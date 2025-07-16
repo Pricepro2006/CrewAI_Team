@@ -1,23 +1,5 @@
-export interface Document {
-  id: string;
-  content: string;
-  metadata: DocumentMetadata;
-  score?: number;
-}
-
-export interface DocumentMetadata {
-  sourceId: string;
-  title?: string;
-  author?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  tags?: string[];
-  type?: string;
-  url?: string;
-  chunkIndex?: number;
-  totalChunks?: number;
-  [key: string]: any;
-}
+import { Document, DocumentMetadata } from '../shared/types';
+export { Document, DocumentMetadata };
 
 export interface ProcessedDocument extends Document {
   embedding?: number[];
