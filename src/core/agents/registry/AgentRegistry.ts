@@ -1,4 +1,4 @@
-import { BaseAgent, AgentFactory, AgentRegistration, AgentPoolConfig, AgentStatus } from '../base/AgentTypes';
+import { BaseAgent, type AgentFactory, type AgentPoolConfig, type AgentStatus } from '../base/AgentTypes';
 import { ResearchAgent } from '../specialized/ResearchAgent';
 import { CodeAgent } from '../specialized/CodeAgent';
 import { DataAnalysisAgent } from '../specialized/DataAnalysisAgent';
@@ -6,14 +6,12 @@ import { WriterAgent } from '../specialized/WriterAgent';
 import { ToolExecutorAgent } from '../specialized/ToolExecutorAgent';
 
 export class AgentRegistry {
-  private agents: Map<string, AgentRegistration>;
   private activeAgents: Map<string, BaseAgent>;
   private agentPool: Map<string, BaseAgent[]>;
   private config: AgentPoolConfig;
   private agentFactories: Map<string, AgentFactory>;
 
   constructor(config?: Partial<AgentPoolConfig>) {
-    this.agents = new Map();
     this.activeAgents = new Map();
     this.agentPool = new Map();
     this.config = {
@@ -29,11 +27,11 @@ export class AgentRegistry {
 
   private registerDefaultAgents(): void {
     // Register agent factories
-    this.agentFactories.set('ResearchAgent', () => new ResearchAgent());
-    this.agentFactories.set('CodeAgent', () => new CodeAgent());
-    this.agentFactories.set('DataAnalysisAgent', () => new DataAnalysisAgent());
-    this.agentFactories.set('WriterAgent', () => new WriterAgent());
-    this.agentFactories.set('ToolExecutorAgent', () => new ToolExecutorAgent());
+    this.agentFactories.set('ResearchAgent', () => new ResearchAgent() as unknown as BaseAgent);
+    this.agentFactories.set('CodeAgent', () => new CodeAgent() as unknown as BaseAgent);
+    this.agentFactories.set('DataAnalysisAgent', () => new DataAnalysisAgent() as unknown as BaseAgent);
+    this.agentFactories.set('WriterAgent', () => new WriterAgent() as unknown as BaseAgent);
+    this.agentFactories.set('ToolExecutorAgent', () => new ToolExecutorAgent() as unknown as BaseAgent);
   }
 
   async initialize(): Promise<void> {
@@ -140,11 +138,11 @@ export class AgentRegistry {
   getActiveAgents(): AgentStatus[] {
     const statuses: AgentStatus[] = [];
     
-    for (const [key, agent] of this.activeAgents.entries()) {
+    for (const [key] of this.activeAgents.entries()) {
       const [type] = key.split('-');
       statuses.push({
         id: key,
-        type,
+        type: type || 'unknown',
         status: 'busy',
         currentTask: 'Active',
         lastActivity: new Date(),

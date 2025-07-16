@@ -1,5 +1,5 @@
 import { OllamaProvider } from '../llm/OllamaProvider';
-import { Query, Plan, ExecutionResult, ReviewResult } from './types';
+import type { Query, Plan, ExecutionResult, ReviewResult } from './types';
 
 export class PlanReviewer {
   constructor(private llm: OllamaProvider) {}

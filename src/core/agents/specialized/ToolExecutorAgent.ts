@@ -1,6 +1,6 @@
 import { BaseAgent } from '../base/BaseAgent';
-import { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
-import { Tool } from '../../tools/base/BaseTool';
+import type { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
+import { BaseTool } from '../../tools/base/BaseTool';
 
 export class ToolExecutorAgent extends BaseAgent {
   constructor() {
@@ -202,6 +202,8 @@ export class ToolExecutorAgent extends BaseAgent {
         Tool: ${spec.name}
         Current parameters: ${JSON.stringify(spec.parameters)}
         
+        ${context.ragDocuments ? `Context from knowledge base:\n${context.ragDocuments.map(d => d.content).join('\n')}` : ''}
+        
         Previous results from dependencies:
         ${previousResults
           .filter(r => spec.dependsOn.includes(r.toolName))
@@ -282,7 +284,7 @@ export class ToolExecutorAgent extends BaseAgent {
     // Tools are registered externally based on requirements
   }
 
-  registerToolSet(tools: Tool[]): void {
+  registerToolSet(tools: BaseTool[]): void {
     for (const tool of tools) {
       this.registerTool(tool);
     }
@@ -313,6 +315,8 @@ export class ToolExecutorAgent extends BaseAgent {
         metadata: {
           agent: this.name,
           tool: toolName,
+          timestamp: new Date().toISOString(),
+          hasContext: !!context,
           ...result.metadata
         }
       };
@@ -331,7 +335,7 @@ interface ToolExecutionPlan {
 
 interface ToolSpec {
   name: string;
-  tool: Tool;
+  tool: BaseTool;
   parameters: any;
   dependsOn: string[];
 }

@@ -1,10 +1,10 @@
 import { OllamaProvider } from '../../llm/OllamaProvider';
-import { Tool } from '../../tools/base/BaseTool';
-import { AgentCapability, AgentContext, AgentResult, ToolExecutionParams } from './AgentTypes';
+import { BaseTool } from '../../tools/base/BaseTool';
+import type { AgentCapability, AgentContext, AgentResult, ToolExecutionParams } from './AgentTypes';
 
 export abstract class BaseAgent {
   protected llm: OllamaProvider;
-  protected tools: Map<string, Tool>;
+  protected tools: Map<string, BaseTool>;
   protected capabilities: AgentCapability[];
   protected isInitialized: boolean = false;
 
@@ -22,7 +22,7 @@ export abstract class BaseAgent {
   /**
    * Execute a task with the given context
    */
-  abstract async execute(
+  abstract execute(
     task: string, 
     context: AgentContext
   ): Promise<AgentResult>;
@@ -60,7 +60,7 @@ export abstract class BaseAgent {
   /**
    * Register a tool for this agent
    */
-  registerTool(tool: Tool): void {
+  registerTool(tool: BaseTool): void {
     this.tools.set(tool.name, tool);
     this.updateCapabilities();
   }
@@ -68,14 +68,14 @@ export abstract class BaseAgent {
   /**
    * Get all registered tools
    */
-  getTools(): Tool[] {
+  getTools(): BaseTool[] {
     return Array.from(this.tools.values());
   }
 
   /**
    * Get a specific tool by name
    */
-  getTool(name: string): Tool | undefined {
+  getTool(name: string): BaseTool | undefined {
     return this.tools.get(name);
   }
 
@@ -138,8 +138,8 @@ export abstract class BaseAgent {
         error: result.error || 'Tool execution failed',
         metadata: {
           agent: this.name,
-          tool: context.tool,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          ...(context.tool && { tool: context.tool })
         }
       };
     }
@@ -150,9 +150,9 @@ export abstract class BaseAgent {
       output: this.formatToolOutput(result.data),
       metadata: {
         agent: this.name,
-        tool: context.tool,
         timestamp: new Date().toISOString(),
-        toolMetadata: result.metadata
+        ...(context.tool && { tool: context.tool }),
+        ...(result.metadata && { toolMetadata: result.metadata })
       }
     };
   }

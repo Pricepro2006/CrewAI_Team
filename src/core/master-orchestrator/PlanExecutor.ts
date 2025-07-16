@@ -1,6 +1,6 @@
 import { AgentRegistry } from '../agents/registry/AgentRegistry';
 import { RAGSystem } from '../rag/RAGSystem';
-import { Plan, PlanStep, ExecutionResult, StepResult, Context } from './types';
+import type { Plan, PlanStep, ExecutionResult, StepResult, Context } from './types';
 
 export class PlanExecutor {
   constructor(

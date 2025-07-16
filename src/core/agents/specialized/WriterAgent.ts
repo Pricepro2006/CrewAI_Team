@@ -1,5 +1,5 @@
 import { BaseAgent } from '../base/BaseAgent';
-import { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
+import type { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
 
 export class WriterAgent extends BaseAgent {
   constructor() {

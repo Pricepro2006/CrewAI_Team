@@ -3,12 +3,12 @@ import { AgentRegistry } from '../agents/registry/AgentRegistry';
 import { RAGSystem } from '../rag/RAGSystem';
 import { PlanExecutor } from './PlanExecutor';
 import { PlanReviewer } from './PlanReviewer';
-import { Plan, ExecutionResult, Query, MasterOrchestratorConfig, ReviewResult } from './types';
+import type { Plan, ExecutionResult, Query, MasterOrchestratorConfig, ReviewResult } from './types';
 
 export class MasterOrchestrator {
   private llm: OllamaProvider;
-  private agentRegistry: AgentRegistry;
-  private ragSystem: RAGSystem;
+  public agentRegistry: AgentRegistry;
+  public ragSystem: RAGSystem;
   private planExecutor: PlanExecutor;
   private planReviewer: PlanReviewer;
 
@@ -26,7 +26,7 @@ export class MasterOrchestrator {
 
   async processQuery(query: Query): Promise<ExecutionResult> {
     // Step 1: Create initial plan
-    const plan = await this.createPlan(query);
+    let plan = await this.createPlan(query);
     
     // Step 2: Execute plan with replan loop
     let executionResult: ExecutionResult;
@@ -85,8 +85,12 @@ export class MasterOrchestrator {
       }
     `;
 
-    const response = await this.llm.generate(prompt);
-    return this.parsePlan(response);
+    const response = await this.llm.generate(prompt, {
+      format: 'json',
+      temperature: 0.3,
+      maxTokens: 2000
+    });
+    return this.parsePlan(response, query);
   }
 
   private async replan(
@@ -111,11 +115,15 @@ export class MasterOrchestrator {
       Return the revised plan in the same JSON format.
     `;
 
-    const response = await this.llm.generate(prompt);
-    return this.parsePlan(response);
+    const response = await this.llm.generate(prompt, {
+      format: 'json',
+      temperature: 0.3,
+      maxTokens: 2000
+    });
+    return this.parsePlan(response, query);
   }
 
-  private parsePlan(response: string): Plan {
+  private parsePlan(response: string, query?: Query): Plan {
     try {
       // Extract JSON from the response
       const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -152,7 +160,7 @@ export class MasterOrchestrator {
           description: 'Process query with general approach',
           agentType: 'ResearchAgent',
           requiresTool: false,
-          ragQuery: query.text,
+          ragQuery: query?.text || 'General query processing',
           expectedOutput: 'General response to query',
           dependencies: []
         }]
