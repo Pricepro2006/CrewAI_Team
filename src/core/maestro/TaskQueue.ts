@@ -1,4 +1,4 @@
-import { QueueConfig, QueueItem, QueueStatus } from './types';
+import type { QueueConfig, QueueItem, QueueStatus } from './types';
 
 export class TaskQueue {
   private queue: QueueItem[] = [];
@@ -61,7 +61,7 @@ export class TaskQueue {
     let insertIndex = 0;
     
     for (let i = 0; i < this.queue.length; i++) {
-      if (item.priority > this.queue[i].priority) {
+      if ((item.priority || 0) > (this.queue[i].priority || 0)) {
         break;
       }
       insertIndex = i + 1;
@@ -93,14 +93,14 @@ export class TaskQueue {
 export class PriorityQueue<T> {
   private items: Array<{ item: T; priority: number }> = [];
 
-  constructor(private compareFn?: (a: T, b: T) => number) {}
+  constructor(private _compareFn?: (a: T, b: T) => number) {}
 
   enqueue(item: T, priority: number = 0): void {
     const queueItem = { item, priority };
     
     let added = false;
     for (let i = 0; i < this.items.length; i++) {
-      if (priority > this.items[i].priority) {
+      if (priority > (this.items[i]?.priority || 0)) {
         this.items.splice(i, 0, queueItem);
         added = true;
         break;

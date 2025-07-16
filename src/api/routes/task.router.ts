@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc/router";
+import type { Router } from '@trpc/server';
 
-export const taskRouter = router({
+export const taskRouter: Router<any> = router({
   // Submit a new task
   submit: publicProcedure
     .input(
@@ -13,7 +14,7 @@ export const taskRouter = router({
         retries: z.number().optional(),
       }),
     )
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async () => {
       // Use masterOrchestrator for task submission
       const taskId = `task-${Date.now()}`;
       // TODO: Implement task submission through masterOrchestrator
@@ -45,7 +46,7 @@ export const taskRouter = router({
         filter: z.enum(["all", "active", "completed"]).default("all"),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async () => {
       // TODO: Implement task listing
       return [];
     }),
@@ -57,7 +58,7 @@ export const taskRouter = router({
         taskId: z.string(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async () => {
       // TODO: Implement task cancellation
       return { success: true };
     }),

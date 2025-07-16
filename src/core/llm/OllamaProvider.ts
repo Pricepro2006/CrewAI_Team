@@ -41,7 +41,7 @@ export class OllamaProvider extends EventEmitter {
   private client: AxiosInstance;
   private config: OllamaConfig;
   private isInitialized: boolean = false;
-  private context?: number[];
+  private context?: number[] | undefined;
 
   constructor(config: OllamaConfig) {
     super();
@@ -55,7 +55,7 @@ export class OllamaProvider extends EventEmitter {
     };
 
     this.client = axios.create({
-      baseURL: this.config.baseUrl,
+      baseURL: this.config.baseUrl || 'http://localhost:11434',
       timeout: 300000, // 5 minutes timeout for long generations
       headers: {
         'Content-Type': 'application/json'

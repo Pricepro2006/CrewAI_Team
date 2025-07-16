@@ -4,7 +4,7 @@ import { RAGSystem } from '../rag/RAGSystem';
 import { PlanExecutor } from './PlanExecutor';
 import { PlanReviewer } from './PlanReviewer';
 import type { Plan, ExecutionResult, Query, MasterOrchestratorConfig, ReviewResult } from './types';
-import { logger, withErrorHandling, createPerformanceMonitor } from '../../utils/logger';
+import { logger, createPerformanceMonitor } from '../../utils/logger';
 
 export class MasterOrchestrator {
   private llm: OllamaProvider;
@@ -84,9 +84,9 @@ export class MasterOrchestrator {
       const result = this.formatResponse(executionResult);
       
       logger.info('Query processing completed', 'ORCHESTRATOR', {
-        success: result.metadata?.successfulSteps === result.metadata?.totalSteps,
+        success: result.metadata?.['successfulSteps'] === result.metadata?.['totalSteps'],
         attempts: attempts + 1,
-        totalSteps: result.metadata?.totalSteps
+        totalSteps: result.metadata?.['totalSteps']
       });
       
       perf.end({ success: true });

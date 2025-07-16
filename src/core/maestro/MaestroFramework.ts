@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { TaskQueue } from './TaskQueue';
 import { ExecutionContext } from './ExecutionContext';
-import { Task, TaskResult, MaestroConfig } from './types';
+import type { Task, TaskResult, MaestroConfig } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class MaestroFramework extends EventEmitter {
@@ -25,7 +25,7 @@ export class MaestroFramework extends EventEmitter {
     const context = new ExecutionContext({
       taskId,
       task,
-      timeout: task.timeout || this.config.taskTimeout,
+      ...(task.timeout && { timeout: task.timeout }),
       config: this.config
     });
     
@@ -144,7 +144,7 @@ export class MaestroFramework extends EventEmitter {
     }
   }
 
-  private async executeAgentTask(task: Task, context: ExecutionContext): Promise<any> {
+  private async executeAgentTask(task: Task, _context: ExecutionContext): Promise<any> {
     // This would integrate with the AgentRegistry
     // For now, return a placeholder
     return {
@@ -154,7 +154,7 @@ export class MaestroFramework extends EventEmitter {
     };
   }
 
-  private async executeToolTask(task: Task, context: ExecutionContext): Promise<any> {
+  private async executeToolTask(task: Task, _context: ExecutionContext): Promise<any> {
     // This would integrate with the Tool system
     return {
       type: 'tool',
@@ -163,7 +163,7 @@ export class MaestroFramework extends EventEmitter {
     };
   }
 
-  private async executeCompositeTask(task: Task, context: ExecutionContext): Promise<any> {
+  private async executeCompositeTask(task: Task, _context: ExecutionContext): Promise<any> {
     // Execute multiple sub-tasks
     const subResults = [];
     

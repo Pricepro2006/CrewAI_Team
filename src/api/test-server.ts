@@ -9,7 +9,7 @@ console.log('Current directory:', process.cwd());
 import express from 'express';
 const app = express();
 
-app.get('/test', (req, res) => {
+app.get('/test', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 

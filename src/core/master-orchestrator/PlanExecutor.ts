@@ -1,6 +1,6 @@
 import { AgentRegistry } from '../agents/registry/AgentRegistry';
 import { RAGSystem } from '../rag/RAGSystem';
-import type { Plan, PlanStep, ExecutionResult, StepResult, Context } from './types';
+import type { Plan, PlanStep, ExecutionResult, StepResult, Context, Document as CustomDocument } from './types';
 
 export class PlanExecutor {
   constructor(
@@ -66,7 +66,7 @@ export class PlanExecutor {
     const documents = await this.ragSystem.search(step.ragQuery, 5);
     
     return {
-      documents,
+      documents: documents as CustomDocument[],
       relevance: this.calculateRelevance(documents, step),
       metadata: {
         stepId: step.id,
@@ -103,9 +103,9 @@ export class PlanExecutor {
     return {
       stepId: step.id,
       success: result.success,
-      output: result.output,
-      data: result.data,
-      error: result.error,
+      ...(result.output && { output: result.output }),
+      ...(result.data && { data: result.data }),
+      ...(result.error && { error: result.error }),
       metadata: {
         ...result.metadata,
         toolUsed: step.toolName,
@@ -131,9 +131,9 @@ export class PlanExecutor {
     return {
       stepId: step.id,
       success: result.success,
-      output: result.output,
-      data: result.data,
-      error: result.error,
+      ...(result.output && { output: result.output }),
+      ...(result.data && { data: result.data }),
+      ...(result.error && { error: result.error }),
       metadata: {
         ...result.metadata,
         contextRelevance: context.relevance
@@ -141,7 +141,7 @@ export class PlanExecutor {
     };
   }
 
-  private calculateRelevance(documents: any[], step: PlanStep): number {
+  private calculateRelevance(documents: any[], _step: PlanStep): number {
     if (documents.length === 0) return 0;
 
     // Average relevance score of top documents
@@ -163,7 +163,7 @@ export class PlanExecutor {
 
     // Stop if critical error
     const hasCriticalError = results.some(
-      r => r.metadata?.errorType === 'CriticalError'
+      r => r.metadata?.['errorType'] === 'CriticalError'
     );
     
     return !hasCriticalError;

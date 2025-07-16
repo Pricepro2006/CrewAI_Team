@@ -1,3 +1,6 @@
+import type { Message } from '../shared/types';
+import type { AgentType } from '../shared/types';
+
 export interface Query {
   text: string;
   conversationId?: string;
@@ -54,7 +57,7 @@ export interface Context {
 }
 
 // Re-export from shared types to avoid circular dependencies
-export { Document, DocumentMetadata, Message, AgentType } from '../shared/types';
+export type { Document, DocumentMetadata, Message, AgentType } from '../shared/types';
 
 export interface MasterOrchestratorConfig {
   ollamaUrl: string;

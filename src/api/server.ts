@@ -10,8 +10,9 @@ import { appRouter } from "./trpc/router";
 import { WebSocketServer } from "ws";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import appConfig from "../config/app.config";
+import type { Express } from "express";
 
-const app = express();
+const app: Express = express();
 const PORT = appConfig.api.port;
 
 // Middleware
@@ -43,7 +44,7 @@ app.get("/health", async (_req, res) => {
     clearTimeout(timeoutId);
     services.ollama = ollamaResponse.ok ? "connected" : "disconnected";
   } catch (error) {
-    if (error.name === "AbortError") {
+    if ((error as Error).name === "AbortError") {
       services.ollama = "timeout";
     } else {
       services.ollama = "error";
@@ -68,7 +69,7 @@ app.get("/health", async (_req, res) => {
       services.chromadb = "not_configured";
     }
   } catch (error) {
-    if (error.name === "AbortError") {
+    if ((error as Error).name === "AbortError") {
       services.chromadb = "timeout";
     } else {
       services.chromadb = "error";
@@ -77,7 +78,7 @@ app.get("/health", async (_req, res) => {
 
   try {
     // Check database connection
-    const { Database } = await import("better-sqlite3");
+    const Database = (await import("better-sqlite3")).default;
     const db = new Database(appConfig.database?.path || "./data/app.db", {
       readonly: true,
     });
@@ -108,7 +109,7 @@ app.use(
   createExpressMiddleware({
     router: appRouter,
     createContext,
-    onError({ error, type, path, input, ctx, req }) {
+    onError({ error, type, path, input }) {
       console.error("tRPC Error:", {
         type,
         path,
@@ -120,7 +121,7 @@ app.use(
 );
 
 // Static file serving for UI in production
-if (process.env.NODE_ENV === "production") {
+if (process.env['NODE_ENV'] === "production") {
   app.use(express.static("dist/client"));
   app.get("*", (_req, res) => {
     res.sendFile("index.html", { root: "dist/client" });
@@ -143,7 +144,14 @@ const wss = new WebSocketServer({
 const wsHandler = applyWSSHandler({
   wss,
   router: appRouter,
-  createContext,
+  createContext: ({ req }) => createContext({ 
+    req, 
+    res: {
+      json: () => {},
+      status: () => ({ json: () => {} }),
+      send: () => {}
+    } as any 
+  }),
 });
 
 console.log(

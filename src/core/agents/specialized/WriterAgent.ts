@@ -319,7 +319,7 @@ export class WriterAgent extends BaseAgent {
 
   private extractEmailSubject(content: string): string {
     const subjectMatch = content.match(/Subject:\s*(.+)/i);
-    return subjectMatch ? subjectMatch[1] : 'No subject';
+    return subjectMatch?.[1] ?? 'No subject';
   }
 
   private checkForActionItems(content: string): boolean {

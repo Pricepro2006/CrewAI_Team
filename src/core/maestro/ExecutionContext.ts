@@ -1,4 +1,4 @@
-import { Task, MaestroConfig } from './types';
+import type { Task, MaestroConfig } from './types';
 
 export interface ExecutionContextConfig {
   taskId: string;
@@ -11,7 +11,7 @@ export class ExecutionContext {
   taskId: string;
   task: Task;
   startTime?: Date;
-  timeout?: number;
+  timeout?: number | undefined;
   retryCount: number = 0;
   metadata: Record<string, any> = {};
   private cleanupCallbacks: Array<() => void> = [];
@@ -78,19 +78,19 @@ export class ExecutionContext {
   }
 
   setProgress(progress: number): void {
-    this.metadata.progress = Math.min(100, Math.max(0, progress));
+    this.metadata['progress'] = Math.min(100, Math.max(0, progress));
   }
 
   getProgress(): number {
-    return this.metadata.progress || 0;
+    return this.metadata['progress'] || 0;
   }
 
   addLog(message: string, level: 'info' | 'warn' | 'error' = 'info'): void {
-    if (!this.metadata.logs) {
-      this.metadata.logs = [];
+    if (!this.metadata['logs']) {
+      this.metadata['logs'] = [];
     }
     
-    this.metadata.logs.push({
+    this.metadata['logs'].push({
       timestamp: new Date().toISOString(),
       level,
       message
@@ -101,7 +101,7 @@ export class ExecutionContext {
     return {
       taskId: this.taskId,
       taskType: this.task.type,
-      startTime: this.startTime,
+      ...(this.startTime && { startTime: this.startTime }),
       elapsedTime: this.getElapsedTime(),
       progress: this.getProgress(),
       retryCount: this.retryCount,

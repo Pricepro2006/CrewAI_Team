@@ -20,8 +20,8 @@ export const AgentMonitor: React.FC = () => {
   });
 
   useEffect(() => {
-    if (agentStatus.data?.agents && Array.isArray(agentStatus.data.agents)) {
-      setActiveAgents(agentStatus.data.agents);
+    if (agentStatus.data && Array.isArray(agentStatus.data)) {
+      setActiveAgents(agentStatus.data);
     }
   }, [agentStatus.data]);
 

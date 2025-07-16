@@ -2,7 +2,7 @@ import { VectorStore } from './VectorStore';
 import { DocumentProcessor } from './DocumentProcessor';
 import { EmbeddingService } from './EmbeddingService';
 import { RetrievalService } from './RetrievalService';
-import { Document, QueryResult, RAGConfig, ProcessedDocument } from './types';
+import type { Document, QueryResult, RAGConfig, ProcessedDocument } from './types';
 
 export class RAGSystem {
   private vectorStore: VectorStore;

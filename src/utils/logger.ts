@@ -141,9 +141,9 @@ export class Logger {
       timestamp: new Date().toISOString(),
       level,
       message,
-      component,
-      metadata,
-      stack: error?.stack
+      ...(component && { component }),
+      ...(metadata && { metadata }),
+      ...(error?.stack && { stack: error.stack })
     };
 
     this.writeToConsole(entry);

@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { router, publicProcedure } from '../trpc/router';
+import type { Router } from '@trpc/server';
 
-export const agentRouter = router({
+export const agentRouter: Router<any> = router({
   // List all registered agents
   list: publicProcedure.query(async ({ ctx }) => {
     const types = ctx.agentRegistry.getRegisteredTypes();
@@ -32,8 +33,11 @@ export const agentRouter = router({
     .mutation(async ({ input, ctx }) => {
       const agent = await ctx.agentRegistry.getAgent(input.agentType);
       
-      const result = await agent.execute(input.task, input.context || {
-        task: input.task
+      const result = await agent.execute(input.task, {
+        task: input.task,
+        ...(input.context?.ragDocuments && { ragDocuments: input.context.ragDocuments }),
+        ...(input.context?.previousResults && { previousResults: input.context.previousResults }),
+        ...(input.context?.userPreferences && { userPreferences: input.context.userPreferences })
       });
 
       // Release agent back to pool

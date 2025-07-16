@@ -24,7 +24,7 @@ export class DocumentProcessor {
     const chunks = this.chunkText(cleaned, {
       size: this.config.size,
       overlap: this.config.overlap,
-      separator: this.config.separator
+      ...(this.config.separator && { separator: this.config.separator })
     });
 
     // Create document objects
@@ -57,6 +57,7 @@ export class DocumentProcessor {
 
     // Remove null characters and other control characters
     cleaned = cleaned.replace(/\0/g, '');
+    // eslint-disable-next-line no-control-regex
     cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
     return cleaned;
@@ -184,7 +185,7 @@ export class DocumentProcessor {
     return Math.ceil(totalLength / effectiveChunkSize);
   }
 
-  validateChunkSize(content: string): boolean {
+  validateChunkSize(_content: string): boolean {
     const minSize = 100; // Minimum reasonable chunk size
     const maxSize = 10000; // Maximum reasonable chunk size
     

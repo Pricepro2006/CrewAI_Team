@@ -1,5 +1,5 @@
 import { MaestroFramework } from '../../core/maestro/MaestroFramework';
-import { Task, TaskResult } from '../../core/maestro/types';
+import type { Task, TaskResult } from '../../core/maestro/types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class TaskService {

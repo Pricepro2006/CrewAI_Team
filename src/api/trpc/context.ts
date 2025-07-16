@@ -1,8 +1,7 @@
-import { inferAsyncReturnType } from '@trpc/server';
-import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
+import type { inferAsyncReturnType } from '@trpc/server';
+import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import { MasterOrchestrator } from '../../core/master-orchestrator/MasterOrchestrator';
 import { ConversationService } from '../services/ConversationService';
-import appConfig from '../../config/app.config';
 import ollamaConfig from '../../config/ollama.config';
 
 // Initialize services (singleton pattern)

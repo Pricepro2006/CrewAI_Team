@@ -34,7 +34,7 @@ export const ChatInterface: React.FC = () => {
     { conversationId: conversationId! },
     {
       enabled: !!conversationId,
-      onData: (message) => {
+      onData: (message: Message) => {
         setMessages(prev => [...prev, message]);
       }
     }

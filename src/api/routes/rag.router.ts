@@ -1,16 +1,17 @@
 import { z } from 'zod';
 import { router, publicProcedure } from '../trpc/router';
-import multer from 'multer';
+import type { Router } from '@trpc/server';
 
-// Configure multer for file uploads
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
-  }
-});
+// Configure multer for file uploads (if needed for future use)
+// import multer from 'multer';
+// const _upload = multer({
+//   storage: multer.memoryStorage(),
+//   limits: {
+//     fileSize: 10 * 1024 * 1024 // 10MB limit
+//   }
+// });
 
-export const ragRouter = router({
+export const ragRouter: Router<any> = router({
   // Upload a document
   upload: publicProcedure
     .input(z.object({

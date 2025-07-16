@@ -1,6 +1,6 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { httpBatchLink, wsLink, splitLink } from '@trpc/client';
+import { httpBatchLink, wsLink, splitLink, createWSClient } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import type { AppRouter } from '../api/trpc/router';
@@ -29,7 +29,9 @@ const trpcClient = trpc.createClient({
         return op.type === 'subscription';
       },
       true: wsLink({
-        url: `ws://localhost:3001/trpc-ws`,
+        client: createWSClient({
+          url: `ws://localhost:3001/trpc-ws`,
+        }),
       }),
       false: httpBatchLink({
         url: 'http://localhost:3000/trpc',

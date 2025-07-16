@@ -181,8 +181,8 @@ export class ToolExecutorAgent extends BaseAgent {
         toolName: spec.name,
         success: result.success,
         result: result.data,
-        error: result.error,
-        metadata: result.metadata,
+        ...(result.error && { error: result.error }),
+        ...(result.metadata && { metadata: result.metadata }),
       };
     } catch (error) {
       return {
@@ -316,7 +316,7 @@ export class ToolExecutorAgent extends BaseAgent {
         success: result.success,
         data: result.data,
         output: JSON.stringify(result.data, null, 2),
-        error: result.error,
+        ...(result.error && { error: result.error }),
         metadata: {
           agent: this.name,
           tool: toolName,
