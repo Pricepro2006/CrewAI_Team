@@ -33,8 +33,8 @@ export class Logger {
 
   private constructor() {
     this.logDir = path.join(process.cwd(), 'data', 'logs');
-    this.logLevel = process.env.LOG_LEVEL === 'debug' ? LogLevel.DEBUG : LogLevel.INFO;
-    this.enableConsole = process.env.NODE_ENV !== 'production';
+    this.logLevel = process.env['LOG_LEVEL'] === 'debug' ? LogLevel.DEBUG : LogLevel.INFO;
+    this.enableConsole = process.env['NODE_ENV'] !== 'production';
     this.enableFile = true;
     
     this.ensureLogDirectory();
@@ -220,7 +220,7 @@ export function createErrorHandler(component: string) {
     logger.error(`Unhandled error in ${component}`, component, context, error);
     
     // In production, you might want to send to external monitoring service
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env['NODE_ENV'] === 'production') {
       // Send to Sentry, DataDog, etc.
     }
   };

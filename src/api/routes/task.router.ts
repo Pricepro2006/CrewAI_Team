@@ -27,7 +27,7 @@ export const taskRouter = router({
         taskId: z.string(),
       }),
     )
-    .query(async ({ input, _ctx }) => {
+    .query(async ({ input }) => {
       // TODO: Implement task status tracking
       return {
         id: input.taskId,
@@ -45,7 +45,7 @@ export const taskRouter = router({
         filter: z.enum(["all", "active", "completed"]).default("all"),
       }),
     )
-    .query(async ({ input, _ctx }) => {
+    .query(async ({ input }) => {
       // TODO: Implement task listing
       return [];
     }),
@@ -57,13 +57,13 @@ export const taskRouter = router({
         taskId: z.string(),
       }),
     )
-    .mutation(async ({ input, _ctx }) => {
+    .mutation(async ({ input }) => {
       // TODO: Implement task cancellation
       return { success: true };
     }),
 
   // Get queue status
-  queueStatus: publicProcedure.query(async ({ _ctx }) => {
+  queueStatus: publicProcedure.query(async () => {
     // TODO: Implement queue status
     return {
       active: 0,
@@ -73,7 +73,7 @@ export const taskRouter = router({
   }),
 
   // Clear completed tasks
-  clearCompleted: publicProcedure.mutation(async ({ _ctx }) => {
+  clearCompleted: publicProcedure.mutation(async () => {
     // TODO: Implement clearing completed tasks
     return { success: true };
   }),

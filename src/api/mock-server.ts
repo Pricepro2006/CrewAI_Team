@@ -169,7 +169,7 @@ app.post("/trpc/agent.status", async (_req, res) => {
   });
 });
 
-app.get("/health", (req, res) => {
+app.get("/health", (_req, res) => {
   res.json({ status: "ok", mode: "mock" });
 });
 

@@ -4,10 +4,10 @@ import path from "path";
 import fs from "fs/promises";
 
 // Set up test environment variables
-process.env.NODE_ENV = "test";
-process.env.DATABASE_PATH = ":memory:";
-process.env.LOG_LEVEL = "error";
-process.env.OLLAMA_URL = "http://localhost:11434";
+process.env['NODE_ENV'] = "test";
+process.env['DATABASE_PATH'] = ":memory:";
+process.env['LOG_LEVEL'] = "error";
+process.env['OLLAMA_URL'] = "http://localhost:11434";
 
 // Create test data directory
 const testDataDir = path.join(process.cwd(), "test-data");

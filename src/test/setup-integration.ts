@@ -10,9 +10,9 @@ import {
 } from "./utils/ollama-test-helper";
 
 // Set up test environment variables
-process.env.NODE_ENV = "test";
-process.env.OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
-process.env.LOG_LEVEL = "error"; // Reduce noise during tests
+process.env['NODE_ENV'] = "test";
+process.env['OLLAMA_URL'] = process.env['OLLAMA_URL'] || "http://localhost:11434";
+process.env['LOG_LEVEL'] = "error"; // Reduce noise during tests
 
 // Global setup for all integration tests
 beforeAll(async () => {
@@ -20,7 +20,7 @@ beforeAll(async () => {
 
   try {
     await setupOllamaForTesting({
-      url: process.env.OLLAMA_URL,
+      url: process.env['OLLAMA_URL'],
       testModel: "qwen2.5:0.5b", // Small, fast model for testing
       testEmbeddingModel: "nomic-embed-text",
     });
