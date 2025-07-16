@@ -87,3 +87,7 @@ playwright_env/
 # Lock files (keep pnpm-lock.yaml)
 package-lock.json
 yarn.lock
+
+# MCP local configuration
+.mcp/
+claude_desktop_config.json
