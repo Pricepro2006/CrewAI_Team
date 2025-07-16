@@ -1,4 +1,5 @@
-import { BaseTool, ToolResult } from '../base/BaseTool';
+import { BaseTool } from '../base/BaseTool';
+import type { ToolResult } from '../base/BaseTool';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 

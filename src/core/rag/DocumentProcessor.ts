@@ -1,4 +1,4 @@
-import { ChunkingConfig, ProcessedDocument, DocumentMetadata, ChunkOptions } from './types';
+import type { ChunkingConfig, ProcessedDocument, DocumentMetadata, ChunkOptions } from './types';
 
 export class DocumentProcessor {
   private config: ChunkingConfig;

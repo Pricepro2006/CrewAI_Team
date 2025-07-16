@@ -1,5 +1,6 @@
-import axios, { AxiosInstance } from 'axios';
-import { EmbeddingConfig } from './types';
+import axios from 'axios';
+import type { AxiosInstance } from 'axios';
+import type { EmbeddingConfig } from './types';
 
 export class EmbeddingService {
   private client: AxiosInstance;

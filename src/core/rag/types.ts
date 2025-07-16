@@ -1,5 +1,5 @@
-import { Document, DocumentMetadata } from '../shared/types';
-export { Document, DocumentMetadata };
+import type { Document, DocumentMetadata } from '../shared/types';
+export type { Document, DocumentMetadata };
 
 export interface ProcessedDocument extends Document {
   embedding?: number[];

@@ -1,6 +1,6 @@
 import { ChromaClient, Collection } from 'chromadb';
 import { EmbeddingService } from './EmbeddingService';
-import { Document, QueryResult, VectorStoreConfig, ProcessedDocument } from './types';
+import type { Document, QueryResult, VectorStoreConfig, ProcessedDocument } from './types';
 
 export class VectorStore {
   private client: ChromaClient;
