@@ -4,6 +4,7 @@ import { RAGSystem } from '../rag/RAGSystem';
 import { PlanExecutor } from './PlanExecutor';
 import { PlanReviewer } from './PlanReviewer';
 import type { Plan, ExecutionResult, Query, MasterOrchestratorConfig, ReviewResult } from './types';
+import { logger, withErrorHandling, createPerformanceMonitor } from '../../utils/logger';
 
 export class MasterOrchestrator {
   private llm: OllamaProvider;
@@ -11,8 +12,11 @@ export class MasterOrchestrator {
   public ragSystem: RAGSystem;
   private planExecutor: PlanExecutor;
   private planReviewer: PlanReviewer;
+  private perfMonitor = createPerformanceMonitor('MasterOrchestrator');
 
   constructor(config: MasterOrchestratorConfig) {
+    logger.info('Initializing MasterOrchestrator', 'ORCHESTRATOR', { config });
+    
     this.llm = new OllamaProvider({
       model: 'qwen3:14b',
       baseUrl: config.ollamaUrl
@@ -22,38 +26,76 @@ export class MasterOrchestrator {
     this.ragSystem = new RAGSystem(config.rag);
     this.planExecutor = new PlanExecutor(this.agentRegistry, this.ragSystem);
     this.planReviewer = new PlanReviewer(this.llm);
+    
+    logger.info('MasterOrchestrator initialized successfully', 'ORCHESTRATOR');
   }
 
   async processQuery(query: Query): Promise<ExecutionResult> {
-    // Step 1: Create initial plan
-    let plan = await this.createPlan(query);
+    const perf = this.perfMonitor.start('processQuery');
     
-    // Step 2: Execute plan with replan loop
-    let executionResult: ExecutionResult;
-    let attempts = 0;
-    const maxAttempts = 3;
+    logger.info('Processing query', 'ORCHESTRATOR', { 
+      query: query.text.substring(0, 100),
+      conversationId: query.conversationId 
+    });
 
-    do {
-      executionResult = await this.planExecutor.execute(plan);
+    try {
+      // Step 1: Create initial plan
+      let plan = await this.createPlan(query);
       
-      // Step 3: Review execution results
-      const review = await this.planReviewer.review(
-        query, 
-        plan, 
-        executionResult
-      );
+      // Step 2: Execute plan with replan loop
+      let executionResult: ExecutionResult;
+      let attempts = 0;
+      const maxAttempts = 3;
 
-      if (!review.satisfactory && attempts < maxAttempts) {
-        // Step 4: Replan if necessary
-        plan = await this.replan(query, plan, review);
-        attempts++;
-      } else {
-        break;
-      }
-    } while (attempts < maxAttempts);
+      do {
+        logger.debug(`Executing plan (attempt ${attempts + 1}/${maxAttempts})`, 'ORCHESTRATOR', {
+          stepsCount: plan.steps.length
+        });
+        
+        executionResult = await this.planExecutor.execute(plan);
+        
+        // Step 3: Review execution results
+        const review = await this.planReviewer.review(
+          query, 
+          plan, 
+          executionResult
+        );
 
-    // Step 5: Format and return final response
-    return this.formatResponse(executionResult);
+        logger.debug('Plan review completed', 'ORCHESTRATOR', {
+          satisfactory: review.satisfactory,
+          attempts: attempts + 1
+        });
+
+        if (!review.satisfactory && attempts < maxAttempts) {
+          // Step 4: Replan if necessary
+          logger.info('Replanning due to unsatisfactory results', 'ORCHESTRATOR', {
+            feedback: review.feedback,
+            failedSteps: review.failedSteps
+          });
+          
+          plan = await this.replan(query, plan, review);
+          attempts++;
+        } else {
+          break;
+        }
+      } while (attempts < maxAttempts);
+
+      // Step 5: Format and return final response
+      const result = this.formatResponse(executionResult);
+      
+      logger.info('Query processing completed', 'ORCHESTRATOR', {
+        success: result.metadata?.successfulSteps === result.metadata?.totalSteps,
+        attempts: attempts + 1,
+        totalSteps: result.metadata?.totalSteps
+      });
+      
+      perf.end({ success: true });
+      return result;
+    } catch (error) {
+      logger.error('Query processing failed', 'ORCHESTRATOR', { query: query.text }, error as Error);
+      perf.end({ success: false });
+      throw error;
+    }
   }
 
   private async createPlan(query: Query): Promise<Plan> {

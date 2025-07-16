@@ -93,28 +93,73 @@ class DuckDuckGoEngine extends SearchEngine {
 
   async search(query: string, limit: number): Promise<SearchResult[]> {
     try {
-      // For now, return mock results to test the system
-      // TODO: Implement real search API when ready
-      return [
-        {
-          title: `Search result for: ${query}`,
-          url: `https://example.com/search-result-1`,
-          snippet: `This is a mock search result for the query "${query}". It contains relevant information about the topic and demonstrates the search functionality.`
+      // Use DuckDuckGo Instant Answer API for search
+      const response = await axios.get('https://api.duckduckgo.com/', {
+        params: {
+          q: query,
+          format: 'json',
+          no_html: '1',
+          skip_disambig: '1'
         },
-        {
-          title: `Related information about ${query}`,
-          url: `https://example.com/search-result-2`,
-          snippet: `Additional context and information related to "${query}". This helps provide comprehensive coverage of the topic.`
-        },
-        {
-          title: `Expert insights on ${query}`,
-          url: `https://example.com/search-result-3`,
-          snippet: `Expert analysis and insights regarding "${query}". This provides authoritative information on the subject.`
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'CrewAI-Team-Search/1.0'
         }
-      ].slice(0, limit);
+      });
+
+      const results: SearchResult[] = [];
+      const data = response.data;
+
+      // Add main result if available
+      if (data.Abstract && data.AbstractURL) {
+        results.push({
+          title: data.Heading || query,
+          url: data.AbstractURL,
+          snippet: data.Abstract
+        });
+      }
+
+      // Add related topics
+      if (data.RelatedTopics && Array.isArray(data.RelatedTopics)) {
+        for (const topic of data.RelatedTopics.slice(0, limit - results.length)) {
+          if (topic.FirstURL && topic.Text) {
+            results.push({
+              title: topic.Text.split(' - ')[0] || topic.Text.substring(0, 60),
+              url: topic.FirstURL,
+              snippet: topic.Text
+            });
+          }
+        }
+      }
+
+      // Add results from answer types
+      if (data.Answer) {
+        results.push({
+          title: `Answer: ${query}`,
+          url: data.AnswerURL || `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
+          snippet: data.Answer
+        });
+      }
+
+      // If we still don't have enough results, add a fallback search link
+      if (results.length === 0) {
+        results.push({
+          title: `Search results for: ${query}`,
+          url: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
+          snippet: `No direct results found. Click to search for "${query}" on DuckDuckGo.`
+        });
+      }
+
+      return results.slice(0, limit);
     } catch (error) {
       console.error('DuckDuckGo search failed:', error);
-      return [];
+      
+      // Return fallback result with search link
+      return [{
+        title: `Search for: ${query}`,
+        url: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
+        snippet: `Error occurred during search. Click to search for "${query}" manually.`
+      }];
     }
   }
 }
