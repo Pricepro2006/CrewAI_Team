@@ -1,11 +1,11 @@
-import express from 'express';
-import cors from 'cors';
-import { config } from 'dotenv';
+import express from "express";
+import cors from "cors";
+import { config } from "dotenv";
 
 config();
 
 const app = express();
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
 
 // Mock conversation storage
@@ -17,41 +17,41 @@ const log = (msg: string) => console.log(`[MockServer] ${msg}`);
 
 // Helper to parse tRPC input from query or body
 const parseTrpcInput = (req: any) => {
-  if (req.method === 'GET') {
+  if (req.method === "GET") {
     // Parse query parameters for GET requests
     const input = req.query.input ? JSON.parse(req.query.input) : {};
-    return input['0'] || {};
+    return input["0"] || {};
   } else {
     // Parse body for POST requests
-    return req.body['0'] || {};
+    return req.body["0"] || {};
   }
 };
 
 // Mock TRPC endpoints - handle both GET (queries) and POST (mutations)
 const handleTrpcRequest = async (req: any, res: any) => {
-  const endpoint = req.path.replace('/trpc/', '');
+  const endpoint = req.path.replace("/trpc/", "");
   log(`${req.method} ${endpoint}`);
-  
+
   const input = parseTrpcInput(req);
   log(`Input: ${JSON.stringify(input, null, 2)}`);
 
   switch (endpoint) {
-    case 'chat.create': {
+    case "chat.create": {
       const conversationId = Date.now().toString();
       const { message } = input;
-      
+
       conversations.set(conversationId, {
         id: conversationId,
-        title: 'AI Agent Research',
+        title: "AI Agent Research",
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       });
-      
+
       // Store user message
       const userMsg = {
-        role: 'user',
+        role: "user",
         content: message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       messages.set(`${conversationId}-user`, userMsg);
 
@@ -90,131 +90,145 @@ Growing trend towards privacy-preserving architectures:
 [Research completed using web search tool]`;
 
       const assistantMsg = {
-        role: 'assistant',
+        role: "assistant",
         content: assistantContent,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       messages.set(`${conversationId}-assistant`, assistantMsg);
-      
+
       log(`Stored assistant response for conversation ${conversationId}`);
 
       // TRPC batch response format - return full content immediately
-      res.json([{
-        result: {
-          data: {
-            json: {
-              conversationId,
-              response: assistantContent,
-              metadata: {
-                agentType: "ResearchAgent",
-                toolsUsed: ["web_search", "document_analysis"]
-              }
-            }
-          }
-        }
-      }]);
+      res.json([
+        {
+          result: {
+            data: {
+              json: {
+                conversationId,
+                response: assistantContent,
+                metadata: {
+                  agentType: "ResearchAgent",
+                  toolsUsed: ["web_search", "document_analysis"],
+                },
+              },
+            },
+          },
+        },
+      ]);
       break;
     }
 
-    case 'chat.message': {
+    case "chat.message": {
       const { conversationId, message } = input;
-      
+
       // Store new user message
-      const msgCount = Array.from(messages.keys()).filter(k => k.startsWith(conversationId)).length;
+      const msgCount = Array.from(messages.keys()).filter((k) =>
+        k.startsWith(conversationId),
+      ).length;
       messages.set(`${conversationId}-user-${msgCount}`, {
-        role: 'user',
+        role: "user",
         content: message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
-      res.json([{
-        result: {
-          data: {
-            json: {
-              response: "Processing your follow-up request...",
-              metadata: {
-                status: "processing",
-                agent: "ResearchAgent"
-              }
-            }
-          }
-        }
-      }]);
+      res.json([
+        {
+          result: {
+            data: {
+              json: {
+                response: "Processing your follow-up request...",
+                metadata: {
+                  status: "processing",
+                  agent: "ResearchAgent",
+                },
+              },
+            },
+          },
+        },
+      ]);
       break;
     }
 
-    case 'chat.list': {
+    case "chat.list": {
       const conversationList = Array.from(conversations.values());
-      
-      res.json([{
-        result: {
-          data: {
-            json: conversationList
-          }
-        }
-      }]);
+
+      res.json([
+        {
+          result: {
+            data: {
+              json: conversationList,
+            },
+          },
+        },
+      ]);
       break;
     }
 
-    case 'chat.history': {
+    case "chat.history": {
       const { conversationId } = input;
-      const convMessages = [];
-      
+      const convMessages: any[] = [];
+
       // Get all messages for this conversation
       messages.forEach((msg, key) => {
         if (key.startsWith(conversationId)) {
           convMessages.push(msg);
         }
       });
-      
-      log(`Returning ${convMessages.length} messages for conversation ${conversationId}`);
-      
-      res.json([{
-        result: {
-          data: {
-            json: convMessages
-          }
-        }
-      }]);
+
+      log(
+        `Returning ${convMessages.length} messages for conversation ${conversationId}`,
+      );
+
+      res.json([
+        {
+          result: {
+            data: {
+              json: convMessages,
+            },
+          },
+        },
+      ]);
       break;
     }
 
-    case 'agent.status': {
-      res.json([{
-        result: {
-          data: {
-            json: {
-              agents: [
-                {
-                  id: 'research-agent',
-                  name: 'ResearchAgent',
-                  status: 'active',
-                  currentTask: 'Researching AI agent architectures',
-                  progress: 75
-                }
-              ]
-            }
-          }
-        }
-      }]);
+    case "agent.status": {
+      res.json([
+        {
+          result: {
+            data: {
+              json: {
+                agents: [
+                  {
+                    id: "research-agent",
+                    name: "ResearchAgent",
+                    status: "active",
+                    currentTask: "Researching AI agent architectures",
+                    progress: 75,
+                  },
+                ],
+              },
+            },
+          },
+        },
+      ]);
       break;
     }
 
     default:
-      res.status(404).json({ error: 'Endpoint not found' });
+      res.status(404).json({ error: "Endpoint not found" });
   }
 };
 
 // Handle both GET and POST requests
-app.get('/trpc/*', handleTrpcRequest);
-app.post('/trpc/*', handleTrpcRequest);
+app.get("/trpc/*", handleTrpcRequest);
+app.post("/trpc/*", handleTrpcRequest);
 
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    mode: 'mock-v2',
+app.get("/health", (_req, res) => {
+  res.json({
+    status: "ok",
+    mode: "mock-v2",
     conversations: conversations.size,
-    messages: messages.size
+    messages: messages.size,
   });
 });
 

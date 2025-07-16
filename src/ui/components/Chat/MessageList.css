@@ -52,7 +52,6 @@
   background-color: var(--accent-primary);
   color: white;
   border-color: var(--accent-primary);
-  color: white;
 }
 
 .message.assistant .message-avatar {
@@ -121,7 +120,9 @@
 }
 
 @keyframes typing {
-  0%, 60%, 100% {
+  0%,
+  60%,
+  100% {
     transform: translateY(0);
   }
   30% {

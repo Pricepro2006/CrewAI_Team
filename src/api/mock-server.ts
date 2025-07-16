@@ -1,11 +1,11 @@
-import express from 'express';
-import cors from 'cors';
-import { config } from 'dotenv';
+import express from "express";
+import cors from "cors";
+import { config } from "dotenv";
 
 config();
 
 const app = express();
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
 
 // Mock conversation storage
@@ -13,28 +13,28 @@ const conversations = new Map();
 const messages = new Map();
 
 // Mock TRPC endpoints
-app.post('/trpc/chat.create', async (req, res) => {
+app.post("/trpc/chat.create", async (req, res) => {
   const conversationId = Date.now().toString();
-  const { message } = req.body['0']; // TRPC batch format
-  
+  const { message } = req.body["0"]; // TRPC batch format
+
   conversations.set(conversationId, {
     id: conversationId,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   });
-  
+
   // Store user message
   const userMessageId = `${conversationId}-1`;
   messages.set(userMessageId, {
-    role: 'user',
+    role: "user",
     content: message,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 
   // Simulate agent processing
   setTimeout(() => {
     const assistantMessageId = `${conversationId}-2`;
     messages.set(assistantMessageId, {
-      role: 'assistant',
+      role: "assistant",
       content: `I'll help you research the latest trends in AI agent architectures.
 
 ## Research Summary: Latest AI Agent Architecture Trends
@@ -72,101 +72,105 @@ Common agent specializations include:
 [Research conducted using web search tool]
 [Sources analyzed: 15 recent papers and implementations]
 [Confidence: High]`,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }, 2000);
 
   // TRPC batch response format
-  res.json([{
-    result: {
-      data: {
-        json: {
-          conversationId,
-          response: "I'll research the latest trends in AI agent architectures for you. Please wait while I gather information...",
-          metadata: {
-            agentType: "ResearchAgent",
-            toolsUsed: ["web_search", "document_analysis"]
-          }
-        }
-      }
-    }
-  }]);
+  res.json([
+    {
+      result: {
+        data: {
+          json: {
+            conversationId,
+            response:
+              "I'll research the latest trends in AI agent architectures for you. Please wait while I gather information...",
+            metadata: {
+              agentType: "ResearchAgent",
+              toolsUsed: ["web_search", "document_analysis"],
+            },
+          },
+        },
+      },
+    },
+  ]);
 });
 
-app.post('/trpc/chat.message', async (req, res) => {
-  log(`Body: ${JSON.stringify(req.body, null, 2)}`);
+app.post("/trpc/chat.message", async (req, res) => {
+  console.log(`Body: ${JSON.stringify(req.body, null, 2)}`);
   const { conversationId, message } = req.body[0]?.json || req.body[0] || {};
-  log(`Continuing conversation ${conversationId}: ${message}`);
-  
+  console.log(`Continuing conversation ${conversationId}: ${message}`);
+
   res.json({
     result: {
       data: {
-        response: "I'm processing your request. The research agent is currently analyzing multiple sources...",
+        response:
+          "I'm processing your request. The research agent is currently analyzing multiple sources...",
         metadata: {
           status: "processing",
-          agent: "ResearchAgent"
-        }
-      }
-    }
+          agent: "ResearchAgent",
+        },
+      },
+    },
   });
 });
 
 // List conversations endpoint
-app.post('/trpc/chat.list', async (req, res) => {
-  const conversationList = Array.from(conversations.values()).map(conv => ({
+app.post("/trpc/chat.list", async (_req, res) => {
+  const conversationList = Array.from(conversations.values()).map((conv) => ({
     id: conv.id,
-    title: 'AI Agent Research',
+    title: "AI Agent Research",
     createdAt: conv.createdAt,
-    updatedAt: conv.createdAt
+    updatedAt: conv.createdAt,
   }));
-  
+
   res.json({
     result: {
-      data: conversationList
-    }
+      data: conversationList,
+    },
   });
 });
 
 // Get conversation history
-app.post('/trpc/chat.history', async (req, res) => {
+app.post("/trpc/chat.history", async (req, res) => {
   const conversationId = req.body[0]?.json?.conversationId;
-  const convMessages = [];
-  
+  const convMessages: any[] = [];
+
   // Get all messages for this conversation
   messages.forEach((msg, key) => {
     if (key.startsWith(conversationId)) {
       convMessages.push(msg);
     }
   });
-  
+
   res.json({
     result: {
-      data: convMessages
-    }
+      data: convMessages,
+    },
   });
 });
 
 // Agent status endpoint
-app.post('/trpc/agent.status', async (req, res) => {
+app.post("/trpc/agent.status", async (_req, res) => {
   res.json({
     result: {
       data: {
         agents: [
           {
-            id: 'research-agent',
-            name: 'ResearchAgent',
-            status: 'active',
-            currentTask: 'Researching AI agent architectures',
-            progress: 75
-          }
-        ]
-      }
-    }
+            id: "research-agent",
+            name: "ResearchAgent",
+            status: "active",
+            currentTask: "Researching AI agent architectures",
+            progress: 75,
+          },
+        ],
+      },
+    },
   });
 });
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', mode: 'mock' });
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", mode: "mock" });
 });
 
 const PORT = 3000;

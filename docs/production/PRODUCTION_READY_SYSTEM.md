@@ -19,23 +19,27 @@ The CrewAI Team system is now production-ready with real integrations, comprehen
 ### Real Integrations
 
 #### ✅ LLM Integration (Ollama)
+
 - **Models**: qwen3:14b (orchestrator), qwen3:8b (agents), nomic-embed-text (embeddings)
 - **Features**: Real-time inference, JSON format support, context management
 - **Configuration**: `src/config/ollama.config.ts`
 
 #### ✅ Search Integration (DuckDuckGo)
+
 - **API**: DuckDuckGo Instant Answer API
 - **Features**: Abstract results, related topics, direct answers
 - **Fallback**: Manual search links for error cases
 - **Location**: `src/core/tools/web/WebSearchTool.ts`
 
 #### ✅ Vector Database (ChromaDB)
+
 - **Database**: ChromaDB for document storage and retrieval
 - **Features**: Real-time embeddings, similarity search, metadata filtering
 - **Configuration**: Configurable paths and collection names
 - **Location**: `src/core/rag/VectorStore.ts`
 
 #### ✅ Database (SQLite)
+
 - **Database**: SQLite with better-sqlite3
 - **Features**: Conversations, messages, agent executions, system health
 - **Schema**: Fully normalized with foreign keys and indexes
@@ -53,21 +57,24 @@ The CrewAI Team system is now production-ready with real integrations, comprehen
 ### Installation Steps
 
 1. **Install Dependencies**
+
    ```bash
    pnpm install
    pnpm approve-builds  # Select all packages when prompted
    ```
 
 2. **Initialize Production Database**
+
    ```bash
    pnpm run init:production-db
    ```
 
 3. **Start Ollama and Pull Models**
+
    ```bash
    # Start Ollama server
    ollama serve
-   
+
    # Pull required models
    ollama pull qwen3:14b
    ollama pull qwen3:8b
@@ -75,16 +82,18 @@ The CrewAI Team system is now production-ready with real integrations, comprehen
    ```
 
 4. **Run Integration Tests**
+
    ```bash
    pnpm run test:integration
    ```
 
 5. **Start the Application**
+
    ```bash
    # Development mode
    pnpm run dev:client  # Frontend
    pnpm run dev:server  # Backend
-   
+
    # Production mode
    pnpm run build
    pnpm run start
@@ -127,18 +136,18 @@ Located in `src/config/ollama.config.ts`:
 ```typescript
 export default {
   main: {
-    baseUrl: process.env.OLLAMA_URL || 'http://localhost:11434',
-    model: 'qwen3:14b',
-    timeout: 30000
+    baseUrl: process.env.OLLAMA_URL || "http://localhost:11434",
+    model: "qwen3:14b",
+    timeout: 30000,
   },
   agents: {
-    model: 'qwen3:8b',
-    timeout: 20000
+    model: "qwen3:8b",
+    timeout: 20000,
   },
   embeddings: {
-    model: 'nomic-embed-text',
-    dimensions: 384
-  }
+    model: "nomic-embed-text",
+    dimensions: 384,
+  },
 };
 ```
 
@@ -243,17 +252,20 @@ GET /api/rag/stats
 ## Performance Characteristics
 
 ### Response Times
+
 - **Simple Queries**: 2-5 seconds
 - **Complex Queries**: 10-30 seconds
 - **Search Operations**: 1-3 seconds
 - **RAG Queries**: 0.5-2 seconds
 
 ### Resource Usage
+
 - **Memory**: 2-4 GB (with loaded models)
 - **CPU**: Varies with model inference
 - **Storage**: 10-20 GB for models, minimal for data
 
 ### Scalability
+
 - **Concurrent Users**: 10-50 (depends on hardware)
 - **Conversation History**: Unlimited (SQLite)
 - **Document Storage**: Hundreds of thousands (ChromaDB)
@@ -301,19 +313,21 @@ cp ./data/app.db ./data/backups/app-$(date +%Y%m%d).db
 ### Common Issues
 
 1. **Ollama Connection Failed**
+
    ```bash
    # Check if Ollama is running
    ps aux | grep ollama
-   
+
    # Start Ollama
    ollama serve
    ```
 
 2. **Models Not Found**
+
    ```bash
    # List available models
    ollama list
-   
+
    # Pull missing models
    ollama pull qwen3:14b
    ollama pull qwen3:8b
@@ -321,10 +335,11 @@ cp ./data/app.db ./data/backups/app-$(date +%Y%m%d).db
    ```
 
 3. **ChromaDB Connection Issues**
+
    ```bash
    # Check ChromaDB status
    curl http://localhost:8000/api/v1/heartbeat
-   
+
    # Start ChromaDB (if installed separately)
    chroma run --host localhost --port 8000
    ```
@@ -359,16 +374,19 @@ LOG_LEVEL=debug pnpm run dev
 ## Security Considerations
 
 ### Authentication
+
 - JWT tokens for API access
 - Rate limiting for API endpoints
 - Input validation and sanitization
 
 ### Data Protection
+
 - Local data storage (no cloud dependencies)
 - Conversation encryption at rest
 - Secure model inference pipeline
 
 ### Network Security
+
 - HTTPS in production
 - CORS configuration
 - API endpoint protection
@@ -376,24 +394,28 @@ LOG_LEVEL=debug pnpm run dev
 ## Deployment
 
 ### Local Development
+
 ```bash
 pnpm run dev:client
 pnpm run dev:server
 ```
 
 ### Production Deployment
+
 ```bash
 pnpm run build
 NODE_ENV=production pnpm run start
 ```
 
 ### Docker Deployment
+
 ```bash
 # Build and run with Docker
 docker-compose up --build
 ```
 
 ### Cloud Deployment
+
 - Configure environment variables
 - Set up reverse proxy (nginx)
 - Configure SSL certificates
@@ -411,6 +433,7 @@ docker-compose up --build
 ## Support
 
 For issues and questions:
+
 1. Check the troubleshooting section
 2. Review log files in `./data/logs/`
 3. Run integration tests: `pnpm run test:integration`
@@ -419,5 +442,5 @@ For issues and questions:
 ---
 
 **System Status**: ✅ Production Ready  
-**Last Updated**: {{ current_date }}  
+**Last Updated**: July 16, 2025  
 **Version**: 1.0.0
