@@ -1,10 +1,25 @@
 /* App.css - App-specific styles */
+@import './styles/theme.css';
+
+/* Set dark theme by default */
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
 .app {
   height: 100vh;
   width: 100vw;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background-color: var(--bg-primary);
 }
 
 .app-content {
@@ -20,7 +35,7 @@
   align-items: center;
   height: 100vh;
   font-size: 1.5em;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 /* Error states */
@@ -34,22 +49,23 @@
 }
 
 .error-message {
-  color: #e74c3c;
+  color: var(--error);
   font-size: 1.2em;
   margin-bottom: 20px;
   text-align: center;
 }
 
 .error-details {
-  background-color: #f8f8f8;
-  border: 1px solid #ddd;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   padding: 20px;
-  border-radius: 5px;
+  border-radius: 8px;
   max-width: 600px;
   width: 100%;
   font-family: monospace;
   font-size: 0.9em;
   white-space: pre-wrap;
+  color: var(--text-secondary);
 }
 
 /* Utility classes */

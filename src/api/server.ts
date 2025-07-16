@@ -20,15 +20,53 @@ app.use(cors(appConfig.api.cors));
 app.use(express.json());
 
 // Health check endpoint
-app.get('/health', (_req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    services: {
-      api: 'running',
-      ollama: 'connected', // TODO: Add actual health checks
-      chromadb: 'connected'
+app.get('/health', async (_req, res) => {
+  const services = {
+    api: 'running',
+    ollama: 'unknown',
+    chromadb: 'unknown',
+    database: 'unknown'
+  };
+
+  try {
+    // Check Ollama connection
+    const ollamaResponse = await fetch(`${appConfig.ollama?.baseUrl || 'http://localhost:11434'}/api/tags`);
+    services.ollama = ollamaResponse.ok ? 'connected' : 'disconnected';
+  } catch (error) {
+    services.ollama = 'error';
+  }
+
+  try {
+    // Check ChromaDB connection (if configured)
+    if (appConfig.rag?.vectorStore?.baseUrl) {
+      const chromaResponse = await fetch(`${appConfig.rag.vectorStore.baseUrl}/api/v1/heartbeat`);
+      services.chromadb = chromaResponse.ok ? 'connected' : 'disconnected';
+    } else {
+      services.chromadb = 'not_configured';
     }
+  } catch (error) {
+    services.chromadb = 'error';
+  }
+
+  try {
+    // Check database connection
+    const { Database } = await import('better-sqlite3');
+    const db = new Database(appConfig.database?.path || './data/app.db', { readonly: true });
+    db.prepare('SELECT 1').get();
+    db.close();
+    services.database = 'connected';
+  } catch (error) {
+    services.database = 'error';
+  }
+
+  const overallStatus = Object.values(services).every(s => 
+    s === 'running' || s === 'connected' || s === 'not_configured'
+  ) ? 'healthy' : 'degraded';
+
+  res.json({ 
+    status: overallStatus, 
+    timestamp: new Date().toISOString(),
+    services
   });
 });
 
