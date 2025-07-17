@@ -55,7 +55,7 @@ export async function createContext({
 
   // Extract user from JWT if present
   const token = req.headers.authorization?.replace('Bearer ', '');
-  let user = null;
+  const user = null;
   
   if (token) {
     // Verify JWT and extract user

@@ -8,7 +8,10 @@ describe('TaskQueue', () => {
   beforeEach(() => {
     vi.clearAllTimers();
     vi.useFakeTimers();
-    queue = new TaskQueue();
+    queue = new TaskQueue({
+      maxSize: 100,
+      strategy: 'fifo'
+    });
   });
 
   afterEach(() => {
