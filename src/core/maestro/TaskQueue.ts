@@ -1,7 +1,7 @@
-import type { QueueConfig, QueueItem, QueueStatus } from "./types";
+import type { QueueConfig, QueueItem, QueueStatus, Task } from "./types";
 
 export class TaskQueue {
-  private queue: QueueItem[] = [];
+  private queue: Task[] = [];
   private processing: Set<string> = new Set();
   private config: QueueConfig;
 
@@ -9,7 +9,11 @@ export class TaskQueue {
     this.config = config;
   }
 
-  async enqueue(item: QueueItem): Promise<void> {
+  enqueue(item: Task): void {
+    // Ensure task has an ID
+    if (!item.id) {
+      item.id = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
     if (this.queue.length >= this.config.maxSize) {
       throw new Error("Queue is full");
     }
@@ -27,7 +31,7 @@ export class TaskQueue {
     }
   }
 
-  async dequeue(): Promise<QueueItem | null> {
+  dequeue(): Task | null {
     const item = this.queue.shift();
     if (item) {
       this.processing.add(item.id);
@@ -56,7 +60,7 @@ export class TaskQueue {
     return this.queue.length;
   }
 
-  private insertByPriority(item: QueueItem): void {
+  private insertByPriority(item: Task): void {
     // Higher priority values come first
     let insertIndex = 0;
 
@@ -71,7 +75,7 @@ export class TaskQueue {
     this.queue.splice(insertIndex, 0, item);
   }
 
-  getItems(): QueueItem[] {
+  getItems(): Task[] {
     return [...this.queue];
   }
 
@@ -89,6 +93,27 @@ export class TaskQueue {
       return true;
     }
     return false;
+  }
+
+  // Alias for removeTask to match test expectations
+  removeById(taskId: string): boolean {
+    return this.removeTask(taskId);
+  }
+
+  peek(): Task | null {
+    return this.queue[0] || null;
+  }
+
+  isEmpty(): boolean {
+    return this.queue.length === 0;
+  }
+
+  toArray(): Task[] {
+    return [...this.queue];
+  }
+
+  findById(taskId: string): Task | null {
+    return this.queue.find((item) => item.id === taskId) || null;
   }
 }
 
