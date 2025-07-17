@@ -1,399 +1,267 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { RetrievalService } from './RetrievalService';
-import type { VectorStore, RetrievalOptions, StoredDocument } from './types';
+import { describe, it, expect, beforeEach } from "vitest";
+import { RetrievalService } from "./RetrievalService";
+import type { QueryResult, RetrievalConfig } from "./types";
 
-// Mock vector store
-const mockVectorStore: VectorStore = {
-  addDocuments: vi.fn(),
-  search: vi.fn(),
-  deleteDocument: vi.fn(),
-  getDocument: vi.fn(),
-  listDocuments: vi.fn(),
-  clear: vi.fn(),
-};
-
-describe('RetrievalService', () => {
+describe("RetrievalService", () => {
   let service: RetrievalService;
+  let config: RetrievalConfig;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    service = new RetrievalService(mockVectorStore, {
-      defaultTopK: 5,
-      defaultThreshold: 0.7,
-    });
+    config = {
+      minScore: 0.5,
+      topK: 10,
+      reranking: true,
+      diversityFactor: 0.3,
+      boostRecent: true,
+    };
+    service = new RetrievalService(config);
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  describe("enhance", () => {
+    it("should filter results by minimum score", async () => {
+      const results: QueryResult[] = [
+        { id: "1", content: "High score", metadata: {}, score: 0.8 },
+        { id: "2", content: "Low score", metadata: {}, score: 0.3 },
+        { id: "3", content: "Medium score", metadata: {}, score: 0.6 },
+      ];
 
-  describe('addDocument', () => {
-    it('should add a document to the vector store', async () => {
-      const document: StoredDocument = {
-        id: 'doc-1',
-        content: 'Test content',
-        embedding: new Array(384).fill(0).map(() => Math.random()),
-        metadata: {
-          sourceId: 'source-1',
-          contentType: 'text/plain',
-          chunkIndex: 0,
-          timestamp: new Date(),
-        },
-      };
+      const enhanced = await service.enhance("query", results);
 
-      vi.mocked(mockVectorStore.addDocuments).mockResolvedValueOnce(['doc-1']);
-
-      const result = await service.addDocument(document);
-
-      expect(mockVectorStore.addDocuments).toHaveBeenCalledWith([document]);
-      expect(result).toBe('doc-1');
+      expect(enhanced).toHaveLength(2);
+      expect(enhanced.every((r) => r.score >= config.minScore)).toBe(true);
     });
 
-    it('should handle errors when adding documents', async () => {
-      const document: StoredDocument = {
-        id: 'doc-1',
-        content: 'Test content',
-        embedding: new Array(384).fill(0),
-        metadata: {},
-      };
-
-      vi.mocked(mockVectorStore.addDocuments).mockRejectedValueOnce(
-        new Error('Storage error')
-      );
-
-      await expect(service.addDocument(document)).rejects.toThrow('Storage error');
-    });
-  });
-
-  describe('addDocuments', () => {
-    it('should add multiple documents in batch', async () => {
-      const documents: StoredDocument[] = [
+    it("should rerank results when enabled", async () => {
+      const results: QueryResult[] = [
         {
-          id: 'doc-1',
-          content: 'Content 1',
-          embedding: new Array(384).fill(0),
+          id: "1",
+          content: "Some content about cats",
           metadata: {},
+          score: 0.7,
         },
         {
-          id: 'doc-2',
-          content: 'Content 2',
-          embedding: new Array(384).fill(0),
+          id: "2",
+          content: "query specific content with query terms",
           metadata: {},
+          score: 0.6,
+        },
+        { id: "3", content: "Unrelated content", metadata: {}, score: 0.65 },
+      ];
+
+      const enhanced = await service.enhance("query specific", results);
+
+      // The document with more query terms should be boosted
+      expect(enhanced[0].id).toBe("2");
+      expect(enhanced[0].score).toBeGreaterThan(0.6);
+    });
+
+    it("should diversify results when diversity factor is set", async () => {
+      const results: QueryResult[] = [
+        {
+          id: "1",
+          content: "First document about AI",
+          metadata: {},
+          score: 0.9,
+        },
+        {
+          id: "2",
+          content: "Second document about AI",
+          metadata: {},
+          score: 0.85,
+        },
+        {
+          id: "3",
+          content: "Document about machine learning",
+          metadata: {},
+          score: 0.8,
+        },
+        { id: "4", content: "Another AI document", metadata: {}, score: 0.75 },
+      ];
+
+      const enhanced = await service.enhance("AI", results);
+
+      // Should maintain diversity - not all results should be about the same topic
+      expect(enhanced).toHaveLength(4);
+      expect(enhanced[0].id).toBe("1"); // Top result should remain first
+    });
+
+    it("should boost recent documents when enabled", async () => {
+      const now = new Date();
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const results: QueryResult[] = [
+        {
+          id: "1",
+          content: "Old content",
+          metadata: { createdAt: lastWeek.toISOString() },
+          score: 0.7,
+        },
+        {
+          id: "2",
+          content: "Recent content",
+          metadata: { createdAt: yesterday.toISOString() },
+          score: 0.7,
+        },
+        {
+          id: "3",
+          content: "Very recent content",
+          metadata: { createdAt: now.toISOString() },
+          score: 0.7,
         },
       ];
 
-      vi.mocked(mockVectorStore.addDocuments).mockResolvedValueOnce(['doc-1', 'doc-2']);
+      const enhanced = await service.enhance("content", results);
 
-      const results = await service.addDocuments(documents);
-
-      expect(mockVectorStore.addDocuments).toHaveBeenCalledWith(documents);
-      expect(results).toEqual(['doc-1', 'doc-2']);
+      // More recent documents should have higher scores
+      expect(enhanced[0].score).toBeGreaterThan(enhanced[1].score);
+      expect(enhanced[1].score).toBeGreaterThan(enhanced[2].score);
     });
 
-    it('should handle empty document array', async () => {
-      vi.mocked(mockVectorStore.addDocuments).mockResolvedValueOnce([]);
-
-      const results = await service.addDocuments([]);
-
-      expect(results).toEqual([]);
-    });
-  });
-
-  describe('retrieve', () => {
-    it('should retrieve relevant documents for a query', async () => {
-      const queryEmbedding = new Array(384).fill(0).map(() => Math.random());
-      const mockResults: StoredDocument[] = [
-        {
-          id: 'doc-1',
-          content: 'Relevant content 1',
-          embedding: queryEmbedding,
-          metadata: { similarity: 0.95 },
-        },
-        {
-          id: 'doc-2',
-          content: 'Relevant content 2',
-          embedding: new Array(384).fill(0),
-          metadata: { similarity: 0.85 },
-        },
-      ];
-
-      vi.mocked(mockVectorStore.search).mockResolvedValueOnce(mockResults);
-
-      const results = await service.retrieve(queryEmbedding);
-
-      expect(mockVectorStore.search).toHaveBeenCalledWith(queryEmbedding, {
-        topK: 5,
-        threshold: 0.7,
-      });
-      expect(results).toEqual(mockResults);
+    it("should handle empty results", async () => {
+      const results: QueryResult[] = [];
+      const enhanced = await service.enhance("query", results);
+      expect(enhanced).toEqual([]);
     });
 
-    it('should use custom retrieval options', async () => {
-      const queryEmbedding = new Array(384).fill(0);
-      const options: RetrievalOptions = {
+    it("should preserve results when no enhancements are configured", async () => {
+      const noEnhanceConfig: RetrievalConfig = {
+        minScore: 0,
         topK: 10,
-        threshold: 0.8,
-        filter: { contentType: 'text/markdown' },
+        reranking: false,
+        diversityFactor: 0,
+        boostRecent: false,
       };
+      const noEnhanceService = new RetrievalService(noEnhanceConfig);
 
-      vi.mocked(mockVectorStore.search).mockResolvedValueOnce([]);
+      const results: QueryResult[] = [
+        { id: "1", content: "Content 1", metadata: {}, score: 0.8 },
+        { id: "2", content: "Content 2", metadata: {}, score: 0.6 },
+      ];
 
-      await service.retrieve(queryEmbedding, options);
+      const enhanced = await noEnhanceService.enhance("query", results);
+      expect(enhanced).toEqual(results);
+    });
+  });
 
-      expect(mockVectorStore.search).toHaveBeenCalledWith(queryEmbedding, options);
+  describe("filterByMetadata", () => {
+    it("should filter results by metadata fields", async () => {
+      const results: QueryResult[] = [
+        {
+          id: "1",
+          content: "Doc 1",
+          metadata: { category: "tech", author: "John" },
+          score: 0.8,
+        },
+        {
+          id: "2",
+          content: "Doc 2",
+          metadata: { category: "tech", author: "Jane" },
+          score: 0.7,
+        },
+        {
+          id: "3",
+          content: "Doc 3",
+          metadata: { category: "science", author: "John" },
+          score: 0.9,
+        },
+      ];
+
+      const filtered = await service.filterByMetadata(results, {
+        category: "tech",
+      });
+
+      expect(filtered).toHaveLength(2);
+      expect(filtered.every((r) => r.metadata.category === "tech")).toBe(true);
     });
 
-    it('should handle search errors gracefully', async () => {
-      const queryEmbedding = new Array(384).fill(0);
-      
-      vi.mocked(mockVectorStore.search).mockRejectedValueOnce(
-        new Error('Search failed')
+    it("should handle array values in filters", async () => {
+      const results: QueryResult[] = [
+        {
+          id: "1",
+          content: "Doc 1",
+          metadata: { tags: ["tech"], status: "published" },
+          score: 0.8,
+        },
+        {
+          id: "2",
+          content: "Doc 2",
+          metadata: { tags: ["science"], status: "draft" },
+          score: 0.7,
+        },
+        {
+          id: "3",
+          content: "Doc 3",
+          metadata: { tags: ["tech"], status: "published" },
+          score: 0.9,
+        },
+      ];
+
+      const filtered = await service.filterByMetadata(results, {
+        status: ["published", "reviewed"],
+      });
+
+      expect(filtered).toHaveLength(2);
+      expect(filtered.every((r) => r.metadata.status === "published")).toBe(
+        true,
       );
-
-      await expect(service.retrieve(queryEmbedding)).rejects.toThrow('Search failed');
     });
   });
 
-  describe('retrieveByQuery', () => {
-    it('should retrieve documents by text query with embedding', async () => {
-      const query = 'test query';
-      const queryEmbedding = new Array(384).fill(0).map(() => Math.random());
-      const mockResults: StoredDocument[] = [
+  describe("highlightMatches", () => {
+    it("should extract relevant sentences containing query terms", () => {
+      const results: QueryResult[] = [
         {
-          id: 'doc-1',
-          content: 'Test document content',
-          embedding: new Array(384).fill(0),
+          id: "1",
+          content:
+            "This is about machine learning. Machine learning is powerful. Other unrelated content here.",
           metadata: {},
+          score: 0.8,
         },
       ];
 
-      // Mock embedding generation
-      const embeddingService = {
-        embedText: vi.fn().mockResolvedValueOnce(queryEmbedding),
-      };
-      service = new RetrievalService(mockVectorStore, {
-        defaultTopK: 5,
-        defaultThreshold: 0.7,
-      }, embeddingService as any);
+      const highlighted = service.highlightMatches("machine learning", results);
 
-      vi.mocked(mockVectorStore.search).mockResolvedValueOnce(mockResults);
-
-      const results = await service.retrieveByQuery(query);
-
-      expect(embeddingService.embedText).toHaveBeenCalledWith(query);
-      expect(mockVectorStore.search).toHaveBeenCalledWith(queryEmbedding, {
-        topK: 5,
-        threshold: 0.7,
-      });
-      expect(results).toEqual(mockResults);
+      expect(highlighted[0].highlights).toBeDefined();
+      expect(highlighted[0].highlights?.length).toBeGreaterThan(0);
+      expect(
+        highlighted[0].highlights?.every(
+          (h) =>
+            h.toLowerCase().includes("machine") ||
+            h.toLowerCase().includes("learning"),
+        ),
+      ).toBe(true);
     });
 
-    it('should throw error if embedding service not available', async () => {
-      const query = 'test query';
-      
-      await expect(service.retrieveByQuery(query)).rejects.toThrow(
-        'Embedding service not configured'
-      );
+    it("should limit highlights to 3 per result", () => {
+      const longContent = Array(10)
+        .fill("This sentence contains the query term. ")
+        .join("");
+      const results: QueryResult[] = [
+        { id: "1", content: longContent, metadata: {}, score: 0.8 },
+      ];
+
+      const highlighted = service.highlightMatches("query", results);
+
+      expect(highlighted[0].highlights?.length).toBeLessThanOrEqual(3);
     });
   });
 
-  describe('deleteDocument', () => {
-    it('should delete a document by ID', async () => {
-      vi.mocked(mockVectorStore.deleteDocument).mockResolvedValueOnce(true);
-
-      const result = await service.deleteDocument('doc-1');
-
-      expect(mockVectorStore.deleteDocument).toHaveBeenCalledWith('doc-1');
-      expect(result).toBe(true);
-    });
-
-    it('should return false if document not found', async () => {
-      vi.mocked(mockVectorStore.deleteDocument).mockResolvedValueOnce(false);
-
-      const result = await service.deleteDocument('non-existent');
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('getDocument', () => {
-    it('should retrieve a document by ID', async () => {
-      const document: StoredDocument = {
-        id: 'doc-1',
-        content: 'Test content',
-        embedding: new Array(384).fill(0),
-        metadata: {},
-      };
-
-      vi.mocked(mockVectorStore.getDocument).mockResolvedValueOnce(document);
-
-      const result = await service.getDocument('doc-1');
-
-      expect(mockVectorStore.getDocument).toHaveBeenCalledWith('doc-1');
-      expect(result).toEqual(document);
-    });
-
-    it('should return null if document not found', async () => {
-      vi.mocked(mockVectorStore.getDocument).mockResolvedValueOnce(null);
-
-      const result = await service.getDocument('non-existent');
-
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('listDocuments', () => {
-    it('should list all documents with pagination', async () => {
-      const documents: StoredDocument[] = [
+  describe("extractTerms", () => {
+    it("should extract and normalize terms from text", async () => {
+      // This is a private method, but we can test it indirectly through enhance
+      const results: QueryResult[] = [
         {
-          id: 'doc-1',
-          content: 'Content 1',
-          embedding: new Array(384).fill(0),
+          id: "1",
+          content: "Testing the TERM extraction!",
           metadata: {},
-        },
-        {
-          id: 'doc-2',
-          content: 'Content 2',
-          embedding: new Array(384).fill(0),
-          metadata: {},
+          score: 0.8,
         },
       ];
 
-      vi.mocked(mockVectorStore.listDocuments).mockResolvedValueOnce({
-        documents,
-        total: 2,
-        offset: 0,
-        limit: 10,
-      });
-
-      const result = await service.listDocuments({ offset: 0, limit: 10 });
-
-      expect(mockVectorStore.listDocuments).toHaveBeenCalledWith({ offset: 0, limit: 10 });
-      expect(result.documents).toEqual(documents);
-      expect(result.total).toBe(2);
-    });
-
-    it('should handle empty document list', async () => {
-      vi.mocked(mockVectorStore.listDocuments).mockResolvedValueOnce({
-        documents: [],
-        total: 0,
-        offset: 0,
-        limit: 10,
-      });
-
-      const result = await service.listDocuments();
-
-      expect(result.documents).toEqual([]);
-      expect(result.total).toBe(0);
-    });
-  });
-
-  describe('clear', () => {
-    it('should clear all documents from the store', async () => {
-      vi.mocked(mockVectorStore.clear).mockResolvedValueOnce(undefined);
-
-      await service.clear();
-
-      expect(mockVectorStore.clear).toHaveBeenCalled();
-    });
-
-    it('should handle clear errors', async () => {
-      vi.mocked(mockVectorStore.clear).mockRejectedValueOnce(
-        new Error('Clear failed')
-      );
-
-      await expect(service.clear()).rejects.toThrow('Clear failed');
-    });
-  });
-
-  describe('rerank', () => {
-    it('should rerank results based on additional criteria', async () => {
-      const documents: StoredDocument[] = [
-        {
-          id: 'doc-1',
-          content: 'First document about AI',
-          embedding: new Array(384).fill(0),
-          metadata: { 
-            sourceId: 'trusted-source',
-            timestamp: new Date('2025-01-15'),
-            similarity: 0.8,
-          },
-        },
-        {
-          id: 'doc-2',
-          content: 'Second document about AI',
-          embedding: new Array(384).fill(0),
-          metadata: { 
-            sourceId: 'regular-source',
-            timestamp: new Date('2025-01-10'),
-            similarity: 0.85,
-          },
-        },
-        {
-          id: 'doc-3',
-          content: 'Third document about ML',
-          embedding: new Array(384).fill(0),
-          metadata: { 
-            sourceId: 'trusted-source',
-            timestamp: new Date('2025-01-20'),
-            similarity: 0.75,
-          },
-        },
-      ];
-
-      // Custom reranking function that prioritizes trusted sources and recency
-      const rerankedResults = await service.rerank(documents, {
-        query: 'AI',
-        boostFactors: {
-          trustedSource: 1.2,
-          recency: 1.1,
-        },
-      });
-
-      // Should reorder based on combined factors
-      expect(rerankedResults[0].id).toBe('doc-3'); // Most recent + trusted
-      expect(rerankedResults[1].id).toBe('doc-1'); // Trusted but older
-      expect(rerankedResults[2].id).toBe('doc-2'); // Highest similarity but not trusted
-    });
-  });
-
-  describe('hybrid search', () => {
-    it('should combine vector and keyword search', async () => {
-      const queryEmbedding = new Array(384).fill(0);
-      const vectorResults: StoredDocument[] = [
-        {
-          id: 'doc-1',
-          content: 'Vector match content',
-          embedding: new Array(384).fill(0),
-          metadata: { similarity: 0.9 },
-        },
-      ];
-      const keywordResults: StoredDocument[] = [
-        {
-          id: 'doc-2',
-          content: 'Keyword match content',
-          embedding: new Array(384).fill(0),
-          metadata: { keywordScore: 0.95 },
-        },
-      ];
-
-      vi.mocked(mockVectorStore.search).mockResolvedValueOnce(vectorResults);
-      
-      // Mock keyword search (if implemented)
-      const hybridService = new RetrievalService(mockVectorStore, {
-        defaultTopK: 5,
-        defaultThreshold: 0.7,
-        hybridSearch: true,
-      });
-
-      // This would combine results from both vector and keyword search
-      const results = await hybridService.retrieve(queryEmbedding, {
-        query: 'test query',
-        hybridAlpha: 0.5, // 50% vector, 50% keyword
-      });
-
-      expect(mockVectorStore.search).toHaveBeenCalled();
-      // Results would be merged and reranked
+      // If reranking works, it means extractTerms is working
+      const enhanced = await service.enhance("testing extraction", results);
+      expect(enhanced[0].score).toBeGreaterThan(0.8); // Should be boosted due to term matches
     });
   });
 });

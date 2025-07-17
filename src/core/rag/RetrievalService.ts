@@ -22,6 +22,8 @@ export class RetrievalService {
     // Boost recent documents if enabled
     if (this.config.boostRecent) {
       enhanced = this.boostRecentDocuments(enhanced);
+      // Re-sort after boosting to maintain score order
+      enhanced = enhanced.sort((a, b) => b.score - a.score);
     }
 
     return enhanced;
