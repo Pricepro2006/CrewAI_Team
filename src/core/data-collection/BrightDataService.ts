@@ -451,7 +451,7 @@ export class BrightDataService {
     const requests = this.rateLimitTracker.get(operation)!;
 
     // Remove old requests outside the window
-    while (requests.length > 0 && requests[0] < now - windowMs) {
+    while (requests.length > 0 && requests[0]! < now - windowMs) {
       requests.shift();
     }
 
