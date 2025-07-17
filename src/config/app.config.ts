@@ -32,7 +32,14 @@ export const appConfig = {
   },
   rag: {
     vectorStore: {
-      baseUrl: process.env['CHROMA_URL'] || 'http://localhost:8000'
+      baseUrl: process.env['CHROMA_URL'] || 'http://localhost:8000',
+      collectionName: process.env['CHROMA_COLLECTION'] || 'crewai-docs',
+      embeddingModel: process.env['EMBEDDING_MODEL'] || 'nomic-embed-text'
+    },
+    documentProcessing: {
+      chunkSize: parseInt(process.env['CHUNK_SIZE'] || '1000', 10),
+      chunkOverlap: parseInt(process.env['CHUNK_OVERLAP'] || '200', 10),
+      chunkingStrategy: (process.env['CHUNKING_STRATEGY'] || 'sentence') as 'fixed' | 'sentence' | 'paragraph'
     }
   },
   maestro: {
