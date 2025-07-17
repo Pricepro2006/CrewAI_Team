@@ -8,6 +8,7 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "dist", "build"],
+    testTimeout: 30000, // 30 seconds for real LLM integration tests
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

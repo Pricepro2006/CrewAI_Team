@@ -3,6 +3,8 @@ import { AgentRegistry } from "../agents/registry/AgentRegistry";
 import { RAGSystem } from "../rag/RAGSystem";
 import { PlanExecutor } from "./PlanExecutor";
 import { PlanReviewer } from "./PlanReviewer";
+import { EnhancedParser } from "./EnhancedParser";
+import { AgentRouter } from "./AgentRouter";
 import type {
   Plan,
   ExecutionResult,
@@ -10,6 +12,7 @@ import type {
   MasterOrchestratorConfig,
   ReviewResult,
 } from "./types";
+import type { QueryAnalysis, AgentRoutingPlan } from "./enhanced-types";
 import { logger, createPerformanceMonitor } from "../../utils/logger";
 import { wsService } from "../../api/services/WebSocketService";
 
@@ -19,6 +22,8 @@ export class MasterOrchestrator {
   public ragSystem: RAGSystem;
   private planExecutor: PlanExecutor;
   private planReviewer: PlanReviewer;
+  private enhancedParser: EnhancedParser;
+  private agentRouter: AgentRouter;
   private perfMonitor = createPerformanceMonitor("MasterOrchestrator");
 
   constructor(config: MasterOrchestratorConfig) {
@@ -33,6 +38,8 @@ export class MasterOrchestrator {
     this.ragSystem = new RAGSystem(config.rag);
     this.planExecutor = new PlanExecutor(this.agentRegistry, this.ragSystem);
     this.planReviewer = new PlanReviewer(this.llm);
+    this.enhancedParser = new EnhancedParser(this.llm);
+    this.agentRouter = new AgentRouter(this.llm);
 
     logger.info("MasterOrchestrator initialized successfully", "ORCHESTRATOR");
   }
@@ -46,8 +53,30 @@ export class MasterOrchestrator {
     });
 
     try {
-      // Step 1: Create initial plan
-      let plan = await this.createPlan(query);
+      // Step 0: Enhanced query analysis
+      const queryAnalysis = await this.enhancedParser.parseQuery(query);
+
+      logger.info("Query analysis completed", "ORCHESTRATOR", {
+        intent: queryAnalysis.intent,
+        complexity: queryAnalysis.complexity,
+        domains: queryAnalysis.domains,
+        priority: queryAnalysis.priority,
+        estimatedDuration: queryAnalysis.estimatedDuration,
+      });
+
+      // Step 0.5: Create intelligent agent routing plan
+      const routingPlan =
+        await this.agentRouter.createRoutingPlan(queryAnalysis);
+
+      logger.info("Agent routing plan created", "ORCHESTRATOR", {
+        selectedAgents: routingPlan.selectedAgents.length,
+        strategy: routingPlan.executionStrategy,
+        confidence: routingPlan.confidence,
+        riskLevel: routingPlan.riskAssessment.level,
+      });
+
+      // Step 1: Create initial plan with enhanced context
+      let plan = await this.createPlan(query, queryAnalysis, routingPlan);
 
       // Broadcast plan creation
       wsService.broadcastPlanUpdate(plan.id, "created", {
@@ -94,7 +123,7 @@ export class MasterOrchestrator {
             },
           );
 
-          plan = await this.replan(query, plan, review);
+          plan = await this.replan(query, plan, review, queryAnalysis);
           attempts++;
         } else {
           break;
@@ -126,17 +155,57 @@ export class MasterOrchestrator {
     }
   }
 
-  private async createPlan(query: Query): Promise<Plan> {
+  private async createPlan(
+    query: Query,
+    analysis?: QueryAnalysis,
+    routingPlan?: AgentRoutingPlan,
+  ): Promise<Plan> {
+    const analysisContext = analysis
+      ? `
+      
+      Query Analysis Context:
+      - Intent: ${analysis.intent}
+      - Complexity: ${analysis.complexity}/10
+      - Required domains: ${analysis.domains.join(", ")}
+      - Priority: ${analysis.priority}
+      - Estimated duration: ${analysis.estimatedDuration} seconds
+      - Resource requirements: ${JSON.stringify(analysis.resourceRequirements)}
+      - Detected entities: ${JSON.stringify(analysis.entities)}
+    `
+      : "";
+
+    const routingContext = routingPlan
+      ? `
+      
+      Agent Routing Plan:
+      - Selected agents: ${routingPlan.selectedAgents.map((a) => `${a.agentType} (priority: ${a.priority}, confidence: ${a.confidence})`).join(", ")}
+      - Execution strategy: ${routingPlan.executionStrategy}
+      - Overall confidence: ${routingPlan.confidence}
+      - Risk level: ${routingPlan.riskAssessment.level}
+      - Risk factors: ${routingPlan.riskAssessment.factors.join(", ")}
+      - Fallback agents available: ${routingPlan.fallbackAgents.join(", ")}
+    `
+      : "";
+
     const prompt = `
       You are the Master Orchestrator. Create a detailed plan to address this query:
-      "${query.text}"
+      "${query.text}"${analysisContext}${routingContext}
       
-      Break down the task into clear, actionable steps.
+      Break down the task into clear, actionable steps considering the analysis and routing context.
       For each step, determine:
       1. What information is needed (RAG query)
-      2. Which agent should handle it
-      3. What tools might be required
+      2. Which agent should handle it - PRIORITIZE agents from the routing plan
+      3. What tools might be required based on resource requirements
       4. Expected output
+      
+      Agent Selection Guidelines (follow routing plan recommendations):
+      - ResearchAgent: For research, web search, information gathering
+      - CodeAgent: For programming, debugging, code analysis
+      - DataAnalysisAgent: For data processing, analysis, metrics
+      - WriterAgent: For documentation, explanations, summaries
+      - ToolExecutorAgent: For tool coordination and complex workflows
+      
+      IMPORTANT: Use the recommended agents from the routing plan unless there's a compelling reason not to.
       
       Return a structured plan in JSON format with the following structure:
       {
@@ -167,6 +236,7 @@ export class MasterOrchestrator {
     query: Query,
     originalPlan: Plan,
     review: ReviewResult,
+    analysis?: QueryAnalysis,
   ): Promise<Plan> {
     const prompt = `
       The original plan did not satisfy the requirements.

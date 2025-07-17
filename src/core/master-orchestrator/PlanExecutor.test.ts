@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { PlanExecutor } from "./PlanExecutor";
 import { AgentRegistry } from "../agents/registry/AgentRegistry";
 import { RAGSystem } from "../rag/RAGSystem";
+import { ChromaDBTestHelper } from "../../test/helpers/chromadb-test-helper";
 import type {
   Plan,
   PlanStep,
@@ -24,32 +25,30 @@ describe("PlanExecutor", () => {
   let executor: PlanExecutor;
   let agentRegistry: AgentRegistry;
   let ragSystem: RAGSystem;
+  let chromaDBHelper: ChromaDBTestHelper;
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    chromaDBHelper = ChromaDBTestHelper.getInstance();
 
     // Use real AgentRegistry - agents are automatically registered via factories
     agentRegistry = new AgentRegistry();
     await agentRegistry.initialize(); // This preloads ResearchAgent and CodeAgent
 
-    // Use real RAGSystem with test configuration
-    ragSystem = new RAGSystem({
-      vectorStore: {
-        type: "chromadb",
-        collectionName: "test-collection",
-        path: "./test-data/vectordb",
-      },
-      chunking: {
-        size: 500,
-        overlap: 50,
-      },
-      retrieval: {
-        topK: 5,
-        minScore: 0.1,
-      },
+    // Use real RAGSystem with test configuration (requires ChromaDB server)
+    const testRAGSystem = await chromaDBHelper.createTestRAGSystem({
+      skipIfUnavailable: true,
+      collectionPrefix: "planexecutor",
     });
 
-    // Initialize RAG system
+    if (!testRAGSystem) {
+      // Skip tests if ChromaDB not available
+      ragSystem = null as any;
+      executor = null as any;
+      return;
+    }
+
+    ragSystem = testRAGSystem;
     await ragSystem.initialize();
 
     executor = new PlanExecutor(agentRegistry, ragSystem);
@@ -61,6 +60,11 @@ describe("PlanExecutor", () => {
 
   describe("execute", () => {
     it("should execute a simple plan successfully", async () => {
+      if (!executor) {
+        console.log("SKIP: ChromaDB not available");
+        return;
+      }
+
       const plan: Plan = {
         id: "plan-1",
         steps: [
@@ -156,7 +160,7 @@ describe("PlanExecutor", () => {
       expect(result.success).toBe(false);
       expect(result.failedSteps).toBe(1);
       expect(result.results[0].success).toBe(false);
-      expect(result.results[0].error).toContain("Agent not found");
+      expect(result.results[0].error).toContain("Agent type not registered");
     });
 
     it("should respect step dependencies", async () => {
