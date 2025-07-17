@@ -12,9 +12,10 @@ export const mockOllamaEmbedding = {
 };
 
 export const createMockOllamaProvider = () => ({
+  initialize: vi.fn().mockResolvedValue(undefined),
   chat: vi.fn().mockResolvedValue(mockOllamaResponse),
   embeddings: vi.fn().mockResolvedValue(mockOllamaEmbedding),
-  generate: vi.fn().mockResolvedValue(mockOllamaResponse),
+  generate: vi.fn().mockResolvedValue(mockOllamaResponse.response),
   pull: vi.fn().mockResolvedValue({ status: "success" }),
   list: vi.fn().mockResolvedValue({
     models: [

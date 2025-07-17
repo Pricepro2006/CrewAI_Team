@@ -26,7 +26,10 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task);
+      const result = await agent.execute(task.input.query, {
+        task: task.input.query,
+        ragDocuments: [],
+      });
 
       expect(result).toBeDefined();
       expect(result.summary).toBeDefined();
@@ -51,7 +54,10 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task);
+      const result = await agent.execute(task.input.query, {
+        task: task.input.query,
+        ragDocuments: [],
+      });
 
       expect(result.keyFindings).toBeDefined();
       expect(result.keyFindings).toBeInstanceOf(Array);
@@ -73,7 +79,10 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task);
+      const result = await agent.execute(task.input.query, {
+        task: task.input.query,
+        ragDocuments: [],
+      });
 
       expect(result.factCheck).toBeDefined();
       expect(result.factCheck.isValid).toBe(true);
@@ -91,7 +100,10 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task);
+      const result = await agent.execute(task.input.query, {
+        task: task.input.query,
+        ragDocuments: [],
+      });
 
       expect(result.analysis).toBeDefined();
       expect(result.analysis.length).toBeGreaterThan(100);
@@ -113,7 +125,10 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task);
+      const result = await agent.execute(task.input.query, {
+        task: task.input.query,
+        ragDocuments: [],
+      });
 
       expect(result.summary).toBeDefined();
 
@@ -141,7 +156,10 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task);
+      const result = await agent.execute(task.input.query, {
+        task: task.input.query,
+        ragDocuments: [],
+      });
 
       // Should still return a result even if some operations timeout
       expect(result).toBeDefined();
@@ -158,7 +176,10 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task);
+      const result = await agent.execute(task.input.query, {
+        task: task.input.query,
+        ragDocuments: [],
+      });
 
       expect(result.comparison).toBeDefined();
       expect(result.sources.length).toBeGreaterThanOrEqual(3);
@@ -181,7 +202,10 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task);
+      const result = await agent.execute(task.input.query, {
+        task: task.input.query,
+        ragDocuments: [],
+      });
 
       expect(result.structuredData).toBeDefined();
       expect(Array.isArray(result.structuredData)).toBe(true);
@@ -209,7 +233,10 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task);
+      const result = await agent.execute(task.input.query, {
+        task: task.input.query,
+        ragDocuments: [],
+      });
 
       expect(result.summary).toBeDefined();
 
@@ -230,7 +257,10 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task);
+      const result = await agent.execute(task.input.query, {
+        task: task.input.query,
+        ragDocuments: [],
+      });
 
       expect(result.citations).toBeDefined();
       expect(result.citations).toBeInstanceOf(Array);
@@ -254,7 +284,10 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task);
+      const result = await agent.execute(task.input.query, {
+        task: task.input.query,
+        ragDocuments: [],
+      });
 
       expect(result.error).toBeDefined();
       expect(result.error).toContain("failed");
