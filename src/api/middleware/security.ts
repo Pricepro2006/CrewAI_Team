@@ -93,7 +93,9 @@ const sanitizationSchemas = {
 };
 
 // Input validation middleware factory (used in enhanced-router.ts)
-export function createInputValidation<T extends z.ZodSchema>(schema: T) {
+export function createInputValidation<T extends z.ZodSchema>(
+  schema: T,
+): (opts: any) => Promise<any> {
   return async (opts: any) => {
     try {
       // Validate and sanitize input
@@ -123,7 +125,7 @@ export function createInputValidation<T extends z.ZodSchema>(schema: T) {
 }
 
 // Authentication middleware factory (used in enhanced-router.ts)
-export function createAuthMiddleware() {
+export function createAuthMiddleware(): (opts: any) => Promise<any> {
   return async (opts: any) => {
     const { ctx } = opts;
     if (!ctx.user) {
@@ -154,7 +156,9 @@ export function createAuthMiddleware() {
 }
 
 // Authorization middleware factory (used in enhanced-router.ts)
-export function createAuthorizationMiddleware(requiredRoles: string[]) {
+export function createAuthorizationMiddleware(
+  requiredRoles: string[],
+): (opts: any) => Promise<any> {
   return async (opts: any) => {
     const { ctx } = opts;
     if (!ctx.user) {
@@ -190,7 +194,7 @@ export function createAuthorizationMiddleware(requiredRoles: string[]) {
 }
 
 // Request logging middleware factory for security audit trail
-export function createSecurityAuditMiddleware() {
+export function createSecurityAuditMiddleware(): (opts: any) => Promise<any> {
   return async (opts: any) => {
     const { ctx, path, type } = opts;
     const startTime = Date.now();
@@ -236,7 +240,7 @@ export function createSecurityAuditMiddleware() {
 }
 
 // CSRF protection middleware factory
-export function createCSRFProtection() {
+export function createCSRFProtection(): (opts: any) => Promise<any> {
   return async (opts: any) => {
     const { ctx, type } = opts;
     // Skip CSRF for queries (read-only operations)
@@ -302,7 +306,7 @@ export function createAdvancedRateLimit(options: {
   maxPerIP: number;
   maxPerUser: number;
   skipSuccessfulRequests?: boolean;
-}) {
+}): Record<string, any> {
   const ipLimiter = rateLimit({
     windowMs: options.windowMs,
     max: options.maxPerIP,
@@ -368,7 +372,7 @@ export function createAdvancedRateLimit(options: {
 export { sanitizationSchemas };
 
 // Comprehensive security middleware stack
-export function createSecurityStack() {
+export function createSecurityStack(): Record<string, any> {
   return {
     headers: securityHeadersConfig,
     audit: createSecurityAuditMiddleware(),

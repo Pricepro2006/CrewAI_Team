@@ -1,0 +1,105 @@
+# CodeRabbit Configuration for AI Agent Team Framework
+# Enhanced configuration for TypeScript, React, and tRPC projects
+
+# General settings
+language: en
+early_access: false
+reviews:
+  # Enable comprehensive code analysis
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_placeholder: "## CodeRabbit Summary\n\n<!-- Summary will be added here -->"
+  poem: true
+  review_status: true
+  collapse_empty_files: true
+
+  # Advanced analysis features
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+      - develop
+      - "feature/**"
+
+  # Specific to our tech stack
+  path_filters:
+    # Include TypeScript/React files
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/*.js"
+    - "**/*.jsx"
+    - "**/*.json"
+    - "**/*.md"
+    - "**/*.yml"
+    - "**/*.yaml"
+
+    # Exclude generated/build files
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/coverage/**"
+    - "!**/*.min.js"
+    - "!**/pnpm-lock.yaml"
+
+  # Code quality focus areas
+  tone_instructions: |
+    You are an expert TypeScript/React developer reviewing code for an AI Agent Team Framework.
+    Focus on:
+
+    **Architecture & Design:**
+    - tRPC best practices and type safety
+    - React component patterns and hooks usage
+    - Agent architecture and orchestration patterns
+    - Separation of concerns and modularity
+
+    **Security & Performance:**
+    - Authentication and authorization patterns
+    - Input validation and sanitization
+    - Rate limiting and security middleware
+    - Performance optimization opportunities
+    - Memory leaks and resource management
+
+    **Code Quality:**
+    - TypeScript strict mode compliance
+    - Error handling and edge cases
+    - Test coverage and testability
+    - Documentation and code clarity
+    - Consistent naming conventions
+
+    **AI/LLM Integration:**
+    - Ollama integration best practices
+    - RAG system implementation
+    - Vector store usage patterns
+    - Agent communication protocols
+
+    **Production Readiness:**
+    - Environment configuration
+    - Logging and monitoring
+    - Database patterns and migrations
+    - CI/CD pipeline optimization
+
+    Provide specific, actionable feedback with code examples when possible.
+    Prioritize security vulnerabilities and performance issues.
+    Suggest modern TypeScript/React patterns and best practices.
+
+# Chat configuration for interactive reviews
+chat:
+  auto_reply: false
+
+# Knowledge base for project-specific context
+knowledge_base:
+  # Project-specific patterns to recognize
+  learnings:
+    - "This is a TypeScript-based AI Agent orchestration system"
+    - "Uses tRPC v10 for type-safe API communication"
+    - "Implements Master Orchestrator pattern with specialized agents"
+    - "Integrates with Ollama for local LLM deployment"
+    - "Uses ChromaDB for vector storage and RAG capabilities"
+    - "Follows security-first approach with comprehensive middleware"
+    - "Implements real-time updates via WebSocket subscriptions"
+    - "Uses React with Vite for frontend, not Next.js"
+    - "Database layer uses SQLite with better-sqlite3"
+    - "Testing uses Vitest for unit tests and Playwright for E2E"

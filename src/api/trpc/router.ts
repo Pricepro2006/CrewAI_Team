@@ -34,7 +34,7 @@ export const appRouter = createRouter({
   task: taskRouter,
   rag: ragRouter,
   chat: chatRouter,
-  websocket: websocketRouter, // Renamed from 'ws' to avoid potential conflicts
+  ws: websocketRouter, // Use 'ws' for frontend compatibility
 });
 
 export type AppRouter = typeof appRouter;

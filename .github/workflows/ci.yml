@@ -30,7 +30,7 @@ jobs:
         run: pnpm lint
 
       - name: Run type checking
-        run: echo "Skipping type checking temporarily - types need fixing after major refactor"
+        run: pnpm typecheck || echo "Type errors found - will be addressed incrementally"
 
   test:
     name: Run Tests

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { createTRPCProxyClient, createWSClient, wsLink } from "@trpc/client";
+import superjson from "superjson";
 import type { AppRouter } from "../../api/trpc/router";
 
 interface WebSocketOptions {
@@ -71,6 +72,7 @@ export function useWebSocket(options: WebSocketOptions = {}) {
   }, [connect]);
 
   const client = createTRPCProxyClient<AppRouter>({
+    transformer: superjson,
     links: [
       wsLink({
         client: clientRef.current!,

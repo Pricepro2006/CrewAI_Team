@@ -75,51 +75,52 @@ const secureQueryValidation = createInputValidation(
   }),
 );
 
-// Export router and procedure helpers
-export const router = t.router;
-export const middleware = t.middleware;
+// Export router and procedure helpers with explicit types
+export const router: typeof t.router = t.router;
+export const middleware: typeof t.middleware = t.middleware;
 
 // Public procedure with basic security
-export const publicProcedure = t.procedure.use(securityAudit);
+export const publicProcedure: ReturnType<typeof t.procedure.use> =
+  t.procedure.use(securityAudit);
 
 // Protected procedure requiring authentication
-export const protectedProcedure = t.procedure
-  .use(securityAudit)
-  .use(authRequired);
+export const protectedProcedure: ReturnType<typeof t.procedure.use> =
+  t.procedure.use(securityAudit).use(authRequired);
 
 // Admin-only procedure
-export const adminProcedure = t.procedure
+export const adminProcedure: ReturnType<typeof t.procedure.use> = t.procedure
   .use(securityAudit)
   .use(authRequired)
   .use(requireAdmin);
 
 // User-level procedure (admin or user)
-export const userProcedure = t.procedure
+export const userProcedure: ReturnType<typeof t.procedure.use> = t.procedure
   .use(securityAudit)
   .use(authRequired)
   .use(requireUser);
 
 // Rate-limited procedures for different operation types
-export const chatProcedure = protectedProcedure.use(chatProcedureRateLimiter);
+export const chatProcedure: ReturnType<typeof protectedProcedure.use> =
+  protectedProcedure.use(chatProcedureRateLimiter);
 
-export const agentProcedure = protectedProcedure.use(agentProcedureRateLimiter);
+export const agentProcedure: ReturnType<typeof protectedProcedure.use> =
+  protectedProcedure.use(agentProcedureRateLimiter);
 
-export const taskProcedure = protectedProcedure.use(taskProcedureRateLimiter);
+export const taskProcedure: ReturnType<typeof protectedProcedure.use> =
+  protectedProcedure.use(taskProcedureRateLimiter);
 
-export const ragProcedure = protectedProcedure.use(ragProcedureRateLimiter);
+export const ragProcedure: ReturnType<typeof protectedProcedure.use> =
+  protectedProcedure.use(ragProcedureRateLimiter);
 
-export const strictProcedure = protectedProcedure.use(
-  strictProcedureRateLimiter,
-);
+export const strictProcedure: ReturnType<typeof protectedProcedure.use> =
+  protectedProcedure.use(strictProcedureRateLimiter);
 
 // Procedures with input validation
-export const secureTextProcedure = protectedProcedure.use(
-  secureStringValidation,
-);
+export const secureTextProcedure: ReturnType<typeof protectedProcedure.use> =
+  protectedProcedure.use(secureStringValidation);
 
-export const secureQueryProcedure = protectedProcedure.use(
-  secureQueryValidation,
-);
+export const secureQueryProcedure: ReturnType<typeof protectedProcedure.use> =
+  protectedProcedure.use(secureQueryValidation);
 
 // Performance monitoring middleware
 const performanceMonitoring = t.middleware(
@@ -161,14 +162,14 @@ const performanceMonitoring = t.middleware(
 );
 
 // Performance-monitored procedures
-export const monitoredProcedure = protectedProcedure.use(performanceMonitoring);
+export const monitoredProcedure: ReturnType<typeof protectedProcedure.use> =
+  protectedProcedure.use(performanceMonitoring);
 
-export const monitoredPublicProcedure = publicProcedure.use(
-  performanceMonitoring,
-);
+export const monitoredPublicProcedure: ReturnType<typeof publicProcedure.use> =
+  publicProcedure.use(performanceMonitoring);
 
 // Comprehensive procedure with all enhancements
-export const enhancedProcedure = t.procedure
+export const enhancedProcedure: ReturnType<typeof t.procedure.use> = t.procedure
   .use(securityAudit)
   .use(performanceMonitoring)
   .use(authRequired);
@@ -192,7 +193,8 @@ const batchOperationMiddleware = t.middleware(async ({ next, ctx }) => {
   });
 });
 
-export const batchProcedure = protectedProcedure.use(batchOperationMiddleware);
+export const batchProcedure: ReturnType<typeof protectedProcedure.use> =
+  protectedProcedure.use(batchOperationMiddleware);
 
 // Custom error handlers for different scenarios
 export function createCustomErrorHandler(errorType: string) {

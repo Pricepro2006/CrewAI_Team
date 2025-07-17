@@ -51,8 +51,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history for better context
 
-      - name: Run CodeRabbit
+      - name: Run CodeRabbit AI Review
         uses: coderabbitai/ai-pr-reviewer@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,3 +63,35 @@ jobs:
           debug: false
           review_simple_changes: false
           review_comment_lgtm: false
+          system_message: |
+            You are reviewing code for an AI Agent Team Framework built with TypeScript, React, tRPC, and Ollama.
+            Focus on security, performance, type safety, and AI/LLM integration best practices.
+            Pay special attention to:
+            - tRPC middleware and security patterns
+            - Agent orchestration and communication
+            - Type safety and error handling
+            - Performance optimization opportunities
+            - Security vulnerabilities in auth/validation
+          openai_model: gpt-4-turbo-preview
+          max_files: 50
+
+  security-scan:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"

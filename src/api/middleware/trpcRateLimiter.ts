@@ -27,7 +27,9 @@ setInterval(() => {
   }
 }, 60 * 1000); // Every minute
 
-export function createTRPCRateLimiter(options: RateLimitOptions) {
+export function createTRPCRateLimiter(
+  options: RateLimitOptions,
+): ReturnType<typeof middleware> {
   const { windowMs, max, message = "Too many requests" } = options;
 
   return middleware(async ({ ctx, next, path }) => {
@@ -85,32 +87,41 @@ export function createTRPCRateLimiter(options: RateLimitOptions) {
 }
 
 // Pre-configured rate limiters for different procedure types
-export const chatProcedureRateLimiter = createTRPCRateLimiter({
+export const chatProcedureRateLimiter: ReturnType<
+  typeof createTRPCRateLimiter
+> = createTRPCRateLimiter({
   windowMs: 60 * 1000, // 1 minute
   max: 10,
   message: "Too many chat messages",
 });
 
-export const agentProcedureRateLimiter = createTRPCRateLimiter({
+export const agentProcedureRateLimiter: ReturnType<
+  typeof createTRPCRateLimiter
+> = createTRPCRateLimiter({
   windowMs: 5 * 60 * 1000, // 5 minutes
   max: 10,
   message: "Too many agent execution requests",
 });
 
-export const taskProcedureRateLimiter = createTRPCRateLimiter({
+export const taskProcedureRateLimiter: ReturnType<
+  typeof createTRPCRateLimiter
+> = createTRPCRateLimiter({
   windowMs: 60 * 1000, // 1 minute
   max: 20,
   message: "Too many task submissions",
 });
 
-export const ragProcedureRateLimiter = createTRPCRateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30,
-  message: "Too many RAG queries",
-});
+export const ragProcedureRateLimiter: ReturnType<typeof createTRPCRateLimiter> =
+  createTRPCRateLimiter({
+    windowMs: 60 * 1000, // 1 minute
+    max: 30,
+    message: "Too many RAG queries",
+  });
 
 // Strict rate limiter for expensive operations
-export const strictProcedureRateLimiter = createTRPCRateLimiter({
+export const strictProcedureRateLimiter: ReturnType<
+  typeof createTRPCRateLimiter
+> = createTRPCRateLimiter({
   windowMs: 5 * 60 * 1000, // 5 minutes
   max: 3,
   message: "This operation is resource-intensive",

@@ -1,12 +1,13 @@
-import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { httpBatchLink, wsLink, splitLink, createWSClient } from '@trpc/client';
-import { createTRPCReact } from '@trpc/react-query';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import type { AppRouter } from '../api/trpc/router';
-import { ChatInterface } from './components/Chat/ChatInterface';
-import { MainLayout } from './components/Layout/MainLayout';
-import './App.css';
+import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { httpBatchLink, wsLink, splitLink, createWSClient } from "@trpc/client";
+import { createTRPCReact } from "@trpc/react-query";
+import superjson from "superjson";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import type { AppRouter } from "../api/trpc/router";
+import { ChatInterface } from "./components/Chat/ChatInterface";
+import { MainLayout } from "./components/Layout/MainLayout";
+import "./App.css";
 
 // Create tRPC client
 export const trpc = createTRPCReact<AppRouter>();
@@ -23,10 +24,11 @@ const queryClient = new QueryClient({
 
 // Create tRPC client
 const trpcClient = trpc.createClient({
+  transformer: superjson,
   links: [
     splitLink({
       condition(op) {
-        return op.type === 'subscription';
+        return op.type === "subscription";
       },
       true: wsLink({
         client: createWSClient({
@@ -34,9 +36,9 @@ const trpcClient = trpc.createClient({
         }),
       }),
       false: httpBatchLink({
-        url: 'http://localhost:3000/trpc',
+        url: "http://localhost:3000/trpc",
         headers() {
-          const token = localStorage.getItem('token');
+          const token = localStorage.getItem("token");
           return token
             ? {
                 authorization: `Bearer ${token}`,

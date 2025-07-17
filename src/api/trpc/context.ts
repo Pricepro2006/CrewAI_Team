@@ -146,6 +146,7 @@ export async function createContext({ req, res }: CreateExpressContextOptions) {
     user,
     requestId: Math.random().toString(36).substring(7),
     timestamp: new Date(),
+    batchId: undefined as string | undefined, // Will be set by batch middleware when needed
     ...services,
   };
 }
