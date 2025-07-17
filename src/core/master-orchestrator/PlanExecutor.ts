@@ -4,6 +4,7 @@ import type {
   Plan,
   PlanStep,
   ExecutionResult,
+  PlanExecutionResult,
   StepResult,
   Context,
 } from "./types";

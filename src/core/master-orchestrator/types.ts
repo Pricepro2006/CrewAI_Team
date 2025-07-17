@@ -37,6 +37,12 @@ export interface ExecutionResult {
   metadata?: Record<string, any>;
 }
 
+export interface PlanExecutionResult extends ExecutionResult {
+  completedSteps: number;
+  failedSteps: number;
+  error?: string;
+}
+
 export interface StepResult {
   stepId: string;
   success: boolean;
