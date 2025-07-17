@@ -138,4 +138,20 @@ export function registerDefaultCleanupTasks(): void {
       }
     },
   });
+
+  // Expired authentication tokens
+  cleanupManager.registerCleanupTask({
+    name: "Expired authentication tokens",
+    priority: 3,
+    cleanup: async () => {
+      try {
+        const { UserService } = await import("./UserService");
+        const userService = new UserService();
+        await userService.cleanupExpiredTokens();
+        logger.info("Expired tokens cleaned", "CLEANUP");
+      } catch (error) {
+        logger.warn("Token cleanup failed", "CLEANUP", { error });
+      }
+    },
+  });
 }

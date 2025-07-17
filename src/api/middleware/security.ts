@@ -128,16 +128,32 @@ export function createInputValidation<T extends z.ZodSchema>(
 export function createAuthMiddleware(): (opts: any) => Promise<any> {
   return async (opts: any) => {
     const { ctx } = opts;
-    if (!ctx.user) {
+
+    // Check if user exists and is not a guest
+    if (!ctx.user || ctx.user.id.startsWith("guest-")) {
       logger.warn("Unauthorized access attempt", "SECURITY", {
         ip: ctx.req?.ip || "unknown",
         userAgent: ctx.req?.headers?.["user-agent"] || "unknown",
         path: ctx.req?.path || "unknown",
+        userId: ctx.user?.id || "no-user",
       });
 
       throw new TRPCError({
         code: "UNAUTHORIZED",
         message: "You must be authenticated to access this resource",
+      });
+    }
+
+    // Ensure user is active
+    if (!ctx.user.isActive) {
+      logger.warn("Inactive user access attempt", "SECURITY", {
+        userId: ctx.user.id,
+        email: ctx.user.email,
+      });
+
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Your account has been deactivated",
       });
     }
 

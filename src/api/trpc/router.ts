@@ -26,12 +26,14 @@ import { chatRouter } from "../routes/chat.router";
 import { websocketRouter } from "../routes/websocket.router";
 import { healthRouter } from "../routes/health.router";
 import { dataCollectionRouter } from "../routes/data-collection.router";
+import { authRouter } from "../routes/auth.router";
 
 // Import the router function from enhanced-router
 import { router as createRouter } from "./enhanced-router";
 
 // Create the main app router with enhanced security
 export const appRouter = createRouter({
+  auth: authRouter, // Authentication endpoints
   agent: agentRouter,
   task: taskRouter,
   rag: ragRouter,

@@ -4,15 +4,16 @@ import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchest
 import { ConversationService } from "../services/ConversationService";
 import { TaskService } from "../services/TaskService";
 import { MaestroFramework } from "../../core/maestro/MaestroFramework";
+import {
+  UserService,
+  type User as DBUser,
+  type JWTPayload,
+} from "../services/UserService";
 import ollamaConfig from "../../config/ollama.config";
 import { logger } from "../../utils/logger";
-import jwt from "jsonwebtoken";
 
-// User interface for type safety
-export interface User {
-  id: string;
-  email?: string;
-  role: "admin" | "user" | "guest";
+// Context User interface (extends DB user with runtime properties)
+export interface User extends Omit<DBUser, "passwordHash"> {
   permissions: string[];
   lastActivity: Date;
 }
@@ -22,6 +23,7 @@ let masterOrchestrator: MasterOrchestrator;
 let conversationService: ConversationService;
 let maestroFramework: MaestroFramework;
 let taskService: TaskService;
+let userService: UserService;
 
 async function initializeServices() {
   if (!masterOrchestrator) {
@@ -62,29 +64,52 @@ async function initializeServices() {
     taskService = new TaskService(maestroFramework);
   }
 
+  if (!userService) {
+    userService = new UserService();
+  }
+
   return {
     masterOrchestrator,
     conversationService,
     taskService,
     maestroFramework,
+    userService,
     agentRegistry: masterOrchestrator.agentRegistry,
     ragSystem: masterOrchestrator.ragSystem,
   };
 }
 
 // JWT verification utility
-async function verifyJWT(token: string): Promise<User | null> {
+async function verifyJWT(
+  token: string,
+  userService: UserService,
+): Promise<User | null> {
   try {
-    const secret =
-      process.env.JWT_SECRET || "dev-secret-key-change-in-production";
-    const decoded = jwt.verify(token, secret) as any;
+    // Verify token using UserService
+    const payload = await userService.verifyToken(token);
 
-    // In production, validate against database
+    // Get full user data from database
+    const dbUser = await userService.getById(payload.userId);
+    if (!dbUser || !dbUser.isActive) {
+      logger.warn("User not found or inactive", "AUTH", {
+        userId: payload.userId,
+      });
+      return null;
+    }
+
+    // Map role-based permissions
+    const permissions = getPermissionsForRole(dbUser.role);
+
     const user: User = {
-      id: decoded.sub || decoded.userId || "guest",
-      email: decoded.email,
-      role: decoded.role || "guest",
-      permissions: decoded.permissions || [],
+      id: dbUser.id,
+      email: dbUser.email,
+      username: dbUser.username,
+      role: dbUser.role,
+      isActive: dbUser.isActive,
+      createdAt: dbUser.createdAt,
+      updatedAt: dbUser.updatedAt,
+      lastLoginAt: dbUser.lastLoginAt,
+      permissions,
       lastActivity: new Date(),
     };
 
@@ -99,6 +124,20 @@ async function verifyJWT(token: string): Promise<User | null> {
       error: error instanceof Error ? error.message : "Unknown error",
     });
     return null;
+  }
+}
+
+// Helper to get permissions based on role
+function getPermissionsForRole(role: string): string[] {
+  switch (role) {
+    case "admin":
+      return ["read", "write", "delete", "admin"];
+    case "moderator":
+      return ["read", "write", "moderate"];
+    case "user":
+      return ["read", "write"];
+    default:
+      return ["read"];
   }
 }
 
@@ -136,14 +175,19 @@ export async function createContext({ req, res }: CreateExpressContextOptions) {
   let user: User | null = null;
 
   if (token) {
-    user = await verifyJWT(token);
+    user = await verifyJWT(token, services.userService);
   }
 
   // Set default guest user if no authentication
   if (!user) {
     user = {
       id: `guest-${ip.replace(/\./g, "-")}-${Date.now()}`,
-      role: "guest",
+      email: "",
+      username: "guest",
+      role: "user", // Default to user role from UserRole enum
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       permissions: ["read"],
       lastActivity: new Date(),
     };
