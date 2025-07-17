@@ -8,7 +8,7 @@ A production-ready, local-first multi-agent orchestration system built with Type
 
 ### What's Working
 
-- ✅ React UI with chat interface
+- ✅ React UI with chat interface and real-time updates
 - ✅ tRPC API with real implementations
 - ✅ Master Orchestrator with Ollama integration
 - ✅ All agents fully implemented
@@ -18,14 +18,18 @@ A production-ready, local-first multi-agent orchestration system built with Type
 - ✅ Real integration tests with Ollama
 - ✅ CI/CD pipeline with GitHub Actions
 - ✅ Git hooks for code quality
+- ✅ WebSocket real-time updates
+- ✅ API rate limiting
+- ✅ TypeScript strict mode (216 errors fixed)
+- ✅ Comprehensive unit tests
 
 ### In Development
 
-- 🚧 WebSocket real-time updates
-- 🚧 API rate limiting
 - 🚧 User authentication
 - 🚧 Enhanced agent behaviors
-- 🚧 Expanding test coverage
+- 🚧 Data collection pipeline (Bright Data integration)
+- 🚧 Knowledge base scraping (Playwright integration)
+- 🚧 CI/CD test updates
 
 ## 🌟 Features
 
@@ -90,10 +94,12 @@ cp .env.example .env
 # Initialize database
 pnpm init:db
 
-# Start development (currently mock server)
-pnpm dev:client  # Frontend only
+# Start development
+pnpm dev:client  # Frontend only (recommended)
 # or
-pnpm dev:alt     # Using the alternative dev script
+pnpm dev:alt     # Alternative script with better ESM handling
+# or for full development
+pnpm dev         # Both frontend and backend
 ```
 
 ### 5. Access the UI

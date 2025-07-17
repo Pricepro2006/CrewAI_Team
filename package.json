@@ -11,7 +11,7 @@
     "dev:client": "vite",
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
-    "build:server": "echo \"Skipping server build temporarily - TypeScript errors need fixing\"",
+    "build:server": "tsc -p tsconfig.server.json",
     "start": "node dist/api/server.js",
     "init:db": "tsx scripts/init-db.ts",
     "init:production-db": "tsx scripts/init-production-db.ts",
