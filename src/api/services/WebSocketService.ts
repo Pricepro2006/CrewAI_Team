@@ -1,77 +1,127 @@
-import { EventEmitter } from 'events';
-import type { WebSocket } from 'ws';
-import { z } from 'zod';
+import { EventEmitter } from "events";
+import type { WebSocket } from "ws";
+import { z } from "zod";
 
 // Message types for WebSocket communication
-export const WebSocketMessageSchema = z.discriminatedUnion('type', [
+export const WebSocketMessageSchema = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal('agent.status'),
+    type: z.literal("agent.status"),
     agentId: z.string(),
-    status: z.enum(['idle', 'busy', 'error', 'terminated']),
-    timestamp: z.date()
+    status: z.enum(["idle", "busy", "error", "terminated"]),
+    timestamp: z.date(),
   }),
   z.object({
-    type: z.literal('agent.task'),
+    type: z.literal("agent.task"),
     agentId: z.string(),
     taskId: z.string(),
-    status: z.enum(['started', 'completed', 'failed']),
+    status: z.enum(["started", "completed", "failed"]),
     result: z.any().optional(),
     error: z.string().optional(),
-    timestamp: z.date()
+    timestamp: z.date(),
   }),
   z.object({
-    type: z.literal('plan.update'),
+    type: z.literal("plan.update"),
     planId: z.string(),
-    status: z.enum(['created', 'executing', 'completed', 'failed', 'replanned']),
-    progress: z.object({
-      completed: z.number(),
-      total: z.number(),
-      currentStep: z.string().optional()
-    }).optional(),
-    timestamp: z.date()
+    status: z.enum([
+      "created",
+      "executing",
+      "completed",
+      "failed",
+      "replanned",
+    ]),
+    progress: z
+      .object({
+        completed: z.number(),
+        total: z.number(),
+        currentStep: z.string().optional(),
+      })
+      .optional(),
+    timestamp: z.date(),
   }),
   z.object({
-    type: z.literal('chat.message'),
+    type: z.literal("chat.message"),
     conversationId: z.string(),
     message: z.object({
-      role: z.enum(['user', 'assistant', 'system']),
+      role: z.enum(["user", "assistant", "system"]),
       content: z.string(),
-      metadata: z.any().optional()
+      metadata: z.any().optional(),
     }),
-    timestamp: z.date()
+    timestamp: z.date(),
   }),
   z.object({
-    type: z.literal('task.update'),
+    type: z.literal("task.update"),
     taskId: z.string(),
-    status: z.enum(['queued', 'executing', 'completed', 'failed']),
+    status: z.enum(["queued", "executing", "completed", "failed"]),
     progress: z.number().min(0).max(100).optional(),
     result: z.any().optional(),
     error: z.string().optional(),
-    timestamp: z.date()
+    timestamp: z.date(),
   }),
   z.object({
-    type: z.literal('rag.operation'),
-    operation: z.enum(['indexing', 'searching', 'embedding']),
-    status: z.enum(['started', 'completed', 'failed']),
-    details: z.object({
-      documentCount: z.number().optional(),
-      chunkCount: z.number().optional(),
-      duration: z.number().optional(),
-      error: z.string().optional()
-    }).optional(),
-    timestamp: z.date()
+    type: z.literal("rag.operation"),
+    operation: z.enum(["indexing", "searching", "embedding"]),
+    status: z.enum(["started", "completed", "failed"]),
+    details: z
+      .object({
+        documentCount: z.number().optional(),
+        chunkCount: z.number().optional(),
+        duration: z.number().optional(),
+        error: z.string().optional(),
+      })
+      .optional(),
+    timestamp: z.date(),
   }),
   z.object({
-    type: z.literal('system.health'),
-    services: z.record(z.enum(['healthy', 'degraded', 'down'])),
+    type: z.literal("system.health"),
+    services: z.record(
+      z.enum([
+        "healthy",
+        "degraded",
+        "down",
+        "connected",
+        "disconnected",
+        "error",
+        "timeout",
+      ]),
+    ),
+    metrics: z
+      .object({
+        cpu: z.number().optional(),
+        memory: z.number().optional(),
+        activeAgents: z.number().optional(),
+        queueLength: z.number().optional(),
+        responseTime: z.number().optional(),
+        uptime: z.number().optional(),
+      })
+      .optional(),
+    timestamp: z.date(),
+  }),
+  z.object({
+    type: z.literal("system.metrics"),
     metrics: z.object({
-      cpu: z.number().optional(),
-      memory: z.number().optional(),
-      activeAgents: z.number().optional(),
-      queueLength: z.number().optional()
-    }).optional(),
-    timestamp: z.date()
-  })
+      memoryUsage: z.object({
+        used: z.number(),
+        total: z.number(),
+        percentage: z.number(),
+      }),
+      cpuUsage: z.number().optional(),
+      activeConnections: z.number(),
+      requestsPerMinute: z.number().optional(),
+      responseTime: z.number(),
+    }),
+    timestamp: z.date(),
+  }),
+  z.object({
+    type: z.literal("agent.performance"),
+    agentId: z.string(),
+    metrics: z.object({
+      tasksCompleted: z.number(),
+      averageResponseTime: z.number(),
+      errorRate: z.number(),
+      lastActivity: z.date(),
+    }),
+    timestamp: z.date(),
+  }),
 ]);
 
 export type WebSocketMessage = z.infer<typeof WebSocketMessageSchema>;
@@ -95,7 +145,7 @@ export class WebSocketService extends EventEmitter {
     this.clients.get(clientId)!.add(ws);
 
     // Clean up on disconnect
-    ws.on('close', () => {
+    ws.on("close", () => {
       this.unregisterClient(clientId, ws);
     });
   }
@@ -122,7 +172,7 @@ export class WebSocketService extends EventEmitter {
       this.subscriptions.set(clientId, new Set());
     }
     const clientSubs = this.subscriptions.get(clientId)!;
-    types.forEach(type => clientSubs.add(type));
+    types.forEach((type) => clientSubs.add(type));
   }
 
   /**
@@ -131,7 +181,7 @@ export class WebSocketService extends EventEmitter {
   unsubscribe(clientId: string, types: string[]): void {
     const clientSubs = this.subscriptions.get(clientId);
     if (clientSubs) {
-      types.forEach(type => clientSubs.delete(type));
+      types.forEach((type) => clientSubs.delete(type));
     }
   }
 
@@ -143,10 +193,10 @@ export class WebSocketService extends EventEmitter {
 
     this.clients.forEach((sockets, clientId) => {
       const clientSubs = this.subscriptions.get(clientId);
-      
+
       // Check if client is subscribed to this message type
-      if (clientSubs && (clientSubs.has(message.type) || clientSubs.has('*'))) {
-        sockets.forEach(ws => {
+      if (clientSubs && (clientSubs.has(message.type) || clientSubs.has("*"))) {
+        sockets.forEach((ws) => {
           if (ws.readyState === ws.OPEN) {
             ws.send(messageStr);
           }
@@ -165,7 +215,7 @@ export class WebSocketService extends EventEmitter {
     const sockets = this.clients.get(clientId);
     if (sockets) {
       const messageStr = JSON.stringify(message);
-      sockets.forEach(ws => {
+      sockets.forEach((ws) => {
         if (ws.readyState === ws.OPEN) {
           ws.send(messageStr);
         }
@@ -190,111 +240,215 @@ export class WebSocketService extends EventEmitter {
 
   // Convenience methods for common broadcasts
 
-  broadcastAgentStatus(agentId: string, status: 'idle' | 'busy' | 'error' | 'terminated'): void {
+  broadcastAgentStatus(
+    agentId: string,
+    status: "idle" | "busy" | "error" | "terminated",
+  ): void {
     this.broadcast({
-      type: 'agent.status',
+      type: "agent.status",
       agentId,
       status,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
   broadcastAgentTask(
-    agentId: string, 
-    taskId: string, 
-    status: 'started' | 'completed' | 'failed',
+    agentId: string,
+    taskId: string,
+    status: "started" | "completed" | "failed",
     result?: any,
-    error?: string
+    error?: string,
   ): void {
     this.broadcast({
-      type: 'agent.task',
+      type: "agent.task",
       agentId,
       taskId,
       status,
       result,
       error,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
   broadcastPlanUpdate(
     planId: string,
-    status: 'created' | 'executing' | 'completed' | 'failed' | 'replanned',
-    progress?: { completed: number; total: number; currentStep?: string }
+    status: "created" | "executing" | "completed" | "failed" | "replanned",
+    progress?: { completed: number; total: number; currentStep?: string },
   ): void {
     this.broadcast({
-      type: 'plan.update',
+      type: "plan.update",
       planId,
       status,
       progress,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
   broadcastChatMessage(
     conversationId: string,
-    message: { role: 'user' | 'assistant' | 'system'; content: string; metadata?: any }
+    message: {
+      role: "user" | "assistant" | "system";
+      content: string;
+      metadata?: any;
+    },
   ): void {
     this.broadcast({
-      type: 'chat.message',
+      type: "chat.message",
       conversationId,
       message,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
   broadcastTaskUpdate(
     taskId: string,
-    status: 'queued' | 'executing' | 'completed' | 'failed',
+    status: "queued" | "executing" | "completed" | "failed",
     progress?: number,
     result?: any,
-    error?: string
+    error?: string,
   ): void {
     this.broadcast({
-      type: 'task.update',
+      type: "task.update",
       taskId,
       status,
       progress,
       result,
       error,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
   broadcastRAGOperation(
-    operation: 'indexing' | 'searching' | 'embedding',
-    status: 'started' | 'completed' | 'failed',
+    operation: "indexing" | "searching" | "embedding",
+    status: "started" | "completed" | "failed",
     details?: {
       documentCount?: number;
       chunkCount?: number;
       duration?: number;
       error?: string;
-    }
+    },
   ): void {
     this.broadcast({
-      type: 'rag.operation',
+      type: "rag.operation",
       operation,
       status,
       details,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
   broadcastSystemHealth(
-    services: Record<string, 'healthy' | 'degraded' | 'down'>,
+    services: Record<
+      string,
+      | "healthy"
+      | "degraded"
+      | "down"
+      | "connected"
+      | "disconnected"
+      | "error"
+      | "timeout"
+    >,
     metrics?: {
       cpu?: number;
       memory?: number;
       activeAgents?: number;
       queueLength?: number;
-    }
+      responseTime?: number;
+      uptime?: number;
+    },
   ): void {
     this.broadcast({
-      type: 'system.health',
+      type: "system.health",
       services,
       metrics,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
+  }
+
+  broadcastSystemMetrics(metrics: {
+    memoryUsage: {
+      used: number;
+      total: number;
+      percentage: number;
+    };
+    cpuUsage?: number;
+    activeConnections: number;
+    requestsPerMinute?: number;
+    responseTime: number;
+  }): void {
+    this.broadcast({
+      type: "system.metrics",
+      metrics,
+      timestamp: new Date(),
+    });
+  }
+
+  broadcastAgentPerformance(
+    agentId: string,
+    metrics: {
+      tasksCompleted: number;
+      averageResponseTime: number;
+      errorRate: number;
+      lastActivity: Date;
+    },
+  ): void {
+    this.broadcast({
+      type: "agent.performance",
+      agentId,
+      metrics,
+      timestamp: new Date(),
+    });
+  }
+
+  /**
+   * Get real-time connection statistics
+   */
+  getConnectionStats(): {
+    totalClients: number;
+    totalConnections: number;
+    subscriptionStats: Record<string, number>;
+  } {
+    let totalConnections = 0;
+    const subscriptionStats: Record<string, number> = {};
+
+    this.clients.forEach((sockets) => {
+      totalConnections += sockets.size;
+    });
+
+    this.subscriptions.forEach((subs) => {
+      subs.forEach((sub) => {
+        subscriptionStats[sub] = (subscriptionStats[sub] || 0) + 1;
+      });
+    });
+
+    return {
+      totalClients: this.clients.size,
+      totalConnections,
+      subscriptionStats,
+    };
+  }
+
+  /**
+   * Start periodic health broadcasts
+   */
+  startHealthMonitoring(intervalMs: number = 30000): void {
+    setInterval(() => {
+      // Get system metrics
+      const memUsage = process.memoryUsage();
+      const stats = this.getConnectionStats();
+
+      this.broadcastSystemMetrics({
+        memoryUsage: {
+          used: memUsage.heapUsed,
+          total: memUsage.heapTotal,
+          percentage: Math.round(
+            (memUsage.heapUsed / memUsage.heapTotal) * 100,
+          ),
+        },
+        activeConnections: stats.totalConnections,
+        responseTime: 0, // This could be populated from actual metrics
+      });
+    }, intervalMs);
   }
 }
 

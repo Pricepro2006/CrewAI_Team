@@ -24,6 +24,7 @@ import { taskRouter } from "../routes/task.router";
 import { ragRouter } from "../routes/rag.router";
 import { chatRouter } from "../routes/chat.router";
 import { websocketRouter } from "../routes/websocket.router";
+import { healthRouter } from "../routes/health.router";
 
 // Import the router function from enhanced-router
 import { router as createRouter } from "./enhanced-router";
@@ -35,6 +36,7 @@ export const appRouter = createRouter({
   rag: ragRouter,
   chat: chatRouter,
   ws: websocketRouter, // Use 'ws' for frontend compatibility
+  health: healthRouter, // Health monitoring endpoints
 });
 
 export type AppRouter = typeof appRouter;

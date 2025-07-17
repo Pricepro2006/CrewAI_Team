@@ -12,6 +12,8 @@ import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import appConfig from "../config/app.config";
 import type { Express } from "express";
 import { apiRateLimiter } from "./middleware/rateLimiter";
+import { wsService } from "./services/WebSocketService";
+import { logger } from "../utils/logger";
 
 const app: Express = express();
 const PORT = appConfig.api.port;
@@ -137,6 +139,10 @@ const server = app.listen(PORT, () => {
   console.log(`🚀 API Server running on http://localhost:${PORT}`);
   console.log(`📡 tRPC endpoint: http://localhost:${PORT}/trpc`);
   console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+
+  // Start WebSocket health monitoring
+  wsService.startHealthMonitoring(30000); // Every 30 seconds
+  logger.info("WebSocket health monitoring started", "WEBSOCKET");
 });
 
 // WebSocket server for subscriptions
