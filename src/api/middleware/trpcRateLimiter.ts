@@ -1,7 +1,7 @@
 import type { MiddlewareFunction } from '@trpc/server';
 import type { Context } from '../trpc/context';
 import { TRPCError } from '@trpc/server';
-import { appConfig } from '../../config/app.config';
+// import { appConfig } from '../../config/app.config';
 import { logger } from '../../utils/logger';
 
 // Rate limit store for tRPC procedures

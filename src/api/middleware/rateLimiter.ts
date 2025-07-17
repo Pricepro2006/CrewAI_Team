@@ -127,7 +127,7 @@ export const authRateLimiter = createRateLimiter({
   max: 5, // 5 attempts per 15 minutes
   message: "Too many authentication attempts. Please try again later.",
   handler: (req: Request, res: Response) => {
-    const key = req.ip || "unknown";
+    // const key = req.ip || "unknown";
 
     logger.error("Potential brute force attack detected", "AUTH_RATE_LIMITER", {
       ip: req.ip,
