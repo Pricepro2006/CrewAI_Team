@@ -1,4 +1,4 @@
-import type { QueueConfig, QueueItem, QueueStatus } from './types';
+import type { QueueConfig, QueueItem, QueueStatus } from "./types";
 
 export class TaskQueue {
   private queue: QueueItem[] = [];
@@ -11,17 +11,17 @@ export class TaskQueue {
 
   async enqueue(item: QueueItem): Promise<void> {
     if (this.queue.length >= this.config.maxSize) {
-      throw new Error('Queue is full');
+      throw new Error("Queue is full");
     }
 
     switch (this.config.strategy) {
-      case 'fifo':
+      case "fifo":
         this.queue.push(item);
         break;
-      case 'lifo':
+      case "lifo":
         this.queue.unshift(item);
         break;
-      case 'priority':
+      case "priority":
         this.insertByPriority(item);
         break;
     }
@@ -43,7 +43,7 @@ export class TaskQueue {
     return {
       queued: this.queue.length,
       processing: this.processing.size,
-      capacity: this.config.maxSize
+      capacity: this.config.maxSize,
     };
   }
 
@@ -59,14 +59,15 @@ export class TaskQueue {
   private insertByPriority(item: QueueItem): void {
     // Higher priority values come first
     let insertIndex = 0;
-    
+
     for (let i = 0; i < this.queue.length; i++) {
-      if ((item.priority || 0) > (this.queue[i].priority || 0)) {
+      const queueItem = this.queue[i];
+      if (queueItem && (item.priority || 0) > (queueItem.priority || 0)) {
         break;
       }
       insertIndex = i + 1;
     }
-    
+
     this.queue.splice(insertIndex, 0, item);
   }
 
@@ -75,12 +76,14 @@ export class TaskQueue {
   }
 
   hasTask(taskId: string): boolean {
-    return this.queue.some(item => item.id === taskId) || 
-           this.processing.has(taskId);
+    return (
+      this.queue.some((item) => item.id === taskId) ||
+      this.processing.has(taskId)
+    );
   }
 
   removeTask(taskId: string): boolean {
-    const index = this.queue.findIndex(item => item.id === taskId);
+    const index = this.queue.findIndex((item) => item.id === taskId);
     if (index !== -1) {
       this.queue.splice(index, 1);
       return true;
@@ -97,7 +100,7 @@ export class PriorityQueue<T> {
 
   enqueue(item: T, priority: number = 0): void {
     const queueItem = { item, priority };
-    
+
     let added = false;
     for (let i = 0; i < this.items.length; i++) {
       if (priority > (this.items[i]?.priority || 0)) {
@@ -106,7 +109,7 @@ export class PriorityQueue<T> {
         break;
       }
     }
-    
+
     if (!added) {
       this.items.push(queueItem);
     }

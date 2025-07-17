@@ -1,5 +1,5 @@
-import type { Message } from '../shared/types';
-import type { AgentType } from '../shared/types';
+import type { Message } from "../shared/types";
+import type { AgentType } from "../shared/types";
 
 export interface Query {
   text: string;
@@ -8,14 +8,15 @@ export interface Query {
   metadata?: Record<string, any>;
 }
 
-
 export interface Plan {
+  id: string;
   steps: PlanStep[];
   metadata?: Record<string, any>;
 }
 
 export interface PlanStep {
   id: string;
+  task: string;
   description: string;
   agentType: AgentType;
   requiresTool: boolean;
@@ -25,7 +26,6 @@ export interface PlanStep {
   dependencies: string[];
   parameters?: Record<string, any>;
 }
-
 
 export interface ExecutionResult {
   success: boolean;
@@ -57,7 +57,12 @@ export interface Context {
 }
 
 // Re-export from shared types to avoid circular dependencies
-export type { Document, DocumentMetadata, Message, AgentType } from '../shared/types';
+export type {
+  Document,
+  DocumentMetadata,
+  Message,
+  AgentType,
+} from "../shared/types";
 
 export interface MasterOrchestratorConfig {
   ollamaUrl: string;
@@ -73,7 +78,7 @@ export interface RAGConfig {
 }
 
 export interface VectorStoreConfig {
-  type: 'chromadb' | 'pinecone' | 'weaviate';
+  type: "chromadb" | "pinecone" | "weaviate";
   path?: string;
   apiKey?: string;
   collectionName: string;
@@ -83,7 +88,7 @@ export interface VectorStoreConfig {
 export interface ChunkingConfig {
   size: number;
   overlap: number;
-  method?: 'sentence' | 'token' | 'character';
+  method?: "sentence" | "token" | "character";
 }
 
 export interface RetrievalConfig {
@@ -106,12 +111,12 @@ export interface MaestroConfig {
 
 export interface QueueConfig {
   maxSize: number;
-  strategy: 'fifo' | 'lifo' | 'priority';
+  strategy: "fifo" | "lifo" | "priority";
 }
 
 export interface Task {
   id?: string;
-  type: 'agent' | 'tool' | 'composite';
+  type: "agent" | "tool" | "composite";
   priority?: number;
   data: any;
   timeout?: number;

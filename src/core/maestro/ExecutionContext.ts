@@ -1,4 +1,4 @@
-import type { Task, MaestroConfig } from './types';
+import type { Task, MaestroConfig } from "./types";
 
 export interface ExecutionContextConfig {
   taskId: string;
@@ -11,7 +11,7 @@ export class ExecutionContext {
   taskId: string;
   task: Task;
   startTime?: Date;
-  timeout?: number | undefined;
+  timeout?: number;
   retryCount: number = 0;
   metadata: Record<string, any> = {};
   private cleanupCallbacks: Array<() => void> = [];
@@ -25,19 +25,21 @@ export class ExecutionContext {
 
   initialize(): void {
     this.startTime = new Date();
-    
+
     // Set up timeout if specified
     if (this.timeout) {
       this.timeoutHandle = setTimeout(() => {
-        throw new Error(`Task ${this.taskId} timed out after ${this.timeout}ms`);
+        throw new Error(
+          `Task ${this.taskId} timed out after ${this.timeout}ms`,
+        );
       }, this.timeout);
     }
-    
+
     // Initialize metadata
     this.metadata = {
       startTime: this.startTime.toISOString(),
       taskType: this.task.type,
-      priority: this.task.priority || 0
+      priority: this.task.priority || 0,
     };
   }
 
@@ -46,16 +48,16 @@ export class ExecutionContext {
     if (this.timeoutHandle) {
       clearTimeout(this.timeoutHandle);
     }
-    
+
     // Run cleanup callbacks
-    this.cleanupCallbacks.forEach(callback => {
+    this.cleanupCallbacks.forEach((callback) => {
       try {
         callback();
       } catch (error) {
-        console.error('Cleanup callback error:', error);
+        console.error("Cleanup callback error:", error);
       }
     });
-    
+
     this.cleanupCallbacks = [];
   }
 
@@ -78,22 +80,22 @@ export class ExecutionContext {
   }
 
   setProgress(progress: number): void {
-    this.metadata['progress'] = Math.min(100, Math.max(0, progress));
+    this.metadata["progress"] = Math.min(100, Math.max(0, progress));
   }
 
   getProgress(): number {
-    return this.metadata['progress'] || 0;
+    return this.metadata["progress"] || 0;
   }
 
-  addLog(message: string, level: 'info' | 'warn' | 'error' = 'info'): void {
-    if (!this.metadata['logs']) {
-      this.metadata['logs'] = [];
+  addLog(message: string, level: "info" | "warn" | "error" = "info"): void {
+    if (!this.metadata["logs"]) {
+      this.metadata["logs"] = [];
     }
-    
-    this.metadata['logs'].push({
+
+    this.metadata["logs"].push({
       timestamp: new Date().toISOString(),
       level,
-      message
+      message,
     });
   }
 
@@ -105,7 +107,7 @@ export class ExecutionContext {
       elapsedTime: this.getElapsedTime(),
       progress: this.getProgress(),
       retryCount: this.retryCount,
-      metadata: { ...this.metadata }
+      metadata: { ...this.metadata },
     };
   }
 }

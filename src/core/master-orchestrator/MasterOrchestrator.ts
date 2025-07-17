@@ -1,11 +1,17 @@
-import { OllamaProvider } from '../llm/OllamaProvider';
-import { AgentRegistry } from '../agents/registry/AgentRegistry';
-import { RAGSystem } from '../rag/RAGSystem';
-import { PlanExecutor } from './PlanExecutor';
-import { PlanReviewer } from './PlanReviewer';
-import type { Plan, ExecutionResult, Query, MasterOrchestratorConfig, ReviewResult } from './types';
-import { logger, createPerformanceMonitor } from '../../utils/logger';
-import { wsService } from '../../api/services/WebSocketService';
+import { OllamaProvider } from "../llm/OllamaProvider";
+import { AgentRegistry } from "../agents/registry/AgentRegistry";
+import { RAGSystem } from "../rag/RAGSystem";
+import { PlanExecutor } from "./PlanExecutor";
+import { PlanReviewer } from "./PlanReviewer";
+import type {
+  Plan,
+  ExecutionResult,
+  Query,
+  MasterOrchestratorConfig,
+  ReviewResult,
+} from "./types";
+import { logger, createPerformanceMonitor } from "../../utils/logger";
+import { wsService } from "../../api/services/WebSocketService";
 
 export class MasterOrchestrator {
   private llm: OllamaProvider;
@@ -13,73 +19,81 @@ export class MasterOrchestrator {
   public ragSystem: RAGSystem;
   private planExecutor: PlanExecutor;
   private planReviewer: PlanReviewer;
-  private perfMonitor = createPerformanceMonitor('MasterOrchestrator');
+  private perfMonitor = createPerformanceMonitor("MasterOrchestrator");
 
   constructor(config: MasterOrchestratorConfig) {
-    logger.info('Initializing MasterOrchestrator', 'ORCHESTRATOR', { config });
-    
+    logger.info("Initializing MasterOrchestrator", "ORCHESTRATOR", { config });
+
     this.llm = new OllamaProvider({
-      model: 'qwen3:14b',
-      baseUrl: config.ollamaUrl
+      model: "qwen3:14b",
+      baseUrl: config.ollamaUrl,
     });
-    
+
     this.agentRegistry = new AgentRegistry();
     this.ragSystem = new RAGSystem(config.rag);
     this.planExecutor = new PlanExecutor(this.agentRegistry, this.ragSystem);
     this.planReviewer = new PlanReviewer(this.llm);
-    
-    logger.info('MasterOrchestrator initialized successfully', 'ORCHESTRATOR');
+
+    logger.info("MasterOrchestrator initialized successfully", "ORCHESTRATOR");
   }
 
   async processQuery(query: Query): Promise<ExecutionResult> {
-    const perf = this.perfMonitor.start('processQuery');
-    
-    logger.info('Processing query', 'ORCHESTRATOR', { 
+    const perf = this.perfMonitor.start("processQuery");
+
+    logger.info("Processing query", "ORCHESTRATOR", {
       query: query.text.substring(0, 100),
-      conversationId: query.conversationId 
+      conversationId: query.conversationId,
     });
 
     try {
       // Step 1: Create initial plan
       let plan = await this.createPlan(query);
-      
+
       // Broadcast plan creation
-      wsService.broadcastPlanUpdate(plan.id, 'created', {
+      wsService.broadcastPlanUpdate(plan.id, "created", {
         completed: 0,
-        total: plan.steps.length
+        total: plan.steps.length,
       });
-      
+
       // Step 2: Execute plan with replan loop
       let executionResult: ExecutionResult;
       let attempts = 0;
       const maxAttempts = 3;
 
       do {
-        logger.debug(`Executing plan (attempt ${attempts + 1}/${maxAttempts})`, 'ORCHESTRATOR', {
-          stepsCount: plan.steps.length
-        });
-        
-        executionResult = await this.planExecutor.execute(plan);
-        
-        // Step 3: Review execution results
-        const review = await this.planReviewer.review(
-          query, 
-          plan, 
-          executionResult
+        logger.debug(
+          `Executing plan (attempt ${attempts + 1}/${maxAttempts})`,
+          "ORCHESTRATOR",
+          {
+            stepsCount: plan.steps.length,
+          },
         );
 
-        logger.debug('Plan review completed', 'ORCHESTRATOR', {
+        executionResult = await this.planExecutor.execute(plan);
+
+        // Step 3: Review execution results
+        const review = await this.planReviewer.review(
+          query,
+          plan,
+          executionResult,
+        );
+
+        logger.debug("Plan review completed", "ORCHESTRATOR", {
           satisfactory: review.satisfactory,
-          attempts: attempts + 1
+          attempts: attempts + 1,
         });
 
         if (!review.satisfactory && attempts < maxAttempts) {
           // Step 4: Replan if necessary
-          logger.info('Replanning due to unsatisfactory results', 'ORCHESTRATOR', {
-            feedback: review.feedback,
-            failedSteps: review.failedSteps
-          });
-          
+          logger.info(
+            "Replanning due to unsatisfactory results",
+            "ORCHESTRATOR",
+            {
+              feedback: review.feedback,
+              failedSteps: review.failedSteps,
+            },
+          );
+
           plan = await this.replan(query, plan, review);
           attempts++;
         } else {
@@ -89,17 +103,24 @@ export class MasterOrchestrator {
 
       // Step 5: Format and return final response
       const result = this.formatResponse(executionResult);
-      
-      logger.info('Query processing completed', 'ORCHESTRATOR', {
-        success: result.metadata?.['successfulSteps'] === result.metadata?.['totalSteps'],
+
+      logger.info("Query processing completed", "ORCHESTRATOR", {
+        success:
+          result.metadata?.["successfulSteps"] ===
+          result.metadata?.["totalSteps"],
         attempts: attempts + 1,
-        totalSteps: result.metadata?.['totalSteps']
+        totalSteps: result.metadata?.["totalSteps"],
       });
-      
+
       perf.end({ success: true });
       return result;
     } catch (error) {
-      logger.error('Query processing failed', 'ORCHESTRATOR', { query: query.text }, error as Error);
+      logger.error(
+        "Query processing failed",
+        "ORCHESTRATOR",
+        { query: query.text },
+        error as Error,
+      );
       perf.end({ success: false });
       throw error;
     }
@@ -135,17 +156,17 @@ export class MasterOrchestrator {
     `;
 
     const response = await this.llm.generate(prompt, {
-      format: 'json',
+      format: "json",
       temperature: 0.3,
-      maxTokens: 2000
+      maxTokens: 2000,
     });
     return this.parsePlan(response, query);
   }
 
   private async replan(
-    query: Query, 
-    originalPlan: Plan, 
-    review: ReviewResult
+    query: Query,
+    originalPlan: Plan,
+    review: ReviewResult,
   ): Promise<Plan> {
     const prompt = `
       The original plan did not satisfy the requirements.
@@ -165,9 +186,9 @@ export class MasterOrchestrator {
     `;
 
     const response = await this.llm.generate(prompt, {
-      format: 'json',
+      format: "json",
       temperature: 0.3,
-      maxTokens: 2000
+      maxTokens: 2000,
     });
     return this.parsePlan(response, query);
   }
@@ -177,19 +198,21 @@ export class MasterOrchestrator {
       // Extract JSON from the response
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('No valid JSON found in response');
+        throw new Error("No valid JSON found in response");
       }
-      
+
       const parsed = JSON.parse(jsonMatch[0]);
-      
+
       // Validate the plan structure
       if (!parsed.steps || !Array.isArray(parsed.steps)) {
-        throw new Error('Invalid plan structure: missing steps array');
+        throw new Error("Invalid plan structure: missing steps array");
       }
-      
+
       return {
+        id: `plan-${Date.now()}`,
         steps: parsed.steps.map((step: any) => ({
           id: step.id || `step-${Date.now()}-${Math.random()}`,
+          task: step.task || step.description,
           description: step.description,
           agentType: step.agentType,
           requiresTool: step.requiresTool || false,
@@ -197,22 +220,26 @@ export class MasterOrchestrator {
           ragQuery: step.ragQuery,
           expectedOutput: step.expectedOutput,
           dependencies: step.dependencies || [],
-          parameters: step.parameters || {}
-        }))
+          parameters: step.parameters || {},
+        })),
       };
     } catch (error) {
-      console.error('Failed to parse plan:', error);
+      console.error("Failed to parse plan:", error);
       // Return a fallback plan
       return {
-        steps: [{
-          id: 'fallback-1',
-          description: 'Process query with general approach',
-          agentType: 'ResearchAgent',
-          requiresTool: false,
-          ragQuery: query?.text || 'General query processing',
-          expectedOutput: 'General response to query',
-          dependencies: []
-        }]
+        id: `plan-fallback-${Date.now()}`,
+        steps: [
+          {
+            id: "fallback-1",
+            task: "Process query with general approach",
+            description: "Process query with general approach",
+            agentType: "ResearchAgent",
+            requiresTool: false,
+            ragQuery: query?.text || "General query processing",
+            expectedOutput: "General response to query",
+            dependencies: [],
+          },
+        ],
       };
     }
   }
@@ -220,18 +247,19 @@ export class MasterOrchestrator {
   private formatResponse(executionResult: ExecutionResult): ExecutionResult {
     // Consolidate results into a coherent response
     const summary = executionResult.results
-      .map(result => result.output)
-      .filter(output => output)
-      .join('\n\n');
+      .map((result) => result.output)
+      .filter((output) => output)
+      .join("\n\n");
 
     return {
       ...executionResult,
       summary,
       metadata: {
         totalSteps: executionResult.results.length,
-        successfulSteps: executionResult.results.filter(r => r.success).length,
-        timestamp: new Date().toISOString()
-      }
+        successfulSteps: executionResult.results.filter((r) => r.success)
+          .length,
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 
@@ -240,7 +268,7 @@ export class MasterOrchestrator {
     await Promise.all([
       this.agentRegistry.initialize(),
       this.ragSystem.initialize(),
-      this.llm.initialize()
+      this.llm.initialize(),
     ]);
   }
 }

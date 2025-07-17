@@ -11,13 +11,7 @@ import { WebSocketServer } from "ws";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import appConfig from "../config/app.config";
 import type { Express } from "express";
-import { 
-  apiRateLimiter, 
-  chatRateLimiter, 
-  agentRateLimiter,
-  strictRateLimiter,
-  fileOperationRateLimiter 
-} from './middleware/rateLimiter';
+import { apiRateLimiter } from "./middleware/rateLimiter";
 
 const app: Express = express();
 const PORT = appConfig.api.port;
@@ -131,7 +125,7 @@ app.use(
 );
 
 // Static file serving for UI in production
-if (process.env['NODE_ENV'] === "production") {
+if (process.env["NODE_ENV"] === "production") {
   app.use(express.static("dist/client"));
   app.get("*", (_req, res) => {
     res.sendFile("index.html", { root: "dist/client" });
@@ -154,14 +148,15 @@ const wss = new WebSocketServer({
 const wsHandler = applyWSSHandler({
   wss,
   router: appRouter,
-  createContext: ({ req }) => createContext({ 
-    req, 
-    res: {
-      json: () => {},
-      status: () => ({ json: () => {} }),
-      send: () => {}
-    } as any 
-  }),
+  createContext: ({ req }) =>
+    createContext({
+      req: req as any,
+      res: {
+        json: () => {},
+        status: () => ({ json: () => {} }),
+        send: () => {},
+      } as any,
+    }),
 });
 
 console.log(
