@@ -54,8 +54,8 @@ const upload = multer({
 });
 
 // Middleware to handle file uploads in tRPC context
-export const fileUploadMiddleware = upload.single("file");
-export const multiFileUploadMiddleware = upload.array("files", 10);
+export const fileUploadMiddleware: ReturnType<typeof upload.single> = upload.single("file");
+export const multiFileUploadMiddleware: ReturnType<typeof upload.array> = upload.array("files", 10);
 
 export const ragRouter: Router<any> = router({
   // Upload a document

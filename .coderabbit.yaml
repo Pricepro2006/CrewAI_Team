@@ -21,7 +21,7 @@ reviews:
     base_branches:
       - main
       - develop
-      - "feature/**"
+      - "feature/.*"
 
   # Specific to our tech stack
   path_filters:
@@ -93,13 +93,23 @@ chat:
 knowledge_base:
   # Project-specific patterns to recognize
   learnings:
-    - "This is a TypeScript-based AI Agent orchestration system"
-    - "Uses tRPC v10 for type-safe API communication"
-    - "Implements Master Orchestrator pattern with specialized agents"
-    - "Integrates with Ollama for local LLM deployment"
-    - "Uses ChromaDB for vector storage and RAG capabilities"
-    - "Follows security-first approach with comprehensive middleware"
-    - "Implements real-time updates via WebSocket subscriptions"
-    - "Uses React with Vite for frontend, not Next.js"
-    - "Database layer uses SQLite with better-sqlite3"
-    - "Testing uses Vitest for unit tests and Playwright for E2E"
+    - pattern: "TypeScript AI Agent System"
+      description: "This is a TypeScript-based AI Agent orchestration system"
+    - pattern: "tRPC v10 Usage"
+      description: "Uses tRPC v10 for type-safe API communication"
+    - pattern: "Master Orchestrator Pattern"
+      description: "Implements Master Orchestrator pattern with specialized agents"
+    - pattern: "Ollama Integration"
+      description: "Integrates with Ollama for local LLM deployment"
+    - pattern: "ChromaDB RAG"
+      description: "Uses ChromaDB for vector storage and RAG capabilities"
+    - pattern: "Security-First Approach"
+      description: "Follows security-first approach with comprehensive middleware"
+    - pattern: "WebSocket Real-time"
+      description: "Implements real-time updates via WebSocket subscriptions"
+    - pattern: "React with Vite"
+      description: "Uses React with Vite for frontend, not Next.js"
+    - pattern: "SQLite Database"
+      description: "Database layer uses SQLite with better-sqlite3"
+    - pattern: "Testing Stack"
+      description: "Testing uses Vitest for unit tests and Playwright for E2E"

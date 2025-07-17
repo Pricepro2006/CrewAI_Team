@@ -8,13 +8,14 @@ import {
   createInputValidation,
   sanitizationSchemas,
 } from "../middleware/security";
+// Import rate limiters from centralized middleware index (avoids circular dependency)
 import {
   chatProcedureRateLimiter,
   agentProcedureRateLimiter,
   taskProcedureRateLimiter,
   ragProcedureRateLimiter,
   strictProcedureRateLimiter,
-} from "../middleware/trpcRateLimiter";
+} from "../middleware/index";
 import { logger } from "../../utils/logger";
 import { z } from "zod";
 
@@ -193,8 +194,7 @@ const batchOperationMiddleware = t.middleware(async ({ next, ctx }) => {
   });
 });
 
-export const batchProcedure: ReturnType<typeof protectedProcedure.use> =
-  protectedProcedure.use(batchOperationMiddleware);
+export const batchProcedure = protectedProcedure.use(batchOperationMiddleware);
 
 // Custom error handlers for different scenarios
 export function createCustomErrorHandler(errorType: string) {

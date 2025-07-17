@@ -6,6 +6,7 @@ import { TaskService } from "../services/TaskService";
 import { MaestroFramework } from "../../core/maestro/MaestroFramework";
 import {
   UserService,
+  UserRole,
   type User as DBUser,
   type JWTPayload,
 } from "../services/UserService";
@@ -56,7 +57,14 @@ async function initializeServices() {
   }
 
   if (!maestroFramework) {
-    maestroFramework = new MaestroFramework();
+    maestroFramework = new MaestroFramework({
+      maxConcurrentTasks: 5,
+      taskTimeout: 300000, // 5 minutes
+      queueConfig: {
+        maxSize: 100,
+        strategy: 'fifo',
+      },
+    });
     await maestroFramework.initialize();
   }
 
@@ -184,7 +192,7 @@ export async function createContext({ req, res }: CreateExpressContextOptions) {
       id: `guest-${ip.replace(/\./g, "-")}-${Date.now()}`,
       email: "",
       username: "guest",
-      role: "user", // Default to user role from UserRole enum
+      role: UserRole.USER, // Default to user role from UserRole enum
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

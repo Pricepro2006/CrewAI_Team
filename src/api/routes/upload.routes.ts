@@ -1,4 +1,5 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import type { Request, Response } from "express";
 import multer from "multer";
 import { logger } from "../../utils/logger";
 import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator";
@@ -84,7 +85,7 @@ async function getOrchestrator() {
   return masterOrchestrator;
 }
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
 
 // Single file upload endpoint
 router.post(
@@ -116,7 +117,7 @@ router.post(
 
       logger.info("File uploaded successfully", "UPLOAD", { documentId });
 
-      res.json({
+      return res.json({
         success: true,
         documentId,
         filename: req.file.originalname,
@@ -125,7 +126,7 @@ router.post(
       });
     } catch (error) {
       logger.error("File upload failed", "UPLOAD", { error });
-      res.status(500).json({
+      return res.status(500).json({
         error: "Upload failed",
         message: error instanceof Error ? error.message : "Unknown error",
       });
@@ -183,7 +184,7 @@ router.post(
         failed: errors.length,
       });
 
-      res.json({
+      return res.json({
         success: errors.length === 0,
         uploaded: results.length,
         failed: errors.length,
@@ -192,7 +193,7 @@ router.post(
       });
     } catch (error) {
       logger.error("Batch upload failed", "UPLOAD", { error });
-      res.status(500).json({
+      return res.status(500).json({
         error: "Batch upload failed",
         message: error instanceof Error ? error.message : "Unknown error",
       });

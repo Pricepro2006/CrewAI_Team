@@ -81,7 +81,7 @@ export const taskRouter: Router<any> = router({
       }
 
       // Transform to API format
-      return tasks.map((task) => ({
+      return tasks.map((task: any) => ({
         id: task.id,
         type: task.task.type,
         status: task.status,

@@ -23,6 +23,8 @@
   overflow: hidden;
   background-color: var(--bg-primary);
   padding: 0;
+  margin-left: 0;
+  height: 100vh;
 }
 
 /* Page transitions */

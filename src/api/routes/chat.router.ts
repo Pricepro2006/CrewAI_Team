@@ -39,7 +39,7 @@ export const chatRouter = createFeatureRouter(
   "chat",
   router({
     // Create a new conversation
-    create: chatProcedure
+    create: publicProcedure
       .input(chatSchemas.message)
       .mutation(async ({ input, ctx }) => {
         logger.info("Creating new chat conversation", "CHAT", {
@@ -94,7 +94,7 @@ export const chatRouter = createFeatureRouter(
       }),
 
     // Send a message in an existing conversation
-    message: chatProcedure
+    message: publicProcedure
       .input(
         z.object({
           conversationId: commonSchemas.id,
@@ -235,7 +235,7 @@ export const chatRouter = createFeatureRouter(
         // Use first few messages to generate title
         const messages = conversation.messages.slice(0, 4);
         const context = messages
-          .map((m) => `${m.role}: ${m.content}`)
+          .map((m: any) => `${m.role}: ${m.content}`)
           .join("\n");
 
         const prompt = `

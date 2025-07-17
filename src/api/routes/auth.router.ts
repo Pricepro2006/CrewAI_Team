@@ -4,7 +4,7 @@ import {
   publicProcedure,
   protectedProcedure,
   adminProcedure,
-} from "../trpc";
+} from "../trpc/enhanced-router";
 import { TRPCError } from "@trpc/server";
 import { UserService, UserRole } from "../services/UserService";
 import { logger } from "../../utils/logger";

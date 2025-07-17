@@ -67,12 +67,12 @@ async function checkOllamaHealth(): Promise<{
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      const data = await response.json();
+      const data = await response.json() as { models?: Array<{ name: string }> };
       return {
         status: "connected",
         details: {
           modelsCount: data.models?.length || 0,
-          models: data.models?.map((m: any) => m.name) || [],
+          models: data.models?.map((m) => m.name) || [],
         },
       };
     }
@@ -116,7 +116,7 @@ async function checkChromaDBHealth(): Promise<{
           { signal: controller.signal },
         );
         if (versionResponse.ok) {
-          const versionData = await versionResponse.json();
+          const versionData = await versionResponse.json() as { version?: string };
           return {
             status: "connected",
             details: { version: versionData.version },

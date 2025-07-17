@@ -7,7 +7,7 @@ export const agentRouter: Router<any> = router({
   list: publicProcedure.query(async ({ ctx }) => {
     const types = ctx.agentRegistry.getRegisteredTypes();
 
-    return types.map((type) => ({
+    return types.map((type: string) => ({
       type,
       available: true,
       description: getAgentDescription(type),

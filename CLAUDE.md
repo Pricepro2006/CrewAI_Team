@@ -38,11 +38,9 @@ pnpm approve-builds  # Select all packages when prompted
 
 # Development servers
 pnpm dev:client     # Frontend only (recommended due to ESM issues)
+pnpm dev:server     # Backend server only
 pnpm dev:alt        # Alternative script that handles ESM better
 pnpm dev           # Full dev (may have issues with Node.js v22)
-
-# For backend development with mock data
-node --import tsx --experimental-specifier-resolution=node src/api/mock-server-v2.ts
 ```
 
 ### Building & Production

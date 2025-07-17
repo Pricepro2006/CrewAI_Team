@@ -11,16 +11,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
   const navItems = [
     {
       path: '/',
-      label: 'Chat',
+      label: 'Dashboard',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M8 12H8.01M12 12H12.01M16 12H16.01M21 12C21 16.418 16.97 20 12 20C10.5286 20.005 9.07479 19.6808 7.745 19.051L3 20L4.395 16.28C3.512 15.042 3 13.574 3 12C3 7.582 7.03 4 12 4C16.97 4 21 7.582 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M3 13H11V3H3V13ZM3 21H11V15H3V21ZM13 21H21V11H13V21ZM13 3V9H21V3H13Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       ),
     },
     {
-      path: '/agents',
-      label: 'Agents',
+      path: '/architecture-expert',
+      label: 'Architecture Expert',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 2L2 7V12C2 16.5 4.23 20.68 7.62 21.94C9.17 22.55 10.5 22 12 22C13.5 22 14.83 22.55 16.38 21.94C19.77 20.68 22 16.5 22 12V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -28,11 +28,56 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
       ),
     },
     {
-      path: '/knowledge',
-      label: 'Knowledge',
+      path: '/database-expert',
+      label: 'Database Expert',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="12" cy="5" rx="9" ry="3" stroke="currentColor" strokeWidth="2"/>
+          <path d="M21 12C21 13.66 16.97 15 12 15S3 13.66 3 12" stroke="currentColor" strokeWidth="2"/>
+          <path d="M3 5V19C3 20.66 7.03 22 12 22S21 20.66 21 19V5" stroke="currentColor" strokeWidth="2"/>
+        </svg>
+      ),
+    },
+    {
+      path: '/web-scraping',
+      label: 'Web Scraping',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 12C21 16.97 16.97 21 12 21S3 16.97 3 12S7.03 3 12 3S21 7.03 21 12Z" stroke="currentColor" strokeWidth="2"/>
+          <path d="M3.6 9H20.4" stroke="currentColor" strokeWidth="2"/>
+          <path d="M3.6 15H20.4" stroke="currentColor" strokeWidth="2"/>
+          <path d="M12 3C13.5 5.5 13.5 8.5 12 12C10.5 15.5 10.5 18.5 12 21" stroke="currentColor" strokeWidth="2"/>
+          <path d="M12 3C10.5 5.5 10.5 8.5 12 12C13.5 15.5 13.5 18.5 12 21" stroke="currentColor" strokeWidth="2"/>
+        </svg>
+      ),
+    },
+    {
+      path: '/knowledge-base',
+      label: 'Knowledge Base',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M7 3.5A2.5 2.5 0 0 1 9.5 1H12.5A2.5 2.5 0 0 1 15 3.5V19.5A2.5 2.5 0 0 1 12.5 22H9.5A2.5 2.5 0 0 1 7 19.5V3.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+    },
+    {
+      path: '/vector-search',
+      label: 'Vector Search',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+          <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2"/>
+          <path d="M11 6V16" stroke="currentColor" strokeWidth="2"/>
+          <path d="M6 11H16" stroke="currentColor" strokeWidth="2"/>
+        </svg>
+      ),
+    },
+    {
+      path: '/professional-dashboard',
+      label: 'Professional Dashboard',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7V12C2 16.5 4.23 20.68 7.62 21.94C9.17 22.55 10.5 22 12 22C13.5 22 14.83 22.55 16.38 21.94C19.77 20.68 22 16.5 22 12V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       ),
     },
@@ -51,7 +96,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
   return (
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        <h2 className="sidebar-title">{!isCollapsed && 'CrewAI Team'}</h2>
+        <h2 className="sidebar-title">{!isCollapsed && 'TypeScript AI'}</h2>
+        <div className="sidebar-subtitle">{!isCollapsed && 'Enterprise Assistant'}</div>
         <button className="sidebar-toggle" onClick={onToggle} aria-label="Toggle sidebar">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

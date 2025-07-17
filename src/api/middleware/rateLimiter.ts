@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import type { Request, Response } from "express";
 import { appConfig } from "../../config/app.config";
 import { logger } from "../../utils/logger";
@@ -20,8 +20,8 @@ export const createRateLimiter = (options: {
     max = appConfig.security.rateLimiting.maxRequests,
     message = "Too many requests, please try again later.",
     keyGenerator = (req: Request) => {
-      // Use IP address by default, but can be customized for authenticated users
-      return req.ip || "unknown";
+      // Use ipKeyGenerator helper for proper IPv6 handling (2025 best practices)
+      return ipKeyGenerator(req.ip || "unknown");
     },
     handler,
   } = options;
@@ -99,9 +99,9 @@ export const chatRateLimiter = createRateLimiter({
   message: "Too many chat messages, please slow down.",
   keyGenerator: (req: Request) => {
     // If we have user authentication, use user ID
-    // Otherwise fall back to IP
+    // Otherwise fall back to IP using ipKeyGenerator for proper IPv6 handling
     const userId = (req as any).user?.id;
-    return userId || req.ip || "unknown";
+    return userId || ipKeyGenerator(req.ip || "unknown");
   },
 });
 

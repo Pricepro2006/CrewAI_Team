@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import type { AppRouter } from "../api/trpc/router";
 import { ChatInterface } from "./components/Chat/ChatInterface";
 import { MainLayout } from "./components/Layout/MainLayout";
+import { Dashboard } from "./components/Dashboard/Dashboard";
 import "./App.css";
 
 // Create tRPC client
@@ -57,11 +58,15 @@ function App() {
         <Router>
           <Routes>
             <Route path="/" element={<MainLayout />}>
-              <Route index element={<ChatInterface />} />
+              <Route index element={<Dashboard />} />
               <Route path="chat" element={<ChatInterface />} />
               <Route path="chat/:conversationId" element={<ChatInterface />} />
-              <Route path="agents" element={<AgentDashboard />} />
-              <Route path="knowledge" element={<KnowledgeBase />} />
+              <Route path="architecture-expert" element={<ArchitectureExpert />} />
+              <Route path="database-expert" element={<DatabaseExpert />} />
+              <Route path="web-scraping" element={<WebScraping />} />
+              <Route path="knowledge-base" element={<KnowledgeBase />} />
+              <Route path="vector-search" element={<VectorSearch />} />
+              <Route path="professional-dashboard" element={<ProfessionalDashboard />} />
               <Route path="settings" element={<Settings />} />
             </Route>
           </Routes>
@@ -72,11 +77,29 @@ function App() {
 }
 
 // Placeholder components
-function AgentDashboard() {
+function ArchitectureExpert() {
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Agent Dashboard</h1>
-      <p>Monitor and manage your AI agents</p>
+      <h1 className="text-2xl font-bold mb-4">Architecture Expert</h1>
+      <p>Design and review system architectures</p>
+    </div>
+  );
+}
+
+function DatabaseExpert() {
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Database Expert</h1>
+      <p>Database design and optimization</p>
+    </div>
+  );
+}
+
+function WebScraping() {
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Web Scraping</h1>
+      <p>Extract data from websites</p>
     </div>
   );
 }
@@ -86,6 +109,24 @@ function KnowledgeBase() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Knowledge Base</h1>
       <p>Manage your RAG documents and embeddings</p>
+    </div>
+  );
+}
+
+function VectorSearch() {
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Vector Search</h1>
+      <p>Search through vector embeddings</p>
+    </div>
+  );
+}
+
+function ProfessionalDashboard() {
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Professional Dashboard</h1>
+      <p>Advanced enterprise features</p>
     </div>
   );
 }

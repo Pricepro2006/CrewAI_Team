@@ -249,7 +249,7 @@ export class UserService {
       LIMIT 1
     `,
       )
-      .get(payload.userId);
+      .get(payload.userId) as { id: string; user_id: string; token_hash: string; expires_at: string; created_at: string; revoked_at: string | null } | undefined;
 
     if (!storedToken) {
       throw new Error("Invalid refresh token");

@@ -126,7 +126,7 @@ app.use(
     onError({ error, type, path, input }) {
       console.error("tRPC Error:", {
         type,
-        path,
+        path: path || 'unknown',
         error: error.message,
         input,
       });
@@ -165,7 +165,7 @@ const wss = new WebSocketServer({
 const wsHandler = applyWSSHandler({
   wss,
   router: appRouter,
-  createContext: ({ req }) =>
+  createContext: ({ req }: { req: any }) =>
     createContext({
       req: req as any,
       res: {
