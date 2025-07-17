@@ -14,6 +14,7 @@ import type { Express } from "express";
 import { apiRateLimiter } from "./middleware/rateLimiter";
 import { wsService } from "./services/WebSocketService";
 import { logger } from "../utils/logger";
+import uploadRoutes from "./routes/upload.routes";
 
 const app: Express = express();
 const PORT = appConfig.api.port;
@@ -108,6 +109,9 @@ app.get("/health", async (_req, res) => {
     services,
   });
 });
+
+// File upload routes (before tRPC to handle multipart forms)
+app.use("/api", uploadRoutes);
 
 // tRPC middleware
 app.use(
