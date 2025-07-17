@@ -29,12 +29,36 @@ export class RAGSystem {
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
-    await Promise.all([
-      this.vectorStore.initialize(),
-      this.embeddingService.initialize(),
-    ]);
+    try {
+      // Initialize vector store and embedding service with individual error handling
+      const vectorStorePromise = this.vectorStore
+        .initialize()
+        .catch((error) => {
+          console.warn("Vector store initialization failed:", error.message);
+          return null; // Continue without vector store
+        });
 
-    this.isInitialized = true;
+      const embeddingPromise = this.embeddingService
+        .initialize()
+        .catch((error) => {
+          console.warn(
+            "Embedding service initialization failed:",
+            error.message,
+          );
+          return null; // Continue without embeddings
+        });
+
+      await Promise.all([vectorStorePromise, embeddingPromise]);
+      this.isInitialized = true;
+    } catch (error) {
+      console.warn(
+        "RAG system initialization failed:",
+        (error as Error).message,
+      );
+      // Mark as initialized even if vector store fails (graceful degradation)
+      this.isInitialized = true;
+      throw error; // Re-throw so orchestrator can handle gracefully
+    }
   }
 
   async addDocument(

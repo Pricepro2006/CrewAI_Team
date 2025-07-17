@@ -74,8 +74,10 @@ export type {
 } from "../shared/types";
 
 export interface MasterOrchestratorConfig {
+  model?: string;
   ollamaUrl: string;
-  rag: RAGConfig;
+  rag?: RAGConfig;
+  database?: any; // For testing with in-memory database
   agents?: AgentConfig[];
   maestro?: MaestroConfig;
 }

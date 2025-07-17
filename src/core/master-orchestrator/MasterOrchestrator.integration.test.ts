@@ -22,7 +22,7 @@ describe("MasterOrchestrator Integration Tests", () => {
 
     testDb = createTestDatabase();
     orchestrator = new MasterOrchestrator({
-      model: "qwen2.5:0.5b", // Use small model for tests
+      model: "phi3:mini", // Use smallest available model for tests
       ollamaUrl: process.env.OLLAMA_URL || "http://localhost:11434",
       database: testDb,
     });
