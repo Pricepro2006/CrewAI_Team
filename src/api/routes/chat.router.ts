@@ -255,5 +255,105 @@ export const chatRouter = createFeatureRouter(
 
         return { title: title.trim() };
       }),
+
+    // Search conversations
+    search: publicProcedure
+      .input(
+        z.object({
+          query: z.string().min(1).max(100),
+          limit: z.number().min(1).max(50).default(20),
+        }),
+      )
+      .query(async ({ input, ctx }) => {
+        logger.info("Searching conversations", "CHAT", {
+          query: input.query,
+          limit: input.limit,
+          userId: ctx.user?.id,
+        });
+
+        const results = await ctx.conversationService.search(
+          input.query,
+          input.limit,
+        );
+
+        logger.info("Search completed", "CHAT", {
+          query: input.query,
+          resultsCount: results.length,
+        });
+
+        return results;
+      }),
+
+    // Get recent conversations
+    recent: publicProcedure
+      .input(
+        z.object({
+          days: z.number().min(1).max(30).default(7),
+          limit: z.number().min(1).max(100).default(50),
+        }),
+      )
+      .query(async ({ input, ctx }) => {
+        return await ctx.conversationService.getRecentConversations(
+          input.days,
+          input.limit,
+        );
+      }),
+
+    // Get conversation statistics
+    stats: publicProcedure.query(async ({ ctx }) => {
+      return await ctx.conversationService.getConversationStats();
+    }),
+
+    // Export a single conversation
+    export: publicProcedure
+      .input(
+        z.object({
+          conversationId: z.string().uuid(),
+          format: z.enum(["json", "markdown"]).default("json"),
+        }),
+      )
+      .query(async ({ input, ctx }) => {
+        logger.info("Exporting conversation", "CHAT", {
+          conversationId: input.conversationId,
+          format: input.format,
+          userId: ctx.user?.id,
+        });
+
+        const data = await ctx.conversationService.exportConversation(
+          input.conversationId,
+          input.format,
+        );
+
+        return {
+          data,
+          format: input.format,
+          conversationId: input.conversationId,
+          timestamp: new Date().toISOString(),
+        };
+      }),
+
+    // Export all conversations
+    exportAll: publicProcedure
+      .input(
+        z.object({
+          format: z.enum(["json", "csv"]).default("json"),
+        }),
+      )
+      .query(async ({ input, ctx }) => {
+        logger.info("Exporting all conversations", "CHAT", {
+          format: input.format,
+          userId: ctx.user?.id,
+        });
+
+        const data = await ctx.conversationService.exportAllConversations(
+          input.format,
+        );
+
+        return {
+          data,
+          format: input.format,
+          timestamp: new Date().toISOString(),
+        };
+      }),
   }),
 );
