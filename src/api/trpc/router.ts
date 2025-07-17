@@ -25,6 +25,7 @@ import { ragRouter } from "../routes/rag.router";
 import { chatRouter } from "../routes/chat.router";
 import { websocketRouter } from "../routes/websocket.router";
 import { healthRouter } from "../routes/health.router";
+import { dataCollectionRouter } from "../routes/data-collection.router";
 
 // Import the router function from enhanced-router
 import { router as createRouter } from "./enhanced-router";
@@ -37,6 +38,7 @@ export const appRouter = createRouter({
   chat: chatRouter,
   ws: websocketRouter, // Use 'ws' for frontend compatibility
   health: healthRouter, // Health monitoring endpoints
+  dataCollection: dataCollectionRouter, // Bright Data integration
 });
 
 export type AppRouter = typeof appRouter;
