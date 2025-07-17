@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { trpc } from '../../App';
+import { useAgentStatus, useTaskQueue, useSystemHealth } from '../../hooks/useWebSocket';
 import './AgentMonitor.css';
 
 interface AgentStatus {

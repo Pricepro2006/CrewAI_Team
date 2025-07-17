@@ -1,6 +1,7 @@
 import { AgentRegistry } from '../agents/registry/AgentRegistry';
 import { RAGSystem } from '../rag/RAGSystem';
 import type { Plan, PlanStep, ExecutionResult, StepResult, Context, Document as CustomDocument } from './types';
+import { wsService } from '../../api/services/WebSocketService';
 
 export class PlanExecutor {
   constructor(
@@ -15,6 +16,12 @@ export class PlanExecutor {
     // Execute steps in dependency order
     const sortedSteps = this.topologicalSort(plan.steps);
 
+    // Broadcast plan execution start
+    wsService.broadcastPlanUpdate(plan.id, 'executing', {
+      completed: 0,
+      total: sortedSteps.length
+    });
+
     for (const step of sortedSteps) {
       // Check if dependencies are satisfied
       if (!this.areDependenciesSatisfied(step, executedSteps)) {
@@ -28,6 +35,12 @@ export class PlanExecutor {
       }
 
       try {
+        // Broadcast step start
+        wsService.broadcastPlanUpdate(plan.id, 'executing', {
+          completed: executedSteps.size,
+          total: sortedSteps.length,
+          currentStep: step.task
+        });
         // Step 1: Gather context from RAG
         const context = await this.gatherContext(step);
         
@@ -55,8 +68,19 @@ export class PlanExecutor {
       }
     }
 
+    // Broadcast plan completion
+    const success = results.every(r => r.success);
+    wsService.broadcastPlanUpdate(
+      plan.id, 
+      success ? 'completed' : 'failed',
+      {
+        completed: executedSteps.size,
+        total: sortedSteps.length
+      }
+    );
+
     return {
-      success: results.every(r => r.success),
+      success,
       results,
       summary: this.summarizeResults(results)
     };

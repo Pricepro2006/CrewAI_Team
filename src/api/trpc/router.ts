@@ -4,6 +4,7 @@ import { agentRouter } from '../routes/agent.router';
 import { taskRouter } from '../routes/task.router';
 import { ragRouter } from '../routes/rag.router';
 import { chatRouter } from '../routes/chat.router';
+import { websocketRouter } from '../routes/websocket.router';
 
 const t = initTRPC.context<typeof createContext>().create({
   errorFormatter({ shape, error }) {
@@ -42,7 +43,8 @@ export const appRouter = router({
   agent: agentRouter,
   task: taskRouter,
   rag: ragRouter,
-  chat: chatRouter
+  chat: chatRouter,
+  ws: websocketRouter
 });
 
 export type AppRouter = typeof appRouter;

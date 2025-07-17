@@ -5,6 +5,7 @@ import { PlanExecutor } from './PlanExecutor';
 import { PlanReviewer } from './PlanReviewer';
 import type { Plan, ExecutionResult, Query, MasterOrchestratorConfig, ReviewResult } from './types';
 import { logger, createPerformanceMonitor } from '../../utils/logger';
+import { wsService } from '../../api/services/WebSocketService';
 
 export class MasterOrchestrator {
   private llm: OllamaProvider;
@@ -41,6 +42,12 @@ export class MasterOrchestrator {
     try {
       // Step 1: Create initial plan
       let plan = await this.createPlan(query);
+      
+      // Broadcast plan creation
+      wsService.broadcastPlanUpdate(plan.id, 'created', {
+        completed: 0,
+        total: plan.steps.length
+      });
       
       // Step 2: Execute plan with replan loop
       let executionResult: ExecutionResult;

@@ -1,6 +1,8 @@
 import { OllamaProvider } from '../../llm/OllamaProvider';
 import { BaseTool } from '../../tools/base/BaseTool';
 import type { AgentCapability, AgentContext, AgentResult, ToolExecutionParams } from './AgentTypes';
+import { wsService } from '../../../api/services/WebSocketService';
+import { v4 as uuidv4 } from 'uuid';
 
 export abstract class BaseAgent {
   protected llm: OllamaProvider;
