@@ -11,6 +11,13 @@ import { WebSocketServer } from "ws";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import appConfig from "../config/app.config";
 import type { Express } from "express";
+import { 
+  apiRateLimiter, 
+  chatRateLimiter, 
+  agentRateLimiter,
+  strictRateLimiter,
+  fileOperationRateLimiter 
+} from './middleware/rateLimiter';
 
 const app: Express = express();
 const PORT = appConfig.api.port;
@@ -19,6 +26,9 @@ const PORT = appConfig.api.port;
 app.use(helmet());
 app.use(cors(appConfig.api.cors));
 app.use(express.json());
+
+// Apply general rate limiting to all routes
+app.use(apiRateLimiter);
 
 // Health check endpoint
 app.get("/health", async (_req, res) => {

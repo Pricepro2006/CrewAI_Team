@@ -3,6 +3,7 @@ import { router, publicProcedure } from '../trpc/router';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import type { Router } from '@trpc/server';
+import { chatProcedureRateLimiter } from '../middleware/trpcRateLimiter';
 
 // Event emitter for real-time updates
 const chatEvents = new EventEmitter();
@@ -10,6 +11,7 @@ const chatEvents = new EventEmitter();
 export const chatRouter: Router<any> = router({
   // Create a new conversation
   create: publicProcedure
+    .use(chatProcedureRateLimiter)
     .input(z.object({
       message: z.string().min(1).max(5000)
     }))
@@ -51,6 +53,7 @@ export const chatRouter: Router<any> = router({
 
   // Send a message in an existing conversation
   message: publicProcedure
+    .use(chatProcedureRateLimiter)
     .input(z.object({
       conversationId: z.string().uuid(),
       message: z.string().min(1).max(5000)
