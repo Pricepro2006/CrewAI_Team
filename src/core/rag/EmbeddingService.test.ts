@@ -1,284 +1,273 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { EmbeddingService } from './EmbeddingService';
-import type { EmbeddingProvider } from './types';
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { EmbeddingService } from "./EmbeddingService";
+import axios from "axios";
 
-// Mock the Ollama provider
-const mockOllamaProvider: EmbeddingProvider = {
-  generateEmbedding: vi.fn(),
-  generateBatchEmbeddings: vi.fn(),
-};
+// Mock axios
+vi.mock("axios");
+const mockedAxios = vi.mocked(axios);
 
-describe('EmbeddingService', () => {
+describe("EmbeddingService", () => {
   let service: EmbeddingService;
+  let mockAxiosInstance: any;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    // Reset the mocked functions
-    vi.mocked(mockOllamaProvider.generateEmbedding).mockReset();
-    vi.mocked(mockOllamaProvider.generateBatchEmbeddings).mockReset();
-    service = new EmbeddingService(mockOllamaProvider);
+    // Create mock axios instance
+    mockAxiosInstance = {
+      get: vi.fn(),
+      post: vi.fn(),
+    };
+
+    mockedAxios.create.mockReturnValue(mockAxiosInstance);
+
+    service = new EmbeddingService({
+      model: "nomic-embed-text",
+      baseUrl: "http://localhost:11434",
+      dimensions: 768,
+    });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  describe('embedText', () => {
-    it('should generate embeddings for text', async () => {
-      const mockEmbedding = new Array(384).fill(0).map(() => Math.random());
-      vi.mocked(mockOllamaProvider.generateEmbedding).mockResolvedValueOnce(mockEmbedding);
+  describe("initialize", () => {
+    it("should initialize successfully when Ollama is available", async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: {
+          models: [{ name: "nomic-embed-text" }],
+        },
+      });
 
-      const result = await service.embedText('Hello world');
-
-      expect(mockOllamaProvider.generateEmbedding).toHaveBeenCalledWith('Hello world');
-      expect(result).toEqual(mockEmbedding);
-      expect(result).toHaveLength(384);
+      await expect(service.initialize()).resolves.not.toThrow();
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith("/api/tags");
     });
 
-    it('should handle empty text', async () => {
-      const mockEmbedding = new Array(384).fill(0);
-      vi.mocked(mockOllamaProvider.generateEmbedding).mockResolvedValueOnce(mockEmbedding);
+    it("should warn when embedding model is not found", async () => {
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      const result = await service.embedText('');
+      mockAxiosInstance.get.mockResolvedValue({
+        data: {
+          models: [{ name: "other-model" }],
+        },
+      });
 
-      expect(result).toEqual(mockEmbedding);
-    });
-
-    it('should handle provider errors gracefully', async () => {
-      vi.mocked(mockOllamaProvider.generateEmbedding).mockRejectedValueOnce(
-        new Error('Provider error')
+      await service.initialize();
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Embedding model nomic-embed-text not found"),
       );
 
-      await expect(service.embedText('test')).rejects.toThrow('Provider error');
+      consoleSpy.mockRestore();
+    });
+
+    it("should throw error when connection fails", async () => {
+      mockAxiosInstance.get.mockRejectedValue(new Error("Connection failed"));
+
+      await expect(service.initialize()).rejects.toThrow(
+        "Failed to initialize embedding service",
+      );
     });
   });
 
-  describe('embedBatch', () => {
-    it('should generate embeddings for multiple texts', async () => {
-      const texts = ['Hello', 'World', 'Test'];
-      const mockEmbeddings = texts.map(() => 
-        new Array(384).fill(0).map(() => Math.random())
-      );
-      vi.mocked(mockOllamaProvider.generateBatchEmbeddings).mockResolvedValueOnce(mockEmbeddings);
-
-      const result = await service.embedBatch(texts);
-
-      expect(mockOllamaProvider.generateBatchEmbeddings).toHaveBeenCalledWith(texts);
-      expect(result).toHaveLength(3);
-      expect(result[0]).toHaveLength(384);
+  describe("embed", () => {
+    beforeEach(() => {
+      // Mock successful initialization
+      mockAxiosInstance.get.mockResolvedValue({
+        data: { models: [{ name: "nomic-embed-text" }] },
+      });
     });
 
-    it('should handle empty batch', async () => {
-      vi.mocked(mockOllamaProvider.generateBatchEmbeddings).mockResolvedValueOnce([]);
+    it("should generate embeddings for text", async () => {
+      const mockEmbedding = new Array(768).fill(0).map((_, i) => i / 768);
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { embedding: mockEmbedding },
+      });
 
-      const result = await service.embedBatch([]);
+      const result = await service.embed("Hello world");
 
-      expect(result).toEqual([]);
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith("/api/embeddings", {
+        model: "nomic-embed-text",
+        prompt: "Hello world",
+      });
+      expect(result).toEqual(mockEmbedding);
+      expect(result).toHaveLength(768);
     });
 
-    it('should fallback to individual embeddings if batch not supported', async () => {
-      // Provider without batch support
-      const simpleMockProvider: EmbeddingProvider = {
-        generateEmbedding: vi.fn(),
-      };
-      service = new EmbeddingService(simpleMockProvider);
+    it("should handle empty text", async () => {
+      const mockEmbedding = new Array(768).fill(0);
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { embedding: mockEmbedding },
+      });
 
-      const texts = ['Text1', 'Text2'];
-      const mockEmbeddings = texts.map(() => 
-        new Array(384).fill(0).map(() => Math.random())
-      );
-      
-      mockEmbeddings.forEach((embedding, i) => {
-        vi.mocked(simpleMockProvider.generateEmbedding)
-          .mockResolvedValueOnce(embedding);
+      const result = await service.embed("");
+
+      expect(result).toEqual(mockEmbedding);
+    });
+
+    it("should return zero vector on error", async () => {
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      mockAxiosInstance.post.mockRejectedValue(new Error("API error"));
+
+      const result = await service.embed("test");
+
+      expect(result).toEqual(new Array(768).fill(0));
+      expect(result).toHaveLength(768);
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe("embedBatch", () => {
+    beforeEach(() => {
+      // Mock successful initialization
+      mockAxiosInstance.get.mockResolvedValue({
+        data: { models: [{ name: "nomic-embed-text" }] },
+      });
+    });
+
+    it("should generate embeddings for multiple texts", async () => {
+      const mockEmbedding1 = new Array(768).fill(0.1);
+      const mockEmbedding2 = new Array(768).fill(0.2);
+
+      mockAxiosInstance.post
+        .mockResolvedValueOnce({ data: { embedding: mockEmbedding1 } })
+        .mockResolvedValueOnce({ data: { embedding: mockEmbedding2 } });
+
+      const result = await service.embedBatch(["Hello", "World"]);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual(mockEmbedding1);
+      expect(result[1]).toEqual(mockEmbedding2);
+    });
+
+    it("should handle large batches efficiently", async () => {
+      const texts = Array(150).fill("test");
+      const mockEmbedding = new Array(768).fill(0.5);
+
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { embedding: mockEmbedding },
       });
 
       const result = await service.embedBatch(texts);
 
-      expect(simpleMockProvider.generateEmbedding).toHaveBeenCalledTimes(2);
-      expect(result).toHaveLength(2);
+      expect(result).toHaveLength(150);
+      expect(result.every((emb) => emb.length === 768)).toBe(true);
     });
   });
 
-  describe('embedDocument', () => {
-    it('should embed all chunks in a document', async () => {
-      const document = {
-        chunks: [
-          { content: 'Chunk 1', metadata: { chunkIndex: 0, sourceId: 'doc1' } },
-          { content: 'Chunk 2', metadata: { chunkIndex: 1, sourceId: 'doc1' } },
-        ],
-        metadata: {
-          sourceId: 'doc1',
-          contentType: 'text/plain' as const,
-          totalChunks: 2,
-          processedAt: new Date(),
-        },
-      };
-
-      const mockEmbeddings = document.chunks.map(() => 
-        new Array(384).fill(0).map(() => Math.random())
-      );
-      vi.mocked(mockOllamaProvider.generateBatchEmbeddings).mockResolvedValueOnce(mockEmbeddings);
-
-      const result = await service.embedDocument(document);
-
-      expect(result).toHaveLength(2);
-      expect(result[0].chunk).toEqual(document.chunks[0]);
-      expect(result[0].embedding).toEqual(mockEmbeddings[0]);
-      expect(result[1].chunk).toEqual(document.chunks[1]);
-      expect(result[1].embedding).toEqual(mockEmbeddings[1]);
-    });
-
-    it('should handle documents with no chunks', async () => {
-      const document = {
-        chunks: [],
-        metadata: {
-          sourceId: 'empty-doc',
-          contentType: 'text/plain' as const,
-          totalChunks: 0,
-          processedAt: new Date(),
-        },
-      };
-
-      const result = await service.embedDocument(document);
-
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe('similarity calculation', () => {
-    it('should calculate cosine similarity correctly', async () => {
+  describe("cosineSimilarity", () => {
+    it("should calculate similarity between identical vectors", async () => {
       const embedding1 = [1, 0, 0];
       const embedding2 = [1, 0, 0];
-      
-      const similarity = await service.calculateSimilarity(embedding1, embedding2);
-      
-      expect(similarity).toBeCloseTo(1.0, 5); // Same vectors = similarity 1
+
+      const similarity = await service.cosineSimilarity(embedding1, embedding2);
+
+      expect(similarity).toBeCloseTo(1.0, 5);
     });
 
-    it('should handle orthogonal vectors', async () => {
-      const embedding1 = [1, 0];
-      const embedding2 = [0, 1];
-      
-      const similarity = await service.calculateSimilarity(embedding1, embedding2);
-      
-      expect(similarity).toBeCloseTo(0.0, 5); // Orthogonal vectors = similarity 0
-    });
-
-    it('should handle opposite vectors', async () => {
+    it("should calculate similarity between opposite vectors", async () => {
       const embedding1 = [1, 0];
       const embedding2 = [-1, 0];
-      
-      const similarity = await service.calculateSimilarity(embedding1, embedding2);
-      
-      expect(similarity).toBeCloseTo(-1.0, 5); // Opposite vectors = similarity -1
+
+      const similarity = await service.cosineSimilarity(embedding1, embedding2);
+
+      expect(similarity).toBeCloseTo(-1.0, 5);
     });
 
-    it('should handle embeddings of different lengths', async () => {
+    it("should handle embeddings of different lengths", async () => {
       const embedding1 = [1, 0, 0];
       const embedding2 = [1, 0];
-      
-      await expect(service.calculateSimilarity(embedding1, embedding2))
-        .rejects.toThrow('Embeddings must have the same length');
+
+      await expect(
+        service.cosineSimilarity(embedding1, embedding2),
+      ).rejects.toThrow("Embeddings must have the same dimension");
     });
 
-    it('should handle zero vectors', async () => {
+    it("should handle zero vectors", async () => {
       const embedding1 = [0, 0, 0];
       const embedding2 = [1, 0, 0];
-      
-      const similarity = await service.calculateSimilarity(embedding1, embedding2);
-      
-      expect(similarity).toBe(0); // Zero vector similarity is 0
+
+      const similarity = await service.cosineSimilarity(embedding1, embedding2);
+
+      expect(similarity).toBe(0);
     });
   });
 
-  describe('findSimilar', () => {
-    it('should find similar embeddings', async () => {
+  describe("findSimilar", () => {
+    it("should find similar embeddings", async () => {
       const queryEmbedding = [1, 0, 0];
       const embeddings = [
-        { id: '1', embedding: [0.9, 0.1, 0], metadata: {} },
-        { id: '2', embedding: [0, 1, 0], metadata: {} },
-        { id: '3', embedding: [1, 0, 0], metadata: {} },
-        { id: '4', embedding: [-1, 0, 0], metadata: {} },
+        [1, 0, 0], // identical
+        [0.8, 0.6, 0], // similar
+        [0, 1, 0], // orthogonal
+        [-1, 0, 0], // opposite
       ];
 
-      const results = await service.findSimilar(queryEmbedding, embeddings, { topK: 2 });
+      const results = await service.findSimilar(queryEmbedding, embeddings, 3);
 
-      expect(results).toHaveLength(2);
-      expect(results[0].id).toBe('3'); // Exact match
-      expect(results[0].similarity).toBeCloseTo(1.0, 5);
-      expect(results[1].id).toBe('1'); // Close match
-      expect(results[1].similarity).toBeGreaterThan(0.9);
+      expect(results).toHaveLength(3);
+      expect(results[0].index).toBe(0); // most similar
+      expect(results[0].score).toBeCloseTo(1.0, 5);
+      expect(results[1].index).toBe(1); // second most similar
+      expect(results[2].index).toBe(2); // third most similar
     });
 
-    it('should respect similarity threshold', async () => {
+    it("should respect topK parameter", async () => {
       const queryEmbedding = [1, 0, 0];
       const embeddings = [
-        { id: '1', embedding: [0.5, 0.5, 0.5], metadata: {} },
-        { id: '2', embedding: [0, 1, 0], metadata: {} },
-        { id: '3', embedding: [-1, 0, 0], metadata: {} },
+        [1, 0, 0],
+        [0.8, 0.6, 0],
+        [0, 1, 0],
+        [-1, 0, 0],
       ];
 
-      const results = await service.findSimilar(queryEmbedding, embeddings, {
-        topK: 10,
-        threshold: 0.5,
+      const results = await service.findSimilar(queryEmbedding, embeddings, 2);
+
+      expect(results).toHaveLength(2);
+    });
+
+    it("should return all results when topK exceeds available embeddings", async () => {
+      const queryEmbedding = [1, 0, 0];
+      const embeddings = [
+        [1, 0, 0],
+        [0, 1, 0],
+      ];
+
+      const results = await service.findSimilar(queryEmbedding, embeddings, 5);
+
+      expect(results).toHaveLength(2);
+    });
+  });
+
+  describe("utility methods", () => {
+    it("should return correct dimensions", () => {
+      expect(service.getDimensions()).toBe(768);
+    });
+
+    it("should return correct model name", () => {
+      expect(service.getModel()).toBe("nomic-embed-text");
+    });
+  });
+
+  describe("error handling", () => {
+    it("should handle initialization before embed calls", async () => {
+      const mockEmbedding = new Array(768).fill(0.1);
+
+      // Mock initialization response
+      mockAxiosInstance.get.mockResolvedValue({
+        data: { models: [{ name: "nomic-embed-text" }] },
       });
 
-      expect(results.every(r => r.similarity >= 0.5)).toBe(true);
-    });
+      // Mock embed response
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { embedding: mockEmbedding },
+      });
 
-    it('should handle empty embeddings list', async () => {
-      const queryEmbedding = [1, 0, 0];
-      const embeddings: any[] = [];
+      const result = await service.embed("test");
 
-      const results = await service.findSimilar(queryEmbedding, embeddings);
-
-      expect(results).toEqual([]);
-    });
-
-    it('should return all results when topK exceeds available embeddings', async () => {
-      const queryEmbedding = [1, 0, 0];
-      const embeddings = [
-        { id: '1', embedding: [1, 0, 0], metadata: {} },
-        { id: '2', embedding: [0, 1, 0], metadata: {} },
-      ];
-
-      const results = await service.findSimilar(queryEmbedding, embeddings, { topK: 10 });
-
-      expect(results).toHaveLength(2);
-    });
-  });
-
-  describe('performance considerations', () => {
-    it('should handle large embedding dimensions efficiently', async () => {
-      const dimension = 1536; // GPT embedding size
-      const embedding1 = new Array(dimension).fill(0).map(() => Math.random());
-      const embedding2 = new Array(dimension).fill(0).map(() => Math.random());
-
-      const start = Date.now();
-      const similarity = await service.calculateSimilarity(embedding1, embedding2);
-      const duration = Date.now() - start;
-
-      expect(similarity).toBeGreaterThanOrEqual(-1);
-      expect(similarity).toBeLessThanOrEqual(1);
-      expect(duration).toBeLessThan(100); // Should be fast
-    });
-
-    it('should batch process efficiently', async () => {
-      const batchSize = 100;
-      const texts = new Array(batchSize).fill(0).map((_, i) => `Text ${i}`);
-      const mockEmbeddings = texts.map(() => 
-        new Array(384).fill(0).map(() => Math.random())
-      );
-      vi.mocked(mockOllamaProvider.generateBatchEmbeddings).mockResolvedValueOnce(mockEmbeddings);
-
-      const start = Date.now();
-      const result = await service.embedBatch(texts);
-      const duration = Date.now() - start;
-
-      expect(result).toHaveLength(batchSize);
-      expect(mockOllamaProvider.generateBatchEmbeddings).toHaveBeenCalledTimes(1);
-      expect(duration).toBeLessThan(1000); // Should complete quickly
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith("/api/tags");
+      expect(result).toEqual(mockEmbedding);
     });
   });
 });
