@@ -1,177 +1,244 @@
-import { z } from 'zod';
-import { router, publicProcedure } from '../trpc/router';
-import { observable } from '@trpc/server/observable';
-import { EventEmitter } from 'events';
-import type { Router } from '@trpc/server';
-import { chatProcedureRateLimiter } from '../middleware/trpcRateLimiter';
+import { z } from "zod";
+import {
+  router,
+  publicProcedure,
+  protectedProcedure,
+  chatProcedure,
+  commonSchemas,
+  createFeatureRouter,
+} from "../trpc/enhanced-router";
+import { observable } from "@trpc/server/observable";
+import { EventEmitter } from "events";
+import type { Router } from "@trpc/server";
+import { sanitizationSchemas } from "../middleware/security";
+import { logger } from "../../utils/logger";
 
 // Event emitter for real-time updates
 const chatEvents = new EventEmitter();
 
-export const chatRouter: Router<any> = router({
-  // Create a new conversation
-  create: publicProcedure
-    .use(chatProcedureRateLimiter)
-    .input(z.object({
-      message: z.string().min(1).max(5000)
-    }))
-    .mutation(async ({ input, ctx }) => {
-      const conversation = await ctx.conversationService.create();
-      
-      // Process the initial message
-      const result = await ctx.masterOrchestrator.processQuery({
-        text: input.message,
-        conversationId: conversation.id
-      });
+// Enhanced input validation schemas
+const chatSchemas = {
+  message: z.object({
+    message: z.string().min(1).max(5000),
+    conversationId: z.string().uuid().optional(),
+    priority: z.enum(["low", "medium", "high"]).default("medium"),
+  }),
 
-      // Add messages to conversation
-      await ctx.conversationService.addMessage(conversation.id, {
-        role: 'user',
-        content: input.message
-      });
+  conversation: z.object({
+    id: commonSchemas.id,
+  }),
 
-      await ctx.conversationService.addMessage(conversation.id, {
-        role: 'assistant',
-        content: result.summary
-      });
+  messageHistory: z.object({
+    conversationId: commonSchemas.id,
+    page: z.number().min(1).default(1),
+    limit: z.number().min(1).max(100).default(10),
+  }),
+};
 
-      // Emit event for real-time updates
-      chatEvents.emit('message', {
-        conversationId: conversation.id,
-        message: {
-          role: 'assistant',
-          content: result.summary
-        }
-      });
+export const chatRouter = createFeatureRouter(
+  "chat",
+  router({
+    // Create a new conversation
+    create: chatProcedure
+      .input(chatSchemas.message)
+      .mutation(async ({ input, ctx }) => {
+        logger.info("Creating new chat conversation", "CHAT", {
+          userId: ctx.user?.id,
+          messageLength: input.message.length,
+          priority: input.priority,
+          requestId: ctx.requestId,
+        });
+        const conversation = await ctx.conversationService.create();
 
-      return {
-        conversationId: conversation.id,
-        response: result.summary,
-        metadata: result.metadata
-      };
-    }),
+        // Process the initial message
+        const result = await ctx.masterOrchestrator.processQuery({
+          text: input.message,
+          conversationId: conversation.id,
+        });
 
-  // Send a message in an existing conversation
-  message: publicProcedure
-    .use(chatProcedureRateLimiter)
-    .input(z.object({
-      conversationId: z.string().uuid(),
-      message: z.string().min(1).max(5000)
-    }))
-    .mutation(async ({ input, ctx }) => {
-      const conversation = await ctx.conversationService.get(input.conversationId);
-      
-      if (!conversation) {
-        throw new Error('Conversation not found');
-      }
+        // Add messages to conversation
+        await ctx.conversationService.addMessage(conversation.id, {
+          role: "user",
+          content: input.message,
+        });
 
-      // Add user message
-      await ctx.conversationService.addMessage(input.conversationId, {
-        role: 'user',
-        content: input.message
-      });
+        await ctx.conversationService.addMessage(conversation.id, {
+          role: "assistant",
+          content: result.summary,
+        });
 
-      // Process with context
-      const result = await ctx.masterOrchestrator.processQuery({
-        text: input.message,
-        conversationId: input.conversationId,
-        history: conversation.messages
-      });
+        // Emit event for real-time updates
+        chatEvents.emit("message", {
+          conversationId: conversation.id,
+          message: {
+            role: "assistant",
+            content: result.summary,
+          },
+        });
 
-      // Add assistant response
-      await ctx.conversationService.addMessage(input.conversationId, {
-        role: 'assistant',
-        content: result.summary
-      });
+        logger.info("Chat conversation created successfully", "CHAT", {
+          conversationId: conversation.id,
+          userId: ctx.user?.id,
+          responseLength: result.summary.length,
+        });
 
-      // Emit event
-      chatEvents.emit('message', {
-        conversationId: input.conversationId,
-        message: {
-          role: 'assistant',
-          content: result.summary
-        }
-      });
-
-      return {
-        response: result.summary,
-        metadata: result.metadata
-      };
-    }),
-
-  // Get conversation history
-  history: publicProcedure
-    .input(z.object({
-      conversationId: z.string().uuid()
-    }))
-    .query(async ({ input, ctx }) => {
-      const conversation = await ctx.conversationService.get(input.conversationId);
-      
-      if (!conversation) {
-        throw new Error('Conversation not found');
-      }
-
-      return conversation.messages;
-    }),
-
-  // List all conversations
-  list: publicProcedure
-    .input(z.object({
-      limit: z.number().min(1).max(100).default(20),
-      offset: z.number().min(0).default(0)
-    }))
-    .query(async ({ input, ctx }) => {
-      return await ctx.conversationService.list(input.limit, input.offset);
-    }),
-
-  // Delete a conversation
-  delete: publicProcedure
-    .input(z.object({
-      conversationId: z.string().uuid()
-    }))
-    .mutation(async ({ input, ctx }) => {
-      await ctx.conversationService.delete(input.conversationId);
-      return { success: true };
-    }),
-
-  // Subscribe to conversation updates
-  onMessage: publicProcedure
-    .input(z.object({
-      conversationId: z.string().uuid()
-    }))
-    .subscription(({ input }) => {
-      return observable((observer) => {
-        const handler = (data: any) => {
-          if (data.conversationId === input.conversationId) {
-            observer.next(data.message);
-          }
+        return {
+          conversationId: conversation.id,
+          response: result.summary,
+          metadata: {
+            ...result.metadata,
+            requestId: ctx.requestId,
+            timestamp: ctx.timestamp,
+          },
         };
+      }),
 
-        chatEvents.on('message', handler);
+    // Send a message in an existing conversation
+    message: chatProcedure
+      .input(
+        z.object({
+          conversationId: commonSchemas.id,
+          message: z.string().min(1).max(5000),
+        }),
+      )
+      .mutation(async ({ input, ctx }) => {
+        logger.info("Processing chat message", "CHAT", {
+          conversationId: input.conversationId,
+          userId: ctx.user?.id,
+          messageLength: input.message.length,
+          requestId: ctx.requestId,
+        });
+        const conversation = await ctx.conversationService.get(
+          input.conversationId,
+        );
 
-        return () => {
-          chatEvents.off('message', handler);
+        if (!conversation) {
+          throw new Error("Conversation not found");
+        }
+
+        // Add user message
+        await ctx.conversationService.addMessage(input.conversationId, {
+          role: "user",
+          content: input.message,
+        });
+
+        // Process with context
+        const result = await ctx.masterOrchestrator.processQuery({
+          text: input.message,
+          conversationId: input.conversationId,
+          history: conversation.messages,
+        });
+
+        // Add assistant response
+        await ctx.conversationService.addMessage(input.conversationId, {
+          role: "assistant",
+          content: result.summary,
+        });
+
+        // Emit event
+        chatEvents.emit("message", {
+          conversationId: input.conversationId,
+          message: {
+            role: "assistant",
+            content: result.summary,
+          },
+        });
+
+        return {
+          response: result.summary,
+          metadata: result.metadata,
         };
-      });
-    }),
+      }),
 
-  // Generate a title for the conversation
-  generateTitle: publicProcedure
-    .input(z.object({
-      conversationId: z.string().uuid()
-    }))
-    .mutation(async ({ input, ctx }) => {
-      const conversation = await ctx.conversationService.get(input.conversationId);
-      
-      if (!conversation) {
-        throw new Error('Conversation not found');
-      }
+    // Get conversation history
+    history: publicProcedure
+      .input(
+        z.object({
+          conversationId: z.string().uuid(),
+        }),
+      )
+      .query(async ({ input, ctx }) => {
+        const conversation = await ctx.conversationService.get(
+          input.conversationId,
+        );
 
-      // Use first few messages to generate title
-      const messages = conversation.messages.slice(0, 4);
-      const context = messages.map(m => `${m.role}: ${m.content}`).join('\n');
+        if (!conversation) {
+          throw new Error("Conversation not found");
+        }
 
-      const prompt = `
+        return conversation.messages;
+      }),
+
+    // List all conversations
+    list: publicProcedure
+      .input(
+        z.object({
+          limit: z.number().min(1).max(100).default(20),
+          offset: z.number().min(0).default(0),
+        }),
+      )
+      .query(async ({ input, ctx }) => {
+        return await ctx.conversationService.list(input.limit, input.offset);
+      }),
+
+    // Delete a conversation
+    delete: publicProcedure
+      .input(
+        z.object({
+          conversationId: z.string().uuid(),
+        }),
+      )
+      .mutation(async ({ input, ctx }) => {
+        await ctx.conversationService.delete(input.conversationId);
+        return { success: true };
+      }),
+
+    // Subscribe to conversation updates
+    onMessage: publicProcedure
+      .input(
+        z.object({
+          conversationId: z.string().uuid(),
+        }),
+      )
+      .subscription(({ input }) => {
+        return observable((observer) => {
+          const handler = (data: any) => {
+            if (data.conversationId === input.conversationId) {
+              observer.next(data.message);
+            }
+          };
+
+          chatEvents.on("message", handler);
+
+          return () => {
+            chatEvents.off("message", handler);
+          };
+        });
+      }),
+
+    // Generate a title for the conversation
+    generateTitle: publicProcedure
+      .input(
+        z.object({
+          conversationId: z.string().uuid(),
+        }),
+      )
+      .mutation(async ({ input, ctx }) => {
+        const conversation = await ctx.conversationService.get(
+          input.conversationId,
+        );
+
+        if (!conversation) {
+          throw new Error("Conversation not found");
+        }
+
+        // Use first few messages to generate title
+        const messages = conversation.messages.slice(0, 4);
+        const context = messages
+          .map((m) => `${m.role}: ${m.content}`)
+          .join("\n");
+
+        const prompt = `
         Generate a short, descriptive title (max 50 characters) for this conversation:
         
         ${context}
@@ -179,10 +246,14 @@ export const chatRouter: Router<any> = router({
         Return only the title, no quotes or explanation.
       `;
 
-      const title = await ctx.masterOrchestrator['llm'].generate(prompt);
-      
-      await ctx.conversationService.updateTitle(input.conversationId, title.trim());
+        const title = await ctx.masterOrchestrator["llm"].generate(prompt);
 
-      return { title: title.trim() };
-    })
-});
+        await ctx.conversationService.updateTitle(
+          input.conversationId,
+          title.trim(),
+        );
+
+        return { title: title.trim() };
+      }),
+  }),
+);

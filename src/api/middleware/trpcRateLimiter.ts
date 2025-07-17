@@ -1,7 +1,6 @@
-import type { MiddlewareFunction } from "@trpc/server";
-import type { Context } from "../trpc/context";
 import { TRPCError } from "@trpc/server";
-// import { appConfig } from '../../config/app.config';
+import { middleware } from "../trpc/enhanced-router";
+import type { Context } from "../trpc/context";
 import { logger } from "../../utils/logger";
 
 // Rate limit store for tRPC procedures
@@ -28,12 +27,10 @@ setInterval(() => {
   }
 }, 60 * 1000); // Every minute
 
-export function createTRPCRateLimiter(
-  options: RateLimitOptions,
-): MiddlewareFunction<Context, Context> {
+export function createTRPCRateLimiter(options: RateLimitOptions) {
   const { windowMs, max, message = "Too many requests" } = options;
 
-  return async ({ ctx, next, path }) => {
+  return middleware(async ({ ctx, next, path }) => {
     // Get user identifier (IP or user ID)
     const userId = ctx.user?.id || ctx.req.ip || "unknown";
     const procedurePath = path;
@@ -84,7 +81,7 @@ export function createTRPCRateLimiter(
 
     // Continue with the procedure
     return next();
-  };
+  });
 }
 
 // Pre-configured rate limiters for different procedure types
