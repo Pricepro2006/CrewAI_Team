@@ -63,7 +63,7 @@ export async function ensureOllamaRunning(): Promise<void> {
 
     throw new Error("Ollama service failed to start after 10 seconds");
   } catch (error) {
-    throw new Error(`Failed to start Ollama: ${error.message}`);
+    throw new Error(`Failed to start Ollama: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -97,18 +97,23 @@ export async function ensureModelAvailable(
   }
 
   console.log(`Pulling model ${model}...`);
-  const provider = new OllamaProvider({ url });
-
+  // Use direct API call instead of OllamaProvider.pull
   try {
-    await provider.pull(model, (progress) => {
-      if (progress.status === "pulling") {
-        const percent = Math.round((progress.completed / progress.total) * 100);
-        process.stdout.write(`\rPulling ${model}: ${percent}%`);
-      }
+    const response = await fetch(`${url}/api/pull`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: model }),
     });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
     console.log(`\nModel ${model} pulled successfully`);
   } catch (error) {
-    throw new Error(`Failed to pull model ${model}: ${error.message}`);
+    throw new Error(`Failed to pull model ${model}: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -140,13 +145,10 @@ export function createTestOllamaProvider(
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
   return new OllamaProvider({
-    url: finalConfig.url,
     model: finalConfig.testModel,
-    embeddingModel: finalConfig.testEmbeddingModel,
-    options: {
-      temperature: 0, // Deterministic responses for testing
-      seed: 42, // Fixed seed for reproducibility
-    },
+    baseUrl: finalConfig.url,
+    temperature: 0, // Deterministic responses for testing
+    maxTokens: 1000, // Reasonable limit for tests
   });
 }
 
@@ -172,7 +174,7 @@ export async function generateWithTimeout(
     ]);
     return response;
   } catch (error) {
-    if (error.message.includes("timed out")) {
+    if (error instanceof Error && error.message.includes("timed out")) {
       throw new Error(
         `Ollama generation timed out. Is the service running and model loaded?`,
       );
@@ -197,13 +199,15 @@ export async function chatWithTimeout(
   });
 
   try {
+    // Note: OllamaProvider doesn't have chat method yet, using generate
+    const prompt = messages.map(m => `${m.role}: ${m.content}`).join('\n');
     const response = await Promise.race([
-      provider.chat(messages),
+      provider.generate(prompt),
       timeoutPromise,
     ]);
     return response;
   } catch (error) {
-    if (error.message.includes("timed out")) {
+    if (error instanceof Error && error.message.includes("timed out")) {
       throw new Error(
         `Ollama chat timed out. Is the service running and model loaded?`,
       );

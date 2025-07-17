@@ -99,14 +99,14 @@ export const Dashboard: React.FC = () => {
     { name: "Writer Agent", status: 'active' as const, specialty: "Content Creation" }
   ];
 
-  const ollamaStatus = health?.services?.find(s => s.includes('ollama')) || 'ollama:disconnected';
+  const ollamaStatus = health?.services?.find((s: any) => s.includes('ollama')) || 'ollama:disconnected';
   const isOllamaConnected = ollamaStatus.includes('connected');
 
   return (
     <div className="dashboard">
       <div className="dashboard-header">
         <h1>Dashboard</h1>
-        <p className="dashboard-subtitle">Welcome back, User! Here's an overview of your AI Assistant.</p>
+        <p className="dashboard-subtitle">Welcome back, User! Here&apos;s an overview of your AI Assistant.</p>
       </div>
 
       <div className="dashboard-content">

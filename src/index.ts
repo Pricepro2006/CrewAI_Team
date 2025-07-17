@@ -3,20 +3,23 @@
  * This demonstrates the full integration of SuperClaude commands with MCP tools
  */
 
-import { Ollama } from 'ollama';
-import { ChromaClient } from 'chromadb';
+// Legacy example file - using type-only imports to avoid runtime dependency
+import type { Ollama } from 'ollama';
+import type { ChromaClient } from 'chromadb';
 
-// Initialize core services
-const ollama = new Ollama({ host: 'http://localhost:11434' });
-const chroma = new ChromaClient();
+// Initialize core services (mocked for legacy example)
+const ollama = {
+  generate: async (params: any) => ({ response: 'Mock response' })
+} as any;
+const chroma = {} as any;
 
 /**
  * Main Application Entry Point
  */
 class AIAgentTeamSystem {
-  private orchestrator: MasterOrchestrator;
-  private agents: Map<string, BaseAgent>;
-  private memoryManager: MemoryManager;
+  private orchestrator!: MasterOrchestrator;
+  private agents!: Map<string, BaseAgent>;
+  private memoryManager!: MemoryManager;
   
   constructor() {
     this.initializeSystem();
@@ -347,9 +350,9 @@ class MemoryManager {
  * Example Usage
  */
 async function runExample() {
-  console.log('=' * 50);
+  console.log('='.repeat(50));
   console.log('AI Agent Team System - Complete Example');
-  console.log('=' * 50);
+  console.log('='.repeat(50));
   
   const system = new AIAgentTeamSystem();
   
@@ -367,7 +370,7 @@ async function runExample() {
     try {
       const result = await system.processQuery(query);
       console.log('\n📤 Result:', JSON.stringify(result, null, 2));
-      console.log('-' * 50);
+      console.log('-'.repeat(50));
     } catch (error) {
       console.error('Error:', error);
     }
