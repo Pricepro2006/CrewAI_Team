@@ -2,6 +2,8 @@ import type { inferAsyncReturnType } from "@trpc/server";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator";
 import { ConversationService } from "../services/ConversationService";
+import { TaskService } from "../services/TaskService";
+import { MaestroFramework } from "../../core/maestro/MaestroFramework";
 import ollamaConfig from "../../config/ollama.config";
 import { logger } from "../../utils/logger";
 import jwt from "jsonwebtoken";
@@ -18,6 +20,8 @@ export interface User {
 // Initialize services (singleton pattern)
 let masterOrchestrator: MasterOrchestrator;
 let conversationService: ConversationService;
+let maestroFramework: MaestroFramework;
+let taskService: TaskService;
 
 async function initializeServices() {
   if (!masterOrchestrator) {
@@ -49,9 +53,20 @@ async function initializeServices() {
     conversationService = new ConversationService();
   }
 
+  if (!maestroFramework) {
+    maestroFramework = new MaestroFramework();
+    await maestroFramework.initialize();
+  }
+
+  if (!taskService) {
+    taskService = new TaskService(maestroFramework);
+  }
+
   return {
     masterOrchestrator,
     conversationService,
+    taskService,
+    maestroFramework,
     agentRegistry: masterOrchestrator.agentRegistry,
     ragSystem: masterOrchestrator.ragSystem,
   };

@@ -91,3 +91,8 @@ yarn.lock
 # MCP local configuration
 .mcp/
 claude_desktop_config.json
+
+#Screenshots
+*.png
+*.jpg
+*.jpeg

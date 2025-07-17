@@ -100,6 +100,11 @@ export class TaskQueue {
     return this.removeTask(taskId);
   }
 
+  // Alias for removeTask to match MaestroFramework expectations
+  remove(taskId: string): boolean {
+    return this.removeTask(taskId);
+  }
+
   peek(): Task | null {
     return this.queue[0] || null;
   }

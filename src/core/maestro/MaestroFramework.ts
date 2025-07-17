@@ -10,6 +10,7 @@ export class MaestroFramework extends EventEmitter {
   private config: MaestroConfig;
   private isProcessing: boolean = false;
   private activeTaskCount: number = 0;
+  private cancelledTasks: Set<string> = new Set();
 
   constructor(config: MaestroConfig) {
     super();
@@ -76,6 +77,15 @@ export class MaestroFramework extends EventEmitter {
 
   private async processTask(queueItem: any): Promise<void> {
     const { id, task, context } = queueItem;
+
+    // Check if task was cancelled before starting
+    if (this.cancelledTasks.has(id)) {
+      this.cancelledTasks.delete(id);
+      this.emit("task:cancelled", { taskId: id });
+      this.executionContexts.delete(id);
+      return;
+    }
+
     this.activeTaskCount++;
 
     try {
@@ -218,5 +228,27 @@ export class MaestroFramework extends EventEmitter {
 
   getTaskContext(taskId: string): ExecutionContext | undefined {
     return this.executionContexts.get(taskId);
+  }
+
+  async cancelTask(taskId: string): Promise<boolean> {
+    // Mark task as cancelled
+    this.cancelledTasks.add(taskId);
+
+    // Try to remove from queue if still pending
+    const removed = await this.taskQueue.remove(taskId);
+
+    if (removed) {
+      this.emit("task:cancelled", { taskId });
+      this.executionContexts.delete(taskId);
+      return true;
+    }
+
+    // Task might be currently executing, will be handled in processTask
+    return false;
+  }
+
+  async initialize(): Promise<void> {
+    // Initialize any required resources
+    this.emit("framework:initialized");
   }
 }
