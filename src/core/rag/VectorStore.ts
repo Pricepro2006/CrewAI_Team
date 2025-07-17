@@ -129,10 +129,14 @@ export class VectorStore {
         return null;
       }
 
+      const metadata = result.metadatas?.[0] || {};
       return {
-        id: result.ids[0],
+        id: result.ids[0] || "",
         content: result.documents?.[0] || "",
-        metadata: result.metadatas?.[0] || {},
+        metadata: {
+          sourceId: metadata.sourceId || result.ids[0] || "",
+          ...metadata,
+        } as DocumentMetadata,
       };
     } catch (error) {
       console.error("Failed to get document:", error);
@@ -173,10 +177,14 @@ export class VectorStore {
 
     const documents: Document[] = [];
     for (let i = 0; i < results.ids.length; i++) {
+      const metadata = results.metadatas?.[i] || {};
       documents.push({
-        id: results.ids[i],
+        id: results.ids[i] || "",
         content: results.documents?.[i] || "",
-        metadata: results.metadatas?.[i] || {},
+        metadata: {
+          sourceId: metadata.sourceId || results.ids[i] || "",
+          ...metadata,
+        } as DocumentMetadata,
       });
     }
 

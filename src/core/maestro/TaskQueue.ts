@@ -33,7 +33,7 @@ export class TaskQueue {
 
   dequeue(): Task | null {
     const item = this.queue.shift();
-    if (item) {
+    if (item && item.id) {
       this.processing.add(item.id);
     }
     return item || null;

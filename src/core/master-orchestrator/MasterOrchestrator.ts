@@ -381,13 +381,4 @@ export class MasterOrchestrator {
       },
     };
   }
-
-  async initialize(): Promise<void> {
-    // Initialize all components
-    await Promise.all([
-      this.agentRegistry.initialize(),
-      this.ragSystem.initialize(),
-      this.llm.initialize(),
-    ]);
-  }
 }

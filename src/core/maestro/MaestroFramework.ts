@@ -1,8 +1,8 @@
-import { EventEmitter } from 'events';
-import { TaskQueue } from './TaskQueue';
-import { ExecutionContext } from './ExecutionContext';
-import type { Task, TaskResult, MaestroConfig } from './types';
-import { v4 as uuidv4 } from 'uuid';
+import { EventEmitter } from "events";
+import { TaskQueue } from "./TaskQueue";
+import { ExecutionContext } from "./ExecutionContext";
+import type { Task, TaskResult, MaestroConfig } from "./types";
+import { v4 as uuidv4 } from "uuid";
 
 export class MaestroFramework extends EventEmitter {
   private taskQueue: TaskQueue;
@@ -20,45 +20,45 @@ export class MaestroFramework extends EventEmitter {
 
   async submitTask(task: Task): Promise<string> {
     const taskId = task.id || this.generateTaskId();
-    
+
     // Create execution context
     const context = new ExecutionContext({
       taskId,
       task,
       ...(task.timeout && { timeout: task.timeout }),
-      config: this.config
+      config: this.config,
     });
-    
+
     this.executionContexts.set(taskId, context);
-    
+
     // Queue task
     await this.taskQueue.enqueue({
       id: taskId,
+      type: "agent",
       priority: task.priority || 0,
-      task,
-      context
+      data: { task, context },
     });
 
-    this.emit('task:submitted', { taskId, task });
-    
+    this.emit("task:submitted", { taskId, task });
+
     // Start processing if not already running
     this.startProcessing();
-    
+
     return taskId;
   }
 
   private async startProcessing(): Promise<void> {
     if (this.isProcessing) return;
-    
+
     this.isProcessing = true;
-    
+
     while (this.isProcessing) {
       // Check if we can process more tasks
       if (this.activeTaskCount >= this.config.maxConcurrentTasks) {
         await this.delay(100);
         continue;
       }
-      
+
       // Get next task from queue
       const queueItem = await this.taskQueue.dequeue();
       if (!queueItem) {
@@ -66,10 +66,10 @@ export class MaestroFramework extends EventEmitter {
         await this.delay(100);
         continue;
       }
-      
+
       // Process task asynchronously
-      this.processTask(queueItem).catch(error => {
-        console.error('Task processing error:', error);
+      this.processTask(queueItem).catch((error) => {
+        console.error("Task processing error:", error);
       });
     }
   }
@@ -77,20 +77,20 @@ export class MaestroFramework extends EventEmitter {
   private async processTask(queueItem: any): Promise<void> {
     const { id, task, context } = queueItem;
     this.activeTaskCount++;
-    
+
     try {
-      this.emit('task:started', { taskId: id });
-      
+      this.emit("task:started", { taskId: id });
+
       // Execute task with context
       const result = await this.executeTask(task, context);
-      
-      this.emit('task:completed', { taskId: id, result });
-      
+
+      this.emit("task:completed", { taskId: id, result });
+
       // Clean up
       this.executionContexts.delete(id);
     } catch (error) {
-      this.emit('task:failed', { taskId: id, error });
-      
+      this.emit("task:failed", { taskId: id, error });
+
       // Check if we should retry
       if (task.retries && context.retryCount < task.retries) {
         context.retryCount++;
@@ -104,78 +104,87 @@ export class MaestroFramework extends EventEmitter {
   }
 
   private async executeTask(
-    task: Task, 
-    context: ExecutionContext
+    task: Task,
+    context: ExecutionContext,
   ): Promise<TaskResult> {
     const startTime = Date.now();
-    
+
     // Set up execution environment
     context.initialize();
-    
+
     try {
       let result: any;
-      
+
       // Execute based on task type
       switch (task.type) {
-        case 'agent':
+        case "agent":
           result = await this.executeAgentTask(task, context);
           break;
-        case 'tool':
+        case "tool":
           result = await this.executeToolTask(task, context);
           break;
-        case 'composite':
+        case "composite":
           result = await this.executeCompositeTask(task, context);
           break;
         default:
           throw new Error(`Unknown task type: ${task.type}`);
       }
-      
+
       const duration = Date.now() - startTime;
-      
+
       return {
         taskId: context.taskId,
         success: true,
         result,
         duration,
-        metadata: context.metadata
+        metadata: context.metadata,
       };
     } finally {
       context.cleanup();
     }
   }
 
-  private async executeAgentTask(task: Task, _context: ExecutionContext): Promise<any> {
+  private async executeAgentTask(
+    task: Task,
+    _context: ExecutionContext,
+  ): Promise<any> {
     // This would integrate with the AgentRegistry
     // For now, return a placeholder
     return {
-      type: 'agent',
+      type: "agent",
       agentType: task.data.agentType,
-      result: 'Agent task completed'
+      result: "Agent task completed",
     };
   }
 
-  private async executeToolTask(task: Task, _context: ExecutionContext): Promise<any> {
+  private async executeToolTask(
+    task: Task,
+    _context: ExecutionContext,
+  ): Promise<any> {
     // This would integrate with the Tool system
     return {
-      type: 'tool',
+      type: "tool",
       toolName: task.data.toolName,
-      result: 'Tool task completed'
+      result: "Tool task completed",
     };
   }
 
-  private async executeCompositeTask(task: Task, _context: ExecutionContext): Promise<any> {
+  private async executeCompositeTask(
+    task: Task,
+    _context: ExecutionContext,
+  ): Promise<any> {
     // Execute multiple sub-tasks
     const subResults = [];
-    
+
     for (const subTask of task.data.subTasks || []) {
       const subTaskId = await this.submitTask(subTask);
       // Wait for completion (simplified - in reality would track separately)
       subResults.push({ subTaskId });
     }
-    
+
     return {
-      type: 'composite',
-      subResults
+      type: "composite",
+      subResults,
     };
   }
 
@@ -184,17 +193,17 @@ export class MaestroFramework extends EventEmitter {
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async shutdown(): Promise<void> {
     this.isProcessing = false;
-    
+
     // Wait for active tasks to complete
     while (this.activeTaskCount > 0) {
       await this.delay(100);
     }
-    
+
     // Clear queue
     this.taskQueue.clear();
     this.executionContexts.clear();
@@ -203,7 +212,7 @@ export class MaestroFramework extends EventEmitter {
   getQueueStatus(): any {
     return {
       ...this.taskQueue.getStatus(),
-      activeTasks: this.activeTaskCount
+      activeTasks: this.activeTaskCount,
     };
   }
 

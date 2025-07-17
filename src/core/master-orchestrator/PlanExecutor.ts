@@ -16,7 +16,7 @@ export class PlanExecutor {
     private ragSystem: RAGSystem,
   ) {}
 
-  async execute(plan: Plan): Promise<ExecutionResult> {
+  async execute(plan: Plan): Promise<PlanExecutionResult> {
     const results: StepResult[] = [];
     const executedSteps = new Set<string>();
 
