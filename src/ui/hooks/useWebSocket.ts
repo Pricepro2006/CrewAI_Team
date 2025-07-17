@@ -1,6 +1,6 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { createTRPCProxyClient, createWSClient, wsLink } from '@trpc/client';
-import type { AppRouter } from '../../api/trpc/router';
+import { useEffect, useRef, useCallback, useState } from "react";
+import { createTRPCProxyClient, createWSClient, wsLink } from "@trpc/client";
+import type { AppRouter } from "../../api/trpc/router";
 
 interface WebSocketOptions {
   onConnect?: () => void;
@@ -16,7 +16,7 @@ export function useWebSocket(options: WebSocketOptions = {}) {
     onDisconnect,
     onError,
     reconnectDelay = 3000,
-    maxReconnectAttempts = 5
+    maxReconnectAttempts = 5,
   } = options;
 
   const [isConnected, setIsConnected] = useState(false);
@@ -26,7 +26,7 @@ export function useWebSocket(options: WebSocketOptions = {}) {
 
   const connect = useCallback(() => {
     const wsClient = createWSClient({
-      url: `ws://localhost:${parseInt(import.meta.env.VITE_API_PORT || '3000') + 1}/trpc-ws`,
+      url: `ws://localhost:${parseInt(import.meta.env.VITE_API_PORT || "3000") + 1}/trpc-ws`,
       onOpen: () => {
         setIsConnected(true);
         setReconnectAttempts(0);
@@ -35,28 +35,33 @@ export function useWebSocket(options: WebSocketOptions = {}) {
       onClose: () => {
         setIsConnected(false);
         onDisconnect?.();
-        
+
         // Attempt to reconnect
         if (reconnectAttempts < maxReconnectAttempts) {
           reconnectTimeoutRef.current = setTimeout(() => {
-            setReconnectAttempts(prev => prev + 1);
+            setReconnectAttempts((prev) => prev + 1);
             connect();
           }, reconnectDelay);
         }
       },
-      onError: (error) => {
-        console.error('WebSocket error:', error);
-        onError?.(error instanceof Error ? error : new Error(String(error)));
-      }
+      // onError is not supported in tRPC WebSocket client
+      // Error handling happens in subscription error callbacks
     });
 
     clientRef.current = wsClient;
     return wsClient;
-  }, [onConnect, onDisconnect, onError, reconnectDelay, reconnectAttempts, maxReconnectAttempts]);
+  }, [
+    onConnect,
+    onDisconnect,
+    onError,
+    reconnectDelay,
+    reconnectAttempts,
+    maxReconnectAttempts,
+  ]);
 
   useEffect(() => {
     const wsClient = connect();
-    
+
     return () => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
@@ -68,15 +73,15 @@ export function useWebSocket(options: WebSocketOptions = {}) {
   const client = createTRPCProxyClient<AppRouter>({
     links: [
       wsLink({
-        client: clientRef.current!
-      })
-    ]
+        client: clientRef.current!,
+      }),
+    ],
   });
 
   return {
     client,
     isConnected,
-    reconnectAttempts
+    reconnectAttempts,
   };
 }
 
@@ -84,7 +89,7 @@ export function useWebSocket(options: WebSocketOptions = {}) {
 export function useAgentStatus(agentId?: string) {
   const [status, setStatus] = useState<{
     agentId: string;
-    status: 'idle' | 'busy' | 'error' | 'terminated';
+    status: "idle" | "busy" | "error" | "terminated";
     timestamp: Date;
   } | null>(null);
 
@@ -93,16 +98,16 @@ export function useAgentStatus(agentId?: string) {
   useEffect(() => {
     if (!isConnected) return;
 
-    const unsubscribe = client.ws.agentStatus.subscribe(
+    const unsubscribe = client.ws?.agentStatus?.subscribe?.(
       { agentId },
       {
-        onData: (data) => {
+        onData: (data: any) => {
           setStatus(data);
         },
-        onError: (error) => {
-          console.error('Agent status subscription error:', error);
-        }
-      }
+        onError: (error: any) => {
+          console.error("Agent status subscription error:", error);
+        },
+      },
     );
 
     return () => {
@@ -130,16 +135,16 @@ export function usePlanProgress(planId: string) {
   useEffect(() => {
     if (!isConnected || !planId) return;
 
-    const unsubscribe = client.ws.planProgress.subscribe(
+    const unsubscribe = client.ws?.planProgress?.subscribe?.(
       { planId },
       {
-        onData: (data) => {
+        onData: (data: any) => {
           setProgress(data);
         },
-        onError: (error) => {
-          console.error('Plan progress subscription error:', error);
-        }
-      }
+        onError: (error: any) => {
+          console.error("Plan progress subscription error:", error);
+        },
+      },
     );
 
     return () => {
@@ -152,33 +157,35 @@ export function usePlanProgress(planId: string) {
 
 // Hook for subscribing to task queue updates
 export function useTaskQueue() {
-  const [tasks, setTasks] = useState<Map<string, {
-    taskId: string;
-    status: string;
-    progress?: number;
-    timestamp: Date;
-  }>>(new Map());
+  const [tasks, setTasks] = useState<
+    Map<
+      string,
+      {
+        taskId: string;
+        status: string;
+        progress?: number;
+        timestamp: Date;
+      }
+    >
+  >(new Map());
 
   const { client, isConnected } = useWebSocket();
 
   useEffect(() => {
     if (!isConnected) return;
 
-    const unsubscribe = client.ws.taskQueue.subscribe(
-      undefined,
-      {
-        onData: (data) => {
-          setTasks(prev => {
-            const newTasks = new Map(prev);
-            newTasks.set(data.taskId, data);
-            return newTasks;
-          });
-        },
-        onError: (error) => {
-          console.error('Task queue subscription error:', error);
-        }
-      }
-    );
+    const unsubscribe = client.ws?.taskQueue?.subscribe?.(undefined, {
+      onData: (data: any) => {
+        setTasks((prev) => {
+          const newTasks = new Map(prev);
+          newTasks.set(data.taskId, data);
+          return newTasks;
+        });
+      },
+      onError: (error: any) => {
+        console.error("Task queue subscription error:", error);
+      },
+    });
 
     return () => {
       unsubscribe.unsubscribe();
@@ -191,7 +198,7 @@ export function useTaskQueue() {
 // Hook for subscribing to system health updates
 export function useSystemHealth() {
   const [health, setHealth] = useState<{
-    services: Record<string, 'healthy' | 'degraded' | 'down'>;
+    services: Record<string, "healthy" | "degraded" | "down">;
     metrics?: {
       cpu?: number;
       memory?: number;
@@ -206,17 +213,14 @@ export function useSystemHealth() {
   useEffect(() => {
     if (!isConnected) return;
 
-    const unsubscribe = client.ws.systemHealth.subscribe(
-      undefined,
-      {
-        onData: (data) => {
-          setHealth(data);
-        },
-        onError: (error) => {
-          console.error('System health subscription error:', error);
-        }
-      }
-    );
+    const unsubscribe = client.ws?.systemHealth?.subscribe?.(undefined, {
+      onData: (data: any) => {
+        setHealth(data);
+      },
+      onError: (error: any) => {
+        console.error("System health subscription error:", error);
+      },
+    });
 
     return () => {
       unsubscribe.unsubscribe();
@@ -228,34 +232,33 @@ export function useSystemHealth() {
 
 // Hook for subscribing to RAG operations
 export function useRAGOperations() {
-  const [operations, setOperations] = useState<Array<{
-    operation: 'indexing' | 'searching' | 'embedding';
-    status: 'started' | 'completed' | 'failed';
-    details?: {
-      documentCount?: number;
-      chunkCount?: number;
-      duration?: number;
-      error?: string;
-    };
-    timestamp: Date;
-  }>>([]);
+  const [operations, setOperations] = useState<
+    Array<{
+      operation: "indexing" | "searching" | "embedding";
+      status: "started" | "completed" | "failed";
+      details?: {
+        documentCount?: number;
+        chunkCount?: number;
+        duration?: number;
+        error?: string;
+      };
+      timestamp: Date;
+    }>
+  >([]);
 
   const { client, isConnected } = useWebSocket();
 
   useEffect(() => {
     if (!isConnected) return;
 
-    const unsubscribe = client.ws.ragOperations.subscribe(
-      undefined,
-      {
-        onData: (data) => {
-          setOperations(prev => [...prev, data].slice(-20)); // Keep last 20 operations
-        },
-        onError: (error) => {
-          console.error('RAG operations subscription error:', error);
-        }
-      }
-    );
+    const unsubscribe = client.ws?.ragOperations?.subscribe?.(undefined, {
+      onData: (data: any) => {
+        setOperations((prev) => [...prev, data].slice(-20)); // Keep last 20 operations
+      },
+      onError: (error: any) => {
+        console.error("RAG operations subscription error:", error);
+      },
+    });
 
     return () => {
       unsubscribe.unsubscribe();

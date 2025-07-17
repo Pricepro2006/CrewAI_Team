@@ -1,5 +1,8 @@
-import type { Message } from "../shared/types";
-import type { AgentType } from "../shared/types";
+import type {
+  Message,
+  AgentType,
+  Document as CustomDocument,
+} from "../shared/types";
 
 export interface Query {
   text: string;
@@ -51,7 +54,7 @@ export interface ReviewResult {
 }
 
 export interface Context {
-  documents: Document[];
+  documents: CustomDocument[];
   relevance: number;
   metadata?: Record<string, any>;
 }

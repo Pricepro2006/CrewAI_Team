@@ -1,40 +1,40 @@
-import { BaseTool } from '../base/BaseTool';
-import type { ToolResult } from '../base/BaseTool';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
+import { BaseTool } from "../base/BaseTool";
+import type { ToolResult } from "../base/BaseTool";
+import axios from "axios";
+import * as cheerio from "cheerio";
 
 export class WebSearchTool extends BaseTool {
   private searchEngines: SearchEngine[];
 
   constructor() {
     super(
-      'web_search',
-      'Searches the web for information using multiple search engines',
+      "web_search",
+      "Searches the web for information using multiple search engines",
       [
         {
-          name: 'query',
-          type: 'string',
+          name: "query",
+          type: "string",
           required: true,
-          description: 'Search query'
+          description: "Search query",
         },
         {
-          name: 'limit',
-          type: 'number',
+          name: "limit",
+          type: "number",
           required: false,
-          description: 'Maximum number of results to return',
+          description: "Maximum number of results to return",
           default: 10,
           min: 1,
-          max: 50
+          max: 50,
         },
         {
-          name: 'engine',
-          type: 'string',
+          name: "engine",
+          type: "string",
           required: false,
-          description: 'Search engine to use',
-          default: 'duckduckgo',
-          enum: ['duckduckgo', 'searx', 'google']
-        }
-      ]
+          description: "Search engine to use",
+          default: "duckduckgo",
+          enum: ["duckduckgo", "searx", "google"],
+        },
+      ],
     );
 
     this.searchEngines = [
@@ -51,14 +51,14 @@ export class WebSearchTool extends BaseTool {
   }): Promise<ToolResult> {
     const validation = this.validateParameters(params);
     if (!validation.valid) {
-      return this.error(validation.errors.join(', '));
+      return this.error(validation.errors.join(", "));
     }
 
     try {
       const limit = params.limit || 10;
-      const engineName = params.engine || 'duckduckgo';
-      
-      const engine = this.searchEngines.find(e => e.name === engineName);
+      const engineName = params.engine || "duckduckgo";
+
+      const engine = this.searchEngines.find((e) => e.name === engineName);
       if (!engine) {
         return this.error(`Search engine ${engineName} not found`);
       }
@@ -69,7 +69,7 @@ export class WebSearchTool extends BaseTool {
         results,
         query: params.query,
         engine: engineName,
-        count: results.length
+        count: results.length,
       });
     } catch (error) {
       return this.error(error as Error);
@@ -86,26 +86,26 @@ interface SearchResult {
 
 abstract class SearchEngine {
   abstract name: string;
-  abstract async search(query: string, limit: number): Promise<SearchResult[]>;
+  abstract search(query: string, limit: number): Promise<SearchResult[]>;
 }
 
 class DuckDuckGoEngine extends SearchEngine {
-  name = 'duckduckgo';
+  name = "duckduckgo";
 
   async search(query: string, limit: number): Promise<SearchResult[]> {
     try {
       // Use DuckDuckGo Instant Answer API for search
-      const response = await axios.get('https://api.duckduckgo.com/', {
+      const response = await axios.get("https://api.duckduckgo.com/", {
         params: {
           q: query,
-          format: 'json',
-          no_html: '1',
-          skip_disambig: '1'
+          format: "json",
+          no_html: "1",
+          skip_disambig: "1",
         },
         timeout: 10000,
         headers: {
-          'User-Agent': 'CrewAI-Team-Search/1.0'
-        }
+          "User-Agent": "CrewAI-Team-Search/1.0",
+        },
       });
 
       const results: SearchResult[] = [];
@@ -116,18 +116,21 @@ class DuckDuckGoEngine extends SearchEngine {
         results.push({
           title: data.Heading || query,
           url: data.AbstractURL,
-          snippet: data.Abstract
+          snippet: data.Abstract,
         });
       }
 
       // Add related topics
       if (data.RelatedTopics && Array.isArray(data.RelatedTopics)) {
-        for (const topic of data.RelatedTopics.slice(0, limit - results.length)) {
+        for (const topic of data.RelatedTopics.slice(
+          0,
+          limit - results.length,
+        )) {
           if (topic.FirstURL && topic.Text) {
             results.push({
-              title: topic.Text.split(' - ')[0] || topic.Text.substring(0, 60),
+              title: topic.Text.split(" - ")[0] || topic.Text.substring(0, 60),
               url: topic.FirstURL,
-              snippet: topic.Text
+              snippet: topic.Text,
             });
           }
         }
@@ -137,8 +140,10 @@ class DuckDuckGoEngine extends SearchEngine {
       if (data.Answer) {
         results.push({
           title: `Answer: ${query}`,
-          url: data.AnswerURL || `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
-          snippet: data.Answer
+          url:
+            data.AnswerURL ||
+            `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
+          snippet: data.Answer,
         });
       }
 
@@ -147,27 +152,29 @@ class DuckDuckGoEngine extends SearchEngine {
         results.push({
           title: `Search results for: ${query}`,
           url: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
-          snippet: `No direct results found. Click to search for "${query}" on DuckDuckGo.`
+          snippet: `No direct results found. Click to search for "${query}" on DuckDuckGo.`,
         });
       }
 
       return results.slice(0, limit);
     } catch (error) {
-      console.error('DuckDuckGo search failed:', error);
-      
+      console.error("DuckDuckGo search failed:", error);
+
       // Return fallback result with search link
-      return [{
-        title: `Search for: ${query}`,
-        url: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
-        snippet: `Error occurred during search. Click to search for "${query}" manually.`
-      }];
+      return [
+        {
+          title: `Search for: ${query}`,
+          url: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
+          snippet: `Error occurred during search. Click to search for "${query}" manually.`,
+        },
+      ];
     }
   }
 }
 
 class SearxEngine extends SearchEngine {
-  name = 'searx';
-  private baseUrl = 'https://searx.me'; // Or your own Searx instance
+  name = "searx";
+  private baseUrl = "https://searx.me"; // Or your own Searx instance
 
   async search(query: string, limit: number): Promise<SearchResult[]> {
     try {
@@ -175,18 +182,18 @@ class SearxEngine extends SearchEngine {
       const response = await axios.get(url, {
         params: {
           q: query,
-          format: 'json',
-          limit
-        }
+          format: "json",
+          limit,
+        },
       });
 
       return response.data.results.map((result: any) => ({
         title: result.title,
         url: result.url,
-        snippet: result.content || ''
+        snippet: result.content || "",
       }));
     } catch (error) {
-      console.error('Searx search failed:', error);
+      console.error("Searx search failed:", error);
       // Fallback to empty results
       return [];
     }
@@ -198,11 +205,11 @@ export class SearchEngineWrapper {
   async search(query: string, limit: number = 10): Promise<SearchResult[]> {
     const tool = new WebSearchTool();
     const result = await tool.execute({ query, limit });
-    
+
     if (result.success && result.data) {
       return result.data.results;
     }
-    
+
     return [];
   }
 }

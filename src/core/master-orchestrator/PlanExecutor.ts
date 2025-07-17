@@ -7,7 +7,6 @@ import type {
   StepResult,
   Context,
 } from "./types";
-import type { Document as CustomDocument } from "../shared/types";
 import { wsService } from "../../api/services/WebSocketService";
 
 export class PlanExecutor {
@@ -93,7 +92,7 @@ export class PlanExecutor {
     const documents = await this.ragSystem.search(step.ragQuery, 5);
 
     return {
-      documents: documents as CustomDocument[],
+      documents: documents,
       relevance: this.calculateRelevance(documents, step),
       metadata: {
         stepId: step.id,
