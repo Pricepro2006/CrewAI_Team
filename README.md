@@ -25,11 +25,11 @@ A production-ready, local-first multi-agent orchestration system built with Type
 
 ### In Development
 
-- 🚧 User authentication
+- 🚧 Integration test updates (converting to real Ollama)
+- 🚧 User authentication system
 - 🚧 Enhanced agent behaviors
-- 🚧 Data collection pipeline (Bright Data integration)
-- 🚧 Knowledge base scraping (Playwright integration)
-- 🚧 CI/CD test updates
+- 🚧 Error recovery mechanisms
+- 🚧 Legacy file TypeScript fixes
 
 ## 🌟 Features
 
@@ -187,7 +187,9 @@ pnpm lint         # Linting
 
 1. **ESM Module Resolution** - Node.js v22 has issues with TypeScript imports. Use `pnpm dev:client` for UI development or see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
 
-2. **Backend Implementation** - Currently using mock servers. See [PRODUCTION_MIGRATION_PLAN.md](./PRODUCTION_MIGRATION_PLAN.md) for implementation status.
+2. **Integration Tests** - Currently updating to use real Ollama per project guardrails. Tests must fail gracefully when Ollama is unavailable.
+
+3. **Legacy Files** - Some older files need TypeScript updates but don't affect production operation.
 
 ## 📚 Documentation
 
