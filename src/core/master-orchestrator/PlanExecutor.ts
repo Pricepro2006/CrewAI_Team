@@ -85,6 +85,86 @@ export class PlanExecutor {
       success,
       results,
       summary: this.summarizeResults(results),
+      completedSteps: results.filter((r) => r.success).length,
+      failedSteps: results.filter((r) => !r.success).length,
+      error: !success ? results.find((r) => !r.success)?.error : undefined,
+    };
+  }
+
+  async executeWithProgress(
+    plan: Plan,
+    progressCallback: (progress: {
+      completedSteps: number;
+      totalSteps: number;
+      currentStep?: string;
+    }) => void,
+  ): Promise<PlanExecutionResult> {
+    const sortedSteps = this.topologicalSort(plan.steps);
+    const results: StepResult[] = [];
+    const executedSteps = new Set<string>();
+
+    for (const step of sortedSteps) {
+      progressCallback({
+        completedSteps: executedSteps.size,
+        totalSteps: sortedSteps.length,
+        currentStep: step.id,
+      });
+
+      try {
+        // Step 1: Gather context from RAG
+        const context = await this.gatherContext(step);
+
+        // Step 2: Execute based on whether tool is required
+        const result = step.requiresTool
+          ? await this.executeWithTool(step, context)
+          : await this.executeInformationQuery(step, context);
+
+        results.push(result);
+        executedSteps.add(step.id);
+
+        // Step 3: Check if we should continue
+        if (!this.shouldContinue(results)) {
+          break;
+        }
+      } catch (error) {
+        const errorResult = {
+          stepId: step.id,
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+          metadata: {
+            errorType: error instanceof Error ? error.name : "UnknownError",
+          },
+        };
+        results.push(errorResult);
+
+        progressCallback({
+          completedSteps: executedSteps.size,
+          totalSteps: sortedSteps.length,
+          currentStep: step.id,
+        });
+      }
+    }
+
+    // Final progress callback
+    progressCallback({
+      completedSteps: executedSteps.size,
+      totalSteps: sortedSteps.length,
+    });
+
+    // Broadcast plan completion
+    const success = results.every((r) => r.success);
+    wsService.broadcastPlanUpdate(plan.id, success ? "completed" : "failed", {
+      completed: executedSteps.size,
+      total: sortedSteps.length,
+    });
+
+    return {
+      success,
+      results,
+      summary: this.summarizeResults(results),
+      completedSteps: results.filter((r) => r.success).length,
+      failedSteps: results.filter((r) => !r.success).length,
+      error: !success ? results.find((r) => !r.success)?.error : undefined,
     };
   }
 
@@ -233,7 +313,8 @@ export class PlanExecutor {
 
     // Calculate in-degrees and adjacency list
     steps.forEach((step) => {
-      step.dependencies.forEach((dep) => {
+      const dependencies = step.dependencies || [];
+      dependencies.forEach((dep) => {
         if (graph.has(dep)) {
           inDegree.set(step.id, (inDegree.get(step.id) || 0) + 1);
           adjList.get(dep)?.push(step.id);
@@ -281,7 +362,7 @@ export class PlanExecutor {
     step: PlanStep,
     executedSteps: Set<string>,
   ): boolean {
-    return step.dependencies.every((dep) => executedSteps.has(dep));
+    return (step.dependencies || []).every((dep) => executedSteps.has(dep));
   }
 
   buildRAGQuery(step: PlanStep): string {
