@@ -15,6 +15,10 @@ import { apiRateLimiter } from "./middleware/rateLimiter";
 import { wsService } from "./services/WebSocketService";
 import { logger } from "../utils/logger";
 import uploadRoutes from "./routes/upload.routes";
+import {
+  cleanupManager,
+  registerDefaultCleanupTasks,
+} from "./services/ServiceCleanupManager";
 
 const app: Express = express();
 const PORT = appConfig.api.port;
@@ -138,6 +142,9 @@ if (process.env["NODE_ENV"] === "production") {
   });
 }
 
+// Register default cleanup tasks
+registerDefaultCleanupTasks();
+
 // Start HTTP server
 const server = app.listen(PORT, () => {
   console.log(`🚀 API Server running on http://localhost:${PORT}`);
@@ -174,18 +181,59 @@ console.log(
 );
 
 // Graceful shutdown
-process.on("SIGTERM", () => {
-  console.log("SIGTERM received, shutting down gracefully...");
+const gracefulShutdown = async (signal: string) => {
+  console.log(`${signal} received, starting graceful shutdown...`);
+  logger.info("Shutdown initiated", "SHUTDOWN", { signal });
 
-  wsHandler.broadcastReconnectNotification();
-
+  // Stop accepting new connections
   server.close(() => {
     console.log("HTTP server closed");
+    logger.info("HTTP server closed", "SHUTDOWN");
   });
 
+  // Close WebSocket connections
+  wsHandler.broadcastReconnectNotification();
   wss.close(() => {
     console.log("WebSocket server closed");
+    logger.info("WebSocket server closed", "SHUTDOWN");
   });
+
+  // Cleanup services
+  try {
+    // Stop WebSocket health monitoring
+    wsService.stopHealthMonitoring();
+    logger.info("WebSocket health monitoring stopped", "SHUTDOWN");
+
+    // Execute all registered cleanup tasks
+    await cleanupManager.cleanup();
+
+    // Add a small delay to allow pending operations to complete
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    logger.info("All services cleaned up successfully", "SHUTDOWN");
+
+    // Exit the process
+    process.exit(0);
+  } catch (error) {
+    logger.error("Error during shutdown", "SHUTDOWN", { error });
+    process.exit(1);
+  }
+};
+
+// Handle different termination signals
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGUSR2", () => gracefulShutdown("SIGUSR2"));
+
+// Handle uncaught errors
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught exception", "CRITICAL", { error });
+  gracefulShutdown("UNCAUGHT_EXCEPTION");
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("Unhandled rejection", "CRITICAL", { reason, promise });
+  gracefulShutdown("UNHANDLED_REJECTION");
 });
 
 export { app, server, wss };

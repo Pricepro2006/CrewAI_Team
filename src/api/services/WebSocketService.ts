@@ -129,6 +129,7 @@ export type WebSocketMessage = z.infer<typeof WebSocketMessageSchema>;
 export class WebSocketService extends EventEmitter {
   private clients: Map<string, Set<WebSocket>> = new Map();
   private subscriptions: Map<string, Set<string>> = new Map();
+  private healthInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     super();
@@ -432,7 +433,12 @@ export class WebSocketService extends EventEmitter {
    * Start periodic health broadcasts
    */
   startHealthMonitoring(intervalMs: number = 30000): void {
-    setInterval(() => {
+    // Clear any existing interval
+    if (this.healthInterval) {
+      clearInterval(this.healthInterval);
+    }
+
+    this.healthInterval = setInterval(() => {
       // Get system metrics
       const memUsage = process.memoryUsage();
       const stats = this.getConnectionStats();
@@ -449,6 +455,16 @@ export class WebSocketService extends EventEmitter {
         responseTime: 0, // This could be populated from actual metrics
       });
     }, intervalMs);
+  }
+
+  /**
+   * Stop health monitoring
+   */
+  stopHealthMonitoring(): void {
+    if (this.healthInterval) {
+      clearInterval(this.healthInterval);
+      this.healthInterval = null;
+    }
   }
 }
 
