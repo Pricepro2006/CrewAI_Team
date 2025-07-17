@@ -1,10 +1,10 @@
 /**
  * Middleware Index - Internal Module Pattern
- * 
+ *
  * This file follows the Internal Module Pattern to resolve circular dependencies
  * between tRPC router and middleware files. Based on 2025 TypeScript best practices
  * and tRPC v10 patterns.
- * 
+ *
  * References:
  * - https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de
  * - https://trpc.io/docs/server/middlewares
@@ -16,9 +16,13 @@ import { logger } from "../../utils/logger";
 
 // First, import base tRPC without circular dependencies
 import { initTRPC } from "@trpc/server";
+import type { MiddlewareBuilder } from "@trpc/server";
 
 // Initialize tRPC for middleware creation
 const t = initTRPC.context<Context>().create();
+
+// Type for middleware functions
+type TRPCMiddleware = ReturnType<typeof t.middleware>;
 
 // =====================================================
 // RATE LIMITING MIDDLEWARE IMPLEMENTATION
@@ -45,7 +49,7 @@ setInterval(() => {
         procedureStore.delete(userId);
       }
     });
-    
+
     // Remove empty procedure stores
     if (procedureStore.size === 0) {
       rateLimitStore.delete(procedurePath);
@@ -56,7 +60,9 @@ setInterval(() => {
 /**
  * Creates a tRPC rate limiter middleware using 2025 best practices
  */
-export function createTRPCRateLimiter(options: RateLimitOptions) {
+export function createTRPCRateLimiter(
+  options: RateLimitOptions,
+): TRPCMiddleware {
   const { windowMs, max, message = "Too many requests" } = options;
 
   return t.middleware(async ({ ctx, next, path }) => {
@@ -127,39 +133,41 @@ export function createTRPCRateLimiter(options: RateLimitOptions) {
 // =====================================================
 
 // Chat procedures - moderate rate limiting
-export const chatProcedureRateLimiter = createTRPCRateLimiter({
+export const chatProcedureRateLimiter: TRPCMiddleware = createTRPCRateLimiter({
   windowMs: 60000, // 1 minute
   max: 30, // 30 requests per minute
   message: "Too many chat requests",
 });
 
 // Agent procedures - stricter rate limiting
-export const agentProcedureRateLimiter = createTRPCRateLimiter({
+export const agentProcedureRateLimiter: TRPCMiddleware = createTRPCRateLimiter({
   windowMs: 60000, // 1 minute
   max: 10, // 10 requests per minute
   message: "Too many agent requests",
 });
 
 // Task procedures - moderate rate limiting
-export const taskProcedureRateLimiter = createTRPCRateLimiter({
+export const taskProcedureRateLimiter: TRPCMiddleware = createTRPCRateLimiter({
   windowMs: 60000, // 1 minute
   max: 20, // 20 requests per minute
   message: "Too many task requests",
 });
 
 // RAG procedures - relaxed rate limiting
-export const ragProcedureRateLimiter = createTRPCRateLimiter({
+export const ragProcedureRateLimiter: TRPCMiddleware = createTRPCRateLimiter({
   windowMs: 60000, // 1 minute
   max: 50, // 50 requests per minute
   message: "Too many RAG requests",
 });
 
 // Strict procedures - very strict rate limiting
-export const strictProcedureRateLimiter = createTRPCRateLimiter({
-  windowMs: 60000, // 1 minute
-  max: 5, // 5 requests per minute
-  message: "Too many sensitive requests",
-});
+export const strictProcedureRateLimiter: TRPCMiddleware = createTRPCRateLimiter(
+  {
+    windowMs: 60000, // 1 minute
+    max: 5, // 5 requests per minute
+    message: "Too many sensitive requests",
+  },
+);
 
 // =====================================================
 // CENTRALIZED RATE LIMITER CLASS
@@ -167,7 +175,7 @@ export const strictProcedureRateLimiter = createTRPCRateLimiter({
 
 export class TRPCRateLimiterManager {
   private static instance: TRPCRateLimiterManager;
-  private limiters: Map<string, ReturnType<typeof createTRPCRateLimiter>> = new Map();
+  private limiters: Map<string, TRPCMiddleware> = new Map();
 
   private constructor() {}
 
@@ -178,13 +186,13 @@ export class TRPCRateLimiterManager {
     return TRPCRateLimiterManager.instance;
   }
 
-  createLimiter(name: string, options: RateLimitOptions) {
+  createLimiter(name: string, options: RateLimitOptions): TRPCMiddleware {
     const limiter = createTRPCRateLimiter(options);
     this.limiters.set(name, limiter);
     return limiter;
   }
 
-  getLimiter(name: string) {
+  getLimiter(name: string): TRPCMiddleware | undefined {
     return this.limiters.get(name);
   }
 
@@ -193,20 +201,23 @@ export class TRPCRateLimiterManager {
   }
 
   getStats() {
-    const stats = new Map<string, { totalUsers: number; totalRequests: number }>();
-    
+    const stats = new Map<
+      string,
+      { totalUsers: number; totalRequests: number }
+    >();
+
     rateLimitStore.forEach((procedureStore, procedurePath) => {
       let totalRequests = 0;
       procedureStore.forEach((userData) => {
         totalRequests += userData.count;
       });
-      
+
       stats.set(procedurePath, {
         totalUsers: procedureStore.size,
         totalRequests,
       });
     });
-    
+
     return stats;
   }
 }

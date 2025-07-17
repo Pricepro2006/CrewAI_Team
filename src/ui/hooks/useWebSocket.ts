@@ -100,20 +100,34 @@ export function useAgentStatus(agentId?: string) {
   useEffect(() => {
     if (!isConnected) return;
 
-    const unsubscribe = client.ws?.agentStatus?.subscribe?.(
-      { agentId },
-      {
-        onData: (data: any) => {
-          setStatus(data);
-        },
-        onError: (error: any) => {
-          console.error("Agent status subscription error:", error);
-        },
-      },
-    );
+    let unsubscribe: any = null;
+
+    try {
+      if (client && typeof client === "object" && "ws" in client) {
+        const ws = (client as any).ws;
+        if (ws && typeof ws.subscribe === "function") {
+          unsubscribe = ws.subscribe(
+            {
+              types: ["agent.status"],
+              filter: { agentId },
+            },
+            {
+              onData: (data: any) => {
+                setStatus(data);
+              },
+              onError: (error: any) => {
+                console.error("Agent status subscription error:", error);
+              },
+            },
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Failed to set up agent status subscription:", error);
+    }
 
     return () => {
-      unsubscribe.unsubscribe();
+      unsubscribe?.unsubscribe?.();
     };
   }, [client, agentId, isConnected]);
 
@@ -137,20 +151,34 @@ export function usePlanProgress(planId: string) {
   useEffect(() => {
     if (!isConnected || !planId) return;
 
-    const unsubscribe = client.ws?.planProgress?.subscribe?.(
-      { planId },
-      {
-        onData: (data: any) => {
-          setProgress(data);
-        },
-        onError: (error: any) => {
-          console.error("Plan progress subscription error:", error);
-        },
-      },
-    );
+    let unsubscribe: any = null;
+
+    try {
+      if (client && typeof client === "object" && "ws" in client) {
+        const ws = (client as any).ws;
+        if (ws && typeof ws.subscribe === "function") {
+          unsubscribe = ws.subscribe(
+            {
+              types: ["plan.update"],
+              filter: { planId },
+            },
+            {
+              onData: (data: any) => {
+                setProgress(data);
+              },
+              onError: (error: any) => {
+                console.error("Plan progress subscription error:", error);
+              },
+            },
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Failed to set up plan progress subscription:", error);
+    }
 
     return () => {
-      unsubscribe.unsubscribe();
+      unsubscribe?.unsubscribe?.();
     };
   }, [client, planId, isConnected]);
 
@@ -176,21 +204,37 @@ export function useTaskQueue() {
   useEffect(() => {
     if (!isConnected) return;
 
-    const unsubscribe = client.ws?.taskQueue?.subscribe?.(undefined, {
-      onData: (data: any) => {
-        setTasks((prev) => {
-          const newTasks = new Map(prev);
-          newTasks.set(data.taskId, data);
-          return newTasks;
-        });
-      },
-      onError: (error: any) => {
-        console.error("Task queue subscription error:", error);
-      },
-    });
+    let unsubscribe: any = null;
+
+    try {
+      if (client && typeof client === "object" && "ws" in client) {
+        const ws = (client as any).ws;
+        if (ws && typeof ws.subscribe === "function") {
+          unsubscribe = ws.subscribe(
+            {
+              types: ["task.update"],
+            },
+            {
+              onData: (data: any) => {
+                setTasks((prev) => {
+                  const newTasks = new Map(prev);
+                  newTasks.set(data.taskId, data);
+                  return newTasks;
+                });
+              },
+              onError: (error: any) => {
+                console.error("Task queue subscription error:", error);
+              },
+            },
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Failed to set up task queue subscription:", error);
+    }
 
     return () => {
-      unsubscribe.unsubscribe();
+      unsubscribe?.unsubscribe?.();
     };
   }, [client, isConnected]);
 
@@ -215,17 +259,33 @@ export function useSystemHealth() {
   useEffect(() => {
     if (!isConnected) return;
 
-    const unsubscribe = client.ws?.systemHealth?.subscribe?.(undefined, {
-      onData: (data: any) => {
-        setHealth(data);
-      },
-      onError: (error: any) => {
-        console.error("System health subscription error:", error);
-      },
-    });
+    let unsubscribe: any = null;
+
+    try {
+      if (client && typeof client === "object" && "ws" in client) {
+        const ws = (client as any).ws;
+        if (ws && typeof ws.subscribe === "function") {
+          unsubscribe = ws.subscribe(
+            {
+              types: ["system.health"],
+            },
+            {
+              onData: (data: any) => {
+                setHealth(data);
+              },
+              onError: (error: any) => {
+                console.error("System health subscription error:", error);
+              },
+            },
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Failed to set up system health subscription:", error);
+    }
 
     return () => {
-      unsubscribe.unsubscribe();
+      unsubscribe?.unsubscribe?.();
     };
   }, [client, isConnected]);
 
@@ -253,17 +313,33 @@ export function useRAGOperations() {
   useEffect(() => {
     if (!isConnected) return;
 
-    const unsubscribe = client.ws?.ragOperations?.subscribe?.(undefined, {
-      onData: (data: any) => {
-        setOperations((prev) => [...prev, data].slice(-20)); // Keep last 20 operations
-      },
-      onError: (error: any) => {
-        console.error("RAG operations subscription error:", error);
-      },
-    });
+    let unsubscribe: any = null;
+
+    try {
+      if (client && typeof client === "object" && "ws" in client) {
+        const ws = (client as any).ws;
+        if (ws && typeof ws.subscribe === "function") {
+          unsubscribe = ws.subscribe(
+            {
+              types: ["rag.operation"],
+            },
+            {
+              onData: (data: any) => {
+                setOperations((prev) => [...prev, data].slice(-20)); // Keep last 20 operations
+              },
+              onError: (error: any) => {
+                console.error("RAG operations subscription error:", error);
+              },
+            },
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Failed to set up RAG operations subscription:", error);
+    }
 
     return () => {
-      unsubscribe.unsubscribe();
+      unsubscribe?.unsubscribe?.();
     };
   }, [client, isConnected]);
 

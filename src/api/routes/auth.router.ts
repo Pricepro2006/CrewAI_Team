@@ -6,6 +6,7 @@ import {
   adminProcedure,
 } from "../trpc/enhanced-router";
 import { TRPCError } from "@trpc/server";
+import type { Router } from "@trpc/server";
 import { UserService, UserRole } from "../services/UserService";
 import { logger } from "../../utils/logger";
 
@@ -30,7 +31,7 @@ const passwordSchema = z
     "Password must contain at least one uppercase letter, one lowercase letter, and one number",
   );
 
-export const authRouter = router({
+export const authRouter: Router<any> = router({
   // Register a new user
   register: publicProcedure
     .input(

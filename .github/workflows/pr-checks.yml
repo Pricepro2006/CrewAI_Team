@@ -72,7 +72,8 @@ jobs:
             - Type safety and error handling
             - Performance optimization opportunities
             - Security vulnerabilities in auth/validation
-          openai_model: gpt-4-turbo-preview
+          openai_light_model: gpt-3.5-turbo
+          openai_heavy_model: gpt-4
           max_files: 50
 
   security-scan:
