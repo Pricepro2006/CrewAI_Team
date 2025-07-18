@@ -5,6 +5,7 @@ import { PlanExecutor } from "./PlanExecutor";
 import { PlanReviewer } from "./PlanReviewer";
 import { EnhancedParser } from "./EnhancedParser";
 import { AgentRouter } from "./AgentRouter";
+import { SimplePlanGenerator } from "./SimplePlanGenerator";
 import type {
   Plan,
   ExecutionResult,
@@ -15,6 +16,7 @@ import type {
 import type { QueryAnalysis, AgentRoutingPlan } from "./enhanced-types";
 import { logger, createPerformanceMonitor } from "../../utils/logger";
 import { wsService } from "../../api/services/WebSocketService";
+import { withTimeout, DEFAULT_TIMEOUTS, TimeoutError } from "../../utils/timeout";
 
 export class MasterOrchestrator {
   private llm: OllamaProvider;
@@ -30,7 +32,7 @@ export class MasterOrchestrator {
     logger.info("Initializing MasterOrchestrator", "ORCHESTRATOR", { config });
 
     this.llm = new OllamaProvider({
-      model: config.model || "qwen3:14b",
+      model: config.model || "phi3:mini",  // Good balance for CPU performance
       baseUrl: config.ollamaUrl,
     });
 
@@ -102,8 +104,12 @@ export class MasterOrchestrator {
     });
 
     try {
-      // Step 0: Enhanced query analysis
-      const queryAnalysis = await this.enhancedParser.parseQuery(query);
+      // Step 0: Enhanced query analysis with timeout
+      const queryAnalysis = await withTimeout(
+        this.enhancedParser.parseQuery(query),
+        DEFAULT_TIMEOUTS.QUERY_PROCESSING,
+        "Query analysis timed out"
+      );
 
       logger.info("Query analysis completed", "ORCHESTRATOR", {
         intent: queryAnalysis.intent,
@@ -113,9 +119,12 @@ export class MasterOrchestrator {
         estimatedDuration: queryAnalysis.estimatedDuration,
       });
 
-      // Step 0.5: Create intelligent agent routing plan
-      const routingPlan =
-        await this.agentRouter.createRoutingPlan(queryAnalysis);
+      // Step 0.5: Create intelligent agent routing plan with timeout
+      const routingPlan = await withTimeout(
+        this.agentRouter.createRoutingPlan(queryAnalysis),
+        DEFAULT_TIMEOUTS.PLAN_CREATION,
+        "Agent routing plan creation timed out"
+      );
 
       logger.info("Agent routing plan created", "ORCHESTRATOR", {
         selectedAgents: routingPlan.selectedAgents.length,
@@ -124,8 +133,16 @@ export class MasterOrchestrator {
         riskLevel: routingPlan.riskAssessment.level,
       });
 
-      // Step 1: Create initial plan with enhanced context
-      let plan = await this.createPlan(query, queryAnalysis, routingPlan);
+      // Step 1: Create initial plan with enhanced context and timeout
+      logger.info("Starting plan creation", "ORCHESTRATOR");
+      let plan = await withTimeout(
+        this.createPlan(query, queryAnalysis, routingPlan),
+        DEFAULT_TIMEOUTS.PLAN_CREATION,
+        "Plan creation timed out"
+      );
+      logger.info("Plan created successfully", "ORCHESTRATOR", {
+        steps: plan.steps.length,
+      });
 
       // Broadcast plan creation
       wsService.broadcastPlanUpdate(plan.id, "created", {
@@ -137,8 +154,19 @@ export class MasterOrchestrator {
       let executionResult: ExecutionResult;
       let attempts = 0;
       const maxAttempts = 3;
+      const startTime = Date.now();
+      const maxTotalTime = 120000; // 2 minutes max for entire replan loop
 
       do {
+        // Check if we've exceeded total time limit
+        if (Date.now() - startTime > maxTotalTime) {
+          logger.warn("Replan loop exceeded time limit", "ORCHESTRATOR", {
+            elapsedTime: Date.now() - startTime,
+            attempts: attempts,
+          });
+          break;
+        }
+        
         logger.debug(
           `Executing plan (attempt ${attempts + 1}/${maxAttempts})`,
           "ORCHESTRATOR",
@@ -147,13 +175,17 @@ export class MasterOrchestrator {
           },
         );
 
-        executionResult = await this.planExecutor.execute(plan);
+        executionResult = await withTimeout(
+          this.planExecutor.execute(plan),
+          DEFAULT_TIMEOUTS.AGENT_EXECUTION,
+          "Plan execution timed out"
+        );
 
-        // Step 3: Review execution results
-        const review = await this.planReviewer.review(
-          query,
-          plan,
-          executionResult,
+        // Step 3: Review execution results with timeout
+        const review = await withTimeout(
+          this.planReviewer.review(query, plan, executionResult),
+          DEFAULT_TIMEOUTS.PLAN_CREATION,
+          "Plan review timed out"
         );
 
         logger.debug("Plan review completed", "ORCHESTRATOR", {
@@ -162,6 +194,21 @@ export class MasterOrchestrator {
         });
 
         if (!review.satisfactory && attempts < maxAttempts) {
+          // Check if failures are only infrastructure-related
+          const hasOnlyInfrastructureFailures = review.failedSteps.length === 0 && 
+            review.feedback.includes('infrastructure limitations');
+            
+          if (hasOnlyInfrastructureFailures) {
+            logger.info(
+              "Skipping replan due to infrastructure limitations",
+              "ORCHESTRATOR",
+              {
+                feedback: review.feedback,
+              },
+            );
+            break;
+          }
+          
           // Step 4: Replan if necessary
           logger.info(
             "Replanning due to unsatisfactory results",
@@ -172,7 +219,11 @@ export class MasterOrchestrator {
             },
           );
 
-          plan = await this.replan(query, plan, review, queryAnalysis);
+          plan = await withTimeout(
+            this.replan(query, plan, review, queryAnalysis),
+            DEFAULT_TIMEOUTS.PLAN_CREATION,
+            "Replanning timed out"
+          );
           attempts++;
         } else {
           break;
@@ -193,6 +244,36 @@ export class MasterOrchestrator {
       perf.end({ success: true });
       return result;
     } catch (error) {
+      if (error instanceof TimeoutError) {
+        logger.error(
+          "Query processing timed out",
+          "ORCHESTRATOR",
+          { 
+            query: query.text,
+            duration: error.duration,
+            message: error.message
+          },
+          error
+        );
+        
+        // Return a timeout response instead of throwing
+        return {
+          success: false,
+          output: "I apologize, but processing your request took too long. This can happen with complex queries or when the system is under heavy load. Please try simplifying your request or try again later.",
+          plan: {
+            id: `plan-timeout-${Date.now()}`,
+            steps: [],
+            status: 'failed',
+            error: error.message
+          },
+          metadata: {
+            error: 'timeout',
+            duration: error.duration,
+            timestamp: new Date().toISOString()
+          }
+        };
+      }
+      
       logger.error(
         "Query processing failed",
         "ORCHESTRATOR",
@@ -209,6 +290,12 @@ export class MasterOrchestrator {
     analysis?: QueryAnalysis,
     routingPlan?: AgentRoutingPlan,
   ): Promise<Plan> {
+    // Use simple plan generator for CPU performance
+    const USE_SIMPLE_PLAN = process.env['USE_SIMPLE_PLAN'] !== 'false';
+    if (USE_SIMPLE_PLAN) {
+      logger.info("Using simple plan generator for CPU performance", "ORCHESTRATOR");
+      return SimplePlanGenerator.createSimplePlan(query, routingPlan);
+    }
     const analysisContext = analysis
       ? `
       
@@ -273,11 +360,15 @@ export class MasterOrchestrator {
       }
     `;
 
-    const response = await this.llm.generate(prompt, {
-      format: "json",
-      temperature: 0.3,
-      maxTokens: 2000,
-    });
+    const response = await withTimeout(
+      this.llm.generate(prompt, {
+        format: "json",
+        temperature: 0.3,
+        maxTokens: 2000,
+      }),
+      DEFAULT_TIMEOUTS.LLM_GENERATION,
+      "LLM generation timed out during plan creation"
+    );
     return this.parsePlan(response, query);
   }
 
@@ -304,11 +395,15 @@ export class MasterOrchestrator {
       Return the revised plan in the same JSON format.
     `;
 
-    const response = await this.llm.generate(prompt, {
-      format: "json",
-      temperature: 0.3,
-      maxTokens: 2000,
-    });
+    const response = await withTimeout(
+      this.llm.generate(prompt, {
+        format: "json",
+        temperature: 0.3,
+        maxTokens: 2000,
+      }),
+      DEFAULT_TIMEOUTS.LLM_GENERATION,
+      "LLM generation timed out during replanning"
+    );
     return this.parsePlan(response, query);
   }
 

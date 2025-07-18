@@ -3,6 +3,8 @@
  * Based on agent template patterns for better query analysis and routing
  */
 
+import type { AgentType } from '../shared/types';
+
 export interface QueryAnalysis {
   intent: string;
   entities: Record<string, any>;
@@ -26,13 +28,13 @@ export interface AgentRoutingPlan {
   selectedAgents: AgentSelection[];
   executionStrategy: "sequential" | "parallel" | "hybrid";
   confidence: number; // 0-1
-  fallbackAgents: string[];
+  fallbackAgents: AgentType[];
   estimatedCost: number;
   riskAssessment: RiskAssessment;
 }
 
 export interface AgentSelection {
-  agentType: string;
+  agentType: AgentType;
   priority: number;
   confidence: number;
   rationale: string;

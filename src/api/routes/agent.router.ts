@@ -1,17 +1,33 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc/router";
 import type { Router } from "@trpc/server";
+import { getAgentModel } from "../../config/model-selection.config";
 
 export const agentRouter: Router<any> = router({
   // List all registered agents
   list: publicProcedure.query(async ({ ctx }) => {
     const types = ctx.agentRegistry.getRegisteredTypes();
 
-    return types.map((type: string) => ({
-      type,
-      available: true,
-      description: getAgentDescription(type),
-    }));
+    return types.map((type: string) => {
+      const modelConfig = getAgentModel(type, 'general');
+      const toolSelectionModel = getAgentModel(type, 'tool_selection');
+      
+      return {
+        type,
+        available: true,
+        description: getAgentDescription(type),
+        capabilities: getAgentCapabilities(type),
+        tools: getAgentTools(type),
+        models: {
+          general: modelConfig.model,
+          toolSelection: toolSelectionModel.model
+        },
+        modelConfig: {
+          general: modelConfig,
+          toolSelection: toolSelectionModel
+        }
+      };
+    });
   }),
 
   // Get agent status
@@ -79,8 +95,13 @@ export const agentRouter: Router<any> = router({
       const types = ctx.agentRegistry.getRegisteredTypes();
 
       for (const type of types) {
+        const modelConfig = getAgentModel(type, 'general');
         agentConfigs[type] = {
-          model: "qwen3:8b", // Currently hardcoded, but could be made configurable
+          model: modelConfig.model,
+          modelDescription: modelConfig.description,
+          temperature: modelConfig.temperature,
+          maxTokens: modelConfig.maxTokens,
+          timeout: modelConfig.timeout,
           capabilities: getAgentCapabilities(type),
           tools: getAgentTools(type),
           description: getAgentDescription(type),

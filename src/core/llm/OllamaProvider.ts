@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import { EventEmitter } from 'events';
+import { sanitizeLLMOutput } from '../../utils/output-sanitizer';
 
 export interface OllamaConfig {
   model: string;
@@ -12,6 +13,7 @@ export interface OllamaConfig {
   systemPrompt?: string;
   format?: 'json' | string;
   stream?: boolean;
+  extractLogProbs?: boolean;
 }
 
 export interface OllamaResponse {
@@ -25,6 +27,10 @@ export interface OllamaResponse {
   prompt_eval_duration?: number;
   eval_duration?: number;
   eval_count?: number;
+  // New fields for log probabilities
+  tokens?: string[];
+  logprobs?: number[][];
+  token_logprobs?: number[];
 }
 
 export interface OllamaGenerateOptions {
@@ -35,6 +41,19 @@ export interface OllamaGenerateOptions {
   systemPrompt?: string;
   format?: 'json' | string;
   context?: number[];
+  extractLogProbs?: boolean;
+}
+
+export interface OllamaGenerateWithLogProbsResponse {
+  text: string;
+  tokens?: string[];
+  logProbs?: number[];
+  metadata?: {
+    model: string;
+    duration: number;
+    tokenCount: number;
+    tokensPerSecond?: number;
+  };
 }
 
 export class OllamaProvider extends EventEmitter {
@@ -56,7 +75,7 @@ export class OllamaProvider extends EventEmitter {
 
     this.client = axios.create({
       baseURL: this.config.baseUrl || 'http://localhost:11434',
-      timeout: 30000, // 30 seconds timeout - much shorter for stuck models
+      timeout: 300000, // 5 minutes timeout for large models
       headers: {
         'Content-Type': 'application/json'
       }
@@ -106,11 +125,14 @@ export class OllamaProvider extends EventEmitter {
       model: this.config.model,
       prompt: this.buildPrompt(prompt, requestOptions.systemPrompt),
       stream: false,
+      keep_alive: '15m', // Keep model loaded for 15 minutes
       options: {
         temperature: requestOptions.temperature,
         top_p: requestOptions.topP,
         top_k: requestOptions.topK,
-        num_predict: requestOptions.maxTokens
+        num_predict: requestOptions.maxTokens,
+        // Include log probs if requested
+        logits_all: requestOptions.extractLogProbs || false
       },
       format: requestOptions.format,
       context: requestOptions.context || this.context
@@ -121,7 +143,7 @@ export class OllamaProvider extends EventEmitter {
         '/api/generate',
         payload,
         {
-          timeout: 30000 // Explicitly set 30 second timeout for this request
+          timeout: 300000 // 5 minutes timeout for large model generation
         }
       );
 
@@ -130,13 +152,17 @@ export class OllamaProvider extends EventEmitter {
         this.context = response.data.context;
       }
 
+      const sanitizedResponse = sanitizeLLMOutput(response.data.response);
+      
       this.emit('generation', {
         prompt,
-        response: response.data.response,
-        duration: response.data.total_duration
+        response: sanitizedResponse,
+        duration: response.data.total_duration,
+        tokens: response.data.tokens,
+        logprobs: response.data.token_logprobs
       });
 
-      return response.data.response;
+      return sanitizedResponse;
     } catch (error: any) {
       this.emit('error', error);
       
@@ -144,6 +170,107 @@ export class OllamaProvider extends EventEmitter {
       if (error.code === 'ECONNABORTED' || error.code === 'ECONNREFUSED') {
         console.warn(`Ollama timeout/connection error for model ${this.config.model}. Providing fallback response.`);
         return this.generateFallbackResponse(prompt, options);
+      }
+      
+      throw error;
+    }
+  }
+
+  /**
+   * Generate text with log probabilities for confidence scoring
+   * This method returns both the generated text and token-level confidence data
+   */
+  async generateWithLogProbs(
+    prompt: string,
+    options?: OllamaGenerateOptions
+  ): Promise<OllamaGenerateWithLogProbsResponse> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    const requestOptions = {
+      ...this.config,
+      ...options,
+      extractLogProbs: true
+    };
+
+    const payload = {
+      model: this.config.model,
+      prompt: this.buildPrompt(prompt, requestOptions.systemPrompt),
+      stream: false,
+      keep_alive: '15m',
+      options: {
+        temperature: requestOptions.temperature || this.config.temperature,
+        top_p: requestOptions.topP || this.config.topP,
+        top_k: requestOptions.topK || this.config.topK,
+        num_predict: requestOptions.maxTokens || this.config.maxTokens,
+        // Request log probabilities
+        logits_all: true,
+        num_ctx: 8192 // Ensure sufficient context for Phi-2
+      },
+      format: requestOptions.format,
+      context: requestOptions.context || this.context
+    };
+
+    try {
+      const response = await this.client.post<OllamaResponse>(
+        '/api/generate',
+        payload,
+        {
+          timeout: 300000
+        }
+      );
+
+      // Store context for conversation continuity
+      if (response.data.context) {
+        this.context = response.data.context;
+      }
+
+      // Extract log probabilities if available
+      let logProbs: number[] | undefined;
+      if (response.data.token_logprobs) {
+        logProbs = response.data.token_logprobs;
+      } else if (response.data.logprobs && response.data.logprobs.length > 0) {
+        // Take the top log prob for each token
+        logProbs = response.data.logprobs.map(probs => probs[0] || -10);
+      }
+
+      const result: OllamaGenerateWithLogProbsResponse = {
+        text: sanitizeLLMOutput(response.data.response),
+        tokens: response.data.tokens,
+        logProbs: logProbs,
+        metadata: {
+          model: response.data.model,
+          duration: response.data.total_duration || 0,
+          tokenCount: response.data.eval_count || 0,
+          tokensPerSecond: response.data.eval_count && response.data.eval_duration
+            ? (response.data.eval_count / (response.data.eval_duration / 1_000_000_000))
+            : undefined
+        }
+      };
+
+      this.emit('generation_with_logprobs', result);
+
+      return result;
+    } catch (error: any) {
+      this.emit('error', error);
+      
+      // Fallback if log probs not supported
+      if (error.response?.status === 400 && error.response?.data?.error?.includes('logits')) {
+        console.warn('Log probabilities not supported by this Ollama version. Falling back to standard generation.');
+        
+        // Fall back to regular generation
+        const text = await this.generate(prompt, options);
+        return {
+          text: sanitizeLLMOutput(text),
+          tokens: undefined,
+          logProbs: undefined,
+          metadata: {
+            model: this.config.model,
+            duration: 0,
+            tokenCount: text.split(/\s+/).length // Rough estimate
+          }
+        };
       }
       
       throw error;
@@ -196,6 +323,7 @@ export class OllamaProvider extends EventEmitter {
       model: this.config.model,
       prompt: this.buildPrompt(prompt, requestOptions.systemPrompt),
       stream: true,
+      keep_alive: '15m', // Keep model loaded for 15 minutes
       options: {
         temperature: requestOptions.temperature,
         top_p: requestOptions.topP,
@@ -212,7 +340,7 @@ export class OllamaProvider extends EventEmitter {
         payload,
         {
           responseType: 'stream',
-          timeout: 30000 // Explicitly set timeout for streaming
+          timeout: 300000 // 5 minutes timeout for streaming
         }
       );
 
@@ -263,7 +391,7 @@ export class OllamaProvider extends EventEmitter {
         model: this.config.model,
         prompt: text
       }, {
-        timeout: 30000 // Explicitly set timeout for embeddings
+        timeout: 300000 // 5 minutes timeout for embeddings
       });
 
       return response.data.embedding;

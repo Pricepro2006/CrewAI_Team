@@ -9,6 +9,7 @@ import type {
   Context,
 } from "./types";
 import { wsService } from "../../api/services/WebSocketService";
+import { withTimeout, DEFAULT_TIMEOUTS, TimeoutError } from "../../utils/timeout";
 
 export class PlanExecutor {
   constructor(
@@ -70,8 +71,15 @@ export class PlanExecutor {
           error: error instanceof Error ? error.message : "Unknown error",
           metadata: {
             errorType: error instanceof Error ? error.name : "UnknownError",
+            isTimeout: error instanceof TimeoutError,
+            ...(error instanceof TimeoutError && { timeoutDuration: error.duration }),
           },
         });
+        
+        // Log timeout errors specifically
+        if (error instanceof TimeoutError) {
+          console.error(`Step ${step.id} timed out after ${error.duration}ms: ${error.message}`);
+        }
       }
     }
 
@@ -170,14 +178,35 @@ export class PlanExecutor {
   }
 
   private async gatherContext(step: PlanStep): Promise<Context> {
-    const documents = await this.ragSystem.search(step.ragQuery, 5);
+    let documents: any[] = [];
+    let relevance = 0;
+    
+    try {
+      // Attempt to search RAG system with timeout
+      const searchPromise = this.ragSystem.search(step.ragQuery, 5);
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('RAG search timeout')), 5000)
+      );
+      
+      documents = await Promise.race([searchPromise, timeoutPromise]);
+      relevance = this.calculateRelevance(documents, step);
+    } catch (error) {
+      // Log the error but don't fail the step
+      console.warn(`RAG search failed for step ${step.id}:`, error instanceof Error ? error.message : 'Unknown error');
+      console.warn('Continuing without RAG context');
+      
+      // Return empty context rather than throwing
+      documents = [];
+      relevance = 0;
+    }
 
     return {
       documents: documents,
-      relevance: this.calculateRelevance(documents, step),
+      relevance: relevance,
       metadata: {
         stepId: step.id,
         query: step.ragQuery,
+        ragAvailable: documents.length > 0,
       },
     };
   }
@@ -201,15 +230,19 @@ export class PlanExecutor {
       );
     }
 
-    const result = await agent.executeWithTool({
-      tool,
-      context: {
-        task: step.description,
-        ragDocuments: context.documents,
-        tool: step.toolName,
-      },
-      parameters: step.parameters || {},
-    });
+    const result = await withTimeout(
+      agent.executeWithTool({
+        tool,
+        context: {
+          task: step.description,
+          ragDocuments: context.documents,
+          tool: step.toolName,
+        },
+        parameters: step.parameters || {},
+      }),
+      DEFAULT_TIMEOUTS.TOOL_EXECUTION,
+      `Tool execution timed out for ${step.toolName}`
+    );
 
     return {
       stepId: step.id,
@@ -231,10 +264,14 @@ export class PlanExecutor {
   ): Promise<StepResult> {
     const agent = await this.agentRegistry.getAgent(step.agentType);
 
-    const result = await agent.execute(step.description, {
-      task: step.description,
-      ragDocuments: context.documents,
-    });
+    const result = await withTimeout(
+      agent.execute(step.description, {
+        task: step.description,
+        ragDocuments: context.documents,
+      }),
+      DEFAULT_TIMEOUTS.AGENT_EXECUTION,
+      `Agent execution timed out for ${step.agentType}`
+    );
 
     return {
       stepId: step.id,

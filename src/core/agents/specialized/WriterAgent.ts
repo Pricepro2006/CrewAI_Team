@@ -1,5 +1,6 @@
 import { BaseAgent } from '../base/BaseAgent';
 import type { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
+import { sanitizeLLMOutput } from '../../../utils/output-sanitizer';
 
 export class WriterAgent extends BaseAgent {
   constructor() {
@@ -39,7 +40,7 @@ export class WriterAgent extends BaseAgent {
       return {
         success: true,
         data: result,
-        output: result.content,
+        output: sanitizeLLMOutput(result.content),
         metadata: {
           agent: this.name,
           contentType: taskAnalysis.contentType,
@@ -127,7 +128,7 @@ export class WriterAgent extends BaseAgent {
     const content = await this.llm.generate(prompt);
     
     return {
-      content,
+      content: sanitizeLLMOutput(content),
       contentType: 'article',
       metadata: {
         sections: this.extractSections(content),
@@ -162,7 +163,7 @@ export class WriterAgent extends BaseAgent {
     const content = await this.llm.generate(prompt);
     
     return {
-      content,
+      content: sanitizeLLMOutput(content),
       contentType: 'report',
       metadata: {
         sections: this.extractSections(content),
@@ -197,7 +198,7 @@ export class WriterAgent extends BaseAgent {
     const content = await this.llm.generate(prompt);
     
     return {
-      content,
+      content: sanitizeLLMOutput(content),
       contentType: 'email',
       metadata: {
         subject: this.extractEmailSubject(content),
@@ -231,7 +232,7 @@ export class WriterAgent extends BaseAgent {
     const content = await this.llm.generate(prompt);
     
     return {
-      content,
+      content: sanitizeLLMOutput(content),
       contentType: 'creative',
       metadata: {
         genre: this.detectGenre(content),
@@ -264,7 +265,7 @@ export class WriterAgent extends BaseAgent {
     const content = await this.llm.generate(prompt);
     
     return {
-      content,
+      content: sanitizeLLMOutput(content),
       contentType: 'technical',
       metadata: {
         hasCodeExamples: content.includes('```'),
@@ -288,7 +289,7 @@ export class WriterAgent extends BaseAgent {
     const content = await this.llm.generate(prompt);
     
     return {
-      content,
+      content: sanitizeLLMOutput(content),
       contentType: 'general',
       metadata: {}
     };

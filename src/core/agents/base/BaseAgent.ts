@@ -1,6 +1,8 @@
 import { OllamaProvider } from '../../llm/OllamaProvider';
 import { BaseTool } from '../../tools/base/BaseTool';
 import type { AgentCapability, AgentContext, AgentResult, ToolExecutionParams } from './AgentTypes';
+import { getAgentModel } from '../../../config/model-selection.config';
+import { sanitizeLLMOutput, sanitizeAgentOutput } from '../../../utils/output-sanitizer';
 // import { wsService } from '../../../api/services/WebSocketService';
 // import { v4 as uuidv4 } from 'uuid';
 
@@ -14,8 +16,12 @@ export abstract class BaseAgent {
     protected name: string,
     protected description: string
   ) {
+    // Use model selection config for agent tasks
+    const modelConfig = getAgentModel(this.name, 'general');
     this.llm = new OllamaProvider({
-      model: 'qwen3:8b' // Smaller model for agents
+      model: modelConfig.model,
+      temperature: modelConfig.temperature,
+      maxTokens: modelConfig.maxTokens
     });
     this.tools = new Map();
     this.capabilities = [];
@@ -40,11 +46,19 @@ export abstract class BaseAgent {
         throw new Error(`Tool ${params.tool.name} not found for agent ${this.name}`);
       }
 
+      // Use simple model for tool selection and parameter extraction
+      const toolSelectionModel = getAgentModel(this.name, 'tool_selection');
+      const toolLLM = new OllamaProvider({
+        model: toolSelectionModel.model,
+        temperature: toolSelectionModel.temperature,
+        maxTokens: toolSelectionModel.maxTokens
+      });
+      
       // Prepare prompt with context
       const prompt = this.buildPromptWithContext(params);
       
       // Get LLM guidance for tool usage
-      const guidance = await this.llm.generate(prompt);
+      const guidance = await toolLLM.generate(prompt);
       
       // Parse LLM response to get tool parameters
       const toolParams = this.parseToolParameters(guidance, params.parameters);
@@ -149,7 +163,7 @@ export abstract class BaseAgent {
     return {
       success: true,
       data: result.data,
-      output: this.formatToolOutput(result.data),
+      output: sanitizeLLMOutput(this.formatToolOutput(result.data)),
       metadata: {
         agent: this.name,
         timestamp: new Date().toISOString(),

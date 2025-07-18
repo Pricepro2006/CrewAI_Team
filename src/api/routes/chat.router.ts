@@ -2,16 +2,15 @@ import { z } from "zod";
 import {
   router,
   publicProcedure,
-  protectedProcedure,
-  chatProcedure,
   commonSchemas,
   createFeatureRouter,
 } from "../trpc/enhanced-router";
 import { observable } from "@trpc/server/observable";
 import { EventEmitter } from "events";
-import type { Router } from "@trpc/server";
-import { sanitizationSchemas } from "../middleware/security";
+// Router type available via enhanced-router
+// Security schemas available via enhanced-router
 import { logger } from "../../utils/logger";
+import { withTimeout, DEFAULT_TIMEOUTS } from "../../utils/timeout";
 
 // Event emitter for real-time updates
 const chatEvents = new EventEmitter();
@@ -202,7 +201,7 @@ export const chatRouter = createFeatureRouter(
       )
       .subscription(({ input }) => {
         return observable((observer) => {
-          const handler = (data: any) => {
+          const handler = (data: { conversationId: string; message: unknown }) => {
             if (data.conversationId === input.conversationId) {
               observer.next(data.message);
             }
@@ -235,7 +234,7 @@ export const chatRouter = createFeatureRouter(
         // Use first few messages to generate title
         const messages = conversation.messages.slice(0, 4);
         const context = messages
-          .map((m: any) => `${m.role}: ${m.content}`)
+          .map((m: { role: string; content: string }) => `${m.role}: ${m.content}`)
           .join("\n");
 
         const prompt = `
@@ -246,7 +245,11 @@ export const chatRouter = createFeatureRouter(
         Return only the title, no quotes or explanation.
       `;
 
-        const title = await ctx.masterOrchestrator["llm"].generate(prompt);
+        const title = await withTimeout(
+          ctx.masterOrchestrator["llm"].generate(prompt),
+          DEFAULT_TIMEOUTS.LLM_GENERATION,
+          "Title generation timed out"
+        );
 
         await ctx.conversationService.updateTitle(
           input.conversationId,
