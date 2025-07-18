@@ -174,25 +174,35 @@ code_generation:
 
 # Knowledge base for project-specific context
 knowledge_base:
-  # Project-specific patterns to recognize
+  # Project-specific patterns to recognize - fix the structure
   learnings:
-    - pattern: "TypeScript AI Agent System"
+    typescript_ai_agent_system:
+      pattern: "TypeScript AI Agent System"
       description: "This is a TypeScript-based AI Agent orchestration system"
-    - pattern: "tRPC v10 Usage"
+    trpc_v10_usage:
+      pattern: "tRPC v10 Usage"
       description: "Uses tRPC v10 for type-safe API communication"
-    - pattern: "Master Orchestrator Pattern"
+    master_orchestrator_pattern:
+      pattern: "Master Orchestrator Pattern"
       description: "Implements Master Orchestrator pattern with specialized agents"
-    - pattern: "Ollama Integration"
+    ollama_integration:
+      pattern: "Ollama Integration"
       description: "Integrates with Ollama for local LLM deployment"
-    - pattern: "ChromaDB RAG"
+    chromadb_rag:
+      pattern: "ChromaDB RAG"
       description: "Uses ChromaDB for vector storage and RAG capabilities"
-    - pattern: "Security-First Approach"
+    security_first_approach:
+      pattern: "Security-First Approach"
       description: "Follows security-first approach with comprehensive middleware"
-    - pattern: "WebSocket Real-time"
+    websocket_realtime:
+      pattern: "WebSocket Real-time"
       description: "Implements real-time updates via WebSocket subscriptions"
-    - pattern: "React with Vite"
+    react_with_vite:
+      pattern: "React with Vite"
       description: "Uses React with Vite for frontend, not Next.js"
-    - pattern: "SQLite Database"
+    sqlite_database:
+      pattern: "SQLite Database"
       description: "Database layer uses SQLite with better-sqlite3"
-    - pattern: "Testing Stack"
+    testing_stack:
+      pattern: "Testing Stack"
       description: "Testing uses Vitest for unit tests and Playwright for E2E"
