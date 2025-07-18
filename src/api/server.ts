@@ -15,6 +15,8 @@ import { apiRateLimiter } from "./middleware/rateLimiter";
 import { wsService } from "./services/WebSocketService";
 import { logger } from "../utils/logger";
 import uploadRoutes from "./routes/upload.routes";
+import { webhookRouter } from "./routes/webhook.router";
+import { emailAnalysisRouter } from "./routes/email-analysis.router";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
@@ -116,6 +118,12 @@ app.get("/health", async (_req, res) => {
 
 // File upload routes (before tRPC to handle multipart forms)
 app.use("/api", uploadRoutes);
+
+// Webhook routes (needs to be before tRPC)
+app.use("/api/webhooks", webhookRouter);
+
+// Email analysis routes
+app.use("/api/email-analysis", emailAnalysisRouter);
 
 // tRPC middleware
 app.use(

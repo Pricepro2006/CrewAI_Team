@@ -281,8 +281,8 @@ describe('AdaptiveDeliveryManager', () => {
       ];
 
       const results = [];
-      for (const eval of evaluations) {
-        results.push(await manager.deliver(eval));
+      for (const evaluation of evaluations) {
+        results.push(await manager.deliver(evaluation));
       }
 
       // Add feedback to first result only
@@ -302,8 +302,8 @@ describe('AdaptiveDeliveryManager', () => {
       ];
 
       const results = [];
-      for (const eval of evaluations) {
-        results.push(await manager.deliver(eval));
+      for (const evaluation of evaluations) {
+        results.push(await manager.deliver(evaluation));
       }
 
       manager.captureFeedback(results[0].feedbackId, { 

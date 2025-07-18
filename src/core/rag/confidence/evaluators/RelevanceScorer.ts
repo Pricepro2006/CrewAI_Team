@@ -25,7 +25,7 @@ export class RelevanceScorer {
   calculateRelevance(
     query: string,
     response: string,
-    sources: ScoredDocument[]
+    _sources: ScoredDocument[]
   ): RelevanceResult {
     // Extract key components
     const queryTerms = this.extractQueryTerms(query);
@@ -140,7 +140,7 @@ export class RelevanceScorer {
     type: string;
     expectedElements: string[];
   } {
-    const lowerQuery = query.toLowerCase();
+    const _lowerQuery = query.toLowerCase();
 
     // Definition/Explanation queries
     if (/^(what|explain|describe|define)\s/i.test(query)) {
@@ -304,13 +304,14 @@ export class RelevanceScorer {
         }
         break;
 
-      case 'enumeration':
+      case 'enumeration': {
         // Check for list markers
         const listMarkers = response.match(/(\d+[.)]\s|[-*]\s|\b(first|second|third)\b)/gi);
         if (listMarkers && listMarkers.length > 1) {
           return Math.max(0.8, fulfillmentRatio);
         }
         break;
+      }
     }
 
     return fulfillmentRatio;
