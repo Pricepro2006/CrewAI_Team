@@ -8,10 +8,14 @@ import type { AppRouter } from "../api/trpc/router";
 import { ChatInterface } from "./components/Chat/ChatInterface";
 import { MainLayout } from "./components/Layout/MainLayout";
 import { Dashboard } from "./components/Dashboard/Dashboard";
+import { EmailDashboard } from "./components/Email/EmailDashboard";
 import "./App.css";
 
 // Create tRPC client
 export const trpc = createTRPCReact<AppRouter>();
+
+// Export trpc instance for use in other components
+export { trpc as trpcClient };
 
 // Create query client
 const queryClient = new QueryClient({
@@ -61,6 +65,7 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="chat" element={<ChatInterface />} />
               <Route path="chat/:conversationId" element={<ChatInterface />} />
+              <Route path="email-dashboard" element={<EmailDashboard />} />
               <Route path="architecture-expert" element={<ArchitectureExpert />} />
               <Route path="database-expert" element={<DatabaseExpert />} />
               <Route path="web-scraping" element={<WebScraping />} />

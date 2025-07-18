@@ -9,6 +9,7 @@ import { CodeAgent } from "../specialized/CodeAgent";
 import { DataAnalysisAgent } from "../specialized/DataAnalysisAgent";
 import { WriterAgent } from "../specialized/WriterAgent";
 import { ToolExecutorAgent } from "../specialized/ToolExecutorAgent";
+import { EmailAnalysisAgent } from "../specialized/EmailAnalysisAgent";
 
 export class AgentRegistry {
   private activeAgents: Map<string, BaseAgent>;
@@ -51,6 +52,10 @@ export class AgentRegistry {
     this.agentFactories.set(
       "ToolExecutorAgent",
       () => new ToolExecutorAgent() as unknown as BaseAgent,
+    );
+    this.agentFactories.set(
+      "EmailAnalysisAgent",
+      () => new EmailAnalysisAgent() as unknown as BaseAgent,
     );
   }
 
