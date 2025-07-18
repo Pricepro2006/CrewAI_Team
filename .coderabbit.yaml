@@ -12,7 +12,6 @@ reviews:
   high_level_summary_placeholder: "## CodeRabbit Summary\n\n<!-- Summary will be added here -->"
   poem: false
   review_status: true
-  collapse_empty_files: true
 
   # Advanced analysis features
   auto_review:
@@ -116,8 +115,8 @@ reviews:
     - "!**/*.min.js"
     - "!**/pnpm-lock.yaml"
 
-  # Code quality focus areas
-  tone_instructions: |
+  # Review instructions for all files
+  review_instructions: |
     You are an expert TypeScript/React developer reviewing code for an AI Agent Team Framework.
     Focus on:
 
@@ -174,35 +173,25 @@ code_generation:
 
 # Knowledge base for project-specific context
 knowledge_base:
-  # Project-specific patterns to recognize - fix the structure
+  # Project-specific patterns to recognize
   learnings:
-    typescript_ai_agent_system:
-      pattern: "TypeScript AI Agent System"
+    - pattern: "TypeScript AI Agent System"
       description: "This is a TypeScript-based AI Agent orchestration system"
-    trpc_v10_usage:
-      pattern: "tRPC v10 Usage"
+    - pattern: "tRPC v10 Usage"
       description: "Uses tRPC v10 for type-safe API communication"
-    master_orchestrator_pattern:
-      pattern: "Master Orchestrator Pattern"
+    - pattern: "Master Orchestrator Pattern"
       description: "Implements Master Orchestrator pattern with specialized agents"
-    ollama_integration:
-      pattern: "Ollama Integration"
+    - pattern: "Ollama Integration"
       description: "Integrates with Ollama for local LLM deployment"
-    chromadb_rag:
-      pattern: "ChromaDB RAG"
+    - pattern: "ChromaDB RAG"
       description: "Uses ChromaDB for vector storage and RAG capabilities"
-    security_first_approach:
-      pattern: "Security-First Approach"
+    - pattern: "Security-First Approach"
       description: "Follows security-first approach with comprehensive middleware"
-    websocket_realtime:
-      pattern: "WebSocket Real-time"
+    - pattern: "WebSocket Real-time"
       description: "Implements real-time updates via WebSocket subscriptions"
-    react_with_vite:
-      pattern: "React with Vite"
+    - pattern: "React with Vite"
       description: "Uses React with Vite for frontend, not Next.js"
-    sqlite_database:
-      pattern: "SQLite Database"
+    - pattern: "SQLite Database"
       description: "Database layer uses SQLite with better-sqlite3"
-    testing_stack:
-      pattern: "Testing Stack"
+    - pattern: "Testing Stack"
       description: "Testing uses Vitest for unit tests and Playwright for E2E"
