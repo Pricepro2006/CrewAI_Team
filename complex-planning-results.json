@@ -1,0 +1,132 @@
+{
+  "testInfo": {
+    "timestamp": "2025-07-18T00:37:03.430Z",
+    "totalModels": 15,
+    "availableModels": 6,
+    "successfulModels": 5,
+    "systemSpecs": {
+      "ram": "50GB",
+      "cpu": "AMD Ryzen 7 PRO 7840HS",
+      "gpu": "Radeon 780M (integrated)",
+      "npu": "Available (PCI bus 100)"
+    }
+  },
+  "results": [
+    {
+      "model": "phi3:mini",
+      "available": true,
+      "planCreationTime": 90.756,
+      "success": false,
+      "responseQuality": "❌ JSON parse error: Expected double-quoted property name in JSON at position 941 (line 23 column 3)",
+      "modelSize": "4f2222927938"
+    },
+    {
+      "model": "qwen2.5:0.5b",
+      "available": true,
+      "planCreationTime": 5.256,
+      "success": true,
+      "responseQuality": "✅ Valid JSON with 1 steps - Well structured",
+      "modelSize": "a8b0c5157701",
+      "stepsGenerated": 1
+    },
+    {
+      "model": "qwen2.5:1.5b",
+      "available": false,
+      "planCreationTime": 0,
+      "success": false,
+      "responseQuality": "Model not available"
+    },
+    {
+      "model": "qwen2.5:3b",
+      "available": false,
+      "planCreationTime": 0,
+      "success": false,
+      "responseQuality": "Model not available"
+    },
+    {
+      "model": "qwen2.5:7b",
+      "available": true,
+      "planCreationTime": 50.731,
+      "success": true,
+      "responseQuality": "✅ Valid JSON with 2 steps - Well structured",
+      "modelSize": "845dbda0ea48",
+      "stepsGenerated": 2
+    },
+    {
+      "model": "qwen2.5:14b",
+      "available": false,
+      "planCreationTime": 0,
+      "success": false,
+      "responseQuality": "Model not available"
+    },
+    {
+      "model": "qwen3:1.7b",
+      "available": true,
+      "planCreationTime": 32.076,
+      "success": true,
+      "responseQuality": "✅ Valid JSON with 2 steps - Well structured",
+      "modelSize": "8f68893c685c",
+      "stepsGenerated": 2
+    },
+    {
+      "model": "qwen3:4b",
+      "available": true,
+      "planCreationTime": 55.481,
+      "success": true,
+      "responseQuality": "✅ Valid JSON with 2 steps - Well structured",
+      "modelSize": "2bfd38a7daaf",
+      "stepsGenerated": 2
+    },
+    {
+      "model": "qwen3:8b",
+      "available": true,
+      "planCreationTime": 87.164,
+      "success": true,
+      "responseQuality": "✅ Valid JSON with 1 steps - Well structured",
+      "modelSize": "500a1f067a9f",
+      "stepsGenerated": 1
+    },
+    {
+      "model": "mistral:7b",
+      "available": false,
+      "planCreationTime": 0,
+      "success": false,
+      "responseQuality": "Model not available"
+    },
+    {
+      "model": "granite3-dense:2b",
+      "available": false,
+      "planCreationTime": 0,
+      "success": false,
+      "responseQuality": "Model not available"
+    },
+    {
+      "model": "granite3-dense:8b",
+      "available": false,
+      "planCreationTime": 0,
+      "success": false,
+      "responseQuality": "Model not available"
+    },
+    {
+      "model": "gemma:2b",
+      "available": false,
+      "planCreationTime": 0,
+      "success": false,
+      "responseQuality": "Model not available"
+    },
+    {
+      "model": "gemma2:2b",
+      "available": false,
+      "planCreationTime": 0,
+      "success": false,
+      "responseQuality": "Model not available"
+    },
+    {
+      "model": "phi4:3.8b",
+      "available": false,
+      "planCreationTime": 0,
+      "success": false,
+      "responseQuality": "Model not available"
+    }
+  ]
+}

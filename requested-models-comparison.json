@@ -1,0 +1,122 @@
+{
+  "testInfo": {
+    "timestamp": "2025-07-18T01:18:07.776Z",
+    "baseline": "phi3:mini (7.8s query + 91.4s plan = 6 steps)",
+    "goal": "Find models generating 6+ steps faster than 91.4s",
+    "requestedModels": [
+      "mistral-small3.2:24b",
+      "gemma3n:e2b",
+      "gemma3n:e4b",
+      "phi4-mini-reasoning:3.8b",
+      "qwen3:1.7b",
+      "qwen3:4b",
+      "granite3.3:8b",
+      "granite3.3:2b",
+      "phi3:mini"
+    ],
+    "systemSpecs": {
+      "ram": "50GB",
+      "cpu": "AMD Ryzen 7 PRO 7840HS",
+      "gpu": "Radeon 780M + NPU"
+    }
+  },
+  "results": [
+    {
+      "model": "mistral-small3.2:24b",
+      "available": false,
+      "queryAnalysisTime": 0,
+      "planCreationTime": 0,
+      "totalTime": 0,
+      "success": false,
+      "responseQuality": "Model unavailable/failed to pull",
+      "comparison": "Failed"
+    },
+    {
+      "model": "gemma3n:e2b",
+      "available": true,
+      "queryAnalysisTime": 48.93,
+      "planCreationTime": 104.673,
+      "totalTime": 153.604,
+      "success": true,
+      "responseQuality": "✅ PARTIAL SUCCESS: 5 steps in 104.7s (phi3:mini FAILED)",
+      "comparison": "Better",
+      "stepsGenerated": 5
+    },
+    {
+      "model": "gemma3n:e4b",
+      "available": true,
+      "queryAnalysisTime": 14.244,
+      "planCreationTime": 133.558,
+      "totalTime": 147.803,
+      "success": true,
+      "responseQuality": "✅ PARTIAL SUCCESS: 4 steps in 133.6s (phi3:mini FAILED)",
+      "comparison": "Better",
+      "stepsGenerated": 4
+    },
+    {
+      "model": "phi4-mini-reasoning:3.8b",
+      "available": true,
+      "queryAnalysisTime": 13.616,
+      "planCreationTime": 183.909,
+      "totalTime": 197.525,
+      "success": true,
+      "responseQuality": "⚠️  MINIMAL: 2 step(s) but at least works (phi3:mini FAILED)",
+      "comparison": "Similar",
+      "stepsGenerated": 2
+    },
+    {
+      "model": "qwen3:1.7b",
+      "available": true,
+      "queryAnalysisTime": 8.556,
+      "planCreationTime": 15.385,
+      "totalTime": 23.941,
+      "success": true,
+      "responseQuality": "⚠️  MINIMAL: 1 step(s) but at least works (phi3:mini FAILED)",
+      "comparison": "Similar",
+      "stepsGenerated": 1
+    },
+    {
+      "model": "qwen3:4b",
+      "available": true,
+      "queryAnalysisTime": 19.331,
+      "planCreationTime": 39.322,
+      "totalTime": 58.654,
+      "success": true,
+      "responseQuality": "✅ PARTIAL SUCCESS: 3 steps in 39.3s (phi3:mini FAILED)",
+      "comparison": "Better",
+      "stepsGenerated": 3
+    },
+    {
+      "model": "granite3.3:8b",
+      "available": true,
+      "queryAnalysisTime": 11.143,
+      "planCreationTime": 53.53,
+      "totalTime": 64.674,
+      "success": true,
+      "responseQuality": "✅ PARTIAL SUCCESS: 3 steps in 53.5s (phi3:mini FAILED)",
+      "comparison": "Better",
+      "stepsGenerated": 3
+    },
+    {
+      "model": "granite3.3:2b",
+      "available": true,
+      "queryAnalysisTime": 4.295,
+      "planCreationTime": 18.33,
+      "totalTime": 22.626,
+      "success": true,
+      "responseQuality": "✅ PARTIAL SUCCESS: 3 steps in 18.3s (phi3:mini FAILED)",
+      "comparison": "Better",
+      "stepsGenerated": 3
+    },
+    {
+      "model": "phi3:mini",
+      "available": true,
+      "queryAnalysisTime": 11.934,
+      "planCreationTime": 100.162,
+      "totalTime": 112.096,
+      "success": false,
+      "responseQuality": "❌ JSON parse error: Expected double-quoted property name in JSON at position 1112 (line 25 column 2)",
+      "comparison": "Failed"
+    }
+  ]
+}
