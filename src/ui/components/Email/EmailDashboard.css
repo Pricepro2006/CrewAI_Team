@@ -1,4 +1,6 @@
 /* Email Dashboard Styles */
+@import '@/client/styles/email-table.css';
+
 .email-dashboard {
   display: flex;
   flex-direction: column;
@@ -239,6 +241,43 @@
   flex: 1;
   overflow-y: auto;
   background-color: var(--color-background);
+}
+
+/* Email Table Specific Layout */
+.email-dashboard__table {
+  flex: 1;
+  overflow: hidden;
+  background-color: var(--color-background);
+  padding: 0 1rem 1rem;
+}
+
+.email-dashboard__table-component {
+  height: 100%;
+  overflow: auto;
+}
+
+/* Controls Section */
+.email-dashboard__controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  gap: 1rem;
+}
+
+/* Status Legend */
+.email-dashboard__status-legend {
+  display: flex;
+  align-items: center;
+}
+
+/* Quick Filters */
+.email-dashboard__quick-filters {
+  padding: 0 2rem 1rem;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* Email Stats Component */

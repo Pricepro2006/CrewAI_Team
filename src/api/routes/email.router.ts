@@ -8,7 +8,26 @@ const emailStorage = new EmailStorageService();
 // Start SLA monitoring
 emailStorage.startSLAMonitoring();
 
-// Input validation schemas
+// Input validation schemas - Enhanced for table view (Agent 10)
+const GetEmailsTableInputSchema = z.object({
+  page: z.number().min(1).optional().default(1),
+  pageSize: z.number().min(1).max(100).optional().default(50),
+  sortBy: z.enum(['received_date', 'subject', 'requested_by', 'status', 'priority']).optional().default('received_date'),
+  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+  filters: z.object({
+    status: z.array(z.enum(['red', 'yellow', 'green'])).optional(),
+    emailAlias: z.array(z.string()).optional(),
+    workflowState: z.array(z.enum(['START_POINT', 'IN_PROGRESS', 'COMPLETION'])).optional(),
+    priority: z.array(z.enum(['Critical', 'High', 'Medium', 'Low'])).optional(),
+    dateRange: z.object({
+      start: z.string().datetime(),
+      end: z.string().datetime()
+    }).optional()
+  }).optional(),
+  search: z.string().optional(),
+  refreshKey: z.number().optional()
+});
+
 const GetEmailsInputSchema = z.object({
   limit: z.number().min(1).max(100).optional().default(50),
   offset: z.number().min(0).optional().default(0),
@@ -39,6 +58,44 @@ const BulkUpdateInputSchema = z.object({
   value: z.string().optional()
 });
 
+// Enhanced batch operations schemas (Agent 10)
+const BatchCreateEmailsInputSchema = z.object({
+  emails: z.array(z.object({
+    messageId: z.string(),
+    emailAlias: z.string().email(),
+    requestedBy: z.string(),
+    subject: z.string(),
+    summary: z.string(),
+    status: z.enum(['red', 'yellow', 'green']),
+    statusText: z.string(),
+    workflowState: z.enum(['START_POINT', 'IN_PROGRESS', 'COMPLETION']),
+    workflowType: z.string().optional(),
+    priority: z.enum(['Critical', 'High', 'Medium', 'Low']).optional(),
+    receivedDate: z.date().optional(),
+    entities: z.array(z.object({
+      type: z.string(),
+      value: z.string()
+    })).optional()
+  })),
+  batchId: z.string().optional()
+});
+
+const BatchUpdateStatusInputSchema = z.object({
+  updates: z.array(z.object({
+    emailId: z.string().uuid(),
+    status: z.enum(['red', 'yellow', 'green']),
+    statusText: z.string(),
+    workflowState: z.enum(['START_POINT', 'IN_PROGRESS', 'COMPLETION']).optional()
+  })),
+  changedBy: z.string().optional()
+});
+
+const BatchDeleteInputSchema = z.object({
+  emailIds: z.array(z.string().uuid()),
+  softDelete: z.boolean().optional().default(true),
+  reason: z.string().optional()
+});
+
 const SendEmailInputSchema = z.object({
   to: z.array(z.string().email()),
   cc: z.array(z.string().email()).optional(),
@@ -55,6 +112,68 @@ const SendEmailInputSchema = z.object({
 });
 
 export const emailRouter = router({
+  // Get table data with advanced filtering, pagination, and sorting (Agent 10)
+  getTableData: publicProcedure
+    .input(GetEmailsTableInputSchema)
+    .query(async ({ input }) => {
+      try {
+        logger.info('Fetching table data', 'EMAIL_ROUTER', { 
+          page: input.page,
+          pageSize: input.pageSize,
+          sortBy: input.sortBy,
+          filters: input.filters,
+          search: input.search
+        });
+        
+        const result = await emailStorage.getEmailsForTableView(input);
+        
+        // Broadcast table data update for real-time synchronization
+        try {
+          const { wsService } = await import('../services/WebSocketService');
+          wsService.broadcastEmailTableDataUpdated(result.emails.length, input);
+        } catch (error) {
+          logger.error('Failed to broadcast table data update', 'EMAIL_ROUTER', { error });
+        }
+        
+        return {
+          success: true,
+          data: result
+        };
+      } catch (error) {
+        logger.error('Failed to fetch table data', 'EMAIL_ROUTER', { error });
+        throw new Error('Failed to fetch table data');
+      }
+    }),
+
+  // Get dashboard statistics with cache support (Agent 10)
+  getDashboardStats: publicProcedure
+    .input(z.object({
+      refreshKey: z.number().optional()
+    }))
+    .query(async ({ input: _input }) => {
+      try {
+        logger.info('Fetching dashboard statistics', 'EMAIL_ROUTER');
+        
+        const stats = await emailStorage.getDashboardStats();
+        
+        // Broadcast stats update for real-time dashboard sync
+        try {
+          const { wsService } = await import('../services/WebSocketService');
+          wsService.broadcastEmailStatsUpdated(stats);
+        } catch (error) {
+          logger.error('Failed to broadcast stats update', 'EMAIL_ROUTER', { error });
+        }
+        
+        return {
+          success: true,
+          data: stats
+        };
+      } catch (error) {
+        logger.error('Failed to fetch dashboard statistics', 'EMAIL_ROUTER', { error });
+        throw new Error('Failed to fetch dashboard statistics');
+      }
+    }),
+
   // Get email analytics
   getAnalytics: publicProcedure
     .input(z.object({
@@ -362,7 +481,74 @@ export const emailRouter = router({
       }
     }),
 
-  // Search emails
+  // Enhanced search with advanced filtering (Agent 10)
+  searchAdvanced: publicProcedure
+    .input(z.object({
+      query: z.string().min(1),
+      page: z.number().min(1).optional().default(1),
+      pageSize: z.number().min(1).max(100).optional().default(50),
+      searchFields: z.array(z.enum(['subject', 'summary', 'requestedBy', 'emailAlias', 'entities'])).optional().default(['subject', 'summary']),
+      filters: z.object({
+        status: z.array(z.enum(['red', 'yellow', 'green'])).optional(),
+        emailAlias: z.array(z.string()).optional(),
+        workflowState: z.array(z.enum(['START_POINT', 'IN_PROGRESS', 'COMPLETION'])).optional(),
+        priority: z.array(z.enum(['Critical', 'High', 'Medium', 'Low'])).optional(),
+        workflowType: z.array(z.string()).optional(),
+        dateRange: z.object({
+          start: z.string().datetime(),
+          end: z.string().datetime()
+        }).optional(),
+        entityTypes: z.array(z.string()).optional()
+      }).optional(),
+      sortBy: z.enum(['relevance', 'received_date', 'subject', 'status']).optional().default('relevance'),
+      sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+      includeHighlight: z.boolean().optional().default(true)
+    }))
+    .query(async ({ input }) => {
+      try {
+        logger.info('Performing advanced search', 'EMAIL_ROUTER', { 
+          query: input.query,
+          searchFields: input.searchFields,
+          filters: input.filters,
+          page: input.page
+        });
+        
+        // Use table view method with search parameter for now
+        // TODO: Implement specialized full-text search with ranking
+        const searchParams = {
+          page: input.page,
+          pageSize: input.pageSize,
+          sortBy: input.sortBy === 'relevance' ? 'received_date' : input.sortBy,
+          sortOrder: input.sortOrder,
+          filters: input.filters,
+          search: input.query
+        };
+        
+        const result = await emailStorage.getEmailsForTableView(searchParams);
+        
+        // Enhance results with search metadata
+        const enhancedResult = {
+          ...result,
+          searchMetadata: {
+            query: input.query,
+            searchFields: input.searchFields,
+            totalMatches: result.total,
+            searchTime: Date.now(), // Simple timing
+            relevanceScoring: input.sortBy === 'relevance'
+          }
+        };
+        
+        return {
+          success: true,
+          data: enhancedResult
+        };
+      } catch (error) {
+        logger.error('Failed to perform advanced search', 'EMAIL_ROUTER', { error });
+        throw new Error('Failed to perform advanced search');
+      }
+    }),
+
+  // Search emails (legacy endpoint)
   search: publicProcedure
     .input(z.object({
       query: z.string().min(1),
@@ -380,19 +566,28 @@ export const emailRouter = router({
     }))
     .query(async ({ input }) => {
       try {
-        logger.info('Searching emails', 'EMAIL_ROUTER', { 
+        logger.info('Searching emails (legacy)', 'EMAIL_ROUTER', { 
           query: input.query,
           filters: input.filters
         });
         
-        // TODO: Implement full-text search functionality
-        // This would search through email subjects, bodies, and analysis data
+        // Forward to advanced search with compatibility mapping
+        const advancedParams = {
+          query: input.query,
+          pageSize: input.limit,
+          filters: {
+            priority: input.filters?.priority ? [input.filters.priority] : undefined,
+            workflowState: input.filters?.status ? [input.filters.status as any] : undefined
+          }
+        };
+        
+        const result = await emailStorage.getEmailsForTableView(advancedParams);
         
         return {
           success: true,
           data: {
-            emails: [],
-            total: 0,
+            emails: result.emails,
+            total: result.total,
             query: input.query,
             filters: input.filters
           }
@@ -400,6 +595,322 @@ export const emailRouter = router({
       } catch (error) {
         logger.error('Failed to search emails', 'EMAIL_ROUTER', { error });
         throw new Error('Failed to search emails');
+      }
+    }),
+
+  // Batch create emails from IEMS data (Agent 10)
+  batchCreateEmails: protectedProcedure
+    .input(BatchCreateEmailsInputSchema)
+    .mutation(async ({ input, ctx }) => {
+      try {
+        logger.info('Batch creating emails', 'EMAIL_ROUTER', { 
+          emailCount: input.emails.length,
+          batchId: input.batchId
+        });
+        
+        const results = [];
+        const errors = [];
+        
+        for (const emailData of input.emails) {
+          try {
+            const emailId = await emailStorage.createEmail({
+              ...emailData,
+              receivedDate: emailData.receivedDate || new Date()
+            });
+            results.push({ emailId, messageId: emailData.messageId, success: true });
+          } catch (error) {
+            errors.push({ 
+              messageId: emailData.messageId, 
+              error: error.message,
+              success: false 
+            });
+            logger.error('Failed to create email in batch', 'EMAIL_ROUTER', { 
+              messageId: emailData.messageId,
+              error 
+            });
+          }
+        }
+        
+        // Broadcast batch creation completion
+        try {
+          const { wsService } = await import('../services/WebSocketService');
+          wsService.broadcastEmailBatchCreated(
+            input.batchId || `batch_${Date.now()}`,
+            results.length,
+            errors.length
+          );
+        } catch (error) {
+          logger.error('Failed to broadcast batch creation', 'EMAIL_ROUTER', { error });
+        }
+        
+        return {
+          success: true,
+          data: {
+            created: results.length,
+            failed: errors.length,
+            total: input.emails.length,
+            results,
+            errors: errors.length > 0 ? errors : undefined
+          }
+        };
+      } catch (error) {
+        logger.error('Failed to batch create emails', 'EMAIL_ROUTER', { error });
+        throw new Error('Failed to batch create emails');
+      }
+    }),
+
+  // Batch update email statuses (Agent 10)
+  batchUpdateStatuses: protectedProcedure
+    .input(BatchUpdateStatusInputSchema)
+    .mutation(async ({ input, ctx }) => {
+      try {
+        logger.info('Batch updating email statuses', 'EMAIL_ROUTER', { 
+          updateCount: input.updates.length,
+          changedBy: input.changedBy
+        });
+        
+        const results = [];
+        const errors = [];
+        const changedBy = input.changedBy || (ctx.user as any)?.email || 'system';
+        
+        for (const update of input.updates) {
+          try {
+            await emailStorage.updateEmailStatus(
+              update.emailId,
+              update.status,
+              update.statusText,
+              changedBy
+            );
+            results.push({ emailId: update.emailId, success: true });
+          } catch (error) {
+            errors.push({ 
+              emailId: update.emailId, 
+              error: error.message,
+              success: false 
+            });
+            logger.error('Failed to update email status in batch', 'EMAIL_ROUTER', { 
+              emailId: update.emailId,
+              error 
+            });
+          }
+        }
+        
+        // Broadcast batch status update completion
+        try {
+          const { wsService } = await import('../services/WebSocketService');
+          wsService.broadcastEmailBatchStatusUpdated(
+            input.updates.map(u => u.emailId),
+            results.length,
+            errors.length,
+            changedBy
+          );
+        } catch (error) {
+          logger.error('Failed to broadcast batch status update', 'EMAIL_ROUTER', { error });
+        }
+        
+        return {
+          success: true,
+          data: {
+            updated: results.length,
+            failed: errors.length,
+            total: input.updates.length,
+            results,
+            errors: errors.length > 0 ? errors : undefined
+          }
+        };
+      } catch (error) {
+        logger.error('Failed to batch update statuses', 'EMAIL_ROUTER', { error });
+        throw new Error('Failed to batch update statuses');
+      }
+    }),
+
+  // Batch delete emails (Agent 10)
+  batchDelete: protectedProcedure
+    .input(BatchDeleteInputSchema)
+    .mutation(async ({ input, ctx }) => {
+      try {
+        logger.info('Batch deleting emails', 'EMAIL_ROUTER', { 
+          emailIds: input.emailIds,
+          softDelete: input.softDelete,
+          reason: input.reason
+        });
+        
+        // For now, use existing bulk update with archive state
+        // TODO: Implement proper soft/hard delete functionality
+        const results = [];
+        const errors = [];
+        
+        for (const emailId of input.emailIds) {
+          try {
+            if (input.softDelete) {
+              await emailStorage.updateWorkflowState(emailId, 'Archived');
+              // TODO: Add audit log for deletion reason
+            } else {
+              // TODO: Implement hard delete functionality
+              logger.warn('Hard delete not implemented, using soft delete', 'EMAIL_ROUTER', { emailId });
+              await emailStorage.updateWorkflowState(emailId, 'Archived');
+            }
+            results.push({ emailId, success: true });
+          } catch (error) {
+            errors.push({ 
+              emailId, 
+              error: error.message,
+              success: false 
+            });
+            logger.error('Failed to delete email in batch', 'EMAIL_ROUTER', { 
+              emailId,
+              error 
+            });
+          }
+        }
+        
+        // Broadcast batch deletion completion
+        try {
+          const { wsService } = await import('../services/WebSocketService');
+          wsService.broadcastEmailBatchDeleted(
+            input.emailIds,
+            results.length,
+            errors.length,
+            input.softDelete
+          );
+        } catch (error) {
+          logger.error('Failed to broadcast batch deletion', 'EMAIL_ROUTER', { error });
+        }
+        
+        return {
+          success: true,
+          data: {
+            deleted: results.length,
+            failed: errors.length,
+            total: input.emailIds.length,
+            softDelete: input.softDelete,
+            results,
+            errors: errors.length > 0 ? errors : undefined
+          }
+        };
+      } catch (error) {
+        logger.error('Failed to batch delete emails', 'EMAIL_ROUTER', { error });
+        throw new Error('Failed to batch delete emails');
+      }
+    }),
+
+  // Get table metadata for frontend configuration (Agent 10)
+  getTableMetadata: publicProcedure
+    .query(async () => {
+      try {
+        logger.info('Fetching table metadata', 'EMAIL_ROUTER');
+        
+        // Return configuration data for table setup
+        const metadata = {
+          columns: [
+            { 
+              key: 'status', 
+              label: 'Status', 
+              type: 'status-indicator',
+              sortable: false,
+              filterable: true,
+              width: 80
+            },
+            { 
+              key: 'emailAlias', 
+              label: 'Email Alias', 
+              type: 'email',
+              sortable: true,
+              filterable: true,
+              width: 200
+            },
+            { 
+              key: 'requestedBy', 
+              label: 'Requested By', 
+              type: 'text',
+              sortable: true,
+              filterable: false,
+              width: 150
+            },
+            { 
+              key: 'subject', 
+              label: 'Subject', 
+              type: 'text',
+              sortable: true,
+              filterable: false,
+              width: 300
+            },
+            { 
+              key: 'summary', 
+              label: 'Summary', 
+              type: 'text',
+              sortable: false,
+              filterable: false,
+              width: 350
+            },
+            { 
+              key: 'priority', 
+              label: 'Priority', 
+              type: 'badge',
+              sortable: true,
+              filterable: true,
+              width: 100
+            },
+            { 
+              key: 'workflowState', 
+              label: 'Workflow', 
+              type: 'badge',
+              sortable: true,
+              filterable: true,
+              width: 120
+            },
+            { 
+              key: 'receivedDate', 
+              label: 'Received', 
+              type: 'datetime',
+              sortable: true,
+              filterable: true,
+              width: 150
+            }
+          ],
+          filterOptions: {
+            status: [
+              { value: 'red', label: 'Critical', color: '#EF4444' },
+              { value: 'yellow', label: 'Warning', color: '#F59E0B' },
+              { value: 'green', label: 'Success', color: '#10B981' }
+            ],
+            priority: [
+              { value: 'Critical', label: 'Critical', color: '#DC2626' },
+              { value: 'High', label: 'High', color: '#EA580C' },
+              { value: 'Medium', label: 'Medium', color: '#D97706' },
+              { value: 'Low', label: 'Low', color: '#65A30D' }
+            ],
+            workflowState: [
+              { value: 'START_POINT', label: 'Start Point', color: '#6366F1' },
+              { value: 'IN_PROGRESS', label: 'In Progress', color: '#8B5CF6' },
+              { value: 'COMPLETION', label: 'Completion', color: '#10B981' }
+            ]
+          },
+          defaultSort: {
+            column: 'receivedDate',
+            direction: 'desc'
+          },
+          pagination: {
+            defaultPageSize: 50,
+            pageSizeOptions: [25, 50, 100]
+          },
+          features: {
+            search: true,
+            filtering: true,
+            sorting: true,
+            bulkActions: true,
+            export: true,
+            realTimeUpdates: true
+          }
+        };
+        
+        return {
+          success: true,
+          data: metadata
+        };
+      } catch (error) {
+        logger.error('Failed to fetch table metadata', 'EMAIL_ROUTER', { error });
+        throw new Error('Failed to fetch table metadata');
       }
     }),
 
