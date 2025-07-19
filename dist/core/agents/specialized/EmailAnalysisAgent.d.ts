@@ -1,58 +1,7 @@
 import { BaseAgent } from '../base/BaseAgent';
 import type { AgentContext, AgentResult } from '../base/AgentTypes';
-interface Email {
-    id: string;
-    subject: string;
-    body?: string;
-    bodyPreview?: string;
-    from: {
-        emailAddress: {
-            name: string;
-            address: string;
-        };
-    };
-    to?: Array<{
-        emailAddress: {
-            name: string;
-            address: string;
-        };
-    }>;
-    receivedDateTime: string;
-    isRead: boolean;
-    categories: string[];
-    importance?: string;
-}
-export interface EmailAnalysis {
-    categories: {
-        workflow: string[];
-        priority: string;
-        intent: string;
-        urgency: string;
-    };
-    priority: 'Critical' | 'High' | 'Medium' | 'Low';
-    entities: EmailEntities;
-    workflowState: string;
-    suggestedActions: string[];
-    confidence: number;
-    summary: string;
-}
-interface EmailEntities {
-    poNumbers: string[];
-    quoteNumbers: string[];
-    orderNumbers: string[];
-    trackingNumbers: string[];
-    caseNumbers: string[];
-    customers: string[];
-    products: string[];
-    amounts: Array<{
-        value: number;
-        currency: string;
-    }>;
-    dates: Array<{
-        date: string;
-        context: string;
-    }>;
-}
+export * from './EmailAnalysisTypes';
+import type { Email, EmailAnalysis } from './EmailAnalysisTypes';
 export declare class EmailAnalysisAgent extends BaseAgent {
     private ollamaProvider;
     private cache;
@@ -60,6 +9,7 @@ export declare class EmailAnalysisAgent extends BaseAgent {
     private readonly patterns;
     private readonly workflowStates;
     constructor();
+    private initializeCache;
     execute(task: string, context: AgentContext): Promise<AgentResult>;
     analyzeEmail(email: Email): Promise<EmailAnalysis>;
     private quickCategorize;
@@ -77,5 +27,4 @@ export declare class EmailAnalysisAgent extends BaseAgent {
     private emptyEntities;
     private formatAnalysisOutput;
 }
-export {};
 //# sourceMappingURL=EmailAnalysisAgent.d.ts.map

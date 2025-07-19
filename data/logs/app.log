@@ -3368,3 +3368,15 @@
 2025-07-18T20:02:18.489Z INFO  [MIGRATION]   - Tables: 3/3
 2025-07-18T20:02:18.489Z INFO  [MIGRATION]   - Workflow patterns: 8
 2025-07-18T20:02:18.489Z INFO  [MIGRATION]   - Indexes: 6/6
+2025-07-19T21:52:01.785Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-19T21:52:01.818Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-19T21:52:01.818Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-19T21:52:01.818Z WARN  [EMAIL_STORAGE] Failed to initialize performance monitoring: TypeError: Logger.info is not a function
+2025-07-19T21:52:01.903Z WARN  [EMAIL_STORAGE] Failed to stop performance monitoring: TypeError: Logger.info is not a function
+2025-07-19T21:52:01.903Z INFO  [EMAIL_STORAGE] EmailStorageService closed
+2025-07-19T22:01:18.201Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-19T22:01:18.202Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-19T22:01:18.222Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-19T22:01:18.232Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-19T22:01:18.232Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-19T22:01:18.232Z WARN  [EMAIL_STORAGE] Failed to initialize performance monitoring: TypeError: Logger.info is not a function

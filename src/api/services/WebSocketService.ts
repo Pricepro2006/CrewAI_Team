@@ -2,6 +2,8 @@ import { EventEmitter } from "events";
 import type { WebSocket } from "ws";
 import { z } from "zod";
 import _ from "lodash"; // Added for 2025 performance optimizations (Agent 11)
+import type { AuthenticatedWebSocket } from "../middleware/websocketAuth";
+import { logger } from "../../utils/logger";
 
 // Message types for WebSocket communication
 export const WebSocketMessageSchema = z.discriminatedUnion("type", [
@@ -225,9 +227,13 @@ export const WebSocketMessageSchema = z.discriminatedUnion("type", [
 export type WebSocketMessage = z.infer<typeof WebSocketMessageSchema>;
 
 export class WebSocketService extends EventEmitter {
-  private clients: Map<string, Set<WebSocket>> = new Map();
+  private clients: Map<string, Set<AuthenticatedWebSocket>> = new Map();
   private subscriptions: Map<string, Set<string>> = new Map();
   private healthInterval: NodeJS.Timeout | null = null;
+  
+  // Authentication tracking
+  private authenticatedClients: Map<string, AuthenticatedWebSocket> = new Map();
+  private clientPermissions: Map<string, Set<string>> = new Map();
   
   // Enhanced performance features (Agent 11 - 2025 Best Practices)
   private messageQueue: Map<string, WebSocketMessage[]> = new Map();
@@ -261,11 +267,27 @@ export class WebSocketService extends EventEmitter {
   /**
    * Register a WebSocket client
    */
-  registerClient(clientId: string, ws: WebSocket): void {
+  registerClient(clientId: string, ws: AuthenticatedWebSocket): void {
     if (!this.clients.has(clientId)) {
       this.clients.set(clientId, new Set());
     }
     this.clients.get(clientId)!.add(ws);
+
+    // Track authenticated clients
+    if (ws.isAuthenticated) {
+      this.authenticatedClients.set(clientId, ws);
+      
+      // Store client permissions
+      if (ws.permissions) {
+        this.clientPermissions.set(clientId, new Set(ws.permissions));
+      }
+      
+      logger.info("Authenticated WebSocket client registered", "WS_SERVICE", {
+        clientId,
+        userId: ws.userId,
+        role: ws.userRole,
+      });
+    }
 
     // Clean up on disconnect
     ws.on("close", () => {
@@ -276,13 +298,22 @@ export class WebSocketService extends EventEmitter {
   /**
    * Unregister a WebSocket client
    */
-  unregisterClient(clientId: string, ws: WebSocket): void {
+  unregisterClient(clientId: string, ws: AuthenticatedWebSocket): void {
     const clientSockets = this.clients.get(clientId);
     if (clientSockets) {
       clientSockets.delete(ws);
       if (clientSockets.size === 0) {
         this.clients.delete(clientId);
         this.subscriptions.delete(clientId);
+        this.authenticatedClients.delete(clientId);
+        this.clientPermissions.delete(clientId);
+        
+        if (ws.isAuthenticated) {
+          logger.info("Authenticated WebSocket client unregistered", "WS_SERVICE", {
+            clientId,
+            userId: ws.userId,
+          });
+        }
       }
     }
   }
@@ -311,7 +342,7 @@ export class WebSocketService extends EventEmitter {
   /**
    * Broadcast a message to all subscribed clients
    */
-  broadcast(message: WebSocketMessage): void {
+  broadcast(message: WebSocketMessage, requiredPermission?: string): void {
     const messageStr = JSON.stringify(message);
 
     this.clients.forEach((sockets, clientId) => {
@@ -319,9 +350,18 @@ export class WebSocketService extends EventEmitter {
 
       // Check if client is subscribed to this message type
       if (clientSubs && (clientSubs.has(message.type) || clientSubs.has("*"))) {
+        // Check permissions if required
+        if (requiredPermission) {
+          const permissions = this.clientPermissions.get(clientId);
+          if (!permissions || !permissions.has(requiredPermission)) {
+            return; // Skip this client if they don't have required permission
+          }
+        }
+        
         sockets.forEach((ws) => {
           if (ws.readyState === ws.OPEN) {
             ws.send(messageStr);
+            this.performanceMetrics.messagesSent++;
           }
         });
       }
@@ -359,6 +399,44 @@ export class WebSocketService extends EventEmitter {
   getClientSubscriptions(clientId: string): string[] {
     const subs = this.subscriptions.get(clientId);
     return subs ? Array.from(subs) : [];
+  }
+
+  /**
+   * Check if a client has a specific permission
+   */
+  hasPermission(clientId: string, permission: string): boolean {
+    const permissions = this.clientPermissions.get(clientId);
+    return permissions ? permissions.has(permission) : false;
+  }
+
+  /**
+   * Get authenticated client info
+   */
+  getAuthenticatedClient(clientId: string): AuthenticatedWebSocket | undefined {
+    return this.authenticatedClients.get(clientId);
+  }
+
+  /**
+   * Check if client is authenticated
+   */
+  isClientAuthenticated(clientId: string): boolean {
+    const client = this.authenticatedClients.get(clientId);
+    return client ? client.isAuthenticated === true : false;
+  }
+
+  /**
+   * Force disconnect a client
+   */
+  forceDisconnectClient(clientId: string): void {
+    const sockets = this.clients.get(clientId);
+    if (sockets) {
+      sockets.forEach(ws => {
+        ws.close(1008, "Forced disconnect");
+      });
+    }
+    
+    // Cleanup will happen in unregisterClient
+    logger.info(`Force disconnected client: ${clientId}`, "WS_SERVICE");
   }
 
   // Enhanced Performance Methods (Agent 11 - 2025 Best Practices)
@@ -802,10 +880,19 @@ export class WebSocketService extends EventEmitter {
   getConnectionStats(): {
     totalClients: number;
     totalConnections: number;
+    authenticatedClients: number;
     subscriptionStats: Record<string, number>;
+    authStats: {
+      byRole: Record<string, number>;
+      byPermission: Record<string, number>;
+    };
   } {
     let totalConnections = 0;
     const subscriptionStats: Record<string, number> = {};
+    const authStats = {
+      byRole: {} as Record<string, number>,
+      byPermission: {} as Record<string, number>,
+    };
 
     this.clients.forEach((sockets) => {
       totalConnections += sockets.size;
@@ -817,10 +904,25 @@ export class WebSocketService extends EventEmitter {
       });
     });
 
+    // Collect authentication statistics
+    this.authenticatedClients.forEach((ws) => {
+      if (ws.userRole) {
+        authStats.byRole[ws.userRole] = (authStats.byRole[ws.userRole] || 0) + 1;
+      }
+    });
+
+    this.clientPermissions.forEach((permissions) => {
+      permissions.forEach((perm) => {
+        authStats.byPermission[perm] = (authStats.byPermission[perm] || 0) + 1;
+      });
+    });
+
     return {
       totalClients: this.clients.size,
       totalConnections,
+      authenticatedClients: this.authenticatedClients.size,
       subscriptionStats,
+      authStats,
     };
   }
 
@@ -845,7 +947,7 @@ export class WebSocketService extends EventEmitter {
       slaStatus,
       state,
       timestamp: new Date(),
-    });
+    }, "read"); // Require read permission
   }
 
   broadcastEmailStateChanged(
@@ -861,7 +963,7 @@ export class WebSocketService extends EventEmitter {
       newState,
       changedBy,
       timestamp: new Date(),
-    });
+    }, "read"); // Require read permission
   }
 
   broadcastEmailBulkUpdate(

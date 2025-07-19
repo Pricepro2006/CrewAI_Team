@@ -31,7 +31,8 @@
     "prepare": "husky",
     "test:related": "vitest related",
     "test:watch": "vitest watch",
-    "approve-builds": "echo \"Skipping native builds approval\""
+    "approve-builds": "echo \"Skipping native builds approval\"",
+    "monitor:cache": "tsx scripts/monitor-cache.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
@@ -53,12 +54,14 @@
     "express": "^4.18.2",
     "express-rate-limit": "^8.0.1",
     "helmet": "^7.1.0",
+    "ioredis": "^5.3.2",
     "jsonwebtoken": "^9.0.2",
     "lru-cache": "^11.1.0",
     "multer": "^2.0.1",
     "node-fetch": "^3.3.2",
     "ollama": "^0.5.16",
     "p-queue": "^8.0.1",
+    "rate-limit-redis": "^4.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.0",
@@ -86,6 +89,8 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
     "axios": "^1.6.5",
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.3",
     "concurrently": "^8.2.2",
     "eslint": "^8.56.0",
     "eslint-plugin-react": "^7.33.2",

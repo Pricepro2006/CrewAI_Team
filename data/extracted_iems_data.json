@@ -1,0 +1,253 @@
+{
+  "email_dashboard_data": {
+    "metadata": {
+      "source": "IEMS project analysis",
+      "total_emails_analyzed": 105081,
+      "extraction_date": "2025-01-18",
+      "version": "1.0.0"
+    },
+    "emails": [
+      {
+        "id": "1",
+        "email_alias": "InsightOrderSupport@tdsynnex.com",
+        "requested_by": "Jessica Kubit",
+        "subject": "URGENT: PO# 0505624503 & 0505624504",
+        "summary": "Urgent order modification request for Hilton Hotels requiring immediate attention",
+        "status": "red",
+        "status_text": "Critical",
+        "workflow_state": "START_POINT",
+        "timestamp": "2025-05-06T14:23:00Z"
+      },
+      {
+        "id": "2",
+        "email_alias": "us.insightsurface@tdsynnex.com",
+        "requested_by": "Lucas Gregory",
+        "subject": "Quote Request-First Watch-CAS-086603-Q4X7T6",
+        "summary": "New quote request for First Watch requiring Surface product pricing",
+        "status": "red",
+        "status_text": "New Request",
+        "workflow_state": "START_POINT",
+        "timestamp": "2025-05-06T09:15:00Z"
+      },
+      {
+        "id": "3",
+        "email_alias": "buildamac@tdsynnex.com",
+        "requested_by": "Christopher Letsinger",
+        "subject": "Re: Order Status - SO# 337938064",
+        "summary": "Processing Apple product order for TDX Holdings, awaiting inventory confirmation",
+        "status": "yellow",
+        "status_text": "In Progress",
+        "workflow_state": "IN_PROGRESS",
+        "timestamp": "2025-05-05T16:45:00Z"
+      },
+      {
+        "id": "4",
+        "email_alias": "salesinsight@tdsynnex.com",
+        "requested_by": "Michael Corcino",
+        "subject": "Deal Registration – Approved - CAS-113464-H9Y6X8",
+        "summary": "Deal registration for Moore Fans successfully approved with special pricing",
+        "status": "green",
+        "status_text": "Completed",
+        "workflow_state": "COMPLETION",
+        "timestamp": "2025-05-05T11:30:00Z"
+      },
+      {
+        "id": "5",
+        "email_alias": "CompuCom@tdsynnex.com",
+        "requested_by": "Humberto Fernandez",
+        "subject": "Shipping address change request PO#: 6193XA",
+        "summary": "Modification request for shipping address on existing order",
+        "status": "yellow",
+        "status_text": "Processing",
+        "workflow_state": "IN_PROGRESS",
+        "timestamp": "2025-05-06T13:20:00Z"
+      },
+      {
+        "id": "6",
+        "email_alias": "HWProcurementHP@tdsynnex.com",
+        "requested_by": "Afnan Tufail",
+        "subject": "Quote Request - GOAT Group Deal Registration",
+        "summary": "New quote request with deal registration for strategic account GOAT Group",
+        "status": "red",
+        "status_text": "New Request",
+        "workflow_state": "START_POINT",
+        "timestamp": "2025-05-06T10:45:00Z"
+      },
+      {
+        "id": "7",
+        "email_alias": "InsightHPI@tdsynnex.com",
+        "requested_by": "Brad Whiteside",
+        "subject": "Re: Special Pricing – Approved - CAS-113475-R9X1J9",
+        "summary": "Special pricing approval completed for Brown & Brown account",
+        "status": "green",
+        "status_text": "Approved",
+        "workflow_state": "COMPLETION",
+        "timestamp": "2025-05-04T17:00:00Z"
+      },
+      {
+        "id": "8",
+        "email_alias": "team4401@tdsynnex.com",
+        "requested_by": "Danielle Clarizio",
+        "subject": "ETA Inquiry - PO# 0505670692",
+        "summary": "Customer inquiring about estimated delivery date for pending order",
+        "status": "yellow",
+        "status_text": "Investigating",
+        "workflow_state": "IN_PROGRESS",
+        "timestamp": "2025-05-06T15:10:00Z"
+      },
+      {
+        "id": "9",
+        "email_alias": "VendorReturns@tdsynnex.com",
+        "requested_by": "Charles Guevarra",
+        "subject": "HP Vendor Return Request #7401696",
+        "summary": "Processing vendor return for HP products, awaiting RMA approval",
+        "status": "yellow",
+        "status_text": "Pending Approval",
+        "workflow_state": "IN_PROGRESS",
+        "timestamp": "2025-05-05T14:00:00Z"
+      },
+      {
+        "id": "10",
+        "email_alias": "QuoteDeskBeijing@tdsynnex.com",
+        "requested_by": "Orville Mangalus",
+        "subject": "Quote Approved - WQ150043228",
+        "summary": "Quote for Kelsey Seybold approved and sent to customer",
+        "status": "green",
+        "status_text": "Delivered",
+        "workflow_state": "COMPLETION",
+        "timestamp": "2025-05-04T09:30:00Z"
+      },
+      {
+        "id": "11",
+        "email_alias": "us.insightsurface@tdsynnex.com",
+        "requested_by": "Paulo King",
+        "subject": "Request for HOLD - Deal 44892652",
+        "summary": "Customer requesting order hold pending budget approval",
+        "status": "yellow",
+        "status_text": "On Hold",
+        "workflow_state": "IN_PROGRESS",
+        "timestamp": "2025-05-06T11:15:00Z"
+      },
+      {
+        "id": "12",
+        "email_alias": "InsightOrderSupport@tdsynnex.com",
+        "requested_by": "Trevor Blass",
+        "subject": "Order Shipped - PO# 70862532",
+        "summary": "Order successfully shipped with tracking information provided",
+        "status": "green",
+        "status_text": "Shipped",
+        "workflow_state": "COMPLETION",
+        "timestamp": "2025-05-03T16:45:00Z"
+      },
+      {
+        "id": "13",
+        "email_alias": "buildamac@tdsynnex.com",
+        "requested_by": "Samantha Culligan",
+        "subject": "IPHONE 16E 128GB BLACK - Availability Check",
+        "summary": "Checking availability for large quantity iPhone order (4,650 units)",
+        "status": "red",
+        "status_text": "Urgent Request",
+        "workflow_state": "START_POINT",
+        "timestamp": "2025-05-06T08:30:00Z"
+      },
+      {
+        "id": "14",
+        "email_alias": "salesinsight@tdsynnex.com",
+        "requested_by": "Nick Paul",
+        "subject": "Re: Nice Label 2019 License - Orlando Health",
+        "summary": "Processing software license quote for healthcare client",
+        "status": "yellow",
+        "status_text": "Quote Preparation",
+        "workflow_state": "IN_PROGRESS",
+        "timestamp": "2025-05-05T13:45:00Z"
+      },
+      {
+        "id": "15",
+        "email_alias": "WasabiCloud@tdsynnex.com",
+        "requested_by": "Yordan Koldashki",
+        "subject": "TD SYNNEX CORPORATION /Wasabi Technologies Renewal",
+        "summary": "Annual cloud services renewal notification requiring action",
+        "status": "red",
+        "status_text": "Action Required",
+        "workflow_state": "START_POINT",
+        "timestamp": "2025-05-06T07:00:00Z"
+      },
+      {
+        "id": "16",
+        "email_alias": "us.insightsurface@tdsynnex.com",
+        "requested_by": "Brian Kirk",
+        "subject": "Re: Quote Processing - Microsoft Surface Bundle",
+        "summary": "Finalizing Surface bundle quote with volume discounts applied",
+        "status": "yellow",
+        "status_text": "Final Review",
+        "workflow_state": "IN_PROGRESS",
+        "timestamp": "2025-05-05T10:20:00Z"
+      },
+      {
+        "id": "17",
+        "email_alias": "InsightHPI@tdsynnex.com",
+        "requested_by": "Corey Brewers",
+        "subject": "SPA Automation - Success:: Ref#09570012521329131094",
+        "summary": "Special pricing agreement successfully processed through automation",
+        "status": "green",
+        "status_text": "Automated",
+        "workflow_state": "COMPLETION",
+        "timestamp": "2025-05-04T14:15:00Z"
+      },
+      {
+        "id": "18",
+        "email_alias": "team4401@tdsynnex.com",
+        "requested_by": "Michael Macdonald",
+        "subject": "Escalation: Red Thread - Veeam Backup Solution",
+        "summary": "Urgent escalation for enterprise backup solution pricing",
+        "status": "red",
+        "status_text": "Escalated",
+        "workflow_state": "START_POINT",
+        "timestamp": "2025-05-06T16:00:00Z"
+      },
+      {
+        "id": "19",
+        "email_alias": "CompuCom@tdsynnex.com",
+        "requested_by": "Thomas Campanella",
+        "subject": "Re: PO# 5090XA - Cancelled Part EOL",
+        "summary": "Processing cancellation due to end-of-life product",
+        "status": "yellow",
+        "status_text": "Cancellation Processing",
+        "workflow_state": "IN_PROGRESS",
+        "timestamp": "2025-05-05T15:30:00Z"
+      },
+      {
+        "id": "20",
+        "email_alias": "InsightOrderSupport@tdsynnex.com",
+        "requested_by": "Dina Cabato",
+        "subject": "Resolution: Case #CAS-086716-D7S4X8",
+        "summary": "Customer issue successfully resolved with shipping discrepancy corrected",
+        "status": "green",
+        "status_text": "Resolved",
+        "workflow_state": "COMPLETION",
+        "timestamp": "2025-05-03T12:00:00Z"
+      }
+    ],
+    "workflow_summary": {
+      "total_emails": 20,
+      "status_distribution": {
+        "red": 6,
+        "yellow": 9,
+        "green": 5
+      },
+      "workflow_state_distribution": {
+        "START_POINT": 6,
+        "IN_PROGRESS": 9,
+        "COMPLETION": 5
+      },
+      "common_workflows": [
+        "Quote Processing",
+        "Order Management",
+        "Deal Registration",
+        "Special Pricing Approval",
+        "Shipping Coordination",
+        "Issue Resolution"
+      ]
+    }
+  }
+}

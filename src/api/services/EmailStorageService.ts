@@ -6,6 +6,7 @@ import { wsService } from './WebSocketService';
 import { performanceOptimizer } from './PerformanceOptimizer';
 import { queryPerformanceMonitor } from './QueryPerformanceMonitor';
 import { LazyLoader } from '../../utils/LazyLoader';
+import { ConnectionPool } from '../../core/database/ConnectionPool';
 
 // Enhanced email analysis interfaces
 export interface EmailAnalysisResult {
@@ -107,14 +108,113 @@ export interface EmailWithAnalysis extends Email {
 
 export class EmailStorageService {
   private db: Database.Database;
+  private connectionPool?: ConnectionPool;
   private slaMonitoringInterval: NodeJS.Timeout | null = null;
   private lazyLoader: LazyLoader<any>;
+  private useConnectionPool: boolean;
 
-  constructor() {
-    this.db = new Database(appConfig.database.path);
+  constructor(dbPath?: string, enableConnectionPool: boolean = false) {
+    const databasePath = dbPath || appConfig.database.path;
+    this.useConnectionPool = enableConnectionPool;
+    
+    if (this.useConnectionPool) {
+      // Initialize connection pool for high-concurrency scenarios
+      this.connectionPool = new ConnectionPool({
+        filename: databasePath,
+        poolSize: 5,
+        enableWAL: true,
+        checkpointInterval: 60000, // 1 minute
+        walSizeLimit: 10 * 1024 * 1024, // 10MB
+        verbose: process.env.NODE_ENV === 'development',
+      });
+      
+      // Create a proxy db object for compatibility
+      this.db = this.createPooledDbProxy();
+      
+      logger.info('EmailStorageService initialized with connection pool', 'EMAIL_STORAGE');
+    } else {
+      // Use single connection for better performance in single-threaded scenarios
+      this.db = new Database(databasePath);
+      logger.info('EmailStorageService initialized with single connection', 'EMAIL_STORAGE');
+    }
+    
     this.lazyLoader = new LazyLoader(50, 20, 5 * 60 * 1000); // 50 items per chunk, 20 chunks cache, 5min TTL
     this.initializeDatabase();
     this.initializePerformanceMonitoring();
+  }
+
+  /**
+   * Create a proxy database object that uses the connection pool
+   * This provides compatibility with existing code that expects a db object
+   */
+  private createPooledDbProxy(): Database.Database {
+    const pool = this.connectionPool!;
+    
+    // Create a proxy that intercepts database method calls
+    const handler: ProxyHandler<any> = {
+      get: (target, prop) => {
+        // For prepare method, return a function that uses the pool
+        if (prop === 'prepare') {
+          return (sql: string) => {
+            // Return a statement-like object that uses the pool
+            return {
+              run: (...params: any[]) => {
+                return pool.execute(db => db.prepare(sql).run(...params));
+              },
+              get: (...params: any[]) => {
+                return pool.execute(db => db.prepare(sql).get(...params));
+              },
+              all: (...params: any[]) => {
+                return pool.execute(db => db.prepare(sql).all(...params));
+              },
+              iterate: (...params: any[]) => {
+                // For iterate, we need special handling as it returns an iterator
+                return pool.execute(db => db.prepare(sql).iterate(...params));
+              },
+            };
+          };
+        }
+        
+        // For transaction method
+        if (prop === 'transaction') {
+          return (fn: Function) => {
+            return (...args: any[]) => {
+              return pool.execute(db => {
+                const transaction = db.transaction(fn);
+                return transaction(...args);
+              });
+            };
+          };
+        }
+        
+        // For pragma method
+        if (prop === 'pragma') {
+          return (pragma: string) => {
+            return pool.execute(db => db.pragma(pragma));
+          };
+        }
+        
+        // For exec method
+        if (prop === 'exec') {
+          return (sql: string) => {
+            return pool.execute(db => db.exec(sql));
+          };
+        }
+        
+        // For close method (no-op as pool manages connections)
+        if (prop === 'close') {
+          return () => {
+            logger.debug('Close called on pooled db proxy (no-op)', 'EMAIL_STORAGE');
+          };
+        }
+        
+        // Default: return property as-is
+        return target[prop];
+      }
+    };
+    
+    // Create and return the proxy
+    return new Proxy({}, handler) as Database.Database;
   }
 
   /**
@@ -162,7 +262,7 @@ export class EmailStorageService {
       const optimizedQuery = performanceOptimizer.optimizeQuery(query, params);
       logger.debug(`Query optimized: ${optimizedQuery.estimatedPerformanceGain}% improvement`, 'EMAIL_STORAGE');
 
-      // Execute the optimized query
+      // Execute the optimized query with prepared statement
       const stmt = this.db.prepare(optimizedQuery.optimizedQuery);
       result = method === 'get' ? stmt.get(...params) as T : stmt.all(...params) as T;
 
@@ -202,6 +302,24 @@ export class EmailStorageService {
 
   private initializeDatabase(): void {
     logger.info('Initializing email storage database', 'EMAIL_STORAGE');
+    
+    // Enable WAL mode for better concurrency if not using connection pool
+    // (Connection pool handles this internally)
+    if (!this.useConnectionPool) {
+      try {
+        this.db.pragma('journal_mode = WAL');
+        this.db.pragma('synchronous = NORMAL');
+        this.db.pragma('cache_size = 10000'); // 10MB cache
+        this.db.pragma('temp_store = MEMORY');
+        this.db.pragma('mmap_size = 268435456'); // 256MB memory map
+        this.db.pragma('foreign_keys = ON');
+        this.db.pragma('busy_timeout = 30000'); // 30 seconds
+        
+        logger.info('WAL mode enabled with performance optimizations', 'EMAIL_STORAGE');
+      } catch (error) {
+        logger.warn(`Failed to set database pragmas: ${error}`, 'EMAIL_STORAGE');
+      }
+    }
     
     // Create emails table
     this.db.exec(`
@@ -554,7 +672,7 @@ export class EmailStorageService {
       WHERE e.id = ?
     `);
 
-    const result = stmt.get(emailId) as unknown;
+    const result = stmt.get(emailId) as any;
     
     if (!result) {
       return null;
@@ -642,8 +760,21 @@ export class EmailStorageService {
     limit: number = 50,
     offset: number = 0
   ): Promise<EmailWithAnalysis[]> {
+    // Use a single optimized query with all necessary joins to avoid N+1 queries
     const stmt = this.db.prepare(`
-      SELECT e.id
+      SELECT 
+        e.*,
+        a.quick_workflow, a.quick_priority, a.quick_intent, a.quick_urgency,
+        a.quick_confidence, a.quick_suggested_state, a.quick_model, a.quick_processing_time,
+        a.deep_workflow_primary, a.deep_workflow_secondary, a.deep_workflow_related,
+        a.deep_confidence,
+        a.entities_po_numbers, a.entities_quote_numbers, a.entities_case_numbers,
+        a.entities_part_numbers, a.entities_order_references, a.entities_contacts,
+        a.action_summary, a.action_details, a.action_sla_status,
+        a.workflow_state, a.workflow_suggested_next, a.workflow_blockers,
+        a.business_impact_revenue, a.business_impact_satisfaction, a.business_impact_urgency_reason,
+        a.contextual_summary, a.suggested_response, a.related_emails,
+        a.deep_model, a.deep_processing_time, a.total_processing_time
       FROM emails e
       JOIN email_analysis a ON e.id = a.email_id
       WHERE a.deep_workflow_primary = ?
@@ -653,13 +784,79 @@ export class EmailStorageService {
 
     const results = stmt.all(workflow, limit, offset) as any[];
     
-    const emails: EmailWithAnalysis[] = [];
-    for (const result of results) {
-      const email = await this.getEmailWithAnalysis(result.id);
-      if (email) {
-        emails.push(email);
+    // Process all results in memory without additional queries
+    const emails: EmailWithAnalysis[] = results.map(result => ({
+      id: result.id,
+      graphId: result.graph_id,
+      subject: result.subject,
+      from: {
+        emailAddress: {
+          name: result.sender_name || '',
+          address: result.sender_email
+        }
+      },
+      to: result.to_addresses ? JSON.parse(result.to_addresses) : [],
+      receivedDateTime: result.received_at,
+      isRead: result.is_read === 1,
+      hasAttachments: result.has_attachments === 1,
+      bodyPreview: result.body_preview,
+      body: result.body,
+      importance: result.importance,
+      categories: result.categories ? JSON.parse(result.categories) : [],
+      analysis: {
+        quick: {
+          workflow: {
+            primary: result.quick_workflow,
+            secondary: result.deep_workflow_secondary ? JSON.parse(result.deep_workflow_secondary) : []
+          },
+          priority: result.quick_priority,
+          intent: result.quick_intent,
+          urgency: result.quick_urgency,
+          confidence: result.quick_confidence,
+          suggestedState: result.quick_suggested_state
+        },
+        deep: {
+          detailedWorkflow: {
+            primary: result.deep_workflow_primary,
+            secondary: result.deep_workflow_secondary ? JSON.parse(result.deep_workflow_secondary) : [],
+            relatedCategories: result.deep_workflow_related ? JSON.parse(result.deep_workflow_related) : [],
+            confidence: result.deep_confidence
+          },
+          entities: {
+            poNumbers: result.entities_po_numbers ? JSON.parse(result.entities_po_numbers) : [],
+            quoteNumbers: result.entities_quote_numbers ? JSON.parse(result.entities_quote_numbers) : [],
+            caseNumbers: result.entities_case_numbers ? JSON.parse(result.entities_case_numbers) : [],
+            partNumbers: result.entities_part_numbers ? JSON.parse(result.entities_part_numbers) : [],
+            orderReferences: result.entities_order_references ? JSON.parse(result.entities_order_references) : [],
+            contacts: result.entities_contacts ? JSON.parse(result.entities_contacts) : []
+          },
+          actionItems: result.action_details ? JSON.parse(result.action_details) : [],
+          workflowState: {
+            current: result.workflow_state,
+            suggestedNext: result.workflow_suggested_next,
+            blockers: result.workflow_blockers ? JSON.parse(result.workflow_blockers) : []
+          },
+          businessImpact: {
+            revenue: result.business_impact_revenue,
+            customerSatisfaction: result.business_impact_satisfaction,
+            urgencyReason: result.business_impact_urgency_reason
+          },
+          contextualSummary: result.contextual_summary,
+          suggestedResponse: result.suggested_response,
+          relatedEmails: result.related_emails ? JSON.parse(result.related_emails) : []
+        },
+        actionSummary: result.action_summary,
+        processingMetadata: {
+          stage1Time: result.quick_processing_time,
+          stage2Time: result.deep_processing_time,
+          totalTime: result.total_processing_time,
+          models: {
+            stage1: result.quick_model,
+            stage2: result.deep_model
+          }
+        }
       }
-    }
+    }));
 
     return emails;
   }
@@ -780,18 +977,29 @@ export class EmailStorageService {
 
     const slaViolations = stmt.all() as any[];
     
+    // Process SLA violations in batches to avoid N+1 updates
+    const updates: Array<{ status: 'at-risk' | 'overdue'; emailId: string }> = [];
+    const broadcasts: Array<{
+      emailId: string;
+      workflow: string;
+      priority: string;
+      status: 'at-risk' | 'overdue';
+      timeRemaining?: number;
+      overdueDuration?: number;
+    }> = [];
+    
+    const now = new Date();
+    const slaThresholds = {
+      Critical: 4 * 60 * 60 * 1000, // 4 hours
+      High: 24 * 60 * 60 * 1000, // 24 hours
+      Medium: 72 * 60 * 60 * 1000, // 72 hours
+      Low: 168 * 60 * 60 * 1000, // 168 hours
+    };
+    
+    // Process violations in memory first
     for (const violation of slaViolations) {
       const receivedAt = new Date(violation.received_at);
-      const now = new Date();
       const diffMs = now.getTime() - receivedAt.getTime();
-      
-      // Calculate SLA thresholds in milliseconds
-      const slaThresholds = {
-        Critical: 4 * 60 * 60 * 1000, // 4 hours
-        High: 24 * 60 * 60 * 1000, // 24 hours
-        Medium: 72 * 60 * 60 * 1000, // 72 hours
-        Low: 168 * 60 * 60 * 1000, // 168 hours
-      };
       
       const slaThreshold = slaThresholds[violation.quick_priority as keyof typeof slaThresholds];
       const isOverdue = diffMs > slaThreshold;
@@ -811,27 +1019,48 @@ export class EmailStorageService {
         continue; // Skip if not at risk or overdue
       }
       
-      // Update SLA status in database
+      updates.push({ status: slaStatus, emailId: violation.id });
+      broadcasts.push({
+        emailId: violation.id,
+        workflow: violation.deep_workflow_primary,
+        priority: violation.quick_priority,
+        status: slaStatus,
+        timeRemaining,
+        overdueDuration
+      });
+    }
+    
+    // Perform batch updates using a transaction for better performance
+    if (updates.length > 0) {
       const updateStmt = this.db.prepare(`
         UPDATE email_analysis 
         SET action_sla_status = ?
         WHERE email_id = ?
       `);
-      updateStmt.run(slaStatus, violation.id);
       
-      // Broadcast SLA alert
-      try {
-        wsService.broadcastEmailSLAAlert(
-          violation.id,
-          violation.deep_workflow_primary,
-          violation.quick_priority,
-          slaStatus,
-          timeRemaining,
-          overdueDuration
-        );
-        logger.info(`SLA alert broadcast for email ${violation.id}: ${slaStatus}`, 'EMAIL_STORAGE');
-      } catch (error) {
-        logger.error(`Failed to broadcast SLA alert for email ${violation.id}: ${error}`, 'EMAIL_STORAGE');
+      const transaction = this.db.transaction((updates: typeof updates) => {
+        for (const update of updates) {
+          updateStmt.run(update.status, update.emailId);
+        }
+      });
+      
+      transaction(updates);
+      
+      // Broadcast all SLA alerts
+      for (const broadcast of broadcasts) {
+        try {
+          wsService.broadcastEmailSLAAlert(
+            broadcast.emailId,
+            broadcast.workflow,
+            broadcast.priority,
+            broadcast.status,
+            broadcast.timeRemaining,
+            broadcast.overdueDuration
+          );
+          logger.info(`SLA alert broadcast for email ${broadcast.emailId}: ${broadcast.status}`, 'EMAIL_STORAGE');
+        } catch (error) {
+          logger.error(`Failed to broadcast SLA alert for email ${broadcast.emailId}: ${error}`, 'EMAIL_STORAGE');
+        }
       }
     }
   }
@@ -1085,7 +1314,122 @@ export class EmailStorageService {
   }
 
   /**
+   * Batch load emails by IDs to avoid N+1 queries
+   * This is a performance optimization method for loading multiple emails at once
+   */
+  async batchLoadEmailsWithAnalysis(emailIds: string[]): Promise<Map<string, EmailWithAnalysis>> {
+    if (emailIds.length === 0) {
+      return new Map();
+    }
+
+    // Create placeholders for the IN clause
+    const placeholders = emailIds.map(() => '?').join(',');
+    
+    const stmt = this.db.prepare(`
+      SELECT 
+        e.*,
+        a.quick_workflow, a.quick_priority, a.quick_intent, a.quick_urgency,
+        a.quick_confidence, a.quick_suggested_state, a.quick_model, a.quick_processing_time,
+        a.deep_workflow_primary, a.deep_workflow_secondary, a.deep_workflow_related,
+        a.deep_confidence,
+        a.entities_po_numbers, a.entities_quote_numbers, a.entities_case_numbers,
+        a.entities_part_numbers, a.entities_order_references, a.entities_contacts,
+        a.action_summary, a.action_details, a.action_sla_status,
+        a.workflow_state, a.workflow_suggested_next, a.workflow_blockers,
+        a.business_impact_revenue, a.business_impact_satisfaction, a.business_impact_urgency_reason,
+        a.contextual_summary, a.suggested_response, a.related_emails,
+        a.deep_model, a.deep_processing_time, a.total_processing_time
+      FROM emails e
+      LEFT JOIN email_analysis a ON e.id = a.email_id
+      WHERE e.id IN (${placeholders})
+    `);
+
+    const results = stmt.all(...emailIds) as any[];
+    const emailMap = new Map<string, EmailWithAnalysis>();
+
+    for (const result of results) {
+      const email: EmailWithAnalysis = {
+        id: result.id,
+        graphId: result.graph_id,
+        subject: result.subject,
+        from: {
+          emailAddress: {
+            name: result.sender_name || '',
+            address: result.sender_email
+          }
+        },
+        to: result.to_addresses ? JSON.parse(result.to_addresses) : [],
+        receivedDateTime: result.received_at,
+        isRead: result.is_read === 1,
+        hasAttachments: result.has_attachments === 1,
+        bodyPreview: result.body_preview,
+        body: result.body,
+        importance: result.importance,
+        categories: result.categories ? JSON.parse(result.categories) : [],
+        analysis: {
+          quick: {
+            workflow: {
+              primary: result.quick_workflow,
+              secondary: result.deep_workflow_secondary ? JSON.parse(result.deep_workflow_secondary) : []
+            },
+            priority: result.quick_priority,
+            intent: result.quick_intent,
+            urgency: result.quick_urgency,
+            confidence: result.quick_confidence,
+            suggestedState: result.quick_suggested_state
+          },
+          deep: {
+            detailedWorkflow: {
+              primary: result.deep_workflow_primary,
+              secondary: result.deep_workflow_secondary ? JSON.parse(result.deep_workflow_secondary) : [],
+              relatedCategories: result.deep_workflow_related ? JSON.parse(result.deep_workflow_related) : [],
+              confidence: result.deep_confidence
+            },
+            entities: {
+              poNumbers: result.entities_po_numbers ? JSON.parse(result.entities_po_numbers) : [],
+              quoteNumbers: result.entities_quote_numbers ? JSON.parse(result.entities_quote_numbers) : [],
+              caseNumbers: result.entities_case_numbers ? JSON.parse(result.entities_case_numbers) : [],
+              partNumbers: result.entities_part_numbers ? JSON.parse(result.entities_part_numbers) : [],
+              orderReferences: result.entities_order_references ? JSON.parse(result.entities_order_references) : [],
+              contacts: result.entities_contacts ? JSON.parse(result.entities_contacts) : []
+            },
+            actionItems: result.action_details ? JSON.parse(result.action_details) : [],
+            workflowState: {
+              current: result.workflow_state,
+              suggestedNext: result.workflow_suggested_next,
+              blockers: result.workflow_blockers ? JSON.parse(result.workflow_blockers) : []
+            },
+            businessImpact: {
+              revenue: result.business_impact_revenue,
+              customerSatisfaction: result.business_impact_satisfaction,
+              urgencyReason: result.business_impact_urgency_reason
+            },
+            contextualSummary: result.contextual_summary,
+            suggestedResponse: result.suggested_response,
+            relatedEmails: result.related_emails ? JSON.parse(result.related_emails) : []
+          },
+          actionSummary: result.action_summary,
+          processingMetadata: {
+            stage1Time: result.quick_processing_time,
+            stage2Time: result.deep_processing_time,
+            totalTime: result.total_processing_time,
+            models: {
+              stage1: result.quick_model,
+              stage2: result.deep_model
+            }
+          }
+        }
+      };
+
+      emailMap.set(email.id, email);
+    }
+
+    return emailMap;
+  }
+
+  /**
    * Get emails for table view with filtering, sorting, pagination (Performance Optimized)
+   * Fixed SQL injection vulnerabilities
    */
   async getEmailsForTableView(options: {
     page?: number;
@@ -1130,48 +1474,59 @@ export class EmailStorageService {
       const pageSize = Math.min(options.pageSize || 50, 100); // Max 100 per page
       const offset = (page - 1) * pageSize;
 
-      // Build query with filters
-      let whereClause = 'WHERE 1=1';
+      // Build query with parameterized queries (no string concatenation)
+      const whereClauses: string[] = [];
       const params: any[] = [];
 
       // Search filter
       if (options.search) {
-        whereClause += ' AND (e.subject LIKE ? OR ea.contextual_summary LIKE ? OR e.sender_name LIKE ?)';
+        whereClauses.push('(e.subject LIKE ? OR ea.contextual_summary LIKE ? OR e.sender_name LIKE ?)');
         const searchParam = `%${options.search}%`;
         params.push(searchParam, searchParam, searchParam);
       }
 
-      // Status filter
+      // Status filter - using parameterized placeholders
       if (options.filters?.status?.length) {
         const statusPlaceholders = options.filters.status.map(() => '?').join(',');
-        whereClause += ` AND ea.workflow_state IN (${statusPlaceholders})`;
+        whereClauses.push(`ea.workflow_state IN (${statusPlaceholders})`);
         params.push(...options.filters.status.map(s => this.mapStatusToWorkflowState(s as any)));
       }
 
-      // Email alias filter
+      // Email alias filter - using parameterized placeholders
       if (options.filters?.emailAlias?.length) {
         const aliasPlaceholders = options.filters.emailAlias.map(() => '?').join(',');
-        whereClause += ` AND e.sender_email IN (${aliasPlaceholders})`;
+        whereClauses.push(`e.sender_email IN (${aliasPlaceholders})`);
         params.push(...options.filters.emailAlias);
+      }
+
+      // Priority filter - using parameterized placeholders
+      if (options.filters?.priority?.length) {
+        const priorityPlaceholders = options.filters.priority.map(() => '?').join(',');
+        whereClauses.push(`ea.quick_priority IN (${priorityPlaceholders})`);
+        params.push(...options.filters.priority);
       }
 
       // Date range filter
       if (options.filters?.dateRange) {
-        whereClause += ' AND e.received_at BETWEEN ? AND ?';
+        whereClauses.push('e.received_at BETWEEN ? AND ?');
         params.push(options.filters.dateRange.start, options.filters.dateRange.end);
       }
 
-      // Sort clause
-      const sortBy = options.sortBy || 'received_date';
-      const sortOrder = options.sortOrder || 'desc';
-      const sortClause = `ORDER BY ${this.sanitizeColumnName(sortBy)} ${sortOrder.toUpperCase()}`;
+      // Build WHERE clause
+      const whereClause = whereClauses.length > 0 
+        ? `WHERE ${whereClauses.join(' AND ')}` 
+        : '';
+
+      // Sanitize and validate sort column
+      const sortColumn = this.getSortColumn(options.sortBy);
+      const sortDirection = options.sortOrder?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
       // Generate cache key based on all parameters
       const cacheKey = `email_table_${JSON.stringify(options)}`;
 
-      // Use optimized pagination for large datasets
-      const paginationQuery = performanceOptimizer.optimizePagination(
-        `SELECT 
+      // Build the main query
+      const dataQuery = `
+        SELECT 
           e.id,
           e.sender_email as email_alias,
           e.sender_name as requested_by,
@@ -1185,10 +1540,20 @@ export class EmailStorageService {
         FROM emails e
         LEFT JOIN email_analysis ea ON e.id = ea.email_id
         ${whereClause}
-        ${sortClause}`,
-        page,
-        pageSize
-      );
+        ORDER BY ${sortColumn} ${sortDirection}
+        LIMIT ? OFFSET ?
+      `;
+
+      // Build the count query
+      const countQuery = `
+        SELECT COUNT(*) as total
+        FROM emails e
+        LEFT JOIN email_analysis ea ON e.id = ea.email_id
+        ${whereClause}
+      `;
+
+      // Add pagination params to data query
+      const dataParams = [...params, pageSize, offset];
 
       // Execute optimized queries with performance monitoring
       const startTime = Date.now();
@@ -1196,13 +1561,13 @@ export class EmailStorageService {
         this.executeCachedQuery<any[]>(
           `${cacheKey}_data`,
           'email_table_view_data',
-          paginationQuery.query,
-          params
+          dataQuery,
+          dataParams
         ),
         this.executeCachedQuery<any>(
           `${cacheKey}_count`,
           'email_table_view_count', 
-          paginationQuery.countQuery,
+          countQuery,
           params,
           'get'
         )
@@ -1240,6 +1605,7 @@ export class EmailStorageService {
 
   /**
    * Get emails for table view using lazy loading (Performance Optimized for Large Datasets)
+   * Fixed SQL injection vulnerabilities
    */
   async getEmailsForTableViewLazy(options: {
     startIndex?: number;
@@ -1280,27 +1646,48 @@ export class EmailStorageService {
 
       // Create the load function for lazy loader
       const loadFn = async (offset: number, limit: number) => {
-        // Build base query
-        let whereClause = 'WHERE 1=1';
+        // Build base query with parameterized queries
+        const whereClauses: string[] = [];
         const params: any[] = [];
 
         // Apply filters (same logic as getEmailsForTableView)
         if (options.search) {
-          whereClause += ' AND (e.subject LIKE ? OR ea.contextual_summary LIKE ? OR e.sender_name LIKE ?)';
+          whereClauses.push('(e.subject LIKE ? OR ea.contextual_summary LIKE ? OR e.sender_name LIKE ?)');
           const searchParam = `%${options.search}%`;
           params.push(searchParam, searchParam, searchParam);
         }
 
         if (options.filters?.status?.length) {
           const statusPlaceholders = options.filters.status.map(() => '?').join(',');
-          whereClause += ` AND ea.workflow_state IN (${statusPlaceholders})`;
+          whereClauses.push(`ea.workflow_state IN (${statusPlaceholders})`);
           params.push(...options.filters.status.map(s => this.mapStatusToWorkflowState(s as any)));
         }
 
-        // Sort clause
-        const sortBy = options.sortBy || 'received_date';
-        const sortOrder = options.sortOrder || 'desc';
-        const sortClause = `ORDER BY ${this.sanitizeColumnName(sortBy)} ${sortOrder.toUpperCase()}`;
+        if (options.filters?.emailAlias?.length) {
+          const aliasPlaceholders = options.filters.emailAlias.map(() => '?').join(',');
+          whereClauses.push(`e.sender_email IN (${aliasPlaceholders})`);
+          params.push(...options.filters.emailAlias);
+        }
+
+        if (options.filters?.priority?.length) {
+          const priorityPlaceholders = options.filters.priority.map(() => '?').join(',');
+          whereClauses.push(`ea.quick_priority IN (${priorityPlaceholders})`);
+          params.push(...options.filters.priority);
+        }
+
+        if (options.filters?.dateRange) {
+          whereClauses.push('e.received_at BETWEEN ? AND ?');
+          params.push(options.filters.dateRange.start, options.filters.dateRange.end);
+        }
+
+        // Build WHERE clause
+        const whereClause = whereClauses.length > 0 
+          ? `WHERE ${whereClauses.join(' AND ')}` 
+          : '';
+
+        // Sanitize sort column and direction
+        const sortColumn = this.getSortColumn(options.sortBy);
+        const sortDirection = options.sortOrder?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
         const query = `
           SELECT 
@@ -1317,14 +1704,17 @@ export class EmailStorageService {
           FROM emails e
           LEFT JOIN email_analysis ea ON e.id = ea.email_id
           ${whereClause}
-          ${sortClause}
+          ORDER BY ${sortColumn} ${sortDirection}
           LIMIT ? OFFSET ?
         `;
+
+        // Add pagination params
+        params.push(limit, offset);
 
         const emails = await this.executeOptimizedQuery<any[]>(
           'email_table_lazy_load',
           query,
-          [...params, limit, offset]
+          params
         );
 
         // Transform emails
@@ -1407,6 +1797,31 @@ export class EmailStorageService {
     }
   }
 
+  /**
+   * Enhanced column name sanitization to prevent SQL injection
+   * Uses a whitelist approach with proper mapping
+   */
+  private getSortColumn(columnName?: string): string {
+    const columnMap: Record<string, string> = {
+      'received_date': 'e.received_at',
+      'received_at': 'e.received_at',
+      'subject': 'e.subject',
+      'sender_name': 'e.sender_name',
+      'email_alias': 'e.sender_email',
+      'workflow_state': 'ea.workflow_state',
+      'priority': 'ea.quick_priority',
+      'quick_priority': 'ea.quick_priority',
+      'status': 'ea.workflow_state',
+      'summary': 'ea.contextual_summary'
+    };
+
+    const column = columnName?.toLowerCase();
+    return columnMap[column || 'received_date'] || 'e.received_at';
+  }
+
+  /**
+   * @deprecated Use getSortColumn instead
+   */
   private sanitizeColumnName(columnName: string): string {
     const allowedColumns = [
       'received_at', 'subject', 'sender_name', 'workflow_state', 'quick_priority'
@@ -1626,8 +2041,25 @@ export class EmailStorageService {
       logger.warn(`Failed to stop performance monitoring: ${error}`, 'EMAIL_STORAGE');
     }
     
-    // Close database
-    this.db.close();
+    // Close database or connection pool
+    if (this.useConnectionPool && this.connectionPool) {
+      this.connectionPool.close();
+      logger.info('Connection pool closed', 'EMAIL_STORAGE');
+    } else {
+      this.db.close();
+      logger.info('Database connection closed', 'EMAIL_STORAGE');
+    }
+    
     logger.info('EmailStorageService closed', 'EMAIL_STORAGE');
+  }
+  
+  /**
+   * Get connection pool statistics (if using pool)
+   */
+  getPoolStats(): any {
+    if (this.useConnectionPool && this.connectionPool) {
+      return this.connectionPool.getStats();
+    }
+    return null;
   }
 }

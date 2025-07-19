@@ -77,6 +77,9 @@ importers:
       node-fetch:
         specifier: ^3.3.2
         version: 3.3.2
+      ollama:
+        specifier: ^0.5.16
+        version: 0.5.16
       p-queue:
         specifier: ^8.0.1
         version: 8.1.0
@@ -6592,7 +6595,6 @@ snapshots:
   ollama@0.5.16:
     dependencies:
       whatwg-fetch: 3.6.20
-    optional: true
 
   on-finished@2.4.1:
     dependencies:

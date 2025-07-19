@@ -2,8 +2,10 @@ import { v4 as uuidv4 } from 'uuid';
 import Database from 'better-sqlite3';
 import appConfig from '../../config/app.config';
 import { logger } from '../../utils/logger';
+import { wsService } from './WebSocketService';
 export class EmailStorageService {
     db;
+    slaMonitoringInterval = null;
     constructor() {
         this.db = new Database(appConfig.database.path);
         this.initializeDatabase();
@@ -255,6 +257,14 @@ export class EmailStorageService {
         });
         transaction();
         logger.info(`Email analysis stored successfully: ${email.id}`, 'EMAIL_STORAGE');
+        // Broadcast real-time update for email analysis completion
+        try {
+            wsService.broadcastEmailAnalyzed(email.id, analysis.deep.detailedWorkflow.primary, analysis.quick.priority, analysis.actionSummary, analysis.deep.detailedWorkflow.confidence, analysis.deep.actionItems[0]?.slaStatus || 'on-track', analysis.deep.workflowState.current);
+            logger.debug(`WebSocket broadcast sent for email analysis: ${email.id}`, 'EMAIL_STORAGE');
+        }
+        catch (error) {
+            logger.error(`Failed to broadcast email analysis update: ${error}`, 'EMAIL_STORAGE');
+        }
     }
     async getEmailWithAnalysis(emailId) {
         const stmt = this.db.prepare(`
@@ -411,15 +421,30 @@ export class EmailStorageService {
             averageProcessingTime: Math.round(avgProcessingTime)
         };
     }
-    async updateWorkflowState(emailId, newState) {
-        const stmt = this.db.prepare(`
+    async updateWorkflowState(emailId, newState, changedBy) {
+        // Get current state first
+        const currentStateStmt = this.db.prepare(`
+      SELECT workflow_state FROM email_analysis WHERE email_id = ?
+    `);
+        const currentResult = currentStateStmt.get(emailId);
+        const oldState = currentResult?.workflow_state || 'unknown';
+        // Update the state
+        const updateStmt = this.db.prepare(`
       UPDATE email_analysis
       SET workflow_state = ?, workflow_state_updated_at = ?, updated_at = ?
       WHERE email_id = ?
     `);
         const now = new Date().toISOString();
-        stmt.run(newState, now, now, emailId);
+        updateStmt.run(newState, now, now, emailId);
         logger.info(`Workflow state updated: ${emailId} -> ${newState}`, 'EMAIL_STORAGE');
+        // Broadcast real-time update for workflow state change
+        try {
+            wsService.broadcastEmailStateChanged(emailId, oldState, newState, changedBy);
+            logger.debug(`WebSocket broadcast sent for workflow state change: ${emailId}`, 'EMAIL_STORAGE');
+        }
+        catch (error) {
+            logger.error(`Failed to broadcast workflow state change: ${error}`, 'EMAIL_STORAGE');
+        }
     }
     async getWorkflowPatterns() {
         const stmt = this.db.prepare(`
@@ -428,7 +453,99 @@ export class EmailStorageService {
     `);
         return stmt.all();
     }
+    async checkSLAStatus() {
+        const stmt = this.db.prepare(`
+      SELECT 
+        e.id,
+        e.subject,
+        e.received_at,
+        a.deep_workflow_primary,
+        a.quick_priority,
+        a.action_sla_status,
+        a.workflow_state
+      FROM emails e
+      JOIN email_analysis a ON e.id = a.email_id
+      WHERE a.workflow_state NOT IN ('Completed', 'Archived')
+      AND (
+        a.action_sla_status = 'at-risk' OR
+        a.action_sla_status = 'overdue' OR
+        (
+          a.action_sla_status = 'on-track' AND
+          (
+            (a.quick_priority = 'Critical' AND datetime(e.received_at, '+4 hours') < datetime('now')) OR
+            (a.quick_priority = 'High' AND datetime(e.received_at, '+1 day') < datetime('now')) OR
+            (a.quick_priority = 'Medium' AND datetime(e.received_at, '+3 days') < datetime('now')) OR
+            (a.quick_priority = 'Low' AND datetime(e.received_at, '+7 days') < datetime('now'))
+          )
+        )
+      )
+    `);
+        const slaViolations = stmt.all();
+        for (const violation of slaViolations) {
+            const receivedAt = new Date(violation.received_at);
+            const now = new Date();
+            const diffMs = now.getTime() - receivedAt.getTime();
+            // Calculate SLA thresholds in milliseconds
+            const slaThresholds = {
+                Critical: 4 * 60 * 60 * 1000, // 4 hours
+                High: 24 * 60 * 60 * 1000, // 24 hours
+                Medium: 72 * 60 * 60 * 1000, // 72 hours
+                Low: 168 * 60 * 60 * 1000, // 168 hours
+            };
+            const slaThreshold = slaThresholds[violation.quick_priority];
+            const isOverdue = diffMs > slaThreshold;
+            const isAtRisk = diffMs > (slaThreshold * 0.8); // 80% of SLA time
+            let slaStatus;
+            let timeRemaining;
+            let overdueDuration;
+            if (isOverdue) {
+                slaStatus = 'overdue';
+                overdueDuration = diffMs - slaThreshold;
+            }
+            else if (isAtRisk) {
+                slaStatus = 'at-risk';
+                timeRemaining = slaThreshold - diffMs;
+            }
+            else {
+                continue; // Skip if not at risk or overdue
+            }
+            // Update SLA status in database
+            const updateStmt = this.db.prepare(`
+        UPDATE email_analysis 
+        SET action_sla_status = ?
+        WHERE email_id = ?
+      `);
+            updateStmt.run(slaStatus, violation.id);
+            // Broadcast SLA alert
+            try {
+                wsService.broadcastEmailSLAAlert(violation.id, violation.deep_workflow_primary, violation.quick_priority, slaStatus, timeRemaining, overdueDuration);
+                logger.info(`SLA alert broadcast for email ${violation.id}: ${slaStatus}`, 'EMAIL_STORAGE');
+            }
+            catch (error) {
+                logger.error(`Failed to broadcast SLA alert for email ${violation.id}: ${error}`, 'EMAIL_STORAGE');
+            }
+        }
+    }
+    startSLAMonitoring(intervalMs = 300000) {
+        if (this.slaMonitoringInterval) {
+            clearInterval(this.slaMonitoringInterval);
+        }
+        this.slaMonitoringInterval = setInterval(() => {
+            this.checkSLAStatus().catch(error => {
+                logger.error(`SLA monitoring failed: ${error}`, 'EMAIL_STORAGE');
+            });
+        }, intervalMs);
+        logger.info('SLA monitoring started', 'EMAIL_STORAGE');
+    }
+    stopSLAMonitoring() {
+        if (this.slaMonitoringInterval) {
+            clearInterval(this.slaMonitoringInterval);
+            this.slaMonitoringInterval = null;
+            logger.info('SLA monitoring stopped', 'EMAIL_STORAGE');
+        }
+    }
     async close() {
+        this.stopSLAMonitoring();
         this.db.close();
     }
 }

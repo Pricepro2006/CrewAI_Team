@@ -1,4 +1,4 @@
-import { EmailAnalysis } from '../agents/specialized/EmailAnalysisAgent';
+import { EmailAnalysis } from '../agents/specialized/EmailAnalysisTypes';
 export declare class EmailAnalysisCache {
     private cache;
     private stats;

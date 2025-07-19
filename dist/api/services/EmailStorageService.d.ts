@@ -113,6 +113,7 @@ export interface EmailWithAnalysis extends Email {
 }
 export declare class EmailStorageService {
     private db;
+    private slaMonitoringInterval;
     constructor();
     private initializeDatabase;
     private seedWorkflowPatterns;
@@ -125,8 +126,11 @@ export declare class EmailStorageService {
         slaCompliance: Record<string, number>;
         averageProcessingTime: number;
     }>;
-    updateWorkflowState(emailId: string, newState: string): Promise<void>;
+    updateWorkflowState(emailId: string, newState: string, changedBy?: string): Promise<void>;
     getWorkflowPatterns(): Promise<any[]>;
+    checkSLAStatus(): Promise<void>;
+    startSLAMonitoring(intervalMs?: number): void;
+    stopSLAMonitoring(): void;
     close(): void;
 }
 //# sourceMappingURL=EmailStorageService.d.ts.map

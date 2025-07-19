@@ -1,10 +1,11 @@
 import { BaseAgent } from '../base/BaseAgent';
 import { OllamaProvider } from '../../llm/OllamaProvider';
 import { logger } from '../../../utils/logger';
-import { EmailAnalysisCache } from '../../cache/EmailAnalysisCache';
+// Re-export types for backward compatibility
+export * from './EmailAnalysisTypes';
 export class EmailAnalysisAgent extends BaseAgent {
     ollamaProvider;
-    cache;
+    cache; // Will be initialized later to avoid circular import
     // TD SYNNEX specific categories
     categories = {
         workflow: [
@@ -61,15 +62,22 @@ export class EmailAnalysisAgent extends BaseAgent {
             model: this.model,
             baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
         });
-        this.cache = new EmailAnalysisCache({
-            maxSize: 500,
-            ttl: 1000 * 60 * 30 // 30 minutes
-        });
+        // Cache will be initialized lazily to avoid circular import
+        this.cache = null;
         // Add capabilities
         this.addCapability('email-analysis');
         this.addCapability('entity-extraction');
         this.addCapability('workflow-management');
         this.addCapability('priority-assessment');
+    }
+    async initializeCache() {
+        if (!this.cache) {
+            const { EmailAnalysisCache } = await import('../../cache/EmailAnalysisCache');
+            this.cache = new EmailAnalysisCache({
+                maxSize: 500,
+                ttl: 1000 * 60 * 30 // 30 minutes
+            });
+        }
     }
     async execute(task, context) {
         try {
@@ -101,6 +109,7 @@ export class EmailAnalysisAgent extends BaseAgent {
     async analyzeEmail(email) {
         logger.info(`Analyzing email: ${email.subject}`, 'EMAIL_AGENT');
         // Check cache first
+        await this.initializeCache();
         const cached = this.cache.get(email.id);
         if (cached) {
             logger.debug(`Using cached analysis for email: ${email.id}`, 'EMAIL_AGENT');
@@ -131,6 +140,7 @@ export class EmailAnalysisAgent extends BaseAgent {
             summary
         };
         // Cache the result
+        await this.initializeCache();
         this.cache.set(email.id, analysis);
         return analysis;
     }
