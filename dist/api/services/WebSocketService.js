@@ -118,6 +118,54 @@ export const WebSocketMessageSchema = z.discriminatedUnion("type", [
         }),
         timestamp: z.date(),
     }),
+    z.object({
+        type: z.literal("email.analyzed"),
+        emailId: z.string(),
+        workflow: z.string(),
+        priority: z.enum(["Critical", "High", "Medium", "Low"]),
+        actionSummary: z.string(),
+        confidence: z.number(),
+        slaStatus: z.enum(["on-track", "at-risk", "overdue"]),
+        state: z.string(),
+        timestamp: z.date(),
+    }),
+    z.object({
+        type: z.literal("email.state_changed"),
+        emailId: z.string(),
+        oldState: z.string(),
+        newState: z.string(),
+        changedBy: z.string().optional(),
+        timestamp: z.date(),
+    }),
+    z.object({
+        type: z.literal("email.bulk_update"),
+        action: z.string(),
+        emailIds: z.array(z.string()),
+        results: z.object({
+            successful: z.number(),
+            failed: z.number(),
+            total: z.number(),
+        }),
+        timestamp: z.date(),
+    }),
+    z.object({
+        type: z.literal("email.sla_alert"),
+        emailId: z.string(),
+        workflow: z.string(),
+        priority: z.enum(["Critical", "High", "Medium", "Low"]),
+        slaStatus: z.enum(["at-risk", "overdue"]),
+        timeRemaining: z.number().optional(),
+        overdueDuration: z.number().optional(),
+        timestamp: z.date(),
+    }),
+    z.object({
+        type: z.literal("email.analytics_updated"),
+        totalEmails: z.number(),
+        workflowDistribution: z.record(z.number()),
+        slaCompliance: z.record(z.number()),
+        averageProcessingTime: z.number(),
+        timestamp: z.date(),
+    }),
 ]);
 export class WebSocketService extends EventEmitter {
     clients = new Map();
@@ -317,6 +365,61 @@ export class WebSocketService extends EventEmitter {
             totalConnections,
             subscriptionStats,
         };
+    }
+    // Email-specific broadcast methods
+    broadcastEmailAnalyzed(emailId, workflow, priority, actionSummary, confidence, slaStatus, state) {
+        this.broadcast({
+            type: "email.analyzed",
+            emailId,
+            workflow,
+            priority,
+            actionSummary,
+            confidence,
+            slaStatus,
+            state,
+            timestamp: new Date(),
+        });
+    }
+    broadcastEmailStateChanged(emailId, oldState, newState, changedBy) {
+        this.broadcast({
+            type: "email.state_changed",
+            emailId,
+            oldState,
+            newState,
+            changedBy,
+            timestamp: new Date(),
+        });
+    }
+    broadcastEmailBulkUpdate(action, emailIds, results) {
+        this.broadcast({
+            type: "email.bulk_update",
+            action,
+            emailIds,
+            results,
+            timestamp: new Date(),
+        });
+    }
+    broadcastEmailSLAAlert(emailId, workflow, priority, slaStatus, timeRemaining, overdueDuration) {
+        this.broadcast({
+            type: "email.sla_alert",
+            emailId,
+            workflow,
+            priority,
+            slaStatus,
+            timeRemaining,
+            overdueDuration,
+            timestamp: new Date(),
+        });
+    }
+    broadcastEmailAnalyticsUpdated(totalEmails, workflowDistribution, slaCompliance, averageProcessingTime) {
+        this.broadcast({
+            type: "email.analytics_updated",
+            totalEmails,
+            workflowDistribution,
+            slaCompliance,
+            averageProcessingTime,
+            timestamp: new Date(),
+        });
     }
     /**
      * Start periodic health broadcasts

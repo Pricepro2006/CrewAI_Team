@@ -1,5 +1,5 @@
 import { LRUCache } from 'lru-cache';
-import { EmailAnalysis } from '../agents/specialized/EmailAnalysisAgent';
+import { EmailAnalysis } from '../agents/specialized/EmailAnalysisTypes';
 import { logger } from '../../utils/logger';
 export class EmailAnalysisCache {
     cache;

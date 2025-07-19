@@ -340,6 +340,143 @@ export declare const WebSocketMessageSchema: z.ZodDiscriminatedUnion<"type", [z.
         errorRate: number;
         lastActivity: Date;
     };
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"email.analyzed">;
+    emailId: z.ZodString;
+    workflow: z.ZodString;
+    priority: z.ZodEnum<["Critical", "High", "Medium", "Low"]>;
+    actionSummary: z.ZodString;
+    confidence: z.ZodNumber;
+    slaStatus: z.ZodEnum<["on-track", "at-risk", "overdue"]>;
+    state: z.ZodString;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "email.analyzed";
+    timestamp: Date;
+    confidence: number;
+    emailId: string;
+    priority: "Critical" | "High" | "Medium" | "Low";
+    workflow: string;
+    actionSummary: string;
+    slaStatus: "on-track" | "at-risk" | "overdue";
+    state: string;
+}, {
+    type: "email.analyzed";
+    timestamp: Date;
+    confidence: number;
+    emailId: string;
+    priority: "Critical" | "High" | "Medium" | "Low";
+    workflow: string;
+    actionSummary: string;
+    slaStatus: "on-track" | "at-risk" | "overdue";
+    state: string;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"email.state_changed">;
+    emailId: z.ZodString;
+    oldState: z.ZodString;
+    newState: z.ZodString;
+    changedBy: z.ZodOptional<z.ZodString>;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "email.state_changed";
+    timestamp: Date;
+    emailId: string;
+    oldState: string;
+    newState: string;
+    changedBy?: string | undefined;
+}, {
+    type: "email.state_changed";
+    timestamp: Date;
+    emailId: string;
+    oldState: string;
+    newState: string;
+    changedBy?: string | undefined;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"email.bulk_update">;
+    action: z.ZodString;
+    emailIds: z.ZodArray<z.ZodString, "many">;
+    results: z.ZodObject<{
+        successful: z.ZodNumber;
+        failed: z.ZodNumber;
+        total: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        failed: number;
+        total: number;
+        successful: number;
+    }, {
+        failed: number;
+        total: number;
+        successful: number;
+    }>;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "email.bulk_update";
+    timestamp: Date;
+    action: string;
+    emailIds: string[];
+    results: {
+        failed: number;
+        total: number;
+        successful: number;
+    };
+}, {
+    type: "email.bulk_update";
+    timestamp: Date;
+    action: string;
+    emailIds: string[];
+    results: {
+        failed: number;
+        total: number;
+        successful: number;
+    };
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"email.sla_alert">;
+    emailId: z.ZodString;
+    workflow: z.ZodString;
+    priority: z.ZodEnum<["Critical", "High", "Medium", "Low"]>;
+    slaStatus: z.ZodEnum<["at-risk", "overdue"]>;
+    timeRemaining: z.ZodOptional<z.ZodNumber>;
+    overdueDuration: z.ZodOptional<z.ZodNumber>;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "email.sla_alert";
+    timestamp: Date;
+    emailId: string;
+    priority: "Critical" | "High" | "Medium" | "Low";
+    workflow: string;
+    slaStatus: "at-risk" | "overdue";
+    timeRemaining?: number | undefined;
+    overdueDuration?: number | undefined;
+}, {
+    type: "email.sla_alert";
+    timestamp: Date;
+    emailId: string;
+    priority: "Critical" | "High" | "Medium" | "Low";
+    workflow: string;
+    slaStatus: "at-risk" | "overdue";
+    timeRemaining?: number | undefined;
+    overdueDuration?: number | undefined;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"email.analytics_updated">;
+    totalEmails: z.ZodNumber;
+    workflowDistribution: z.ZodRecord<z.ZodString, z.ZodNumber>;
+    slaCompliance: z.ZodRecord<z.ZodString, z.ZodNumber>;
+    averageProcessingTime: z.ZodNumber;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "email.analytics_updated";
+    timestamp: Date;
+    totalEmails: number;
+    workflowDistribution: Record<string, number>;
+    slaCompliance: Record<string, number>;
+    averageProcessingTime: number;
+}, {
+    type: "email.analytics_updated";
+    timestamp: Date;
+    totalEmails: number;
+    workflowDistribution: Record<string, number>;
+    slaCompliance: Record<string, number>;
+    averageProcessingTime: number;
 }>]>;
 export type WebSocketMessage = z.infer<typeof WebSocketMessageSchema>;
 export declare class WebSocketService extends EventEmitter {
@@ -431,6 +568,15 @@ export declare class WebSocketService extends EventEmitter {
         totalConnections: number;
         subscriptionStats: Record<string, number>;
     };
+    broadcastEmailAnalyzed(emailId: string, workflow: string, priority: "Critical" | "High" | "Medium" | "Low", actionSummary: string, confidence: number, slaStatus: "on-track" | "at-risk" | "overdue", state: string): void;
+    broadcastEmailStateChanged(emailId: string, oldState: string, newState: string, changedBy?: string): void;
+    broadcastEmailBulkUpdate(action: string, emailIds: string[], results: {
+        successful: number;
+        failed: number;
+        total: number;
+    }): void;
+    broadcastEmailSLAAlert(emailId: string, workflow: string, priority: "Critical" | "High" | "Medium" | "Low", slaStatus: "at-risk" | "overdue", timeRemaining?: number, overdueDuration?: number): void;
+    broadcastEmailAnalyticsUpdated(totalEmails: number, workflowDistribution: Record<string, number>, slaCompliance: Record<string, number>, averageProcessingTime: number): void;
     /**
      * Start periodic health broadcasts
      */

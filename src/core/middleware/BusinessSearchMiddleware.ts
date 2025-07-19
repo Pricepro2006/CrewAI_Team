@@ -20,6 +20,8 @@ import { BusinessQueryOptimizer } from '../search/BusinessQueryOptimizer';
 import { BusinessResponseValidator, ValidationResult } from '../validators/BusinessResponseValidator';
 import { logger } from '../../utils/logger';
 import { FeatureFlagService } from '../../config/features/FeatureFlagService';
+import { RateLimiter } from './RateLimiter';
+import { BusinessSearchCache } from '../cache/BusinessSearchCache';
 
 export interface MiddlewareMetrics {
   totalRequests: number;
@@ -30,6 +32,10 @@ export interface MiddlewareMetrics {
   averageLatency: number;
   errors: number;
   circuitBreakerStatus: 'closed' | 'open' | 'half-open';
+  rateLimitedRequests: number;
+  cacheHits: number;
+  cacheMisses: number;
+  cacheHitRate: number;
 }
 
 export interface MiddlewareConfig {
@@ -42,6 +48,9 @@ export interface MiddlewareConfig {
   circuitBreakerCooldownMs: number;
   bypassPatterns?: RegExp[];
   forceEnhancePatterns?: RegExp[];
+  cacheEnabled: boolean;
+  cacheMaxAge: number;
+  cacheStaleWhileRevalidate: number;
 }
 
 export class BusinessSearchMiddleware extends EventEmitter {
@@ -50,6 +59,8 @@ export class BusinessSearchMiddleware extends EventEmitter {
   private featureFlags: FeatureFlagService;
   private metrics: MiddlewareMetrics;
   private config: MiddlewareConfig;
+  private rateLimiter: RateLimiter;
+  private cache: BusinessSearchCache;
   
   // Circuit breaker state
   private circuitBreakerFailures: number = 0;
@@ -59,6 +70,9 @@ export class BusinessSearchMiddleware extends EventEmitter {
   // Performance tracking
   private latencyHistory: number[] = [];
   private readonly MAX_LATENCY_HISTORY = 100;
+
+  // Rate limiting tracking
+  private rateLimitedRequests: number = 0;
 
   constructor(config?: Partial<MiddlewareConfig>) {
     super();
@@ -71,6 +85,9 @@ export class BusinessSearchMiddleware extends EventEmitter {
       maxLatencyMs: 2000, // 2 second max added latency
       circuitBreakerThreshold: 5,
       circuitBreakerCooldownMs: 60000, // 1 minute cooldown
+      cacheEnabled: true,
+      cacheMaxAge: 60 * 60 * 1000, // 1 hour
+      cacheStaleWhileRevalidate: 5 * 60 * 1000, // 5 minutes
       ...config
     };
 
@@ -80,6 +97,12 @@ export class BusinessSearchMiddleware extends EventEmitter {
       minConfidenceThreshold: 0.6
     });
     this.featureFlags = FeatureFlagService.getInstance();
+    this.rateLimiter = new RateLimiter(process.env.USE_REDIS === 'true');
+    this.cache = new BusinessSearchCache({
+      maxAge: this.config.cacheMaxAge,
+      staleWhileRevalidate: this.config.cacheStaleWhileRevalidate,
+      useRedis: process.env.USE_REDIS === 'true'
+    });
 
     this.metrics = {
       totalRequests: 0,
@@ -89,7 +112,11 @@ export class BusinessSearchMiddleware extends EventEmitter {
       failedValidations: 0,
       averageLatency: 0,
       errors: 0,
-      circuitBreakerStatus: 'closed'
+      circuitBreakerStatus: 'closed',
+      rateLimitedRequests: 0,
+      cacheHits: 0,
+      cacheMisses: 0,
+      cacheHitRate: 0
     };
   }
 
@@ -147,6 +174,42 @@ export class BusinessSearchMiddleware extends EventEmitter {
           return originalMethod(prompt, options);
         }
 
+        // Extract location from prompt for cache key
+        const optimization = BusinessQueryOptimizer.optimize(prompt);
+        const location = optimization.components.location;
+
+        // Check cache if enabled
+        if (this.config.cacheEnabled) {
+          const cacheEntry = await this.cache.get(prompt, location);
+          
+          if (cacheEntry) {
+            this.metrics.cacheHits++;
+            this.updateCacheMetrics();
+            
+            // Track latency for cached response
+            this.trackLatency(Date.now() - startTime);
+            
+            // Emit cache hit event
+            this.emit('cache_hit', {
+              prompt,
+              location,
+              age: Date.now() - cacheEntry.timestamp,
+              hitCount: cacheEntry.hitCount
+            });
+            
+            logger.debug('Cache hit for business search', {
+              prompt: prompt.slice(0, 50),
+              location,
+              age: (Date.now() - cacheEntry.timestamp) / 1000
+            });
+            
+            return cacheEntry.response;
+          } else {
+            this.metrics.cacheMisses++;
+            this.updateCacheMetrics();
+          }
+        }
+
         // Enhance the prompt
         const enhancedPrompt = await this.enhancePrompt(prompt);
         this.metrics.enhancedRequests++;
@@ -155,14 +218,29 @@ export class BusinessSearchMiddleware extends EventEmitter {
         const response = await originalMethod(enhancedPrompt, options);
 
         // Validate response if enabled
+        let validation: ValidationResult | undefined;
         if (this.config.validateResponses) {
-          const validation = await this.validateResponse(response);
+          validation = await this.validateResponse(response);
           this.metrics.validatedResponses++;
           
           if (!validation.isValid) {
             this.metrics.failedValidations++;
             this.handleValidationFailure(validation, prompt, response);
           }
+        }
+
+        // Store in cache if enabled and response is valid
+        if (this.config.cacheEnabled && (!validation || validation.isValid)) {
+          await this.cache.set(
+            prompt,
+            location,
+            response,
+            validation,
+            {
+              enhanced: true,
+              modelUsed: options?.model
+            }
+          );
         }
 
         // Track latency
@@ -172,7 +250,8 @@ export class BusinessSearchMiddleware extends EventEmitter {
         this.emit('request_processed', {
           type: 'generate',
           enhanced: shouldEnhance,
-          latency: Date.now() - startTime
+          latency: Date.now() - startTime,
+          cached: false
         });
 
         return response;
@@ -386,6 +465,35 @@ export class BusinessSearchMiddleware extends EventEmitter {
    * Enhance a prompt with business search instructions
    */
   private async enhancePrompt(prompt: string): Promise<string> {
+    // Apply rate limiting check
+    const rateLimitKey = `websearch:${prompt.slice(0, 50)}`;
+    
+    try {
+      // Check rate limit using token bucket for burst handling
+      const isAllowed = await this.checkRateLimit(rateLimitKey);
+      
+      if (!isAllowed) {
+        this.rateLimitedRequests++;
+        logger.warn('Rate limit exceeded for WebSearch enhancement', {
+          key: rateLimitKey,
+          rateLimitedTotal: this.rateLimitedRequests
+        });
+        
+        // Emit rate limit event
+        this.emit('rate_limited', {
+          prompt,
+          timestamp: Date.now(),
+          totalRateLimited: this.rateLimitedRequests
+        });
+        
+        // Return original prompt without enhancement when rate limited
+        return prompt;
+      }
+    } catch (error) {
+      logger.error('Rate limit check failed, allowing request', error);
+      // Continue with enhancement if rate limit check fails
+    }
+
     const options: BusinessSearchEnhancementOptions = {
       enhancementLevel: this.config.enhancementLevel,
       includeExamples: true,
@@ -424,6 +532,31 @@ export class BusinessSearchMiddleware extends EventEmitter {
       prompt,
       response,
       validation
+    });
+  }
+
+  /**
+   * Check rate limit for a given key
+   */
+  private async checkRateLimit(key: string): Promise<boolean> {
+    // Use token bucket limiter for WebSearch operations
+    // 30 requests per 5 minutes with burst capacity of 5
+    const tokenBucket = this.rateLimiter.tokenBucketLimiter(5, 0.1); // 0.1 tokens/second = 6 tokens/minute
+    
+    return new Promise((resolve) => {
+      const mockReq = { ip: key } as any;
+      const mockRes = {
+        setHeader: () => {},
+        getHeader: () => null,
+        status: () => ({ json: () => {} })
+      } as any;
+      
+      tokenBucket(mockReq, mockRes, () => {
+        resolve(true); // Request allowed
+      });
+      
+      // If middleware doesn't call next, request is rate limited
+      setTimeout(() => resolve(false), 10);
     });
   }
 
@@ -493,6 +626,16 @@ export class BusinessSearchMiddleware extends EventEmitter {
   }
 
   /**
+   * Update cache metrics
+   */
+  private updateCacheMetrics(): void {
+    const total = this.metrics.cacheHits + this.metrics.cacheMisses;
+    this.metrics.cacheHitRate = total > 0 
+      ? (this.metrics.cacheHits / total) * 100 
+      : 0;
+  }
+
+  /**
    * Get current metrics
    */
   public getMetrics(): MiddlewareMetrics {
@@ -511,9 +654,14 @@ export class BusinessSearchMiddleware extends EventEmitter {
       failedValidations: 0,
       averageLatency: 0,
       errors: 0,
-      circuitBreakerStatus: this.circuitBreakerStatus
+      circuitBreakerStatus: this.circuitBreakerStatus,
+      rateLimitedRequests: 0,
+      cacheHits: 0,
+      cacheMisses: 0,
+      cacheHitRate: 0
     };
     this.latencyHistory = [];
+    this.rateLimitedRequests = 0;
   }
 
   /**
@@ -539,5 +687,54 @@ export class BusinessSearchMiddleware extends EventEmitter {
     this.circuitBreakerFailures = 0;
     this.circuitBreakerLastFailure = 0;
     logger.info('Circuit breaker manually reset');
+  }
+
+  /**
+   * Get cache statistics
+   */
+  public getCacheStats() {
+    return this.cache.getStats();
+  }
+
+  /**
+   * Clear cache
+   */
+  public async clearCache(): Promise<void> {
+    await this.cache.clear();
+    this.metrics.cacheHits = 0;
+    this.metrics.cacheMisses = 0;
+    this.metrics.cacheHitRate = 0;
+    logger.info('Business search cache cleared');
+  }
+
+  /**
+   * Preload cache with common queries
+   */
+  public async preloadCache(queries: Array<{ query: string; location?: string; response: string }>): Promise<void> {
+    await this.cache.preload(queries);
+    logger.info(`Preloaded ${queries.length} queries into cache`);
+  }
+
+  /**
+   * Analyze cache performance
+   */
+  public analyzeCachePerformance() {
+    return this.cache.analyzePerformance();
+  }
+
+  /**
+   * Search cache entries
+   */
+  public async searchCache(pattern: RegExp) {
+    return this.cache.search(pattern);
+  }
+
+  /**
+   * Cleanup resources
+   */
+  public async cleanup(): Promise<void> {
+    await this.cache.cleanup();
+    this.rateLimiter.cleanup();
+    logger.info('BusinessSearchMiddleware cleaned up');
   }
 }
