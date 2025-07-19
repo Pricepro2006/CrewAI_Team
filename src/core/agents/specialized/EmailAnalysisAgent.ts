@@ -2,62 +2,13 @@ import { BaseAgent } from '../base/BaseAgent';
 import type { AgentContext, AgentResult } from '../base/AgentTypes';
 import { OllamaProvider } from '../../llm/OllamaProvider';
 import { logger } from '../../../utils/logger';
-import { EmailAnalysisCache } from '../../cache/EmailAnalysisCache';
-
-// Email interfaces
-interface Email {
-  id: string;
-  subject: string;
-  body?: string;
-  bodyPreview?: string;
-  from: {
-    emailAddress: {
-      name: string;
-      address: string;
-    };
-  };
-  to?: Array<{
-    emailAddress: {
-      name: string;
-      address: string;
-    };
-  }>;
-  receivedDateTime: string;
-  isRead: boolean;
-  categories: string[];
-  importance?: string;
-}
-
-export interface EmailAnalysis {
-  categories: {
-    workflow: string[];
-    priority: string;
-    intent: string;
-    urgency: string;
-  };
-  priority: 'Critical' | 'High' | 'Medium' | 'Low';
-  entities: EmailEntities;
-  workflowState: string;
-  suggestedActions: string[];
-  confidence: number;
-  summary: string;
-}
-
-interface EmailEntities {
-  poNumbers: string[];
-  quoteNumbers: string[];
-  orderNumbers: string[];
-  trackingNumbers: string[];
-  caseNumbers: string[];
-  customers: string[];
-  products: string[];
-  amounts: Array<{ value: number; currency: string }>;
-  dates: Array<{ date: string; context: string }>;
-}
+// Re-export types for backward compatibility
+export * from './EmailAnalysisTypes';
+import type { Email, EmailAnalysis, EmailEntities, EmailProcessingResult } from './EmailAnalysisTypes';
 
 export class EmailAnalysisAgent extends BaseAgent {
   private ollamaProvider: OllamaProvider;
-  private cache: EmailAnalysisCache;
+  private cache: any; // Will be initialized later to avoid circular import
   
   // TD SYNNEX specific categories
   private readonly categories = {
@@ -123,16 +74,24 @@ export class EmailAnalysisAgent extends BaseAgent {
       baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
     });
     
-    this.cache = new EmailAnalysisCache({
-      maxSize: 500,
-      ttl: 1000 * 60 * 30 // 30 minutes
-    });
+    // Cache will be initialized lazily to avoid circular import
+    this.cache = null;
     
     // Add capabilities
     this.addCapability('email-analysis');
     this.addCapability('entity-extraction');
     this.addCapability('workflow-management');
     this.addCapability('priority-assessment');
+  }
+
+  private async initializeCache(): Promise<void> {
+    if (!this.cache) {
+      const { EmailAnalysisCache } = await import('../../cache/EmailAnalysisCache');
+      this.cache = new EmailAnalysisCache({
+        maxSize: 500,
+        ttl: 1000 * 60 * 30 // 30 minutes
+      });
+    }
   }
 
   async execute(task: string, context: AgentContext): Promise<AgentResult> {
@@ -169,6 +128,7 @@ export class EmailAnalysisAgent extends BaseAgent {
     logger.info(`Analyzing email: ${email.subject}`, 'EMAIL_AGENT');
     
     // Check cache first
+    await this.initializeCache();
     const cached = this.cache.get(email.id);
     if (cached) {
       logger.debug(`Using cached analysis for email: ${email.id}`, 'EMAIL_AGENT');
@@ -207,6 +167,7 @@ export class EmailAnalysisAgent extends BaseAgent {
     };
     
     // Cache the result
+    await this.initializeCache();
     this.cache.set(email.id, analysis);
     
     return analysis;

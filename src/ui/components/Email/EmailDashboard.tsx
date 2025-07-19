@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   EnvelopeIcon, 
   ChartBarIcon, 
@@ -6,51 +6,62 @@ import {
   ExclamationTriangleIcon,
   FunnelIcon,
   MagnifyingGlassIcon,
-  PlusIcon
+  PlusIcon,
+  RefreshIcon
 } from '@heroicons/react/24/outline';
 import { trpc } from '../../utils/trpc';
-import { EmailList } from './EmailList';
+import { EmailTable } from '@/client/components/email/EmailTable';
+import { FilterPanel, QuickFilters } from '@/client/components/email/FilterPanel';
+import { StatusLegend } from '@/client/components/email/StatusIndicator';
 import { EmailStats } from './EmailStats';
-import { EmailFilters } from './EmailFilters';
 import { EmailCompose } from './EmailCompose';
+import type { EmailRecord, FilterState, FilterOptions } from '@/types/email-dashboard.interfaces';
 import './EmailDashboard.css';
 
 export interface EmailDashboardProps {
   className?: string;
 }
 
-export interface EmailFilters {
-  workflow?: string;
-  priority?: string;
-  status?: string;
-  slaStatus?: string;
-  search?: string;
-  dateRange?: {
-    start: Date;
-    end: Date;
-  };
-}
+// Map existing email data to new EmailRecord format
+function mapEmailToRecord(email: any): EmailRecord {
+  const analysis = email.analysis || {};
+  const workflowState = analysis.workflow_state === 'New' ? 'START_POINT' : 
+                       analysis.workflow_state === 'In Progress' ? 'IN_PROGRESS' : 
+                       'COMPLETION';
+  
+  const status = analysis.quick_priority === 'Critical' || analysis.action_sla_status === 'overdue' ? 'red' :
+                 workflowState === 'IN_PROGRESS' ? 'yellow' : 'green';
+  
+  const statusText = analysis.quick_priority === 'Critical' ? 'Critical' :
+                     analysis.action_sla_status === 'overdue' ? 'Overdue' :
+                     workflowState === 'START_POINT' ? 'New Request' :
+                     workflowState === 'IN_PROGRESS' ? 'Processing' : 'Completed';
 
-export interface EmailStats {
-  totalEmails: number;
-  workflowDistribution: Record<string, number>;
-  slaCompliance: Record<string, number>;
-  averageProcessingTime: number;
-  todayStats: {
-    received: number;
-    processed: number;
-    overdue: number;
-    critical: number;
+  return {
+    id: email.id,
+    email_alias: email.to?.split('@')[0] + '@tdsynnex.com' || 'unknown@tdsynnex.com',
+    requested_by: email.from?.split('<')[0]?.trim() || 'Unknown',
+    subject: email.subject || 'No Subject',
+    summary: analysis.quick_summary || email.bodyPreview || 'No summary available',
+    status,
+    status_text: statusText,
+    workflow_state: workflowState,
+    timestamp: email.receivedDateTime,
+    priority: analysis.quick_priority || 'Medium',
+    workflow_type: analysis.workflow_type || 'General',
+    entities: analysis.entities,
+    isRead: email.isRead,
+    hasAttachments: email.hasAttachments,
   };
 }
 
 export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => {
-  const [filters, setFilters] = useState<EmailFilters>({});
-  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({});
   const [showCompose, setShowCompose] = useState(false);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [realTimeUpdates, setRealTimeUpdates] = useState<any[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch email analytics
   const { data: emailStats, isLoading: statsLoading } = trpc.emails.getAnalytics.useQuery({
@@ -105,9 +116,97 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
     return () => clearInterval(interval);
   }, [refetchEmails]);
 
+  // Convert emails to EmailRecord format
+  const emailRecords = useMemo(() => {
+    if (!emails) return [];
+    return emails.map(mapEmailToRecord);
+  }, [emails]);
+
+  // Generate filter options from current data
+  const filterOptions = useMemo<FilterOptions>(() => {
+    if (!emailRecords) return {
+      emailAliases: [],
+      requesters: [],
+      statuses: [],
+      workflowStates: [],
+      workflowTypes: [],
+      priorities: [],
+      tags: []
+    };
+
+    const emailAliases = [...new Set(emailRecords.map(e => e.email_alias))];
+    const requesters = [...new Set(emailRecords.map(e => e.requested_by))];
+    const workflowTypes = [...new Set(emailRecords.map(e => e.workflow_type).filter(Boolean))];
+    const tags = [...new Set(emailRecords.flatMap(e => e.tags || []))];
+
+    const statusCounts = { red: 0, yellow: 0, green: 0 };
+    const workflowStateCounts = { START_POINT: 0, IN_PROGRESS: 0, COMPLETION: 0 };
+    const priorityCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
+
+    emailRecords.forEach(email => {
+      statusCounts[email.status]++;
+      workflowStateCounts[email.workflow_state]++;
+      if (email.priority) priorityCounts[email.priority as keyof typeof priorityCounts]++;
+    });
+
+    return {
+      emailAliases,
+      requesters,
+      statuses: [
+        { value: 'red', label: 'Critical', color: 'red', count: statusCounts.red },
+        { value: 'yellow', label: 'In Progress', color: 'yellow', count: statusCounts.yellow },
+        { value: 'green', label: 'Completed', color: 'green', count: statusCounts.green }
+      ],
+      workflowStates: [
+        { value: 'START_POINT', label: 'Start Point', count: workflowStateCounts.START_POINT },
+        { value: 'IN_PROGRESS', label: 'In Progress', count: workflowStateCounts.IN_PROGRESS },
+        { value: 'COMPLETION', label: 'Completion', count: workflowStateCounts.COMPLETION }
+      ],
+      workflowTypes: workflowTypes.map(type => ({
+        value: type!,
+        label: type!,
+        count: emailRecords.filter(e => e.workflow_type === type).length
+      })),
+      priorities: [
+        { value: 'Critical', label: 'Critical', count: priorityCounts.Critical },
+        { value: 'High', label: 'High', count: priorityCounts.High },
+        { value: 'Medium', label: 'Medium', count: priorityCounts.Medium },
+        { value: 'Low', label: 'Low', count: priorityCounts.Low }
+      ],
+      tags
+    };
+  }, [emailRecords]);
+
   // Handle filter changes
-  const handleFilterChange = (newFilters: Partial<EmailFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+  const handleFilterChange = (newFilters: FilterState) => {
+    setFilters(newFilters);
+  };
+
+  // Handle email selection
+  const handleEmailSelect = (emailId: string) => {
+    setSelectedEmails(prev => 
+      prev.includes(emailId) 
+        ? prev.filter(id => id !== emailId)
+        : [...prev, emailId]
+    );
+  };
+
+  const handleEmailsSelect = (emailIds: string[]) => {
+    setSelectedEmails(emailIds);
+  };
+
+  // Handle email row click
+  const handleEmailClick = (email: EmailRecord) => {
+    // Navigate to email detail view or open modal
+    console.log('Email clicked:', email);
+  };
+
+  // Manual refresh
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetchEmails();
+    setRefreshKey(prev => prev + 1);
+    setTimeout(() => setIsRefreshing(false), 500);
   };
 
   // Handle bulk actions
@@ -157,6 +256,22 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
     }, { received: 0, processed: 0, overdue: 0, critical: 0 });
   }, [emails]);
 
+  // Count active filters
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.search) count++;
+    if (filters.emailAliases?.length) count += filters.emailAliases.length;
+    if (filters.requesters?.length) count += filters.requesters.length;
+    if (filters.statuses?.length) count += filters.statuses.length;
+    if (filters.workflowStates?.length) count += filters.workflowStates.length;
+    if (filters.priorities?.length) count += filters.priorities.length;
+    if (filters.dateRange) count++;
+    if (filters.hasAttachments !== undefined) count++;
+    if (filters.isRead !== undefined) count++;
+    if (filters.tags?.length) count += filters.tags.length;
+    return count;
+  }, [filters]);
+
   return (
     <div className={`email-dashboard ${className || ''}`}>
       <div className="email-dashboard__header">
@@ -172,12 +287,21 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
         
         <div className="email-dashboard__actions">
           <button 
-            className="email-dashboard__action-btn email-dashboard__action-btn--secondary"
-            onClick={() => setShowFilters(!showFilters)}
+            className={`email-dashboard__action-btn email-dashboard__action-btn--secondary ${isRefreshing ? 'animate-spin' : ''}`}
+            onClick={handleRefresh}
+            disabled={isRefreshing}
           >
-            <FunnelIcon className="email-dashboard__action-icon" />
-            {showFilters ? 'Hide Filters' : 'Show Filters'}
+            <RefreshIcon className="email-dashboard__action-icon" />
+            Refresh
           </button>
+          
+          <FilterPanel
+            filters={filters}
+            filterOptions={filterOptions}
+            onFiltersChange={handleFilterChange}
+            onReset={() => setFilters({})}
+            activeFilterCount={activeFilterCount}
+          />
           
           <button 
             className="email-dashboard__action-btn email-dashboard__action-btn--primary"
@@ -224,30 +348,33 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
 
         {/* Main Email Interface */}
         <div className="email-dashboard__main">
-          {/* Search Bar */}
-          <div className="email-dashboard__search">
-            <div className="email-dashboard__search-input">
-              <MagnifyingGlassIcon className="email-dashboard__search-icon" />
-              <input
-                type="text"
-                placeholder="Search emails by subject, sender, or content..."
-                value={filters.search || ''}
-                onChange={(e) => handleFilterChange({ search: e.target.value })}
-                className="email-dashboard__search-field"
-              />
+          {/* Search Bar and Quick Filters */}
+          <div className="email-dashboard__controls">
+            <div className="email-dashboard__search">
+              <div className="email-dashboard__search-input">
+                <MagnifyingGlassIcon className="email-dashboard__search-icon" />
+                <input
+                  type="text"
+                  placeholder="Search emails by subject, sender, or content..."
+                  value={filters.search || ''}
+                  onChange={(e) => handleFilterChange({ ...filters, search: e.target.value })}
+                  className="email-dashboard__search-field"
+                />
+              </div>
+            </div>
+            
+            {/* Status Legend */}
+            <div className="email-dashboard__status-legend">
+              <StatusLegend />
             </div>
           </div>
 
-          {/* Filters Panel */}
-          {showFilters && (
-            <div className="email-dashboard__filters">
-              <EmailFilters
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onClear={() => setFilters({})}
-              />
-            </div>
-          )}
+          {/* Quick Filter Buttons */}
+          <div className="email-dashboard__quick-filters">
+            <QuickFilters 
+              onFilterChange={(quickFilters) => handleFilterChange({ ...filters, ...quickFilters })}
+            />
+          </div>
 
           {/* Bulk Actions */}
           {selectedEmails.length > 0 && (
@@ -278,15 +405,17 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
             </div>
           )}
 
-          {/* Email List */}
-          <div className="email-dashboard__list">
-            <EmailList
-              emails={emails || []}
+          {/* Email Table */}
+          <div className="email-dashboard__table">
+            <EmailTable
+              emails={emailRecords}
               loading={emailsLoading}
+              error={null}
               selectedEmails={selectedEmails}
-              onEmailSelect={setSelectedEmails}
-              onEmailAction={refetchEmails}
-              filters={filters}
+              onEmailSelect={handleEmailSelect}
+              onEmailsSelect={handleEmailsSelect}
+              onRowClick={handleEmailClick}
+              className="email-dashboard__table-component"
             />
           </div>
         </div>
