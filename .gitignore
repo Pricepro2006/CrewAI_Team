@@ -17,6 +17,7 @@ env/
 ENV/
 /dist/
 /venv/
+playwright_env/
 
 # Build outputs
 dist/
