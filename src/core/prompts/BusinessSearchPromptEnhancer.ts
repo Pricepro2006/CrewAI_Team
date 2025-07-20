@@ -147,7 +147,7 @@ ${BusinessSearchPromptEnhancer.BUSINESS_SEARCH_MARKER}`
       return enhancedPrompt;
       
     } catch (error) {
-      logger.error('Error enhancing prompt:', error);
+      logger.error('Error enhancing prompt:', error instanceof Error ? error.message : String(error));
       // Return original prompt or default on error
       return prompt || this.getDefaultBusinessPrompt();
     }

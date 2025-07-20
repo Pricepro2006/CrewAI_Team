@@ -20,7 +20,7 @@ export { ConfidenceResponseGenerator } from './ConfidenceResponseGenerator.js';
 
 // Evaluation
 export { MultiModalEvaluator } from './MultiModalEvaluator.js';
-export { ConfidenceExtractor } from './ConfidenceExtractor.js';
+// export { ConfidenceExtractor } from './ConfidenceExtractor.js'; // TODO: Implement ConfidenceExtractor
 
 // Evaluators
 export { RelevanceScorer } from './evaluators/RelevanceScorer.js';
@@ -34,10 +34,10 @@ export { ConfidenceCalibrator } from './ConfidenceCalibrator.js';
 export { AdaptiveDeliveryManager } from './AdaptiveDeliveryManager.js';
 
 // Performance optimization
-export { PerformanceOptimizer } from './PerformanceOptimizer.js';
+export { PerformanceOptimizer } from '../../../api/services/PerformanceOptimizer';
 
 // BERT ranking
-export { BERTRanker } from './BERTRanker.js';
+// export { BERTRanker } from './BERTRanker.js'; // TODO: Implement BERTRanker
 
 // Re-export action types and core enums
 export { ActionType } from './types.js';

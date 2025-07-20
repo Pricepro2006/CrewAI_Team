@@ -4,8 +4,8 @@
  */
 
 import { 
-  QueryComponents, 
-  QueryOptimizationResult,
+  type QueryComponents, 
+  type QueryOptimizationResult,
   UrgencyLevel 
 } from './types';
 import { BusinessQueryOptimizer } from './BusinessQueryOptimizer';
@@ -87,7 +87,7 @@ export class QueryEnhancer {
     const cityCorrection = LocationDatabase.correctLocation(location.city || location.rawLocation);
     
     // Get state info
-    let state = location.state;
+    const state = location.state;
     let stateAbbr = location.stateAbbr;
     
     if (!stateAbbr && state) {
@@ -161,7 +161,7 @@ export class QueryEnhancer {
     const primaryParts: string[] = [];
     
     // Add service (use first enhanced term)
-    if (enhancedService.length > 0) {
+    if (enhancedService.length > 0 && enhancedService[0]) {
       primaryParts.push(enhancedService[0]);
     }
     
@@ -191,7 +191,7 @@ export class QueryEnhancer {
     
     // Alternative queries
     // Version with expanded location
-    if (enhancedLocation.cityMetadata?.state) {
+    if (enhancedLocation.cityMetadata?.state && enhancedService[0]) {
       const altQuery = `${enhancedService[0]} ${enhancedLocation.corrected}, ${enhancedLocation.cityMetadata.state} ${components.businessIndicators.join(' ')}`;
       queries.push(altQuery.trim());
     }

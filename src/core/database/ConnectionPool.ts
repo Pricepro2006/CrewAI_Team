@@ -41,8 +41,8 @@ export class ConnectionPool extends EventEmitter {
   private config: Required<PoolConfig>;
   private connections: Map<string, PooledConnection> = new Map();
   private availableConnections: string[] = [];
-  private checkpointInterval?: NodeJS.Timer;
-  private maintenanceInterval?: NodeJS.Timer;
+  private checkpointInterval?: NodeJS.Timeout;
+  private maintenanceInterval?: NodeJS.Timeout;
   private stats = {
     totalConnections: 0,
     activeConnections: 0,

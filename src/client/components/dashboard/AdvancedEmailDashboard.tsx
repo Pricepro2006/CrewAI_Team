@@ -3,14 +3,14 @@ import { Filter, Download, BarChart3, Settings, Users, Zap } from 'lucide-react'
 
 // Import our advanced components
 import { AdvancedFilterPanel } from '../table/AdvancedFilterPanel';
-import { StatusUpdateManager, EmailStatus, EmailWorkflowData } from '../status/StatusUpdateManager';
-import { DataExportManager, ExportColumn } from '../export/DataExportManager';
+import { StatusUpdateManager, type EmailStatus, type EmailWorkflowData } from '../status/StatusUpdateManager';
+import { DataExportManager, type ExportColumn } from '../export/DataExportManager';
 import { StatusDistributionChart } from '../charts/StatusDistributionChart';
 import { WorkflowTimelineChart } from '../charts/WorkflowTimelineChart';
 import { SLATrackingDashboard } from '../charts/SLATrackingDashboard';
 
 // Import hooks
-import { useAdvancedFiltering, FilterRule } from '../../hooks/useAdvancedFiltering';
+import { useAdvancedFiltering, type FilterRule } from '../../hooks/useAdvancedFiltering';
 import { useAuditTrail } from '../../hooks/useAuditTrail';
 import { useReportGeneration } from '../../hooks/useReportGeneration';
 
@@ -141,7 +141,7 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
       id: 'priority',
       label: 'Priority',
       field: 'priority',
-      type: 'select' as const,
+      type: 'text' as const,
       options: ['low', 'medium', 'high', 'critical'],
       included: true
     },
@@ -192,17 +192,17 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
         
         switch (rule.operator) {
           case 'contains':
-            return stringValue.includes(String(rule.value).toLowerCase());
+            return rule.value !== undefined && stringValue.includes(String(rule.value).toLowerCase());
           case 'equals':
-            return stringValue === String(rule.value).toLowerCase();
+            return rule.value !== undefined && stringValue === String(rule.value).toLowerCase();
           case 'startsWith':
-            return stringValue.startsWith(String(rule.value).toLowerCase());
+            return rule.value !== undefined && stringValue.startsWith(String(rule.value).toLowerCase());
           case 'endsWith':
-            return stringValue.endsWith(String(rule.value).toLowerCase());
+            return rule.value !== undefined && stringValue.endsWith(String(rule.value).toLowerCase());
           case 'in':
-            return Array.isArray(rule.value) && rule.value.includes(value);
+            return Array.isArray(rule.value) && rule.value.includes(String(value));
           case 'notIn':
-            return Array.isArray(rule.value) && !rule.value.includes(value);
+            return Array.isArray(rule.value) && !rule.value.includes(String(value));
           default:
             return true;
         }
@@ -324,11 +324,11 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
 
     return last30Days.map(date => {
       const dayEmails = emails.filter(email => 
-        email.createdAt.split('T')[0] === date
+        email.createdAt?.split('T')[0] === date
       );
       
       return {
-        timestamp: date,
+        timestamp: date as string, // date is always defined from the array generation above
         totalEmails: dayEmails.length,
         completedEmails: dayEmails.filter(e => e.status === 'completed').length,
         criticalEmails: dayEmails.filter(e => e.priority === 'critical').length,

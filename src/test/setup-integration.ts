@@ -19,11 +19,7 @@ beforeAll(async () => {
   console.log("Setting up Ollama for integration tests...");
 
   try {
-    await setupOllamaForTesting({
-      url: process.env['OLLAMA_URL'],
-      testModel: "qwen2.5:0.5b", // Small, fast model for testing
-      testEmbeddingModel: "nomic-embed-text",
-    });
+    await setupOllamaForTesting();
     console.log("Ollama setup complete");
   } catch (error) {
     console.error("Failed to setup Ollama:", error);

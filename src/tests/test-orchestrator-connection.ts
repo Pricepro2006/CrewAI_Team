@@ -7,7 +7,7 @@ async function testOrchestratorConnection() {
   try {
     // Create orchestrator instance
     const orchestrator = new MasterOrchestrator({
-      ollamaUrl: config.ollama.baseUrl || "http://localhost:11434",
+      ollamaUrl: config.ollama?.url || "http://localhost:11434",
       rag: {
         vectorStore: {
           type: "chromadb" as const,

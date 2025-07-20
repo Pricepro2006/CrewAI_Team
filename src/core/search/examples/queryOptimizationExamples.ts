@@ -55,7 +55,7 @@ exampleQueries.forEach((query, index) => {
       console.log(`  - [${flag.severity.toUpperCase()}] ${flag.type}: ${flag.detail}`);
     });
     console.log("\nQuery rejected for security reasons.\n");
-    continue;
+    return;
   }
   
   // Run enhancement
@@ -146,8 +146,10 @@ const iterations = 1000;
 
 for (let i = 0; i < iterations; i++) {
   const query = exampleQueries[i % exampleQueries.length];
-  BusinessQueryOptimizer.optimize(query);
-  QueryEnhancer.enhance(query);
+  if (query) {
+    BusinessQueryOptimizer.optimize(query);
+    QueryEnhancer.enhance(query);
+  }
 }
 
 const endTime = Date.now();

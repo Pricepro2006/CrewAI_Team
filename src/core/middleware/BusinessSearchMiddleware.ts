@@ -14,10 +14,10 @@
  */
 
 import { EventEmitter } from 'events';
-import { OllamaProvider, OllamaGenerateOptions, OllamaGenerateWithLogProbsResponse } from '../llm/OllamaProvider';
-import { BusinessSearchPromptEnhancer, BusinessSearchEnhancementOptions } from '../prompts/BusinessSearchPromptEnhancer';
+import type { OllamaProvider, OllamaGenerateOptions, OllamaGenerateWithLogProbsResponse } from '../llm/OllamaProvider';
+import { BusinessSearchPromptEnhancer, type BusinessSearchEnhancementOptions } from '../prompts/BusinessSearchPromptEnhancer';
 import { BusinessQueryOptimizer } from '../search/BusinessQueryOptimizer';
-import { BusinessResponseValidator, ValidationResult } from '../validators/BusinessResponseValidator';
+import { BusinessResponseValidator, type ValidationResult } from '../validators/BusinessResponseValidator';
 import { logger } from '../../utils/logger';
 import { FeatureFlagService } from '../../config/features/FeatureFlagService';
 import { RateLimiter } from './RateLimiter';
@@ -180,7 +180,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
 
         // Check cache if enabled
         if (this.config.cacheEnabled) {
-          const cacheEntry = await this.cache.get(prompt, location);
+          const cacheEntry = await this.cache.get(prompt, location?.rawLocation);
           
           if (cacheEntry) {
             this.metrics.cacheHits++;
@@ -197,9 +197,9 @@ export class BusinessSearchMiddleware extends EventEmitter {
               hitCount: cacheEntry.hitCount
             });
             
-            logger.debug('Cache hit for business search', {
+            logger.debug('Cache hit for business search', 'BUSINESS_SEARCH', {
               prompt: prompt.slice(0, 50),
-              location,
+              location: location?.rawLocation,
               age: (Date.now() - cacheEntry.timestamp) / 1000
             });
             
@@ -233,12 +233,12 @@ export class BusinessSearchMiddleware extends EventEmitter {
         if (this.config.cacheEnabled && (!validation || validation.isValid)) {
           await this.cache.set(
             prompt,
-            location,
+            location?.rawLocation,
             response,
             validation,
             {
               enhanced: true,
-              modelUsed: options?.model
+              modelUsed: provider.getConfig().model
             }
           );
         }
@@ -474,7 +474,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
       
       if (!isAllowed) {
         this.rateLimitedRequests++;
-        logger.warn('Rate limit exceeded for WebSearch enhancement', {
+        logger.warn('Rate limit exceeded for WebSearch enhancement', 'BUSINESS_SEARCH', {
           key: rateLimitKey,
           rateLimitedTotal: this.rateLimitedRequests
         });
@@ -490,7 +490,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
         return prompt;
       }
     } catch (error) {
-      logger.error('Rate limit check failed, allowing request', error);
+      logger.error('Rate limit check failed, allowing request', error instanceof Error ? error.message : String(error));
       // Continue with enhancement if rate limit check fails
     }
 
@@ -502,7 +502,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
 
     const enhanced = this.promptEnhancer.enhance(prompt, options);
     
-    logger.debug('Prompt enhanced for business search', {
+    logger.debug('Prompt enhanced for business search', 'BUSINESS_SEARCH', {
       originalLength: prompt.length,
       enhancedLength: enhanced.length,
       level: this.config.enhancementLevel
@@ -522,7 +522,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
    * Handle validation failure
    */
   private handleValidationFailure(validation: ValidationResult, prompt: string, response: string): void {
-    logger.warn('Response validation failed', {
+    logger.warn('Response validation failed', 'BUSINESS_SEARCH', {
       confidence: validation.confidence,
       missingInfo: validation.missingInfo,
       suggestions: validation.suggestions
@@ -669,7 +669,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
    */
   public updateConfig(config: Partial<MiddlewareConfig>): void {
     this.config = { ...this.config, ...config };
-    logger.info('BusinessSearchMiddleware configuration updated', this.config);
+    logger.info('BusinessSearchMiddleware configuration updated', 'MIDDLEWARE', this.config);
   }
 
   /**
