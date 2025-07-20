@@ -1,3 +1,9 @@
+import type {
+  Message,
+  AgentType,
+  Document as CustomDocument,
+} from "../shared/types";
+
 export interface Query {
   text: string;
   conversationId?: string;
@@ -5,14 +11,15 @@ export interface Query {
   metadata?: Record<string, any>;
 }
 
-
 export interface Plan {
+  id: string;
   steps: PlanStep[];
   metadata?: Record<string, any>;
 }
 
 export interface PlanStep {
   id: string;
+  task: string;
   description: string;
   agentType: AgentType;
   requiresTool: boolean;
@@ -23,12 +30,17 @@ export interface PlanStep {
   parameters?: Record<string, any>;
 }
 
-
 export interface ExecutionResult {
   success: boolean;
   results: StepResult[];
   summary: string;
   metadata?: Record<string, any>;
+}
+
+export interface PlanExecutionResult extends ExecutionResult {
+  completedSteps: number;
+  failedSteps: number;
+  error?: string;
 }
 
 export interface StepResult {
@@ -48,17 +60,24 @@ export interface ReviewResult {
 }
 
 export interface Context {
-  documents: Document[];
+  documents: CustomDocument[];
   relevance: number;
   metadata?: Record<string, any>;
 }
 
 // Re-export from shared types to avoid circular dependencies
-export { Document, DocumentMetadata, Message, AgentType } from '../shared/types';
+export type {
+  Document,
+  DocumentMetadata,
+  Message,
+  AgentType,
+} from "../shared/types";
 
 export interface MasterOrchestratorConfig {
+  model?: string;
   ollamaUrl: string;
-  rag: RAGConfig;
+  rag?: RAGConfig;
+  database?: any; // For testing with in-memory database
   agents?: AgentConfig[];
   maestro?: MaestroConfig;
 }
@@ -70,7 +89,7 @@ export interface RAGConfig {
 }
 
 export interface VectorStoreConfig {
-  type: 'chromadb' | 'pinecone' | 'weaviate';
+  type: "chromadb" | "pinecone" | "weaviate";
   path?: string;
   apiKey?: string;
   collectionName: string;
@@ -80,7 +99,7 @@ export interface VectorStoreConfig {
 export interface ChunkingConfig {
   size: number;
   overlap: number;
-  method?: 'sentence' | 'token' | 'character';
+  method?: "sentence" | "token" | "character";
 }
 
 export interface RetrievalConfig {
@@ -103,12 +122,12 @@ export interface MaestroConfig {
 
 export interface QueueConfig {
   maxSize: number;
-  strategy: 'fifo' | 'lifo' | 'priority';
+  strategy: "fifo" | "lifo" | "priority";
 }
 
 export interface Task {
   id?: string;
-  type: 'agent' | 'tool' | 'composite';
+  type: "agent" | "tool" | "composite";
   priority?: number;
   data: any;
   timeout?: number;

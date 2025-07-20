@@ -1,29 +1,39 @@
-import React, { useEffect, useState } from 'react';
-import { trpc } from '../../App';
-import './AgentMonitor.css';
+import React, { useEffect, useState } from "react";
+import { trpc } from "../../App";
+import {
+  useAgentStatus,
+  useTaskQueue,
+  useSystemHealth,
+} from "../../hooks/useWebSocket";
+import "./AgentMonitor.css";
 
 interface AgentStatus {
   id: string;
-  name: string;
-  status: 'idle' | 'busy' | 'error' | 'active';
+  type: string;
+  status: "idle" | "busy" | "error";
   currentTask?: string;
-  progress?: number;
+  lastActivity: Date;
+  tasksCompleted: number;
+  errors: number;
 }
 
 export const AgentMonitor: React.FC = () => {
   const [activeAgents, setActiveAgents] = useState<AgentStatus[]>([]);
-  
-  // Poll for agent status
-  const agentStatus = trpc.agent.status.useQuery(undefined, {
+
+  // Poll for agent status - use type assertion to bypass tRPC inference issues
+  const agentStatus = (trpc.agent.status as any).useQuery(undefined, {
     refetchInterval: 1000, // Refresh every second
-    enabled: true
+    enabled: true,
+    trpc: {
+      ssr: false,
+    },
   });
 
   useEffect(() => {
-    if (agentStatus.data?.agents && Array.isArray(agentStatus.data.agents)) {
-      setActiveAgents(agentStatus.data.agents);
+    if (agentStatus?.data && Array.isArray(agentStatus.data)) {
+      setActiveAgents(agentStatus.data);
     }
-  }, [agentStatus.data]);
+  }, [agentStatus?.data]);
 
   if (activeAgents.length === 0) {
     return null;
@@ -33,17 +43,17 @@ export const AgentMonitor: React.FC = () => {
     <div className="agent-monitor">
       <h3>Active Agents</h3>
       <div className="agent-list">
-        {activeAgents.map(agent => (
+        {activeAgents.map((agent) => (
           <div key={agent.id} className={`agent-status agent-${agent.status}`}>
             <div className="agent-header">
               <span className="agent-icon">
-                {agent.name === 'ResearchAgent' && '🔍'}
-                {agent.name === 'CodeAgent' && '💻'}
-                {agent.name === 'DataAnalysisAgent' && '📊'}
-                {agent.name === 'WriterAgent' && '✍️'}
-                {agent.name === 'ToolExecutorAgent' && '🔧'}
+                {agent.type === "ResearchAgent" && "🔍"}
+                {agent.type === "CodeAgent" && "💻"}
+                {agent.type === "DataAnalysisAgent" && "📊"}
+                {agent.type === "WriterAgent" && "✍️"}
+                {agent.type === "ToolExecutorAgent" && "🔧"}
               </span>
-              <span className="agent-name">{agent.name}</span>
+              <span className="agent-name">{agent.type}</span>
               <span className={`status-indicator status-${agent.status}`}>
                 {agent.status}
               </span>
@@ -53,14 +63,11 @@ export const AgentMonitor: React.FC = () => {
                 <small>{agent.currentTask}</small>
               </div>
             )}
-            {agent.progress !== undefined && (
-              <div className="agent-progress">
-                <div 
-                  className="progress-bar"
-                  style={{ width: `${agent.progress}%` }}
-                />
-              </div>
-            )}
+            <div className="agent-stats">
+              <small>
+                Tasks: {agent.tasksCompleted} | Errors: {agent.errors}
+              </small>
+            </div>
           </div>
         ))}
       </div>

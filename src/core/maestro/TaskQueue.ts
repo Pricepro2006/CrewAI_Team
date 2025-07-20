@@ -1,7 +1,7 @@
-import { QueueConfig, QueueItem, QueueStatus } from './types';
+import type { QueueConfig, QueueItem, QueueStatus, Task } from "./types";
 
 export class TaskQueue {
-  private queue: QueueItem[] = [];
+  private queue: Task[] = [];
   private processing: Set<string> = new Set();
   private config: QueueConfig;
 
@@ -9,27 +9,31 @@ export class TaskQueue {
     this.config = config;
   }
 
-  async enqueue(item: QueueItem): Promise<void> {
+  enqueue(item: Task): void {
+    // Ensure task has an ID
+    if (!item.id) {
+      item.id = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
     if (this.queue.length >= this.config.maxSize) {
-      throw new Error('Queue is full');
+      throw new Error("Queue is full");
     }
 
     switch (this.config.strategy) {
-      case 'fifo':
+      case "fifo":
         this.queue.push(item);
         break;
-      case 'lifo':
+      case "lifo":
         this.queue.unshift(item);
         break;
-      case 'priority':
+      case "priority":
         this.insertByPriority(item);
         break;
     }
   }
 
-  async dequeue(): Promise<QueueItem | null> {
+  dequeue(): Task | null {
     const item = this.queue.shift();
-    if (item) {
+    if (item && item.id) {
       this.processing.add(item.id);
     }
     return item || null;
@@ -43,7 +47,7 @@ export class TaskQueue {
     return {
       queued: this.queue.length,
       processing: this.processing.size,
-      capacity: this.config.maxSize
+      capacity: this.config.maxSize,
     };
   }
 
@@ -56,36 +60,65 @@ export class TaskQueue {
     return this.queue.length;
   }
 
-  private insertByPriority(item: QueueItem): void {
+  private insertByPriority(item: Task): void {
     // Higher priority values come first
     let insertIndex = 0;
-    
+
     for (let i = 0; i < this.queue.length; i++) {
-      if (item.priority > this.queue[i].priority) {
+      const queueItem = this.queue[i];
+      if (queueItem && (item.priority || 0) > (queueItem.priority || 0)) {
         break;
       }
       insertIndex = i + 1;
     }
-    
+
     this.queue.splice(insertIndex, 0, item);
   }
 
-  getItems(): QueueItem[] {
+  getItems(): Task[] {
     return [...this.queue];
   }
 
   hasTask(taskId: string): boolean {
-    return this.queue.some(item => item.id === taskId) || 
-           this.processing.has(taskId);
+    return (
+      this.queue.some((item) => item.id === taskId) ||
+      this.processing.has(taskId)
+    );
   }
 
   removeTask(taskId: string): boolean {
-    const index = this.queue.findIndex(item => item.id === taskId);
+    const index = this.queue.findIndex((item) => item.id === taskId);
     if (index !== -1) {
       this.queue.splice(index, 1);
       return true;
     }
     return false;
+  }
+
+  // Alias for removeTask to match test expectations
+  removeById(taskId: string): boolean {
+    return this.removeTask(taskId);
+  }
+
+  // Alias for removeTask to match MaestroFramework expectations
+  remove(taskId: string): boolean {
+    return this.removeTask(taskId);
+  }
+
+  peek(): Task | null {
+    return this.queue[0] || null;
+  }
+
+  isEmpty(): boolean {
+    return this.queue.length === 0;
+  }
+
+  toArray(): Task[] {
+    return [...this.queue];
+  }
+
+  findById(taskId: string): Task | null {
+    return this.queue.find((item) => item.id === taskId) || null;
   }
 }
 
@@ -93,20 +126,20 @@ export class TaskQueue {
 export class PriorityQueue<T> {
   private items: Array<{ item: T; priority: number }> = [];
 
-  constructor(private compareFn?: (a: T, b: T) => number) {}
+  constructor(private _compareFn?: (a: T, b: T) => number) {}
 
   enqueue(item: T, priority: number = 0): void {
     const queueItem = { item, priority };
-    
+
     let added = false;
     for (let i = 0; i < this.items.length; i++) {
-      if (priority > this.items[i].priority) {
+      if (priority > (this.items[i]?.priority || 0)) {
         this.items.splice(i, 0, queueItem);
         added = true;
         break;
       }
     }
-    
+
     if (!added) {
       this.items.push(queueItem);
     }

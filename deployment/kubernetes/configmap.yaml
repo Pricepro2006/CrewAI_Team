@@ -1,0 +1,149 @@
+# 2025 Best Practice: Configuration management with ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: email-dashboard-config
+  namespace: production
+  labels:
+    app: email-dashboard
+data:
+  # Application configuration
+  NODE_ENV: "production"
+  PORT: "3000"
+  LOG_LEVEL: "info"
+  
+  # API configuration
+  API_BASE_URL: "https://api.tdsynnex.com"
+  API_TIMEOUT: "30000"
+  API_RETRY_ATTEMPTS: "3"
+  
+  # WebSocket configuration
+  WS_ENABLED: "true"
+  WS_HEARTBEAT_INTERVAL: "30000"
+  WS_RECONNECT_INTERVAL: "5000"
+  
+  # Cache configuration
+  CACHE_ENABLED: "true"
+  CACHE_TTL: "3600"
+  CACHE_MAX_SIZE: "1000"
+  
+  # Feature flags
+  FEATURE_EXPORT_ENABLED: "true"
+  FEATURE_REALTIME_UPDATES: "true"
+  FEATURE_ADVANCED_FILTERING: "true"
+  
+  # Monitoring configuration
+  METRICS_ENABLED: "true"
+  METRICS_PORT: "9090"
+  TRACING_ENABLED: "true"
+  TRACING_SAMPLE_RATE: "0.1"
+  
+  # Rate limiting
+  RATE_LIMIT_WINDOW: "60000"
+  RATE_LIMIT_MAX_REQUESTS: "100"
+  
+  # CORS configuration
+  CORS_ALLOWED_ORIGINS: "https://tdsynnex.com,https://app.tdsynnex.com"
+  CORS_ALLOWED_METHODS: "GET,POST,PUT,DELETE,PATCH"
+  
+  # Email service configuration
+  EMAIL_BATCH_SIZE: "100"
+  EMAIL_PROCESSING_INTERVAL: "5000"
+  
+  # Database connection pool
+  DB_POOL_MIN: "5"
+  DB_POOL_MAX: "20"
+  DB_CONNECTION_TIMEOUT: "10000"
+
+---
+# Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: email-dashboard-sa
+  namespace: production
+  labels:
+    app: email-dashboard
+
+---
+# Role for pod security
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: email-dashboard-role
+  namespace: production
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "watch", "list"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: email-dashboard-rolebinding
+  namespace: production
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: email-dashboard-role
+subjects:
+- kind: ServiceAccount
+  name: email-dashboard-sa
+  namespace: production
+
+---
+# Network Policy for security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: email-dashboard-netpol
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: email-dashboard
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: production
+    - podSelector:
+        matchLabels:
+          app: nginx-ingress
+    ports:
+    - protocol: TCP
+      port: 3000
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 9090
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: production
+    ports:
+    - protocol: TCP
+      port: 5432  # PostgreSQL
+    - protocol: TCP
+      port: 6379  # Redis
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443   # HTTPS for external APIs
+    - protocol: TCP
+      port: 53    # DNS
+    - protocol: UDP
+      port: 53    # DNS

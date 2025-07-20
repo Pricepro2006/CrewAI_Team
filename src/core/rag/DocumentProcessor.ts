@@ -1,30 +1,40 @@
-import { ChunkingConfig, ProcessedDocument, DocumentMetadata, ChunkOptions } from './types';
+import type {
+  ChunkingConfig,
+  ProcessedDocument,
+  DocumentMetadata,
+  ChunkOptions,
+} from "./types";
 
 export class DocumentProcessor {
   private config: ChunkingConfig;
 
   constructor(config: ChunkingConfig) {
     this.config = {
-      method: 'sentence',
-      separator: '.',
+      method: "sentence",
+      separator: ".",
       trimWhitespace: true,
       preserveFormatting: false,
-      ...config
+      ...config,
     };
   }
 
   async processDocument(
     content: string,
-    metadata: DocumentMetadata
+    metadata: DocumentMetadata,
   ): Promise<ProcessedDocument[]> {
+    // Handle null/undefined content
+    if (!content) {
+      return [];
+    }
+
     // Clean and normalize text
     const cleaned = this.cleanText(content);
-    
+
     // Split into chunks based on method
     const chunks = this.chunkText(cleaned, {
       size: this.config.size,
       overlap: this.config.overlap,
-      separator: this.config.separator
+      ...(this.config.separator && { separator: this.config.separator }),
     });
 
     // Create document objects
@@ -35,40 +45,49 @@ export class DocumentProcessor {
         ...metadata,
         chunkIndex: index,
         totalChunks: chunks.length,
-        chunkSize: chunk.length
-      }
+        chunkSize: chunk.length,
+      },
     }));
   }
 
   private cleanText(text: string): string {
     let cleaned = text;
 
-    if (this.config.trimWhitespace) {
-      // Remove extra whitespace
-      cleaned = cleaned.replace(/\s+/g, ' ').trim();
-    }
-
     if (!this.config.preserveFormatting) {
       // Remove special formatting characters
-      cleaned = cleaned.replace(/[\r\n\t]+/g, ' ');
+      cleaned = cleaned.replace(/[\r\n\t]+/g, " ");
       // Remove multiple spaces
-      cleaned = cleaned.replace(/ {2,}/g, ' ');
+      cleaned = cleaned.replace(/ {2,}/g, " ");
+
+      if (this.config.trimWhitespace) {
+        // Remove extra whitespace
+        cleaned = cleaned.replace(/\s+/g, " ").trim();
+      }
+    } else {
+      // Normalize line endings but preserve them
+      cleaned = cleaned.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+      if (this.config.trimWhitespace) {
+        // Only trim leading/trailing spaces, preserve internal formatting
+        cleaned = cleaned.trim();
+      }
     }
 
     // Remove null characters and other control characters
-    cleaned = cleaned.replace(/\0/g, '');
-    cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    cleaned = cleaned.replace(/\0/g, "");
+    // eslint-disable-next-line no-control-regex
+    cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
 
     return cleaned;
   }
 
   private chunkText(text: string, options: ChunkOptions): string[] {
     switch (this.config.method) {
-      case 'sentence':
+      case "sentence":
         return this.chunkBySentence(text, options);
-      case 'token':
+      case "token":
         return this.chunkByToken(text, options);
-      case 'character':
+      case "character":
         return this.chunkByCharacter(text, options);
       default:
         return this.chunkBySentence(text, options);
@@ -78,28 +97,28 @@ export class DocumentProcessor {
   private chunkBySentence(text: string, options: ChunkOptions): string[] {
     const chunks: string[] = [];
     const sentences = this.splitIntoSentences(text);
-    
-    let currentChunk = '';
+
+    let currentChunk = "";
     let currentLength = 0;
 
     for (const sentence of sentences) {
       if (currentLength + sentence.length > options.size && currentChunk) {
         chunks.push(currentChunk.trim());
-        
+
         // Handle overlap
         if (options.overlap > 0) {
           const overlapStart = Math.max(
-            0, 
-            currentChunk.length - options.overlap
+            0,
+            currentChunk.length - options.overlap,
           );
-          currentChunk = currentChunk.slice(overlapStart) + ' ' + sentence;
+          currentChunk = currentChunk.slice(overlapStart) + " " + sentence;
           currentLength = currentChunk.length;
         } else {
           currentChunk = sentence;
           currentLength = sentence.length;
         }
       } else {
-        currentChunk += (currentChunk ? ' ' : '') + sentence;
+        currentChunk += (currentChunk ? " " : "") + sentence;
         currentLength += sentence.length;
       }
     }
@@ -120,7 +139,7 @@ export class DocumentProcessor {
     const overlapTokens = Math.floor(options.overlap / avgCharsPerToken);
 
     for (let i = 0; i < words.length; i += tokensPerChunk - overlapTokens) {
-      const chunk = words.slice(i, i + tokensPerChunk).join(' ');
+      const chunk = words.slice(i, i + tokensPerChunk).join(" ");
       if (chunk.trim()) {
         chunks.push(chunk.trim());
       }
@@ -131,7 +150,7 @@ export class DocumentProcessor {
 
   private chunkByCharacter(text: string, options: ChunkOptions): string[] {
     const chunks: string[] = [];
-    
+
     for (let i = 0; i < text.length; i += options.size - options.overlap) {
       const chunk = text.slice(i, i + options.size);
       if (chunk.trim()) {
@@ -147,9 +166,9 @@ export class DocumentProcessor {
     const sentenceEnders = /([.!?]+)/g;
     const parts = text.split(sentenceEnders);
     const sentences: string[] = [];
-    
+
     for (let i = 0; i < parts.length; i += 2) {
-      const sentence = parts[i] + (parts[i + 1] || '');
+      const sentence = parts[i] + (parts[i + 1] || "");
       if (sentence.trim()) {
         sentences.push(sentence.trim());
       }
@@ -164,7 +183,7 @@ export class DocumentProcessor {
   }
 
   async processDocuments(
-    documents: Array<{ content: string; metadata: DocumentMetadata }>
+    documents: Array<{ content: string; metadata: DocumentMetadata }>,
   ): Promise<ProcessedDocument[]> {
     const allProcessed: ProcessedDocument[] = [];
 
@@ -180,16 +199,18 @@ export class DocumentProcessor {
     const cleaned = this.cleanText(content);
     const totalLength = cleaned.length;
     const effectiveChunkSize = this.config.size - this.config.overlap;
-    
+
     return Math.ceil(totalLength / effectiveChunkSize);
   }
 
-  validateChunkSize(content: string): boolean {
+  validateChunkSize(_content: string): boolean {
     const minSize = 100; // Minimum reasonable chunk size
     const maxSize = 10000; // Maximum reasonable chunk size
-    
-    return this.config.size >= minSize && 
-           this.config.size <= maxSize &&
-           this.config.overlap < this.config.size;
+
+    return (
+      this.config.size >= minSize &&
+      this.config.size <= maxSize &&
+      this.config.overlap < this.config.size
+    );
   }
 }

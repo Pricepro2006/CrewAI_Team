@@ -1,0 +1,24 @@
+# TypeScript Type Import Detection Rule
+# Detects incorrect type imports when verbatimModuleSyntax is enabled
+id: typescript-type-imports
+language: TypeScript
+message: "When verbatimModuleSyntax is enabled, types must be imported using 'import type' syntax"
+severity: error
+rule:
+  # Match regular imports that should be type imports
+  pattern: import { $IMPORTS } from $MODULE
+  constraints:
+    IMPORTS:
+      # Common type-only patterns that should use import type
+      regex: ".*Type$|.*Interface$|.*Props$|Request|Response"
+  # Exclude cases where import type is already used
+  not:
+    pattern: import type { $IMPORTS } from $MODULE
+note: |
+  TypeScript 5.0+ with verbatimModuleSyntax requires explicit type imports.
+  Fix: import type { TypeName } from 'module'
+  
+  Examples of violations:
+  - import { RequestType } from 'express'  // Should be import type
+  - import { UserInterface } from './types'  // Should be import type
+  - import { ComponentProps } from 'react'  // Should be import type

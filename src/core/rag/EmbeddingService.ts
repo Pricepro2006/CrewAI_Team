@@ -1,5 +1,6 @@
-import axios, { AxiosInstance } from 'axios';
-import { EmbeddingConfig } from './types';
+import axios from 'axios';
+import type { AxiosInstance } from 'axios';
+import type { EmbeddingConfig } from './types';
 
 export class EmbeddingService {
   private client: AxiosInstance;
@@ -125,9 +126,9 @@ export class EmbeddingService {
     let norm2 = 0;
 
     for (let i = 0; i < embedding1.length; i++) {
-      dotProduct += embedding1[i] * embedding2[i];
-      norm1 += embedding1[i] * embedding1[i];
-      norm2 += embedding2[i] * embedding2[i];
+      dotProduct += (embedding1[i] || 0) * (embedding2[i] || 0);
+      norm1 += (embedding1[i] || 0) * (embedding1[i] || 0);
+      norm2 += (embedding2[i] || 0) * (embedding2[i] || 0);
     }
 
     norm1 = Math.sqrt(norm1);

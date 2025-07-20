@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Header } from './Header';
-import { Sidebar } from './Sidebar';
+import Sidebar from './Sidebar';
 import './MainLayout.css';
 
 export const MainLayout: React.FC = () => {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
   return (
     <div className="main-layout">
-      <Header />
-      <div className="layout-body">
-        <Sidebar />
+      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
+      <div className="layout-content">
         <main className="main-content">
           <Outlet />
         </main>

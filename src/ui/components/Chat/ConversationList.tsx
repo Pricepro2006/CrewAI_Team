@@ -1,5 +1,5 @@
-import React from 'react';
-import { trpc } from '../../App';
+import React from "react";
+import { trpc } from "../../App";
 
 interface ConversationListProps {
   currentId: string | null;
@@ -48,7 +48,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           <div className="p-4 text-center text-gray-500">Loading...</div>
         ) : conversations && conversations.length > 0 ? (
           <div className="space-y-1 p-2">
-            {conversations.map((conv) => (
+            {conversations.map((conv: any) => (
               <ConversationItem
                 key={conv.id}
                 conversation={conv}
@@ -83,7 +83,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
   isActive,
   onSelect,
 }) => {
-  const title = conversation.title || 'New Conversation';
+  const title = conversation.title || "New Conversation";
   const date = new Date(conversation.updatedAt);
   const dateStr = formatRelativeDate(date);
 
@@ -92,8 +92,8 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
       onClick={onSelect}
       className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
         isActive
-          ? 'bg-blue-100 text-blue-900'
-          : 'hover:bg-gray-100 text-gray-700'
+          ? "bg-blue-100 text-blue-900"
+          : "hover:bg-gray-100 text-gray-700"
       }`}
     >
       <div className="font-medium text-sm truncate">{title}</div>
@@ -106,10 +106,11 @@ function formatRelativeDate(date: Date): string {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (diffInSeconds < 60) return 'Just now';
+  if (diffInSeconds < 60) return "Just now";
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  
+  if (diffInSeconds < 604800)
+    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+
   return date.toLocaleDateString();
 }
