@@ -2,7 +2,7 @@
  * MultiModalEvaluator - Evaluates responses using multiple evaluation methods
  * Combines factuality, relevance, and coherence scoring for comprehensive evaluation
  */
-import { ResponseEvaluationResult, ScoredDocument, TokenConfidence, ActionType } from './types.js';
+import { type ResponseEvaluationResult, type ScoredDocument, type TokenConfidence, ActionType } from './types.js';
 export declare class MultiModalEvaluator {
     private relevanceScorer;
     private factualityChecker;

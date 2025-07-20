@@ -1,4 +1,3 @@
-import { BaseAgent, } from "../base/AgentTypes";
 import { ResearchAgent } from "../specialized/ResearchAgent";
 import { CodeAgent } from "../specialized/CodeAgent";
 import { DataAnalysisAgent } from "../specialized/DataAnalysisAgent";

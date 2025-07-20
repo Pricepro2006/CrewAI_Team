@@ -4,7 +4,7 @@ import type {
   AgentContext,
   AgentResult,
 } from "../base/AgentTypes";
-import { BaseTool } from "../../tools/base/BaseTool";
+import type { BaseTool } from "../../tools/base/BaseTool";
 
 export class ToolExecutorAgent extends BaseAgent {
   constructor() {

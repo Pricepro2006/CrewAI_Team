@@ -295,7 +295,7 @@ export const useAuditTrail = (options: UseAuditTrailOptions = {}) => {
     ).length;
 
     const failedActions = events.filter(event => 
-      event.details.success === false ||
+      (event.details as any)?.success === false ||
       event.tags?.includes('failure') ||
       event.action.includes('failed')
     ).length;
@@ -384,6 +384,7 @@ export const useAuditTrail = (options: UseAuditTrailOptions = {}) => {
       const interval = setInterval(refreshEvents, refreshInterval);
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [autoRefresh, refreshInterval, refreshEvents]);
 
   // Get events for specific entity
@@ -435,5 +436,3 @@ export const useAuditTrail = (options: UseAuditTrailOptions = {}) => {
     getCurrentUserContext
   };
 };
-
-export type { AuditEvent, AuditFilter, AuditMetrics };

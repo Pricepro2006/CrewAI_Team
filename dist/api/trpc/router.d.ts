@@ -1,451 +1,188 @@
 export { router, publicProcedure, protectedProcedure, adminProcedure, userProcedure, chatProcedure, agentProcedure, taskProcedure, ragProcedure, strictProcedure, enhancedProcedure, monitoredProcedure, middleware, commonSchemas, createFeatureRouter, createSecureRouter, } from "./enhanced-router";
 export declare const appRouter: import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
-    ctx: any;
+    ctx: {
+        masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+        conversationService: import("../services/ConversationService").ConversationService;
+        taskService: import("../services/TaskService").TaskService;
+        maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+        userService: import("../services/UserService").UserService;
+        agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+        ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+        req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+        res: import("express").Response<any, Record<string, any>>;
+        user: import("./context").User;
+        requestId: string;
+        timestamp: Date;
+        batchId: string | undefined;
+        validatedInput: unknown;
+    };
     meta: object;
     errorShape: {
         data: {
             stack: string | undefined;
             requestId: any;
-            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+            code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
             httpStatus: number;
             path?: string;
         };
         message: string;
-        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
     };
     transformer: typeof import("superjson").default;
 }>, {
-    auth: import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
-        ctx: any;
-        meta: object;
-        errorShape: {
-            data: {
-                stack: string | undefined;
-                requestId: any;
-                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                httpStatus: number;
-                path?: string;
-            };
-            message: string;
-            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-        };
-        transformer: typeof import("superjson").default;
-    }>, {
-        register: import("@trpc/server").BuildProcedure<"mutation", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: {
-                email: string;
-                username: string;
-                password: string;
-                role?: import("../services/UserService").UserRole | undefined;
-            };
-            _input_out: {
-                email: string;
-                username: string;
-                password: string;
-                role?: import("../services/UserService").UserRole | undefined;
-            };
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            success: boolean;
-            user: {
-                id: string;
-                email: string;
-                username: string;
-                role: import("../services/UserService").UserRole;
-            };
-        }>;
-        login: import("@trpc/server").BuildProcedure<"mutation", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: {
-                password: string;
-                emailOrUsername: string;
-            };
-            _input_out: {
-                password: string;
-                emailOrUsername: string;
-            };
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            success: boolean;
-            user: {
-                id: string;
-                email: string;
-                username: string;
-                role: import("../services/UserService").UserRole;
-            };
-            tokens: import("../services/UserService").AuthTokens;
-        }>;
-        refresh: import("@trpc/server").BuildProcedure<"mutation", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: {
-                refreshToken: string;
-            };
-            _input_out: {
-                refreshToken: string;
-            };
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            success: boolean;
-            tokens: import("../services/UserService").AuthTokens;
-        }>;
-        logout: import("@trpc/server").BuildProcedure<"mutation", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: {
-                refreshToken?: string | undefined;
-            };
-            _input_out: {
-                refreshToken?: string | undefined;
-            };
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            success: boolean;
-            message: string;
-        }>;
-        me: import("@trpc/server").BuildProcedure<"query", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: typeof import("@trpc/server").unsetMarker;
-            _input_out: typeof import("@trpc/server").unsetMarker;
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            id: string;
-            email: string;
-            username: string;
-            role: import("../services/UserService").UserRole;
-            isActive: boolean;
-            createdAt: string;
-            lastLoginAt: string | undefined;
-        }>;
-        listUsers: import("@trpc/server").BuildProcedure<"query", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: {
-                limit?: number | undefined;
-                offset?: number | undefined;
-            };
-            _input_out: {
-                limit: number;
-                offset: number;
-            };
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            users: {
-                id: string;
-                email: string;
-                username: string;
-                role: import("../services/UserService").UserRole;
-                isActive: boolean;
-                createdAt: string;
-                lastLoginAt: string | undefined;
-            }[];
-            total: number;
-        }>;
-        stats: import("@trpc/server").BuildProcedure<"query", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: typeof import("@trpc/server").unsetMarker;
-            _input_out: typeof import("@trpc/server").unsetMarker;
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            totalUsers: number;
-            activeUsers: number;
-            usersByRole: Record<string, number>;
-            recentSignups: number;
-        }>;
-        updateRole: import("@trpc/server").BuildProcedure<"mutation", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: {
-                role: import("../services/UserService").UserRole;
-                userId: string;
-            };
-            _input_out: {
-                role: import("../services/UserService").UserRole;
-                userId: string;
-            };
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            success: boolean;
-            message: string;
-        }>;
-        deactivateUser: import("@trpc/server").BuildProcedure<"mutation", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: {
-                userId: string;
-            };
-            _input_out: {
-                userId: string;
-            };
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            success: boolean;
-            message: string;
-        }>;
-        reactivateUser: import("@trpc/server").BuildProcedure<"mutation", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: {
-                userId: string;
-            };
-            _input_out: {
-                userId: string;
-            };
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            success: boolean;
-            message: string;
-        }>;
-    }>;
+    auth: import("@trpc/server").Router<any>;
     agent: import("@trpc/server").Router<any>;
     task: import("@trpc/server").Router<any>;
     rag: import("@trpc/server").Router<any>;
     chat: import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
-        ctx: any;
+        ctx: {
+            masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+            conversationService: import("../services/ConversationService").ConversationService;
+            taskService: import("../services/TaskService").TaskService;
+            maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+            userService: import("../services/UserService").UserService;
+            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+            req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+            res: import("express").Response<any, Record<string, any>>;
+            user: import("./context").User;
+            requestId: string;
+            timestamp: Date;
+            batchId: string | undefined;
+            validatedInput: unknown;
+        };
         meta: object;
         errorShape: {
             data: {
                 stack: string | undefined;
                 requestId: any;
-                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                 httpStatus: number;
                 path?: string;
             };
             message: string;
-            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+            code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
         };
         transformer: typeof import("superjson").default;
     }>, {
         create: import("@trpc/server").BuildProcedure<"mutation", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: {
                 message: string;
-                conversationId?: string | undefined;
                 priority?: "medium" | "low" | "high" | undefined;
+                conversationId?: string | undefined;
             };
             _input_out: {
-                message: string;
                 priority: "medium" | "low" | "high";
+                message: string;
                 conversationId?: string | undefined;
             };
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
-            conversationId: any;
-            response: any;
-            metadata: any;
+            conversationId: string;
+            response: string;
+            metadata: {
+                requestId: string;
+                timestamp: Date;
+            };
         }>;
         message: import("@trpc/server").BuildProcedure<"mutation", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: {
                 message: string;
                 conversationId: string;
@@ -457,28 +194,58 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
-            response: any;
-            metadata: any;
+            response: string;
+            metadata: Record<string, any> | undefined;
         }>;
         history: import("@trpc/server").BuildProcedure<"query", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: {
                 conversationId: string;
             };
@@ -487,26 +254,56 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             };
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
-        }, any>;
+        }, import("../services/ConversationService").Message[]>;
         list: import("@trpc/server").BuildProcedure<"query", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: {
                 limit?: number | undefined;
                 offset?: number | undefined;
@@ -517,26 +314,56 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             };
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
-        }, any>;
+        }, import("../services/ConversationService").Conversation[]>;
         delete: import("@trpc/server").BuildProcedure<"mutation", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: {
                 conversationId: string;
             };
@@ -550,23 +377,53 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
         }>;
         onMessage: import("@trpc/server").BuildProcedure<"subscription", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: {
                 conversationId: string;
             };
@@ -578,23 +435,53 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
         }, import("@trpc/server/observable").Observable<unknown, unknown>>;
         generateTitle: import("@trpc/server").BuildProcedure<"mutation", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: {
                 conversationId: string;
             };
@@ -604,27 +491,57 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
-            title: any;
+            title: string;
         }>;
         search: import("@trpc/server").BuildProcedure<"query", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: {
                 query: string;
                 limit?: number | undefined;
@@ -635,26 +552,56 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             };
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
-        }, any>;
+        }, import("../services/ConversationService").Conversation[]>;
         recent: import("@trpc/server").BuildProcedure<"query", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: {
                 limit?: number | undefined;
                 days?: number | undefined;
@@ -665,85 +612,183 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             };
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
-        }, any>;
+        }, import("../services/ConversationService").Conversation[]>;
         stats: import("@trpc/server").BuildProcedure<"query", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: typeof import("@trpc/server").unsetMarker;
             _input_out: typeof import("@trpc/server").unsetMarker;
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
-        }, any>;
+        }, {
+            totalConversations: number;
+            totalMessages: number;
+            averageMessagesPerConversation: number;
+            recentActivity: {
+                date: string;
+                count: number;
+            }[];
+        }>;
         export: import("@trpc/server").BuildProcedure<"query", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: {
                 conversationId: string;
                 format?: "json" | "markdown" | undefined;
             };
             _input_out: {
-                conversationId: string;
                 format: "json" | "markdown";
+                conversationId: string;
             };
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
-            data: any;
+            data: string;
             format: "json" | "markdown";
             conversationId: string;
             timestamp: string;
         }>;
         exportAll: import("@trpc/server").BuildProcedure<"query", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: {
                 format?: "json" | "csv" | undefined;
             };
@@ -753,736 +798,1737 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
-            data: any;
+            data: string;
             format: "json" | "csv";
             timestamp: string;
         }>;
     }>;
     ws: import("@trpc/server").Router<any>;
-    health: import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
-        ctx: any;
+    health: import("@trpc/server").Router<import("@trpc/server/dist/core/router").RouterDef<import("@trpc/server").RootConfig<{
+        ctx: {
+            masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+            conversationService: import("../services/ConversationService").ConversationService;
+            taskService: import("../services/TaskService").TaskService;
+            maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+            userService: import("../services/UserService").UserService;
+            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+            req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+            res: import("express").Response<any, Record<string, any>>;
+            user: import("./context").User;
+            requestId: string;
+            timestamp: Date;
+            batchId: string | undefined;
+            validatedInput: unknown;
+        };
         meta: object;
         errorShape: {
             data: {
                 stack: string | undefined;
                 requestId: any;
-                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                 httpStatus: number;
                 path?: string;
             };
             message: string;
-            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+            code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
         };
         transformer: typeof import("superjson").default;
-    }>, {
-        basic: import("@trpc/server").BuildProcedure<"query", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: typeof import("@trpc/server").unsetMarker;
-            _input_out: typeof import("@trpc/server").unsetMarker;
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            status: string;
-            timestamp: string;
-            responseTime: number;
-            services: {
-                api: "error" | "timeout" | "connected" | "disconnected" | "running" | "not_configured";
-                ollama: "error" | "timeout" | "connected" | "disconnected" | "running" | "not_configured";
-                database: "error" | "timeout" | "connected" | "disconnected" | "running" | "not_configured";
-            };
-        }>;
-        detailed: import("@trpc/server").BuildProcedure<"query", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: typeof import("@trpc/server").unsetMarker;
-            _input_out: typeof import("@trpc/server").unsetMarker;
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            status: "healthy" | "degraded" | "unhealthy";
-            timestamp: string;
-            uptime: number;
-            version: string;
-            environment: string;
-            services: {
-                api: "error" | "timeout" | "connected" | "disconnected" | "running" | "not_configured";
-                ollama: "error" | "timeout" | "connected" | "disconnected" | "running" | "not_configured";
-                chromadb: "error" | "timeout" | "connected" | "disconnected" | "running" | "not_configured";
-                database: "error" | "timeout" | "connected" | "disconnected" | "running" | "not_configured";
-                masterOrchestrator: "error" | "timeout" | "connected" | "disconnected" | "running" | "not_configured";
-                agentRegistry: "error" | "timeout" | "connected" | "disconnected" | "running" | "not_configured";
-            };
-            metrics: {
-                memoryUsage: {
-                    used: number;
-                    total: number;
-                    percentage: number;
-                };
-                cpuUsage: undefined;
-                responseTime: number;
-            };
-            details: {
-                ollama: any;
-                chromadb: any;
-                database: any;
-                masterOrchestrator: any;
-                agentRegistry: any;
-            };
-        }>;
-        ready: import("@trpc/server").BuildProcedure<"query", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: typeof import("@trpc/server").unsetMarker;
-            _input_out: typeof import("@trpc/server").unsetMarker;
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            ready: boolean;
-            timestamp: string;
-            responseTime: number;
-            services: {
-                ollama: "error" | "timeout" | "connected" | "disconnected" | "running" | "not_configured";
-                database: "error" | "timeout" | "connected" | "disconnected" | "running" | "not_configured";
-                masterOrchestrator: "error" | "timeout" | "connected" | "disconnected" | "running" | "not_configured";
-            };
-        }>;
-        live: import("@trpc/server").BuildProcedure<"query", {
-            _config: import("@trpc/server").RootConfig<{
-                ctx: any;
-                meta: object;
-                errorShape: {
-                    data: {
-                        stack: string | undefined;
-                        requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                        httpStatus: number;
-                        path?: string;
-                    };
-                    message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                };
-                transformer: typeof import("superjson").default;
-            }>;
-            _meta: object;
-            _ctx_out: any;
-            _input_in: typeof import("@trpc/server").unsetMarker;
-            _input_out: typeof import("@trpc/server").unsetMarker;
-            _output_in: typeof import("@trpc/server").unsetMarker;
-            _output_out: typeof import("@trpc/server").unsetMarker;
-        }, {
-            alive: boolean;
-            timestamp: string;
-            uptime: number;
-            responseTime: number;
-            pid: number;
-        }>;
-    }>;
-    dataCollection: import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
-        ctx: any;
+    }>, {}, {
+        queries: {};
+        mutations: {};
+        subscriptions: {};
+    }>>;
+    dataCollection: import("@trpc/server").Router<import("@trpc/server/dist/core/router").RouterDef<import("@trpc/server").RootConfig<{
+        ctx: {
+            masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+            conversationService: import("../services/ConversationService").ConversationService;
+            taskService: import("../services/TaskService").TaskService;
+            maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+            userService: import("../services/UserService").UserService;
+            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+            req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+            res: import("express").Response<any, Record<string, any>>;
+            user: import("./context").User;
+            requestId: string;
+            timestamp: Date;
+            batchId: string | undefined;
+            validatedInput: unknown;
+        };
         meta: object;
         errorShape: {
             data: {
                 stack: string | undefined;
                 requestId: any;
-                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                 httpStatus: number;
                 path?: string;
             };
             message: string;
-            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+            code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+        };
+        transformer: typeof import("superjson").default;
+    }>, {}, {
+        queries: {};
+        mutations: {};
+        subscriptions: {};
+    }>>;
+    emails: import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
+        ctx: {
+            masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+            conversationService: import("../services/ConversationService").ConversationService;
+            taskService: import("../services/TaskService").TaskService;
+            maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+            userService: import("../services/UserService").UserService;
+            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+            req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+            res: import("express").Response<any, Record<string, any>>;
+            user: import("./context").User;
+            requestId: string;
+            timestamp: Date;
+            batchId: string | undefined;
+            validatedInput: unknown;
+        };
+        meta: object;
+        errorShape: {
+            data: {
+                stack: string | undefined;
+                requestId: any;
+                code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                httpStatus: number;
+                path?: string;
+            };
+            message: string;
+            code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
         };
         transformer: typeof import("superjson").default;
     }>, {
-        initialize: import("@trpc/server").BuildProcedure<"mutation", {
+        getTableData: import("@trpc/server").BuildProcedure<"query", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
-            _input_in: typeof import("@trpc/server").unsetMarker;
-            _input_out: typeof import("@trpc/server").unsetMarker;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                search?: string | undefined;
+                filters?: {
+                    priority?: ("Critical" | "High" | "Medium" | "Low")[] | undefined;
+                    workflowState?: ("START_POINT" | "IN_PROGRESS" | "COMPLETION")[] | undefined;
+                    status?: ("red" | "yellow" | "green")[] | undefined;
+                    emailAlias?: string[] | undefined;
+                    dateRange?: {
+                        end: string;
+                        start: string;
+                    } | undefined;
+                } | undefined;
+                page?: number | undefined;
+                pageSize?: number | undefined;
+                sortBy?: "subject" | "priority" | "status" | "received_date" | "requested_by" | undefined;
+                sortOrder?: "asc" | "desc" | undefined;
+                refreshKey?: number | undefined;
+            };
+            _input_out: {
+                page: number;
+                pageSize: number;
+                sortBy: "subject" | "priority" | "status" | "received_date" | "requested_by";
+                sortOrder: "asc" | "desc";
+                search?: string | undefined;
+                filters?: {
+                    priority?: ("Critical" | "High" | "Medium" | "Low")[] | undefined;
+                    workflowState?: ("START_POINT" | "IN_PROGRESS" | "COMPLETION")[] | undefined;
+                    status?: ("red" | "yellow" | "green")[] | undefined;
+                    emailAlias?: string[] | undefined;
+                    dateRange?: {
+                        end: string;
+                        start: string;
+                    } | undefined;
+                } | undefined;
+                refreshKey?: number | undefined;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: {
+                emails: Array<{
+                    id: string;
+                    email_alias: string;
+                    requested_by: string;
+                    subject: string;
+                    summary: string;
+                    status: string;
+                    status_text: string;
+                    workflow_state: string;
+                    priority: string;
+                    received_date: string;
+                    is_read: boolean;
+                    has_attachments: boolean;
+                }>;
+                totalCount: number;
+                totalPages: number;
+                fromCache?: boolean;
+                performanceMetrics?: {
+                    queryTime: number;
+                    cacheHit: boolean;
+                    optimizationGain: number;
+                };
+            };
+        }>;
+        getDashboardStats: import("@trpc/server").BuildProcedure<"query", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                refreshKey?: number | undefined;
+            };
+            _input_out: {
+                refreshKey?: number | undefined;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: {
+                totalEmails: number;
+                criticalCount: number;
+                inProgressCount: number;
+                completedCount: number;
+                statusDistribution: Record<string, number>;
+            };
+        }>;
+        getAnalytics: import("@trpc/server").BuildProcedure<"query", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                refreshKey?: number | undefined;
+            };
+            _input_out: {
+                refreshKey?: number | undefined;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: {
+                totalEmails: number;
+                workflowDistribution: Record<string, number>;
+                slaCompliance: Record<string, number>;
+                averageProcessingTime: number;
+            };
+        }>;
+        getList: import("@trpc/server").BuildProcedure<"query", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                limit?: number | undefined;
+                priority?: "Critical" | "High" | "Medium" | "Low" | undefined;
+                status?: string | undefined;
+                search?: string | undefined;
+                workflow?: string | undefined;
+                slaStatus?: "on-track" | "at-risk" | "overdue" | undefined;
+                offset?: number | undefined;
+                dateRange?: {
+                    end: Date;
+                    start: Date;
+                } | undefined;
+                refreshKey?: number | undefined;
+            };
+            _input_out: {
+                limit: number;
+                offset: number;
+                priority?: "Critical" | "High" | "Medium" | "Low" | undefined;
+                status?: string | undefined;
+                search?: string | undefined;
+                workflow?: string | undefined;
+                slaStatus?: "on-track" | "at-risk" | "overdue" | undefined;
+                dateRange?: {
+                    end: Date;
+                    start: Date;
+                } | undefined;
+                refreshKey?: number | undefined;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: any[];
+        }>;
+        getById: import("@trpc/server").BuildProcedure<"query", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                id: string;
+            };
+            _input_out: {
+                id: string;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: import("../services/EmailStorageService").EmailWithAnalysis;
+        }>;
+        updateWorkflowState: import("@trpc/server").BuildProcedure<"mutation", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                emailId: string;
+                newState: "In Review" | "In Progress" | "Pending External" | "Completed" | "New" | "Archived";
+            };
+            _input_out: {
+                emailId: string;
+                newState: "In Review" | "In Progress" | "Pending External" | "Completed" | "New" | "Archived";
+            };
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
             success: boolean;
             message: string;
         }>;
-        getStats: import("@trpc/server").BuildProcedure<"query", {
+        bulkUpdate: import("@trpc/server").BuildProcedure<"mutation", {
             _config: import("@trpc/server").RootConfig<{
-                ctx: any;
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
                 meta: object;
                 errorShape: {
                     data: {
                         stack: string | undefined;
                         requestId: any;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
                         httpStatus: number;
                         path?: string;
                     };
                     message: string;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
                 };
                 transformer: typeof import("superjson").default;
             }>;
             _meta: object;
-            _ctx_out: any;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                action: "mark-read" | "archive" | "set-priority" | "change-state";
+                emailIds: string[];
+                value?: string | undefined;
+            };
+            _input_out: {
+                action: "mark-read" | "archive" | "set-priority" | "change-state";
+                emailIds: string[];
+                value?: string | undefined;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: {
+                processed: number;
+                successful: number;
+                failed: number;
+                results: ({
+                    emailId: string;
+                    success: boolean;
+                    error?: undefined;
+                } | {
+                    emailId: string;
+                    success: boolean;
+                    error: string;
+                })[];
+            };
+        }>;
+        sendEmail: import("@trpc/server").BuildProcedure<"mutation", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                body: string;
+                subject: string;
+                to: string[];
+                priority?: "low" | "high" | "normal" | undefined;
+                cc?: string[] | undefined;
+                bcc?: string[] | undefined;
+                template?: string | undefined;
+                attachments?: {
+                    content: string;
+                    contentType: string;
+                    filename: string;
+                }[] | undefined;
+            };
+            _input_out: {
+                body: string;
+                subject: string;
+                priority: "low" | "high" | "normal";
+                to: string[];
+                cc?: string[] | undefined;
+                bcc?: string[] | undefined;
+                template?: string | undefined;
+                attachments?: {
+                    content: string;
+                    contentType: string;
+                    filename: string;
+                }[] | undefined;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: {
+                messageId: string;
+                sentAt: string;
+                recipients: number;
+            };
+        }>;
+        getWorkflowPatterns: import("@trpc/server").BuildProcedure<"query", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
             _input_in: typeof import("@trpc/server").unsetMarker;
             _input_out: typeof import("@trpc/server").unsetMarker;
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
-        }, import("../../core/data-collection/types").DataPipelineStats>;
-        sources: import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
-            ctx: any;
-            meta: object;
-            errorShape: {
-                data: {
-                    stack: string | undefined;
-                    requestId: any;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                    httpStatus: number;
-                    path?: string;
-                };
-                message: string;
-                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-            };
-            transformer: typeof import("superjson").default;
-        }>, {
-            list: import("@trpc/server").BuildProcedure<"query", {
-                _config: import("@trpc/server").RootConfig<{
-                    ctx: any;
-                    meta: object;
-                    errorShape: {
-                        data: {
-                            stack: string | undefined;
-                            requestId: any;
-                            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                            httpStatus: number;
-                            path?: string;
-                        };
-                        message: string;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                    };
-                    transformer: typeof import("superjson").default;
-                }>;
-                _meta: object;
-                _ctx_out: any;
-                _input_in: typeof import("@trpc/server").unsetMarker;
-                _input_out: typeof import("@trpc/server").unsetMarker;
-                _output_in: typeof import("@trpc/server").unsetMarker;
-                _output_out: typeof import("@trpc/server").unsetMarker;
-            }, import("../../core/data-collection/types").DataSource[]>;
-            create: import("@trpc/server").BuildProcedure<"mutation", {
-                _config: import("@trpc/server").RootConfig<{
-                    ctx: any;
-                    meta: object;
-                    errorShape: {
-                        data: {
-                            stack: string | undefined;
-                            requestId: any;
-                            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                            httpStatus: number;
-                            path?: string;
-                        };
-                        message: string;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                    };
-                    transformer: typeof import("superjson").default;
-                }>;
-                _meta: object;
-                _ctx_out: any;
-                _input_in: {
-                    name: string;
-                    type: "web_scraping" | "search_engine" | "social_media" | "ecommerce" | "news";
-                    config: {
-                        url?: string | undefined;
-                        keywords?: string[] | undefined;
-                        filters?: Record<string, any> | undefined;
-                        maxResults?: number | undefined;
-                        frequency?: "hourly" | "daily" | "weekly" | "monthly" | undefined;
-                        outputFormat?: "json" | "csv" | "markdown" | undefined;
-                    };
-                    status?: "active" | "inactive" | undefined;
-                };
-                _input_out: {
-                    name: string;
-                    type: "web_scraping" | "search_engine" | "social_media" | "ecommerce" | "news";
-                    status: "active" | "inactive";
-                    config: {
-                        url?: string | undefined;
-                        keywords?: string[] | undefined;
-                        filters?: Record<string, any> | undefined;
-                        maxResults?: number | undefined;
-                        frequency?: "hourly" | "daily" | "weekly" | "monthly" | undefined;
-                        outputFormat?: "json" | "csv" | "markdown" | undefined;
-                    };
-                };
-                _output_in: typeof import("@trpc/server").unsetMarker;
-                _output_out: typeof import("@trpc/server").unsetMarker;
-            }, {
-                sourceId: string;
-                message: string;
-            }>;
-            update: import("@trpc/server").BuildProcedure<"mutation", {
-                _config: import("@trpc/server").RootConfig<{
-                    ctx: any;
-                    meta: object;
-                    errorShape: {
-                        data: {
-                            stack: string | undefined;
-                            requestId: any;
-                            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                            httpStatus: number;
-                            path?: string;
-                        };
-                        message: string;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                    };
-                    transformer: typeof import("superjson").default;
-                }>;
-                _meta: object;
-                _ctx_out: any;
-                _input_in: {
-                    sourceId: string;
-                    updates: {
-                        name?: string | undefined;
-                        type?: "web_scraping" | "search_engine" | "social_media" | "ecommerce" | "news" | undefined;
-                        status?: "error" | "active" | "inactive" | undefined;
-                        config?: {
-                            url?: string | undefined;
-                            keywords?: string[] | undefined;
-                            filters?: Record<string, any> | undefined;
-                            maxResults?: number | undefined;
-                            frequency?: "hourly" | "daily" | "weekly" | "monthly" | undefined;
-                            outputFormat?: "json" | "csv" | "markdown" | undefined;
-                        } | undefined;
-                    };
-                };
-                _input_out: {
-                    sourceId: string;
-                    updates: {
-                        name?: string | undefined;
-                        type?: "web_scraping" | "search_engine" | "social_media" | "ecommerce" | "news" | undefined;
-                        status?: "error" | "active" | "inactive" | undefined;
-                        config?: {
-                            url?: string | undefined;
-                            keywords?: string[] | undefined;
-                            filters?: Record<string, any> | undefined;
-                            maxResults?: number | undefined;
-                            frequency?: "hourly" | "daily" | "weekly" | "monthly" | undefined;
-                            outputFormat?: "json" | "csv" | "markdown" | undefined;
-                        } | undefined;
-                    };
-                };
-                _output_in: typeof import("@trpc/server").unsetMarker;
-                _output_out: typeof import("@trpc/server").unsetMarker;
-            }, {
-                success: boolean;
-                message: string;
-            }>;
-            delete: import("@trpc/server").BuildProcedure<"mutation", {
-                _config: import("@trpc/server").RootConfig<{
-                    ctx: any;
-                    meta: object;
-                    errorShape: {
-                        data: {
-                            stack: string | undefined;
-                            requestId: any;
-                            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                            httpStatus: number;
-                            path?: string;
-                        };
-                        message: string;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                    };
-                    transformer: typeof import("superjson").default;
-                }>;
-                _meta: object;
-                _ctx_out: any;
-                _input_in: {
-                    sourceId: string;
-                };
-                _input_out: {
-                    sourceId: string;
-                };
-                _output_in: typeof import("@trpc/server").unsetMarker;
-                _output_out: typeof import("@trpc/server").unsetMarker;
-            }, {
-                success: boolean;
-                message: string;
-            }>;
-            collect: import("@trpc/server").BuildProcedure<"mutation", {
-                _config: import("@trpc/server").RootConfig<{
-                    ctx: any;
-                    meta: object;
-                    errorShape: {
-                        data: {
-                            stack: string | undefined;
-                            requestId: any;
-                            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                            httpStatus: number;
-                            path?: string;
-                        };
-                        message: string;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                    };
-                    transformer: typeof import("superjson").default;
-                }>;
-                _meta: object;
-                _ctx_out: any;
-                _input_in: {
-                    sourceId: string;
-                };
-                _input_out: {
-                    sourceId: string;
-                };
-                _output_in: typeof import("@trpc/server").unsetMarker;
-                _output_out: typeof import("@trpc/server").unsetMarker;
-            }, {
-                jobId: string;
-                message: string;
-            }>;
+        }, {
+            success: boolean;
+            data: any[];
         }>;
-        jobs: import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
-            ctx: any;
-            meta: object;
-            errorShape: {
-                data: {
-                    stack: string | undefined;
-                    requestId: any;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                    httpStatus: number;
-                    path?: string;
+        getStats: import("@trpc/server").BuildProcedure<"query", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
                 };
-                message: string;
-                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-            };
-            transformer: typeof import("superjson").default;
-        }>, {
-            list: import("@trpc/server").BuildProcedure<"query", {
-                _config: import("@trpc/server").RootConfig<{
-                    ctx: any;
-                    meta: object;
-                    errorShape: {
-                        data: {
-                            stack: string | undefined;
-                            requestId: any;
-                            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                            httpStatus: number;
-                            path?: string;
-                        };
-                        message: string;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
                     };
-                    transformer: typeof import("superjson").default;
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: typeof import("@trpc/server").unsetMarker;
+            _input_out: typeof import("@trpc/server").unsetMarker;
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: {
+                todayStats: {
+                    received: number;
+                    processed: number;
+                    overdue: number;
+                    critical: number;
+                };
+                totalEmails: number;
+                workflowDistribution: Record<string, number>;
+                slaCompliance: Record<string, number>;
+                averageProcessingTime: number;
+            };
+        }>;
+        searchAdvanced: import("@trpc/server").BuildProcedure<"query", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                query: string;
+                filters?: {
+                    priority?: ("Critical" | "High" | "Medium" | "Low")[] | undefined;
+                    workflowState?: ("START_POINT" | "IN_PROGRESS" | "COMPLETION")[] | undefined;
+                    status?: ("red" | "yellow" | "green")[] | undefined;
+                    emailAlias?: string[] | undefined;
+                    dateRange?: {
+                        end: string;
+                        start: string;
+                    } | undefined;
+                    workflowType?: string[] | undefined;
+                    entityTypes?: string[] | undefined;
+                } | undefined;
+                page?: number | undefined;
+                pageSize?: number | undefined;
+                sortBy?: "subject" | "status" | "relevance" | "received_date" | undefined;
+                sortOrder?: "asc" | "desc" | undefined;
+                searchFields?: ("summary" | "subject" | "entities" | "emailAlias" | "requestedBy")[] | undefined;
+                includeHighlight?: boolean | undefined;
+            };
+            _input_out: {
+                query: string;
+                page: number;
+                pageSize: number;
+                sortBy: "subject" | "status" | "relevance" | "received_date";
+                sortOrder: "asc" | "desc";
+                searchFields: ("summary" | "subject" | "entities" | "emailAlias" | "requestedBy")[];
+                includeHighlight: boolean;
+                filters?: {
+                    priority?: ("Critical" | "High" | "Medium" | "Low")[] | undefined;
+                    workflowState?: ("START_POINT" | "IN_PROGRESS" | "COMPLETION")[] | undefined;
+                    status?: ("red" | "yellow" | "green")[] | undefined;
+                    emailAlias?: string[] | undefined;
+                    dateRange?: {
+                        end: string;
+                        start: string;
+                    } | undefined;
+                    workflowType?: string[] | undefined;
+                    entityTypes?: string[] | undefined;
+                } | undefined;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: {
+                searchMetadata: {
+                    query: string;
+                    searchFields: ("summary" | "subject" | "entities" | "emailAlias" | "requestedBy")[];
+                    totalMatches: number;
+                    searchTime: number;
+                    relevanceScoring: boolean;
+                };
+                emails: Array<{
+                    id: string;
+                    email_alias: string;
+                    requested_by: string;
+                    subject: string;
+                    summary: string;
+                    status: string;
+                    status_text: string;
+                    workflow_state: string;
+                    priority: string;
+                    received_date: string;
+                    is_read: boolean;
+                    has_attachments: boolean;
                 }>;
-                _meta: object;
-                _ctx_out: any;
-                _input_in: {
-                    sourceId?: string | undefined;
-                    limit?: number | undefined;
-                    status?: "completed" | "failed" | "running" | "pending" | undefined;
-                    offset?: number | undefined;
+                totalCount: number;
+                totalPages: number;
+                fromCache?: boolean;
+                performanceMetrics?: {
+                    queryTime: number;
+                    cacheHit: boolean;
+                    optimizationGain: number;
                 };
-                _input_out: {
-                    limit: number;
-                    offset: number;
-                    sourceId?: string | undefined;
-                    status?: "completed" | "failed" | "running" | "pending" | undefined;
+            };
+        }>;
+        search: import("@trpc/server").BuildProcedure<"query", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
                 };
-                _output_in: typeof import("@trpc/server").unsetMarker;
-                _output_out: typeof import("@trpc/server").unsetMarker;
-            }, never[] | {
-                jobs: import("../../core/data-collection/types").DataCollectionJob[];
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                query: string;
+                limit?: number | undefined;
+                filters?: {
+                    priority?: "Critical" | "High" | "Medium" | "Low" | undefined;
+                    status?: string | undefined;
+                    workflow?: string | undefined;
+                    slaStatus?: "on-track" | "at-risk" | "overdue" | undefined;
+                    dateRange?: {
+                        end: Date;
+                        start: Date;
+                    } | undefined;
+                } | undefined;
+            };
+            _input_out: {
+                query: string;
+                limit: number;
+                filters?: {
+                    priority?: "Critical" | "High" | "Medium" | "Low" | undefined;
+                    status?: string | undefined;
+                    workflow?: string | undefined;
+                    slaStatus?: "on-track" | "at-risk" | "overdue" | undefined;
+                    dateRange?: {
+                        end: Date;
+                        start: Date;
+                    } | undefined;
+                } | undefined;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: {
+                emails: {
+                    id: string;
+                    email_alias: string;
+                    requested_by: string;
+                    subject: string;
+                    summary: string;
+                    status: string;
+                    status_text: string;
+                    workflow_state: string;
+                    priority: string;
+                    received_date: string;
+                    is_read: boolean;
+                    has_attachments: boolean;
+                }[];
                 total: number;
-                hasMore: boolean;
-            }>;
-            get: import("@trpc/server").BuildProcedure<"query", {
-                _config: import("@trpc/server").RootConfig<{
-                    ctx: any;
-                    meta: object;
-                    errorShape: {
-                        data: {
-                            stack: string | undefined;
-                            requestId: any;
-                            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                            httpStatus: number;
-                            path?: string;
-                        };
-                        message: string;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                    };
-                    transformer: typeof import("superjson").default;
-                }>;
-                _meta: object;
-                _ctx_out: any;
-                _input_in: {
-                    jobId: string;
-                };
-                _input_out: {
-                    jobId: string;
-                };
-                _output_in: typeof import("@trpc/server").unsetMarker;
-                _output_out: typeof import("@trpc/server").unsetMarker;
-            }, import("../../core/data-collection/types").DataCollectionJob>;
-        }>;
-        collect: import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
-            ctx: any;
-            meta: object;
-            errorShape: {
-                data: {
-                    stack: string | undefined;
-                    requestId: any;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                    httpStatus: number;
-                    path?: string;
-                };
-                message: string;
-                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                query: string;
+                filters: {
+                    priority?: "Critical" | "High" | "Medium" | "Low" | undefined;
+                    status?: string | undefined;
+                    workflow?: string | undefined;
+                    slaStatus?: "on-track" | "at-risk" | "overdue" | undefined;
+                    dateRange?: {
+                        end: Date;
+                        start: Date;
+                    } | undefined;
+                } | undefined;
             };
-            transformer: typeof import("superjson").default;
-        }>, {
-            searchEngine: import("@trpc/server").BuildProcedure<"mutation", {
-                _config: import("@trpc/server").RootConfig<{
-                    ctx: any;
-                    meta: object;
-                    errorShape: {
-                        data: {
-                            stack: string | undefined;
-                            requestId: any;
-                            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                            httpStatus: number;
-                            path?: string;
-                        };
-                        message: string;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                    };
-                    transformer: typeof import("superjson").default;
-                }>;
-                _meta: object;
-                _ctx_out: any;
-                _input_in: {
-                    query: string;
-                    engine?: "google" | "bing" | "yandex" | undefined;
-                    language?: string | undefined;
-                    maxResults?: number | undefined;
-                    location?: string | undefined;
-                };
-                _input_out: {
-                    query: string;
-                    engine: "google" | "bing" | "yandex";
-                    maxResults: number;
-                    language?: string | undefined;
-                    location?: string | undefined;
-                };
-                _output_in: typeof import("@trpc/server").unsetMarker;
-                _output_out: typeof import("@trpc/server").unsetMarker;
-            }, {
-                success: boolean;
-                recordsCollected: number;
-                message: string;
-                data: never[];
-            }>;
-            webScraping: import("@trpc/server").BuildProcedure<"mutation", {
-                _config: import("@trpc/server").RootConfig<{
-                    ctx: any;
-                    meta: object;
-                    errorShape: {
-                        data: {
-                            stack: string | undefined;
-                            requestId: any;
-                            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                            httpStatus: number;
-                            path?: string;
-                        };
-                        message: string;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
-                    };
-                    transformer: typeof import("superjson").default;
-                }>;
-                _meta: object;
-                _ctx_out: any;
-                _input_in: {
-                    url: string;
-                    extractionPrompt?: string | undefined;
-                    followLinks?: boolean | undefined;
-                    maxDepth?: number | undefined;
-                    respectRobots?: boolean | undefined;
-                };
-                _input_out: {
-                    url: string;
-                    followLinks: boolean;
-                    maxDepth: number;
-                    respectRobots: boolean;
-                    extractionPrompt?: string | undefined;
-                };
-                _output_in: typeof import("@trpc/server").unsetMarker;
-                _output_out: typeof import("@trpc/server").unsetMarker;
-            }, {
-                success: boolean;
-                recordsCollected: number;
-                message: string;
-                data: never[];
-            }>;
         }>;
-        control: import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
-            ctx: any;
-            meta: object;
-            errorShape: {
-                data: {
-                    stack: string | undefined;
-                    requestId: any;
-                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                    httpStatus: number;
-                    path?: string;
+        batchCreateEmails: import("@trpc/server").BuildProcedure<"mutation", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
                 };
-                message: string;
-                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
             };
-            transformer: typeof import("superjson").default;
-        }>, {
-            start: import("@trpc/server").BuildProcedure<"mutation", {
-                _config: import("@trpc/server").RootConfig<{
-                    ctx: any;
-                    meta: object;
-                    errorShape: {
-                        data: {
-                            stack: string | undefined;
-                            requestId: any;
-                            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                            httpStatus: number;
-                            path?: string;
-                        };
-                        message: string;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+            _input_in: {
+                emails: {
+                    summary: string;
+                    subject: string;
+                    workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
+                    status: "red" | "yellow" | "green";
+                    emailAlias: string;
+                    messageId: string;
+                    requestedBy: string;
+                    statusText: string;
+                    priority?: "Critical" | "High" | "Medium" | "Low" | undefined;
+                    entities?: {
+                        type: string;
+                        value: string;
+                    }[] | undefined;
+                    workflowType?: string | undefined;
+                    receivedDate?: Date | undefined;
+                }[];
+                batchId?: string | undefined;
+            };
+            _input_out: {
+                emails: {
+                    summary: string;
+                    subject: string;
+                    workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
+                    status: "red" | "yellow" | "green";
+                    emailAlias: string;
+                    messageId: string;
+                    requestedBy: string;
+                    statusText: string;
+                    priority?: "Critical" | "High" | "Medium" | "Low" | undefined;
+                    entities?: {
+                        type: string;
+                        value: string;
+                    }[] | undefined;
+                    workflowType?: string | undefined;
+                    receivedDate?: Date | undefined;
+                }[];
+                batchId?: string | undefined;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: {
+                created: number;
+                failed: number;
+                total: number;
+                results: {
+                    emailId: string;
+                    messageId: string;
+                    success: boolean;
+                }[];
+                errors: {
+                    messageId: string;
+                    error: string;
+                    success: boolean;
+                }[] | undefined;
+            };
+        }>;
+        batchUpdateStatuses: import("@trpc/server").BuildProcedure<"mutation", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
                     };
-                    transformer: typeof import("superjson").default;
-                }>;
-                _meta: object;
-                _ctx_out: any;
-                _input_in: typeof import("@trpc/server").unsetMarker;
-                _input_out: typeof import("@trpc/server").unsetMarker;
-                _output_in: typeof import("@trpc/server").unsetMarker;
-                _output_out: typeof import("@trpc/server").unsetMarker;
-            }, {
-                success: boolean;
-                message: string;
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
             }>;
-            stop: import("@trpc/server").BuildProcedure<"mutation", {
-                _config: import("@trpc/server").RootConfig<{
-                    ctx: any;
-                    meta: object;
-                    errorShape: {
-                        data: {
-                            stack: string | undefined;
-                            requestId: any;
-                            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                            httpStatus: number;
-                            path?: string;
-                        };
-                        message: string;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                updates: {
+                    emailId: string;
+                    status: "red" | "yellow" | "green";
+                    statusText: string;
+                    workflowState?: "START_POINT" | "IN_PROGRESS" | "COMPLETION" | undefined;
+                }[];
+                changedBy?: string | undefined;
+            };
+            _input_out: {
+                updates: {
+                    emailId: string;
+                    status: "red" | "yellow" | "green";
+                    statusText: string;
+                    workflowState?: "START_POINT" | "IN_PROGRESS" | "COMPLETION" | undefined;
+                }[];
+                changedBy?: string | undefined;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: {
+                updated: number;
+                failed: number;
+                total: number;
+                results: {
+                    emailId: string;
+                    success: boolean;
+                }[];
+                errors: {
+                    emailId: string;
+                    error: string;
+                    success: boolean;
+                }[] | undefined;
+            };
+        }>;
+        batchDelete: import("@trpc/server").BuildProcedure<"mutation", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
                     };
-                    transformer: typeof import("superjson").default;
-                }>;
-                _meta: object;
-                _ctx_out: any;
-                _input_in: typeof import("@trpc/server").unsetMarker;
-                _input_out: typeof import("@trpc/server").unsetMarker;
-                _output_in: typeof import("@trpc/server").unsetMarker;
-                _output_out: typeof import("@trpc/server").unsetMarker;
-            }, {
-                success: boolean;
-                message: string;
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
             }>;
-            runScheduled: import("@trpc/server").BuildProcedure<"mutation", {
-                _config: import("@trpc/server").RootConfig<{
-                    ctx: any;
-                    meta: object;
-                    errorShape: {
-                        data: {
-                            stack: string | undefined;
-                            requestId: any;
-                            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
-                            httpStatus: number;
-                            path?: string;
-                        };
-                        message: string;
-                        code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                emailIds: string[];
+                softDelete?: boolean | undefined;
+                reason?: string | undefined;
+            };
+            _input_out: {
+                emailIds: string[];
+                softDelete: boolean;
+                reason?: string | undefined;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: {
+                deleted: number;
+                failed: number;
+                total: number;
+                softDelete: boolean;
+                results: {
+                    emailId: string;
+                    success: boolean;
+                }[];
+                errors: {
+                    emailId: string;
+                    error: string;
+                    success: boolean;
+                }[] | undefined;
+            };
+        }>;
+        getTableMetadata: import("@trpc/server").BuildProcedure<"query", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
                     };
-                    transformer: typeof import("superjson").default;
-                }>;
-                _meta: object;
-                _ctx_out: any;
-                _input_in: typeof import("@trpc/server").unsetMarker;
-                _input_out: typeof import("@trpc/server").unsetMarker;
-                _output_in: typeof import("@trpc/server").unsetMarker;
-                _output_out: typeof import("@trpc/server").unsetMarker;
-            }, {
-                success: boolean;
-                message: string;
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
             }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: typeof import("@trpc/server").unsetMarker;
+            _input_out: typeof import("@trpc/server").unsetMarker;
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+            data: {
+                columns: {
+                    key: string;
+                    label: string;
+                    type: string;
+                    sortable: boolean;
+                    filterable: boolean;
+                    width: number;
+                }[];
+                filterOptions: {
+                    status: {
+                        value: string;
+                        label: string;
+                        color: string;
+                    }[];
+                    priority: {
+                        value: string;
+                        label: string;
+                        color: string;
+                    }[];
+                    workflowState: {
+                        value: string;
+                        label: string;
+                        color: string;
+                    }[];
+                };
+                defaultSort: {
+                    column: string;
+                    direction: string;
+                };
+                pagination: {
+                    defaultPageSize: number;
+                    pageSizeOptions: number[];
+                };
+                features: {
+                    search: boolean;
+                    filtering: boolean;
+                    sorting: boolean;
+                    bulkActions: boolean;
+                    export: boolean;
+                    realTimeUpdates: boolean;
+                };
+            };
+        }>;
+        subscribeToEmailUpdates: import("@trpc/server").BuildProcedure<"subscription", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                types?: string[] | undefined;
+            };
+            _input_out: {
+                types: string[];
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, AsyncGenerator<{
+            type: any;
+            data: unknown;
+            timestamp: string;
+        }, never, unknown>>;
+    }>;
+    metrics: import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
+        ctx: {
+            masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+            conversationService: import("../services/ConversationService").ConversationService;
+            taskService: import("../services/TaskService").TaskService;
+            maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+            userService: import("../services/UserService").UserService;
+            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+            req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+            res: import("express").Response<any, Record<string, any>>;
+            user: import("./context").User;
+            requestId: string;
+            timestamp: Date;
+            batchId: string | undefined;
+            validatedInput: unknown;
+        };
+        meta: object;
+        errorShape: {
+            data: {
+                stack: string | undefined;
+                requestId: any;
+                code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                httpStatus: number;
+                path?: string;
+            };
+            message: string;
+            code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+        };
+        transformer: typeof import("superjson").default;
+    }>, {
+        getRateLimitMetrics: import("@trpc/server").BuildProcedure<"query", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: typeof import("@trpc/server").unsetMarker;
+            _input_out: typeof import("@trpc/server").unsetMarker;
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, any>;
+        resetRateLimitMetrics: import("@trpc/server").BuildProcedure<"mutation", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                identifier?: string | undefined;
+            };
+            _input_out: {
+                identifier?: string | undefined;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            success: boolean;
+        }>;
+        getRateLimitStatus: import("@trpc/server").BuildProcedure<"query", {
+            _config: import("@trpc/server").RootConfig<{
+                ctx: {
+                    masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                    conversationService: import("../services/ConversationService").ConversationService;
+                    taskService: import("../services/TaskService").TaskService;
+                    maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                    userService: import("../services/UserService").UserService;
+                    agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                    ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                    req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                    res: import("express").Response<any, Record<string, any>>;
+                    user: import("./context").User;
+                    requestId: string;
+                    timestamp: Date;
+                    batchId: string | undefined;
+                    validatedInput: unknown;
+                };
+                meta: object;
+                errorShape: {
+                    data: {
+                        stack: string | undefined;
+                        requestId: any;
+                        code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                        httpStatus: number;
+                        path?: string;
+                    };
+                    message: string;
+                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                };
+                transformer: typeof import("superjson").default;
+            }>;
+            _meta: object;
+            _ctx_out: {
+                timestamp: Date;
+                user: import("./context").User;
+                batchId: string | undefined;
+                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+                res: import("express").Response<any, Record<string, any>>;
+                requestId: string;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
+                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
+                validatedInput: unknown;
+            };
+            _input_in: {
+                identifier: string;
+            };
+            _input_out: {
+                identifier: string;
+            };
+            _output_in: typeof import("@trpc/server").unsetMarker;
+            _output_out: typeof import("@trpc/server").unsetMarker;
+        }, {
+            identifier: string;
+            allowed: boolean;
+            remaining: number;
+            resetTime: Date;
         }>;
     }>;
 }>;

@@ -295,9 +295,8 @@ export const useReportGeneration = (options: UseReportGenerationOptions = {}) =>
     setIsGenerating(true);
     setError(null);
 
-    try {
-      // Create report record
-      const report: GeneratedReport = {
+    // Create report record
+    const report: GeneratedReport = {
         id: generateId(),
         templateId,
         name: template.name,
@@ -314,6 +313,8 @@ export const useReportGeneration = (options: UseReportGenerationOptions = {}) =>
       };
 
       setGeneratedReports(prev => [report, ...prev.slice(0, maxHistory - 1)]);
+
+      try {
 
       // Process each section
       const processedSections = await Promise.all(
@@ -631,11 +632,3 @@ async function generateHTMLReport(template: ReportTemplate, sections: any[], opt
   // Would generate HTML content
   return { downloadUrl: 'mock-html-url', fileSize: 1536 };
 }
-
-export type { 
-  ReportField, 
-  ReportSection, 
-  ReportTemplate, 
-  ReportSchedule, 
-  GeneratedReport 
-};

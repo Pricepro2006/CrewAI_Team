@@ -382,7 +382,10 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
     setColumns(template.columns);
     setFilters(template.filters);
     setExportFormat(template.format);
-    setExportOptions(template.options);
+    setExportOptions({
+      ...template.options,
+      sheetName: template.options.filename || exportOptions.sheetName
+    });
     setShowTemplates(false);
     onTemplateLoad?.(template);
   }, [onTemplateLoad]);

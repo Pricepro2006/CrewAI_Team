@@ -1,4 +1,4 @@
-import { Worker, Job } from 'bullmq';
+import { Worker, type Job } from 'bullmq';
 import { logger } from '../../utils/logger';
 import { EmailAnalysisAgent } from '../agents/specialized/EmailAnalysisAgent';
 
@@ -38,7 +38,7 @@ async function initializeEmailAgent() {
 async function processEmailNotification(job: Job<EmailNotificationData>) {
   const { notification } = job.data;
   
-  logger.info('Processing email notification', {
+  logger.info('Processing email notification', 'EMAIL_WORKER', {
     notificationId: notification.id,
     changeType: notification.changeType,
     resource: notification.resource,
@@ -73,7 +73,7 @@ async function processEmailNotification(job: Job<EmailNotificationData>) {
     // Analyze the email
     const analysis = await agent.analyzeEmail(emailData as any);
 
-    logger.info('Email analysis completed', {
+    logger.info('Email analysis completed', 'EMAIL_WORKER', {
       emailId,
       priority: analysis.priority,
       workflowState: analysis.workflowState,
@@ -90,7 +90,7 @@ async function processEmailNotification(job: Job<EmailNotificationData>) {
     };
 
   } catch (error) {
-    logger.error('Error processing email notification', {
+    logger.error('Error processing email notification', 'EMAIL_WORKER', {
       error: error instanceof Error ? error.message : String(error),
       notificationId: notification.id,
     });
@@ -115,14 +115,14 @@ export const emailNotificationWorker = new Worker<EmailNotificationData>(
 
 // Worker event handlers
 emailNotificationWorker.on('completed', (job) => {
-  logger.info('Email notification job completed', {
+  logger.info('Email notification job completed', 'EMAIL_WORKER', {
     jobId: job.id,
     emailId: job.returnvalue?.emailId,
   });
 });
 
 emailNotificationWorker.on('failed', (job, error) => {
-  logger.error('Email notification job failed', {
+  logger.error('Email notification job failed', 'EMAIL_WORKER', {
     jobId: job?.id,
     error: error.message,
   });
@@ -130,7 +130,7 @@ emailNotificationWorker.on('failed', (job, error) => {
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received, closing email notification worker');
+  logger.info('SIGTERM received, closing email notification worker', 'EMAIL_WORKER');
   await emailNotificationWorker.close();
 });
 

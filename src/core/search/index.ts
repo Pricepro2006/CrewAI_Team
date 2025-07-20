@@ -5,7 +5,8 @@
 export * from './types';
 export { BusinessQueryOptimizer } from './BusinessQueryOptimizer';
 export { LocationDatabase } from './data/locationDatabase';
-export { QueryEnhancer, EnhancedQuery } from './QueryEnhancer';
+export { QueryEnhancer } from './QueryEnhancer';
+export type { EnhancedQuery } from './QueryEnhancer';
 
 // Re-export commonly used types for convenience
 export type {

@@ -175,11 +175,9 @@ export function createInputValidation<T extends z.ZodTypeAny>(schema: T) {
       // Validate and sanitize input
       const validatedInput = await schema.parseAsync(input);
 
-      // Continue with validated input
-      return next({
-        ...opts,
-        input: validatedInput,
-      });
+      // Update context with validated input and continue
+      ctx.validatedInput = validatedInput;
+      return next();
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.warn("Input Validation Failed", "SECURITY", {
@@ -271,17 +269,18 @@ export function createCSRFProtection() {
   return async (opts: {
     ctx: Context;
     next: () => Promise<any>;
+    type?: string;
   }) => {
     const { ctx, next } = opts;
 
     // Skip CSRF check for safe methods
-    if (["query", "subscription"].includes(opts.type)) {
+    if (opts.type && ["query", "subscription"].includes(opts.type)) {
       return next();
     }
 
     // Check CSRF token
-    const token = ctx.req.headers["x-csrf-token"];
-    const sessionToken = ctx.req.session?.csrfToken;
+    const token = ctx.req.headers["x-csrf-token"] as string | undefined;
+    const sessionToken = (ctx.req as any).session?.csrfToken;
 
     if (!token || token !== sessionToken) {
       logger.warn("CSRF Token Mismatch", "SECURITY", {

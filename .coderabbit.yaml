@@ -28,11 +28,16 @@ reviews:
       instructions: |
         Review TypeScript/React/JavaScript code for:
         - Type safety and proper TypeScript usage
+        - **verbatimModuleSyntax compliance**: Ensure type-only imports use `import type` syntax
+        - **Type import patterns**: Check for correct use of `import type` vs `import` for TypeScript types
+        - Missing module exports and circular dependencies
         - React hooks and component patterns
         - tRPC patterns and security
         - Performance optimization opportunities
-        - Security vulnerabilities
+        - Security vulnerabilities (injection, XSS, CSRF)
+        - TypeScript compilation errors and strict mode compliance
         - Code maintainability and readability
+        - ESLint rule violations and auto-fixable issues
 
     - path: "**/*.test.{ts,tsx,js,jsx}"
       instructions: |
@@ -74,6 +79,10 @@ reviews:
     eslint:
       enabled: true
 
+    # High-performance linting (2025)
+    oxlint:
+      enabled: true
+      
     # Security scanning
     gitleaks:
       enabled: true
@@ -86,9 +95,10 @@ reviews:
     ast-grep:
       essential_rules: true
       rule_dirs:
-        - "rules"
+        - "coderabbit-rules"
       packages:
         - "security/typescript-rules"
+        - "ast-grep-essentials"
 
     # Additional tools
     hadolint:
@@ -119,6 +129,13 @@ reviews:
   review_instructions: |
     You are an expert TypeScript/React developer reviewing code for an AI Agent Team Framework.
     Focus on:
+
+    **TypeScript Error Detection & Resolution (2025):**
+    - **verbatimModuleSyntax compliance**: Flag missing `import type` for type-only imports
+    - **Missing exports**: Identify classes, interfaces, functions that should be exported
+    - **Type safety violations**: Catch unsafe `any` usage and missing type annotations
+    - **Compilation errors**: Detect patterns that cause TypeScript compilation failures
+    - **ESLint violations**: Identify auto-fixable issues with consistent-type-imports rule
 
     **Architecture & Design:**
     - tRPC best practices and type safety
@@ -152,9 +169,15 @@ reviews:
     - Database patterns and migrations
     - CI/CD pipeline optimization
 
+    **Error Prevention Patterns:**
+    - Suggest automated fixes using ESLint --fix
+    - Recommend TypeScript configuration improvements
+    - Identify patterns that prevent future compilation errors
+    - Suggest codemod tools for large-scale refactoring
+
     Provide specific, actionable feedback with code examples when possible.
-    Prioritize security vulnerabilities and performance issues.
-    Suggest modern TypeScript/React patterns and best practices.
+    Prioritize TypeScript compilation errors and security vulnerabilities.
+    Suggest modern TypeScript/React patterns and 2025 best practices.
 
 # Chat configuration for interactive reviews
 chat:

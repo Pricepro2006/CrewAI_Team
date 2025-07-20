@@ -39,7 +39,6 @@ export class PineconeVectorStore {
             values: doc.embedding || [], // Embeddings would be generated
             metadata: {
                 content: doc.content,
-                sourceId: doc.metadata.sourceId,
                 ...doc.metadata
             }
         }));

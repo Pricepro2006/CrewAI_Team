@@ -1,5 +1,5 @@
-import { BaseTool } from '../../tools/base/BaseTool';
 import { logger } from '../../../utils/logger';
+import { OllamaProvider } from '../../llm/OllamaProvider';
 export class BaseAgent {
     name;
     description;
@@ -7,11 +7,17 @@ export class BaseAgent {
     tools = new Map();
     capabilities = new Set();
     initialized = false;
+    llm;
     constructor(name, description, model = 'qwen3:0.6b') {
         this.name = name;
         this.description = description;
         this.model = model;
         logger.info(`Initializing agent: ${name}`, 'AGENT');
+        // Initialize LLM provider
+        this.llm = new OllamaProvider({
+            model: this.model,
+            baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+        });
     }
     async executeWithTool(params) {
         const { tool, context, parameters, guidance } = params;
@@ -22,7 +28,7 @@ export class BaseAgent {
                     error: `Tool ${tool.name} not registered with this agent`,
                 };
             }
-            const result = await tool.execute(parameters, context);
+            const result = await tool.execute(parameters);
             return {
                 success: true,
                 data: result,
@@ -59,9 +65,9 @@ export class BaseAgent {
             return;
         }
         logger.info(`Initializing agent ${this.name}`, 'AGENT');
-        // Initialize any tools
+        // Initialize any tools (if they have initialization method)
         for (const tool of this.tools.values()) {
-            if (tool.initialize) {
+            if ('initialize' in tool && typeof tool.initialize === 'function') {
                 await tool.initialize();
             }
         }

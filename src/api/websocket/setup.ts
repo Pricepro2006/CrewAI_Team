@@ -1,7 +1,7 @@
 import { WebSocketServer } from "ws";
 import { WebSocketAuthManager, createWebSocketAuthMiddleware, type AuthenticatedWebSocket } from "../middleware/websocketAuth";
 import { wsService } from "../services/WebSocketService";
-import { UserService } from "../services/UserService";
+import type { UserService } from "../services/UserService";
 import { logger } from "../../utils/logger";
 
 /**
@@ -226,7 +226,7 @@ export function createAuthenticatedWebSocketServer(
       threshold: 1024,
     },
     // Connection verification
-    verifyClient: (info) => {
+    verifyClient: (info: any) => {
       // Could add IP filtering, origin checks, etc.
       const origin = info.origin || info.req.headers.origin;
       

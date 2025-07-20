@@ -130,7 +130,7 @@
 }
 
 .email-table-loading-spinner {
-  @apply animate-spin rounded-full h-12 w-12 border-b-2 border-primary;
+  @apply animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600;
 }
 
 /* Empty State */
@@ -197,14 +197,14 @@
 }
 
 .email-quick-filter-btn.active {
-  @apply bg-primary text-white border-primary;
+  @apply bg-blue-600 text-white border-blue-600;
 }
 
 /* Bulk Actions Bar */
 .email-bulk-actions {
   @apply flex items-center justify-between px-4 py-3;
   @apply bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800;
-  @apply animate-in fade-in slide-in-from-top-2 duration-200;
+  @apply transition-all duration-200;
 }
 
 .email-bulk-count {

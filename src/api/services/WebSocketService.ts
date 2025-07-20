@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import type { WebSocket } from "ws";
 import { z } from "zod";
-import _ from "lodash"; // Added for 2025 performance optimizations (Agent 11)
+// import _ from "lodash"; // Commented out - types not available
 import type { AuthenticatedWebSocket } from "../middleware/websocketAuth";
 import { logger } from "../../utils/logger";
 
@@ -237,7 +237,8 @@ export class WebSocketService extends EventEmitter {
   
   // Enhanced performance features (Agent 11 - 2025 Best Practices)
   private messageQueue: Map<string, WebSocketMessage[]> = new Map();
-  private throttledBroadcasts: Map<string, ReturnType<typeof _.throttle>> = new Map();
+  private throttledBroadcasts: Map<string, (message: WebSocketMessage) => void> = new Map();
+  private throttleTimers: Map<string, NodeJS.Timeout> = new Map();
   private performanceMetrics = {
     messagesSent: 0,
     messagesDropped: 0,
@@ -442,23 +443,45 @@ export class WebSocketService extends EventEmitter {
   // Enhanced Performance Methods (Agent 11 - 2025 Best Practices)
   
   /**
+   * Custom throttle implementation to replace lodash
+   */
+  private createThrottle(fn: (message: WebSocketMessage) => void, delay: number): (message: WebSocketMessage) => void {
+    let timeoutId: NodeJS.Timeout | null = null;
+    let lastMessage: WebSocketMessage | null = null;
+    
+    return (message: WebSocketMessage) => {
+      lastMessage = message;
+      
+      if (!timeoutId) {
+        timeoutId = setTimeout(() => {
+          if (lastMessage) {
+            fn(lastMessage);
+          }
+          timeoutId = null;
+          lastMessage = null;
+        }, delay);
+      }
+    };
+  }
+
+  /**
    * Setup throttled broadcast functions for high-frequency updates
    */
   private setupThrottledBroadcasts(): void {
     // Table data updates - throttled to 200ms (researched best practice)
-    this.throttledBroadcasts.set('table_data', _.throttle((message: WebSocketMessage) => {
+    this.throttledBroadcasts.set('table_data', this.createThrottle((message: WebSocketMessage) => {
       this.broadcast(message);
-    }, 200, { trailing: true }));
+    }, 200));
     
     // Stats updates - throttled to 500ms for dashboard widgets
-    this.throttledBroadcasts.set('stats', _.throttle((message: WebSocketMessage) => {
+    this.throttledBroadcasts.set('stats', this.createThrottle((message: WebSocketMessage) => {
       this.broadcast(message);
-    }, 500, { trailing: true }));
+    }, 500));
     
     // Performance metrics - throttled to 1000ms
-    this.throttledBroadcasts.set('performance', _.throttle((message: WebSocketMessage) => {
+    this.throttledBroadcasts.set('performance', this.createThrottle((message: WebSocketMessage) => {
       this.broadcast(message);
-    }, 1000, { trailing: true }));
+    }, 1000));
   }
   
   /**
@@ -603,7 +626,7 @@ export class WebSocketService extends EventEmitter {
   /**
    * Get enhanced performance metrics
    */
-  getPerformanceMetrics(): typeof this.performanceMetrics & { connectionStats: ReturnType<typeof this.getConnectionStats> } {
+  getPerformanceMetrics(): typeof this.performanceMetrics & { connectionStats: ReturnType<WebSocketService['getConnectionStats']> } {
     return {
       ...this.performanceMetrics,
       connectionStats: this.getConnectionStats(),

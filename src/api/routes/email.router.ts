@@ -159,7 +159,12 @@ export const emailRouter = router({
         // Broadcast stats update for real-time dashboard sync
         try {
           const { wsService } = await import('../services/WebSocketService');
-          wsService.broadcastEmailStatsUpdated(stats);
+          wsService.broadcastEmailStatsUpdated({
+            total: stats.totalEmails,
+            critical: stats.criticalCount,
+            inProgress: stats.inProgressCount,
+            completed: stats.completedCount
+          });
         } catch (error) {
           logger.error('Failed to broadcast stats update', 'EMAIL_ROUTER', { error });
         }
@@ -355,9 +360,9 @@ export const emailRouter = router({
           } catch (error) {
             logger.error('Failed to process bulk action for email', 'EMAIL_ROUTER', { 
               emailId, 
-              error 
+              error: error instanceof Error ? error.message : String(error)
             });
-            results.push({ emailId, success: false, error: error.message });
+            results.push({ emailId, success: false, error: error instanceof Error ? error.message : String(error) });
           }
         }
         
@@ -532,7 +537,7 @@ export const emailRouter = router({
           searchMetadata: {
             query: input.query,
             searchFields: input.searchFields,
-            totalMatches: result.total,
+            totalMatches: result.totalCount,
             searchTime: Date.now(), // Simple timing
             relevanceScoring: input.sortBy === 'relevance'
           }
@@ -587,7 +592,7 @@ export const emailRouter = router({
           success: true,
           data: {
             emails: result.emails,
-            total: result.total,
+            total: result.totalCount,
             query: input.query,
             filters: input.filters
           }
@@ -621,12 +626,12 @@ export const emailRouter = router({
           } catch (error) {
             errors.push({ 
               messageId: emailData.messageId, 
-              error: error.message,
+              error: error instanceof Error ? error.message : String(error),
               success: false 
             });
             logger.error('Failed to create email in batch', 'EMAIL_ROUTER', { 
               messageId: emailData.messageId,
-              error 
+              error: error instanceof Error ? error.message : String(error) 
             });
           }
         }
@@ -685,12 +690,12 @@ export const emailRouter = router({
           } catch (error) {
             errors.push({ 
               emailId: update.emailId, 
-              error: error.message,
+              error: error instanceof Error ? error.message : String(error),
               success: false 
             });
             logger.error('Failed to update email status in batch', 'EMAIL_ROUTER', { 
               emailId: update.emailId,
-              error 
+              error: error instanceof Error ? error.message : String(error)
             });
           }
         }
@@ -754,12 +759,12 @@ export const emailRouter = router({
           } catch (error) {
             errors.push({ 
               emailId, 
-              error: error.message,
+              error: error instanceof Error ? error.message : String(error),
               success: false 
             });
             logger.error('Failed to delete email in batch', 'EMAIL_ROUTER', { 
               emailId,
-              error 
+              error: error instanceof Error ? error.message : String(error)
             });
           }
         }

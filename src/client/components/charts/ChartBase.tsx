@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Chart, ChartConfiguration } from 'chart.js/auto';
+import { Chart, type ChartConfiguration } from 'chart.js/auto';
 
 /**
  * Base Chart Component for Email Dashboard Analytics

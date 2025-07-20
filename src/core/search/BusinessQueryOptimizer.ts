@@ -3,16 +3,16 @@
  * Implements security best practices and query optimization
  */
 
-import {
+import type {
   QueryComponents,
   LocationInfo,
-  UrgencyLevel,
   TimeConstraint,
   SearchOperator,
   QueryOptimizationResult,
   SecurityFlag,
   ServiceMapping
 } from './types';
+import { UrgencyLevel } from './types';
 
 export class BusinessQueryOptimizer {
   private static readonly DANGEROUS_PATTERNS = [
@@ -219,7 +219,7 @@ export class BusinessQueryOptimizer {
     
     // Extract potential service from query structure
     const serviceMatch = query.match(/\b([a-z]+(?:ing|er|ist|ice|ices))\b/i);
-    return serviceMatch ? serviceMatch[1].toLowerCase() : 'general service';
+    return serviceMatch?.[1]?.toLowerCase() || 'general service';
   }
 
   /**
@@ -242,7 +242,7 @@ export class BusinessQueryOptimizer {
 
     // Check for city, state pattern
     const cityStateMatch = query.match(this.LOCATION_PATTERNS.cityState);
-    if (cityStateMatch) {
+    if (cityStateMatch && cityStateMatch[1] && cityStateMatch[2]) {
       location.city = cityStateMatch[1].trim();
       location.state = cityStateMatch[2].trim();
       location.rawLocation = cityStateMatch[0];
@@ -274,7 +274,7 @@ export class BusinessQueryOptimizer {
 
     // Extract any potential location words
     const locationWords = query.match(/\b(?:in|at|near|around)\s+([A-Za-z\s]+)/i);
-    if (locationWords) {
+    if (locationWords && locationWords[1]) {
       location.rawLocation = locationWords[1].trim();
       location.confidence = 0.3;
     }

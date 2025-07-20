@@ -2,8 +2,6 @@
  * ConfidenceRAGRetriever - Retrieves documents with confidence scoring
  * Integrates with vector stores and applies confidence-based filtering
  */
-import { VectorStore } from '../VectorStore';
-import { RetrievalResult, RetrievalOptions, ScoredDocument } from './types.js';
 export class ConfidenceRAGRetriever {
     vectorStore;
     retrievalCache = new Map();
@@ -230,7 +228,9 @@ export class ConfidenceRAGRetriever {
         if (this.retrievalCache.size >= this.cacheSize) {
             // Remove oldest entry
             const firstKey = this.retrievalCache.keys().next().value;
-            this.retrievalCache.delete(firstKey);
+            if (firstKey) {
+                this.retrievalCache.delete(firstKey);
+            }
         }
         // Add timestamp for TTL
         result.cachedAt = Date.now();

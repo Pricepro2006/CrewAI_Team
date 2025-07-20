@@ -34,7 +34,16 @@
       }
     ],
     "@typescript-eslint/explicit-module-boundary-types": "off",
-    "no-console": ["warn", { "allow": ["warn", "error"] }]
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "@typescript-eslint/consistent-type-imports": [
+      "error",
+      {
+        "prefer": "type-imports",
+        "fixStyle": "inline-type-imports",
+        "disallowTypeAnnotations": false
+      }
+    ],
+    "@typescript-eslint/no-import-type-side-effects": "error"
   },
   "settings": {
     "react": {

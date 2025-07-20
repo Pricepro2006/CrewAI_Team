@@ -1,5 +1,5 @@
-import { EmailAnalysisAgent, EmailAnalysis } from '../agents/specialized/EmailAnalysisAgent';
-import { EmailAnalysisCache } from '../cache/EmailAnalysisCache';
+import type { EmailAnalysisAgent, EmailAnalysis } from '../agents/specialized/EmailAnalysisAgent';
+import type { EmailAnalysisCache } from '../cache/EmailAnalysisCache';
 interface BatchProcessingOptions {
     concurrency?: number;
     timeout?: number;

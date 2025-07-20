@@ -1,11 +1,13 @@
-import { BaseTool } from '../../tools/base/BaseTool';
+import type { BaseTool } from '../../tools/base/BaseTool';
 import type { AgentCapability, AgentContext, AgentResult, ToolExecutionParams } from './AgentTypes';
 import { logger } from '../../../utils/logger';
+import { OllamaProvider } from '../../llm/OllamaProvider';
 
 export abstract class BaseAgent {
   protected tools: Map<string, BaseTool> = new Map();
   protected capabilities: Set<string> = new Set();
   protected initialized = false;
+  protected llm: OllamaProvider;
 
   constructor(
     public readonly name: string,
@@ -13,6 +15,12 @@ export abstract class BaseAgent {
     protected readonly model: string = 'qwen3:0.6b'
   ) {
     logger.info(`Initializing agent: ${name}`, 'AGENT');
+    
+    // Initialize LLM provider
+    this.llm = new OllamaProvider({
+      model: this.model,
+      baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+    });
   }
 
   abstract execute(task: string, context: AgentContext): Promise<AgentResult>;
@@ -28,7 +36,7 @@ export abstract class BaseAgent {
         };
       }
 
-      const result = await tool.execute(parameters, context);
+      const result = await tool.execute(parameters);
       
       return {
         success: true,
@@ -73,10 +81,10 @@ export abstract class BaseAgent {
 
     logger.info(`Initializing agent ${this.name}`, 'AGENT');
     
-    // Initialize any tools
+    // Initialize any tools (if they have initialization method)
     for (const tool of this.tools.values()) {
-      if (tool.initialize) {
-        await tool.initialize();
+      if ('initialize' in tool && typeof (tool as any).initialize === 'function') {
+        await (tool as any).initialize();
       }
     }
 

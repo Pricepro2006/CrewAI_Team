@@ -1,4 +1,4 @@
-import { ChromaClient, Collection } from "chromadb";
+import { ChromaClient } from "chromadb";
 import { EmbeddingService } from "./EmbeddingService";
 export class VectorStore {
     client;
@@ -9,7 +9,7 @@ export class VectorStore {
         this.config = config;
         // Check if path is a URL or file path and configure accordingly
         const chromaPath = config.path || "http://localhost:8000";
-        let clientConfig = {};
+        const clientConfig = {};
         if (chromaPath.startsWith('http')) {
             // HTTP URL - use as-is
             clientConfig.path = chromaPath;

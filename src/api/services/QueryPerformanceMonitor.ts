@@ -1,4 +1,4 @@
-import { Logger } from '../../utils/logger';
+import { logger } from '../../utils/logger';
 import { wsService } from './WebSocketService';
 
 /**
@@ -35,7 +35,7 @@ export class QueryPerformanceMonitor {
     }
     
     this.isMonitoring = true;
-    Logger.info('Query performance monitoring started', 'QUERY_MONITOR');
+    logger.info('Query performance monitoring started', 'QUERY_MONITOR');
     
     // Start periodic performance checks
     this.startPeriodicChecks();
@@ -47,7 +47,7 @@ export class QueryPerformanceMonitor {
   stopMonitoring(): void {
     this.isMonitoring = false;
     this.monitors.clear();
-    Logger.info('Query performance monitoring stopped', 'QUERY_MONITOR');
+    logger.info('Query performance monitoring stopped', 'QUERY_MONITOR');
   }
   
   /**
@@ -87,7 +87,7 @@ export class QueryPerformanceMonitor {
       createdAt: Date.now()
     });
     
-    Logger.info('Query monitor registered', 'QUERY_MONITOR', { 
+    logger.info('Query monitor registered', 'QUERY_MONITOR', { 
       monitorId, 
       pattern: queryPattern 
     });
@@ -150,7 +150,7 @@ export class QueryPerformanceMonitor {
    */
   setAlertThresholds(thresholds: Partial<PerformanceThresholds>): void {
     this.alertThresholds = { ...this.alertThresholds, ...thresholds };
-    Logger.info('Alert thresholds updated', 'QUERY_MONITOR', { thresholds });
+    logger.info('Alert thresholds updated', 'QUERY_MONITOR', { thresholds });
   }
   
   /**
@@ -158,7 +158,7 @@ export class QueryPerformanceMonitor {
    */
   clearHistory(): void {
     this.performanceHistory = [];
-    Logger.info('Performance history cleared', 'QUERY_MONITOR');
+    logger.info('Performance history cleared', 'QUERY_MONITOR');
   }
   
   // Private methods
@@ -256,15 +256,16 @@ export class QueryPerformanceMonitor {
     this.lastAlertTime.set(alertKey, Date.now());
     
     // Log alert
-    Logger.warn('Performance alert', 'QUERY_MONITOR', alert);
+    logger.warn('Performance alert', 'QUERY_MONITOR', alert);
     
     // Broadcast alert via WebSocket
+    const severity = alert.severity === 'error' ? 'critical' : alert.severity;
     wsService.broadcastPerformanceWarning(
       'database',
       alert.type,
       alert.details?.executionTime || 0,
       alert.details?.threshold || 0,
-      alert.severity
+      severity as 'critical' | 'warning'
     );
   }
   
@@ -300,15 +301,16 @@ export class QueryPerformanceMonitor {
     if (entry.executionTime > this.alertThresholds.slowQueryTime || entry.error) {
       try {
         wsService.broadcast({
-          type: 'query.performance_update',
-          queryId: entry.id,
-          executionTime: entry.executionTime,
-          isSlowQuery: entry.executionTime > this.alertThresholds.slowQueryTime,
-          hasError: !!entry.error,
+          type: 'system.performance_warning',
+          value: entry.executionTime,
+          component: 'database',
+          metric: 'query_time',
+          threshold: this.alertThresholds.slowQueryTime,
+          severity: entry.executionTime > this.alertThresholds.criticalQueryTime ? 'critical' as const : 'warning' as const,
           timestamp: new Date()
         });
       } catch (error) {
-        Logger.error('Failed to broadcast performance update', 'QUERY_MONITOR', { error });
+        logger.error('Failed to broadcast performance update', 'QUERY_MONITOR', { error });
       }
     }
   }
@@ -517,7 +519,7 @@ export class QueryPerformanceMonitor {
     this.performanceHistory = this.performanceHistory.filter(entry => entry.timestamp > cutoff);
     
     if (this.performanceHistory.length < originalSize) {
-      Logger.debug('Performance history cleanup', 'QUERY_MONITOR', {
+      logger.debug('Performance history cleanup', 'QUERY_MONITOR', {
         removed: originalSize - this.performanceHistory.length,
         remaining: this.performanceHistory.length
       });

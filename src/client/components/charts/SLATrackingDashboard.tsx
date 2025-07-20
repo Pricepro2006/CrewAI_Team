@@ -183,6 +183,7 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
               if (tooltipItems.length > 0) {
                 const priorityIndex = tooltipItems[0].dataIndex;
                 const priority = priorityBreakdown[priorityIndex];
+                if (!priority) return [];
                 const total = priority.onTrack + priority.atRisk + priority.overdue;
                 const avgHours = (priority.averageTime / (1000 * 60 * 60)).toFixed(1);
                 
@@ -235,7 +236,10 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
     if (onDrillDown && elements.length > 0) {
       const elementIndex = elements[0].index;
       const statuses = ['onTrack', 'atRisk', 'overdue'] as const;
-      onDrillDown('All', statuses[elementIndex]);
+      const status = statuses[elementIndex];
+      if (status) {
+        onDrillDown('All', status);
+      }
     }
   };
 
@@ -243,9 +247,15 @@ export const SLATrackingDashboard: React.FC<SLATrackingDashboardProps> = ({
     if (onDrillDown && elements.length > 0) {
       const elementIndex = elements[0].dataIndex;
       const datasetIndex = elements[0].datasetIndex;
-      const priority = priorityBreakdown[elementIndex].priority;
-      const statuses = ['onTrack', 'atRisk', 'overdue'] as const;
-      onDrillDown(priority, statuses[datasetIndex]);
+      const priorityData = priorityBreakdown[elementIndex];
+      if (priorityData) {
+        const priority = priorityData.priority;
+        const statuses = ['onTrack', 'atRisk', 'overdue'] as const;
+        const status = statuses[datasetIndex];
+        if (status) {
+          onDrillDown(priority, status);
+        }
+      }
     }
   };
 

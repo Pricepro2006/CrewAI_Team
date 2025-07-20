@@ -2,7 +2,7 @@
  * Confidence scoring profiles for different use cases
  * Allows users to select between conservative, balanced, or permissive settings
  */
-import { ConfidenceConfig } from "../core/rag/confidence/types";
+import type { ConfidenceConfig } from "../core/rag/confidence/types";
 export interface ConfidenceProfile {
     name: string;
     description: string;

@@ -177,7 +177,7 @@ export class EmailStorageService {
         
         // For transaction method
         if (prop === 'transaction') {
-          return (fn: Function) => {
+          return (fn: (...params: any[]) => unknown) => {
             return (...args: any[]) => {
               return pool.execute(db => {
                 const transaction = db.transaction(fn);
@@ -1038,7 +1038,7 @@ export class EmailStorageService {
         WHERE email_id = ?
       `);
       
-      const transaction = this.db.transaction((updates: typeof updates) => {
+      const transaction = this.db.transaction((updates: Array<{emailId: string, status: string}>) => {
         for (const update of updates) {
           updateStmt.run(update.status, update.emailId);
         }
@@ -1052,7 +1052,7 @@ export class EmailStorageService {
           wsService.broadcastEmailSLAAlert(
             broadcast.emailId,
             broadcast.workflow,
-            broadcast.priority,
+            broadcast.priority as "Critical" | "High" | "Medium" | "Low",
             broadcast.status,
             broadcast.timeRemaining,
             broadcast.overdueDuration
@@ -2028,7 +2028,7 @@ export class EmailStorageService {
     }
   }
 
-  async close(): void {
+  async close(): Promise<void> {
     // Stop SLA monitoring
     this.stopSLAMonitoring();
     

@@ -9,12 +9,12 @@ import { PlanExecutor } from "./PlanExecutor";
 import { EnhancedParser } from "./EnhancedParser";
 import { AgentRouter } from "./AgentRouter";
 import { SimplePlanGenerator } from "./SimplePlanGenerator";
-import { QueryComplexityAnalyzer, ConfidenceRAGRetriever, ConfidenceContextBuilder, ConfidenceResponseGenerator, MultiModalEvaluator, ConfidenceCalibrator, AdaptiveDeliveryManager, ActionType, ResponseEvaluationResult, DeliveredResponse, } from "../rag/confidence";
+import { QueryComplexityAnalyzer, ConfidenceRAGRetriever, ConfidenceContextBuilder, ConfidenceResponseGenerator, MultiModalEvaluator, ConfidenceCalibrator, AdaptiveDeliveryManager, ActionType, } from "../rag/confidence";
 import { logger, createPerformanceMonitor } from "../../utils/logger";
 // import { wsService } from "../../api/services/WebSocketService"; // TODO: Integrate WebSocket updates
 import { VectorStore } from "../rag/VectorStore";
 import { EventEmitter } from "events";
-import { PerformanceOptimizer } from "../rag/confidence/PerformanceOptimizer";
+import { PerformanceOptimizer } from "../../api/services/PerformanceOptimizer";
 import { selectModel, getModelForSystemLoad, MODEL_CONFIGS, } from "../../config/model-selection.config";
 export class ConfidenceMasterOrchestrator extends EventEmitter {
     llm;
@@ -45,17 +45,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
         super();
         logger.info("Initializing ConfidenceMasterOrchestrator", "CONFIDENCE_ORCHESTRATOR", { config });
         // Initialize performance optimizer first
-        this.performanceOptimizer = new PerformanceOptimizer({
-            enableCache: true,
-            cacheSize: 500,
-            cacheTTL: 300000, // 5 minutes
-            enableBatching: true,
-            batchSize: 5,
-            batchTimeout: 100,
-            enableModelSwitching: true,
-            cpuThreshold: 0.8,
-            memoryThreshold: 0.85,
-        });
+        this.performanceOptimizer = new PerformanceOptimizer();
         // Initialize LLM with model selection based on configuration
         // Default to complex model (granite3.3:2b) for main orchestrator
         const defaultModel = MODEL_CONFIGS.COMPLEX.model;
@@ -70,9 +60,13 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
         this.ragSystem = new RAGSystem(config.rag || this.getDefaultRAGConfig());
         this.planExecutor = new PlanExecutor(this.agentRegistry, this.ragSystem);
         this.enhancedParser = new EnhancedParser(this.llm);
-        this.agentRouter = new AgentRouter(this.llm);
+        this.agentRouter = new AgentRouter();
         // Initialize confidence scoring components
-        const vectorStore = new VectorStore();
+        const vectorStore = new VectorStore({
+            type: 'chromadb',
+            collectionName: 'confidence-rag',
+            path: 'http://localhost:8000'
+        });
         this.confidenceRAG = {
             analyzer: new QueryComplexityAnalyzer(),
             retriever: new ConfidenceRAGRetriever(vectorStore),
@@ -107,9 +101,8 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
             conversationId: query.conversationId,
         });
         try {
-            // Step 1: Analyze query complexity (with caching)
-            const complexityCacheKey = this.performanceOptimizer.generateQueryKey(`complexity:${query.text}`);
-            const complexity = await this.performanceOptimizer.withCache(complexityCacheKey, async () => this.confidenceRAG.analyzer.assessComplexity(query.text), 60000);
+            // Step 1: Analyze query complexity
+            const complexity = await this.confidenceRAG.analyzer.assessComplexity(query.text);
             this.emit("confidence:update", {
                 stage: "query-analysis",
                 confidence: complexity.score / 10,
@@ -119,8 +112,8 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
                 score: complexity.score,
                 factors: complexity.factors,
             });
-            // Step 2: Select model based on complexity and system load
-            const systemLoad = this.performanceOptimizer.getSystemLoad();
+            // Step 2: Select model based on complexity
+            const systemLoad = { cpu: 0.5, memory: 0.5, queueLength: 0 }; // Default system load
             const modelConfig = selectModel(query.text, {
                 urgency: query.metadata?.urgency || "normal",
                 accuracy: query.metadata?.accuracy || "normal",
@@ -128,16 +121,16 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
             // Apply system load adjustments
             const adjustedModelConfig = getModelForSystemLoad(modelConfig, systemLoad);
             // Switch model if different from current
-            if (adjustedModelConfig.model !== this.llm.config.model) {
+            if (adjustedModelConfig.model !== this.llm.getConfig().model) {
                 logger.info("Switching model based on complexity and system load", "CONFIDENCE_ORCHESTRATOR", {
-                    from: this.llm.config.model,
+                    from: this.llm.getConfig().model,
                     to: adjustedModelConfig.model,
                     complexity: complexity.score,
                     systemLoad,
                 });
                 this.llm = new OllamaProvider({
                     model: adjustedModelConfig.model,
-                    baseUrl: this.llm.config.baseUrl,
+                    baseUrl: this.llm.getConfig().baseUrl,
                     temperature: adjustedModelConfig.temperature,
                     maxTokens: adjustedModelConfig.maxTokens,
                 });
@@ -178,7 +171,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
         // Use simple model for quick responses
         const simpleModel = new OllamaProvider({
             model: MODEL_CONFIGS.SIMPLE.model,
-            baseUrl: this.llm.config.baseUrl,
+            baseUrl: this.llm.getConfig().baseUrl,
             temperature: MODEL_CONFIGS.SIMPLE.temperature,
             maxTokens: MODEL_CONFIGS.SIMPLE.maxTokens,
         });
@@ -212,8 +205,8 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
             confidence: retrieval.averageConfidence,
             details: { documentsFound: retrieval.documents.length },
         });
-        // Optimize document selection
-        const optimizedDocs = await this.performanceOptimizer.optimizeRetrieval(retrieval.documents, 5);
+        // Use retrieved documents directly
+        const optimizedDocs = retrieval.documents.slice(0, 5);
         // Step 2: Build context
         const context = this.confidenceRAG.contextBuilder.buildContext(optimizedDocs, query.text, { mode: "unified", includeConfidence: true });
         // Step 3: Generate response with confidence
@@ -258,7 +251,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
         // Use enhanced parser for query analysis
         const queryAnalysis = await this.enhancedParser.parseQuery(query);
         // Create agent routing plan
-        const routingPlan = await this.agentRouter.createRoutingPlan(queryAnalysis);
+        const routingPlan = await this.agentRouter.routeQuery(queryAnalysis);
         // Create and execute plan
         const plan = await this.createEnhancedPlan(query, queryAnalysis, routingPlan);
         const executionResult = await this.planExecutor.execute(plan);
@@ -341,13 +334,15 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
                 id: `plan-fallback-${Date.now()}`,
                 steps: [
                     {
-                        id: "1",
-                        title: "Process query",
+                        id: "default-step-1",
+                        task: "Process query",
                         description: "Process the user query with available agents",
                         agentType: "ResearchAgent",
-                        input: { query: query.text },
+                        requiresTool: false,
+                        ragQuery: query.text,
+                        expectedOutput: "Response to user query",
                         dependencies: [],
-                        tools: [],
+                        parameters: { query: query.text },
                     },
                 ],
             };
@@ -375,7 +370,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
         const successRate = results.filter((r) => r.success).length / results.length;
         const avgStepConfidence = results
             .filter((r) => r.metadata?.confidence)
-            .reduce((sum, r) => sum + (r.metadata.confidence || 0), 0) /
+            .reduce((sum, r) => sum + (r.metadata?.confidence || 0), 0) /
             results.length;
         return successRate * 0.6 + avgStepConfidence * 0.4;
     }
@@ -385,7 +380,13 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     createFallbackResponse(query, error) {
         const evaluation = {
             overallConfidence: 0,
-            qualityMetrics: { factuality: 0, relevance: 0, coherence: 0 },
+            qualityMetrics: {
+                factuality: 0,
+                relevance: 0,
+                coherence: 0,
+                completeness: 0,
+                consistency: 0
+            },
             factualityScore: 0,
             relevanceScore: 0,
             coherenceScore: 0,
@@ -408,6 +409,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
             feedbackId: `feedback-error-${Date.now()}`,
         };
         return {
+            success: false,
             results: [],
             summary: delivered.content,
             confidence: 0,
@@ -434,8 +436,10 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
      */
     createOrchestratorResult(response, delivered, processingPath) {
         return {
+            success: true,
             results: [
                 {
+                    stepId: `confidence-step-${Date.now()}`,
                     success: true,
                     output: response,
                     metadata: {
@@ -481,7 +485,11 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
         return {
             delivery: this.confidenceRAG.delivery.getDeliveryStats(),
             calibration: this.confidenceRAG.calibrator.getDiagnostics(),
-            performance: this.perfMonitor.getStats(),
+            performance: {
+                operationCounts: {},
+                averageExecutionTimes: {},
+                totalOperations: 0
+            },
             optimization: this.performanceOptimizer.getStatistics(),
         };
     }

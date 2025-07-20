@@ -5,6 +5,11 @@ import { logger } from '../../../utils/logger';
 // Re-export types for backward compatibility
 export * from './EmailAnalysisTypes';
 import type { Email, EmailAnalysis, EmailEntities, EmailProcessingResult } from './EmailAnalysisTypes';
+import { 
+  PRODUCTION_EMAIL_CONFIG, 
+  enhancePriorityDetection,
+  ANALYSIS_SCENARIOS 
+} from './EmailAnalysisConfig';
 
 export class EmailAnalysisAgent extends BaseAgent {
   private ollamaProvider: OllamaProvider;
@@ -66,7 +71,7 @@ export class EmailAnalysisAgent extends BaseAgent {
     super(
       'EmailAnalysisAgent',
       'Specializes in analyzing and categorizing TD SYNNEX email communications',
-      'qwen3:0.6b' // Start with lightweight model
+      PRODUCTION_EMAIL_CONFIG.primaryModel // Use production-tested model
     );
     
     this.ollamaProvider = new OllamaProvider({
@@ -139,7 +144,7 @@ export class EmailAnalysisAgent extends BaseAgent {
     const quickAnalysis = await this.quickCategorize(email);
     
     // Stage 2: Deep analysis if confidence is low
-    if (quickAnalysis.confidence < 0.8) {
+    if (quickAnalysis.confidence && quickAnalysis.confidence < 0.8) {
       const deepAnalysis = await this.deepAnalyze(email);
       return this.mergeAnalyses(quickAnalysis, deepAnalysis);
     }
@@ -156,14 +161,19 @@ export class EmailAnalysisAgent extends BaseAgent {
     // Stage 6: Generate summary
     const summary = await this.generateSummary(email);
     
+    // Apply TD SYNNEX-specific priority rules
+    const modelPriority = quickAnalysis.priority || 'Medium';
+    const enhancedPriority = enhancePriorityDetection(email, modelPriority);
+    
     const analysis: EmailAnalysis = {
-      categories: quickAnalysis.categories,
-      priority: quickAnalysis.priority,
+      categories: quickAnalysis.categories || { workflow: [], priority: enhancedPriority.priority, intent: 'FYI', urgency: 'No Rush' },
+      priority: enhancedPriority.priority as 'Critical' | 'High' | 'Medium' | 'Low',
       entities,
       workflowState,
       suggestedActions,
-      confidence: quickAnalysis.confidence,
-      summary
+      confidence: Math.max(quickAnalysis.confidence || 0.5, enhancedPriority.confidence),
+      summary,
+      prioritySource: enhancedPriority.source as 'pattern-rule' | 'workflow-rule' | 'model' // Track how priority was determined
     };
     
     // Cache the result
@@ -231,9 +241,9 @@ Analyze:
 Provide detailed categorization with high confidence.`;
 
     try {
-      // Create a new provider instance with different model
+      // Create a new provider instance with quality-focused model
       const deepProvider = new OllamaProvider({
-        model: 'granite3.3:2b',
+        model: ANALYSIS_SCENARIOS.qualityFocus.primaryModel,
         baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
       });
       
@@ -455,9 +465,9 @@ Summary:`;
     
     const categories = {
       workflow: [] as string[],
-      priority: 'Medium' as const,
-      intent: 'FYI' as const,
-      urgency: 'No Rush' as const
+      priority: 'Medium' as 'Critical' | 'High' | 'Medium' | 'Low',
+      intent: 'FYI' as 'Action Required' | 'FYI' | 'Request' | 'Update',
+      urgency: 'No Rush' as 'Immediate' | '24 Hours' | '72 Hours' | 'No Rush'
     };
     
     // Workflow detection

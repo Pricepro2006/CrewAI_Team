@@ -6,11 +6,12 @@ import {
   getSortedRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
-  ColumnDef,
-  SortingState,
-  ColumnFiltersState,
-  VisibilityState,
-  RowSelectionState,
+  type ColumnDef,
+  type SortingState,
+  type ColumnFiltersState,
+  type VisibilityState,
+  type RowSelectionState,
+  type Table as TanstackTable,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -75,10 +76,10 @@ export function EmailTable({
     () => [
       {
         id: 'select',
-        header: ({ table }) => (
+        header: ({ table }: { table: TanstackTable<EmailRecord> }) => (
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            onCheckedChange={(value: boolean) => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
             className="translate-y-[2px]"
           />
@@ -86,7 +87,7 @@ export function EmailTable({
         cell: ({ row }) => (
           <Checkbox
             checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
             aria-label="Select row"
             className="translate-y-[2px]"
           />
@@ -193,7 +194,7 @@ export function EmailTable({
       // Call external sort handler if provided
       if (onSort && typeof updater === 'function') {
         const newSorting = updater(sorting);
-        if (newSorting.length > 0) {
+        if (newSorting.length > 0 && newSorting[0]) {
           const { id, desc } = newSorting[0];
           onSort(id as SortableColumn, desc ? 'desc' : 'asc');
         }
@@ -208,7 +209,8 @@ export function EmailTable({
         const newSelection = updater(rowSelection);
         const selectedIds = Object.keys(newSelection)
           .filter((key) => newSelection[key])
-          .map((index) => emails[parseInt(index)].id);
+          .map((index) => emails[parseInt(index)]?.id)
+          .filter((id): id is string => id !== undefined);
         onEmailsSelect(selectedIds);
       }
     },
@@ -329,7 +331,7 @@ export function EmailTable({
                     'hover:bg-muted/50',
                     row.original.isRead === false && 'font-semibold'
                   )}
-                  onClick={(e) => handleRowClick(row.original, e)}
+                  onClick={(e: React.MouseEvent) => handleRowClick(row.original, e)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} style={{ width: cell.column.getSize() }}>

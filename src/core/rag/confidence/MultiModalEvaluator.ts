@@ -4,10 +4,10 @@
  */
 
 import { 
-  ResponseEvaluationResult, 
-  ScoredDocument, 
-  TokenConfidence, 
-  EvaluationMetrics,
+  type ResponseEvaluationResult, 
+  type ScoredDocument, 
+  type TokenConfidence, 
+  type EvaluationMetrics,
   ActionType 
 } from './types.js';
 import { RelevanceScorer } from './evaluators/RelevanceScorer.js';

@@ -5,7 +5,7 @@
 set -e
 
 CREWAI_DIR="/home/pricepro2006/CrewAI_Team"
-MASTER_KB="/home/pricepro2006/master_knowledge_base"
+MASTER_KB="$HOME/master_knowledge_base"
 RAG_DIR="$MASTER_KB/CrewAI_Team/rag_optimized"
 
 echo "🤖 RAG System Optimization Script"

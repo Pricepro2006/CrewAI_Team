@@ -48,3 +48,13 @@ coverage/
 *.tmp
 *.temp
 .cache/
+PHASE*_PROGRESS.md
+.coderabbit*
+*.log
+.*test*
+*mock*
+*irrigation*
+# Miscellaneous
+*.bak
+*.orig
+*/test/*

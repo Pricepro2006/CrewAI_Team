@@ -1,8 +1,8 @@
-import {
+import type {
   BaseAgent,
-  type AgentFactory,
-  type AgentPoolConfig,
-  type AgentStatus,
+  AgentFactory,
+  AgentPoolConfig,
+  AgentStatus,
 } from "../base/AgentTypes";
 import { ResearchAgent } from "../specialized/ResearchAgent";
 import { CodeAgent } from "../specialized/CodeAgent";

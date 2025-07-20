@@ -1,6 +1,6 @@
-import { BusinessResponseValidator, ValidationResult } from '../BusinessResponseValidator.js';
-import { FallbackSearchManager, FallbackSearchOptions } from './FallbackSearchManager.js';
-import { UserFeedbackCollector, UserFeedback } from './UserFeedbackCollector.js';
+import { BusinessResponseValidator, type ValidationResult } from '../BusinessResponseValidator.js';
+import { FallbackSearchManager, type FallbackSearchOptions } from './FallbackSearchManager.js';
+import { UserFeedbackCollector, type UserFeedback } from './UserFeedbackCollector.js';
 
 export interface IntegratedValidationOptions {
   enableFallback?: boolean;

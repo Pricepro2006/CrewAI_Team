@@ -113,8 +113,28 @@ export interface EmailWithAnalysis extends Email {
 }
 export declare class EmailStorageService {
     private db;
+    private connectionPool?;
     private slaMonitoringInterval;
-    constructor();
+    private lazyLoader;
+    private useConnectionPool;
+    constructor(dbPath?: string, enableConnectionPool?: boolean);
+    /**
+     * Create a proxy database object that uses the connection pool
+     * This provides compatibility with existing code that expects a db object
+     */
+    private createPooledDbProxy;
+    /**
+     * Initialize performance monitoring for database operations
+     */
+    private initializePerformanceMonitoring;
+    /**
+     * Execute optimized database query with performance monitoring
+     */
+    private executeOptimizedQuery;
+    /**
+     * Execute cached query with performance optimization
+     */
+    private executeCachedQuery;
     private initializeDatabase;
     private seedWorkflowPatterns;
     storeEmail(email: Email, analysis: EmailAnalysisResult): Promise<void>;
@@ -131,6 +151,196 @@ export declare class EmailStorageService {
     checkSLAStatus(): Promise<void>;
     startSLAMonitoring(intervalMs?: number): void;
     stopSLAMonitoring(): void;
-    close(): void;
+    /**
+     * Create email record from IEMS data
+     */
+    createEmail(emailData: {
+        messageId: string;
+        emailAlias: string;
+        requestedBy: string;
+        subject: string;
+        summary: string;
+        status: 'red' | 'yellow' | 'green';
+        statusText: string;
+        workflowState: 'START_POINT' | 'IN_PROGRESS' | 'COMPLETION';
+        workflowType?: string;
+        priority?: 'Critical' | 'High' | 'Medium' | 'Low';
+        receivedDate: Date;
+        hasAttachments?: boolean;
+        isRead?: boolean;
+        body?: string;
+        entities?: any[];
+        recipients?: any[];
+    }): Promise<string>;
+    /**
+     * Update email status with audit trail
+     */
+    updateEmailStatus(emailId: string, newStatus: 'red' | 'yellow' | 'green', newStatusText?: string, performedBy?: string): Promise<void>;
+    /**
+     * Create audit log entry
+     */
+    createAuditLog(auditData: {
+        entityType: string;
+        entityId: string;
+        action: string;
+        oldValues: Record<string, any>;
+        newValues: Record<string, any>;
+        performedBy: string;
+    }): Promise<void>;
+    /**
+     * Batch load emails by IDs to avoid N+1 queries
+     * This is a performance optimization method for loading multiple emails at once
+     */
+    batchLoadEmailsWithAnalysis(emailIds: string[]): Promise<Map<string, EmailWithAnalysis>>;
+    /**
+     * Get emails for table view with filtering, sorting, pagination (Performance Optimized)
+     * Fixed SQL injection vulnerabilities
+     */
+    getEmailsForTableView(options: {
+        page?: number;
+        pageSize?: number;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+        filters?: {
+            status?: string[];
+            emailAlias?: string[];
+            workflowState?: string[];
+            priority?: string[];
+            dateRange?: {
+                start: string;
+                end: string;
+            };
+        };
+        search?: string;
+        refreshKey?: number;
+    }): Promise<{
+        emails: Array<{
+            id: string;
+            email_alias: string;
+            requested_by: string;
+            subject: string;
+            summary: string;
+            status: string;
+            status_text: string;
+            workflow_state: string;
+            priority: string;
+            received_date: string;
+            is_read: boolean;
+            has_attachments: boolean;
+        }>;
+        totalCount: number;
+        totalPages: number;
+        fromCache?: boolean;
+        performanceMetrics?: {
+            queryTime: number;
+            cacheHit: boolean;
+            optimizationGain: number;
+        };
+    }>;
+    /**
+     * Get emails for table view using lazy loading (Performance Optimized for Large Datasets)
+     * Fixed SQL injection vulnerabilities
+     */
+    getEmailsForTableViewLazy(options: {
+        startIndex?: number;
+        chunkSize?: number;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+        filters?: {
+            status?: string[];
+            emailAlias?: string[];
+            workflowState?: string[];
+            priority?: string[];
+            dateRange?: {
+                start: string;
+                end: string;
+            };
+        };
+        search?: string;
+    }): Promise<{
+        data: Array<{
+            id: string;
+            email_alias: string;
+            requested_by: string;
+            subject: string;
+            summary: string;
+            status: string;
+            status_text: string;
+            workflow_state: string;
+            priority: string;
+            received_date: string;
+            is_read: boolean;
+            has_attachments: boolean;
+        }>;
+        startIndex: number;
+        endIndex: number;
+        isFromCache: boolean;
+        totalItems?: number;
+    }>;
+    /**
+     * Get email dashboard statistics
+     */
+    getDashboardStats(): Promise<{
+        totalEmails: number;
+        criticalCount: number;
+        inProgressCount: number;
+        completedCount: number;
+        statusDistribution: Record<string, number>;
+    }>;
+    private validateEmailData;
+    /**
+     * Enhanced column name sanitization to prevent SQL injection
+     * Uses a whitelist approach with proper mapping
+     */
+    private getSortColumn;
+    /**
+     * @deprecated Use getSortColumn instead
+     */
+    private sanitizeColumnName;
+    private extractIntent;
+    private mapStatusToUrgency;
+    private mapStatusToWorkflowState;
+    private mapWorkflowToStatus;
+    private getStatusText;
+    private extractEntitiesOfType;
+    /**
+     * Get comprehensive performance statistics
+     */
+    getPerformanceMetrics(): Promise<{
+        database: any;
+        cache: any;
+        lazyLoader: any;
+        recommendations: string[];
+    }>;
+    /**
+     * Get detailed performance report
+     */
+    getDetailedPerformanceReport(): Promise<any>;
+    /**
+     * Clear all performance caches
+     */
+    clearPerformanceCaches(): Promise<void>;
+    /**
+     * Preload adjacent chunks for smooth scrolling
+     */
+    preloadAdjacentChunks(currentIndex: number, options: {
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+        filters?: any;
+        search?: string;
+    }): Promise<void>;
+    /**
+     * Optimize database queries and rebuild indexes if needed
+     */
+    optimizeDatabase(): Promise<{
+        indexesRebuilt: number;
+        vacuumCompleted: boolean;
+        optimizationRecommendations: string[];
+    }>;
+    close(): Promise<void>;
+    /**
+     * Get connection pool statistics (if using pool)
+     */
+    getPoolStats(): any;
 }
 //# sourceMappingURL=EmailStorageService.d.ts.map

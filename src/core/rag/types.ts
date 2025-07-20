@@ -18,12 +18,16 @@ export interface RAGConfig {
 }
 
 export interface VectorStoreConfig {
-  type: 'chromadb' | 'pinecone' | 'weaviate' | 'qdrant';
+  type: 'chromadb' | 'pinecone' | 'weaviate' | 'qdrant' | 'mcp-vectorize';
   path?: string;
   baseUrl?: string;
   apiKey?: string;
   collectionName: string;
   dimension?: number;
+  // Pinecone specific
+  indexName?: string;
+  // MCP Vectorize specific
+  pipelineId?: string;
 }
 
 export interface ChunkingConfig {

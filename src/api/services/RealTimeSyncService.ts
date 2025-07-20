@@ -1,8 +1,8 @@
 import { EventEmitter } from 'events';
-import * as WebSocket from 'ws';
-import { WebSocketService } from './WebSocketService';
-import { EmailStorageService } from './EmailStorageService';
-import { IEMSDataFlowService } from './IEMSDataFlowService';
+import type * as WebSocket from 'ws';
+import type { WebSocketService } from './WebSocketService';
+import type { EmailStorageService } from './EmailStorageService';
+import type { IEMSDataFlowService } from './IEMSDataFlowService';
 import { logger } from '../../utils/logger';
 import { z } from 'zod';
 
@@ -115,7 +115,7 @@ export class RealTimeSyncService extends EventEmitter {
     this.subscriptions.set(id, subscription);
     this.statistics.activeSubscriptions = this.subscriptions.size;
     
-    logger.info(`New sync subscription created: ${id}`, { events, filter });
+    logger.info(`New sync subscription created: ${id}`, 'REAL_TIME_SYNC', { events, filter });
     
     return id;
   }
@@ -147,7 +147,7 @@ export class RealTimeSyncService extends EventEmitter {
     try {
       SyncEventSchema.parse(fullEvent);
     } catch (error) {
-      logger.error('Invalid sync event:', error);
+      logger.error('Invalid sync event', 'REAL_TIME_SYNC', {}, error instanceof Error ? error : new Error(String(error)));
       return;
     }
 
@@ -181,7 +181,7 @@ export class RealTimeSyncService extends EventEmitter {
         this.statistics.lastEventTime = new Date();
       }
     } catch (error) {
-      logger.error('Error processing event queue:', error);
+      logger.error('Error processing event queue', 'REAL_TIME_SYNC', {}, error instanceof Error ? error : new Error(String(error)));
       this.statistics.errorCount++;
     } finally {
       this.isProcessing = false;
@@ -196,7 +196,7 @@ export class RealTimeSyncService extends EventEmitter {
    * Process a single event
    */
   private async processEvent(event: SyncEvent): Promise<void> {
-    logger.debug(`Processing sync event: ${event.type}`, event);
+    logger.debug(`Processing sync event: ${event.type}`, 'REAL_TIME_SYNC', event);
 
     // Buffer events for batch processing
     if (this.shouldBufferEvent(event)) {
@@ -210,7 +210,7 @@ export class RealTimeSyncService extends EventEmitter {
         try {
           subscription.callback(event);
         } catch (error) {
-          logger.error(`Subscription callback error: ${subscription.id}`, error);
+          logger.error(`Subscription callback error: ${subscription.id}`, 'REAL_TIME_SYNC', {}, error instanceof Error ? error : new Error(String(error)));
         }
       }
     }
@@ -277,7 +277,7 @@ export class RealTimeSyncService extends EventEmitter {
         timestamp: new Date().toISOString(),
         source: 'sync-service',
         data: {
-          eventType: events[0].type,
+          eventType: events[0]?.type || 'unknown',
           count: events.length,
           events: events
         },
@@ -324,7 +324,7 @@ export class RealTimeSyncService extends EventEmitter {
       event: event
     };
 
-    this.wsService.broadcastEmailUpdate(wsMessage);
+    this.wsService.broadcastEmailBulkUpdate(event.type, [], { successful: 1, failed: 0, total: 1 });
   }
 
   /**
@@ -359,7 +359,7 @@ export class RealTimeSyncService extends EventEmitter {
       return;
     }
 
-    logger.info('Processing sync request', event.metadata);
+    logger.info('Processing sync request', 'REAL_TIME_SYNC', event.metadata);
 
     // Publish sync started event
     await this.publishEvent({
@@ -411,7 +411,7 @@ export class RealTimeSyncService extends EventEmitter {
         metadata: event.metadata
       });
     } catch (error) {
-      logger.error('Failed to process analysis:', error);
+      logger.error('Failed to process analysis', 'REAL_TIME_SYNC', {}, error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -437,7 +437,7 @@ export class RealTimeSyncService extends EventEmitter {
         performedBy: userId || 'system'
       });
     } catch (error) {
-      logger.error('Failed to update status:', error);
+      logger.error('Failed to update status', 'REAL_TIME_SYNC', {}, error instanceof Error ? error : new Error(String(error)));
     }
   }
 

@@ -29,7 +29,7 @@ let userService: UserService;
 async function initializeServices() {
   if (!masterOrchestrator) {
     masterOrchestrator = new MasterOrchestrator({
-      ollamaUrl: ollamaConfig.main.baseUrl!,
+      ollamaUrl: ollamaConfig.baseUrl,
       rag: {
         vectorStore: {
           type: "chromadb",
@@ -214,6 +214,7 @@ export async function createContext({ req, res }: CreateExpressContextOptions) {
     requestId: Math.random().toString(36).substring(7),
     timestamp: new Date(),
     batchId: undefined as string | undefined, // Will be set by batch middleware when needed
+    validatedInput: undefined as unknown, // Will be set by input validation middleware when needed
     ...services,
   };
 }

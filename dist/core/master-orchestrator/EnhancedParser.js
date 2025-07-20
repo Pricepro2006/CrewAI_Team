@@ -1,4 +1,3 @@
-import { OllamaProvider } from "../llm/OllamaProvider";
 import { logger } from "../../utils/logger";
 /**
  * Enhanced parser for structured query analysis

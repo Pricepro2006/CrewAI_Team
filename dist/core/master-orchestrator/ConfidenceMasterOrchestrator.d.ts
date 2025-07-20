@@ -4,7 +4,7 @@
  */
 import { AgentRegistry } from "../agents/registry/AgentRegistry";
 import { RAGSystem } from "../rag/RAGSystem";
-import { DeliveredResponse } from "../rag/confidence";
+import { type DeliveredResponse } from "../rag/confidence";
 import type { ExecutionResult, Query, MasterOrchestratorConfig } from "./types";
 import { EventEmitter } from "events";
 export interface ConfidenceOrchestratorResult extends ExecutionResult {
@@ -75,10 +75,20 @@ export declare class ConfidenceMasterOrchestrator extends EventEmitter {
      * Get performance statistics
      */
     getPerformanceStats(): {
-        delivery: any;
-        calibration: any;
-        performance: any;
-        optimization: any;
+        delivery: Record<string, any>;
+        calibration: Record<string, any>;
+        performance: {
+            operationCounts: {};
+            averageExecutionTimes: {};
+            totalOperations: number;
+        };
+        optimization: {
+            cacheSize: number;
+            cacheHitRate: number;
+            avgQueryTime: number;
+            slowQueriesCount: number;
+            totalOptimizationRecommendations: number;
+        };
     };
     /**
      * Load calibration parameters

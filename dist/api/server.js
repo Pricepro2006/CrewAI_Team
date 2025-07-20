@@ -9,6 +9,7 @@ import { appRouter } from "./trpc/router";
 import { WebSocketServer } from "ws";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import appConfig from "../config/app.config";
+import ollamaConfig from "../config/ollama.config";
 import { apiRateLimiter } from "./middleware/rateLimiter";
 import { wsService } from "./services/WebSocketService";
 import { logger } from "../utils/logger";
@@ -37,7 +38,7 @@ app.get("/health", async (_req, res) => {
         // Check Ollama connection with timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const ollamaResponse = await fetch(`${appConfig.ollama?.baseUrl || "http://localhost:11434"}/api/tags`, {
+        const ollamaResponse = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
             signal: controller.signal,
         });
         clearTimeout(timeoutId);
@@ -53,18 +54,14 @@ app.get("/health", async (_req, res) => {
     }
     try {
         // Check ChromaDB connection (if configured)
-        if (appConfig.rag?.vectorStore?.baseUrl) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
-            const chromaResponse = await fetch(`${appConfig.rag.vectorStore.baseUrl}/api/v1/heartbeat`, {
-                signal: controller.signal,
-            });
-            clearTimeout(timeoutId);
-            services.chromadb = chromaResponse.ok ? "connected" : "disconnected";
-        }
-        else {
-            services.chromadb = "not_configured";
-        }
+        const chromaUrl = process.env.CHROMA_URL || "http://localhost:8001";
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const chromaResponse = await fetch(`${chromaUrl}/api/v1/heartbeat`, {
+            signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        services.chromadb = chromaResponse.ok ? "connected" : "disconnected";
     }
     catch (error) {
         if (error.name === "AbortError") {

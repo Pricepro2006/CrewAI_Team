@@ -123,7 +123,7 @@ export const StakeholderFeedbackPortal: React.FC = () => {
       const date = new Date();
       date.setDate(date.getDate() - (6 - i));
       return {
-        date: date.toISOString().split('T')[0],
+        date: date.toISOString().split('T')[0] || '',
         rating: 3.5 + Math.random() * 1.5
       };
     });

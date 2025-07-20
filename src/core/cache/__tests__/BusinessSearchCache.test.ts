@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { BusinessSearchCache, CacheEntry } from '../BusinessSearchCache';
-import { ValidationResult } from '../../validators/BusinessResponseValidator';
+import type { ValidationResult } from '../../validators/BusinessResponseValidator';
 
 // Mock Redis
 jest.mock('ioredis', () => {

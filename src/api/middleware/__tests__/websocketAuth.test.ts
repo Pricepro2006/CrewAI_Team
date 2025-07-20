@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { WebSocketAuthManager, type AuthenticatedWebSocket } from "../websocketAuth";
-import { UserService } from "../../services/UserService";
+import type { UserService } from "../../services/UserService";
 import { WebSocket } from "ws";
 
 // Mock dependencies

@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 import type { WebSocket } from "ws";
 import { z } from "zod";
+import type { AuthenticatedWebSocket } from "../middleware/websocketAuth";
 export declare const WebSocketMessageSchema: z.ZodDiscriminatedUnion<"type", [z.ZodObject<{
     type: z.ZodLiteral<"agent.status">;
     agentId: z.ZodString;
@@ -477,21 +478,167 @@ export declare const WebSocketMessageSchema: z.ZodDiscriminatedUnion<"type", [z.
     workflowDistribution: Record<string, number>;
     slaCompliance: Record<string, number>;
     averageProcessingTime: number;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"email.table_data_updated">;
+    rowCount: z.ZodNumber;
+    filters: z.ZodOptional<z.ZodAny>;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "email.table_data_updated";
+    timestamp: Date;
+    rowCount: number;
+    filters?: any;
+}, {
+    type: "email.table_data_updated";
+    timestamp: Date;
+    rowCount: number;
+    filters?: any;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"email.stats_updated">;
+    stats: z.ZodObject<{
+        total: z.ZodNumber;
+        critical: z.ZodNumber;
+        inProgress: z.ZodNumber;
+        completed: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        critical: number;
+        completed: number;
+        total: number;
+        inProgress: number;
+    }, {
+        critical: number;
+        completed: number;
+        total: number;
+        inProgress: number;
+    }>;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "email.stats_updated";
+    timestamp: Date;
+    stats: {
+        critical: number;
+        completed: number;
+        total: number;
+        inProgress: number;
+    };
+}, {
+    type: "email.stats_updated";
+    timestamp: Date;
+    stats: {
+        critical: number;
+        completed: number;
+        total: number;
+        inProgress: number;
+    };
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"email.batch_created">;
+    batchId: z.ZodString;
+    successCount: z.ZodNumber;
+    errorCount: z.ZodNumber;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "email.batch_created";
+    timestamp: Date;
+    batchId: string;
+    successCount: number;
+    errorCount: number;
+}, {
+    type: "email.batch_created";
+    timestamp: Date;
+    batchId: string;
+    successCount: number;
+    errorCount: number;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"email.batch_status_updated">;
+    emailIds: z.ZodArray<z.ZodString, "many">;
+    successCount: z.ZodNumber;
+    errorCount: z.ZodNumber;
+    changedBy: z.ZodString;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "email.batch_status_updated";
+    timestamp: Date;
+    changedBy: string;
+    emailIds: string[];
+    successCount: number;
+    errorCount: number;
+}, {
+    type: "email.batch_status_updated";
+    timestamp: Date;
+    changedBy: string;
+    emailIds: string[];
+    successCount: number;
+    errorCount: number;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"email.batch_deleted">;
+    emailIds: z.ZodArray<z.ZodString, "many">;
+    successCount: z.ZodNumber;
+    errorCount: z.ZodNumber;
+    softDelete: z.ZodBoolean;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "email.batch_deleted";
+    timestamp: Date;
+    emailIds: string[];
+    successCount: number;
+    errorCount: number;
+    softDelete: boolean;
+}, {
+    type: "email.batch_deleted";
+    timestamp: Date;
+    emailIds: string[];
+    successCount: number;
+    errorCount: number;
+    softDelete: boolean;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"system.performance_warning">;
+    component: z.ZodString;
+    metric: z.ZodString;
+    value: z.ZodNumber;
+    threshold: z.ZodNumber;
+    severity: z.ZodEnum<["warning", "critical"]>;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "system.performance_warning";
+    timestamp: Date;
+    value: number;
+    component: string;
+    metric: string;
+    threshold: number;
+    severity: "critical" | "warning";
+}, {
+    type: "system.performance_warning";
+    timestamp: Date;
+    value: number;
+    component: string;
+    metric: string;
+    threshold: number;
+    severity: "critical" | "warning";
 }>]>;
 export type WebSocketMessage = z.infer<typeof WebSocketMessageSchema>;
 export declare class WebSocketService extends EventEmitter {
     private clients;
     private subscriptions;
     private healthInterval;
+    private authenticatedClients;
+    private clientPermissions;
+    private messageQueue;
+    private throttledBroadcasts;
+    private throttleTimers;
+    private performanceMetrics;
+    private readonly MAX_QUEUE_SIZE;
+    private readonly MAX_MESSAGE_HISTORY;
+    private connectionHealthChecks;
+    private retryAttempts;
     constructor();
     /**
      * Register a WebSocket client
      */
-    registerClient(clientId: string, ws: WebSocket): void;
+    registerClient(clientId: string, ws: AuthenticatedWebSocket): void;
     /**
      * Unregister a WebSocket client
      */
-    unregisterClient(clientId: string, ws: WebSocket): void;
+    unregisterClient(clientId: string, ws: AuthenticatedWebSocket): void;
     /**
      * Subscribe a client to specific message types
      */
@@ -503,7 +650,7 @@ export declare class WebSocketService extends EventEmitter {
     /**
      * Broadcast a message to all subscribed clients
      */
-    broadcast(message: WebSocketMessage): void;
+    broadcast(message: WebSocketMessage, requiredPermission?: string): void;
     /**
      * Send a message to a specific client
      */
@@ -516,6 +663,93 @@ export declare class WebSocketService extends EventEmitter {
      * Get client subscription info
      */
     getClientSubscriptions(clientId: string): string[];
+    /**
+     * Check if a client has a specific permission
+     */
+    hasPermission(clientId: string, permission: string): boolean;
+    /**
+     * Get authenticated client info
+     */
+    getAuthenticatedClient(clientId: string): AuthenticatedWebSocket | undefined;
+    /**
+     * Check if client is authenticated
+     */
+    isClientAuthenticated(clientId: string): boolean;
+    /**
+     * Force disconnect a client
+     */
+    forceDisconnectClient(clientId: string): void;
+    /**
+     * Custom throttle implementation to replace lodash
+     */
+    private createThrottle;
+    /**
+     * Setup throttled broadcast functions for high-frequency updates
+     */
+    private setupThrottledBroadcasts;
+    /**
+     * Enhanced broadcast with throttling support for high-frequency updates
+     */
+    private broadcastThrottled;
+    /**
+     * Memory cleanup routine to prevent memory leaks
+     */
+    private startMemoryCleanup;
+    /**
+     * Start performance monitoring with alerts
+     */
+    private startPerformanceMonitoring;
+    /**
+     * Clean up client data completely
+     */
+    private cleanupClient;
+    /**
+     * Calculate average response time across connections
+     */
+    private calculateAverageResponseTime;
+    /**
+     * Enhanced client registration with health monitoring
+     */
+    registerClientEnhanced(clientId: string, ws: WebSocket): void;
+    /**
+     * Handle connection errors with retry logic
+     */
+    private handleConnectionError;
+    /**
+     * Get enhanced performance metrics
+     */
+    getPerformanceMetrics(): typeof this.performanceMetrics & {
+        connectionStats: ReturnType<WebSocketService['getConnectionStats']>;
+    };
+    /**
+     * Broadcast table data updates with throttling
+     */
+    broadcastEmailTableDataUpdated(rowCount: number, filters?: any): void;
+    /**
+     * Broadcast dashboard stats updates with throttling
+     */
+    broadcastEmailStatsUpdated(stats: {
+        total: number;
+        critical: number;
+        inProgress: number;
+        completed: number;
+    }): void;
+    /**
+     * Broadcast batch creation events
+     */
+    broadcastEmailBatchCreated(batchId: string, successCount: number, errorCount: number): void;
+    /**
+     * Broadcast batch status updates
+     */
+    broadcastEmailBatchStatusUpdated(emailIds: string[], successCount: number, errorCount: number, changedBy: string): void;
+    /**
+     * Broadcast batch deletion events
+     */
+    broadcastEmailBatchDeleted(emailIds: string[], successCount: number, errorCount: number, softDelete: boolean): void;
+    /**
+     * Broadcast performance warnings
+     */
+    broadcastPerformanceWarning(component: string, metric: string, value: number, threshold: number, severity: "warning" | "critical"): void;
     broadcastAgentStatus(agentId: string, status: "idle" | "busy" | "error" | "terminated"): void;
     broadcastAgentTask(agentId: string, taskId: string, status: "started" | "completed" | "failed", result?: any, error?: string): void;
     broadcastPlanUpdate(planId: string, status: "created" | "executing" | "completed" | "failed" | "replanned", progress?: {
@@ -566,7 +800,12 @@ export declare class WebSocketService extends EventEmitter {
     getConnectionStats(): {
         totalClients: number;
         totalConnections: number;
+        authenticatedClients: number;
         subscriptionStats: Record<string, number>;
+        authStats: {
+            byRole: Record<string, number>;
+            byPermission: Record<string, number>;
+        };
     };
     broadcastEmailAnalyzed(emailId: string, workflow: string, priority: "Critical" | "High" | "Medium" | "Low", actionSummary: string, confidence: number, slaStatus: "on-track" | "at-risk" | "overdue", state: string): void;
     broadcastEmailStateChanged(emailId: string, oldState: string, newState: string, changedBy?: string): void;

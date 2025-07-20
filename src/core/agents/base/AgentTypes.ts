@@ -1,4 +1,4 @@
-import { BaseTool } from '../../tools/base/BaseTool';
+import type { BaseTool } from '../../tools/base/BaseTool';
 import type { Document } from '../../shared/types';
 
 export interface AgentCapability {

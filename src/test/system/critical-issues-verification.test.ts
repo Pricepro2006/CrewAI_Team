@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, type ChildProcess } from 'child_process';
 import axios from 'axios';
 import { MasterOrchestrator } from '@/core/master-orchestrator/MasterOrchestrator';
 import { OllamaProvider } from '@/core/llm/OllamaProvider';

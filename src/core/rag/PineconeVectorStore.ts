@@ -49,7 +49,6 @@ export class PineconeVectorStore implements IVectorStore {
       values: doc.embedding || [], // Embeddings would be generated
       metadata: {
         content: doc.content,
-        sourceId: doc.metadata.sourceId,
         ...doc.metadata
       }
     }));

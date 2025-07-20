@@ -2,7 +2,7 @@
  * QueryComplexityAnalyzer - Analyzes query complexity for confidence scoring
  * Determines routing strategy based on query characteristics
  */
-import { QueryComplexity } from './types.js';
+import type { QueryComplexity } from './types.js';
 export declare class QueryComplexityAnalyzer {
     private complexityCache;
     private readonly cacheSize;

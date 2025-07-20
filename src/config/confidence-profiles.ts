@@ -3,7 +3,7 @@
  * Allows users to select between conservative, balanced, or permissive settings
  */
 
-import { ConfidenceConfig } from "../core/rag/confidence/types";
+import type { ConfidenceConfig } from "../core/rag/confidence/types";
 
 export interface ConfidenceProfile {
   name: string;
@@ -175,10 +175,10 @@ export const CONFIDENCE_PROFILES: Record<string, ConfidenceProfile> = {
 export function getConfidenceProfile(
   profileName: string = "balanced",
 ): ConfidenceProfile {
-  const profile = CONFIDENCE_PROFILES[profileName];
+  const profile = CONFIDENCE_PROFILES[profileName as keyof typeof CONFIDENCE_PROFILES];
   if (!profile) {
     console.warn(`Unknown confidence profile: ${profileName}, using balanced`);
-    return CONFIDENCE_PROFILES.balanced;
+    return CONFIDENCE_PROFILES.balanced!;
   }
   return profile;
 }
@@ -196,13 +196,27 @@ export function getEnvironmentProfile(): ConfidenceProfile {
 
   switch (env) {
     case "production":
-      return CONFIDENCE_PROFILES.production;
+      return CONFIDENCE_PROFILES.production || CONFIDENCE_PROFILES.balanced!;
     case "development":
-      return CONFIDENCE_PROFILES.research;
+      return CONFIDENCE_PROFILES.research || CONFIDENCE_PROFILES.balanced!;
     case "test":
-      return CONFIDENCE_PROFILES.permissive;
+      return CONFIDENCE_PROFILES.permissive || CONFIDENCE_PROFILES.balanced!;
     default:
-      return CONFIDENCE_PROFILES.balanced;
+      return CONFIDENCE_PROFILES.balanced || {
+        name: "Fallback",
+        description: "Fallback profile",
+        config: {
+          retrieval: { minimum: 0.6, preferred: 0.75 },
+          generation: { acceptable: 0.7, review: 0.4 },
+          overall: { high: 0.8, medium: 0.6, low: 0.4 }
+        },
+        complexityThresholds: { simple: 3, medium: 7 },
+        deliveryOptions: {
+          alwaysIncludeConfidence: false,
+          alwaysIncludeEvidence: false,
+          defaultWarnings: true
+        }
+      };
   }
 }
 

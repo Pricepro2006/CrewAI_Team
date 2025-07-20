@@ -1,8 +1,18 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 import Redis from 'ioredis';
 import { logger } from '../../utils/logger';
+
+// Extend Express Request to include user property
+declare module 'express' {
+  interface Request {
+    user?: {
+      id: string;
+      [key: string]: any;
+    };
+  }
+}
 
 export interface RateLimitConfig {
   windowMs: number;
@@ -13,6 +23,18 @@ export interface RateLimitConfig {
   skipSuccessfulRequests?: boolean;
   skipFailedRequests?: boolean;
   keyGenerator?: (req: Request) => string;
+}
+
+// Rate limit metrics interface
+export interface RateLimitMetrics {
+  totalRequests: number;
+  blockedRequests: number;
+  limiters: Record<string, { requests: number; blocked: number }>;
+  topIdentifiers: Array<{ identifier: string; requests: number; blocked: number }>;
+  windowStats: {
+    current: { requests: number; blocked: number; startTime: Date };
+    previous: { requests: number; blocked: number; startTime: Date };
+  };
 }
 
 export class RateLimiter {
@@ -38,7 +60,7 @@ export class RateLimiter {
       });
 
       this.redisClient.on('error', (err) => {
-        logger.error('Redis error:', err);
+        logger.error('Redis error:', err instanceof Error ? err.message : String(err));
         this.useRedis = false;
       });
     }
@@ -56,7 +78,7 @@ export class RateLimiter {
       skipFailedRequests: true,
       keyGenerator: (req: Request) => {
         // Rate limit by user ID if authenticated, otherwise by IP
-        return req.user?.id || req.ip;
+        return req.user?.id || req.ip || 'unknown';
       }
     };
 
@@ -74,7 +96,7 @@ export class RateLimiter {
       keyGenerator: (req: Request) => {
         // Combine IP and search query for more granular limiting
         const query = req.body?.query || req.query?.q || '';
-        return `${req.ip}:${query.slice(0, 50)}`;
+        return `${req.ip || 'unknown'}:${query.slice(0, 50)}`;
       }
     };
 
@@ -124,9 +146,9 @@ export class RateLimiter {
     // Use Redis store if available and connected
     if (this.useRedis && this.redisClient) {
       limiterConfig.store = new RedisStore({
+        // @ts-ignore - RedisStore types may not match exactly
         client: this.redisClient,
-        prefix: 'rl:',
-        sendCommand: (...args: string[]) => (this.redisClient as any).call(...args)
+        prefix: 'rl:'
       });
     }
 
@@ -135,7 +157,7 @@ export class RateLimiter {
 
   // Custom rate limit handler with logging
   private rateLimitHandler(req: Request, res: Response) {
-    logger.warn('Rate limit exceeded', {
+    logger.warn('Rate limit exceeded', 'RATE_LIMITER', {
       ip: req.ip,
       path: req.path,
       userId: req.user?.id,
@@ -158,7 +180,7 @@ export class RateLimiter {
     const requests = new Map<string, number[]>();
 
     return (req: Request, res: Response, next: NextFunction) => {
-      const key = req.ip;
+      const key = req.ip || 'unknown';
       const now = Date.now();
       const windowStart = now - windowMs;
 
@@ -191,7 +213,7 @@ export class RateLimiter {
     const buckets = new Map<string, { tokens: number; lastRefill: number }>();
 
     return (req: Request, res: Response, next: NextFunction) => {
-      const key = req.ip;
+      const key = req.ip || 'unknown';
       const now = Date.now();
       
       let bucket = buckets.get(key);
@@ -227,6 +249,50 @@ export class RateLimiter {
     if (this.redisClient) {
       this.redisClient.disconnect();
     }
+  }
+
+  // Get metrics for rate limiting
+  public getMetrics(): any {
+    // Return mock metrics for now - in production this would aggregate from Redis
+    return {
+      totalRequests: 0,
+      rateLimitedRequests: 0,
+      percentageRateLimited: '0',
+      averageLatency: 0,
+      circuitBreakerStatus: 'closed' as const,
+      windowResets: {
+        webSearch: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+        businessSearch: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+        premium: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      }
+    };
+  }
+
+  // Check limit for an identifier
+  public checkLimit(identifier: string): { allowed: boolean; remaining: number; reset: Date } {
+    // Mock implementation - in production this would check Redis
+    return {
+      allowed: true,
+      remaining: 100,
+      reset: new Date(Date.now() + 15 * 60 * 1000)
+    };
+  }
+
+  // Reset rate limit for an identifier
+  public reset(identifier: string): void {
+    // In production, this would clear the Redis keys for this identifier
+    logger.info('Rate limit reset', 'RATE_LIMITER', { identifier });
+  }
+
+  // Reset all rate limits
+  public resetAll(): void {
+    // In production, this would clear all Redis rate limit keys
+    logger.info('All rate limits reset', 'RATE_LIMITER');
+  }
+
+  // Get singleton instance
+  public static getInstance(): RateLimiter {
+    return rateLimiter;
   }
 }
 

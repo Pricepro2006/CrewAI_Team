@@ -1,4 +1,4 @@
-import { MaestroFramework } from "../../core/maestro/MaestroFramework";
+import type { MaestroFramework } from "../../core/maestro/MaestroFramework";
 import type { Task, TaskResult } from "../../core/maestro/types";
 export declare class TaskService {
     private maestro;

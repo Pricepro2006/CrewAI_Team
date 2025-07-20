@@ -2,7 +2,7 @@
  * Confidence Configuration for the Confidence-Scored RAG System
  * Based on 2025 best practices for confidence calibration
  */
-import { ConfidenceConfig } from "../core/rag/confidence/types";
+import type { ConfidenceConfig } from "../core/rag/confidence/types";
 /**
  * Default confidence thresholds based on research findings
  * These values are optimized for CPU-based inference on AMD Ryzen 7 PRO 7840HS
