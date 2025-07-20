@@ -1,9 +1,19 @@
-/* MainLayout.css */
+/* MainLayout.css - Dark Theme */
 .main-layout {
   display: flex;
   height: 100vh;
   width: 100vw;
-  background-color: #f0f0f0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.layout-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
 }
 
 .main-content {
@@ -11,6 +21,35 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background-color: var(--bg-primary);
+  padding: 0;
+  margin-left: 0;
+  height: 100vh;
 }
 
-/* Add any other necessary styles */
+/* Page transitions */
+.main-content > * {
+  animation: pageEnter 0.3s ease-out;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .layout-content {
+    width: 100%;
+  }
+  
+  .main-content {
+    padding: 0;
+  }
+}

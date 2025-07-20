@@ -1,0 +1,22 @@
+[MockServer] Mock TRPC server v2 running on http://localhost:3000
+[MockServer] Endpoint: chat.create
+[MockServer] Body: {
+  "0": {
+    "message": "Research the latest trends in AI agent architectures and create a summary report"
+  }
+}
+[MockServer] Stored assistant response for conversation 1752647610177
+[MockServer] Endpoint: chat.create
+[MockServer] Body: {
+  "0": {
+    "message": "Research the latest trends in AI agent architectures and create a summary report"
+  }
+}
+[MockServer] Stored assistant response for conversation 1752647667246
+[MockServer] Endpoint: chat.create
+[MockServer] Body: {
+  "0": {
+    "message": "Quick test"
+  }
+}
+[MockServer] Stored assistant response for conversation 1752647899177

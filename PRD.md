@@ -5,6 +5,12 @@
 
 The AI Agent Team Framework is a TypeScript-based, local-first multi-agent orchestration system designed to provide enterprise-grade AI capabilities without relying on external APIs or incurring usage costs. The system leverages Ollama for local LLM inference and implements a sophisticated Master Orchestrator with RAG capabilities.
 
+### Key Architecture Principles
+- **Direct SDK Integration**: No unnecessary API layers for local LLM services
+- **Optimal Performance**: Zero-latency local calls with direct memory access
+- **Type Safety**: End-to-end TypeScript with tRPC integration
+- **Local-First**: All AI operations run locally for privacy and cost control
+
 ## 2. Product Vision
 
 ### 2.1 Problem Statement
@@ -273,3 +279,34 @@ A comprehensive framework that:
 - CrewAI Architecture
 - tRPC Best Practices
 - React Performance Guide
+
+## 12. Architecture Patterns & Best Practices
+
+### 12.1 Local-First LLM Integration Standards
+1. **Direct SDK Integration Pattern**
+   ```
+   Frontend (React) → tRPC API → Backend Services → Direct Ollama SDK
+                                                 → Direct ChromaDB calls
+                                                 → Direct Agent calls
+   ```
+2. **No Unnecessary API Layers**: Avoid HTTP middleware for local services
+3. **Zero-Latency Operations**: Direct memory access for agent coordination
+4. **Connection Pooling**: Reuse connections for optimal performance
+
+### 12.2 Performance Requirements
+- **Response Time**: <5 seconds for complex multi-agent queries
+- **Concurrency**: Support 10+ concurrent conversations
+- **Memory Usage**: Efficient model loading and context management
+- **Graceful Degradation**: Fallback mechanisms when services unavailable
+
+### 12.3 Type Safety Standards
+- **End-to-End TypeScript**: Full type safety from frontend to LLM calls
+- **tRPC Integration**: Type-safe API layer for frontend-backend communication
+- **Proper Error Handling**: Typed error responses and exception handling
+- **Schema Validation**: Zod schemas for runtime type checking
+
+### 12.4 Code Quality Requirements
+- **Modular Architecture**: Clean separation of concerns
+- **Test Coverage**: Minimum 80% coverage target
+- **Security**: Comprehensive middleware stack (auth, rate limiting, CORS)
+- **Documentation**: Inline docs and comprehensive API documentation

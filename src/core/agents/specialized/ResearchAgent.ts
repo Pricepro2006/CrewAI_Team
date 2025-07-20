@@ -1,5 +1,5 @@
 import { BaseAgent } from '../base/BaseAgent';
-import { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
+import type { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
 import { WebSearchTool } from '../../tools/web/WebSearchTool';
 import { WebScraperTool } from '../../tools/web/WebScraperTool';
 
@@ -102,12 +102,18 @@ export class ResearchAgent extends BaseAgent {
     const searchTool = this.tools.get('web_search') as WebSearchTool;
     const scraperTool = this.tools.get('web_scraper') as WebScraperTool;
 
+    // Check if we have existing context that might reduce search needs
+    const hasExistingContext = context.ragDocuments && context.ragDocuments.length > 0;
+    
+    // If we have existing context, limit the search scope
+    const searchLimit = hasExistingContext ? 3 : 5;
+    
     // Execute searches
     for (const query of plan.queries) {
       if (searchTool) {
         const searchResult = await searchTool.execute({ 
           query, 
-          limit: 5 
+          limit: searchLimit 
         });
         
         if (searchResult.success && searchResult.data) {

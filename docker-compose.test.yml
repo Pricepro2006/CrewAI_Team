@@ -1,0 +1,21 @@
+services:
+  chromadb-test:
+    image: chromadb/chroma:latest
+    ports:
+      - "8001:8000" # Use different port for tests to avoid conflicts
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HTTP_PORT=8000
+    volumes:
+      - test_chroma_data:/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:8000/api/v2/version || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  test_chroma_data:
+    driver: local

@@ -1,0 +1,63 @@
+# Unsafe Any Type Usage Detection Rule
+# Detects potentially unsafe usage of 'any' type in TypeScript
+id: unsafe-any-usage
+language: TypeScript
+message: "Unsafe usage of 'any' type detected - consider using specific types"
+severity: warning
+rule:
+  any:
+    # Function parameters with any
+    - pattern: |
+        function $NAME($PARAM: any$$$) {
+          $$$
+        }
+    
+    # Variable declarations with any
+    - pattern: |
+        const $VAR: any = $$$
+    
+    # Interface properties with any
+    - pattern: |
+        interface $NAME {
+          $PROP: any$$$
+        }
+    
+    # Type assertions to any
+    - pattern: $EXPR as any
+    
+    # Array of any
+    - pattern: any[]
+
+# Exclude legitimate any usage patterns
+not:
+  any:
+    # Console methods (legitimate)
+    - inside:
+        pattern: console.$METHOD($$$)
+    
+    # Error handling (legitimate)
+    - inside:
+        pattern: |
+          catch ($ERROR: any) {
+            $$$
+          }
+    
+    # Legacy compatibility (marked)
+    - inside:
+        pattern: |
+          // @ts-ignore
+          $$$
+
+note: |
+  Consider using more specific types instead of 'any':
+  
+  Instead of:        Use:
+  - any              unknown (for truly unknown data)
+  - any[]            T[] (for arrays of specific type)
+  - param: any       param: string | number (union types)
+  - as any           proper type assertion
+  
+  For third-party libraries without types, consider:
+  - Creating type declarations
+  - Using @types packages
+  - Using generic constraints

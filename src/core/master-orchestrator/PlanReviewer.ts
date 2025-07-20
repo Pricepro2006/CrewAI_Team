@@ -1,110 +1,95 @@
-import { OllamaProvider } from '../llm/OllamaProvider';
-import { Query, Plan, ExecutionResult, ReviewResult } from './types';
+import type { Plan, ExecutionResult, ReviewResult } from "./types";
+import { logger } from "../../utils/logger";
 
 export class PlanReviewer {
-  constructor(private llm: OllamaProvider) {}
+  constructor() {
+    logger.info("PlanReviewer initialized", "REVIEWER");
+  }
 
-  async review(
-    query: Query,
-    plan: Plan,
+  async reviewPlan(plan: Plan): Promise<ReviewResult> {
+    logger.debug("Reviewing plan", "REVIEWER", { planId: plan.id });
+
+    // Basic plan validation
+    const issues: string[] = [];
+    const suggestions: string[] = [];
+
+    // Check if plan has steps
+    if (!plan.steps || plan.steps.length === 0) {
+      issues.push("Plan has no execution steps");
+    }
+
+    // Check for step dependencies
+    const hasUndefinedDependencies = plan.steps.some(step => 
+      step.dependencies?.some(dep => !plan.steps.find(s => s.id === dep))
+    );
+    if (hasUndefinedDependencies) {
+      issues.push("Some steps reference undefined dependencies");
+    }
+
+    const satisfactory = issues.length === 0;
+
+    const result: ReviewResult = {
+      satisfactory,
+      feedback: issues.length > 0 ? `Issues found: ${issues.join('; ')}` : 'Plan looks good',
+      failedSteps: [],
+      suggestions
+    };
+
+    logger.debug("Plan review completed", "REVIEWER", { 
+      planId: plan.id, 
+      satisfactory, 
+      issueCount: issues.length 
+    });
+
+    return result;
+  }
+
+  async reviewExecution(
+    plan: Plan, 
     executionResult: ExecutionResult
   ): Promise<ReviewResult> {
-    const prompt = this.buildReviewPrompt(query, plan, executionResult);
-    const response = await this.llm.generate(prompt, { format: 'json' });
-    
-    return this.parseReviewResult(response, executionResult);
-  }
+    logger.debug("Reviewing execution results", "REVIEWER", { 
+      planId: plan.id, 
+      resultCount: executionResult.results.length 
+    });
 
-  private buildReviewPrompt(
-    query: Query,
-    plan: Plan,
-    executionResult: ExecutionResult
-  ): string {
-    return `
-      You are reviewing the execution results of a plan. Determine if the results satisfactorily address the original query.
-      
-      Original Query: "${query.text}"
-      
-      Plan Overview:
-      ${plan.steps.map((step, i) => `
-        ${i + 1}. ${step.description}
-        - Agent: ${step.agentType}
-        - Expected: ${step.expectedOutput}
-      `).join('\n')}
-      
-      Execution Results:
-      ${executionResult.results.map((result, i) => `
-        Step ${i + 1} (${result.stepId}):
-        - Success: ${result.success}
-        - Output: ${result.output || 'No output'}
-        - Error: ${result.error || 'None'}
-      `).join('\n\n')}
-      
-      Summary: ${executionResult.summary}
-      
-      Review the results and determine:
-      1. Does the execution satisfy the original query?
-      2. Which steps failed or produced inadequate results?
-      3. What specific improvements are needed?
-      
-      Respond with a JSON object:
-      {
-        "satisfactory": boolean,
-        "feedback": "Detailed explanation of the review",
-        "failedSteps": ["step-id-1", "step-id-2"],
-        "suggestions": [
-          "Specific suggestion 1",
-          "Specific suggestion 2"
-        ],
-        "score": 0-100
-      }
-    `;
-  }
+    const issues: string[] = [];
+    const suggestions: string[] = [];
 
-  private parseReviewResult(
-    response: string,
-    executionResult: ExecutionResult
-  ): ReviewResult {
-    try {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in response');
-      }
+    // Check if all steps were executed
+    const executedSteps = executionResult.results.filter(r => r.success).length;
+    const totalSteps = plan.steps.length;
 
-      const parsed = JSON.parse(jsonMatch[0]);
-      
-      return {
-        satisfactory: parsed.satisfactory || false,
-        feedback: parsed.feedback || 'No feedback provided',
-        failedSteps: parsed.failedSteps || this.identifyFailedSteps(executionResult),
-        suggestions: parsed.suggestions || []
-      };
-    } catch (error) {
-      console.error('Failed to parse review result:', error);
-      
-      // Fallback review based on execution results
-      return this.generateFallbackReview(executionResult);
+    if (executedSteps < totalSteps) {
+      issues.push(`Only ${executedSteps}/${totalSteps} steps completed successfully`);
     }
-  }
 
-  private identifyFailedSteps(executionResult: ExecutionResult): string[] {
-    return executionResult.results
-      .filter(r => !r.success)
-      .map(r => r.stepId);
-  }
+    // Check for errors
+    const errors = executionResult.results.filter(r => !r.success);
+    if (errors.length > 0) {
+      issues.push(`${errors.length} steps failed execution`);
+    }
 
-  private generateFallbackReview(executionResult: ExecutionResult): ReviewResult {
-    const failedSteps = this.identifyFailedSteps(executionResult);
-    const successRate = executionResult.results.filter(r => r.success).length / 
-                       executionResult.results.length;
+    // Check output quality
+    const hasOutput = executionResult.results.some(r => r.output && r.output.trim().length > 0);
+    if (!hasOutput) {
+      issues.push("No meaningful output generated");
+    }
 
-    return {
-      satisfactory: successRate > 0.8 && failedSteps.length === 0,
-      feedback: `Execution completed with ${Math.round(successRate * 100)}% success rate.`,
-      failedSteps,
-      suggestions: failedSteps.length > 0 
-        ? ['Retry failed steps with adjusted parameters', 'Consider alternative agents or tools']
-        : []
+    const satisfactory = issues.length === 0;
+
+    const result: ReviewResult = {
+      satisfactory,
+      feedback: issues.length > 0 ? `Execution issues: ${issues.join('; ')}` : 'Execution successful',
+      failedSteps: executionResult.results.filter(r => !r.success).map(r => r.stepId),
+      suggestions
     };
+
+    logger.debug("Execution review completed", "REVIEWER", { 
+      planId: plan.id, 
+      satisfactory 
+    });
+
+    return result;
   }
 }

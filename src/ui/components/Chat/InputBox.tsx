@@ -1,4 +1,4 @@
-import React, { useState, useRef, KeyboardEvent } from 'react';
+import React, { useState, useRef, type KeyboardEvent } from 'react';
 import './InputBox.css';
 
 interface InputBoxProps {

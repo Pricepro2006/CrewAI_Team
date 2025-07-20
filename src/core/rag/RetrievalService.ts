@@ -1,4 +1,4 @@
-import { QueryResult, RetrievalConfig } from './types';
+import type { QueryResult, RetrievalConfig } from "./types";
 
 export class RetrievalService {
   constructor(private config: RetrievalConfig) {}
@@ -22,32 +22,37 @@ export class RetrievalService {
     // Boost recent documents if enabled
     if (this.config.boostRecent) {
       enhanced = this.boostRecentDocuments(enhanced);
+      // Re-sort after boosting to maintain score order
+      enhanced = enhanced.sort((a, b) => b.score - a.score);
     }
 
     return enhanced;
   }
 
   private filterByScore(results: QueryResult[]): QueryResult[] {
-    return results.filter(r => r.score >= this.config.minScore);
+    return results.filter((r) => r.score >= this.config.minScore);
   }
 
-  private async rerank(query: string, results: QueryResult[]): Promise<QueryResult[]> {
+  private async rerank(
+    query: string,
+    results: QueryResult[],
+  ): Promise<QueryResult[]> {
     // Simple reranking based on keyword matching
     // In production, you might use a more sophisticated reranking model
-    
+
     const queryTerms = this.extractTerms(query);
-    
-    const reranked = results.map(result => {
+
+    const reranked = results.map((result) => {
       let boost = 0;
       const contentTerms = this.extractTerms(result.content);
-      
+
       // Calculate term overlap
       for (const term of queryTerms) {
         if (contentTerms.has(term)) {
           boost += 0.1;
         }
       }
-      
+
       // Boost if query terms appear in metadata
       if (result.metadata.title) {
         const titleTerms = this.extractTerms(result.metadata.title);
@@ -57,10 +62,10 @@ export class RetrievalService {
           }
         }
       }
-      
+
       return {
         ...result,
-        score: Math.min(result.score + boost, 1.0)
+        score: Math.min(result.score + boost, 1.0),
       };
     });
 
@@ -73,20 +78,28 @@ export class RetrievalService {
 
     const diversified: QueryResult[] = [];
     const used = new Set<number>();
-    
+
     // Add the top result
-    diversified.push(results[0]);
-    used.add(0);
+    const firstResult = results[0];
+    if (firstResult) {
+      diversified.push(firstResult);
+      used.add(0);
+    }
 
     // Add diverse results
-    while (diversified.length < results.length && diversified.length < this.config.topK) {
+    while (
+      diversified.length < results.length &&
+      diversified.length < this.config.topK
+    ) {
       let bestIndex = -1;
       let bestDiversity = -1;
 
       for (let i = 1; i < results.length; i++) {
         if (used.has(i)) continue;
 
-        const diversity = this.calculateDiversity(results[i], diversified);
+        const result = results[i];
+        if (!result) continue;
+        const diversity = this.calculateDiversity(result, diversified);
         if (diversity > bestDiversity) {
           bestDiversity = diversity;
           bestIndex = i;
@@ -94,8 +107,11 @@ export class RetrievalService {
       }
 
       if (bestIndex !== -1) {
-        diversified.push(results[bestIndex]);
-        used.add(bestIndex);
+        const bestResult = results[bestIndex];
+        if (bestResult) {
+          diversified.push(bestResult);
+          used.add(bestIndex);
+        }
       } else {
         break;
       }
@@ -105,8 +121,8 @@ export class RetrievalService {
   }
 
   private calculateDiversity(
-    candidate: QueryResult, 
-    selected: QueryResult[]
+    candidate: QueryResult,
+    selected: QueryResult[],
   ): number {
     // Simple diversity based on content difference
     const candidateTerms = this.extractTerms(candidate.content);
@@ -119,7 +135,7 @@ export class RetrievalService {
     }
 
     // Higher score means more diverse (less overlap)
-    return 1 - (totalOverlap / selected.length);
+    return 1 - totalOverlap / selected.length;
   }
 
   private calculateOverlap(set1: Set<string>, set2: Set<string>): number {
@@ -139,17 +155,18 @@ export class RetrievalService {
     const now = Date.now();
     const dayInMs = 24 * 60 * 60 * 1000;
 
-    return results.map(result => {
+    return results.map((result) => {
       if (!result.metadata.createdAt && !result.metadata.updatedAt) {
         return result;
       }
 
-      const docDate = new Date(
-        result.metadata.updatedAt || result.metadata.createdAt
-      ).getTime();
-      
+      const dateStr = result.metadata.updatedAt || result.metadata.createdAt;
+      if (!dateStr) return result;
+
+      const docDate = new Date(dateStr).getTime();
+
       const ageInDays = (now - docDate) / dayInMs;
-      
+
       // Decay function: newer documents get higher boost
       let boost = 0;
       if (ageInDays < 1) {
@@ -162,7 +179,7 @@ export class RetrievalService {
 
       return {
         ...result,
-        score: Math.min(result.score + boost, 1.0)
+        score: Math.min(result.score + boost, 1.0),
       };
     });
   }
@@ -171,23 +188,23 @@ export class RetrievalService {
     // Simple term extraction
     const terms = text
       .toLowerCase()
-      .replace(/[^\w\s]/g, ' ')
+      .replace(/[^\w\s]/g, " ")
       .split(/\s+/)
-      .filter(term => term.length > 2); // Filter out short words
-    
+      .filter((term) => term.length > 2); // Filter out short words
+
     return new Set(terms);
   }
 
   async filterByMetadata(
     results: QueryResult[],
-    filters: Record<string, any>
+    filters: Record<string, any>,
   ): Promise<QueryResult[]> {
-    return results.filter(result => {
+    return results.filter((result) => {
       for (const [key, value] of Object.entries(filters)) {
         if (!(key in result.metadata)) {
           return false;
         }
-        
+
         if (Array.isArray(value)) {
           // Check if metadata value is in the array
           if (!value.includes(result.metadata[key])) {
@@ -197,21 +214,21 @@ export class RetrievalService {
           return false;
         }
       }
-      
+
       return true;
     });
   }
 
   highlightMatches(query: string, results: QueryResult[]): QueryResult[] {
     const queryTerms = this.extractTerms(query);
-    
-    return results.map(result => {
+
+    return results.map((result) => {
       const highlights: string[] = [];
       const sentences = result.content.split(/[.!?]+/);
-      
+
       for (const sentence of sentences) {
         const sentenceTerms = this.extractTerms(sentence);
-        
+
         // Check if sentence contains query terms
         let hasMatch = false;
         for (const term of queryTerms) {
@@ -220,15 +237,15 @@ export class RetrievalService {
             break;
           }
         }
-        
+
         if (hasMatch) {
           highlights.push(sentence.trim());
         }
       }
-      
+
       return {
         ...result,
-        highlights: highlights.slice(0, 3) // Limit to 3 highlights
+        highlights: highlights.slice(0, 3), // Limit to 3 highlights
       };
     });
   }
