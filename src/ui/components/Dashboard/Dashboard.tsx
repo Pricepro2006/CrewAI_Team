@@ -42,7 +42,8 @@ const AgentCard: React.FC<AgentCardProps> = ({ name, status, specialty }) => (
 );
 
 export const Dashboard: React.FC = () => {
-  const { data: health } = trpc.health.detailed.useQuery();
+  // const { data: health } = trpc.health.detailed.useQuery(); // TODO: Implement health.detailed endpoint
+  const health = null; // Placeholder until health endpoint is implemented
   // Note: agents.list endpoint not yet implemented, using mock data
   const agents = null; // TODO: Implement agents.list endpoint
 
@@ -216,7 +217,7 @@ export const Dashboard: React.FC = () => {
     },
   ];
 
-  const ollamaStatus = health?.services?.ollama || "disconnected";
+  const ollamaStatus = (health as any)?.services?.ollama || "disconnected";
   const isOllamaConnected = ollamaStatus === "connected";
 
   return (

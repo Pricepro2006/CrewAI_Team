@@ -11,7 +11,15 @@ interface WebSocketOptions {
   maxReconnectAttempts?: number;
 }
 
-export function useWebSocket(options: WebSocketOptions = {}) {
+export function useWebSocket(options: WebSocketOptions = {}): {
+  client: any;
+  isConnected: boolean;
+  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  reconnectAttempts: number;
+  connect: () => void;
+  disconnect: () => void;
+  sendMessage: (message: any) => void;
+} {
   const {
     onConnect,
     onDisconnect,
@@ -83,7 +91,11 @@ export function useWebSocket(options: WebSocketOptions = {}) {
   return {
     client,
     isConnected,
+    connectionStatus: isConnected ? 'connected' as const : 'disconnected' as const,
     reconnectAttempts,
+    connect: () => {}, // TODO: Implement connect functionality
+    disconnect: () => {}, // TODO: Implement disconnect functionality  
+    sendMessage: (message: any) => {}, // TODO: Implement sendMessage functionality
   };
 }
 

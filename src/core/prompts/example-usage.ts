@@ -38,10 +38,10 @@ export async function ollamaIntegrationExample() {
     });
     
     try {
-      const response = await ollama.generateResponse(enhancedPrompt);
+      const response = await ollama.generate(enhancedPrompt);
       console.log('LLM Response:', response);
     } catch (error) {
-      logger.error('Failed to get LLM response:', error);
+      logger.error('Failed to get LLM response:', error instanceof Error ? error.message : String(error));
     }
   }
 }
@@ -70,7 +70,7 @@ export class BusinessSearchAgent {
     });
     
     // Generate response with enhanced prompt
-    const response = await this.ollama.generateResponse(enhancedPrompt, {
+    const response = await this.ollama.generate(enhancedPrompt, {
       temperature: 0.3, // Lower temperature for factual business info
       maxTokens: 1000
     });
@@ -170,7 +170,7 @@ export async function dynamicEnhancementExample(userQuery: string) {
     return enhancedPrompt;
   } catch (error) {
     // Fallback to default business prompt
-    logger.error('Enhancement failed, using default', error);
+    logger.error('Enhancement failed, using default', error instanceof Error ? error.message : String(error));
     return businessSearchPromptEnhancer.getDefaultBusinessPrompt();
   }
 }

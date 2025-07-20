@@ -7,7 +7,7 @@ import {
   FunnelIcon,
   MagnifyingGlassIcon,
   PlusIcon,
-  RefreshIcon
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { trpc } from '../../utils/trpc';
 import { EmailTable } from '@/client/components/email/EmailTable';
@@ -15,7 +15,7 @@ import { FilterPanel, QuickFilters } from '@/client/components/email/FilterPanel
 import { StatusLegend } from '@/client/components/email/StatusIndicator';
 import { EmailStats } from './EmailStats';
 import { EmailCompose } from './EmailCompose';
-import type { EmailRecord, FilterState, FilterOptions } from '@/types/email-dashboard.interfaces';
+import type { EmailRecord, FilterConfig, FilterOptions } from '@/types/email-dashboard.interfaces';
 import './EmailDashboard.css';
 
 export interface EmailDashboardProps {
@@ -56,11 +56,29 @@ function mapEmailToRecord(email: any): EmailRecord {
 }
 
 export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => {
-  const [filters, setFilters] = useState<FilterState>({});
+  const [filters, setFilters] = useState<FilterConfig>({
+    search: '',
+    emailAliases: [],
+    requesters: [],
+    statuses: [],
+    workflowStates: [],
+    workflowTypes: [],
+    priorities: [],
+    dateRange: {
+      start: null,
+      end: null
+    },
+    hasAttachments: undefined,
+    isRead: undefined,
+    tags: []
+  });
   const [showCompose, setShowCompose] = useState(false);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [realTimeUpdates, setRealTimeUpdates] = useState<any[]>([]);
+  const [realTimeUpdates, setRealTimeUpdates] = useState<Array<{
+    type: 'email.analyzed' | 'email.state_changed' | 'email.sla_alert' | 'email.analytics_updated';
+    data: any;
+  }>>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch email analytics
@@ -69,8 +87,16 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
   });
 
   // Fetch filtered emails
-  const { data: emails, isLoading: emailsLoading, refetch: refetchEmails } = trpc.emails.getList.useQuery({
+  const sanitizedFilters = {
     ...filters,
+    dateRange: filters.dateRange.start && filters.dateRange.end ? {
+      start: filters.dateRange.start,
+      end: filters.dateRange.end
+    } : undefined
+  };
+  
+  const { data: emails, isLoading: emailsLoading, refetch: refetchEmails } = trpc.emails.getList.useQuery({
+    ...sanitizedFilters,
     limit: 50
   });
 
@@ -78,7 +104,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
   const emailUpdatesSubscription = trpc.emails.subscribeToEmailUpdates.useSubscription({
     types: ['email.analyzed', 'email.state_changed', 'email.sla_alert', 'email.analytics_updated']
   }, {
-    onData: (update) => {
+    onData: (update: any) => {
       setRealTimeUpdates(prev => [...prev.slice(-99), update]); // Keep last 100 updates
       
       // Handle different types of updates
@@ -119,7 +145,9 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
   // Convert emails to EmailRecord format
   const emailRecords = useMemo(() => {
     if (!emails) return [];
-    return emails.map(mapEmailToRecord);
+    // Handle both direct array and wrapped response
+    const emailData = Array.isArray(emails) ? emails : emails.data || [];
+    return emailData.map(mapEmailToRecord);
   }, [emails]);
 
   // Generate filter options from current data
@@ -153,32 +181,19 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
       emailAliases,
       requesters,
       statuses: [
-        { value: 'red', label: 'Critical', color: 'red', count: statusCounts.red },
-        { value: 'yellow', label: 'In Progress', color: 'yellow', count: statusCounts.yellow },
-        { value: 'green', label: 'Completed', color: 'green', count: statusCounts.green }
+        { value: 'red' as const, label: 'Critical', color: 'red', description: 'Critical/urgent emails requiring immediate attention' },
+        { value: 'yellow' as const, label: 'In Progress', color: 'yellow', description: 'Emails currently being processed' },
+        { value: 'green' as const, label: 'Completed', color: 'green', description: 'Successfully completed emails' }
       ],
-      workflowStates: [
-        { value: 'START_POINT', label: 'Start Point', count: workflowStateCounts.START_POINT },
-        { value: 'IN_PROGRESS', label: 'In Progress', count: workflowStateCounts.IN_PROGRESS },
-        { value: 'COMPLETION', label: 'Completion', count: workflowStateCounts.COMPLETION }
-      ],
-      workflowTypes: workflowTypes.map(type => ({
-        value: type!,
-        label: type!,
-        count: emailRecords.filter(e => e.workflow_type === type).length
-      })),
-      priorities: [
-        { value: 'Critical', label: 'Critical', count: priorityCounts.Critical },
-        { value: 'High', label: 'High', count: priorityCounts.High },
-        { value: 'Medium', label: 'Medium', count: priorityCounts.Medium },
-        { value: 'Low', label: 'Low', count: priorityCounts.Low }
-      ],
+      workflowStates: ['START_POINT', 'IN_PROGRESS', 'COMPLETION'] as const,
+      workflowTypes: workflowTypes.filter((t): t is string => t !== undefined),
+      priorities: ['Critical', 'High', 'Medium', 'Low'] as const,
       tags
     };
   }, [emailRecords]);
 
   // Handle filter changes
-  const handleFilterChange = (newFilters: FilterState) => {
+  const handleFilterChange = (newFilters: FilterConfig) => {
     setFilters(newFilters);
   };
 
@@ -241,7 +256,10 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    return emails.reduce((acc, email) => {
+    // Handle both direct array and wrapped response
+    const emailData = Array.isArray(emails) ? emails : emails.data || [];
+    
+    return emailData.reduce((acc: { received: number; processed: number; overdue: number; critical: number }, email: any) => {
       const emailDate = new Date(email.receivedDateTime);
       emailDate.setHours(0, 0, 0, 0);
       
@@ -291,7 +309,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
-            <RefreshIcon className="email-dashboard__action-icon" />
+            <ArrowPathIcon className="email-dashboard__action-icon" />
             Refresh
           </button>
           
@@ -299,7 +317,22 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
             filters={filters}
             filterOptions={filterOptions}
             onFiltersChange={handleFilterChange}
-            onReset={() => setFilters({})}
+            onReset={() => setFilters({
+              search: '',
+              emailAliases: [],
+              requesters: [],
+              statuses: [],
+              workflowStates: [],
+              workflowTypes: [],
+              priorities: [],
+              dateRange: {
+                start: null,
+                end: null
+              },
+              hasAttachments: undefined,
+              isRead: undefined,
+              tags: []
+            })}
             activeFilterCount={activeFilterCount}
           />
           
@@ -341,7 +374,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
         {/* Analytics Section */}
         <div className="email-dashboard__analytics">
           <EmailStats 
-            stats={emailStats}
+            stats={emailStats && 'data' in emailStats ? emailStats.data : emailStats}
             loading={statsLoading}
           />
         </div>
@@ -357,7 +390,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
                   type="text"
                   placeholder="Search emails by subject, sender, or content..."
                   value={filters.search || ''}
-                  onChange={(e) => handleFilterChange({ ...filters, search: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange({ ...filters, search: e.target.value })}
                   className="email-dashboard__search-field"
                 />
               </div>

@@ -3,7 +3,7 @@
  * Determines routing strategy based on query characteristics
  */
 
-import { QueryComplexity } from './types.js';
+import type { QueryComplexity } from './types.js';
 
 export class QueryComplexityAnalyzer {
   private complexityCache = new Map<string, QueryComplexity>();
@@ -317,7 +317,9 @@ export class QueryComplexityAnalyzer {
     if (this.complexityCache.size >= this.cacheSize) {
       // Remove oldest entry
       const firstKey = this.complexityCache.keys().next().value;
-      this.complexityCache.delete(firstKey);
+      if (firstKey) {
+        this.complexityCache.delete(firstKey);
+      }
     }
     
     this.complexityCache.set(key, complexity);
