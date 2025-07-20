@@ -2,7 +2,7 @@
  * ConfidenceContextBuilder - Builds context from retrieved documents
  * Optimizes context for confidence-aware generation
  */
-import { ScoredDocument, ContextOptions, BuiltContext } from './types.js';
+import type { ScoredDocument, ContextOptions, BuiltContext } from './types.js';
 export declare class ConfidenceContextBuilder {
     private readonly maxTokensDefault;
     private readonly minTokensPerDoc;

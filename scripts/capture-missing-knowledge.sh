@@ -5,7 +5,7 @@
 
 set -e
 
-MASTER_KB="/home/pricepro2006/master_knowledge_base"
+MASTER_KB="$HOME/master_knowledge_base"
 CREWAI_DIR="/home/pricepro2006/CrewAI_Team"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 CAPTURE_DIR="${MASTER_KB}/CrewAI_Team/captured_knowledge_${TIMESTAMP}"
@@ -191,7 +191,7 @@ cat > "${CAPTURE_DIR}/integrate_to_master.sh" << 'EOF'
 # Script to integrate captured knowledge into master knowledge base
 
 CAPTURE_DIR="$(dirname "$0")"
-MASTER_KB="/home/pricepro2006/master_knowledge_base"
+MASTER_KB="$HOME/master_knowledge_base"
 
 echo "Integrating captured knowledge into master knowledge base..."
 

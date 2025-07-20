@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { BusinessSearchMiddleware } from '../BusinessSearchMiddleware';
-import { OllamaProvider } from '../../llm/OllamaProvider';
+import type { OllamaProvider } from '../../llm/OllamaProvider';
 
 // Mock dependencies
 jest.mock('../../llm/OllamaProvider');

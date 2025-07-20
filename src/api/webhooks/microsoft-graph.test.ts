@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { graphWebhookHandler } from './microsoft-graph';
 
 // Mock bullmq

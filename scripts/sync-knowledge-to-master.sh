@@ -7,7 +7,7 @@ set -e  # Exit on error
 
 # Configuration
 CREWAI_KB="/home/pricepro2006/CrewAI_Team/docs/knowledge_base"
-MASTER_KB="/home/pricepro2006/master_knowledge_base"
+MASTER_KB="$HOME/master_knowledge_base"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 LOG_FILE="/home/pricepro2006/master_knowledge_base/metadata/sync_log_${TIMESTAMP}.txt"
 

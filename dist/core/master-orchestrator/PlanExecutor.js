@@ -1,5 +1,3 @@
-import { AgentRegistry } from "../agents/registry/AgentRegistry";
-import { RAGSystem } from "../rag/RAGSystem";
 import { wsService } from "../../api/services/WebSocketService";
 import { withTimeout, DEFAULT_TIMEOUTS, TimeoutError } from "../../utils/timeout";
 export class PlanExecutor {

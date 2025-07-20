@@ -101,7 +101,7 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
       datasets.push({
         label: 'Avg Processing Time (min)',
         data: data.map(point => point.averageProcessingTime ? point.averageProcessingTime / 60000 : 0),
-        backgroundColor: chartType === 'area' ? `${CHART_COLORS.secondary}20` : CHART_COLORS.secondary,
+        backgroundColor: CHART_COLORS.secondary,
         borderColor: CHART_COLORS.secondary,
         borderWidth: 2,
         fill: false,
@@ -111,8 +111,8 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
         pointBackgroundColor: CHART_COLORS.secondary,
         pointBorderColor: '#ffffff',
         pointBorderWidth: 2,
-        yAxisID: 'y1' // Secondary y-axis for processing time
-      });
+        ...(chartType === 'line' ? { yAxisID: 'y1' } : {}) // Only add yAxisID for line charts
+      } as any);
     }
 
     return { labels, datasets };
@@ -120,7 +120,7 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
 
   // Chart options
   const chartOptions = useMemo(() => {
-    const baseOptions = {
+    const baseOptions: any = {
       responsive: true,
       plugins: {
         title: {
@@ -154,7 +154,9 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
               if (tooltipItems.length > 0) {
                 const dataIndex = tooltipItems[0].dataIndex;
                 const originalData = data[dataIndex];
-                return new Date(originalData.timestamp).toLocaleString();
+                if (originalData) {
+                  return new Date(originalData.timestamp).toLocaleString();
+                }
               }
               return '';
             },
@@ -172,18 +174,20 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
                 const dataIndex = tooltipItems[0].dataIndex;
                 const originalData = data[dataIndex];
                 
-                const completionRate = originalData.totalEmails > 0 
-                  ? ((originalData.completedEmails / originalData.totalEmails) * 100).toFixed(1)
-                  : '0';
-                
-                return [
-                  '',
-                  `Completion Rate: ${completionRate}%`,
-                  `Critical Rate: ${originalData.totalEmails > 0 
-                    ? ((originalData.criticalEmails / originalData.totalEmails) * 100).toFixed(1)
-                    : '0'
-                  }%`
-                ];
+                if (originalData) {
+                  const completionRate = originalData.totalEmails > 0 
+                    ? ((originalData.completedEmails / originalData.totalEmails) * 100).toFixed(1)
+                    : '0';
+                  
+                  return [
+                    '',
+                    `Completion Rate: ${completionRate}%`,
+                    `Critical Rate: ${originalData.totalEmails > 0 
+                      ? ((originalData.criticalEmails / originalData.totalEmails) * 100).toFixed(1)
+                      : '0'
+                    }%`
+                  ];
+                }
               }
               return [];
             }
@@ -261,7 +265,9 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
     if (onClick && elements.length > 0) {
       const elementIndex = elements[0].index;
       const dataPoint = data[elementIndex];
-      onClick(dataPoint);
+      if (dataPoint) {
+        onClick(dataPoint);
+      }
     }
   };
 
@@ -327,7 +333,7 @@ export const WorkflowTimelineChart: React.FC<WorkflowTimelineChartProps> = ({
       </div>
 
       <ChartBase
-        type={chartType}
+        type={chartType === 'area' ? 'line' : chartType}
         data={chartData}
         options={chartOptions}
         onChartClick={handleChartClick}

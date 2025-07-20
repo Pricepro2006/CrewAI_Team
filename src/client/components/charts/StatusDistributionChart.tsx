@@ -186,10 +186,15 @@ export const StatusDistributionChart: React.FC<StatusDistributionChartProps> = (
   const handleChartClick = (event: any, elements: any[]) => {
     if (onClick && elements.length > 0) {
       const elementIndex = elements[0].index;
-      const statusKeys = chartData.datasets[0].statusKeys;
-      const status = statusKeys[elementIndex];
-      const count = chartData.datasets[0].data[elementIndex];
-      onClick(status, count);
+      const dataset = chartData.datasets[0];
+      if (dataset && dataset.statusKeys) {
+        const statusKeys = dataset.statusKeys;
+        const status = statusKeys[elementIndex];
+        const count = dataset.data[elementIndex];
+        if (status !== undefined && count !== undefined) {
+          onClick(status, count);
+        }
+      }
     }
   };
 

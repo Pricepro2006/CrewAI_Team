@@ -2,7 +2,6 @@
  * Confidence Configuration for the Confidence-Scored RAG System
  * Based on 2025 best practices for confidence calibration
  */
-import { ConfidenceConfig } from "../core/rag/confidence/types";
 /**
  * Default confidence thresholds based on research findings
  * These values are optimized for CPU-based inference on AMD Ryzen 7 PRO 7840HS
@@ -164,35 +163,37 @@ export function validateConfidenceConfig(config) {
 export function getConfidenceConfigFromEnv() {
     const config = {};
     // Retrieval thresholds
-    if (process.env.CONFIDENCE_RETRIEVAL_MIN) {
-        config.retrieval = config.retrieval || {};
-        config.retrieval.minimum = parseFloat(process.env.CONFIDENCE_RETRIEVAL_MIN);
-    }
-    if (process.env.CONFIDENCE_RETRIEVAL_PREFERRED) {
-        config.retrieval = config.retrieval || {};
-        config.retrieval.preferred = parseFloat(process.env.CONFIDENCE_RETRIEVAL_PREFERRED);
+    if (process.env.CONFIDENCE_RETRIEVAL_MIN || process.env.CONFIDENCE_RETRIEVAL_PREFERRED) {
+        config.retrieval = {};
+        if (process.env.CONFIDENCE_RETRIEVAL_MIN) {
+            config.retrieval.minimum = parseFloat(process.env.CONFIDENCE_RETRIEVAL_MIN);
+        }
+        if (process.env.CONFIDENCE_RETRIEVAL_PREFERRED) {
+            config.retrieval.preferred = parseFloat(process.env.CONFIDENCE_RETRIEVAL_PREFERRED);
+        }
     }
     // Generation thresholds
-    if (process.env.CONFIDENCE_GENERATION_ACCEPTABLE) {
-        config.generation = config.generation || {};
-        config.generation.acceptable = parseFloat(process.env.CONFIDENCE_GENERATION_ACCEPTABLE);
-    }
-    if (process.env.CONFIDENCE_GENERATION_REVIEW) {
-        config.generation = config.generation || {};
-        config.generation.review = parseFloat(process.env.CONFIDENCE_GENERATION_REVIEW);
+    if (process.env.CONFIDENCE_GENERATION_ACCEPTABLE || process.env.CONFIDENCE_GENERATION_REVIEW) {
+        config.generation = {};
+        if (process.env.CONFIDENCE_GENERATION_ACCEPTABLE) {
+            config.generation.acceptable = parseFloat(process.env.CONFIDENCE_GENERATION_ACCEPTABLE);
+        }
+        if (process.env.CONFIDENCE_GENERATION_REVIEW) {
+            config.generation.review = parseFloat(process.env.CONFIDENCE_GENERATION_REVIEW);
+        }
     }
     // Overall thresholds
-    if (process.env.CONFIDENCE_OVERALL_HIGH) {
-        config.overall = config.overall || {};
-        config.overall.high = parseFloat(process.env.CONFIDENCE_OVERALL_HIGH);
-    }
-    if (process.env.CONFIDENCE_OVERALL_MEDIUM) {
-        config.overall = config.overall || {};
-        config.overall.medium = parseFloat(process.env.CONFIDENCE_OVERALL_MEDIUM);
-    }
-    if (process.env.CONFIDENCE_OVERALL_LOW) {
-        config.overall = config.overall || {};
-        config.overall.low = parseFloat(process.env.CONFIDENCE_OVERALL_LOW);
+    if (process.env.CONFIDENCE_OVERALL_HIGH || process.env.CONFIDENCE_OVERALL_MEDIUM || process.env.CONFIDENCE_OVERALL_LOW) {
+        config.overall = {};
+        if (process.env.CONFIDENCE_OVERALL_HIGH) {
+            config.overall.high = parseFloat(process.env.CONFIDENCE_OVERALL_HIGH);
+        }
+        if (process.env.CONFIDENCE_OVERALL_MEDIUM) {
+            config.overall.medium = parseFloat(process.env.CONFIDENCE_OVERALL_MEDIUM);
+        }
+        if (process.env.CONFIDENCE_OVERALL_LOW) {
+            config.overall.low = parseFloat(process.env.CONFIDENCE_OVERALL_LOW);
+        }
     }
     return config;
 }

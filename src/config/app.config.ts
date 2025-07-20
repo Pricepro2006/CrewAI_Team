@@ -14,9 +14,15 @@ interface ApiConfig {
   };
 }
 
+interface OllamaConfig {
+  url: string;
+  model?: string;
+}
+
 interface AppConfig {
   database: DatabaseConfig;
   api: ApiConfig;
+  ollama?: OllamaConfig;
 }
 
 const appConfig: AppConfig = {
@@ -30,6 +36,10 @@ const appConfig: AppConfig = {
       credentials: true,
     },
   },
+  ollama: process.env.OLLAMA_URL ? {
+    url: process.env.OLLAMA_URL,
+    model: process.env.OLLAMA_MODEL,
+  } : undefined,
 };
 
 export default appConfig;

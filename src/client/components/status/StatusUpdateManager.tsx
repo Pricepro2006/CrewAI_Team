@@ -398,10 +398,9 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
                   backgroundColor: `${transition.color}05`
                 }}
               >
-                <transition.icon 
-                  className="w-4 h-4 flex-shrink-0" 
-                  style={{ color: transition.color }}
-                />
+                <span style={{ color: transition.color }}>
+                  <transition.icon className="w-4 h-4 flex-shrink-0" />
+                </span>
                 <div className="flex-1 text-left">
                   <div className="text-sm font-medium text-gray-900">
                     {transition.label}

@@ -1,5 +1,5 @@
-import { AgentRegistry } from "../agents/registry/AgentRegistry";
-import { RAGSystem } from "../rag/RAGSystem";
+import type { AgentRegistry } from "../agents/registry/AgentRegistry";
+import type { RAGSystem } from "../rag/RAGSystem";
 import type { Plan, PlanStep, PlanExecutionResult } from "./types";
 export declare class PlanExecutor {
     private agentRegistry;

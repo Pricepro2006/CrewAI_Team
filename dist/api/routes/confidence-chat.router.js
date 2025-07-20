@@ -6,7 +6,6 @@ import { router, publicProcedure, commonSchemas, createFeatureRouter, } from "..
 import { observable } from "@trpc/server/observable";
 import { EventEmitter } from "events";
 import { logger } from "../../utils/logger";
-import { ConfidenceMasterOrchestrator } from "../../core/master-orchestrator/ConfidenceMasterOrchestrator";
 // Event emitter for real-time updates
 const confidenceChatEvents = new EventEmitter();
 // Enhanced schemas with confidence support
@@ -396,8 +395,11 @@ export const confidenceChatRouter = createFeatureRouter("confidence-chat", route
                 originalIndex: input.messageIndex,
             },
         };
-        // Save updated conversation
-        await ctx.conversationService.update(input.conversationId, conversation);
+        // Add the new message to the conversation
+        const lastMessage = conversation.messages[conversation.messages.length - 1];
+        if (lastMessage) {
+            await ctx.conversationService.addMessage(input.conversationId, lastMessage);
+        }
         return {
             response: result.deliveredResponse.content,
             confidence: {

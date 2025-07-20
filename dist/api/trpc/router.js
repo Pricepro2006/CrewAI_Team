@@ -10,6 +10,7 @@ import { healthRouter } from "../routes/health.router";
 import { dataCollectionRouter } from "../routes/data-collection.router";
 import { authRouter } from "../routes/auth.router";
 import { emailRouter } from "../routes/email.router";
+import { metricsRouter } from "../routes/metrics.router";
 // Import the router function from enhanced-router
 import { router as createRouter } from "./enhanced-router";
 // Create the main app router with enhanced security
@@ -23,5 +24,6 @@ export const appRouter = createRouter({
     health: healthRouter, // Health monitoring endpoints
     dataCollection: dataCollectionRouter, // Bright Data integration
     emails: emailRouter, // Email analytics and management
+    metrics: metricsRouter, // Performance and rate limit metrics
 });
 //# sourceMappingURL=router.js.map

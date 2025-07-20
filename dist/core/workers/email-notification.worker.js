@@ -1,4 +1,4 @@
-import { Worker, Job } from 'bullmq';
+import { Worker } from 'bullmq';
 import { logger } from '../../utils/logger';
 import { EmailAnalysisAgent } from '../agents/specialized/EmailAnalysisAgent';
 // Worker configuration
@@ -16,7 +16,7 @@ async function initializeEmailAgent() {
 // Process email notification
 async function processEmailNotification(job) {
     const { notification } = job.data;
-    logger.info('Processing email notification', {
+    logger.info('Processing email notification', 'EMAIL_WORKER', {
         notificationId: notification.id,
         changeType: notification.changeType,
         resource: notification.resource,
@@ -44,7 +44,7 @@ async function processEmailNotification(job) {
         };
         // Analyze the email
         const analysis = await agent.analyzeEmail(emailData);
-        logger.info('Email analysis completed', {
+        logger.info('Email analysis completed', 'EMAIL_WORKER', {
             emailId,
             priority: analysis.priority,
             workflowState: analysis.workflowState,
@@ -59,7 +59,7 @@ async function processEmailNotification(job) {
         };
     }
     catch (error) {
-        logger.error('Error processing email notification', {
+        logger.error('Error processing email notification', 'EMAIL_WORKER', {
             error: error instanceof Error ? error.message : String(error),
             notificationId: notification.id,
         });
@@ -78,20 +78,20 @@ export const emailNotificationWorker = new Worker('email-notifications', async (
 });
 // Worker event handlers
 emailNotificationWorker.on('completed', (job) => {
-    logger.info('Email notification job completed', {
+    logger.info('Email notification job completed', 'EMAIL_WORKER', {
         jobId: job.id,
         emailId: job.returnvalue?.emailId,
     });
 });
 emailNotificationWorker.on('failed', (job, error) => {
-    logger.error('Email notification job failed', {
+    logger.error('Email notification job failed', 'EMAIL_WORKER', {
         jobId: job?.id,
         error: error.message,
     });
 });
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-    logger.info('SIGTERM received, closing email notification worker');
+    logger.info('SIGTERM received, closing email notification worker', 'EMAIL_WORKER');
     await emailNotificationWorker.close();
 });
 export default emailNotificationWorker;

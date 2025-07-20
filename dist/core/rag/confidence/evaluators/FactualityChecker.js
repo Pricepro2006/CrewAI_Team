@@ -2,7 +2,6 @@
  * FactualityChecker - Evaluates factual accuracy of responses
  * Checks response claims against source documents
  */
-import { ScoredDocument } from '../types.js';
 export class FactualityChecker {
     /**
      * Check factual accuracy of response against sources

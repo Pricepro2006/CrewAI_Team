@@ -1,5 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
-import { EmailData, EmailStatus } from '../../types/email';
+import { test, expect, type Page } from '@playwright/test';
+import type { EmailData, EmailStatus } from '../../types/email';
 
 // 2025 Best Practice: Comprehensive E2E Testing with Playwright
 
@@ -268,7 +268,8 @@ test.describe('Performance Tests', () => {
     
     // Measure initial render time
     const renderTime = await page.evaluate(() => {
-      return performance.getEntriesByType('navigation')[0].loadEventEnd;
+      const navEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      return navEntry?.loadEventEnd || 0;
     });
     
     expect(renderTime).toBeLessThan(5000);

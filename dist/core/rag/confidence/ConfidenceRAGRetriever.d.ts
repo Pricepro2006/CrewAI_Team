@@ -2,8 +2,8 @@
  * ConfidenceRAGRetriever - Retrieves documents with confidence scoring
  * Integrates with vector stores and applies confidence-based filtering
  */
-import { VectorStore } from '../VectorStore';
-import { RetrievalResult, RetrievalOptions } from './types.js';
+import type { VectorStore } from '../VectorStore';
+import type { RetrievalResult, RetrievalOptions } from './types.js';
 export declare class ConfidenceRAGRetriever {
     private vectorStore;
     private retrievalCache;

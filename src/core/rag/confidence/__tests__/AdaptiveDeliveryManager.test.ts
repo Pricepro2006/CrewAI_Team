@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AdaptiveDeliveryManager } from '../AdaptiveDeliveryManager';
 import {
-  ResponseEvaluationResult,
+  type ResponseEvaluationResult,
   ActionType,
-  ScoredDocument
+  type ScoredDocument
 } from '../types';
 
 describe('AdaptiveDeliveryManager', () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AdaptiveDeliveryManager } from '../AdaptiveDeliveryManager';
-import { ResponseEvaluationResult, ActionType, ScoredDocument } from '../types';
+import { ActionType } from '../types';
 describe('AdaptiveDeliveryManager', () => {
     let manager;
     beforeEach(() => {

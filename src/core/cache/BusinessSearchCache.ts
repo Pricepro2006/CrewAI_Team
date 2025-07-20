@@ -2,7 +2,7 @@ import { LRUCache } from 'lru-cache';
 import { createHash } from 'crypto';
 import Redis from 'ioredis';
 import { logger } from '../../utils/logger';
-import { ValidationResult } from '../validators/BusinessResponseValidator';
+import type { ValidationResult } from '../validators/BusinessResponseValidator';
 
 export interface CacheEntry {
   response: string;
@@ -103,14 +103,14 @@ export class BusinessSearchCache {
       });
 
       this.redisClient.on('error', (err) => {
-        logger.error('Redis cache error:', err);
+        logger.error('Redis cache error:', err instanceof Error ? err.message : String(err));
       });
 
       this.redisClient.on('connect', () => {
         logger.info('Redis cache connected');
       });
     } catch (error) {
-      logger.error('Failed to initialize Redis for cache:', error);
+      logger.error('Failed to initialize Redis for cache:', error instanceof Error ? error.message : String(error));
       this.config.useRedis = false;
     }
   }
@@ -177,7 +177,7 @@ export class BusinessSearchCache {
         this.memoryCache.set(key, entry);
         this.trackResponseTime(Date.now() - startTime);
         
-        logger.debug('Cache hit', {
+        logger.debug('Cache hit', 'BUSINESS_CACHE', {
           key,
           age: age / 1000,
           isStale,
@@ -193,7 +193,7 @@ export class BusinessSearchCache {
       return null;
 
     } catch (error) {
-      logger.error('Cache get error:', error);
+      logger.error('Cache get error:', error instanceof Error ? error.message : String(error));
       this.stats.misses++;
       this.trackResponseTime(Date.now() - startTime);
       return null;
@@ -236,7 +236,7 @@ export class BusinessSearchCache {
         
         // Compress if needed (in production, use zlib)
         if (data.length > this.config.compressionThreshold) {
-          logger.debug('Large cache entry, consider compression', {
+          logger.debug('Large cache entry, consider compression', 'BUSINESS_CACHE', {
             size: data.length,
             key
           });
@@ -250,14 +250,14 @@ export class BusinessSearchCache {
         );
       }
 
-      logger.debug('Cache set', {
+      logger.debug('Cache set', 'BUSINESS_CACHE', {
         key,
         responseLength: response.length,
         enhanced: entry.metadata.enhanced
       });
 
     } catch (error) {
-      logger.error('Cache set error:', error);
+      logger.error('Cache set error:', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -279,7 +279,7 @@ export class BusinessSearchCache {
 
       return deleted;
     } catch (error) {
-      logger.error('Cache delete error:', error);
+      logger.error('Cache delete error:', error instanceof Error ? error.message : String(error));
       return false;
     }
   }
@@ -313,7 +313,7 @@ export class BusinessSearchCache {
 
       logger.info('Cache cleared');
     } catch (error) {
-      logger.error('Cache clear error:', error);
+      logger.error('Cache clear error:', error instanceof Error ? error.message : String(error));
     }
   }
 

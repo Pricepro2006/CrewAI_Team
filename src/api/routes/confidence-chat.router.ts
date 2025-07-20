@@ -12,7 +12,7 @@ import {
 import { observable } from "@trpc/server/observable";
 import { EventEmitter } from "events";
 import { logger } from "../../utils/logger";
-import { ConfidenceMasterOrchestrator } from "../../core/master-orchestrator/ConfidenceMasterOrchestrator";
+import type { ConfidenceMasterOrchestrator } from "../../core/master-orchestrator/ConfidenceMasterOrchestrator";
 
 // Event emitter for real-time updates
 const confidenceChatEvents = new EventEmitter();
@@ -74,7 +74,7 @@ export const confidenceChatRouter = createFeatureRouter(
 
         // Ensure we have confidence orchestrator
         const orchestrator =
-          ctx.masterOrchestrator as ConfidenceMasterOrchestrator;
+          ctx.masterOrchestrator as unknown as unknown as ConfidenceMasterOrchestrator;
 
         // Set up event listeners for real-time updates
         orchestrator.on("confidence:update", (data) => {
@@ -186,7 +186,7 @@ export const confidenceChatRouter = createFeatureRouter(
         }
 
         const orchestrator =
-          ctx.masterOrchestrator as ConfidenceMasterOrchestrator;
+          ctx.masterOrchestrator as unknown as ConfidenceMasterOrchestrator;
 
         // Add user message
         await ctx.conversationService.addMessage(input.conversationId, {
@@ -256,7 +256,7 @@ export const confidenceChatRouter = createFeatureRouter(
         });
 
         const orchestrator =
-          ctx.masterOrchestrator as ConfidenceMasterOrchestrator;
+          ctx.masterOrchestrator as unknown as ConfidenceMasterOrchestrator;
         orchestrator.captureFeedback(input.feedbackId, input);
 
         // Emit feedback event for analytics
@@ -282,7 +282,7 @@ export const confidenceChatRouter = createFeatureRouter(
       )
       .query(async ({ input, ctx }) => {
         const orchestrator =
-          ctx.masterOrchestrator as ConfidenceMasterOrchestrator;
+          ctx.masterOrchestrator as unknown as ConfidenceMasterOrchestrator;
         const stats = orchestrator.getPerformanceStats();
 
         // Filter by conversation if specified
@@ -493,7 +493,7 @@ export const confidenceChatRouter = createFeatureRouter(
         }
 
         const orchestrator =
-          ctx.masterOrchestrator as ConfidenceMasterOrchestrator;
+          ctx.masterOrchestrator as unknown as ConfidenceMasterOrchestrator;
 
         // Process with new settings
         const result = await orchestrator.processQuery({
@@ -515,11 +515,14 @@ export const confidenceChatRouter = createFeatureRouter(
           },
         };
 
-        // Save updated conversation
-        await ctx.conversationService.update(
-          input.conversationId,
-          conversation,
-        );
+        // Add the new message to the conversation
+        const lastMessage = conversation.messages[conversation.messages.length - 1];
+        if (lastMessage) {
+          await ctx.conversationService.addMessage(
+            input.conversationId,
+            lastMessage,
+          );
+        }
 
         return {
           response: result.deliveredResponse.content,

@@ -1,4 +1,4 @@
-import { BaseAgent, type AgentFactory, type AgentPoolConfig, type AgentStatus } from "../base/AgentTypes";
+import type { BaseAgent, AgentFactory, AgentPoolConfig, AgentStatus } from "../base/AgentTypes";
 export declare class AgentRegistry {
     private activeAgents;
     private agentPool;

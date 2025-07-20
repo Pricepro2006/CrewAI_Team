@@ -2,8 +2,8 @@
  * ConfidenceResponseGenerator - Generates responses with confidence scoring
  * Uses LLM to generate responses with token-level confidence tracking
  */
-import { OllamaProvider } from '../../llm/OllamaProvider';
-import { GenerationRequest, GenerationResult, GenerationOptions } from './types.js';
+import type { OllamaProvider } from '../../llm/OllamaProvider';
+import type { GenerationRequest, GenerationResult, GenerationOptions } from './types.js';
 export declare class ConfidenceResponseGenerator {
     private llm;
     private defaultOptions;

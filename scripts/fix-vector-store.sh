@@ -5,7 +5,7 @@
 set -e
 
 CREWAI_DIR="/home/pricepro2006/CrewAI_Team"
-MASTER_KB="/home/pricepro2006/master_knowledge_base"
+MASTER_KB="$HOME/master_knowledge_base"
 
 echo "🔧 CrewAI Vector Store Fix Script"
 echo "================================="

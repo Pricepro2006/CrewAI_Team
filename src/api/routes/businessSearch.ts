@@ -1,4 +1,5 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
+import type { Request, Response } from 'express';
 import { 
   webSearchRateLimit, 
   businessSearchRateLimit,
@@ -50,7 +51,7 @@ router.get('/health', (req: Request, res: Response) => {
  */
 router.post('/search/business', 
   businessSearchRateLimit, // Apply business search rate limit
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<any> => {
     try {
       const { query, location } = req.body;
       
@@ -83,8 +84,8 @@ router.post('/search/business',
       });
       
     } catch (error) {
-      logger.error('Business search error:', error);
-      res.status(500).json({
+      logger.error('Business search error:', error instanceof Error ? error.message : String(error));
+      return res.status(500).json({
         error: 'Internal server error',
         message: 'Failed to process business search'
       });
@@ -97,7 +98,7 @@ router.post('/search/business',
  */
 router.post('/search/web',
   webSearchRateLimit, // Apply web search rate limit
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<any> => {
     try {
       const { query } = req.body;
       
@@ -120,8 +121,8 @@ router.post('/search/web',
       });
       
     } catch (error) {
-      logger.error('Web search error:', error);
-      res.status(500).json({
+      logger.error('Web search error:', error instanceof Error ? error.message : String(error));
+      return res.status(500).json({
         error: 'Internal server error',
         message: 'Failed to process web search'
       });
@@ -134,12 +135,13 @@ router.post('/search/web',
  */
 router.post('/search/premium',
   premiumRateLimit, // Apply premium rate limit
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<any> => {
     try {
       const { query, options } = req.body;
       
-      // Verify premium status
-      if (!req.user?.premium) {
+      // Verify premium status (req.user would be set by auth middleware)
+      const user = (req as any).user;
+      if (!user?.premium) {
         return res.status(403).json({
           error: 'Premium access required'
         });
@@ -168,8 +170,8 @@ router.post('/search/premium',
       });
       
     } catch (error) {
-      logger.error('Premium search error:', error);
-      res.status(500).json({
+      logger.error('Premium search error:', error instanceof Error ? error.message : String(error));
+      return res.status(500).json({
         error: 'Internal server error',
         message: 'Failed to process premium search'
       });
@@ -218,10 +220,10 @@ businessSearchMiddleware.on('high_latency', (event) => {
 });
 
 businessSearchMiddleware.on('validation_failed', (event) => {
-  logger.warn('Response validation failed', {
-    prompt: event.prompt.slice(0, 100),
-    confidence: event.validation.confidence
-  });
+  logger.warn('Response validation failed', JSON.stringify({
+    prompt: typeof event.prompt === 'string' ? event.prompt.slice(0, 100) : String(event.prompt),
+    confidence: event.validation?.confidence || 'unknown'
+  }));
 });
 
 export default router;

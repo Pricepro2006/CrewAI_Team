@@ -1,5 +1,4 @@
 import { BaseAgent } from "../base/BaseAgent";
-import { BaseTool } from "../../tools/base/BaseTool";
 export class ToolExecutorAgent extends BaseAgent {
     constructor() {
         super("ToolExecutorAgent", "General-purpose agent for executing various tools and coordinating tool usage");

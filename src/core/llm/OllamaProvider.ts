@@ -156,13 +156,13 @@ export class OllamaProvider extends EventEmitter {
       
       this.emit('generation', {
         prompt,
-        response: sanitizedResponse,
+        response: sanitizedResponse.content,
         duration: response.data.total_duration,
         tokens: response.data.tokens,
         logprobs: response.data.token_logprobs
       });
 
-      return sanitizedResponse;
+      return sanitizedResponse.content;
     } catch (error: any) {
       this.emit('error', error);
       
@@ -236,7 +236,7 @@ export class OllamaProvider extends EventEmitter {
       }
 
       const result: OllamaGenerateWithLogProbsResponse = {
-        text: sanitizeLLMOutput(response.data.response),
+        text: sanitizeLLMOutput(response.data.response).content,
         tokens: response.data.tokens,
         logProbs: logProbs,
         metadata: {
@@ -262,7 +262,7 @@ export class OllamaProvider extends EventEmitter {
         // Fall back to regular generation
         const text = await this.generate(prompt, options);
         return {
-          text: sanitizeLLMOutput(text),
+          text: sanitizeLLMOutput(text).content,
           tokens: undefined,
           logProbs: undefined,
           metadata: {

@@ -1,6 +1,4 @@
 import PQueue from 'p-queue';
-import { EmailAnalysisAgent, EmailAnalysis } from '../agents/specialized/EmailAnalysisAgent';
-import { EmailAnalysisCache } from '../cache/EmailAnalysisCache';
 import { logger } from '../../utils/logger';
 export class EmailBatchProcessor {
     queue;

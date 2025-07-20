@@ -2,7 +2,6 @@
  * CoherenceAnalyzer - Evaluates coherence and logical flow of responses
  * Analyzes response structure, consistency, and readability
  */
-import { TokenConfidence } from '../types.js';
 export class CoherenceAnalyzer {
     /**
      * Analyze response coherence
@@ -156,8 +155,8 @@ export class CoherenceAnalyzer {
         // Look for topic shifts (simplified approach)
         const topicWords = this.extractTopicWords(response);
         // Check if response maintains focus on key topics
-        const firstSentenceWords = this.extractTopicWords(sentences[0]);
-        const lastSentenceWords = this.extractTopicWords(sentences[sentences.length - 1]);
+        const firstSentenceWords = this.extractTopicWords(sentences[0] || '');
+        const lastSentenceWords = this.extractTopicWords(sentences[sentences.length - 1] || '');
         // Calculate topic overlap between beginning and end
         const overlap = firstSentenceWords.filter(word => lastSentenceWords.includes(word));
         const overlapRatio = overlap.length / Math.max(firstSentenceWords.length, lastSentenceWords.length);
@@ -170,8 +169,8 @@ export class CoherenceAnalyzer {
         // Check for abrupt topic changes
         let topicShifts = 0;
         for (let i = 1; i < sentences.length; i++) {
-            const currentWords = this.extractTopicWords(sentences[i]);
-            const prevWords = this.extractTopicWords(sentences[i - 1]);
+            const currentWords = this.extractTopicWords(sentences[i] || '');
+            const prevWords = this.extractTopicWords(sentences[i - 1] || '');
             const sentenceOverlap = currentWords.filter(word => prevWords.includes(word));
             const sentenceOverlapRatio = sentenceOverlap.length / Math.max(currentWords.length, prevWords.length);
             if (sentenceOverlapRatio < 0.1 && currentWords.length > 3 && prevWords.length > 3) {

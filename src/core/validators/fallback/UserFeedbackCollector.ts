@@ -104,11 +104,13 @@ export class UserFeedbackCollector {
     // Calculate improvement trend (daily average)
     const dailyRatings = new Map<string, number[]>();
     relevantFeedback.forEach(f => {
-      const dateKey = f.timestamp.toISOString().split('T')[0];
-      if (!dailyRatings.has(dateKey)) {
+      const dateKey = f.timestamp.toISOString().split('T')[0] || '';
+      if (dateKey && !dailyRatings.has(dateKey)) {
         dailyRatings.set(dateKey, []);
       }
-      dailyRatings.get(dateKey)!.push(f.userRating);
+      if (dateKey) {
+        dailyRatings.get(dateKey)!.push(f.userRating);
+      }
     });
 
     const improvementTrend = Array.from(dailyRatings.entries())

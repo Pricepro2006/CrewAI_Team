@@ -46,9 +46,9 @@ export class MasterOrchestrator {
         };
         this.ragSystem = new RAGSystem(ragConfig);
         this.planExecutor = new PlanExecutor(this.agentRegistry, this.ragSystem);
-        this.planReviewer = new PlanReviewer(this.llm);
+        this.planReviewer = new PlanReviewer();
         this.enhancedParser = new EnhancedParser(this.llm);
-        this.agentRouter = new AgentRouter(this.llm);
+        this.agentRouter = new AgentRouter();
         logger.info("MasterOrchestrator initialized successfully", "ORCHESTRATOR");
     }
     async initialize() {
@@ -89,12 +89,12 @@ export class MasterOrchestrator {
                 estimatedDuration: queryAnalysis.estimatedDuration,
             });
             // Step 0.5: Create intelligent agent routing plan with timeout
-            const routingPlan = await withTimeout(this.agentRouter.createRoutingPlan(queryAnalysis), DEFAULT_TIMEOUTS.PLAN_CREATION, "Agent routing plan creation timed out");
+            const routingPlan = await withTimeout(this.agentRouter.routeQuery(queryAnalysis), DEFAULT_TIMEOUTS.PLAN_CREATION, "Agent routing plan creation timed out");
             logger.info("Agent routing plan created", "ORCHESTRATOR", {
-                selectedAgents: routingPlan.selectedAgents.length,
+                primaryAgent: routingPlan.primaryAgent,
                 strategy: routingPlan.executionStrategy,
                 confidence: routingPlan.confidence,
-                riskLevel: routingPlan.riskAssessment.level,
+                fallbackAgents: routingPlan.fallbackAgents?.length || 0,
             });
             // Step 1: Create initial plan with enhanced context and timeout
             logger.info("Starting plan creation", "ORCHESTRATOR");
@@ -108,7 +108,11 @@ export class MasterOrchestrator {
                 total: plan.steps.length,
             });
             // Step 2: Execute plan with replan loop
-            let executionResult;
+            let executionResult = {
+                success: false,
+                results: [],
+                summary: 'No execution performed'
+            };
             let attempts = 0;
             const maxAttempts = 3;
             const startTime = Date.now();
@@ -127,12 +131,12 @@ export class MasterOrchestrator {
                 });
                 executionResult = await withTimeout(this.planExecutor.execute(plan), DEFAULT_TIMEOUTS.AGENT_EXECUTION, "Plan execution timed out");
                 // Step 3: Review execution results with timeout
-                const review = await withTimeout(this.planReviewer.review(query, plan, executionResult), DEFAULT_TIMEOUTS.PLAN_CREATION, "Plan review timed out");
+                const review = await withTimeout(this.planReviewer.reviewPlan(plan), DEFAULT_TIMEOUTS.PLAN_CREATION, "Plan review timed out");
                 logger.debug("Plan review completed", "ORCHESTRATOR", {
-                    satisfactory: review.satisfactory,
+                    satisfactory: review.approved || review.satisfactory,
                     attempts: attempts + 1,
                 });
-                if (!review.satisfactory && attempts < maxAttempts) {
+                if (!review.approved && !review.satisfactory && attempts < maxAttempts) {
                     // Check if failures are only infrastructure-related
                     const hasOnlyInfrastructureFailures = review.failedSteps.length === 0 &&
                         review.feedback.includes('infrastructure limitations');
@@ -175,13 +179,8 @@ export class MasterOrchestrator {
                 // Return a timeout response instead of throwing
                 return {
                     success: false,
-                    output: "I apologize, but processing your request took too long. This can happen with complex queries or when the system is under heavy load. Please try simplifying your request or try again later.",
-                    plan: {
-                        id: `plan-timeout-${Date.now()}`,
-                        steps: [],
-                        status: 'failed',
-                        error: error.message
-                    },
+                    results: [],
+                    summary: "I apologize, but processing your request took too long. This can happen with complex queries or when the system is under heavy load. Please try simplifying your request or try again later.",
                     metadata: {
                         error: 'timeout',
                         duration: error.duration,

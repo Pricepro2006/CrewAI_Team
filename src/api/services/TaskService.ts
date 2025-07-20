@@ -1,4 +1,4 @@
-import { MaestroFramework } from "../../core/maestro/MaestroFramework";
+import type { MaestroFramework } from "../../core/maestro/MaestroFramework";
 import type { Task, TaskResult } from "../../core/maestro/types";
 import { v4 as uuidv4 } from "uuid";
 

@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState } from 'react';
-import { FilterFn } from '@tanstack/react-table';
+import type { FilterFn } from '@tanstack/react-table';
 
 /**
  * Advanced Filtering Hook

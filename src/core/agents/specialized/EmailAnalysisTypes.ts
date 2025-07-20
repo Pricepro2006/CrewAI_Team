@@ -40,6 +40,7 @@ export interface EmailAnalysis {
   suggestedActions: string[];
   confidence: number;
   summary: string;
+  prioritySource?: 'pattern-rule' | 'workflow-rule' | 'model';
 }
 
 export interface EmailEntities {

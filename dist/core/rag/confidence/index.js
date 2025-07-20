@@ -14,7 +14,7 @@ export { ConfidenceContextBuilder } from './ConfidenceContextBuilder.js';
 export { ConfidenceResponseGenerator } from './ConfidenceResponseGenerator.js';
 // Evaluation
 export { MultiModalEvaluator } from './MultiModalEvaluator.js';
-export { ConfidenceExtractor } from './ConfidenceExtractor.js';
+// export { ConfidenceExtractor } from './ConfidenceExtractor.js'; // TODO: Implement ConfidenceExtractor
 // Evaluators
 export { RelevanceScorer } from './evaluators/RelevanceScorer.js';
 export { FactualityChecker } from './evaluators/FactualityChecker.js';
@@ -24,9 +24,9 @@ export { ConfidenceCalibrator } from './ConfidenceCalibrator.js';
 // Delivery
 export { AdaptiveDeliveryManager } from './AdaptiveDeliveryManager.js';
 // Performance optimization
-export { PerformanceOptimizer } from './PerformanceOptimizer.js';
+export { PerformanceOptimizer } from '../../../api/services/PerformanceOptimizer';
 // BERT ranking
-export { BERTRanker } from './BERTRanker.js';
+// export { BERTRanker } from './BERTRanker.js'; // TODO: Implement BERTRanker
 // Re-export action types and core enums
 export { ActionType } from './types.js';
 //# sourceMappingURL=index.js.map

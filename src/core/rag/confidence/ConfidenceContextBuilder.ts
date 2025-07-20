@@ -3,7 +3,7 @@
  * Optimizes context for confidence-aware generation
  */
 
-import { ScoredDocument, ContextOptions, BuiltContext } from './types.js';
+import type { ScoredDocument, ContextOptions, BuiltContext } from './types.js';
 
 export class ConfidenceContextBuilder {
   private readonly maxTokensDefault = 4000;
@@ -209,6 +209,8 @@ export class ConfidenceContextBuilder {
 
     for (let i = 0; i < documents.length; i++) {
       const doc = documents[i];
+      if (!doc) continue;
+      
       const docSection = this.formatDocumentForSectioned(doc, i + 1, options);
       const docTokens = this.estimateTokens(docSection);
 

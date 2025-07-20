@@ -14,12 +14,14 @@ export interface RAGConfig {
     retrieval: RetrievalConfig;
 }
 export interface VectorStoreConfig {
-    type: 'chromadb' | 'pinecone' | 'weaviate' | 'qdrant';
+    type: 'chromadb' | 'pinecone' | 'weaviate' | 'qdrant' | 'mcp-vectorize';
     path?: string;
     baseUrl?: string;
     apiKey?: string;
     collectionName: string;
     dimension?: number;
+    indexName?: string;
+    pipelineId?: string;
 }
 export interface ChunkingConfig {
     size: number;

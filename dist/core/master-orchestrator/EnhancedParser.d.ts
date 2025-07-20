@@ -1,4 +1,4 @@
-import { OllamaProvider } from "../llm/OllamaProvider";
+import type { OllamaProvider } from "../llm/OllamaProvider";
 import type { Query } from "./types";
 import type { QueryAnalysis } from "./enhanced-types";
 /**

@@ -2,7 +2,6 @@
  * RelevanceScorer - Evaluates response relevance to the query
  * Measures semantic similarity and intent fulfillment
  */
-import { ScoredDocument } from '../types.js';
 export class RelevanceScorer {
     /**
      * Calculate overall relevance score

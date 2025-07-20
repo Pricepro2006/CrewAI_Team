@@ -11,6 +11,10 @@ const appConfig = {
             credentials: true,
         },
     },
+    ollama: process.env.OLLAMA_URL ? {
+        url: process.env.OLLAMA_URL,
+        model: process.env.OLLAMA_MODEL,
+    } : undefined,
 };
 export default appConfig;
 //# sourceMappingURL=app.config.js.map

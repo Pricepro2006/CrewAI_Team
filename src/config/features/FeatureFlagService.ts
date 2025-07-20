@@ -149,7 +149,7 @@ export class FeatureFlagService extends EventEmitter {
         this.config.defaultRolloutPercentage = config.defaultRolloutPercentage;
       }
     } catch (error) {
-      logger.error('Error loading feature flags from file', error);
+      logger.error('Error loading feature flags from file', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -175,7 +175,7 @@ export class FeatureFlagService extends EventEmitter {
       
       logger.debug('Feature flags saved to file');
     } catch (error) {
-      logger.error('Error saving feature flags to file', error);
+      logger.error('Error saving feature flags to file', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -344,7 +344,7 @@ export class FeatureFlagService extends EventEmitter {
     this.flags.set(flagName, updatedFlag);
     this.saveToFile();
 
-    logger.info(`Updated feature flag: ${flagName}`, updates);
+    logger.info(`Updated feature flag: ${flagName}`, 'FEATURE_FLAGS', updates);
     
     this.emit('flag_updated', {
       name: flagName,

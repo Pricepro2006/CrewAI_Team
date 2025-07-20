@@ -267,12 +267,12 @@ export class BusinessResponseValidator {
       ContactPatterns.hours.twentyFourSeven
     );
     
-    if (twentyFourSevenMatches.length > 0) {
+    if (twentyFourSevenMatches.length > 0 && twentyFourSevenMatches[0]) {
       hours.push({
         value: twentyFourSevenMatches[0].value,
         type: '24/7',
         confidence: 0.95,
-        index: twentyFourSevenMatches[0].index
+        index: twentyFourSevenMatches[0].index || 0
       });
     }
 
@@ -317,12 +317,12 @@ export class BusinessResponseValidator {
     const matches = PatternHelpers.extractMatches(text, ContactPatterns.email.standard);
     
     for (const match of matches) {
-      const domain = match.value.split('@')[1];
+      const domain = match.value.split('@')[1] || '';
       emails.push({
         value: match.value,
         domain,
         confidence: 0.95,
-        index: match.index
+        index: match.index || 0
       });
     }
 
@@ -386,8 +386,8 @@ export class BusinessResponseValidator {
     if (match) {
       return {
         times: {
-          open: match[1],
-          close: match[2]
+          open: match[1] || '',
+          close: match[2] || ''
         }
       };
     }
@@ -399,8 +399,8 @@ export class BusinessResponseValidator {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const match = dayRange.match(/(\w{3})\w*\s*[-–—]\s*(\w{3})\w*/i);
     if (match) {
-      const startDay = match[1].substring(0, 3);
-      const endDay = match[2].substring(0, 3);
+      const startDay = match[1]?.substring(0, 3) || '';
+      const endDay = match[2]?.substring(0, 3) || '';
       const startIdx = days.findIndex(d => d.toLowerCase() === startDay.toLowerCase());
       const endIdx = days.findIndex(d => d.toLowerCase() === endDay.toLowerCase());
       

@@ -1,4 +1,4 @@
-import { ValidationResult, ContactInfo } from '../BusinessResponseValidator.js';
+import type { ValidationResult, ContactInfo } from '../BusinessResponseValidator.js';
 
 export interface FallbackSearchOptions {
   query: string;

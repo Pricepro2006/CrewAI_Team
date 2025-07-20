@@ -128,7 +128,7 @@ export function sanitizeJSONOutput(content) {
  * Sanitize output for specific contexts
  */
 export function sanitizeForContext(content, context) {
-    let result = sanitizeLLMOutput(content);
+    const result = sanitizeLLMOutput(content);
     switch (context) {
         case 'email':
             // Additional email-specific sanitization

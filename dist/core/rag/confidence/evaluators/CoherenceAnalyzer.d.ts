@@ -2,7 +2,7 @@
  * CoherenceAnalyzer - Evaluates coherence and logical flow of responses
  * Analyzes response structure, consistency, and readability
  */
-import { TokenConfidence } from '../types.js';
+import type { TokenConfidence } from '../types.js';
 export interface CoherenceResult {
     score: number;
     structuralCoherence: number;

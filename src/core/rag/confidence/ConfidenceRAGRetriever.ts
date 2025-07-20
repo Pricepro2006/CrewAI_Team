@@ -3,8 +3,8 @@
  * Integrates with vector stores and applies confidence-based filtering
  */
 
-import { VectorStore } from '../VectorStore';
-import { RetrievalResult, RetrievalOptions, ScoredDocument } from './types.js';
+import type { VectorStore } from '../VectorStore';
+import type { RetrievalResult, RetrievalOptions, ScoredDocument } from './types.js';
 
 export class ConfidenceRAGRetriever {
   private vectorStore: VectorStore;
@@ -278,7 +278,9 @@ export class ConfidenceRAGRetriever {
     if (this.retrievalCache.size >= this.cacheSize) {
       // Remove oldest entry
       const firstKey = this.retrievalCache.keys().next().value;
-      this.retrievalCache.delete(firstKey);
+      if (firstKey) {
+        this.retrievalCache.delete(firstKey);
+      }
     }
     
     // Add timestamp for TTL

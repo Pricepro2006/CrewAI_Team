@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Request, Response } from 'express';
 import { graphWebhookHandler } from './microsoft-graph';
 // Mock bullmq
 vi.mock('bullmq', () => ({

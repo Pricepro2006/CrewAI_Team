@@ -1,5 +1,5 @@
 import { performanceOptimizer } from '../api/services/PerformanceOptimizer';
-import { Logger } from './logger';
+import { logger } from './logger';
 
 /**
  * Lazy loading utilities for virtual scrolling and large datasets
@@ -35,7 +35,7 @@ export class LazyLoader<T> {
     // Check cache first
     const cached = this.cache.get(chunkKey);
     if (cached && !this.isCacheExpired(cached)) {
-      Logger.debug('Lazy load cache hit', 'LAZY_LOADER', { 
+      logger.debug('Lazy load cache hit', 'LAZY_LOADER', { 
         startIndex, 
         chunkKey,
         cacheSize: this.cache.size 
@@ -53,7 +53,7 @@ export class LazyLoader<T> {
     // Check if already loading this chunk (deduplication)
     const existingLoad = this.loadingStates.get(chunkKey);
     if (existingLoad) {
-      Logger.debug('Deduplicating concurrent load', 'LAZY_LOADER', { chunkKey });
+      logger.debug('Deduplicating concurrent load', 'LAZY_LOADER', { chunkKey });
       const data = await existingLoad;
       return {
         data,
@@ -108,7 +108,7 @@ export class LazyLoader<T> {
       if (!this.cache.has(nextChunkKey) && !this.loadingStates.has(nextChunkKey)) {
         preloadPromises.push(
           this.loadChunk(nextStartIndex, loadFn, totalItems).catch(error => {
-            Logger.warn('Failed to preload next chunk', 'LAZY_LOADER', { error, nextStartIndex });
+            logger.warn('Failed to preload next chunk', 'LAZY_LOADER', { error, nextStartIndex });
           })
         );
       }
@@ -121,7 +121,7 @@ export class LazyLoader<T> {
       if (!this.cache.has(prevChunkKey) && !this.loadingStates.has(prevChunkKey)) {
         preloadPromises.push(
           this.loadChunk(prevStartIndex, loadFn, totalItems).catch(error => {
-            Logger.warn('Failed to preload previous chunk', 'LAZY_LOADER', { error, prevStartIndex });
+            logger.warn('Failed to preload previous chunk', 'LAZY_LOADER', { error, prevStartIndex });
           })
         );
       }
@@ -130,7 +130,7 @@ export class LazyLoader<T> {
     // Execute preloads without blocking
     if (preloadPromises.length > 0) {
       Promise.allSettled(preloadPromises).then(() => {
-        Logger.debug('Preload completed', 'LAZY_LOADER', { 
+        logger.debug('Preload completed', 'LAZY_LOADER', { 
           currentIndex, 
           preloadedChunks: preloadPromises.length 
         });
@@ -198,7 +198,7 @@ export class LazyLoader<T> {
   clearCache(): void {
     this.cache.clear();
     this.loadingStates.clear();
-    Logger.info('Lazy loader cache cleared', 'LAZY_LOADER');
+    logger.info('Lazy loader cache cleared', 'LAZY_LOADER');
   }
   
   /**
@@ -217,7 +217,7 @@ export class LazyLoader<T> {
       this.clearCache();
     }
     
-    Logger.debug('Cache invalidated', 'LAZY_LOADER', { startIndex, endIndex });
+    logger.debug('Cache invalidated', 'LAZY_LOADER', { startIndex, endIndex });
   }
   
   // Private methods
@@ -232,7 +232,7 @@ export class LazyLoader<T> {
       const data = await loadFn(startIndex, this.chunkSize);
       const duration = Date.now() - startTime;
       
-      Logger.debug('Chunk loaded', 'LAZY_LOADER', {
+      logger.debug('Chunk loaded', 'LAZY_LOADER', {
         startIndex,
         itemCount: data.length,
         duration
@@ -240,7 +240,7 @@ export class LazyLoader<T> {
       
       return data;
     } catch (error) {
-      Logger.error('Failed to load chunk', 'LAZY_LOADER', {
+      logger.error('Failed to load chunk', 'LAZY_LOADER', {
         startIndex,
         error
       });
@@ -252,7 +252,9 @@ export class LazyLoader<T> {
     // Implement LRU eviction
     if (this.cache.size >= this.cacheSize) {
       const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      if (oldestKey !== undefined) {
+        this.cache.delete(oldestKey);
+      }
     }
     
     this.cache.set(chunkKey, {

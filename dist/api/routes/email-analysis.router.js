@@ -30,7 +30,7 @@ emailAnalysisRouter.post('/analyze', async (req, res) => {
             priority: analysis.priority,
             confidence: analysis.confidence
         });
-        res.json({
+        return res.json({
             success: true,
             emailId: email.id,
             analysis
@@ -38,7 +38,7 @@ emailAnalysisRouter.post('/analyze', async (req, res) => {
     }
     catch (error) {
         logger.error('Email analysis failed', 'API', { error });
-        res.status(500).json({
+        return res.status(500).json({
             error: 'Email analysis failed',
             message: error instanceof Error ? error.message : 'Unknown error'
         });
@@ -79,7 +79,7 @@ emailAnalysisRouter.post('/batch', async (req, res) => {
             successful: successCount,
             failed: emails.length - successCount
         });
-        res.json({
+        return res.json({
             success: true,
             total: emails.length,
             successful: successCount,
@@ -88,7 +88,7 @@ emailAnalysisRouter.post('/batch', async (req, res) => {
     }
     catch (error) {
         logger.error('Batch email analysis failed', 'API', { error });
-        res.status(500).json({
+        return res.status(500).json({
             error: 'Batch analysis failed',
             message: error instanceof Error ? error.message : 'Unknown error'
         });
@@ -146,14 +146,14 @@ emailAnalysisRouter.post('/extract-entities', async (req, res) => {
             categories: []
         };
         const analysis = await agent.analyzeEmail(mockEmail);
-        res.json({
+        return res.json({
             success: true,
             entities: analysis.entities
         });
     }
     catch (error) {
         logger.error('Entity extraction failed', 'API', { error });
-        res.status(500).json({
+        return res.status(500).json({
             error: 'Entity extraction failed',
             message: error instanceof Error ? error.message : 'Unknown error'
         });

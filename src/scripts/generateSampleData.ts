@@ -121,7 +121,8 @@ const STATUS_MAPPINGS = {
 
 // Helper functions
 function randomElement<T>(array: T[]): T {
-  return array[Math.floor(Math.random() * array.length)];
+  const index = Math.floor(Math.random() * array.length);
+  return array[index]!;
 }
 
 function generatePONumber(): string {
@@ -189,7 +190,7 @@ function generateSubject(state: 'START_POINT' | 'IN_PROGRESS' | 'COMPLETION'): s
 }
 
 function generateSummary(workflowType: string, state: 'START_POINT' | 'IN_PROGRESS' | 'COMPLETION'): string {
-  const summaries = {
+  const summaries: Record<string, Record<'START_POINT' | 'IN_PROGRESS' | 'COMPLETION', string>> = {
     'Quote Processing': {
       START_POINT: 'New quote request requiring pricing and product availability check',
       IN_PROGRESS: 'Quote being prepared with special pricing validation in progress',
@@ -352,17 +353,18 @@ function generateSampleData(count: number = 100) {
   console.log(`Generated ${emails.length} sample email records`);
   console.log(`Output saved to: ${outputPath}`);
   console.log('\nStatus Distribution:');
-  console.log(`  Red (Critical): ${data.workflow_summary.status_distribution.red}`);
-  console.log(`  Yellow (In Progress): ${data.workflow_summary.status_distribution.yellow}`);
-  console.log(`  Green (Completed): ${data.workflow_summary.status_distribution.green}`);
+  console.log(`  Red (Critical): ${data.email_dashboard_data.workflow_summary.status_distribution.red}`);
+  console.log(`  Yellow (In Progress): ${data.email_dashboard_data.workflow_summary.status_distribution.yellow}`);
+  console.log(`  Green (Completed): ${data.email_dashboard_data.workflow_summary.status_distribution.green}`);
   console.log('\nWorkflow State Distribution:');
-  console.log(`  Start Points: ${data.workflow_summary.workflow_state_distribution.START_POINT}`);
-  console.log(`  In Progress: ${data.workflow_summary.workflow_state_distribution.IN_PROGRESS}`);
-  console.log(`  Completed: ${data.workflow_summary.workflow_state_distribution.COMPLETION}`);
+  console.log(`  Start Points: ${data.email_dashboard_data.workflow_summary.workflow_state_distribution.START_POINT}`);
+  console.log(`  In Progress: ${data.email_dashboard_data.workflow_summary.workflow_state_distribution.IN_PROGRESS}`);
+  console.log(`  Completed: ${data.email_dashboard_data.workflow_summary.workflow_state_distribution.COMPLETION}`);
 }
 
 // Run the generator
 const count = process.argv[2] ? parseInt(process.argv[2], 10) : 100;
 generateSampleData(count);
 
-export { generateSampleData, generateEmailRecord, EmailRecord };
+export { generateSampleData, generateEmailRecord };
+export type { EmailRecord };

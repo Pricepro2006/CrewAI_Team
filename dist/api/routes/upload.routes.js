@@ -51,7 +51,7 @@ let masterOrchestrator;
 async function getOrchestrator() {
     if (!masterOrchestrator) {
         masterOrchestrator = new MasterOrchestrator({
-            ollamaUrl: ollamaConfig.main.baseUrl,
+            ollamaUrl: ollamaConfig.baseUrl,
             rag: {
                 vectorStore: {
                     type: "chromadb",

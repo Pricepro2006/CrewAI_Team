@@ -1,4 +1,3 @@
-import { Request, Response } from 'express';
 import { Queue } from 'bullmq';
 import { logger } from '../../utils/logger';
 // Create a queue for processing email notifications
@@ -14,7 +13,7 @@ export const graphWebhookHandler = async (req, res) => {
         // Handle validation token for new subscriptions
         const validationToken = req.query.validationToken;
         if (validationToken) {
-            logger.info('Validating Microsoft Graph webhook subscription', {
+            logger.info('Validating Microsoft Graph webhook subscription', 'WEBHOOK', {
                 token: validationToken.substring(0, 10) + '...',
             });
             return res.send(validationToken);
@@ -32,7 +31,7 @@ export const graphWebhookHandler = async (req, res) => {
         for (const notification of notifications.value) {
             // Verify client state
             if (notification.clientState !== expectedClientState) {
-                logger.error('Invalid client state in notification', {
+                logger.error('Invalid client state in notification', 'WEBHOOK', {
                     expected: expectedClientState,
                     received: notification.clientState,
                 });
@@ -52,19 +51,19 @@ export const graphWebhookHandler = async (req, res) => {
                 removeOnComplete: true,
                 removeOnFail: false,
             });
-            logger.info('Queued email notification', {
+            logger.info('Queued email notification', 'WEBHOOK', {
                 subscriptionId: notification.subscriptionId,
                 changeType: notification.changeType,
                 resource: notification.resource,
             });
         }
         // Respond quickly (must be within 3 seconds for Microsoft Graph)
-        res.status(202).send();
+        return res.status(202).send();
     }
     catch (error) {
-        logger.error('Error processing Microsoft Graph webhook', error);
+        logger.error('Error processing Microsoft Graph webhook', 'WEBHOOK', {}, error instanceof Error ? error : new Error(String(error)));
         // Still respond with 202 to prevent retry storms
-        res.status(202).send();
+        return res.status(202).send();
     }
 };
 // Webhook route configuration

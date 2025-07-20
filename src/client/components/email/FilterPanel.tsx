@@ -23,20 +23,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { DateRangePicker, type DateRange } from '@/components/ui/date-range-picker';
 import { StatusIndicator } from './StatusIndicator';
 import type {
   EmailStatus,
   WorkflowState,
   Priority,
-  FilterState,
+  FilterConfig,
   FilterOptions,
+  StatusOption,
 } from '@/types/email-dashboard.interfaces';
 
 interface FilterPanelProps {
-  filters: FilterState;
+  filters: FilterConfig;
   filterOptions: FilterOptions;
-  onFiltersChange: (filters: FilterState) => void;
+  onFiltersChange: (filters: FilterConfig) => void;
   onReset: () => void;
   activeFilterCount?: number;
 }
@@ -62,9 +63,9 @@ export function FilterPanel({
   activeFilterCount = 0,
 }: FilterPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [localFilters, setLocalFilters] = useState<FilterState>(filters);
+  const [localFilters, setLocalFilters] = useState<FilterConfig>(filters);
 
-  const handleFilterChange = useCallback((key: keyof FilterState, value: any) => {
+  const handleFilterChange = useCallback((key: keyof FilterConfig, value: any) => {
     setLocalFilters((prev) => ({
       ...prev,
       [key]: value,
@@ -77,7 +78,7 @@ export function FilterPanel({
   }, [localFilters, onFiltersChange]);
 
   const handleReset = useCallback(() => {
-    const resetFilters: FilterState = {
+    const resetFilters: FilterConfig = {
       search: '',
       emailAliases: [],
       requesters: [],
@@ -85,7 +86,10 @@ export function FilterPanel({
       workflowStates: [],
       workflowTypes: [],
       priorities: [],
-      dateRange: undefined,
+      dateRange: {
+        start: null,
+        end: null
+      },
       hasAttachments: undefined,
       isRead: undefined,
       tags: [],
@@ -95,7 +99,7 @@ export function FilterPanel({
   }, [onReset]);
 
   const toggleArrayFilter = useCallback(
-    (key: keyof FilterState, value: string) => {
+    (key: keyof FilterConfig, value: string) => {
       const currentValues = (localFilters[key] as string[]) || [];
       const newValues = currentValues.includes(value)
         ? currentValues.filter((v) => v !== value)
@@ -141,7 +145,7 @@ export function FilterPanel({
                 id="search"
                 placeholder="Search emails..."
                 value={localFilters.search || ''}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange('search', e.target.value)}
               />
             </div>
 
@@ -169,7 +173,6 @@ export function FilterPanel({
                         <StatusIndicator status={status.value} size="sm" showTooltip={false} />
                         <span className="text-sm font-medium">{status.label}</span>
                       </div>
-                      <span className="text-sm text-muted-foreground">({status.count})</span>
                     </label>
                   </div>
                 ))}
@@ -183,18 +186,17 @@ export function FilterPanel({
               <Label>Workflow State</Label>
               <div className="space-y-2">
                 {filterOptions.workflowStates.map((state) => (
-                  <div key={state.value} className="flex items-center space-x-2">
+                  <div key={state} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`workflow-${state.value}`}
-                      checked={localFilters.workflowStates?.includes(state.value) || false}
-                      onCheckedChange={() => toggleArrayFilter('workflowStates', state.value)}
+                      id={`workflow-${state}`}
+                      checked={localFilters.workflowStates?.includes(state) || false}
+                      onCheckedChange={() => toggleArrayFilter('workflowStates', state)}
                     />
                     <label
-                      htmlFor={`workflow-${state.value}`}
+                      htmlFor={`workflow-${state}`}
                       className="flex items-center justify-between w-full cursor-pointer"
                     >
-                      <span className="text-sm font-medium">{workflowStateLabels[state.value]}</span>
-                      <span className="text-sm text-muted-foreground">({state.count})</span>
+                      <span className="text-sm font-medium">{workflowStateLabels[state]}</span>
                     </label>
                   </div>
                 ))}
@@ -208,18 +210,17 @@ export function FilterPanel({
               <Label>Priority</Label>
               <div className="space-y-2">
                 {filterOptions.priorities.map((priority) => (
-                  <div key={priority.value} className="flex items-center space-x-2">
+                  <div key={priority} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`priority-${priority.value}`}
-                      checked={localFilters.priorities?.includes(priority.value) || false}
-                      onCheckedChange={() => toggleArrayFilter('priorities', priority.value)}
+                      id={`priority-${priority}`}
+                      checked={localFilters.priorities?.includes(priority) || false}
+                      onCheckedChange={() => toggleArrayFilter('priorities', priority)}
                     />
                     <label
-                      htmlFor={`priority-${priority.value}`}
+                      htmlFor={`priority-${priority}`}
                       className="flex items-center justify-between w-full cursor-pointer"
                     >
-                      <span className="text-sm font-medium">{priorityLabels[priority.value]}</span>
-                      <span className="text-sm text-muted-foreground">({priority.count})</span>
+                      <span className="text-sm font-medium">{priorityLabels[priority]}</span>
                     </label>
                   </div>
                 ))}
@@ -236,7 +237,7 @@ export function FilterPanel({
               </Label>
               <Select
                 value={localFilters.emailAliases?.[0] || ''}
-                onValueChange={(value) => handleFilterChange('emailAliases', value ? [value] : [])}
+                onValueChange={(value: string) => handleFilterChange('emailAliases', value ? [value] : [])}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All email aliases" />
@@ -260,7 +261,7 @@ export function FilterPanel({
               </Label>
               <Select
                 value={localFilters.requesters?.[0] || ''}
-                onValueChange={(value) => handleFilterChange('requesters', value ? [value] : [])}
+                onValueChange={(value: string) => handleFilterChange('requesters', value ? [value] : [])}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All requesters" />
@@ -285,8 +286,20 @@ export function FilterPanel({
                 Date Range
               </Label>
               <DateRangePicker
-                value={localFilters.dateRange}
-                onChange={(dateRange) => handleFilterChange('dateRange', dateRange)}
+                value={
+                  localFilters.dateRange.start || localFilters.dateRange.end
+                    ? {
+                        from: localFilters.dateRange.start || undefined,
+                        to: localFilters.dateRange.end || undefined,
+                      }
+                    : undefined
+                }
+                onChange={(dateRange) => {
+                  handleFilterChange('dateRange', {
+                    start: dateRange?.from || null,
+                    end: dateRange?.to || null,
+                  });
+                }}
               />
             </div>
 
@@ -298,7 +311,7 @@ export function FilterPanel({
                 <Checkbox
                   id="has-attachments"
                   checked={localFilters.hasAttachments === true}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={(checked: boolean) =>
                     handleFilterChange('hasAttachments', checked === true ? true : undefined)
                   }
                 />
@@ -311,7 +324,7 @@ export function FilterPanel({
                 <Checkbox
                   id="unread-only"
                   checked={localFilters.isRead === false}
-                  onCheckedChange={(checked) =>
+                  onCheckedChange={(checked: boolean) =>
                     handleFilterChange('isRead', checked === true ? false : undefined)
                   }
                 />
@@ -363,7 +376,7 @@ export function FilterPanel({
 export function QuickFilters({
   onFilterChange,
 }: {
-  onFilterChange: (filters: Partial<FilterState>) => void;
+  onFilterChange: (filters: Partial<FilterConfig>) => void;
 }) {
   return (
     <div className="flex items-center gap-2">
