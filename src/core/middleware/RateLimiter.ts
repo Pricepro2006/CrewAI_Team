@@ -148,7 +148,7 @@ export class RateLimiter {
     // Use Redis store if available and connected
     if (this.useRedis && this.redisClient) {
       limiterConfig.store = new RedisStore({
-        // @ts-ignore - RedisStore types may not match exactly
+        // @ts-expect-error - RedisStore types may not match exactly
         client: this.redisClient,
         prefix: 'rl:'
       });
