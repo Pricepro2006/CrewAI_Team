@@ -13,3 +13,20 @@ export async function cleanupOllamaTests(): Promise<void> {
   console.log('Cleaning up Ollama tests...');
   // Add any necessary cleanup here
 }
+
+export function skipIfNoOllama() {
+  return {
+    skip: async (): Promise<boolean> => {
+      // Check if Ollama is available
+      try {
+        // You can add actual Ollama availability check here
+        // For now, return false to not skip tests
+        return false;
+      } catch (error) {
+        console.log('Ollama not available, skipping test');
+        return true;
+      }
+    },
+    reason: 'Ollama service not available'
+  };
+}

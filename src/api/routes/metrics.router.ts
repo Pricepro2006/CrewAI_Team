@@ -1,20 +1,21 @@
-import { router, publicProcedure } from '../trpc/router';
-import { z } from 'zod';
-import { RateLimiter } from '../../core/middleware/RateLimiter';
+import { router, publicProcedure } from "../trpc/router";
+import { z } from "zod";
+import { RateLimiter } from "../../core/middleware/RateLimiter";
 
 // Get the rate limiter instance
 const rateLimiter = RateLimiter.getInstance();
 
-export const metricsRouter = router({
-  getRateLimitMetrics: publicProcedure
-    .query(async () => {
-      return rateLimiter.getMetrics();
-    }),
+export const metricsRouter: any = router({
+  getRateLimitMetrics: publicProcedure.query(async () => {
+    return rateLimiter.getMetrics();
+  }),
 
   resetRateLimitMetrics: publicProcedure
-    .input(z.object({
-      identifier: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        identifier: z.string().optional(),
+      }),
+    )
     .mutation(async ({ input }) => {
       if (input.identifier) {
         rateLimiter.reset(input.identifier);
@@ -26,11 +27,15 @@ export const metricsRouter = router({
     }),
 
   getRateLimitStatus: publicProcedure
-    .input(z.object({
-      identifier: z.string(),
-    }))
+    .input(
+      z.object({
+        identifier: z.string(),
+      }),
+    )
     .query(async ({ input }) => {
-      const { allowed, remaining, reset } = rateLimiter.checkLimit(input.identifier);
+      const { allowed, remaining, reset } = rateLimiter.checkLimit(
+        input.identifier,
+      );
       return {
         identifier: input.identifier,
         allowed,

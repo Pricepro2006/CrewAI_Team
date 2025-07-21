@@ -67,6 +67,7 @@ export interface SearchEngineParams {
     maxResults?: number;
     location?: string;
     language?: string;
+    cursor?: string;
 }
 export interface WebScrapingParams {
     url: string;
@@ -76,15 +77,17 @@ export interface WebScrapingParams {
     respectRobots?: boolean;
 }
 export interface EcommerceScrapingParams {
-    platform: "amazon" | "walmart" | "ebay" | "etsy" | "bestbuy";
+    platform: "amazon" | "walmart" | "ebay" | "etsy" | "bestbuy" | "homedepot" | "zara";
     productUrl?: string;
     searchKeyword?: string;
     maxProducts?: number;
 }
 export interface SocialMediaParams {
-    platform: "linkedin" | "twitter" | "instagram" | "facebook" | "tiktok";
+    platform: "linkedin" | "instagram" | "facebook" | "tiktok" | "youtube";
     profileUrl?: string;
     searchTerm?: string;
     maxPosts?: number;
+    includeComments?: boolean;
+    includeMedia?: boolean;
 }
 //# sourceMappingURL=types.d.ts.map
