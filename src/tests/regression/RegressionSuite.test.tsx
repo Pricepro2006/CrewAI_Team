@@ -1,9 +1,10 @@
+/** @jsx React.createElement */
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EmailDashboard } from '../../ui/components/Email/EmailDashboard';
-import { EmailStorageService } from '../../api/services/EmailStorageService';
+import type { EmailStorageService } from '../../api/services/EmailStorageService';
 
 // 2025 Best Practice: Comprehensive Regression Test Suite
 

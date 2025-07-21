@@ -3,8 +3,9 @@
  * Implements the real business logic for deal data management
  */
 
-import Database from 'better-sqlite3';
-import { BaseRepository, BaseEntity } from './BaseRepository';
+import type Database from 'better-sqlite3';
+import { BaseRepository } from './BaseRepository';
+import type { BaseEntity } from './BaseRepository';
 import { logger } from '../../utils/logger';
 
 export interface Deal extends BaseEntity {
