@@ -4,7 +4,7 @@ import type { TeamMember } from '@/config/team-members.config';
 
 export interface UseEmailAssignmentOptions {
   onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
+  onError?: (error: any) => void;
 }
 
 export function useEmailAssignment(options?: UseEmailAssignmentOptions) {

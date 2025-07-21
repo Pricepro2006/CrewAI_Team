@@ -1,0 +1,141 @@
+{
+  "mcpServers": {
+    "wslFilesystem": {
+      "command": "wsl.exe",
+      "args": [
+        "bash",
+        "-c",
+        "mcp-server-filesystem /home/pricepro2006"
+      ]
+    },
+    "zDriveFilesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "Z:/home/pricepro2006"
+      ]
+    },
+    "vectorize": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@vectorize-io/vectorize-mcp-server@latest"
+      ],
+      "env": {
+        "VECTORIZE_ORG_ID": "9dcdd948-0619-4c58-bf9b-f5674e2180ec",
+        "VECTORIZE_TOKEN": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NTE2NDIzNjQsImF1ZCI6IjlkY2RkOTQ4LTA2MTktNGM1OC1iZjliLWY1Njc0ZTIxODBlYyIsInJvbGUiOiJhZG1pbiIsImF1dGhvcml6YXRpb25fZGV0YWlscyI6W3sibmFtZSI6IlJFVFJJRVZBTF9BQ0NFU1NfVE9LRU4iLCJpc1N0YW5kYXJkUm9sZSI6dHJ1ZSwicGVybWlzc2lvbnMiOnsiVmVyc2lvbiI6IjEuMCIsIlN0YXRlbWVudCI6W3siQWN0aW9uIjpbIk9yZzpQaXBlbGluZXM6UmV0cmlldmFsIl0sIlJlc291cmNlIjpbIi9vcmdhbml6YXRpb24vOWRjZGQ5NDgtMDYxOS00YzU4LWJmOWItZjU2NzRlMjE4MGVjIl0sIkVmZmVjdCI6IkFsbG93In1dfX1dLCJzdWIiOiJUeXBlc2NyaXB0IEFnZW50aWMgVGVhbSJ9.IHCNVsE_YZhSNuYNUj8TZMvDdUFz4w7eWlhJ5Nb5jCKiIxg10t9zDF5eDdOAaRJB1u_DzJjbhTdxCgr9LKCiDUbs8G3jfBE-wUgu4qlT6uWkBhFwuczA5kt7dOrfvOewNRJaW3j3EKwIdxfPNjvCiJXudv4q_z7ih-fJUEwt9dHamqMj4S0OmbIGO5Rz0U_atdy8fLDwKUgrT2EL0n-aBsxuuMGWw2B0VUEyhwApg_eLP9hxVw4oFkve8cKMFj6kEe8nbr0eCPKOC5M2py2YsTFvrt46_hjy5LZ7Kq_GIb-3rBzk9wGT6Fyueb1_DCBGC8tjWJVuFs9TwMqRO_A0lQ",
+        "VECTORIZE_PIPELINE_ID": "aipadf43-891f-4b5c-89aa-7d6f70cba7f9"
+      }
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
+    },    
+    "claude-code-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@steipete/claude-code-mcp@latest"
+      ]
+    },
+    "fetch": {
+      "command": "python",
+      "args": ["-m", "mcp_server_fetch"]
+    },
+    "Bright Data": {
+      "command": "npx",
+      "args": ["@brightdata/mcp"],
+      "env": {
+        "API_TOKEN": "261ca8f9-b363-4925-b97d-81c918c0e289",
+        "RATE_LIMIT": "100/1h"
+      }
+    },
+    "supabase": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=kakzhibvojwxwbwsrxey"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_b8d9a95b022de22de0c8fc6ef4ded7078a595cc2"
+      }
+    },
+    "youtube-transcript": {
+      "command": "npx",
+      "args": ["-y", "@kimtaeyoon83/mcp-server-youtube-transcript"]
+    },
+    "mastra": {
+      "command": "npx",
+      "args": ["-y", "@mastra/mcp-docs-server"]
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ]
+    },
+    "sequential": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "magic": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-magic"
+      ]
+    },
+    "redis": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-redis",
+        "redis://localhost:6379"
+      ]
+    },
+    "gdrive": { 
+      "command": 
+      "npx", 
+      "args": [ 
+        "-y", 
+        "@modelcontextprotocol/server-gdrive" 
+      ] 
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    },
+    "microsoft-graph": {
+      "command": "node",
+      "args": ["./mcp-servers/microsoft-graph/dist/index.js"],
+      "cwd": "/home/pricepro2006/CrewAI_Team",
+      "env": {
+        "MSGRAPH_CLIENT_ID": "23208ebe-80e9-429d-8a37-8fcaca70e43d",
+        "MSGRAPH_TENANT_ID": "7fe14ab6-8f5d-4139-84bf-cd8aed0ee6b9",
+        "MSGRAPH_CLIENT_SECRET": "3Pr8Q~W8wu7TKQNuo4v0GJwz0NK0T7Vw86~CFajw"
+      }
+    }
+  }
+}

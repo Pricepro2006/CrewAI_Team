@@ -9,6 +9,12 @@ import { ChatInterface } from "./components/Chat/ChatInterface";
 import { MainLayout } from "./components/Layout/MainLayout";
 import { Dashboard } from "./components/Dashboard/Dashboard";
 import { EmailDashboard } from "./components/Email/EmailDashboard";
+import { IEMSDashboard } from "./components/IEMS/IEMSDashboard";
+import { Agents } from "./components/Agents/Agents";
+import { WebScraping } from "./components/WebScraping/WebScraping";
+import { KnowledgeBase } from "./components/KnowledgeBase/KnowledgeBase";
+import { VectorSearch } from "./components/VectorSearch/VectorSearch";
+import { Settings } from "./components/Settings/Settings";
 import "./App.css";
 
 // Create tRPC client
@@ -37,7 +43,16 @@ const trpcClient = trpc.createClient({
       },
       true: wsLink({
         client: createWSClient({
-          url: `ws://localhost:3001/trpc-ws`,
+          url: `ws://localhost:3002/trpc-ws`,
+          connectionParams: async () => {
+            const token = localStorage.getItem("token");
+            return token ? { token } : {};
+          },
+          retryDelayMs: () => {
+            // Exponential backoff with max delay of 30 seconds
+            return Math.min(1000 * 2 ** 0, 30000);
+          },
+          WebSocket: window.WebSocket,
         }),
       }),
       false: httpLink({
@@ -49,6 +64,13 @@ const trpcClient = trpc.createClient({
                 authorization: `Bearer ${token}`,
               }
             : {};
+        },
+        // Add CORS credentials
+        fetch(url, options) {
+          return fetch(url, {
+            ...options,
+            credentials: 'include',
+          });
         },
       }),
     }),
@@ -65,13 +87,12 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="chat" element={<ChatInterface />} />
               <Route path="chat/:conversationId" element={<ChatInterface />} />
+              <Route path="agents" element={<Agents />} />
               <Route path="email-dashboard" element={<EmailDashboard />} />
-              <Route path="architecture-expert" element={<ArchitectureExpert />} />
-              <Route path="database-expert" element={<DatabaseExpert />} />
+              <Route path="iems-dashboard" element={<IEMSDashboard />} />
               <Route path="web-scraping" element={<WebScraping />} />
               <Route path="knowledge-base" element={<KnowledgeBase />} />
               <Route path="vector-search" element={<VectorSearch />} />
-              <Route path="professional-dashboard" element={<ProfessionalDashboard />} />
               <Route path="settings" element={<Settings />} />
             </Route>
           </Routes>
@@ -81,68 +102,5 @@ function App() {
   );
 }
 
-// Placeholder components
-function ArchitectureExpert() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Architecture Expert</h1>
-      <p>Design and review system architectures</p>
-    </div>
-  );
-}
-
-function DatabaseExpert() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Database Expert</h1>
-      <p>Database design and optimization</p>
-    </div>
-  );
-}
-
-function WebScraping() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Web Scraping</h1>
-      <p>Extract data from websites</p>
-    </div>
-  );
-}
-
-function KnowledgeBase() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Knowledge Base</h1>
-      <p>Manage your RAG documents and embeddings</p>
-    </div>
-  );
-}
-
-function VectorSearch() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Vector Search</h1>
-      <p>Search through vector embeddings</p>
-    </div>
-  );
-}
-
-function ProfessionalDashboard() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Professional Dashboard</h1>
-      <p>Advanced enterprise features</p>
-    </div>
-  );
-}
-
-function Settings() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Settings</h1>
-      <p>Configure your AI Agent Team</p>
-    </div>
-  );
-}
 
 export default App;

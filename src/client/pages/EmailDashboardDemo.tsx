@@ -145,7 +145,7 @@ export function EmailDashboardDemo() {
       summary: email.summary || 'No summary',
       status: (email.status || 'yellow') as EmailStatus,
       status_text: email.status_text || 'Pending',
-      workflow_state: email.workflow_state || 'START_POINT',
+      workflow_state: (email.workflow_state || 'START_POINT') as WorkflowState,
       timestamp: email.received_date,
       priority: email.priority || 'Medium',
       assignedTo: undefined as string | undefined, // This field doesn't exist in the API response

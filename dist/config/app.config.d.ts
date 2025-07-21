@@ -4,8 +4,11 @@ interface DatabaseConfig {
 interface ApiConfig {
     port: number;
     cors: {
-        origin: string[];
+        origin: string[] | string | boolean | ((origin: string | undefined, callback: (err: Error | null, origin?: boolean | string | RegExp | (boolean | string | RegExp)[]) => void) => void);
         credentials: boolean;
+        optionsSuccessStatus?: number;
+        methods?: string[];
+        allowedHeaders?: string[];
     };
 }
 interface OllamaConfig {

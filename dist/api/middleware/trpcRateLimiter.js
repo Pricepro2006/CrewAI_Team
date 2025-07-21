@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
-import { middleware } from "../trpc/enhanced-router";
-import { logger } from "../../utils/logger";
+import { middleware } from "../trpc/enhanced-router.js";
+import { logger } from "../../utils/logger.js";
 // Rate limit store for tRPC procedures
 const rateLimitStore = new Map();
 // Clean up old entries periodically

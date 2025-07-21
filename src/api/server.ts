@@ -174,6 +174,19 @@ const server = app.listen(PORT, () => {
 const wss = new WebSocketServer({
   port: PORT + 1,
   path: "/trpc-ws",
+  // Add origin validation
+  verifyClient: (info: { origin?: string }) => {
+    const origin = info.origin;
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175'
+    ];
+    // Allow connections without origin (like direct WebSocket clients)
+    if (!origin) return true;
+    return allowedOrigins.includes(origin);
+  }
 });
 
 const wsHandler = applyWSSHandler({

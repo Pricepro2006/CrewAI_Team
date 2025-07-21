@@ -36,9 +36,11 @@ const appConfig: AppConfig = {
     port: parseInt(process.env.PORT || '3001', 10),
     cors: {
       origin: function (origin, callback) {
-        const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [
+        const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || process.env.CORS_ORIGIN?.split(',') || [
           'http://localhost:3000', 
-          'http://localhost:5173'
+          'http://localhost:5173',
+          'http://localhost:5174',
+          'http://localhost:5175'
         ];
         
         // Allow requests with no origin (like mobile apps or curl requests)

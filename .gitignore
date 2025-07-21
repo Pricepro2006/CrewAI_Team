@@ -1,10 +1,33 @@
 node_modules
 
-# Environment variables
+# Environment variables - SECURITY CRITICAL
 .env
+.env.*
+!.env.example
+!.env.template
 .env.local
 .env.production
 .env.development
+.env.staging
+.env.backup*
+
+# Security files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*secret*
+*password*
+*credential*
+*token*
+config.json
+*config.json
+!config.example.json
+*azure*
+*aws*
+*gcp*
+claude_desktop_config.json
 
 # Python
 __pycache__/
