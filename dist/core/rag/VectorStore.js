@@ -27,16 +27,24 @@ export class VectorStore {
     }
     async initialize() {
         try {
-            // First check if ChromaDB is running
-            await this.client.heartbeat();
-            // Get or create collection
-            this.collection = await this.client.getOrCreateCollection({
-                name: this.config.collectionName,
-                metadata: {
-                    description: "Knowledge base for AI agents",
-                    created_at: new Date().toISOString(),
-                },
-            });
+            // First check if ChromaDB is running using v2 API
+            await this.client.version();
+            // Try to get existing collection first
+            try {
+                this.collection = await this.client.getCollection({
+                    name: this.config.collectionName,
+                });
+            }
+            catch (getError) {
+                // Collection doesn't exist, create it
+                this.collection = await this.client.createCollection({
+                    name: this.config.collectionName,
+                    metadata: {
+                        description: "Knowledge base for AI agents",
+                        created_at: new Date().toISOString(),
+                    },
+                });
+            }
         }
         catch (error) {
             console.error("Failed to initialize vector store:", error);

@@ -30,6 +30,7 @@ import { authRouter } from "../routes/auth.router";
 import { emailRouter } from "../routes/email.router";
 import { metricsRouter } from "../routes/metrics.router";
 import { emailAssignmentRouter } from "./routers/emailAssignment.router";
+import { iemsEmailRouter } from "../routes/iems-email.router";
 
 // Import the router function from enhanced-router
 import { router as createRouter } from "./enhanced-router";
@@ -47,6 +48,7 @@ export const appRouter = createRouter({
   emails: emailRouter, // Email analytics and management
   emailAssignment: emailAssignmentRouter, // Email assignment functionality
   metrics: metricsRouter, // Performance and rate limit metrics
+  iemsEmails: iemsEmailRouter, // IEMS email dashboard endpoints
 });
 
 export type AppRouter = typeof appRouter;

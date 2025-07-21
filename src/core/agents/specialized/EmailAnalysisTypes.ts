@@ -9,6 +9,10 @@ export interface Email {
   subject: string;
   body?: string;
   bodyPreview?: string;
+  sender?: string;
+  recipient?: string;
+  content?: string;
+  metadata?: Record<string, any>;
   from: {
     emailAddress: {
       name: string;

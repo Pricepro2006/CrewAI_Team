@@ -42,15 +42,15 @@ const AgentCard: React.FC<AgentCardProps> = ({ name, status, specialty }) => (
 );
 
 export const Dashboard: React.FC = () => {
-  // const { data: health } = trpc.health.detailed.useQuery(); // TODO: Implement health.detailed endpoint
-  const health = null; // Placeholder until health endpoint is implemented
-  // Note: agents.list endpoint not yet implemented, using mock data
-  const agents = null; // TODO: Implement agents.list endpoint
+  const { data: health } = trpc.health.status.useQuery();
+  const { data: agentStats } = trpc.agent.getStats.useQuery();
+  const { data: conversationStats } = trpc.chat.stats.useQuery();
+  const { data: ragStats } = trpc.rag.stats.useQuery();
 
   const stats = [
     {
       title: "Total Messages",
-      value: 128,
+      value: conversationStats?.totalMessages || 0,
       icon: (
         <svg
           width="20"
@@ -68,11 +68,11 @@ export const Dashboard: React.FC = () => {
           />
         </svg>
       ),
-      description: "up from last week",
+      description: conversationStats?.todayMessages ? `${conversationStats.todayMessages} today` : "in conversations",
     },
     {
       title: "Active Agents",
-      value: 4,
+      value: agentStats?.activeAgents || 0,
       icon: (
         <svg
           width="20"
@@ -90,11 +90,11 @@ export const Dashboard: React.FC = () => {
           />
         </svg>
       ),
-      description: "4 agents total",
+      description: agentStats?.totalAgents ? `${agentStats.totalAgents} agents total` : "agents available",
     },
     {
       title: "Documents Processed",
-      value: 35,
+      value: ragStats?.documentCount || 0,
       icon: (
         <svg
           width="20"
@@ -140,11 +140,11 @@ export const Dashboard: React.FC = () => {
           />
         </svg>
       ),
-      description: "in the last 24 hours",
+      description: ragStats?.chunksCount ? `${ragStats.chunksCount} chunks indexed` : "in knowledge base",
     },
     {
-      title: "Workflows Created",
-      value: 7,
+      title: "Conversations",
+      value: conversationStats?.totalConversations || 0,
       icon: (
         <svg
           width="20"
@@ -190,11 +190,12 @@ export const Dashboard: React.FC = () => {
           />
         </svg>
       ),
-      description: "in the last week",
+      description: conversationStats?.todayConversations ? `${conversationStats.todayConversations} today` : "total created",
     },
   ];
 
-  const availableAgents = [
+  // Get agent list from real data or fallback to known agents
+  const availableAgents = agentStats?.agents || [
     {
       name: "Research Agent",
       status: "active" as const,
@@ -217,8 +218,8 @@ export const Dashboard: React.FC = () => {
     },
   ];
 
-  const ollamaStatus = (health as any)?.services?.ollama || "disconnected";
-  const isOllamaConnected = ollamaStatus === "connected";
+  const ollamaStatus = health?.services?.ollama || health?.status || "disconnected";
+  const isOllamaConnected = ollamaStatus === "connected" || ollamaStatus === "healthy";
 
   return (
     <div className="dashboard">
@@ -256,7 +257,9 @@ export const Dashboard: React.FC = () => {
                 <AgentCard key={index} {...agent} />
               ))}
             </div>
-            <p className="agents-count">4 of 4 agents available</p>
+            <p className="agents-count">
+              {agentStats?.activeAgents || availableAgents.filter(a => a.status === 'active').length} of {agentStats?.totalAgents || availableAgents.length} agents available
+            </p>
           </div>
         </div>
       </div>

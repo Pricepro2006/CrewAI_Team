@@ -16,12 +16,43 @@ import type {
   DataPipelineStats,
 } from "./types";
 
+// Import MCP Bright Data tool types
+interface MCPBrightDataTool {
+  searchEngine: (params: { query: string; engine?: string; cursor?: string }) => Promise<any>;
+  scrapeAsMarkdown: (params: { url: string }) => Promise<{ content: string }>;
+  scrapeAsHtml: (params: { url: string }) => Promise<{ content: string }>;
+  extract: (params: { url: string; extraction_prompt?: string }) => Promise<any>;
+  webDataAmazonProduct: (params: { url: string }) => Promise<any>;
+  webDataAmazonProductSearch: (params: { keyword: string; url: string; pages_to_search?: string }) => Promise<any>;
+  webDataWalmartProduct: (params: { url: string }) => Promise<any>;
+  webDataEbayProduct: (params: { url: string }) => Promise<any>;
+  webDataLinkedinPersonProfile: (params: { url: string }) => Promise<any>;
+  webDataInstagramProfiles: (params: { url: string }) => Promise<any>;
+  webDataTiktokProfiles: (params: { url: string }) => Promise<any>;
+}
+
 export class BrightDataService {
   private credentials: BrightDataCredentials;
   private rateLimitTracker = new Map<string, number[]>();
+  private mcpTools: MCPBrightDataTool;
 
-  constructor(credentials: BrightDataCredentials) {
+  constructor(credentials: BrightDataCredentials, mcpTools?: MCPBrightDataTool) {
     this.credentials = credentials;
+    
+    // If no MCP tools provided, create a mock implementation for development
+    this.mcpTools = mcpTools || {
+      searchEngine: async () => ({ results: [] }),
+      scrapeAsMarkdown: async () => ({ content: "" }),
+      scrapeAsHtml: async () => ({ content: "" }),
+      extract: async () => ({}),
+      webDataAmazonProduct: async () => ({}),
+      webDataAmazonProductSearch: async () => ({ products: [] }),
+      webDataWalmartProduct: async () => ({}),
+      webDataEbayProduct: async () => ({}),
+      webDataLinkedinPersonProfile: async () => ({}),
+      webDataInstagramProfiles: async () => ({}),
+      webDataTiktokProfiles: async () => ({}),
+    };
   }
 
   /**
@@ -41,8 +72,13 @@ export class BrightDataService {
         throw new Error("Rate limit exceeded for search engine requests");
       }
 
-      // This would integrate with the MCP Bright Data search_engine tool
-      // For now, we'll create a structured response
+      // Call the actual MCP Bright Data search engine tool
+      const searchResults = await this.mcpTools.searchEngine({
+        query: params.query,
+        engine: params.engine || "google",
+        cursor: params.cursor,
+      });
+
       const results: CollectedData[] = [
         {
           id: `search_${Date.now()}`,
@@ -51,15 +87,14 @@ export class BrightDataService {
           data: {
             query: params.query,
             engine: params.engine || "google",
-            results: [
-              // This would be populated by actual MCP tool call:
-              // mcp__Bright_Data__search_engine({ query: params.query, engine: params.engine })
-            ],
+            results: searchResults.results || [],
+            cursor: searchResults.cursor,
             timestamp: new Date(),
             metadata: {
-              totalResults: params.maxResults || 10,
+              totalResults: searchResults.results?.length || 0,
               location: params.location,
               language: params.language,
+              hasMore: !!searchResults.cursor,
             },
           },
           extractedAt: new Date(),
@@ -70,6 +105,7 @@ export class BrightDataService {
 
       logger.info("Search engine data collection completed", "BRIGHT_DATA", {
         recordsCollected: results.length,
+        actualResults: searchResults.results?.length || 0,
       });
 
       return results;
@@ -97,10 +133,17 @@ export class BrightDataService {
         throw new Error("Rate limit exceeded for web scraping requests");
       }
 
-      // This would integrate with MCP Bright Data scraping tools:
-      // - mcp__Bright_Data__scrape_as_markdown
-      // - mcp__Bright_Data__scrape_as_html
-      // - mcp__Bright_Data__extract
+      // Call actual MCP Bright Data scraping tools
+      const markdownResult = await this.mcpTools.scrapeAsMarkdown({ url: params.url });
+      const htmlResult = await this.mcpTools.scrapeAsHtml({ url: params.url });
+      
+      let extractedData;
+      if (params.extractionPrompt) {
+        extractedData = await this.mcpTools.extract({ 
+          url: params.url, 
+          extraction_prompt: params.extractionPrompt 
+        });
+      }
 
       const results: CollectedData[] = [
         {
@@ -110,27 +153,33 @@ export class BrightDataService {
           data: {
             url: params.url,
             content: {
-              // This would be populated by:
-              // await mcp__Bright_Data__scrape_as_markdown({ url: params.url })
-              markdown: "",
-              html: "",
-              extractedData: params.extractionPrompt ? {} : undefined,
+              markdown: markdownResult.content || "",
+              html: htmlResult.content || "",
+              extractedData: extractedData || undefined,
             },
             timestamp: new Date(),
             metadata: {
               followLinks: params.followLinks,
               maxDepth: params.maxDepth,
               respectRobots: params.respectRobots,
+              contentLength: {
+                markdown: markdownResult.content?.length || 0,
+                html: htmlResult.content?.length || 0,
+              },
             },
           },
           extractedAt: new Date(),
-          tags: ["web_scraping", "html"],
+          tags: ["web_scraping", "html", "markdown"],
           quality: "high",
         },
       ];
 
       logger.info("Web scraping data collection completed", "BRIGHT_DATA", {
         recordsCollected: results.length,
+        contentLengths: {
+          markdown: markdownResult.content?.length || 0,
+          html: htmlResult.content?.length || 0,
+        },
       });
 
       return results;
@@ -298,6 +347,8 @@ export class BrightDataService {
   // Private helper methods for specific platforms
 
   private async collectAmazonProduct(url: string): Promise<CollectedData> {
+    const productData = await this.mcpTools.webDataAmazonProduct({ url });
+    
     return {
       id: `amazon_${Date.now()}`,
       sourceId: "amazon_products",
@@ -305,9 +356,7 @@ export class BrightDataService {
       data: {
         platform: "amazon",
         url,
-        product: {
-          // This would be populated by mcp__Bright_Data__web_data_amazon_product
-        },
+        product: productData,
         timestamp: new Date(),
       },
       extractedAt: new Date(),
@@ -320,6 +369,12 @@ export class BrightDataService {
     keyword: string,
     maxProducts?: number,
   ): Promise<CollectedData[]> {
+    const searchData = await this.mcpTools.webDataAmazonProductSearch({
+      keyword,
+      url: "https://www.amazon.com",
+      pages_to_search: maxProducts ? Math.ceil(maxProducts / 16).toString() : "1",
+    });
+
     return [
       {
         id: `amazon_search_${Date.now()}`,
@@ -329,9 +384,7 @@ export class BrightDataService {
           platform: "amazon",
           keyword,
           maxProducts,
-          products: [
-            // This would be populated by mcp__Bright_Data__web_data_amazon_product_search
-          ],
+          products: searchData.products || [],
           timestamp: new Date(),
         },
         extractedAt: new Date(),
@@ -342,6 +395,8 @@ export class BrightDataService {
   }
 
   private async collectWalmartProduct(url: string): Promise<CollectedData> {
+    const productData = await this.mcpTools.webDataWalmartProduct({ url });
+    
     return {
       id: `walmart_${Date.now()}`,
       sourceId: "walmart_products",
@@ -349,9 +404,7 @@ export class BrightDataService {
       data: {
         platform: "walmart",
         url,
-        product: {
-          // This would be populated by mcp__Bright_Data__web_data_walmart_product
-        },
+        product: productData,
         timestamp: new Date(),
       },
       extractedAt: new Date(),
@@ -361,6 +414,8 @@ export class BrightDataService {
   }
 
   private async collectEbayProduct(url: string): Promise<CollectedData> {
+    const productData = await this.mcpTools.webDataEbayProduct({ url });
+    
     return {
       id: `ebay_${Date.now()}`,
       sourceId: "ebay_products",
@@ -368,9 +423,7 @@ export class BrightDataService {
       data: {
         platform: "ebay",
         url,
-        product: {
-          // This would be populated by mcp__Bright_Data__web_data_ebay_product
-        },
+        product: productData,
         timestamp: new Date(),
       },
       extractedAt: new Date(),
@@ -380,6 +433,8 @@ export class BrightDataService {
   }
 
   private async collectLinkedInProfile(url: string): Promise<CollectedData> {
+    const profileData = await this.mcpTools.webDataLinkedinPersonProfile({ url });
+    
     return {
       id: `linkedin_${Date.now()}`,
       sourceId: "linkedin_profiles",
@@ -387,9 +442,7 @@ export class BrightDataService {
       data: {
         platform: "linkedin",
         url,
-        profile: {
-          // This would be populated by mcp__Bright_Data__web_data_linkedin_person_profile
-        },
+        profile: profileData,
         timestamp: new Date(),
       },
       extractedAt: new Date(),
@@ -399,6 +452,8 @@ export class BrightDataService {
   }
 
   private async collectInstagramProfile(url: string): Promise<CollectedData> {
+    const profileData = await this.mcpTools.webDataInstagramProfiles({ url });
+    
     return {
       id: `instagram_${Date.now()}`,
       sourceId: "instagram_profiles",
@@ -406,9 +461,7 @@ export class BrightDataService {
       data: {
         platform: "instagram",
         url,
-        profile: {
-          // This would be populated by mcp__Bright_Data__web_data_instagram_profiles
-        },
+        profile: profileData,
         timestamp: new Date(),
       },
       extractedAt: new Date(),
@@ -418,6 +471,8 @@ export class BrightDataService {
   }
 
   private async collectTikTokProfile(url: string): Promise<CollectedData> {
+    const profileData = await this.mcpTools.webDataTiktokProfiles({ url });
+    
     return {
       id: `tiktok_${Date.now()}`,
       sourceId: "tiktok_profiles",
@@ -425,9 +480,7 @@ export class BrightDataService {
       data: {
         platform: "tiktok",
         url,
-        profile: {
-          // This would be populated by mcp__Bright_Data__web_data_tiktok_profiles
-        },
+        profile: profileData,
         timestamp: new Date(),
       },
       extractedAt: new Date(),

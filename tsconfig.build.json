@@ -1,0 +1,35 @@
+{
+  "extends": "./tsconfig.server.json",
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "noEmitOnError": false,
+    "allowImportingTsExtensions": false
+  },
+  "include": [
+    "src/api/**/*",
+    "src/core/**/*",
+    "src/config/**/*",
+    "src/utils/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/tests/**",
+    "src/test/**",
+    "test/**",
+    "tests/**",
+    "vitest.config.ts",
+    "vitest.integration.config.ts",
+    "playwright.config.ts",
+    "src/scripts/migration/**",
+    "dist/**",
+    "src/ui/**/*",
+    "src/client/**/*"
+  ]
+}

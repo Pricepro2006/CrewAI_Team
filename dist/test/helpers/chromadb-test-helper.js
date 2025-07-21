@@ -1,4 +1,4 @@
-import { RAGSystem } from "../../core/rag/RAGSystem";
+import { RAGSystem } from "../../core/rag/RAGSystem.js";
 export class ChromaDBTestHelper {
     static instance;
     isAvailable;
