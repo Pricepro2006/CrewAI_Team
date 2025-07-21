@@ -57,7 +57,7 @@ chmod +x .git/hooks/pre-commit
 echo "✅ Security setup complete\!"
 echo ""
 echo "Next steps:"
-echo "1. 🔑 Revoke the Azure client secret: 3Pr8Q~W8wu7TKQNuo4v0GJwz0NK0T7Vw86~CFajw"
+echo "1. 🔑 Revoke the Azure client secret: [REVOKED-PLACEHOLDER]"
 echo "2. 📝 Edit .env with your real secrets"
 echo "3. 📝 Edit claude_desktop_config.json with real values"
 echo "4. 🧹 Run: git filter-branch to clean history"
