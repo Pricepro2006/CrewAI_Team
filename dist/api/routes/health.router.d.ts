@@ -1,19 +1,19 @@
 export declare const healthRouter: import("@trpc/server").Router<import("@trpc/server/dist/core/router").RouterDef<import("@trpc/server").RootConfig<{
     ctx: {
-        masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-        conversationService: import("../services/ConversationService").ConversationService;
-        taskService: import("../services/TaskService").TaskService;
-        maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-        userService: import("../services/UserService").UserService;
-        agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-        ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-        req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-        res: import("express").Response<any, Record<string, any>>;
+        req: import("express").Request;
+        res: import("express").Response;
         user: import("../trpc/context").User;
         requestId: string;
         timestamp: Date;
         batchId: string | undefined;
         validatedInput: unknown;
+        masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+        conversationService: import("../services/ConversationService").ConversationService;
+        taskService: import("../services/TaskService").TaskService;
+        maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+        userService: import("../services/UserService").UserService;
+        agentRegistry: any;
+        ragSystem: any;
     };
     meta: object;
     errorShape: {

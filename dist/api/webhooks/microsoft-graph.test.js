@@ -131,7 +131,7 @@ describe('Microsoft Graph Webhook Handler', () => {
     describe('Error Handling', () => {
         it('should handle processing errors gracefully', async () => {
             // Mock an error in the Queue
-            const Queue = require('bullmq').Queue;
+            const { Queue } = await import('bullmq');
             Queue.mockImplementationOnce(() => ({
                 add: vi.fn().mockRejectedValue(new Error('Queue error'))
             }));

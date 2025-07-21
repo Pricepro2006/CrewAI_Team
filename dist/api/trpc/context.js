@@ -45,7 +45,7 @@ async function initializeServices() {
             taskTimeout: 300000, // 5 minutes
             queueConfig: {
                 maxSize: 100,
-                strategy: 'fifo',
+                strategy: "fifo",
             },
         });
         await maestroFramework.initialize();
@@ -137,7 +137,7 @@ function validateRequest(req) {
     }
     return { ip, userAgent };
 }
-export async function createContext({ req, res }) {
+export async function createContext({ req, res, }) {
     // Validate request and extract security info
     const { ip, userAgent } = validateRequest(req);
     // Get services
