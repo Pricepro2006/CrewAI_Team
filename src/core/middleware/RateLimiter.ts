@@ -140,7 +140,9 @@ export class RateLimiter {
   private createLimiter(config: RateLimitConfig) {
     const limiterConfig: any = {
       ...config,
-      handler: this.rateLimitHandler.bind(this)
+      handler: this.rateLimitHandler.bind(this),
+      // Disable IPv6 validation warning for local development
+      validate: false
     };
 
     // Use Redis store if available and connected
