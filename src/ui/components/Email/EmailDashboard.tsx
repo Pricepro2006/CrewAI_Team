@@ -109,23 +109,27 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
       
       // Handle different types of updates
       switch (update.type) {
-        case 'email.analyzed':
+        case 'email.analyzed': {
           // Refresh email list when new analysis is complete
           setRefreshKey(prev => prev + 1);
           refetchEmails();
           break;
-        case 'email.state_changed':
+        }
+        case 'email.state_changed': {
           // Refresh email list when state changes
           refetchEmails();
           break;
-        case 'email.analytics_updated':
+        }
+        case 'email.analytics_updated': {
           // Refresh analytics when updated
           setRefreshKey(prev => prev + 1);
           break;
-        case 'email.sla_alert':
+        }
+        case 'email.sla_alert': {
           // Show SLA alert notification
           console.log('SLA Alert:', update.data);
           break;
+        }
       }
     },
     onError: (error) => {
