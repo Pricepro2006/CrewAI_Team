@@ -111,18 +111,24 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
         const filterValue = filter.value;
         
         switch (filter.operator) {
-          case 'equals':
+          case 'equals': {
             return value === filterValue;
-          case 'contains':
+          }
+          case 'contains': {
             return String(value || '').toLowerCase().includes(String(filterValue).toLowerCase());
-          case 'greaterThan':
+          }
+          case 'greaterThan': {
             return Number(value) > Number(filterValue);
-          case 'lessThan':
+          }
+          case 'lessThan': {
             return Number(value) < Number(filterValue);
-          case 'between':
+          }
+          case 'between': {
             return Number(value) >= Number(filterValue.min) && Number(value) <= Number(filterValue.max);
-          case 'in':
+          }
+          case 'in': {
             return Array.isArray(filterValue) && filterValue.includes(value);
+          }
           default:
             return true;
         }
@@ -153,9 +159,10 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
     }
     
     switch (column.type) {
-      case 'date':
+      case 'date': {
         const date = new Date(value);
         return date.toLocaleDateString();
+      }
       case 'currency':
         return new Intl.NumberFormat('en-US', { 
           style: 'currency', 
