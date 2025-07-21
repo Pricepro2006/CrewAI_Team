@@ -324,6 +324,69 @@ export const emailRouter = router({
       }
     }),
 
+  // Update email status
+  updateStatus: protectedProcedure
+    .input(z.object({
+      id: z.string().uuid(),
+      status: z.enum(['red', 'yellow', 'green']),
+      status_text: z.string(),
+      workflow_state: z.enum(['START_POINT', 'IN_PROGRESS', 'COMPLETION']).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        logger.info('Updating email status', 'EMAIL_ROUTER', {
+          emailId: input.id,
+          status: input.status,
+          status_text: input.status_text,
+          workflow_state: input.workflow_state
+        });
+
+        const changedBy = (ctx.user as any)?.email || (ctx.user as any)?.name || 'system';
+        
+        // Update the email status
+        await emailStorage.updateEmailStatus(
+          input.id,
+          input.status,
+          input.status_text,
+          changedBy
+        );
+
+        // If workflow state is provided, update it as well
+        if (input.workflow_state) {
+          const email = await emailStorage.getEmail(input.id);
+          if (email) {
+            await emailStorage.updateEmail(input.id, {
+              ...email,
+              workflow_state: input.workflow_state,
+              lastUpdated: new Date().toISOString()
+            });
+          }
+        }
+
+        // Broadcast the update
+        try {
+          const { wsService } = await import('../services/WebSocketService');
+          const updatedEmail = await emailStorage.getEmail(input.id);
+          if (updatedEmail) {
+            wsService.emitEmailUpdate({
+              type: 'update',
+              email: updatedEmail,
+            });
+          }
+        } catch (error) {
+          logger.error('Failed to broadcast email update', 'EMAIL_ROUTER', { error });
+        }
+
+        return {
+          success: true,
+          message: 'Email status updated successfully'
+        };
+      } catch (error) {
+        logger.error('Failed to update email status', 'EMAIL_ROUTER', { error });
+        throw new Error('Failed to update email status');
+      }
+    }),
+
   // Bulk update emails
   bulkUpdate: protectedProcedure
     .input(BulkUpdateInputSchema)

@@ -18,6 +18,7 @@ import { logger } from "../utils/logger";
 import uploadRoutes from "./routes/upload.routes";
 import { webhookRouter } from "./routes/webhook.router";
 import { emailAnalysisRouter } from "./routes/email-analysis.router";
+import emailAssignmentRouter from "./routes/email-assignment.router";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
@@ -29,6 +30,10 @@ const PORT = appConfig.api.port;
 // Middleware
 app.use(helmet());
 app.use(cors(appConfig.api.cors));
+
+// Handle preflight requests for all routes
+app.options('*', cors(appConfig.api.cors));
+
 app.use(express.json());
 
 // Apply general rate limiting to all routes
@@ -122,6 +127,9 @@ app.use("/api/webhooks", webhookRouter);
 
 // Email analysis routes
 app.use("/api/email-analysis", emailAnalysisRouter);
+
+// Email assignment routes
+app.use("/api/email-assignment", emailAssignmentRouter);
 
 // tRPC middleware
 app.use(

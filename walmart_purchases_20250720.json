@@ -1,0 +1,207 @@
+{
+  "extraction_date": "2025-07-20",
+  "user": "Nicholas P",
+  "orders": [
+    {
+      "order_number": "200013565586481",
+      "order_type": "Delivery from store",
+      "status": "On the way",
+      "delivery_time": "Arrives today, 2:28pm-5:03pm",
+      "store_location": "Not specified in this order",
+      "items": [
+        "Fresh Sweet Corn on the Cob (1 each) - Quantity: 4",
+        "Great Value Traditional Italian Salad Dressing & Marinade, 16 fl oz",
+        "Stonefire® Roasted Garlic Naan, 8.8 oz, 2 Count",
+        "Patak's Tastes of India Simmer Sauce, Tikka Masala Curry, 15-Ounce",
+        "Great Value Sharp Cheddar Block Cheese, 8 oz Chunk",
+        "Old El Paso Taco Seasoning Mix, Original Flavor, 1 oz.",
+        "80% Lean / 20% Fat Ground Beef Chuck, 1 lb Tray, Fresh, All Natural*",
+        "Rio Rancho Tostada Bowls Gluten Free Restaurant-Style Multigrain Corn Bowls, 4 Count, Box",
+        "Cheetos Oven Baked Crunchy Cheese Snacks, 7.625 oz. Bag",
+        "Hillshire Farm Ultra Thin Sliced Honey Ham Deli Lunch Meat, 9 oz Plastic Tub",
+        "+15 more items"
+      ]
+    },
+    {
+      "order_number": "200013547112029",
+      "order_type": "Delivery",
+      "status": "On the way",
+      "delivery_time": "Now arrives tomorrow by 8pm",
+      "sold_by": "Bio Ink products",
+      "items": [
+        "Colgate Optic White Pro Series Whitening Toothpaste 3.3 Ounce (Pack of 4)"
+      ]
+    },
+    {
+      "order_number": "200013547112029",
+      "order_type": "Curbside pickup",
+      "status": "Picked up on Jul 16",
+      "store_location": "Mount pleasant Supercenter at 1481 N HIGHWAY 17",
+      "items": [
+        "Tresemme Flawless Curls Moisturizing Conditioner, 28 oz",
+        "Nature Valley Protein Oats and Dark Chocolate Granola Pouch, 11 oz",
+        "bettergoods Unsweetened Vanilla Almond milk, Half Gallon",
+        "Oikos Triple Zero Strawberry and Mixed Berry 0g Added Sugar Fat Free Greek Yogurt, 5.3 oz, 6 Count",
+        "Taylor Farms Mediterranean Crunch Chopped Salad Kit, 11 oz Bag, Fresh",
+        "Marketside Fresh Spinach, 10 oz, Bag",
+        "Fresh Banana, Each - Quantity: 5",
+        "Fresh Blueberries, 1 Pint Container"
+      ]
+    },
+    {
+      "order_number": "200013459952714",
+      "order_type": "Delivery",
+      "status": "Delivered on Jul 12",
+      "items": [
+        "Collapsible Colander Set of 3 Round Silicone Kitchen Strainer Set - 2 pcs 4 Quart and 1 pcs 2 Quart- Perfect for Draining Pasta, Vegetable and fruit (green,blue, purple)",
+        "PHANCIR Dish Drying Rack for Kitchen, Stainless Steel 2 Tier New Dish Racks Sink Organizer, Black"
+      ]
+    },
+    {
+      "order_number": "200013459952714",
+      "order_type": "Curbside pickup", 
+      "status": "Picked up on Jul 11",
+      "store_location": "Charleston Supercenter at 1231 FOLLY RD",
+      "items": [
+        "Tresemme Flawless Curls Moisturizing Conditioner, 28 oz",
+        "Sterilite 3 Gallon Bathroom Swing Top Wastebasket, Small Plastic Round Trash Can with Lid, Black"
+      ]
+    },
+    {
+      "order_number": "200013360253011",
+      "order_type": "Curbside pickup",
+      "status": "Picked up on Jul 07",
+      "store_location": "Charleston Supercenter at 1231 FOLLY RD",
+      "refund_note": "Refund issued on Wed, Jul 16",
+      "items": [
+        "StarKist Chunk Light Tuna in Sunflower Oil, 17g Protein, 2.6 oz Pouch",
+        "Nature Valley Protein Oats and Dark Chocolate Granola Pouch, 11 oz",
+        "Welch's Fruit Snacks, Mixed Fruit, 10 Count Snack Box, 0.8oz Snack Packs, Gluten Free",
+        "Pringles Original Potato Crisps Chips, Lunch Snacks, 5.2 oz Canister",
+        "Marketside Asian Chopped Salad Kit, 10.6 oz Bag, Fresh",
+        "Marketside Fresh Spinach, 10 oz, Bag",
+        "Senor Rico Rice Pudding Snack, Refrigerated in Individual Sealed Plastic Cups, 3.75 oz, 4 Count",
+        "Fresh Banana, Each - Quantity: 5",
+        "Kozy Shack Rice Pudding, Gluten Free Dessert, 24 oz, 6 Count",
+        "Tresemme Moisturizing Shampoo Flawless Curls, 28 oz",
+        "+3 more items"
+      ]
+    },
+    {
+      "order_number": "200013366213450",
+      "order_type": "Delivery from store",
+      "status": "Delivered on Jul 05",
+      "items": [
+        "Goldfish Cheddar Crackers, 6.6 oz Bag",
+        "Goldfish Colors Cheddar Baked Snack Crackers, 6.6 oz Bag",
+        "Frito Lay French Onion Dip, 8.5 oz. Canister",
+        "Great Value Purified Drinking Water, 16.9 fl oz, 24 Count",
+        "Sunkist Zero Sugar Orange Soda Pop, 12 fl oz, 12 Pack Cans",
+        "Diet Coke Diet Cola Soda Pop, 2 Liters Bottle",
+        "Lay's Kettle Cooked Mesquite Barbecue Flavored Potato Chips, 8 oz Bag",
+        "Nestle Toll House Chocolate Chip Cookie Dough, Makes 36 Cookies, 36 oz",
+        "Great Value Mayonnaise, 15 fl oz",
+        "Great Value Yellow Mustard, 20 oz Squeeze Bottle",
+        "+18 more items"
+      ]
+    },
+    {
+      "order_number": "200013332944390",
+      "order_type": "Curbside pickup",
+      "status": "Picked up on Jun 23",
+      "store_location": "Mount pleasant Supercenter at 1481 N HIGHWAY 17",
+      "items": [
+        "Tresemme Moisturizing Shampoo Flawless Curls, 28 oz",
+        "Heinz Tomato Ketchup, 32 oz Bottle",
+        "Great Value Strawberry Banana Blend, 48 oz (Frozen)",
+        "Great Value Oil Roasted Lightly Salted Almonds, 14 oz",
+        "Oikos Triple Zero Strawberry and Mixed Berry 0g Added Sugar Fat Free Greek Yogurt, 5.3 oz, 6 Count",
+        "EasyLiner Original Grip Shelf Liner, Taupe, 12 in. x 5 ft. Roll",
+        "Great Value Strong Flex Tall Kitchen Drawstring Bags, Unscented, 13 Gallon, 20 Count - Quantity: 2"
+      ]
+    },
+    {
+      "order_number": "200013337428747",
+      "order_type": "Delivery from store",
+      "status": "Delivered on Jun 15",
+      "items": [
+        "Opti Free PureMoist Contact Lens Disinfecting Liquid Solution for Daily Use, 10 oz",
+        "Sharpie Retractable Permanent Markers, Ultra Fine Tip, 2 Count"
+      ]
+    },
+    {
+      "order_number": "200013337428747",
+      "order_type": "Curbside pickup",
+      "status": "Picked up on Jun 15",
+      "store_location": "Mount pleasant Supercenter at 1481 N HIGHWAY 17",
+      "refund_note": "Refund issued on Mon, Jun 16",
+      "items": [
+        "StarKist Chunk Light Tuna in Sunflower Oil, 17g Protein, 2.6 oz Pouch",
+        "Nature Valley Protein Oats and Dark Chocolate Granola Pouch, 11 oz",
+        "Oikos Triple Zero Strawberry and Mixed Berry 0g Added Sugar Fat Free Greek Yogurt, 5.3 oz, 6 Count",
+        "Marketside Caesar Salad Kit, 11.55 oz Bag, Fresh",
+        "Marketside Fresh Spinach, 10 oz, Bag",
+        "Perdue Harvestland, Free Range, Fresh Boneless Skinless Chicken Thighs, 1.3-2.25 lb. Tray"
+      ]
+    },
+    {
+      "order_number": "200013172333186",
+      "order_type": "Delivery from store",
+      "status": "Delivered on Jun 12",
+      "items": [
+        "Olé Xtreme Wellness High Fiber Spinach & Herbs Tortilla Wraps, 12.7 oz, 8 Count",
+        "Sargento® Sliced Pepper Jack Natural Cheese, 24 Slices",
+        "Quaker Old Fashioned Instant Whole Grain Oatmeal, 42 oz Canister",
+        "Great Value Semi-Sweet Chocolate Baking Chips, 12 oz Bag",
+        "Jimmy Dean Premium Pork Hot Sausage Roll, 16 oz",
+        "Jimmy Dean Premium Pork Regular Sausage Roll, 16 oz",
+        "Quaker Old Fashioned Grits, 24 oz Canister",
+        "Great Value Sweetened Coconut Flakes, 7 oz (198g)",
+        "Great Value Strong Flex 13-Gallon Drawstring Tall Kitchen Trash Bags, Fresh Scent, 120 Bags",
+        "Blue Diamond Almonds Nut-Thins Artisan, Multi-Seed, Snack Crackers, Gluten-Free, 4.25oz",
+        "+4 more items"
+      ]
+    },
+    {
+      "order_number": "200013252938674",
+      "order_type": "Curbside pickup",
+      "status": "Picked up on Jun 08",
+      "store_location": "Mount pleasant Supercenter at 1481 N HIGHWAY 17",
+      "refund_note": "Refund issued on Wed, Jul 16",
+      "items": [
+        "Quaker Old Fashioned Instant Whole Grain Oatmeal, 42 oz Canister",
+        "Dove Men+Care Deodorant for Men Moon Oasis Aluminum-Free, 3.oz",
+        "Welch's, Made With Real Fruit Fruit Snacks, Mixed Fruit, .8 oz, 10 Count",
+        "Welch's, Made With Real Fruit Fruit Snacks, Berries N Cherries, .8 oz, 10 Count",
+        "Nature Valley Protein Granola Bars, Snack Variety Pack, Chewy Bars, 15 Ct, 21.3 oz",
+        "Oikos Triple Zero Strawberry and Mixed Berry 0g Added Sugar Fat Free Greek Yogurt, 5.3 oz, 6 Count",
+        "Marketside Caesar Salad Kit, 11.55 oz Bag, Fresh",
+        "Sharpie Fine Point Retractable Markers, Black, 2 Count",
+        "Fresh Mandarin Oranges, 5 lb Bag",
+        "Fresh Blueberries, 1 Pint Container"
+      ]
+    },
+    {
+      "order_number": "200013146737353",
+      "order_type": "Curbside pickup",
+      "status": "Picked up on Jun 01",
+      "store_location": "Mount pleasant Supercenter at 1481 N HIGHWAY 17",
+      "refund_note": "Refund issued on Wed, Jun 04",
+      "items": [
+        "Nature Valley Protein Oats and Dark Chocolate Granola Pouch, 11 oz",
+        "bettergoods Unsweetened Vanilla Almondmilk, Half Gallon",
+        "Oikos Triple Zero Strawberry and Mixed Berry 0g Added Sugar Fat Free Greek Yogurt, 5.3 oz, 6 Count",
+        "Marketside Asian Chopped Salad Kit, 10.6 oz Bag, Fresh",
+        "Marketside Fresh Spinach, 10 oz Bag, Fresh",
+        "Too Good Lower Sugar Vanilla Flavored Low Fat Greek Yogurt Cultured Product, 32 oz Tub",
+        "Fresh Banana, Each - Quantity: 5",
+        "Fresh Blueberries, 1 Pint Container",
+        "Sanderson Farms Fresh Boneless Skinless Chicken Thigh Fillets, 22g Protein, 4oz 112g, 1.4 - 2.5 lb"
+      ]
+    }
+  ],
+  "store_locations_found": [
+    "Mount pleasant Supercenter at 1481 N HIGHWAY 17",
+    "Charleston Supercenter at 1231 FOLLY RD"
+  ]
+}

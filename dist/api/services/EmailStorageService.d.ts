@@ -342,5 +342,36 @@ export declare class EmailStorageService {
      * Get connection pool statistics (if using pool)
      */
     getPoolStats(): any;
+    /**
+     * Get a single email by ID
+     */
+    getEmail(emailId: string): Promise<any | null>;
+    /**
+     * Update an email record
+     */
+    updateEmail(emailId: string, updates: Partial<any>): Promise<void>;
+    /**
+     * Log an activity related to email assignment
+     */
+    logActivity(activity: {
+        emailId?: string;
+        action: string;
+        userId: string;
+        details?: any;
+        timestamp: string;
+    }): Promise<void>;
+    /**
+     * Get assignment workload distribution
+     */
+    getAssignmentWorkload(): Promise<Record<string, number>>;
+    /**
+     * Get count of unassigned emails
+     */
+    getUnassignedCount(): Promise<number>;
+    /**
+     * Create singleton instance getter
+     */
+    private static instance;
+    static getInstance(): EmailStorageService;
 }
 //# sourceMappingURL=EmailStorageService.d.ts.map

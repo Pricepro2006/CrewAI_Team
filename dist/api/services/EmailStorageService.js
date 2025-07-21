@@ -1534,5 +1534,112 @@ export class EmailStorageService {
         }
         return null;
     }
+    /**
+     * Get a single email by ID
+     */
+    async getEmail(emailId) {
+        try {
+            const stmt = this.db.prepare(`
+        SELECT * FROM emails 
+        WHERE id = ?
+      `);
+            const email = stmt.get(emailId);
+            return email || null;
+        }
+        catch (error) {
+            logger.error(`Failed to get email ${emailId}: ${error}`, 'EMAIL_STORAGE');
+            throw error;
+        }
+    }
+    /**
+     * Update an email record
+     */
+    async updateEmail(emailId, updates) {
+        try {
+            const updateFields = Object.keys(updates)
+                .filter(key => key !== 'id')
+                .map(key => `${key} = @${key}`)
+                .join(', ');
+            const stmt = this.db.prepare(`
+        UPDATE emails 
+        SET ${updateFields}
+        WHERE id = @id
+      `);
+            stmt.run({ id: emailId, ...updates });
+            logger.info(`Updated email ${emailId}`, 'EMAIL_STORAGE');
+        }
+        catch (error) {
+            logger.error(`Failed to update email ${emailId}: ${error}`, 'EMAIL_STORAGE');
+            throw error;
+        }
+    }
+    /**
+     * Log an activity related to email assignment
+     */
+    async logActivity(activity) {
+        try {
+            const stmt = this.db.prepare(`
+        INSERT INTO activity_logs (id, email_id, action, user_id, details, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+            stmt.run(uuidv4(), activity.emailId || null, activity.action, activity.userId, JSON.stringify(activity.details || {}), activity.timestamp);
+            logger.info(`Logged activity: ${activity.action}`, 'EMAIL_STORAGE');
+        }
+        catch (error) {
+            logger.error(`Failed to log activity: ${error}`, 'EMAIL_STORAGE');
+            // Don't throw - logging should not break the main flow
+        }
+    }
+    /**
+     * Get assignment workload distribution
+     */
+    async getAssignmentWorkload() {
+        try {
+            const stmt = this.db.prepare(`
+        SELECT assignedTo, COUNT(*) as count
+        FROM emails
+        WHERE assignedTo IS NOT NULL
+        GROUP BY assignedTo
+      `);
+            const results = stmt.all();
+            const workload = {};
+            results.forEach(row => {
+                workload[row.assignedTo] = row.count;
+            });
+            return workload;
+        }
+        catch (error) {
+            logger.error(`Failed to get assignment workload: ${error}`, 'EMAIL_STORAGE');
+            throw error;
+        }
+    }
+    /**
+     * Get count of unassigned emails
+     */
+    async getUnassignedCount() {
+        try {
+            const stmt = this.db.prepare(`
+        SELECT COUNT(*) as count
+        FROM emails
+        WHERE assignedTo IS NULL OR assignedTo = ''
+      `);
+            const result = stmt.get();
+            return result.count;
+        }
+        catch (error) {
+            logger.error(`Failed to get unassigned count: ${error}`, 'EMAIL_STORAGE');
+            throw error;
+        }
+    }
+    /**
+     * Create singleton instance getter
+     */
+    static instance;
+    static getInstance() {
+        if (!EmailStorageService.instance) {
+            EmailStorageService.instance = new EmailStorageService();
+        }
+        return EmailStorageService.instance;
+    }
 }
 //# sourceMappingURL=EmailStorageService.js.map

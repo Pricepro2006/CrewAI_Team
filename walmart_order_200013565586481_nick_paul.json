@@ -1,0 +1,191 @@
+{
+  "order_number": "200013565586481",
+  "order_date": "Jul 20, 2025",
+  "customer_name": "Nicholas Paul", 
+  "fulfillment_type": "Delivery from store",
+  "delivery_status": "Delivered today at 3:43pm",
+  "delivery_address": "278 Wycliff Dr, Spartanburg, SC 29301",
+  "return_eligible_until": "Sat, Oct 18",
+  "driver_tip": "$7.50",
+  "items_received": [
+    {
+      "name": "Marketside Organic Fresh Iceberg Lettuce, Each",
+      "quantity": "Qty 1",
+      "price": "$2.66",
+      "notes": "Substitution"
+    },
+    {
+      "name": "Pork Center Cut Loin Chops Bone-In, 1.1 - 2.6 lb Tray",
+      "quantity": "Qty 1",
+      "price": "$7.57",
+      "notes": "Substitution"
+    },
+    {
+      "name": "Hillshire Farm Ultra Thin Sliced Honey Roasted Turkey Breast Deli Lunch Meat, 9 oz Plastic Tub",
+      "quantity": "Qty 1",
+      "price": "$3.97",
+      "original_price": "$4.56",
+      "savings": "$0.59",
+      "notes": "Substitution"
+    },
+    {
+      "name": "Land O Lakes White Deli American Cheese Product, Deli Sliced to Order",
+      "quantity": "Final weight 0.8 lbs",
+      "price": "$6.05",
+      "price_per_lb": "$7.92/lb",
+      "notes": "Weight-adjusted"
+    },
+    {
+      "name": "Patak's Tastes of India Simmer Sauce, Tikka Masala Curry, 15-Ounce",
+      "quantity": "Qty 1",
+      "price": "$4.43",
+      "unit_price": "29.5¢/oz"
+    },
+    {
+      "name": "Rio Rancho Tostada Bowls Gluten Free Restaurant-Style Multigrain Corn Bowls, 4 Count, Box",
+      "quantity": "Qty 1",
+      "price": "$5.97",
+      "unit_price": "$1.19/oz"
+    },
+    {
+      "name": "Cheetos Oven Baked Crunchy Cheese Snacks, 7.625 oz. Bag",
+      "quantity": "Qty 1",
+      "price": "$3.98",
+      "unit_price": "52.4¢/oz"
+    },
+    {
+      "name": "Fresh Sweet Corn on the Cob (1 each)",
+      "quantity": "Qty 4",
+      "price": "$2.00",
+      "unit_price": "$0.50 ea"
+    },
+    {
+      "name": "Great Value Traditional Italian Salad Dressing & Marinade, 16 fl oz",
+      "quantity": "Qty 1",
+      "price": "$1.97",
+      "unit_price": "12.3¢/fl oz"
+    },
+    {
+      "name": "Great Value Sharp Cheddar Block Cheese, 8 oz Chunk",
+      "quantity": "Qty 1",
+      "price": "$1.97",
+      "original_price": "$2.24",
+      "savings": "$0.27",
+      "unit_price": "24.6¢/oz"
+    },
+    {
+      "name": "Old El Paso Taco Seasoning Mix, Original Flavor, 1 oz.",
+      "quantity": "Qty 1",
+      "price": "$0.97",
+      "unit_price": "97.0¢/oz"
+    },
+    {
+      "name": "80% Lean / 20% Fat Ground Beef Chuck, 1 lb Tray, Fresh, All Natural*",
+      "quantity": "Qty 1",
+      "price": "$6.93",
+      "unit_price": "$6.93/lb"
+    },
+    {
+      "name": "Hillshire Farm Ultra Thin Sliced Honey Ham Deli Lunch Meat, 9 oz Plastic Tub",
+      "quantity": "Qty 1",
+      "price": "$3.97",
+      "original_price": "$4.56",
+      "savings": "$0.59",
+      "unit_price": "$7.09/lb"
+    },
+    {
+      "name": "Great Value Wheat Sandwich Bread, 20 oz",
+      "quantity": "Qty 1",
+      "price": "$1.42",
+      "unit_price": "7.1¢/oz"
+    },
+    {
+      "name": "Great Value 100% Whole Wheat Round Top Bread, 20 oz",
+      "quantity": "Qty 1",
+      "price": "$1.97",
+      "unit_price": "9.9¢/oz"
+    },
+    {
+      "name": "Marketside Fresh Spinach, 10 oz, Bag",
+      "quantity": "Qty 1",
+      "price": "$1.98",
+      "unit_price": "19.8¢/oz"
+    },
+    {
+      "name": "Great Value Purified Drinking Water, 16.9 Fl. Oz., 40 Count",
+      "quantity": "Qty 1",
+      "price": "$4.92",
+      "original_price": "$5.64",
+      "savings": "$0.72",
+      "unit_price": "0.7¢/fl oz"
+    },
+    {
+      "name": "Diet Coke Diet Cola Soda Pop, 12 fl oz Cans, 24 Pack",
+      "quantity": "Qty 1",
+      "price": "$13.48",
+      "unit_price": "4.7¢/fl oz"
+    },
+    {
+      "name": "Sunkist Zero Sugar Orange Soda Pop, 16.9 fl oz, 6 Pack Bottles",
+      "quantity": "Qty 1",
+      "price": "$3.98",
+      "original_price": "$6.38",
+      "savings": "$0.60",
+      "unit_price": "3.9¢/fl oz"
+    },
+    {
+      "name": "Texas Pete Original Hot Sauce, 12 Fl Oz",
+      "quantity": "Qty 1",
+      "price": "$2.38",
+      "original_price": "$2.74",
+      "savings": "$0.36",
+      "unit_price": "19.8¢/fl oz"
+    },
+    {
+      "name": "Tyson All Natural, Fresh Chicken Thighs, Family Pack, 4.75 - 6.0 lb Tray",
+      "quantity": "Qty 1",
+      "price": "$8.35",
+      "original_price": "$9.48",
+      "unit_price": "$1.58/lb",
+      "notes": "Discount price"
+    },
+    {
+      "name": "Tyson All Natural, Fresh, Boneless, Skinless Chicken Breasts, 1.75 - 3.0 lb Tray",
+      "quantity": "Qty 1",
+      "price": "$8.87",
+      "original_price": "$12.35",
+      "unit_price": "$4.64/lb",
+      "notes": "Discount price"
+    },
+    {
+      "name": "Sweet Mini Peppers, Each",
+      "quantity": "Qty 1",
+      "price": "$2.96",
+      "unit_price": "$2.96/ea"
+    }
+  ],
+  "unavailable_items": [
+    {
+      "name": "Stonefire® Roasted Garlic Naan, 8.8 oz, 2 Count",
+      "status": "unavailable"
+    },
+    {
+      "name": "Sunkist Zero Sugar Orange Soda Pop, 16.9 fl oz, 6 Pack Bottles",
+      "quantity": "3",
+      "status": "unavailable"
+    }
+  ],
+  "payment": {
+    "method": "Visa ending in 7145",
+    "subtotal": "$107.68",
+    "subtotal_after_savings": "$102.75",
+    "delivery_fee": "$5.00 (3 hours or less)",
+    "free_delivery_discount": "$9.95",
+    "tax": "$0.00",
+    "driver_tip": "$7.50",
+    "total": "$115.25"
+  },
+  "total_items_received": 26,
+  "total_substitutions": 3,
+  "total_unavailable": 4
+}

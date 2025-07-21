@@ -142,3 +142,5 @@ TimeoutError: Replanning timed out
     at process.processTimers (node:internal/timers:523:7)
 2025-07-18T17:19:51.832Z ERROR [CRITICAL] Uncaught exception {"error":{"code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":3000}}
 2025-07-18T17:19:51.833Z ERROR [CRITICAL] Uncaught exception {"error":{"code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":3001}}
+2025-07-21T11:01:45.827Z ERROR [CRITICAL] Uncaught exception {"error":{"code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":3001}}
+2025-07-21T11:01:45.828Z ERROR [CRITICAL] Uncaught exception {"error":{"code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":3002}}

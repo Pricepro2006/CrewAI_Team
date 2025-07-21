@@ -1,8 +1,8 @@
 -- Migration Script 02: Transform Data to Email Dashboard Format
 -- Purpose: Transform parsed analysis data into Email Dashboard schema
 
--- First, ensure we have the unified schema
-.read /home/pricepro2006/CrewAI_Team/docs/unified_schema.sql
+-- NOTE: This migration assumes the unified schema has already been created
+-- If not, run 01_create_migration_tables.sql first
 
 -- Transform analysis results to emails table
 INSERT INTO emails (
