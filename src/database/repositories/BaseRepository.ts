@@ -3,7 +3,7 @@
  * Provides common database operations with proper error handling and performance optimization
  */
 
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger';
 
@@ -100,7 +100,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
    */
   protected sanitizeColumnName(columnName: string): string {
     // Only allow alphanumeric characters, underscores, and dots
-    return columnName.replace(/[^a-zA-Z0-9_\.]/g, '');
+    return columnName.replace(/[^a-zA-Z0-9_.]/g, '');
   }
 
   /**

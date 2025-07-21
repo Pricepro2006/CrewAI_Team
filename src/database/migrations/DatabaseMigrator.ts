@@ -3,7 +3,7 @@
  * Handles database schema migrations with version control and rollback support
  */
 
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { logger } from '../../utils/logger';

@@ -3,8 +3,9 @@
  * Uses the enhanced email schema with proper indexing and relationships
  */
 
-import Database from 'better-sqlite3';
-import { BaseRepository, BaseEntity, PaginatedResult, QueryOptions } from './BaseRepository';
+import type Database from 'better-sqlite3';
+import { BaseRepository } from './BaseRepository';
+import type { BaseEntity, PaginatedResult, QueryOptions } from './BaseRepository';
 import { logger } from '../../utils/logger';
 
 export interface EmailEnhanced extends BaseEntity {

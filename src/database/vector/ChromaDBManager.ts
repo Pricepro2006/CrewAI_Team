@@ -3,7 +3,8 @@
  * Provides production-ready ChromaDB operations with schema management
  */
 
-import { ChromaClient, Collection } from 'chromadb';
+import { ChromaClient } from 'chromadb';
+import type { Collection } from 'chromadb';
 import { logger } from '../../utils/logger';
 
 export interface ChromaDocument {
