@@ -5,7 +5,7 @@
  * by avoiding the overhead of agent initialization on each request.
  */
 
-import { BaseAgent } from '../agents/base/BaseAgent';
+import type { BaseAgent } from '../agents/base/BaseAgent';
 import { EmailAnalysisAgent } from '../agents/specialized/EmailAnalysisAgent';
 import { logger } from '../../utils/logger';
 

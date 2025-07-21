@@ -153,7 +153,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
   /**
    * Wrap the generate method
    */
-  private wrapGenerate(provider: OllamaProvider, originalMethod: Function) {
+  private wrapGenerate(provider: OllamaProvider, originalMethod: (...args: any[]) => any) {
     return async (prompt: string, options?: OllamaGenerateOptions): Promise<string> => {
       const startTime = Date.now();
       
@@ -266,7 +266,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
   /**
    * Wrap the generateWithLogProbs method
    */
-  private wrapGenerateWithLogProbs(provider: OllamaProvider, originalMethod: Function) {
+  private wrapGenerateWithLogProbs(provider: OllamaProvider, originalMethod: (...args: any[]) => any) {
     return async (prompt: string, options?: OllamaGenerateOptions): Promise<OllamaGenerateWithLogProbsResponse> => {
       const startTime = Date.now();
       
@@ -327,7 +327,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
   /**
    * Wrap the generateStream method
    */
-  private wrapGenerateStream(provider: OllamaProvider, originalMethod: Function) {
+  private wrapGenerateStream(provider: OllamaProvider, originalMethod: (...args: any[]) => any) {
     return async (
       prompt: string, 
       options?: OllamaGenerateOptions,
