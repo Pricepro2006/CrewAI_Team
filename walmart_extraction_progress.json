@@ -1,0 +1,30 @@
+{
+  "extractionProgress": {
+    "totalOrdersExtracted": 2,
+    "completedOrders": [
+      {
+        "orderNumber": "200013332944390",
+        "extractionDate": "2025-07-20",
+        "fileLocation": "/home/pricepro2006/CrewAI_Team/walmart_order_200013332944390.json",
+        "customerName": "josh deguzman"
+      },
+      {
+        "orderNumber": "200013330976320", 
+        "extractionDate": "2025-07-20",
+        "fileLocation": "/home/pricepro2006/CrewAI_Team/walmart_purchases_20250720.json",
+        "customerName": "Nick Paul"
+      }
+    ],
+    "nextSteps": {
+      "focus": "Extract only orders for Nick Paul",
+      "strategy": "Use authenticated browser session to navigate purchase history",
+      "filterBy": "Customer name: Nick Paul",
+      "priority": "High - expedite extraction process"
+    },
+    "extractionStats": {
+      "nickPaulOrders": 1,
+      "otherCustomerOrders": 1,
+      "pendingExtraction": "Unknown - need to access full purchase history"
+    }
+  }
+}

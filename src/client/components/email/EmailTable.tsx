@@ -23,19 +23,30 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { StatusIndicator } from './StatusIndicator';
+import { InlineAssignment } from './AssignmentDropdown';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { EmailRecord, SortableColumn, SortDirection } from '@/types/email-dashboard.interfaces';
+
+interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role?: string;
+  avatar?: string;
+}
 
 interface EmailTableProps {
   emails: EmailRecord[];
   loading?: boolean;
   error?: string | null;
   selectedEmails?: string[];
+  teamMembers?: TeamMember[];
   onEmailSelect?: (emailId: string) => void;
   onEmailsSelect?: (emailIds: string[]) => void;
   onSort?: (column: SortableColumn, direction: SortDirection) => void;
   onRowClick?: (email: EmailRecord) => void;
+  onAssignEmail?: (emailId: string, memberId: string) => Promise<void>;
   className?: string;
 }
 
@@ -44,10 +55,12 @@ export function EmailTable({
   loading = false,
   error = null,
   selectedEmails = [],
+  teamMembers = [],
   onEmailSelect,
   onEmailsSelect,
   onSort,
   onRowClick,
+  onAssignEmail,
   className,
 }: EmailTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -169,6 +182,31 @@ export function EmailTable({
         size: 350,
       },
       {
+        accessorKey: 'assignedTo',
+        header: 'Assigned To',
+        cell: ({ row }) => (
+          <div className="text-sm" onClick={(e) => e.stopPropagation()}>
+            {onAssignEmail && teamMembers.length > 0 ? (
+              <InlineAssignment
+                emailId={row.original.id}
+                currentAssignee={row.original.assignedTo}
+                teamMembers={teamMembers}
+                onAssign={onAssignEmail}
+              />
+            ) : (
+              <div>
+                {row.original.assignedTo ? (
+                  <span className="font-medium">{row.original.assignedTo}</span>
+                ) : (
+                  <span className="text-muted-foreground italic">Unassigned</span>
+                )}
+              </div>
+            )}
+          </div>
+        ),
+        size: 150,
+      },
+      {
         accessorKey: 'timestamp',
         header: 'Time',
         cell: ({ row }) => (
@@ -179,7 +217,7 @@ export function EmailTable({
         size: 120,
       },
     ],
-    []
+    [teamMembers, onAssignEmail]
   );
 
   const table = useReactTable({

@@ -16,6 +16,7 @@ import { logger } from "../utils/logger";
 import uploadRoutes from "./routes/upload.routes";
 import { webhookRouter } from "./routes/webhook.router";
 import { emailAnalysisRouter } from "./routes/email-analysis.router";
+import emailAssignmentRouter from "./routes/email-assignment.router";
 import { cleanupManager, registerDefaultCleanupTasks, } from "./services/ServiceCleanupManager";
 const app = express();
 const PORT = appConfig.api.port;
@@ -100,6 +101,8 @@ app.use("/api", uploadRoutes);
 app.use("/api/webhooks", webhookRouter);
 // Email analysis routes
 app.use("/api/email-analysis", emailAnalysisRouter);
+// Email assignment routes
+app.use("/api/email-assignment", emailAssignmentRouter);
 // tRPC middleware
 app.use("/trpc", createExpressMiddleware({
     router: appRouter,

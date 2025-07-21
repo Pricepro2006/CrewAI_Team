@@ -1,0 +1,24 @@
+{
+  "order_number": "200013170988638",
+  "order_date": "Apr 10, 2025",
+  "customer_name": "Nicholas Paul",
+  "fulfillment_type": "Delivery",
+  "delivery_status": "Delivered on Apr 10",
+  "delivery_address": "278 wycliff dr, Spartanburg, SC 29301",
+  "items_received": [
+    {
+      "name": "GIANNA 9FT Outdoor Patio Umbrella",
+      "quantity": "Qty 1",
+      "price": "$32.09"
+    }
+  ],
+  "payment": {
+    "subtotal": "$32.09",
+    "delivery_fee": "$0.00",
+    "tax": "$0.00",
+    "total": "$32.09"
+  },
+  "total_items": 1,
+  "location": "Spartanburg, SC",
+  "found_on_page": 3
+}

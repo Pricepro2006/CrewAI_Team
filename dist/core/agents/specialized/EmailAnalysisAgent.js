@@ -61,8 +61,7 @@ export class EmailAnalysisAgent extends BaseAgent {
         );
         this.ollamaProvider = new OllamaProvider({
             model: this.model,
-            baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-            timeout: PRODUCTION_EMAIL_CONFIG.timeout
+            baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
         });
         // Cache will be initialized lazily to avoid circular import
         this.cache = null;
@@ -207,8 +206,7 @@ Provide detailed categorization with high confidence.`;
             // Create a new provider instance with quality-focused model
             const deepProvider = new OllamaProvider({
                 model: ANALYSIS_SCENARIOS.qualityFocus.primaryModel,
-                baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-                timeout: ANALYSIS_SCENARIOS.qualityFocus.timeout
+                baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
             });
             const response = await deepProvider.generate(prompt, {
                 temperature: 0.2

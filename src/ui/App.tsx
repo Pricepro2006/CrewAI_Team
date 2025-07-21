@@ -1,6 +1,6 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, wsLink, splitLink, createWSClient } from "@trpc/client";
+import { httpBatchLink, httpLink, wsLink, splitLink, createWSClient } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import superjson from "superjson";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -40,8 +40,8 @@ const trpcClient = trpc.createClient({
           url: `ws://localhost:3001/trpc-ws`,
         }),
       }),
-      false: httpBatchLink({
-        url: "http://localhost:3000/trpc",
+      false: httpLink({
+        url: "http://localhost:3001/trpc",
         headers() {
           const token = localStorage.getItem("token");
           return token

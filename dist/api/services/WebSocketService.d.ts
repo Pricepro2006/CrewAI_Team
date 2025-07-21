@@ -807,6 +807,14 @@ export declare class WebSocketService extends EventEmitter {
             byPermission: Record<string, number>;
         };
     };
+    /**
+     * Emit email update event for assignment changes
+     */
+    emitEmailUpdate(event: {
+        type: 'update' | 'delete' | 'create';
+        email?: any;
+        emailId?: string;
+    }): void;
     broadcastEmailAnalyzed(emailId: string, workflow: string, priority: "Critical" | "High" | "Medium" | "Low", actionSummary: string, confidence: number, slaStatus: "on-track" | "at-risk" | "overdue", state: string): void;
     broadcastEmailStateChanged(emailId: string, oldState: string, newState: string, changedBy?: string): void;
     broadcastEmailBulkUpdate(action: string, emailIds: string[], results: {

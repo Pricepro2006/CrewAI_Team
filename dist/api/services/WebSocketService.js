@@ -763,6 +763,18 @@ export class WebSocketService extends EventEmitter {
         };
     }
     // Email-specific broadcast methods
+    /**
+     * Emit email update event for assignment changes
+     */
+    emitEmailUpdate(event) {
+        this.broadcast({
+            type: "email.updated",
+            eventType: event.type,
+            email: event.email,
+            emailId: event.emailId,
+            timestamp: new Date(),
+        });
+    }
     broadcastEmailAnalyzed(emailId, workflow, priority, actionSummary, confidence, slaStatus, state) {
         this.broadcast({
             type: "email.analyzed",
