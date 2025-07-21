@@ -1,6 +1,7 @@
-import { initTRPC, TRPCError } from "@trpc/server";
+import { initTRPC, TRPCError, type AnyRouter } from "@trpc/server";
 import superjson from "superjson";
 import type { Context } from "./context";
+import type { Request, Response } from "express";
 import {
   createSecurityAuditMiddleware,
   createAuthMiddleware,
@@ -24,8 +25,13 @@ import { z } from "zod";
  * Based on TypeScript Expert tRPC API instructions and security best practices
  */
 
+// Explicit type for tRPC instance
+type TRPCInstance = ReturnType<
+  ReturnType<typeof initTRPC.context<Context>>["create"]
+>;
+
 // Initialize tRPC with enhanced configuration
-const t = initTRPC.context<Context>().create({
+const t: TRPCInstance = initTRPC.context<Context>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     // Enhanced error formatting with security considerations
@@ -102,17 +108,31 @@ export const userProcedure: ReturnType<typeof t.procedure.use> = t.procedure
 
 // Rate-limited procedures for different operation types
 // Convert express rate limiters to tRPC middleware
-const createRateLimitMiddleware = (name: string) => t.middleware(async ({ ctx, next }) => {
-  // For now, just proceed - rate limiting can be handled at HTTP level
-  logger.debug(`Rate limit check for ${name}`, 'TRPC_RATE_LIMIT');
-  return next();
-});
+const createRateLimitMiddleware = (name: string) =>
+  t.middleware(async ({ ctx, next }) => {
+    // For now, just proceed - rate limiting can be handled at HTTP level
+    logger.debug(`Rate limit check for ${name}`, "TRPC_RATE_LIMIT");
+    return next();
+  });
 
-export const chatProcedure = protectedProcedure.use(createRateLimitMiddleware('chat'));
-export const agentProcedure = protectedProcedure.use(createRateLimitMiddleware('agent'));
-export const taskProcedure = protectedProcedure.use(createRateLimitMiddleware('task'));
-export const ragProcedure = protectedProcedure.use(createRateLimitMiddleware('rag'));
-export const strictProcedure = protectedProcedure.use(createRateLimitMiddleware('strict'));
+// Type for rate-limited procedures
+type RateLimitedProcedure = ReturnType<typeof protectedProcedure.use>;
+
+export const chatProcedure: RateLimitedProcedure = protectedProcedure.use(
+  createRateLimitMiddleware("chat"),
+);
+export const agentProcedure: RateLimitedProcedure = protectedProcedure.use(
+  createRateLimitMiddleware("agent"),
+);
+export const taskProcedure: RateLimitedProcedure = protectedProcedure.use(
+  createRateLimitMiddleware("task"),
+);
+export const ragProcedure: RateLimitedProcedure = protectedProcedure.use(
+  createRateLimitMiddleware("rag"),
+);
+export const strictProcedure: RateLimitedProcedure = protectedProcedure.use(
+  createRateLimitMiddleware("strict"),
+);
 
 // Procedures with input validation
 export const secureTextProcedure: ReturnType<typeof protectedProcedure.use> =
@@ -192,10 +212,16 @@ const batchOperationMiddleware = t.middleware(async ({ next, ctx }) => {
   });
 });
 
-export const batchProcedure = protectedProcedure.use(batchOperationMiddleware);
+export const batchProcedure: RateLimitedProcedure = protectedProcedure.use(
+  batchOperationMiddleware,
+);
 
 // Custom error handlers for different scenarios
-export function createCustomErrorHandler(errorType: string) {
+type CustomErrorHandler = ReturnType<typeof t.middleware>;
+
+export function createCustomErrorHandler(
+  errorType: string,
+): CustomErrorHandler {
   return t.middleware(async ({ next }) => {
     try {
       return await next();
