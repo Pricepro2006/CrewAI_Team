@@ -354,7 +354,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({ className }) => 
       <div className="email-dashboard__quick-stats">
         <div className="email-dashboard__stat">
           <div className="email-dashboard__stat-value">{todayStats.received}</div>
-          <div className="email-dashboard__stat-label">Today's Emails</div>
+          <div className="email-dashboard__stat-label">Today&apos;s Emails</div>
         </div>
         <div className="email-dashboard__stat">
           <div className="email-dashboard__stat-value">{todayStats.processed}</div>

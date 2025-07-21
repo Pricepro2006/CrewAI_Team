@@ -171,7 +171,7 @@ export const WebScraping: React.FC = () => {
               </svg>
             </div>
             <h3>Secure & Reliable</h3>
-            <p>Powered by Bright Data's enterprise-grade infrastructure with built-in proxy rotation.</p>
+            <p>Powered by Bright Data&apos;s enterprise-grade infrastructure with built-in proxy rotation.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">
