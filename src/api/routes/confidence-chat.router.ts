@@ -51,7 +51,7 @@ const confidenceChatSchemas = {
   }),
 };
 
-export const confidenceChatRouter = createFeatureRouter(
+export const confidenceChatRouter: any = createFeatureRouter(
   "confidence-chat",
   router({
     // Create a new conversation with confidence scoring
@@ -516,7 +516,8 @@ export const confidenceChatRouter = createFeatureRouter(
         };
 
         // Add the new message to the conversation
-        const lastMessage = conversation.messages[conversation.messages.length - 1];
+        const lastMessage =
+          conversation.messages[conversation.messages.length - 1];
         if (lastMessage) {
           await ctx.conversationService.addMessage(
             input.conversationId,
