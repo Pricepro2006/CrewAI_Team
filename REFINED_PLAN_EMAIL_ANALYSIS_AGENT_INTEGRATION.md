@@ -303,7 +303,7 @@ Environment Variables
 bash# Already in .env
 MSGRAPH_CLIENT_ID=23208ebe-80e9-429d-8a37-8fcaca70e43d
 MSGRAPH_TENANT_ID=7fe14ab6-8f5d-4139-84bf-cd8aed0ee6b9
-MSGRAPH_CLIENT_SECRET=3Pr8Q~W8wu7TKQNuo4v0GJwz0NK0T7Vw86~CFajw
+MSGRAPH_CLIENT_SECRET=your-client-secret-here
 
 # Add new variables
 WEBHOOK_URL=https://your-domain.com/api/webhooks/microsoft-graph
