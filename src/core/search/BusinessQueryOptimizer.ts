@@ -179,6 +179,7 @@ export class BusinessQueryOptimizer {
    */
   private static sanitizeInput(input: string): string {
     // Remove control characters
+    // eslint-disable-next-line no-control-regex
     let sanitized = input.replace(/[\x00-\x1F\x7F]/g, '');
     
     // Normalize whitespace

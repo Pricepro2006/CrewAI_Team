@@ -203,9 +203,9 @@ export class EmailRepository extends BaseRepository<EmailEnhanced> {
       orderDirection = 'DESC'
     } = options;
 
-    let whereConditions: Record<string, any> = {};
-    let additionalClauses: string[] = [];
-    let additionalParams: any[] = [];
+    const whereConditions: Record<string, any> = {};
+    const additionalClauses: string[] = [];
+    const additionalParams: any[] = [];
 
     // Basic filters
     if (status?.length) {
@@ -245,8 +245,8 @@ export class EmailRepository extends BaseRepository<EmailEnhanced> {
     const { clause: whereClause, params: whereParams } = this.buildWhereClause(whereConditions);
     const orderClause = this.buildOrderClause(orderBy, orderDirection);
 
-    let baseQuery = `SELECT * FROM ${this.tableName}`;
-    let countQuery = `SELECT COUNT(*) as total FROM ${this.tableName}`;
+    const baseQuery = `SELECT * FROM ${this.tableName}`;
+    const countQuery = `SELECT COUNT(*) as total FROM ${this.tableName}`;
     let allParams = whereParams;
 
     // Combine where conditions

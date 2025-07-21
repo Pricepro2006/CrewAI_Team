@@ -43,7 +43,8 @@
         "disallowTypeAnnotations": false
       }
     ],
-    "@typescript-eslint/no-import-type-side-effects": "error"
+    "@typescript-eslint/no-import-type-side-effects": "error",
+    "react/prop-types": "off"
   },
   "settings": {
     "react": {
