@@ -1,5 +1,6 @@
 import type { inferAsyncReturnType } from "@trpc/server";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
+import type { Request, Response } from "express";
 import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator";
 import { ConversationService } from "../services/ConversationService";
 import { TaskService } from "../services/TaskService";
@@ -62,7 +63,7 @@ async function initializeServices() {
       taskTimeout: 300000, // 5 minutes
       queueConfig: {
         maxSize: 100,
-        strategy: 'fifo',
+        strategy: "fifo",
       },
     });
     await maestroFramework.initialize();
@@ -171,7 +172,27 @@ function validateRequest(req: any) {
   return { ip, userAgent };
 }
 
-export async function createContext({ req, res }: CreateExpressContextOptions) {
+type TRPCContext = {
+  req: Request;
+  res: Response;
+  user: User;
+  requestId: string;
+  timestamp: Date;
+  batchId: string | undefined;
+  validatedInput: unknown;
+  masterOrchestrator: MasterOrchestrator;
+  conversationService: ConversationService;
+  taskService: TaskService;
+  maestroFramework: MaestroFramework;
+  userService: UserService;
+  agentRegistry: any;
+  ragSystem: any;
+};
+
+export async function createContext({
+  req,
+  res,
+}: CreateExpressContextOptions): Promise<TRPCContext> {
   // Validate request and extract security info
   const { ip, userAgent } = validateRequest(req);
 
