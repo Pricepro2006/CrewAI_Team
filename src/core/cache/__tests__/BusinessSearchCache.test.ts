@@ -310,7 +310,7 @@ describe('BusinessSearchCache', () => {
     });
 
     it('should handle Redis errors gracefully', async () => {
-      const Redis = require('ioredis');
+      const { Redis } = await import('ioredis');
       const mockRedis = Redis.mock.results[0].value;
       
       // Make Redis operations fail
