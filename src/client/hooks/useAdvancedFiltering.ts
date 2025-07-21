@@ -110,15 +110,17 @@ export const useAdvancedFiltering = <TData extends Record<string, any>>(
             return true; // Invalid regex shouldn't break filtering
           }
         
-        case 'greaterThan':
+        case 'greaterThan': {
           const gtValue = parseFloat(String(rule.value));
           const gtCellValue = parseFloat(String(cellValue));
           return !isNaN(gtValue) && !isNaN(gtCellValue) && gtCellValue > gtValue;
+        }
         
-        case 'lessThan':
+        case 'lessThan': {
           const ltValue = parseFloat(String(rule.value));
           const ltCellValue = parseFloat(String(cellValue));
           return !isNaN(ltValue) && !isNaN(ltCellValue) && ltCellValue < ltValue;
+        }
         
         case 'between':
           if (typeof rule.value === 'object' && 'min' in rule.value && 'max' in rule.value) {
