@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EmailDashboard } from '../../ui/components/Email/EmailDashboard';

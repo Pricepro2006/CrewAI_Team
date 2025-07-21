@@ -133,7 +133,9 @@ const EmailRow: React.FC<EmailRowProps> = ({
         if (poNumbers.length > 0) {
           entities.push({ type: 'PO', value: poNumbers[0].value || poNumbers[0] });
         }
-      } catch {}
+      } catch {
+        // Ignore parsing errors
+      }
     }
     
     if (email.analysis?.entities_quote_numbers) {
@@ -142,7 +144,9 @@ const EmailRow: React.FC<EmailRowProps> = ({
         if (quoteNumbers.length > 0) {
           entities.push({ type: 'Quote', value: quoteNumbers[0].value || quoteNumbers[0] });
         }
-      } catch {}
+      } catch {
+        // Ignore parsing errors
+      }
     }
     
     if (email.analysis?.entities_case_numbers) {
@@ -151,7 +155,9 @@ const EmailRow: React.FC<EmailRowProps> = ({
         if (caseNumbers.length > 0) {
           entities.push({ type: 'Case', value: caseNumbers[0].value || caseNumbers[0] });
         }
-      } catch {}
+      } catch {
+        // Ignore parsing errors
+      }
     }
     
     return entities;
