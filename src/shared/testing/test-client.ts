@@ -329,7 +329,7 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
     return this;
   }
 
-  toBeInstanceOf(constructor: Function): TestAssertions<T> {
+  toBeInstanceOf(constructor: new (...args: any[]) => any): TestAssertions<T> {
     const passed = this.not ? !(this.actual instanceof constructor) : (this.actual instanceof constructor);
     if (!passed) {
       throw new Error(`Expected ${this.actual} ${this.not ? 'not ' : ''}to be instance of ${constructor.name}`);
