@@ -1,0 +1,33 @@
+version: "3.8"
+
+# Staging-specific overrides
+services:
+  app:
+    ports:
+      - "3001:3000" # API on different port for staging
+      - "5001:5173" # Vite dev server on different port
+    environment:
+      - NODE_ENV=staging
+      - PORT=3000
+      - WS_PORT=3002
+      - LOG_LEVEL=debug
+    volumes:
+      - ./data:/app/data
+      - ./.env.staging:/app/.env:ro
+    command: ["sh", "-c", "node dist/api/server.js"]
+
+  # Use specific versions for staging stability
+  ollama:
+    image: ollama/ollama:0.1.32
+    environment:
+      - OLLAMA_DEBUG=1
+
+  chromadb:
+    image: chromadb/chroma:0.4.22
+    environment:
+      - CHROMA_LOG_CONFIG=chromadb/log_config.yml
+      - CHROMA_SERVER_LOG_LEVEL=INFO
+
+  # Disable nginx in staging (use direct access)
+  nginx:
+    profiles: ["production"]
