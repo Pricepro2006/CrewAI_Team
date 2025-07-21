@@ -505,7 +505,7 @@ export const StatusUpdateManager: React.FC<StatusUpdateManagerProps> = ({
                       </div>
                       {entry.comment && (
                         <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-700">
-                          "{entry.comment}"
+                          &ldquo;{entry.comment}&rdquo;
                         </div>
                       )}
                       <div className="mt-2 text-xs text-gray-500">

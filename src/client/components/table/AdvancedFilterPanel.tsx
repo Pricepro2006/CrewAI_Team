@@ -342,7 +342,7 @@ export const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
 
               {filterRules.length === 0 ? (
                 <p className="text-sm text-gray-500 text-center py-8">
-                  No filter rules defined. Click "Add Rule" to get started.
+                  No filter rules defined. Click &ldquo;Add Rule&rdquo; to get started.
                 </p>
               ) : (
                 <div className="space-y-3">
