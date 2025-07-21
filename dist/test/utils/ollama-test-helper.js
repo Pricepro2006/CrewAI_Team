@@ -24,7 +24,8 @@ export function skipIfNoOllama() {
                 console.log('Ollama not available, skipping test');
                 return true;
             }
-        }
+        },
+        reason: 'Ollama service not available'
     };
 }
 //# sourceMappingURL=ollama-test-helper.js.map

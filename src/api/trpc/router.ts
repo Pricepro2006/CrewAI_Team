@@ -37,7 +37,7 @@ import { router as createRouter } from "./enhanced-router";
 import type { AnyRouter } from "@trpc/server";
 
 // Create the main app router with enhanced security
-export const appRouter = createRouter({
+export const appRouter: any = createRouter({
   auth: authRouter, // Authentication endpoints
   agent: agentRouter,
   task: taskRouter,
