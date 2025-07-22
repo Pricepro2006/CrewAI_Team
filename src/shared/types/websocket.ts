@@ -3,9 +3,9 @@
  * Comprehensive type definitions for real-time features
  */
 
-import type { Timestamp } from './index';
-import type { Task, Message, Document } from './core';
-import type { EmailRecord } from './email';
+import type { Timestamp } from "./index";
+import type { Task, Message, Document, Conversation } from "./core";
+import type { EmailRecord } from "./email";
 
 // =====================================================
 // Core WebSocket Types
@@ -19,7 +19,7 @@ export interface WebSocketConnection {
   metadata: ConnectionMetadata;
   connectedAt: Timestamp;
   lastActivity: Timestamp;
-  status: 'connecting' | 'connected' | 'disconnected' | 'error';
+  status: "connecting" | "connected" | "disconnected" | "error";
 }
 
 export interface ConnectionMetadata {
@@ -46,7 +46,7 @@ export interface WebSocketMessage<T = unknown> {
 export interface MessageMetadata {
   requestId?: string;
   correlationId?: string;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
+  priority?: "low" | "medium" | "high" | "critical";
   ttl?: number;
   retry?: boolean;
   broadcast?: boolean;
@@ -57,56 +57,56 @@ export interface MessageMetadata {
 // Event Type System
 // =====================================================
 
-export type WebSocketEventType = 
+export type WebSocketEventType =
   // System events
-  | 'system.connect'
-  | 'system.disconnect' 
-  | 'system.heartbeat'
-  | 'system.error'
-  | 'system.reconnect'
+  | "system.connect"
+  | "system.disconnect"
+  | "system.heartbeat"
+  | "system.error"
+  | "system.reconnect"
   // Chat events
-  | 'chat.message.new'
-  | 'chat.message.update'
-  | 'chat.message.delete'
-  | 'chat.typing.start'
-  | 'chat.typing.stop'
-  | 'chat.conversation.create'
-  | 'chat.conversation.update'
-  | 'chat.conversation.archive'
+  | "chat.message.new"
+  | "chat.message.update"
+  | "chat.message.delete"
+  | "chat.typing.start"
+  | "chat.typing.stop"
+  | "chat.conversation.create"
+  | "chat.conversation.update"
+  | "chat.conversation.archive"
   // Task events
-  | 'task.create'
-  | 'task.update'
-  | 'task.complete'
-  | 'task.fail'
-  | 'task.cancel'
-  | 'task.progress'
-  | 'task.assign'
+  | "task.create"
+  | "task.update"
+  | "task.complete"
+  | "task.fail"
+  | "task.cancel"
+  | "task.progress"
+  | "task.assign"
   // Agent events
-  | 'agent.start'
-  | 'agent.step'
-  | 'agent.tool.call'
-  | 'agent.tool.response'
-  | 'agent.complete'
-  | 'agent.error'
+  | "agent.start"
+  | "agent.step"
+  | "agent.tool.call"
+  | "agent.tool.response"
+  | "agent.complete"
+  | "agent.error"
   // Email events
-  | 'email.create'
-  | 'email.update'
-  | 'email.delete'
-  | 'email.assign'
-  | 'email.status.change'
-  | 'email.batch.process'
+  | "email.create"
+  | "email.update"
+  | "email.delete"
+  | "email.assign"
+  | "email.status.change"
+  | "email.batch.process"
   // Document events
-  | 'document.create'
-  | 'document.update'
-  | 'document.delete'
-  | 'document.process'
-  | 'document.index'
+  | "document.create"
+  | "document.update"
+  | "document.delete"
+  | "document.process"
+  | "document.index"
   // System monitoring events
-  | 'monitoring.metric'
-  | 'monitoring.alert'
-  | 'monitoring.health'
+  | "monitoring.metric"
+  | "monitoring.alert"
+  | "monitoring.health"
   // Custom events
-  | 'custom.event';
+  | "custom.event";
 
 // =====================================================
 // Event Data Types
@@ -122,7 +122,7 @@ export interface SystemConnectEvent {
 export interface SystemDisconnectEvent {
   connectionId: string;
   userId?: string;
-  reason: 'client' | 'server' | 'timeout' | 'error';
+  reason: "client" | "server" | "timeout" | "error";
   code?: number;
   message?: string;
 }
@@ -163,13 +163,13 @@ export interface ChatTypingEvent {
 export interface ChatConversationEvent {
   conversationId: string;
   conversation: Partial<Conversation>;
-  action: 'create' | 'update' | 'archive' | 'restore';
+  action: "create" | "update" | "archive" | "restore";
 }
 
 export interface TaskEvent {
   taskId: string;
   task: Partial<Task>;
-  action: 'create' | 'update' | 'complete' | 'fail' | 'cancel' | 'assign';
+  action: "create" | "update" | "complete" | "fail" | "cancel" | "assign";
   previousState?: Partial<Task>;
 }
 
@@ -186,7 +186,7 @@ export interface TaskProgressEvent {
 
 export interface TaskLog {
   timestamp: Timestamp;
-  level: 'debug' | 'info' | 'warn' | 'error';
+  level: "debug" | "info" | "warn" | "error";
   message: string;
   context?: Record<string, unknown>;
 }
@@ -194,7 +194,7 @@ export interface TaskLog {
 export interface AgentEvent {
   agentId: string;
   taskId: string;
-  action: 'start' | 'step' | 'complete' | 'error';
+  action: "start" | "step" | "complete" | "error";
   data: AgentEventData;
 }
 
@@ -207,7 +207,7 @@ export interface AgentEventData {
 
 export interface AgentStep {
   stepId: string;
-  type: 'thinking' | 'tool_call' | 'response' | 'search' | 'analysis';
+  type: "thinking" | "tool_call" | "response" | "search" | "analysis";
   description: string;
   input?: unknown;
   output?: unknown;
@@ -229,7 +229,7 @@ export interface AgentToolEvent {
   agentId: string;
   taskId: string;
   toolName: string;
-  action: 'call' | 'response';
+  action: "call" | "response";
   parameters?: unknown;
   result?: unknown;
   error?: WebSocketError;
@@ -239,14 +239,14 @@ export interface AgentToolEvent {
 export interface EmailEvent {
   emailId: string;
   email: Partial<EmailRecord>;
-  action: 'create' | 'update' | 'delete' | 'assign' | 'status_change';
+  action: "create" | "update" | "delete" | "assign" | "status_change";
   previousState?: Partial<EmailRecord>;
   userId?: string;
 }
 
 export interface EmailBatchEvent {
   batchId: string;
-  status: 'started' | 'processing' | 'completed' | 'failed';
+  status: "started" | "processing" | "completed" | "failed";
   progress: {
     processed: number;
     total: number;
@@ -260,9 +260,9 @@ export interface EmailBatchEvent {
 export interface DocumentEvent {
   documentId: string;
   document: Partial<Document>;
-  action: 'create' | 'update' | 'delete' | 'process' | 'index';
+  action: "create" | "update" | "delete" | "process" | "index";
   progress?: {
-    stage: 'parsing' | 'chunking' | 'embedding' | 'indexing' | 'complete';
+    stage: "parsing" | "chunking" | "embedding" | "indexing" | "complete";
     percentage: number;
   };
   error?: WebSocketError;
@@ -279,7 +279,7 @@ export interface MonitoringMetricEvent {
 export interface MonitoringAlertEvent {
   alertId: string;
   name: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   message: string;
   timestamp: Timestamp;
   resolved?: boolean;
@@ -288,14 +288,14 @@ export interface MonitoringAlertEvent {
 
 export interface MonitoringHealthEvent {
   service: string;
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: "healthy" | "degraded" | "unhealthy";
   checks: HealthCheck[];
   timestamp: Timestamp;
 }
 
 export interface HealthCheck {
   name: string;
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: "healthy" | "degraded" | "unhealthy";
   responseTime?: number;
   error?: string;
   metadata?: Record<string, unknown>;
@@ -314,7 +314,7 @@ export interface CustomEvent {
 
 export interface Channel {
   name: string;
-  type: 'public' | 'private' | 'presence';
+  type: "public" | "private" | "presence";
   description?: string;
   metadata?: Record<string, unknown>;
   permissions?: ChannelPermissions;
@@ -393,19 +393,19 @@ export interface WebSocketError {
   retryAfter?: number;
 }
 
-export type WebSocketErrorCode = 
-  | 'CONNECTION_FAILED'
-  | 'AUTHENTICATION_FAILED'
-  | 'AUTHORIZATION_FAILED'
-  | 'INVALID_MESSAGE'
-  | 'CHANNEL_NOT_FOUND'
-  | 'SUBSCRIPTION_FAILED'
-  | 'PUBLISH_FAILED'
-  | 'RATE_LIMIT_EXCEEDED'
-  | 'SERVER_ERROR'
-  | 'CLIENT_ERROR'
-  | 'TIMEOUT'
-  | 'PROTOCOL_ERROR';
+export type WebSocketErrorCode =
+  | "CONNECTION_FAILED"
+  | "AUTHENTICATION_FAILED"
+  | "AUTHORIZATION_FAILED"
+  | "INVALID_MESSAGE"
+  | "CHANNEL_NOT_FOUND"
+  | "SUBSCRIPTION_FAILED"
+  | "PUBLISH_FAILED"
+  | "RATE_LIMIT_EXCEEDED"
+  | "SERVER_ERROR"
+  | "CLIENT_ERROR"
+  | "TIMEOUT"
+  | "PROTOCOL_ERROR";
 
 // =====================================================
 // Connection Management
@@ -470,7 +470,7 @@ export interface MessageQueue {
   messages: QueuedMessage[];
   size: number;
   maxSize: number;
-  strategy: 'fifo' | 'lifo' | 'priority';
+  strategy: "fifo" | "lifo" | "priority";
   persistentMessages: number;
 }
 
@@ -484,7 +484,7 @@ export interface QueuedMessage extends WebSocketMessage {
 
 export interface MessageDeliveryStatus {
   messageId: string;
-  status: 'queued' | 'delivered' | 'failed' | 'expired';
+  status: "queued" | "delivered" | "failed" | "expired";
   attempts: number;
   lastAttempt?: Timestamp;
   error?: WebSocketError;
@@ -496,7 +496,10 @@ export interface MessageDeliveryStatus {
 
 export interface EventHandler<T = unknown> {
   eventType: WebSocketEventType;
-  handler: (event: WebSocketMessage<T>, connection: WebSocketConnection) => Promise<void>;
+  handler: (
+    event: WebSocketMessage<T>,
+    connection: WebSocketConnection,
+  ) => Promise<void>;
   middleware?: EventMiddleware[];
 }
 
@@ -505,16 +508,25 @@ export interface EventMiddleware {
   handler: (
     event: WebSocketMessage,
     connection: WebSocketConnection,
-    next: () => Promise<void>
+    next: () => Promise<void>,
   ) => Promise<void>;
 }
 
 export interface WebSocketMiddleware {
   onConnect?: (connection: WebSocketConnection) => Promise<boolean>;
   onDisconnect?: (connection: WebSocketConnection) => Promise<void>;
-  onMessage?: (message: WebSocketMessage, connection: WebSocketConnection) => Promise<boolean>;
-  onError?: (error: WebSocketError, connection: WebSocketConnection) => Promise<void>;
-  onSubscribe?: (request: SubscriptionRequest, connection: WebSocketConnection) => Promise<boolean>;
+  onMessage?: (
+    message: WebSocketMessage,
+    connection: WebSocketConnection,
+  ) => Promise<boolean>;
+  onError?: (
+    error: WebSocketError,
+    connection: WebSocketConnection,
+  ) => Promise<void>;
+  onSubscribe?: (
+    request: SubscriptionRequest,
+    connection: WebSocketConnection,
+  ) => Promise<boolean>;
 }
 
 // =====================================================
@@ -584,7 +596,7 @@ export interface WebSocketSecurity {
 }
 
 export interface TokenValidation {
-  schemes: ('bearer' | 'query' | 'cookie')[];
+  schemes: ("bearer" | "query" | "cookie")[];
   jwtSecret?: string;
   apiKeyHeader?: string;
   cookieName?: string;
@@ -613,8 +625,8 @@ export interface MonitoringConfig {
   };
   logging: {
     enabled: boolean;
-    level: 'debug' | 'info' | 'warn' | 'error';
-    format: 'json' | 'text';
+    level: "debug" | "info" | "warn" | "error";
+    format: "json" | "text";
   };
   healthCheck: {
     enabled: boolean;
