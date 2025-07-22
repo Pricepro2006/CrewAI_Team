@@ -1,38 +1,38 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import type { Request, Response, NextFunction } from 'express';
-import { RateLimiter } from '../RateLimiter';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { Request, Response, NextFunction } from "express";
+import { RateLimiter } from "../RateLimiter";
 
 // Mock Redis
-jest.mock('ioredis', () => {
-  return jest.fn().mockImplementation(() => ({
-    on: jest.fn(),
-    disconnect: jest.fn()
+vi.mock("ioredis", () => {
+  return vi.fn().mockImplementation(() => ({
+    on: vi.fn(),
+    disconnect: vi.fn(),
   }));
 });
 
 // Mock express-rate-limit
-jest.mock('express-rate-limit', () => {
-  return jest.fn().mockImplementation((config: any) => {
+vi.mock("express-rate-limit", () => {
+  return vi.fn().mockImplementation((config: any) => {
     return (req: Request, res: Response, next: NextFunction) => {
       // Simple mock implementation
       const key = config.keyGenerator ? config.keyGenerator(req) : req.ip;
       const requestCounts = (global as any).mockRequestCounts || new Map();
-      
+
       const count = requestCounts.get(key) || 0;
       if (count >= config.max) {
         res.status(429);
         return config.handler(req, res);
       }
-      
+
       requestCounts.set(key, count + 1);
-      res.setHeader('X-RateLimit-Limit', config.max);
-      res.setHeader('X-RateLimit-Remaining', config.max - count - 1);
+      res.setHeader("X-RateLimit-Limit", config.max);
+      res.setHeader("X-RateLimit-Remaining", config.max - count - 1);
       next();
     };
   });
 });
 
-describe('RateLimiter', () => {
+describe("RateLimiter", () => {
   let rateLimiter: RateLimiter;
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
@@ -41,216 +41,219 @@ describe('RateLimiter', () => {
   beforeEach(() => {
     // Clear mock request counts
     (global as any).mockRequestCounts = new Map();
-    
+
     rateLimiter = new RateLimiter(false); // Use memory store
-    
+
     mockReq = {
-      ip: '127.0.0.1',
-      path: '/api/search',
+      ip: "127.0.0.1",
+      path: "/api/search",
       body: {},
       query: {},
-      user: undefined
+      user: undefined,
     };
-    
+
     mockRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-      setHeader: jest.fn(),
-      getHeader: jest.fn()
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+      setHeader: vi.fn(),
+      getHeader: vi.fn(),
     };
-    
-    nextFn = jest.fn();
+
+    nextFn = vi.fn();
   });
 
-  describe('webSearchLimiter', () => {
-    it('should allow requests under the limit', () => {
+  describe("webSearchLimiter", () => {
+    it("should allow requests under the limit", () => {
       const limiter = rateLimiter.webSearchLimiter();
-      
+
       for (let i = 0; i < 10; i++) {
         limiter(mockReq as Request, mockRes as Response, nextFn);
       }
-      
+
       expect(nextFn).toHaveBeenCalledTimes(10);
       expect(mockRes.status).not.toHaveBeenCalled();
     });
 
-    it('should block requests over the limit', () => {
+    it("should block requests over the limit", () => {
       const limiter = rateLimiter.webSearchLimiter();
-      
+
       // Make 100 requests (the limit)
       for (let i = 0; i < 100; i++) {
         limiter(mockReq as Request, mockRes as Response, nextFn);
       }
-      
+
       // The 101st request should be blocked
       limiter(mockReq as Request, mockRes as Response, nextFn);
-      
+
       expect(mockRes.status).toHaveBeenCalledWith(429);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Too many requests',
-        message: 'Rate limit exceeded. Please try again later.',
-        retryAfter: undefined
+        error: "Too many requests",
+        message: "Rate limit exceeded. Please try again later.",
+        retryAfter: undefined,
       });
     });
 
-    it('should use user ID for authenticated users', () => {
+    it("should use user ID for authenticated users", () => {
       const limiter = rateLimiter.webSearchLimiter();
       const authenticatedReq = {
         ...mockReq,
-        user: { id: 'user123', premium: false }
+        user: { id: "user123", premium: false },
       };
-      
+
       limiter(authenticatedReq as Request, mockRes as Response, nextFn);
-      
+
       expect(nextFn).toHaveBeenCalled();
     });
   });
 
-  describe('businessSearchLimiter', () => {
-    it('should have stricter limits than webSearchLimiter', () => {
+  describe("businessSearchLimiter", () => {
+    it("should have stricter limits than webSearchLimiter", () => {
       const limiter = rateLimiter.businessSearchLimiter();
-      
+
       // Make 30 requests (the limit)
       for (let i = 0; i < 30; i++) {
-        nextFn.mockClear();
+        nextFn.mockReset();
         limiter(mockReq as Request, mockRes as Response, nextFn);
         expect(nextFn).toHaveBeenCalled();
       }
-      
+
       // The 31st request should be blocked
-      nextFn.mockClear();
+      nextFn.mockReset();
       limiter(mockReq as Request, mockRes as Response, nextFn);
-      
+
       expect(nextFn).not.toHaveBeenCalled();
       expect(mockRes.status).toHaveBeenCalledWith(429);
     });
 
-    it('should include query in rate limit key', () => {
+    it("should include query in rate limit key", () => {
       const limiter = rateLimiter.businessSearchLimiter();
       const reqWithQuery = {
         ...mockReq,
-        body: { query: 'plumber near me' }
+        body: { query: "plumber near me" },
       };
-      
+
       limiter(reqWithQuery as Request, mockRes as Response, nextFn);
-      
+
       expect(nextFn).toHaveBeenCalled();
     });
   });
 
-  describe('globalLimiter', () => {
-    it('should have high limit for general API usage', () => {
+  describe("globalLimiter", () => {
+    it("should have high limit for general API usage", () => {
       const limiter = rateLimiter.globalLimiter();
-      
+
       // Should allow many requests
       for (let i = 0; i < 100; i++) {
         limiter(mockReq as Request, mockRes as Response, nextFn);
       }
-      
+
       expect(nextFn).toHaveBeenCalledTimes(100);
       expect(mockRes.status).not.toHaveBeenCalled();
     });
   });
 
-  describe('premiumLimiter', () => {
-    it('should allow premium users higher limits', () => {
+  describe("premiumLimiter", () => {
+    it("should allow premium users higher limits", () => {
       const limiter = rateLimiter.premiumLimiter();
       const premiumReq = {
         ...mockReq,
-        user: { id: 'premium123', premium: true }
+        user: { id: "premium123", premium: true },
       };
-      
+
       // Premium users get 500 requests
       for (let i = 0; i < 100; i++) {
         limiter(premiumReq as Request, mockRes as Response, nextFn);
       }
-      
+
       expect(nextFn).toHaveBeenCalledTimes(100);
       expect(mockRes.status).not.toHaveBeenCalled();
     });
 
-    it('should apply default limits to non-premium users', () => {
+    it("should apply default limits to non-premium users", () => {
       const limiter = rateLimiter.premiumLimiter();
-      
+
       // Non-premium users treated as single key
       limiter(mockReq as Request, mockRes as Response, nextFn);
-      
+
       expect(nextFn).toHaveBeenCalled();
     });
   });
 
-  describe('slidingWindowLimiter', () => {
-    it('should track requests in sliding window', async () => {
+  describe("slidingWindowLimiter", () => {
+    it("should track requests in sliding window", async () => {
       const limiter = rateLimiter.slidingWindowLimiter(1000, 5); // 1 second window, 5 max
-      
+
       // Make 5 requests quickly
       for (let i = 0; i < 5; i++) {
-        nextFn.mockClear();
+        nextFn.mockReset();
         limiter(mockReq as Request, mockRes as Response, nextFn);
         expect(nextFn).toHaveBeenCalled();
       }
-      
+
       // 6th request should be blocked
-      nextFn.mockClear();
+      nextFn.mockReset();
       limiter(mockReq as Request, mockRes as Response, nextFn);
       expect(nextFn).not.toHaveBeenCalled();
-      
+
       // Wait for window to slide
-      await new Promise(resolve => setTimeout(resolve, 1100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+
       // Should allow request again
-      nextFn.mockClear();
+      nextFn.mockReset();
       limiter(mockReq as Request, mockRes as Response, nextFn);
       expect(nextFn).toHaveBeenCalled();
     });
   });
 
-  describe('tokenBucketLimiter', () => {
-    it('should allow burst of requests up to capacity', () => {
+  describe("tokenBucketLimiter", () => {
+    it("should allow burst of requests up to capacity", () => {
       const limiter = rateLimiter.tokenBucketLimiter(5, 1); // 5 capacity, 1 token/second
-      
+
       // Should allow 5 requests immediately (using all tokens)
       for (let i = 0; i < 5; i++) {
-        nextFn.mockClear();
+        nextFn.mockReset();
         limiter(mockReq as Request, mockRes as Response, nextFn);
         expect(nextFn).toHaveBeenCalled();
       }
-      
+
       // 6th request should be blocked (no tokens left)
-      nextFn.mockClear();
+      nextFn.mockReset();
       limiter(mockReq as Request, mockRes as Response, nextFn);
       expect(nextFn).not.toHaveBeenCalled();
     });
 
-    it('should refill tokens over time', async () => {
+    it("should refill tokens over time", async () => {
       const limiter = rateLimiter.tokenBucketLimiter(2, 2); // 2 capacity, 2 tokens/second
-      
+
       // Use all tokens
       limiter(mockReq as Request, mockRes as Response, nextFn);
       limiter(mockReq as Request, mockRes as Response, nextFn);
-      
+
       // Should be blocked
-      nextFn.mockClear();
+      nextFn.mockReset();
       limiter(mockReq as Request, mockRes as Response, nextFn);
       expect(nextFn).not.toHaveBeenCalled();
-      
+
       // Wait for token refill
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
       // Should have 1 token now
-      nextFn.mockClear();
+      nextFn.mockReset();
       limiter(mockReq as Request, mockRes as Response, nextFn);
       expect(nextFn).toHaveBeenCalled();
     });
   });
 
-  describe('cleanup', () => {
-    it('should disconnect Redis client if present', () => {
+  describe("cleanup", () => {
+    it("should disconnect Redis client if present", () => {
       const rateLimiterWithRedis = new RateLimiter(true);
-      const disconnectSpy = jest.spyOn((rateLimiterWithRedis as any).redisClient || {}, 'disconnect');
-      
+      const disconnectSpy = vi.spyOn(
+        (rateLimiterWithRedis as any).redisClient || {},
+        "disconnect",
+      );
+
       rateLimiterWithRedis.cleanup();
-      
+
       if ((rateLimiterWithRedis as any).redisClient) {
         expect(disconnectSpy).toHaveBeenCalled();
       }
