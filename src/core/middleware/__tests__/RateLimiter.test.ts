@@ -36,7 +36,7 @@ describe("RateLimiter", () => {
   let rateLimiter: RateLimiter;
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
-  let nextFn: NextFunction;
+  let nextFn: jest.Mock<any, any> | NextFunction;
 
   beforeEach(() => {
     // Clear mock request counts
@@ -59,7 +59,7 @@ describe("RateLimiter", () => {
       getHeader: vi.fn(),
     };
 
-    nextFn = vi.fn();
+    nextFn = vi.fn() as any;
   });
 
   describe("webSearchLimiter", () => {

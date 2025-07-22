@@ -9,6 +9,7 @@ import { IEMSDataService } from "../services/IEMSDataService";
 import type { EmailStatus } from "../../types/iems-email.types";
 import { logger } from "../../utils/logger";
 import { wsService } from "../services/WebSocketService";
+import type { AnyRouter } from "@trpc/server";
 
 // Get singleton instance
 const iemsDataService = IEMSDataService.getInstance();
@@ -18,7 +19,7 @@ iemsDataService.initialize().catch((error) => {
   logger.error("Failed to initialize IEMS Data Service", "IEMS_ROUTER", error);
 });
 
-export const iemsEmailRouter = router({
+export const iemsEmailRouter: AnyRouter = router({
   /**
    * Get categorized emails for dashboard display
    */

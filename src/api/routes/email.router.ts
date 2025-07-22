@@ -6,6 +6,7 @@ import {
 } from "../trpc/enhanced-router";
 import { EmailStorageService } from "../services/EmailStorageService";
 import { logger } from "../../utils/logger";
+import type { AnyRouter } from "@trpc/server";
 
 // Initialize email storage service
 const emailStorage = new EmailStorageService();
@@ -149,7 +150,7 @@ const SendEmailInputSchema = z.object({
     .optional(),
 });
 
-export const emailRouter = router({
+export const emailRouter: AnyRouter = router({
   // Get table data with advanced filtering, pagination, and sorting (Agent 10)
   getTableData: publicProcedure
     .input(GetEmailsTableInputSchema)

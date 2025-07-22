@@ -2,9 +2,9 @@ import { z } from "zod";
 import { router, publicProcedure } from "../trpc/router";
 import { observable } from "@trpc/server/observable";
 import { wsService } from "../services/WebSocketService";
-import type { Router } from "@trpc/server";
+import type { Router, AnyRouter } from "@trpc/server";
 
-export const websocketRouter = router({
+export const websocketRouter: AnyRouter = router({
   // Subscribe to specific message types
   subscribe: publicProcedure
     .input(
