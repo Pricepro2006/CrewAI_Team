@@ -418,7 +418,7 @@ class EmailBatchProcessor {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const filePath = path.join(batchDir, file);
+      const filePath = path.join(batchDir, file!);
 
       logger.info(
         `Processing file ${i + 1}/${files.length}: ${file}`,
@@ -1051,7 +1051,7 @@ class EmailBatchProcessor {
     emailId: string,
     emailParams: any,
   ): Promise<void> {
-    const entities = [];
+    const entities: any[] = [];
     const timestamp = new Date().toISOString();
 
     // Store workflow state
@@ -1271,7 +1271,8 @@ async function main() {
 }
 
 // Export for use as module
-export { EmailBatchProcessor, IEMSEmailData };
+export { EmailBatchProcessor };
+export type { IEMSEmailData };
 
 // Run as CLI if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {

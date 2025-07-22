@@ -291,4 +291,4 @@ class SearxEngine extends SearchEngine {
   }
 }
 
-export { SearchResult, SearchEngine };
+export type { SearchResult, SearchEngine };

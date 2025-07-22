@@ -10,6 +10,7 @@ import {
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { trpc } from "../../utils/trpc";
+import { api } from "@/lib/trpc";
 import { EmailTable } from "@/client/components/email/EmailTable";
 import {
   FilterPanel,
@@ -113,10 +114,11 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch email analytics
-  const { data: emailStats, isLoading: statsLoading } =
-    api.emails.getAnalytics.useQuery({
-      refreshKey,
-    });
+  const { data: emailStats, isLoading: statsLoading } = (
+    api.emails as any
+  ).getAnalytics.useQuery({
+    refreshKey,
+  });
 
   // Fetch filtered emails
   const sanitizedFilters = {
@@ -134,56 +136,57 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
     data: emails,
     isLoading: emailsLoading,
     refetch: refetchEmails,
-  } = api.emails.getList.useQuery({
+  } = (api.emails as any).getList.useQuery({
     ...sanitizedFilters,
     limit: 50,
   });
 
   // WebSocket subscription for real-time updates
-  const emailUpdatesSubscription =
-    api.emails.subscribeToEmailUpdates.useSubscription(
-      {
-        types: [
-          "email.analyzed",
-          "email.state_changed",
-          "email.sla_alert",
-          "email.analytics_updated",
-        ],
-      },
-      {
-        onData: (update: any) => {
-          setRealTimeUpdates((prev) => [...prev.slice(-99), update]); // Keep last 100 updates
+  const emailUpdatesSubscription = (
+    api.emails as any
+  ).subscribeToEmailUpdates.useSubscription(
+    {
+      types: [
+        "email.analyzed",
+        "email.state_changed",
+        "email.sla_alert",
+        "email.analytics_updated",
+      ],
+    },
+    {
+      onData: (update: any) => {
+        setRealTimeUpdates((prev) => [...prev.slice(-99), update]); // Keep last 100 updates
 
-          // Handle different types of updates
-          switch (update.type) {
-            case "email.analyzed": {
-              // Refresh email list when new analysis is complete
-              setRefreshKey((prev) => prev + 1);
-              refetchEmails();
-              break;
-            }
-            case "email.state_changed": {
-              // Refresh email list when state changes
-              refetchEmails();
-              break;
-            }
-            case "email.analytics_updated": {
-              // Refresh analytics when updated
-              setRefreshKey((prev) => prev + 1);
-              break;
-            }
-            case "email.sla_alert": {
-              // Show SLA alert notification
-              console.log("SLA Alert:", update.data);
-              break;
-            }
+        // Handle different types of updates
+        switch (update.type) {
+          case "email.analyzed": {
+            // Refresh email list when new analysis is complete
+            setRefreshKey((prev) => prev + 1);
+            refetchEmails();
+            break;
           }
-        },
-        onError: (error) => {
-          console.error("WebSocket subscription error:", error);
-        },
+          case "email.state_changed": {
+            // Refresh email list when state changes
+            refetchEmails();
+            break;
+          }
+          case "email.analytics_updated": {
+            // Refresh analytics when updated
+            setRefreshKey((prev) => prev + 1);
+            break;
+          }
+          case "email.sla_alert": {
+            // Show SLA alert notification
+            console.log("SLA Alert:", update.data);
+            break;
+          }
+        }
       },
-    );
+      onError: (error: any) => {
+        console.error("WebSocket subscription error:", error);
+      },
+    },
+  );
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -203,7 +206,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
   }, [emails]);
 
   // Generate filter options from current data
-  const filterOptions = useMemo<FilterOptions>(() => {
+  const filterOptions = useMemo(() => {
     if (!emailRecords)
       return {
         emailAliases: [],
@@ -215,12 +218,16 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
         tags: [],
       };
 
-    const emailAliases = [...new Set(emailRecords.map((e) => e.email_alias))];
-    const requesters = [...new Set(emailRecords.map((e) => e.requested_by))];
-    const workflowTypes = [
-      ...new Set(emailRecords.map((e) => e.workflow_type).filter(Boolean)),
+    const emailAliases = [
+      ...new Set(emailRecords.map((e: any) => e.email_alias)),
     ];
-    const tags = [...new Set(emailRecords.flatMap((e) => e.tags || []))];
+    const requesters = [
+      ...new Set(emailRecords.map((e: any) => e.requested_by)),
+    ];
+    const workflowTypes = [
+      ...new Set(emailRecords.map((e: any) => e.workflow_type).filter(Boolean)),
+    ];
+    const tags = [...new Set(emailRecords.flatMap((e: any) => e.tags || []))];
 
     const statusCounts = { red: 0, yellow: 0, green: 0 };
     const workflowStateCounts = {
@@ -230,11 +237,16 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
     };
     const priorityCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
 
-    emailRecords.forEach((email) => {
-      statusCounts[email.status]++;
-      workflowStateCounts[email.workflow_state]++;
-      if (email.priority)
-        priorityCounts[email.priority as keyof typeof priorityCounts]++;
+    emailRecords.forEach((email: any) => {
+      if (email.status in statusCounts) {
+        (statusCounts as any)[email.status]++;
+      }
+      if (email.workflow_state in workflowStateCounts) {
+        (workflowStateCounts as any)[email.workflow_state]++;
+      }
+      if (email.priority && email.priority in priorityCounts) {
+        (priorityCounts as any)[email.priority]++;
+      }
     });
 
     return {
@@ -265,7 +277,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
       priorities: ["Critical", "High", "Medium", "Low"] as const,
       tags,
     };
-  }, [emailRecords]);
+  }, [emailRecords]) as FilterOptions;
 
   // Handle filter changes
   const handleFilterChange = (newFilters: FilterConfig) => {

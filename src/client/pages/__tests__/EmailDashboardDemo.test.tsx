@@ -6,6 +6,7 @@ import { createTRPCMsw } from "msw-trpc";
 import { setupServer } from "msw/node";
 import { api } from "@/lib/trpc";
 import { httpBatchLink } from "@trpc/client";
+import superjson from "superjson";
 import { EmailDashboardDemo } from "../EmailDashboardDemo";
 import type { AppRouter } from "../../../api/trpc/router";
 
@@ -130,6 +131,7 @@ const createWrapper = () => {
 
   // Handle case where trpc might not have createClient or Provider
   const trpcClient = api.createClient({
+    transformer: superjson,
     links: [
       httpBatchLink({
         url: "http://localhost:3000/api/trpc",

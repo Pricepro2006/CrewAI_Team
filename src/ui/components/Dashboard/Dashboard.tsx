@@ -42,10 +42,10 @@ const AgentCard: React.FC<AgentCardProps> = ({ name, status, specialty }) => (
 );
 
 export const Dashboard: React.FC = () => {
-  const { data: health } = api.health.status.useQuery();
-  const { data: agentStats } = api.agent.list.useQuery();
-  const { data: conversationStats } = api.chat.stats.useQuery();
-  const { data: ragStats } = api.rag.stats.useQuery();
+  const { data: health } = (api.health as any).status.useQuery();
+  const { data: agentStats } = (api.agent as any).list.useQuery();
+  const { data: conversationStats } = (api.chat as any).stats.useQuery();
+  const { data: ragStats } = (api.rag as any).stats.useQuery();
 
   const stats = [
     {

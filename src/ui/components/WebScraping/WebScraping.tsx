@@ -8,8 +8,8 @@ export const WebScraping: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Use tRPC mutation hook
-  const scrapeMutation = api.dataCollection.webScraping.useMutation({
-    onSuccess: (data) => {
+  const scrapeMutation = (api.dataCollection as any).webScraping.useMutation({
+    onSuccess: (data: any) => {
       setResult(data);
       setError(null);
     },

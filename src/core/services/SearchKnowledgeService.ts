@@ -1,5 +1,5 @@
 import { RAGSystem } from "../rag/RAGSystem";
-import type { VectorStoreConfig } from "../rag/types";
+import type { VectorStoreConfig, RAGConfig } from "../rag/types";
 import * as fs from "fs/promises";
 import * as path from "path";
 

@@ -42,7 +42,7 @@ export interface PerformanceThresholds {
 }
 
 export class DatabasePerformanceMonitor extends EventEmitter {
-  private db: Database;
+  private db: Database.Database;
   private queryHistory: QueryMetrics[] = [];
   private slowQueryLog: QueryMetrics[] = [];
   private thresholds: PerformanceThresholds;
@@ -70,7 +70,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
     // Override database prepare method to track queries
     const originalPrepare = this.db.prepare.bind(this.db);
 
-    this.db.prepare = (sql: string) => {
+    (this.db as any).prepare = (sql: string) => {
       const statement = originalPrepare(sql);
       const originalRun = statement.run.bind(statement);
       const originalGet = statement.get.bind(statement);
@@ -430,11 +430,13 @@ export class DatabasePerformanceMonitor extends EventEmitter {
     };
 
     this.queryHistory.forEach((q) => {
-      const type = q.query.trim().split(" ")[0].toUpperCase();
-      if (type in distribution) {
-        distribution[type]++;
+      const type = (
+        q.query.trim().split(" ")[0] || "OTHER"
+      ).toUpperCase() as keyof typeof distribution;
+      if (type in distribution && type !== "OTHER") {
+        (distribution as any)[type]++;
       } else {
-        distribution.OTHER++;
+        (distribution as any).OTHER++;
       }
     });
 
@@ -463,7 +465,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
     }
 
     const distribution = this.getQueryDistribution();
-    if (distribution.SELECT > distribution.INSERT * 10) {
+    if (distribution.SELECT! > distribution.INSERT! * 10) {
       recommendations.push(
         "Read-heavy workload detected. Consider caching strategies",
       );

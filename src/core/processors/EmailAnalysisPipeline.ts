@@ -362,11 +362,13 @@ class WorkflowDetectionStage implements AnalysisStage {
     // Increase confidence if multiple patterns match
     const patterns = this.workflowPatterns[workflowType];
     if (patterns) {
-      const positionPatterns = patterns[position];
-      const matchCount = positionPatterns.filter((pattern) =>
-        pattern.test(content),
-      ).length;
-      confidence += matchCount * 0.1;
+      const positionPatterns = patterns[position as keyof typeof patterns];
+      if (positionPatterns) {
+        const matchCount = positionPatterns.filter((pattern: RegExp) =>
+          pattern.test(content),
+        ).length;
+        confidence += matchCount * 0.1;
+      }
     }
 
     // Cap at 0.95
@@ -453,7 +455,7 @@ class EntityExtractionStage implements AnalysisStage {
     // Extract from email addresses
     if (email.from) {
       const fromMatch = email.from.match(/^([^<]+)/);
-      if (fromMatch) people.add(fromMatch[1].trim());
+      if (fromMatch && fromMatch[1]) people.add(fromMatch[1].trim());
     }
 
     // Add more extraction logic as needed

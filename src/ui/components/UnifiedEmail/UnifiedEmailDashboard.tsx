@@ -9,8 +9,8 @@ import {
   Cog6ToothIcon,
   FunnelIcon,
 } from "@heroicons/react/24/outline";
-import { trpc } from "@/utils/trpc";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { api } from "@/lib/trpc";
+import { useWebSocket } from "@/ui/hooks/useWebSocket";
 import { MetricsBar } from "./MetricsBar";
 import { EmailListView } from "./EmailListView";
 import { AnalyticsView } from "./AnalyticsView";
@@ -57,33 +57,35 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
   const [showSettings, setShowSettings] = useState(false);
 
   // Fetch unified email data with all enrichments
-  const { data: emailData, refetch: refetchEmails } =
-    api.unifiedEmail.getEmails.useQuery({
-      ...filters,
-      includeAnalysis: true,
-      includeWorkflowState: true,
-      includeAgentInfo: true,
-    });
+  const { data: emailData, refetch: refetchEmails } = (
+    api.emails as any
+  ).getTableData.useQuery({
+    ...filters,
+    includeAnalysis: true,
+    includeWorkflowState: true,
+    includeAgentInfo: true,
+  });
 
   // Analytics data with workflow metrics
-  const { data: analytics, refetch: refetchAnalytics } =
-    api.unifiedEmail.getAnalytics.useQuery({
-      includeWorkflowMetrics: true,
-      includeAgentMetrics: true,
-      includeTrends: true,
-    });
+  const { data: analytics, refetch: refetchAnalytics } = (
+    api.emails as any
+  ).getAnalytics.useQuery({
+    includeWorkflowMetrics: true,
+    includeAgentMetrics: true,
+    includeTrends: true,
+  });
 
   // Real-time updates via WebSocket
-  const { lastMessage } = useWebSocket("/ws/emails", {
-    onMessage: (event) => {
-      if (event.type === "email.processed" || event.type === "email.updated") {
-        // Refresh data when new emails arrive or are updated
-        refetchEmails();
-        refetchAnalytics();
-      }
+  useWebSocket({
+    onConnect: () => {
+      console.log("WebSocket connected");
     },
-    reconnect: true,
-    reconnectInterval: 5000,
+    onDisconnect: () => {
+      console.log("WebSocket disconnected");
+    },
+    onError: (error) => {
+      console.error("WebSocket error:", error);
+    },
   });
 
   // Manual refresh
@@ -191,27 +193,19 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
         {viewMode === "list" && (
           <EmailListView
             emails={emailData?.emails || []}
-            totalCount={emailData?.total || 0}
-            onSelectionChange={setSelectedEmails}
-            selectedEmails={selectedEmails}
-            filters={filters}
-            onFiltersChange={setFilters}
+            onEmailSelect={(email) => setSelectedEmails([email.id])}
+            selectedEmailId={selectedEmails[0]}
           />
         )}
 
         {viewMode === "analytics" && (
-          <AnalyticsView
-            analytics={analytics}
-            emails={emailData?.emails || []}
-            workflowData={analytics?.workflowData}
-          />
+          <AnalyticsView analytics={analytics || null} />
         )}
 
         {viewMode === "agents" && (
           <AgentView
             agents={analytics?.agents || []}
-            assignments={emailData?.agentAssignments || {}}
-            performanceMetrics={analytics?.agentPerformance}
+            agentPerformance={analytics?.agentPerformance}
           />
         )}
       </div>

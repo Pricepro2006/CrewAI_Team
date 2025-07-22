@@ -23,7 +23,7 @@ export const VectorSearch: React.FC = () => {
   const [topK, setTopK] = useState(10);
 
   // Create search query that we can trigger manually
-  const searchQuery = api.rag.search.useQuery(
+  const searchQuery = (api.rag as any).search.useQuery(
     {
       query: query.trim(),
       limit: topK,

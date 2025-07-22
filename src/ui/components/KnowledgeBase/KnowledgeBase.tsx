@@ -21,8 +21,11 @@ export const KnowledgeBase: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Load real documents from the backend
-  const documentsQuery = api.rag.list.useQuery({ limit: 100, offset: 0 });
-  const statsQuery = api.rag.stats.useQuery();
+  const documentsQuery = (api.rag as any).list.useQuery({
+    limit: 100,
+    offset: 0,
+  });
+  const statsQuery = (api.rag as any).stats.useQuery();
 
   useEffect(() => {
     if (documentsQuery.data) {
@@ -42,7 +45,7 @@ export const KnowledgeBase: React.FC = () => {
     }
   }, [documentsQuery.data]);
 
-  const uploadFileMutation = api.rag.uploadFile.useMutation({
+  const uploadFileMutation = (api.rag as any).uploadFile.useMutation({
     onSuccess: () => {
       documentsQuery.refetch();
       setError(null);
@@ -103,7 +106,7 @@ export const KnowledgeBase: React.FC = () => {
     });
   };
 
-  const deleteDocumentMutation = api.rag.delete.useMutation({
+  const deleteDocumentMutation = (api.rag as any).delete.useMutation({
     onSuccess: () => {
       documentsQuery.refetch();
       setError(null);
@@ -114,7 +117,7 @@ export const KnowledgeBase: React.FC = () => {
   });
 
   // Create search mutation to handle search properly
-  const searchMutation = api.rag.search.useQuery(
+  const searchMutation = (api.rag as any).search.useQuery(
     {
       query: searchQuery.trim(),
       limit: 5,

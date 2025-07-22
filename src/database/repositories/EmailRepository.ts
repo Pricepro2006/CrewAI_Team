@@ -4,12 +4,18 @@ import { metrics } from "@/api/monitoring/metrics";
 import type {
   UnifiedEmailData,
   WorkflowState,
-  EmailAnalysisResult,
-  EmailEntity,
 } from "@/types/unified-email.types";
 
 export interface EmailRepositoryConfig {
-  db: Database;
+  db: Database.Database;
+}
+
+export interface EmailEntity {
+  type: string;
+  value: string;
+  format?: string;
+  confidence?: number;
+  extractionMethod?: string;
 }
 
 export interface CreateEmailParams {
@@ -70,7 +76,7 @@ export interface EmailQueryParams {
 }
 
 export class EmailRepository {
-  private db: Database;
+  private db: Database.Database;
   private statements: Map<string, any> = new Map();
 
   constructor(config: EmailRepositoryConfig) {
@@ -605,7 +611,7 @@ export class EmailRepository {
       const { total } = this.db.prepare(countQuery).get(queryParams) as any;
 
       // Load entities for each email
-      for (const email of emails) {
+      for (const email of emails as any[]) {
         email.entities = this.statements.get("getEmailEntities").all(email.id);
         email.attachments = this.statements
           .get("getEmailAttachments")

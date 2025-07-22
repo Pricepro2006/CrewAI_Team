@@ -6,7 +6,7 @@ import {
   ArrowPathIcon,
   ChartBarIcon,
 } from "@heroicons/react/24/outline";
-import { trpc } from "../../utils/trpc";
+import { api } from "@/lib/trpc";
 import { EmailAliasSection } from "./EmailAliasSection";
 import { MarketingSplunkSection } from "./MarketingSplunkSection";
 import { VMwareTDSynnexSection } from "./VMwareTDSynnexSection";
@@ -26,19 +26,23 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
     data: categorizedEmails,
     isLoading,
     refetch,
-  } = api.iemsEmails.getCategorizedEmails.useQuery({
+  } = (api.iemsEmails as any).getCategorizedEmails.useQuery({
     limit: 20,
     refresh: refreshKey > 0,
   });
 
   // Fetch analytics
-  const { data: analytics } = api.iemsEmails.getAnalytics.useQuery();
+  const { data: analytics } = (api.iemsEmails as any).getAnalytics.useQuery();
 
   // Fetch team members
-  const { data: teamMembers } = api.iemsEmails.getTeamMembers.useQuery();
+  const { data: teamMembers } = (
+    api.iemsEmails as any
+  ).getTeamMembers.useQuery();
 
   // WebSocket subscription for real-time updates
-  const emailUpdatesSubscription = api.ws?.subscribe?.useSubscription?.(
+  const emailUpdatesSubscription = (
+    api.ws as any
+  )?.subscribe?.useSubscription?.(
     {
       types: ["email.statusUpdated", "email.assigned", "email.actionPerformed"],
     },
@@ -87,31 +91,35 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
   }, [analytics]);
 
   // Handle status update
-  const updateEmailStatus = api.iemsEmails.updateEmailStatus.useMutation({
+  const updateEmailStatus = (
+    api.iemsEmails as any
+  ).updateEmailStatus.useMutation({
     onSuccess: () => {
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Failed to update email status:", error);
     },
   });
 
   // Handle email assignment
-  const assignEmail = api.iemsEmails.assignEmail.useMutation({
+  const assignEmail = (api.iemsEmails as any).assignEmail.useMutation({
     onSuccess: () => {
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Failed to assign email:", error);
     },
   });
 
   // Handle email action
-  const performEmailAction = api.iemsEmails.performEmailAction.useMutation({
+  const performEmailAction = (
+    api.iemsEmails as any
+  ).performEmailAction.useMutation({
     onSuccess: () => {
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Failed to perform email action:", error);
     },
   });

@@ -12,7 +12,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
-import { trpc } from "@/utils/trpc";
+import { api as trpc } from "@/lib/trpc";
 
 interface RateLimitMetrics {
   totalRequests: number;

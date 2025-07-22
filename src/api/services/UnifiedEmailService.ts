@@ -1,4 +1,5 @@
 import { EmailStorageService } from "./EmailStorageService";
+import type { EmailAnalysisResult } from "./EmailStorageService";
 import { IEMSDataService } from "./IEMSDataService";
 import { EmailAnalysisAgent } from "@/core/agents/specialized/EmailAnalysisAgent";
 import { EmailAnalysisPipeline } from "@/core/processors/EmailAnalysisPipeline";
@@ -474,22 +475,66 @@ export class UnifiedEmailService {
       isRead: false,
       hasAttachments: emailData.hasAttachments,
       bodyPreview: emailData.bodyPreview || "",
-      body: emailData.body,
+      body: emailData.body.content,
       importance: emailData.importance,
       categories: [],
       conversationId: emailData.conversationId,
     };
 
     // Create a minimal analysis result for now
-    const analysisResult = {
-      summary: "",
-      sentiment: "neutral",
-      keyPhrases: [],
-      entities: [],
-      actionItems: [],
-      urgency: "medium" as const,
-      category: "uncategorized",
-      suggestedActions: [],
+    const analysisResult: EmailAnalysisResult = {
+      quick: {
+        workflow: {
+          primary: "general",
+          secondary: [],
+        },
+        priority: "Medium",
+        intent: "informational",
+        urgency: "medium",
+        confidence: 0.5,
+        suggestedState: "START_POINT",
+      },
+      deep: {
+        detailedWorkflow: {
+          primary: "general",
+          secondary: [],
+          relatedCategories: [],
+          confidence: 0.5,
+        },
+        entities: {
+          poNumbers: [],
+          quoteNumbers: [],
+          caseNumbers: [],
+          partNumbers: [],
+          orderReferences: [],
+          contacts: [],
+        },
+        actionItems: [],
+        workflowState: {
+          current: "START_POINT",
+          suggestedNext: "IN_PROGRESS",
+          blockers: [],
+          estimatedCompletion: undefined,
+        },
+        businessImpact: {
+          revenue: undefined,
+          customerSatisfaction: "medium",
+          urgencyReason: undefined,
+        },
+        contextualSummary: "",
+        suggestedResponse: undefined,
+        relatedEmails: [],
+      },
+      actionSummary: "",
+      processingMetadata: {
+        stage1Time: 0,
+        stage2Time: 0,
+        totalTime: 0,
+        models: {
+          stage1: "none",
+          stage2: "none",
+        },
+      },
     };
 
     return await this.emailStorage.storeEmail(email, analysisResult);

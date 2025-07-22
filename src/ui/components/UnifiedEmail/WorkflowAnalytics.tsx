@@ -7,7 +7,7 @@ import {
   LightBulbIcon,
 } from "@heroicons/react/24/outline";
 import { Card } from "@/components/ui/card";
-import { trpc } from "@/utils/trpc";
+import { api } from "@/lib/trpc";
 
 interface WorkflowAnalyticsProps {
   className?: string;
@@ -39,7 +39,7 @@ interface WorkflowChainData {
 export const WorkflowAnalytics: React.FC<WorkflowAnalyticsProps> = ({
   className,
 }) => {
-  const { data, isLoading } = api.unifiedEmail.getWorkflowAnalytics.useQuery();
+  const { data, isLoading } = (api.emails as any).getStats.useQuery();
 
   if (isLoading) {
     return (
@@ -50,7 +50,7 @@ export const WorkflowAnalytics: React.FC<WorkflowAnalyticsProps> = ({
     );
   }
 
-  const workflowData = data as WorkflowChainData;
+  const workflowData = (data?.data || data) as WorkflowChainData;
 
   // Calculate percentages
   const completePercentage = (

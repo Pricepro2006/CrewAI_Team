@@ -1,2 +1,2 @@
-// Re-export the trpc instance from App.tsx to ensure consistency
-export { trpc } from '../App';
+// Re-export the api instance from lib/trpc
+export { api as trpc } from "@/lib/trpc";

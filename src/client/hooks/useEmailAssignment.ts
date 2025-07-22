@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { api } from "@/ui/lib/api";
+import { api } from "@/lib/trpc";
 import type { TeamMember } from "@/config/team-members.config";
 
 export interface UseEmailAssignmentOptions {
@@ -11,25 +11,29 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
   const utils = api.useUtils();
 
   // Queries
-  const { data: teamMembers = [], isLoading: loadingTeamMembers } =
-    api.emailAssignment.getTeamMembers.useQuery();
+  const { data: teamMembers = [], isLoading: loadingTeamMembers } = (
+    api.emailAssignment as any
+  ).getTeamMembers.useQuery();
 
-  const { data: workloadData, isLoading: loadingWorkload } =
-    api.emailAssignment.getWorkloadDistribution.useQuery();
+  const { data: workloadData, isLoading: loadingWorkload } = (
+    api.emailAssignment as any
+  ).getWorkloadDistribution.useQuery();
 
   // Mutations
-  const assignEmailMutation = api.emailAssignment.assignEmail.useMutation({
-    onSuccess: (data) => {
+  const assignEmailMutation = (
+    api.emailAssignment as any
+  ).assignEmail.useMutation({
+    onSuccess: (data: any) => {
       // Invalidate relevant queries
       utils.emails.invalidate();
-      utils.emailAssignment.getWorkloadDistribution.invalidate();
+      (utils.emailAssignment as any).getWorkloadDistribution.invalidate();
       options?.onSuccess?.(data);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Email assignment failed:", error);
       options?.onError?.(error);
     },
-    retry: (failureCount, error) => {
+    retry: (failureCount: number, error: any) => {
       // Only retry for network errors, not for business logic errors
       if (
         failureCount < 2 &&
@@ -42,17 +46,19 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
     },
   });
 
-  const bulkAssignMutation = api.emailAssignment.bulkAssignEmails.useMutation({
-    onSuccess: (data) => {
+  const bulkAssignMutation = (
+    api.emailAssignment as any
+  ).bulkAssignEmails.useMutation({
+    onSuccess: (data: any) => {
       utils.emails.invalidate();
-      utils.emailAssignment.getWorkloadDistribution.invalidate();
+      (utils.emailAssignment as any).getWorkloadDistribution.invalidate();
       options?.onSuccess?.(data);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Bulk email assignment failed:", error);
       options?.onError?.(error);
     },
-    retry: (failureCount, error) => {
+    retry: (failureCount: number, error: any) => {
       // Only retry for network errors, not for business logic errors
       if (
         failureCount < 2 &&
@@ -88,7 +94,9 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
 
   const getAssignmentSuggestions = useCallback(
     async (emailId: string) => {
-      return utils.emailAssignment.getAssignmentSuggestions.fetch({ emailId });
+      return (utils.emailAssignment as any).getAssignmentSuggestions.fetch({
+        emailId,
+      });
     },
     [utils],
   );
@@ -111,15 +119,15 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
   );
 
   // Subscription for real-time updates
-  api.emailAssignment.onEmailUpdate.useSubscription(undefined, {
-    onData: (data) => {
+  (api.emailAssignment as any).onEmailUpdate.useSubscription(undefined, {
+    onData: (data: any) => {
       // Handle real-time email updates
       console.log("Email update received:", data);
       // You could dispatch to a global state manager here
       // or invalidate queries as needed
       utils.emails.invalidate();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Subscription error:", error);
     },
   });

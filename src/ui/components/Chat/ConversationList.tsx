@@ -12,7 +12,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   onSelect,
   onNew,
 }) => {
-  const { data: conversations, isLoading } = api.chat.list.useQuery({
+  const { data: conversations, isLoading } = (api.chat as any).list.useQuery({
     limit: 50,
     offset: 0,
   });

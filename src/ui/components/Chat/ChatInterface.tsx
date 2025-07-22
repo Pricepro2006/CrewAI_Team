@@ -17,9 +17,9 @@ export const ChatInterface: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const messageEndRef = useRef<HTMLDivElement>(null);
 
-  const createConversation = api.chat.create.useMutation();
-  const sendMessage = api.chat.message.useMutation();
-  const conversationHistory = api.chat.history.useQuery(
+  const createConversation = (api.chat as any).create.useMutation();
+  const sendMessage = (api.chat as any).message.useMutation();
+  const conversationHistory = (api.chat as any).history.useQuery(
     { conversationId: conversationId! },
     { enabled: !!conversationId },
   );
@@ -32,7 +32,7 @@ export const ChatInterface: React.FC = () => {
   }, [conversationHistory.data]);
 
   // Subscribe to real-time updates
-  api.chat.onMessage.useSubscription(
+  (api.chat as any).onMessage.useSubscription(
     { conversationId: conversationId! },
     {
       enabled: !!conversationId,
