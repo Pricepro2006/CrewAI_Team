@@ -3,9 +3,9 @@
  * Provides common database operations with proper error handling and performance optimization
  */
 
-import type Database from 'better-sqlite3';
-import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../../utils/logger';
+import type Database from "better-sqlite3";
+import { v4 as uuidv4 } from "uuid";
+import { logger } from "../../utils/logger";
 
 export interface BaseEntity {
   id: string;
@@ -17,7 +17,7 @@ export interface QueryOptions {
   limit?: number;
   offset?: number;
   orderBy?: string;
-  orderDirection?: 'ASC' | 'DESC';
+  orderDirection?: "ASC" | "DESC";
   where?: Record<string, any>;
 }
 
@@ -34,7 +34,7 @@ export interface PaginatedResult<T> {
 export abstract class BaseRepository<T extends BaseEntity> {
   protected db: Database.Database;
   protected tableName: string;
-  protected primaryKey: string = 'id';
+  protected primaryKey: string = "id";
 
   constructor(db: Database.Database, tableName: string) {
     this.db = db;
@@ -51,9 +51,12 @@ export abstract class BaseRepository<T extends BaseEntity> {
   /**
    * Build WHERE clause from conditions object
    */
-  protected buildWhereClause(conditions: Record<string, any>): { clause: string; params: any[] } {
+  protected buildWhereClause(conditions: Record<string, any>): {
+    clause: string;
+    params: any[];
+  } {
     if (!conditions || Object.keys(conditions).length === 0) {
-      return { clause: '', params: [] };
+      return { clause: "", params: [] };
     }
 
     const clauses: string[] = [];
@@ -63,10 +66,10 @@ export abstract class BaseRepository<T extends BaseEntity> {
       if (value === null || value === undefined) {
         clauses.push(`${key} IS NULL`);
       } else if (Array.isArray(value)) {
-        const placeholders = value.map(() => '?').join(',');
+        const placeholders = value.map(() => "?").join(",");
         clauses.push(`${key} IN (${placeholders})`);
         params.push(...value);
-      } else if (typeof value === 'object' && value.operator) {
+      } else if (typeof value === "object" && value.operator) {
         // Support for complex conditions like { operator: '>', value: 100 }
         clauses.push(`${key} ${value.operator} ?`);
         params.push(value.value);
@@ -77,15 +80,18 @@ export abstract class BaseRepository<T extends BaseEntity> {
     }
 
     return {
-      clause: `WHERE ${clauses.join(' AND ')}`,
-      params
+      clause: `WHERE ${clauses.join(" AND ")}`,
+      params,
     };
   }
 
   /**
    * Build ORDER BY clause
    */
-  protected buildOrderClause(orderBy?: string, orderDirection: 'ASC' | 'DESC' = 'ASC'): string {
+  protected buildOrderClause(
+    orderBy?: string,
+    orderDirection: "ASC" | "DESC" = "ASC",
+  ): string {
     if (!orderBy) {
       return `ORDER BY ${this.primaryKey} ASC`;
     }
@@ -100,28 +106,28 @@ export abstract class BaseRepository<T extends BaseEntity> {
    */
   protected sanitizeColumnName(columnName: string): string {
     // Only allow alphanumeric characters, underscores, and dots
-    return columnName.replace(/[^a-zA-Z0-9_.]/g, '');
+    return columnName.replace(/[^a-zA-Z0-9_.]/g, "");
   }
 
   /**
    * Execute a query with performance monitoring
    */
   protected executeQuery<R = any>(
-    query: string, 
-    params: any[] = [], 
-    operation: 'get' | 'all' | 'run' = 'all'
+    query: string,
+    params: any[] = [],
+    operation: "get" | "all" | "run" = "all",
   ): R {
     const startTime = Date.now();
-    
+
     try {
       const stmt = this.db.prepare(query);
       let result: R;
 
       switch (operation) {
-        case 'get':
+        case "get":
           result = stmt.get(...params) as R;
           break;
-        case 'run':
+        case "run":
           result = stmt.run(...params) as R;
           break;
         default:
@@ -129,14 +135,21 @@ export abstract class BaseRepository<T extends BaseEntity> {
       }
 
       const executionTime = Date.now() - startTime;
-      
-      if (executionTime > 1000) { // Log slow queries
-        logger.warn(`Slow query detected (${executionTime}ms): ${query}`, 'DATABASE');
+
+      if (executionTime > 1000) {
+        // Log slow queries
+        logger.warn(
+          `Slow query detected (${executionTime}ms): ${query}`,
+          "DATABASE",
+        );
       }
 
       return result;
     } catch (error) {
-      logger.error(`Database query failed: ${error}. Query: ${query}`, 'DATABASE');
+      logger.error(
+        `Database query failed: ${error}. Query: ${query}`,
+        "DATABASE",
+      );
       throw error;
     }
   }
@@ -146,7 +159,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
    */
   async findById(id: string): Promise<T | null> {
     const query = `SELECT * FROM ${this.tableName} WHERE ${this.primaryKey} = ?`;
-    const result = this.executeQuery<T>(query, [id], 'get');
+    const result = this.executeQuery<T>(query, [id], "get");
     return result || null;
   }
 
@@ -155,18 +168,20 @@ export abstract class BaseRepository<T extends BaseEntity> {
    */
   async findAll(options: QueryOptions = {}): Promise<T[]> {
     const { limit, offset, orderBy, orderDirection, where } = options;
-    const { clause: whereClause, params: whereParams } = this.buildWhereClause(where || {});
+    const { clause: whereClause, params: whereParams } = this.buildWhereClause(
+      where || {},
+    );
     const orderClause = this.buildOrderClause(orderBy, orderDirection);
-    
+
     let query = `SELECT * FROM ${this.tableName} ${whereClause} ${orderClause}`;
     const params = [...whereParams];
 
     if (limit !== undefined) {
-      query += ' LIMIT ?';
+      query += " LIMIT ?";
       params.push(limit);
 
       if (offset !== undefined) {
-        query += ' OFFSET ?';
+        query += " OFFSET ?";
         params.push(offset);
       }
     }
@@ -180,21 +195,27 @@ export abstract class BaseRepository<T extends BaseEntity> {
   async findPaginated(
     page: number = 1,
     pageSize: number = 50,
-    options: Omit<QueryOptions, 'limit' | 'offset'> = {}
+    options: Omit<QueryOptions, "limit" | "offset"> = {},
   ): Promise<PaginatedResult<T>> {
     const offset = (page - 1) * pageSize;
-    
+
     // Get total count
-    const { clause: whereClause, params: whereParams } = this.buildWhereClause(options.where || {});
+    const { clause: whereClause, params: whereParams } = this.buildWhereClause(
+      options.where || {},
+    );
     const countQuery = `SELECT COUNT(*) as total FROM ${this.tableName} ${whereClause}`;
-    const countResult = this.executeQuery<{ total: number }>(countQuery, whereParams, 'get');
+    const countResult = this.executeQuery<{ total: number }>(
+      countQuery,
+      whereParams,
+      "get",
+    );
     const total = countResult?.total || 0;
 
     // Get paginated data
     const data = await this.findAll({
       ...options,
       limit: pageSize,
-      offset
+      offset,
     });
 
     const totalPages = Math.ceil(total / pageSize);
@@ -206,7 +227,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
       pageSize,
       totalPages,
       hasNext: page < totalPages,
-      hasPrevious: page > 1
+      hasPrevious: page > 1,
     };
   }
 
@@ -216,7 +237,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
   async findOne(conditions: Record<string, any>): Promise<T | null> {
     const { clause: whereClause, params } = this.buildWhereClause(conditions);
     const query = `SELECT * FROM ${this.tableName} ${whereClause} LIMIT 1`;
-    const result = this.executeQuery<T>(query, params, 'get');
+    const result = this.executeQuery<T>(query, params, "get");
     return result || null;
   }
 
@@ -226,7 +247,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
   async count(conditions: Record<string, any> = {}): Promise<number> {
     const { clause: whereClause, params } = this.buildWhereClause(conditions);
     const query = `SELECT COUNT(*) as total FROM ${this.tableName} ${whereClause}`;
-    const result = this.executeQuery<{ total: number }>(query, params, 'get');
+    const result = this.executeQuery<{ total: number }>(query, params, "get");
     return result?.total || 0;
   }
 
@@ -241,27 +262,32 @@ export abstract class BaseRepository<T extends BaseEntity> {
   /**
    * Create a new entity
    */
-  async create(data: Omit<T, 'id' | 'created_at' | 'updated_at'>): Promise<T> {
+  async create(data: Omit<T, "id" | "created_at" | "updated_at">): Promise<T> {
     const now = new Date().toISOString();
     const entityData = {
       ...data,
       id: this.generateId(),
       created_at: now,
-      updated_at: now
+      updated_at: now,
     } as T;
 
-    const columns = Object.keys(entityData).join(', ');
-    const placeholders = Object.keys(entityData).map(() => '?').join(', ');
+    const columns = Object.keys(entityData).join(", ");
+    const placeholders = Object.keys(entityData)
+      .map(() => "?")
+      .join(", ");
     const values = Object.values(entityData);
 
     const query = `INSERT INTO ${this.tableName} (${columns}) VALUES (${placeholders})`;
-    
+
     try {
-      this.executeQuery(query, values, 'run');
-      logger.info(`Created ${this.tableName} with id: ${entityData.id}`, 'DATABASE');
+      this.executeQuery(query, values, "run");
+      logger.info(
+        `Created ${this.tableName} with id: ${entityData.id}`,
+        "DATABASE",
+      );
       return entityData;
     } catch (error) {
-      logger.error(`Failed to create ${this.tableName}: ${error}`, 'DATABASE');
+      logger.error(`Failed to create ${this.tableName}: ${error}`, "DATABASE");
       throw error;
     }
   }
@@ -269,7 +295,10 @@ export abstract class BaseRepository<T extends BaseEntity> {
   /**
    * Update an entity by ID
    */
-  async update(id: string, data: Partial<Omit<T, 'id' | 'created_at'>>): Promise<T | null> {
+  async update(
+    id: string,
+    data: Partial<Omit<T, "id" | "created_at">>,
+  ): Promise<T | null> {
     // Check if entity exists
     const existingEntity = await this.findById(id);
     if (!existingEntity) {
@@ -278,24 +307,27 @@ export abstract class BaseRepository<T extends BaseEntity> {
 
     const updateData = {
       ...data,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     const updateFields = Object.keys(updateData)
-      .map(key => `${key} = ?`)
-      .join(', ');
+      .map((key) => `${key} = ?`)
+      .join(", ");
     const values = [...Object.values(updateData), id];
 
     const query = `UPDATE ${this.tableName} SET ${updateFields} WHERE ${this.primaryKey} = ?`;
-    
+
     try {
-      this.executeQuery(query, values, 'run');
-      logger.info(`Updated ${this.tableName} with id: ${id}`, 'DATABASE');
-      
+      this.executeQuery(query, values, "run");
+      logger.info(`Updated ${this.tableName} with id: ${id}`, "DATABASE");
+
       // Return updated entity
       return await this.findById(id);
     } catch (error) {
-      logger.error(`Failed to update ${this.tableName} with id ${id}: ${error}`, 'DATABASE');
+      logger.error(
+        `Failed to update ${this.tableName} with id ${id}: ${error}`,
+        "DATABASE",
+      );
       throw error;
     }
   }
@@ -305,18 +337,21 @@ export abstract class BaseRepository<T extends BaseEntity> {
    */
   async delete(id: string): Promise<boolean> {
     const query = `DELETE FROM ${this.tableName} WHERE ${this.primaryKey} = ?`;
-    
+
     try {
-      const result = this.executeQuery<Database.RunResult>(query, [id], 'run');
+      const result = this.executeQuery<Database.RunResult>(query, [id], "run");
       const deleted = result.changes > 0;
-      
+
       if (deleted) {
-        logger.info(`Deleted ${this.tableName} with id: ${id}`, 'DATABASE');
+        logger.info(`Deleted ${this.tableName} with id: ${id}`, "DATABASE");
       }
-      
+
       return deleted;
     } catch (error) {
-      logger.error(`Failed to delete ${this.tableName} with id ${id}: ${error}`, 'DATABASE');
+      logger.error(
+        `Failed to delete ${this.tableName} with id ${id}: ${error}`,
+        "DATABASE",
+      );
       throw error;
     }
   }
@@ -327,15 +362,25 @@ export abstract class BaseRepository<T extends BaseEntity> {
   async deleteWhere(conditions: Record<string, any>): Promise<number> {
     const { clause: whereClause, params } = this.buildWhereClause(conditions);
     const query = `DELETE FROM ${this.tableName} ${whereClause}`;
-    
+
     try {
-      const result = this.executeQuery<Database.RunResult>(query, params, 'run');
+      const result = this.executeQuery<Database.RunResult>(
+        query,
+        params,
+        "run",
+      );
       const deletedCount = result.changes;
-      
-      logger.info(`Deleted ${deletedCount} records from ${this.tableName}`, 'DATABASE');
+
+      logger.info(
+        `Deleted ${deletedCount} records from ${this.tableName}`,
+        "DATABASE",
+      );
       return deletedCount;
     } catch (error) {
-      logger.error(`Failed to delete from ${this.tableName}: ${error}`, 'DATABASE');
+      logger.error(
+        `Failed to delete from ${this.tableName}: ${error}`,
+        "DATABASE",
+      );
       throw error;
     }
   }
@@ -358,7 +403,10 @@ export abstract class BaseRepository<T extends BaseEntity> {
     try {
       return await transaction();
     } catch (error) {
-      logger.error(`Transaction failed for ${this.tableName}: ${error}`, 'DATABASE');
+      logger.error(
+        `Transaction failed for ${this.tableName}: ${error}`,
+        "DATABASE",
+      );
       throw error;
     }
   }
@@ -366,21 +414,30 @@ export abstract class BaseRepository<T extends BaseEntity> {
   /**
    * Bulk insert entities
    */
-  async bulkCreate(entities: Array<Omit<T, 'id' | 'created_at' | 'updated_at'>>): Promise<T[]> {
+  async bulkCreate(
+    entities: Array<Omit<T, "id" | "created_at" | "updated_at">>,
+  ): Promise<T[]> {
     if (entities.length === 0) {
       return [];
     }
 
     const now = new Date().toISOString();
-    const entitiesWithMetadata = entities.map(entity => ({
+    const entitiesWithMetadata = entities.map((entity) => ({
       ...entity,
       id: this.generateId(),
       created_at: now,
-      updated_at: now
+      updated_at: now,
     })) as T[];
 
-    const columns = Object.keys(entitiesWithMetadata[0]).join(', ');
-    const placeholders = Object.keys(entitiesWithMetadata[0]).map(() => '?').join(', ');
+    const firstEntity = entitiesWithMetadata[0];
+    if (!firstEntity) {
+      return [];
+    }
+
+    const columns = Object.keys(firstEntity).join(", ");
+    const placeholders = Object.keys(firstEntity)
+      .map(() => "?")
+      .join(", ");
     const query = `INSERT INTO ${this.tableName} (${columns}) VALUES (${placeholders})`;
 
     const insertStmt = this.db.prepare(query);
@@ -392,10 +449,16 @@ export abstract class BaseRepository<T extends BaseEntity> {
 
     try {
       transaction(entitiesWithMetadata);
-      logger.info(`Bulk created ${entities.length} records in ${this.tableName}`, 'DATABASE');
+      logger.info(
+        `Bulk created ${entities.length} records in ${this.tableName}`,
+        "DATABASE",
+      );
       return entitiesWithMetadata;
     } catch (error) {
-      logger.error(`Failed to bulk create in ${this.tableName}: ${error}`, 'DATABASE');
+      logger.error(
+        `Failed to bulk create in ${this.tableName}: ${error}`,
+        "DATABASE",
+      );
       throw error;
     }
   }
@@ -403,17 +466,28 @@ export abstract class BaseRepository<T extends BaseEntity> {
   /**
    * Search entities with text-based search
    */
-  async search(searchTerm: string, searchColumns: string[], options: QueryOptions = {}): Promise<T[]> {
+  async search(
+    searchTerm: string,
+    searchColumns: string[],
+    options: QueryOptions = {},
+  ): Promise<T[]> {
     if (!searchTerm.trim() || searchColumns.length === 0) {
       return [];
     }
 
-    const searchConditions = searchColumns.map(column => `${column} LIKE ?`).join(' OR ');
+    const searchConditions = searchColumns
+      .map((column) => `${column} LIKE ?`)
+      .join(" OR ");
     const searchParams = searchColumns.map(() => `%${searchTerm}%`);
-    
-    const { clause: whereClause, params: whereParams } = this.buildWhereClause(options.where || {});
-    const orderClause = this.buildOrderClause(options.orderBy, options.orderDirection);
-    
+
+    const { clause: whereClause, params: whereParams } = this.buildWhereClause(
+      options.where || {},
+    );
+    const orderClause = this.buildOrderClause(
+      options.orderBy,
+      options.orderDirection,
+    );
+
     let query = `SELECT * FROM ${this.tableName}`;
     const params: any[] = [];
 
@@ -428,11 +502,11 @@ export abstract class BaseRepository<T extends BaseEntity> {
     query += ` ${orderClause}`;
 
     if (options.limit !== undefined) {
-      query += ' LIMIT ?';
+      query += " LIMIT ?";
       params.push(options.limit);
 
       if (options.offset !== undefined) {
-        query += ' OFFSET ?';
+        query += " OFFSET ?";
         params.push(options.offset);
       }
     }
