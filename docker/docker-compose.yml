@@ -1,4 +1,8 @@
-version: '3.8'
+version: "3.8"
+
+# Note: SearXNG runs separately at ~/searxng
+# Start it with: cd ~/searxng && docker-compose up -d
+# Access at: http://localhost:8888
 
 services:
   ollama:
@@ -49,6 +53,8 @@ services:
       - OLLAMA_URL=http://ollama:11434
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
+      - SEARXNG_BASE_URL=http://host.docker.internal:8888
+      - SEARXNG_ENABLED=true
     volumes:
       - app_data:/app/data
       - ./logs:/app/data/logs
@@ -57,7 +63,13 @@ services:
       - chromadb
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

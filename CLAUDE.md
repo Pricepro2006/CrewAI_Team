@@ -268,11 +268,13 @@ export class MyTool extends ValidatedTool {
 1. **Never trust API behavior** - Always test actual responses
 2. **Implement fallbacks** - Every external call needs a fallback
 3. **Use proper timeouts** - Especially important for CPU-based inference
+4. **Prefer SearXNG** - Use local SearXNG (port 8888) for unlimited searches
 
 ### Common Pitfalls to Avoid
 
 1. **Empty Responses**: Check if agent has executeWithTool override
 2. **API Misuse**: DuckDuckGo Instant Answer API ≠ Web Search
+   - Use SearXNG instead for proper web search with aggregated results
 3. **Timeout Issues**: CPU inference takes 28-30s per LLM call
 4. **Missing Fallbacks**: External APIs will fail - plan for it
 
@@ -299,6 +301,43 @@ For detailed guidelines, see:
 - [Empty Response Investigation](docs/knowledge_base/empty_response_investigation_solution_2025.md)
 - [Tool Integration Action Plan](docs/TOOL_INTEGRATION_ACTION_PLAN.md)
 
+## Search Infrastructure
+
+### SearXNG Integration (Primary Search Provider)
+
+The project uses SearXNG as the primary search provider for all web searches:
+
+- **URL**: http://localhost:8888
+- **Setup**: Already configured in ~/searxng/docker-compose.yml
+- **Engines**: Aggregates 70+ search engines including Google, Bing, DuckDuckGo
+- **Cost**: FREE and UNLIMITED (self-hosted)
+- **Fallback**: Automatic fallback to DuckDuckGo if unavailable
+
+### Search Provider Hierarchy
+
+```typescript
+// Research Agent automatically selects the best available provider
+1. SearXNG (port 8888) - Primary, unlimited searches
+2. DuckDuckGo - Fallback, limited to snippets
+3. Future: Google Places API, Bing API (within free tiers)
+```
+
+### SearXNG Management
+
+```bash
+# Start SearXNG
+cd ~/searxng && docker-compose up -d
+
+# Stop SearXNG
+cd ~/searxng && docker-compose down
+
+# View logs
+cd ~/searxng && docker-compose logs -f
+
+# Test search
+curl "http://localhost:8888/search?q=test&format=json"
+```
+
 ## CrewAI Team Architecture Patterns
 
 ### Local-First LLM Integration
@@ -310,6 +349,7 @@ For detailed guidelines, see:
   Frontend (React) → tRPC API → Backend Services → Direct Ollama SDK
                                                 → Direct ChromaDB calls
                                                 → Direct Agent calls
+                                                → SearXNG (port 8888)
   ```
 
 ### Performance Optimization Standards

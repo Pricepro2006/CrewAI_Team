@@ -2,9 +2,11 @@ import { BaseTool } from "../base/BaseTool";
 import type { ToolResult } from "../base/BaseTool";
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { SearchKnowledgeService } from "../../services/SearchKnowledgeService";
 
 export class WebSearchTool extends BaseTool {
   private searchEngines: SearchEngine[];
+  private searchKnowledgeService?: SearchKnowledgeService;
 
   constructor() {
     super(
@@ -42,6 +44,32 @@ export class WebSearchTool extends BaseTool {
       new SearxEngine(),
       // Google engine would require API key
     ];
+
+    this.initializeKnowledgeService();
+  }
+
+  private async initializeKnowledgeService(): Promise<void> {
+    try {
+      // Initialize with default RAG configuration
+      this.searchKnowledgeService = new SearchKnowledgeService({
+        vectorStore: {
+          type: "chromadb",
+          collectionName: "search_knowledge",
+          baseUrl: "http://localhost:8000",
+        },
+        chunking: {
+          chunkSize: 1000,
+          overlap: 200,
+        },
+        retrieval: {
+          topK: 5,
+        },
+      });
+      await this.searchKnowledgeService.initialize();
+    } catch (error) {
+      console.warn("Failed to initialize SearchKnowledgeService:", error);
+      // Continue without knowledge service
+    }
   }
 
   async execute(params: {
@@ -64,6 +92,30 @@ export class WebSearchTool extends BaseTool {
       }
 
       const results = await engine.search(params.query, limit);
+
+      // Save search results to knowledge base
+      if (this.searchKnowledgeService && results.length > 0) {
+        try {
+          await this.searchKnowledgeService.saveSearchResults(
+            params.query,
+            results.map((r) => ({
+              title: r.title,
+              url: r.url,
+              snippet: r.snippet,
+              source: engineName,
+              relevance: 0.7, // Default relevance for DuckDuckGo
+              metadata: { timestamp: r.timestamp },
+            })),
+            engineName.charAt(0).toUpperCase() + engineName.slice(1),
+          );
+        } catch (error) {
+          console.warn(
+            "Failed to save search results to knowledge base:",
+            error,
+          );
+          // Continue without saving
+        }
+      }
 
       return this.success({
         results,

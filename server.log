@@ -89,3 +89,56 @@
 [0] [32m2025-07-22T16:12:53.346Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}[0m
 [0] [33m2025-07-22T16:12:53.346Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 77773ms {"success":true}[0m
 [0] [32m2025-07-22T16:12:53.347Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"4ae38547-f9d0-4fb8-9340-2aedb06ffbd0","userId":"guest-::1-1753200695571","responseLength":3229}[0m
+[0] tRPC Error: {
+[0]   type: 'query',
+[0]   path: 'health.status',
+[0]   error: 'No "query"-procedure on path "health.status"',
+[0]   input: undefined
+[0] }
+[0] tRPC Error: {
+[0]   type: 'query',
+[0]   path: 'health.status',
+[0]   error: 'No "query"-procedure on path "health.status"',
+[0]   input: undefined
+[0] }
+[0] tRPC Error: {
+[0]   type: 'query',
+[0]   path: 'health.status',
+[0]   error: 'No "query"-procedure on path "health.status"',
+[0]   input: undefined
+[0] }
+[0] tRPC Error: {
+[0]   type: 'query',
+[0]   path: 'health.status',
+[0]   error: 'No "query"-procedure on path "health.status"',
+[0]   input: undefined
+[0] }
+[0] tRPC Error: {
+[0]   type: 'query',
+[0]   path: 'health.status',
+[0]   error: 'No "query"-procedure on path "health.status"',
+[0]   input: undefined
+[0] }
+[0] [32m2025-07-22T16:49:11.648Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753202951645","messageLength":310,"priority":"medium","requestId":"8tnduo"}[0m
+[0] [32m2025-07-22T16:49:11.652Z INFO  [ORCHESTRATOR] Processing query {"query":"Find irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing int","conversationId":"0f8860cc-045b-456a-9e6a-aa6015710272"}[0m
+[0] [32m2025-07-22T16:49:11.656Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":3,"domains":2,"priority":"medium","estimatedDuration":120}[0m
+[0] [32m2025-07-22T16:49:11.656Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":3,"domains":["research","development"],"priority":"medium","estimatedDuration":120}[0m
+[0] [32m2025-07-22T16:49:11.656Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}[0m
+[0] [32m2025-07-22T16:49:11.656Z INFO  [ORCHESTRATOR] Starting plan creation[0m
+[0] [32m2025-07-22T16:49:11.656Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance[0m
+[0] [32m2025-07-22T16:49:11.656Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}[0m
+[0] [32m2025-07-22T16:49:13.746Z INFO  [AGENT] Initializing agent: ResearchAgent[0m
+[0] [32m2025-07-22T16:49:13.747Z INFO  [AGENT] Initializing agent ResearchAgent[0m
+[0] [32m2025-07-22T16:49:13.748Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools[0m
+[0] [ResearchAgent] Starting executeWithTool for web_search
+[0] [ResearchAgent] Query extracted: Find irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing into the irrigation piping, for the area surrounding 278 Wycliff Dr. Spartanburg, SC 29301. They need to be able to travel to this location and if you can include initial visit costs, add that information as well.
+[0] [ResearchAgent] Business query detected - will enhance synthesis
+[0] [ResearchAgent] Executing web search...
+[0] [ResearchAgent] Search completed: true
+[0] [ResearchAgent] Found 5 results, synthesizing...
+[0] [ResearchAgent] Detected business query, enhancing synthesis prompt
+[0] [32m2025-07-22T16:49:14.887Z INFO   Prompt enhanced with business search instructions (level: standard)[0m
+[0] [ResearchAgent] Synthesis complete
+[0] [32m2025-07-22T16:51:39.278Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}[0m
+[0] [33m2025-07-22T16:51:39.278Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 147626ms {"success":true}[0m
+[0] [32m2025-07-22T16:51:39.280Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"0f8860cc-045b-456a-9e6a-aa6015710272","userId":"guest-::1-1753202951645","responseLength":4786}[0m

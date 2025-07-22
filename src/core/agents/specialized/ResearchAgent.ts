@@ -10,13 +10,39 @@ import { WebScraperTool } from "../../tools/web/WebScraperTool";
 import { SearXNGSearchTool } from "../../tools/web/SearXNGProvider";
 import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout";
 import { businessSearchPromptEnhancer } from "../../prompts/BusinessSearchPromptEnhancer";
+import { SearchKnowledgeService } from "../../services/SearchKnowledgeService";
 
 export class ResearchAgent extends BaseAgent {
+  private searchKnowledgeService?: SearchKnowledgeService;
+
   constructor() {
     super(
       "ResearchAgent",
       "Specializes in web research, information gathering, and fact-checking",
     );
+    this.initializeKnowledgeService();
+  }
+
+  private async initializeKnowledgeService(): Promise<void> {
+    try {
+      this.searchKnowledgeService = new SearchKnowledgeService({
+        vectorStore: {
+          type: "chromadb",
+          collectionName: "search_knowledge",
+          baseUrl: "http://localhost:8000",
+        },
+        chunking: {
+          chunkSize: 1000,
+          overlap: 200,
+        },
+        retrieval: {
+          topK: 5,
+        },
+      });
+      await this.searchKnowledgeService.initialize();
+    } catch (error) {
+      console.warn("Failed to initialize SearchKnowledgeService:", error);
+    }
   }
 
   async execute(task: string, context: AgentContext): Promise<AgentResult> {
@@ -100,6 +126,22 @@ export class ResearchAgent extends BaseAgent {
           success: false,
           error: "No query provided for web search",
         };
+      }
+
+      // Check for cached results first
+      let cachedResults: any[] = [];
+      if (this.searchKnowledgeService) {
+        try {
+          cachedResults =
+            await this.searchKnowledgeService.searchPreviousResults(query, 3);
+          if (cachedResults.length > 0) {
+            console.log(
+              `[ResearchAgent] Found ${cachedResults.length} cached results for similar queries`,
+            );
+          }
+        } catch (error) {
+          console.warn("Failed to search cached results:", error);
+        }
       }
 
       console.log("[ResearchAgent] Executing web search...");
@@ -321,6 +363,22 @@ export class ResearchAgent extends BaseAgent {
 
     const topResults = results.slice(0, 5);
 
+    // Check if we have any cached results that might be helpful
+    let cachedContext = "";
+    if (this.searchKnowledgeService) {
+      try {
+        const cachedResults =
+          await this.searchKnowledgeService.searchPreviousResults(task, 2);
+        if (cachedResults.length > 0) {
+          cachedContext = `\n\nPreviously cached relevant information:\n${cachedResults
+            .map((r) => r.content)
+            .join("\n\n")}\n\n`;
+        }
+      } catch (error) {
+        // Ignore cache errors
+      }
+    }
+
     // Check if this is a business-related query
     const isBusinessQuery = businessSearchPromptEnhancer.needsEnhancement(task);
 
@@ -329,7 +387,7 @@ export class ResearchAgent extends BaseAgent {
 
     let basePrompt = `
       Synthesize the following research findings to answer the task: "${task}"
-      
+      ${cachedContext}
       Research Findings:
       ${topResults
         .map(

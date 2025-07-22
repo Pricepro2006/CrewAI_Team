@@ -1,6 +1,7 @@
 import { ValidatedTool } from "../base/ValidatedTool";
 import type { ToolResult } from "../base/ToolTypes";
 import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout";
+import { SearchKnowledgeService } from "../../services/SearchKnowledgeService";
 
 interface SearXNGResult {
   url: string;
@@ -36,6 +37,7 @@ export interface SearXNGSearchParams {
 
 export class SearXNGSearchTool extends ValidatedTool {
   private baseUrl: string;
+  private searchKnowledgeService?: SearchKnowledgeService;
 
   constructor(baseUrl: string = "http://localhost:8888") {
     super(
@@ -43,6 +45,31 @@ export class SearXNGSearchTool extends ValidatedTool {
       "Searches using local SearXNG instance - aggregates results from multiple search engines including Google, Bing, DuckDuckGo, and specialized engines",
     );
     this.baseUrl = baseUrl;
+    this.initializeKnowledgeService();
+  }
+
+  private async initializeKnowledgeService(): Promise<void> {
+    try {
+      // Initialize with default RAG configuration
+      this.searchKnowledgeService = new SearchKnowledgeService({
+        vectorStore: {
+          type: "chromadb",
+          collectionName: "search_knowledge",
+          baseUrl: "http://localhost:8000",
+        },
+        chunking: {
+          chunkSize: 1000,
+          overlap: 200,
+        },
+        retrieval: {
+          topK: 5,
+        },
+      });
+      await this.searchKnowledgeService.initialize();
+    } catch (error) {
+      console.warn("Failed to initialize SearchKnowledgeService:", error);
+      // Continue without knowledge service
+    }
   }
 
   getInputSchema() {
@@ -149,6 +176,30 @@ export class SearXNGSearchTool extends ValidatedTool {
           },
         }));
 
+      // Save search results to knowledge base
+      if (this.searchKnowledgeService && results.length > 0) {
+        try {
+          await this.searchKnowledgeService.saveSearchResults(
+            params.query,
+            results.map((r) => ({
+              title: r.title,
+              url: r.url,
+              snippet: r.snippet,
+              source: r.source,
+              relevance: r.relevance,
+              metadata: r.metadata,
+            })),
+            "SearXNG",
+          );
+        } catch (error) {
+          console.warn(
+            "Failed to save search results to knowledge base:",
+            error,
+          );
+          // Continue without saving
+        }
+      }
+
       return {
         success: true,
         data: {
@@ -205,6 +256,25 @@ export class SearXNGSearchTool extends ValidatedTool {
       return response.ok;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Search for previously cached results in the knowledge base
+   */
+  async searchCachedResults(query: string, limit: number = 5): Promise<any[]> {
+    if (!this.searchKnowledgeService) {
+      return [];
+    }
+
+    try {
+      return await this.searchKnowledgeService.searchPreviousResults(
+        query,
+        limit,
+      );
+    } catch (error) {
+      console.warn("Failed to search cached results:", error);
+      return [];
     }
   }
 }
