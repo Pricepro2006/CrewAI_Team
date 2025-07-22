@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc/router";
-import type { Router } from "@trpc/server";
+import type { Router, AnyRouter } from "@trpc/server";
 import multer from "multer";
 import { logger } from "../../utils/logger";
 
@@ -59,7 +59,7 @@ export const fileUploadMiddleware: ReturnType<typeof upload.single> =
 export const multiFileUploadMiddleware: ReturnType<typeof upload.array> =
   upload.array("files", 10);
 
-export const ragRouter = router({
+export const ragRouter: AnyRouter = router({
   // Upload a document
   upload: publicProcedure
     .input(

@@ -1,11 +1,12 @@
 import { router, publicProcedure } from "../trpc/router";
 import { z } from "zod";
 import { RateLimiter } from "../../core/middleware/RateLimiter";
+import type { AnyRouter } from "@trpc/server";
 
 // Get the rate limiter instance
 const rateLimiter = RateLimiter.getInstance();
 
-export const metricsRouter = router({
+export const metricsRouter: AnyRouter = router({
   getRateLimitMetrics: publicProcedure.query(async () => {
     return rateLimiter.getMetrics();
   }),

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import type { AnyRouter } from "@trpc/server";
 import {
   router,
   publicProcedure,
@@ -17,7 +18,7 @@ import {
 const emailStorage = new EmailStorageService();
 const wsService = new WebSocketService();
 
-export const emailAssignmentRouter = router({
+export const emailAssignmentRouter: AnyRouter = router({
   /**
    * Get all team members
    */

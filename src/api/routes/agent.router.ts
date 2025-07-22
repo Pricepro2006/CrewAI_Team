@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc/router";
-import type { Router } from "@trpc/server";
+import type { Router, AnyRouter } from "@trpc/server";
 import { getAgentModel } from "../../config/model-selection.config";
 
-export const agentRouter = router({
+export const agentRouter: AnyRouter = router({
   // List all registered agents
   list: publicProcedure.query(async ({ ctx }) => {
     const types = ctx.agentRegistry.getRegisteredTypes();

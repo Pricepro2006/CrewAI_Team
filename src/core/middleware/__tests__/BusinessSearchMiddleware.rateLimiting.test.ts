@@ -16,7 +16,7 @@ vi.mock("../../../config/features/FeatureFlagService", () => ({
 
 describe("BusinessSearchMiddleware - Rate Limiting Integration", () => {
   let middleware: BusinessSearchMiddleware;
-  let mockProvider: vi.Mocked<OllamaProvider>;
+  let mockProvider: Partial<OllamaProvider> & { generate: any };
   let wrappedProvider: OllamaProvider;
 
   beforeEach(() => {
