@@ -7,6 +7,7 @@ import {
 } from "../trpc/enhanced-router";
 import { observable } from "@trpc/server/observable";
 import { EventEmitter } from "events";
+import type { AnyRouter } from "@trpc/server";
 // Router type available via enhanced-router
 // Security schemas available via enhanced-router
 import { logger } from "../../utils/logger";
@@ -34,7 +35,7 @@ const chatSchemas = {
   }),
 };
 
-export const chatRouter = createFeatureRouter(
+export const chatRouter: AnyRouter = createFeatureRouter(
   "chat",
   router({
     // Create a new conversation
