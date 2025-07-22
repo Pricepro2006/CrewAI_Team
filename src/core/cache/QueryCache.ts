@@ -1,13 +1,13 @@
 /**
  * Query Cache Implementation
- * 
+ *
  * Provides Redis-based caching for query results to improve performance
  * and reduce processing time for repeated queries.
  */
 
-import Redis from 'ioredis';
-import crypto from 'crypto';
-import { logger } from '../../utils/logger';
+import Redis from "ioredis";
+import crypto from "crypto";
+import { logger } from "../../utils/logger";
 
 interface CacheConfig {
   host?: string;
@@ -42,13 +42,13 @@ export class QueryCache {
 
   constructor(config: CacheConfig = {}) {
     this.config = {
-      host: config.host || 'localhost',
+      host: config.host || "localhost",
       port: config.port || 6379,
-      password: config.password || '',
+      password: config.password || "",
       db: config.db || 0,
-      keyPrefix: config.keyPrefix || 'query:',
+      keyPrefix: config.keyPrefix || "query:",
       defaultTTL: config.defaultTTL || 3600, // 1 hour
-      maxRetries: config.maxRetries || 3
+      maxRetries: config.maxRetries || 3,
     };
 
     this.stats = {
@@ -56,7 +56,7 @@ export class QueryCache {
       misses: 0,
       sets: 0,
       errors: 0,
-      hitRate: 0
+      hitRate: 0,
     };
 
     this.initialize();
@@ -69,45 +69,52 @@ export class QueryCache {
         port: this.config.port,
         password: this.config.password || undefined,
         db: this.config.db,
-        retryDelayOnFailover: 100,
         maxRetriesPerRequest: this.config.maxRetries,
         lazyConnect: true,
         reconnectOnError: (err) => {
-          const targetError = 'READONLY';
+          const targetError = "READONLY";
           return err.message.includes(targetError);
-        }
+        },
       });
 
       // Test connection
       await this.redis.connect();
       await this.redis.ping();
-      
+
       this.enabled = true;
-      logger.info('Query cache initialized successfully', 'QUERY_CACHE', {
+      logger.info("Query cache initialized successfully", "QUERY_CACHE", {
         host: this.config.host,
         port: this.config.port,
-        db: this.config.db
+        db: this.config.db,
       });
 
       // Set up event handlers
-      this.redis.on('error', (error) => {
+      this.redis.on("error", (error) => {
         this.stats.errors++;
-        logger.error('Redis connection error', 'QUERY_CACHE', error);
+        logger.error(
+          "Redis connection error",
+          "QUERY_CACHE",
+          undefined,
+          error as Error,
+        );
         this.enabled = false;
       });
 
-      this.redis.on('connect', () => {
-        logger.info('Redis cache connected', 'QUERY_CACHE');
+      this.redis.on("connect", () => {
+        logger.info("Redis cache connected", "QUERY_CACHE");
         this.enabled = true;
       });
 
-      this.redis.on('close', () => {
-        logger.warn('Redis cache disconnected', 'QUERY_CACHE');
+      this.redis.on("close", () => {
+        logger.warn("Redis cache disconnected", "QUERY_CACHE");
         this.enabled = false;
       });
-
     } catch (error) {
-      logger.warn('Failed to initialize query cache, running without cache', 'QUERY_CACHE', error);
+      logger.warn(
+        "Failed to initialize query cache, running without cache",
+        "QUERY_CACHE",
+        { error: (error as Error).message },
+      );
       this.enabled = false;
     }
   }
@@ -115,7 +122,10 @@ export class QueryCache {
   /**
    * Get cached query result
    */
-  async get<T = any>(query: string, context?: Record<string, any>): Promise<T | null> {
+  async get<T = any>(
+    query: string,
+    context?: Record<string, any>,
+  ): Promise<T | null> {
     if (!this.enabled || !this.redis) {
       return null;
     }
@@ -123,7 +133,7 @@ export class QueryCache {
     try {
       const key = this.generateKey(query, context);
       const cached = await this.redis.get(key);
-      
+
       if (!cached) {
         this.stats.misses++;
         this.updateHitRate();
@@ -131,9 +141,9 @@ export class QueryCache {
       }
 
       const entry: CacheEntry = JSON.parse(cached);
-      
+
       // Check if entry has expired (additional check)
-      if (Date.now() > entry.timestamp + (entry.ttl * 1000)) {
+      if (Date.now() > entry.timestamp + entry.ttl * 1000) {
         await this.redis.del(key);
         this.stats.misses++;
         this.updateHitRate();
@@ -142,17 +152,16 @@ export class QueryCache {
 
       this.stats.hits++;
       this.updateHitRate();
-      
-      logger.debug('Cache hit', 'QUERY_CACHE', { 
-        key: key.substring(0, 20) + '...', 
-        age: Date.now() - entry.timestamp 
+
+      logger.debug("Cache hit", "QUERY_CACHE", {
+        key: key.substring(0, 20) + "...",
+        age: Date.now() - entry.timestamp,
       });
 
       return entry.data;
-
     } catch (error) {
       this.stats.errors++;
-      logger.error('Cache get error', 'QUERY_CACHE', error);
+      logger.error("Cache get error", "QUERY_CACHE", undefined, error as Error);
       return null;
     }
   }
@@ -160,7 +169,12 @@ export class QueryCache {
   /**
    * Cache query result
    */
-  async set(query: string, data: any, ttl?: number, context?: Record<string, any>): Promise<void> {
+  async set(
+    query: string,
+    data: any,
+    ttl?: number,
+    context?: Record<string, any>,
+  ): Promise<void> {
     if (!this.enabled || !this.redis) {
       return;
     }
@@ -168,26 +182,25 @@ export class QueryCache {
     try {
       const key = this.generateKey(query, context);
       const effectiveTTL = ttl || this.config.defaultTTL;
-      
+
       const entry: CacheEntry = {
         data,
         timestamp: Date.now(),
         ttl: effectiveTTL,
-        key
+        key,
       };
 
       await this.redis.setex(key, effectiveTTL, JSON.stringify(entry));
       this.stats.sets++;
-      
-      logger.debug('Cache set', 'QUERY_CACHE', { 
-        key: key.substring(0, 20) + '...', 
-        ttl: effectiveTTL,
-        dataSize: JSON.stringify(data).length 
-      });
 
+      logger.debug("Cache set", "QUERY_CACHE", {
+        key: key.substring(0, 20) + "...",
+        ttl: effectiveTTL,
+        dataSize: JSON.stringify(data).length,
+      });
     } catch (error) {
       this.stats.errors++;
-      logger.error('Cache set error', 'QUERY_CACHE', error);
+      logger.error("Cache set error", "QUERY_CACHE", undefined, error as Error);
     }
   }
 
@@ -202,14 +215,18 @@ export class QueryCache {
     try {
       const key = this.generateKey(query, context);
       await this.redis.del(key);
-      
-      logger.debug('Cache cleared', 'QUERY_CACHE', { 
-        key: key.substring(0, 20) + '...' 
+
+      logger.debug("Cache cleared", "QUERY_CACHE", {
+        key: key.substring(0, 20) + "...",
       });
-      
     } catch (error) {
       this.stats.errors++;
-      logger.error('Cache clear error', 'QUERY_CACHE', error);
+      logger.error(
+        "Cache clear error",
+        "QUERY_CACHE",
+        undefined,
+        error as Error,
+      );
     }
   }
 
@@ -222,19 +239,23 @@ export class QueryCache {
     }
 
     try {
-      const pattern = this.config.keyPrefix + '*';
+      const pattern = this.config.keyPrefix + "*";
       const keys = await this.redis.keys(pattern);
-      
+
       if (keys.length > 0) {
         await this.redis.del(...keys);
-        logger.info('All query cache cleared', 'QUERY_CACHE', { 
-          keysDeleted: keys.length 
+        logger.info("All query cache cleared", "QUERY_CACHE", {
+          keysDeleted: keys.length,
         });
       }
-      
     } catch (error) {
       this.stats.errors++;
-      logger.error('Cache clear all error', 'QUERY_CACHE', error);
+      logger.error(
+        "Cache clear all error",
+        "QUERY_CACHE",
+        undefined,
+        error as Error,
+      );
     }
   }
 
@@ -255,25 +276,28 @@ export class QueryCache {
   /**
    * Get cache health status
    */
-  async getHealth(): Promise<{ status: string; latency?: number; error?: string }> {
+  async getHealth(): Promise<{
+    status: string;
+    latency?: number;
+    error?: string;
+  }> {
     if (!this.enabled || !this.redis) {
-      return { status: 'disabled' };
+      return { status: "disabled" };
     }
 
     try {
       const start = Date.now();
       await this.redis.ping();
       const latency = Date.now() - start;
-      
-      return { 
-        status: 'healthy', 
-        latency 
+
+      return {
+        status: "healthy",
+        latency,
       };
-      
     } catch (error) {
-      return { 
-        status: 'error', 
-        error: error instanceof Error ? error.message : String(error) 
+      return {
+        status: "error",
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -282,9 +306,11 @@ export class QueryCache {
    * Generate cache key from query and context
    */
   private generateKey(query: string, context?: Record<string, any>): string {
-    const contextStr = context ? JSON.stringify(context, Object.keys(context).sort()) : '';
+    const contextStr = context
+      ? JSON.stringify(context, Object.keys(context).sort())
+      : "";
     const combined = query + contextStr;
-    const hash = crypto.createHash('md5').update(combined).digest('hex');
+    const hash = crypto.createHash("md5").update(combined).digest("hex");
     return this.config.keyPrefix + hash;
   }
 
@@ -304,7 +330,7 @@ export class QueryCache {
       await this.redis.quit();
       this.redis = null;
       this.enabled = false;
-      logger.info('Query cache closed', 'QUERY_CACHE');
+      logger.info("Query cache closed", "QUERY_CACHE");
     }
   }
 }
