@@ -378,3 +378,8 @@ TimeoutError: Replanning timed out
 2025-07-22T14:27:22.882Z ERROR [AGENT] Error in agent ResearchAgent: LLM synthesis timed out {"error":{"duration":90000,"name":"TimeoutError"}}
 2025-07-22T14:57:17.092Z ERROR [CRITICAL] Uncaught exception {"error":{"code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":3001}}
 2025-07-22T14:57:17.093Z ERROR [CRITICAL] Uncaught exception {"error":{"code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":3002}}
+2025-07-22T16:00:45.805Z ERROR [ORCHESTRATOR] Query processing timed out {"query":"Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing into the irrigation piping, for the area surrounding the following address. They need to be able to travel to this location and if you can include initial visit costs, add that information as well. address: 278 Wycliff Dr. Spartanburg, SC 29301","duration":120000,"message":"Plan execution timed out"}
+TimeoutError: Plan execution timed out
+    at Timeout.<anonymous> (/home/pricepro2006/CrewAI_Team/src/utils/timeout.ts:32:9)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7)

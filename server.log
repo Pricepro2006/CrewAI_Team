@@ -73,3 +73,83 @@ ChromaDB file path configuration is deprecated. Falling back to HTTP.
 [32m2025-07-22T15:33:42.523Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}[0m
 [33m2025-07-22T15:33:42.523Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 97732ms {"success":true}[0m
 [32m2025-07-22T15:33:42.524Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"25705f57-7c89-4c07-8511-8fc60ce6e303","userId":"guest-::1-1753198324789","responseLength":4341}[0m
+tRPC Error: {
+  type: 'query',
+  path: 'chat.history',
+  error: 'Conversation not found',
+  input: { conversationId: 'f3082778-6554-4fb9-8a5a-a039d5e59f9b' }
+}
+tRPC Error: {
+  type: 'query',
+  path: 'chat.history',
+  error: 'Conversation not found',
+  input: { conversationId: 'f3082778-6554-4fb9-8a5a-a039d5e59f9b' }
+}
+tRPC Error: {
+  type: 'query',
+  path: 'chat.history',
+  error: 'Conversation not found',
+  input: { conversationId: 'f3082778-6554-4fb9-8a5a-a039d5e59f9b' }
+}
+tRPC Error: {
+  type: 'query',
+  path: 'chat.history',
+  error: 'Conversation not found',
+  input: { conversationId: 'f3082778-6554-4fb9-8a5a-a039d5e59f9b' }
+}
+[32m2025-07-22T15:40:01.982Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753198801982","messageLength":349,"priority":"medium","requestId":"4q7jl"}[0m
+[32m2025-07-22T15:40:01.982Z INFO  [ORCHESTRATOR] Processing query {"query":"Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root gro","conversationId":"d3176bd7-707f-4616-b396-039e46b60af3"}[0m
+[32m2025-07-22T15:40:01.983Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":3,"domains":2,"priority":"medium","estimatedDuration":120}[0m
+[32m2025-07-22T15:40:01.983Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":3,"domains":["research","development"],"priority":"medium","estimatedDuration":120}[0m
+[32m2025-07-22T15:40:01.984Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}[0m
+[32m2025-07-22T15:40:01.984Z INFO  [ORCHESTRATOR] Starting plan creation[0m
+[32m2025-07-22T15:40:01.984Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance[0m
+[32m2025-07-22T15:40:01.984Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}[0m
+[32m2025-07-22T15:40:02.647Z INFO  [AGENT] Initializing agent: ResearchAgent[0m
+[32m2025-07-22T15:40:02.648Z INFO  [AGENT] Initializing agent ResearchAgent[0m
+[32m2025-07-22T15:40:02.648Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools[0m
+[ResearchAgent] Starting executeWithTool for web_search
+[ResearchAgent] Query extracted: Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing into the irrigation piping, for the area surrounding the following address. They need to be able to travel to this location and if you can include initial visit costs, add that information as well. address: 278 Wycliff Dr. Spartanburg, SC 29301
+[ResearchAgent] Business query detected - will enhance synthesis
+[ResearchAgent] Executing web search...
+[ResearchAgent] Search completed: true
+[ResearchAgent] Found 5 results, synthesizing...
+[ResearchAgent] Detected business query, enhancing synthesis prompt
+[32m2025-07-22T15:40:03.706Z INFO   Prompt enhanced with business search instructions (level: standard)[0m
+[ResearchAgent] Synthesis complete
+[32m2025-07-22T15:41:00.935Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}[0m
+[33m2025-07-22T15:41:00.935Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 58953ms {"success":true}[0m
+[32m2025-07-22T15:41:00.936Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"d3176bd7-707f-4616-b396-039e46b60af3","userId":"guest-::1-1753198801982","responseLength":4555}[0m
+[32m2025-07-22T15:46:00.481Z INFO  [CHAT] Processing chat message {"conversationId":"f3082778-6554-4fb9-8a5a-a039d5e59f9b","userId":"guest-::1-1753199160481","messageLength":349,"requestId":"ldlvw"}[0m
+tRPC Error: {
+  type: 'mutation',
+  path: 'chat.message',
+  error: 'Conversation not found',
+  input: {
+    conversationId: 'f3082778-6554-4fb9-8a5a-a039d5e59f9b',
+    message: 'Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing into the irrigation piping, for the area surrounding the following address. They need to be able to travel to this location and if you can include initial visit costs, add that information as well. address: 278 Wycliff Dr. Spartanburg, SC 29301'
+  }
+}
+[32m2025-07-22T15:58:49.550Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753199929550","messageLength":349,"priority":"medium","requestId":"28exn"}[0m
+[32m2025-07-22T15:58:49.551Z INFO  [ORCHESTRATOR] Processing query {"query":"Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root gro","conversationId":"b26f4dd6-eb02-4924-abca-c7389b730007"}[0m
+[32m2025-07-22T15:58:49.551Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":3,"domains":2,"priority":"medium","estimatedDuration":120}[0m
+[32m2025-07-22T15:58:49.551Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":3,"domains":["research","development"],"priority":"medium","estimatedDuration":120}[0m
+[32m2025-07-22T15:58:49.551Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}[0m
+[32m2025-07-22T15:58:49.552Z INFO  [ORCHESTRATOR] Starting plan creation[0m
+[32m2025-07-22T15:58:49.552Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance[0m
+[32m2025-07-22T15:58:49.552Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}[0m
+[ResearchAgent] Starting executeWithTool for web_search
+[ResearchAgent] Query extracted: Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing into the irrigation piping, for the area surrounding the following address. They need to be able to travel to this location and if you can include initial visit costs, add that information as well. address: 278 Wycliff Dr. Spartanburg, SC 29301
+[ResearchAgent] Business query detected - will enhance synthesis
+[ResearchAgent] Executing web search...
+[ResearchAgent] Search completed: true
+[ResearchAgent] Found 5 results, synthesizing...
+[ResearchAgent] Detected business query, enhancing synthesis prompt
+[32m2025-07-22T15:58:51.259Z INFO   Prompt enhanced with business search instructions (level: standard)[0m
+[31m2025-07-22T16:00:45.805Z ERROR [ORCHESTRATOR] Query processing timed out {"query":"Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing into the irrigation piping, for the area surrounding the following address. They need to be able to travel to this location and if you can include initial visit costs, add that information as well. address: 278 Wycliff Dr. Spartanburg, SC 29301","duration":120000,"message":"Plan execution timed out"}
+TimeoutError: Plan execution timed out
+    at Timeout.<anonymous> (/home/pricepro2006/CrewAI_Team/src/utils/timeout.ts:32:9)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7)[0m
+[32m2025-07-22T16:00:45.809Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"b26f4dd6-eb02-4924-abca-c7389b730007","userId":"guest-::1-1753199929550","responseLength":188}[0m
+[ResearchAgent] Synthesis complete
