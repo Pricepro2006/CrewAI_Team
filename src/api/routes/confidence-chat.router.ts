@@ -12,6 +12,7 @@ import {
 import { observable } from "@trpc/server/observable";
 import { EventEmitter } from "events";
 import { logger } from "../../utils/logger";
+import type { AnyRouter } from "@trpc/server";
 import type { ConfidenceMasterOrchestrator } from "../../core/master-orchestrator/ConfidenceMasterOrchestrator";
 
 // Event emitter for real-time updates
@@ -51,7 +52,7 @@ const confidenceChatSchemas = {
   }),
 };
 
-export const confidenceChatRouter = createFeatureRouter(
+export const confidenceChatRouter: AnyRouter = createFeatureRouter(
   "confidence-chat",
   router({
     // Create a new conversation with confidence scoring

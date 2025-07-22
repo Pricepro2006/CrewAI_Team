@@ -7,6 +7,7 @@ import {
 } from "../trpc/enhanced-router";
 import { logger } from "../../utils/logger";
 import { BrightDataService } from "../../core/data-collection/BrightDataService";
+import type { AnyRouter } from "@trpc/server";
 import type {
   SearchEngineParams,
   WebScrapingParams,
@@ -76,7 +77,7 @@ const credentials: BrightDataCredentials = {
 // This would be injected from the MCP server in production
 const brightDataService = new BrightDataService(credentials);
 
-export const dataCollectionRouter = createFeatureRouter(
+export const dataCollectionRouter: AnyRouter = createFeatureRouter(
   "dataCollection",
   router({
     // Search Engine Data Collection
