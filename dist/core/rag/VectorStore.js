@@ -10,13 +10,13 @@ export class VectorStore {
         // Check if path is a URL or file path and configure accordingly
         const chromaPath = config.path || "http://localhost:8000";
         const clientConfig = {};
-        if (chromaPath.startsWith('http')) {
+        if (chromaPath.startsWith("http")) {
             // HTTP URL - use as-is
             clientConfig.path = chromaPath;
         }
         else {
             // File path - this will fail in 2025 versions, fallback to HTTP
-            console.warn('ChromaDB file path configuration is deprecated. Falling back to HTTP.');
+            console.warn("ChromaDB file path configuration is deprecated. Falling back to HTTP.");
             clientConfig.path = "http://localhost:8000";
         }
         this.client = new ChromaClient(clientConfig);
@@ -31,7 +31,9 @@ export class VectorStore {
             await this.client.version();
             // Try to get existing collection first
             try {
-                this.collection = await this.client.getCollection({ name: this.config.collectionName });
+                this.collection = await this.client.getCollection({
+                    name: this.config.collectionName,
+                });
             }
             catch (getError) {
                 // Collection doesn't exist, create it
@@ -47,9 +49,9 @@ export class VectorStore {
         catch (error) {
             console.error("Failed to initialize vector store:", error);
             // Check if it's a connection error
-            if (error.message?.includes('Could not connect to tenant') ||
-                error.message?.includes('Failed to parse URL') ||
-                error.code === 'ECONNREFUSED') {
+            if (error.message?.includes("Could not connect to tenant") ||
+                error.message?.includes("Failed to parse URL") ||
+                error.code === "ECONNREFUSED") {
                 console.warn("ChromaDB is not running or misconfigured. Vector store will be disabled.");
                 throw new Error("ChromaDB connection failed - vector store disabled");
             }

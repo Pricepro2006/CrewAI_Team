@@ -36,7 +36,7 @@ describe("RateLimiter", () => {
   let rateLimiter: RateLimiter;
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
-  let nextFn: jest.Mock<any, any> | NextFunction;
+  let nextFn: ReturnType<typeof vi.fn> | NextFunction;
 
   beforeEach(() => {
     // Clear mock request counts
@@ -112,13 +112,13 @@ describe("RateLimiter", () => {
 
       // Make 30 requests (the limit)
       for (let i = 0; i < 30; i++) {
-        nextFn.mockReset();
+        if ("mockReset" in nextFn) nextFn.mockReset();
         limiter(mockReq as Request, mockRes as Response, nextFn);
         expect(nextFn).toHaveBeenCalled();
       }
 
       // The 31st request should be blocked
-      nextFn.mockReset();
+      if ("mockReset" in nextFn) nextFn.mockReset();
       limiter(mockReq as Request, mockRes as Response, nextFn);
 
       expect(nextFn).not.toHaveBeenCalled();
@@ -185,13 +185,13 @@ describe("RateLimiter", () => {
 
       // Make 5 requests quickly
       for (let i = 0; i < 5; i++) {
-        nextFn.mockReset();
+        if ("mockReset" in nextFn) nextFn.mockReset();
         limiter(mockReq as Request, mockRes as Response, nextFn);
         expect(nextFn).toHaveBeenCalled();
       }
 
       // 6th request should be blocked
-      nextFn.mockReset();
+      if ("mockReset" in nextFn) nextFn.mockReset();
       limiter(mockReq as Request, mockRes as Response, nextFn);
       expect(nextFn).not.toHaveBeenCalled();
 
@@ -199,7 +199,7 @@ describe("RateLimiter", () => {
       await new Promise((resolve) => setTimeout(resolve, 1100));
 
       // Should allow request again
-      nextFn.mockReset();
+      if ("mockReset" in nextFn) nextFn.mockReset();
       limiter(mockReq as Request, mockRes as Response, nextFn);
       expect(nextFn).toHaveBeenCalled();
     });
@@ -211,13 +211,13 @@ describe("RateLimiter", () => {
 
       // Should allow 5 requests immediately (using all tokens)
       for (let i = 0; i < 5; i++) {
-        nextFn.mockReset();
+        if ("mockReset" in nextFn) nextFn.mockReset();
         limiter(mockReq as Request, mockRes as Response, nextFn);
         expect(nextFn).toHaveBeenCalled();
       }
 
       // 6th request should be blocked (no tokens left)
-      nextFn.mockReset();
+      if ("mockReset" in nextFn) nextFn.mockReset();
       limiter(mockReq as Request, mockRes as Response, nextFn);
       expect(nextFn).not.toHaveBeenCalled();
     });
@@ -230,7 +230,7 @@ describe("RateLimiter", () => {
       limiter(mockReq as Request, mockRes as Response, nextFn);
 
       // Should be blocked
-      nextFn.mockReset();
+      if ("mockReset" in nextFn) nextFn.mockReset();
       limiter(mockReq as Request, mockRes as Response, nextFn);
       expect(nextFn).not.toHaveBeenCalled();
 
@@ -238,7 +238,7 @@ describe("RateLimiter", () => {
       await new Promise((resolve) => setTimeout(resolve, 600));
 
       // Should have 1 token now
-      nextFn.mockReset();
+      if ("mockReset" in nextFn) nextFn.mockReset();
       limiter(mockReq as Request, mockRes as Response, nextFn);
       expect(nextFn).toHaveBeenCalled();
     });

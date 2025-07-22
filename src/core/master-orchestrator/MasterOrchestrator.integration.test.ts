@@ -73,8 +73,8 @@ describe("MasterOrchestrator Integration Tests", () => {
         await expect(async () => {
           const provider = orchestrator["llm"];
           await generateWithTimeout(
-            provider,
-            'Say "test successful" and nothing else.',
+            provider.generate('Say "test successful" and nothing else.'),
+            5000,
           );
         }).rejects.toThrow();
         return;
@@ -86,8 +86,8 @@ describe("MasterOrchestrator Integration Tests", () => {
 
       // Test a simple generation to verify connection
       const response = await generateWithTimeout(
-        provider,
-        'Say "test successful" and nothing else.',
+        provider.generate('Say "test successful" and nothing else.'),
+        5000,
       );
 
       expect((response as string).toLowerCase()).toContain("test");
@@ -124,10 +124,10 @@ describe("MasterOrchestrator Integration Tests", () => {
       // Verify task structure
       const firstTask = plan.steps[0];
       expect(firstTask).toHaveProperty("id");
-      expect(firstTask).toHaveProperty("type");
+      expect(firstTask).toHaveProperty("task");
       expect(firstTask).toHaveProperty("description");
       expect(firstTask).toHaveProperty("agentType");
-      expect(firstTask?.metadata?.status || "pending").toBe("pending");
+      expect(firstTask).toHaveProperty("ragQuery");
     });
 
     it("should handle simple research queries", async () => {
@@ -289,7 +289,7 @@ describe("MasterOrchestrator Integration Tests", () => {
         conversationId,
       });
       expect(response2.success).toBe(true);
-      expect(response2.summary || response2.output || "").toContain("42");
+      expect(response2.summary || "").toContain("42");
     });
 
     it("should handle errors gracefully", async () => {
@@ -402,9 +402,9 @@ describe("MasterOrchestrator Integration Tests", () => {
       });
 
       // Verify correct results
-      expect(responses[0].summary).toContain("4");
-      expect(responses[1].summary).toContain("6");
-      expect(responses[2].summary).toContain("8");
+      expect(responses[0]?.summary).toContain("4");
+      expect(responses[1]?.summary).toContain("6");
+      expect(responses[2]?.summary).toContain("8");
     });
   });
 
@@ -477,7 +477,7 @@ describe("MasterOrchestrator Integration Tests", () => {
       const conversation = conversationResult.rows?.[0];
 
       expect(conversation).toBeDefined();
-      expect(conversation?.id).toBe(conversationId);
+      expect((conversation as any)?.id).toBe(conversationId);
 
       // Verify message saved
       const messagesResult = await testDb.query(

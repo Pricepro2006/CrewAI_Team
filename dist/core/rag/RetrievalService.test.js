@@ -16,9 +16,24 @@ describe("RetrievalService", () => {
     describe("enhance", () => {
         it("should filter results by minimum score", async () => {
             const results = [
-                { id: "1", content: "High score", metadata: { sourceId: "test" }, score: 0.8 },
-                { id: "2", content: "Low score", metadata: { sourceId: "test" }, score: 0.3 },
-                { id: "3", content: "Medium score", metadata: { sourceId: "test" }, score: 0.6 },
+                {
+                    id: "1",
+                    content: "High score",
+                    metadata: { sourceId: "test" },
+                    score: 0.8,
+                },
+                {
+                    id: "2",
+                    content: "Low score",
+                    metadata: { sourceId: "test" },
+                    score: 0.3,
+                },
+                {
+                    id: "3",
+                    content: "Medium score",
+                    metadata: { sourceId: "test" },
+                    score: 0.6,
+                },
             ];
             const enhanced = await service.enhance("query", results);
             expect(enhanced).toHaveLength(2);
@@ -38,7 +53,12 @@ describe("RetrievalService", () => {
                     metadata: { sourceId: "test" },
                     score: 0.6,
                 },
-                { id: "3", content: "Unrelated content", metadata: { sourceId: "test" }, score: 0.65 },
+                {
+                    id: "3",
+                    content: "Unrelated content",
+                    metadata: { sourceId: "test" },
+                    score: 0.65,
+                },
             ];
             const enhanced = await service.enhance("query specific", results);
             // The document with more query terms should be boosted
@@ -65,7 +85,12 @@ describe("RetrievalService", () => {
                     metadata: { sourceId: "test" },
                     score: 0.8,
                 },
-                { id: "4", content: "Another AI document", metadata: { sourceId: "test" }, score: 0.75 },
+                {
+                    id: "4",
+                    content: "Another AI document",
+                    metadata: { sourceId: "test" },
+                    score: 0.75,
+                },
             ];
             const enhanced = await service.enhance("AI", results);
             // Should maintain diversity - not all results should be about the same topic
@@ -80,19 +105,19 @@ describe("RetrievalService", () => {
                 {
                     id: "1",
                     content: "Old content",
-                    metadata: { sourceId: '1', createdAt: lastWeek.toISOString() },
+                    metadata: { sourceId: "1", createdAt: lastWeek.toISOString() },
                     score: 0.7,
                 },
                 {
                     id: "2",
                     content: "Recent content",
-                    metadata: { sourceId: '2', createdAt: yesterday.toISOString() },
+                    metadata: { sourceId: "2", createdAt: yesterday.toISOString() },
                     score: 0.7,
                 },
                 {
                     id: "3",
                     content: "Very recent content",
-                    metadata: { sourceId: '3', createdAt: now.toISOString() },
+                    metadata: { sourceId: "3", createdAt: now.toISOString() },
                     score: 0.7,
                 },
             ];
@@ -116,8 +141,18 @@ describe("RetrievalService", () => {
             };
             const noEnhanceService = new RetrievalService(noEnhanceConfig);
             const results = [
-                { id: "1", content: "Content 1", metadata: { sourceId: "test" }, score: 0.8 },
-                { id: "2", content: "Content 2", metadata: { sourceId: "test" }, score: 0.6 },
+                {
+                    id: "1",
+                    content: "Content 1",
+                    metadata: { sourceId: "test" },
+                    score: 0.8,
+                },
+                {
+                    id: "2",
+                    content: "Content 2",
+                    metadata: { sourceId: "test" },
+                    score: 0.6,
+                },
             ];
             const enhanced = await noEnhanceService.enhance("query", results);
             expect(enhanced).toEqual(results);
@@ -129,19 +164,19 @@ describe("RetrievalService", () => {
                 {
                     id: "1",
                     content: "Doc 1",
-                    metadata: { sourceId: '1', category: "tech", author: "John" },
+                    metadata: { sourceId: "1", category: "tech", author: "John" },
                     score: 0.8,
                 },
                 {
                     id: "2",
                     content: "Doc 2",
-                    metadata: { sourceId: '2', category: "tech", author: "Jane" },
+                    metadata: { sourceId: "2", category: "tech", author: "Jane" },
                     score: 0.7,
                 },
                 {
                     id: "3",
                     content: "Doc 3",
-                    metadata: { sourceId: '3', category: "science", author: "John" },
+                    metadata: { sourceId: "3", category: "science", author: "John" },
                     score: 0.9,
                 },
             ];
@@ -156,19 +191,19 @@ describe("RetrievalService", () => {
                 {
                     id: "1",
                     content: "Doc 1",
-                    metadata: { sourceId: '1', tags: ["tech"], status: "published" },
+                    metadata: { sourceId: "1", tags: ["tech"], status: "published" },
                     score: 0.8,
                 },
                 {
                     id: "2",
                     content: "Doc 2",
-                    metadata: { sourceId: '2', tags: ["science"], status: "draft" },
+                    metadata: { sourceId: "2", tags: ["science"], status: "draft" },
                     score: 0.7,
                 },
                 {
                     id: "3",
                     content: "Doc 3",
-                    metadata: { sourceId: '3', tags: ["tech"], status: "published" },
+                    metadata: { sourceId: "3", tags: ["tech"], status: "published" },
                     score: 0.9,
                 },
             ];
@@ -200,7 +235,12 @@ describe("RetrievalService", () => {
                 .fill("This sentence contains the query term. ")
                 .join("");
             const results = [
-                { id: "1", content: longContent, metadata: { sourceId: "test" }, score: 0.8 },
+                {
+                    id: "1",
+                    content: longContent,
+                    metadata: { sourceId: "test" },
+                    score: 0.8,
+                },
             ];
             const highlighted = service.highlightMatches("query", results);
             expect(highlighted[0]?.highlights?.length).toBeLessThanOrEqual(3);
@@ -213,7 +253,7 @@ describe("RetrievalService", () => {
                 {
                     id: "1",
                     content: "Testing the TERM extraction!",
-                    metadata: { sourceId: '1' },
+                    metadata: { sourceId: "1" },
                     score: 0.8,
                 },
             ];

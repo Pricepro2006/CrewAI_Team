@@ -171,7 +171,9 @@ describe("ResearchAgent Integration Tests", () => {
             expect(result.data?.findings).toBeDefined();
             expect(Array.isArray(result.data.findings)).toBe(true);
             // Should extract method names from findings content
-            const methods = result.data.findings.map((f) => f.content || f).flat();
+            const methods = result.data.findings
+                .map((f) => f.content || f)
+                .flat();
             const hasArrayMethods = methods.some((item) => ["map", "filter", "reduce", "forEach", "find"].some((method) => item.toLowerCase().includes(method)));
             expect(hasArrayMethods).toBe(true);
         });
