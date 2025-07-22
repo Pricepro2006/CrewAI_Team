@@ -8,27 +8,27 @@ const ollamaConfig = {
             name: "phi3:mini",
             description: "Microsoft Phi-3 Mini model",
             contextWindow: 8192,
-            temperature: 0.7
+            temperature: 0.7,
         },
         "qwen3:0.6b": {
             name: "qwen3:0.6b",
             description: "Qwen 3 0.6B model",
             contextWindow: 8192,
-            temperature: 0.7
+            temperature: 0.7,
         },
         "llama3.1:8b": {
             name: "llama3.1:8b",
             description: "Meta Llama 3.1 8B model",
             contextWindow: 8192,
-            temperature: 0.7
+            temperature: 0.7,
         },
         "granite3.3:2b": {
             name: "granite3.3:2b",
             description: "IBM Granite 3.3 2B model - Optimized for accuracy",
             contextWindow: 8192,
-            temperature: 0.7
-        }
-    }
+            temperature: 0.7,
+        },
+    },
 };
 export default ollamaConfig;
 //# sourceMappingURL=ollama.config.js.map

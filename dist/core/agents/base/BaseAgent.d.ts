@@ -1,6 +1,6 @@
-import type { BaseTool } from '../../tools/base/BaseTool';
-import type { AgentContext, AgentResult, ToolExecutionParams } from './AgentTypes';
-import { OllamaProvider } from '../../llm/OllamaProvider';
+import type { BaseTool } from "../../tools/base/BaseTool";
+import type { AgentContext, AgentResult, ToolExecutionParams } from "./AgentTypes";
+import { OllamaProvider } from "../../llm/OllamaProvider";
 export declare abstract class BaseAgent {
     readonly name: string;
     readonly description: string;

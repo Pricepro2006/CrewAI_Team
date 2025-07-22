@@ -6,7 +6,7 @@ export class TimeoutError extends Error {
     constructor(message, duration) {
         super(message);
         this.duration = duration;
-        this.name = 'TimeoutError';
+        this.name = "TimeoutError";
     }
 }
 /**
@@ -48,7 +48,7 @@ export function createTimeoutWrapper(defaultTimeout) {
  * Retry with exponential backoff and timeout
  */
 export async function retryWithTimeout(fn, options = {}) {
-    const { maxRetries = 3, timeoutMs = 30000, baseDelay = 1000, maxDelay = 10000, onRetry } = options;
+    const { maxRetries = 3, timeoutMs = 30000, baseDelay = 1000, maxDelay = 10000, onRetry, } = options;
     let lastError;
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
@@ -63,7 +63,7 @@ export async function retryWithTimeout(fn, options = {}) {
                     onRetry(lastError, attempt + 1);
                 }
                 // Wait before retrying
-                await new Promise(resolve => setTimeout(resolve, delay));
+                await new Promise((resolve) => setTimeout(resolve, delay));
             }
         }
     }

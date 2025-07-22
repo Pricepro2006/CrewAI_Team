@@ -5762,3 +5762,82 @@
 2025-07-22T15:00:00.506Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}
 2025-07-22T15:00:00.507Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 94590ms {"success":true}
 2025-07-22T15:00:00.510Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"952d29e8-43e8-48fe-9e15-fa0705576ca4","userId":"guest-::1-1753196305914","responseLength":3146}
+2025-07-22T15:31:05.808Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"SIGTERM"}
+2025-07-22T15:31:05.809Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T15:31:05.809Z INFO  [CLEANUP] Starting service cleanup {"taskCount":5}
+2025-07-22T15:31:05.809Z INFO  [CLEANUP] Cleaning up: Active agent tasks
+2025-07-22T15:31:05.809Z INFO  [CLEANUP] Agent tasks terminated
+2025-07-22T15:31:05.809Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T15:31:05.809Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T15:31:05.809Z INFO  [CLEANUP] Cleaned up: Active agent tasks
+2025-07-22T15:31:05.810Z INFO  [CLEANUP] Cleaning up: LLM connections
+2025-07-22T15:31:05.810Z INFO  [CLEANUP] LLM connections closed
+2025-07-22T15:31:05.810Z INFO  [CLEANUP] Cleaned up: LLM connections
+2025-07-22T15:31:05.810Z INFO  [CLEANUP] Cleaning up: Database connections
+2025-07-22T15:31:05.821Z INFO  [CLEANUP] Database connections closed
+2025-07-22T15:31:05.821Z INFO  [CLEANUP] Cleaned up: Database connections
+2025-07-22T15:31:05.821Z INFO  [CLEANUP] Cleaning up: Temporary files
+2025-07-22T15:31:05.822Z INFO  [CLEANUP] Temporary files cleaned
+2025-07-22T15:31:05.822Z INFO  [CLEANUP] Cleaned up: Temporary files
+2025-07-22T15:31:05.822Z INFO  [CLEANUP] Cleaning up: Expired authentication tokens
+2025-07-22T15:31:05.823Z WARN  [CLEANUP] Token cleanup failed {"error":{"code":"SQLITE_NOTADB"}}
+2025-07-22T15:31:05.824Z INFO  [CLEANUP] Cleaned up: Expired authentication tokens
+2025-07-22T15:31:05.824Z INFO  [CLEANUP] Service cleanup completed {"successful":5,"failed":0,"errors":[]}
+2025-07-22T15:31:13.709Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T15:31:13.712Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T15:31:13.720Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T15:31:13.720Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T15:31:13.721Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T15:31:13.722Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T15:31:13.723Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T15:31:13.723Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T15:31:13.723Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753198273723_0v68en9td","pattern":"email_table_view"}
+2025-07-22T15:31:13.723Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753198273723_9fz1j4ofe","pattern":"workflow_analytics"}
+2025-07-22T15:31:13.724Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T15:31:13.724Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T15:31:13.766Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T15:31:13.767Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T15:31:13.767Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T15:31:13.768Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T15:31:13.768Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T15:31:13.768Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753198273768_yx55jsjws","pattern":"email_table_view"}
+2025-07-22T15:31:13.768Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753198273768_ly30bgm5x","pattern":"workflow_analytics"}
+2025-07-22T15:31:13.768Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T15:31:13.769Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T15:31:13.861Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T15:31:13.861Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T15:31:13.861Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T15:31:13.862Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T15:31:13.862Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T15:31:13.863Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753198273863_tzutsmab4","pattern":"email_table_view"}
+2025-07-22T15:31:13.863Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753198273863_rgk8x1b9t","pattern":"workflow_analytics"}
+2025-07-22T15:31:13.863Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T15:31:13.872Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T15:31:13.883Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T15:31:13.889Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T15:31:13.890Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T15:31:13.891Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T15:31:13.891Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T15:31:13.909Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T15:31:13.910Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T15:31:13.910Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T15:31:13.932Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T15:31:13.933Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T15:31:13.933Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T15:31:13.933Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T15:31:13.933Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T15:31:13.934Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T15:31:13.934Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools
+2025-07-22T15:31:13.934Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T15:32:04.790Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753198324789","messageLength":349,"priority":"medium","requestId":"1k37hs"}
+2025-07-22T15:32:04.791Z INFO  [ORCHESTRATOR] Processing query {"query":"Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root gro","conversationId":"25705f57-7c89-4c07-8511-8fc60ce6e303"}
+2025-07-22T15:32:04.792Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":3,"domains":2,"priority":"medium","estimatedDuration":120}
+2025-07-22T15:32:04.792Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":3,"domains":["research","development"],"priority":"medium","estimatedDuration":120}
+2025-07-22T15:32:04.792Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T15:32:04.792Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T15:32:04.793Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T15:32:04.793Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T15:32:06.629Z INFO   Prompt enhanced with business search instructions (level: standard)
+2025-07-22T15:33:42.523Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}
+2025-07-22T15:33:42.523Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 97732ms {"success":true}
+2025-07-22T15:33:42.524Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"25705f57-7c89-4c07-8511-8fc60ce6e303","userId":"guest-::1-1753198324789","responseLength":4341}

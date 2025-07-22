@@ -8,6 +8,7 @@ import type {
 import { WebSearchTool } from "../../tools/web/WebSearchTool";
 import { WebScraperTool } from "../../tools/web/WebScraperTool";
 import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout";
+import { businessSearchPromptEnhancer } from "../../prompts/BusinessSearchPromptEnhancer";
 
 export class ResearchAgent extends BaseAgent {
   constructor() {
@@ -69,6 +70,16 @@ export class ResearchAgent extends BaseAgent {
       const query = taskMatch ? taskMatch[1] : taskDescription;
 
       console.log("[ResearchAgent] Query extracted:", query);
+
+      // Check if this is a business query and enhance search parameters
+      const isBusinessQuery = businessSearchPromptEnhancer.needsEnhancement(
+        query || taskDescription,
+      );
+      if (isBusinessQuery) {
+        console.log(
+          "[ResearchAgent] Business query detected - will enhance synthesis",
+        );
+      }
 
       // For tool execution, skip the LLM-based research plan creation
       // and go directly to search execution
@@ -304,7 +315,14 @@ export class ResearchAgent extends BaseAgent {
     }
 
     const topResults = results.slice(0, 5);
-    const prompt = `
+
+    // Check if this is a business-related query
+    const isBusinessQuery = businessSearchPromptEnhancer.needsEnhancement(task);
+
+    // Increase content size for business queries to capture contact info
+    const contentLength = isBusinessQuery ? 1500 : 500;
+
+    let basePrompt = `
       Synthesize the following research findings to answer the task: "${task}"
       
       Research Findings:
@@ -313,7 +331,7 @@ export class ResearchAgent extends BaseAgent {
           (r, i) => `
         ${i + 1}. Source: ${r.source}
         Title: ${r.title}
-        Content: ${r.content.substring(0, 500)}...
+        Content: ${r.content.substring(0, contentLength)}...
         Relevance: ${r.relevance}
       `,
         )
@@ -329,8 +347,56 @@ export class ResearchAgent extends BaseAgent {
       Format the response in clear paragraphs.
     `;
 
+    // Enhance the prompt for business queries
+    if (isBusinessQuery) {
+      console.log(
+        "[ResearchAgent] Detected business query, enhancing synthesis prompt",
+      );
+
+      // Determine enhancement level based on urgency keywords
+      const urgentKeywords = [
+        "urgent",
+        "emergency",
+        "asap",
+        "immediately",
+        "now",
+      ];
+      const hasUrgency = urgentKeywords.some((keyword) =>
+        task.toLowerCase().includes(keyword),
+      );
+
+      // Extract location if present
+      const locationMatch = task.match(
+        /(?:in|near|at|around)\s+([^.?!]+?)(?:\.|$)/i,
+      );
+      const customInstructions = locationMatch
+        ? `Focus on businesses in or near ${locationMatch[1]}. Include distance/travel information.`
+        : "";
+
+      basePrompt = businessSearchPromptEnhancer.enhance(basePrompt, {
+        enhancementLevel: hasUrgency ? "aggressive" : "standard",
+        includeExamples: true,
+        customInstructions: `
+          ${customInstructions}
+          
+          CRITICAL: Extract and include the following business information:
+          - Business name and type
+          - Complete phone number(s)
+          - Full street address
+          - Business hours/availability
+          - Website URL and/or email
+          - Service areas and travel availability
+          - Initial visit costs or pricing information
+          - Any special certifications or qualifications
+          
+          Format business listings clearly with a "Recommendations" section.
+          Each business should be a separate subsection with contact details prominently displayed.
+        `,
+      });
+    }
+
     return await withTimeout(
-      this.llm.generate(prompt),
+      this.llm.generate(basePrompt),
       DEFAULT_TIMEOUTS.LLM_GENERATION,
       "LLM synthesis timed out",
     );
