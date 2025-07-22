@@ -371,3 +371,10 @@ TimeoutError: Replanning timed out
 2025-07-21T17:08:18.412Z ERROR [IEMS_DATA] Failed to generate AI summary {}
 2025-07-21T17:08:18.412Z ERROR [IEMS_DATA] Failed to generate AI summary {}
 2025-07-22T02:21:05.337Z ERROR [EMAIL_AGENT] Quick categorization failed {"error":{}}
+2025-07-22T03:21:41.502Z ERROR [EMAIL_AGENT] Quick categorization failed {"error":{}}
+2025-07-22T03:21:41.502Z ERROR [EMAIL_AGENT] Failed to parse deep analysis {"error":{}}
+2025-07-22T03:34:49.165Z ERROR [CRITICAL] Uncaught exception {"error":{"code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":3001}}
+2025-07-22T03:34:49.166Z ERROR [CRITICAL] Uncaught exception {"error":{"code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":3002}}
+2025-07-22T14:27:22.882Z ERROR [AGENT] Error in agent ResearchAgent: LLM synthesis timed out {"error":{"duration":90000,"name":"TimeoutError"}}
+2025-07-22T14:57:17.092Z ERROR [CRITICAL] Uncaught exception {"error":{"code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":3001}}
+2025-07-22T14:57:17.093Z ERROR [CRITICAL] Uncaught exception {"error":{"code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":3002}}

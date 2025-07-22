@@ -1,8 +1,9 @@
 import { BaseAgent } from '../base/BaseAgent';
-import type { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
+import type { AgentCapability, AgentContext, AgentResult, ToolExecutionParams } from '../base/AgentTypes';
 export declare class ResearchAgent extends BaseAgent {
     constructor();
     execute(task: string, context: AgentContext): Promise<AgentResult>;
+    executeWithTool(params: ToolExecutionParams): Promise<AgentResult>;
     private createResearchPlan;
     private parseResearchPlan;
     private executeResearchPlan;

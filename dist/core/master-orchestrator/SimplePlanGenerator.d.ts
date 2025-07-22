@@ -4,5 +4,6 @@ export declare class SimplePlanGenerator {
     static createSimplePlan(query: Query, routingPlan?: AgentRoutingPlan): Plan;
     private static selectAgentByPattern;
     private static doesRequireTool;
+    private static selectTool;
 }
 //# sourceMappingURL=SimplePlanGenerator.d.ts.map

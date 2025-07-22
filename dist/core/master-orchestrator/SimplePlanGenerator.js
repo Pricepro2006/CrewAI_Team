@@ -12,6 +12,8 @@ export class SimplePlanGenerator {
             selectedAgent: agentType,
             hasRoutingPlan: !!routingPlan
         });
+        const requiresTool = this.doesRequireTool(query.text, agentType);
+        const toolName = requiresTool ? this.selectTool(query.text, agentType) : undefined;
         return {
             id: `plan-${Date.now()}`,
             steps: [
@@ -20,7 +22,8 @@ export class SimplePlanGenerator {
                     task: 'Answer user query',
                     description: `Process and respond to: ${query.text}`,
                     agentType,
-                    requiresTool: this.doesRequireTool(query.text, agentType),
+                    requiresTool: requiresTool,
+                    toolName: toolName,
                     ragQuery: query.text,
                     expectedOutput: 'Comprehensive answer to user query',
                     dependencies: [],
@@ -120,7 +123,8 @@ export class SimplePlanGenerator {
         // Agent-specific tool requirements
         if (agentType === 'ResearchAgent' &&
             (lowerQuery.includes('latest') || lowerQuery.includes('current') ||
-                lowerQuery.includes('recent') || lowerQuery.includes('search'))) {
+                lowerQuery.includes('recent') || lowerQuery.includes('search') ||
+                lowerQuery.includes('find'))) {
             return true;
         }
         if (agentType === 'CodeAgent' &&
@@ -129,6 +133,27 @@ export class SimplePlanGenerator {
             return true;
         }
         return toolIndicators.some(indicator => lowerQuery.includes(indicator));
+    }
+    static selectTool(queryText, agentType) {
+        const lowerQuery = queryText.toLowerCase();
+        // Agent-specific tool selection
+        if (agentType === 'ResearchAgent') {
+            // For research tasks, prefer web search
+            if (lowerQuery.includes('latest') || lowerQuery.includes('current') ||
+                lowerQuery.includes('recent') || lowerQuery.includes('find') ||
+                lowerQuery.includes('search') || lowerQuery.includes('specialists')) {
+                return 'web_search';
+            }
+            return 'web_search'; // Default for research
+        }
+        if (agentType === 'CodeAgent') {
+            return 'code_executor'; // Default tool for code agent
+        }
+        if (agentType === 'DataAnalysisAgent') {
+            return 'data_analyzer'; // Default tool for data analysis
+        }
+        // Fallback
+        return 'web_search';
     }
 }
 //# sourceMappingURL=SimplePlanGenerator.js.map

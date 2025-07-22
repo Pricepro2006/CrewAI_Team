@@ -15,8 +15,9 @@ interface SearchResult {
     snippet: string;
     timestamp?: string;
 }
-export declare class SearchEngineWrapper {
-    search(query: string, limit?: number): Promise<SearchResult[]>;
+declare abstract class SearchEngine {
+    abstract name: string;
+    abstract search(query: string, limit: number): Promise<SearchResult[]>;
 }
-export {};
+export { SearchResult, SearchEngine };
 //# sourceMappingURL=WebSearchTool.d.ts.map

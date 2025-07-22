@@ -8,7 +8,7 @@ export class BaseAgent {
     capabilities = new Set();
     initialized = false;
     llm;
-    constructor(name, description, model = 'qwen3:0.6b') {
+    constructor(name, description, model = 'granite3.3:2b') {
         this.name = name;
         this.description = description;
         this.model = model;
@@ -65,6 +65,11 @@ export class BaseAgent {
             return;
         }
         logger.info(`Initializing agent ${this.name}`, 'AGENT');
+        // Register default tools first
+        if (typeof this.registerDefaultTools === 'function') {
+            this.registerDefaultTools();
+            logger.debug(`Registered default tools for ${this.name}`, 'AGENT');
+        }
         // Initialize any tools (if they have initialization method)
         for (const tool of this.tools.values()) {
             if ('initialize' in tool && typeof tool.initialize === 'function') {
@@ -72,7 +77,7 @@ export class BaseAgent {
             }
         }
         this.initialized = true;
-        logger.info(`Agent ${this.name} initialized successfully`, 'AGENT');
+        logger.info(`Agent ${this.name} initialized successfully with ${this.tools.size} tools`, 'AGENT');
     }
     handleError(error) {
         logger.error(`Error in agent ${this.name}: ${error.message}`, 'AGENT', { error });

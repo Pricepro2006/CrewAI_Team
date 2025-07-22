@@ -57,10 +57,10 @@ app.get("/health", async (_req, res) => {
     }
     try {
         // Check ChromaDB connection (if configured)
-        const chromaUrl = process.env.CHROMA_URL || "http://localhost:8001";
+        const chromaUrl = process.env.CHROMA_BASE_URL || "http://localhost:8000";
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const chromaResponse = await fetch(`${chromaUrl}/api/v1/heartbeat`, {
+        const chromaResponse = await fetch(`${chromaUrl}/api/v2/version`, {
             signal: controller.signal,
         });
         clearTimeout(timeoutId);

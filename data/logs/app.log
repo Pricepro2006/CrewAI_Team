@@ -4542,3 +4542,1223 @@
 2025-07-22T02:21:05.336Z INFO  [EMAIL_CACHE] Email analysis cache initialized {"maxSize":500,"ttl":"1800s"}
 2025-07-22T02:21:05.455Z INFO  [DATA_PIPELINE] Initializing Data Collection Pipeline
 2025-07-22T02:21:05.456Z INFO  [DATA_PIPELINE] Loading pipeline configuration
+2025-07-22T03:21:41.488Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T03:21:41.490Z INFO  [EMAIL_AGENT] Analyzing email: Order Confirmation - PO #12345678
+2025-07-22T03:21:41.502Z INFO  [EMAIL_CACHE] Email analysis cache initialized {"maxSize":500,"ttl":"1800s"}
+2025-07-22T03:21:41.673Z INFO  [DATA_PIPELINE] Initializing Data Collection Pipeline
+2025-07-22T03:21:41.674Z INFO  [DATA_PIPELINE] Loading pipeline configuration
+2025-07-22T03:21:41.674Z INFO  [DATA_PIPELINE] Data Collection Pipeline initialized successfully
+2025-07-22T03:21:41.675Z INFO  [DATA_PIPELINE] Data Collection Pipeline shutdown
+2025-07-22T03:21:41.675Z INFO  [DATA_PIPELINE] Initializing Data Collection Pipeline
+2025-07-22T03:21:41.675Z INFO  [DATA_PIPELINE] Loading pipeline configuration
+2025-07-22T03:21:41.675Z INFO  [DATA_PIPELINE] Data Collection Pipeline initialized successfully
+2025-07-22T03:21:43.926Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"model":"phi3:mini","ollamaUrl":"http://localhost:11434","database":{},"rag":{"vectorStore":{"type":"chromadb","path":"./test-data/chroma-test","collectionName":"test-collection","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":false}}}}
+2025-07-22T03:21:43.929Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:43.929Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:43.929Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:44.055Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T03:21:44.056Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:21:44.056Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:21:44.056Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:21:44.056Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T03:21:44.056Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T03:21:44.056Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T03:21:44.056Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T03:21:44.058Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"model":"phi3:mini","ollamaUrl":"http://localhost:11434","database":{},"rag":{"vectorStore":{"type":"chromadb","path":"./test-data/chroma-test","collectionName":"test-collection","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":false}}}}
+2025-07-22T03:21:44.058Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:44.058Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:44.058Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:44.083Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T03:21:44.083Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:21:44.083Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:21:44.083Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:21:44.083Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T03:21:44.083Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T03:21:44.083Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T03:21:44.083Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T03:21:44.084Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"model":"phi3:mini","ollamaUrl":"http://localhost:11434","database":{},"rag":{"vectorStore":{"type":"chromadb","path":"./test-data/chroma-test","collectionName":"test-collection","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":false}}}}
+2025-07-22T03:21:44.084Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:44.084Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:44.084Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:44.071Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:21:44.072Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:21:44.072Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:21:44.073Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:21:44.073Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:21:44.112Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T03:21:44.113Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:21:44.113Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:21:44.113Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:21:44.113Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T03:21:44.113Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T03:21:44.113Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T03:21:44.113Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T03:21:44.114Z INFO  [ORCHESTRATOR] Processing query {"query":"Hello, test","conversationId":"test-conv-1"}
+2025-07-22T03:21:44.116Z INFO  [PARSER] Query analysis completed {"intent":"test","complexity":1,"domains":2,"priority":"medium","estimatedDuration":60}
+2025-07-22T03:21:44.116Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"test","complexity":1,"domains":["testing","development"],"priority":"medium","estimatedDuration":60}
+2025-07-22T03:21:44.116Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T03:21:44.116Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T03:21:44.116Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T03:21:44.116Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T03:21:44.715Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","collectionName":"test-collection"},"chunking":{"size":500,"overlap":50},"retrieval":{"topK":5,"minScore":0.7}}}}
+2025-07-22T03:21:44.722Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:44.723Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:44.723Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:44.730Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","collectionName":"test-collection"},"chunking":{"size":500,"overlap":50},"retrieval":{"topK":5,"minScore":0.7}}}}
+2025-07-22T03:21:44.731Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:44.731Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:44.732Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:44.732Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","collectionName":"test-collection"},"chunking":{"size":500,"overlap":50},"retrieval":{"topK":5,"minScore":0.7}}}}
+2025-07-22T03:21:44.733Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:44.733Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:44.733Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:44.734Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","collectionName":"test-collection"},"chunking":{"size":500,"overlap":50},"retrieval":{"topK":5,"minScore":0.7}}}}
+2025-07-22T03:21:44.735Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:44.735Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:44.735Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:44.735Z INFO  [ORCHESTRATOR] Processing query {"query":"Research artificial intelligence","conversationId":"test-conv"}
+2025-07-22T03:21:44.736Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":1,"domains":2,"priority":"medium","estimatedDuration":60}
+2025-07-22T03:21:44.736Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":1,"domains":["research","development"],"priority":"medium","estimatedDuration":60}
+2025-07-22T03:21:44.736Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T03:21:44.736Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T03:21:44.736Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T03:21:44.737Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T03:21:44.802Z INFO  [ORCHESTRATOR] Query processing completed {"success":false,"attempts":1,"totalSteps":1}
+2025-07-22T03:21:44.805Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","collectionName":"test-collection"},"chunking":{"size":500,"overlap":50},"retrieval":{"topK":5,"minScore":0.7}}}}
+2025-07-22T03:21:44.805Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:44.805Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:44.805Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:44.806Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","collectionName":"test-collection"},"chunking":{"size":500,"overlap":50},"retrieval":{"topK":5,"minScore":0.7}}}}
+2025-07-22T03:21:44.806Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:44.806Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:44.806Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:44.806Z INFO  [ORCHESTRATOR] Processing query {"query":"Test network failure","conversationId":"test-conv"}
+2025-07-22T03:21:44.807Z INFO  [PARSER] Query analysis completed {"intent":"test","complexity":2,"domains":2,"priority":"medium","estimatedDuration":90}
+2025-07-22T03:21:44.807Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"test","complexity":2,"domains":["testing","development"],"priority":"medium","estimatedDuration":90}
+2025-07-22T03:21:44.807Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T03:21:44.807Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T03:21:44.807Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T03:21:44.808Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T03:21:44.834Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:21:44.834Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:21:44.834Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:21:49.119Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"model":"phi3:mini","ollamaUrl":"http://localhost:11434","database":{},"rag":{"vectorStore":{"type":"chromadb","path":"./test-data/chroma-test","collectionName":"test-collection","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":false}}}}
+2025-07-22T03:21:49.120Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:49.120Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:49.121Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:49.142Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T03:21:49.143Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:21:49.143Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:21:49.143Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:21:49.143Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T03:21:49.143Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T03:21:49.143Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T03:21:49.143Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T03:21:49.144Z INFO  [ORCHESTRATOR] Processing query {"query":"Test with metadata","conversationId":"test-conv-2"}
+2025-07-22T03:21:49.145Z INFO  [PARSER] Query analysis completed {"intent":"test","complexity":1,"domains":3,"priority":"medium","estimatedDuration":75}
+2025-07-22T03:21:49.146Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"test","complexity":1,"domains":["testing","development","data"],"priority":"medium","estimatedDuration":75}
+2025-07-22T03:21:49.146Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T03:21:49.146Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T03:21:49.146Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T03:21:49.146Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T03:21:54.147Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"model":"phi3:mini","ollamaUrl":"http://localhost:11434","database":{},"rag":{"vectorStore":{"type":"chromadb","path":"./test-data/chroma-test","collectionName":"test-collection","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":false}}}}
+2025-07-22T03:21:54.147Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:54.147Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:54.147Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:54.177Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T03:21:54.178Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:21:54.178Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:21:54.178Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:21:54.178Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T03:21:54.179Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T03:21:54.179Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T03:21:54.179Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T03:21:54.179Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T03:21:54.184Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"model":"phi3:mini","ollamaUrl":"http://localhost:11434","database":{},"rag":{"vectorStore":{"type":"chromadb","path":"./test-data/chroma-test","collectionName":"test-collection","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":false}}}}
+2025-07-22T03:21:54.184Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:54.184Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:54.184Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:54.199Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T03:21:54.199Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:21:54.199Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:21:54.199Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:21:54.199Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T03:21:54.199Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T03:21:54.199Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T03:21:54.199Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T03:21:54.200Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"model":"phi3:mini","ollamaUrl":"http://localhost:11434","database":{},"rag":{"vectorStore":{"type":"chromadb","path":"./test-data/chroma-test","collectionName":"test-collection","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":false}}}}
+2025-07-22T03:21:54.200Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:54.200Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:54.200Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:54.216Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T03:21:54.216Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:21:54.216Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:21:54.216Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:21:54.216Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T03:21:54.216Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T03:21:54.216Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T03:21:54.216Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T03:21:54.216Z INFO  [ORCHESTRATOR] Processing query {"query":"Database test","conversationId":"test-conv-4"}
+2025-07-22T03:21:54.216Z INFO  [PARSER] Query analysis completed {"intent":"test","complexity":2,"domains":3,"priority":"medium","estimatedDuration":105}
+2025-07-22T03:21:54.216Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"test","complexity":2,"domains":["testing","development","data"],"priority":"medium","estimatedDuration":105}
+2025-07-22T03:21:54.216Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T03:21:54.217Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T03:21:54.217Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T03:21:54.217Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T03:21:55.875Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}
+2025-07-22T03:21:55.876Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 11762ms {"success":true}
+2025-07-22T03:21:58.937Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}
+2025-07-22T03:21:59.219Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"model":"phi3:mini","ollamaUrl":"http://localhost:11434","database":{},"rag":{"vectorStore":{"type":"chromadb","path":"./test-data/chroma-test","collectionName":"test-collection","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":false}}}}
+2025-07-22T03:21:59.220Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:21:59.220Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:21:59.220Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:21:59.238Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T03:21:59.238Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:21:59.238Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:21:59.238Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:21:59.238Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T03:21:59.238Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T03:21:59.238Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T03:21:59.238Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T03:21:59.238Z INFO  [ORCHESTRATOR] Processing query {"query":"","conversationId":"test-conv-5"}
+2025-07-22T03:22:03.893Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}
+2025-07-22T03:22:04.242Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"model":"phi3:mini","ollamaUrl":"http://localhost:11434","database":{},"rag":{"vectorStore":{"type":"chromadb","path":"./test-data/chroma-test","collectionName":"test-collection","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":false}}}}
+2025-07-22T03:22:04.243Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:22:04.243Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:22:04.243Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:22:04.251Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T03:22:04.251Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:22:04.252Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:22:04.252Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:22:04.252Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T03:22:04.252Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T03:22:04.252Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T03:22:04.252Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T03:22:04.252Z INFO  [ORCHESTRATOR] Processing query {"query":"No conversation ID","conversationId":""}
+2025-07-22T03:22:08.303Z INFO  [PARSER] Query analysis completed {"intent":"other","complexity":1,"domains":1,"priority":"medium","estimatedDuration":45}
+2025-07-22T03:22:08.303Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"other","complexity":1,"domains":["development"],"priority":"medium","estimatedDuration":45}
+2025-07-22T03:22:08.304Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T03:22:08.304Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T03:22:08.304Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T03:22:08.304Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T03:22:08.308Z INFO  [PARSER] Query analysis completed {"intent":"other","complexity":1,"domains":1,"priority":"medium","estimatedDuration":45}
+2025-07-22T03:22:08.308Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"other","complexity":1,"domains":["development"],"priority":"medium","estimatedDuration":45}
+2025-07-22T03:22:08.308Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T03:22:08.308Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T03:22:08.308Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T03:22:08.308Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T03:34:48.928Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T03:34:48.929Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T03:34:48.955Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T03:34:48.955Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T03:34:48.956Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T03:34:48.957Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T03:34:48.957Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T03:34:48.957Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T03:34:48.957Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155288957_ui1rpgg63","pattern":"email_table_view"}
+2025-07-22T03:34:48.957Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155288957_ovfa7g793","pattern":"workflow_analytics"}
+2025-07-22T03:34:48.957Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T03:34:48.957Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T03:34:49.005Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T03:34:49.005Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T03:34:49.006Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T03:34:49.006Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T03:34:49.006Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T03:34:49.006Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155289006_nbgg0o917","pattern":"email_table_view"}
+2025-07-22T03:34:49.006Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155289006_7wm82gv0l","pattern":"workflow_analytics"}
+2025-07-22T03:34:49.006Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T03:34:49.007Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T03:34:49.157Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T03:34:49.158Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T03:34:49.158Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T03:34:49.158Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T03:34:49.158Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T03:34:49.159Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155289159_axknuzv9k","pattern":"email_table_view"}
+2025-07-22T03:34:49.159Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155289159_on2wn41fc","pattern":"workflow_analytics"}
+2025-07-22T03:34:49.159Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T03:34:49.165Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"UNCAUGHT_EXCEPTION"}
+2025-07-22T03:34:49.165Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T03:34:49.166Z INFO  [CLEANUP] Starting service cleanup {"taskCount":5}
+2025-07-22T03:34:49.166Z INFO  [CLEANUP] Cleaning up: Active agent tasks
+2025-07-22T03:34:49.166Z INFO  [CLEANUP] Agent tasks terminated
+2025-07-22T03:34:49.166Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"UNCAUGHT_EXCEPTION"}
+2025-07-22T03:34:49.166Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T03:34:49.166Z WARN  [CLEANUP] Cleanup already in progress
+2025-07-22T03:34:49.166Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T03:34:49.166Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T03:34:49.166Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T03:34:49.166Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T03:34:49.166Z INFO  [CLEANUP] Cleaned up: Active agent tasks
+2025-07-22T03:34:49.166Z INFO  [CLEANUP] Cleaning up: LLM connections
+2025-07-22T03:34:49.166Z INFO  [CLEANUP] LLM connections closed
+2025-07-22T03:34:49.166Z INFO  [CLEANUP] Cleaned up: LLM connections
+2025-07-22T03:34:49.167Z INFO  [CLEANUP] Cleaning up: Database connections
+2025-07-22T03:34:49.168Z INFO  [CLEANUP] Database connections closed
+2025-07-22T03:34:49.168Z INFO  [CLEANUP] Cleaned up: Database connections
+2025-07-22T03:34:49.168Z INFO  [CLEANUP] Cleaning up: Temporary files
+2025-07-22T03:34:49.168Z INFO  [CLEANUP] Temporary files cleaned
+2025-07-22T03:34:49.168Z INFO  [CLEANUP] Cleaned up: Temporary files
+2025-07-22T03:34:49.168Z INFO  [CLEANUP] Cleaning up: Expired authentication tokens
+2025-07-22T03:34:49.170Z INFO  [CLEANUP] Expired tokens cleaned
+2025-07-22T03:34:49.170Z INFO  [CLEANUP] Cleaned up: Expired authentication tokens
+2025-07-22T03:34:49.170Z INFO  [CLEANUP] Service cleanup completed {"successful":5,"failed":0,"errors":[]}
+2025-07-22T03:34:49.171Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T03:34:49.172Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T03:34:49.172Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T03:34:49.172Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully
+2025-07-22T03:35:08.669Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T03:35:08.670Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T03:35:08.682Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T03:35:08.682Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T03:35:08.683Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T03:35:08.684Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T03:35:08.684Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T03:35:08.684Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T03:35:08.684Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155308684_9gchz3cvi","pattern":"email_table_view"}
+2025-07-22T03:35:08.684Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155308684_xfoozom03","pattern":"workflow_analytics"}
+2025-07-22T03:35:08.684Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T03:35:08.684Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T03:35:08.712Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T03:35:08.712Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T03:35:08.713Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T03:35:08.714Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T03:35:08.714Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T03:35:08.714Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155308714_oorvy4zad","pattern":"email_table_view"}
+2025-07-22T03:35:08.714Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155308714_jvdgfzbm6","pattern":"workflow_analytics"}
+2025-07-22T03:35:08.714Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T03:35:08.715Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T03:35:08.793Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T03:35:08.793Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T03:35:08.794Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T03:35:08.794Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T03:35:08.795Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T03:35:08.795Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155308795_31bv94kgg","pattern":"email_table_view"}
+2025-07-22T03:35:08.795Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155308795_40xd5ao3v","pattern":"workflow_analytics"}
+2025-07-22T03:35:08.795Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T03:35:08.801Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T03:35:08.807Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T03:35:08.808Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T03:35:08.808Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T03:35:08.808Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully
+2025-07-22T03:39:18.616Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T03:39:18.617Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T03:39:18.630Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T03:39:18.631Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T03:39:18.631Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T03:39:18.632Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T03:39:18.632Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T03:39:18.632Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T03:39:18.633Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155558633_4f4ep6ka5","pattern":"email_table_view"}
+2025-07-22T03:39:18.633Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155558633_kartlka3w","pattern":"workflow_analytics"}
+2025-07-22T03:39:18.633Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T03:39:18.633Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T03:39:18.666Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T03:39:18.666Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T03:39:18.667Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T03:39:18.668Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T03:39:18.668Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T03:39:18.668Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155558668_xwtom1nw2","pattern":"email_table_view"}
+2025-07-22T03:39:18.668Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155558668_9dxtsxw8c","pattern":"workflow_analytics"}
+2025-07-22T03:39:18.668Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T03:39:18.669Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T03:39:18.757Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T03:39:18.757Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T03:39:18.757Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T03:39:18.758Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T03:39:18.758Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T03:39:18.758Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155558758_dh7kmownv","pattern":"email_table_view"}
+2025-07-22T03:39:18.759Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753155558759_9vr9ai35r","pattern":"workflow_analytics"}
+2025-07-22T03:39:18.759Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T03:39:18.768Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T03:39:18.776Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T03:39:18.778Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T03:39:18.778Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T03:39:18.778Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully
+2025-07-22T03:39:21.248Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T03:39:21.249Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:39:21.249Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:39:21.249Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:39:21.334Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T03:39:21.335Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:39:21.335Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:39:21.335Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:39:21.335Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T03:39:21.335Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T03:39:21.335Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T03:39:21.335Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T03:56:59.914Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T03:56:59.916Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T03:56:59.928Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T03:56:59.928Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T03:56:59.929Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T03:56:59.947Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T03:56:59.948Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T03:56:59.948Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T03:56:59.948Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753156619948_syoiibuwz","pattern":"email_table_view"}
+2025-07-22T03:56:59.949Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753156619949_9yybab9ve","pattern":"workflow_analytics"}
+2025-07-22T03:56:59.949Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T03:56:59.949Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T03:56:59.983Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T03:56:59.984Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T03:56:59.984Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T03:56:59.985Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T03:56:59.985Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T03:56:59.985Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753156619985_f5onthf3s","pattern":"email_table_view"}
+2025-07-22T03:56:59.985Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753156619985_bff0odw0u","pattern":"workflow_analytics"}
+2025-07-22T03:56:59.985Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T03:56:59.986Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T03:57:00.072Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T03:57:00.072Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T03:57:00.072Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T03:57:00.073Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T03:57:00.073Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T03:57:00.073Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753156620073_auy85nw3c","pattern":"email_table_view"}
+2025-07-22T03:57:00.073Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753156620073_r60xzc53r","pattern":"workflow_analytics"}
+2025-07-22T03:57:00.073Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T03:57:00.081Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T03:57:00.088Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T03:57:00.089Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T03:57:00.089Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T03:57:00.089Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully
+2025-07-22T03:57:01.687Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T03:57:01.688Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T03:57:01.688Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T03:57:01.688Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T03:57:01.717Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T03:57:01.718Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T03:57:01.718Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T03:57:01.718Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T03:57:01.718Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T03:57:01.718Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T03:57:01.718Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T03:57:01.718Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T04:09:34.832Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T04:09:34.833Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T04:09:34.846Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T04:09:34.847Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T04:09:34.847Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T04:09:34.848Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T04:09:34.848Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T04:09:34.849Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T04:09:34.849Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753157374849_jflr59dxh","pattern":"email_table_view"}
+2025-07-22T04:09:34.849Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753157374849_3eiihkh0g","pattern":"workflow_analytics"}
+2025-07-22T04:09:34.849Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T04:09:34.849Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T04:09:34.880Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T04:09:34.880Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T04:09:34.881Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T04:09:34.882Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T04:09:34.882Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T04:09:34.882Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753157374882_wmo85c0bv","pattern":"email_table_view"}
+2025-07-22T04:09:34.882Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753157374882_sgzu3z7uk","pattern":"workflow_analytics"}
+2025-07-22T04:09:34.882Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T04:09:34.883Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T04:09:34.972Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T04:09:34.972Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T04:09:34.973Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T04:09:34.973Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T04:09:34.973Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T04:09:34.973Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753157374973_jzdb22t2h","pattern":"email_table_view"}
+2025-07-22T04:09:34.973Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753157374973_s40p004gk","pattern":"workflow_analytics"}
+2025-07-22T04:09:34.973Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T04:09:34.985Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T04:09:34.992Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T04:09:34.999Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T04:09:34.999Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T04:09:34.999Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully
+2025-07-22T04:09:36.971Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T04:09:36.971Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T04:09:36.971Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T04:09:36.972Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T04:09:37.001Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T04:09:37.001Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T04:09:37.001Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T04:09:37.001Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T04:09:37.001Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T04:09:37.001Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T04:09:37.001Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T04:09:37.001Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T04:21:19.046Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"SIGTERM"}
+2025-07-22T04:21:19.047Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T04:21:19.047Z INFO  [CLEANUP] Starting service cleanup {"taskCount":5}
+2025-07-22T04:21:19.047Z INFO  [CLEANUP] Cleaning up: Active agent tasks
+2025-07-22T04:21:19.047Z INFO  [CLEANUP] Agent tasks terminated
+2025-07-22T04:21:19.047Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T04:21:19.047Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T04:21:19.047Z INFO  [CLEANUP] Cleaned up: Active agent tasks
+2025-07-22T04:21:19.048Z INFO  [CLEANUP] Cleaning up: LLM connections
+2025-07-22T04:21:19.048Z INFO  [CLEANUP] LLM connections closed
+2025-07-22T04:21:19.048Z INFO  [CLEANUP] Cleaned up: LLM connections
+2025-07-22T04:21:19.048Z INFO  [CLEANUP] Cleaning up: Database connections
+2025-07-22T04:21:19.050Z INFO  [CLEANUP] Database connections closed
+2025-07-22T04:21:19.050Z INFO  [CLEANUP] Cleaned up: Database connections
+2025-07-22T04:21:19.050Z INFO  [CLEANUP] Cleaning up: Temporary files
+2025-07-22T04:21:19.050Z INFO  [CLEANUP] Temporary files cleaned
+2025-07-22T04:21:19.050Z INFO  [CLEANUP] Cleaned up: Temporary files
+2025-07-22T04:21:19.050Z INFO  [CLEANUP] Cleaning up: Expired authentication tokens
+2025-07-22T04:21:19.052Z INFO  [CLEANUP] Expired tokens cleaned
+2025-07-22T04:21:19.052Z INFO  [CLEANUP] Cleaned up: Expired authentication tokens
+2025-07-22T04:21:19.052Z INFO  [CLEANUP] Service cleanup completed {"successful":5,"failed":0,"errors":[]}
+2025-07-22T04:21:43.798Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T04:21:43.800Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T04:21:43.811Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T04:21:43.811Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T04:21:43.812Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T04:21:43.813Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T04:21:43.813Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T04:21:43.813Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T04:21:43.814Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753158103813_jgkodnfbw","pattern":"email_table_view"}
+2025-07-22T04:21:43.814Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753158103814_g3tey24zh","pattern":"workflow_analytics"}
+2025-07-22T04:21:43.814Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T04:21:43.814Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T04:21:43.844Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T04:21:43.844Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T04:21:43.845Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T04:21:43.845Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T04:21:43.845Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T04:21:43.845Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753158103845_25z1ywwdf","pattern":"email_table_view"}
+2025-07-22T04:21:43.846Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753158103846_eou9u6wwh","pattern":"workflow_analytics"}
+2025-07-22T04:21:43.846Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T04:21:43.846Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T04:21:43.934Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T04:21:43.934Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T04:21:43.934Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T04:21:43.935Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T04:21:43.935Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T04:21:43.935Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753158103935_hxb1a5fds","pattern":"email_table_view"}
+2025-07-22T04:21:43.935Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753158103935_6de3r58f5","pattern":"workflow_analytics"}
+2025-07-22T04:21:43.935Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T04:21:43.944Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T04:21:43.953Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T04:21:43.958Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T04:21:43.958Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T04:21:43.959Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully
+2025-07-22T04:21:44.048Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T04:21:44.050Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T04:21:44.050Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T04:21:44.050Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T04:21:44.084Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T04:21:44.085Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T04:21:44.085Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T04:21:44.085Z INFO  [AGENT] Agent ResearchAgent initialized successfully
+2025-07-22T04:21:44.085Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T04:21:44.086Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T04:21:44.086Z INFO  [AGENT] Agent CodeAgent initialized successfully
+2025-07-22T04:21:44.086Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T04:23:14.784Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753158194783","messageLength":151,"priority":"medium","requestId":"fwcgyf"}
+2025-07-22T04:23:14.786Z INFO  [ORCHESTRATOR] Processing query {"query":"I need help debugging a TypeScript error in my React component. Can you also research the best pract","conversationId":"03b57d71-5e76-403a-86a6-7a227ba28987"}
+2025-07-22T04:23:14.788Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":2,"domains":3,"priority":"medium","estimatedDuration":105}
+2025-07-22T04:23:14.788Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":2,"domains":["research","development","web"],"priority":"medium","estimatedDuration":105}
+2025-07-22T04:23:14.788Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T04:23:14.788Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T04:23:14.789Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T04:23:14.789Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T04:23:15.435Z INFO  [ORCHESTRATOR] Query processing completed {"success":false,"attempts":1,"totalSteps":1}
+2025-07-22T04:23:15.437Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"03b57d71-5e76-403a-86a6-7a227ba28987","userId":"guest-::1-1753158194783","responseLength":0}
+2025-07-22T04:36:42.430Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753159002430","messageLength":351,"priority":"medium","requestId":"5pr1wt"}
+2025-07-22T04:36:42.431Z INFO  [ORCHESTRATOR] Processing query {"query":"Find current irrigation specialists to assist with a cracked, leaking sprinkler head from a root gro","conversationId":"566fd45d-c4d0-4892-bca6-b80dea7dfcef"}
+2025-07-22T04:36:42.432Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":3,"domains":2,"priority":"medium","estimatedDuration":120}
+2025-07-22T04:36:42.432Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":3,"domains":["research","development"],"priority":"medium","estimatedDuration":120}
+2025-07-22T04:36:42.432Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T04:36:42.432Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T04:36:42.432Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T04:36:42.433Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T04:36:42.850Z INFO  [ORCHESTRATOR] Query processing completed {"success":false,"attempts":1,"totalSteps":1}
+2025-07-22T04:36:42.851Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"566fd45d-c4d0-4892-bca6-b80dea7dfcef","userId":"guest-::1-1753159002430","responseLength":0}
+2025-07-22T04:39:06.280Z INFO  [CHAT] Processing chat message {"conversationId":"566fd45d-c4d0-4892-bca6-b80dea7dfcef","userId":"guest-::1-1753159146280","messageLength":351,"requestId":"962h3s"}
+2025-07-22T04:39:06.281Z INFO  [ORCHESTRATOR] Processing query {"query":"Find current irrigation specialists to assist with a cracked, leaking sprinkler head from a root gro","conversationId":"566fd45d-c4d0-4892-bca6-b80dea7dfcef"}
+2025-07-22T04:39:06.282Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":3,"domains":2,"priority":"medium","estimatedDuration":120}
+2025-07-22T04:39:06.282Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":3,"domains":["research","development"],"priority":"medium","estimatedDuration":120}
+2025-07-22T04:39:06.282Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T04:39:06.282Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T04:39:06.282Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T04:39:06.283Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T04:39:06.376Z INFO  [ORCHESTRATOR] Query processing completed {"success":false,"attempts":1,"totalSteps":1}
+2025-07-22T04:40:55.668Z INFO  [CHAT] Processing chat message {"conversationId":"566fd45d-c4d0-4892-bca6-b80dea7dfcef","userId":"guest-::1-1753159255667","messageLength":351,"requestId":"3yi2vu"}
+2025-07-22T04:40:55.669Z INFO  [ORCHESTRATOR] Processing query {"query":"Find current irrigation specialists to assist with a cracked, leaking sprinkler head from a root gro","conversationId":"566fd45d-c4d0-4892-bca6-b80dea7dfcef"}
+2025-07-22T04:40:55.669Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":3,"domains":2,"priority":"medium","estimatedDuration":120}
+2025-07-22T04:40:55.669Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":3,"domains":["research","development"],"priority":"medium","estimatedDuration":120}
+2025-07-22T04:40:55.669Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T04:40:55.669Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T04:40:55.669Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T04:40:55.669Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T04:40:55.776Z INFO  [ORCHESTRATOR] Query processing completed {"success":false,"attempts":1,"totalSteps":1}
+2025-07-22T04:56:32.830Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"SIGTERM"}
+2025-07-22T04:56:32.831Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T04:56:32.832Z INFO  [CLEANUP] Starting service cleanup {"taskCount":5}
+2025-07-22T04:56:32.832Z INFO  [CLEANUP] Cleaning up: Active agent tasks
+2025-07-22T04:56:32.832Z INFO  [CLEANUP] Agent tasks terminated
+2025-07-22T04:56:32.832Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T04:56:32.832Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T04:56:32.832Z INFO  [CLEANUP] Cleaned up: Active agent tasks
+2025-07-22T04:56:32.833Z INFO  [CLEANUP] Cleaning up: LLM connections
+2025-07-22T04:56:32.833Z INFO  [CLEANUP] LLM connections closed
+2025-07-22T04:56:32.833Z INFO  [CLEANUP] Cleaned up: LLM connections
+2025-07-22T04:56:32.833Z INFO  [CLEANUP] Cleaning up: Database connections
+2025-07-22T04:56:32.836Z INFO  [CLEANUP] Database connections closed
+2025-07-22T04:56:32.836Z INFO  [CLEANUP] Cleaned up: Database connections
+2025-07-22T04:56:32.836Z INFO  [CLEANUP] Cleaning up: Temporary files
+2025-07-22T04:56:32.836Z INFO  [CLEANUP] Temporary files cleaned
+2025-07-22T04:56:32.836Z INFO  [CLEANUP] Cleaned up: Temporary files
+2025-07-22T04:56:32.836Z INFO  [CLEANUP] Cleaning up: Expired authentication tokens
+2025-07-22T04:56:32.839Z INFO  [CLEANUP] Expired tokens cleaned
+2025-07-22T04:56:32.839Z INFO  [CLEANUP] Cleaned up: Expired authentication tokens
+2025-07-22T04:56:32.839Z INFO  [CLEANUP] Service cleanup completed {"successful":5,"failed":0,"errors":[]}
+2025-07-22T04:56:38.675Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T04:56:38.680Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T04:56:38.688Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T04:56:38.689Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T04:56:38.689Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T04:56:38.691Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T04:56:38.691Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T04:56:38.691Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T04:56:38.692Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753160198692_fkyfbhpol","pattern":"email_table_view"}
+2025-07-22T04:56:38.692Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753160198692_mu971ceix","pattern":"workflow_analytics"}
+2025-07-22T04:56:38.692Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T04:56:38.692Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T04:56:38.725Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T04:56:38.725Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T04:56:38.726Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T04:56:38.727Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T04:56:38.727Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T04:56:38.727Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753160198727_biqmrcp5a","pattern":"email_table_view"}
+2025-07-22T04:56:38.727Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753160198727_kjdiubzws","pattern":"workflow_analytics"}
+2025-07-22T04:56:38.727Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T04:56:38.728Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T04:56:38.828Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T04:56:38.828Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T04:56:38.828Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T04:56:38.830Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T04:56:38.830Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T04:56:38.830Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753160198830_t32yykx1a","pattern":"email_table_view"}
+2025-07-22T04:56:38.830Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753160198830_2jxkubq4r","pattern":"workflow_analytics"}
+2025-07-22T04:56:38.830Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T04:56:38.839Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T04:56:38.843Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T04:56:38.843Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T04:56:38.843Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T04:56:38.844Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T04:56:39.073Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T04:56:39.074Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T04:56:39.074Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T04:56:39.074Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T04:56:39.102Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T04:56:39.103Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T04:56:39.103Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T04:56:39.103Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T04:56:39.103Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T04:56:39.103Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T04:56:39.103Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools
+2025-07-22T04:56:39.103Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T04:57:03.161Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T04:57:03.162Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T04:57:03.169Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T04:57:03.169Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T04:57:03.170Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T04:57:03.172Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T04:57:03.172Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T04:57:03.172Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T04:57:03.173Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753160223172_vrsejiaub","pattern":"email_table_view"}
+2025-07-22T04:57:03.173Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753160223173_n9o58jdom","pattern":"workflow_analytics"}
+2025-07-22T04:57:03.173Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T04:57:03.173Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T04:57:03.210Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T04:57:03.210Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T04:57:03.211Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T04:57:03.213Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T04:57:03.213Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T04:57:03.213Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753160223213_w9qyaclvq","pattern":"email_table_view"}
+2025-07-22T04:57:03.213Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753160223213_nx7o8qdwf","pattern":"workflow_analytics"}
+2025-07-22T04:57:03.213Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T04:57:03.214Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T04:57:03.321Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T04:57:03.321Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T04:57:03.322Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T04:57:03.323Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T04:57:03.323Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T04:57:03.324Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753160223324_8sx8cejik","pattern":"email_table_view"}
+2025-07-22T04:57:03.324Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753160223324_541udcw0u","pattern":"workflow_analytics"}
+2025-07-22T04:57:03.324Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T04:57:03.332Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T04:57:03.341Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T04:57:03.348Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T04:57:03.348Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T04:57:03.348Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T04:57:03.386Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T04:57:03.387Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T04:57:03.387Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T04:57:03.387Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T04:57:03.415Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T04:57:03.416Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T04:57:03.416Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T04:57:03.416Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T04:57:03.416Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T04:57:03.416Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T04:57:03.416Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools
+2025-07-22T04:57:03.416Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T05:00:50.308Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T05:00:50.309Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T05:00:50.310Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T11:34:18.629Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"SIGTERM"}
+2025-07-22T11:34:18.631Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T11:34:18.631Z INFO  [CLEANUP] Starting service cleanup {"taskCount":5}
+2025-07-22T11:34:18.631Z INFO  [CLEANUP] Cleaning up: Active agent tasks
+2025-07-22T11:34:18.631Z INFO  [CLEANUP] Agent tasks terminated
+2025-07-22T11:34:18.631Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T11:34:18.631Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T11:34:18.631Z INFO  [CLEANUP] Cleaned up: Active agent tasks
+2025-07-22T11:34:18.631Z INFO  [CLEANUP] Cleaning up: LLM connections
+2025-07-22T11:34:18.631Z INFO  [CLEANUP] LLM connections closed
+2025-07-22T11:34:18.632Z INFO  [CLEANUP] Cleaned up: LLM connections
+2025-07-22T11:34:18.632Z INFO  [CLEANUP] Cleaning up: Database connections
+2025-07-22T11:34:18.635Z INFO  [CLEANUP] Database connections closed
+2025-07-22T11:34:18.636Z INFO  [CLEANUP] Cleaned up: Database connections
+2025-07-22T11:34:18.636Z INFO  [CLEANUP] Cleaning up: Temporary files
+2025-07-22T11:34:18.636Z INFO  [CLEANUP] Temporary files cleaned
+2025-07-22T11:34:18.636Z INFO  [CLEANUP] Cleaned up: Temporary files
+2025-07-22T11:34:18.636Z INFO  [CLEANUP] Cleaning up: Expired authentication tokens
+2025-07-22T11:34:18.637Z INFO  [CLEANUP] Expired tokens cleaned
+2025-07-22T11:34:18.637Z INFO  [CLEANUP] Cleaned up: Expired authentication tokens
+2025-07-22T11:34:18.637Z INFO  [CLEANUP] Service cleanup completed {"successful":5,"failed":0,"errors":[]}
+2025-07-22T11:34:26.862Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T11:34:26.864Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T11:34:26.875Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T11:34:26.875Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T11:34:26.876Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T11:34:26.877Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T11:34:26.878Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T11:34:26.878Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T11:34:26.878Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753184066878_89aczraf3","pattern":"email_table_view"}
+2025-07-22T11:34:26.878Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753184066878_6trb8hhvk","pattern":"workflow_analytics"}
+2025-07-22T11:34:26.878Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T11:34:26.879Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T11:34:26.930Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T11:34:26.931Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T11:34:26.931Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T11:34:26.934Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T11:34:26.934Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T11:34:26.934Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753184066934_1d76bh5n5","pattern":"email_table_view"}
+2025-07-22T11:34:26.934Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753184066934_hq2oy47pb","pattern":"workflow_analytics"}
+2025-07-22T11:34:26.934Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T11:34:26.936Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T11:34:27.042Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T11:34:27.043Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T11:34:27.043Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T11:34:27.046Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T11:34:27.046Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T11:34:27.046Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753184067046_siojh77ow","pattern":"email_table_view"}
+2025-07-22T11:34:27.046Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753184067046_yt7w49uaq","pattern":"workflow_analytics"}
+2025-07-22T11:34:27.046Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T11:34:27.060Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T11:34:27.071Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T11:34:27.079Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T11:34:27.080Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T11:34:27.080Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T11:34:28.187Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T11:34:28.189Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T11:34:28.189Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T11:34:28.189Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T11:34:28.233Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T11:34:28.233Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T11:34:28.233Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T11:34:28.234Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T11:34:28.234Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T11:34:28.234Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T11:34:28.235Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools
+2025-07-22T11:34:28.235Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T11:37:10.711Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753184230710","messageLength":46,"priority":"medium","requestId":"fe4z0x"}
+2025-07-22T11:37:10.712Z INFO  [ORCHESTRATOR] Processing query {"query":"Find irrigation specialists in Spartanburg, SC","conversationId":"dd2d17fe-9297-4355-8f81-9d6923983b3e"}
+2025-07-22T11:37:10.714Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":1,"domains":2,"priority":"medium","estimatedDuration":60}
+2025-07-22T11:37:10.714Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":1,"domains":["research","development"],"priority":"medium","estimatedDuration":60}
+2025-07-22T11:37:10.715Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T11:37:10.715Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T11:37:10.715Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T11:37:10.715Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T11:37:11.325Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}
+2025-07-22T11:37:11.326Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"dd2d17fe-9297-4355-8f81-9d6923983b3e","userId":"guest-::1-1753184230710","responseLength":0}
+2025-07-22T13:40:31.538Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"SIGTERM"}
+2025-07-22T13:40:31.540Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T13:40:31.540Z INFO  [CLEANUP] Starting service cleanup {"taskCount":5}
+2025-07-22T13:40:31.541Z INFO  [CLEANUP] Cleaning up: Active agent tasks
+2025-07-22T13:40:31.541Z INFO  [CLEANUP] Agent tasks terminated
+2025-07-22T13:40:31.541Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T13:40:31.541Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T13:40:31.541Z INFO  [CLEANUP] Cleaned up: Active agent tasks
+2025-07-22T13:40:31.541Z INFO  [CLEANUP] Cleaning up: LLM connections
+2025-07-22T13:40:31.541Z INFO  [CLEANUP] LLM connections closed
+2025-07-22T13:40:31.542Z INFO  [CLEANUP] Cleaned up: LLM connections
+2025-07-22T13:40:31.542Z INFO  [CLEANUP] Cleaning up: Database connections
+2025-07-22T13:40:31.544Z INFO  [CLEANUP] Database connections closed
+2025-07-22T13:40:31.545Z INFO  [CLEANUP] Cleaned up: Database connections
+2025-07-22T13:40:31.545Z INFO  [CLEANUP] Cleaning up: Temporary files
+2025-07-22T13:40:31.545Z INFO  [CLEANUP] Temporary files cleaned
+2025-07-22T13:40:31.545Z INFO  [CLEANUP] Cleaned up: Temporary files
+2025-07-22T13:40:31.545Z INFO  [CLEANUP] Cleaning up: Expired authentication tokens
+2025-07-22T13:40:31.550Z INFO  [CLEANUP] Expired tokens cleaned
+2025-07-22T13:40:31.551Z INFO  [CLEANUP] Cleaned up: Expired authentication tokens
+2025-07-22T13:40:31.551Z INFO  [CLEANUP] Service cleanup completed {"successful":5,"failed":0,"errors":[]}
+2025-07-22T13:42:20.583Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T13:42:20.587Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T13:42:20.609Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T13:42:20.609Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T13:42:20.610Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T13:42:20.613Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T13:42:20.613Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T13:42:20.614Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T13:42:20.614Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753191740614_jk001tl7o","pattern":"email_table_view"}
+2025-07-22T13:42:20.614Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753191740614_hh6u7hp4o","pattern":"workflow_analytics"}
+2025-07-22T13:42:20.615Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T13:42:20.615Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T13:42:20.696Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T13:42:20.696Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T13:42:20.697Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T13:42:20.698Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T13:42:20.698Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T13:42:20.698Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753191740698_fsc6ntwsq","pattern":"email_table_view"}
+2025-07-22T13:42:20.698Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753191740698_ai7foux2u","pattern":"workflow_analytics"}
+2025-07-22T13:42:20.698Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T13:42:20.699Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T13:42:20.939Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T13:42:20.939Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T13:42:20.940Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T13:42:20.941Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T13:42:20.941Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T13:42:20.941Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753191740941_q9487dykn","pattern":"email_table_view"}
+2025-07-22T13:42:20.941Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753191740941_3ib8ez0s9","pattern":"workflow_analytics"}
+2025-07-22T13:42:20.941Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T13:42:20.953Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T13:42:20.960Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T13:42:20.963Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T13:42:20.963Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T13:42:20.963Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T13:42:21.611Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T13:42:21.612Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T13:42:21.612Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T13:42:21.612Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T13:42:21.647Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T13:42:21.648Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T13:42:21.648Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T13:42:21.648Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T13:42:21.648Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T13:42:21.649Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T13:42:21.649Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools
+2025-07-22T13:42:21.649Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T13:45:20.944Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T13:45:20.948Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T13:45:20.958Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T13:45:20.959Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T13:45:20.960Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T13:45:20.963Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T13:45:20.963Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T13:45:20.964Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T13:45:20.965Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753191920964_gd4e96r2o","pattern":"email_table_view"}
+2025-07-22T13:45:20.965Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753191920965_r8a44t8g2","pattern":"workflow_analytics"}
+2025-07-22T13:45:20.965Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T13:45:20.966Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T13:45:21.013Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T13:45:21.013Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T13:45:21.014Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T13:45:21.032Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T13:45:21.032Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T13:45:21.032Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753191921032_g200fojr2","pattern":"email_table_view"}
+2025-07-22T13:45:21.032Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753191921032_h6ouwxz4o","pattern":"workflow_analytics"}
+2025-07-22T13:45:21.032Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T13:45:21.034Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T13:45:21.147Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T13:45:21.147Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T13:45:21.148Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T13:45:21.155Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T13:45:21.155Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T13:45:21.156Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753191921155_2stk70nzm","pattern":"email_table_view"}
+2025-07-22T13:45:21.156Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753191921156_vssr3dyt2","pattern":"workflow_analytics"}
+2025-07-22T13:45:21.156Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T13:45:21.173Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T13:45:21.185Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T13:45:21.187Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T13:45:21.188Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T13:45:21.188Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T13:45:22.562Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T13:45:22.563Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T13:45:22.563Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T13:45:22.563Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T13:45:22.608Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T13:45:22.608Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T13:45:22.609Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T13:45:22.609Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T13:45:22.609Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T13:45:22.610Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T13:45:22.610Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools
+2025-07-22T13:45:22.610Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T13:46:17.093Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753191977092","messageLength":46,"priority":"medium","requestId":"b1zgri"}
+2025-07-22T13:46:17.096Z INFO  [ORCHESTRATOR] Processing query {"query":"Find irrigation specialists in Spartanburg, SC","conversationId":"df52d677-5a91-4038-8e0c-fbf62f988589"}
+2025-07-22T13:46:17.098Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":1,"domains":2,"priority":"medium","estimatedDuration":60}
+2025-07-22T13:46:17.098Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":1,"domains":["research","development"],"priority":"medium","estimatedDuration":60}
+2025-07-22T13:46:17.098Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T13:46:17.098Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T13:46:17.099Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T13:46:17.099Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T13:46:17.992Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}
+2025-07-22T13:46:17.996Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"df52d677-5a91-4038-8e0c-fbf62f988589","userId":"guest-::1-1753191977092","responseLength":0}
+2025-07-22T13:48:18.221Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753192098220","messageLength":46,"priority":"medium","requestId":"t18vedi"}
+2025-07-22T13:48:18.222Z INFO  [ORCHESTRATOR] Processing query {"query":"Find irrigation specialists in Spartanburg, SC","conversationId":"b5f56f08-7221-4b41-97ff-113e3700a2b5"}
+2025-07-22T13:48:18.223Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":1,"domains":2,"priority":"medium","estimatedDuration":60}
+2025-07-22T13:48:18.223Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":1,"domains":["research","development"],"priority":"medium","estimatedDuration":60}
+2025-07-22T13:48:18.224Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T13:48:18.224Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T13:48:18.224Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T13:48:18.224Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T13:48:18.326Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T13:48:18.327Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T13:48:18.327Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T13:48:18.327Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}
+2025-07-22T13:48:18.331Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"b5f56f08-7221-4b41-97ff-113e3700a2b5","userId":"guest-::1-1753192098220","responseLength":0}
+2025-07-22T13:49:57.248Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"SIGTERM"}
+2025-07-22T13:49:57.249Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T13:49:57.249Z INFO  [CLEANUP] Starting service cleanup {"taskCount":5}
+2025-07-22T13:49:57.249Z INFO  [CLEANUP] Cleaning up: Active agent tasks
+2025-07-22T13:49:57.249Z INFO  [CLEANUP] Agent tasks terminated
+2025-07-22T13:49:57.249Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T13:49:57.250Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T13:49:57.250Z INFO  [CLEANUP] Cleaned up: Active agent tasks
+2025-07-22T13:49:57.250Z INFO  [CLEANUP] Cleaning up: LLM connections
+2025-07-22T13:49:57.250Z INFO  [CLEANUP] LLM connections closed
+2025-07-22T13:49:57.250Z INFO  [CLEANUP] Cleaned up: LLM connections
+2025-07-22T13:49:57.250Z INFO  [CLEANUP] Cleaning up: Database connections
+2025-07-22T13:49:57.254Z INFO  [CLEANUP] Database connections closed
+2025-07-22T13:49:57.255Z INFO  [CLEANUP] Cleaned up: Database connections
+2025-07-22T13:49:57.255Z INFO  [CLEANUP] Cleaning up: Temporary files
+2025-07-22T13:49:57.255Z INFO  [CLEANUP] Temporary files cleaned
+2025-07-22T13:49:57.255Z INFO  [CLEANUP] Cleaned up: Temporary files
+2025-07-22T13:49:57.255Z INFO  [CLEANUP] Cleaning up: Expired authentication tokens
+2025-07-22T13:49:57.257Z INFO  [CLEANUP] Expired tokens cleaned
+2025-07-22T13:49:57.258Z INFO  [CLEANUP] Cleaned up: Expired authentication tokens
+2025-07-22T13:49:57.258Z INFO  [CLEANUP] Service cleanup completed {"successful":5,"failed":0,"errors":[]}
+2025-07-22T13:50:08.008Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T13:50:08.011Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T13:50:08.042Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T13:50:08.043Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T13:50:08.044Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T13:50:08.055Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T13:50:08.055Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T13:50:08.056Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T13:50:08.056Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753192208056_gdxbj1cwa","pattern":"email_table_view"}
+2025-07-22T13:50:08.057Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753192208057_pztero167","pattern":"workflow_analytics"}
+2025-07-22T13:50:08.057Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T13:50:08.057Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T13:50:08.110Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T13:50:08.110Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T13:50:08.111Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T13:50:08.118Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T13:50:08.119Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T13:50:08.119Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753192208119_u31yjuqv7","pattern":"email_table_view"}
+2025-07-22T13:50:08.119Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753192208119_6zgzutq55","pattern":"workflow_analytics"}
+2025-07-22T13:50:08.119Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T13:50:08.121Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T13:50:08.233Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T13:50:08.233Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T13:50:08.234Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T13:50:08.241Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T13:50:08.241Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T13:50:08.242Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753192208241_zc3twc68s","pattern":"email_table_view"}
+2025-07-22T13:50:08.242Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753192208242_q5oul0cvs","pattern":"workflow_analytics"}
+2025-07-22T13:50:08.242Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T13:50:08.257Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T13:50:08.268Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T13:50:08.277Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T13:50:08.278Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T13:50:08.278Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T13:50:08.434Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T13:50:08.435Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T13:50:08.436Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T13:50:08.436Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T13:50:08.478Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T13:50:08.479Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T13:50:08.479Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T13:50:08.480Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T13:50:08.480Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T13:50:08.480Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T13:50:08.480Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools
+2025-07-22T13:50:08.480Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T13:50:30.884Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753192230882","messageLength":46,"priority":"medium","requestId":"ypyh3b"}
+2025-07-22T13:50:30.886Z INFO  [ORCHESTRATOR] Processing query {"query":"Find irrigation specialists in Spartanburg, SC","conversationId":"d8882548-7fbd-4eda-b780-547938d71477"}
+2025-07-22T13:50:30.888Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":1,"domains":2,"priority":"medium","estimatedDuration":60}
+2025-07-22T13:50:30.888Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":1,"domains":["research","development"],"priority":"medium","estimatedDuration":60}
+2025-07-22T13:50:30.889Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T13:50:30.889Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T13:50:30.889Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T13:50:30.889Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T13:51:13.747Z INFO  [ORCHESTRATOR] Query processing completed {"success":false,"attempts":1,"totalSteps":1}
+2025-07-22T13:51:13.747Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 42861ms {"success":true}
+2025-07-22T13:51:13.752Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"d8882548-7fbd-4eda-b780-547938d71477","userId":"guest-::1-1753192230882","responseLength":0}
+2025-07-22T13:52:23.644Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"SIGTERM"}
+2025-07-22T13:52:23.645Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T13:52:23.645Z INFO  [CLEANUP] Starting service cleanup {"taskCount":5}
+2025-07-22T13:52:23.645Z INFO  [CLEANUP] Cleaning up: Active agent tasks
+2025-07-22T13:52:23.645Z INFO  [CLEANUP] Agent tasks terminated
+2025-07-22T13:52:23.645Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T13:52:23.646Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T13:52:23.646Z INFO  [CLEANUP] Cleaned up: Active agent tasks
+2025-07-22T13:52:23.646Z INFO  [CLEANUP] Cleaning up: LLM connections
+2025-07-22T13:52:23.646Z INFO  [CLEANUP] LLM connections closed
+2025-07-22T13:52:23.646Z INFO  [CLEANUP] Cleaned up: LLM connections
+2025-07-22T13:52:23.646Z INFO  [CLEANUP] Cleaning up: Database connections
+2025-07-22T13:52:23.649Z INFO  [CLEANUP] Database connections closed
+2025-07-22T13:52:23.649Z INFO  [CLEANUP] Cleaned up: Database connections
+2025-07-22T13:52:23.649Z INFO  [CLEANUP] Cleaning up: Temporary files
+2025-07-22T13:52:23.649Z INFO  [CLEANUP] Temporary files cleaned
+2025-07-22T13:52:23.650Z INFO  [CLEANUP] Cleaned up: Temporary files
+2025-07-22T13:52:23.650Z INFO  [CLEANUP] Cleaning up: Expired authentication tokens
+2025-07-22T13:52:23.652Z INFO  [CLEANUP] Expired tokens cleaned
+2025-07-22T13:52:23.652Z INFO  [CLEANUP] Cleaned up: Expired authentication tokens
+2025-07-22T13:52:23.652Z INFO  [CLEANUP] Service cleanup completed {"successful":5,"failed":0,"errors":[]}
+2025-07-22T13:52:34.706Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T13:52:34.710Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T13:52:34.729Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T13:52:34.730Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T13:52:34.731Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T13:52:34.740Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T13:52:34.740Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T13:52:34.740Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T13:52:34.741Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753192354741_dt14nz3s7","pattern":"email_table_view"}
+2025-07-22T13:52:34.742Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753192354742_o3jys66nv","pattern":"workflow_analytics"}
+2025-07-22T13:52:34.742Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T13:52:34.742Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T13:52:34.790Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T13:52:34.791Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T13:52:34.795Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T13:52:34.805Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T13:52:34.805Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T13:52:34.805Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753192354805_y4ny0rqoy","pattern":"email_table_view"}
+2025-07-22T13:52:34.806Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753192354806_e67u1pe02","pattern":"workflow_analytics"}
+2025-07-22T13:52:34.806Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T13:52:34.807Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T13:52:34.930Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T13:52:34.930Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T13:52:34.931Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T13:52:34.941Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T13:52:34.941Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T13:52:34.942Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753192354942_mqbe77deb","pattern":"email_table_view"}
+2025-07-22T13:52:34.942Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753192354942_pl91pghl1","pattern":"workflow_analytics"}
+2025-07-22T13:52:34.942Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T13:52:34.959Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T13:52:34.971Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T13:52:34.981Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T13:52:34.981Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T13:52:34.981Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T13:52:35.515Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T13:52:35.516Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T13:52:35.517Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T13:52:35.517Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T13:52:35.564Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T13:52:35.565Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T13:52:35.565Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T13:52:35.566Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T13:52:35.567Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T13:52:35.567Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T13:52:35.567Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools
+2025-07-22T13:52:35.567Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T13:52:48.619Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753192368617","messageLength":46,"priority":"medium","requestId":"pwcmu"}
+2025-07-22T13:52:48.622Z INFO  [ORCHESTRATOR] Processing query {"query":"Find irrigation specialists in Spartanburg, SC","conversationId":"f26593d7-5bb2-4537-adae-99255571dd2c"}
+2025-07-22T13:52:48.624Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":1,"domains":2,"priority":"medium","estimatedDuration":60}
+2025-07-22T13:52:48.624Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":1,"domains":["research","development"],"priority":"medium","estimatedDuration":60}
+2025-07-22T13:52:48.625Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T13:52:48.625Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T13:52:48.625Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T13:52:48.625Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T13:53:31.405Z INFO  [ORCHESTRATOR] Query processing completed {"success":false,"attempts":1,"totalSteps":1}
+2025-07-22T13:53:31.405Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 42783ms {"success":true}
+2025-07-22T13:53:31.424Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"f26593d7-5bb2-4537-adae-99255571dd2c","userId":"guest-::1-1753192368617","responseLength":0}
+2025-07-22T14:17:00.181Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"SIGTERM"}
+2025-07-22T14:17:00.183Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T14:17:00.183Z INFO  [CLEANUP] Starting service cleanup {"taskCount":5}
+2025-07-22T14:17:00.183Z INFO  [CLEANUP] Cleaning up: Active agent tasks
+2025-07-22T14:17:00.183Z INFO  [CLEANUP] Agent tasks terminated
+2025-07-22T14:17:00.184Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T14:17:00.184Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T14:17:00.184Z INFO  [CLEANUP] Cleaned up: Active agent tasks
+2025-07-22T14:17:00.184Z INFO  [CLEANUP] Cleaning up: LLM connections
+2025-07-22T14:17:00.184Z INFO  [CLEANUP] LLM connections closed
+2025-07-22T14:17:00.184Z INFO  [CLEANUP] Cleaned up: LLM connections
+2025-07-22T14:17:00.184Z INFO  [CLEANUP] Cleaning up: Database connections
+2025-07-22T14:17:00.190Z INFO  [CLEANUP] Database connections closed
+2025-07-22T14:17:00.190Z INFO  [CLEANUP] Cleaned up: Database connections
+2025-07-22T14:17:00.190Z INFO  [CLEANUP] Cleaning up: Temporary files
+2025-07-22T14:17:00.190Z INFO  [CLEANUP] Temporary files cleaned
+2025-07-22T14:17:00.190Z INFO  [CLEANUP] Cleaned up: Temporary files
+2025-07-22T14:17:00.190Z INFO  [CLEANUP] Cleaning up: Expired authentication tokens
+2025-07-22T14:17:00.192Z INFO  [CLEANUP] Expired tokens cleaned
+2025-07-22T14:17:00.192Z INFO  [CLEANUP] Cleaned up: Expired authentication tokens
+2025-07-22T14:17:00.192Z INFO  [CLEANUP] Service cleanup completed {"successful":5,"failed":0,"errors":[]}
+2025-07-22T14:17:20.960Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T14:17:20.962Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T14:17:20.973Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T14:17:20.974Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T14:17:20.974Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T14:17:20.975Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T14:17:20.975Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T14:17:20.975Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T14:17:20.976Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753193840976_wla2uglpd","pattern":"email_table_view"}
+2025-07-22T14:17:20.976Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753193840976_py9qfijrz","pattern":"workflow_analytics"}
+2025-07-22T14:17:20.976Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T14:17:20.976Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T14:17:21.029Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T14:17:21.029Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T14:17:21.030Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T14:17:21.031Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T14:17:21.031Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T14:17:21.031Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753193841031_d6ahac0b1","pattern":"email_table_view"}
+2025-07-22T14:17:21.031Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753193841031_rk6c4eev5","pattern":"workflow_analytics"}
+2025-07-22T14:17:21.031Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T14:17:21.032Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T14:17:21.146Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T14:17:21.146Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T14:17:21.146Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T14:17:21.147Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T14:17:21.147Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T14:17:21.147Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753193841147_pyufbixe2","pattern":"email_table_view"}
+2025-07-22T14:17:21.147Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753193841147_n9wdr78u4","pattern":"workflow_analytics"}
+2025-07-22T14:17:21.147Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T14:17:21.155Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T14:17:21.160Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T14:17:21.163Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T14:17:21.163Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T14:17:21.163Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T14:17:21.718Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T14:17:21.719Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T14:17:21.719Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T14:17:21.719Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T14:17:21.750Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T14:17:21.750Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T14:17:21.750Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T14:17:21.750Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T14:17:21.751Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T14:17:21.751Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T14:17:21.751Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools
+2025-07-22T14:17:21.751Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T14:25:57.097Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753194357096","messageLength":46,"priority":"high","requestId":"aasx2a"}
+2025-07-22T14:25:57.098Z INFO  [ORCHESTRATOR] Processing query {"query":"Find irrigation specialists in Spartanburg, SC","conversationId":"759c6479-41a2-422f-ad25-1a22a9e11fc9"}
+2025-07-22T14:25:57.100Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":1,"domains":2,"priority":"medium","estimatedDuration":60}
+2025-07-22T14:25:57.100Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":1,"domains":["research","development"],"priority":"medium","estimatedDuration":60}
+2025-07-22T14:25:57.100Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T14:25:57.100Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T14:25:57.100Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T14:25:57.101Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T14:26:41.171Z INFO  [ORCHESTRATOR] Query processing completed {"success":false,"attempts":1,"totalSteps":1}
+2025-07-22T14:26:41.171Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 44073ms {"success":true}
+2025-07-22T14:26:41.172Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"759c6479-41a2-422f-ad25-1a22a9e11fc9","userId":"guest-::1-1753194357096","responseLength":0}
+2025-07-22T14:57:16.821Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T14:57:16.824Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T14:57:16.834Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T14:57:16.835Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T14:57:16.835Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T14:57:16.842Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T14:57:16.842Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T14:57:16.842Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T14:57:16.843Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753196236842_x3278zox7","pattern":"email_table_view"}
+2025-07-22T14:57:16.843Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753196236843_pm1e8rxoc","pattern":"workflow_analytics"}
+2025-07-22T14:57:16.843Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T14:57:16.843Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T14:57:16.901Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T14:57:16.902Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T14:57:16.902Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T14:57:16.904Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T14:57:16.904Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T14:57:16.904Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753196236904_8aay4c4ge","pattern":"email_table_view"}
+2025-07-22T14:57:16.904Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753196236904_ljcxkxx78","pattern":"workflow_analytics"}
+2025-07-22T14:57:16.904Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T14:57:16.904Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T14:57:17.080Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T14:57:17.080Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T14:57:17.081Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T14:57:17.082Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T14:57:17.082Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T14:57:17.083Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753196237083_tdzms7qrv","pattern":"email_table_view"}
+2025-07-22T14:57:17.083Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753196237083_wci24epzn","pattern":"workflow_analytics"}
+2025-07-22T14:57:17.083Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T14:57:17.092Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"UNCAUGHT_EXCEPTION"}
+2025-07-22T14:57:17.093Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T14:57:17.093Z INFO  [CLEANUP] Starting service cleanup {"taskCount":5}
+2025-07-22T14:57:17.093Z INFO  [CLEANUP] Cleaning up: Active agent tasks
+2025-07-22T14:57:17.093Z INFO  [CLEANUP] Agent tasks terminated
+2025-07-22T14:57:17.093Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"UNCAUGHT_EXCEPTION"}
+2025-07-22T14:57:17.093Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T14:57:17.093Z WARN  [CLEANUP] Cleanup already in progress
+2025-07-22T14:57:17.094Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T14:57:17.094Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T14:57:17.094Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T14:57:17.094Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T14:57:17.094Z INFO  [CLEANUP] Cleaned up: Active agent tasks
+2025-07-22T14:57:17.094Z INFO  [CLEANUP] Cleaning up: LLM connections
+2025-07-22T14:57:17.094Z INFO  [CLEANUP] LLM connections closed
+2025-07-22T14:57:17.095Z INFO  [CLEANUP] Cleaned up: LLM connections
+2025-07-22T14:57:17.095Z INFO  [CLEANUP] Cleaning up: Database connections
+2025-07-22T14:57:17.097Z INFO  [CLEANUP] Database connections closed
+2025-07-22T14:57:17.097Z INFO  [CLEANUP] Cleaned up: Database connections
+2025-07-22T14:57:17.097Z INFO  [CLEANUP] Cleaning up: Temporary files
+2025-07-22T14:57:17.097Z INFO  [CLEANUP] Temporary files cleaned
+2025-07-22T14:57:17.097Z INFO  [CLEANUP] Cleaned up: Temporary files
+2025-07-22T14:57:17.097Z INFO  [CLEANUP] Cleaning up: Expired authentication tokens
+2025-07-22T14:57:17.100Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T14:57:17.102Z INFO  [CLEANUP] Expired tokens cleaned
+2025-07-22T14:57:17.102Z INFO  [CLEANUP] Cleaned up: Expired authentication tokens
+2025-07-22T14:57:17.102Z INFO  [CLEANUP] Service cleanup completed {"successful":5,"failed":0,"errors":[]}
+2025-07-22T14:57:17.104Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T14:57:17.104Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T14:57:17.104Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T14:57:55.258Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T14:57:55.260Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T14:57:55.274Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T14:57:55.274Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T14:57:55.275Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T14:57:55.277Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T14:57:55.277Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T14:57:55.277Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T14:57:55.277Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753196275277_zzns2whos","pattern":"email_table_view"}
+2025-07-22T14:57:55.277Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753196275277_1cmv89bu8","pattern":"workflow_analytics"}
+2025-07-22T14:57:55.278Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T14:57:55.278Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T14:57:55.314Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T14:57:55.314Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T14:57:55.315Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T14:57:55.320Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T14:57:55.321Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T14:57:55.321Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753196275321_afduggw1t","pattern":"email_table_view"}
+2025-07-22T14:57:55.321Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753196275321_txkkfnm1g","pattern":"workflow_analytics"}
+2025-07-22T14:57:55.321Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T14:57:55.323Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T14:57:55.411Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T14:57:55.412Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T14:57:55.412Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T14:57:55.419Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T14:57:55.419Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T14:57:55.419Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753196275419_x77jrf75j","pattern":"email_table_view"}
+2025-07-22T14:57:55.419Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753196275419_9u8eagn2b","pattern":"workflow_analytics"}
+2025-07-22T14:57:55.419Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T14:57:55.429Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T14:57:55.437Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T14:57:55.439Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T14:57:55.439Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T14:57:55.439Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T14:58:25.880Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T14:58:25.882Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T14:58:25.882Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T14:58:25.882Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T14:58:25.912Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T14:58:25.912Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T14:58:25.912Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T14:58:25.913Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T14:58:25.913Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T14:58:25.913Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T14:58:25.913Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools
+2025-07-22T14:58:25.913Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T14:58:25.916Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753196305914","messageLength":121,"priority":"high","requestId":"ts1mk"}
+2025-07-22T14:58:25.917Z INFO  [ORCHESTRATOR] Processing query {"query":"Find irrigation specialists in Spartanburg, SC to fix a cracked sprinkler head caused by root intrus","conversationId":"952d29e8-43e8-48fe-9e15-fa0705576ca4"}
+2025-07-22T14:58:25.918Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":2,"domains":2,"priority":"medium","estimatedDuration":90}
+2025-07-22T14:58:25.918Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":2,"domains":["research","development"],"priority":"medium","estimatedDuration":90}
+2025-07-22T14:58:25.919Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T14:58:25.919Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T14:58:25.919Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T14:58:25.919Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T15:00:00.506Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}
+2025-07-22T15:00:00.507Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 94590ms {"success":true}
+2025-07-22T15:00:00.510Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"952d29e8-43e8-48fe-9e15-fa0705576ca4","userId":"guest-::1-1753196305914","responseLength":3146}

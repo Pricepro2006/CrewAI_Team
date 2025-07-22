@@ -1,6 +1,7 @@
 import { BaseAgent } from '../base/BaseAgent';
 import { WebSearchTool } from '../../tools/web/WebSearchTool';
 import { WebScraperTool } from '../../tools/web/WebScraperTool';
+import { withTimeout, DEFAULT_TIMEOUTS } from '../../../utils/timeout';
 export class ResearchAgent extends BaseAgent {
     constructor() {
         super('ResearchAgent', 'Specializes in web research, information gathering, and fact-checking');
@@ -31,6 +32,87 @@ export class ResearchAgent extends BaseAgent {
             };
         }
         catch (error) {
+            return this.handleError(error);
+        }
+    }
+    async executeWithTool(params) {
+        const { tool, context, parameters } = params;
+        try {
+            // If it's not a web search tool, use default behavior
+            if (tool.name !== 'web_search') {
+                return super.executeWithTool(params);
+            }
+            console.log('[ResearchAgent] Starting executeWithTool for web_search');
+            // For web search, we need to create a proper research query
+            // Extract the query from the task description (format: "Process and respond to: <query>")
+            const taskDescription = context.task || '';
+            const taskMatch = taskDescription.match(/Process and respond to: (.+)/);
+            const query = taskMatch ? taskMatch[1] : taskDescription;
+            console.log('[ResearchAgent] Query extracted:', query);
+            // For tool execution, skip the LLM-based research plan creation
+            // and go directly to search execution
+            const searchTool = this.tools.get('web_search');
+            if (!searchTool) {
+                return {
+                    success: false,
+                    error: 'Web search tool not found'
+                };
+            }
+            if (!query) {
+                return {
+                    success: false,
+                    error: 'No query provided for web search'
+                };
+            }
+            console.log('[ResearchAgent] Executing web search...');
+            const searchResult = await searchTool.execute({
+                query,
+                limit: 5
+            });
+            console.log('[ResearchAgent] Search completed:', searchResult.success);
+            if (!searchResult.success || !searchResult.data) {
+                return {
+                    success: true,
+                    output: "I couldn't find any relevant information for your query. This might be due to search limitations or the specificity of your request.",
+                    data: { findings: [], sources: [] },
+                    metadata: {
+                        agent: this.name,
+                        tool: tool.name,
+                        timestamp: new Date().toISOString()
+                    }
+                };
+            }
+            // Convert search results to research results
+            const results = searchResult.data.results.map((item) => ({
+                source: item.url,
+                title: item.title,
+                content: item.snippet,
+                type: 'search_result',
+                relevance: 0.8
+            }));
+            console.log('[ResearchAgent] Found', results.length, 'results, synthesizing...');
+            // Synthesize the findings
+            const synthesis = await this.synthesizeFindings(results, query || taskDescription);
+            console.log('[ResearchAgent] Synthesis complete');
+            return {
+                success: true,
+                data: {
+                    findings: results,
+                    synthesis: synthesis,
+                    sources: this.extractSources(results)
+                },
+                output: synthesis,
+                metadata: {
+                    agent: this.name,
+                    tool: tool.name,
+                    queriesExecuted: 1,
+                    sourcesFound: results.length,
+                    timestamp: new Date().toISOString()
+                }
+            };
+        }
+        catch (error) {
+            console.error('[ResearchAgent] Error in executeWithTool:', error);
             return this.handleError(error);
         }
     }
@@ -100,15 +182,16 @@ export class ResearchAgent extends BaseAgent {
                 if (searchResult.success && searchResult.data) {
                     // For each search result, potentially scrape the content
                     for (const item of searchResult.data.results) {
+                        const relevance = this.calculateRelevance(item, plan);
                         results.push({
                             source: item.url,
                             title: item.title,
                             content: item.snippet,
                             type: 'search_result',
-                            relevance: this.calculateRelevance(item, plan)
+                            relevance: relevance
                         });
                         // Scrape full content for highly relevant results
-                        if (scraperTool && item.relevance > 0.7) {
+                        if (scraperTool && relevance > 0.7) {
                             const scraped = await scraperTool.execute({
                                 url: item.url
                             });
@@ -173,7 +256,7 @@ export class ResearchAgent extends BaseAgent {
       
       Format the response in clear paragraphs.
     `;
-        return await this.llm.generate(prompt);
+        return await withTimeout(this.llm.generate(prompt), DEFAULT_TIMEOUTS.LLM_GENERATION, 'LLM synthesis timed out');
     }
     extractSources(results) {
         const uniqueSources = new Map();

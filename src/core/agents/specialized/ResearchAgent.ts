@@ -1,13 +1,19 @@
-import { BaseAgent } from '../base/BaseAgent';
-import type { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
-import { WebSearchTool } from '../../tools/web/WebSearchTool';
-import { WebScraperTool } from '../../tools/web/WebScraperTool';
+import { BaseAgent } from "../base/BaseAgent";
+import type {
+  AgentCapability,
+  AgentContext,
+  AgentResult,
+  ToolExecutionParams,
+} from "../base/AgentTypes";
+import { WebSearchTool } from "../../tools/web/WebSearchTool";
+import { WebScraperTool } from "../../tools/web/WebScraperTool";
+import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout";
 
 export class ResearchAgent extends BaseAgent {
   constructor() {
     super(
-      'ResearchAgent',
-      'Specializes in web research, information gathering, and fact-checking'
+      "ResearchAgent",
+      "Specializes in web research, information gathering, and fact-checking",
     );
   }
 
@@ -15,19 +21,19 @@ export class ResearchAgent extends BaseAgent {
     try {
       // Analyze the task to determine research strategy
       const researchPlan = await this.createResearchPlan(task, context);
-      
+
       // Execute research based on the plan
       const results = await this.executeResearchPlan(researchPlan, context);
-      
+
       // Synthesize findings
       const synthesis = await this.synthesizeFindings(results, task);
-      
+
       return {
         success: true,
         data: {
           findings: results,
           synthesis: synthesis,
-          sources: this.extractSources(results)
+          sources: this.extractSources(results),
         },
         output: synthesis,
         metadata: {
@@ -35,20 +41,131 @@ export class ResearchAgent extends BaseAgent {
           toolsUsed: researchPlan.tools,
           queriesExecuted: researchPlan.queries.length,
           sourcesFound: results.length,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       };
     } catch (error) {
       return this.handleError(error as Error);
     }
   }
 
-  private async createResearchPlan(task: string, context: AgentContext): Promise<ResearchPlan> {
+  override async executeWithTool(
+    params: ToolExecutionParams,
+  ): Promise<AgentResult> {
+    const { tool, context, parameters } = params;
+
+    try {
+      // If it's not a web search tool, use default behavior
+      if (tool.name !== "web_search") {
+        return super.executeWithTool(params);
+      }
+
+      console.log("[ResearchAgent] Starting executeWithTool for web_search");
+
+      // For web search, we need to create a proper research query
+      // Extract the query from the task description (format: "Process and respond to: <query>")
+      const taskDescription = context.task || "";
+      const taskMatch = taskDescription.match(/Process and respond to: (.+)/);
+      const query = taskMatch ? taskMatch[1] : taskDescription;
+
+      console.log("[ResearchAgent] Query extracted:", query);
+
+      // For tool execution, skip the LLM-based research plan creation
+      // and go directly to search execution
+      const searchTool = this.tools.get("web_search") as WebSearchTool;
+
+      if (!searchTool) {
+        return {
+          success: false,
+          error: "Web search tool not found",
+        };
+      }
+
+      if (!query) {
+        return {
+          success: false,
+          error: "No query provided for web search",
+        };
+      }
+
+      console.log("[ResearchAgent] Executing web search...");
+      const searchResult = await searchTool.execute({
+        query,
+        limit: 5,
+      });
+
+      console.log("[ResearchAgent] Search completed:", searchResult.success);
+
+      if (!searchResult.success || !searchResult.data) {
+        return {
+          success: true,
+          output:
+            "I couldn't find any relevant information for your query. This might be due to search limitations or the specificity of your request.",
+          data: { findings: [], sources: [] },
+          metadata: {
+            agent: this.name,
+            tool: tool.name,
+            timestamp: new Date().toISOString(),
+          },
+        };
+      }
+
+      // Convert search results to research results
+      const results: ResearchResult[] = searchResult.data.results.map(
+        (item: any) => ({
+          source: item.url,
+          title: item.title,
+          content: item.snippet,
+          type: "search_result" as const,
+          relevance: 0.8,
+        }),
+      );
+
+      console.log(
+        "[ResearchAgent] Found",
+        results.length,
+        "results, synthesizing...",
+      );
+
+      // Synthesize the findings
+      const synthesis = await this.synthesizeFindings(
+        results,
+        query || taskDescription,
+      );
+
+      console.log("[ResearchAgent] Synthesis complete");
+
+      return {
+        success: true,
+        data: {
+          findings: results,
+          synthesis: synthesis,
+          sources: this.extractSources(results),
+        },
+        output: synthesis,
+        metadata: {
+          agent: this.name,
+          tool: tool.name,
+          queriesExecuted: 1,
+          sourcesFound: results.length,
+          timestamp: new Date().toISOString(),
+        },
+      };
+    } catch (error) {
+      console.error("[ResearchAgent] Error in executeWithTool:", error);
+      return this.handleError(error as Error);
+    }
+  }
+
+  private async createResearchPlan(
+    task: string,
+    context: AgentContext,
+  ): Promise<ResearchPlan> {
     const prompt = `
       You are a research specialist. Create a research plan for the following task:
       "${task}"
       
-      ${context.ragDocuments ? `Existing knowledge base context:\n${context.ragDocuments.map(d => d.content).join('\n\n')}` : ''}
+      ${context.ragDocuments ? `Existing knowledge base context:\n${context.ragDocuments.map((d) => d.content).join("\n\n")}` : ""}
       
       Create a research plan that includes:
       1. Key search queries to execute
@@ -75,71 +192,73 @@ export class ResearchAgent extends BaseAgent {
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         return {
-          queries: parsed.queries || ['general research query'],
-          sourceTypes: parsed.sourceTypes || ['general'],
-          extractionFocus: parsed.extractionFocus || ['information'],
-          tools: parsed.tools || ['web_search']
+          queries: parsed.queries || ["general research query"],
+          sourceTypes: parsed.sourceTypes || ["general"],
+          extractionFocus: parsed.extractionFocus || ["information"],
+          tools: parsed.tools || ["web_search"],
         };
       }
     } catch (error) {
-      console.error('Failed to parse research plan:', error);
+      console.error("Failed to parse research plan:", error);
     }
 
     // Fallback plan
     return {
-      queries: ['general research query'],
-      sourceTypes: ['general'],
-      extractionFocus: ['information'],
-      tools: ['web_search']
+      queries: ["general research query"],
+      sourceTypes: ["general"],
+      extractionFocus: ["information"],
+      tools: ["web_search"],
     };
   }
 
   private async executeResearchPlan(
-    plan: ResearchPlan, 
-    context: AgentContext
+    plan: ResearchPlan,
+    context: AgentContext,
   ): Promise<ResearchResult[]> {
     const results: ResearchResult[] = [];
-    const searchTool = this.tools.get('web_search') as WebSearchTool;
-    const scraperTool = this.tools.get('web_scraper') as WebScraperTool;
+    const searchTool = this.tools.get("web_search") as WebSearchTool;
+    const scraperTool = this.tools.get("web_scraper") as WebScraperTool;
 
     // Check if we have existing context that might reduce search needs
-    const hasExistingContext = context.ragDocuments && context.ragDocuments.length > 0;
-    
+    const hasExistingContext =
+      context.ragDocuments && context.ragDocuments.length > 0;
+
     // If we have existing context, limit the search scope
     const searchLimit = hasExistingContext ? 3 : 5;
-    
+
     // Execute searches
     for (const query of plan.queries) {
       if (searchTool) {
-        const searchResult = await searchTool.execute({ 
-          query, 
-          limit: searchLimit 
+        const searchResult = await searchTool.execute({
+          query,
+          limit: searchLimit,
         });
-        
+
         if (searchResult.success && searchResult.data) {
           // For each search result, potentially scrape the content
           for (const item of searchResult.data.results) {
+            const relevance = this.calculateRelevance(item, plan);
             results.push({
               source: item.url,
               title: item.title,
               content: item.snippet,
-              type: 'search_result',
-              relevance: this.calculateRelevance(item, plan)
+              type: "search_result",
+              relevance: relevance,
             });
 
             // Scrape full content for highly relevant results
-            if (scraperTool && item.relevance > 0.7) {
-              const scraped = await scraperTool.execute({ 
-                url: item.url 
+            if (scraperTool && relevance > 0.7) {
+              const scraped = await scraperTool.execute({
+                url: item.url,
               });
-              
+
               if (scraped.success && scraped.data) {
                 results.push({
                   source: item.url,
                   title: item.title,
                   content: scraped.data.content,
-                  type: 'scraped_content',
-                  relevance: item.relevance
+                  type: "scraped_content",
+                  relevance: item.relevance,
                 });
               }
             }
@@ -155,30 +274,30 @@ export class ResearchAgent extends BaseAgent {
   private calculateRelevance(item: any, plan: ResearchPlan): number {
     // Simple relevance scoring based on keyword matching
     let score = 0.5; // Base score
-    
+
     const text = `${item.title} ${item.snippet}`.toLowerCase();
-    
+
     // Check for extraction focus keywords
-    plan.extractionFocus.forEach(focus => {
+    plan.extractionFocus.forEach((focus) => {
       if (text.includes(focus.toLowerCase())) {
         score += 0.1;
       }
     });
-    
+
     // Check for source type indicators
     const url = item.url.toLowerCase();
-    plan.sourceTypes.forEach(type => {
+    plan.sourceTypes.forEach((type) => {
       if (url.includes(type) || text.includes(type)) {
         score += 0.1;
       }
     });
-    
+
     return Math.min(score, 1.0);
   }
 
   private async synthesizeFindings(
-    results: ResearchResult[], 
-    task: string
+    results: ResearchResult[],
+    task: string,
   ): Promise<string> {
     if (results.length === 0) {
       return "No relevant information found for the given task.";
@@ -189,12 +308,16 @@ export class ResearchAgent extends BaseAgent {
       Synthesize the following research findings to answer the task: "${task}"
       
       Research Findings:
-      ${topResults.map((r, i) => `
+      ${topResults
+        .map(
+          (r, i) => `
         ${i + 1}. Source: ${r.source}
         Title: ${r.title}
         Content: ${r.content.substring(0, 500)}...
         Relevance: ${r.relevance}
-      `).join('\n\n')}
+      `,
+        )
+        .join("\n\n")}
       
       Create a comprehensive summary that:
       1. Directly addresses the original task
@@ -206,48 +329,52 @@ export class ResearchAgent extends BaseAgent {
       Format the response in clear paragraphs.
     `;
 
-    return await this.llm.generate(prompt);
+    return await withTimeout(
+      this.llm.generate(prompt),
+      DEFAULT_TIMEOUTS.LLM_GENERATION,
+      "LLM synthesis timed out",
+    );
   }
 
   private extractSources(results: ResearchResult[]): Source[] {
     const uniqueSources = new Map<string, Source>();
-    
-    results.forEach(result => {
+
+    results.forEach((result) => {
       if (!uniqueSources.has(result.source)) {
         uniqueSources.set(result.source, {
           url: result.source,
           title: result.title,
           type: result.type,
-          accessedAt: new Date().toISOString()
+          accessedAt: new Date().toISOString(),
         });
       }
     });
-    
+
     return Array.from(uniqueSources.values());
   }
 
   protected getAgentSpecificCapabilities(): AgentCapability[] {
     return [
       {
-        name: 'web_research',
-        description: 'Can search the web for information',
-        type: 'retrieval'
+        name: "web_research",
+        description: "Can search the web for information",
+        type: "retrieval",
       },
       {
-        name: 'content_extraction',
-        description: 'Can extract and parse content from web pages',
-        type: 'analysis'
+        name: "content_extraction",
+        description: "Can extract and parse content from web pages",
+        type: "analysis",
       },
       {
-        name: 'fact_checking',
-        description: 'Can verify information across multiple sources',
-        type: 'analysis'
+        name: "fact_checking",
+        description: "Can verify information across multiple sources",
+        type: "analysis",
       },
       {
-        name: 'source_evaluation',
-        description: 'Can assess the credibility and relevance of sources',
-        type: 'analysis'
-      }
+        name: "source_evaluation",
+        description: "Can assess the credibility and relevance of sources",
+        type: "analysis",
+      },
     ];
   }
 
@@ -268,7 +395,7 @@ interface ResearchResult {
   source: string;
   title: string;
   content: string;
-  type: 'search_result' | 'scraped_content';
+  type: "search_result" | "scraped_content";
   relevance: number;
 }
 

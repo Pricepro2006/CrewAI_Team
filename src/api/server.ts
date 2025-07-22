@@ -32,7 +32,7 @@ app.use(helmet());
 app.use(cors(appConfig.api.cors));
 
 // Handle preflight requests for all routes
-app.options('*', cors(appConfig.api.cors));
+app.options("*", cors(appConfig.api.cors));
 
 app.use(express.json());
 
@@ -54,12 +54,9 @@ app.get("/health", async (_req, res) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const ollamaResponse = await fetch(
-      `${ollamaConfig.baseUrl}/api/tags`,
-      {
-        signal: controller.signal,
-      },
-    );
+    const ollamaResponse = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
+      signal: controller.signal,
+    });
     clearTimeout(timeoutId);
     services.ollama = ollamaResponse.ok ? "connected" : "disconnected";
   } catch (error) {
@@ -72,16 +69,13 @@ app.get("/health", async (_req, res) => {
 
   try {
     // Check ChromaDB connection (if configured)
-    const chromaUrl = process.env.CHROMA_URL || "http://localhost:8001";
+    const chromaUrl = process.env.CHROMA_BASE_URL || "http://localhost:8000";
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const chromaResponse = await fetch(
-      `${chromaUrl}/api/v1/heartbeat`,
-      {
-        signal: controller.signal,
-      },
-    );
+    const chromaResponse = await fetch(`${chromaUrl}/api/v2/version`, {
+      signal: controller.signal,
+    });
     clearTimeout(timeoutId);
     services.chromadb = chromaResponse.ok ? "connected" : "disconnected";
   } catch (error) {
@@ -140,7 +134,7 @@ app.use(
     onError({ error, type, path, input }) {
       console.error("tRPC Error:", {
         type,
-        path: path || 'unknown',
+        path: path || "unknown",
         error: error.message,
         input,
       });
@@ -178,15 +172,15 @@ const wss = new WebSocketServer({
   verifyClient: (info: { origin?: string }) => {
     const origin = info.origin;
     const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:5175'
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5175",
     ];
     // Allow connections without origin (like direct WebSocket clients)
     if (!origin) return true;
     return allowedOrigins.includes(origin);
-  }
+  },
 });
 
 const wsHandler = applyWSSHandler({
