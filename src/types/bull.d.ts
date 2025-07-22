@@ -1,4 +1,4 @@
-declare module "bull" {
+declare module "bullmq" {
   import { EventEmitter } from "events";
 
   export interface JobOptions {

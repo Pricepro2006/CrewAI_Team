@@ -1,0 +1,31 @@
+{
+  "query": "test response process",
+  "timestamp": "2025-07-22T23:34:57.091Z",
+  "results": [
+    {
+      "title": "test response process - Result 1",
+      "url": "https://example.com/search?q=test%20response%20process&result=1",
+      "snippet": "Information about test response process. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "test response process - Result 2",
+      "url": "https://example.com/search?q=test%20response%20process&result=2",
+      "snippet": "Information about test response process. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "test response process - Result 3",
+      "url": "https://example.com/search?q=test%20response%20process&result=3",
+      "snippet": "Information about test response process. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

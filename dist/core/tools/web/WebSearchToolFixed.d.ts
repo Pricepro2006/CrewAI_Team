@@ -19,5 +19,5 @@ declare abstract class SearchEngine {
     abstract name: string;
     abstract search(query: string, limit: number): Promise<SearchResult[]>;
 }
-export { SearchResult, SearchEngine };
+export type { SearchResult, SearchEngine };
 //# sourceMappingURL=WebSearchToolFixed.d.ts.map

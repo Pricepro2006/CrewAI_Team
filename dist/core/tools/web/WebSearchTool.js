@@ -1,8 +1,10 @@
 import { BaseTool } from "../base/BaseTool";
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { SearchKnowledgeService } from "../../services/SearchKnowledgeService";
 export class WebSearchTool extends BaseTool {
     searchEngines;
+    searchKnowledgeService;
     constructor() {
         super("web_search", "Searches the web for information using multiple search engines", [
             {
@@ -34,6 +36,31 @@ export class WebSearchTool extends BaseTool {
             new SearxEngine(),
             // Google engine would require API key
         ];
+        this.initializeKnowledgeService();
+    }
+    async initializeKnowledgeService() {
+        try {
+            // Initialize with default RAG configuration
+            this.searchKnowledgeService = new SearchKnowledgeService({
+                vectorStore: {
+                    type: "chromadb",
+                    collectionName: "search_knowledge",
+                    baseUrl: "http://localhost:8000",
+                },
+                chunking: {
+                    chunkSize: 1000,
+                    overlap: 200,
+                },
+                retrieval: {
+                    topK: 5,
+                },
+            });
+            await this.searchKnowledgeService.initialize();
+        }
+        catch (error) {
+            console.warn("Failed to initialize SearchKnowledgeService:", error);
+            // Continue without knowledge service
+        }
     }
     async execute(params) {
         const validation = this.validateParameters(params);
@@ -48,6 +75,23 @@ export class WebSearchTool extends BaseTool {
                 return this.error(`Search engine ${engineName} not found`);
             }
             const results = await engine.search(params.query, limit);
+            // Save search results to knowledge base
+            if (this.searchKnowledgeService && results.length > 0) {
+                try {
+                    await this.searchKnowledgeService.saveSearchResults(params.query, results.map((r) => ({
+                        title: r.title,
+                        url: r.url,
+                        snippet: r.snippet,
+                        source: engineName,
+                        relevance: 0.7, // Default relevance for DuckDuckGo
+                        metadata: { timestamp: r.timestamp },
+                    })), engineName.charAt(0).toUpperCase() + engineName.slice(1));
+                }
+                catch (error) {
+                    console.warn("Failed to save search results to knowledge base:", error);
+                    // Continue without saving
+                }
+            }
             return this.success({
                 results,
                 query: params.query,
@@ -97,6 +141,7 @@ class DuckDuckGoEngineFixed extends SearchEngine {
                         snippet: snippet || "No description available",
                     });
                 }
+                return true; // Continue iteration
             });
             // If no results from scraping, try the Instant Answer API as fallback
             if (results.length === 0) {
@@ -226,5 +271,4 @@ class SearxEngine extends SearchEngine {
         }
     }
 }
-export { SearchResult, SearchEngine };
 //# sourceMappingURL=WebSearchTool.js.map

@@ -1,3 +1,10 @@
+export declare const DEFAULT_TIMEOUTS: {
+    LLM_GENERATION: number;
+    AGENT_EXECUTION: number;
+    TOOL_EXECUTION: number;
+    API_REQUEST: number;
+    CACHE_TTL: number;
+};
 interface DatabaseConfig {
     path: string;
 }

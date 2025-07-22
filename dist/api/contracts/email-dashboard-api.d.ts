@@ -78,9 +78,9 @@ export declare const EmailRecordSchema: z.ZodObject<{
     lastUpdated: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     timestamp: string;
+    id: string;
     summary: string;
     subject: string;
-    id: string;
     status: "red" | "yellow" | "green";
     workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
     email_alias: string;
@@ -104,9 +104,9 @@ export declare const EmailRecordSchema: z.ZodObject<{
     dueDate?: string | undefined;
 }, {
     timestamp: string;
+    id: string;
     summary: string;
     subject: string;
-    id: string;
     status: "red" | "yellow" | "green";
     workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
     email_alias: string;
@@ -329,9 +329,9 @@ export declare const ListEmailsResponseSchema: z.ZodObject<{
         lastUpdated: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -355,9 +355,9 @@ export declare const ListEmailsResponseSchema: z.ZodObject<{
         dueDate?: string | undefined;
     }, {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -501,9 +501,9 @@ export declare const ListEmailsResponseSchema: z.ZodObject<{
     page: number;
     emails: {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -555,9 +555,9 @@ export declare const ListEmailsResponseSchema: z.ZodObject<{
     page: number;
     emails: {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -646,13 +646,13 @@ export declare const GetEmailResponseSchema: z.ZodObject<{
         contentType: z.ZodOptional<z.ZodString>;
         size: z.ZodNumber;
     }, "strip", z.ZodTypeAny, {
-        size: number;
         id: string;
+        size: number;
         filename: string;
         contentType?: string | undefined;
     }, {
-        size: number;
         id: string;
+        size: number;
         filename: string;
         contentType?: string | undefined;
     }>, "many">>;
@@ -672,9 +672,9 @@ export declare const GetEmailResponseSchema: z.ZodObject<{
     relatedEmails: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
     timestamp: string;
+    id: string;
     summary: string;
     subject: string;
-    id: string;
     status: "red" | "yellow" | "green";
     workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
     email_alias: string;
@@ -696,8 +696,8 @@ export declare const GetEmailResponseSchema: z.ZodObject<{
         order_references?: string[] | undefined;
     } | undefined;
     attachments?: {
-        size: number;
         id: string;
+        size: number;
         filename: string;
         contentType?: string | undefined;
     }[] | undefined;
@@ -717,9 +717,9 @@ export declare const GetEmailResponseSchema: z.ZodObject<{
     relatedEmails?: string[] | undefined;
 }, {
     timestamp: string;
+    id: string;
     summary: string;
     subject: string;
-    id: string;
     status: "red" | "yellow" | "green";
     workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
     email_alias: string;
@@ -741,8 +741,8 @@ export declare const GetEmailResponseSchema: z.ZodObject<{
         order_references?: string[] | undefined;
     } | undefined;
     attachments?: {
-        size: number;
         id: string;
+        size: number;
         filename: string;
         contentType?: string | undefined;
     }[] | undefined;
@@ -1330,9 +1330,9 @@ export declare const EmailUpdateEventSchema: z.ZodObject<{
         lastUpdated: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1356,9 +1356,9 @@ export declare const EmailUpdateEventSchema: z.ZodObject<{
         dueDate?: string | undefined;
     }, {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1384,9 +1384,9 @@ export declare const EmailUpdateEventSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     data: {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1413,9 +1413,9 @@ export declare const EmailUpdateEventSchema: z.ZodObject<{
 }, {
     data: {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1484,9 +1484,9 @@ export declare const EmailCreateEventSchema: z.ZodObject<{
         lastUpdated: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1510,9 +1510,9 @@ export declare const EmailCreateEventSchema: z.ZodObject<{
         dueDate?: string | undefined;
     }, {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1538,9 +1538,9 @@ export declare const EmailCreateEventSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     data: {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1567,9 +1567,9 @@ export declare const EmailCreateEventSchema: z.ZodObject<{
 }, {
     data: {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1799,9 +1799,9 @@ export declare const WebSocketEventSchema: z.ZodDiscriminatedUnion<"type", [z.Zo
         lastUpdated: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1825,9 +1825,9 @@ export declare const WebSocketEventSchema: z.ZodDiscriminatedUnion<"type", [z.Zo
         dueDate?: string | undefined;
     }, {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1853,9 +1853,9 @@ export declare const WebSocketEventSchema: z.ZodDiscriminatedUnion<"type", [z.Zo
 }, "strip", z.ZodTypeAny, {
     data: {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1882,9 +1882,9 @@ export declare const WebSocketEventSchema: z.ZodDiscriminatedUnion<"type", [z.Zo
 }, {
     data: {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1952,9 +1952,9 @@ export declare const WebSocketEventSchema: z.ZodDiscriminatedUnion<"type", [z.Zo
         lastUpdated: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -1978,9 +1978,9 @@ export declare const WebSocketEventSchema: z.ZodDiscriminatedUnion<"type", [z.Zo
         dueDate?: string | undefined;
     }, {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -2006,9 +2006,9 @@ export declare const WebSocketEventSchema: z.ZodDiscriminatedUnion<"type", [z.Zo
 }, "strip", z.ZodTypeAny, {
     data: {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -2035,9 +2035,9 @@ export declare const WebSocketEventSchema: z.ZodDiscriminatedUnion<"type", [z.Zo
 }, {
     data: {
         timestamp: string;
+        id: string;
         summary: string;
         subject: string;
-        id: string;
         status: "red" | "yellow" | "green";
         workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         email_alias: string;
@@ -2361,9 +2361,9 @@ export declare const API_ENDPOINTS: {
                 lastUpdated: z.ZodOptional<z.ZodString>;
             }, "strip", z.ZodTypeAny, {
                 timestamp: string;
+                id: string;
                 summary: string;
                 subject: string;
-                id: string;
                 status: "red" | "yellow" | "green";
                 workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
                 email_alias: string;
@@ -2387,9 +2387,9 @@ export declare const API_ENDPOINTS: {
                 dueDate?: string | undefined;
             }, {
                 timestamp: string;
+                id: string;
                 summary: string;
                 subject: string;
-                id: string;
                 status: "red" | "yellow" | "green";
                 workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
                 email_alias: string;
@@ -2533,9 +2533,9 @@ export declare const API_ENDPOINTS: {
             page: number;
             emails: {
                 timestamp: string;
+                id: string;
                 summary: string;
                 subject: string;
-                id: string;
                 status: "red" | "yellow" | "green";
                 workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
                 email_alias: string;
@@ -2587,9 +2587,9 @@ export declare const API_ENDPOINTS: {
             page: number;
             emails: {
                 timestamp: string;
+                id: string;
                 summary: string;
                 subject: string;
-                id: string;
                 status: "red" | "yellow" | "green";
                 workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
                 email_alias: string;
@@ -2681,13 +2681,13 @@ export declare const API_ENDPOINTS: {
                 contentType: z.ZodOptional<z.ZodString>;
                 size: z.ZodNumber;
             }, "strip", z.ZodTypeAny, {
-                size: number;
                 id: string;
+                size: number;
                 filename: string;
                 contentType?: string | undefined;
             }, {
-                size: number;
                 id: string;
+                size: number;
                 filename: string;
                 contentType?: string | undefined;
             }>, "many">>;
@@ -2707,9 +2707,9 @@ export declare const API_ENDPOINTS: {
             relatedEmails: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
             timestamp: string;
+            id: string;
             summary: string;
             subject: string;
-            id: string;
             status: "red" | "yellow" | "green";
             workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
             email_alias: string;
@@ -2731,8 +2731,8 @@ export declare const API_ENDPOINTS: {
                 order_references?: string[] | undefined;
             } | undefined;
             attachments?: {
-                size: number;
                 id: string;
+                size: number;
                 filename: string;
                 contentType?: string | undefined;
             }[] | undefined;
@@ -2752,9 +2752,9 @@ export declare const API_ENDPOINTS: {
             relatedEmails?: string[] | undefined;
         }, {
             timestamp: string;
+            id: string;
             summary: string;
             subject: string;
-            id: string;
             status: "red" | "yellow" | "green";
             workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
             email_alias: string;
@@ -2776,8 +2776,8 @@ export declare const API_ENDPOINTS: {
                 order_references?: string[] | undefined;
             } | undefined;
             attachments?: {
-                size: number;
                 id: string;
+                size: number;
                 filename: string;
                 contentType?: string | undefined;
             }[] | undefined;
@@ -2873,9 +2873,9 @@ export declare const API_ENDPOINTS: {
             lastUpdated: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
             timestamp: string;
+            id: string;
             summary: string;
             subject: string;
-            id: string;
             status: "red" | "yellow" | "green";
             workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
             email_alias: string;
@@ -2899,9 +2899,9 @@ export declare const API_ENDPOINTS: {
             dueDate?: string | undefined;
         }, {
             timestamp: string;
+            id: string;
             summary: string;
             subject: string;
-            id: string;
             status: "red" | "yellow" | "green";
             workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
             email_alias: string;
@@ -3933,9 +3933,9 @@ export declare const API_ENDPOINTS: {
                 lastUpdated: z.ZodOptional<z.ZodString>;
             }, "strip", z.ZodTypeAny, {
                 timestamp: string;
+                id: string;
                 summary: string;
                 subject: string;
-                id: string;
                 status: "red" | "yellow" | "green";
                 workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
                 email_alias: string;
@@ -3959,9 +3959,9 @@ export declare const API_ENDPOINTS: {
                 dueDate?: string | undefined;
             }, {
                 timestamp: string;
+                id: string;
                 summary: string;
                 subject: string;
-                id: string;
                 status: "red" | "yellow" | "green";
                 workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
                 email_alias: string;
@@ -3987,9 +3987,9 @@ export declare const API_ENDPOINTS: {
         }, "strip", z.ZodTypeAny, {
             data: {
                 timestamp: string;
+                id: string;
                 summary: string;
                 subject: string;
-                id: string;
                 status: "red" | "yellow" | "green";
                 workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
                 email_alias: string;
@@ -4016,9 +4016,9 @@ export declare const API_ENDPOINTS: {
         }, {
             data: {
                 timestamp: string;
+                id: string;
                 summary: string;
                 subject: string;
-                id: string;
                 status: "red" | "yellow" | "green";
                 workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
                 email_alias: string;
@@ -4086,9 +4086,9 @@ export declare const API_ENDPOINTS: {
                 lastUpdated: z.ZodOptional<z.ZodString>;
             }, "strip", z.ZodTypeAny, {
                 timestamp: string;
+                id: string;
                 summary: string;
                 subject: string;
-                id: string;
                 status: "red" | "yellow" | "green";
                 workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
                 email_alias: string;
@@ -4112,9 +4112,9 @@ export declare const API_ENDPOINTS: {
                 dueDate?: string | undefined;
             }, {
                 timestamp: string;
+                id: string;
                 summary: string;
                 subject: string;
-                id: string;
                 status: "red" | "yellow" | "green";
                 workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
                 email_alias: string;
@@ -4140,9 +4140,9 @@ export declare const API_ENDPOINTS: {
         }, "strip", z.ZodTypeAny, {
             data: {
                 timestamp: string;
+                id: string;
                 summary: string;
                 subject: string;
-                id: string;
                 status: "red" | "yellow" | "green";
                 workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
                 email_alias: string;
@@ -4169,9 +4169,9 @@ export declare const API_ENDPOINTS: {
         }, {
             data: {
                 timestamp: string;
+                id: string;
                 summary: string;
                 subject: string;
-                id: string;
                 status: "red" | "yellow" | "green";
                 workflow_state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
                 email_alias: string;

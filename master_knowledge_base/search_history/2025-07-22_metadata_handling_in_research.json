@@ -1,0 +1,31 @@
+{
+  "query": "metadata handling in research",
+  "timestamp": "2025-07-22T23:35:13.604Z",
+  "results": [
+    {
+      "title": "metadata handling in research - Result 1",
+      "url": "https://example.com/search?q=metadata%20handling%20in%20research&result=1",
+      "snippet": "Information about metadata handling in research. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "metadata handling in research - Result 2",
+      "url": "https://example.com/search?q=metadata%20handling%20in%20research&result=2",
+      "snippet": "Information about metadata handling in research. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "metadata handling in research - Result 3",
+      "url": "https://example.com/search?q=metadata%20handling%20in%20research&result=3",
+      "snippet": "Information about metadata handling in research. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

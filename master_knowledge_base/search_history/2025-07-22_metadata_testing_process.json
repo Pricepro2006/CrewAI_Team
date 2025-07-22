@@ -1,0 +1,31 @@
+{
+  "query": "metadata testing process",
+  "timestamp": "2025-07-22T23:35:13.089Z",
+  "results": [
+    {
+      "title": "metadata testing process - Result 1",
+      "url": "https://example.com/search?q=metadata%20testing%20process&result=1",
+      "snippet": "Information about metadata testing process. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "metadata testing process - Result 2",
+      "url": "https://example.com/search?q=metadata%20testing%20process&result=2",
+      "snippet": "Information about metadata testing process. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "metadata testing process - Result 3",
+      "url": "https://example.com/search?q=metadata%20testing%20process&result=3",
+      "snippet": "Information about metadata testing process. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

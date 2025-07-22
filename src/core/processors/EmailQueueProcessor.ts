@@ -1,5 +1,4 @@
-import Queue from "bull";
-import type { Job } from "bull";
+import { Queue, type Job } from "bullmq";
 import { UnifiedEmailService } from "@/api/services/UnifiedEmailService";
 import { logger } from "@/utils/logger";
 import { metrics } from "@/api/monitoring/metrics";

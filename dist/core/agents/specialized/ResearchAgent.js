@@ -1,11 +1,37 @@
 import { BaseAgent } from "../base/BaseAgent";
 import { WebSearchTool } from "../../tools/web/WebSearchTool";
 import { WebScraperTool } from "../../tools/web/WebScraperTool";
+import { SearXNGSearchTool } from "../../tools/web/SearXNGProvider";
 import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout";
 import { businessSearchPromptEnhancer } from "../../prompts/BusinessSearchPromptEnhancer";
+import { SearchKnowledgeService } from "../../services/SearchKnowledgeService";
 export class ResearchAgent extends BaseAgent {
+    searchKnowledgeService;
     constructor() {
         super("ResearchAgent", "Specializes in web research, information gathering, and fact-checking");
+        this.initializeKnowledgeService();
+    }
+    async initializeKnowledgeService() {
+        try {
+            this.searchKnowledgeService = new SearchKnowledgeService({
+                vectorStore: {
+                    type: "chromadb",
+                    collectionName: "search_knowledge",
+                    baseUrl: "http://localhost:8000",
+                },
+                chunking: {
+                    chunkSize: 1000,
+                    overlap: 200,
+                },
+                retrieval: {
+                    topK: 5,
+                },
+            });
+            await this.searchKnowledgeService.initialize();
+        }
+        catch (error) {
+            console.warn("Failed to initialize SearchKnowledgeService:", error);
+        }
     }
     async execute(task, context) {
         try {
@@ -57,7 +83,8 @@ export class ResearchAgent extends BaseAgent {
             }
             // For tool execution, skip the LLM-based research plan creation
             // and go directly to search execution
-            const searchTool = this.tools.get("web_search");
+            // Get whichever search tool is registered (SearXNG or WebSearchTool)
+            const searchTool = this.tools.get("searxng_search") || this.tools.get("web_search");
             if (!searchTool) {
                 return {
                     success: false,
@@ -69,6 +96,20 @@ export class ResearchAgent extends BaseAgent {
                     success: false,
                     error: "No query provided for web search",
                 };
+            }
+            // Check for cached results first
+            let cachedResults = [];
+            if (this.searchKnowledgeService) {
+                try {
+                    cachedResults =
+                        await this.searchKnowledgeService.searchPreviousResults(query, 3);
+                    if (cachedResults.length > 0) {
+                        console.log(`[ResearchAgent] Found ${cachedResults.length} cached results for similar queries`);
+                    }
+                }
+                catch (error) {
+                    console.warn("Failed to search cached results:", error);
+                }
             }
             console.log("[ResearchAgent] Executing web search...");
             const searchResult = await searchTool.execute({
@@ -172,7 +213,8 @@ export class ResearchAgent extends BaseAgent {
     }
     async executeResearchPlan(plan, context) {
         const results = [];
-        const searchTool = this.tools.get("web_search");
+        // Get whichever search tool is registered (SearXNG or WebSearchTool)
+        const searchTool = this.tools.get("searxng_search") || this.tools.get("web_search");
         const scraperTool = this.tools.get("web_scraper");
         // Check if we have existing context that might reduce search needs
         const hasExistingContext = context.ragDocuments && context.ragDocuments.length > 0;
@@ -242,13 +284,28 @@ export class ResearchAgent extends BaseAgent {
             return "No relevant information found for the given task.";
         }
         const topResults = results.slice(0, 5);
+        // Check if we have any cached results that might be helpful
+        let cachedContext = "";
+        if (this.searchKnowledgeService) {
+            try {
+                const cachedResults = await this.searchKnowledgeService.searchPreviousResults(task, 2);
+                if (cachedResults.length > 0) {
+                    cachedContext = `\n\nPreviously cached relevant information:\n${cachedResults
+                        .map((r) => r.content)
+                        .join("\n\n")}\n\n`;
+                }
+            }
+            catch (error) {
+                // Ignore cache errors
+            }
+        }
         // Check if this is a business-related query
         const isBusinessQuery = businessSearchPromptEnhancer.needsEnhancement(task);
         // Increase content size for business queries to capture contact info
         const contentLength = isBusinessQuery ? 1500 : 500;
         let basePrompt = `
       Synthesize the following research findings to answer the task: "${task}"
-      
+      ${cachedContext}
       Research Findings:
       ${topResults
             .map((r, i) => `
@@ -347,7 +404,23 @@ export class ResearchAgent extends BaseAgent {
         ];
     }
     registerDefaultTools() {
-        this.registerTool(new WebSearchTool());
+        // Try to use SearXNG first if available
+        const searxng = new SearXNGSearchTool();
+        searxng
+            .isAvailable()
+            .then((available) => {
+            if (available) {
+                console.log("[ResearchAgent] Using SearXNG for search (unlimited, better results)");
+                this.registerTool(searxng);
+            }
+            else {
+                console.log("[ResearchAgent] SearXNG not available, using DuckDuckGo fallback");
+                this.registerTool(new WebSearchTool());
+            }
+        })
+            .catch(() => {
+            this.registerTool(new WebSearchTool());
+        });
         this.registerTool(new WebScraperTool());
     }
 }

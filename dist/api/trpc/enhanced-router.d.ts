@@ -25,12 +25,12 @@ declare const t: {
             data: {
                 stack: string | undefined;
                 requestId: any;
-                code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
                 httpStatus: number;
                 path?: string;
             };
             message: string;
-            code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
         };
         transformer: typeof superjson;
     }>;
@@ -57,12 +57,12 @@ declare const t: {
                 data: {
                     stack: string | undefined;
                     requestId: any;
-                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
                     httpStatus: number;
                     path?: string;
                 };
                 message: string;
-                code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
             };
             transformer: typeof superjson;
         }>;
@@ -111,12 +111,12 @@ declare const t: {
                 data: {
                     stack: string | undefined;
                     requestId: any;
-                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
                     httpStatus: number;
                     path?: string;
                 };
                 message: string;
-                code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
             };
             transformer: typeof superjson;
         }>;
@@ -149,12 +149,12 @@ declare const t: {
                 data: {
                     stack: string | undefined;
                     requestId: any;
-                    code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                    code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
                     httpStatus: number;
                     path?: string;
                 };
                 message: string;
-                code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
             };
             transformer: typeof superjson;
         }>;
@@ -187,12 +187,12 @@ declare const t: {
             data: {
                 stack: string | undefined;
                 requestId: any;
-                code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
                 httpStatus: number;
                 path?: string;
             };
             message: string;
-            code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
         };
         transformer: typeof superjson;
     }>, TProcRouterRecord>;
@@ -219,12 +219,12 @@ declare const t: {
             data: {
                 stack: string | undefined;
                 requestId: any;
-                code: import("@trpc/server/rpc").TRPC_ERROR_CODE_KEY;
+                code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_KEY;
                 httpStatus: number;
                 path?: string;
             };
             message: string;
-            code: import("@trpc/server/rpc").TRPC_ERROR_CODE_NUMBER;
+            code: import("@trpc/server/dist/rpc").TRPC_ERROR_CODE_NUMBER;
         };
         transformer: typeof superjson;
     }>, any>>>(router: TRouter) => import("@trpc/server").RouterCaller<TRouter["_def"]>;

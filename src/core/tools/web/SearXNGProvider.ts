@@ -156,7 +156,7 @@ export class SearXNGSearchTool extends ValidatedTool {
         throw new Error(`SearXNG returned status ${response.status}`);
       }
 
-      const data: SearXNGResponse = await response.json();
+      const data = (await response.json()) as SearXNGResponse;
 
       // Transform results to our standard format
       const results = data.results
