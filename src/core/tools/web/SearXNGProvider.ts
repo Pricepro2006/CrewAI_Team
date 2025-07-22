@@ -116,14 +116,16 @@ export class SearXNGSearchTool extends ValidatedTool {
     };
   }
 
-  async validateExecution(params: SearXNGSearchParams) {
+  override async validateExecution(params: SearXNGSearchParams) {
     if (!params.query || params.query.trim().length === 0) {
       return { valid: false, error: "Search query cannot be empty" };
     }
     return { valid: true };
   }
 
-  async performExecution(params: SearXNGSearchParams): Promise<ToolResult> {
+  override async performExecution(
+    params: SearXNGSearchParams,
+  ): Promise<ToolResult> {
     try {
       // Build query parameters
       const searchParams = new URLSearchParams({
@@ -227,7 +229,7 @@ export class SearXNGSearchTool extends ValidatedTool {
     }
   }
 
-  getTimeout(): number {
+  override getTimeout(): number {
     return DEFAULT_TIMEOUTS.API_REQUEST;
   }
 

@@ -26,21 +26,19 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
     data: categorizedEmails,
     isLoading,
     refetch,
-  } = trpc.iemsEmails.getCategorizedEmails.useQuery({
+  } = api.iemsEmails.getCategorizedEmails.useQuery({
     limit: 20,
     refresh: refreshKey > 0,
   });
 
   // Fetch analytics
-  const { data: analytics } = trpc.iemsEmails.getAnalytics.useQuery();
+  const { data: analytics } = api.iemsEmails.getAnalytics.useQuery();
 
   // Fetch team members
-  const { data: teamMembers } = trpc.iemsEmails.getTeamMembers.useQuery();
+  const { data: teamMembers } = api.iemsEmails.getTeamMembers.useQuery();
 
   // WebSocket subscription for real-time updates
-  const emailUpdatesSubscription = (
-    trpc as any
-  ).ws?.subscribe?.useSubscription?.(
+  const emailUpdatesSubscription = api.ws?.subscribe?.useSubscription?.(
     {
       types: ["email.statusUpdated", "email.assigned", "email.actionPerformed"],
     },
@@ -89,7 +87,7 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
   }, [analytics]);
 
   // Handle status update
-  const updateEmailStatus = trpc.iemsEmails.updateEmailStatus.useMutation({
+  const updateEmailStatus = api.iemsEmails.updateEmailStatus.useMutation({
     onSuccess: () => {
       refetch();
     },
@@ -99,7 +97,7 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
   });
 
   // Handle email assignment
-  const assignEmail = trpc.iemsEmails.assignEmail.useMutation({
+  const assignEmail = api.iemsEmails.assignEmail.useMutation({
     onSuccess: () => {
       refetch();
     },
@@ -109,7 +107,7 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
   });
 
   // Handle email action
-  const performEmailAction = trpc.iemsEmails.performEmailAction.useMutation({
+  const performEmailAction = api.iemsEmails.performEmailAction.useMutation({
     onSuccess: () => {
       refetch();
     },

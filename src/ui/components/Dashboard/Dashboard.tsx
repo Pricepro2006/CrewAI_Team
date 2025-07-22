@@ -1,5 +1,5 @@
 import React from "react";
-import { trpc } from "../../App";
+import { api } from "@/lib/trpc";
 import "./Dashboard.css";
 
 interface StatsCardProps {
@@ -42,14 +42,10 @@ const AgentCard: React.FC<AgentCardProps> = ({ name, status, specialty }) => (
 );
 
 export const Dashboard: React.FC = () => {
-  const { data: health } = (trpc as any).health?.status?.useQuery() || {
-    data: undefined,
-  };
-  const { data: agentStats } = trpc.agent?.list?.useQuery?.() || {
-    data: undefined,
-  };
-  const { data: conversationStats } = trpc.chat.stats.useQuery();
-  const { data: ragStats } = trpc.rag.stats.useQuery();
+  const { data: health } = api.health.status.useQuery();
+  const { data: agentStats } = api.agent.list.useQuery();
+  const { data: conversationStats } = api.chat.stats.useQuery();
+  const { data: ragStats } = api.rag.stats.useQuery();
 
   const stats = [
     {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { trpc } from "../../App";
+import { api } from "@/lib/trpc";
 import "./KnowledgeBase.css";
 
 interface Document {
@@ -21,8 +21,8 @@ export const KnowledgeBase: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Load real documents from the backend
-  const documentsQuery = trpc.rag.list.useQuery({ limit: 100, offset: 0 });
-  const statsQuery = trpc.rag.stats.useQuery();
+  const documentsQuery = api.rag.list.useQuery({ limit: 100, offset: 0 });
+  const statsQuery = api.rag.stats.useQuery();
 
   useEffect(() => {
     if (documentsQuery.data) {
@@ -42,7 +42,7 @@ export const KnowledgeBase: React.FC = () => {
     }
   }, [documentsQuery.data]);
 
-  const uploadFileMutation = trpc.rag.uploadFile.useMutation({
+  const uploadFileMutation = api.rag.uploadFile.useMutation({
     onSuccess: () => {
       documentsQuery.refetch();
       setError(null);
@@ -103,7 +103,7 @@ export const KnowledgeBase: React.FC = () => {
     });
   };
 
-  const deleteDocumentMutation = trpc.rag.delete.useMutation({
+  const deleteDocumentMutation = api.rag.delete.useMutation({
     onSuccess: () => {
       documentsQuery.refetch();
       setError(null);
@@ -114,7 +114,7 @@ export const KnowledgeBase: React.FC = () => {
   });
 
   // Create search mutation to handle search properly
-  const searchMutation = trpc.rag.search.useQuery(
+  const searchMutation = api.rag.search.useQuery(
     {
       query: searchQuery.trim(),
       limit: 5,

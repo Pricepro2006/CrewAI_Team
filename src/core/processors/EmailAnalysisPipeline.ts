@@ -1,8 +1,8 @@
-import { EmailAnalysisAgent } from '../agents/specialized/EmailAnalysisAgent';
-import { logger } from '@/utils/logger';
-import { metrics } from '@/api/monitoring/metrics';
-import { withTimeout } from '@/utils/timeout';
-import { DEFAULT_TIMEOUTS } from '@/config/app.config';
+import { EmailAnalysisAgent } from "../agents/specialized/EmailAnalysisAgent";
+import { logger } from "@/utils/logger";
+import { metrics } from "@/api/monitoring/metrics";
+import { withTimeout } from "@/utils/timeout";
+import { DEFAULT_TIMEOUTS } from "@/config/app.config";
 
 // Types
 export interface EmailData {
@@ -26,9 +26,9 @@ export interface EnrichedEmail extends EmailData {
     topics: string[];
   };
   workflow: {
-    state: 'START_POINT' | 'IN_PROGRESS' | 'COMPLETION';
+    state: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
     type: string;
-    chainPosition: 'start' | 'middle' | 'end';
+    chainPosition: "start" | "middle" | "end";
     chainId?: string;
     isComplete: boolean;
     confidence: number;
@@ -42,7 +42,7 @@ export interface EnrichedEmail extends EmailData {
     dates: string[];
     amounts: string[];
   };
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  priority: "low" | "medium" | "high" | "critical";
   communicationPattern: {
     isFirstContact: boolean;
     responseRequired: boolean;
@@ -58,7 +58,9 @@ export interface EnrichedEmail extends EmailData {
 // Analysis stage interface
 export interface AnalysisStage {
   name: string;
-  process(email: EmailData | Partial<EnrichedEmail>): Promise<Partial<EnrichedEmail>>;
+  process(
+    email: EmailData | Partial<EnrichedEmail>,
+  ): Promise<Partial<EnrichedEmail>>;
 }
 
 // Main pipeline class
@@ -78,7 +80,7 @@ export class EmailAnalysisPipeline {
       new EntityExtractionStage(),
       new PriorityClassificationStage(),
       new CommunicationPatternStage(),
-      new AgentAssignmentStage()
+      new AgentAssignmentStage(),
     ];
   }
 
@@ -86,56 +88,55 @@ export class EmailAnalysisPipeline {
     let enrichedEmail = { ...email } as Partial<EnrichedEmail>;
     const startTime = Date.now();
 
-    logger.info('Starting email analysis pipeline', 'PIPELINE', { 
+    logger.info("Starting email analysis pipeline", "PIPELINE", {
       emailId: email.id,
-      subject: email.subject.substring(0, 50)
+      subject: email.subject.substring(0, 50),
     });
 
     for (const stage of this.stages) {
       try {
         const stageStartTime = Date.now();
-        
+
         enrichedEmail = await withTimeout(
           stage.process(enrichedEmail),
           this.getStageTimeout(stage.name),
-          `Stage ${stage.name} timeout`
+          `Stage ${stage.name} timeout`,
         );
-        
+
         const stageDuration = Date.now() - stageStartTime;
-        metrics.histogram('pipeline.stage.duration', stageDuration, {
-          stage: stage.name
+        metrics.histogram("pipeline.stage.duration", stageDuration, {
+          stage: stage.name,
         });
-        
-        logger.debug(`Stage ${stage.name} completed`, 'PIPELINE', {
+
+        logger.debug(`Stage ${stage.name} completed`, "PIPELINE", {
           emailId: email.id,
-          duration: stageDuration
+          duration: stageDuration,
         });
-        
       } catch (error) {
-        logger.error(`Stage ${stage.name} failed`, 'PIPELINE', {
+        logger.error(`Stage ${stage.name} failed`, "PIPELINE", {
           emailId: email.id,
           stage: stage.name,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         });
-        
-        metrics.increment('pipeline.stage.error', {
-          stage: stage.name
+
+        metrics.increment("pipeline.stage.error", 1, {
+          stage: stage.name,
         });
-        
+
         // Add error flag but continue processing
-        enrichedEmail[`${stage.name.toLowerCase()}_error`] = true;
+        (enrichedEmail as any)[`${stage.name.toLowerCase()}_error`] = true;
       }
     }
 
     const processingTime = Date.now() - startTime;
-    logger.info('Pipeline processing complete', 'PIPELINE', {
+    logger.info("Pipeline processing complete", "PIPELINE", {
       emailId: email.id,
       duration: processingTime,
-      workflowState: enrichedEmail.workflow?.state
+      workflowState: enrichedEmail.workflow?.state,
     });
 
-    metrics.histogram('pipeline.total.duration', processingTime);
-    metrics.increment('pipeline.emails.processed');
+    metrics.histogram("pipeline.total.duration", processingTime);
+    metrics.increment("pipeline.emails.processed", 1);
 
     return enrichedEmail as EnrichedEmail;
   }
@@ -147,7 +148,7 @@ export class EmailAnalysisPipeline {
       EntityExtraction: 10000,
       PriorityClassification: 5000,
       CommunicationPattern: 5000,
-      AgentAssignment: 5000
+      AgentAssignment: 5000,
     };
     return timeouts[stageName] || DEFAULT_TIMEOUTS.TOOL_EXECUTION;
   }
@@ -156,84 +157,149 @@ export class EmailAnalysisPipeline {
 // Stage implementations
 
 class ContentAnalysisStage implements AnalysisStage {
-  name = 'ContentAnalysis';
-  
+  name = "ContentAnalysis";
+
   constructor(private analysisAgent: EmailAnalysisAgent) {}
 
-  async process(email: Partial<EnrichedEmail>): Promise<Partial<EnrichedEmail>> {
-    const analysis = await this.analysisAgent.analyzeEmail({
+  async process(
+    email: Partial<EnrichedEmail>,
+  ): Promise<Partial<EnrichedEmail>> {
+    // Convert EmailData format to Email format expected by EmailAnalysisAgent
+    const emailForAnalysis = {
+      id: email.id!,
       subject: email.subject!,
-      body: email.body!,
-      from: email.from!,
-      to: email.to!
-    });
+      body: email.body,
+      from: {
+        emailAddress: {
+          name: email.from || "",
+          address: email.from || "",
+        },
+      },
+      to: email.to?.map((addr) => ({
+        emailAddress: {
+          name: addr,
+          address: addr,
+        },
+      })),
+      receivedDateTime: email.receivedDateTime!,
+      isRead: false,
+      categories: [],
+      hasAttachments: email.hasAttachments || false,
+      importance: email.importance || "normal",
+    };
+
+    const analysis = await this.analysisAgent.analyzeEmail(emailForAnalysis);
 
     return {
       ...email,
       analysis: {
-        summary: analysis.summary,
-        sentiment: analysis.sentiment,
-        intent: analysis.intent,
-        topics: analysis.topics || []
-      }
+        summary: analysis.summary || "",
+        sentiment: (analysis as any).sentiment || "neutral",
+        intent: analysis.categories?.intent || "unknown",
+        topics: (analysis as any).topics || [],
+      },
     };
   }
 }
 
 class WorkflowDetectionStage implements AnalysisStage {
-  name = 'WorkflowDetection';
+  name = "WorkflowDetection";
 
   // Patterns based on 97,900 email analysis
-  private workflowPatterns = {
+  private workflowPatterns: Record<
+    string,
+    {
+      start: RegExp[];
+      middle: RegExp[];
+      end: RegExp[];
+    }
+  > = {
     quoteToOrder: {
       start: [
-        /quote request/i, /rfq/i, /request for quote/i, /pricing request/i,
-        /please provide.*quote/i, /need.*pricing/i, /interested in.*pricing/i
+        /quote request/i,
+        /rfq/i,
+        /request for quote/i,
+        /pricing request/i,
+        /please provide.*quote/i,
+        /need.*pricing/i,
+        /interested in.*pricing/i,
       ],
       middle: [
-        /quote.*attached/i, /pricing.*below/i, /quote.*\d{6,}/i,
-        /reviewing.*quote/i, /questions.*quote/i, /clarification.*pricing/i
+        /quote.*attached/i,
+        /pricing.*below/i,
+        /quote.*\d{6,}/i,
+        /reviewing.*quote/i,
+        /questions.*quote/i,
+        /clarification.*pricing/i,
       ],
       end: [
-        /po.*attached/i, /purchase order/i, /order.*confirmed/i,
-        /approved.*purchase/i, /proceed.*order/i
-      ]
+        /po.*attached/i,
+        /purchase order/i,
+        /order.*confirmed/i,
+        /approved.*purchase/i,
+        /proceed.*order/i,
+      ],
     },
     orderSupport: {
       start: [
-        /order.*status/i, /tracking.*number/i, /where.*order/i,
-        /shipment.*update/i, /delivery.*status/i
+        /order.*status/i,
+        /tracking.*number/i,
+        /where.*order/i,
+        /shipment.*update/i,
+        /delivery.*status/i,
       ],
       middle: [
-        /investigating.*order/i, /checking.*status/i, /following up/i,
-        /order.*processing/i, /shipment.*delayed/i
+        /investigating.*order/i,
+        /checking.*status/i,
+        /following up/i,
+        /order.*processing/i,
+        /shipment.*delayed/i,
       ],
       end: [
-        /order.*delivered/i, /shipment.*received/i, /delivery.*complete/i,
-        /package.*arrived/i, /successfully.*delivered/i
-      ]
+        /order.*delivered/i,
+        /shipment.*received/i,
+        /delivery.*complete/i,
+        /package.*arrived/i,
+        /successfully.*delivered/i,
+      ],
     },
     technicalSupport: {
       start: [
-        /issue with/i, /problem with/i, /error.*occurring/i,
-        /not working/i, /help.*with/i, /support.*ticket/i
+        /issue with/i,
+        /problem with/i,
+        /error.*occurring/i,
+        /not working/i,
+        /help.*with/i,
+        /support.*ticket/i,
       ],
       middle: [
-        /troubleshooting/i, /investigating.*issue/i, /working on.*problem/i,
-        /ticket.*\d{5,}/i, /case.*created/i
+        /troubleshooting/i,
+        /investigating.*issue/i,
+        /working on.*problem/i,
+        /ticket.*\d{5,}/i,
+        /case.*created/i,
       ],
       end: [
-        /issue.*resolved/i, /problem.*fixed/i, /ticket.*closed/i,
-        /resolution.*provided/i, /working.*now/i
-      ]
-    }
+        /issue.*resolved/i,
+        /problem.*fixed/i,
+        /ticket.*closed/i,
+        /resolution.*provided/i,
+        /working.*now/i,
+      ],
+    },
   };
 
-  async process(email: Partial<EnrichedEmail>): Promise<Partial<EnrichedEmail>> {
+  async process(
+    email: Partial<EnrichedEmail>,
+  ): Promise<Partial<EnrichedEmail>> {
     const content = `${email.subject} ${email.body}`;
     const workflowType = this.detectWorkflowType(content);
     const chainPosition = this.detectChainPosition(content, workflowType);
-    const confidence = this.calculateConfidence(content, workflowType, chainPosition);
+    const confidence = this.calculateConfidence(
+      content,
+      workflowType,
+      chainPosition,
+    );
 
     // Try to link to existing workflow chain
     const chainId = await this.findOrCreateWorkflowChain(email, workflowType);
@@ -245,48 +311,61 @@ class WorkflowDetectionStage implements AnalysisStage {
         type: workflowType,
         chainPosition,
         chainId,
-        isComplete: chainPosition === 'end',
-        confidence
-      }
+        isComplete: chainPosition === "end",
+        confidence,
+      },
     };
   }
 
   private detectWorkflowType(content: string): string {
     for (const [type, patterns] of Object.entries(this.workflowPatterns)) {
-      const allPatterns = [...patterns.start, ...patterns.middle, ...patterns.end];
-      if (allPatterns.some(pattern => pattern.test(content))) {
+      const allPatterns = [
+        ...patterns.start,
+        ...patterns.middle,
+        ...patterns.end,
+      ];
+      if (allPatterns.some((pattern) => pattern.test(content))) {
         return type;
       }
     }
-    return 'general';
+    return "general";
   }
 
-  private detectChainPosition(content: string, workflowType: string): 'start' | 'middle' | 'end' {
+  private detectChainPosition(
+    content: string,
+    workflowType: string,
+  ): "start" | "middle" | "end" {
     const patterns = this.workflowPatterns[workflowType];
-    if (!patterns) return 'middle';
+    if (!patterns) return "middle";
 
     // Check end patterns first (most specific)
-    if (patterns.end.some(pattern => pattern.test(content))) {
-      return 'end';
+    if (patterns.end.some((pattern) => pattern.test(content))) {
+      return "end";
     }
 
     // Check start patterns
-    if (patterns.start.some(pattern => pattern.test(content))) {
-      return 'start';
+    if (patterns.start.some((pattern) => pattern.test(content))) {
+      return "start";
     }
 
     // Default to middle
-    return 'middle';
+    return "middle";
   }
 
-  private calculateConfidence(content: string, workflowType: string, position: string): number {
+  private calculateConfidence(
+    content: string,
+    workflowType: string,
+    position: string,
+  ): number {
     let confidence = 0.5; // Base confidence
 
     // Increase confidence if multiple patterns match
     const patterns = this.workflowPatterns[workflowType];
     if (patterns) {
       const positionPatterns = patterns[position];
-      const matchCount = positionPatterns.filter(pattern => pattern.test(content)).length;
+      const matchCount = positionPatterns.filter((pattern) =>
+        pattern.test(content),
+      ).length;
       confidence += matchCount * 0.1;
     }
 
@@ -294,73 +373,83 @@ class WorkflowDetectionStage implements AnalysisStage {
     return Math.min(confidence, 0.95);
   }
 
-  private mapChainPositionToState(position: 'start' | 'middle' | 'end'): 'START_POINT' | 'IN_PROGRESS' | 'COMPLETION' {
+  private mapChainPositionToState(
+    position: "start" | "middle" | "end",
+  ): "START_POINT" | "IN_PROGRESS" | "COMPLETION" {
     const mapping = {
-      'start': 'START_POINT' as const,
-      'middle': 'IN_PROGRESS' as const,
-      'end': 'COMPLETION' as const
+      start: "START_POINT" as const,
+      middle: "IN_PROGRESS" as const,
+      end: "COMPLETION" as const,
     };
     return mapping[position];
   }
 
-  private async findOrCreateWorkflowChain(email: Partial<EnrichedEmail>, workflowType: string): Promise<string | undefined> {
+  private async findOrCreateWorkflowChain(
+    email: Partial<EnrichedEmail>,
+    workflowType: string,
+  ): Promise<string | undefined> {
     // In a real implementation, this would:
     // 1. Look for related emails using conversationId, references, subject similarity
     // 2. Create or update workflow chain in database
     // 3. Return the chain ID
-    
+
     // For now, use conversation ID as a simple chain identifier
     return email.conversationId;
   }
 }
 
 class EntityExtractionStage implements AnalysisStage {
-  name = 'EntityExtraction';
+  name = "EntityExtraction";
 
   private patterns = {
     orderNumbers: [
       /\b\d{8,10}\b/g, // 8-10 digit numbers
       /PO[#\s]*\d{6,}/gi, // PO numbers
       /SO[#\s]*\d{6,}/gi, // Sales orders
-      /order[#\s]*\d{6,}/gi // Order numbers
+      /order[#\s]*\d{6,}/gi, // Order numbers
     ],
     trackingNumbers: [
       /\b1Z[A-Z0-9]{16}\b/g, // UPS
       /\b\d{20,22}\b/g, // FedEx
-      /\b\d{10,14}\b/g // Generic tracking
+      /\b\d{10,14}\b/g, // Generic tracking
     ],
     people: [
       /(?:from:|to:|cc:)\s*([^<\n]+)</gi,
-      /(?:dear|hi|hello)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/gi
+      /(?:dear|hi|hello)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/gi,
     ],
-    amounts: [
-      /\$[\d,]+\.?\d*/g,
-      /USD\s*[\d,]+\.?\d*/gi
-    ]
+    amounts: [/\$[\d,]+\.?\d*/g, /USD\s*[\d,]+\.?\d*/gi],
   };
 
-  async process(email: Partial<EnrichedEmail>): Promise<Partial<EnrichedEmail>> {
+  async process(
+    email: Partial<EnrichedEmail>,
+  ): Promise<Partial<EnrichedEmail>> {
     const content = `${email.subject} ${email.body}`;
-    
+
     const entities = {
       people: this.extractPeople(email),
       organizations: this.extractOrganizations(content),
       products: this.extractProducts(content),
-      orderNumbers: this.extractWithPatterns(content, this.patterns.orderNumbers),
-      trackingNumbers: this.extractWithPatterns(content, this.patterns.trackingNumbers),
+      orderNumbers: this.extractWithPatterns(
+        content,
+        this.patterns.orderNumbers,
+      ),
+      trackingNumbers: this.extractWithPatterns(
+        content,
+        this.patterns.trackingNumbers,
+      ),
       dates: this.extractDates(content),
-      amounts: this.extractWithPatterns(content, this.patterns.amounts)
+      amounts: this.extractWithPatterns(content, this.patterns.amounts),
     };
 
     return {
       ...email,
-      entities
+      entities,
     };
   }
 
   private extractPeople(email: Partial<EnrichedEmail>): string[] {
     const people = new Set<string>();
-    
+
     // Extract from email addresses
     if (email.from) {
       const fromMatch = email.from.match(/^([^<]+)/);
@@ -374,20 +463,20 @@ class EntityExtractionStage implements AnalysisStage {
   private extractOrganizations(content: string): string[] {
     // Simple implementation - would use NER in production
     const orgs = new Set<string>();
-    
+
     const orgPatterns = [
       /TD SYNNEX/gi,
       /Insight/gi,
       /CompuCom/gi,
       /Microsoft/gi,
       /HP\b/gi,
-      /Dell/gi
+      /Dell/gi,
     ];
 
-    orgPatterns.forEach(pattern => {
+    orgPatterns.forEach((pattern) => {
       const matches = content.match(pattern);
       if (matches) {
-        matches.forEach(match => orgs.add(match));
+        matches.forEach((match) => orgs.add(match));
       }
     });
 
@@ -397,17 +486,17 @@ class EntityExtractionStage implements AnalysisStage {
   private extractProducts(content: string): string[] {
     // Extract product SKUs and names
     const products = new Set<string>();
-    
+
     const productPatterns = [
       /\b[A-Z0-9]{6,}(?:#[A-Z]{3})?\b/g, // SKUs like 9VD15AA#ABA
       /Surface\s+\w+/gi,
-      /ThinkPad\s+\w+/gi
+      /ThinkPad\s+\w+/gi,
     ];
 
-    productPatterns.forEach(pattern => {
+    productPatterns.forEach((pattern) => {
       const matches = content.match(pattern);
       if (matches) {
-        matches.forEach(match => products.add(match));
+        matches.forEach((match) => products.add(match));
       }
     });
 
@@ -416,11 +505,11 @@ class EntityExtractionStage implements AnalysisStage {
 
   private extractWithPatterns(content: string, patterns: RegExp[]): string[] {
     const results = new Set<string>();
-    
-    patterns.forEach(pattern => {
+
+    patterns.forEach((pattern) => {
       const matches = content.match(pattern);
       if (matches) {
-        matches.forEach(match => results.add(match));
+        matches.forEach((match) => results.add(match));
       }
     });
 
@@ -430,17 +519,17 @@ class EntityExtractionStage implements AnalysisStage {
   private extractDates(content: string): string[] {
     // Simple date extraction - would use more sophisticated parsing in production
     const dates = new Set<string>();
-    
+
     const datePatterns = [
       /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/g,
       /\b\d{1,2}-\d{1,2}-\d{2,4}\b/g,
-      /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s+\d{4}\b/gi
+      /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s+\d{4}\b/gi,
     ];
 
-    datePatterns.forEach(pattern => {
+    datePatterns.forEach((pattern) => {
       const matches = content.match(pattern);
       if (matches) {
-        matches.forEach(match => dates.add(match));
+        matches.forEach((match) => dates.add(match));
       }
     });
 
@@ -449,65 +538,81 @@ class EntityExtractionStage implements AnalysisStage {
 }
 
 class PriorityClassificationStage implements AnalysisStage {
-  name = 'PriorityClassification';
+  name = "PriorityClassification";
 
   private priorityIndicators = {
     critical: [
-      /urgent/i, /asap/i, /critical/i, /emergency/i,
-      /immediately/i, /high priority/i, /expedite/i
+      /urgent/i,
+      /asap/i,
+      /critical/i,
+      /emergency/i,
+      /immediately/i,
+      /high priority/i,
+      /expedite/i,
     ],
     high: [
-      /important/i, /priority/i, /soon/i, /quickly/i,
-      /by end of day/i, /eod/i, /today/i
+      /important/i,
+      /priority/i,
+      /soon/i,
+      /quickly/i,
+      /by end of day/i,
+      /eod/i,
+      /today/i,
     ],
-    medium: [
-      /when possible/i, /at your convenience/i, /this week/i
-    ],
-    low: [
-      /no rush/i, /whenever/i, /low priority/i, /fyi/i
-    ]
+    medium: [/when possible/i, /at your convenience/i, /this week/i],
+    low: [/no rush/i, /whenever/i, /low priority/i, /fyi/i],
   };
 
-  async process(email: Partial<EnrichedEmail>): Promise<Partial<EnrichedEmail>> {
+  async process(
+    email: Partial<EnrichedEmail>,
+  ): Promise<Partial<EnrichedEmail>> {
     const content = `${email.subject} ${email.body}`;
     const priority = this.determinePriority(content, email);
 
     return {
       ...email,
-      priority
+      priority,
     };
   }
 
   private determinePriority(
-    content: string, 
-    email: Partial<EnrichedEmail>
-  ): 'low' | 'medium' | 'high' | 'critical' {
+    content: string,
+    email: Partial<EnrichedEmail>,
+  ): "low" | "medium" | "high" | "critical" {
     // Check explicit priority indicators
     for (const [level, patterns] of Object.entries(this.priorityIndicators)) {
-      if (patterns.some(pattern => pattern.test(content))) {
+      if (patterns.some((pattern) => pattern.test(content))) {
         return level as any;
       }
     }
 
     // Consider workflow state
-    if (email.workflow?.state === 'START_POINT' && email.workflow?.type === 'orderSupport') {
-      return 'high';
+    if (
+      email.workflow?.state === "START_POINT" &&
+      email.workflow?.type === "orderSupport"
+    ) {
+      return "high";
     }
 
     // Consider entities (orders, tracking numbers often indicate higher priority)
-    if (email.entities?.orderNumbers?.length || email.entities?.trackingNumbers?.length) {
-      return 'medium';
+    if (
+      email.entities?.orderNumbers?.length ||
+      email.entities?.trackingNumbers?.length
+    ) {
+      return "medium";
     }
 
     // Default
-    return 'medium';
+    return "medium";
   }
 }
 
 class CommunicationPatternStage implements AnalysisStage {
-  name = 'CommunicationPattern';
+  name = "CommunicationPattern";
 
-  async process(email: Partial<EnrichedEmail>): Promise<Partial<EnrichedEmail>> {
+  async process(
+    email: Partial<EnrichedEmail>,
+  ): Promise<Partial<EnrichedEmail>> {
     const isFirstContact = this.detectFirstContact(email);
     const responseRequired = this.detectResponseRequired(email);
     const estimatedResponseTime = this.estimateResponseTime(email);
@@ -517,36 +622,43 @@ class CommunicationPatternStage implements AnalysisStage {
       communicationPattern: {
         isFirstContact,
         responseRequired,
-        estimatedResponseTime
-      }
+        estimatedResponseTime,
+      },
     };
   }
 
   private detectFirstContact(email: Partial<EnrichedEmail>): boolean {
     // Check if this is start of workflow
-    if (email.workflow?.chainPosition === 'start') {
+    if (email.workflow?.chainPosition === "start") {
       return true;
     }
 
     // Check for first contact indicators
     const content = `${email.subject} ${email.body}`.toLowerCase();
     const firstContactPhrases = [
-      'first time', 'new customer', 'introducing', 'initial inquiry'
+      "first time",
+      "new customer",
+      "introducing",
+      "initial inquiry",
     ];
 
-    return firstContactPhrases.some(phrase => content.includes(phrase));
+    return firstContactPhrases.some((phrase) => content.includes(phrase));
   }
 
   private detectResponseRequired(email: Partial<EnrichedEmail>): boolean {
     const content = `${email.subject} ${email.body}`.toLowerCase();
-    
+
     // Questions typically require responses
-    const hasQuestions = content.includes('?') || 
-                        /\b(what|when|where|how|why|can you|could you|would you)\b/i.test(content);
+    const hasQuestions =
+      content.includes("?") ||
+      /\b(what|when|where|how|why|can you|could you|would you)\b/i.test(
+        content,
+      );
 
     // Certain intents require response
-    const requiresResponse = email.analysis?.intent === 'request' || 
-                           email.analysis?.intent === 'inquiry';
+    const requiresResponse =
+      email.analysis?.intent === "request" ||
+      email.analysis?.intent === "inquiry";
 
     return hasQuestions || requiresResponse || false;
   }
@@ -555,27 +667,30 @@ class CommunicationPatternStage implements AnalysisStage {
     // Base on priority and type
     const priorityTimes = {
       critical: 1, // 1 hour
-      high: 4,     // 4 hours
-      medium: 24,  // 24 hours
-      low: 48      // 48 hours
+      high: 4, // 4 hours
+      medium: 24, // 24 hours
+      low: 48, // 48 hours
     };
 
-    return priorityTimes[email.priority || 'medium'];
+    return priorityTimes[email.priority || "medium"];
   }
 }
 
 class AgentAssignmentStage implements AnalysisStage {
-  name = 'AgentAssignment';
+  name = "AgentAssignment";
 
   private agentCapabilities = {
-    'sales-agent': ['quote', 'pricing', 'product', 'rfq'],
-    'support-agent': ['issue', 'problem', 'error', 'help', 'support'],
-    'order-agent': ['order', 'shipment', 'tracking', 'delivery', 'po'],
-    'general-agent': ['general', 'inquiry', 'information']
+    "sales-agent": ["quote", "pricing", "product", "rfq"],
+    "support-agent": ["issue", "problem", "error", "help", "support"],
+    "order-agent": ["order", "shipment", "tracking", "delivery", "po"],
+    "general-agent": ["general", "inquiry", "information"],
   };
 
-  async process(email: Partial<EnrichedEmail>): Promise<Partial<EnrichedEmail>> {
-    const { agentId, confidence, reason } = await this.determineAgentAssignment(email);
+  async process(
+    email: Partial<EnrichedEmail>,
+  ): Promise<Partial<EnrichedEmail>> {
+    const { agentId, confidence, reason } =
+      await this.determineAgentAssignment(email);
 
     if (agentId) {
       return {
@@ -583,8 +698,8 @@ class AgentAssignmentStage implements AnalysisStage {
         agentAssignment: {
           agentId,
           confidence,
-          reason
-        }
+          reason,
+        },
       };
     }
 
@@ -592,32 +707,34 @@ class AgentAssignmentStage implements AnalysisStage {
   }
 
   private async determineAgentAssignment(
-    email: Partial<EnrichedEmail>
+    email: Partial<EnrichedEmail>,
   ): Promise<{ agentId?: string; confidence: number; reason: string }> {
-    const content = `${email.subject} ${email.body} ${email.analysis?.topics?.join(' ')}`.toLowerCase();
+    const content =
+      `${email.subject} ${email.body} ${email.analysis?.topics?.join(" ")}`.toLowerCase();
 
     // Score each agent based on keyword matches
     const scores: Record<string, number> = {};
-    
+
     for (const [agentId, keywords] of Object.entries(this.agentCapabilities)) {
-      scores[agentId] = keywords.filter(keyword => content.includes(keyword)).length;
+      scores[agentId] = keywords.filter((keyword) =>
+        content.includes(keyword),
+      ).length;
     }
 
     // Find best match
-    const bestAgent = Object.entries(scores)
-      .sort(([, a], [, b]) => b - a)[0];
+    const bestAgent = Object.entries(scores).sort(([, a], [, b]) => b - a)[0];
 
     if (bestAgent && bestAgent[1] > 0) {
       return {
         agentId: bestAgent[0],
         confidence: Math.min(bestAgent[1] / 5, 0.9), // Normalize confidence
-        reason: `Matched ${bestAgent[1]} relevant keywords`
+        reason: `Matched ${bestAgent[1]} relevant keywords`,
       };
     }
 
     return {
       confidence: 0,
-      reason: 'No suitable agent found'
+      reason: "No suitable agent found",
     };
   }
 }

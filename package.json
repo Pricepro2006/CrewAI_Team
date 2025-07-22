@@ -39,7 +39,8 @@
     "test:related": "vitest related",
     "test:watch": "vitest watch",
     "approve-builds": "echo \"Skipping native builds approval\"",
-    "monitor:cache": "tsx scripts/monitor-cache.ts"
+    "monitor:cache": "tsx scripts/monitor-cache.ts",
+    "process-emails": "tsx src/scripts/email-batch-processor.ts --"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",

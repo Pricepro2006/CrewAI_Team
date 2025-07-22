@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { trpc } from "../../App";
+import { api } from "@/lib/trpc";
 import { MessageList } from "./MessageList";
 import { InputBox } from "./InputBox";
 import { AgentMonitor } from "../AgentStatus/AgentMonitor";
@@ -17,9 +17,9 @@ export const ChatInterface: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const messageEndRef = useRef<HTMLDivElement>(null);
 
-  const createConversation = trpc.chat.create.useMutation();
-  const sendMessage = trpc.chat.message.useMutation();
-  const conversationHistory = trpc.chat.history.useQuery(
+  const createConversation = api.chat.create.useMutation();
+  const sendMessage = api.chat.message.useMutation();
+  const conversationHistory = api.chat.history.useQuery(
     { conversationId: conversationId! },
     { enabled: !!conversationId },
   );
@@ -32,7 +32,7 @@ export const ChatInterface: React.FC = () => {
   }, [conversationHistory.data]);
 
   // Subscribe to real-time updates
-  trpc.chat.onMessage.useSubscription(
+  api.chat.onMessage.useSubscription(
     { conversationId: conversationId! },
     {
       enabled: !!conversationId,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { EmailDashboardMultiPanel } from "../components/dashboard/EmailDashboardMultiPanel";
 import { useEmailAssignment } from "../hooks/useEmailAssignment";
-import { trpc } from "@/utils/trpc";
+import { api } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -124,7 +124,7 @@ export function EmailDashboardDemo() {
     refetch,
     isFetching,
   } = (
-    (trpc as any).emails?.getTableData?.useQuery ||
+    (api as any).emails?.getTableData?.useQuery ||
     (() => ({
       data: undefined,
       isLoading: false,
@@ -205,7 +205,7 @@ export function EmailDashboardDemo() {
   );
 
   // Update email status using tRPC mutation
-  const updateEmailMutation = (trpc as any).emails?.updateStatus?.useMutation({
+  const updateEmailMutation = (api as any).emails?.updateStatus?.useMutation({
     onSuccess: () => {
       setShowSuccessMessage("Email status updated successfully!");
       refetch(); // Refresh the email list

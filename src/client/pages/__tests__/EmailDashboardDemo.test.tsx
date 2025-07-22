@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCMsw } from "msw-trpc";
 import { setupServer } from "msw/node";
-import { trpc } from "@/utils/trpc";
+import { api } from "@/lib/trpc";
 import { httpBatchLink } from "@trpc/client";
 import { EmailDashboardDemo } from "../EmailDashboardDemo";
 import type { AppRouter } from "../../../api/trpc/router";
@@ -98,15 +98,17 @@ const mockTeamMembers = [
 // Setup MSW
 const mswTrpc = createTRPCMsw<AppRouter>();
 const server = setupServer(
-  mswTrpc.emails?.getTableData?.query(() => mockEmailsData as any),
-  mswTrpc.emails?.updateStatus?.mutation(
-    () => ({ success: true, message: "Status updated successfully" }) as any,
-  ),
-  mswTrpc.emailAssignment?.getTeamMembers?.query(() => mockTeamMembers as any),
-  mswTrpc.emailAssignment?.assignEmail?.mutation(
-    () => ({ success: true, message: "Email assigned successfully" }) as any,
-  ),
-  mswTrpc.emailAssignment?.getWorkloadDistribution?.query(() => [] as any),
+  mswTrpc.emails.getTableData.query(() => mockEmailsData),
+  mswTrpc.emails.updateStatus.mutation(() => ({
+    success: true,
+    message: "Status updated successfully",
+  })),
+  mswTrpc.emailAssignment.getTeamMembers.query(() => mockTeamMembers),
+  mswTrpc.emailAssignment.assignEmail.mutation(() => ({
+    success: true,
+    message: "Email assigned successfully",
+  })),
+  mswTrpc.emailAssignment.getWorkloadDistribution.query(() => []),
 );
 
 beforeAll(() => server.listen());
@@ -127,7 +129,7 @@ const createWrapper = () => {
   });
 
   // Handle case where trpc might not have createClient or Provider
-  const trpcClient = (trpc as any).createClient?.({
+  const trpcClient = api.createClient({
     links: [
       httpBatchLink({
         url: "http://localhost:3000/api/trpc",
@@ -135,18 +137,11 @@ const createWrapper = () => {
     ],
   });
 
-  const TrpcProvider = (trpc as any).Provider;
-
-  const Wrapper = ({ children }: { children: React.ReactNode }) =>
-    TrpcProvider ? (
-      <TrpcProvider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
-      </TrpcProvider>
-    ) : (
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <api.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
+    </api.Provider>
+  );
   Wrapper.displayName = "TestWrapper";
   return Wrapper;
 };
@@ -223,7 +218,7 @@ describe("EmailDashboardDemo Component", () => {
     it("should display error message when email fetch fails", async () => {
       // Override handler to return error
       server.use(
-        mswTrpc.emails?.getTableData?.query(() => {
+        mswTrpc.emails.getTableData.query(() => {
           throw new Error("Network error occurred");
         }),
       );
@@ -242,12 +237,12 @@ describe("EmailDashboardDemo Component", () => {
 
       // Override handler to error first, then succeed
       server.use(
-        mswTrpc.emails?.getTableData?.query(() => {
+        mswTrpc.emails.getTableData.query(() => {
           if (shouldError) {
             shouldError = false;
             throw new Error("Network error occurred");
           }
-          return mockEmailsData as any;
+          return mockEmailsData;
         }),
       );
 

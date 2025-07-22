@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { trpc } from "../../App";
+import { api } from "@/lib/trpc";
 import "./VectorSearch.css";
 
 interface SearchResult {
@@ -23,7 +23,7 @@ export const VectorSearch: React.FC = () => {
   const [topK, setTopK] = useState(10);
 
   // Create search query that we can trigger manually
-  const searchQuery = trpc.rag.search.useQuery(
+  const searchQuery = api.rag.search.useQuery(
     {
       query: query.trim(),
       limit: topK,

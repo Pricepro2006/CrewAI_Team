@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  BarChart3, 
-  AlertCircle, 
-  CheckCircle2, 
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  BarChart3,
+  AlertCircle,
+  CheckCircle2,
   XCircle,
   RefreshCw,
   TrendingUp,
-  TrendingDown
-} from 'lucide-react';
-import { trpc } from '@/utils/trpc';
+  TrendingDown,
+} from "lucide-react";
+import { trpc } from "@/utils/trpc";
 
 interface RateLimitMetrics {
   totalRequests: number;
   rateLimitedRequests: number;
   percentageRateLimited: string;
   averageLatency: number;
-  circuitBreakerStatus: 'closed' | 'open' | 'half-open';
+  circuitBreakerStatus: "closed" | "open" | "half-open";
   windowResets: {
     webSearch: string;
     businessSearch: string;
@@ -32,13 +32,12 @@ export const RateLimitMonitor: React.FC = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // Fetch metrics using tRPC
-  const { data, refetch, isLoading, error } = trpc.metrics.getRateLimitMetrics.useQuery(
-    undefined,
-    {
-      refetchInterval: autoRefresh ? 5000 : false,
-      refetchIntervalInBackground: true
-    }
-  );
+  const { data, refetch, isLoading, error } = (
+    trpc as any
+  ).metrics.getRateLimitMetrics.useQuery(undefined, {
+    refetchInterval: autoRefresh ? 5000 : false,
+    refetchIntervalInBackground: true,
+  });
 
   useEffect(() => {
     if (data) {
@@ -48,26 +47,34 @@ export const RateLimitMonitor: React.FC = () => {
 
   const getCircuitBreakerColor = (status: string) => {
     switch (status) {
-      case 'closed': return 'text-green-500';
-      case 'open': return 'text-red-500';
-      case 'half-open': return 'text-yellow-500';
-      default: return 'text-gray-500';
+      case "closed":
+        return "text-green-500";
+      case "open":
+        return "text-red-500";
+      case "half-open":
+        return "text-yellow-500";
+      default:
+        return "text-gray-500";
     }
   };
 
   const getCircuitBreakerIcon = (status: string) => {
     switch (status) {
-      case 'closed': return <CheckCircle2 className="w-4 h-4" />;
-      case 'open': return <XCircle className="w-4 h-4" />;
-      case 'half-open': return <AlertCircle className="w-4 h-4" />;
-      default: return null;
+      case "closed":
+        return <CheckCircle2 className="w-4 h-4" />;
+      case "open":
+        return <XCircle className="w-4 h-4" />;
+      case "half-open":
+        return <AlertCircle className="w-4 h-4" />;
+      default:
+        return null;
     }
   };
 
   const getRateLimitSeverity = (percentage: number) => {
-    if (percentage >= 20) return 'destructive';
-    if (percentage >= 10) return 'warning';
-    return 'success';
+    if (percentage >= 20) return "destructive";
+    if (percentage >= 10) return "warning";
+    return "success";
   };
 
   if (isLoading && !metrics) {
@@ -75,7 +82,9 @@ export const RateLimitMonitor: React.FC = () => {
       <Card>
         <CardContent className="flex items-center justify-center p-8">
           <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
-          <span className="ml-2 text-gray-500">Loading rate limit metrics...</span>
+          <span className="ml-2 text-gray-500">
+            Loading rate limit metrics...
+          </span>
         </CardContent>
       </Card>
     );
@@ -129,8 +138,9 @@ export const RateLimitMonitor: React.FC = () => {
         <Alert variant="warning">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            High rate limiting detected: {metrics.percentageRateLimited} of requests are being rate limited.
-            Consider scaling up or optimizing query patterns.
+            High rate limiting detected: {metrics.percentageRateLimited} of
+            requests are being rate limited. Consider scaling up or optimizing
+            query patterns.
           </AlertDescription>
         </Alert>
       )}
@@ -145,7 +155,9 @@ export const RateLimitMonitor: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.totalRequests.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {metrics.totalRequests.toLocaleString()}
+            </div>
             <p className="text-xs text-gray-500 mt-1">All WebSearch requests</p>
           </CardContent>
         </Card>
@@ -185,8 +197,8 @@ export const RateLimitMonitor: React.FC = () => {
             <div className="text-2xl font-bold">
               {metrics.averageLatency.toFixed(0)}ms
             </div>
-            <Progress 
-              value={Math.min((metrics.averageLatency / 2000) * 100, 100)} 
+            <Progress
+              value={Math.min((metrics.averageLatency / 2000) * 100, 100)}
               className="mt-2"
             />
           </CardContent>
@@ -200,16 +212,18 @@ export const RateLimitMonitor: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`flex items-center gap-2 ${getCircuitBreakerColor(metrics.circuitBreakerStatus)}`}>
+            <div
+              className={`flex items-center gap-2 ${getCircuitBreakerColor(metrics.circuitBreakerStatus)}`}
+            >
               {getCircuitBreakerIcon(metrics.circuitBreakerStatus)}
               <span className="text-lg font-semibold capitalize">
                 {metrics.circuitBreakerStatus}
               </span>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              {metrics.circuitBreakerStatus === 'open' 
-                ? 'Requests bypassing enhancement'
-                : 'Normal operation'}
+              {metrics.circuitBreakerStatus === "open"
+                ? "Requests bypassing enhancement"
+                : "Normal operation"}
             </p>
           </CardContent>
         </Card>
@@ -224,19 +238,27 @@ export const RateLimitMonitor: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
               <p className="text-sm font-medium text-gray-600">Web Search</p>
-              <p className="text-xs text-gray-500">Resets: {metrics.windowResets.webSearch}</p>
+              <p className="text-xs text-gray-500">
+                Resets: {metrics.windowResets.webSearch}
+              </p>
               <Progress value={75} className="h-2" />
               <p className="text-xs text-gray-400">100 requests / 15 min</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-600">Business Search</p>
-              <p className="text-xs text-gray-500">Resets: {metrics.windowResets.businessSearch}</p>
+              <p className="text-sm font-medium text-gray-600">
+                Business Search
+              </p>
+              <p className="text-xs text-gray-500">
+                Resets: {metrics.windowResets.businessSearch}
+              </p>
               <Progress value={50} className="h-2" />
               <p className="text-xs text-gray-400">30 requests / 5 min</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-gray-600">Premium</p>
-              <p className="text-xs text-gray-500">Resets: {metrics.windowResets.premium}</p>
+              <p className="text-xs text-gray-500">
+                Resets: {metrics.windowResets.premium}
+              </p>
               <Progress value={20} className="h-2" />
               <p className="text-xs text-gray-400">500 requests / 15 min</p>
             </div>
@@ -255,11 +277,12 @@ export const RateLimitMonitor: React.FC = () => {
               <div className="flex items-center gap-2 text-sm">
                 <XCircle className="w-4 h-4 text-red-500" />
                 <span className="text-gray-600">
-                  {metrics.rateLimitedRequests} requests rate limited in current period
+                  {metrics.rateLimitedRequests} requests rate limited in current
+                  period
                 </span>
               </div>
             )}
-            {metrics.circuitBreakerStatus === 'open' && (
+            {metrics.circuitBreakerStatus === "open" && (
               <div className="flex items-center gap-2 text-sm">
                 <AlertCircle className="w-4 h-4 text-yellow-500" />
                 <span className="text-gray-600">
@@ -271,7 +294,8 @@ export const RateLimitMonitor: React.FC = () => {
               <div className="flex items-center gap-2 text-sm">
                 <AlertCircle className="w-4 h-4 text-orange-500" />
                 <span className="text-gray-600">
-                  High latency detected: {metrics.averageLatency.toFixed(0)}ms average
+                  High latency detected: {metrics.averageLatency.toFixed(0)}ms
+                  average
                 </span>
               </div>
             )}

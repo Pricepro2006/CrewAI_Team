@@ -32,7 +32,22 @@ export class SearchKnowledgeService {
     },
     knowledgeBasePath: string = "/home/pricepro2006/CrewAI_Team/master_knowledge_base",
   ) {
-    this.ragSystem = new RAGSystem(ragConfig);
+    // Provide default values for required properties
+    const fullConfig: RAGConfig = {
+      vectorStore: ragConfig.vectorStore,
+      chunking: ragConfig.chunking || {
+        chunkSize: 1000,
+        chunkOverlap: 200,
+        minChunkSize: 50,
+      },
+      retrieval: ragConfig.retrieval || {
+        topK: 5,
+        minScore: 0.7,
+        maxTokens: 2000,
+      },
+    };
+
+    this.ragSystem = new RAGSystem(fullConfig);
     this.knowledgeBasePath = knowledgeBasePath;
     this.searchHistoryPath = path.join(knowledgeBasePath, "search_history");
   }

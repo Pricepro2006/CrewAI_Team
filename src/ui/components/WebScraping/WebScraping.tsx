@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { trpc } from "../../App";
+import { api } from "@/lib/trpc";
 import "./WebScraping.css";
 
 export const WebScraping: React.FC = () => {
@@ -8,7 +8,7 @@ export const WebScraping: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Use tRPC mutation hook
-  const scrapeMutation = trpc.dataCollection.webScraping.useMutation({
+  const scrapeMutation = api.dataCollection.webScraping.useMutation({
     onSuccess: (data) => {
       setResult(data);
       setError(null);

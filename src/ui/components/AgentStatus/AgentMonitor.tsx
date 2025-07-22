@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { trpc } from "../../App";
+import { api } from "@/lib/trpc";
 import {
   useAgentStatus,
   useTaskQueue,
@@ -21,7 +21,7 @@ export const AgentMonitor: React.FC = () => {
   const [activeAgents, setActiveAgents] = useState<AgentStatus[]>([]);
 
   // Poll for agent status - use type assertion to bypass tRPC inference issues
-  const agentStatus = (trpc.agent.status as any).useQuery(undefined, {
+  const agentStatus = (api.agent.status as any).useQuery(undefined, {
     refetchInterval: 1000, // Refresh every second
     enabled: true,
     trpc: {

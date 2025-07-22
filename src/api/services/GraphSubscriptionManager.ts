@@ -1,9 +1,9 @@
-import { Client } from '@microsoft/microsoft-graph-client';
-import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
-import { ClientSecretCredential } from '@azure/identity';
-import { logger } from '@/utils/logger';
-import { metrics } from '../monitoring/metrics';
-import { CronJob } from 'cron';
+import { Client } from "@microsoft/microsoft-graph-client";
+import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials";
+import { ClientSecretCredential } from "@azure/identity";
+import { logger } from "@/utils/logger";
+import { metrics } from "../monitoring/metrics";
+import { CronJob } from "cron";
 
 interface Subscription {
   id: string;
@@ -21,9 +21,9 @@ interface SubscriptionConfig {
 }
 
 export class GraphSubscriptionManager {
-  private graphClient: Client;
+  private graphClient!: Client;
   private subscriptions: Map<string, Subscription> = new Map();
-  private renewalJob: CronJob;
+  private renewalJob!: CronJob;
   private readonly MAX_SUBSCRIPTION_DURATION = 4230 * 60 * 1000; // 70.5 minutes in ms
   private readonly RENEWAL_BUFFER = 5 * 60 * 1000; // 5 minutes before expiry
 
@@ -36,26 +36,29 @@ export class GraphSubscriptionManager {
     const credential = new ClientSecretCredential(
       process.env.AZURE_TENANT_ID!,
       process.env.AZURE_CLIENT_ID!,
-      process.env.AZURE_CLIENT_SECRET!
+      process.env.AZURE_CLIENT_SECRET!,
     );
 
     const authProvider = new TokenCredentialAuthenticationProvider(credential, {
-      scopes: ['https://graph.microsoft.com/.default']
+      scopes: ["https://graph.microsoft.com/.default"],
     });
 
     this.graphClient = Client.initWithMiddleware({
       authProvider,
-      defaultVersion: 'v1.0',
+      defaultVersion: "v1.0",
     });
   }
 
   /**
    * Create email subscription for a mailbox
    */
-  async createEmailSubscription(mailbox: string, config?: Partial<SubscriptionConfig>): Promise<Subscription> {
+  async createEmailSubscription(
+    mailbox: string,
+    config?: Partial<SubscriptionConfig>,
+  ): Promise<Subscription> {
     const defaultConfig: SubscriptionConfig = {
       resource: `users/${mailbox}/messages`,
-      changeTypes: ['created', 'updated'],
+      changeTypes: ["created", "updated"],
       includeResourceData: false, // Requires additional permissions
     };
 
@@ -63,44 +66,49 @@ export class GraphSubscriptionManager {
 
     try {
       const subscription = {
-        changeType: finalConfig.changeTypes.join(','),
+        changeType: finalConfig.changeTypes.join(","),
         notificationUrl: `${process.env.API_URL}/api/webhooks/microsoft-graph`,
         resource: finalConfig.resource,
-        expirationDateTime: new Date(Date.now() + this.MAX_SUBSCRIPTION_DURATION).toISOString(),
-        clientState: process.env.WEBHOOK_CLIENT_STATE || 'SecretClientState',
+        expirationDateTime: new Date(
+          Date.now() + this.MAX_SUBSCRIPTION_DURATION,
+        ).toISOString(),
+        clientState: process.env.WEBHOOK_CLIENT_STATE || "SecretClientState",
         includeResourceData: finalConfig.includeResourceData,
       };
 
-      logger.info('Creating Graph subscription', 'GRAPH_SUBSCRIPTION', {
+      logger.info("Creating Graph subscription", "GRAPH_SUBSCRIPTION", {
         resource: subscription.resource,
         changeTypes: subscription.changeType,
       });
 
       const result = await this.graphClient
-        .api('/subscriptions')
+        .api("/subscriptions")
         .post(subscription);
 
       this.subscriptions.set(result.id, result);
-      
-      logger.info('Graph subscription created', 'GRAPH_SUBSCRIPTION', {
+
+      logger.info("Graph subscription created", "GRAPH_SUBSCRIPTION", {
         subscriptionId: result.id,
         expirationDateTime: result.expirationDateTime,
       });
 
-      metrics.increment('graph.subscription.created');
+      metrics.increment("graph.subscription.created");
 
       // Store subscription in database for persistence
       await this.storeSubscription(result);
 
       return result;
-
     } catch (error) {
-      logger.error('Failed to create Graph subscription', 'GRAPH_SUBSCRIPTION', {
-        mailbox,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      
-      metrics.increment('graph.subscription.create_error');
+      logger.error(
+        "Failed to create Graph subscription",
+        "GRAPH_SUBSCRIPTION",
+        {
+          mailbox,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      );
+
+      metrics.increment("graph.subscription.create_error");
       throw error;
     }
   }
@@ -108,7 +116,9 @@ export class GraphSubscriptionManager {
   /**
    * Create subscriptions for multiple mailboxes
    */
-  async createBulkEmailSubscriptions(mailboxes: string[]): Promise<Subscription[]> {
+  async createBulkEmailSubscriptions(
+    mailboxes: string[],
+  ): Promise<Subscription[]> {
     const results: Subscription[] = [];
     const errors: Array<{ mailbox: string; error: string }> = [];
 
@@ -125,7 +135,7 @@ export class GraphSubscriptionManager {
     }
 
     if (errors.length > 0) {
-      logger.warn('Some subscriptions failed to create', 'GRAPH_SUBSCRIPTION', {
+      logger.warn("Some subscriptions failed to create", "GRAPH_SUBSCRIPTION", {
         successful: results.length,
         failed: errors.length,
         errors,
@@ -142,13 +152,19 @@ export class GraphSubscriptionManager {
     try {
       const subscription = this.subscriptions.get(subscriptionId);
       if (!subscription) {
-        logger.warn('Subscription not found for renewal', 'GRAPH_SUBSCRIPTION', {
-          subscriptionId,
-        });
+        logger.warn(
+          "Subscription not found for renewal",
+          "GRAPH_SUBSCRIPTION",
+          {
+            subscriptionId,
+          },
+        );
         return;
       }
 
-      const newExpiration = new Date(Date.now() + this.MAX_SUBSCRIPTION_DURATION).toISOString();
+      const newExpiration = new Date(
+        Date.now() + this.MAX_SUBSCRIPTION_DURATION,
+      ).toISOString();
 
       const updated = await this.graphClient
         .api(`/subscriptions/${subscriptionId}`)
@@ -158,24 +174,23 @@ export class GraphSubscriptionManager {
 
       this.subscriptions.set(subscriptionId, updated);
 
-      logger.info('Subscription renewed', 'GRAPH_SUBSCRIPTION', {
+      logger.info("Subscription renewed", "GRAPH_SUBSCRIPTION", {
         subscriptionId,
         newExpiration,
       });
 
-      metrics.increment('graph.subscription.renewed');
+      metrics.increment("graph.subscription.renewed");
 
       // Update stored subscription
       await this.updateStoredSubscription(updated);
-
     } catch (error) {
-      logger.error('Failed to renew subscription', 'GRAPH_SUBSCRIPTION', {
+      logger.error("Failed to renew subscription", "GRAPH_SUBSCRIPTION", {
         subscriptionId,
         error: error instanceof Error ? error.message : String(error),
       });
-      
-      metrics.increment('graph.subscription.renew_error');
-      
+
+      metrics.increment("graph.subscription.renew_error");
+
       // Remove failed subscription from tracking
       this.subscriptions.delete(subscriptionId);
     }
@@ -186,28 +201,25 @@ export class GraphSubscriptionManager {
    */
   async deleteSubscription(subscriptionId: string): Promise<void> {
     try {
-      await this.graphClient
-        .api(`/subscriptions/${subscriptionId}`)
-        .delete();
+      await this.graphClient.api(`/subscriptions/${subscriptionId}`).delete();
 
       this.subscriptions.delete(subscriptionId);
 
-      logger.info('Subscription deleted', 'GRAPH_SUBSCRIPTION', {
+      logger.info("Subscription deleted", "GRAPH_SUBSCRIPTION", {
         subscriptionId,
       });
 
-      metrics.increment('graph.subscription.deleted');
+      metrics.increment("graph.subscription.deleted");
 
       // Remove from storage
       await this.removeStoredSubscription(subscriptionId);
-
     } catch (error) {
-      logger.error('Failed to delete subscription', 'GRAPH_SUBSCRIPTION', {
+      logger.error("Failed to delete subscription", "GRAPH_SUBSCRIPTION", {
         subscriptionId,
         error: error instanceof Error ? error.message : String(error),
       });
-      
-      metrics.increment('graph.subscription.delete_error');
+
+      metrics.increment("graph.subscription.delete_error");
     }
   }
 
@@ -216,12 +228,10 @@ export class GraphSubscriptionManager {
    */
   async getActiveSubscriptions(): Promise<Subscription[]> {
     try {
-      const response = await this.graphClient
-        .api('/subscriptions')
-        .get();
+      const response = await this.graphClient.api("/subscriptions").get();
 
       const activeSubscriptions = response.value.filter(
-        (sub: Subscription) => new Date(sub.expirationDateTime) > new Date()
+        (sub: Subscription) => new Date(sub.expirationDateTime) > new Date(),
       );
 
       // Update local cache
@@ -231,12 +241,11 @@ export class GraphSubscriptionManager {
       });
 
       return activeSubscriptions;
-
     } catch (error) {
-      logger.error('Failed to get active subscriptions', 'GRAPH_SUBSCRIPTION', {
+      logger.error("Failed to get active subscriptions", "GRAPH_SUBSCRIPTION", {
         error: error instanceof Error ? error.message : String(error),
       });
-      
+
       return [];
     }
   }
@@ -246,12 +255,12 @@ export class GraphSubscriptionManager {
    */
   private startRenewalJob() {
     // Run every 5 minutes
-    this.renewalJob = new CronJob('*/5 * * * *', async () => {
+    this.renewalJob = new CronJob("*/5 * * * *", async () => {
       await this.renewExpiringSubscriptions();
     });
 
     this.renewalJob.start();
-    logger.info('Subscription renewal job started', 'GRAPH_SUBSCRIPTION');
+    logger.info("Subscription renewal job started", "GRAPH_SUBSCRIPTION");
   }
 
   /**
@@ -262,13 +271,20 @@ export class GraphSubscriptionManager {
     const renewalThreshold = now + this.RENEWAL_BUFFER;
 
     for (const [id, subscription] of this.subscriptions) {
-      const expirationTime = new Date(subscription.expirationDateTime).getTime();
-      
+      const expirationTime = new Date(
+        subscription.expirationDateTime,
+      ).getTime();
+
       if (expirationTime <= renewalThreshold) {
-        logger.info('Subscription expiring soon, renewing', 'GRAPH_SUBSCRIPTION', {
-          subscriptionId: id,
-          expiresIn: Math.round((expirationTime - now) / 1000 / 60) + ' minutes',
-        });
+        logger.info(
+          "Subscription expiring soon, renewing",
+          "GRAPH_SUBSCRIPTION",
+          {
+            subscriptionId: id,
+            expiresIn:
+              Math.round((expirationTime - now) / 1000 / 60) + " minutes",
+          },
+        );
 
         await this.renewSubscription(id);
       }
@@ -283,17 +299,21 @@ export class GraphSubscriptionManager {
     // This is a placeholder for the actual implementation
     try {
       const stored = await this.getStoredSubscriptions();
-      stored.forEach(sub => {
+      stored.forEach((sub) => {
         this.subscriptions.set(sub.id, sub);
       });
-      
-      logger.info('Loaded stored subscriptions', 'GRAPH_SUBSCRIPTION', {
+
+      logger.info("Loaded stored subscriptions", "GRAPH_SUBSCRIPTION", {
         count: stored.length,
       });
     } catch (error) {
-      logger.error('Failed to load stored subscriptions', 'GRAPH_SUBSCRIPTION', {
-        error: error instanceof Error ? error.message : String(error),
-      });
+      logger.error(
+        "Failed to load stored subscriptions",
+        "GRAPH_SUBSCRIPTION",
+        {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      );
     }
   }
 
@@ -304,8 +324,8 @@ export class GraphSubscriptionManager {
     if (this.renewalJob) {
       this.renewalJob.stop();
     }
-    
-    logger.info('Graph subscription manager shutdown', 'GRAPH_SUBSCRIPTION');
+
+    logger.info("Graph subscription manager shutdown", "GRAPH_SUBSCRIPTION");
   }
 
   // Storage methods (implement based on your database)
@@ -313,11 +333,15 @@ export class GraphSubscriptionManager {
     // TODO: Implement database storage
   }
 
-  private async updateStoredSubscription(subscription: Subscription): Promise<void> {
+  private async updateStoredSubscription(
+    subscription: Subscription,
+  ): Promise<void> {
     // TODO: Implement database update
   }
 
-  private async removeStoredSubscription(subscriptionId: string): Promise<void> {
+  private async removeStoredSubscription(
+    subscriptionId: string,
+  ): Promise<void> {
     // TODO: Implement database removal
   }
 

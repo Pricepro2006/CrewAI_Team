@@ -184,6 +184,8 @@ class DuckDuckGoEngineFixed extends SearchEngine {
             snippet: snippet || "No description available",
           });
         }
+
+        return true; // Continue iteration
       });
 
       // If no results from scraping, try the Instant Answer API as fallback
@@ -341,4 +343,4 @@ class SearxEngine extends SearchEngine {
   }
 }
 
-export { SearchResult, SearchEngine };
+export type { SearchResult, SearchEngine };

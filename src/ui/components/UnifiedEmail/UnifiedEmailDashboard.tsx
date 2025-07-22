@@ -1,23 +1,27 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  EnvelopeIcon, 
-  ChartBarIcon, 
-  ClockIcon, 
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  EnvelopeIcon,
+  ChartBarIcon,
+  ClockIcon,
   ExclamationTriangleIcon,
   UserGroupIcon,
   ArrowPathIcon,
   Cog6ToothIcon,
-  FunnelIcon
-} from '@heroicons/react/24/outline';
-import { trpc } from '@/utils/trpc';
-import { useWebSocket } from '@/hooks/useWebSocket';
-import { MetricsBar } from './MetricsBar';
-import { EmailListView } from './EmailListView';
-import { AnalyticsView } from './AnalyticsView';
-import { AgentView } from './AgentView';
-import { StatusLegend } from './StatusLegend';
-import type { UnifiedEmailData, ViewMode, FilterConfig } from '@/types/unified-email.types';
-import './UnifiedEmailDashboard.css';
+  FunnelIcon,
+} from "@heroicons/react/24/outline";
+import { trpc } from "@/utils/trpc";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { MetricsBar } from "./MetricsBar";
+import { EmailListView } from "./EmailListView";
+import { AnalyticsView } from "./AnalyticsView";
+import { AgentView } from "./AgentView";
+import { StatusLegend } from "./StatusLegend";
+import type {
+  UnifiedEmailData,
+  ViewMode,
+  FilterConfig,
+} from "@/types/unified-email.types";
+import "./UnifiedEmailDashboard.css";
 
 interface UnifiedEmailDashboardProps {
   className?: string;
@@ -25,7 +29,7 @@ interface UnifiedEmailDashboardProps {
 }
 
 const defaultFilters: FilterConfig = {
-  search: '',
+  search: "",
   emailAliases: [],
   requesters: [],
   statuses: [],
@@ -34,17 +38,17 @@ const defaultFilters: FilterConfig = {
   priorities: [],
   dateRange: {
     start: null,
-    end: null
+    end: null,
   },
   hasAttachments: undefined,
   isRead: undefined,
   tags: [],
-  assignedAgents: []
+  assignedAgents: [],
 };
 
 export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
   className,
-  initialView = 'list'
+  initialView = "list",
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>(initialView);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
@@ -53,31 +57,33 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
   const [showSettings, setShowSettings] = useState(false);
 
   // Fetch unified email data with all enrichments
-  const { data: emailData, refetch: refetchEmails } = trpc.unifiedEmail.getEmails.useQuery({
-    ...filters,
-    includeAnalysis: true,
-    includeWorkflowState: true,
-    includeAgentInfo: true
-  });
+  const { data: emailData, refetch: refetchEmails } =
+    api.unifiedEmail.getEmails.useQuery({
+      ...filters,
+      includeAnalysis: true,
+      includeWorkflowState: true,
+      includeAgentInfo: true,
+    });
 
   // Analytics data with workflow metrics
-  const { data: analytics, refetch: refetchAnalytics } = trpc.unifiedEmail.getAnalytics.useQuery({
-    includeWorkflowMetrics: true,
-    includeAgentMetrics: true,
-    includeTrends: true
-  });
+  const { data: analytics, refetch: refetchAnalytics } =
+    api.unifiedEmail.getAnalytics.useQuery({
+      includeWorkflowMetrics: true,
+      includeAgentMetrics: true,
+      includeTrends: true,
+    });
 
   // Real-time updates via WebSocket
-  const { lastMessage } = useWebSocket('/ws/emails', {
+  const { lastMessage } = useWebSocket("/ws/emails", {
     onMessage: (event) => {
-      if (event.type === 'email.processed' || event.type === 'email.updated') {
+      if (event.type === "email.processed" || event.type === "email.updated") {
         // Refresh data when new emails arrive or are updated
         refetchEmails();
         refetchAnalytics();
       }
     },
     reconnect: true,
-    reconnectInterval: 5000
+    reconnectInterval: 5000,
   });
 
   // Manual refresh
@@ -91,19 +97,22 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
   };
 
   // Calculate critical metrics
-  const metrics = useMemo(() => ({
-    totalEmails: emailData?.total || 0,
-    todaysEmails: emailData?.todaysCount || 0,
-    workflowCompletion: analytics?.workflowCompletion || 3.5,
-    avgResponseTime: analytics?.avgResponseTime || 4.3,
-    criticalAlerts: analytics?.criticalAlerts || [],
-    agentUtilization: analytics?.agentUtilization || 0,
-    pendingAssignment: emailData?.pendingAssignmentCount || 0,
-    urgentCount: emailData?.urgentCount || 0
-  }), [emailData, analytics]);
+  const metrics = useMemo(
+    () => ({
+      totalEmails: emailData?.total || 0,
+      todaysEmails: emailData?.todaysCount || 0,
+      workflowCompletion: analytics?.workflowCompletion || 3.5,
+      avgResponseTime: analytics?.avgResponseTime || 4.3,
+      criticalAlerts: analytics?.criticalAlerts || [],
+      agentUtilization: analytics?.agentUtilization || 0,
+      pendingAssignment: emailData?.pendingAssignmentCount || 0,
+      urgentCount: emailData?.urgentCount || 0,
+    }),
+    [emailData, analytics],
+  );
 
   return (
-    <div className={`unified-dashboard ${className || ''}`}>
+    <div className={`unified-dashboard ${className || ""}`}>
       {/* Header */}
       <div className="unified-dashboard__header">
         <div className="unified-dashboard__title">
@@ -118,24 +127,24 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
 
         <div className="unified-dashboard__nav">
           <button
-            className={`unified-dashboard__nav-btn ${viewMode === 'list' ? 'active' : ''}`}
-            onClick={() => setViewMode('list')}
+            className={`unified-dashboard__nav-btn ${viewMode === "list" ? "active" : ""}`}
+            onClick={() => setViewMode("list")}
             title="Email List"
           >
             <EnvelopeIcon className="unified-dashboard__nav-icon" />
             Emails
           </button>
           <button
-            className={`unified-dashboard__nav-btn ${viewMode === 'analytics' ? 'active' : ''}`}
-            onClick={() => setViewMode('analytics')}
+            className={`unified-dashboard__nav-btn ${viewMode === "analytics" ? "active" : ""}`}
+            onClick={() => setViewMode("analytics")}
             title="Analytics"
           >
             <ChartBarIcon className="unified-dashboard__nav-icon" />
             Analytics
           </button>
           <button
-            className={`unified-dashboard__nav-btn ${viewMode === 'agents' ? 'active' : ''}`}
-            onClick={() => setViewMode('agents')}
+            className={`unified-dashboard__nav-btn ${viewMode === "agents" ? "active" : ""}`}
+            onClick={() => setViewMode("agents")}
             title="Agent Management"
           >
             <UserGroupIcon className="unified-dashboard__nav-icon" />
@@ -145,7 +154,7 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
 
         <div className="unified-dashboard__actions">
           <button
-            className={`unified-dashboard__action-btn ${isRefreshing ? 'animate-spin' : ''}`}
+            className={`unified-dashboard__action-btn ${isRefreshing ? "animate-spin" : ""}`}
             onClick={handleRefresh}
             disabled={isRefreshing}
             title="Refresh"
@@ -167,8 +176,9 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
         <div className="unified-dashboard__alert unified-dashboard__alert--critical">
           <ExclamationTriangleIcon className="unified-dashboard__alert-icon" />
           <span>
-            Critical: Only {metrics.workflowCompletion.toFixed(1)}% of workflows have complete chains. 
-            This impacts visibility and tracking across {metrics.totalEmails.toLocaleString()} emails.
+            Critical: Only {metrics.workflowCompletion.toFixed(1)}% of workflows
+            have complete chains. This impacts visibility and tracking across{" "}
+            {metrics.totalEmails.toLocaleString()} emails.
           </span>
         </div>
       )}
@@ -178,7 +188,7 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
 
       {/* Main Content Area */}
       <div className="unified-dashboard__content">
-        {viewMode === 'list' && (
+        {viewMode === "list" && (
           <EmailListView
             emails={emailData?.emails || []}
             totalCount={emailData?.total || 0}
@@ -188,16 +198,16 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
             onFiltersChange={setFilters}
           />
         )}
-        
-        {viewMode === 'analytics' && (
+
+        {viewMode === "analytics" && (
           <AnalyticsView
             analytics={analytics}
             emails={emailData?.emails || []}
             workflowData={analytics?.workflowData}
           />
         )}
-        
-        {viewMode === 'agents' && (
+
+        {viewMode === "agents" && (
           <AgentView
             agents={analytics?.agents || []}
             assignments={emailData?.agentAssignments || {}}
@@ -205,7 +215,7 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
           />
         )}
       </div>
-      
+
       {/* Status Legend */}
       <StatusLegend />
 
