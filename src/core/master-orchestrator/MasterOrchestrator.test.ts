@@ -27,7 +27,7 @@ describe("MasterOrchestrator", () => {
   describe("initialization", () => {
     it("should initialize with default configuration", () => {
       expect(orchestrator).toBeDefined();
-      expect(orchestrator["config"].model).toBe("qwen3:14b");
+      expect((orchestrator as any)["config"].model).toBe("qwen3:14b");
     });
 
     it("should register default agents", async () => {
@@ -64,7 +64,7 @@ describe("MasterOrchestrator", () => {
       const plan = await orchestrator["createPlan"](userInput, context);
 
       expect(plan.tasks.length).toBeGreaterThanOrEqual(3);
-      const taskTypes = plan.tasks.map((t) => t.type);
+      const taskTypes = plan.tasks.map((t: any) => t.type);
       expect(taskTypes).toContain("data-analysis");
       expect(taskTypes).toContain("visualization");
       expect(taskTypes).toContain("writing");
@@ -75,7 +75,7 @@ describe("MasterOrchestrator", () => {
     it("should execute a simple plan", async () => {
       const plan: Plan = {
         id: "plan-test-1",
-        goal: "Test goal",
+        metadata: { goal: "Test goal" },
         tasks: [
           {
             id: "task-1",
@@ -93,7 +93,7 @@ describe("MasterOrchestrator", () => {
         updatedAt: new Date(),
       };
 
-      const result = await orchestrator["executePlan"](plan);
+      const result = await (orchestrator as any)["executePlan"](plan);
 
       expect(result.status).toBe("completed");
       expect(result.tasks[0].status).toBe("completed");
@@ -103,7 +103,7 @@ describe("MasterOrchestrator", () => {
     it("should handle task dependencies", async () => {
       const plan: Plan = {
         id: "plan-test-2",
-        goal: "Complex test",
+        metadata: { goal: "Complex test" },
         tasks: [
           {
             id: "task-1",
@@ -130,7 +130,7 @@ describe("MasterOrchestrator", () => {
         updatedAt: new Date(),
       };
 
-      const result = await orchestrator["executePlan"](plan);
+      const result = await (orchestrator as any)["executePlan"](plan);
 
       expect(result.status).toBe("completed");
       expect(result.tasks[0].status).toBe("completed");
@@ -145,11 +145,11 @@ describe("MasterOrchestrator", () => {
       );
 
       const registry = orchestrator["agentRegistry"];
-      vi.spyOn(registry, "getAgent").mockReturnValue(failingAgent);
+      vi.spyOn(registry, "getAgent").mockResolvedValue(failingAgent);
 
       const plan: Plan = {
         id: "plan-test-3",
-        goal: "Failing test",
+        metadata: { goal: "Failing test" },
         tasks: [
           {
             id: "task-1",
@@ -167,7 +167,7 @@ describe("MasterOrchestrator", () => {
         updatedAt: new Date(),
       };
 
-      const result = await orchestrator["executePlan"](plan);
+      const result = await (orchestrator as any)["executePlan"](plan);
 
       expect(result.status).toBe("failed");
       expect(result.tasks[0].status).toBe("failed");
@@ -179,7 +179,7 @@ describe("MasterOrchestrator", () => {
     it("should review completed plans", async () => {
       const completedPlan: Plan = {
         id: "plan-test-4",
-        goal: "Completed test",
+        metadata: { goal: "Completed test" },
         tasks: [
           {
             id: "task-1",
@@ -198,7 +198,9 @@ describe("MasterOrchestrator", () => {
         updatedAt: new Date(),
       };
 
-      const needsReplan = await orchestrator["reviewPlan"](completedPlan);
+      const needsReplan = await (orchestrator as any)["reviewPlan"](
+        completedPlan,
+      );
 
       expect(needsReplan).toBe(false);
     });
@@ -206,7 +208,7 @@ describe("MasterOrchestrator", () => {
     it("should suggest replanning for partial failures", async () => {
       const partiallyFailedPlan: Plan = {
         id: "plan-test-5",
-        goal: "Partial failure test",
+        metadata: { goal: "Partial failure test" },
         tasks: [
           {
             id: "task-1",
@@ -235,21 +237,20 @@ describe("MasterOrchestrator", () => {
         updatedAt: new Date(),
       };
 
-      const needsReplan = await orchestrator["reviewPlan"](partiallyFailedPlan);
+      const needsReplan = await (orchestrator as any)["reviewPlan"](
+        partiallyFailedPlan,
+      );
 
       expect(needsReplan).toBe(true);
     });
   });
 
-  describe("processUserQuery", () => {
+  describe("processQuery", () => {
     it("should process a complete user query", async () => {
       const query = "What is the weather today?";
       const conversationId = "test-conv-1";
 
-      const response = await orchestrator.processUserQuery(
-        query,
-        conversationId,
-      );
+      const response = await orchestrator.processQuery(query, conversationId);
 
       expect(response).toBeDefined();
       expect(response.success).toBe(true);
@@ -262,7 +263,7 @@ describe("MasterOrchestrator", () => {
       const conversationId = "test-conv-1";
 
       await expect(
-        orchestrator.processUserQuery(query, conversationId),
+        orchestrator.processQuery(query, conversationId),
       ).rejects.toThrow("Query cannot be empty");
     });
 
@@ -273,10 +274,7 @@ describe("MasterOrchestrator", () => {
       const query = "Complex query requiring replanning";
       const conversationId = "test-conv-1";
 
-      const response = await orchestrator.processUserQuery(
-        query,
-        conversationId,
-      );
+      const response = await orchestrator.processQuery(query, conversationId);
 
       expect(response.success).toBe(true);
       expect(response.metadata?.replanCount).toBeLessThanOrEqual(3);
