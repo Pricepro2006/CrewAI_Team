@@ -51,7 +51,7 @@ const confidenceChatSchemas = {
   }),
 };
 
-export const confidenceChatRouter: any = createFeatureRouter(
+export const confidenceChatRouter = createFeatureRouter(
   "confidence-chat",
   router({
     // Create a new conversation with confidence scoring

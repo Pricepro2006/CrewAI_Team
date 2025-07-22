@@ -1,6 +1,12 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, httpLink, wsLink, splitLink, createWSClient } from "@trpc/client";
+import {
+  httpBatchLink,
+  httpLink,
+  wsLink,
+  splitLink,
+  createWSClient,
+} from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import superjson from "superjson";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -44,10 +50,6 @@ const trpcClient = trpc.createClient({
       true: wsLink({
         client: createWSClient({
           url: `ws://localhost:3002/trpc-ws`,
-          connectionParams: async () => {
-            const token = localStorage.getItem("token");
-            return token ? { token } : {};
-          },
           retryDelayMs: () => {
             // Exponential backoff with max delay of 30 seconds
             return Math.min(1000 * 2 ** 0, 30000);
@@ -69,7 +71,7 @@ const trpcClient = trpc.createClient({
         fetch(url, options) {
           return fetch(url, {
             ...options,
-            credentials: 'include',
+            credentials: "include",
           });
         },
       }),
@@ -101,6 +103,5 @@ function App() {
     </trpc.Provider>
   );
 }
-
 
 export default App;

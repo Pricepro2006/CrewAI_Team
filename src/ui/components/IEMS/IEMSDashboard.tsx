@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  EnvelopeIcon, 
-  ClockIcon, 
+import React, { useState, useEffect } from "react";
+import {
+  EnvelopeIcon,
+  ClockIcon,
   ExclamationTriangleIcon,
   ArrowPathIcon,
-  ChartBarIcon
-} from '@heroicons/react/24/outline';
-import { trpc } from '../../utils/trpc';
-import { EmailAliasSection } from './EmailAliasSection';
-import { MarketingSplunkSection } from './MarketingSplunkSection';
-import { VMwareTDSynnexSection } from './VMwareTDSynnexSection';
-import type { CategorizedEmails } from '@/types/iems-email.types';
-import './IEMSDashboard.css';
+  ChartBarIcon,
+} from "@heroicons/react/24/outline";
+import { trpc } from "../../utils/trpc";
+import { EmailAliasSection } from "./EmailAliasSection";
+import { MarketingSplunkSection } from "./MarketingSplunkSection";
+import { VMwareTDSynnexSection } from "./VMwareTDSynnexSection";
+import type { CategorizedEmails } from "@/types/iems-email.types";
+import "./IEMSDashboard.css";
 
 export interface IEMSDashboardProps {
   className?: string;
@@ -22,9 +22,13 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch categorized emails
-  const { data: categorizedEmails, isLoading, refetch } = trpc.iemsEmails.getCategorizedEmails.useQuery({
+  const {
+    data: categorizedEmails,
+    isLoading,
+    refetch,
+  } = trpc.iemsEmails.getCategorizedEmails.useQuery({
     limit: 20,
-    refresh: refreshKey > 0
+    refresh: refreshKey > 0,
   });
 
   // Fetch analytics
@@ -34,18 +38,23 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
   const { data: teamMembers } = trpc.iemsEmails.getTeamMembers.useQuery();
 
   // WebSocket subscription for real-time updates
-  const emailUpdatesSubscription = trpc.ws.subscribeToUpdates.useSubscription({
-    types: ['email.statusUpdated', 'email.assigned', 'email.actionPerformed']
-  }, {
-    onData: (update: any) => {
-      console.log('Real-time update:', update);
-      // Refresh data on updates
-      refetch();
+  const emailUpdatesSubscription = (
+    trpc as any
+  ).ws?.subscribe?.useSubscription?.(
+    {
+      types: ["email.statusUpdated", "email.assigned", "email.actionPerformed"],
     },
-    onError: (error) => {
-      console.error('WebSocket subscription error:', error);
-    }
-  });
+    {
+      onData: (update: any) => {
+        console.log("Real-time update:", update);
+        // Refresh data on updates
+        refetch();
+      },
+      onError: (error: any) => {
+        console.error("WebSocket subscription error:", error);
+      },
+    },
+  );
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -58,22 +67,24 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
   // Manual refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
     await refetch();
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
   // Calculate quick stats
   const quickStats = React.useMemo(() => {
-    if (!analytics) return { total: 0, urgent: 0, pending: 0, avgResponseTime: '0h' };
-    
+    if (!analytics)
+      return { total: 0, urgent: 0, pending: 0, avgResponseTime: "0h" };
+
     return {
       total: analytics.totalEmails,
       urgent: analytics.urgentCount,
       pending: analytics.pendingAssignments,
-      avgResponseTime: analytics.avgResponseTime > 0 
-        ? `${Math.round(analytics.avgResponseTime / 60)}h`
-        : '0h'
+      avgResponseTime:
+        analytics.avgResponseTime > 0
+          ? `${Math.round(analytics.avgResponseTime / 60)}h`
+          : "0h",
     };
   }, [analytics]);
 
@@ -83,8 +94,8 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
       refetch();
     },
     onError: (error) => {
-      console.error('Failed to update email status:', error);
-    }
+      console.error("Failed to update email status:", error);
+    },
   });
 
   // Handle email assignment
@@ -93,8 +104,8 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
       refetch();
     },
     onError: (error) => {
-      console.error('Failed to assign email:', error);
-    }
+      console.error("Failed to assign email:", error);
+    },
   });
 
   // Handle email action
@@ -103,12 +114,12 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
       refetch();
     },
     onError: (error) => {
-      console.error('Failed to perform email action:', error);
-    }
+      console.error("Failed to perform email action:", error);
+    },
   });
 
   return (
-    <div className={`iems-dashboard ${className || ''}`}>
+    <div className={`iems-dashboard ${className || ""}`}>
       {/* Header */}
       <div className="iems-dashboard__header">
         <div className="iems-dashboard__title">
@@ -120,10 +131,10 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
             TD SYNNEX Intelligent Email Management System
           </p>
         </div>
-        
+
         <div className="iems-dashboard__actions">
-          <button 
-            className={`iems-dashboard__action-btn iems-dashboard__action-btn--secondary ${isRefreshing ? 'animate-spin' : ''}`}
+          <button
+            className={`iems-dashboard__action-btn iems-dashboard__action-btn--secondary ${isRefreshing ? "animate-spin" : ""}`}
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
@@ -153,7 +164,9 @@ export const IEMSDashboard: React.FC<IEMSDashboardProps> = ({ className }) => {
         </div>
         <div className="iems-dashboard__stat">
           <ClockIcon className="iems-dashboard__stat-icon" />
-          <div className="iems-dashboard__stat-value">{quickStats.avgResponseTime}</div>
+          <div className="iems-dashboard__stat-value">
+            {quickStats.avgResponseTime}
+          </div>
           <div className="iems-dashboard__stat-label">Avg Response Time</div>
         </div>
       </div>

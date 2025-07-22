@@ -34,7 +34,7 @@ const chatSchemas = {
   }),
 };
 
-export const chatRouter: any = createFeatureRouter(
+export const chatRouter = createFeatureRouter(
   "chat",
   router({
     // Create a new conversation

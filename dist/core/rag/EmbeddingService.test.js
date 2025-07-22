@@ -153,10 +153,10 @@ describe("EmbeddingService", () => {
             ];
             const results = await service.findSimilar(queryEmbedding, embeddings, 3);
             expect(results).toHaveLength(3);
-            expect(results[0].index).toBe(0); // most similar
-            expect(results[0].score).toBeCloseTo(1.0, 5);
-            expect(results[1].index).toBe(1); // second most similar
-            expect(results[2].index).toBe(2); // third most similar
+            expect(results[0]?.index).toBe(0); // most similar
+            expect(results[0]?.score).toBeCloseTo(1.0, 5);
+            expect(results[1]?.index).toBe(1); // second most similar
+            expect(results[2]?.index).toBe(2); // third most similar
         });
         it("should respect topK parameter", async () => {
             const queryEmbedding = [1, 0, 0];

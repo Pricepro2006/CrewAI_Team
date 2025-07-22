@@ -85,10 +85,10 @@ describe("MasterOrchestrator Basic Tests", () => {
             ]);
             expect(response).toBeDefined();
             expect(response.success).toBe(true);
-            expect(response.output).toBeDefined();
-            expect(response.output.toLowerCase()).toContain("hello");
-            expect(response.plan).toBeDefined();
-            expect(response.plan.tasks.length).toBeGreaterThan(0);
+            expect(response.summary).toBeDefined();
+            expect(response.summary.toLowerCase()).toContain("hello");
+            expect(response.results).toBeDefined();
+            expect(response.results.length).toBeGreaterThan(0);
         });
         it("should handle query metadata", async () => {
             if (!isOllamaAvailable) {
@@ -119,7 +119,7 @@ describe("MasterOrchestrator Basic Tests", () => {
             ]);
             expect(response.success).toBe(true);
             expect(response.metadata).toBeDefined();
-            expect(response.output).toContain("5");
+            expect(response.summary).toContain("5");
         });
     });
     describe("Plan Creation", () => {
@@ -223,7 +223,7 @@ describe("MasterOrchestrator Basic Tests", () => {
             ]);
             expect(response).toBeDefined();
             expect(response.success).toBeDefined();
-            expect(response.output.toLowerCase()).toContain("test");
+            expect(response.summary.toLowerCase()).toContain("test");
         });
     });
 });

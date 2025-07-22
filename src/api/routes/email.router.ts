@@ -149,7 +149,7 @@ const SendEmailInputSchema = z.object({
     .optional(),
 });
 
-export const emailRouter: any = router({
+export const emailRouter = router({
   // Get table data with advanced filtering, pagination, and sorting (Agent 10)
   getTableData: publicProcedure
     .input(GetEmailsTableInputSchema)

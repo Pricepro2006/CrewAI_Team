@@ -17,7 +17,7 @@ import {
 const emailStorage = new EmailStorageService();
 const wsService = new WebSocketService();
 
-export const emailAssignmentRouter: any = router({
+export const emailAssignmentRouter = router({
   /**
    * Get all team members
    */

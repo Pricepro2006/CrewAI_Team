@@ -370,3 +370,4 @@ TimeoutError: Replanning timed out
 2025-07-21T17:08:18.412Z ERROR [IEMS_DATA] Failed to generate AI summary {}
 2025-07-21T17:08:18.412Z ERROR [IEMS_DATA] Failed to generate AI summary {}
 2025-07-21T17:08:18.412Z ERROR [IEMS_DATA] Failed to generate AI summary {}
+2025-07-22T02:21:05.337Z ERROR [EMAIL_AGENT] Quick categorization failed {"error":{}}

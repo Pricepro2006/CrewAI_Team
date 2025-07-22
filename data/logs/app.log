@@ -4537,3 +4537,8 @@
 2025-07-21T18:03:41.976Z INFO  [IEMS_DATA] Categorized emails {"emailAlias":20,"marketingSplunk":0,"vmwareTDSynnex":0,"total":50}
 2025-07-21T18:03:41.982Z INFO  [IEMS_DATA] Loaded email batches {"totalEmails":50,"filesProcessed":5}
 2025-07-21T18:03:41.982Z INFO  [IEMS_DATA] Categorized emails {"emailAlias":20,"marketingSplunk":0,"vmwareTDSynnex":0,"total":50}
+2025-07-22T02:21:05.322Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T02:21:05.324Z INFO  [EMAIL_AGENT] Analyzing email: Order Confirmation - PO #12345678
+2025-07-22T02:21:05.336Z INFO  [EMAIL_CACHE] Email analysis cache initialized {"maxSize":500,"ttl":"1800s"}
+2025-07-22T02:21:05.455Z INFO  [DATA_PIPELINE] Initializing Data Collection Pipeline
+2025-07-22T02:21:05.456Z INFO  [DATA_PIPELINE] Loading pipeline configuration

@@ -31,7 +31,7 @@ const passwordSchema = z
     "Password must contain at least one uppercase letter, one lowercase letter, and one number",
   );
 
-export const authRouter: Router<any> = router({
+export const authRouter = router({
   // Register a new user
   register: publicProcedure
     .input(

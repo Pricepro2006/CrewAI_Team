@@ -18,7 +18,7 @@ iemsDataService.initialize().catch((error) => {
   logger.error("Failed to initialize IEMS Data Service", "IEMS_ROUTER", error);
 });
 
-export const iemsEmailRouter: any = router({
+export const iemsEmailRouter = router({
   /**
    * Get categorized emails for dashboard display
    */

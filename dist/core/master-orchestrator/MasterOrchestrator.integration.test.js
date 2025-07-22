@@ -90,11 +90,11 @@ describe("MasterOrchestrator Integration Tests", () => {
             // Verify plan structure
             expect(plan).toBeDefined();
             expect(plan.id).toMatch(/^plan-/);
-            expect(plan.goal).toBe(userInput);
-            expect(plan.tasks).toBeInstanceOf(Array);
-            expect(plan.tasks.length).toBeGreaterThan(0);
+            expect(plan.metadata?.goal).toBe(userInput);
+            expect(plan.steps).toBeInstanceOf(Array);
+            expect(plan.steps.length).toBeGreaterThan(0);
             // Verify task structure
-            const firstTask = plan.tasks[0];
+            const firstTask = plan.steps[0];
             expect(firstTask).toHaveProperty("id");
             expect(firstTask).toHaveProperty("type");
             expect(firstTask).toHaveProperty("description");
@@ -119,11 +119,11 @@ describe("MasterOrchestrator Integration Tests", () => {
                 conversationId,
             });
             expect(response.success).toBe(true);
-            expect(response.output).toBeDefined();
-            expect(response.output.length).toBeGreaterThan(0);
+            expect(response.summary).toBeDefined();
+            expect(response.summary.length).toBeGreaterThan(0);
             expect(response.plan).toBeDefined();
             // Should create a research-focused plan
-            const researchTasks = response.plan.tasks.filter((t) => t.type === "research" || t.agentType === "research");
+            const researchTasks = response.plan.steps.filter((t) => t.type === "research" || t.agentType === "research");
             expect(researchTasks.length).toBeGreaterThan(0);
         });
         it("should handle code generation requests", async () => {
@@ -144,9 +144,9 @@ describe("MasterOrchestrator Integration Tests", () => {
                 conversationId,
             });
             expect(response.success).toBe(true);
-            expect(response.output).toBeDefined();
+            expect(response.summary).toBeDefined();
             // Should create a code-focused plan
-            const codeTasks = response.plan.tasks.filter((t) => t.type === "code-generation" || t.agentType === "code");
+            const codeTasks = response.plan.steps.filter((t) => t.type === "code-generation" || t.agentType === "code");
             expect(codeTasks.length).toBeGreaterThan(0);
         });
         it("should execute a complete plan with real agents", async () => {
@@ -169,10 +169,10 @@ describe("MasterOrchestrator Integration Tests", () => {
             expect(response.success).toBe(true);
             expect(response.plan.status).toBe("completed");
             // Verify all tasks completed
-            const completedTasks = response.plan.tasks.filter((t) => t.status === "completed");
-            expect(completedTasks.length).toBe(response.plan.tasks.length);
+            const completedTasks = response.plan.steps.filter((t) => t.status === "completed");
+            expect(completedTasks.length).toBe(response.plan.steps.length);
             // Verify output contains a number
-            expect(response.output).toMatch(/\d+/);
+            expect(response.summary).toMatch(/\d+/);
         });
         it("should handle multi-step plans", async () => {
             if (!isOllamaAvailable) {
@@ -192,12 +192,12 @@ describe("MasterOrchestrator Integration Tests", () => {
                 conversationId,
             });
             expect(response.success).toBe(true);
-            expect(response.plan.tasks.length).toBeGreaterThanOrEqual(2);
+            expect(response.plan.steps.length).toBeGreaterThanOrEqual(2);
             // Verify dependency chain
-            const hasDependencies = response.plan.tasks.some((t) => t.dependencies.length > 0);
+            const hasDependencies = response.plan.steps.some((t) => t.dependencies.length > 0);
             expect(hasDependencies).toBe(true);
             // Verify correct result (5+3)*2 = 16
-            expect(response.output).toContain("16");
+            expect(response.summary).toContain("16");
         });
         it("should persist conversation history", async () => {
             if (!isOllamaAvailable) {
@@ -245,11 +245,11 @@ describe("MasterOrchestrator Integration Tests", () => {
             });
             // Should still return a response even if task fails
             expect(response.success).toBe(true);
-            expect(response.output).toBeDefined();
+            expect(response.summary).toBeDefined();
             // Should acknowledge the error in response
-            const containsErrorInfo = response.output.toLowerCase().includes("error") ||
-                response.output.toLowerCase().includes("invalid") ||
-                response.output.toLowerCase().includes("parse");
+            const containsErrorInfo = response.summary.toLowerCase().includes("error") ||
+                response.summary.toLowerCase().includes("invalid") ||
+                response.summary.toLowerCase().includes("parse");
             expect(containsErrorInfo).toBe(true);
         });
         it("should respect context window limits", async () => {
@@ -273,9 +273,9 @@ describe("MasterOrchestrator Integration Tests", () => {
                 conversationId,
             });
             expect(response.success).toBe(true);
-            expect(response.output).toBeDefined();
+            expect(response.summary).toBeDefined();
             // Should produce a summary much shorter than input
-            expect(response.output.length).toBeLessThan(longText.length / 10);
+            expect(response.summary.length).toBeLessThan(longText.length / 10);
         });
         it("should handle concurrent requests", async () => {
             if (!isOllamaAvailable) {
@@ -317,12 +317,12 @@ describe("MasterOrchestrator Integration Tests", () => {
             // All should succeed
             responses.forEach((response) => {
                 expect(response.success).toBe(true);
-                expect(response.output).toBeDefined();
+                expect(response.summary).toBeDefined();
             });
             // Verify correct results
-            expect(responses[0].output).toContain("4");
-            expect(responses[1].output).toContain("6");
-            expect(responses[2].output).toContain("8");
+            expect(responses[0].summary).toContain("4");
+            expect(responses[1].summary).toContain("6");
+            expect(responses[2].summary).toContain("8");
         });
     });
     describe("Plan Review and Replanning", () => {
