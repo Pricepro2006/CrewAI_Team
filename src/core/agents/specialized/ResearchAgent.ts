@@ -7,6 +7,7 @@ import type {
 } from "../base/AgentTypes";
 import { WebSearchTool } from "../../tools/web/WebSearchTool";
 import { WebScraperTool } from "../../tools/web/WebScraperTool";
+import { SearXNGSearchTool } from "../../tools/web/SearXNGProvider";
 import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout";
 import { businessSearchPromptEnhancer } from "../../prompts/BusinessSearchPromptEnhancer";
 
@@ -83,7 +84,9 @@ export class ResearchAgent extends BaseAgent {
 
       // For tool execution, skip the LLM-based research plan creation
       // and go directly to search execution
-      const searchTool = this.tools.get("web_search") as WebSearchTool;
+      // Get whichever search tool is registered (SearXNG or WebSearchTool)
+      const searchTool =
+        this.tools.get("searxng_search") || this.tools.get("web_search");
 
       if (!searchTool) {
         return {
@@ -227,7 +230,9 @@ export class ResearchAgent extends BaseAgent {
     context: AgentContext,
   ): Promise<ResearchResult[]> {
     const results: ResearchResult[] = [];
-    const searchTool = this.tools.get("web_search") as WebSearchTool;
+    // Get whichever search tool is registered (SearXNG or WebSearchTool)
+    const searchTool =
+      this.tools.get("searxng_search") || this.tools.get("web_search");
     const scraperTool = this.tools.get("web_scraper") as WebScraperTool;
 
     // Check if we have existing context that might reduce search needs
@@ -445,7 +450,27 @@ export class ResearchAgent extends BaseAgent {
   }
 
   protected registerDefaultTools(): void {
-    this.registerTool(new WebSearchTool());
+    // Try to use SearXNG first if available
+    const searxng = new SearXNGSearchTool();
+    searxng
+      .isAvailable()
+      .then((available) => {
+        if (available) {
+          console.log(
+            "[ResearchAgent] Using SearXNG for search (unlimited, better results)",
+          );
+          this.registerTool(searxng);
+        } else {
+          console.log(
+            "[ResearchAgent] SearXNG not available, using DuckDuckGo fallback",
+          );
+          this.registerTool(new WebSearchTool());
+        }
+      })
+      .catch(() => {
+        this.registerTool(new WebSearchTool());
+      });
+
     this.registerTool(new WebScraperTool());
   }
 }

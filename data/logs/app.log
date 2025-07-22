@@ -5960,3 +5960,27 @@
 2025-07-22T16:06:29.148Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
 2025-07-22T16:06:29.148Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
 2025-07-22T16:06:29.148Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T16:10:56.561Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}
+2025-07-22T16:10:56.563Z INFO  [REVIEWER] PlanReviewer initialized
+2025-07-22T16:10:56.563Z INFO  [ROUTER] AgentRouter initialized
+2025-07-22T16:10:56.563Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully
+2025-07-22T16:10:56.614Z INFO  [ORCHESTRATOR] RAG system initialized successfully
+2025-07-22T16:10:56.614Z INFO  [AGENT] Initializing agent: ResearchAgent
+2025-07-22T16:10:56.614Z INFO  [AGENT] Initializing agent ResearchAgent
+2025-07-22T16:10:56.615Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools
+2025-07-22T16:10:56.615Z INFO  [AGENT] Initializing agent: CodeAgent
+2025-07-22T16:10:56.615Z INFO  [AGENT] Initializing agent CodeAgent
+2025-07-22T16:10:56.615Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools
+2025-07-22T16:10:56.615Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed
+2025-07-22T16:11:35.572Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753200695571","messageLength":349,"priority":"medium","requestId":"0kprkd"}
+2025-07-22T16:11:35.573Z INFO  [ORCHESTRATOR] Processing query {"query":"Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root gro","conversationId":"4ae38547-f9d0-4fb8-9340-2aedb06ffbd0"}
+2025-07-22T16:11:35.575Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":3,"domains":2,"priority":"medium","estimatedDuration":120}
+2025-07-22T16:11:35.575Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":3,"domains":["research","development"],"priority":"medium","estimatedDuration":120}
+2025-07-22T16:11:35.575Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}
+2025-07-22T16:11:35.576Z INFO  [ORCHESTRATOR] Starting plan creation
+2025-07-22T16:11:35.576Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance
+2025-07-22T16:11:35.576Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
+2025-07-22T16:11:37.333Z INFO   Prompt enhanced with business search instructions (level: standard)
+2025-07-22T16:12:53.346Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}
+2025-07-22T16:12:53.346Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 77773ms {"success":true}
+2025-07-22T16:12:53.347Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"4ae38547-f9d0-4fb8-9340-2aedb06ffbd0","userId":"guest-::1-1753200695571","responseLength":3229}

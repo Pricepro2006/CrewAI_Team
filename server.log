@@ -56,3 +56,36 @@
 [0] [32m2025-07-22T16:06:29.148Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}[0m
 [0] [32m2025-07-22T16:06:29.148Z INFO  [AGENT] Initializing agent EmailAnalysisAgent[0m
 [0] [32m2025-07-22T16:06:29.148Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools[0m
+[0] [32m2025-07-22T16:10:56.561Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}[0m
+[0] [32m2025-07-22T16:10:56.563Z INFO  [REVIEWER] PlanReviewer initialized[0m
+[0] ChromaDB file path configuration is deprecated. Falling back to HTTP.
+[0] [32m2025-07-22T16:10:56.563Z INFO  [ROUTER] AgentRouter initialized[0m
+[0] [32m2025-07-22T16:10:56.563Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully[0m
+[0] [32m2025-07-22T16:10:56.614Z INFO  [ORCHESTRATOR] RAG system initialized successfully[0m
+[0] [32m2025-07-22T16:10:56.614Z INFO  [AGENT] Initializing agent: ResearchAgent[0m
+[0] [32m2025-07-22T16:10:56.614Z INFO  [AGENT] Initializing agent ResearchAgent[0m
+[0] [32m2025-07-22T16:10:56.615Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools[0m
+[0] [32m2025-07-22T16:10:56.615Z INFO  [AGENT] Initializing agent: CodeAgent[0m
+[0] [32m2025-07-22T16:10:56.615Z INFO  [AGENT] Initializing agent CodeAgent[0m
+[0] [32m2025-07-22T16:10:56.615Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools[0m
+[0] [32m2025-07-22T16:10:56.615Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed[0m
+[0] [32m2025-07-22T16:11:35.572Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753200695571","messageLength":349,"priority":"medium","requestId":"0kprkd"}[0m
+[0] [32m2025-07-22T16:11:35.573Z INFO  [ORCHESTRATOR] Processing query {"query":"Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root gro","conversationId":"4ae38547-f9d0-4fb8-9340-2aedb06ffbd0"}[0m
+[0] [32m2025-07-22T16:11:35.575Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":3,"domains":2,"priority":"medium","estimatedDuration":120}[0m
+[0] [32m2025-07-22T16:11:35.575Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":3,"domains":["research","development"],"priority":"medium","estimatedDuration":120}[0m
+[0] [32m2025-07-22T16:11:35.575Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}[0m
+[0] [32m2025-07-22T16:11:35.576Z INFO  [ORCHESTRATOR] Starting plan creation[0m
+[0] [32m2025-07-22T16:11:35.576Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance[0m
+[0] [32m2025-07-22T16:11:35.576Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}[0m
+[0] [ResearchAgent] Starting executeWithTool for web_search
+[0] [ResearchAgent] Query extracted: Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing into the irrigation piping, for the area surrounding the following address. They need to be able to travel to this location and if you can include initial visit costs, add that information as well. address: 278 Wycliff Dr. Spartanburg, SC 29301
+[0] [ResearchAgent] Business query detected - will enhance synthesis
+[0] [ResearchAgent] Executing web search...
+[0] [ResearchAgent] Search completed: true
+[0] [ResearchAgent] Found 5 results, synthesizing...
+[0] [ResearchAgent] Detected business query, enhancing synthesis prompt
+[0] [32m2025-07-22T16:11:37.333Z INFO   Prompt enhanced with business search instructions (level: standard)[0m
+[0] [ResearchAgent] Synthesis complete
+[0] [32m2025-07-22T16:12:53.346Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}[0m
+[0] [33m2025-07-22T16:12:53.346Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 77773ms {"success":true}[0m
+[0] [32m2025-07-22T16:12:53.347Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"4ae38547-f9d0-4fb8-9340-2aedb06ffbd0","userId":"guest-::1-1753200695571","responseLength":3229}[0m
