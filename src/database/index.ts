@@ -4,105 +4,71 @@
  */
 
 // Core Database Manager
-export { DatabaseManager, getDatabaseManager } from './DatabaseManager';
+export { DatabaseManager, getDatabaseManager } from "./DatabaseManager";
 
 // Repository Pattern Implementation
-export { BaseRepository } from './repositories/BaseRepository';
-export { UserRepository } from './repositories/UserRepository';
-export { 
-  EmailRepository, 
-  EmailEntityRepository, 
-  EmailAttachmentRepository 
-} from './repositories/EmailRepository';
-export { 
-  DealRepository, 
-  DealItemRepository, 
-  ProductFamilyRepository 
-} from './repositories/DealRepository';
+export { BaseRepository } from "./repositories/BaseRepository";
+export { UserRepository } from "./repositories/UserRepository";
+export {
+  EmailRepository,
+  EmailEntityRepository,
+  EmailAttachmentRepository,
+} from "./repositories/EmailRepository";
+export {
+  DealRepository,
+  DealItemRepository,
+  ProductFamilyRepository,
+} from "./repositories/DealRepository";
 
 // Vector Database Management
-export { ChromaDBManager } from './vector/ChromaDBManager';
+export { ChromaDBManager } from "./vector/ChromaDBManager";
 
 // File Storage System
-export { FileStorageManager } from './storage/FileStorageManager';
+export { FileStorageManager } from "./storage/FileStorageManager";
 
 // Migration System
-export { DatabaseMigrator } from './migrations/DatabaseMigrator';
+export { DatabaseMigrator } from "./migrations/DatabaseMigrator";
 
 // Database Initialization
-export { initializeDatabase, resetDatabase } from './scripts/initializeDatabase';
+export {
+  initializeDatabase,
+  resetDatabase,
+} from "./scripts/initializeDatabase";
 
-// Type definitions
+// Base type definitions
 export type {
-  // Base types
   BaseEntity,
   QueryOptions,
   PaginatedResult,
+} from "./repositories/BaseRepository";
 
-  // User types
-  User,
-  CreateUserData,
-
-  // Email types
+export type { User, CreateUserData } from "./repositories/UserRepository";
+export type {
   EmailEnhanced,
   EmailEntity,
   EmailAttachment,
   CreateEmailData,
   EmailSearchOptions,
-
-  // Deal types
+} from "./repositories/EmailRepository";
+export type {
   Deal,
   DealItem,
   ProductFamily,
   CreateDealData,
   CreateDealItemData,
   DealQueryResult,
-
-  // Vector database types
+} from "./repositories/DealRepository";
+export type {
   ChromaDocument,
   ChromaQueryResult,
   CollectionConfig,
-
-  // File storage types
+} from "./vector/ChromaDBManager";
+export type {
   StoredFile,
   FileMetadata,
   StorageConfig,
-
-  // Migration types
-  Migration,
-  MigrationResult,
-} from './repositories/BaseRepository';
-
-export type { User, CreateUserData } from './repositories/UserRepository';
-export type { 
-  EmailEnhanced, 
-  EmailEntity, 
-  EmailAttachment, 
-  CreateEmailData, 
-  EmailSearchOptions 
-} from './repositories/EmailRepository';
-export type { 
-  Deal, 
-  DealItem, 
-  ProductFamily, 
-  CreateDealData, 
-  CreateDealItemData, 
-  DealQueryResult 
-} from './repositories/DealRepository';
-export type { 
-  ChromaDocument, 
-  ChromaQueryResult, 
-  CollectionConfig 
-} from './vector/ChromaDBManager';
-export type { 
-  StoredFile, 
-  FileMetadata, 
-  StorageConfig 
-} from './storage/FileStorageManager';
-export type { 
-  Migration, 
-  MigrationResult 
-} from './migrations/DatabaseMigrator';
+} from "./storage/FileStorageManager";
+export type { Migration, MigrationResult } from "./migrations/DatabaseMigrator";
 
 // Constants and configuration
 export const DATABASE_CONSTANTS = {
@@ -113,14 +79,25 @@ export const DATABASE_CONSTANTS = {
     WAL_CHECKPOINT_INTERVAL: 60000, // 1 minute
   },
   CHROMADB: {
-    DEFAULT_HOST: 'localhost',
+    DEFAULT_HOST: "localhost",
     DEFAULT_PORT: 8000,
-    DEFAULT_TENANT: 'default_tenant',
-    DEFAULT_DATABASE: 'crewai_team',
+    DEFAULT_TENANT: "default_tenant",
+    DEFAULT_DATABASE: "crewai_team",
   },
   FILE_STORAGE: {
     DEFAULT_MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
-    SUPPORTED_EXTENSIONS: ['.pdf', '.doc', '.docx', '.xlsx', '.txt', '.jpg', '.jpeg', '.png', '.gif', '.zip'],
-    CATEGORIES: ['documents', 'attachments', 'images', 'exports', 'backups'],
+    SUPPORTED_EXTENSIONS: [
+      ".pdf",
+      ".doc",
+      ".docx",
+      ".xlsx",
+      ".txt",
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".gif",
+      ".zip",
+    ],
+    CATEGORIES: ["documents", "attachments", "images", "exports", "backups"],
   },
 } as const;
