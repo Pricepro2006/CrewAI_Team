@@ -3,15 +3,17 @@
  * Comprehensive testing utilities for real end-to-end API tests
  */
 
-import type { 
-  ApiResponse, 
-  ApiContext, 
+import type {
+  APITypes,
+  CoreTypes,
+  DatabaseTypes,
+  WebSocketTypes,
+  ApiResponse,
   Timestamp,
-  BaseEntity,
-  PaginationResponse,
-  WebSocketMessage,
-  WebSocketEventType
-} from '../types';
+} from "../types";
+
+// Import BaseEntity from CoreTypes
+type BaseEntity = CoreTypes.BaseEntity;
 
 // =====================================================
 // Test Configuration and Setup
@@ -34,7 +36,11 @@ export interface DatabaseTestConfig {
   resetBetweenTests: boolean;
   seedData: boolean;
   useTransactions: boolean;
-  isolationLevel: 'READ_UNCOMMITTED' | 'READ_COMMITTED' | 'REPEATABLE_READ' | 'SERIALIZABLE';
+  isolationLevel:
+    | "READ_UNCOMMITTED"
+    | "READ_COMMITTED"
+    | "REPEATABLE_READ"
+    | "SERIALIZABLE";
 }
 
 export interface ServiceTestConfig {
@@ -74,7 +80,7 @@ export interface TestUser {
 export interface MonitoringTestConfig {
   metricsEnabled: boolean;
   tracingEnabled: boolean;
-  logLevel: 'debug' | 'info' | 'warn' | 'error';
+  logLevel: "debug" | "info" | "warn" | "error";
   collectCoverage: boolean;
 }
 
@@ -168,6 +174,36 @@ export interface TestHttpClient {
   timeout: number;
   retries: number;
   interceptors: RequestInterceptor[];
+
+  // HTTP methods
+  request<T = unknown>(config: RequestConfig): Promise<TestResponse<T>>;
+  get<T = unknown>(
+    url: string,
+    config?: Partial<RequestConfig>,
+  ): Promise<TestResponse<T>>;
+  post<T = unknown>(
+    url: string,
+    body?: unknown,
+    config?: Partial<RequestConfig>,
+  ): Promise<TestResponse<T>>;
+  put<T = unknown>(
+    url: string,
+    body?: unknown,
+    config?: Partial<RequestConfig>,
+  ): Promise<TestResponse<T>>;
+  patch<T = unknown>(
+    url: string,
+    body?: unknown,
+    config?: Partial<RequestConfig>,
+  ): Promise<TestResponse<T>>;
+  delete<T = unknown>(
+    url: string,
+    config?: Partial<RequestConfig>,
+  ): Promise<TestResponse<T>>;
+
+  // Auth methods
+  setAuthToken(token: string): void;
+  clearAuthToken(): void;
 }
 
 export interface RequestInterceptor {
@@ -177,7 +213,7 @@ export interface RequestInterceptor {
 }
 
 export interface RequestConfig {
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   url: string;
   headers: Record<string, string>;
   params?: Record<string, unknown>;
@@ -215,7 +251,7 @@ export interface TestWebSocketClient {
   autoReconnect: boolean;
   reconnectAttempts: number;
   messageQueue: QueuedMessage[];
-  eventHandlers: Map<WebSocketEventType, EventHandler[]>;
+  eventHandlers: Map<string, EventHandler[]>;
 }
 
 export interface TestWebSocketConnection {
@@ -223,21 +259,21 @@ export interface TestWebSocketConnection {
   connected: boolean;
   connectedAt: Timestamp;
   lastActivity: Timestamp;
-  sentMessages: WebSocketMessage[];
-  receivedMessages: WebSocketMessage[];
+  sentMessages: WebSocketTypes.WebSocketMessage[];
+  receivedMessages: WebSocketTypes.WebSocketMessage[];
   subscriptions: string[];
   metadata: Record<string, unknown>;
 }
 
 export interface QueuedMessage {
-  message: WebSocketMessage;
+  message: WebSocketTypes.WebSocketMessage;
   queuedAt: Timestamp;
   attempts: number;
   maxAttempts: number;
 }
 
 export interface EventHandler {
-  handler: (message: WebSocketMessage) => Promise<void>;
+  handler: (message: WebSocketTypes.WebSocketMessage) => Promise<void>;
   once: boolean;
   timeout?: number;
 }
@@ -256,11 +292,11 @@ export interface TestAssertions<T = unknown> {
   toBeDefined(): TestAssertions<T>;
   toBeTruthy(): TestAssertions<T>;
   toBeFalsy(): TestAssertions<T>;
-  
+
   // Type assertions
   toBeInstanceOf(constructor: new (...args: any[]) => any): TestAssertions<T>;
   toBeTypeOf(type: string): TestAssertions<T>;
-  
+
   // Number assertions
   toBeGreaterThan(expected: number): TestAssertions<T>;
   toBeGreaterThanOrEqual(expected: number): TestAssertions<T>;
@@ -268,32 +304,37 @@ export interface TestAssertions<T = unknown> {
   toBeLessThanOrEqual(expected: number): TestAssertions<T>;
   toBeCloseTo(expected: number, precision?: number): TestAssertions<T>;
   toBeNaN(): TestAssertions<T>;
-  
+
   // String assertions
   toContain(expected: string): TestAssertions<T>;
   toStartWith(expected: string): TestAssertions<T>;
   toEndWith(expected: string): TestAssertions<T>;
   toMatch(regexp: RegExp): TestAssertions<T>;
   toHaveLength(length: number): TestAssertions<T>;
-  
+
   // Array/Object assertions
   toContainEqual(expected: unknown): TestAssertions<T>;
   toHaveProperty(path: string, value?: unknown): TestAssertions<T>;
-  
+
   // API-specific assertions
   toHaveStatus(status: number): TestAssertions<TestResponse>;
   toHaveHeader(name: string, value?: string): TestAssertions<TestResponse>;
   toHaveResponseTime(maxTime: number): TestAssertions<TestResponse>;
   toMatchSchema(schema: unknown): TestAssertions<T>;
-  
+
   // WebSocket assertions
-  toHaveReceivedMessage(eventType: WebSocketEventType): TestAssertions<TestWebSocketConnection>;
+  toHaveReceivedMessage(
+    eventType: string,
+  ): TestAssertions<TestWebSocketConnection>;
   toHaveSubscription(channel: string): TestAssertions<TestWebSocketConnection>;
-  
+
   // Database assertions
-  toExistInDatabase(table: string, conditions: Record<string, unknown>): TestAssertions<T>;
+  toExistInDatabase(
+    table: string,
+    conditions: Record<string, unknown>,
+  ): TestAssertions<T>;
   toHaveCount(table: string, count: number): TestAssertions<T>;
-  
+
   // Negation
   not: TestAssertions<T>;
 }
@@ -306,28 +347,31 @@ export interface TestDataGenerator<T = unknown> {
   generate(): T;
   generateMany(count: number): T[];
   generateWith(overrides: Partial<T>): T;
-  generateSequence(count: number, sequencer: (index: number) => Partial<T>): T[];
+  generateSequence(
+    count: number,
+    sequencer: (index: number) => Partial<T>,
+  ): T[];
 }
 
 export interface TestConversation extends BaseEntity {
   title: string;
   participantIds: string[];
   messageCount: number;
-  status: 'active' | 'archived';
+  status: "active" | "archived";
 }
 
 export interface TestMessage extends BaseEntity {
   conversationId: string;
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   userId: string;
 }
 
 export interface TestTask extends BaseEntity {
-  type: 'agent' | 'tool' | 'composite';
+  type: "agent" | "tool" | "composite";
   title: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  priority: 'low' | 'medium' | 'high';
+  status: "pending" | "running" | "completed" | "failed";
+  priority: "low" | "medium" | "high";
   assignedTo?: string;
 }
 
@@ -343,8 +387,8 @@ export interface TestEmail extends BaseEntity {
   subject: string;
   sender: string;
   recipient: string;
-  status: 'red' | 'yellow' | 'green';
-  priority: 'high' | 'medium' | 'low';
+  status: "red" | "yellow" | "green";
+  priority: "high" | "medium" | "low";
 }
 
 // =====================================================
@@ -486,7 +530,7 @@ export interface LoadTestStep {
 }
 
 export interface ValidationRule {
-  type: 'status' | 'header' | 'body' | 'response_time' | 'custom';
+  type: "status" | "header" | "body" | "response_time" | "custom";
   condition: string;
   expected: unknown;
   message?: string;
@@ -494,13 +538,13 @@ export interface ValidationRule {
 
 export interface ExtractionRule {
   name: string;
-  type: 'json' | 'regex' | 'header' | 'cookie';
+  type: "json" | "regex" | "header" | "cookie";
   expression: string;
-  scope: 'user' | 'test';
+  scope: "user" | "test";
 }
 
 export interface RampUpStrategy {
-  type: 'linear' | 'exponential' | 'step' | 'instant';
+  type: "linear" | "exponential" | "step" | "instant";
   stages: RampUpStage[];
 }
 
@@ -625,7 +669,7 @@ export interface CacheStats {
 }
 
 export interface CacheOperation {
-  operation: 'get' | 'set' | 'delete' | 'clear';
+  operation: "get" | "set" | "delete" | "clear";
   key: string;
   hit: boolean;
   responseTime: number;
@@ -636,7 +680,7 @@ export interface PerformanceTrend {
   metric: string;
   period: string;
   values: number[];
-  trend: 'improving' | 'degrading' | 'stable';
+  trend: "improving" | "degrading" | "stable";
   changePercentage: number;
 }
 
@@ -672,7 +716,7 @@ export interface TestCase {
 export interface TestResult {
   suite: string;
   test: string;
-  status: 'passed' | 'failed' | 'skipped' | 'timeout';
+  status: "passed" | "failed" | "skipped" | "timeout";
   duration: number;
   error?: TestError;
   assertions: AssertionResult[];
@@ -692,7 +736,7 @@ export interface AssertionResult {
 
 export interface TestLog {
   timestamp: Timestamp;
-  level: 'debug' | 'info' | 'warn' | 'error';
+  level: "debug" | "info" | "warn" | "error";
   message: string;
   context?: Record<string, unknown>;
 }
