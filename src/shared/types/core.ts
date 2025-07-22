@@ -3,7 +3,16 @@
  * Fundamental data structures used throughout the application
  */
 
-import type { Timestamp, TimestampedEntity } from './index';
+// Define base timestamp types directly to avoid circular import
+export interface Timestamp {
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TimestampedEntity {
+  created_at?: string;
+  updated_at?: string;
+}
 
 // =====================================================
 // Base Entity Types
@@ -26,7 +35,11 @@ export interface BaseEntityWithMetadata extends BaseEntity {
 export interface Document extends BaseEntity {
   title: string;
   content: string;
-  contentType: 'text/plain' | 'text/markdown' | 'text/html' | 'application/json';
+  contentType:
+    | "text/plain"
+    | "text/markdown"
+    | "text/html"
+    | "application/json";
   sourceId?: string;
   author?: string;
   url?: string;
@@ -74,7 +87,7 @@ export interface ChunkMetadata {
 }
 
 export interface EntityExtraction {
-  type: 'person' | 'organization' | 'location' | 'date' | 'product' | 'custom';
+  type: "person" | "organization" | "location" | "date" | "product" | "custom";
   value: string;
   confidence: number;
   startPosition: number;
@@ -87,7 +100,7 @@ export interface EntityExtraction {
 // =====================================================
 
 export interface Message extends BaseEntity {
-  role: 'user' | 'assistant' | 'system' | 'tool';
+  role: "user" | "assistant" | "system" | "tool";
   content: string | MessageContent;
   conversationId?: string;
   parentMessageId?: string;
@@ -116,7 +129,7 @@ export interface MessageAttachment {
 }
 
 export interface MessageEmbed {
-  type: 'image' | 'video' | 'link' | 'file' | 'code';
+  type: "image" | "video" | "link" | "file" | "code";
   url: string;
   title?: string;
   description?: string;
@@ -125,13 +138,13 @@ export interface MessageEmbed {
 }
 
 export interface MessageMetadata {
-  sentiment?: 'positive' | 'negative' | 'neutral';
+  sentiment?: "positive" | "negative" | "neutral";
   confidence?: number;
   language?: string;
   topics?: string[];
   entities?: EntityExtraction[];
   intent?: string;
-  urgency?: 'low' | 'medium' | 'high' | 'critical';
+  urgency?: "low" | "medium" | "high" | "critical";
   requiresAction?: boolean;
   actionType?: string;
   estimatedResponseTime?: number;
@@ -144,15 +157,15 @@ export interface Conversation extends BaseEntity {
   title?: string;
   participantIds: string[];
   messages: Message[];
-  status: 'active' | 'archived' | 'closed';
-  priority?: 'low' | 'medium' | 'high' | 'critical';
+  status: "active" | "archived" | "closed";
+  priority?: "low" | "medium" | "high" | "critical";
   category?: string;
   lastActivityAt: Timestamp;
   metadata?: ConversationMetadata;
 }
 
 export interface ConversationMetadata {
-  source: 'web' | 'api' | 'webhook' | 'import' | 'system';
+  source: "web" | "api" | "webhook" | "import" | "system";
   channel?: string;
   assignedTo?: string;
   labels?: string[];
@@ -170,9 +183,9 @@ export interface ConversationMetadata {
 // =====================================================
 
 export interface Task extends BaseEntity {
-  type: 'agent' | 'tool' | 'composite' | 'human';
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  type: "agent" | "tool" | "composite" | "human";
+  status: "pending" | "running" | "completed" | "failed" | "cancelled";
+  priority: "low" | "medium" | "high" | "critical";
   title: string;
   description?: string;
   input?: unknown;
@@ -227,7 +240,7 @@ export interface TokenUsage {
 
 export interface SystemConfig {
   version: string;
-  environment: 'development' | 'staging' | 'production';
+  environment: "development" | "staging" | "production";
   features: FeatureFlags;
   limits: SystemLimits;
   services: ServiceConfiguration;
@@ -278,7 +291,7 @@ export interface ServiceConfiguration {
 }
 
 export interface DatabaseConfig {
-  type: 'sqlite' | 'postgres' | 'mysql';
+  type: "sqlite" | "postgres" | "mysql";
   url?: string;
   path?: string;
   pool?: PoolConfig;
@@ -307,7 +320,7 @@ export interface BackupConfig {
 }
 
 export interface LLMConfig {
-  provider: 'ollama' | 'openai' | 'anthropic' | 'huggingface';
+  provider: "ollama" | "openai" | "anthropic" | "huggingface";
   baseUrl?: string;
   apiKey?: string;
   model: string;
@@ -319,7 +332,7 @@ export interface LLMConfig {
 }
 
 export interface VectorStoreConfig {
-  type: 'chromadb' | 'pinecone' | 'weaviate' | 'qdrant';
+  type: "chromadb" | "pinecone" | "weaviate" | "qdrant";
   url?: string;
   apiKey?: string;
   collection: string;
@@ -330,7 +343,7 @@ export interface VectorStoreConfig {
 }
 
 export interface CacheConfig {
-  provider: 'redis' | 'memory' | 'file';
+  provider: "redis" | "memory" | "file";
   url?: string;
   ttl: number;
   maxSize?: number;
@@ -347,10 +360,10 @@ export interface WebSocketConfig {
 }
 
 export interface QueueConfig {
-  type: 'memory' | 'redis' | 'sqs' | 'rabbitmq';
+  type: "memory" | "redis" | "sqs" | "rabbitmq";
   url?: string;
   maxSize: number;
-  strategy: 'fifo' | 'lifo' | 'priority';
+  strategy: "fifo" | "lifo" | "priority";
   retryPolicy: RetryPolicy;
 }
 
@@ -377,21 +390,21 @@ export interface MetricsConfig {
 }
 
 export interface MetricExport {
-  type: 'prometheus' | 'statsd' | 'datadog' | 'cloudwatch';
+  type: "prometheus" | "statsd" | "datadog" | "cloudwatch";
   endpoint?: string;
   apiKey?: string;
   tags?: Record<string, string>;
 }
 
 export interface LoggingConfig {
-  level: 'debug' | 'info' | 'warn' | 'error';
-  format: 'json' | 'text';
+  level: "debug" | "info" | "warn" | "error";
+  format: "json" | "text";
   outputs: LogOutput[];
   sampling?: SamplingConfig;
 }
 
 export interface LogOutput {
-  type: 'console' | 'file' | 'elasticsearch' | 'cloudwatch';
+  type: "console" | "file" | "elasticsearch" | "cloudwatch";
   path?: string;
   maxSize?: string;
   maxFiles?: number;
@@ -454,18 +467,18 @@ export interface SessionConfig {
   secret: string;
   maxAge: number;
   secure: boolean;
-  sameSite: boolean | 'strict' | 'lax' | 'none';
+  sameSite: boolean | "strict" | "lax" | "none";
   store?: SessionStoreConfig;
 }
 
 export interface SessionStoreConfig {
-  type: 'memory' | 'redis' | 'database';
+  type: "memory" | "redis" | "database";
   url?: string;
   prefix?: string;
 }
 
 export interface OAuthConfig {
-  provider: 'google' | 'github' | 'microsoft' | 'custom';
+  provider: "google" | "github" | "microsoft" | "custom";
   clientId: string;
   clientSecret: string;
   redirectUrl: string;
@@ -505,7 +518,7 @@ export interface EncryptionConfig {
 
 export interface SecretConfig {
   name: string;
-  provider: 'env' | 'file' | 'vault' | 'aws' | 'azure';
+  provider: "env" | "file" | "vault" | "aws" | "azure";
   path?: string;
   key?: string;
 }
@@ -529,7 +542,7 @@ export interface CookieConfig {
   name: string;
   secure: boolean;
   httpOnly: boolean;
-  sameSite: boolean | 'strict' | 'lax' | 'none';
+  sameSite: boolean | "strict" | "lax" | "none";
   maxAge?: number;
 }
 

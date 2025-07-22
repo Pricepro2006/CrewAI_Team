@@ -3,10 +3,15 @@
  * Comprehensive type definitions for all API endpoints and contracts
  */
 
-import type { z } from 'zod';
-import type { Timestamp, PaginationRequest, PaginationResponse, ApiResponse } from './index';
-import type { Message, Conversation, Task, Document } from './core';
-import type { ApiError } from './errors';
+import type { z } from "zod";
+import type {
+  Timestamp,
+  PaginationRequest,
+  PaginationResponse,
+  ApiResponse,
+} from "./index";
+import type { Message, Conversation, Task, Document } from "./core";
+import type { ApiError } from "./errors";
 
 // =====================================================
 // Common API Types
@@ -128,10 +133,13 @@ export interface SearchFilters {
     end: Timestamp;
   };
   terms?: Record<string, string | string[]>;
-  range?: Record<string, {
-    min?: number;
-    max?: number;
-  }>;
+  range?: Record<
+    string,
+    {
+      min?: number;
+      max?: number;
+    }
+  >;
   exists?: string[];
   missing?: string[];
 }
@@ -152,9 +160,9 @@ export interface EndpointDefinition<
   TInput = unknown,
   TOutput = unknown,
   TParams = Record<string, string>,
-  TQuery = Record<string, unknown>
+  TQuery = Record<string, unknown>,
 > {
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   path: string;
   summary: string;
   description?: string;
@@ -181,10 +189,10 @@ export interface HeaderDefinition {
 }
 
 export interface SecurityRequirement {
-  type: 'bearer' | 'apiKey' | 'oauth2' | 'basic';
+  type: "bearer" | "apiKey" | "oauth2" | "basic";
   scheme?: string;
   bearerFormat?: string;
-  in?: 'header' | 'query' | 'cookie';
+  in?: "header" | "query" | "cookie";
   name?: string;
   scopes?: string[];
 }
@@ -238,7 +246,7 @@ export interface ValidationConfig {
 
 // Chat API
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   metadata?: {
     model?: string;
@@ -264,11 +272,11 @@ export interface ChatOptions {
   logitBias?: Record<string, number>;
   user?: string;
   tools?: ToolDefinition[];
-  toolChoice?: 'auto' | 'none' | ToolChoice;
+  toolChoice?: "auto" | "none" | ToolChoice;
 }
 
 export interface ToolDefinition {
-  type: 'function';
+  type: "function";
   function: {
     name: string;
     description: string;
@@ -277,7 +285,7 @@ export interface ToolDefinition {
 }
 
 export interface ToolChoice {
-  type: 'function';
+  type: "function";
   function: {
     name: string;
   };
@@ -294,7 +302,7 @@ export interface ChatResponse {
 export interface ChatChoice {
   index: number;
   message: ChatMessage;
-  finishReason: 'stop' | 'length' | 'tool_calls' | 'content_filter';
+  finishReason: "stop" | "length" | "tool_calls" | "content_filter";
   delta?: ChatMessage; // For streaming responses
 }
 
@@ -324,7 +332,7 @@ export interface AgentContext {
 export interface AgentOptions {
   timeout?: number;
   maxRetries?: number;
-  priority?: 'low' | 'medium' | 'high';
+  priority?: "low" | "medium" | "high";
   async?: boolean;
   callbacks?: AgentCallbacks;
 }
@@ -347,7 +355,7 @@ export interface AgentCallbacks {
 
 export interface AgentStep {
   stepId: string;
-  type: 'thinking' | 'tool_call' | 'response';
+  type: "thinking" | "tool_call" | "response";
   content: string;
   tool?: string;
   parameters?: unknown;
@@ -375,11 +383,11 @@ export interface AgentMetadata {
 
 // Task API
 export interface CreateTaskRequest {
-  type: 'agent' | 'tool' | 'composite' | 'human';
+  type: "agent" | "tool" | "composite" | "human";
   title: string;
   description?: string;
   input?: unknown;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
+  priority?: "low" | "medium" | "high" | "critical";
   assignedTo?: string;
   dependencies?: string[];
   deadline?: Timestamp;
@@ -403,7 +411,7 @@ export interface TaskProgress {
 
 export interface TaskLog {
   timestamp: Timestamp;
-  level: 'debug' | 'info' | 'warn' | 'error';
+  level: "debug" | "info" | "warn" | "error";
   message: string;
   context?: Record<string, unknown>;
 }
@@ -456,7 +464,11 @@ export interface RAGSource {
 export interface CreateDocumentRequest {
   title: string;
   content: string;
-  contentType: 'text/plain' | 'text/markdown' | 'text/html' | 'application/json';
+  contentType:
+    | "text/plain"
+    | "text/markdown"
+    | "text/html"
+    | "application/json";
   source?: string;
   url?: string;
   author?: string;
@@ -464,7 +476,11 @@ export interface CreateDocumentRequest {
   metadata?: Record<string, unknown>;
 }
 
-export interface DocumentResponse extends Document {
+export interface DocumentResponse {
+  id: string;
+  title: string;
+  content: string;
+  metadata: Record<string, unknown>;
   chunks?: DocumentChunkResponse[];
   similar?: DocumentSimilarity[];
 }
@@ -512,7 +528,7 @@ export interface AnalyticsRequest {
     start: Timestamp;
     end: Timestamp;
   };
-  granularity?: 'hour' | 'day' | 'week' | 'month';
+  granularity?: "hour" | "day" | "week" | "month";
 }
 
 export interface AnalyticsResponse {
@@ -530,8 +546,8 @@ export interface AnalyticsDataPoint {
 
 // Export/Import API
 export interface ExportRequest {
-  format: 'json' | 'csv' | 'xlsx' | 'pdf';
-  type: 'conversations' | 'tasks' | 'documents' | 'analytics';
+  format: "json" | "csv" | "xlsx" | "pdf";
+  type: "conversations" | "tasks" | "documents" | "analytics";
   filters?: Record<string, unknown>;
   options?: ExportOptions;
 }
@@ -545,7 +561,7 @@ export interface ExportOptions {
 
 export interface ExportResponse {
   id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   url?: string;
   expiresAt: Timestamp;
   size?: number;
@@ -553,8 +569,8 @@ export interface ExportResponse {
 }
 
 export interface ImportRequest {
-  format: 'json' | 'csv' | 'xlsx';
-  type: 'conversations' | 'tasks' | 'documents';
+  format: "json" | "csv" | "xlsx";
+  type: "conversations" | "tasks" | "documents";
   file: File | Buffer;
   options?: ImportOptions;
 }
@@ -568,7 +584,7 @@ export interface ImportOptions {
 
 export interface ImportResponse {
   id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   processed: number;
   total: number;
   errors: ImportError[];
