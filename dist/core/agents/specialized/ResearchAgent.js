@@ -272,15 +272,21 @@ export class ResearchAgent extends BaseAgent {
         if (isBusinessQuery) {
             console.log("[ResearchAgent] Detected business query, enhancing synthesis prompt");
             // Determine enhancement level based on urgency keywords
-            const urgentKeywords = ['urgent', 'emergency', 'asap', 'immediately', 'now'];
-            const hasUrgency = urgentKeywords.some(keyword => task.toLowerCase().includes(keyword));
+            const urgentKeywords = [
+                "urgent",
+                "emergency",
+                "asap",
+                "immediately",
+                "now",
+            ];
+            const hasUrgency = urgentKeywords.some((keyword) => task.toLowerCase().includes(keyword));
             // Extract location if present
             const locationMatch = task.match(/(?:in|near|at|around)\s+([^.?!]+?)(?:\.|$)/i);
             const customInstructions = locationMatch
                 ? `Focus on businesses in or near ${locationMatch[1]}. Include distance/travel information.`
-                : '';
+                : "";
             basePrompt = businessSearchPromptEnhancer.enhance(basePrompt, {
-                enhancementLevel: hasUrgency ? 'aggressive' : 'standard',
+                enhancementLevel: hasUrgency ? "aggressive" : "standard",
                 includeExamples: true,
                 customInstructions: `
           ${customInstructions}
@@ -297,7 +303,7 @@ export class ResearchAgent extends BaseAgent {
           
           Format business listings clearly with a "Recommendations" section.
           Each business should be a separate subsection with contact details prominently displayed.
-        `
+        `,
             });
         }
         return await withTimeout(this.llm.generate(basePrompt), DEFAULT_TIMEOUTS.LLM_GENERATION, "LLM synthesis timed out");

@@ -383,3 +383,5 @@ TimeoutError: Plan execution timed out
     at Timeout.<anonymous> (/home/pricepro2006/CrewAI_Team/src/utils/timeout.ts:32:9)
     at listOnTimeout (node:internal/timers:588:17)
     at process.processTimers (node:internal/timers:523:7)
+2025-07-22T16:05:42.797Z ERROR [CRITICAL] Uncaught exception {"error":{"code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":3001}}
+2025-07-22T16:05:42.798Z ERROR [CRITICAL] Uncaught exception {"error":{"code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":3002}}

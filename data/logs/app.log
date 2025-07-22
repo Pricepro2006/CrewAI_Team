@@ -5867,3 +5867,96 @@
 2025-07-22T15:58:49.552Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}
 2025-07-22T15:58:51.259Z INFO   Prompt enhanced with business search instructions (level: standard)
 2025-07-22T16:00:45.809Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"b26f4dd6-eb02-4924-abca-c7389b730007","userId":"guest-::1-1753199929550","responseLength":188}
+2025-07-22T16:05:42.625Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T16:05:42.627Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T16:05:42.642Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T16:05:42.644Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T16:05:42.645Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T16:05:42.647Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T16:05:42.647Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T16:05:42.647Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T16:05:42.648Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200342647_1zsl47w7a","pattern":"email_table_view"}
+2025-07-22T16:05:42.648Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200342648_f64g4hh7z","pattern":"workflow_analytics"}
+2025-07-22T16:05:42.648Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T16:05:42.648Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T16:05:42.689Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T16:05:42.689Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T16:05:42.689Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T16:05:42.691Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T16:05:42.691Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T16:05:42.691Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200342691_oimwbzvwp","pattern":"email_table_view"}
+2025-07-22T16:05:42.691Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200342691_dmkz87dh5","pattern":"workflow_analytics"}
+2025-07-22T16:05:42.691Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T16:05:42.692Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T16:05:42.786Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T16:05:42.786Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T16:05:42.787Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T16:05:42.788Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T16:05:42.788Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T16:05:42.788Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200342788_xwjx60qx8","pattern":"email_table_view"}
+2025-07-22T16:05:42.788Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200342788_d5ud6ui2p","pattern":"workflow_analytics"}
+2025-07-22T16:05:42.788Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T16:05:42.797Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"UNCAUGHT_EXCEPTION"}
+2025-07-22T16:05:42.798Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T16:05:42.798Z INFO  [CLEANUP] Starting service cleanup {"taskCount":5}
+2025-07-22T16:05:42.798Z INFO  [CLEANUP] Cleaning up: Active agent tasks
+2025-07-22T16:05:42.798Z INFO  [CLEANUP] Agent tasks terminated
+2025-07-22T16:05:42.798Z INFO  [SHUTDOWN] Shutdown initiated {"signal":"UNCAUGHT_EXCEPTION"}
+2025-07-22T16:05:42.798Z INFO  [SHUTDOWN] WebSocket health monitoring stopped
+2025-07-22T16:05:42.798Z WARN  [CLEANUP] Cleanup already in progress
+2025-07-22T16:05:42.798Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T16:05:42.798Z INFO  [SHUTDOWN] HTTP server closed
+2025-07-22T16:05:42.798Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T16:05:42.798Z INFO  [SHUTDOWN] WebSocket server closed
+2025-07-22T16:05:42.798Z INFO  [CLEANUP] Cleaned up: Active agent tasks
+2025-07-22T16:05:42.798Z INFO  [CLEANUP] Cleaning up: LLM connections
+2025-07-22T16:05:42.798Z INFO  [CLEANUP] LLM connections closed
+2025-07-22T16:05:42.798Z INFO  [CLEANUP] Cleaned up: LLM connections
+2025-07-22T16:05:42.799Z INFO  [CLEANUP] Cleaning up: Database connections
+2025-07-22T16:05:42.801Z INFO  [CLEANUP] Database connections closed
+2025-07-22T16:05:42.801Z INFO  [CLEANUP] Cleaned up: Database connections
+2025-07-22T16:05:42.801Z INFO  [CLEANUP] Cleaning up: Temporary files
+2025-07-22T16:05:42.801Z INFO  [CLEANUP] Temporary files cleaned
+2025-07-22T16:05:42.801Z INFO  [CLEANUP] Cleaned up: Temporary files
+2025-07-22T16:05:42.801Z INFO  [CLEANUP] Cleaning up: Expired authentication tokens
+2025-07-22T16:05:42.806Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T16:05:42.808Z INFO  [CLEANUP] Expired tokens cleaned
+2025-07-22T16:05:42.808Z INFO  [CLEANUP] Cleaned up: Expired authentication tokens
+2025-07-22T16:05:42.808Z INFO  [CLEANUP] Service cleanup completed {"successful":5,"failed":0,"errors":[]}
+2025-07-22T16:05:42.814Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T16:05:42.814Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T16:05:42.814Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools
+2025-07-22T16:06:28.988Z INFO  [ROUTER_SETUP] Creating feature router: chat
+2025-07-22T16:06:28.989Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection
+2025-07-22T16:06:28.999Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T16:06:28.999Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T16:06:29.000Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T16:06:29.001Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T16:06:29.001Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T16:06:29.001Z INFO  [QUERY_MONITOR] Query performance monitoring started
+2025-07-22T16:06:29.001Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200389001_1iagyi8an","pattern":"email_table_view"}
+2025-07-22T16:06:29.002Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200389002_kpgb5hdh9","pattern":"workflow_analytics"}
+2025-07-22T16:06:29.002Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T16:06:29.002Z INFO  [EMAIL_STORAGE] SLA monitoring started
+2025-07-22T16:06:29.031Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T16:06:29.031Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T16:06:29.033Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T16:06:29.034Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T16:06:29.034Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T16:06:29.034Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200389034_mjremb616","pattern":"email_table_view"}
+2025-07-22T16:06:29.034Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200389034_xicqc13i8","pattern":"workflow_analytics"}
+2025-07-22T16:06:29.034Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T16:06:29.035Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent
+2025-07-22T16:06:29.124Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection
+2025-07-22T16:06:29.125Z INFO  [EMAIL_STORAGE] Initializing email storage database
+2025-07-22T16:06:29.125Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations
+2025-07-22T16:06:29.126Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully
+2025-07-22T16:06:29.126Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully
+2025-07-22T16:06:29.126Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200389126_h99y6facb","pattern":"email_table_view"}
+2025-07-22T16:06:29.126Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200389126_ho447ihlr","pattern":"workflow_analytics"}
+2025-07-22T16:06:29.126Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService
+2025-07-22T16:06:29.135Z INFO  [WEBSOCKET] WebSocket health monitoring started
+2025-07-22T16:06:29.143Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}
+2025-07-22T16:06:29.148Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}
+2025-07-22T16:06:29.148Z INFO  [AGENT] Initializing agent EmailAnalysisAgent
+2025-07-22T16:06:29.148Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools

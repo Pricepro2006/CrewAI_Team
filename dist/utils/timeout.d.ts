@@ -48,7 +48,7 @@ export declare class CancellableTimeout {
  */
 export declare const DEFAULT_TIMEOUTS: {
     readonly QUERY_PROCESSING: 30000;
-    readonly AGENT_EXECUTION: 120000;
+    readonly AGENT_EXECUTION: 180000;
     readonly TOOL_EXECUTION: 180000;
     readonly LLM_GENERATION: 180000;
     readonly PLAN_CREATION: 20000;

@@ -1,155 +1,58 @@
 
-> ai-agent-team@1.0.0 dev:server
-> NODE_OPTIONS='--import tsx --experimental-specifier-resolution=node' node src/api/server.ts
+> ai-agent-team@1.0.0 dev
+> concurrently "npm run dev:server" "npm run dev:client"
 
-[32m2025-07-22T15:31:13.709Z INFO  [ROUTER_SETUP] Creating feature router: chat[0m
-[32m2025-07-22T15:31:13.712Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection[0m
-[32m2025-07-22T15:31:13.720Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection[0m
-[32m2025-07-22T15:31:13.720Z INFO  [EMAIL_STORAGE] Initializing email storage database[0m
-[32m2025-07-22T15:31:13.721Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations[0m
-[32m2025-07-22T15:31:13.722Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully[0m
-[32m2025-07-22T15:31:13.723Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully[0m
-[32m2025-07-22T15:31:13.723Z INFO  [QUERY_MONITOR] Query performance monitoring started[0m
-[32m2025-07-22T15:31:13.723Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753198273723_0v68en9td","pattern":"email_table_view"}[0m
-[32m2025-07-22T15:31:13.723Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753198273723_9fz1j4ofe","pattern":"workflow_analytics"}[0m
-[32m2025-07-22T15:31:13.724Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService[0m
-[32m2025-07-22T15:31:13.724Z INFO  [EMAIL_STORAGE] SLA monitoring started[0m
-[32m2025-07-22T15:31:13.766Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection[0m
-[32m2025-07-22T15:31:13.767Z INFO  [EMAIL_STORAGE] Initializing email storage database[0m
-[32m2025-07-22T15:31:13.767Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations[0m
-[32m2025-07-22T15:31:13.768Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully[0m
-[32m2025-07-22T15:31:13.768Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully[0m
-[32m2025-07-22T15:31:13.768Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753198273768_yx55jsjws","pattern":"email_table_view"}[0m
-[32m2025-07-22T15:31:13.768Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753198273768_ly30bgm5x","pattern":"workflow_analytics"}[0m
-[32m2025-07-22T15:31:13.768Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService[0m
-[32m2025-07-22T15:31:13.769Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent[0m
-[32m2025-07-22T15:31:13.861Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection[0m
-[32m2025-07-22T15:31:13.861Z INFO  [EMAIL_STORAGE] Initializing email storage database[0m
-[32m2025-07-22T15:31:13.861Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations[0m
-[32m2025-07-22T15:31:13.862Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully[0m
-[32m2025-07-22T15:31:13.862Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully[0m
-[32m2025-07-22T15:31:13.863Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753198273863_tzutsmab4","pattern":"email_table_view"}[0m
-[32m2025-07-22T15:31:13.863Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753198273863_rgk8x1b9t","pattern":"workflow_analytics"}[0m
-[32m2025-07-22T15:31:13.863Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService[0m
-🔌 WebSocket server running on ws://localhost:3002/trpc-ws
-🚀 API Server running on http://localhost:3001
-📡 tRPC endpoint: http://localhost:3001/trpc
-🏥 Health check: http://localhost:3001/health
-[32m2025-07-22T15:31:13.872Z INFO  [WEBSOCKET] WebSocket health monitoring started[0m
-[33m2025-07-22T15:31:13.883Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}[0m
-[32m2025-07-22T15:31:13.889Z INFO  [ORCHESTRATOR] Initializing MasterOrchestrator {"config":{"ollamaUrl":"http://localhost:11434","rag":{"vectorStore":{"type":"chromadb","path":"./data/chroma","collectionName":"crewai-knowledge","dimension":384},"chunking":{"size":500,"overlap":50,"method":"sentence"},"retrieval":{"topK":5,"minScore":0.5,"reranking":true}}}}[0m
-ChromaDB file path configuration is deprecated. Falling back to HTTP.
-[32m2025-07-22T15:31:13.890Z INFO  [REVIEWER] PlanReviewer initialized[0m
-[32m2025-07-22T15:31:13.891Z INFO  [ROUTER] AgentRouter initialized[0m
-[32m2025-07-22T15:31:13.891Z INFO  [ORCHESTRATOR] MasterOrchestrator initialized successfully[0m
-[32m2025-07-22T15:31:13.909Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}[0m
-[32m2025-07-22T15:31:13.910Z INFO  [AGENT] Initializing agent EmailAnalysisAgent[0m
-[32m2025-07-22T15:31:13.910Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools[0m
-[32m2025-07-22T15:31:13.932Z INFO  [ORCHESTRATOR] RAG system initialized successfully[0m
-[32m2025-07-22T15:31:13.933Z INFO  [AGENT] Initializing agent: ResearchAgent[0m
-[32m2025-07-22T15:31:13.933Z INFO  [AGENT] Initializing agent ResearchAgent[0m
-[32m2025-07-22T15:31:13.933Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools[0m
-[32m2025-07-22T15:31:13.933Z INFO  [AGENT] Initializing agent: CodeAgent[0m
-[32m2025-07-22T15:31:13.934Z INFO  [AGENT] Initializing agent CodeAgent[0m
-[32m2025-07-22T15:31:13.934Z INFO  [AGENT] Agent CodeAgent initialized successfully with 0 tools[0m
-[32m2025-07-22T15:31:13.934Z INFO  [ORCHESTRATOR] MasterOrchestrator initialization completed[0m
-[32m2025-07-22T15:32:04.790Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753198324789","messageLength":349,"priority":"medium","requestId":"1k37hs"}[0m
-[32m2025-07-22T15:32:04.791Z INFO  [ORCHESTRATOR] Processing query {"query":"Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root gro","conversationId":"25705f57-7c89-4c07-8511-8fc60ce6e303"}[0m
-[32m2025-07-22T15:32:04.792Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":3,"domains":2,"priority":"medium","estimatedDuration":120}[0m
-[32m2025-07-22T15:32:04.792Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":3,"domains":["research","development"],"priority":"medium","estimatedDuration":120}[0m
-[32m2025-07-22T15:32:04.792Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}[0m
-[32m2025-07-22T15:32:04.792Z INFO  [ORCHESTRATOR] Starting plan creation[0m
-[32m2025-07-22T15:32:04.793Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance[0m
-[32m2025-07-22T15:32:04.793Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}[0m
-[ResearchAgent] Starting executeWithTool for web_search
-[ResearchAgent] Query extracted: Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing into the irrigation piping, for the area surrounding the following address. They need to be able to travel to this location and if you can include initial visit costs, add that information as well. address: 278 Wycliff Dr. Spartanburg, SC 29301
-[ResearchAgent] Business query detected - will enhance synthesis
-[ResearchAgent] Executing web search...
-[ResearchAgent] Search completed: true
-[ResearchAgent] Found 5 results, synthesizing...
-[ResearchAgent] Detected business query, enhancing synthesis prompt
-[32m2025-07-22T15:32:06.629Z INFO   Prompt enhanced with business search instructions (level: standard)[0m
-[ResearchAgent] Synthesis complete
-[32m2025-07-22T15:33:42.523Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}[0m
-[33m2025-07-22T15:33:42.523Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 97732ms {"success":true}[0m
-[32m2025-07-22T15:33:42.524Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"25705f57-7c89-4c07-8511-8fc60ce6e303","userId":"guest-::1-1753198324789","responseLength":4341}[0m
-tRPC Error: {
-  type: 'query',
-  path: 'chat.history',
-  error: 'Conversation not found',
-  input: { conversationId: 'f3082778-6554-4fb9-8a5a-a039d5e59f9b' }
-}
-tRPC Error: {
-  type: 'query',
-  path: 'chat.history',
-  error: 'Conversation not found',
-  input: { conversationId: 'f3082778-6554-4fb9-8a5a-a039d5e59f9b' }
-}
-tRPC Error: {
-  type: 'query',
-  path: 'chat.history',
-  error: 'Conversation not found',
-  input: { conversationId: 'f3082778-6554-4fb9-8a5a-a039d5e59f9b' }
-}
-tRPC Error: {
-  type: 'query',
-  path: 'chat.history',
-  error: 'Conversation not found',
-  input: { conversationId: 'f3082778-6554-4fb9-8a5a-a039d5e59f9b' }
-}
-[32m2025-07-22T15:40:01.982Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753198801982","messageLength":349,"priority":"medium","requestId":"4q7jl"}[0m
-[32m2025-07-22T15:40:01.982Z INFO  [ORCHESTRATOR] Processing query {"query":"Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root gro","conversationId":"d3176bd7-707f-4616-b396-039e46b60af3"}[0m
-[32m2025-07-22T15:40:01.983Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":3,"domains":2,"priority":"medium","estimatedDuration":120}[0m
-[32m2025-07-22T15:40:01.983Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":3,"domains":["research","development"],"priority":"medium","estimatedDuration":120}[0m
-[32m2025-07-22T15:40:01.984Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}[0m
-[32m2025-07-22T15:40:01.984Z INFO  [ORCHESTRATOR] Starting plan creation[0m
-[32m2025-07-22T15:40:01.984Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance[0m
-[32m2025-07-22T15:40:01.984Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}[0m
-[32m2025-07-22T15:40:02.647Z INFO  [AGENT] Initializing agent: ResearchAgent[0m
-[32m2025-07-22T15:40:02.648Z INFO  [AGENT] Initializing agent ResearchAgent[0m
-[32m2025-07-22T15:40:02.648Z INFO  [AGENT] Agent ResearchAgent initialized successfully with 2 tools[0m
-[ResearchAgent] Starting executeWithTool for web_search
-[ResearchAgent] Query extracted: Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing into the irrigation piping, for the area surrounding the following address. They need to be able to travel to this location and if you can include initial visit costs, add that information as well. address: 278 Wycliff Dr. Spartanburg, SC 29301
-[ResearchAgent] Business query detected - will enhance synthesis
-[ResearchAgent] Executing web search...
-[ResearchAgent] Search completed: true
-[ResearchAgent] Found 5 results, synthesizing...
-[ResearchAgent] Detected business query, enhancing synthesis prompt
-[32m2025-07-22T15:40:03.706Z INFO   Prompt enhanced with business search instructions (level: standard)[0m
-[ResearchAgent] Synthesis complete
-[32m2025-07-22T15:41:00.935Z INFO  [ORCHESTRATOR] Query processing completed {"success":true,"attempts":1,"totalSteps":1}[0m
-[33m2025-07-22T15:41:00.935Z WARN  [MasterOrchestrator] Slow operation detected: processQuery took 58953ms {"success":true}[0m
-[32m2025-07-22T15:41:00.936Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"d3176bd7-707f-4616-b396-039e46b60af3","userId":"guest-::1-1753198801982","responseLength":4555}[0m
-[32m2025-07-22T15:46:00.481Z INFO  [CHAT] Processing chat message {"conversationId":"f3082778-6554-4fb9-8a5a-a039d5e59f9b","userId":"guest-::1-1753199160481","messageLength":349,"requestId":"ldlvw"}[0m
-tRPC Error: {
-  type: 'mutation',
-  path: 'chat.message',
-  error: 'Conversation not found',
-  input: {
-    conversationId: 'f3082778-6554-4fb9-8a5a-a039d5e59f9b',
-    message: 'Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing into the irrigation piping, for the area surrounding the following address. They need to be able to travel to this location and if you can include initial visit costs, add that information as well. address: 278 Wycliff Dr. Spartanburg, SC 29301'
-  }
-}
-[32m2025-07-22T15:58:49.550Z INFO  [CHAT] Creating new chat conversation {"userId":"guest-::1-1753199929550","messageLength":349,"priority":"medium","requestId":"28exn"}[0m
-[32m2025-07-22T15:58:49.551Z INFO  [ORCHESTRATOR] Processing query {"query":"Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root gro","conversationId":"b26f4dd6-eb02-4924-abca-c7389b730007"}[0m
-[32m2025-07-22T15:58:49.551Z INFO  [PARSER] Query analysis completed {"intent":"research","complexity":3,"domains":2,"priority":"medium","estimatedDuration":120}[0m
-[32m2025-07-22T15:58:49.551Z INFO  [ORCHESTRATOR] Query analysis completed {"intent":"research","complexity":3,"domains":["research","development"],"priority":"medium","estimatedDuration":120}[0m
-[32m2025-07-22T15:58:49.551Z INFO  [ORCHESTRATOR] Agent routing plan created {"strategy":"sequential","confidence":0.8,"fallbackAgents":1}[0m
-[32m2025-07-22T15:58:49.552Z INFO  [ORCHESTRATOR] Starting plan creation[0m
-[32m2025-07-22T15:58:49.552Z INFO  [ORCHESTRATOR] Using simple plan generator for CPU performance[0m
-[32m2025-07-22T15:58:49.552Z INFO  [ORCHESTRATOR] Plan created successfully {"steps":1}[0m
-[ResearchAgent] Starting executeWithTool for web_search
-[ResearchAgent] Query extracted: Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing into the irrigation piping, for the area surrounding the following address. They need to be able to travel to this location and if you can include initial visit costs, add that information as well. address: 278 Wycliff Dr. Spartanburg, SC 29301
-[ResearchAgent] Business query detected - will enhance synthesis
-[ResearchAgent] Executing web search...
-[ResearchAgent] Search completed: true
-[ResearchAgent] Found 5 results, synthesizing...
-[ResearchAgent] Detected business query, enhancing synthesis prompt
-[32m2025-07-22T15:58:51.259Z INFO   Prompt enhanced with business search instructions (level: standard)[0m
-[31m2025-07-22T16:00:45.805Z ERROR [ORCHESTRATOR] Query processing timed out {"query":"Find current Irrigation specialists to assist with a cracked, leaking sprinkler head from a root growing into the irrigation piping, for the area surrounding the following address. They need to be able to travel to this location and if you can include initial visit costs, add that information as well. address: 278 Wycliff Dr. Spartanburg, SC 29301","duration":120000,"message":"Plan execution timed out"}
-TimeoutError: Plan execution timed out
-    at Timeout.<anonymous> (/home/pricepro2006/CrewAI_Team/src/utils/timeout.ts:32:9)
-    at listOnTimeout (node:internal/timers:588:17)
-    at process.processTimers (node:internal/timers:523:7)[0m
-[32m2025-07-22T16:00:45.809Z INFO  [CHAT] Chat conversation created successfully {"conversationId":"b26f4dd6-eb02-4924-abca-c7389b730007","userId":"guest-::1-1753199929550","responseLength":188}[0m
-[ResearchAgent] Synthesis complete
+[0] 
+[0] > ai-agent-team@1.0.0 dev:server
+[0] > NODE_OPTIONS='--import tsx --experimental-specifier-resolution=node' node src/api/server.ts
+[0] 
+[1] 
+[1] > ai-agent-team@1.0.0 dev:client
+[1] > vite
+[1] 
+[1] 
+[1]   VITE v5.4.19  ready in 350 ms
+[1] 
+[1]   ➜  Local:   http://localhost:5173/
+[1]   ➜  Network: http://10.255.255.254:5173/
+[1]   ➜  Network: http://172.28.107.253:5173/
+[1]   ➜  Network: http://172.19.0.1:5173/
+[1]   ➜  Network: http://172.17.0.1:5173/
+[0] [32m2025-07-22T16:06:28.988Z INFO  [ROUTER_SETUP] Creating feature router: chat[0m
+[0] [32m2025-07-22T16:06:28.989Z INFO  [ROUTER_SETUP] Creating feature router: dataCollection[0m
+[0] [32m2025-07-22T16:06:28.999Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection[0m
+[0] [32m2025-07-22T16:06:28.999Z INFO  [EMAIL_STORAGE] Initializing email storage database[0m
+[0] [32m2025-07-22T16:06:29.000Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations[0m
+[0] [32m2025-07-22T16:06:29.001Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully[0m
+[0] [32m2025-07-22T16:06:29.001Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully[0m
+[0] [32m2025-07-22T16:06:29.001Z INFO  [QUERY_MONITOR] Query performance monitoring started[0m
+[0] [32m2025-07-22T16:06:29.001Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200389001_1iagyi8an","pattern":"email_table_view"}[0m
+[0] [32m2025-07-22T16:06:29.002Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200389002_kpgb5hdh9","pattern":"workflow_analytics"}[0m
+[0] [32m2025-07-22T16:06:29.002Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService[0m
+[0] [32m2025-07-22T16:06:29.002Z INFO  [EMAIL_STORAGE] SLA monitoring started[0m
+[0] [32m2025-07-22T16:06:29.031Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection[0m
+[0] [32m2025-07-22T16:06:29.031Z INFO  [EMAIL_STORAGE] Initializing email storage database[0m
+[0] [32m2025-07-22T16:06:29.033Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations[0m
+[0] [32m2025-07-22T16:06:29.034Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully[0m
+[0] [32m2025-07-22T16:06:29.034Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully[0m
+[0] [32m2025-07-22T16:06:29.034Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200389034_mjremb616","pattern":"email_table_view"}[0m
+[0] [32m2025-07-22T16:06:29.034Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200389034_xicqc13i8","pattern":"workflow_analytics"}[0m
+[0] [32m2025-07-22T16:06:29.034Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService[0m
+[0] [32m2025-07-22T16:06:29.035Z INFO  [AGENT] Initializing agent: EmailAnalysisAgent[0m
+[0] [32m2025-07-22T16:06:29.124Z INFO  [EMAIL_STORAGE] EmailStorageService initialized with single connection[0m
+[0] [32m2025-07-22T16:06:29.125Z INFO  [EMAIL_STORAGE] Initializing email storage database[0m
+[0] [32m2025-07-22T16:06:29.125Z INFO  [EMAIL_STORAGE] WAL mode enabled with performance optimizations[0m
+[0] [32m2025-07-22T16:06:29.126Z INFO  [EMAIL_STORAGE] Workflow patterns seeded successfully[0m
+[0] [32m2025-07-22T16:06:29.126Z INFO  [EMAIL_STORAGE] Email storage database initialized successfully[0m
+[0] [32m2025-07-22T16:06:29.126Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200389126_h99y6facb","pattern":"email_table_view"}[0m
+[0] [32m2025-07-22T16:06:29.126Z INFO  [QUERY_MONITOR] Query monitor registered {"monitorId":"monitor_1753200389126_ho447ihlr","pattern":"workflow_analytics"}[0m
+[0] [32m2025-07-22T16:06:29.126Z INFO  [EMAIL_STORAGE] Performance monitoring initialized for EmailStorageService[0m
+[0] 🔌 WebSocket server running on ws://localhost:3002/trpc-ws
+[0] 🚀 API Server running on http://localhost:3001
+[0] 📡 tRPC endpoint: http://localhost:3001/trpc
+[0] 🏥 Health check: http://localhost:3001/health
+[0] [32m2025-07-22T16:06:29.135Z INFO  [WEBSOCKET] WebSocket health monitoring started[0m
+[0] [33m2025-07-22T16:06:29.143Z WARN  [IEMS_DATA] Could not load mailboxes file {"file":"/home/pricepro2006/iems_project/mailboxes.json"}[0m
+[0] [32m2025-07-22T16:06:29.148Z INFO  [IEMS_DATA] Loaded distribution lists {"count":13}[0m
+[0] [32m2025-07-22T16:06:29.148Z INFO  [AGENT] Initializing agent EmailAnalysisAgent[0m
+[0] [32m2025-07-22T16:06:29.148Z INFO  [AGENT] Agent EmailAnalysisAgent initialized successfully with 0 tools[0m

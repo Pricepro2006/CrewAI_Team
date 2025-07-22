@@ -100,7 +100,7 @@ export class CancellableTimeout {
  */
 export const DEFAULT_TIMEOUTS = {
     QUERY_PROCESSING: 30000, // 30 seconds for query processing
-    AGENT_EXECUTION: 120000, // 2 minutes for multiple LLM calls in agents
+    AGENT_EXECUTION: 180000, // 3 minutes for agents (must match LLM_GENERATION for synthesis)
     TOOL_EXECUTION: 180000, // 3 minutes for tool execution (increased for LLM synthesis)
     LLM_GENERATION: 180000, // 3 minutes for granite3.3:2b on CPU
     PLAN_CREATION: 20000, // 20 seconds for plan creation
