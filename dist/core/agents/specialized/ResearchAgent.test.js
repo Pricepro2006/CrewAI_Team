@@ -196,7 +196,7 @@ describe("ResearchAgent", () => {
                     focusAreas: ["commonalities", "differences"],
                 },
             };
-            const synthesizeQuery = `Synthesize information from ${task.input.sources.length} sources focusing on ${task.input.focusAreas.join(' and ')}`;
+            const synthesizeQuery = `Synthesize information from ${task.input.sources.length} sources focusing on ${task.input.focusAreas.join(" and ")}`;
             const result = await agent.execute(synthesizeQuery, {
                 task: synthesizeQuery,
                 ragDocuments: [],

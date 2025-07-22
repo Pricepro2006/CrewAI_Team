@@ -16,7 +16,7 @@ vi.mock("../../../config/features/FeatureFlagService", () => ({
 
 describe("BusinessSearchMiddleware - Rate Limiting Integration", () => {
   let middleware: BusinessSearchMiddleware;
-  let mockProvider: Partial<OllamaProvider> & { generate: any };
+  let mockProvider: OllamaProvider;
   let wrappedProvider: OllamaProvider;
 
   beforeEach(() => {
@@ -31,6 +31,11 @@ describe("BusinessSearchMiddleware - Rate Limiting Integration", () => {
         logProbs: [],
       }),
       generateStream: vi.fn().mockResolvedValue("Mock stream response"),
+      client: {} as any,
+      config: { model: "test-model", ollamaUrl: "http://localhost:11434" },
+      isInitialized: true,
+      generateFallbackResponse: vi.fn(),
+      buildPrompt: vi.fn(),
     } as any;
 
     // Create middleware instance

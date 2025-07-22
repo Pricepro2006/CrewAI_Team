@@ -16,7 +16,7 @@ vi.mock("../../../config/features/FeatureFlagService", () => ({
 
 describe("BusinessSearchMiddleware - Caching Integration", () => {
   let middleware: BusinessSearchMiddleware;
-  let mockProvider: Partial<OllamaProvider> & { generate: any };
+  let mockProvider: OllamaProvider;
   let wrappedProvider: OllamaProvider;
 
   beforeEach(() => {
@@ -30,6 +30,11 @@ describe("BusinessSearchMiddleware - Caching Integration", () => {
         logProbs: [],
       }),
       generateStream: vi.fn().mockResolvedValue("Fresh stream response"),
+      client: {} as any,
+      config: { model: "test-model", ollamaUrl: "http://localhost:11434" },
+      isInitialized: true,
+      generateFallbackResponse: vi.fn(),
+      buildPrompt: vi.fn(),
     } as any;
 
     // Create middleware with caching enabled
@@ -153,7 +158,7 @@ describe("BusinessSearchMiddleware - Caching Integration", () => {
       const query = "Find dentists near me";
 
       // Add artificial delay to mock provider
-      mockProvider.generate.mockImplementation(
+      (mockProvider.generate as any).mockImplementation(
         () =>
           new Promise((resolve) => setTimeout(() => resolve("Response"), 100)),
       );
@@ -295,13 +300,13 @@ describe("BusinessSearchMiddleware - Caching Integration", () => {
         .mockResolvedValueOnce({ isValid: true }); // Second call passes
 
       // First request - invalid response, should not cache
-      mockProvider.generate.mockResolvedValueOnce(
+      (mockProvider.generate as any).mockResolvedValueOnce(
         "Invalid response without contact info",
       );
       await wrappedProvider.generate("Find services near me");
 
       // Second request - valid response, should cache
-      mockProvider.generate.mockResolvedValueOnce(
+      (mockProvider.generate as any).mockResolvedValueOnce(
         "Valid: Call 555-1234 at 123 Main St",
       );
       await wrappedProvider.generate("Find other services near me");

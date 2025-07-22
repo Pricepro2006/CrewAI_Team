@@ -6,8 +6,8 @@ export const agentRouter = router({
     list: publicProcedure.query(async ({ ctx }) => {
         const types = ctx.agentRegistry.getRegisteredTypes();
         return types.map((type) => {
-            const modelConfig = getAgentModel(type, 'general');
-            const toolSelectionModel = getAgentModel(type, 'tool_selection');
+            const modelConfig = getAgentModel(type, "general");
+            const toolSelectionModel = getAgentModel(type, "tool_selection");
             return {
                 type,
                 available: true,
@@ -16,12 +16,12 @@ export const agentRouter = router({
                 tools: getAgentTools(type),
                 models: {
                     general: modelConfig.model,
-                    toolSelection: toolSelectionModel.model
+                    toolSelection: toolSelectionModel.model,
                 },
                 modelConfig: {
                     general: modelConfig,
-                    toolSelection: toolSelectionModel
-                }
+                    toolSelection: toolSelectionModel,
+                },
             };
         });
     }),
@@ -78,7 +78,7 @@ export const agentRouter = router({
         const agentConfigs = {};
         const types = ctx.agentRegistry.getRegisteredTypes();
         for (const type of types) {
-            const modelConfig = getAgentModel(type, 'general');
+            const modelConfig = getAgentModel(type, "general");
             agentConfigs[type] = {
                 model: modelConfig.model,
                 modelDescription: modelConfig.description,
