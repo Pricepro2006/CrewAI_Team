@@ -31,9 +31,7 @@ export class VectorStore {
             await this.client.version();
             // Try to get existing collection first
             try {
-                this.collection = await this.client.getCollection({
-                    name: this.config.collectionName,
-                });
+                this.collection = await this.client.getCollection({ name: this.config.collectionName });
             }
             catch (getError) {
                 // Collection doesn't exist, create it

@@ -18,7 +18,10 @@
       "Bash(webpack:*)",
       "Bash(vite:*)"
     ],
-    "deny": ["Bash(wget:*)", "Bash(rm -rf:*)"],
+    "deny": [
+      "Bash(wget:*)",
+      "Bash(rm -rf:*)"
+    ],
     "defaultMode": "acceptEdits"
   },
   "env": {
@@ -120,7 +123,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if [ -f package.json ] && git status --porcelain | grep -E '\\.js$|\\.jsx$|\\.ts$|\\.tsx$' | grep -v '^dist/' >/dev/null; then echo 'Running linter on changed files...'; npx eslint $(git diff --name-only --diff-filter=ACMR | grep -E '\\.js$|\\.jsx$|\\.ts$|\\.tsx$' | grep -v '^dist/'); fi",
+            "command": "if [ -f package.json ] && git status --porcelain | grep -E '\\.js$|\\.jsx$|\\.ts$|\\.tsx$' >/dev/null; then echo 'Running linter on changed files...'; npx eslint $(git diff --name-only --diff-filter=ACMR | grep -E '\\.js$|\\.jsx$|\\.ts$|\\.tsx$'); fi",
             "timeout": 60
           }
         ]

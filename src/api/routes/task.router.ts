@@ -3,7 +3,7 @@ import { router, publicProcedure } from "../trpc/router";
 import type { Router } from "@trpc/server";
 import { logger } from "../../utils/logger";
 
-export const taskRouter: Router<any> = router({
+export const taskRouter = router({
   // Submit a new task
   submit: publicProcedure
     .input(

@@ -60,7 +60,7 @@ describe("MasterOrchestrator", () => {
         it("should execute a simple plan", async () => {
             const plan = {
                 id: "plan-test-1",
-                goal: "Test goal",
+                metadata: { goal: "Test goal" },
                 tasks: [
                     {
                         id: "task-1",
@@ -85,7 +85,7 @@ describe("MasterOrchestrator", () => {
         it("should handle task dependencies", async () => {
             const plan = {
                 id: "plan-test-2",
-                goal: "Complex test",
+                metadata: { goal: "Complex test" },
                 tasks: [
                     {
                         id: "task-1",
@@ -121,10 +121,10 @@ describe("MasterOrchestrator", () => {
             const failingAgent = new ResearchAgent();
             vi.spyOn(failingAgent, "execute").mockRejectedValue(new Error("Task failed"));
             const registry = orchestrator["agentRegistry"];
-            vi.spyOn(registry, "getAgent").mockReturnValue(failingAgent);
+            vi.spyOn(registry, "getAgent").mockResolvedValue(failingAgent);
             const plan = {
                 id: "plan-test-3",
-                goal: "Failing test",
+                metadata: { goal: "Failing test" },
                 tasks: [
                     {
                         id: "task-1",
@@ -151,7 +151,7 @@ describe("MasterOrchestrator", () => {
         it("should review completed plans", async () => {
             const completedPlan = {
                 id: "plan-test-4",
-                goal: "Completed test",
+                metadata: { goal: "Completed test" },
                 tasks: [
                     {
                         id: "task-1",
@@ -175,7 +175,7 @@ describe("MasterOrchestrator", () => {
         it("should suggest replanning for partial failures", async () => {
             const partiallyFailedPlan = {
                 id: "plan-test-5",
-                goal: "Partial failure test",
+                metadata: { goal: "Partial failure test" },
                 tasks: [
                     {
                         id: "task-1",
@@ -207,11 +207,11 @@ describe("MasterOrchestrator", () => {
             expect(needsReplan).toBe(true);
         });
     });
-    describe("processUserQuery", () => {
+    describe("processQuery", () => {
         it("should process a complete user query", async () => {
             const query = "What is the weather today?";
             const conversationId = "test-conv-1";
-            const response = await orchestrator.processUserQuery(query, conversationId);
+            const response = await orchestrator.processQuery(query, conversationId);
             expect(response).toBeDefined();
             expect(response.success).toBe(true);
             expect(response.message).toBeDefined();
@@ -220,14 +220,14 @@ describe("MasterOrchestrator", () => {
         it("should handle empty queries", async () => {
             const query = "";
             const conversationId = "test-conv-1";
-            await expect(orchestrator.processUserQuery(query, conversationId)).rejects.toThrow("Query cannot be empty");
+            await expect(orchestrator.processQuery(query, conversationId)).rejects.toThrow("Query cannot be empty");
         });
         it("should respect max retries on replan", async () => {
             // Mock to always suggest replan
             vi.spyOn(orchestrator, "reviewPlan").mockResolvedValue(true);
             const query = "Complex query requiring replanning";
             const conversationId = "test-conv-1";
-            const response = await orchestrator.processUserQuery(query, conversationId);
+            const response = await orchestrator.processQuery(query, conversationId);
             expect(response.success).toBe(true);
             expect(response.metadata?.replanCount).toBeLessThanOrEqual(3);
         });

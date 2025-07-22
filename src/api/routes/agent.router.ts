@@ -3,15 +3,15 @@ import { router, publicProcedure } from "../trpc/router";
 import type { Router } from "@trpc/server";
 import { getAgentModel } from "../../config/model-selection.config";
 
-export const agentRouter: Router<any> = router({
+export const agentRouter = router({
   // List all registered agents
   list: publicProcedure.query(async ({ ctx }) => {
     const types = ctx.agentRegistry.getRegisteredTypes();
 
     return types.map((type: string) => {
-      const modelConfig = getAgentModel(type, 'general');
-      const toolSelectionModel = getAgentModel(type, 'tool_selection');
-      
+      const modelConfig = getAgentModel(type, "general");
+      const toolSelectionModel = getAgentModel(type, "tool_selection");
+
       return {
         type,
         available: true,
@@ -20,12 +20,12 @@ export const agentRouter: Router<any> = router({
         tools: getAgentTools(type),
         models: {
           general: modelConfig.model,
-          toolSelection: toolSelectionModel.model
+          toolSelection: toolSelectionModel.model,
         },
         modelConfig: {
           general: modelConfig,
-          toolSelection: toolSelectionModel
-        }
+          toolSelection: toolSelectionModel,
+        },
       };
     });
   }),
@@ -95,7 +95,7 @@ export const agentRouter: Router<any> = router({
       const types = ctx.agentRegistry.getRegisteredTypes();
 
       for (const type of types) {
-        const modelConfig = getAgentModel(type, 'general');
+        const modelConfig = getAgentModel(type, "general");
         agentConfigs[type] = {
           model: modelConfig.model,
           modelDescription: modelConfig.description,

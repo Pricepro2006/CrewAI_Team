@@ -5,7 +5,7 @@ import { RateLimiter } from "../../core/middleware/RateLimiter";
 // Get the rate limiter instance
 const rateLimiter = RateLimiter.getInstance();
 
-export const metricsRouter: any = router({
+export const metricsRouter = router({
   getRateLimitMetrics: publicProcedure.query(async () => {
     return rateLimiter.getMetrics();
   }),

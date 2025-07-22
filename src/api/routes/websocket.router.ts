@@ -4,7 +4,7 @@ import { observable } from "@trpc/server/observable";
 import { wsService } from "../services/WebSocketService";
 import type { Router } from "@trpc/server";
 
-export const websocketRouter: Router<any> = router({
+export const websocketRouter = router({
   // Subscribe to specific message types
   subscribe: publicProcedure
     .input(

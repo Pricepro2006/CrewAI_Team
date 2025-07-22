@@ -76,7 +76,7 @@ const credentials: BrightDataCredentials = {
 // This would be injected from the MCP server in production
 const brightDataService = new BrightDataService(credentials);
 
-export const dataCollectionRouter: any = createFeatureRouter(
+export const dataCollectionRouter = createFeatureRouter(
   "dataCollection",
   router({
     // Search Engine Data Collection
