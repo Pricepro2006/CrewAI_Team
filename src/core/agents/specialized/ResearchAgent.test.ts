@@ -155,8 +155,8 @@ describe("ResearchAgent", () => {
         },
       });
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task.input.claim, {
+        task: task.input.claim,
         ragDocuments: [],
       });
 
@@ -186,8 +186,8 @@ describe("ResearchAgent", () => {
         },
       });
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task.input.url, {
+        task: task.input.url,
         ragDocuments: [],
       });
 
@@ -229,8 +229,9 @@ describe("ResearchAgent", () => {
         },
       };
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const synthesizeQuery = `Synthesize information from ${task.input.sources.length} sources focusing on ${task.input.focusAreas.join(" and ")}`;
+      const result = await agent.execute(synthesizeQuery, {
+        task: synthesizeQuery,
         ragDocuments: [],
       });
 

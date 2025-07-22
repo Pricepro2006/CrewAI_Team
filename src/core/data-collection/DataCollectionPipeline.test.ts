@@ -53,8 +53,8 @@ describe("DataCollectionPipeline", () => {
 
       const sources = pipeline.getDataSources();
       expect(sources.length).toBe(1);
-      expect(sources[0].name).toBe(source.name);
-      expect(sources[0].type).toBe(source.type);
+      expect(sources[0]?.name).toBe(source.name);
+      expect(sources[0]?.type).toBe(source.type);
     });
 
     it("should update an existing data source", async () => {
@@ -147,8 +147,8 @@ describe("DataCollectionPipeline", () => {
 
       const jobs = pipeline.getJobsForSource(sourceId);
       expect(jobs.length).toBe(1);
-      expect(jobs[0].status).toBe("completed");
-      expect(jobs[0].recordsCollected).toBe(1);
+      expect(jobs[0]?.status).toBe("completed");
+      expect(jobs[0]?.recordsCollected).toBe(1);
 
       collectSearchResultsSpy.mockRestore();
     });
@@ -180,8 +180,8 @@ describe("DataCollectionPipeline", () => {
 
       const jobs = pipeline.getJobsForSource(sourceId);
       expect(jobs.length).toBe(1);
-      expect(jobs[0].status).toBe("failed");
-      expect(jobs[0].error).toBe("Collection failed");
+      expect(jobs[0]?.status).toBe("failed");
+      expect(jobs[0]?.error).toBe("Collection failed");
 
       collectWebScrapingDataSpy.mockRestore();
     });

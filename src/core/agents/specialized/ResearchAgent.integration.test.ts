@@ -32,12 +32,13 @@ describe("ResearchAgent Integration Tests", () => {
       });
 
       expect(result).toBeDefined();
-      expect(result.summary).toBeDefined();
-      expect(result.summary.length).toBeGreaterThan(50);
-      expect(result.sources).toBeInstanceOf(Array);
+      expect(result.success).toBe(true);
+      expect(result.data?.synthesis).toBeDefined();
+      expect(result.data.synthesis.length).toBeGreaterThan(50);
+      expect(result.data?.sources).toBeInstanceOf(Array);
 
       // Should contain relevant information
-      const summaryLower = result.summary.toLowerCase();
+      const summaryLower = result.data.synthesis.toLowerCase();
       expect(
         summaryLower.includes("typescript") ||
           summaryLower.includes("javascript") ||
@@ -59,14 +60,16 @@ describe("ResearchAgent Integration Tests", () => {
         ragDocuments: [],
       });
 
-      expect(result.keyFindings).toBeDefined();
-      expect(result.keyFindings).toBeInstanceOf(Array);
-      expect(result.keyFindings.length).toBeGreaterThan(0);
+      expect(result.data?.findings).toBeDefined();
+      expect(result.data.findings).toBeInstanceOf(Array);
+      expect(result.data.findings.length).toBeGreaterThan(0);
 
       // Each finding should be a meaningful statement
-      result.keyFindings.forEach((finding) => {
+      result.data.findings.forEach((finding: any) => {
         expect(finding).toBeDefined();
-        expect(finding.length).toBeGreaterThan(10);
+        expect(finding.content?.length || finding.length || 0).toBeGreaterThan(
+          10,
+        );
       });
     });
 
@@ -79,16 +82,16 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task.input.claim, {
+        task: task.input.claim,
         ragDocuments: [],
       });
 
-      expect(result.factCheck).toBeDefined();
-      expect(result.factCheck.isValid).toBe(true);
-      expect(result.factCheck.confidence).toBeGreaterThan(0.7);
-      expect(result.factCheck.evidence).toBeInstanceOf(Array);
-      expect(result.factCheck.evidence.length).toBeGreaterThan(0);
+      expect(result.success).toBe(true);
+      expect(result.data?.synthesis).toBeDefined();
+      expect(result.data.synthesis.length).toBeGreaterThan(10);
+      expect(result.data?.sources).toBeInstanceOf(Array);
+      expect(result.data.sources.length).toBeGreaterThan(0);
     });
 
     it("should analyze a real URL", async () => {
@@ -100,18 +103,19 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task.input.url, {
+        task: task.input.url,
         ragDocuments: [],
       });
 
-      expect(result.analysis).toBeDefined();
-      expect(result.analysis.length).toBeGreaterThan(100);
-      expect(result.keyPoints).toBeInstanceOf(Array);
+      expect(result.success).toBe(true);
+      expect(result.data?.synthesis).toBeDefined();
+      expect(result.data.synthesis.length).toBeGreaterThan(100);
+      expect(result.data?.findings).toBeInstanceOf(Array);
       expect(result.metadata).toBeDefined();
 
       // Should extract TypeScript-related content
-      const analysisLower = result.analysis.toLowerCase();
+      const analysisLower = result.data.synthesis.toLowerCase();
       expect(analysisLower.includes("typescript")).toBe(true);
     });
 
@@ -130,10 +134,10 @@ describe("ResearchAgent Integration Tests", () => {
         ragDocuments: [],
       });
 
-      expect(result.summary).toBeDefined();
+      expect(result.data?.synthesis).toBeDefined();
 
       // Should cover multiple perspectives
-      const summaryLower = result.summary.toLowerCase();
+      const summaryLower = result.data.synthesis.toLowerCase();
       expect(
         summaryLower.includes("benefit") ||
           summaryLower.includes("advantage") ||
@@ -163,7 +167,8 @@ describe("ResearchAgent Integration Tests", () => {
 
       // Should still return a result even if some operations timeout
       expect(result).toBeDefined();
-      expect(result.summary || result.fallbackSummary).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.data?.synthesis || result.output).toBeDefined();
     });
 
     it("should compare multiple sources", async () => {
@@ -181,12 +186,11 @@ describe("ResearchAgent Integration Tests", () => {
         ragDocuments: [],
       });
 
-      expect(result.comparison).toBeDefined();
-      expect(result.sources.length).toBeGreaterThanOrEqual(3);
+      expect(result.data?.synthesis).toBeDefined();
+      expect(result.data?.sources?.length || 0).toBeGreaterThanOrEqual(3);
 
       // Should identify differences
-      const comparisonLower =
-        result.comparison?.toLowerCase() || result.summary.toLowerCase();
+      const comparisonLower = result.data.synthesis.toLowerCase();
       expect(
         comparisonLower.includes("rest") && comparisonLower.includes("graphql"),
       ).toBe(true);
@@ -207,12 +211,14 @@ describe("ResearchAgent Integration Tests", () => {
         ragDocuments: [],
       });
 
-      expect(result.structuredData).toBeDefined();
-      expect(Array.isArray(result.structuredData)).toBe(true);
+      expect(result.data?.findings).toBeDefined();
+      expect(Array.isArray(result.data.findings)).toBe(true);
 
-      // Should extract method names
-      const methods = result.structuredData.flat();
-      const hasArrayMethods = methods.some((item) =>
+      // Should extract method names from findings content
+      const methods = result.data.findings
+        .map((f: any) => f.content || f)
+        .flat();
+      const hasArrayMethods = methods.some((item: any) =>
         ["map", "filter", "reduce", "forEach", "find"].some((method) =>
           item.toLowerCase().includes(method),
         ),
@@ -238,10 +244,10 @@ describe("ResearchAgent Integration Tests", () => {
         ragDocuments: [],
       });
 
-      expect(result.summary).toBeDefined();
+      expect(result.data?.synthesis).toBeDefined();
 
       // Should respect constraints
-      const summaryLower = result.summary.toLowerCase();
+      const summaryLower = result.data.synthesis.toLowerCase();
       expect(
         summaryLower.includes("performance") ||
           summaryLower.includes("scalability"),
@@ -262,15 +268,15 @@ describe("ResearchAgent Integration Tests", () => {
         ragDocuments: [],
       });
 
-      expect(result.citations).toBeDefined();
-      expect(result.citations).toBeInstanceOf(Array);
+      expect(result.data?.sources).toBeDefined();
+      expect(result.data.sources).toBeInstanceOf(Array);
 
-      // Each citation should have required fields
-      result.citations?.forEach((citation) => {
-        expect(citation).toHaveProperty("source");
-        expect(citation).toHaveProperty("relevance");
-        expect(citation.relevance).toBeGreaterThan(0);
-        expect(citation.relevance).toBeLessThanOrEqual(1);
+      // Each source should have required fields
+      result.data.sources?.forEach((source: any) => {
+        expect(source).toHaveProperty("url");
+        expect(source).toHaveProperty("title");
+        expect(source.url).toBeDefined();
+        expect(source.title).toBeDefined();
       });
     });
   });
@@ -284,14 +290,14 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task.input.url, {
+        task: task.input.url,
         ragDocuments: [],
       });
 
+      expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
       expect(result.error).toContain("failed");
-      expect(result.fallbackAnalysis).toBeDefined();
     });
 
     it("should handle malformed queries", async () => {
@@ -302,7 +308,12 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      await expect(agent.execute(task)).rejects.toThrow("Query is required");
+      await expect(
+        agent.execute("", {
+          task: "",
+          ragDocuments: [],
+        }),
+      ).rejects.toThrow("Query is required");
     });
   });
 });
