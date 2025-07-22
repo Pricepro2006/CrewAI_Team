@@ -4,254 +4,182 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an AI Agent Team Framework - a TypeScript-based multi-agent orchestration system with RAG capabilities, designed for local deployment using Ollama models. It features a Master Orchestrator with plan/replan loops, specialized agents, and a full tool ecosystem.
+This is a JavaScript/TypeScript project optimized for modern web development. The project uses industry-standard tools and follows best practices for scalable application development.
 
-**Current Status**: Development Phase - The UI is complete and functional with mock data. Backend implementation is the primary focus for production readiness.
+## Development Commands
 
-## Current State (July 2025)
+### Package Management
+- `npm install` or `yarn install` - Install dependencies
+- `npm ci` or `yarn install --frozen-lockfile` - Install dependencies for CI/CD
+- `npm update` or `yarn upgrade` - Update dependencies
 
-- **Frontend**: ✅ Complete React UI with tRPC client, chat interface, agent monitoring
-- **API Structure**: ✅ tRPC routers and service architecture fully defined  
-- **Backend Logic**: 🚧 Using mock servers, ready for production implementation
-- **Database**: ✅ SQLite schema defined with better-sqlite3
-- **Agent System**: ✅ Framework complete, 🚧 agent logic needs implementation
-- **RAG System**: ✅ Architecture ready, 🚧 ChromaDB integration pending
-- **Tool System**: ✅ Framework ready, 🚧 tool implementations needed
-- **LLM Integration**: 🚧 Ollama provider structure ready, needs connection
+### Build Commands
+- `npm run build` - Build the project for production
+- `npm run dev` or `npm start` - Start development server
+- `npm run preview` - Preview production build locally
 
-## Key Commands
+### Testing Commands
+- `npm test` or `npm run test` - Run all tests
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:coverage` - Run tests with coverage report
+- `npm run test:unit` - Run unit tests only
+- `npm run test:integration` - Run integration tests only
+- `npm run test:e2e` - Run end-to-end tests
 
-### Development
-```bash
-# Install dependencies and approve native builds
-pnpm install
-pnpm approve-builds  # Select all packages when prompted
+### Code Quality Commands
+- `npm run lint` - Run ESLint for code linting
+- `npm run lint:fix` - Run ESLint with auto-fix
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
+- `npm run typecheck` - Run TypeScript type checking
 
-# Development servers
-pnpm dev:client     # Frontend only (recommended due to ESM issues)
-pnpm dev:alt        # Alternative script that handles ESM better
-pnpm dev           # Full dev (may have issues with Node.js v22)
+### Development Tools
+- `npm run storybook` - Start Storybook (if available)
+- `npm run analyze` - Analyze bundle size
+- `npm run clean` - Clean build artifacts
 
-# For backend development with mock data
-node --import tsx --experimental-specifier-resolution=node src/api/mock-server-v2.ts
+## Technology Stack
+
+### Core Technologies
+- **JavaScript/TypeScript** - Primary programming languages
+- **Node.js** - Runtime environment
+- **npm/yarn** - Package management
+
+### Common Frameworks
+- **React** - UI library with hooks and functional components
+- **Vue.js** - Progressive framework for building user interfaces
+- **Angular** - Full-featured framework for web applications
+- **Express.js** - Web application framework for Node.js
+- **Next.js** - React framework with SSR/SSG capabilities
+
+### Build Tools
+- **Vite** - Fast build tool and development server
+- **Webpack** - Module bundler
+- **Rollup** - Module bundler for libraries
+- **esbuild** - Extremely fast JavaScript bundler
+
+### Testing Framework
+- **Jest** - JavaScript testing framework
+- **Vitest** - Fast unit test framework
+- **Testing Library** - Simple and complete testing utilities
+- **Cypress** - End-to-end testing framework
+- **Playwright** - Cross-browser testing
+
+### Code Quality Tools
+- **ESLint** - JavaScript/TypeScript linter
+- **Prettier** - Code formatter
+- **TypeScript** - Static type checking
+- **Husky** - Git hooks
+
+## Project Structure Guidelines
+
+### File Organization
+```
+src/
+├── components/     # Reusable UI components
+├── pages/         # Page components or routes
+├── hooks/         # Custom React hooks
+├── utils/         # Utility functions
+├── services/      # API calls and external services
+├── types/         # TypeScript type definitions
+├── constants/     # Application constants
+├── styles/        # Global styles and themes
+└── tests/         # Test files
 ```
 
-### Building & Production
-```bash
-pnpm build         # Build entire project
-pnpm build:client  # Build frontend only
-pnpm build:server  # Build backend only
-pnpm start         # Start production server
-```
+### Naming Conventions
+- **Files**: Use kebab-case for file names (`user-profile.component.ts`)
+- **Components**: Use PascalCase for component names (`UserProfile`)
+- **Functions**: Use camelCase for function names (`getUserData`)
+- **Constants**: Use UPPER_SNAKE_CASE for constants (`API_BASE_URL`)
+- **Types/Interfaces**: Use PascalCase with descriptive names (`UserData`, `ApiResponse`)
 
-### Testing & Quality
-```bash
-pnpm test          # Run unit tests
-pnpm test:integration  # Integration tests
-pnpm test:e2e      # E2E tests with Playwright
-pnpm typecheck     # TypeScript type checking
-pnpm lint          # ESLint
-pnpm format        # Prettier formatting
-```
+## TypeScript Guidelines
 
-### Setup & Initialization
-```bash
-# Pull Ollama models
-ollama pull qwen3:14b
-ollama pull qwen3:8b
-ollama pull nomic-embed-text
+### Type Safety
+- Enable strict mode in `tsconfig.json`
+- Use explicit types for function parameters and return values
+- Prefer interfaces over types for object shapes
+- Use union types for multiple possible values
+- Avoid `any` type - use `unknown` when type is truly unknown
 
-# Initialize database
-pnpm init:db
+### Best Practices
+- Use type guards for runtime type checking
+- Leverage utility types (`Partial`, `Pick`, `Omit`, etc.)
+- Create custom types for domain-specific data
+- Use enums for finite sets of values
+- Document complex types with JSDoc comments
 
-# Start Ollama service
-ollama serve
-```
+## Code Quality Standards
 
-## High-Level Architecture
+### ESLint Configuration
+- Use recommended ESLint rules for JavaScript/TypeScript
+- Enable React-specific rules if using React
+- Configure import/export rules for consistent module usage
+- Set up accessibility rules for inclusive development
 
-### System Flow
-```
-User Query → tRPC API → Master Orchestrator → Plan Creation
-                                            ↓
-                                    Agent Execution ← RAG Context
-                                            ↓
-                                    Tool Usage (Search, Code, etc.)
-                                            ↓
-                                    Review & Replan → Response
-```
+### Prettier Configuration
+- Use consistent indentation (2 spaces recommended)
+- Set maximum line length (80-100 characters)
+- Use single quotes for strings
+- Add trailing commas for better git diffs
 
-### Key Design Patterns
+### Testing Standards
+- Aim for 80%+ test coverage
+- Write unit tests for utilities and business logic
+- Use integration tests for component interactions
+- Implement e2e tests for critical user flows
+- Follow AAA pattern (Arrange, Act, Assert)
 
-1. **Plan-Execute-Review Loop**: Master Orchestrator creates plans, executes them through agents, reviews results, and replans if needed
-2. **Agent Registry**: Dynamic agent loading and management
-3. **Tool Registration**: Agents can register and use multiple tools
-4. **Context Management**: Efficient handling of LLM context windows
-5. **Event-Driven**: Real-time updates via EventEmitter and WebSockets
+## Performance Optimization
 
-### Core Components
+### Bundle Optimization
+- Use code splitting for large applications
+- Implement lazy loading for routes and components
+- Optimize images and assets
+- Use tree shaking to eliminate dead code
+- Analyze bundle size regularly
 
-1. **Master Orchestrator** (`src/core/master-orchestrator/`)
-   - Central planning and coordination
-   - Plan/replan loop implementation
-   - Uses qwen3:14b model
-   - **Status**: Structure complete, needs LLM integration
+### Runtime Performance
+- Implement proper memoization (React.memo, useMemo, useCallback)
+- Use virtualization for large lists
+- Optimize re-renders in React applications
+- Implement proper error boundaries
+- Use web workers for heavy computations
 
-2. **Agent System** (`src/core/agents/`)
-   - BaseAgent abstract class
-   - Specialized agents: Research, Code, DataAnalysis, Writer, ToolExecutor
-   - Agent Registry for dynamic management
-   - **Status**: Framework ready, agent logic not implemented
+## Security Guidelines
 
-3. **RAG System** (`src/core/rag/`)
-   - Vector storage (ChromaDB planned)
-   - Document processing and chunking
-   - Embedding service with nomic-embed-text
-   - **Status**: Structure ready, needs vector DB integration
+### Dependencies
+- Regularly audit dependencies with `npm audit`
+- Keep dependencies updated
+- Use lock files (`package-lock.json`, `yarn.lock`)
+- Avoid dependencies with known vulnerabilities
 
-4. **Tool Framework** (`src/core/tools/`)
-   - BaseTool abstract class
-   - WebSearchTool and WebScraperTool
-   - **Status**: Structure ready, implementations needed
-
-5. **API Layer** (`src/api/`)
-   - tRPC routers for type-safe communication
-   - Service layer for business logic
-   - WebSocket support planned
-   - **Status**: Routes defined, using mock responses
-
-6. **Frontend** (`src/ui/`)
-   - React + TypeScript + Vite
-   - Professional chat interface
-   - Real-time agent monitoring UI
-   - **Status**: ✅ Complete and working
-
-### Technology Stack
-
-- **Runtime**: Node.js 18+ (tested with v22.15.0) with TypeScript
-- **LLM Provider**: Ollama (local)
-- **Models**: qwen3:14b (orchestrator), qwen3:8b (agents), nomic-embed-text (embeddings)
-- **Vector DB**: ChromaDB (optional for RAG features)
-- **API**: tRPC + Express
-- **Frontend**: React + Vite (NOT Next.js)
-- **Database**: SQLite (better-sqlite3)
-- **Testing**: Vitest + Playwright
-- **Build**: TSX for development, TSC for production
-- **Package Manager**: pnpm (required)
-
-## Known Issues & Solutions
-
-### 1. ESM Module Resolution Error (`ERR_MODULE_NOT_FOUND`)
-This occurs with Node.js v22 and complex TypeScript imports.
-
-**Solution 1**: Run client and server separately:
-```bash
-pnpm dev:client  # Terminal 1
-pnpm dev:server  # Terminal 2
-```
-
-**Solution 2**: Use production build:
-```bash
-pnpm build
-pnpm start
-```
-
-**Solution 3**: Install ts-node-dev for better dev experience:
-```bash
-pnpm add -D ts-node-dev
-# Then update dev:server script in package.json
-```
-
-### 2. Native Module Build
-Run `pnpm approve-builds` and select all packages when prompted.
-Required for: bcrypt, better-sqlite3, esbuild, sqlite3
-
-### 3. Dependency Version Mismatch
-The project uses @tanstack/react-query v4 (not v5) for compatibility with tRPC
+### Code Security
+- Sanitize user inputs
+- Use HTTPS for API calls
+- Implement proper authentication and authorization
+- Store sensitive data securely (environment variables)
+- Use Content Security Policy (CSP) headers
 
 ## Development Workflow
 
-### Adding a New Agent
-1. Create new file in `src/core/agents/specialized/`
-2. Extend BaseAgent class
-3. Implement execute() method
-4. Register in AgentRegistry
-5. Add tests
+### Before Starting
+1. Check Node.js version compatibility
+2. Install dependencies with `npm install`
+3. Copy environment variables from `.env.example`
+4. Run type checking with `npm run typecheck`
 
-### Adding a New Tool
-1. Create new file in `src/core/tools/`
-2. Extend BaseTool class
-3. Define parameters and validation
-4. Implement execute() method
-5. Register with relevant agents
+### During Development
+1. Use TypeScript for type safety
+2. Run linter frequently to catch issues early
+3. Write tests for new features
+4. Use meaningful commit messages
+5. Review code changes before committing
 
-### Modifying API Endpoints
-1. Update router in `src/api/routes/`
-2. Update service if needed
-3. Ensure tRPC types are correct
-4. Test with frontend
-
-## Current Mock Data Locations
-
-Remove these when implementing production:
-- `/src/api/mock-server.ts`
-- `/src/api/mock-server-v2.ts`
-- `/src/api/test-server.ts`
-- Placeholder components in `/src/ui/App.tsx`
-- Hardcoded health checks in `/src/api/server.ts`
-
-## Production Migration
-
-See [PRODUCTION_MIGRATION_PLAN.md](./PRODUCTION_MIGRATION_PLAN.md) for detailed steps to move from mock to production implementation.
-
-## Tips
-
-- Always ensure Ollama is running before starting development
-- Use `pnpm dev:client` alone for UI development if server has issues
-- Check `data/logs/` for debugging information
-- Monitor agent activity in the UI's agent monitor panel
-- Run `pnpm typecheck` before committing to catch type errors
-- ChromaDB is optional - the system will work without it but RAG features will be disabled
-
-## Project Structure
-```
-src/
-├── api/          # Express + tRPC API
-├── config/       # Configuration files
-├── core/         # Core business logic
-│   ├── agents/   # Agent implementations
-│   ├── llm/      # LLM provider
-│   ├── maestro/  # Task orchestration
-│   ├── master-orchestrator/  # Main orchestrator
-│   ├── rag/      # RAG system
-│   └── tools/    # Tool implementations
-├── ui/           # React frontend
-└── utils/        # Utility functions
-```
-
-## Important Files to Know
-
-- `src/core/master-orchestrator/MasterOrchestrator.ts` - Main orchestration logic
-- `src/api/routes/chat.router.ts` - Chat endpoint implementation
-- `src/core/agents/base/BaseAgent.ts` - Agent base class
-- `src/ui/components/Chat/ChatInterface.tsx` - Main chat UI
-- `PRODUCTION_MIGRATION_PLAN.md` - Detailed implementation roadmap
-
-## Environment Variables
-
-```env
-NODE_ENV=development
-OLLAMA_URL=http://localhost:11434
-DATABASE_PATH=./data/app.db
-VECTOR_DB_PATH=./data/vectordb
-JWT_SECRET=dev-secret-key-change-in-production
-LOG_LEVEL=debug
-```
-
-## Next Priority Tasks
-
-1. Implement `MasterOrchestrator.initialize()` to connect to Ollama
-2. Complete `createPlan()` method with real LLM calls
-3. Implement at least one agent (suggest starting with ResearchAgent)
-4. Connect one tool (WebSearchTool) with real functionality
-5. Update chat router to use real orchestrator instead of mock
+### Before Committing
+1. Run full test suite: `npm test`
+2. Check linting: `npm run lint`
+3. Verify formatting: `npm run format:check`
+4. Run type checking: `npm run typecheck`
+5. Test production build: `npm run build`

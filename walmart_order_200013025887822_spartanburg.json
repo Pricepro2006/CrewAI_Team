@@ -1,0 +1,26 @@
+{
+  "order_number": "200013025887822",
+  "customer_name": "Nicholas Paul",
+  "address": "278 wycliff dr, Spartanburg, SC 29301",
+  "order_date": "May 11, 2025",
+  "total_amount": "$159.64",
+  "fulfillment_segments": [
+    {
+      "type": "Delivery",
+      "delivered_date": "May 13",
+      "items": ["Purina Pro Plan Puppy Dry Dog Food"]
+    },
+    {
+      "type": "Delivery from store", 
+      "delivered_date": "May 12",
+      "items": ["Ready Clean Protein Bar, Chocolate Peanut Butter, 15 Count"]
+    },
+    {
+      "type": "Delivery from store",
+      "delivered_date": "May 11", 
+      "items": ["15 items including Sara Lee Turkey, Pop-Tarts, Sunkist Zero Sugar (4 packs)"]
+    }
+  ],
+  "location": "Spartanburg, SC",
+  "found_on_page": 2
+}

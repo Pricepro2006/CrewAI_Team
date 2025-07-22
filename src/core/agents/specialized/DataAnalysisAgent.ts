@@ -1,5 +1,5 @@
 import { BaseAgent } from '../base/BaseAgent';
-import { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
+import type { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
 
 export class DataAnalysisAgent extends BaseAgent {
   constructor() {
@@ -192,6 +192,8 @@ export class DataAnalysisAgent extends BaseAgent {
   ): Promise<AnalysisResult> {
     const prompt = `
       Explore this dataset comprehensively:
+      Analysis complexity: ${analysis.complexity}
+      Expected techniques: ${analysis.techniques.join(', ')}
       
       ${context.ragDocuments ? `Data:\n${context.ragDocuments[0]?.content}` : ''}
       

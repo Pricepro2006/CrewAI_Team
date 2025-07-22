@@ -1,0 +1,293 @@
+/* Marketing/Splunk Section Styles */
+.marketing-splunk-section {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Section Header */
+.marketing-splunk-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: #dc2626;
+  color: white;
+}
+
+.marketing-splunk-section .section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.marketing-splunk-section .section-count {
+  font-size: 0.875rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+
+/* Table Layout */
+.marketing-splunk-section .section-table {
+  width: 100%;
+}
+
+.marketing-splunk-section .table-header {
+  display: grid;
+  grid-template-columns: 150px 150px 1fr 2fr 120px 150px;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.marketing-splunk-section .table-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.marketing-splunk-section .table-row {
+  display: grid;
+  grid-template-columns: 150px 150px 1fr 2fr 120px 150px;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s;
+}
+
+.marketing-splunk-section .table-row:hover {
+  background-color: #f9fafb;
+}
+
+.marketing-splunk-section .table-cell {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Cell Content */
+.marketing-splunk-section .email-alias-name {
+  font-weight: 500;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.marketing-splunk-section .requestor-name {
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.marketing-splunk-section .email-subject {
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.marketing-splunk-section .attachment-indicator {
+  font-size: 0.875rem;
+  cursor: help;
+}
+
+.marketing-splunk-section .email-summary {
+  color: #6b7280;
+  font-size: 0.875rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+.status-badge--red {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.status-badge--red .status-dot {
+  background-color: #dc2626;
+}
+
+.status-badge--yellow {
+  background-color: #fffbeb;
+  color: #d97706;
+}
+
+.status-badge--yellow .status-dot {
+  background-color: #f59e0b;
+}
+
+.status-badge--green {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+
+.status-badge--green .status-dot {
+  background-color: #10b981;
+}
+
+/* Assignment */
+.assignment-container {
+  position: relative;
+}
+
+.assigned-member {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #374151;
+}
+
+.assigned-icon {
+  width: 1rem;
+  height: 1rem;
+  color: #6b7280;
+}
+
+.assigned-name {
+  font-size: 0.875rem;
+}
+
+.assignment-dropdown {
+  position: relative;
+}
+
+.assignment-button {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background-color: white;
+  color: #374151;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.assignment-button:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.dropdown-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+  margin-top: 0.25rem;
+  min-width: 220px;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-header {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dropdown-empty {
+  padding: 1rem;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background-color: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #f3f4f6;
+}
+
+.dropdown-item-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #6b7280;
+}
+
+.dropdown-item-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.dropdown-item-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.dropdown-item-email {
+  font-size: 0.75rem;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Empty State */
+.marketing-splunk-section .table-empty {
+  padding: 3rem;
+  text-align: center;
+  color: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .marketing-splunk-section .table-header,
+  .marketing-splunk-section .table-row {
+    grid-template-columns: 120px 120px 1fr 1.5fr 100px 120px;
+  }
+}

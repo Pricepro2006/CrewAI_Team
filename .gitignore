@@ -1,61 +1,35 @@
-# Dependencies
-node_modules/
-.pnpm-store/
+node_modules
 
-# Production build
-dist/
-build/
-
-# Environment files
+# Environment variables - SECURITY CRITICAL
 .env
+.env.*
+!.env.example
+!.env.template
 .env.local
 .env.production
-.env.*.local
+.env.development
+.env.staging
+.env.backup*
 
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Security files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*secret*
+*password*
+*credential*
+*token*
+config.json
+*config.json
+!config.example.json
+*azure*
+*aws*
+*gcp*
+claude_desktop_config.json
 
-# Data and databases
-data/
-*.db
-*.sqlite
-*.sqlite3
-
-# Vector databases
-vectordb/
-chromadb/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Testing
-coverage/
-.nyc_output/
-
-# Cache
-.cache/
-.parcel-cache/
-.next/
-.nuxt/
-.vuepress/dist/
-.temp/
-
-# OS files
-Thumbs.db
-desktop.ini
-
-# Python (if using Python tools)
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -64,26 +38,47 @@ __pycache__/
 venv/
 env/
 ENV/
+/dist/
+/venv/
 playwright_env/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
 
 # Temporary files
 *.tmp
 *.temp
-.tmp/
-.temp/
-
-# Ollama models (they're stored locally)
-.ollama/
-
-# SSL certificates (for local dev)
-*.pem
-*.key
-*.crt
-
-# Backup files
+.cache/
+PHASE*_PROGRESS.md
+.coderabbit*
+*.log
+.*test*
+*mock*
+*irrigation*
+# Miscellaneous
 *.bak
-*.backup
-
-# Lock files (keep pnpm-lock.yaml)
-package-lock.json
-yarn.lock
+*.orig
+*/test/*

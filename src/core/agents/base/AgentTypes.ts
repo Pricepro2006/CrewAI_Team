@@ -1,5 +1,5 @@
-import { Tool } from '../../tools/base/BaseTool';
-import { Document } from '../../shared/types';
+import type { BaseTool } from '../../tools/base/BaseTool';
+import type { Document } from '../../shared/types';
 
 export interface AgentCapability {
   name: string;
@@ -36,7 +36,7 @@ export interface AgentMetadata {
 }
 
 export interface ToolExecutionParams {
-  tool: Tool;
+  tool: BaseTool;
   context: AgentContext;
   parameters: any;
   guidance?: string;
@@ -64,9 +64,9 @@ export abstract class BaseAgent {
   
   abstract execute(task: string, context: AgentContext): Promise<AgentResult>;
   abstract executeWithTool(params: ToolExecutionParams): Promise<AgentResult>;
-  abstract registerTool(tool: Tool): void;
-  abstract getTools(): Tool[];
-  abstract getTool(name: string): Tool | undefined;
+  abstract registerTool(tool: BaseTool): void;
+  abstract getTools(): BaseTool[];
+  abstract getTool(name: string): BaseTool | undefined;
   abstract hasCapability(capability: string): boolean;
   abstract initialize(): Promise<void>;
 }

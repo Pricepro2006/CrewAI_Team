@@ -1,23 +1,5 @@
-export interface Document {
-  id: string;
-  content: string;
-  metadata: DocumentMetadata;
-  score?: number;
-}
-
-export interface DocumentMetadata {
-  sourceId: string;
-  title?: string;
-  author?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  tags?: string[];
-  type?: string;
-  url?: string;
-  chunkIndex?: number;
-  totalChunks?: number;
-  [key: string]: any;
-}
+import type { Document, DocumentMetadata } from '../shared/types';
+export type { Document, DocumentMetadata };
 
 export interface ProcessedDocument extends Document {
   embedding?: number[];
@@ -36,12 +18,16 @@ export interface RAGConfig {
 }
 
 export interface VectorStoreConfig {
-  type: 'chromadb' | 'pinecone' | 'weaviate' | 'qdrant';
+  type: 'chromadb' | 'pinecone' | 'weaviate' | 'qdrant' | 'mcp-vectorize';
   path?: string;
   baseUrl?: string;
   apiKey?: string;
   collectionName: string;
   dimension?: number;
+  // Pinecone specific
+  indexName?: string;
+  // MCP Vectorize specific
+  pipelineId?: string;
 }
 
 export interface ChunkingConfig {

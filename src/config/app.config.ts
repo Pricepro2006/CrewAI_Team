@@ -1,52 +1,67 @@
-export const appConfig = {
-  api: {
-    port: parseInt(process.env.API_PORT || '3000'),
-    host: process.env.API_HOST || 'localhost',
-    cors: {
-      origin: process.env.NODE_ENV === 'production' 
-        ? process.env.FRONTEND_URL 
-        : ['http://localhost:5173', 'http://localhost:3000'],
-      credentials: true
-    }
-  },
-  ui: {
-    port: parseInt(process.env.UI_PORT || '5173'),
-    host: process.env.UI_HOST || 'localhost'
-  },
+import { config } from 'dotenv';
+
+config();
+
+interface DatabaseConfig {
+  path: string;
+}
+
+interface ApiConfig {
+  port: number;
+  cors: {
+    origin: string[] | string | boolean | ((origin: string | undefined, callback: (err: Error | null, origin?: boolean | string | RegExp | (boolean | string | RegExp)[]) => void) => void);
+    credentials: boolean;
+    optionsSuccessStatus?: number;
+    methods?: string[];
+    allowedHeaders?: string[];
+  };
+}
+
+interface OllamaConfig {
+  url: string;
+  model?: string;
+}
+
+interface AppConfig {
+  database: DatabaseConfig;
+  api: ApiConfig;
+  ollama?: OllamaConfig;
+}
+
+const appConfig: AppConfig = {
   database: {
-    path: process.env.DATABASE_PATH || './data/app.db'
+    path: process.env.DATABASE_PATH || './data/app.db',
   },
-  security: {
-    jwtSecret: process.env.JWT_SECRET || 'dev-secret-key-change-in-production',
-    rateLimiting: {
-      windowMs: parseInt(process.env.RATE_LIMIT_WINDOW || '60000'),
-      maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '10')
-    }
-  },
-  logging: {
-    level: process.env.LOG_LEVEL || 'info',
-    filePath: process.env.LOG_FILE_PATH || './data/logs'
-  },
-  maestro: {
-    queueConfig: {
-      maxSize: 100,
-      strategy: 'priority' as const
+  api: {
+    port: parseInt(process.env.PORT || '3001', 10),
+    cors: {
+      origin: function (origin, callback) {
+        const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || process.env.CORS_ORIGIN?.split(',') || [
+          'http://localhost:3000', 
+          'http://localhost:5173',
+          'http://localhost:5174',
+          'http://localhost:5175'
+        ];
+        
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'), false);
+        }
+      },
+      credentials: true,
+      optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     },
-    maxConcurrentTasks: 5,
-    taskTimeout: 300000 // 5 minutes
   },
-  agents: {
-    maxAgents: 10,
-    idleTimeout: 300000, // 5 minutes
-    preloadAgents: ['ResearchAgent', 'CodeAgent']
-  },
-  features: {
-    enableWebSearch: true,
-    enableCodeGeneration: true,
-    enableDataAnalysis: true,
-    enableWriting: true,
-    enableFileOperations: false // Disabled by default for security
-  }
+  ollama: process.env.OLLAMA_URL ? {
+    url: process.env.OLLAMA_URL,
+    model: process.env.OLLAMA_MODEL,
+  } : undefined,
 };
 
 export default appConfig;

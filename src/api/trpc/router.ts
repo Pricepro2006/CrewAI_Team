@@ -1,48 +1,55 @@
-import { initTRPC } from '@trpc/server';
-import { createContext } from './context';
-import { agentRouter } from '../routes/agent.router';
-import { taskRouter } from '../routes/task.router';
-import { ragRouter } from '../routes/rag.router';
-import { chatRouter } from '../routes/chat.router';
+// Re-export enhanced router components
+export {
+  router,
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+  userProcedure,
+  chatProcedure,
+  agentProcedure,
+  taskProcedure,
+  ragProcedure,
+  strictProcedure,
+  enhancedProcedure,
+  monitoredProcedure,
+  middleware,
+  commonSchemas,
+  createFeatureRouter,
+  createSecureRouter,
+} from "./enhanced-router";
 
-const t = initTRPC.context<typeof createContext>().create({
-  errorFormatter({ shape, error }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        zodError:
-          error.cause instanceof Error && error.cause.name === 'ZodError'
-            ? error.cause
-            : null,
-      },
-    };
-  },
-});
+// Import routers
+import { agentRouter } from "../routes/agent.router";
+import { taskRouter } from "../routes/task.router";
+import { ragRouter } from "../routes/rag.router";
+import { chatRouter } from "../routes/chat.router";
+import { websocketRouter } from "../routes/websocket.router";
+import { healthRouter } from "../routes/health.router";
+import { dataCollectionRouter } from "../routes/data-collection.router";
+import { authRouter } from "../routes/auth.router";
+import { emailRouter } from "../routes/email.router";
+import { metricsRouter } from "../routes/metrics.router";
+import { emailAssignmentRouter } from "./routers/emailAssignment.router";
+import { iemsEmailRouter } from "../routes/iems-email.router";
 
-export const router = t.router;
-export const publicProcedure = t.procedure;
-export const middleware = t.middleware;
+// Import the router function from enhanced-router
+import { router as createRouter } from "./enhanced-router";
+import type { AnyRouter } from "@trpc/server";
 
-// Auth middleware
-const isAuthenticated = middleware(async ({ ctx, next }) => {
-  // Add authentication logic here if needed
-  return next({
-    ctx: {
-      ...ctx,
-      user: null // Replace with actual user from JWT/session
-    }
-  });
-});
-
-export const protectedProcedure = t.procedure.use(isAuthenticated);
-
-// Create the main app router
-export const appRouter = router({
+// Create the main app router with enhanced security
+export const appRouter: AnyRouter = createRouter({
+  auth: authRouter, // Authentication endpoints
   agent: agentRouter,
   task: taskRouter,
   rag: ragRouter,
-  chat: chatRouter
+  chat: chatRouter,
+  ws: websocketRouter, // Use 'ws' for frontend compatibility
+  health: healthRouter, // Health monitoring endpoints
+  dataCollection: dataCollectionRouter, // Bright Data integration
+  emails: emailRouter, // Email analytics and management
+  emailAssignment: emailAssignmentRouter, // Email assignment functionality
+  metrics: metricsRouter, // Performance and rate limit metrics
+  iemsEmails: iemsEmailRouter, // IEMS email dashboard endpoints
 });
 
 export type AppRouter = typeof appRouter;

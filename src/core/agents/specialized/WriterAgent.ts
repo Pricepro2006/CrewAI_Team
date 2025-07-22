@@ -1,5 +1,6 @@
 import { BaseAgent } from '../base/BaseAgent';
-import { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
+import type { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
+import { sanitizeLLMOutput } from '../../../utils/output-sanitizer';
 
 export class WriterAgent extends BaseAgent {
   constructor() {
@@ -39,7 +40,7 @@ export class WriterAgent extends BaseAgent {
       return {
         success: true,
         data: result,
-        output: result.content,
+        output: sanitizeLLMOutput(result.content).content,
         metadata: {
           agent: this.name,
           contentType: taskAnalysis.contentType,
@@ -127,7 +128,7 @@ export class WriterAgent extends BaseAgent {
     const content = await this.llm.generate(prompt);
     
     return {
-      content,
+      content: sanitizeLLMOutput(content).content,
       contentType: 'article',
       metadata: {
         sections: this.extractSections(content),
@@ -162,7 +163,7 @@ export class WriterAgent extends BaseAgent {
     const content = await this.llm.generate(prompt);
     
     return {
-      content,
+      content: sanitizeLLMOutput(content).content,
       contentType: 'report',
       metadata: {
         sections: this.extractSections(content),
@@ -197,7 +198,7 @@ export class WriterAgent extends BaseAgent {
     const content = await this.llm.generate(prompt);
     
     return {
-      content,
+      content: sanitizeLLMOutput(content).content,
       contentType: 'email',
       metadata: {
         subject: this.extractEmailSubject(content),
@@ -231,7 +232,7 @@ export class WriterAgent extends BaseAgent {
     const content = await this.llm.generate(prompt);
     
     return {
-      content,
+      content: sanitizeLLMOutput(content).content,
       contentType: 'creative',
       metadata: {
         genre: this.detectGenre(content),
@@ -264,7 +265,7 @@ export class WriterAgent extends BaseAgent {
     const content = await this.llm.generate(prompt);
     
     return {
-      content,
+      content: sanitizeLLMOutput(content).content,
       contentType: 'technical',
       metadata: {
         hasCodeExamples: content.includes('```'),
@@ -288,7 +289,7 @@ export class WriterAgent extends BaseAgent {
     const content = await this.llm.generate(prompt);
     
     return {
-      content,
+      content: sanitizeLLMOutput(content).content,
       contentType: 'general',
       metadata: {}
     };
@@ -319,7 +320,7 @@ export class WriterAgent extends BaseAgent {
 
   private extractEmailSubject(content: string): string {
     const subjectMatch = content.match(/Subject:\s*(.+)/i);
-    return subjectMatch ? subjectMatch[1] : 'No subject';
+    return subjectMatch?.[1] ?? 'No subject';
   }
 
   private checkForActionItems(content: string): boolean {

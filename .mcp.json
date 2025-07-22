@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "name": "File System MCP",
+      "description": "Local file management; compatible with any language",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/home/pricepro2006/CrewAI_Team"
+      ],
+      "env": {}
+    },
+    "memory": {
+      "name": "Memory MCP",
+      "description": "Centralized memory system for AI agents",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "env": {}
+    },
+    "sequential-thinking": {
+      "name": "Sequential Thinking MCP",
+      "description": "Helps LLMs decompose complex tasks into logical steps",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "env": {}
+    }
+  }
+}
