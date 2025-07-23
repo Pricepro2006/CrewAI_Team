@@ -40,7 +40,10 @@
     "test:watch": "vitest watch",
     "approve-builds": "echo \"Skipping native builds approval\"",
     "monitor:cache": "tsx scripts/monitor-cache.ts",
-    "process-emails": "tsx src/scripts/email-batch-processor.ts --"
+    "process-emails": "tsx src/scripts/email-batch-processor.ts --",
+    "pipeline:test": "tsx src/scripts/test-pipeline-small-batch.ts",
+    "pipeline:execute": "tsx src/scripts/run-three-stage-pipeline.ts",
+    "pipeline:monitor": "tsx src/scripts/monitor-pipeline.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",

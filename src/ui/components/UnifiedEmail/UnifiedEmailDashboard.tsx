@@ -101,14 +101,14 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
   // Calculate critical metrics
   const metrics = useMemo(
     () => ({
-      totalEmails: emailData?.total || 0,
-      todaysEmails: emailData?.todaysCount || 0,
+      totalEmails: emailData?.data?.total || emailData?.total || 0,
+      todaysEmails: emailData?.data?.todaysCount || emailData?.todaysCount || 0,
       workflowCompletion: analytics?.workflowCompletion || 3.5,
       avgResponseTime: analytics?.avgResponseTime || 4.3,
       criticalAlerts: analytics?.criticalAlerts || [],
       agentUtilization: analytics?.agentUtilization || 0,
-      pendingAssignment: emailData?.pendingAssignmentCount || 0,
-      urgentCount: emailData?.urgentCount || 0,
+      pendingAssignment: emailData?.data?.pendingAssignmentCount || emailData?.pendingAssignmentCount || 0,
+      urgentCount: emailData?.data?.urgentCount || emailData?.urgentCount || 0,
     }),
     [emailData, analytics],
   );
@@ -145,12 +145,28 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
             Analytics
           </button>
           <button
+            className={`unified-dashboard__nav-btn ${viewMode === "workflows" ? "active" : ""}`}
+            onClick={() => setViewMode("workflows")}
+            title="Workflow Tracking"
+          >
+            <ClockIcon className="unified-dashboard__nav-icon" />
+            Workflows
+          </button>
+          <button
             className={`unified-dashboard__nav-btn ${viewMode === "agents" ? "active" : ""}`}
             onClick={() => setViewMode("agents")}
             title="Agent Management"
           >
             <UserGroupIcon className="unified-dashboard__nav-icon" />
             Agents
+          </button>
+          <button
+            className={`unified-dashboard__nav-btn ${viewMode === "settings" ? "active" : ""}`}
+            onClick={() => setViewMode("settings")}
+            title="Settings"
+          >
+            <Cog6ToothIcon className="unified-dashboard__nav-icon" />
+            Settings
           </button>
         </div>
 
@@ -192,7 +208,7 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
       <div className="unified-dashboard__content">
         {viewMode === "list" && (
           <EmailListView
-            emails={emailData?.emails || []}
+            emails={emailData?.data?.emails || emailData?.emails || []}
             onEmailSelect={(email) => setSelectedEmails([email.id])}
             selectedEmailId={selectedEmails[0]}
           />
@@ -202,11 +218,48 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
           <AnalyticsView analytics={analytics || null} />
         )}
 
+        {viewMode === "workflows" && (
+          <div className="workflow-view">
+            <h2>Workflow Tracking</h2>
+            <EmailListView
+              emails={(emailData?.data?.emails || emailData?.emails || []).filter(
+                email => email.workflowState === "IN_PROGRESS"
+              )}
+              onEmailSelect={(email) => setSelectedEmails([email.id])}
+              selectedEmailId={selectedEmails[0]}
+            />
+          </div>
+        )}
+
         {viewMode === "agents" && (
           <AgentView
             agents={analytics?.agents || []}
             agentPerformance={analytics?.agentPerformance}
           />
+        )}
+
+        {viewMode === "settings" && (
+          <div className="settings-view">
+            <h2>Email Management Settings</h2>
+            <div className="settings-content">
+              <div className="settings-section">
+                <h3>Email Aliases</h3>
+                <p>Configure email aliases and routing rules</p>
+              </div>
+              <div className="settings-section">
+                <h3>Workflow Configuration</h3>
+                <p>Set up workflow automation and triggers</p>
+              </div>
+              <div className="settings-section">
+                <h3>Agent Assignment</h3>
+                <p>Manage agent assignments and workload distribution</p>
+              </div>
+              <div className="settings-section">
+                <h3>Notifications</h3>
+                <p>Configure email alerts and notifications</p>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

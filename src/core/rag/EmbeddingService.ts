@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import type { EmbeddingConfig } from './types';
+import { MODEL_CONFIG } from '../../config/models.config';
 
 export class EmbeddingService {
   private client: AxiosInstance;
@@ -8,15 +9,17 @@ export class EmbeddingService {
   private isInitialized: boolean = false;
 
   constructor(config: EmbeddingConfig) {
+    // Override to use Llama 3.2:3b for embeddings
     this.config = {
-      batchSize: 100,
-      dimensions: 768, // Default for nomic-embed-text
+      batchSize: MODEL_CONFIG.batchSizes.embedding,
+      dimensions: 4096, // Llama 3.2:3b embedding dimensions
+      model: MODEL_CONFIG.models.embedding, // Use llama3.2:3b
       ...config
     };
 
     this.client = axios.create({
-      baseURL: config.baseUrl || 'http://localhost:11434',
-      timeout: 60000, // 1 minute timeout for embeddings
+      baseURL: config.baseUrl || MODEL_CONFIG.api.ollamaUrl,
+      timeout: MODEL_CONFIG.timeouts.embedding,
       headers: {
         'Content-Type': 'application/json'
       }

@@ -1,5 +1,6 @@
-import React from "react";
-import { NavLink } from "react-router-dom";
+import React, { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import "./Sidebar.css";
 
 interface SidebarProps {
@@ -8,6 +9,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
+  const location = useLocation();
+  const [expandedItems, setExpandedItems] = useState<string[]>(["email-management"]);
   const navItems = [
     {
       path: "/",
@@ -122,6 +125,59 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
           />
         </svg>
       ),
+      submenu: [
+        {
+          path: "/email-dashboard",
+          label: "Dashboard Overview",
+          icon: (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 13H11V3H3V13ZM3 21H11V15H3V21ZM13 21H21V11H13V21ZM13 3V9H21V3H13Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ),
+        },
+        {
+          path: "/email-dashboard/analytics",
+          label: "Email Analytics",
+          icon: (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 20V10M12 20V4M6 20V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ),
+        },
+        {
+          path: "/email-dashboard/workflows",
+          label: "Workflow Tracking",
+          icon: (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 16V8C20.9996 7.64927 20.9071 7.30481 20.7315 7.00116C20.556 6.69751 20.3037 6.44536 20 6.27L13 2.27C12.696 2.09446 12.3511 2.00205 12 2.00205C11.6489 2.00205 11.304 2.09446 11 2.27L4 6.27C3.69626 6.44536 3.44398 6.69751 3.26846 7.00116C3.09294 7.30481 3.00036 7.64927 3 8V16C3.00036 16.3507 3.09294 16.6952 3.26846 16.9988C3.44398 17.3025 3.69626 17.5546 4 17.73L11 21.73C11.304 21.9055 11.6489 21.9979 12 21.9979C12.3511 21.9979 12.696 21.9055 13 21.73L20 17.73C20.3037 17.5546 20.556 17.3025 20.7315 16.9988C20.9071 16.6952 20.9996 16.3507 21 16Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <line x1="12" y1="22.08" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ),
+        },
+        {
+          path: "/email-dashboard/agents",
+          label: "Agent Performance",
+          icon: (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M16 3.13C16.8604 3.3503 17.623 3.8507 18.1676 4.55231C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ),
+        },
+        {
+          path: "/email-dashboard/settings",
+          label: "Email Settings",
+          icon: (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 1V6M12 18V23M4.22 4.22L7.05 7.05M16.95 16.95L19.78 19.78M1 12H6M18 12H23M4.22 19.78L7.05 16.95M16.95 7.05L19.78 4.22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ),
+        },
+      ],
     },
     {
       path: "/web-scraping",
@@ -254,21 +310,74 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
       </div>
 
       <nav className="sidebar-nav">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              `sidebar-item ${isActive ? "active" : ""}`
-            }
-            title={isCollapsed ? item.label : undefined}
-          >
-            <span className="sidebar-icon">{item.icon}</span>
-            {!isCollapsed && (
-              <span className="sidebar-label">{item.label}</span>
-            )}
-          </NavLink>
-        ))}
+        {navItems.map((item) => {
+          const hasSubmenu = item.submenu && item.submenu.length > 0;
+          const isExpanded = expandedItems.includes(item.label.toLowerCase().replace(/\s+/g, '-'));
+          const isActive = hasSubmenu 
+            ? item.submenu.some(sub => location.pathname === sub.path)
+            : location.pathname === item.path;
+
+          if (hasSubmenu) {
+            return (
+              <div key={item.path} className="sidebar-item-group">
+                <div
+                  className={`sidebar-item sidebar-item--parent ${isActive ? "active" : ""}`}
+                  onClick={() => {
+                    const key = item.label.toLowerCase().replace(/\s+/g, '-');
+                    setExpandedItems(prev => 
+                      prev.includes(key) 
+                        ? prev.filter(k => k !== key)
+                        : [...prev, key]
+                    );
+                  }}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <span className="sidebar-icon">{item.icon}</span>
+                  {!isCollapsed && (
+                    <>
+                      <span className="sidebar-label">{item.label}</span>
+                      <span className="sidebar-chevron">
+                        {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                      </span>
+                    </>
+                  )}
+                </div>
+                {!isCollapsed && isExpanded && (
+                  <div className="sidebar-submenu">
+                    {item.submenu.map((subItem) => (
+                      <NavLink
+                        key={subItem.path}
+                        to={subItem.path}
+                        className={({ isActive }) =>
+                          `sidebar-item sidebar-item--sub ${isActive ? "active" : ""}`
+                        }
+                      >
+                        <span className="sidebar-icon sidebar-icon--sub">{subItem.icon}</span>
+                        <span className="sidebar-label">{subItem.label}</span>
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `sidebar-item ${isActive ? "active" : ""}`
+              }
+              title={isCollapsed ? item.label : undefined}
+            >
+              <span className="sidebar-icon">{item.icon}</span>
+              {!isCollapsed && (
+                <span className="sidebar-label">{item.label}</span>
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
 
       <div className="sidebar-footer">

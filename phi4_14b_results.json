@@ -1,0 +1,148 @@
+[
+  {
+    "email_id": "email-8ef42296-42ba-4e7d-90be-0db338a66daf",
+    "subject": "Insight PO 505729474 missing EU information",
+    "analysis": {
+      "contextual_summary": "Vivian Qi from BSIC TD SYNNEX is reaching out to the team for assistance in obtaining contact information related to a drop ship Purchase Order (PO) numbered 505729474. The email highlights that there is missing EU-specific information, which is crucial for processing or fulfilling this order.",
+      "workflow_state": "WAITING",
+      "business_process": "Order Management",
+      "entities": {
+        "po_numbers": [
+          "505729474"
+        ],
+        "quote_numbers": [],
+        "case_numbers": [],
+        "part_numbers": [],
+        "companies": [
+          "BSIC TD SYNNEX"
+        ]
+      },
+      "action_items": [
+        {
+          "task": "Retrieve contact information for PO 505729474",
+          "details": "Identify and provide the necessary EU-specific details required to process this drop ship order."
+        }
+      ],
+      "urgency_level": "HIGH",
+      "suggested_response": "Acknowledge receipt of Vivian's request, confirm that the team is looking into obtaining the missing contact information for PO 505729474, and assure her of a follow-up with the required details as soon as possible.",
+      "processing_time_seconds": 56.063586711883545,
+      "model": "doomgrave/phi-4:14b-tools-Q3_K_S"
+    }
+  },
+  {
+    "email_id": "email-caa27fb2-eb96-4a20-b007-3891e38263af",
+    "subject": "V#35565 BOs list 05/21/2025",
+    "analysis": {
+      "contextual_summary": "The email is related to the management of a Business Opportunity (BO) list for a specific date, indicating an ongoing process in order or opportunity tracking. It likely involves updating or reviewing business opportunities and their associated details.",
+      "workflow_state": "IN_PROGRESS",
+      "business_process": "Order Management",
+      "entities": {
+        "po_numbers": [],
+        "quote_numbers": [],
+        "case_numbers": [],
+        "part_numbers": [],
+        "companies": []
+      },
+      "action_items": [
+        {
+          "task": "Review BO list for accuracy and completeness.",
+          "details": "Ensure all opportunities are up-to-date with the latest information."
+        }
+      ],
+      "urgency_level": "MEDIUM",
+      "suggested_response": "Acknowledge receipt of the email, confirm review of the BO list, and provide any necessary updates or corrections to ensure accuracy.",
+      "processing_time_seconds": 37.591015100479126,
+      "model": "doomgrave/phi-4:14b-tools-Q3_K_S"
+    }
+  },
+  {
+    "email_id": "email-9bc600d9-a47a-4cef-8972-d05dea17b9ef",
+    "subject": "TD SYNNEX Daily Media Briefing for Wednesday, May 21, 2025",
+    "analysis": {
+      "contextual_summary": "The email is a daily media briefing from TD SYNNEX for Wednesday, May 21, 2025. It likely contains updates on market trends, business insights, or relevant news affecting the company's operations and strategies.",
+      "workflow_state": "IN_PROGRESS",
+      "business_process": "Media Briefing",
+      "entities": {
+        "po_numbers": [],
+        "quote_numbers": [],
+        "case_numbers": [],
+        "part_numbers": [],
+        "companies": [
+          "TD SYNNEX"
+        ]
+      },
+      "action_items": [
+        {
+          "description": "Review the media briefing content for any relevant updates or actions required.",
+          "details": "Focus on market trends, business insights, and news that may impact operations."
+        }
+      ],
+      "urgency_level": "MEDIUM",
+      "suggested_response": "Acknowledge receipt of the briefing, review key points, and determine if any immediate action is necessary. Forward relevant information to appropriate departments or team members as needed.",
+      "processing_time_seconds": 45.36855340003967,
+      "model": "doomgrave/phi-4:14b-tools-Q3_K_S"
+    }
+  },
+  {
+    "email_id": "email-9cc82b32-7e12-4012-b41a-83757a77f210",
+    "subject": "Re: Freight for PO 505571311",
+    "analysis": {
+      "contextual_summary": "The email discusses the status of freight for Purchase Order (PO) 505571311, indicating a need to address potential delays in shipment due to logistical issues. The sender is seeking confirmation on whether the current arrangements are satisfactory or if alternative solutions should be explored.",
+      "workflow_state": "IN_PROGRESS",
+      "business_process": "Order Management",
+      "entities": {
+        "po_numbers": [
+          "505571311"
+        ],
+        "quote_numbers": [],
+        "case_numbers": [],
+        "part_numbers": [],
+        "companies": []
+      },
+      "action_items": [
+        {
+          "description": "Confirm current freight arrangements with the logistics provider.",
+          "details": "Reach out to the logistics team to ensure that the shipment is on track and discuss any potential delays."
+        },
+        {
+          "description": "Explore alternative shipping solutions if necessary.",
+          "details": "Identify other reliable carriers or expedited shipping options in case of significant delays."
+        }
+      ],
+      "urgency_level": "MEDIUM",
+      "suggested_response": "Acknowledge receipt of the email and confirm that you are reviewing the current freight arrangements. Assure the sender that any necessary adjustments will be made promptly to avoid shipment delays.",
+      "processing_time_seconds": 45.542938470840454,
+      "model": "doomgrave/phi-4:14b-tools-Q3_K_S"
+    }
+  },
+  {
+    "email_id": "email-ff0620c2-1900-4808-a12e-51db1a7ba6ea",
+    "subject": "RE: Quote for Laptops - US",
+    "analysis": {
+      "contextual_summary": "The email is a follow-up regarding a quote for laptops in the US market. It appears to be part of an ongoing negotiation or procurement process where pricing and specifications are being discussed. The sender might be seeking confirmation or further details about the quote.",
+      "workflow_state": "IN_PROGRESS",
+      "business_process": "Quote Processing",
+      "entities": {
+        "po_numbers": [],
+        "quote_numbers": [],
+        "case_numbers": [],
+        "part_numbers": [],
+        "companies": []
+      },
+      "action_items": [
+        {
+          "task": "Review the quote details for accuracy and completeness.",
+          "details": "Ensure all specifications, pricing, and terms are correct."
+        },
+        {
+          "task": "Respond to the sender with any questions or confirmations.",
+          "details": "Clarify any uncertainties regarding the quote."
+        }
+      ],
+      "urgency_level": "MEDIUM",
+      "suggested_response": "Acknowledge receipt of the email, review the quoted details for accuracy, and respond with any clarifications needed. If satisfied, proceed to approve or request adjustments as necessary.",
+      "processing_time_seconds": 65.77032518386841,
+      "model": "doomgrave/phi-4:14b-tools-Q3_K_S"
+    }
+  }
+]

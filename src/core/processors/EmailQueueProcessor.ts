@@ -48,30 +48,38 @@ export class EmailQueueProcessor {
       },
     };
 
-    // Initialize queue
-    this.queue = new Queue("email-notifications", {
-      connection: this.config.redis,
-      defaultJobOptions: {
-        attempts: this.config.maxRetries,
-        backoff: {
-          type: "exponential",
-          delay: this.config.retryDelay,
-        },
-        removeOnComplete: true,
-        removeOnFail: false,
-      },
-    });
-
     // Initialize services
     this.emailService = new UnifiedEmailService();
 
-    // Setup queue processing
-    this.setupQueueHandlers();
+    // Try to initialize queue with Redis
+    try {
+      // Initialize queue
+      this.queue = new Queue("email-notifications", {
+        connection: this.config.redis,
+        defaultJobOptions: {
+          attempts: this.config.maxRetries,
+          backoff: {
+            type: "exponential",
+            delay: this.config.retryDelay,
+          },
+          removeOnComplete: true,
+          removeOnFail: false,
+        },
+      });
 
-    logger.info("Email queue processor initialized", "EMAIL_QUEUE", {
-      concurrency: this.config.concurrency,
-      maxRetries: this.config.maxRetries,
-    });
+      // Setup queue processing
+      this.setupQueueHandlers();
+
+      logger.info("Email queue processor initialized with Redis", "EMAIL_QUEUE", {
+        concurrency: this.config.concurrency,
+        maxRetries: this.config.maxRetries,
+      });
+    } catch (error) {
+      logger.warn("Redis connection failed, running without queue support", "EMAIL_QUEUE", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Queue will be undefined, methods will handle this gracefully
+    }
   }
 
   /**
@@ -79,6 +87,28 @@ export class EmailQueueProcessor {
    */
   async addEmailToQueue(emailData: any): Promise<string> {
     try {
+      // If queue not available, process immediately
+      if (!this.queue) {
+        logger.info("Processing email directly (no queue)", "EMAIL_QUEUE", {
+          subject: emailData.subject?.substring(0, 50),
+        });
+        
+        const processedEmail = await this.emailService.processIncomingEmail(emailData);
+        
+        // Broadcast to connected clients
+        if (io) {
+          io.emit("email:processed", {
+            emailId: processedEmail.id,
+            subject: processedEmail.subject,
+            from: processedEmail.from,
+            priority: processedEmail.priority,
+            workflowState: processedEmail.workflowState,
+          });
+        }
+        
+        return processedEmail.id;
+      }
+
       const job = await this.queue.add(
         {
           emailData,
@@ -109,6 +139,10 @@ export class EmailQueueProcessor {
    * Setup queue event handlers
    */
   private setupQueueHandlers(): void {
+    if (!this.queue) {
+      return; // No queue, no handlers needed
+    }
+
     // Create worker for processing jobs
     const worker = new Worker(
       "email-notifications",
@@ -287,6 +321,14 @@ export class EmailQueueProcessor {
     jobData: EmailQueueJob,
     error: Error,
   ): Promise<void> {
+    if (!this.queue) {
+      logger.error("Failed to add to dead letter queue - no queue available", "EMAIL_QUEUE", {
+        jobData,
+        error: error.message,
+      });
+      return;
+    }
+
     try {
       const deadLetterJob: DeadLetterJob = {
         ...jobData,
@@ -311,6 +353,10 @@ export class EmailQueueProcessor {
    * Check queue health
    */
   private async checkQueueHealth(): Promise<void> {
+    if (!this.queue) {
+      return; // No queue to check
+    }
+
     try {
       const [waiting, active, completed, failed, delayed] = await Promise.all([
         this.queue.getWaitingCount(),
@@ -347,6 +393,19 @@ export class EmailQueueProcessor {
    * Get queue statistics
    */
   async getQueueStats(): Promise<any> {
+    if (!this.queue) {
+      return {
+        waiting: 0,
+        active: 0,
+        completed: 0,
+        failed: 0,
+        delayed: 0,
+        paused: false,
+        healthy: true,
+        message: "Queue not available (Redis not connected)"
+      };
+    }
+
     const [waiting, active, completed, failed, delayed, paused] =
       await Promise.all([
         this.queue.getWaitingCount(),
@@ -372,6 +431,10 @@ export class EmailQueueProcessor {
    * Pause queue processing
    */
   async pause(): Promise<void> {
+    if (!this.queue) {
+      logger.info("No queue to pause (Redis not connected)", "EMAIL_QUEUE");
+      return;
+    }
     await this.queue.pause();
     logger.info("Email queue paused", "EMAIL_QUEUE");
   }
@@ -380,6 +443,10 @@ export class EmailQueueProcessor {
    * Resume queue processing
    */
   async resume(): Promise<void> {
+    if (!this.queue) {
+      logger.info("No queue to resume (Redis not connected)", "EMAIL_QUEUE");
+      return;
+    }
     await this.queue.resume();
     logger.info("Email queue resumed", "EMAIL_QUEUE");
   }
@@ -389,6 +456,11 @@ export class EmailQueueProcessor {
    */
   async shutdown(): Promise<void> {
     logger.info("Shutting down email queue processor", "EMAIL_QUEUE");
+
+    if (!this.queue) {
+      logger.info("No queue to shutdown (Redis not connected)", "EMAIL_QUEUE");
+      return;
+    }
 
     // Stop accepting new jobs
     await this.queue.pause();

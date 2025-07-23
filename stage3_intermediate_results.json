@@ -1,0 +1,21 @@
+[
+  {
+    "emailId": "email_mdf2xhvsku598zy",
+    "executiveSummary": "Analysis failed - requires manual executive review",
+    "businessImpact": {},
+    "keyStakeholders": [],
+    "recommendedActions": [
+      {
+        "action": "Manual review required",
+        "priority": "HIGH",
+        "owner": "Executive Team",
+        "deadline": "Immediate"
+      }
+    ],
+    "strategicInsights": "",
+    "modelUsed": "failed",
+    "qualityScore": 0,
+    "processingTime": 15.014,
+    "fallbackUsed": true
+  }
+]

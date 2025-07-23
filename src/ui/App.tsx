@@ -93,6 +93,22 @@ function App() {
                 element={<UnifiedEmailDashboard />}
               />
               <Route
+                path="email-dashboard/analytics"
+                element={<UnifiedEmailDashboard initialView="analytics" />}
+              />
+              <Route
+                path="email-dashboard/workflows"
+                element={<UnifiedEmailDashboard initialView="workflows" />}
+              />
+              <Route
+                path="email-dashboard/agents"
+                element={<UnifiedEmailDashboard initialView="agents" />}
+              />
+              <Route
+                path="email-dashboard/settings"
+                element={<UnifiedEmailDashboard initialView="settings" />}
+              />
+              <Route
                 path="iems-dashboard"
                 element={<Navigate to="/email-dashboard" replace />}
               />

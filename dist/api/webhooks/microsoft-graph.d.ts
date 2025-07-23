@@ -1,4 +1,4 @@
-import type { Request, Response } from 'express';
+import type { Request, Response } from "express";
 export declare const graphWebhookHandler: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
 export declare const graphWebhookRoutes: {
     path: string;

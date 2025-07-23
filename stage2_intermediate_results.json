@@ -1,0 +1,62 @@
+[
+  {
+    "emailId": "email_mdf2xhvsku598zy",
+    "contextualSummary": "",
+    "workflowState": "UNKNOWN",
+    "businessProcess": "Error",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Analysis failed - manual review required",
+    "qualityScore": 0,
+    "processingTime": 0,
+    "model": "llama3.2:3b",
+    "error": "canceled"
+  },
+  {
+    "emailId": "email_mdf2xhvttude03r",
+    "contextualSummary": "",
+    "workflowState": "UNKNOWN",
+    "businessProcess": "Error",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Analysis failed - manual review required",
+    "qualityScore": 0,
+    "processingTime": 0,
+    "model": "llama3.2:3b",
+    "error": "canceled"
+  },
+  {
+    "emailId": "email_mdf2xw40basr8k1",
+    "contextualSummary": "",
+    "workflowState": "UNKNOWN",
+    "businessProcess": "Error",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Analysis failed - manual review required",
+    "qualityScore": 0,
+    "processingTime": 0,
+    "model": "llama3.2:3b",
+    "error": "canceled"
+  }
+]

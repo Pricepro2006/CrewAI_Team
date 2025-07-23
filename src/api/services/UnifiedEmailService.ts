@@ -666,11 +666,15 @@ export class UnifiedEmailService {
     // Get analytics from repository
     const analytics = await this.emailRepository.getAnalytics(dateRange);
 
+    // Get status counts
+    const statusCounts = await this.getStatusCounts(dateRange);
+
     return {
       workflowCompletion: analytics.workflowStats?.completion_rate || 3.5,
       avgResponseTime: analytics.avgResponseTime || 4.3,
       criticalAlerts: await this.getCriticalAlerts(),
       agentUtilization: await this.getAgentUtilization(),
+      statusCounts,
     };
   }
 
@@ -691,6 +695,49 @@ export class UnifiedEmailService {
     }
 
     return alerts;
+  }
+
+  private async getStatusCounts(dateRange?: {
+    start: Date;
+    end: Date;
+  }): Promise<{ critical: number; inProgress: number; completed: number }> {
+    try {
+      // Query emails by status/priority
+      const criticalResult = await this.emailRepository.queryEmails({
+        priorities: ["critical"],
+        dateRange,
+        limit: 0, // Just get count
+      });
+
+      const inProgressResult = await this.emailRepository.queryEmails({
+        statuses: ["processing", "escalated"],
+        dateRange,
+        limit: 0, // Just get count
+      });
+
+      const completedResult = await this.emailRepository.queryEmails({
+        statuses: ["resolved"],
+        dateRange,
+        limit: 0, // Just get count
+      });
+
+      return {
+        critical: criticalResult.total || 0,
+        inProgress: inProgressResult.total || 0,
+        completed: completedResult.total || 0,
+      };
+    } catch (error) {
+      logger.warn("Failed to get status counts, using defaults", "UNIFIED_EMAIL", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      
+      // Return default values if query fails
+      return {
+        critical: 0,
+        inProgress: 0,
+        completed: 0,
+      };
+    }
   }
 
   private generateRecommendations(data: any): any[] {

@@ -94,3 +94,59 @@
   font-weight: bold;
   color: #1f2937;
 }
+
+/* Workflow View */
+.workflow-view {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  height: 100%;
+}
+
+.workflow-view h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 16px;
+}
+
+/* Settings View */
+.settings-view {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.settings-view h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 24px;
+}
+
+.settings-content {
+  display: grid;
+  gap: 24px;
+}
+
+.settings-section {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 20px;
+}
+
+.settings-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.settings-section p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}

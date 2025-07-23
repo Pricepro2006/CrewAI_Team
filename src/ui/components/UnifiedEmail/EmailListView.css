@@ -1,0 +1,162 @@
+/* Email List View Styles */
+.email-list-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.email-list-header {
+  background: #f8f9fa;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0;
+}
+
+.email-tabs {
+  display: flex;
+  gap: 0;
+  height: 48px;
+}
+
+.email-tab {
+  flex: 1;
+  padding: 12px 24px;
+  background: #f8f9fa;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.email-tab:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.email-tab.active {
+  background: #fff;
+  color: #1f2937;
+  border-bottom-color: #3b82f6;
+}
+
+.email-list-content {
+  flex: 1;
+  overflow: auto;
+  padding: 0;
+}
+
+/* Table Styles */
+.email-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.email-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.email-table thead {
+  background: #6b7280;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.email-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 500;
+  white-space: nowrap;
+  border-right: 1px solid #9ca3af;
+}
+
+.email-table th:last-child {
+  border-right: none;
+}
+
+.email-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.15s;
+  cursor: pointer;
+}
+
+.email-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.email-table tbody tr.selected {
+  background: #dbeafe;
+}
+
+.email-table td {
+  padding: 12px 16px;
+  vertical-align: middle;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status Indicators */
+.status-indicator {
+  font-size: 20px;
+  line-height: 1;
+  display: inline-block;
+  text-align: center;
+}
+
+.status-indicator.status-red {
+  color: #ef4444;
+}
+
+.status-indicator.status-yellow {
+  color: #f59e0b;
+}
+
+.status-indicator.status-green {
+  color: #10b981;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .email-table {
+    font-size: 12px;
+  }
+  
+  .email-table th,
+  .email-table td {
+    padding: 8px 12px;
+  }
+  
+  .email-tab {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+/* Custom scrollbar */
+.email-list-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.email-list-content::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.email-list-content::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.email-list-content::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

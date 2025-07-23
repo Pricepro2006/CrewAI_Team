@@ -1,6 +1,6 @@
 // Unified Email Dashboard Types
 
-export type ViewMode = 'list' | 'analytics' | 'agents';
+export type ViewMode = 'list' | 'analytics' | 'agents' | 'workflows' | 'settings';
 
 export type WorkflowState = 'START_POINT' | 'IN_PROGRESS' | 'COMPLETION';
 
@@ -195,6 +195,11 @@ export interface GetAnalyticsResponse {
   agents?: AgentInfo[];
   agentPerformance?: Record<string, AgentPerformance>;
   trends?: TrendData;
+  statusCounts?: {
+    critical: number;
+    inProgress: number;
+    completed: number;
+  };
 }
 
 export interface TrendData {

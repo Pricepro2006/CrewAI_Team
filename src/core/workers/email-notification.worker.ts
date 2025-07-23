@@ -102,43 +102,55 @@ async function processEmailNotification(job: any) {
   }
 }
 
-// Create the worker
-export const emailNotificationWorker = new Worker(
-  "email-notifications",
-  async (job: any) => {
-    return await processEmailNotification(job);
-  },
-  {
-    connection: {
-      host: process.env.REDIS_HOST || "localhost",
-      port: parseInt(process.env.REDIS_PORT || "6379"),
+// Create the worker only if Redis is available
+let emailNotificationWorker: any;
+
+try {
+  emailNotificationWorker = new Worker(
+    "email-notifications",
+    async (job: any) => {
+      return await processEmailNotification(job);
     },
-    concurrency: WORKER_CONCURRENCY,
-  },
-);
+    {
+      connection: {
+        host: process.env.REDIS_HOST || "localhost",
+        port: parseInt(process.env.REDIS_PORT || "6379"),
+      },
+      concurrency: WORKER_CONCURRENCY,
+    },
+  );
 
-// Worker event handlers
-emailNotificationWorker.on("completed", (job: any) => {
-  logger.info("Email notification job completed", "EMAIL_WORKER", {
-    jobId: job.id,
-    emailId: (job as any).returnValue?.emailId,
+  // Worker event handlers
+  emailNotificationWorker.on("completed", (job: any) => {
+    logger.info("Email notification job completed", "EMAIL_WORKER", {
+      jobId: job.id,
+      emailId: (job as any).returnValue?.emailId,
+    });
   });
-});
 
-emailNotificationWorker.on("failed", (job: any | undefined, error: Error) => {
-  logger.error("Email notification job failed", "EMAIL_WORKER", {
-    jobId: job?.id,
-    error: error.message,
+  emailNotificationWorker.on("failed", (job: any | undefined, error: Error) => {
+    logger.error("Email notification job failed", "EMAIL_WORKER", {
+      jobId: job?.id,
+      error: error.message,
+    });
   });
-});
+
+  logger.info("Email notification worker started successfully", "EMAIL_WORKER");
+} catch (error) {
+  logger.warn("Email notification worker not started - Redis unavailable", "EMAIL_WORKER", {
+    error: error instanceof Error ? error.message : String(error),
+  });
+}
 
 // Graceful shutdown
 process.on("SIGTERM", async () => {
-  logger.info(
-    "SIGTERM received, closing email notification worker",
-    "EMAIL_WORKER",
-  );
-  await emailNotificationWorker.close();
+  if (emailNotificationWorker) {
+    logger.info(
+      "SIGTERM received, closing email notification worker",
+      "EMAIL_WORKER",
+    );
+    await emailNotificationWorker.close();
+  }
 });
 
 export default emailNotificationWorker;

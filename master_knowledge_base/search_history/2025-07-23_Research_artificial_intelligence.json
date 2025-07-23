@@ -1,0 +1,31 @@
+{
+  "query": "Research artificial intelligence",
+  "timestamp": "2025-07-23T13:56:59.046Z",
+  "results": [
+    {
+      "title": "Research artificial intelligence - Result 1",
+      "url": "https://example.com/search?q=Research%20artificial%20intelligence&result=1",
+      "snippet": "Information about Research artificial intelligence. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Research artificial intelligence - Result 2",
+      "url": "https://example.com/search?q=Research%20artificial%20intelligence&result=2",
+      "snippet": "Information about Research artificial intelligence. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "Research artificial intelligence - Result 3",
+      "url": "https://example.com/search?q=Research%20artificial%20intelligence&result=3",
+      "snippet": "Information about Research artificial intelligence. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

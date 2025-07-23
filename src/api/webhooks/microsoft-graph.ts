@@ -1,7 +1,27 @@
 import type { Request, Response } from "express";
-// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-explicit-any
-const { Queue } = require("bullmq") as any;
 import { logger } from "../../utils/logger";
+
+// Dynamic import for BullMQ
+let emailQueue: any;
+
+async function initializeBullMQ() {
+  try {
+    const bullmq = await import("bullmq") as any;
+    
+    // Create a queue for processing email notifications
+    emailQueue = new bullmq.Queue("email-notifications", {
+      connection: {
+        host: process.env.REDIS_HOST || "localhost",
+        port: parseInt(process.env.REDIS_PORT || "6379"),
+      },
+    });
+  } catch (error) {
+    logger.warn("BullMQ not available, webhook functionality limited", "WEBHOOK");
+  }
+}
+
+// Initialize on module load
+initializeBullMQ();
 
 // Types for Microsoft Graph notifications
 interface ChangeNotificationCollection {
@@ -24,13 +44,6 @@ interface ChangeNotification {
   tenantId: string;
 }
 
-// Create a queue for processing email notifications
-const emailQueue = new Queue("email-notifications", {
-  connection: {
-    host: process.env.REDIS_HOST || "localhost",
-    port: parseInt(process.env.REDIS_PORT || "6379"),
-  },
-});
 
 // Webhook handler for Microsoft Graph notifications
 export const graphWebhookHandler = async (req: Request, res: Response) => {
@@ -73,30 +86,37 @@ export const graphWebhookHandler = async (req: Request, res: Response) => {
         continue;
       }
 
-      // Add to queue for processing
-      await emailQueue.add(
-        "process-email-notification",
-        {
-          type: "email-notification",
-          notification,
-          timestamp: new Date().toISOString(),
-        },
-        {
-          attempts: 3,
-          backoff: {
-            type: "exponential",
-            delay: 2000,
+      // Add to queue for processing if available
+      if (emailQueue) {
+        await emailQueue.add(
+          "process-email-notification",
+          {
+            type: "email-notification",
+            notification,
+            timestamp: new Date().toISOString(),
           },
-          removeOnComplete: true,
-          removeOnFail: false,
-        },
-      );
+          {
+            attempts: 3,
+            backoff: {
+              type: "exponential",
+              delay: 2000,
+            },
+            removeOnComplete: true,
+            removeOnFail: false,
+          },
+        );
 
-      logger.info("Queued email notification", "WEBHOOK", {
-        subscriptionId: notification.subscriptionId,
-        changeType: notification.changeType,
-        resource: notification.resource,
-      });
+        logger.info("Queued email notification", "WEBHOOK", {
+          subscriptionId: notification.subscriptionId,
+          changeType: notification.changeType,
+          resource: notification.resource,
+        });
+      } else {
+        logger.warn("BullMQ not available, notification skipped", "WEBHOOK", {
+          subscriptionId: notification.subscriptionId,
+          changeType: notification.changeType,
+        });
+      }
     }
 
     // Respond quickly (must be within 3 seconds for Microsoft Graph)
