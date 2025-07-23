@@ -1,9 +1,44 @@
-import { Client } from "@microsoft/microsoft-graph-client";
-import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials";
-import { ClientSecretCredential } from "@azure/identity";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { logger } from "@/utils/logger";
 import { metrics } from "../monitoring/metrics";
-import { CronJob } from "cron";
+
+// Optional imports for Microsoft Graph dependencies
+let Client: any;
+let TokenCredentialAuthenticationProvider: any;
+let ClientSecretCredential: any;
+let CronJob: any;
+
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  Client = require("@microsoft/microsoft-graph-client").Client;
+} catch {
+  logger.warn("Microsoft Graph client not available", "GRAPH_SUBSCRIPTION");
+}
+
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  TokenCredentialAuthenticationProvider =
+    require("@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials").TokenCredentialAuthenticationProvider;
+} catch {
+  logger.warn(
+    "Microsoft Graph auth provider not available",
+    "GRAPH_SUBSCRIPTION",
+  );
+}
+
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  ClientSecretCredential = require("@azure/identity").ClientSecretCredential;
+} catch {
+  logger.warn("Azure identity not available", "GRAPH_SUBSCRIPTION");
+}
+
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  CronJob = require("cron").CronJob;
+} catch {
+  logger.warn("Cron not available", "GRAPH_SUBSCRIPTION");
+}
 
 interface Subscription {
   id: string;
@@ -21,15 +56,34 @@ interface SubscriptionConfig {
 }
 
 export class GraphSubscriptionManager {
-  private graphClient!: Client;
+  private graphClient: any;
   private subscriptions: Map<string, Subscription> = new Map();
-  private renewalJob!: CronJob;
+  private renewalJob: any;
   private readonly MAX_SUBSCRIPTION_DURATION = 4230 * 60 * 1000; // 70.5 minutes in ms
   private readonly RENEWAL_BUFFER = 5 * 60 * 1000; // 5 minutes before expiry
+  private isAvailable = false;
 
   constructor() {
-    this.initializeGraphClient();
-    this.startRenewalJob();
+    this.checkAvailability();
+    if (this.isAvailable) {
+      this.initializeGraphClient();
+      this.startRenewalJob();
+    }
+  }
+
+  private checkAvailability(): void {
+    this.isAvailable = !!(
+      Client &&
+      TokenCredentialAuthenticationProvider &&
+      ClientSecretCredential &&
+      CronJob
+    );
+    if (!this.isAvailable) {
+      logger.warn(
+        "Microsoft Graph dependencies not available, subscription manager disabled",
+        "GRAPH_SUBSCRIPTION",
+      );
+    }
   }
 
   private initializeGraphClient() {
@@ -56,6 +110,9 @@ export class GraphSubscriptionManager {
     mailbox: string,
     config?: Partial<SubscriptionConfig>,
   ): Promise<Subscription> {
+    if (!this.isAvailable) {
+      throw new Error("Microsoft Graph dependencies not available");
+    }
     const defaultConfig: SubscriptionConfig = {
       resource: `users/${mailbox}/messages`,
       changeTypes: ["created", "updated"],
@@ -119,6 +176,9 @@ export class GraphSubscriptionManager {
   async createBulkEmailSubscriptions(
     mailboxes: string[],
   ): Promise<Subscription[]> {
+    if (!this.isAvailable) {
+      throw new Error("Microsoft Graph dependencies not available");
+    }
     const results: Subscription[] = [];
     const errors: Array<{ mailbox: string; error: string }> = [];
 
@@ -149,6 +209,9 @@ export class GraphSubscriptionManager {
    * Renew a subscription before it expires
    */
   async renewSubscription(subscriptionId: string): Promise<void> {
+    if (!this.isAvailable) {
+      throw new Error("Microsoft Graph dependencies not available");
+    }
     try {
       const subscription = this.subscriptions.get(subscriptionId);
       if (!subscription) {
@@ -200,6 +263,9 @@ export class GraphSubscriptionManager {
    * Delete a subscription
    */
   async deleteSubscription(subscriptionId: string): Promise<void> {
+    if (!this.isAvailable) {
+      throw new Error("Microsoft Graph dependencies not available");
+    }
     try {
       await this.graphClient.api(`/subscriptions/${subscriptionId}`).delete();
 
@@ -227,6 +293,9 @@ export class GraphSubscriptionManager {
    * Get all active subscriptions
    */
   async getActiveSubscriptions(): Promise<Subscription[]> {
+    if (!this.isAvailable) {
+      return [];
+    }
     try {
       const response = await this.graphClient.api("/subscriptions").get();
 
@@ -254,6 +323,9 @@ export class GraphSubscriptionManager {
    * Start automatic renewal job
    */
   private startRenewalJob() {
+    if (!this.isAvailable) {
+      return;
+    }
     // Run every 5 minutes
     this.renewalJob = new CronJob("*/5 * * * *", async () => {
       await this.renewExpiringSubscriptions();
@@ -329,18 +401,18 @@ export class GraphSubscriptionManager {
   }
 
   // Storage methods (implement based on your database)
-  private async storeSubscription(subscription: Subscription): Promise<void> {
+  private async storeSubscription(_subscription: Subscription): Promise<void> {
     // TODO: Implement database storage
   }
 
   private async updateStoredSubscription(
-    subscription: Subscription,
+    _subscription: Subscription,
   ): Promise<void> {
     // TODO: Implement database update
   }
 
   private async removeStoredSubscription(
-    subscriptionId: string,
+    _subscriptionId: string,
   ): Promise<void> {
     // TODO: Implement database removal
   }
