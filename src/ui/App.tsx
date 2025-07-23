@@ -13,8 +13,8 @@ import { api } from "@/lib/trpc";
 import { ChatInterface } from "./components/Chat/ChatInterface";
 import { MainLayout } from "./components/Layout/MainLayout";
 import { Dashboard } from "./components/Dashboard/Dashboard";
-import { EmailDashboard } from "./components/Email/EmailDashboard";
-import { IEMSDashboard } from "./components/IEMS/IEMSDashboard";
+import { UnifiedEmailDashboard } from "./components/UnifiedEmail/UnifiedEmailDashboard";
+import { Navigate } from "react-router-dom";
 import { Agents } from "./components/Agents/Agents";
 import { WebScraping } from "./components/WebScraping/WebScraping";
 import { KnowledgeBase } from "./components/KnowledgeBase/KnowledgeBase";
@@ -88,8 +88,14 @@ function App() {
               <Route path="chat" element={<ChatInterface />} />
               <Route path="chat/:conversationId" element={<ChatInterface />} />
               <Route path="agents" element={<Agents />} />
-              <Route path="email-dashboard" element={<EmailDashboard />} />
-              <Route path="iems-dashboard" element={<IEMSDashboard />} />
+              <Route
+                path="email-dashboard"
+                element={<UnifiedEmailDashboard />}
+              />
+              <Route
+                path="iems-dashboard"
+                element={<Navigate to="/email-dashboard" replace />}
+              />
               <Route path="web-scraping" element={<WebScraping />} />
               <Route path="knowledge-base" element={<KnowledgeBase />} />
               <Route path="vector-search" element={<VectorSearch />} />
