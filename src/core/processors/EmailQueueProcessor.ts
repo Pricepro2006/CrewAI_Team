@@ -1,4 +1,6 @@
-import { Queue, type Job } from "bullmq";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { Queue, Worker } = require("bullmq") as any;
 import { UnifiedEmailService } from "@/api/services/UnifiedEmailService";
 import { logger } from "@/utils/logger";
 import { metrics } from "@/api/monitoring/metrics";
@@ -30,7 +32,7 @@ export interface EmailQueueConfig {
 }
 
 export class EmailQueueProcessor {
-  private queue: Queue<EmailQueueJob>;
+  private queue: any;
   private emailService: UnifiedEmailService;
   private config: Required<EmailQueueConfig>;
 
@@ -48,7 +50,7 @@ export class EmailQueueProcessor {
 
     // Initialize queue
     this.queue = new Queue("email-notifications", {
-      redis: this.config.redis,
+      connection: this.config.redis,
       defaultJobOptions: {
         attempts: this.config.maxRetries,
         backoff: {
@@ -107,16 +109,20 @@ export class EmailQueueProcessor {
    * Setup queue event handlers
    */
   private setupQueueHandlers(): void {
-    // Process jobs
-    this.queue.process(
-      this.config.concurrency!,
-      async (job: Job<EmailQueueJob>) => {
+    // Create worker for processing jobs
+    const worker = new Worker(
+      "email-notifications",
+      async (job: any) => {
         return this.processEmailJob(job);
+      },
+      {
+        connection: this.config.redis,
+        concurrency: this.config.concurrency!,
       },
     );
 
-    // Queue event handlers
-    this.queue.on("completed", (job: Job<EmailQueueJob>, result: any) => {
+    // Worker event handlers
+    worker.on("completed", (job: any, result: any) => {
       metrics.increment("email_queue.job_completed");
       logger.info("Email processing completed", "EMAIL_QUEUE", {
         jobId: job.id,
@@ -125,7 +131,7 @@ export class EmailQueueProcessor {
       });
     });
 
-    this.queue.on("failed", (job: Job<EmailQueueJob>, err: Error) => {
+    worker.on("failed", (job: any, err: Error) => {
       metrics.increment("email_queue.job_failed");
       logger.error("Email processing failed", "EMAIL_QUEUE", {
         jobId: job.id,
@@ -134,7 +140,7 @@ export class EmailQueueProcessor {
       });
     });
 
-    this.queue.on("stalled", (job: Job<EmailQueueJob>) => {
+    worker.on("stalled", (job: any) => {
       metrics.increment("email_queue.job_stalled");
       logger.warn("Email processing stalled", "EMAIL_QUEUE", {
         jobId: job.id,
@@ -148,7 +154,7 @@ export class EmailQueueProcessor {
   /**
    * Process individual email job
    */
-  private async processEmailJob(job: Job<EmailQueueJob>): Promise<any> {
+  private async processEmailJob(job: any): Promise<any> {
     const startTime = Date.now();
     const { emailData, receivedAt } = job.data;
 
@@ -159,13 +165,13 @@ export class EmailQueueProcessor {
       });
 
       // Update job progress
-      await job.progress(10);
+      await job.updateProgress(10);
 
       // Process email through unified service
       const processedEmail =
         await this.emailService.processIncomingEmail(emailData);
 
-      await job.progress(90);
+      await job.updateProgress(90);
 
       // Broadcast to connected clients
       if (io) {
@@ -178,7 +184,7 @@ export class EmailQueueProcessor {
         });
       }
 
-      await job.progress(100);
+      await job.updateProgress(100);
 
       // Record metrics
       const processingTime = Date.now() - startTime;

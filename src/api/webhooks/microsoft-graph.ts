@@ -1,6 +1,7 @@
-import type { Request, Response } from 'express';
-import { Queue } from 'bullmq';
-import { logger } from '../../utils/logger';
+import type { Request, Response } from "express";
+// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-explicit-any
+const { Queue } = require("bullmq") as any;
+import { logger } from "../../utils/logger";
 
 // Types for Microsoft Graph notifications
 interface ChangeNotificationCollection {
@@ -14,9 +15,9 @@ interface ChangeNotification {
   changeType: string;
   resource: string;
   resourceData?: {
-    '@odata.type': string;
-    '@odata.id': string;
-    '@odata.etag': string;
+    "@odata.type": string;
+    "@odata.id": string;
+    "@odata.etag": string;
     id: string;
   };
   clientState: string;
@@ -24,10 +25,10 @@ interface ChangeNotification {
 }
 
 // Create a queue for processing email notifications
-const emailQueue = new Queue('email-notifications', {
+const emailQueue = new Queue("email-notifications", {
   connection: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
+    host: process.env.REDIS_HOST || "localhost",
+    port: parseInt(process.env.REDIS_PORT || "6379"),
   },
 });
 
@@ -37,21 +38,26 @@ export const graphWebhookHandler = async (req: Request, res: Response) => {
     // Handle validation token for new subscriptions
     const validationToken = req.query.validationToken as string;
     if (validationToken) {
-      logger.info('Validating Microsoft Graph webhook subscription', 'WEBHOOK', {
-        token: validationToken.substring(0, 10) + '...',
-      });
+      logger.info(
+        "Validating Microsoft Graph webhook subscription",
+        "WEBHOOK",
+        {
+          token: validationToken.substring(0, 10) + "...",
+        },
+      );
       return res.send(validationToken);
     }
 
     // Verify client state for security
-    const expectedClientState = process.env.WEBHOOK_CLIENT_STATE || 'SecretClientState';
-    
+    const expectedClientState =
+      process.env.WEBHOOK_CLIENT_STATE || "SecretClientState";
+
     // Process change notifications
     const notifications: ChangeNotificationCollection = req.body;
-    
+
     if (!notifications || !notifications.value) {
-      logger.warn('Invalid notification format received');
-      return res.status(400).send('Invalid notification format');
+      logger.warn("Invalid notification format received");
+      return res.status(400).send("Invalid notification format");
     }
 
     logger.info(`Received ${notifications.value.length} notifications`);
@@ -60,7 +66,7 @@ export const graphWebhookHandler = async (req: Request, res: Response) => {
     for (const notification of notifications.value) {
       // Verify client state
       if (notification.clientState !== expectedClientState) {
-        logger.error('Invalid client state in notification', 'WEBHOOK', {
+        logger.error("Invalid client state in notification", "WEBHOOK", {
           expected: expectedClientState,
           received: notification.clientState,
         });
@@ -69,24 +75,24 @@ export const graphWebhookHandler = async (req: Request, res: Response) => {
 
       // Add to queue for processing
       await emailQueue.add(
-        'process-email-notification',
+        "process-email-notification",
         {
-          type: 'email-notification',
+          type: "email-notification",
           notification,
           timestamp: new Date().toISOString(),
         },
         {
           attempts: 3,
           backoff: {
-            type: 'exponential',
+            type: "exponential",
             delay: 2000,
           },
           removeOnComplete: true,
           removeOnFail: false,
-        }
+        },
       );
 
-      logger.info('Queued email notification', 'WEBHOOK', {
+      logger.info("Queued email notification", "WEBHOOK", {
         subscriptionId: notification.subscriptionId,
         changeType: notification.changeType,
         resource: notification.resource,
@@ -95,9 +101,13 @@ export const graphWebhookHandler = async (req: Request, res: Response) => {
 
     // Respond quickly (must be within 3 seconds for Microsoft Graph)
     return res.status(202).send();
-    
   } catch (error) {
-    logger.error('Error processing Microsoft Graph webhook', 'WEBHOOK', {}, error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      "Error processing Microsoft Graph webhook",
+      "WEBHOOK",
+      {},
+      error instanceof Error ? error : new Error(String(error)),
+    );
     // Still respond with 202 to prevent retry storms
     return res.status(202).send();
   }
@@ -105,7 +115,7 @@ export const graphWebhookHandler = async (req: Request, res: Response) => {
 
 // Webhook route configuration
 export const graphWebhookRoutes = {
-  path: '/api/webhooks/microsoft-graph',
+  path: "/api/webhooks/microsoft-graph",
   handler: graphWebhookHandler,
-  method: 'POST',
+  method: "POST",
 };

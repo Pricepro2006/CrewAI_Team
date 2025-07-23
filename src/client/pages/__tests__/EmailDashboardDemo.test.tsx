@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCMsw } from "msw-trpc";
@@ -99,17 +100,17 @@ const mockTeamMembers = [
 // Setup MSW
 const mswTrpc = createTRPCMsw<AppRouter>();
 const server = setupServer(
-  mswTrpc.emails.getTableData.query(() => mockEmailsData),
-  mswTrpc.emails.updateStatus.mutation(() => ({
+  (mswTrpc.emails as any).getTableData.query(() => mockEmailsData),
+  (mswTrpc.emails as any).updateStatus.mutation(() => ({
     success: true,
     message: "Status updated successfully",
   })),
-  mswTrpc.emailAssignment.getTeamMembers.query(() => mockTeamMembers),
-  mswTrpc.emailAssignment.assignEmail.mutation(() => ({
+  (mswTrpc.emailAssignment as any).getTeamMembers.query(() => mockTeamMembers),
+  (mswTrpc.emailAssignment as any).assignEmail.mutation(() => ({
     success: true,
     message: "Email assigned successfully",
   })),
-  mswTrpc.emailAssignment.getWorkloadDistribution.query(() => []),
+  (mswTrpc.emailAssignment as any).getWorkloadDistribution.query(() => []),
 );
 
 beforeAll(() => server.listen());
@@ -220,7 +221,7 @@ describe("EmailDashboardDemo Component", () => {
     it("should display error message when email fetch fails", async () => {
       // Override handler to return error
       server.use(
-        mswTrpc.emails.getTableData.query(() => {
+        (mswTrpc.emails as any).getTableData.query(() => {
           throw new Error("Network error occurred");
         }),
       );
@@ -239,7 +240,7 @@ describe("EmailDashboardDemo Component", () => {
 
       // Override handler to error first, then succeed
       server.use(
-        mswTrpc.emails.getTableData.query(() => {
+        (mswTrpc.emails as any).getTableData.query(() => {
           if (shouldError) {
             shouldError = false;
             throw new Error("Network error occurred");

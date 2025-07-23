@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
-import { Queue } from "bullmq";
+// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-explicit-any
+const { Queue } = require("bullmq") as any;
 import { logger } from "../../utils/logger";
-import crypto from "crypto";
+import * as crypto from "crypto";
 import { metrics } from "../monitoring/metrics";
 
 // Types for Microsoft Graph notifications
@@ -143,13 +144,8 @@ export const enhancedGraphWebhookHandler = async (
             type: "exponential",
             delay: 2000,
           },
-          removeOnComplete: {
-            age: 3600, // Keep completed jobs for 1 hour
-            count: 1000, // Keep last 1000 completed jobs
-          },
-          removeOnFail: {
-            age: 86400, // Keep failed jobs for 24 hours
-          },
+          removeOnComplete: 1000, // Keep last 1000 completed jobs
+          removeOnFail: 50, // Keep last 50 failed jobs
         },
       );
 
