@@ -52,9 +52,9 @@ export class PipelineOrchestrator {
       const triageResults = await this.stage1.process(emails);
       await this.updateExecutionRecord(1, triageResults.all.length);
 
-      // Stage 2: Llama 3.2:3b for priority emails
+      // Stage 2: Llama 3.2:3b for priority emails (top 1000)
       logger.info(
-        `Starting Stage 2: Llama Analysis for ${triageResults.top5000.length} priority emails`,
+        `Starting Stage 2: Llama Analysis for ${triageResults.top5000.length} priority emails (top 1000)`,
         "PIPELINE",
       );
 
@@ -66,9 +66,9 @@ export class PipelineOrchestrator {
       const priorityResults = await this.stage2.process(triageResults.top5000);
       // Final update handled by progress callback, no redundant update needed
 
-      // Stage 3: Deep analysis for critical emails
+      // Stage 3: Deep analysis for critical emails (top 100)
       logger.info(
-        `Starting Stage 3: Deep Analysis for ${triageResults.top500.length} critical emails`,
+        `Starting Stage 3: Deep Analysis for ${triageResults.top500.length} critical emails (top 100)`,
         "PIPELINE",
       );
 

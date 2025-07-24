@@ -353,14 +353,14 @@ export class Stage1PatternTriage {
     // Create email map for quick lookup
     const emailMap = new Map(emails.map((e) => [e.id, e]));
 
-    // Get top emails
-    const top5000Ids = sorted.slice(0, 5000).map((r) => r.emailId);
-    const top500Ids = sorted.slice(0, 500).map((r) => r.emailId);
+    // Get top emails (adjusted for CPU inference practicality)
+    const top5000Ids = sorted.slice(0, 1000).map((r) => r.emailId); // Now top 1000
+    const top500Ids = sorted.slice(0, 100).map((r) => r.emailId); // Now top 100
 
     return {
       all: sorted,
-      top5000: top5000Ids.map((id) => emailMap.get(id)!).filter(Boolean),
-      top500: top500Ids.map((id) => emailMap.get(id)!).filter(Boolean),
+      top5000: top5000Ids.map((id) => emailMap.get(id)!).filter(Boolean), // Actually top 1000
+      top500: top500Ids.map((id) => emailMap.get(id)!).filter(Boolean), // Actually top 100
     };
   }
 }

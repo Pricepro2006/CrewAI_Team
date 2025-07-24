@@ -67,18 +67,18 @@ export const MODEL_CONFIG = {
       triage: {
         model: "pattern",
         targetEmails: 33797,
-        expectedTime: 3600, // 1 hour in seconds
+        expectedTime: 60, // < 1 minute in seconds (pattern matching only)
       },
       priority: {
         model: "primary",
-        targetEmails: 5000,
-        expectedTime: 46800, // 13 hours in seconds
+        targetEmails: 1000, // Reduced from 5000 for practical CPU inference
+        expectedTime: 12600, // ~3.5 hours in seconds (1000 emails × 45s)
       },
       critical: {
         model: "critical",
         fallbackModel: "primary",
-        targetEmails: 500,
-        expectedTime: 25200, // 7 hours in seconds
+        targetEmails: 100, // Reduced from 500 for practical CPU inference
+        expectedTime: 7200, // ~2 hours in seconds (100 emails × 45-180s)
       },
     },
   },
