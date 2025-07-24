@@ -30,8 +30,17 @@ export class OllamaManager {
    */
   static async isInstalled(): Promise<boolean> {
     try {
+      // Check standard installation
       const { stdout } = await execAsync("which ollama");
-      return !!stdout.trim();
+      if (stdout.trim()) return true;
+    } catch {
+      // Continue to check snap
+    }
+
+    try {
+      // Check snap installation
+      const { stdout } = await execAsync("snap list ollama 2>/dev/null");
+      return stdout.includes("ollama");
     } catch {
       return false;
     }
@@ -74,6 +83,30 @@ export class OllamaManager {
       return false;
     }
 
+    // Check if snap is having issues
+    try {
+      const { stdout: snapList } = await execAsync(
+        "snap list ollama 2>/dev/null",
+      );
+      if (snapList.includes("ollama")) {
+        logger.warn(
+          "Ollama is installed via snap but snap daemon may not be running",
+          "OLLAMA",
+        );
+        logger.info(
+          "Please start Ollama manually in a separate terminal:",
+          "OLLAMA",
+        );
+        logger.info("1. Try: sudo snap start snapd", "OLLAMA");
+        logger.info("2. Then: ollama serve", "OLLAMA");
+        logger.info("Or reinstall Ollama without snap:", "OLLAMA");
+        logger.info("curl -fsSL https://ollama.com/install.sh | sh", "OLLAMA");
+        return false;
+      }
+    } catch {
+      // Not a snap issue, continue
+    }
+
     // Try to start via systemd first (preferred method)
     if (await this.hasSystemdService()) {
       try {
@@ -91,6 +124,31 @@ export class OllamaManager {
           "OLLAMA",
         );
       }
+    }
+
+    // Try snap command if available
+    try {
+      const { stdout: snapCheck } = await execAsync(
+        "snap list ollama 2>/dev/null",
+      );
+      if (snapCheck.includes("ollama")) {
+        logger.info("Starting Ollama via snap...", "OLLAMA");
+
+        // For snap, we need to use the full command
+        const ollamaProcess = spawn("snap", ["run", "ollama", "serve"], {
+          detached: true,
+          stdio: "ignore",
+        });
+
+        ollamaProcess.unref();
+
+        if (await this.waitForStartup()) {
+          logger.info("Ollama started successfully via snap", "OLLAMA");
+          return true;
+        }
+      }
+    } catch {
+      // Not a snap installation, continue to regular method
     }
 
     // Fallback: Start Ollama directly in background
