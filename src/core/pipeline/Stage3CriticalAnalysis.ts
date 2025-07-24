@@ -5,7 +5,11 @@
 
 import { logger } from "../../utils/logger";
 import { MODEL_CONFIG } from "../../config/models.config";
-import type { Email, CriticalAnalysisResult, CriticalAnalysisResults } from "./types";
+import type {
+  Email,
+  CriticalAnalysisResult,
+  CriticalAnalysisResults,
+} from "./types";
 import axios from "axios";
 
 export class Stage3CriticalAnalysis {
@@ -14,6 +18,28 @@ export class Stage3CriticalAnalysis {
   private apiUrl = `${MODEL_CONFIG.api.ollamaUrl}${MODEL_CONFIG.api.endpoints.generate}`;
   private primaryTimeout = MODEL_CONFIG.timeouts.critical;
   private fallbackTimeout = MODEL_CONFIG.timeouts.fallback;
+  private progressCallback?: (count: number) => Promise<void>;
+  private lastProgressUpdate = 0;
+  private readonly PROGRESS_THROTTLE_MS = 2000; // Update every 2 seconds
+
+  /**
+   * Set progress callback for real-time updates
+   */
+  setProgressCallback(callback: (count: number) => Promise<void>): void {
+    this.progressCallback = callback;
+  }
+
+  /**
+   * Check if progress should be updated (throttling)
+   */
+  private shouldUpdateProgress(_processed: number): boolean {
+    const now = Date.now();
+    if (now - this.lastProgressUpdate > this.PROGRESS_THROTTLE_MS) {
+      this.lastProgressUpdate = now;
+      return true;
+    }
+    return false;
+  }
 
   /**
    * Process critical emails with deep analysis
@@ -22,34 +48,62 @@ export class Stage3CriticalAnalysis {
     const startTime = Date.now();
     const results: CriticalAnalysisResult[] = [];
 
-    logger.info(`Starting critical analysis for ${emails.length} high-priority emails`, "STAGE3");
+    logger.info(
+      `Starting critical analysis for ${emails.length} high-priority emails`,
+      "STAGE3",
+    );
 
     // Process one at a time for critical emails
     for (let i = 0; i < emails.length; i++) {
-      const email = emails[i];
-      
+      const email = emails[i]!;
+
       try {
         // Try Phi-4 first
-        logger.debug(`Attempting Phi-4 analysis for email ${email.id}`, "STAGE3");
+        logger.debug(
+          `Attempting Phi-4 analysis for email ${email.id}`,
+          "STAGE3",
+        );
         const result = await this.analyzeWithPhi4(email);
         results.push(result);
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Fallback to Llama 3.2:3b
-        logger.warn(`Phi-4 failed for email ${email.id}, using Llama 3.2:3b fallback`, "STAGE3");
+        logger.warn(
+          `Phi-4 failed for email ${email.id}, using Llama 3.2:3b fallback`,
+          "STAGE3",
+        );
         const fallbackResult = await this.analyzeWithLlama(email);
         results.push(fallbackResult);
       }
 
       // Progress logging
-      const progress = ((i + 1) / emails.length * 100).toFixed(1);
-      logger.info(`Stage 3 Progress: ${i + 1}/${emails.length} (${progress}%)`, "STAGE3");
+      const progress = (((i + 1) / emails.length) * 100).toFixed(1);
+      logger.info(
+        `Stage 3 Progress: ${i + 1}/${emails.length} (${progress}%)`,
+        "STAGE3",
+      );
+
+      // Update progress in database with throttling
+      if (this.progressCallback && this.shouldUpdateProgress(i + 1)) {
+        try {
+          await this.progressCallback(i + 1);
+        } catch (error) {
+          logger.warn(
+            "Progress update failed, continuing processing",
+            "STAGE3",
+            error as Error,
+          );
+        }
+      }
 
       // Save intermediate results
       await this.saveIntermediateResults(results);
     }
 
     const totalTime = (Date.now() - startTime) / 1000;
-    logger.info(`Critical analysis completed in ${totalTime.toFixed(2)}s`, "STAGE3");
+    logger.info(
+      `Critical analysis completed in ${totalTime.toFixed(2)}s`,
+      "STAGE3",
+    );
 
     return results;
   }
@@ -81,7 +135,7 @@ export class Stage3CriticalAnalysis {
         {
           signal: controller.signal,
           timeout: this.primaryTimeout,
-        }
+        },
       );
 
       clearTimeout(timeoutId);
@@ -92,24 +146,38 @@ export class Stage3CriticalAnalysis {
 
       return {
         emailId: email.id,
-        executiveSummary: analysis.executive_summary || '',
+        executiveSummary: analysis.executive_summary || "",
         businessImpact: analysis.business_impact || {},
         keyStakeholders: analysis.key_stakeholders || [],
-        recommendedActions: analysis.recommended_actions || [],
-        strategicInsights: analysis.strategic_insights || '',
+        recommendedActions: (analysis.recommended_actions || []).map(
+          (action: any) => ({
+            action: action.action || "",
+            priority:
+              action.priority === "HIGH" || action.priority === "CRITICAL"
+                ? action.priority
+                : ("HIGH" as const),
+            owner: action.owner || "",
+            deadline: action.deadline || "",
+          }),
+        ) as Array<{
+          action: string;
+          priority: "HIGH" | "CRITICAL";
+          owner: string;
+          deadline: string;
+        }>,
+        strategicInsights: analysis.strategic_insights || "",
         modelUsed: this.primaryModel,
         qualityScore: this.calculateCriticalQualityScore(analysis),
         processingTime,
         fallbackUsed: false,
       };
-
-    } catch (error: any) {
+    } catch (error) {
       clearTimeout(timeoutId);
-      
-      if (error.name === 'AbortError') {
-        throw new Error('Phi-4 timeout');
+
+      if ((error as any).name === "AbortError") {
+        throw new Error("Phi-4 timeout");
       }
-      
+
       throw error;
     }
   }
@@ -117,7 +185,9 @@ export class Stage3CriticalAnalysis {
   /**
    * Analyze with Llama 3.2:3b fallback
    */
-  private async analyzeWithLlama(email: Email): Promise<CriticalAnalysisResult> {
+  private async analyzeWithLlama(
+    email: Email,
+  ): Promise<CriticalAnalysisResult> {
     const startTime = Date.now();
 
     try {
@@ -138,7 +208,7 @@ export class Stage3CriticalAnalysis {
         },
         {
           timeout: this.fallbackTimeout,
-        }
+        },
       );
 
       const responseText = response.data.response;
@@ -147,34 +217,54 @@ export class Stage3CriticalAnalysis {
 
       return {
         emailId: email.id,
-        executiveSummary: analysis.executive_summary || '',
+        executiveSummary: analysis.executive_summary || "",
         businessImpact: analysis.business_impact || {},
         keyStakeholders: analysis.key_stakeholders || [],
-        recommendedActions: analysis.recommended_actions || [],
-        strategicInsights: analysis.strategic_insights || '',
+        recommendedActions: (analysis.recommended_actions || []).map(
+          (action: any) => ({
+            action: action.action || "",
+            priority:
+              action.priority === "HIGH" || action.priority === "CRITICAL"
+                ? action.priority
+                : ("HIGH" as const),
+            owner: action.owner || "",
+            deadline: action.deadline || "",
+          }),
+        ) as Array<{
+          action: string;
+          priority: "HIGH" | "CRITICAL";
+          owner: string;
+          deadline: string;
+        }>,
+        strategicInsights: analysis.strategic_insights || "",
         modelUsed: this.fallbackModel,
         qualityScore: this.calculateCriticalQualityScore(analysis),
         processingTime,
         fallbackUsed: true,
       };
+    } catch (error: unknown) {
+      logger.error(
+        `Critical analysis failed for email ${email.id}`,
+        "STAGE3",
+        error as Error,
+      );
 
-    } catch (error) {
-      logger.error(`Critical analysis failed for email ${email.id}`, "STAGE3", error as Error);
-      
       // Return minimal result on complete failure
       return {
         emailId: email.id,
-        executiveSummary: 'Analysis failed - requires manual executive review',
+        executiveSummary: "Analysis failed - requires manual executive review",
         businessImpact: {},
         keyStakeholders: [],
-        recommendedActions: [{
-          action: 'Manual review required',
-          priority: 'HIGH',
-          owner: 'Executive Team',
-          deadline: 'Immediate',
-        }],
-        strategicInsights: '',
-        modelUsed: 'failed',
+        recommendedActions: [
+          {
+            action: "Manual review required",
+            priority: "HIGH",
+            owner: "Executive Team",
+            deadline: "Immediate",
+          },
+        ],
+        strategicInsights: "",
+        modelUsed: "failed",
         qualityScore: 0,
         processingTime: (Date.now() - startTime) / 1000,
         fallbackUsed: true,
@@ -224,29 +314,53 @@ Respond ONLY with valid JSON, no additional text.`;
   }
 
   /**
-   * Parse critical response
+   * Parse critical response - Returns structured critical analysis object
    */
-  private parseCriticalResponse(responseText: string): any {
+  private parseCriticalResponse(responseText: string): {
+    executive_summary?: string;
+    business_impact?: {
+      revenue?: string;
+      risk?: string;
+      opportunity?: string;
+    };
+    key_stakeholders?: string[];
+    recommended_actions?: Array<{
+      action: string;
+      priority: "HIGH" | "CRITICAL" | string;
+      owner: string;
+      deadline: string;
+    }>;
+    strategic_insights?: string;
+  } {
     try {
       // Clean response if needed
       let cleanedText = responseText;
-      if (responseText.includes('```json')) {
-        cleanedText = responseText.split('```json')[1].split('```')[0];
-      } else if (responseText.includes('```')) {
-        cleanedText = responseText.split('```')[1].split('```')[0];
+      const jsonSplit = responseText.split("```json");
+      const codeSplit = responseText.split("```");
+
+      if (jsonSplit.length > 1 && jsonSplit[1]) {
+        const afterJson = jsonSplit[1];
+        const endSplit = afterJson.split("```");
+        cleanedText =
+          endSplit.length > 0 && endSplit[0] ? endSplit[0] : afterJson;
+      } else if (codeSplit.length > 1 && codeSplit[1]) {
+        const afterCode = codeSplit[1];
+        const endSplit = afterCode.split("```");
+        cleanedText =
+          endSplit.length > 0 && endSplit[0] ? endSplit[0] : afterCode;
       }
 
       return JSON.parse(cleanedText.trim());
     } catch (error) {
       logger.warn("Failed to parse critical response as JSON", "STAGE3");
-      
+
       // Return a basic structure
       return {
         executive_summary: responseText.substring(0, 300),
         business_impact: {},
         key_stakeholders: [],
         recommended_actions: [],
-        strategic_insights: '',
+        strategic_insights: "",
       };
     }
   }
@@ -254,7 +368,12 @@ Respond ONLY with valid JSON, no additional text.`;
   /**
    * Calculate quality score for critical analysis
    */
-  private calculateCriticalQualityScore(analysis: any): number {
+  private calculateCriticalQualityScore(analysis: {
+    executive_summary?: string;
+    business_impact?: Record<string, any>;
+    recommended_actions?: any[];
+    strategic_insights?: string;
+  }): number {
     let score = 0;
     const weights = {
       executiveSummary: 0.25,
@@ -275,15 +394,26 @@ Respond ONLY with valid JSON, no additional text.`;
     }
 
     // Recommended actions
-    if (analysis.recommended_actions && analysis.recommended_actions.length > 0) {
-      const actionQuality = analysis.recommended_actions.every((a: any) => 
-        a.action && a.priority && a.owner && a.deadline
+    if (
+      analysis.recommended_actions &&
+      analysis.recommended_actions.length > 0
+    ) {
+      const actionQuality = (analysis.recommended_actions as unknown[]).every(
+        (a: unknown) => {
+          const action = a as Record<string, unknown>;
+          return (
+            action.action && action.priority && action.owner && action.deadline
+          );
+        },
       );
       score += weights.recommendedActions * (actionQuality ? 10 : 5);
     }
 
     // Strategic insights
-    if (analysis.strategic_insights && analysis.strategic_insights.length > 100) {
+    if (
+      analysis.strategic_insights &&
+      analysis.strategic_insights.length > 100
+    ) {
       score += weights.strategicInsights * 10;
     }
 
@@ -293,13 +423,19 @@ Respond ONLY with valid JSON, no additional text.`;
   /**
    * Save intermediate results for resumability
    */
-  private async saveIntermediateResults(results: CriticalAnalysisResult[]): Promise<void> {
+  private async saveIntermediateResults(
+    results: CriticalAnalysisResult[],
+  ): Promise<void> {
     try {
-      const fs = await import('fs/promises');
-      const path = 'stage3_intermediate_results.json';
+      const fs = await import("fs/promises");
+      const path = "stage3_intermediate_results.json";
       await fs.writeFile(path, JSON.stringify(results, null, 2));
     } catch (error) {
-      logger.warn("Failed to save intermediate results", "STAGE3", error as Error);
+      logger.warn(
+        "Failed to save intermediate results",
+        "STAGE3",
+        error as Error,
+      );
     }
   }
 }

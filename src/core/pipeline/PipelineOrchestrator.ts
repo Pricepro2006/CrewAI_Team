@@ -4,7 +4,6 @@
  */
 
 import { logger } from "../../utils/logger";
-import { MODEL_CONFIG } from "../../config/models.config";
 import { Stage1PatternTriage } from "./Stage1PatternTriage";
 import { Stage2LlamaAnalysis } from "./Stage2LlamaAnalysis";
 import { Stage3CriticalAnalysis } from "./Stage3CriticalAnalysis";
@@ -15,6 +14,10 @@ import type {
   LlamaAnalysisResults,
   CriticalAnalysisResults,
   Email,
+  TriageResult,
+  LlamaAnalysisResult,
+  CriticalAnalysisResult,
+  PipelineStatus,
 } from "./types";
 
 export class PipelineOrchestrator {
@@ -54,16 +57,28 @@ export class PipelineOrchestrator {
         `Starting Stage 2: Llama Analysis for ${triageResults.top5000.length} priority emails`,
         "PIPELINE",
       );
+
+      // Set up progress callback for real-time updates
+      this.stage2.setProgressCallback(async (count: number) => {
+        await this.updateExecutionRecord(2, count);
+      });
+
       const priorityResults = await this.stage2.process(triageResults.top5000);
-      await this.updateExecutionRecord(2, priorityResults.length);
+      // Final update handled by progress callback, no redundant update needed
 
       // Stage 3: Deep analysis for critical emails
       logger.info(
         `Starting Stage 3: Deep Analysis for ${triageResults.top500.length} critical emails`,
         "PIPELINE",
       );
+
+      // Set up progress callback for real-time updates
+      this.stage3.setProgressCallback(async (count: number) => {
+        await this.updateExecutionRecord(3, count);
+      });
+
       const criticalResults = await this.stage3.process(triageResults.top500);
-      await this.updateExecutionRecord(3, criticalResults.length);
+      // Final update handled by progress callback, no redundant update needed
 
       // Consolidate results
       const results = await this.consolidateResults(
@@ -140,16 +155,30 @@ export class PipelineOrchestrator {
   ): Promise<void> {
     if (!this.executionId) return;
 
-    const db = getDatabaseConnection();
-    const columnName = `stage${stage}_count`;
+    try {
+      const db = getDatabaseConnection();
+      const columnName = `stage${stage}_count`;
 
-    db.prepare(
-      `
-      UPDATE pipeline_executions 
-      SET ${columnName} = ?
-      WHERE id = ?
-    `,
-    ).run(count, this.executionId);
+      db.prepare(
+        `
+        UPDATE pipeline_executions 
+        SET ${columnName} = ?, updated_at = ?
+        WHERE id = ?
+      `,
+      ).run(count, new Date().toISOString(), this.executionId);
+
+      logger.debug(
+        `Updated ${columnName} to ${count} for execution ${this.executionId}`,
+        "PIPELINE",
+      );
+    } catch (error) {
+      logger.error(
+        `Failed to update execution record for stage ${stage}`,
+        "PIPELINE",
+        error as Error,
+      );
+      // Don't throw - progress tracking failure shouldn't stop processing
+    }
   }
 
   /**
@@ -199,7 +228,17 @@ export class PipelineOrchestrator {
     criticalResults: CriticalAnalysisResults,
   ): Promise<PipelineResults> {
     // Create a map for efficient lookup
-    const emailAnalysisMap = new Map<string, any>();
+    const emailAnalysisMap = new Map<
+      string,
+      {
+        emailId: string;
+        stage1: TriageResult;
+        stage2: LlamaAnalysisResult | null;
+        stage3: CriticalAnalysisResult | null;
+        finalScore: number;
+        pipelineStage: number;
+      }
+    >();
 
     // Add triage results (all emails)
     for (const result of triageResults.all) {
@@ -249,7 +288,16 @@ export class PipelineOrchestrator {
   /**
    * Save consolidated results to database
    */
-  private async saveConsolidatedResults(results: any[]): Promise<void> {
+  private async saveConsolidatedResults(
+    results: Array<{
+      emailId: string;
+      stage1: TriageResult;
+      stage2: LlamaAnalysisResult | null;
+      stage3: CriticalAnalysisResult | null;
+      finalScore: number;
+      pipelineStage: number;
+    }>,
+  ): Promise<void> {
     const db = getDatabaseConnection();
 
     // Update email_analysis table with pipeline results
@@ -313,7 +361,7 @@ export class PipelineOrchestrator {
   /**
    * Get current pipeline status
    */
-  async getStatus(): Promise<any> {
+  async getStatus(): Promise<PipelineStatus> {
     if (!this.executionId) {
       return { status: "not_running" };
     }
@@ -326,8 +374,30 @@ export class PipelineOrchestrator {
       WHERE id = ?
     `,
       )
-      .get(this.executionId);
+      .get(this.executionId) as
+      | {
+          id: number;
+          status: string;
+          started_at: string;
+          completed_at?: string;
+          stage1_count: number;
+          stage2_count: number;
+          stage3_count: number;
+          error_message?: string;
+        }
+      | undefined;
 
-    return execution;
+    return execution
+      ? {
+          status: execution.status as PipelineStatus["status"],
+          executionId: execution.id,
+          startedAt: execution.started_at,
+          completedAt: execution.completed_at,
+          stage1Progress: execution.stage1_count,
+          stage2Progress: execution.stage2_count,
+          stage3Progress: execution.stage3_count,
+          errorMessage: execution.error_message,
+        }
+      : { status: "not_running" };
   }
 }
