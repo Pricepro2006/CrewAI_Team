@@ -8,6 +8,7 @@
 import { getDatabaseConnection } from "../database/connection";
 import { logger } from "../utils/logger";
 import { PipelineOrchestrator } from "../core/pipeline/PipelineOrchestrator";
+import { OllamaManager } from "../utils/ollama-manager";
 import fs from "fs";
 import path from "path";
 
@@ -87,24 +88,27 @@ async function main() {
       process.exit(1);
     }
 
-    // Check Ollama
+    // Initialize Ollama and ensure required models
+    const requiredModels = ["llama3.2:3b"];
+
+    logger.info("Checking Ollama status...", "PIPELINE");
+    if (!(await OllamaManager.initialize(requiredModels))) {
+      logger.error("Failed to initialize Ollama", "PIPELINE");
+      process.exit(1);
+    }
+
+    // Check for optional Phi-4 model
     try {
       const response = await fetch("http://localhost:11434/api/tags");
       const data = await response.json();
       const models = data.models || [];
 
-      const hasLlama = models.some((m: any) => m.name === "llama3.2:3b");
       const hasPhi4 = models.some(
-        (m: any) => m.name.includes("phi-4") || m.name.includes("phi4"),
+        (m: any) =>
+          m.name.includes("phi-4") ||
+          m.name.includes("phi4") ||
+          m.name === "doomgrave/phi-4:14b-tools-Q3_K_S",
       );
-
-      if (!hasLlama) {
-        logger.error(
-          "Llama 3.2:3b not found. Please run: ollama pull llama3.2:3b",
-          "PIPELINE",
-        );
-        process.exit(1);
-      }
 
       logger.info("✅ Llama 3.2:3b model available", "PIPELINE");
 
@@ -113,12 +117,16 @@ async function main() {
           "Phi-4 not found. Stage 3 will use Llama fallback",
           "PIPELINE",
         );
+        logger.info(
+          "To use Phi-4 for better Stage 3 analysis, run:",
+          "PIPELINE",
+        );
+        logger.info("ollama pull doomgrave/phi-4:14b-tools-Q3_K_S", "PIPELINE");
       } else {
         logger.info("✅ Phi-4 model available", "PIPELINE");
       }
     } catch (error) {
-      logger.error("Ollama not running. Please start Ollama first", "PIPELINE");
-      process.exit(1);
+      logger.warn("Could not check for optional models", "PIPELINE");
     }
 
     // Estimate time

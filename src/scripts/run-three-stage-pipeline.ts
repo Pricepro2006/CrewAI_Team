@@ -8,47 +8,62 @@
 import { PipelineOrchestrator } from "../core/pipeline/PipelineOrchestrator";
 import { logger } from "../utils/logger";
 import { getDatabaseConnection } from "../database/connection";
+import { OllamaManager } from "../utils/ollama-manager";
 import * as fs from "fs/promises";
 import * as path from "path";
 
 async function checkPrerequisites(): Promise<boolean> {
   logger.info("Checking prerequisites...", "PIPELINE");
 
-  // Check if Llama 3.2:3b is available
+  // Initialize Ollama and ensure required models
+  const requiredModels = ["llama3.2:3b"];
+  const optionalModels = ["doomgrave/phi-4:14b-tools-Q3_K_S"];
+
+  // Start Ollama if needed and ensure required models
+  if (!(await OllamaManager.initialize(requiredModels))) {
+    return false;
+  }
+
+  // Check for optional models (don't fail if not available)
   try {
     const response = await fetch("http://localhost:11434/api/tags");
     const data = await response.json();
     const models = data.models || [];
-    
-    const hasLlama = models.some((m: any) => m.name === "llama3.2:3b");
-    if (!hasLlama) {
-      logger.error("Llama 3.2:3b model not found. Please run: ollama pull llama3.2:3b", "PIPELINE");
-      return false;
-    }
 
-    // Check for Phi-4 (optional)
-    const hasPhi4 = models.some((m: any) => m.name.includes("phi-4"));
+    const hasPhi4 = models.some(
+      (m: any) =>
+        m.name.includes("phi-4") ||
+        m.name === "doomgrave/phi-4:14b-tools-Q3_K_S",
+    );
+
     if (!hasPhi4) {
-      logger.warn("Phi-4 model not found. Stage 3 will use Llama 3.2:3b fallback", "PIPELINE");
+      logger.warn(
+        "Phi-4 model not found. Stage 3 will use Llama 3.2:3b fallback",
+        "PIPELINE",
+      );
+      logger.info("To use Phi-4 for better Stage 3 analysis, run:", "PIPELINE");
+      logger.info("ollama pull doomgrave/phi-4:14b-tools-Q3_K_S", "PIPELINE");
     }
-
   } catch (error) {
-    logger.error("Ollama not running. Please start Ollama first", "PIPELINE");
-    return false;
+    logger.warn("Could not check for optional models", "PIPELINE");
   }
 
   // Check database
   try {
     const db = getDatabaseConnection();
-    const emailCount = db.prepare("SELECT COUNT(*) as count FROM emails_enhanced").get() as { count: number };
+    const emailCount = db
+      .prepare("SELECT COUNT(*) as count FROM emails_enhanced")
+      .get() as { count: number };
 
-    logger.info(`Found ${emailCount?.count || 0} emails in database`, "PIPELINE");
+    logger.info(
+      `Found ${emailCount?.count || 0} emails in database`,
+      "PIPELINE",
+    );
 
     if (!emailCount?.count) {
       logger.error("No emails found in database", "PIPELINE");
       return false;
     }
-
   } catch (error) {
     logger.error("Database connection failed", "PIPELINE", error as Error);
     return false;
@@ -56,7 +71,7 @@ async function checkPrerequisites(): Promise<boolean> {
 
   // Check disk space (rough estimate: 2GB needed)
   const stats = await fs.statfs("/");
-  const freeGB = stats.bfree * stats.bsize / (1024 * 1024 * 1024);
+  const freeGB = (stats.bfree * stats.bsize) / (1024 * 1024 * 1024);
   if (freeGB < 2) {
     logger.warn(`Low disk space: ${freeGB.toFixed(2)}GB free`, "PIPELINE");
   }
@@ -67,19 +82,25 @@ async function checkPrerequisites(): Promise<boolean> {
 async function createProgressMonitor(orchestrator: PipelineOrchestrator) {
   const interval = setInterval(async () => {
     const status = await orchestrator.getStatus();
-    if (status.status === 'running') {
+    if (status.status === "running") {
       const total = 33797;
-      const stage1Progress = (status.stage1_count || 0) / total * 100;
-      const stage2Progress = (status.stage2_count || 0) / 5000 * 100;
-      const stage3Progress = (status.stage3_count || 0) / 500 * 100;
+      const stage1Progress = ((status.stage1_count || 0) / total) * 100;
+      const stage2Progress = ((status.stage2_count || 0) / 5000) * 100;
+      const stage3Progress = ((status.stage3_count || 0) / 500) * 100;
 
       console.clear();
       console.log("=".repeat(60));
       console.log("Three-Stage Pipeline Progress");
       console.log("=".repeat(60));
-      console.log(`Stage 1 (Pattern Triage):  [${progressBar(stage1Progress)}] ${stage1Progress.toFixed(1)}%`);
-      console.log(`Stage 2 (Llama Analysis):  [${progressBar(stage2Progress)}] ${stage2Progress.toFixed(1)}%`);
-      console.log(`Stage 3 (Critical):        [${progressBar(stage3Progress)}] ${stage3Progress.toFixed(1)}%`);
+      console.log(
+        `Stage 1 (Pattern Triage):  [${progressBar(stage1Progress)}] ${stage1Progress.toFixed(1)}%`,
+      );
+      console.log(
+        `Stage 2 (Llama Analysis):  [${progressBar(stage2Progress)}] ${stage2Progress.toFixed(1)}%`,
+      );
+      console.log(
+        `Stage 3 (Critical):        [${progressBar(stage3Progress)}] ${stage3Progress.toFixed(1)}%`,
+      );
       console.log("=".repeat(60));
     }
   }, 5000); // Update every 5 seconds
@@ -89,7 +110,7 @@ async function createProgressMonitor(orchestrator: PipelineOrchestrator) {
 
 function progressBar(percentage: number): string {
   const width = 40;
-  const filled = Math.round(width * percentage / 100);
+  const filled = Math.round((width * percentage) / 100);
   const empty = width - filled;
   return "█".repeat(filled) + "░".repeat(empty);
 }
@@ -99,7 +120,7 @@ async function main() {
   console.log("=====================================\n");
 
   // Check prerequisites
-  if (!await checkPrerequisites()) {
+  if (!(await checkPrerequisites())) {
     process.exit(1);
   }
 
@@ -145,7 +166,6 @@ async function main() {
     const reportPath = `pipeline_report_${results.executionId}.json`;
     await fs.writeFile(reportPath, JSON.stringify(results, null, 2));
     logger.info(`Detailed report saved: ${reportPath}`, "PIPELINE");
-
   } catch (error) {
     stopMonitor();
     logger.error("Pipeline execution failed", "PIPELINE", error as Error);
@@ -155,13 +175,19 @@ async function main() {
 }
 
 // Handle graceful shutdown
-process.on('SIGINT', async () => {
-  logger.info("Received interrupt signal, shutting down gracefully...", "PIPELINE");
+process.on("SIGINT", async () => {
+  logger.info(
+    "Received interrupt signal, shutting down gracefully...",
+    "PIPELINE",
+  );
   process.exit(0);
 });
 
-process.on('SIGTERM', async () => {
-  logger.info("Received termination signal, shutting down gracefully...", "PIPELINE");
+process.on("SIGTERM", async () => {
+  logger.info(
+    "Received termination signal, shutting down gracefully...",
+    "PIPELINE",
+  );
   process.exit(0);
 });
 

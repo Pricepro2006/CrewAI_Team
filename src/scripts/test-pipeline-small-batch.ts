@@ -7,6 +7,7 @@
 
 import { getDatabaseConnection } from "../database/connection";
 import { logger } from "../utils/logger";
+import { OllamaManager } from "../utils/ollama-manager";
 import { Stage1PatternTriage } from "../core/pipeline/Stage1PatternTriage";
 import { Stage2LlamaAnalysis } from "../core/pipeline/Stage2LlamaAnalysis";
 import { Stage3CriticalAnalysis } from "../core/pipeline/Stage3CriticalAnalysis";
@@ -182,26 +183,16 @@ async function main() {
   console.log("\n🧪 Three-Stage Pipeline Test (Small Batch)");
   console.log("=========================================\n");
 
-  // Check Ollama
-  try {
-    const response = await fetch("http://localhost:11434/api/tags");
-    const data = await response.json();
-    const models = data.models || [];
+  // Initialize Ollama and ensure required models
+  const requiredModels = ["llama3.2:3b"];
 
-    const hasLlama = models.some((m: any) => m.name === "llama3.2:3b");
-    if (!hasLlama) {
-      logger.error(
-        "Llama 3.2:3b not found. Please run: ollama pull llama3.2:3b",
-        "TEST",
-      );
-      process.exit(1);
-    }
-
-    logger.info("✅ Llama 3.2:3b model available", "TEST");
-  } catch (error) {
-    logger.error("Ollama not running", "TEST");
+  logger.info("Checking Ollama status...", "TEST");
+  if (!(await OllamaManager.initialize(requiredModels))) {
+    logger.error("Failed to initialize Ollama", "TEST");
     process.exit(1);
   }
+
+  logger.info("✅ Llama 3.2:3b model available", "TEST");
 
   // Run test
   const success = await testPipeline();

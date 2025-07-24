@@ -82,3 +82,6 @@ PHASE*_PROGRESS.md
 *.bak
 *.orig
 */test/*
+*walmart*
+*nick*
+*paul*
