@@ -4,6 +4,12 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+  issues: write
+
 jobs:
   pr-title:
     name: Validate PR Title
@@ -79,6 +85,8 @@ jobs:
   security-scan:
     name: Security Analysis
     runs-on: ubuntu-latest
+    # Skip SARIF upload for PRs from forks due to permission restrictions
+    if: github.event.pull_request.head.repo.full_name == github.repository
 
     steps:
       - uses: actions/checkout@v4
@@ -96,3 +104,80 @@ jobs:
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
+
+  # Alternative security scan for PRs from forks (no SARIF upload)
+  security-scan-fork:
+    name: Security Analysis (Fork PRs)
+    runs-on: ubuntu-latest
+    # Only run for PRs from forks
+    if: github.event.pull_request.head.repo.full_name != github.repository
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "table"
+          exit-code: "1"
+          severity: "CRITICAL,HIGH"
+
+      - name: Run Trivy in JSON format for comment
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "json"
+          output: "trivy-results.json"
+
+      - name: Create PR comment with security findings
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## 🔒 Security Scan Results\n\n';
+
+            try {
+              const results = JSON.parse(fs.readFileSync('trivy-results.json', 'utf8'));
+              const vulnerabilities = [];
+              
+              results.Results?.forEach(result => {
+                result.Vulnerabilities?.forEach(vuln => {
+                  if (vuln.Severity === 'CRITICAL' || vuln.Severity === 'HIGH') {
+                    vulnerabilities.push({
+                      pkg: vuln.PkgName,
+                      vulnerability: vuln.VulnerabilityID,
+                      severity: vuln.Severity,
+                      title: vuln.Title
+                    });
+                  }
+                });
+              });
+              
+              if (vulnerabilities.length > 0) {
+                comment += '⚠️ **Security vulnerabilities found:**\n\n';
+                comment += '| Package | Vulnerability | Severity | Description |\n';
+                comment += '|---------|---------------|----------|-------------|\n';
+                vulnerabilities.forEach(v => {
+                  comment += `| ${v.pkg} | ${v.vulnerability} | ${v.severity} | ${v.title || 'N/A'} |\n`;
+                });
+              } else {
+                comment += '✅ **No critical or high severity vulnerabilities found!**\n';
+              }
+            } catch (error) {
+              comment += '❌ **Error parsing security scan results**\n';
+              comment += `\`\`\`\n${error.message}\n\`\`\`\n`;
+            }
+
+            comment += '\n*Note: Full SARIF results are not uploaded for PRs from forks due to GitHub security restrictions.*';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
