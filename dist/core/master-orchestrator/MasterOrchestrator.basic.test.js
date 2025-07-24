@@ -17,7 +17,7 @@ describe("MasterOrchestrator Basic Tests", () => {
     beforeEach(async () => {
         testDb = createTestDatabase();
         orchestrator = new MasterOrchestrator({
-            model: "phi3:mini", // Use smallest model for faster tests
+            model: "qwen3:0.6b", // Use smallest model for faster tests
             ollamaUrl: process.env.OLLAMA_URL || "http://localhost:11434",
             database: testDb,
             rag: {

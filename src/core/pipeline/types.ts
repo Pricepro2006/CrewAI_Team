@@ -33,7 +33,7 @@ export interface TriageResult {
     part_numbers: string[];
     companies: string[];
   };
-  urgencyLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  urgencyLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   businessProcess: string;
   processingTime: number;
 }
@@ -83,7 +83,7 @@ export interface CriticalAnalysisResult {
   keyStakeholders: string[];
   recommendedActions: Array<{
     action: string;
-    priority: 'HIGH' | 'CRITICAL';
+    priority: "HIGH" | "CRITICAL";
     owner: string;
     deadline: string;
   }>;
@@ -113,13 +113,20 @@ export interface PipelineResults {
 }
 
 export interface PipelineStatus {
-  status: 'not_running' | 'running' | 'completed' | 'failed';
+  status: "not_running" | "running" | "completed" | "failed";
   executionId?: number;
+  id?: number; // Alias for executionId for backward compatibility
   startedAt?: string;
   completedAt?: string;
   stage1Progress?: number;
   stage2Progress?: number;
   stage3Progress?: number;
+  stage1_count?: number; // Alias for stage1Progress
+  stage2_count?: number; // Alias for stage2Progress
+  stage3_count?: number; // Alias for stage3Progress
   estimatedCompletion?: string;
   errorMessage?: string;
+  lastProcessedId?: number;
+  currentStage?: number;
+  processedCount?: number;
 }

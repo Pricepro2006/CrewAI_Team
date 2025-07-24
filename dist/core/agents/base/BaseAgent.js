@@ -1,5 +1,6 @@
 import { logger } from "../../../utils/logger";
 import { OllamaProvider } from "../../llm/OllamaProvider";
+import { MODEL_CONFIG, getModelConfig, getModelTimeout } from "../../../config/models.config";
 export class BaseAgent {
     name;
     description;
@@ -8,15 +9,18 @@ export class BaseAgent {
     capabilities = new Set();
     initialized = false;
     llm;
-    constructor(name, description, model = "granite3.3:2b") {
+    timeout;
+    constructor(name, description, model = getModelConfig('primary')) {
         this.name = name;
         this.description = description;
         this.model = model;
-        logger.info(`Initializing agent: ${name}`, "AGENT");
+        logger.info(`Initializing agent: ${name} with model: ${model}`, "AGENT");
+        // Get timeout for this model
+        this.timeout = getModelTimeout('primary');
         // Initialize LLM provider
         this.llm = new OllamaProvider({
             model: this.model,
-            baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
+            baseUrl: MODEL_CONFIG.api.ollamaUrl,
         });
     }
     async executeWithTool(params) {

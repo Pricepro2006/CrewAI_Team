@@ -9,6 +9,7 @@ export declare abstract class BaseAgent {
     protected capabilities: Set<string>;
     protected initialized: boolean;
     protected llm: OllamaProvider;
+    protected timeout: number;
     constructor(name: string, description: string, model?: string);
     abstract execute(task: string, context: AgentContext): Promise<AgentResult>;
     executeWithTool(params: ToolExecutionParams): Promise<AgentResult>;

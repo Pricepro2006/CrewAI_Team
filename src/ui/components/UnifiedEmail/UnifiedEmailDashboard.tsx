@@ -107,7 +107,10 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
       avgResponseTime: analytics?.avgResponseTime || 4.3,
       criticalAlerts: analytics?.criticalAlerts || [],
       agentUtilization: analytics?.agentUtilization || 0,
-      pendingAssignment: emailData?.data?.pendingAssignmentCount || emailData?.pendingAssignmentCount || 0,
+      pendingAssignment:
+        emailData?.data?.pendingAssignmentCount ||
+        emailData?.pendingAssignmentCount ||
+        0,
       urgentCount: emailData?.data?.urgentCount || emailData?.urgentCount || 0,
     }),
     [emailData, analytics],
@@ -222,10 +225,17 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
           <div className="workflow-view">
             <h2>Workflow Tracking</h2>
             <EmailListView
-              emails={(emailData?.data?.emails || emailData?.emails || []).filter(
-                email => email.workflowState === "IN_PROGRESS"
+              emails={(
+                emailData?.data?.emails ||
+                emailData?.emails ||
+                []
+              ).filter(
+                (email: UnifiedEmailData) =>
+                  email.workflowState === "IN_PROGRESS",
               )}
-              onEmailSelect={(email) => setSelectedEmails([email.id])}
+              onEmailSelect={(email: UnifiedEmailData) =>
+                setSelectedEmails([email.id])
+              }
               selectedEmailId={selectedEmails[0]}
             />
           </div>

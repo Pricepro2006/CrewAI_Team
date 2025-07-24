@@ -163,7 +163,7 @@ async function main() {
         if (status.executionId) {
           await saveCheckpoint({
             executionId: status.executionId,
-            lastProcessedId: status.lastProcessedId || "",
+            lastProcessedId: String(status.lastProcessedId || ""),
             stage: status.currentStage || 1,
             processedCount: status.processedCount || 0,
             startTime: new Date(startTime).toISOString(),
