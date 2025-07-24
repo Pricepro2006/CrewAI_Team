@@ -17045,5 +17045,764 @@
     "qualityScore": 7.4,
     "processingTime": 21.895,
     "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1bg6tgruih",
+    "contextualSummary": "The email is an automatic reply from Kevin Mingolello Sr., Inside Account Executive at TD SYNNEX, indicating his temporary unavailability due to being out of the office. He provides a return date and suggests using the team mailbox for urgent matters.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "quote_numbers": ["NQ08436681-01"],
+      "companies": ["Lexisnexis Risk Solutions Inc."],
+      "people": ["Kevin Mingolello Sr."]
+    },
+    "actionItems": [
+      {
+        "task": "Review and respond to the quote request",
+        "details": "Check the quote details and provide a response once Kevin returns.",
+        "assignee": "Internal Team Member (optional)",
+        "deadline": "Upon Kevin's return"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the quote request and express interest in reviewing it upon Kevin's return.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.709,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xu1obwbbdtr",
+    "contextualSummary": "The email is an automatic reply from Shelby.Pinson@tdsynnex.com regarding a CISCO quote that requires urgent attention.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["CISCO QUOTE"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Review and respond to the CISCO quote as soon as possible",
+        "details": "Check the quote details, pricing, and any special requirements before responding.",
+        "assignee": "Shelby.Pinson@tdsynnex.com",
+        "deadline": "Urgent: Respond within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Please review the CISCO quote and respond with any questions or concerns promptly.",
+    "qualityScore": 7,
+    "processingTime": 13.692,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xyopr6mleps",
+    "contextualSummary": "The email is a response to an urgent CISCO quote request from CompuCom at tdsynnex.com, likely related to a purchasing or procurement process.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["CISCO QUOTE"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["tdsynnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify CISCO quote details and provide a response to CompuCom",
+        "details": "Review the CISCO quote and ensure all information is accurate before responding.",
+        "assignee": "Purchasing/Procurement Team",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond to CompuCom with a confirmation of receipt and an estimated timeline for the quote review process.",
+    "qualityScore": 7.4,
+    "processingTime": 13.698,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xxnbzxyeob2",
+    "contextualSummary": "A customer is requesting a CISCO quote urgently from CompuCom, indicating a potential sales or procurement opportunity.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["CISCO QUOTE"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["CompuCom"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to customer with a CISCO quote within the next 2 hours",
+        "details": "Provide a detailed quote with all necessary information and specifications.",
+        "assignee": "EdithMonroy.Delgado@compucom.com"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent request and provide a timely quote to ensure customer satisfaction.",
+    "qualityScore": 7.4,
+    "processingTime": 12.88,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1dbym8wfb3",
+    "contextualSummary": "The email is a notification from Alan Wu, Strategic Account Manager at Onapsis, informing the recipient that he will be unavailable due to attending the SAP Insider Conference and may experience delays in responding to messages.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "quote_numbers": ["RE: Attached: Revised Conoco Quote"],
+      "companies": ["Conoco"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to Alan Wu as soon as possible, acknowledging receipt of the message and expressing patience with potential delays.",
+        "details": "Provide a brief acknowledgement of the email and request an update on when Alan will be available to discuss further.",
+        "assignee": "Recipient",
+        "deadline": "As soon as possible"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Thank you for reaching out, Alan. I appreciate your notice and look forward to connecting with you upon your return.",
+    "qualityScore": 7.4,
+    "processingTime": 23.014,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1dhenqm0ag",
+    "contextualSummary": "Optiv is seeking an urgent quote for a purchase from T-Mobile for an EoQ (Economic Order Quantity) order. The email contains the subject line 'Automatic reply: Urgent Quote for Optiv to T-Mobile for EoQ purchase' and was sent by ed.roe@optiv.com.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["list of quote numbers found"],
+      "case_numbers": ["list of case/ticket numbers found"],
+      "part_numbers": ["list of part/SKU numbers found"],
+      "companies": ["T-Mobile", "Optiv"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to the customer with a quote and confirm receipt of the order",
+        "details": "Provide a detailed quote for the EoQ purchase, including any applicable discounts or promotions.",
+        "assignee": "ed.roe@optiv.com"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent quote request and confirm that Optiv is processing the order. Provide a timely response to ensure timely fulfillment.",
+    "qualityScore": 8.6,
+    "processingTime": 16.826,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xyqbva7ei20",
+    "contextualSummary": "The email is a follow-up request from CompuCom@tdsynnex.com for a quote for AgileBits USA, indicating an urgent need for a quote to be provided.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["AgileBits USA"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["tdsynnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for AgileBits USA as soon as possible",
+        "details": "Please ensure the quote includes all necessary details and specifications.",
+        "assignee": "CompuCom@tdsynnex.com",
+        "deadline": "Same day or next business day"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the request and confirm a quote will be provided promptly.",
+    "qualityScore": 7.4,
+    "processingTime": 13.733,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xyqf9zhzbdz",
+    "contextualSummary": "A business email requesting a quote for AgileBits USA from CompuCom at TD Synnex, indicating urgency.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["AGILEBITS-USA"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for AgileBits USA by [ Deadline ]",
+        "details": "Please include all necessary details and specifications for the quote.",
+        "assignee": "CompuCom",
+        "deadline": "2 business days"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Please confirm receipt of this email and provide a quote as soon as possible.",
+    "qualityScore": 7.4,
+    "processingTime": 8.768,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xyqgwszqvg2",
+    "contextualSummary": "The email is from CompuCom at TD Synnex, requesting a quote for AgileBits USA in response to an urgent request. The content is truncated, but the sender likely needs a prompt quote to fulfill their obligations.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["AgileBits USA"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for AgileBits USA",
+        "details": "Include all necessary details and pricing information",
+        "assignee": "CompuCom",
+        "deadline": "ASAP"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge the urgent request and provide a prompt quote with all necessary details.",
+    "qualityScore": 7.4,
+    "processingTime": 9.246,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xxozr9qeigy",
+    "contextualSummary": "A sales representative from TD Synnex's presales team is requesting a quote for AgileBits USA, referencing a specific order (TS-1818887), and emphasizing the urgency of the request.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["TS-1818887"],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for AgileBits USA by [insert deadline]",
+        "details": "Ensure the quote includes all necessary details and specifications.",
+        "assignee": "Sales Representative",
+        "deadline": "[Insert Date]"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the request and provide a detailed quote as soon as possible to meet the urgency.",
+    "qualityScore": 7.4,
+    "processingTime": 13.793,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xu1x4z8xj6u",
+    "contextualSummary": "The sender, Trevor Barker, is informing his colleagues about his upcoming PTO from March 18-31 and providing an alternate contact for emergencies.",
+    "workflowState": "WAITING",
+    "businessProcess": "Employee Notification/Availability Update",
+    "entities": {
+      "companies": ["HP"],
+      "people": ["Trevor Barker", "Kiki Wood"]
+    },
+    "actionItems": [
+      {
+        "task": "Update internal records with Trevor's PTO dates and alternate contact information",
+        "details": "Ensure all relevant teams are aware of the change to avoid missed calls or emails during his absence.",
+        "assignee": "HR/IT Department",
+        "deadline": "Before March 18"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt and confirm understanding of Trevor's PTO dates and alternate contact information.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.981,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xyqpsujb30x",
+    "contextualSummary": "The email is a request from CompuCom@tdsynnex.com for an urgent quote for AgileBits USA, likely in response to a previously discussed order or project.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["Not provided"],
+      "quote_numbers": ["Not provided"],
+      "case_numbers": ["Not provided"],
+      "part_numbers": ["Not provided"],
+      "companies": ["tdsynnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for AgileBits USA as soon as possible",
+        "details": "Include all necessary details such as pricing, delivery dates, and any other relevant information.",
+        "assignee": "CompuCom@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Respond promptly with a detailed quote and any additional information required to complete the order.",
+    "qualityScore": 8.6,
+    "processingTime": 13.567,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xw6rwgbl2o5",
+    "contextualSummary": "A quote for John Hancock is being reconfirmed with CAS numbers CAS-038704-B4P8K8 and CAS-101607-M2L2G3, with a reference to WQ147355050.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "quote_numbers": ["CAS-038704-B4P8K8", "CAS-101607-M2L2G3"],
+      "case_numbers": ["WQ147355050"],
+      "companies": ["John Hancock"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify quote details and confirm with John Hancock",
+        "details": "Confirm the accuracy of the quote and ensure all necessary information is included.",
+        "assignee": "Brian Kirk"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please confirm the quote details and provide an update on the status of this case.",
+    "qualityScore": 8.2,
+    "processingTime": 21.988,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xyru61i6lpp",
+    "contextualSummary": "A purchasing manager at a company is requesting an urgent quote for a specific part number (Z1FT000D5) from TD Synnex, indicating a potential order or procurement need.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["Z1FT000D5"],
+      "case_numbers": [],
+      "part_numbers": ["Z1FT000D5"],
+      "companies": ["TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for the requested part number (Z1FT000D5) as soon as possible",
+        "details": "Please ensure the quote includes all necessary details, such as pricing and lead time.",
+        "assignee": "CompuCom@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Respond promptly to confirm receipt of the request and provide a timely quote.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.119,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xxp6y86iyr6",
+    "contextualSummary": "A sales representative from TD Synnex's presales team is requesting a quote for AgileBits USA, indicating an urgent need for a price proposal to facilitate a potential sale.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["TS-1818887"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for AgileBits USA by [insert deadline]",
+        "details": "The sales representative needs a detailed price proposal to move the sale forward.",
+        "assignee": "Sales Team",
+        "deadline": "[Insert Date and Time]"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Respond promptly with a quote for AgileBits USA, highlighting any promotions or discounts that may be available.",
+    "qualityScore": 7.4,
+    "processingTime": 13.98,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xyrv0jd2zpa",
+    "contextualSummary": "A business email requesting a quote for AgileBits USA from CompuCom at TD Synnex, indicating urgency.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["AGILEBITS-USA-1234"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for AgileBits USA",
+        "details": "Include all necessary details and pricing information.",
+        "assignee": "CompuCom",
+        "deadline": "Next business day"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the request and provide a quote as soon as possible to meet the urgency.",
+    "qualityScore": 7.4,
+    "processingTime": 12.811,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1h17kbfczu",
+    "contextualSummary": "The email is from Alan Wu, a Strategic Account Manager at Onapsis, indicating he will be out of office for the week due to PTO and may experience delays in responding to messages.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "quote_numbers": ["#1234"],
+      "companies": ["TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to Alan as soon as possible, but not urgently, and provide any necessary information or clarification.",
+        "details": "Alan will respond when he returns from PTO, so there's no need for immediate action.",
+        "assignee": "None",
+        "deadline": "None"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the email and express appreciation for Alan's message.",
+    "qualityScore": 7.4,
+    "processingTime": 21.486,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1h9gmsfddp",
+    "contextualSummary": "The email is an automatic reply from Hudson McCarter at Optiv regarding a quote request for Methodist Firemon Renewal on 07/09/2025 (quote number 4261807), indicating limited access to email during PTO and requesting urgent texts.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["4261807"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Respond to Hudson via email upon return from PTO on 3/17",
+        "details": "Acknowledge receipt of quote request and express interest in processing the renewal",
+        "assignee": "Hudson McCarter",
+        "deadline": "Upon return from PTO"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Respond to Hudson via email upon return from PTO, acknowledging receipt of quote request and expressing interest in processing the renewal.",
+    "qualityScore": 7,
+    "processingTime": 15.989,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xweso7kgura",
+    "contextualSummary": "A quote request has been forwarded from Charles River to TD Synnex for a specific part (CAS-084393-K5C1V2) with an associated case number (J8J9Q7). The email requires follow-up and potential action on the quote.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["CAS-084393-K5C1V2"],
+      "case_numbers": ["J8J9Q7"],
+      "part_numbers": ["CAS-084393-K5C1V2"],
+      "companies": ["Charles River"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify quote details and confirm receipt with Charles River",
+        "details": "Confirm the quote amount, terms, and conditions to ensure accuracy.",
+        "assignee": "TD Synnex Quote Team",
+        "deadline": "Within 2 business days"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond to confirm receipt of the quote request and express interest in proceeding with the order.",
+    "qualityScore": 8.2,
+    "processingTime": 15.985,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xwet897bp93",
+    "contextualSummary": "A customer is requesting a quote for two items from Charles River: CAS-084393-K5C1V2 and CAS-102320-J8J9Q7. The email contains a truncated content section that requires clarification on the product details, pricing, and availability.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["CAS-084393-K5C1V2", "CAS-102320-J8J9Q7"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify product details and pricing for the requested items",
+        "details": "Confirm availability, pricing, and any applicable discounts or promotions.",
+        "assignee": "Sales Team",
+        "deadline": "Respond within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please confirm product details and pricing for the requested items to proceed with the quote request.",
+    "qualityScore": 7.4,
+    "processingTime": 15.387,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xz0j4latylu",
+    "contextualSummary": "A customer from CompuCom is requesting a quote for an urgent order (mp# 21ML0089US) with case number 11458363.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["21ML0089US"],
+      "case_numbers": ["11458363"],
+      "part_numbers": [],
+      "companies": ["CompuCom"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify quote request details and provide a quote within the next 24 hours",
+        "details": "Ensure all necessary information is accurate and up-to-date for a timely quote.",
+        "assignee": "Quote Team",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent quote request and confirm our team will provide a quote within the specified timeframe.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.399,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1mc48wkv66",
+    "contextualSummary": "A company is requesting a second quote for Optiv Quote Request Prime/Magellan Rx Imperva Renewal scheduled for February 28, 2025. The email contains an urgent tone and requires immediate attention.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["Optiv Quote Request"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Thales Group"]
+    },
+    "actionItems": [
+      {
+        "task": "Review and provide a second quote for the Optiv Quote Request Prime/Magellan Rx Imperva Renewal",
+        "details": "Ensure all necessary information is included in the quote request.",
+        "assignee": "khaleda.akbar@thalesgroup.com"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Please review and respond with a second quote for the Optiv Quote Request Prime/Magellan Rx Imperva Renewal by February 28, 2025.",
+    "qualityScore": 7.4,
+    "processingTime": 15.338,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xz6r4hddowu",
+    "contextualSummary": "The email is a response to an urgent quote request related to a specific case number (11441991). The sender, CompuCom, is providing information about the quote request and asking for clarification or further action.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11441991"],
+      "case_numbers": ["11441991"],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify quote request details and confirm availability of parts",
+        "details": "Please review the quote request and ensure that all required parts are available for shipping.",
+        "assignee": "CompuCom",
+        "deadline": "Next business day"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please confirm receipt of this email and provide an update on the status of the quote request.",
+    "qualityScore": 7.4,
+    "processingTime": 14.131,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1nk9srl4j9",
+    "contextualSummary": "The email is an automatic reply from Alex Simpson at TDS Nexxus, informing recipients that they are out of office and providing alternative contact information for pricing requests and escalations.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management/Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["F5Q-00930412"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Optiv Security", "Stephens, Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Reach out to F5NetworksSales or David.yarem@tdsynnex.com for pricing requests and escalations",
+        "details": "Contact alternative contacts for urgent matters",
+        "assignee": "",
+        "deadline": ""
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Respond to the sender when they return to office or contact the provided alternatives",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.694,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xz7t34llkns",
+    "contextualSummary": "A customer is requesting a quote for Sonic Automotive, likely related to purchasing parts or services from TD Synnex. The quote request is urgent, indicating a need for prompt attention.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["21HNSGJS00"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Sonic Automotive"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify quote request details and provide a quote within the specified timeframe",
+        "details": "Ensure accurate information is gathered to fulfill the customer's needs efficiently.",
+        "assignee": "CompuCom@tdsynnex.com",
+        "deadline": "Urgent: 1 business day"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the quote request and confirm a prompt response will be provided.",
+    "qualityScore": 7.4,
+    "processingTime": 14.001,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xz7u2cmfwpz",
+    "contextualSummary": "A business quote request from Sonic Automotive has been forwarded to CompuCom at TDS Nexgen, indicating a potential order or purchase opportunity that requires attention and processing.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["21HNSGJS00"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Sonic Automotive"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote request and confirm receipt with Sonic Automotive",
+        "details": "Confirm that CompuCom has received the quote request and understand the requirements.",
+        "assignee": "CompuCom",
+        "deadline": "Respond within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the quote request and express willingness to process it promptly.",
+    "qualityScore": 7.4,
+    "processingTime": 13.876,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1o6lwaik9k",
+    "contextualSummary": "The email is an automatic reply from Don Pugliese at Optiv Security, informing recipients that he is out of the office until March 4th and providing his cell phone number for urgent matters.",
+    "workflowState": "WAITING",
+    "businessProcess": "Support Case Management",
+    "entities": {
+      "companies": ["Optiv"],
+      "part_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "po_numbers": []
+    },
+    "actionItems": [
+      {
+        "task": "Respond to the sender or escalate to another team member if necessary",
+        "details": "The recipient needs to acknowledge receipt of the email and confirm their next steps.",
+        "assignee": "Recipient",
+        "deadline": "None"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the email and express understanding of Don's unavailability, with a plan to reach out upon his return.",
+    "qualityScore": 7,
+    "processingTime": 14.842,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1ofg63ujjf",
+    "contextualSummary": "Ameriprise is requesting quotes for Optiv, TD, and Broadcom products. The email contains an urgent tone and requires a prompt response to initiate the quote request process.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["list of quote numbers found"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Ameriprise"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to Ameriprise with the requested quote information and initiate the quote request process.",
+        "details": "Provide detailed product specifications, pricing, and any other relevant information required for the quotes.",
+        "assignee": "Allison.McKinney@tdsynnex.com",
+        "deadline": "Immediate"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Respond promptly to initiate the quote request process and ensure timely delivery of products.",
+    "qualityScore": 7.4,
+    "processingTime": 14.715,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1pmnvxpr7b",
+    "contextualSummary": "The email is a follow-up request for quotes from Ameriprise regarding Optiv/TD/Broadcom products, indicating an urgent need for procurement decisions.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["Optiv", "TD", "Broadcom"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Ameriprise"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify quotes from Ameriprise and provide updates on procurement progress",
+        "details": "Ensure accurate information and necessary documentation for timely decision-making.",
+        "assignee": "Procurement Team"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly to confirm receipt of quotes and initiate further discussion on product selection.",
+    "qualityScore": 8.2,
+    "processingTime": 21.309,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1pu52jak18",
+    "contextualSummary": "Ameriprise is requesting quotes from Optiv/TD/Broadcom for an unspecified product or service, prompting a prompt response to initiate the quote request process.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["list of quote numbers found"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Ameriprise", "Optiv", "TD", "Broadcom"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to Ameriprise with a confirmation of receipt and initiation of quote request process",
+        "details": "Acknowledge the email, confirm receipt, and express willingness to provide quotes from Optiv/TD/Broadcom.",
+        "assignee": "Christine.Beck-Dunbar@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Thank you for reaching out. We will initiate the quote request process and provide quotes from Optiv/TD/Broadcom as soon as possible.",
+    "qualityScore": 8.6,
+    "processingTime": 15.596,
+    "model": "llama3.2:3b"
   }
 ]
