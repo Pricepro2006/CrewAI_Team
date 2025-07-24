@@ -16545,5 +16545,505 @@
     "qualityScore": 7.4,
     "processingTime": 13.412,
     "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y6ejcywd91f",
+    "contextualSummary": "The email is a confirmation from Optiv regarding the delivery of F5 quotes to Brenda, indicating a successful transfer of information.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["Stephens F5"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quotes with Brenda to ensure they are accurate and complete.",
+        "details": "Confirm that the quotes have been delivered as requested.",
+        "assignee": "Brenda",
+        "deadline": "Today"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please confirm receipt of the F5 quotes with Brenda to ensure a smooth process.",
+    "qualityScore": 7,
+    "processingTime": 13.476,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y6gyrd3sbl0",
+    "contextualSummary": "The email is a request for a Fortinet quote from Optiv to Paige, indicating a potential sales or procurement process.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "quote_numbers": ["FTQ-3974934"],
+      "companies": ["Optiv"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote details and provide an update to Paige on the status of the request.",
+        "details": "Check the Fortinet website for available quotes, verify the PO/BO/SO number, and confirm the requested part numbers.",
+        "assignee": "Paige",
+        "deadline": "Within 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the quote request and express willingness to assist with the procurement process.",
+    "qualityScore": 7.4,
+    "processingTime": 14.008,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y6gz3xuje3i",
+    "contextualSummary": "The email is a follow-up request for a Fortinet quote from Optiv, indicating that they are awaiting a response to quote number FTQ-3974934.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["FTQ-3974934"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Respond to Optiv with the quote details or an estimated time for delivery",
+        "details": "Provide a professional response to acknowledge receipt of the request and offer assistance if needed.",
+        "assignee": "Quote Processing Team"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly with the quote details or an estimated time for delivery to ensure timely completion of the project.",
+    "qualityScore": 7,
+    "processingTime": 14.02,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xtp1zwmpobv",
+    "contextualSummary": "The email is a response to an urgent quote request, likely from a customer or internal stakeholder. The sender, buildamac@tdsynnex.com, is requesting more information about the quote and has truncated their content for analysis.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["list of quote numbers found"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Request full quote content from the sender",
+        "details": "To ensure accurate quote processing and provide a comprehensive response to the customer.",
+        "assignee": "buildamac@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent quote request and express willingness to process the quote as soon as possible.",
+    "qualityScore": 7,
+    "processingTime": 13.875,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y6jbq8sceb3",
+    "contextualSummary": "The email is a notification from Optiv's team regarding a Barracuda Cloud DataProtection renewal quote request, indicating that the current request is too early and that a new quote will be provided closer to the renewal date in September.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["4313031"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Optiv"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the renewal quote request status and confirm the new quote date with Optiv's team.",
+        "details": "Confirm that the new quote will be provided closer to the renewal date in September, as indicated by Optiv's team.",
+        "assignee": "Dani",
+        "deadline": "Confirm with Optiv's team ASAP"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Thank you for the update. Can you please confirm the new quote date and any potential price changes between now and September?",
+    "qualityScore": 7.4,
+    "processingTime": 16.93,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y6mdj7a8utd",
+    "contextualSummary": "{\n  \"contextual_summary\": \"A quote has been sent to Marriott for a high-priority project, indicating that an updated quote is required. The sender thanks everyone involved in the process, suggesting a",
+    "workflowState": "UNKNOWN",
+    "businessProcess": "General",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Manual review required",
+    "qualityScore": 4,
+    "processingTime": 14.603,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y6ng4cxqwby",
+    "contextualSummary": "The email is a follow-up from Optiv regarding an Infoblox quote for Marriott Intl's hardware refresh (Q-533757). The sender is questioning the absence of shipping fees on the quote and requests clarification.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["Q-533757"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Marriott Intl"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify shipping fees on the quote and provide clarification to Optiv",
+        "details": "Check the Infoblox quote for Q-533757 and confirm if shipping fees are included or not.",
+        "assignee": "Roger (or designated person)",
+        "deadline": "Respond within 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge the query, provide a brief explanation regarding the shipping fees on the quote, and offer to clarify further if needed.",
+    "qualityScore": 7.4,
+    "processingTime": 16.303,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xyk890l3f5t",
+    "contextualSummary": "The email is a request for a quote from CompuCom@tdsynnex.com regarding an urgent matter related to New York Life insurance (case number: 11532157) with PO/BO/SO numbers and part/SKU numbers mentioned.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["4RA85F#BGJ"],
+      "quote_numbers": [],
+      "case_numbers": ["11532157"],
+      "part_numbers": [],
+      "companies": ["New York Life"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote request and provide a response to CompuCom@tdsynnex.com with the requested information.",
+        "details": "Ensure all necessary details are included in the response, including PO/BO/SO numbers and part/SKU numbers.",
+        "assignee": "Quote Processing Team",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Respond promptly to confirm receipt of the quote request and provide an estimated timeline for processing the quote.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.95,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y17doyft2vu",
+    "contextualSummary": "{\n  \"contextual_summary\": \"The email is an automatic reply from Kevin Mingolello Sr., Inside Account Executive at TD SYNNEX, informing the recipient that he is out of the office and will return on 4/3",
+    "workflowState": "UNKNOWN",
+    "businessProcess": "General",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Manual review required",
+    "qualityScore": 4,
+    "processingTime": 15.782,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2yd6pjcgmqkp",
+    "contextualSummary": "The email is a follow-up request for standard quotes from TD Worldwide, indicating an urgent need for processing. The sender likely requires assistance in obtaining or verifying PO numbers, quote numbers, case numbers, part numbers, and company information to facilitate the quote request process.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["1234567890", "2345678901"],
+      "quote_numbers": ["Q001", "Q002"],
+      "case_numbers": ["C001", "C002"],
+      "part_numbers": ["P001", "P002"],
+      "companies": ["TD Worldwide", "TD Canada"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify PO numbers and quote numbers with the relevant departments",
+        "details": "Ensure accuracy of PO and quote information to avoid delays in processing.",
+        "assignee": "InsightHPI Team",
+        "deadline": "End of day today"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please acknowledge receipt of this email and confirm your availability to assist with the quote request process.",
+    "qualityScore": 8.6,
+    "processingTime": 15.741,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2yd73bg4hzov",
+    "contextualSummary": "A standard quote request has been sent to a company with an urgent deadline, requiring immediate attention from the recipient.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["12345", "67890"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["TD Worldwide"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify and confirm the quote request details with the customer",
+        "details": "Ensure all information is accurate and complete before proceeding with the quote.",
+        "assignee": "John Doe (Quote Processor)",
+        "deadline": "End of day today"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Respond promptly to confirm receipt of the standard quote request and express urgency regarding the deadline.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 8.818,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2yd763revpre",
+    "contextualSummary": "The email is a follow-up regarding a standard quote request that requires urgent attention. The sender has truncated their content for analysis, but the subject line indicates a sense of urgency. The recipient should review the original message to understand the specific requirements and respond accordingly.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Review the original message and respond with a quote request confirmation or clarification as needed.",
+        "details": "The recipient should carefully review the content of the email to understand the requirements and provide an appropriate response.",
+        "assignee": "Recipient",
+        "deadline": "Urgent attention required"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please confirm receipt of this message and indicate your readiness to proceed with the quote request.",
+    "qualityScore": 6.6,
+    "processingTime": 10.09,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2m00y2jwv3",
+    "contextualSummary": "The email is a follow-up inquiry from William.Ramsay@Insight.com regarding a quote deal with ID # CAS-091008-N7X7. The content is truncated, but the sender appears to be seeking a quote or price confirmation for an unspecified product or service.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["CAS-091008-N7X7"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote or price confirmation for the specified deal ID",
+        "details": "Please respond with a detailed quote or price breakdown for CAS-091008-N7X7.",
+        "assignee": "Insight Team (William.Ramsay@Insight.com)",
+        "deadline": "Respond within 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please respond with a quote or price confirmation for the specified deal ID, including any relevant details or next steps.",
+    "qualityScore": 7,
+    "processingTime": 15.271,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2m1eczff5g",
+    "contextualSummary": "The email is a follow-up inquiry from Harrison.Sun regarding a quote deal with ID CAS-091008-N7X7, requesting a quote and possibly other information.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["CAS-091008-N7X7"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for the requested deal",
+        "details": "Please include all relevant details and pricing information.",
+        "assignee": "Harrison.Sun",
+        "deadline": "Next business day"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "We will provide a quote for the requested deal as soon as possible.",
+    "qualityScore": 7,
+    "processingTime": 12.696,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2m2ochpwlh",
+    "contextualSummary": "The email is a follow-up inquiry regarding a quote deal with ID CAS-091008-N7X7, requesting a quote from TD Synnex.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["CAS-091008-N7X7"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for the requested deal",
+        "details": "Please include all necessary details and specifications.",
+        "assignee": "Surface",
+        "deadline": "Next business day"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "We appreciate your follow-up inquiry. Please allow [X] working hours for our team to process the quote.",
+    "qualityScore": 7,
+    "processingTime": 12.988,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2m635wfm7a",
+    "contextualSummary": "The email is requesting a quote deal ID from Alex.Sarduy@insight.com for a specific order (CAS-091008-N7X7), likely related to a business-to-business transaction.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["CAS-091008-N7X7"],
+      "quote_numbers": ["CAS-091008-N7X7"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote deal ID and provide confirmation to Alex.Sarduy@insight.com",
+        "details": "Ensure accuracy of the quote deal ID and clarify any discrepancies.",
+        "assignee": "Internal Team Member (e.g., Sales or Operations)",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly to confirm receipt of the email and request clarification on the quote deal ID.",
+    "qualityScore": 7.4,
+    "processingTime": 14.553,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xxm693w0629",
+    "contextualSummary": "The email is a response to an urgent quote request for MS331DN in New York. The sender, EMT@tdsynnex.com, is likely requesting clarification or updates on the status of the quote.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["MS331DN"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Confirm the quote status and provide an update on the expected delivery date",
+        "details": "Please confirm if the quote has been processed and if there are any changes to the original quote.",
+        "assignee": "EMT@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please provide an update on the status of the quote as soon as possible.",
+    "qualityScore": 7,
+    "processingTime": 13.45,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1ahekg6rdh",
+    "contextualSummary": "The email is a follow-up to a quote request for remote access services from Allied Solutions, NinjaOne, and Optiv (TD Synnex). The sender provides copies of the quotes and requests Liz's review.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["4439931"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Allied Solutions", "NinjaOne", "Optiv (TD Synnex)"]
+    },
+    "actionItems": [
+      {
+        "task": "Review and verify the quotes provided by Evan.",
+        "details": "Check for any discrepancies or errors in the quotes.",
+        "assignee": "Liz",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please review the attached quotes and confirm receipt. If you have any questions or concerns, please don't hesitate to reach out.",
+    "qualityScore": 8.2,
+    "processingTime": 15.668,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y34ym4neh25",
+    "contextualSummary": "A sales team at TDS Nexxus is requesting assistance from Insight to obtain a quote for AmTrust insurance products. The email is urgent, indicating a time-sensitive requirement.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["AmTrust Quote"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Insight", "TDS Nexxus"]
+    },
+    "actionItems": [
+      {
+        "task": "Obtain a quote for AmTrust insurance products from Insight",
+        "details": "Contact the sales team at Insight to discuss requirements and obtain a quote.",
+        "assignee": "Surface Team",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Respond promptly to confirm receipt of the email and request assistance from the sales team at Insight.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.566,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xxmzhve8eop",
+    "contextualSummary": "A customer inquiry about a quote for a large deal (46501968 v.5) from Wilhelmksen Global Business Services, with a request to provide a quote attachment.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["46501968"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["WILHELMSEN GLOBAL BUSINESS SERVICES"]
+    },
+    "actionItems": [
+      {
+        "task": "Send a quote attachment to the customer",
+        "details": "Attach the requested quote for Wilhelmksen Global Business Services (46501968 v.5) and respond with confirmation.",
+        "assignee": "Sierra Jacobsen",
+        "deadline": "Same day"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Thank you for your inquiry, please find the attached quote for Wilhelmksen Global Business Services (46501968 v.5). We appreciate your business.",
+    "qualityScore": 7.4,
+    "processingTime": 21.895,
+    "model": "llama3.2:3b"
   }
 ]
