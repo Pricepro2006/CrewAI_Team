@@ -17804,5 +17804,2293 @@
     "qualityScore": 8.6,
     "processingTime": 15.596,
     "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1pydywh7up",
+    "contextualSummary": "{\n  \"contextual_summary\": \"The email is a quote request from Ameriprise for Optiv/TD/Broadcom products, indicating a potential business opportunity or order management process.\",\n  \"workflow_state\": \"",
+    "workflowState": "UNKNOWN",
+    "businessProcess": "General",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Manual review required",
+    "qualityScore": 4,
+    "processingTime": 21.222,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xzdhas857bj",
+    "contextualSummary": "A customer at TD Synnex is requesting a quote for a Deutsche Bank adapter cable with DisplayPort/HDMI connectivity, case number 11353067, and PO/BO/SO number 36922.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["36922"],
+      "quote_numbers": ["mp# 36922"],
+      "case_numbers": ["11353067"],
+      "part_numbers": [],
+      "companies": ["Deutsche Bank"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote request and provide a quote to the customer within the next 24 hours.",
+        "details": "Ensure all necessary information is gathered and provided in the quote, including any applicable discounts or promotions.",
+        "assignee": "CompuCom",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the quote request and express a commitment to providing a timely response.",
+    "qualityScore": 8.2,
+    "processingTime": 15.478,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xzdn5eizc25",
+    "contextualSummary": "A customer is requesting a quote for a Deutsche Bank adapter cable with DisplayPort and HDMI connectivity, case number 11353067, via CompuCom at TDS Nexgen.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["mp# 36922"],
+      "case_numbers": ["11353067"],
+      "part_numbers": ["Lindy Adapter cable DisplayPort / HDMI 2 m"],
+      "companies": ["Deutsche Bank"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote request and provide a response to CompuCom within 24 hours.",
+        "details": "Ensure all necessary information is gathered before providing an update on the status of the quote request.",
+        "assignee": "CompuCom",
+        "deadline": "Within 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the quote request and confirm that CompuCom will review the information and provide an update on the status of the quote within the specified timeframe.",
+    "qualityScore": 8.2,
+    "processingTime": 11.66,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1sqwfb8714",
+    "contextualSummary": "A quote request has been received for Dematic_Blackberry_Spark Suite Renewal on April 16, 2025, but the email originated outside of TD SYNNEX, prompting a request to keep the organization and partners safe.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["4209241"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote request and its legitimacy before responding.",
+        "details": "Check with Optiv's internal systems to confirm the quote request and ensure it aligns with TD SYNNEX's policies.",
+        "assignee": "Chris.Shrader@optiv.com",
+        "deadline": "Respond within 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the quote request and express interest in reviewing it, while emphasizing the need to verify its legitimacy.",
+    "qualityScore": 7,
+    "processingTime": 17.031,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xv49dy32ija",
+    "contextualSummary": "A customer from Deutsche Bank is requesting a quote for an adapter cable displayPort/HDMI 2m in a case with PO/BO/SO number 11353067.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["11353067"],
+      "quote_numbers": [],
+      "case_numbers": ["36922"],
+      "part_numbers": [],
+      "companies": ["Deutsche Bank"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify product availability and provide a quote to the customer",
+        "details": "Check if the adapter cable is in stock and calculate the total cost including shipping.",
+        "assignee": "CompuCom",
+        "deadline": "Next business day"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the quote request and provide a detailed response with product availability and pricing information.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.495,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1t0uh5wft8",
+    "contextualSummary": "The sender, Kari Kalogridis, is unavailable due to travel from February 18th and will respond to emails after that date. Urgent matters should be directed to specific Symantec contact numbers.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["PO-44000079962125336"],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Optum"]
+    },
+    "actionItems": [
+      {
+        "task": "Direct urgent matters to Symantec contacts",
+        "details": "Reach out to Symantec and CarbonBlack for quote and order inquiries.",
+        "assignee": "Symantec and CarbonBlack teams",
+        "deadline": "None"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please wait for Kari's return on February 18th or contact Symantec for assistance.",
+    "qualityScore": 7.4,
+    "processingTime": 16.18,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xzgq5yrdizo",
+    "contextualSummary": "The email is a response to an urgent request regarding Samsung questions and quote requests from a customer. The sender is requesting assistance in processing the quotes and providing answers to the customer's queries.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Samsung"]
+    },
+    "actionItems": [
+      {
+        "task": "Research and provide answers to Samsung questions",
+        "details": "Investigate the customer's queries and respond with accurate information",
+        "assignee": "CompuCom Team",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge the urgent request and express willingness to assist in resolving the customer's queries.",
+    "qualityScore": 7,
+    "processingTime": 13.669,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xzhyvakkbyq",
+    "contextualSummary": "A customer is requesting a quote for a Deutsche Bank-quoted part (Lindy Adapter cable) with specific displayPort/HDMI requirements. The request includes a case number and requires urgent attention.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["mp# 36922"],
+      "case_numbers": ["11353067"],
+      "part_numbers": ["Lindy Adapter cable DisplayPort / HDMI 2 m"],
+      "companies": ["Deutsche Bank"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote request and ensure all requirements are met before proceeding with a quote.",
+        "details": "Review the case number, part requirements, and any additional information provided by the customer.",
+        "assignee": "CompuCom",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please acknowledge receipt of the quote request and confirm that you will review the requirements to provide a timely quote.",
+    "qualityScore": 8.2,
+    "processingTime": 15.723,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xv57iv8z78n",
+    "contextualSummary": "A customer is requesting a quote for a Deutsche Bank-approved adapter cable displayPort/HDMI 2m case number 11353067 (mp# 36922), indicating an urgent business process related to order management or support case resolution.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing and Support Case Resolution",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["mp# 36922"],
+      "case_numbers": ["11353067"],
+      "part_numbers": [],
+      "companies": ["Deutsche Bank"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote request and provide a detailed response to the customer within the next 24 hours.",
+        "details": "Ensure all necessary information is verified, including the part number (if applicable) and any specific requirements or specifications for the adapter cable.",
+        "assignee": "Quote Processing Team",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly to acknowledge receipt of the quote request, confirming that the team is working on a detailed response and providing an estimated time for delivery.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.714,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y1xtlgye1k5",
+    "contextualSummary": "A customer is requesting a quote for Fortinet products, referencing Quote ID # FTQ-3640686, and the sender is responding to this request.",
+    "workflowState": "IN_PROGRESS",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "quote_numbers": ["FTQ-3640686"],
+      "companies": ["Fortinet"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a detailed quote for Fortinet products within the next 24 hours.",
+        "details": "Ensure all required information is included, such as product specifications and pricing.",
+        "assignee": "Sales Team",
+        "deadline": "2023-12-15"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please confirm receipt of the quote request and provide a detailed quote for Fortinet products by the deadline.",
+    "qualityScore": 7.4,
+    "processingTime": 13.078,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2242b1y4pu",
+    "contextualSummary": "A customer has requested a quote for Carbon Black from Ryerson, Inc., which is expiring on January 18th, 2025. The sender, James, is currently out of the office and will follow up upon his return.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["Ryerson, Inc."],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Ryerson, Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to the customer with a quote or request for more information",
+        "details": "Provide a quote or ask for additional details to complete the order.",
+        "assignee": "James Soliday",
+        "deadline": "Upon return from out of office"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please provide more information about the required Carbon Black quantity and any specific requirements.",
+    "qualityScore": 7.4,
+    "processingTime": 14.943,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xzmic614e1q",
+    "contextualSummary": "A customer is requesting an urgent quote for a specific product or service, likely related to a purchase order (PO) or business opportunity (BO). The email appears to be a response to a previous inquiry, and the sender is providing an update on the status of the quote.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["#1234"],
+      "quote_numbers": ["Q-5678"],
+      "case_numbers": [],
+      "part_numbers": ["SKU-9012"],
+      "companies": ["CompuCom"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide an updated quote with the requested product or service details",
+        "details": "Please ensure all necessary information is included to facilitate a timely and accurate response.",
+        "assignee": "Sales Team",
+        "deadline": "End of day today"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Thank you for your patience. We are working diligently to provide an updated quote as soon as possible.",
+    "qualityScore": 8.2,
+    "processingTime": 15.482,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xzmj0s39qtt",
+    "contextualSummary": "CompuCom responds to an urgent quote request related to SE/APC services, likely for a customer or internal order management process.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["SE-12345", "APC-67890"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify quote details and provide an updated quote",
+        "details": "Confirm the requested services, pricing, and any additional requirements.",
+        "assignee": "CompuCom Team",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond with an updated quote or request clarification on the customer's requirements.",
+    "qualityScore": 7.4,
+    "processingTime": 9.155,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y251dyb1jmp",
+    "contextualSummary": "The email is an automatic reply from Optiv regarding a quote request for Dematic_Blackberry_Spark Suite Renewal, received outside of TD SYNNEX's organization. The sender is unavailable until January 21st and suggests contacting Nikki on the OPTIV-COS-R-TEAM for urgent matters.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["4209241"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Respond to Nikki on OPTIV-COS-R-TEAM for urgent matters",
+        "details": "Acknowledge the receipt of the quote request and express interest in proceeding with the renewal.",
+        "assignee": "Nikki",
+        "deadline": "Upon receiving the email"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Thank you for reaching out. We will review the quote request and respond upon our return on January 21st.",
+    "qualityScore": 7,
+    "processingTime": 16.558,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y25ho4x7nnb",
+    "contextualSummary": "Ameriprise is requesting quotes from Optiv for Optiv/TD/Broadcom products, indicating a potential order or procurement process. The email's urgency suggests a time-sensitive request.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["list of quote numbers found"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Ameriprise"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to Ameriprise with a quote request or provide an estimated delivery timeline",
+        "details": "Provide detailed information about the requested products and any necessary documentation.",
+        "assignee": "Optiv Quote Team"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge Ameriprise's request and express willingness to provide a quote or estimated delivery timeline.",
+    "qualityScore": 7.4,
+    "processingTime": 14.109,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y27s19meanp",
+    "contextualSummary": "The email is an automatic reply from Kari Kalogridis at TDS Nexxus, indicating she is out of the office (OOO) until January 13th and will respond to emails upon her return. The email provides contact information for urgent matters and general inquiries.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management/Support Case",
+    "entities": {
+      "companies": ["Celanese International"],
+      "part_numbers": ["Site ID 2480809"]
+    },
+    "actionItems": [
+      {
+        "task": "Wait for Kari's return and respond to the email upon receipt of her response.",
+        "details": "Monitor the email for a response from Kari Kalogridis after January 13th.",
+        "assignee": "None",
+        "deadline": "Upon receipt of Kari's response"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the email and wait for Kari's return to respond with further information.",
+    "qualityScore": 7.4,
+    "processingTime": 15.84,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvd4wd5w6vj",
+    "contextualSummary": "A customer from Lenovo is seeking an urgent quote for a commercial project with Case Number: 11153325, requiring immediate attention from Compucom.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11153325"],
+      "case_numbers": ["11153325"],
+      "part_numbers": [],
+      "companies": ["Lenovo"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide an urgent quote for Case Number: 11153325",
+        "details": "Ensure all necessary information is gathered and the quote is accurate and complete.",
+        "assignee": "Mandi.Moragne@compucom.com"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent request and confirm that a quote will be provided promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.323,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2f3jawvppl",
+    "contextualSummary": "{\n  \"contextual_summary\": \"The email is an automatic reply from Amber Krakowski, a Client Director at Optiv, indicating her out-of-office status during the holiday period. She provides alternative con",
+    "workflowState": "UNKNOWN",
+    "businessProcess": "General",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Manual review required",
+    "qualityScore": 4,
+    "processingTime": 15.207,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2f414jlzam",
+    "contextualSummary": "The email is an automatic reply from Carly Daugherty at Optiv regarding a renewal polarity quote request for 3M (4165113). The sender is outside of TD SYNNEX and requests help in keeping the organization safe. Carly will be out of office due to illness, but urgent matters can be directed to TeamCruz@Optiv.com.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["4165113"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["3M"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote request and contact Carly's team for assistance",
+        "details": "Check if the quote request is legitimate and reach out to TeamCruz@Optiv.com for support.",
+        "assignee": "Recipient of the email",
+        "deadline": null
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond to acknowledge receipt of the email and express interest in verifying the quote request.",
+    "qualityScore": 7.4,
+    "processingTime": 16.658,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2g7x6lfmoa",
+    "contextualSummary": "A client is out of office for the holiday and requests urgent matters to be directed to their cell phone number.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "companies": ["U.S. Bank", "Optiv"],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "po_numbers": []
+    },
+    "actionItems": [
+      {
+        "task": "Redirect urgent matters to the client's cell phone number",
+        "details": "The client is unavailable until December 27 and needs immediate attention.",
+        "assignee": "Client Director (Amber Krakowski)",
+        "deadline": "Immediate"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Please call Amber's cell phone number at (612) 239-7222 for urgent matters.",
+    "qualityScore": 7.4,
+    "processingTime": 14.389,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvde462cw9e",
+    "contextualSummary": "The email is a reply to an urgent quote request for a specific case (11282299) with a unique order number (6SG43UT). The sender from TD Synnex is requesting quotes and providing context about the order.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["6SG43UT"],
+      "quote_numbers": [],
+      "case_numbers": ["11282299"],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide quotes for the specified case and order number",
+        "details": "Ensure accurate product information and pricing are included in the quote.",
+        "assignee": "Quote Request Team",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please provide a detailed quote for the specified case and order number, including accurate product information and pricing.",
+    "qualityScore": 7.4,
+    "processingTime": 14.497,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2hfm5ontz2",
+    "contextualSummary": "The email is a response to a quote request from Boyd Gaming, requiring immediate attention to provide an ASAP quote. The sender, Brian Miller, is likely a sales representative or account manager at TDS Nexgen, and the recipient is probably a procurement officer or purchasing manager at Boyd Gaming.",
+    "workflowState": "IN_PROGRESS",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["Quote Number"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Boyd Gaming"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a detailed quote to Boyd Gaming ASAP",
+        "details": "Ensure all necessary information is included, and the quote meets TDS Nexgen's standard terms.",
+        "assignee": "Brian Miller",
+        "deadline": "Within the hour"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the request and confirm that a quote will be provided promptly.",
+    "qualityScore": 7.4,
+    "processingTime": 14.352,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2hg3qmnayb",
+    "contextualSummary": "The email is an out-of-office notification from Matthew Garrison at TDS Nexxus, informing recipients that he will be unavailable starting December 23rd and providing an alternative contact for immediate assistance.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management/Quote Processing",
+    "entities": {
+      "quote_numbers": ["Quote to Boyd Gaming"],
+      "companies": ["Boyd Gaming"]
+    },
+    "actionItems": [
+      {
+        "task": "Contact Sam Boscoe at TDS Nexxus for immediate assistance with the quote.",
+        "details": "Sam will be able to provide support and address any urgent matters related to the quote.",
+        "assignee": "Sam Boscoe",
+        "deadline": null
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please reach out to Sam Boscoe at TDS Nexxus for assistance with your quote.",
+    "qualityScore": 7.4,
+    "processingTime": 14.006,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvde8mrjwmk",
+    "contextualSummary": "A customer is requesting a quote for an order with case number 11282299, referencing a part number (6SG43UT) and asking for urgent processing.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["NYL"],
+      "case_numbers": ["11282299"],
+      "part_numbers": ["6SG43UT"],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify quote request details and provide a quote within the specified timeframe",
+        "details": "Ensure all necessary information is accurate and complete before providing a quote.",
+        "assignee": "Carlos.Arana@tdsynnex.com (sender)",
+        "deadline": "Urgent: Please respond within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Please confirm receipt of this urgent quote request and provide a quote as soon as possible.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.493,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvdff9n6css",
+    "contextualSummary": "The email is a response to an urgent quote request for a specific part number (6SG43UT) associated with case number 11282299. The sender, CompuCom from TD Synnex, requests quotes and needs further action.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["NYL"],
+      "case_numbers": ["11282299"],
+      "part_numbers": ["6SG43UT"],
+      "companies": ["TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide quotes for the requested part number (6SG43UT) and submit to CompuCom",
+        "details": "Include all relevant information, such as pricing and delivery details.",
+        "assignee": "CompuCom",
+        "deadline": "Urgent: Please respond within 24 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the quote request and express willingness to provide quotes for the requested part number.",
+    "qualityScore": 8.2,
+    "processingTime": 15.187,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvdg68rnu5q",
+    "contextualSummary": "A customer is requesting a quote for an order with case number 11282299 (mp# 6SG43UT), indicating a need for urgent processing.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11282299"],
+      "case_numbers": ["11282299"],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for the order with case number 11282299 (mp# 6SG43UT) as soon as possible.",
+        "details": "Ensure all necessary information is gathered and the quote is accurate before submission.",
+        "assignee": "Quote Team",
+        "deadline": "Urgent: Quote required within the next 24 hours."
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the request and confirm that a quote will be provided promptly, with an estimated completion time of 24 hours or less.",
+    "qualityScore": 7.4,
+    "processingTime": 14.815,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvdhrpnmdqv",
+    "contextualSummary": "The email is a response to an urgent quote request for a specific part number (6SG43UT) associated with case number 11282299, likely from a purchasing or procurement process.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["NYL"],
+      "case_numbers": ["11282299"],
+      "part_numbers": ["6SG43UT"],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for the requested part number (6SG43UT) and submit it to the customer by [insert deadline].",
+        "details": "Ensure all necessary information is included in the quote, such as pricing, lead time, and any applicable discounts.",
+        "assignee": "CompuCom Team Lead",
+        "deadline": "End of day tomorrow"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent quote request and confirm that a quote will be provided by the specified deadline.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.203,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y03jltexvjx",
+    "contextualSummary": "The email is a response to an urgent quote case number 11283917, likely related to order management or quote processing within the company.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11283917"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify quote details and provide an update on the status of case number 11283917",
+        "details": "Please review the quote and confirm if there are any changes or updates to report.",
+        "assignee": "CompuCom Team",
+        "deadline": "Same day, by end of business"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please acknowledge receipt of this email and confirm your plan for addressing the quote case number 11283917.",
+    "qualityScore": 7,
+    "processingTime": 14.004,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y0851jc8cvd",
+    "contextualSummary": "The email is a response to an urgent Mitre quote case number 11240882, indicating a critical business process (Quote Processing) that requires immediate attention.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11240882"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify quote details and provide update on status",
+        "details": "Review the Mitre quote case number 11240882 to ensure all information is accurate and up-to-date.",
+        "assignee": "Recipient (not specified)",
+        "deadline": "Urgent: Please respond within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Please confirm receipt of this email and provide an update on the status of Mitre quote case number 11240882.",
+    "qualityScore": 7,
+    "processingTime": 14.055,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y08bha7x077",
+    "contextualSummary": "A customer is requesting an urgent quote for a Mitre case number 11240882, indicating a need for prompt attention to resolve the issue.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11240882"],
+      "case_numbers": ["11240882"],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide a detailed quote for the Mitre case number 11240882 as soon as possible",
+        "details": "Ensure all necessary information is included in the quote to facilitate timely resolution.",
+        "assignee": "CompuCom Team Lead",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent request and provide a prompt estimate for the Mitre quote.",
+    "qualityScore": 7.4,
+    "processingTime": 9.615,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y08g9yzdo6r",
+    "contextualSummary": "A customer is requesting an urgent quote for a specific case number (11240882), likely indicating a need for timely procurement or purchasing decision.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11240882"],
+      "case_numbers": ["11240882"],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify quote details and provide an estimated delivery date",
+        "details": "Confirm the accuracy of the requested quote and provide a realistic timeline for procurement or purchasing.",
+        "assignee": "CompuCom Team",
+        "deadline": "Next business day"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent request and confirm that we will expedite the quote process to meet the deadline.",
+    "qualityScore": 7.4,
+    "processingTime": 9.575,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y08n7g4iolx",
+    "contextualSummary": "A customer has requested an urgent quote for a Mitre case number 11240882, indicating a potential sales or procurement opportunity that requires prompt attention.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11240882"],
+      "case_numbers": ["11240882"],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide a detailed quote for the Mitre case number 11240882 as soon as possible",
+        "details": "Ensure all necessary information is included in the quote, such as product specifications and pricing.",
+        "assignee": "Sales Team Lead",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent request and provide an estimated timeline for providing the quote.",
+    "qualityScore": 7.4,
+    "processingTime": 9.918,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2kmtht3z1d",
+    "contextualSummary": "Fortinet is recalling a quote message due to potential security risks, urging recipients to exercise caution when interacting with unsolicited emails.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "quote_numbers": ["TD SYNNEX Quote-FTQ-3431555"],
+      "companies": ["Fortinet"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the authenticity of the quote message before responding or taking any action.",
+        "details": "Check for any suspicious links, attachments, or formatting that may indicate phishing or malware.",
+        "assignee": "Ben Mcdaniel",
+        "deadline": "None"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond to the sender with a message indicating awareness of the recall and expressing caution when dealing with unsolicited emails.",
+    "qualityScore": 7.4,
+    "processingTime": 17.07,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y0dg0ge3djv",
+    "contextualSummary": "A request for a quote is made for HSS urgent, indicating a need for prompt procurement or delivery of goods/services.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["HSS"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for HSS urgent as soon as possible",
+        "details": "Include all necessary details and specifications for the quote",
+        "assignee": "CompuCom",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Please confirm receipt of this request and indicate your availability to provide a quote.",
+    "qualityScore": 7,
+    "processingTime": 12.395,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y0dkrkljd6i",
+    "contextualSummary": "A sales representative from CompuCom is requesting a quote for an urgent order (HSS) through TD Synnex. The email aims to expedite the procurement process by providing necessary information and assigning tasks.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["123456789", "987654321"],
+      "quote_numbers": ["Q12345", "Q67890"],
+      "case_numbers": ["CASE-1234", "CASE-5678"],
+      "part_numbers": ["PC-101", "PC-202"],
+      "companies": ["TD Synnex", "CompuCom"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for the urgent order by EOD today",
+        "details": "Ensure all necessary information is included in the quote, including pricing and delivery dates.",
+        "assignee": "Sales Representative (CompuCom)",
+        "deadline": "End of Day Today"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order request and confirm a quote will be provided by EOD today.",
+    "qualityScore": 8.6,
+    "processingTime": 11.732,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2luayhk60g",
+    "contextualSummary": "The email is an automatic reply from Kari Kalogridis at TDS Nexxus regarding a delayed response due to being out of office (OOO) until December 12th. The recipient can contact Broadcom or Symantec for urgent matters, and general inquiries should be directed to other contacts.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management/Quote Processing",
+    "entities": {
+      "companies": ["TDS Nexxus", "Chubb", "Broadcom"],
+      "part_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "po_numbers": []
+    },
+    "actionItems": [
+      {
+        "task": "Reach out to Broadcom or Symantec for urgent matters",
+        "details": "Contact Broadcom at broadcombd@tdsynnex.com or Symantec at Symantecandcarbonblackquotes@tdsynnex.com",
+        "assignee": "Recipient",
+        "deadline": "N/A"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Respond to acknowledge receipt of the email and request a revised timeline for the renewal request.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.749,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvge2j2jdc2",
+    "contextualSummary": "A customer is requesting an urgent quote for a specific order case number (11253936), likely requiring swift attention to meet their needs.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11253936"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide an urgent quote for the specified order case number (11253936) as soon as possible.",
+        "details": "Ensure all relevant information is gathered to ensure accuracy and completeness of the quote.",
+        "assignee": "Michael Corcino",
+        "deadline": "ASAP"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent request and confirm that a quote will be provided promptly.",
+    "qualityScore": 7,
+    "processingTime": 13.274,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvgjcco1eus",
+    "contextualSummary": "The email is a response to an urgent quote request with case number 11253936, likely from a customer or internal stakeholder seeking a prompt quote for a specific order.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["Not specified"],
+      "quote_numbers": ["11253936"],
+      "case_numbers": ["11253936"],
+      "part_numbers": ["Not specified"],
+      "companies": ["Not specified"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for the requested order as soon as possible",
+        "details": "Ensure all necessary information is gathered and calculations are accurate to meet the customer's deadline.",
+        "assignee": "Quote Team/Team Lead",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the quote request and confirm that a team member will review the order for a prompt quote.",
+    "qualityScore": 8.6,
+    "processingTime": 14.778,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y0glnwqk2wf",
+    "contextualSummary": "The email is a follow-up on an urgent quote case number 11253936, requesting a quote from CompuCom at TDS Nexgen.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["No PO/BO/SO numbers found"],
+      "quote_numbers": ["11253936"],
+      "case_numbers": ["11253936"],
+      "part_numbers": ["No part/SKU numbers found"],
+      "companies": ["TDS Nexgen"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for the specified case number",
+        "details": "Please ensure the quote includes all necessary details and is accurate.",
+        "assignee": "CompuCom",
+        "deadline": "Next business day"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent request and confirm a quote will be provided by the next business day.",
+    "qualityScore": 8.6,
+    "processingTime": 14.262,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvh6o242q4f",
+    "contextualSummary": "The email is a response to an urgent quote request with case number 11253936, likely related to order management or support case processing.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["Not specified"],
+      "quote_numbers": ["11253936"],
+      "case_numbers": ["11253936"],
+      "part_numbers": ["Not specified"],
+      "companies": ["Not specified"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for the requested part",
+        "details": "Please review the order details and provide a quote as soon as possible.",
+        "assignee": "Page.West@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "We will expedite the quote process to ensure timely delivery.",
+    "qualityScore": 8.6,
+    "processingTime": 12.717,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y0gokk0ipk8",
+    "contextualSummary": "A quote request has been received for SALUTE MISSION CRITICAL, LLC part#21M3000PUS, indicating a potential order or purchase. The email is requesting a response from the sender (CompuCom@tdsynnex.com) to confirm the quote details.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["part#21M3000PUS"],
+      "case_numbers": [],
+      "part_numbers": ["part#21M3000PUS"],
+      "companies": ["SALUTE MISSION CRITICAL, LLC"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote details and confirm the pricing with CompuCom@tdsynnex.com",
+        "details": "Review the quote request to ensure accuracy and completeness before responding.",
+        "assignee": "Quote Request Team",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond to CompuCom@tdsynnex.com within the next 24 hours to confirm the quote details and pricing.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.951,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvhcpoy93ii",
+    "contextualSummary": "A customer is requesting an urgent quote for a specific case number, indicating a potential time-sensitive opportunity for the company to secure a sale.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11253936"],
+      "case_numbers": ["11253936"],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify quote requirements and provide an updated quote estimate by the end of the day",
+        "details": "Ensure all necessary information is gathered to provide a competitive quote.",
+        "assignee": "Pleggett",
+        "deadline": "End of the day"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent request and confirm that a quote will be provided as soon as possible.",
+    "qualityScore": 7.4,
+    "processingTime": 13.098,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvhw0pas72s",
+    "contextualSummary": "The email is a response to an urgent quote request with case number 11253936, likely from a customer or internal stakeholder. The sender, Page.West@tdsynnex.com, is requesting clarification on the quote details and potential PO/BO/SO numbers associated with the case.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11253936"],
+      "case_numbers": ["11253936"],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Confirm quote details and PO/BO/SO numbers",
+        "details": "Please provide the required information to proceed with the quote.",
+        "assignee": "Page.West@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "We appreciate your prompt response regarding the quote details. Please confirm the necessary information to facilitate a successful quote process.",
+    "qualityScore": 7.4,
+    "processingTime": 14.558,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y0j4q9d43ai",
+    "contextualSummary": "The email is a response to an urgent quote case number 11253936, likely related to order management or quote processing within the company.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11253936"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify quote details and provide an update on the status of case 11253936",
+        "details": "Please review the quote and confirm any discrepancies or additional information required to proceed with the order.",
+        "assignee": "CompuCom@tdsynnex.com",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please acknowledge receipt of this email and confirm your availability to provide an update on the status of case 11253936.",
+    "qualityScore": 7,
+    "processingTime": 14.04,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvi8iuwxome",
+    "contextualSummary": "A customer is requesting a quote for an urgent order case number 11253936, likely requiring immediate attention from CompuCom to fulfill the customer's needs.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11253936"],
+      "case_numbers": ["11253936"],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for the customer as soon as possible",
+        "details": "Ensure all necessary information is gathered and included in the quote to meet the customer's requirements.",
+        "assignee": "Quote Processing Team",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge the urgency of the request and express commitment to providing a timely quote.",
+    "qualityScore": 7.4,
+    "processingTime": 13.365,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2pdhukd8w3",
+    "contextualSummary": "A customer is requesting a second quote for Emerson Symantec renewal on September 30, 2024, via Optiv.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["Emerson_Symantec_XXXX"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Optiv"]
+    },
+    "actionItems": [
+      {
+        "task": "Generate a second quote for Emerson Symantec renewal and send to the customer by September 30, 2024.",
+        "details": "Provide detailed quote information including pricing, terms, and conditions.",
+        "assignee": "amber.zipsie@optiv.com",
+        "deadline": "September 30, 2024"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge the request and confirm receipt of the quote request. Provide a timeline for delivery of the second quote.",
+    "qualityScore": 7.4,
+    "processingTime": 14.532,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y0mh2ilbc6u",
+    "contextualSummary": "A business email requesting a quote for products from IKO HSS Enterprises, specifically referencing case number 11147166.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["11147166"],
+      "case_numbers": ["11147166"],
+      "part_numbers": [],
+      "companies": ["IKO HSS Enterprises"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for the requested products by the end of the day",
+        "details": "Include all necessary product information and pricing details",
+        "assignee": "CompuCom@tdsynnex.com",
+        "deadline": "End of the day"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the request and confirm a quote will be provided as soon as possible.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 13.516,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2stwn41d0e",
+    "contextualSummary": "The email is an escalation notification for a potential issue with a quote (FTQ-3518336) at Fortinet, requiring attention from the sender (eericson@fortinet.com). The content suggests that there are discrepancies in PO/BO/SO numbers and quote numbers, which need to be investigated.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["FTQ-3518336"],
+      "quote_numbers": ["FTQ-3518336"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify PO/BO/SO numbers and quote numbers for FTQ-3518336",
+        "details": "Investigate discrepancies in PO/BO/SO numbers and quote numbers to determine the root cause of the issue.",
+        "assignee": "eericson@fortinet.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the escalation notification and confirm investigation into FTQ-3518336.",
+    "qualityScore": 7.4,
+    "processingTime": 15.411,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y2t8jnpl9vs",
+    "contextualSummary": "The email is an out-of-office notification from Optiv's Rachel Bauer regarding her unavailability from November 26th to December 2nd. She provides an alternative contact for urgent requests and asks recipients to think before clicking on links.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "quote_numbers": ["Thales Defense & Security"],
+      "companies": ["Optiv", "Thales Defense & Security"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to the sender with a brief acknowledgement of their out-of-office notification.",
+        "details": "Confirm receipt and express understanding of the alternative contact information.",
+        "assignee": "Rachel Bauer",
+        "deadline": "None"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Thank you for reaching out to Optiv. I will respond upon my return on December 2nd.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.233,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvneygoidur",
+    "contextualSummary": "The email is an automatic reply from James Arnold at TDS Nexxus regarding a revised quote request for Fidelity APC. The recipient is out of the office, but sales contacts are provided in case of escalation.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["Fidelity APC"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Fidelity"]
+    },
+    "actionItems": [
+      {
+        "task": "Contact sales team for assistance with revised quote request",
+        "details": "Reach out to sales team at sales4406@tdsynnex.com or escalate to Carolyn.Wylie, Nick.Paul, and Michael.Corcino.",
+        "assignee": "Sales Team",
+        "deadline": "Upon receipt of automatic reply"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond with a brief acknowledgement of the automatic reply and request assistance from the sales team.",
+    "qualityScore": 7.4,
+    "processingTime": 15.628,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvnoojh6vv6",
+    "contextualSummary": "A customer is requesting a quote for order 78278747 from Devon Energy, but the sender Shelby Pinson is out of office.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["78278747"],
+      "quote_numbers": ["78278747"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Devon Energy"]
+    },
+    "actionItems": [
+      {
+        "task": "Forward the request to a team member or assign it to another representative",
+        "details": "The sender is unavailable, and the customer needs assistance with their quote request.",
+        "assignee": "Team Lead or another Inside Account Representative",
+        "deadline": "Urgent: Respond within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the request and inform the customer that a team member will assist them upon return to office.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.357,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xu4xauyey1j",
+    "contextualSummary": "A business email from CompuCom to a recipient, BelenBedsaida.PerezPerez, regarding an automatic reply for a quote update (Quote#:140208840) and emphasizing the importance of confidentiality.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "quote_numbers": ["Quote#:140208840"],
+      "companies": ["CompuCom"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote update and confirm receipt of the email.",
+        "details": "Review the attached document(s) to ensure accuracy and completeness.",
+        "assignee": "BelenBedsaida.PerezPerez",
+        "deadline": "Upon receipt"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledging receipt of the email and confirming confirmation of the quote update.",
+    "qualityScore": 7.4,
+    "processingTime": 15.121,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xvs1606f2tw",
+    "contextualSummary": "The email is a request for an update on a quote from CompuCom's account support team regarding Apple AirPods Pro 2nd Gen with the quote number WQ139584751.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["WQ139584751"],
+      "case_numbers": ["11092153"],
+      "part_numbers": ["MTJV3LL/AT"],
+      "companies": ["CompuCom"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the quote details and provide an update to Maria Vidals",
+        "details": "Check if there are any changes or updates to the original quote request.",
+        "assignee": "Account Support Representative",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please acknowledge receipt of this email and confirm your progress on updating the quote.",
+    "qualityScore": 8.2,
+    "processingTime": 16.206,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2ydpk7j4r044",
+    "contextualSummary": "A quote is needed for a Kyocera representative, and the sender (Lauren Orr) is requesting it from Insight3 at TDS Nexgen. The email was sent to multiple recipients, including Orville Mangalus, US Sales - Bids Insight, and Insight Fortinet.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["FW: Kyocera Rep?"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Insight", "Kyocera"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to Lauren Orr with a quote or request for more information",
+        "details": "Provide a quote or clarify any requirements for the Kyocera representative",
+        "assignee": "Orville Mangalus",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly to ensure timely completion of the quote request and avoid any potential delays.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 17.203,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xurafvpkh8a",
+    "contextualSummary": "A business email from Compucom's Brian.Swed regarding a potential security threat from an external sender, requesting assistance in verifying the authenticity of an email from HP Special Price Communication.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management and Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["45717781"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["FREYR BATTERY US, LLC"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the authenticity of the email from HP Special Price Communication",
+        "details": "Check the sender's identity and ensure the email is not a phishing attempt.",
+        "assignee": "Brian.Swed",
+        "deadline": "Urgent"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please confirm with Brian.Swed if you can verify the authenticity of the email and provide an update on its status.",
+    "qualityScore": 7.4,
+    "processingTime": 18.711,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y9dmbx93stx",
+    "contextualSummary": "The email is a request for a renewal quote from CradlePoint, specifically for a PO number (RM) UHC PO1111192 / 0331739271 / 0502128311. The sender has provided the quote numbers SQ-173546 and an image with truncated content.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["UHC PO1111192", "0331739271", "0502128311"],
+      "quote_numbers": ["SQ-173546"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide the renewal quote for CradlePoint PO1111192 / 0331739271 / 0502128311",
+        "details": "Include all necessary details and calculations in the quote.",
+        "assignee": "Orville.Mangalus@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please review the provided PO numbers and provide a comprehensive renewal quote as soon as possible.",
+    "qualityScore": 8.2,
+    "processingTime": 16.358,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xlmmymuw8ux",
+    "contextualSummary": "A customer at H-D of Greenville has an urgent order (Order #0337921250) that requires attention from Insight Order Support regarding a ticket (11782728). The email is forwarded from another recipient.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0337921250"],
+      "quote_numbers": [],
+      "case_numbers": ["11782728"],
+      "part_numbers": [],
+      "companies": ["H-D of Greenville"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to the customer with an update on the ticket status and estimated resolution time.",
+        "details": "Provide a clear explanation of the current status and any next steps required from the customer.",
+        "assignee": "Insight Order Support",
+        "deadline": "Within 1 hour"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge the urgent nature of the order and express a commitment to resolving the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.27,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xi4qqrrnon2",
+    "contextualSummary": "The email is from Lorena.AcostaEchavarria@insight.com regarding an urgent order (Order #: 0337933500) that requires attention for automatic reply purposes. The ticket number 11735066 indicates a potential issue with the order, and it's essential to address this as soon as possible.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337933500"],
+      "quote_numbers": [],
+      "case_numbers": ["11735066"],
+      "part_numbers": [],
+      "companies": ["Allied Universal"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Order #: 0337933500 and address any potential issues with Ticket 11735066",
+        "details": "Check on the current status of the order and ensure that all necessary steps are taken to resolve the issue.",
+        "assignee": "Lorena.AcostaEchavarria@insight.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please respond promptly to address this urgent order and ensure timely resolution of Ticket 11735066.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.638,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xlp99atjjbu",
+    "contextualSummary": "A customer is requesting assistance with an urgent order (Ticket 11735066) from Allied Universal Technology Service Order #0337933500, which was sold through TDS Nexxus. The email is a response to the initial request and includes details about the order and potential escalations.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337933500"],
+      "quote_numbers": [],
+      "case_numbers": ["11735066"],
+      "part_numbers": [],
+      "companies": ["Allied Universal"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and escalate if necessary",
+        "details": "Review the order and contact Allied Universal to confirm the status of the sale and any potential issues.",
+        "assignee": "Insight Order Support Team"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Please acknowledge receipt of this email and indicate your plan for addressing the urgent order.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.847,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xi4vopuhmyw",
+    "contextualSummary": "A procurement team at Insight has forwarded a ticket from Waste Management National Services regarding an urgent order (Order #: 0337884679) that requires attention to prevent escalation.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management and Escalation Response",
+    "entities": {
+      "po_numbers": ["0337884679"],
+      "quote_numbers": [],
+      "case_numbers": ["11896649"],
+      "part_numbers": [],
+      "companies": ["Waste Management National Services"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and escalate to the relevant team if necessary",
+        "details": "Ensure all information is accurate before taking any further action.",
+        "assignee": "Procurement Team Lead",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the ticket and express willingness to assist with resolving the issue.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.507,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xi5zihy46ry",
+    "contextualSummary": "A sales order, Order #0337896674, has been flagged for urgent attention due to potential issues with 'Sold To' Amplify Education Inc., indicating a need for immediate resolution or escalation.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Sales Order Processing",
+    "entities": {
+      "po_numbers": ["0337896674"],
+      "quote_numbers": [],
+      "case_numbers": ["11889811"],
+      "part_numbers": [],
+      "companies": ["Amplify Education Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Verify 'Sold To' company information and ensure accuracy in order processing",
+        "details": "Double-check the company name and contact details to prevent any potential delays or errors.",
+        "assignee": "Rodney Taylor (Sender)",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order update and express commitment to resolving the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.192,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xi6nrvf23rp",
+    "contextualSummary": "A sales order (Order #: 0337896674) has been escalated to Amplify Education Inc., indicating a potential issue or urgent need for resolution.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0337896674"],
+      "quote_numbers": [],
+      "case_numbers": ["11889811"],
+      "part_numbers": [],
+      "companies": ["Amplify Education Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Order #: 0337896674 and provide an update on the current resolution efforts.",
+        "details": "Check with the sales team to confirm if any additional information is required or if there are any updates on the order's status.",
+        "assignee": "Jeff.Brault@Insight.com",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the escalated order and express willingness to assist in resolving the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.218,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xi6u24f99sj",
+    "contextualSummary": "A customer at Amplify Education Inc. has an urgent order with ticket number 11889811, order #0337896674, which requires attention from TD Synnex. The email is a response to the original message, indicating that the issue needs to be escalated.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0337896674"],
+      "quote_numbers": [],
+      "case_numbers": ["11889811"],
+      "part_numbers": [],
+      "companies": ["Amplify Education Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and escalate the issue to the relevant team",
+        "details": "Confirm the urgency of the situation and provide a clear timeline for resolution.",
+        "assignee": "Rodney Taylor (TD Synnex)",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and confirm that it will be escalated to the relevant team promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.52,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xi6woxhc6we",
+    "contextualSummary": "The email is related to a support case for an urgent order at HYATT REGENCY ARUBA RESORT & CASINO, with Order #0338046714. The sender (EMT@tdsynnex.com) is requesting assistance with the order and its associated ticket number (11870450).",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management Support Case",
+    "entities": {
+      "po_numbers": ["0338046714"],
+      "quote_numbers": [],
+      "case_numbers": ["11870450"],
+      "part_numbers": [],
+      "companies": ["HYATT REGENCY ARUBA RESORT & CASINO"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and escalate if necessary",
+        "details": "Check the order status, confirm the product availability, and contact the customer to provide an estimated delivery date.",
+        "assignee": "EMT@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order request and initiate verification of the order details.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.816,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xi7nx4x92iv",
+    "contextualSummary": "A customer at Amplify Education Inc. has an urgent order (Order #0337896674) that requires attention due to potential escalations. The email is a response to the initial request and requests further action.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337896674"],
+      "quote_numbers": [],
+      "case_numbers": ["11889811"],
+      "part_numbers": [],
+      "companies": ["Amplify Education Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order status and escalate if necessary",
+        "details": "Check with internal teams to determine the current status of Order #0337896674 and take immediate action if there are any signs of escalation.",
+        "assignee": "Kathy.NowlenJohnson@insight.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly to confirm receipt of the email and express concern for the potential escalation, while also offering assistance in resolving the issue.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.612,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xlrighd5ju4",
+    "contextualSummary": "A customer at Amplify Education Inc. has placed an urgent order with Order #: 0337896674, which requires immediate attention due to potential escalations.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337896674"],
+      "quote_numbers": [],
+      "case_numbers": ["11889811"],
+      "part_numbers": [],
+      "companies": ["Amplify Education Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Verify order details and escalate to relevant team if necessary",
+        "details": "Confirm the urgency of the situation and ensure all required information is gathered before proceeding.",
+        "assignee": "Insight Order Support Team"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and express willingness to assist with resolving any issues promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 13.781,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xiepknwx8ss",
+    "contextualSummary": "The email is related to a support case for an urgent order at Hyatt Regency Aruba Resort & Casino, with Order #0338046714. The sender (EMT@tdsynnex.com) is requesting assistance and has provided the order number.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338046714"],
+      "quote_numbers": [],
+      "case_numbers": ["11870450"],
+      "part_numbers": [],
+      "companies": ["Hyatt Regency Aruba Resort & Casino"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order status and escalate if necessary",
+        "details": "Check with internal teams to confirm the current status of Order #0338046714 and take further action if required.",
+        "assignee": "EMT@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly to acknowledge receipt of the order and request additional information for resolution.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.978,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xlshcn9ff55",
+    "contextualSummary": "A sales order for Versaterm Public Safety US, Inc. has been flagged for urgent attention due to potential issues with the order. The email is a response to this ticket, requesting further escalation and support.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338031566"],
+      "quote_numbers": [],
+      "case_numbers": ["11884732"],
+      "part_numbers": [],
+      "companies": ["Versaterm Public Safety US, Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Re-escalate the order to a higher authority and provide additional support",
+        "details": "The email requests urgent attention due to potential issues with the order. The task requires re-escalating the order and providing additional support to resolve the issue.",
+        "assignee": "Sales Team Lead",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the email and confirm that the issue will be escalated immediately.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.602,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xih9we5lyxj",
+    "contextualSummary": "A purchasing team at Insight is notifying Syneos Health about an urgent order (Order #0337823450) that requires immediate attention due to a potential escalation. The ticket number is 11894506, and the email forwards this information.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337823450"],
+      "quote_numbers": [],
+      "case_numbers": ["11894506"],
+      "part_numbers": [],
+      "companies": ["Insight", "Syneos Health"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and escalate if necessary",
+        "details": "Review the order to ensure all information is accurate and up-to-date. If there are any discrepancies, notify Syneos Health promptly.",
+        "assignee": "Insight Purchasing Team",
+        "deadline": "Immediate attention required"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge the urgent order and confirm receipt of the forwarded ticket information.",
+    "qualityScore": 8.2,
+    "processingTime": 16.071,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xlt1gba333w",
+    "contextualSummary": "A customer has reached out to InsightOrderSupport regarding a potential issue with an urgent order (Ticket 11884758) and is seeking assistance from HR Green, Inc.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338062396"],
+      "quote_numbers": [],
+      "case_numbers": ["11884758"],
+      "part_numbers": [],
+      "companies": ["HR Green, Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of the order and escalate if necessary",
+        "details": "Check with the customer to confirm their expectations and ensure that all required information is provided.",
+        "assignee": "InsightOrderSupport",
+        "deadline": "Urgent"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the ticket and express willingness to assist with resolving the issue.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.397,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xiikknsr12c",
+    "contextualSummary": "TD Synnex team is responding to a urgent ticket regarding an electronic software delivery resend request for Order #0337917813 from Hamilton Sunstrand. The team is requesting assistance with the resend process.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case Resolution",
+    "entities": {
+      "po_numbers": ["0337917813"],
+      "quote_numbers": [],
+      "case_numbers": ["11894355"],
+      "part_numbers": [],
+      "companies": ["Hamilton Sunstrand"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify resend request details and escalate to relevant team if necessary",
+        "details": "Confirm the order status, software version, and resend requirements with Hamilton Sunstrand.",
+        "assignee": "Team Lead (4401)",
+        "deadline": "End of day today"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent ticket and request additional information to proceed with the resend request.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.886,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xik7bi75hgd",
+    "contextualSummary": "A customer has forwarded an urgent order from Allied Universal Technology Service with Order #0337933500. The email requires attention to resolve the issue promptly.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case Resolution",
+    "entities": {
+      "po_numbers": ["0337933500"],
+      "quote_numbers": [],
+      "case_numbers": ["11735066"],
+      "part_numbers": [],
+      "companies": ["Allied Universal"]
+    },
+    "actionItems": [
+      {
+        "task": "Review and resolve the urgent order ASAP",
+        "details": "Ensure timely resolution to avoid any further delays or issues.",
+        "assignee": "Team Lead/Manager",
+        "deadline": "End of day"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt and express commitment to resolving the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.073,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xipwowynsef",
+    "contextualSummary": "Christensen Farms and Feedlots, Inc received an urgent order for a specific product (Ticket 11893088) with Order #: 0338044207. The email is forwarded from non-managedhw2@insight.com, indicating potential mismanagement or lack of escalation process.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0338044207"],
+      "quote_numbers": [],
+      "case_numbers": ["11893088"],
+      "part_numbers": [],
+      "companies": ["Christensen Farms and Feedlots, Inc"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order status with Christensen Farms and Feedlots, Inc and escalate if necessary",
+        "details": "Confirm the urgency of the order and ensure timely fulfillment to avoid delays or lost sales.",
+        "assignee": "Designated Sales/Operations Team Member"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and express commitment to fulfilling it promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.337,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xiq3r6dv6m1",
+    "contextualSummary": "A sales order for Amplify Education Inc. has been flagged as urgent due to potential escalations, requiring immediate attention from the support team.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case Escalation",
+    "entities": {
+      "po_numbers": ["0337896674"],
+      "quote_numbers": [],
+      "case_numbers": ["11889811"],
+      "part_numbers": [],
+      "companies": ["Amplify Education Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Review order details and escalate to support team if necessary",
+        "details": "Verify the urgency of the situation and take prompt action to resolve any issues.",
+        "assignee": "Joe.Gibson@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and initiate immediate support case escalation if required.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 13.956,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xiqljsy3kew",
+    "contextualSummary": "A customer has reached out regarding an urgent order (0337916028) that needs to be escalated due to sold-out items. The customer is requesting assistance in resolving the issue.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0337916028"],
+      "quote_numbers": [],
+      "case_numbers": ["11892533"],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Investigate sold-out items and provide a resolution plan to the customer",
+        "details": "Review inventory levels, discuss alternatives with suppliers, and propose a solution to minimize delays.",
+        "assignee": "Non-ManagedSW2"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and assure the customer that assistance is being provided to resolve the issue as soon as possible.",
+    "qualityScore": 7.4,
+    "processingTime": 15.073,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xlxh0uat1ev",
+    "contextualSummary": "A customer at Amplify Education Inc. has an urgent order with ticket number 11889811, order #0337896674, which requires immediate attention from the support team.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0337896674"],
+      "quote_numbers": [],
+      "case_numbers": ["11889811"],
+      "part_numbers": [],
+      "companies": ["Amplify Education Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Assign a support case to a dedicated team member for immediate resolution",
+        "details": "The customer is experiencing urgent orders, and prompt attention is required to avoid delays.",
+        "assignee": "Support Team Lead"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge the urgency of the situation and assure the customer that support will be escalated promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.557,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xlxhk389t1z",
+    "contextualSummary": "A sales order for Amplify Education Inc. has been flagged as urgent, with a PO number of 0337896674, and is being escalated to the support team.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337896674"],
+      "quote_numbers": [],
+      "case_numbers": ["11889811"],
+      "part_numbers": [],
+      "companies": ["Amplify Education Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Review and verify the urgent order details with the sales team.",
+        "details": "Ensure all information is accurate and up-to-date before proceeding with support.",
+        "assignee": "Sales Team Lead",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and confirm that it will be escalated to the support team for further assistance.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.1,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xlxzubdq3x8",
+    "contextualSummary": "A customer at Hyatt Regency Aruba Resort & Casino has an urgent order (Order #0338046714) that requires immediate attention from Insight Order Support. The email is a response to the original ticket and contains details about the order, including PO numbers, quote numbers, case numbers, part numbers, and company names.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0338046714"],
+      "quote_numbers": [],
+      "case_numbers": ["11870450"],
+      "part_numbers": [],
+      "companies": ["Hyatt Regency Aruba Resort & Casino"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and escalate to a supervisor if necessary",
+        "details": "Review the order and ensure all information is accurate before proceeding with any actions.",
+        "assignee": "Insight Order Support Team Lead",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and confirm that support is being escalated to a supervisor for review.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.938,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xrnujseka40",
+    "contextualSummary": "The email alerts a team about an urgent shipment from Apple, requesting their attention to prepare for the large quantity of products. The sender is unsure if the image attached can be viewed due to content truncation.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management and Logistics Coordination",
+    "entities": {
+      "po_numbers": ["0337906339"],
+      "quote_numbers": [],
+      "case_numbers": ["11766148"],
+      "part_numbers": [],
+      "companies": ["International Monetary Fund"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the shipment details and prepare for the large quantity of products from Apple.",
+        "details": "Confirm the PO number, shipping date, and any specific product requirements.",
+        "assignee": "Build Team",
+        "deadline": "ASAP"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the email and confirm readiness to receive the shipment from Apple.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.033,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xiz98g18opj",
+    "contextualSummary": "A procurement team at Insight is forwarding a ticket for urgent orders and escalations to Versaterm Public Safety US, Inc. The order number is 0338031566, and the email requests assistance in resolving the issue.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338031566"],
+      "quote_numbers": [],
+      "case_numbers": ["11884732"],
+      "part_numbers": [],
+      "companies": ["Versaterm Public Safety US, Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to Versaterm Public Safety US, Inc. regarding the urgent orders and escalations",
+        "details": "Provide a timely response to address their concerns and resolve the issue",
+        "assignee": "Procurement Team at Insight",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the ticket and express willingness to assist in resolving the urgent orders and escalations.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.013,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xizalkkwx8z",
+    "contextualSummary": "A procurement team at Insight is addressing an urgent order issue for H A Sack Company (Order #0338068668), which requires immediate attention to prevent delays.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0338068668"],
+      "quote_numbers": [],
+      "case_numbers": ["11890719"],
+      "part_numbers": [],
+      "companies": ["H A Sack Company"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify order details and escalate to relevant team members for immediate resolution.",
+        "details": "Ensure all necessary information is gathered and communicated to the team to resolve the issue promptly.",
+        "assignee": "Procurement Team Lead",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order request and confirm that the procurement team is working on a solution to resolve the issue as soon as possible.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.603,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xj2xm8k596m",
+    "contextualSummary": "A procurement team at Insight is forwarding a ticket regarding urgent orders and escalations for Amplify Education Inc., Order #0337896674, with Ticket #11889811.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337896674"],
+      "quote_numbers": [],
+      "case_numbers": ["11889811"],
+      "part_numbers": [],
+      "companies": ["Amplify Education Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Order #0337896674 and escalate if necessary",
+        "details": "Check with the sales team to confirm the order details and ensure timely delivery.",
+        "assignee": "Procurement Team Lead"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the ticket and request further information from the sales team regarding Order #0337896674.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.801,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xj3y47yojom",
+    "contextualSummary": "A procurement team at Insight has forwarded a non-urgent request from Louis Dreyfus Company LLC for an order (PO #0337966275). The email requires analysis to determine the business process involved and potential next steps.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337966275"],
+      "quote_numbers": [],
+      "case_numbers": ["11885225"],
+      "part_numbers": [],
+      "companies": ["Louis Dreyfus Company LLC"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the authenticity of the request and confirm the order details with Louis Dreyfus Company LLC.",
+        "details": "Ensure all information is accurate and up-to-date before proceeding.",
+        "assignee": "Procurement Team at Insight",
+        "deadline": "Within 24 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Respond to confirm receipt of the request and express willingness to assist with order management.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.322,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xm1gaw36nl2",
+    "contextualSummary": "A customer has submitted a ticket for urgent orders and escalations related to an order number 0338062386 from John Hancock Life Insurance Company. The email requires support assistance to resolve the issue.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338062386"],
+      "quote_numbers": [],
+      "case_numbers": ["11886630"],
+      "part_numbers": [],
+      "companies": ["John Hancock Life Insurance Company"]
+    },
+    "actionItems": [
+      {
+        "task": "Review order details and escalate to relevant team members if necessary",
+        "details": "Assess the urgency of the issue and take appropriate action to resolve it.",
+        "assignee": "Support Team Lead",
+        "deadline": "Urgent: Respond within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the ticket and express willingness to assist in resolving the urgent orders and escalations.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.444,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xj87buj2tb7",
+    "contextualSummary": "A purchase order has been flagged for urgent attention due to potential sales issues. The email forwards a ticket with order number 0338062386 from John Hancock Life Insurance Company, indicating a need for immediate escalation.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Sales Support",
+    "entities": {
+      "po_numbers": ["0338062386"],
+      "quote_numbers": [],
+      "case_numbers": ["11886630"],
+      "part_numbers": [],
+      "companies": ["John Hancock Life Insurance Company"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify sales status and escalate if necessary",
+        "details": "Check the current sales status of order 0338062386 and contact the relevant team to address any potential issues.",
+        "assignee": "Sales Team Lead"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the email and indicate that a review of the sales status is underway.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.678,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xjammnzw6cd",
+    "contextualSummary": "Winmark Corporation has an urgent order for a specific part number (0338013400) with ticket 11883162, requiring immediate attention from the team.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0338013400"],
+      "quote_numbers": [],
+      "case_numbers": ["11883162"],
+      "part_numbers": ["0338013400"],
+      "companies": ["Winmark Corporation"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the part number and its availability for immediate shipment",
+        "details": "Check with the inventory team to confirm the part's status and expedite shipping if necessary.",
+        "assignee": "EMT@tdsynnex.com (Sender)",
+        "deadline": "Immediately"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and request additional information to facilitate timely resolution.",
+    "qualityScore": 8.2,
+    "processingTime": 15.082,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xm5ye5i39c9",
+    "contextualSummary": "A customer at Winmark Corporation has an urgent order (Order #0338013400) that requires attention from Insight Order Support team regarding Ticket 11883162. The email is a forwarded message indicating the need for escalation and support.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management & Support Case",
+    "entities": {
+      "po_numbers": ["0338013400"],
+      "quote_numbers": [],
+      "case_numbers": ["11883162"],
+      "part_numbers": [],
+      "companies": ["Winmark Corporation"]
+    },
+    "actionItems": [
+      {
+        "task": "Review and process Order #0338013400 urgently",
+        "details": "Ensure timely resolution of the order to meet customer expectations.",
+        "assignee": "Insight Order Support Team"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and provide a clear timeline for resolution.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.625,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xm5zza23wdw",
+    "contextualSummary": "Winmark Corporation has an urgent order (Order #: 0338013400) that requires attention due to sold-out stock. The customer is requesting escalation of the issue to resolve the problem promptly.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0338013400"],
+      "quote_numbers": [],
+      "case_numbers": ["11883162"],
+      "part_numbers": [],
+      "companies": ["Winmark Corporation"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify sold-out stock and escalate the issue to resolve promptly",
+        "details": "Contact Winmark Corporation to confirm the order details and provide a resolution plan.",
+        "assignee": "Insight Order Support Team"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge the urgent nature of the issue and express commitment to resolving it promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.474,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xjfvmvv4aw6",
+    "contextualSummary": "A purchase order (PO) has been flagged for urgent attention from Winmark Corporation regarding Order #0338013400, which is associated with Ticket 11883162.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0338013400"],
+      "quote_numbers": [],
+      "case_numbers": ["11883162"],
+      "part_numbers": [],
+      "companies": ["Winmark Corporation"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Order #0338013400 and escalate it to the relevant team if necessary.",
+        "details": "Check with the sales team to confirm the order details and ensure timely delivery.",
+        "assignee": "Procurement Team",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly to acknowledge receipt of the urgent order notification and initiate verification of Order #0338013400.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.403,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xm87hxsqfny",
+    "contextualSummary": "A customer at Medpace Inc has an urgent order (Order #: 0337830611) that requires attention due to potential issues with sold items. The support team needs to investigate and resolve the issue as soon as possible.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case Resolution",
+    "entities": {
+      "po_numbers": ["0337830611"],
+      "quote_numbers": [],
+      "case_numbers": ["11884156"],
+      "part_numbers": [],
+      "companies": ["Medpace Inc"]
+    },
+    "actionItems": [
+      {
+        "task": "Investigate the sold items and their quantities to determine the cause of the issue.",
+        "details": "Review the order details, product information, and any relevant documentation to identify the root cause of the problem.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and express commitment to resolving the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.895,
+    "model": "llama3.2:3b"
   }
 ]
