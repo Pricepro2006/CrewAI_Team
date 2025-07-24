@@ -4537,3 +4537,10 @@
 2025-07-21T18:03:41.976Z INFO  [IEMS_DATA] Categorized emails {"emailAlias":20,"marketingSplunk":0,"vmwareTDSynnex":0,"total":50}
 2025-07-21T18:03:41.982Z INFO  [IEMS_DATA] Loaded email batches {"totalEmails":50,"filesProcessed":5}
 2025-07-21T18:03:41.982Z INFO  [IEMS_DATA] Categorized emails {"emailAlias":20,"marketingSplunk":0,"vmwareTDSynnex":0,"total":50}
+2025-07-24T17:56:24.191Z INFO  [DATA_PIPELINE] Initializing Data Collection Pipeline
+2025-07-24T17:57:03.110Z INFO  [STAGE2] Stage 2 Progress: 610/1000 (61.0%)
+2025-07-24T17:58:22.721Z INFO  [STAGE2] Stage 2 Progress: 615/1000 (61.5%)
+2025-07-24T17:59:36.558Z INFO  [STAGE2] Stage 2 Progress: 620/1000 (62.0%)
+2025-07-24T18:00:49.077Z INFO  [STAGE2] Stage 2 Progress: 625/1000 (62.5%)
+2025-07-24T18:02:00.171Z INFO  [STAGE2] Stage 2 Progress: 630/1000 (63.0%)
+2025-07-24T18:03:16.947Z INFO  [STAGE2] Stage 2 Progress: 635/1000 (63.5%)

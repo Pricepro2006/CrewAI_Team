@@ -15,6 +15,9 @@ export const ChatInterface: React.FC = () => {
   );
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<
+    "connected" | "disconnected" | "connecting"
+  >("connecting");
   const messageEndRef = useRef<HTMLDivElement>(null);
 
   const createConversation = trpc.chat.create.useMutation();
@@ -31,14 +34,50 @@ export const ChatInterface: React.FC = () => {
     }
   }, [conversationHistory.data]);
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates with proper error handling
   trpc.chat.onMessage.useSubscription(
     { conversationId: conversationId! },
     {
       enabled: !!conversationId,
       onData: (data: unknown) => {
         const message = data as Message;
-        setMessages((prev) => [...prev, message]);
+        setConnectionStatus("connected");
+
+        // Prevent duplicate messages
+        setMessages((prev) => {
+          const exists = prev.some(
+            (m) =>
+              m.content === message.content &&
+              m.role === message.role &&
+              Math.abs(
+                new Date(m.timestamp || 0).getTime() -
+                  new Date(message.timestamp || 0).getTime(),
+              ) < 1000,
+          );
+          return exists ? prev : [...prev, message];
+        });
+
+        // Auto-scroll to new message
+        setTimeout(() => {
+          messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      },
+      onError: (error) => {
+        console.error("WebSocket subscription error:", error);
+        setConnectionStatus("disconnected");
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "system",
+            content: "Connection error. Trying to reconnect...",
+          },
+        ]);
+      },
+      onStarted: () => {
+        setConnectionStatus("connected");
+      },
+      onStopped: () => {
+        setConnectionStatus("disconnected");
       },
     },
   );
@@ -108,18 +147,32 @@ export const ChatInterface: React.FC = () => {
     <div className="chat-interface">
       <div className="chat-header">
         <h2>AI Agent Team Chat</h2>
-        {conversationId && (
-          <button
-            className="new-chat-btn"
-            onClick={() => {
-              setConversationId(null);
-              setMessages([]);
-              navigate("/chat");
-            }}
+        <div className="chat-header-controls">
+          <div
+            className={`connection-status connection-status--${connectionStatus}`}
           >
-            New Chat
-          </button>
-        )}
+            <span className="connection-indicator"></span>
+            <span className="connection-text">
+              {connectionStatus === "connected"
+                ? "Connected"
+                : connectionStatus === "connecting"
+                  ? "Connecting..."
+                  : "Disconnected"}
+            </span>
+          </div>
+          {conversationId && (
+            <button
+              className="new-chat-btn"
+              onClick={() => {
+                setConversationId(null);
+                setMessages([]);
+                navigate("/chat");
+              }}
+            >
+              New Chat
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="chat-container">

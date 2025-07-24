@@ -25,6 +25,61 @@
   letter-spacing: -0.025em;
 }
 
+.chat-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.connection-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6c757d;
+}
+
+.connection-status--connected .connection-indicator {
+  background: #28a745;
+  box-shadow: 0 0 8px rgba(40, 167, 69, 0.6);
+}
+
+.connection-status--connecting .connection-indicator {
+  background: #ffc107;
+  animation: pulse 1.5s infinite;
+}
+
+.connection-status--disconnected .connection-indicator {
+  background: #dc3545;
+}
+
+.connection-text {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 .new-chat-btn {
   padding: 8px 16px;
   background-color: var(--accent-primary);
