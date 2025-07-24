@@ -16178,5 +16178,372 @@
     "qualityScore": 7.4,
     "processingTime": 15.817,
     "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y60sh02glr8",
+    "contextualSummary": "Optiv is updating quotes for a customer, Kelly, due to incorrect quoting. The updated quotes are attached, and the company apologizes for the mistake.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["4252405"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Optiv"]
+    },
+    "actionItems": [
+      {
+        "task": "Review and acknowledge the updated quotes",
+        "details": "Please review the attached updated quotes and confirm receipt.",
+        "assignee": "Kelly"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Thank you for the updated quotes. Please let me know if there's anything else I can assist with.",
+    "qualityScore": 7.4,
+    "processingTime": 14.095,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y6272g68wll",
+    "contextualSummary": "The email appears to be a follow-up on an urgent quote request for SPP_F5_Flex Consumption Renewal on May 15, 2025. The sender, Optiv, is thanking the recipients and includes a brief image.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["SPP_F5_Flex Consumption_Renewal_05/15/2025"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Respond to Optiv with a quote or request for clarification",
+        "details": "Please provide a detailed response regarding the quote request or ask for additional information if needed.",
+        "assignee": "Recipient",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly to confirm receipt of the email and provide an update on the status of the quote request.",
+    "qualityScore": 7,
+    "processingTime": 16.45,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xte7clum6wp",
+    "contextualSummary": "The email is a response to a quote request for an iPad, requesting a response as soon as possible. The sender is BuildAMac at TD Synnex, likely a sales or procurement representative.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["list of quote numbers found"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Provide a detailed response to the quote request by [insert deadline]",
+        "details": "Ensure all relevant information is included, such as product specifications and pricing.",
+        "assignee": "BuildAMac at TD Synnex",
+        "deadline": "[Insert deadline]"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "A prompt response will be provided to the quote request, ensuring timely consideration of the iPad option.",
+    "qualityScore": 7,
+    "processingTime": 13.628,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y63ez6au4np",
+    "contextualSummary": "The email is a request from Optiv to expedite loading specific SKUs into their system, indicating a potential issue with order management or quote processing. The sender has also added the @SP-Software team for support.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "part_numbers": ["SNX-1234", "SNX-5678"],
+      "quote_numbers": ["Q12345", "Q67890"],
+      "companies": ["SP-Software"]
+    },
+    "actionItems": [
+      {
+        "task": "Load SKUs into the system as soon as possible",
+        "details": "Expedite loading of SNX-1234 and SNX-5678 to resolve potential order management issues.",
+        "assignee": "Kesvin"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please confirm the status of the quote processing and provide an estimated timeline for resolution.",
+    "qualityScore": 8.6,
+    "processingTime": 15.206,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xtet86l7jk2",
+    "contextualSummary": "A customer is requesting a quote for a MacBook Pro 16 Inch in silver with AppleCare and accessories, referencing an external email (RE: quote for MacBook Pro 16 Inch/ Silver with AppleCare and Accessories). The request is urgent.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["RITM2337941"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify product availability and quote accuracy",
+        "details": "Check product details, pricing, and AppleCare options to ensure a correct quote.",
+        "assignee": "buildamac@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge the request and confirm receipt of the urgent quote inquiry.",
+    "qualityScore": 7.4,
+    "processingTime": 14.084,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y64a3857i63",
+    "contextualSummary": "A business email from Optiv@tdsynnex.com is being forwarded with a Fortinet quote for MYR Group, requesting assistance or further action.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "quote_numbers": ["FTQ-3998146"],
+      "companies": ["MYR Group"]
+    },
+    "actionItems": [
+      {
+        "task": "Review and verify the quote details",
+        "details": "Check the quote for accuracy and completeness before taking any further action.",
+        "assignee": "Lonna",
+        "deadline": "Respond within 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please review the quote and respond with any questions or concerns.",
+    "qualityScore": 7.4,
+    "processingTime": 13.232,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y65s4ucrrrh",
+    "contextualSummary": "Optiv is updating a bill to reflect TDSynnex, requiring an updated quote for pricing information.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["RE: Onapsis quotes"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["TDSynnex", "Optiv"]
+    },
+    "actionItems": [
+      {
+        "task": "Update the bill to reflect TDSynnex",
+        "details": "Ensure accurate billing information for pricing quote.",
+        "assignee": "Theodore",
+        "deadline": "ASAP"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please confirm receipt of updated bill and provide a revised quote as soon as possible.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 13.534,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y67uapjtol5",
+    "contextualSummary": "A sales representative from Optiv at TDS Nexxus is sending a quote request for Frontline Technologies Group, LLC (F5) to Jessica, likely as part of an ongoing business process.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["[Quote Number]"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["Frontline Technologies Group, LLC (F5)"]
+    },
+    "actionItems": [
+      {
+        "task": "Review quote and provide feedback or request modifications",
+        "details": "Carefully review the provided quote to ensure it meets requirements.",
+        "assignee": "Jessica"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please review the attached quote and let me know if you need any changes or have questions.",
+    "qualityScore": 7.4,
+    "processingTime": 14.347,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y689y59oo1g",
+    "contextualSummary": "{\n  \"contextual_summary\": \"The email is a response to an urgent quote request for F5 SPP_Flex Consumption Renewal on May 15, 2025. The sender, Optiv, expresses gratitude and connects with the recipien",
+    "workflowState": "UNKNOWN",
+    "businessProcess": "General",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Manual review required",
+    "qualityScore": 4,
+    "processingTime": 16.039,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y68whed1ahs",
+    "contextualSummary": "The sender is questioning the process of splitting up Imperva quotes without pre-approval, suggesting a potential issue with quote matching and electronic processing.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["PO-44000079962130405"],
+      "quote_numbers": ["Imperva quote numbers not specified"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["CVS", "Caremark"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify if pre-approval from Imperva is required for splitting quotes",
+        "details": "Check with Imperva to confirm their policy on quote splitting and matching.",
+        "assignee": "Sender (Optiv)",
+        "deadline": "Respond within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please clarify the process for handling electronic quotes from Imperva to ensure accurate quote matching.",
+    "qualityScore": 8.2,
+    "processingTime": 16.18,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y6b2zfgurjx",
+    "contextualSummary": "A follow-up email from Optiv to Brenda regarding a quote request for Stephens F5 quotes, with a friendly tone and an attached image.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "quote_numbers": ["3"],
+      "companies": ["Stephens"]
+    },
+    "actionItems": [
+      {
+        "task": "Review the attached image for any additional information or clarification needed.",
+        "details": "Check if there are any specific requirements or details mentioned in the image.",
+        "assignee": "Brenda",
+        "deadline": "None"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Please review the attached image and let us know if you need anything else, Brenda.",
+    "qualityScore": 7.4,
+    "processingTime": 12.866,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xhuxtu31x2d",
+    "contextualSummary": "Jon Maurer, Channel Sales Director at Bitwarden, is out of office until April 14th. He provides contact information for support, partners, and renewal inquiries.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management/Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["#628350"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Reach out to support@bitwarden.com for inquiries",
+        "details": "Contact Jon Maurer's team for assistance with quotes, renewals, or other business matters.",
+        "assignee": "Support Team",
+        "deadline": ""
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Respond to support@bitwarden.com for prompt assistance.",
+    "qualityScore": 7,
+    "processingTime": 19.086,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y6cwuijfygw",
+    "contextualSummary": "Optiv is sending a quote for General Mills / Optiv / Lantronix order DR-25-1058 / Q-15732 to Michael. The email includes an attached quote and asks if any further assistance is needed.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": ["DR-25-1058", "Q-15732"],
+      "case_numbers": [],
+      "part_numbers": [],
+      "companies": ["General Mills", "Optiv", "Lantronix"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the attached quote and confirm receipt with Optiv",
+        "details": "Ensure that the quote is accurate and complete before responding to Optiv.",
+        "assignee": "Michael"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the quote and request clarification on any discrepancies.",
+    "qualityScore": 8.6,
+    "processingTime": 15.284,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2yctnhnewnf0",
+    "contextualSummary": "A customer is requesting a quote for an urgent order, likely involving a specific product or service from TD Synnex. The email requires a prompt response to provide a quote and potentially facilitate the sale.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "po_numbers": ["Not specified"],
+      "quote_numbers": ["Not specified"],
+      "case_numbers": ["Not specified"],
+      "part_numbers": ["Not specified"],
+      "companies": ["TDSynnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Provide a quote for the urgent order",
+        "details": "Review customer requirements and provide a detailed quote with pricing, delivery dates, and any other relevant information.",
+        "assignee": "Chris Ignacio (Sender)",
+        "deadline": "Urgent: Respond within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the quote request and express willingness to provide a quote as soon as possible.",
+    "qualityScore": 8.6,
+    "processingTime": 14.778,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2y6efva82d90",
+    "contextualSummary": "The email is a follow-up from Optiv regarding a Fortinet quote (FTQ-3974934) and requests Paige's review and confirmation.",
+    "workflowState": "WAITING",
+    "businessProcess": "Quote Processing",
+    "entities": {
+      "quote_numbers": ["FTQ-3974934"],
+      "companies": ["Optiv"]
+    },
+    "actionItems": [
+      {
+        "task": "Review the quote and confirm if any additional information is needed.",
+        "details": "Please review the attached image and provide feedback on the quote.",
+        "assignee": "Paige",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please review the quote and confirm if any additional information is needed to proceed with the order.",
+    "qualityScore": 7.4,
+    "processingTime": 13.412,
+    "model": "llama3.2:3b"
   }
 ]
