@@ -13,6 +13,9 @@ import {
 } from "../services/UserService";
 import ollamaConfig from "../../config/ollama.config";
 import { logger } from "../../utils/logger";
+import { mcpToolsService } from "../services/MCPToolsService";
+import { DealDataService } from "../services/DealDataService";
+import { EmailStorageService } from "../services/EmailStorageService";
 
 // Context User interface (extends DB user with runtime properties)
 export interface User extends Omit<DBUser, "passwordHash"> {
@@ -26,6 +29,8 @@ let conversationService: ConversationService;
 let maestroFramework: MaestroFramework;
 let taskService: TaskService;
 let userService: UserService;
+let dealDataService: DealDataService;
+let emailStorageService: EmailStorageService;
 
 async function initializeServices() {
   if (!masterOrchestrator) {
@@ -77,14 +82,25 @@ async function initializeServices() {
     userService = new UserService();
   }
 
+  if (!dealDataService) {
+    dealDataService = new DealDataService();
+  }
+
+  if (!emailStorageService) {
+    emailStorageService = new EmailStorageService();
+  }
+
   return {
     masterOrchestrator,
     conversationService,
     taskService,
     maestroFramework,
     userService,
+    dealDataService,
+    emailStorageService,
     agentRegistry: masterOrchestrator.agentRegistry,
     ragSystem: masterOrchestrator.ragSystem,
+    mcpTools: mcpToolsService.getAllTools(),
   };
 }
 
@@ -185,8 +201,11 @@ type TRPCContext = {
   taskService: TaskService;
   maestroFramework: MaestroFramework;
   userService: UserService;
+  dealDataService: DealDataService;
+  emailStorageService: EmailStorageService;
   agentRegistry: any;
   ragSystem: any;
+  mcpTools: any;
 };
 
 export async function createContext({

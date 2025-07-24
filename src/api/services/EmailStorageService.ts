@@ -1,12 +1,12 @@
-import { v4 as uuidv4 } from 'uuid';
-import Database from 'better-sqlite3';
-import appConfig from '../../config/app.config';
-import { logger } from '../../utils/logger';
-import { wsService } from './WebSocketService';
-import { performanceOptimizer } from './PerformanceOptimizer';
-import { queryPerformanceMonitor } from './QueryPerformanceMonitor';
-import { LazyLoader } from '../../utils/LazyLoader';
-import { ConnectionPool } from '../../core/database/ConnectionPool';
+import { v4 as uuidv4 } from "uuid";
+import Database from "better-sqlite3";
+import appConfig from "../../config/app.config";
+import { logger } from "../../utils/logger";
+import { wsService } from "./WebSocketService";
+import { performanceOptimizer } from "./PerformanceOptimizer";
+import { queryPerformanceMonitor } from "./QueryPerformanceMonitor";
+import { LazyLoader } from "../../utils/LazyLoader";
+import { ConnectionPool } from "../../core/database/ConnectionPool";
 
 // Enhanced email analysis interfaces
 export interface EmailAnalysisResult {
@@ -21,7 +21,7 @@ export interface QuickAnalysis {
     primary: string;
     secondary?: string[];
   };
-  priority: 'Critical' | 'High' | 'Medium' | 'Low';
+  priority: "Critical" | "High" | "Medium" | "Low";
   intent: string;
   urgency: string;
   confidence: number;
@@ -41,14 +41,18 @@ export interface DeepWorkflowAnalysis {
     caseNumbers: Array<{ value: string; type: string; confidence: number }>;
     partNumbers: Array<{ value: string; confidence: number }>;
     orderReferences: Array<{ value: string; confidence: number }>;
-    contacts: Array<{ name: string; email?: string; type: 'internal' | 'external' }>;
+    contacts: Array<{
+      name: string;
+      email?: string;
+      type: "internal" | "external";
+    }>;
   };
   actionItems: Array<{
     type: string;
     description: string;
     priority: string;
     slaHours: number;
-    slaStatus: 'on-track' | 'at-risk' | 'overdue';
+    slaStatus: "on-track" | "at-risk" | "overdue";
     estimatedCompletion?: string;
   }>;
   workflowState: {
@@ -59,7 +63,7 @@ export interface DeepWorkflowAnalysis {
   };
   businessImpact: {
     revenue?: number;
-    customerSatisfaction: 'high' | 'medium' | 'low';
+    customerSatisfaction: "high" | "medium" | "low";
     urgencyReason?: string;
   };
   contextualSummary: string;
@@ -116,7 +120,7 @@ export class EmailStorageService {
   constructor(dbPath?: string, enableConnectionPool: boolean = false) {
     const databasePath = dbPath || appConfig.database.path;
     this.useConnectionPool = enableConnectionPool;
-    
+
     if (this.useConnectionPool) {
       // Initialize connection pool for high-concurrency scenarios
       this.connectionPool = new ConnectionPool({
@@ -125,19 +129,25 @@ export class EmailStorageService {
         enableWAL: true,
         checkpointInterval: 60000, // 1 minute
         walSizeLimit: 10 * 1024 * 1024, // 10MB
-        verbose: process.env.NODE_ENV === 'development',
+        verbose: process.env.NODE_ENV === "development",
       });
-      
+
       // Create a proxy db object for compatibility
       this.db = this.createPooledDbProxy();
-      
-      logger.info('EmailStorageService initialized with connection pool', 'EMAIL_STORAGE');
+
+      logger.info(
+        "EmailStorageService initialized with connection pool",
+        "EMAIL_STORAGE",
+      );
     } else {
       // Use single connection for better performance in single-threaded scenarios
       this.db = new Database(databasePath);
-      logger.info('EmailStorageService initialized with single connection', 'EMAIL_STORAGE');
+      logger.info(
+        "EmailStorageService initialized with single connection",
+        "EMAIL_STORAGE",
+      );
     }
-    
+
     this.lazyLoader = new LazyLoader(50, 20, 5 * 60 * 1000); // 50 items per chunk, 20 chunks cache, 5min TTL
     this.initializeDatabase();
     this.initializePerformanceMonitoring();
@@ -149,70 +159,73 @@ export class EmailStorageService {
    */
   private createPooledDbProxy(): Database.Database {
     const pool = this.connectionPool!;
-    
+
     // Create a proxy that intercepts database method calls
     const handler: ProxyHandler<any> = {
       get: (target, prop) => {
         // For prepare method, return a function that uses the pool
-        if (prop === 'prepare') {
+        if (prop === "prepare") {
           return (sql: string) => {
             // Return a statement-like object that uses the pool
             return {
               run: (...params: any[]) => {
-                return pool.execute(db => db.prepare(sql).run(...params));
+                return pool.execute((db) => db.prepare(sql).run(...params));
               },
               get: (...params: any[]) => {
-                return pool.execute(db => db.prepare(sql).get(...params));
+                return pool.execute((db) => db.prepare(sql).get(...params));
               },
               all: (...params: any[]) => {
-                return pool.execute(db => db.prepare(sql).all(...params));
+                return pool.execute((db) => db.prepare(sql).all(...params));
               },
               iterate: (...params: any[]) => {
                 // For iterate, we need special handling as it returns an iterator
-                return pool.execute(db => db.prepare(sql).iterate(...params));
+                return pool.execute((db) => db.prepare(sql).iterate(...params));
               },
             };
           };
         }
-        
+
         // For transaction method
-        if (prop === 'transaction') {
+        if (prop === "transaction") {
           return (fn: (...params: any[]) => unknown) => {
             return (...args: any[]) => {
-              return pool.execute(db => {
+              return pool.execute((db) => {
                 const transaction = db.transaction(fn);
                 return transaction(...args);
               });
             };
           };
         }
-        
+
         // For pragma method
-        if (prop === 'pragma') {
+        if (prop === "pragma") {
           return (pragma: string) => {
-            return pool.execute(db => db.pragma(pragma));
+            return pool.execute((db) => db.pragma(pragma));
           };
         }
-        
+
         // For exec method
-        if (prop === 'exec') {
+        if (prop === "exec") {
           return (sql: string) => {
-            return pool.execute(db => db.exec(sql));
+            return pool.execute((db) => db.exec(sql));
           };
         }
-        
+
         // For close method (no-op as pool manages connections)
-        if (prop === 'close') {
+        if (prop === "close") {
           return () => {
-            logger.debug('Close called on pooled db proxy (no-op)', 'EMAIL_STORAGE');
+            logger.debug(
+              "Close called on pooled db proxy (no-op)",
+              "EMAIL_STORAGE",
+            );
           };
         }
-        
+
         // Default: return property as-is
         return target[prop];
-      }
+      },
     };
-    
+
     // Create and return the proxy
     return new Proxy({}, handler) as Database.Database;
   }
@@ -224,23 +237,29 @@ export class EmailStorageService {
     try {
       // Start query performance monitoring
       queryPerformanceMonitor.startMonitoring();
-      
+
       // Register monitors for common query patterns
-      queryPerformanceMonitor.registerQueryMonitor('email_table_view', {
+      queryPerformanceMonitor.registerQueryMonitor("email_table_view", {
         alertOnSlow: true,
         alertOnError: true,
-        trackStatistics: true
+        trackStatistics: true,
       });
-      
-      queryPerformanceMonitor.registerQueryMonitor('workflow_analytics', {
+
+      queryPerformanceMonitor.registerQueryMonitor("workflow_analytics", {
         alertOnSlow: true,
         alertOnError: true,
-        trackStatistics: true
+        trackStatistics: true,
       });
-      
-      logger.info('Performance monitoring initialized for EmailStorageService', 'EMAIL_STORAGE');
+
+      logger.info(
+        "Performance monitoring initialized for EmailStorageService",
+        "EMAIL_STORAGE",
+      );
     } catch (error) {
-      logger.warn(`Failed to initialize performance monitoring: ${error}`, 'EMAIL_STORAGE');
+      logger.warn(
+        `Failed to initialize performance monitoring: ${error}`,
+        "EMAIL_STORAGE",
+      );
     }
   }
 
@@ -251,7 +270,7 @@ export class EmailStorageService {
     queryDescription: string,
     query: string,
     params: any[] = [],
-    method: 'get' | 'all' = 'all'
+    method: "get" | "all" = "all",
   ): Promise<T> {
     const startTime = Date.now();
     let result: T;
@@ -260,15 +279,21 @@ export class EmailStorageService {
     try {
       // Optimize the query using 2025 best practices
       const optimizedQuery = performanceOptimizer.optimizeQuery(query, params);
-      logger.debug(`Query optimized: ${optimizedQuery.estimatedPerformanceGain}% improvement`, 'EMAIL_STORAGE');
+      logger.debug(
+        `Query optimized: ${optimizedQuery.estimatedPerformanceGain}% improvement`,
+        "EMAIL_STORAGE",
+      );
 
       // Execute the optimized query with prepared statement
       const stmt = this.db.prepare(optimizedQuery.optimizedQuery);
-      result = method === 'get' ? stmt.get(...params) as T : stmt.all(...params) as T;
-
+      result =
+        method === "get"
+          ? (stmt.get(...params) as T)
+          : (stmt.all(...params) as T);
     } catch (queryError) {
-      error = queryError instanceof Error ? queryError.message : String(queryError);
-      logger.error(`Database query failed: ${error}`, 'EMAIL_STORAGE');
+      error =
+        queryError instanceof Error ? queryError.message : String(queryError);
+      logger.error(`Database query failed: ${error}`, "EMAIL_STORAGE");
       throw queryError;
     } finally {
       // Record performance metrics
@@ -278,7 +303,7 @@ export class EmailStorageService {
         executionTime,
         params: params.slice(0, 5), // Limit params for privacy
         error,
-        cacheHit: false // TODO: Implement cache hit detection
+        cacheHit: false, // TODO: Implement cache hit detection
       });
     }
 
@@ -293,34 +318,45 @@ export class EmailStorageService {
     queryDescription: string,
     query: string,
     params: any[] = [],
-    method: 'get' | 'all' = 'all'
+    method: "get" | "all" = "all",
   ): Promise<T> {
     return performanceOptimizer.cacheQuery(cacheKey, async () => {
-      return this.executeOptimizedQuery<T>(queryDescription, query, params, method);
+      return this.executeOptimizedQuery<T>(
+        queryDescription,
+        query,
+        params,
+        method,
+      );
     });
   }
 
   private initializeDatabase(): void {
-    logger.info('Initializing email storage database', 'EMAIL_STORAGE');
-    
+    logger.info("Initializing email storage database", "EMAIL_STORAGE");
+
     // Enable WAL mode for better concurrency if not using connection pool
     // (Connection pool handles this internally)
     if (!this.useConnectionPool) {
       try {
-        this.db.pragma('journal_mode = WAL');
-        this.db.pragma('synchronous = NORMAL');
-        this.db.pragma('cache_size = 10000'); // 10MB cache
-        this.db.pragma('temp_store = MEMORY');
-        this.db.pragma('mmap_size = 268435456'); // 256MB memory map
-        this.db.pragma('foreign_keys = ON');
-        this.db.pragma('busy_timeout = 30000'); // 30 seconds
-        
-        logger.info('WAL mode enabled with performance optimizations', 'EMAIL_STORAGE');
+        this.db.pragma("journal_mode = WAL");
+        this.db.pragma("synchronous = NORMAL");
+        this.db.pragma("cache_size = 10000"); // 10MB cache
+        this.db.pragma("temp_store = MEMORY");
+        this.db.pragma("mmap_size = 268435456"); // 256MB memory map
+        this.db.pragma("foreign_keys = ON");
+        this.db.pragma("busy_timeout = 30000"); // 30 seconds
+
+        logger.info(
+          "WAL mode enabled with performance optimizations",
+          "EMAIL_STORAGE",
+        );
       } catch (error) {
-        logger.warn(`Failed to set database pragmas: ${error}`, 'EMAIL_STORAGE');
+        logger.warn(
+          `Failed to set database pragmas: ${error}`,
+          "EMAIL_STORAGE",
+        );
       }
     }
-    
+
     // Create emails table
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS emails (
@@ -438,76 +474,79 @@ export class EmailStorageService {
 
     // Pre-populate TD SYNNEX workflow patterns
     this.seedWorkflowPatterns();
-    
-    logger.info('Email storage database initialized successfully', 'EMAIL_STORAGE');
+
+    logger.info(
+      "Email storage database initialized successfully",
+      "EMAIL_STORAGE",
+    );
   }
 
   private seedWorkflowPatterns(): void {
     const patterns = [
       {
-        pattern_name: 'Standard Order Processing',
-        workflow_category: 'Order Management',
+        pattern_name: "Standard Order Processing",
+        workflow_category: "Order Management",
         success_rate: 0.973,
         average_completion_time: 2 * 60 * 60 * 1000, // 2 hours in ms
-        trigger_keywords: 'order,purchase,PO,buy,procurement',
-        typical_entities: 'po_numbers,order_references,part_numbers'
+        trigger_keywords: "order,purchase,PO,buy,procurement",
+        typical_entities: "po_numbers,order_references,part_numbers",
       },
       {
-        pattern_name: 'Express Shipping Request',
-        workflow_category: 'Shipping/Logistics',
+        pattern_name: "Express Shipping Request",
+        workflow_category: "Shipping/Logistics",
         success_rate: 0.965,
         average_completion_time: 4 * 60 * 60 * 1000, // 4 hours in ms
-        trigger_keywords: 'shipping,delivery,logistics,tracking,freight',
-        typical_entities: 'tracking_numbers,order_references,contacts'
+        trigger_keywords: "shipping,delivery,logistics,tracking,freight",
+        typical_entities: "tracking_numbers,order_references,contacts",
       },
       {
-        pattern_name: 'Quote to Order Conversion',
-        workflow_category: 'Quote Processing',
+        pattern_name: "Quote to Order Conversion",
+        workflow_category: "Quote Processing",
         success_rate: 0.892,
         average_completion_time: 24 * 60 * 60 * 1000, // 24 hours in ms
-        trigger_keywords: 'quote,pricing,estimate,CAS,TS,WQ',
-        typical_entities: 'quote_numbers,part_numbers,contacts'
+        trigger_keywords: "quote,pricing,estimate,CAS,TS,WQ",
+        typical_entities: "quote_numbers,part_numbers,contacts",
       },
       {
-        pattern_name: 'Technical Support Case',
-        workflow_category: 'Customer Support',
+        pattern_name: "Technical Support Case",
+        workflow_category: "Customer Support",
         success_rate: 0.915,
         average_completion_time: 8 * 60 * 60 * 1000, // 8 hours in ms
-        trigger_keywords: 'support,issue,problem,help,ticket',
-        typical_entities: 'case_numbers,contacts,part_numbers'
+        trigger_keywords: "support,issue,problem,help,ticket",
+        typical_entities: "case_numbers,contacts,part_numbers",
       },
       {
-        pattern_name: 'Partner Deal Registration',
-        workflow_category: 'Deal Registration',
+        pattern_name: "Partner Deal Registration",
+        workflow_category: "Deal Registration",
         success_rate: 0.883,
         average_completion_time: 72 * 60 * 60 * 1000, // 72 hours in ms
-        trigger_keywords: 'deal,registration,partner,reseller',
-        typical_entities: 'contacts,order_references'
+        trigger_keywords: "deal,registration,partner,reseller",
+        typical_entities: "contacts,order_references",
       },
       {
-        pattern_name: 'Manager Approval Request',
-        workflow_category: 'Approval Workflows',
+        pattern_name: "Manager Approval Request",
+        workflow_category: "Approval Workflows",
         success_rate: 0.947,
         average_completion_time: 12 * 60 * 60 * 1000, // 12 hours in ms
-        trigger_keywords: 'approval,authorize,manager,escalate',
-        typical_entities: 'contacts,order_references,po_numbers'
+        trigger_keywords: "approval,authorize,manager,escalate",
+        typical_entities: "contacts,order_references,po_numbers",
       },
       {
-        pattern_name: 'Contract Renewal',
-        workflow_category: 'Renewal Processing',
+        pattern_name: "Contract Renewal",
+        workflow_category: "Renewal Processing",
         success_rate: 0.871,
         average_completion_time: 168 * 60 * 60 * 1000, // 168 hours in ms
-        trigger_keywords: 'renewal,contract,extend,expire',
-        typical_entities: 'contacts,order_references'
+        trigger_keywords: "renewal,contract,extend,expire",
+        typical_entities: "contacts,order_references",
       },
       {
-        pattern_name: 'Vendor RMA Process',
-        workflow_category: 'Vendor Management',
+        pattern_name: "Vendor RMA Process",
+        workflow_category: "Vendor Management",
         success_rate: 0.824,
         average_completion_time: 96 * 60 * 60 * 1000, // 96 hours in ms
-        trigger_keywords: 'RMA,return,vendor,defective',
-        typical_entities: 'case_numbers,part_numbers,contacts'
-      }
+        trigger_keywords: "RMA,return,vendor,defective",
+        typical_entities: "case_numbers,part_numbers,contacts",
+      },
     ];
 
     const insertPattern = this.db.prepare(`
@@ -525,16 +564,16 @@ export class EmailStorageService {
         pattern.success_rate,
         pattern.average_completion_time,
         pattern.trigger_keywords,
-        pattern.typical_entities
+        pattern.typical_entities,
       );
     }
 
-    logger.info('Workflow patterns seeded successfully', 'EMAIL_STORAGE');
+    logger.info("Workflow patterns seeded successfully", "EMAIL_STORAGE");
   }
 
   async storeEmail(email: Email, analysis: EmailAnalysisResult): Promise<void> {
-    logger.info(`Storing email analysis: ${email.subject}`, 'EMAIL_STORAGE');
-    
+    logger.info(`Storing email analysis: ${email.subject}`, "EMAIL_STORAGE");
+
     const transaction = this.db.transaction(() => {
       // Store email
       const emailStmt = this.db.prepare(`
@@ -551,7 +590,7 @@ export class EmailStorageService {
         email.subject,
         email.from.emailAddress.address,
         email.from.emailAddress.name,
-        JSON.stringify(email.to?.map(t => t.emailAddress) || []),
+        JSON.stringify(email.to?.map((t) => t.emailAddress) || []),
         email.receivedDateTime,
         email.isRead ? 1 : 0,
         email.hasAttachments ? 1 : 0,
@@ -560,7 +599,7 @@ export class EmailStorageService {
         email.importance,
         JSON.stringify(email.categories || []),
         JSON.stringify(email),
-        new Date().toISOString()
+        new Date().toISOString(),
       );
 
       // Store enhanced analysis
@@ -611,7 +650,7 @@ export class EmailStorageService {
         // Actions
         analysis.actionSummary,
         JSON.stringify(analysis.deep.actionItems),
-        analysis.deep.actionItems[0]?.slaStatus || 'on-track',
+        analysis.deep.actionItems[0]?.slaStatus || "on-track",
         // Workflow state
         analysis.deep.workflowState.current,
         analysis.deep.workflowState.suggestedNext,
@@ -628,13 +667,16 @@ export class EmailStorageService {
         analysis.processingMetadata.models.stage2,
         analysis.processingMetadata.stage2Time,
         analysis.processingMetadata.totalTime,
-        new Date().toISOString()
+        new Date().toISOString(),
       );
     });
 
     transaction();
-    logger.info(`Email analysis stored successfully: ${email.id}`, 'EMAIL_STORAGE');
-    
+    logger.info(
+      `Email analysis stored successfully: ${email.id}`,
+      "EMAIL_STORAGE",
+    );
+
     // Broadcast real-time update for email analysis completion
     try {
       wsService.broadcastEmailAnalyzed(
@@ -643,16 +685,24 @@ export class EmailStorageService {
         analysis.quick.priority,
         analysis.actionSummary,
         analysis.deep.detailedWorkflow.confidence,
-        analysis.deep.actionItems[0]?.slaStatus || 'on-track',
-        analysis.deep.workflowState.current
+        analysis.deep.actionItems[0]?.slaStatus || "on-track",
+        analysis.deep.workflowState.current,
       );
-      logger.debug(`WebSocket broadcast sent for email analysis: ${email.id}`, 'EMAIL_STORAGE');
+      logger.debug(
+        `WebSocket broadcast sent for email analysis: ${email.id}`,
+        "EMAIL_STORAGE",
+      );
     } catch (error) {
-      logger.error(`Failed to broadcast email analysis update: ${error}`, 'EMAIL_STORAGE');
+      logger.error(
+        `Failed to broadcast email analysis update: ${error}`,
+        "EMAIL_STORAGE",
+      );
     }
   }
 
-  async getEmailWithAnalysis(emailId: string): Promise<EmailWithAnalysis | null> {
+  async getEmailWithAnalysis(
+    emailId: string,
+  ): Promise<EmailWithAnalysis | null> {
     const stmt = this.db.prepare(`
       SELECT 
         e.*,
@@ -673,7 +723,7 @@ export class EmailStorageService {
     `);
 
     const result = stmt.get(emailId) as any;
-    
+
     if (!result) {
       return null;
     }
@@ -685,9 +735,9 @@ export class EmailStorageService {
       subject: result.subject,
       from: {
         emailAddress: {
-          name: result.sender_name || '',
-          address: result.sender_email
-        }
+          name: result.sender_name || "",
+          address: result.sender_email,
+        },
       },
       to: result.to_addresses ? JSON.parse(result.to_addresses) : [],
       receivedDateTime: result.received_at,
@@ -701,43 +751,67 @@ export class EmailStorageService {
         quick: {
           workflow: {
             primary: result.quick_workflow,
-            secondary: result.deep_workflow_secondary ? JSON.parse(result.deep_workflow_secondary) : []
+            secondary: result.deep_workflow_secondary
+              ? JSON.parse(result.deep_workflow_secondary)
+              : [],
           },
           priority: result.quick_priority,
           intent: result.quick_intent,
           urgency: result.quick_urgency,
           confidence: result.quick_confidence,
-          suggestedState: result.quick_suggested_state
+          suggestedState: result.quick_suggested_state,
         },
         deep: {
           detailedWorkflow: {
             primary: result.deep_workflow_primary,
-            secondary: result.deep_workflow_secondary ? JSON.parse(result.deep_workflow_secondary) : [],
-            relatedCategories: result.deep_workflow_related ? JSON.parse(result.deep_workflow_related) : [],
-            confidence: result.deep_confidence
+            secondary: result.deep_workflow_secondary
+              ? JSON.parse(result.deep_workflow_secondary)
+              : [],
+            relatedCategories: result.deep_workflow_related
+              ? JSON.parse(result.deep_workflow_related)
+              : [],
+            confidence: result.deep_confidence,
           },
           entities: {
-            poNumbers: result.entities_po_numbers ? JSON.parse(result.entities_po_numbers) : [],
-            quoteNumbers: result.entities_quote_numbers ? JSON.parse(result.entities_quote_numbers) : [],
-            caseNumbers: result.entities_case_numbers ? JSON.parse(result.entities_case_numbers) : [],
-            partNumbers: result.entities_part_numbers ? JSON.parse(result.entities_part_numbers) : [],
-            orderReferences: result.entities_order_references ? JSON.parse(result.entities_order_references) : [],
-            contacts: result.entities_contacts ? JSON.parse(result.entities_contacts) : []
+            poNumbers: result.entities_po_numbers
+              ? JSON.parse(result.entities_po_numbers)
+              : [],
+            quoteNumbers: result.entities_quote_numbers
+              ? JSON.parse(result.entities_quote_numbers)
+              : [],
+            caseNumbers: result.entities_case_numbers
+              ? JSON.parse(result.entities_case_numbers)
+              : [],
+            partNumbers: result.entities_part_numbers
+              ? JSON.parse(result.entities_part_numbers)
+              : [],
+            orderReferences: result.entities_order_references
+              ? JSON.parse(result.entities_order_references)
+              : [],
+            contacts: result.entities_contacts
+              ? JSON.parse(result.entities_contacts)
+              : [],
           },
-          actionItems: result.action_details ? JSON.parse(result.action_details) : [],
+          actionItems: result.action_details
+            ? JSON.parse(result.action_details)
+            : [],
           workflowState: {
             current: result.workflow_state,
             suggestedNext: result.workflow_suggested_next,
-            blockers: result.workflow_blockers ? JSON.parse(result.workflow_blockers) : []
+            blockers: result.workflow_blockers
+              ? JSON.parse(result.workflow_blockers)
+              : [],
           },
           businessImpact: {
             revenue: result.business_impact_revenue,
             customerSatisfaction: result.business_impact_satisfaction,
-            urgencyReason: result.business_impact_urgency_reason
+            urgencyReason: result.business_impact_urgency_reason,
           },
           contextualSummary: result.contextual_summary,
           suggestedResponse: result.suggested_response,
-          relatedEmails: result.related_emails ? JSON.parse(result.related_emails) : []
+          relatedEmails: result.related_emails
+            ? JSON.parse(result.related_emails)
+            : [],
         },
         actionSummary: result.action_summary,
         processingMetadata: {
@@ -746,10 +820,10 @@ export class EmailStorageService {
           totalTime: result.total_processing_time,
           models: {
             stage1: result.quick_model,
-            stage2: result.deep_model
-          }
-        }
-      }
+            stage2: result.deep_model,
+          },
+        },
+      },
     };
 
     return email;
@@ -758,7 +832,7 @@ export class EmailStorageService {
   async getEmailsByWorkflow(
     workflow: string,
     limit: number = 50,
-    offset: number = 0
+    offset: number = 0,
   ): Promise<EmailWithAnalysis[]> {
     // Use a single optimized query with all necessary joins to avoid N+1 queries
     const stmt = this.db.prepare(`
@@ -783,17 +857,17 @@ export class EmailStorageService {
     `);
 
     const results = stmt.all(workflow, limit, offset) as any[];
-    
+
     // Process all results in memory without additional queries
-    const emails: EmailWithAnalysis[] = results.map(result => ({
+    const emails: EmailWithAnalysis[] = results.map((result) => ({
       id: result.id,
       graphId: result.graph_id,
       subject: result.subject,
       from: {
         emailAddress: {
-          name: result.sender_name || '',
-          address: result.sender_email
-        }
+          name: result.sender_name || "",
+          address: result.sender_email,
+        },
       },
       to: result.to_addresses ? JSON.parse(result.to_addresses) : [],
       receivedDateTime: result.received_at,
@@ -807,43 +881,67 @@ export class EmailStorageService {
         quick: {
           workflow: {
             primary: result.quick_workflow,
-            secondary: result.deep_workflow_secondary ? JSON.parse(result.deep_workflow_secondary) : []
+            secondary: result.deep_workflow_secondary
+              ? JSON.parse(result.deep_workflow_secondary)
+              : [],
           },
           priority: result.quick_priority,
           intent: result.quick_intent,
           urgency: result.quick_urgency,
           confidence: result.quick_confidence,
-          suggestedState: result.quick_suggested_state
+          suggestedState: result.quick_suggested_state,
         },
         deep: {
           detailedWorkflow: {
             primary: result.deep_workflow_primary,
-            secondary: result.deep_workflow_secondary ? JSON.parse(result.deep_workflow_secondary) : [],
-            relatedCategories: result.deep_workflow_related ? JSON.parse(result.deep_workflow_related) : [],
-            confidence: result.deep_confidence
+            secondary: result.deep_workflow_secondary
+              ? JSON.parse(result.deep_workflow_secondary)
+              : [],
+            relatedCategories: result.deep_workflow_related
+              ? JSON.parse(result.deep_workflow_related)
+              : [],
+            confidence: result.deep_confidence,
           },
           entities: {
-            poNumbers: result.entities_po_numbers ? JSON.parse(result.entities_po_numbers) : [],
-            quoteNumbers: result.entities_quote_numbers ? JSON.parse(result.entities_quote_numbers) : [],
-            caseNumbers: result.entities_case_numbers ? JSON.parse(result.entities_case_numbers) : [],
-            partNumbers: result.entities_part_numbers ? JSON.parse(result.entities_part_numbers) : [],
-            orderReferences: result.entities_order_references ? JSON.parse(result.entities_order_references) : [],
-            contacts: result.entities_contacts ? JSON.parse(result.entities_contacts) : []
+            poNumbers: result.entities_po_numbers
+              ? JSON.parse(result.entities_po_numbers)
+              : [],
+            quoteNumbers: result.entities_quote_numbers
+              ? JSON.parse(result.entities_quote_numbers)
+              : [],
+            caseNumbers: result.entities_case_numbers
+              ? JSON.parse(result.entities_case_numbers)
+              : [],
+            partNumbers: result.entities_part_numbers
+              ? JSON.parse(result.entities_part_numbers)
+              : [],
+            orderReferences: result.entities_order_references
+              ? JSON.parse(result.entities_order_references)
+              : [],
+            contacts: result.entities_contacts
+              ? JSON.parse(result.entities_contacts)
+              : [],
           },
-          actionItems: result.action_details ? JSON.parse(result.action_details) : [],
+          actionItems: result.action_details
+            ? JSON.parse(result.action_details)
+            : [],
           workflowState: {
             current: result.workflow_state,
             suggestedNext: result.workflow_suggested_next,
-            blockers: result.workflow_blockers ? JSON.parse(result.workflow_blockers) : []
+            blockers: result.workflow_blockers
+              ? JSON.parse(result.workflow_blockers)
+              : [],
           },
           businessImpact: {
             revenue: result.business_impact_revenue,
             customerSatisfaction: result.business_impact_satisfaction,
-            urgencyReason: result.business_impact_urgency_reason
+            urgencyReason: result.business_impact_urgency_reason,
           },
           contextualSummary: result.contextual_summary,
           suggestedResponse: result.suggested_response,
-          relatedEmails: result.related_emails ? JSON.parse(result.related_emails) : []
+          relatedEmails: result.related_emails
+            ? JSON.parse(result.related_emails)
+            : [],
         },
         actionSummary: result.action_summary,
         processingMetadata: {
@@ -852,10 +950,10 @@ export class EmailStorageService {
           totalTime: result.total_processing_time,
           models: {
             stage1: result.quick_model,
-            stage2: result.deep_model
-          }
-        }
-      }
+            stage2: result.deep_model,
+          },
+        },
+      },
     }));
 
     return emails;
@@ -867,33 +965,54 @@ export class EmailStorageService {
     slaCompliance: Record<string, number>;
     averageProcessingTime: number;
   }> {
-    const totalEmails = (this.db.prepare(`
+    const totalEmails = (
+      this.db
+        .prepare(
+          `
       SELECT COUNT(*) as count FROM emails
-    `).get() as any).count;
+    `,
+        )
+        .get() as any
+    ).count;
 
-    const workflowDistribution = this.db.prepare(`
+    const workflowDistribution = this.db
+      .prepare(
+        `
       SELECT 
         deep_workflow_primary as workflow,
         COUNT(*) as count
       FROM email_analysis
       WHERE deep_workflow_primary IS NOT NULL
       GROUP BY deep_workflow_primary
-    `).all() as any[];
+    `,
+      )
+      .all() as any[];
 
-    const slaCompliance = this.db.prepare(`
+    const slaCompliance = this.db
+      .prepare(
+        `
       SELECT 
         action_sla_status as status,
         COUNT(*) as count
       FROM email_analysis
       WHERE action_sla_status IS NOT NULL
       GROUP BY action_sla_status
-    `).all() as any[];
+    `,
+      )
+      .all() as any[];
 
-    const avgProcessingTime = (this.db.prepare(`
+    const avgProcessingTime =
+      (
+        this.db
+          .prepare(
+            `
       SELECT AVG(total_processing_time) as avg_time
       FROM email_analysis
       WHERE total_processing_time IS NOT NULL
-    `).get() as any).avg_time || 0;
+    `,
+          )
+          .get() as any
+      ).avg_time || 0;
 
     return {
       totalEmails,
@@ -905,17 +1024,21 @@ export class EmailStorageService {
         acc[item.status] = item.count;
         return acc;
       }, {}),
-      averageProcessingTime: Math.round(avgProcessingTime)
+      averageProcessingTime: Math.round(avgProcessingTime),
     };
   }
 
-  async updateWorkflowState(emailId: string, newState: string, changedBy?: string): Promise<void> {
+  async updateWorkflowState(
+    emailId: string,
+    newState: string,
+    changedBy?: string,
+  ): Promise<void> {
     // Get current state first
     const currentStateStmt = this.db.prepare(`
       SELECT workflow_state FROM email_analysis WHERE email_id = ?
     `);
     const currentResult = currentStateStmt.get(emailId) as any;
-    const oldState = currentResult?.workflow_state || 'unknown';
+    const oldState = currentResult?.workflow_state || "unknown";
 
     // Update the state
     const updateStmt = this.db.prepare(`
@@ -926,15 +1049,29 @@ export class EmailStorageService {
 
     const now = new Date().toISOString();
     updateStmt.run(newState, now, now, emailId);
-    
-    logger.info(`Workflow state updated: ${emailId} -> ${newState}`, 'EMAIL_STORAGE');
+
+    logger.info(
+      `Workflow state updated: ${emailId} -> ${newState}`,
+      "EMAIL_STORAGE",
+    );
 
     // Broadcast real-time update for workflow state change
     try {
-      wsService.broadcastEmailStateChanged(emailId, oldState, newState, changedBy);
-      logger.debug(`WebSocket broadcast sent for workflow state change: ${emailId}`, 'EMAIL_STORAGE');
+      wsService.broadcastEmailStateChanged(
+        emailId,
+        oldState,
+        newState,
+        changedBy,
+      );
+      logger.debug(
+        `WebSocket broadcast sent for workflow state change: ${emailId}`,
+        "EMAIL_STORAGE",
+      );
     } catch (error) {
-      logger.error(`Failed to broadcast workflow state change: ${error}`, 'EMAIL_STORAGE');
+      logger.error(
+        `Failed to broadcast workflow state change: ${error}`,
+        "EMAIL_STORAGE",
+      );
     }
   }
 
@@ -976,18 +1113,19 @@ export class EmailStorageService {
     `);
 
     const slaViolations = stmt.all() as any[];
-    
+
     // Process SLA violations in batches to avoid N+1 updates
-    const updates: Array<{ status: 'at-risk' | 'overdue'; emailId: string }> = [];
+    const updates: Array<{ status: "at-risk" | "overdue"; emailId: string }> =
+      [];
     const broadcasts: Array<{
       emailId: string;
       workflow: string;
       priority: string;
-      status: 'at-risk' | 'overdue';
+      status: "at-risk" | "overdue";
       timeRemaining?: number;
       overdueDuration?: number;
     }> = [];
-    
+
     const now = new Date();
     const slaThresholds = {
       Critical: 4 * 60 * 60 * 1000, // 4 hours
@@ -995,30 +1133,31 @@ export class EmailStorageService {
       Medium: 72 * 60 * 60 * 1000, // 72 hours
       Low: 168 * 60 * 60 * 1000, // 168 hours
     };
-    
+
     // Process violations in memory first
     for (const violation of slaViolations) {
       const receivedAt = new Date(violation.received_at);
       const diffMs = now.getTime() - receivedAt.getTime();
-      
-      const slaThreshold = slaThresholds[violation.quick_priority as keyof typeof slaThresholds];
+
+      const slaThreshold =
+        slaThresholds[violation.quick_priority as keyof typeof slaThresholds];
       const isOverdue = diffMs > slaThreshold;
-      const isAtRisk = diffMs > (slaThreshold * 0.8); // 80% of SLA time
-      
-      let slaStatus: 'at-risk' | 'overdue';
+      const isAtRisk = diffMs > slaThreshold * 0.8; // 80% of SLA time
+
+      let slaStatus: "at-risk" | "overdue";
       let timeRemaining: number | undefined;
       let overdueDuration: number | undefined;
-      
+
       if (isOverdue) {
-        slaStatus = 'overdue';
+        slaStatus = "overdue";
         overdueDuration = diffMs - slaThreshold;
       } else if (isAtRisk) {
-        slaStatus = 'at-risk';
+        slaStatus = "at-risk";
         timeRemaining = slaThreshold - diffMs;
       } else {
         continue; // Skip if not at risk or overdue
       }
-      
+
       updates.push({ status: slaStatus, emailId: violation.id });
       broadcasts.push({
         emailId: violation.id,
@@ -1026,10 +1165,10 @@ export class EmailStorageService {
         priority: violation.quick_priority,
         status: slaStatus,
         timeRemaining,
-        overdueDuration
+        overdueDuration,
       });
     }
-    
+
     // Perform batch updates using a transaction for better performance
     if (updates.length > 0) {
       const updateStmt = this.db.prepare(`
@@ -1037,15 +1176,17 @@ export class EmailStorageService {
         SET action_sla_status = ?
         WHERE email_id = ?
       `);
-      
-      const transaction = this.db.transaction((updates: Array<{emailId: string, status: string}>) => {
-        for (const update of updates) {
-          updateStmt.run(update.status, update.emailId);
-        }
-      });
-      
+
+      const transaction = this.db.transaction(
+        (updates: Array<{ emailId: string; status: string }>) => {
+          for (const update of updates) {
+            updateStmt.run(update.status, update.emailId);
+          }
+        },
+      );
+
       transaction(updates);
-      
+
       // Broadcast all SLA alerts
       for (const broadcast of broadcasts) {
         try {
@@ -1055,35 +1196,42 @@ export class EmailStorageService {
             broadcast.priority as "Critical" | "High" | "Medium" | "Low",
             broadcast.status,
             broadcast.timeRemaining,
-            broadcast.overdueDuration
+            broadcast.overdueDuration,
           );
-          logger.info(`SLA alert broadcast for email ${broadcast.emailId}: ${broadcast.status}`, 'EMAIL_STORAGE');
+          logger.info(
+            `SLA alert broadcast for email ${broadcast.emailId}: ${broadcast.status}`,
+            "EMAIL_STORAGE",
+          );
         } catch (error) {
-          logger.error(`Failed to broadcast SLA alert for email ${broadcast.emailId}: ${error}`, 'EMAIL_STORAGE');
+          logger.error(
+            `Failed to broadcast SLA alert for email ${broadcast.emailId}: ${error}`,
+            "EMAIL_STORAGE",
+          );
         }
       }
     }
   }
 
-  startSLAMonitoring(intervalMs: number = 300000): void { // Default 5 minutes
+  startSLAMonitoring(intervalMs: number = 300000): void {
+    // Default 5 minutes
     if (this.slaMonitoringInterval) {
       clearInterval(this.slaMonitoringInterval);
     }
-    
+
     this.slaMonitoringInterval = setInterval(() => {
-      this.checkSLAStatus().catch(error => {
-        logger.error(`SLA monitoring failed: ${error}`, 'EMAIL_STORAGE');
+      this.checkSLAStatus().catch((error) => {
+        logger.error(`SLA monitoring failed: ${error}`, "EMAIL_STORAGE");
       });
     }, intervalMs);
-    
-    logger.info('SLA monitoring started', 'EMAIL_STORAGE');
+
+    logger.info("SLA monitoring started", "EMAIL_STORAGE");
   }
 
   stopSLAMonitoring(): void {
     if (this.slaMonitoringInterval) {
       clearInterval(this.slaMonitoringInterval);
       this.slaMonitoringInterval = null;
-      logger.info('SLA monitoring stopped', 'EMAIL_STORAGE');
+      logger.info("SLA monitoring stopped", "EMAIL_STORAGE");
     }
   }
 
@@ -1100,11 +1248,11 @@ export class EmailStorageService {
     requestedBy: string;
     subject: string;
     summary: string;
-    status: 'red' | 'yellow' | 'green';
+    status: "red" | "yellow" | "green";
     statusText: string;
-    workflowState: 'START_POINT' | 'IN_PROGRESS' | 'COMPLETION';
+    workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
     workflowType?: string;
-    priority?: 'Critical' | 'High' | 'Medium' | 'Low';
+    priority?: "Critical" | "High" | "Medium" | "Low";
     receivedDate: Date;
     hasAttachments?: boolean;
     isRead?: boolean;
@@ -1139,10 +1287,10 @@ export class EmailStorageService {
         emailData.isRead ? 1 : 0,
         emailData.hasAttachments ? 1 : 0,
         emailData.summary,
-        emailData.body || '',
+        emailData.body || "",
         JSON.stringify(emailData),
         new Date().toISOString(),
-        new Date().toISOString()
+        new Date().toISOString(),
       );
 
       // Insert analysis record with IEMS data
@@ -1161,45 +1309,49 @@ export class EmailStorageService {
       insertAnalysisStmt.run(
         analysisId,
         emailId,
-        emailData.workflowType || 'General Support',
-        emailData.priority || 'Medium',
+        emailData.workflowType || "General Support",
+        emailData.priority || "Medium",
         this.extractIntent(emailData.subject, emailData.summary),
         this.mapStatusToUrgency(emailData.status),
         0.85, // Default confidence for IEMS data
         emailData.workflowState,
-        emailData.workflowType || 'General Support',
+        emailData.workflowType || "General Support",
         emailData.workflowState,
         emailData.summary,
-        this.extractEntitiesOfType(emailData.entities, 'po_number'),
-        this.extractEntitiesOfType(emailData.entities, 'quote_number'),
-        this.extractEntitiesOfType(emailData.entities, 'case_number'),
-        this.extractEntitiesOfType(emailData.entities, 'part_number'),
-        this.extractEntitiesOfType(emailData.entities, 'order_reference'),
+        this.extractEntitiesOfType(emailData.entities, "po_number"),
+        this.extractEntitiesOfType(emailData.entities, "quote_number"),
+        this.extractEntitiesOfType(emailData.entities, "case_number"),
+        this.extractEntitiesOfType(emailData.entities, "part_number"),
+        this.extractEntitiesOfType(emailData.entities, "order_reference"),
         JSON.stringify(emailData.recipients || []),
         new Date().toISOString(),
-        new Date().toISOString()
+        new Date().toISOString(),
       );
 
       // Create audit log entry
       await this.createAuditLog({
-        entityType: 'email',
+        entityType: "email",
         entityId: emailId,
-        action: 'created',
+        action: "created",
         oldValues: {},
         newValues: {
           subject: emailData.subject,
           status: emailData.status,
-          workflow_state: emailData.workflowState
+          workflow_state: emailData.workflowState,
         },
-        performedBy: 'IEMS-system'
+        performedBy: "IEMS-system",
       });
 
-      logger.info(`Email created from IEMS data: ${emailId}`, 'EMAIL_STORAGE');
+      logger.info(`Email created from IEMS data: ${emailId}`, "EMAIL_STORAGE");
       return emailId;
-
     } catch (error) {
-      logger.error(`Failed to create email from IEMS data: ${error}`, 'EMAIL_STORAGE');
-      throw new Error(`Email creation failed: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(
+        `Failed to create email from IEMS data: ${error}`,
+        "EMAIL_STORAGE",
+      );
+      throw new Error(
+        `Email creation failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -1207,21 +1359,23 @@ export class EmailStorageService {
    * Update email status with audit trail
    */
   async updateEmailStatus(
-    emailId: string, 
-    newStatus: 'red' | 'yellow' | 'green',
+    emailId: string,
+    newStatus: "red" | "yellow" | "green",
     newStatusText?: string,
-    performedBy?: string
+    performedBy?: string,
   ): Promise<void> {
     try {
       // Get current status
-      const currentEmail = this.db.prepare('SELECT * FROM email_analysis WHERE email_id = ?').get(emailId) as any;
-      
+      const currentEmail = this.db
+        .prepare("SELECT * FROM email_analysis WHERE email_id = ?")
+        .get(emailId) as any;
+
       if (!currentEmail) {
         throw new Error(`Email not found: ${emailId}`);
       }
 
       const oldStatus = this.mapWorkflowToStatus(currentEmail.workflow_state);
-      
+
       // Update status in email_analysis table
       const updateStmt = this.db.prepare(`
         UPDATE email_analysis 
@@ -1234,31 +1388,94 @@ export class EmailStorageService {
 
       // Create audit log
       await this.createAuditLog({
-        entityType: 'email',
+        entityType: "email",
         entityId: emailId,
-        action: 'status_update',
-        oldValues: { status: oldStatus, workflow_state: currentEmail.workflow_state },
+        action: "status_update",
+        oldValues: {
+          status: oldStatus,
+          workflow_state: currentEmail.workflow_state,
+        },
         newValues: { status: newStatus, workflow_state: newWorkflowState },
-        performedBy: performedBy || 'system'
+        performedBy: performedBy || "system",
       });
 
       // Broadcast status change via WebSocket
       try {
         wsService.broadcastEmailStateChanged(
-          emailId, 
-          currentEmail.workflow_state, 
-          newWorkflowState, 
-          performedBy
+          emailId,
+          currentEmail.workflow_state,
+          newWorkflowState,
+          performedBy,
         );
       } catch (wsError) {
-        logger.warn(`WebSocket broadcast failed for status update: ${wsError}`, 'EMAIL_STORAGE');
+        logger.warn(
+          `WebSocket broadcast failed for status update: ${wsError}`,
+          "EMAIL_STORAGE",
+        );
       }
 
-      logger.info(`Email status updated: ${emailId} -> ${newStatus}`, 'EMAIL_STORAGE');
-
+      logger.info(
+        `Email status updated: ${emailId} -> ${newStatus}`,
+        "EMAIL_STORAGE",
+      );
     } catch (error) {
-      logger.error(`Failed to update email status: ${error}`, 'EMAIL_STORAGE');
+      logger.error(`Failed to update email status: ${error}`, "EMAIL_STORAGE");
       throw error;
+    }
+  }
+
+  /**
+   * Get recent emails for a specific user
+   */
+  async getRecentEmailsForUser(
+    userId: string,
+    daysBack: number = 7,
+  ): Promise<any[]> {
+    try {
+      const stmt = this.db.prepare(`
+        SELECT 
+          e.id,
+          e.subject,
+          e.sender,
+          e.recipients,
+          e.date,
+          ea.quick_priority as priority,
+          ea.quick_intent as intent,
+          ea.sentiment,
+          ea.quick_urgency as urgency,
+          GROUP_CONCAT(DISTINCT ee.entity_value) as entities
+        FROM emails_enhanced e
+        LEFT JOIN email_analysis ea ON e.id = ea.email_id
+        LEFT JOIN email_entities ee ON e.id = ee.email_id
+        WHERE e.sender LIKE ? OR e.recipients LIKE ?
+        AND datetime(e.date) >= datetime('now', '-${daysBack} days')
+        GROUP BY e.id
+        ORDER BY e.date DESC
+        LIMIT 100
+      `);
+
+      const userPattern = `%${userId}%`;
+      const results = stmt.all(userPattern, userPattern) as any[];
+
+      return results.map((row) => ({
+        id: row.id,
+        subject: row.subject,
+        sender: row.sender,
+        recipients: row.recipients,
+        date: row.date,
+        priority: row.priority,
+        intent: row.intent,
+        sentiment: row.sentiment || "neutral",
+        urgency: row.urgency,
+        entities: row.entities ? row.entities.split(",") : [],
+      }));
+    } catch (error) {
+      logger.error("Failed to get recent emails for user", "EMAIL_STORAGE", {
+        error,
+        userId,
+        daysBack,
+      });
+      return [];
     }
   }
 
@@ -1302,13 +1519,15 @@ export class EmailStorageService {
         JSON.stringify(auditData.oldValues),
         JSON.stringify(auditData.newValues),
         auditData.performedBy,
-        new Date().toISOString()
+        new Date().toISOString(),
       );
 
-      logger.debug(`Audit log created: ${auditData.action} on ${auditData.entityType}:${auditData.entityId}`, 'EMAIL_STORAGE');
-
+      logger.debug(
+        `Audit log created: ${auditData.action} on ${auditData.entityType}:${auditData.entityId}`,
+        "EMAIL_STORAGE",
+      );
     } catch (error) {
-      logger.error(`Failed to create audit log: ${error}`, 'EMAIL_STORAGE');
+      logger.error(`Failed to create audit log: ${error}`, "EMAIL_STORAGE");
       throw error;
     }
   }
@@ -1317,14 +1536,16 @@ export class EmailStorageService {
    * Batch load emails by IDs to avoid N+1 queries
    * This is a performance optimization method for loading multiple emails at once
    */
-  async batchLoadEmailsWithAnalysis(emailIds: string[]): Promise<Map<string, EmailWithAnalysis>> {
+  async batchLoadEmailsWithAnalysis(
+    emailIds: string[],
+  ): Promise<Map<string, EmailWithAnalysis>> {
     if (emailIds.length === 0) {
       return new Map();
     }
 
     // Create placeholders for the IN clause
-    const placeholders = emailIds.map(() => '?').join(',');
-    
+    const placeholders = emailIds.map(() => "?").join(",");
+
     const stmt = this.db.prepare(`
       SELECT 
         e.*,
@@ -1354,9 +1575,9 @@ export class EmailStorageService {
         subject: result.subject,
         from: {
           emailAddress: {
-            name: result.sender_name || '',
-            address: result.sender_email
-          }
+            name: result.sender_name || "",
+            address: result.sender_email,
+          },
         },
         to: result.to_addresses ? JSON.parse(result.to_addresses) : [],
         receivedDateTime: result.received_at,
@@ -1370,43 +1591,67 @@ export class EmailStorageService {
           quick: {
             workflow: {
               primary: result.quick_workflow,
-              secondary: result.deep_workflow_secondary ? JSON.parse(result.deep_workflow_secondary) : []
+              secondary: result.deep_workflow_secondary
+                ? JSON.parse(result.deep_workflow_secondary)
+                : [],
             },
             priority: result.quick_priority,
             intent: result.quick_intent,
             urgency: result.quick_urgency,
             confidence: result.quick_confidence,
-            suggestedState: result.quick_suggested_state
+            suggestedState: result.quick_suggested_state,
           },
           deep: {
             detailedWorkflow: {
               primary: result.deep_workflow_primary,
-              secondary: result.deep_workflow_secondary ? JSON.parse(result.deep_workflow_secondary) : [],
-              relatedCategories: result.deep_workflow_related ? JSON.parse(result.deep_workflow_related) : [],
-              confidence: result.deep_confidence
+              secondary: result.deep_workflow_secondary
+                ? JSON.parse(result.deep_workflow_secondary)
+                : [],
+              relatedCategories: result.deep_workflow_related
+                ? JSON.parse(result.deep_workflow_related)
+                : [],
+              confidence: result.deep_confidence,
             },
             entities: {
-              poNumbers: result.entities_po_numbers ? JSON.parse(result.entities_po_numbers) : [],
-              quoteNumbers: result.entities_quote_numbers ? JSON.parse(result.entities_quote_numbers) : [],
-              caseNumbers: result.entities_case_numbers ? JSON.parse(result.entities_case_numbers) : [],
-              partNumbers: result.entities_part_numbers ? JSON.parse(result.entities_part_numbers) : [],
-              orderReferences: result.entities_order_references ? JSON.parse(result.entities_order_references) : [],
-              contacts: result.entities_contacts ? JSON.parse(result.entities_contacts) : []
+              poNumbers: result.entities_po_numbers
+                ? JSON.parse(result.entities_po_numbers)
+                : [],
+              quoteNumbers: result.entities_quote_numbers
+                ? JSON.parse(result.entities_quote_numbers)
+                : [],
+              caseNumbers: result.entities_case_numbers
+                ? JSON.parse(result.entities_case_numbers)
+                : [],
+              partNumbers: result.entities_part_numbers
+                ? JSON.parse(result.entities_part_numbers)
+                : [],
+              orderReferences: result.entities_order_references
+                ? JSON.parse(result.entities_order_references)
+                : [],
+              contacts: result.entities_contacts
+                ? JSON.parse(result.entities_contacts)
+                : [],
             },
-            actionItems: result.action_details ? JSON.parse(result.action_details) : [],
+            actionItems: result.action_details
+              ? JSON.parse(result.action_details)
+              : [],
             workflowState: {
               current: result.workflow_state,
               suggestedNext: result.workflow_suggested_next,
-              blockers: result.workflow_blockers ? JSON.parse(result.workflow_blockers) : []
+              blockers: result.workflow_blockers
+                ? JSON.parse(result.workflow_blockers)
+                : [],
             },
             businessImpact: {
               revenue: result.business_impact_revenue,
               customerSatisfaction: result.business_impact_satisfaction,
-              urgencyReason: result.business_impact_urgency_reason
+              urgencyReason: result.business_impact_urgency_reason,
             },
             contextualSummary: result.contextual_summary,
             suggestedResponse: result.suggested_response,
-            relatedEmails: result.related_emails ? JSON.parse(result.related_emails) : []
+            relatedEmails: result.related_emails
+              ? JSON.parse(result.related_emails)
+              : [],
           },
           actionSummary: result.action_summary,
           processingMetadata: {
@@ -1415,10 +1660,10 @@ export class EmailStorageService {
             totalTime: result.total_processing_time,
             models: {
               stage1: result.quick_model,
-              stage2: result.deep_model
-            }
-          }
-        }
+              stage2: result.deep_model,
+            },
+          },
+        },
       };
 
       emailMap.set(email.id, email);
@@ -1435,7 +1680,7 @@ export class EmailStorageService {
     page?: number;
     pageSize?: number;
     sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
+    sortOrder?: "asc" | "desc";
     filters?: {
       status?: string[];
       emailAlias?: string[];
@@ -1480,46 +1725,61 @@ export class EmailStorageService {
 
       // Search filter
       if (options.search) {
-        whereClauses.push('(e.subject LIKE ? OR ea.contextual_summary LIKE ? OR e.sender_name LIKE ?)');
+        whereClauses.push(
+          "(e.subject LIKE ? OR ea.contextual_summary LIKE ? OR e.sender_name LIKE ?)",
+        );
         const searchParam = `%${options.search}%`;
         params.push(searchParam, searchParam, searchParam);
       }
 
       // Status filter - using parameterized placeholders
       if (options.filters?.status?.length) {
-        const statusPlaceholders = options.filters.status.map(() => '?').join(',');
+        const statusPlaceholders = options.filters.status
+          .map(() => "?")
+          .join(",");
         whereClauses.push(`ea.workflow_state IN (${statusPlaceholders})`);
-        params.push(...options.filters.status.map(s => this.mapStatusToWorkflowState(s as any)));
+        params.push(
+          ...options.filters.status.map((s) =>
+            this.mapStatusToWorkflowState(s as any),
+          ),
+        );
       }
 
       // Email alias filter - using parameterized placeholders
       if (options.filters?.emailAlias?.length) {
-        const aliasPlaceholders = options.filters.emailAlias.map(() => '?').join(',');
+        const aliasPlaceholders = options.filters.emailAlias
+          .map(() => "?")
+          .join(",");
         whereClauses.push(`e.sender_email IN (${aliasPlaceholders})`);
         params.push(...options.filters.emailAlias);
       }
 
       // Priority filter - using parameterized placeholders
       if (options.filters?.priority?.length) {
-        const priorityPlaceholders = options.filters.priority.map(() => '?').join(',');
+        const priorityPlaceholders = options.filters.priority
+          .map(() => "?")
+          .join(",");
         whereClauses.push(`ea.quick_priority IN (${priorityPlaceholders})`);
         params.push(...options.filters.priority);
       }
 
       // Date range filter
       if (options.filters?.dateRange) {
-        whereClauses.push('e.received_at BETWEEN ? AND ?');
-        params.push(options.filters.dateRange.start, options.filters.dateRange.end);
+        whereClauses.push("e.received_at BETWEEN ? AND ?");
+        params.push(
+          options.filters.dateRange.start,
+          options.filters.dateRange.end,
+        );
       }
 
       // Build WHERE clause
-      const whereClause = whereClauses.length > 0 
-        ? `WHERE ${whereClauses.join(' AND ')}` 
-        : '';
+      const whereClause =
+        whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
       // Sanitize and validate sort column
       const sortColumn = this.getSortColumn(options.sortBy);
-      const sortDirection = options.sortOrder?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+      const sortDirection =
+        options.sortOrder?.toUpperCase() === "DESC" ? "DESC" : "ASC";
 
       // Generate cache key based on all parameters
       const cacheKey = `email_table_${JSON.stringify(options)}`;
@@ -1560,17 +1820,17 @@ export class EmailStorageService {
       const [emails, countResult] = await Promise.all([
         this.executeCachedQuery<any[]>(
           `${cacheKey}_data`,
-          'email_table_view_data',
+          "email_table_view_data",
           dataQuery,
-          dataParams
+          dataParams,
         ),
         this.executeCachedQuery<any>(
           `${cacheKey}_count`,
-          'email_table_view_count', 
+          "email_table_view_count",
           countQuery,
           params,
-          'get'
-        )
+          "get",
+        ),
       ]);
 
       const queryTime = Date.now() - startTime;
@@ -1578,12 +1838,12 @@ export class EmailStorageService {
       const totalPages = Math.ceil(totalCount / pageSize);
 
       // Transform emails to include proper status mapping
-      const transformedEmails = emails.map(email => ({
+      const transformedEmails = emails.map((email) => ({
         ...email,
         status: this.mapWorkflowToStatus(email.workflow_state),
         status_text: this.getStatusText(email.workflow_state),
         is_read: Boolean(email.is_read),
-        has_attachments: Boolean(email.has_attachments)
+        has_attachments: Boolean(email.has_attachments),
       }));
 
       return {
@@ -1593,12 +1853,14 @@ export class EmailStorageService {
         performanceMetrics: {
           queryTime,
           cacheHit: false, // This would be set by the cache implementation
-          optimizationGain: 0 // This would be calculated by the optimizer
-        }
+          optimizationGain: 0, // This would be calculated by the optimizer
+        },
       };
-
     } catch (error) {
-      logger.error(`Failed to get emails for table view: ${error}`, 'EMAIL_STORAGE');
+      logger.error(
+        `Failed to get emails for table view: ${error}`,
+        "EMAIL_STORAGE",
+      );
       throw error;
     }
   }
@@ -1611,7 +1873,7 @@ export class EmailStorageService {
     startIndex?: number;
     chunkSize?: number;
     sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
+    sortOrder?: "asc" | "desc";
     filters?: {
       status?: string[];
       emailAlias?: string[];
@@ -1652,42 +1914,57 @@ export class EmailStorageService {
 
         // Apply filters (same logic as getEmailsForTableView)
         if (options.search) {
-          whereClauses.push('(e.subject LIKE ? OR ea.contextual_summary LIKE ? OR e.sender_name LIKE ?)');
+          whereClauses.push(
+            "(e.subject LIKE ? OR ea.contextual_summary LIKE ? OR e.sender_name LIKE ?)",
+          );
           const searchParam = `%${options.search}%`;
           params.push(searchParam, searchParam, searchParam);
         }
 
         if (options.filters?.status?.length) {
-          const statusPlaceholders = options.filters.status.map(() => '?').join(',');
+          const statusPlaceholders = options.filters.status
+            .map(() => "?")
+            .join(",");
           whereClauses.push(`ea.workflow_state IN (${statusPlaceholders})`);
-          params.push(...options.filters.status.map(s => this.mapStatusToWorkflowState(s as any)));
+          params.push(
+            ...options.filters.status.map((s) =>
+              this.mapStatusToWorkflowState(s as any),
+            ),
+          );
         }
 
         if (options.filters?.emailAlias?.length) {
-          const aliasPlaceholders = options.filters.emailAlias.map(() => '?').join(',');
+          const aliasPlaceholders = options.filters.emailAlias
+            .map(() => "?")
+            .join(",");
           whereClauses.push(`e.sender_email IN (${aliasPlaceholders})`);
           params.push(...options.filters.emailAlias);
         }
 
         if (options.filters?.priority?.length) {
-          const priorityPlaceholders = options.filters.priority.map(() => '?').join(',');
+          const priorityPlaceholders = options.filters.priority
+            .map(() => "?")
+            .join(",");
           whereClauses.push(`ea.quick_priority IN (${priorityPlaceholders})`);
           params.push(...options.filters.priority);
         }
 
         if (options.filters?.dateRange) {
-          whereClauses.push('e.received_at BETWEEN ? AND ?');
-          params.push(options.filters.dateRange.start, options.filters.dateRange.end);
+          whereClauses.push("e.received_at BETWEEN ? AND ?");
+          params.push(
+            options.filters.dateRange.start,
+            options.filters.dateRange.end,
+          );
         }
 
         // Build WHERE clause
-        const whereClause = whereClauses.length > 0 
-          ? `WHERE ${whereClauses.join(' AND ')}` 
-          : '';
+        const whereClause =
+          whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
         // Sanitize sort column and direction
         const sortColumn = this.getSortColumn(options.sortBy);
-        const sortDirection = options.sortOrder?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+        const sortDirection =
+          options.sortOrder?.toUpperCase() === "DESC" ? "DESC" : "ASC";
 
         const query = `
           SELECT 
@@ -1712,18 +1989,18 @@ export class EmailStorageService {
         params.push(limit, offset);
 
         const emails = await this.executeOptimizedQuery<any[]>(
-          'email_table_lazy_load',
+          "email_table_lazy_load",
           query,
-          params
+          params,
         );
 
         // Transform emails
-        return emails.map(email => ({
+        return emails.map((email) => ({
           ...email,
           status: this.mapWorkflowToStatus(email.workflow_state),
           status_text: this.getStatusText(email.workflow_state),
           is_read: Boolean(email.is_read),
-          has_attachments: Boolean(email.has_attachments)
+          has_attachments: Boolean(email.has_attachments),
         }));
       };
 
@@ -1731,9 +2008,11 @@ export class EmailStorageService {
       const result = await this.lazyLoader.loadChunk(startIndex, loadFn);
 
       return result;
-
     } catch (error) {
-      logger.error(`Failed to get emails for lazy table view: ${error}`, 'EMAIL_STORAGE');
+      logger.error(
+        `Failed to get emails for lazy table view: ${error}`,
+        "EMAIL_STORAGE",
+      );
       throw error;
     }
   }
@@ -1769,12 +2048,11 @@ export class EmailStorageService {
         statusDistribution: {
           red: stats.critical,
           yellow: stats.in_progress,
-          green: stats.completed
-        }
+          green: stats.completed,
+        },
       };
-
     } catch (error) {
-      logger.error(`Failed to get dashboard stats: ${error}`, 'EMAIL_STORAGE');
+      logger.error(`Failed to get dashboard stats: ${error}`, "EMAIL_STORAGE");
       throw error;
     }
   }
@@ -1784,16 +2062,20 @@ export class EmailStorageService {
   // =====================================================
 
   private validateEmailData(emailData: any): void {
-    if (!emailData.messageId) throw new Error('Message ID is required');
-    if (!emailData.emailAlias) throw new Error('Email alias is required');
-    if (!emailData.requestedBy) throw new Error('Requested by is required');
-    if (!emailData.subject) throw new Error('Subject is required');
-    if (!emailData.summary) throw new Error('Summary is required');
-    if (!['red', 'yellow', 'green'].includes(emailData.status)) {
-      throw new Error('Invalid status. Must be red, yellow, or green');
+    if (!emailData.messageId) throw new Error("Message ID is required");
+    if (!emailData.emailAlias) throw new Error("Email alias is required");
+    if (!emailData.requestedBy) throw new Error("Requested by is required");
+    if (!emailData.subject) throw new Error("Subject is required");
+    if (!emailData.summary) throw new Error("Summary is required");
+    if (!["red", "yellow", "green"].includes(emailData.status)) {
+      throw new Error("Invalid status. Must be red, yellow, or green");
     }
-    if (!['START_POINT', 'IN_PROGRESS', 'COMPLETION'].includes(emailData.workflowState)) {
-      throw new Error('Invalid workflow state');
+    if (
+      !["START_POINT", "IN_PROGRESS", "COMPLETION"].includes(
+        emailData.workflowState,
+      )
+    ) {
+      throw new Error("Invalid workflow state");
     }
   }
 
@@ -1803,20 +2085,20 @@ export class EmailStorageService {
    */
   private getSortColumn(columnName?: string): string {
     const columnMap: Record<string, string> = {
-      'received_date': 'e.received_at',
-      'received_at': 'e.received_at',
-      'subject': 'e.subject',
-      'sender_name': 'e.sender_name',
-      'email_alias': 'e.sender_email',
-      'workflow_state': 'ea.workflow_state',
-      'priority': 'ea.quick_priority',
-      'quick_priority': 'ea.quick_priority',
-      'status': 'ea.workflow_state',
-      'summary': 'ea.contextual_summary'
+      received_date: "e.received_at",
+      received_at: "e.received_at",
+      subject: "e.subject",
+      sender_name: "e.sender_name",
+      email_alias: "e.sender_email",
+      workflow_state: "ea.workflow_state",
+      priority: "ea.quick_priority",
+      quick_priority: "ea.quick_priority",
+      status: "ea.workflow_state",
+      summary: "ea.contextual_summary",
     };
 
     const column = columnName?.toLowerCase();
-    return columnMap[column || 'received_date'] || 'e.received_at';
+    return columnMap[column || "received_date"] || "e.received_at";
   }
 
   /**
@@ -1824,61 +2106,85 @@ export class EmailStorageService {
    */
   private sanitizeColumnName(columnName: string): string {
     const allowedColumns = [
-      'received_at', 'subject', 'sender_name', 'workflow_state', 'quick_priority'
+      "received_at",
+      "subject",
+      "sender_name",
+      "workflow_state",
+      "quick_priority",
     ];
-    return allowedColumns.includes(columnName) ? columnName : 'received_at';
+    return allowedColumns.includes(columnName) ? columnName : "received_at";
   }
 
   private extractIntent(subject: string, summary: string): string {
     const text = `${subject} ${summary}`.toLowerCase();
-    
-    if (text.includes('urgent') || text.includes('critical')) return 'urgent_action';
-    if (text.includes('quote') || text.includes('pricing')) return 'quote_request';
-    if (text.includes('order') || text.includes('purchase')) return 'order_processing';
-    if (text.includes('support') || text.includes('help')) return 'support_request';
-    
-    return 'general_inquiry';
+
+    if (text.includes("urgent") || text.includes("critical"))
+      return "urgent_action";
+    if (text.includes("quote") || text.includes("pricing"))
+      return "quote_request";
+    if (text.includes("order") || text.includes("purchase"))
+      return "order_processing";
+    if (text.includes("support") || text.includes("help"))
+      return "support_request";
+
+    return "general_inquiry";
   }
 
   private mapStatusToUrgency(status: string): string {
     switch (status) {
-      case 'red': return 'critical';
-      case 'yellow': return 'medium';
-      case 'green': return 'low';
-      default: return 'medium';
+      case "red":
+        return "critical";
+      case "yellow":
+        return "medium";
+      case "green":
+        return "low";
+      default:
+        return "medium";
     }
   }
 
   private mapStatusToWorkflowState(status: string): string {
     switch (status) {
-      case 'red': return 'START_POINT';
-      case 'yellow': return 'IN_PROGRESS';
-      case 'green': return 'COMPLETION';
-      default: return 'IN_PROGRESS';
+      case "red":
+        return "START_POINT";
+      case "yellow":
+        return "IN_PROGRESS";
+      case "green":
+        return "COMPLETION";
+      default:
+        return "IN_PROGRESS";
     }
   }
 
   private mapWorkflowToStatus(workflowState: string): string {
     switch (workflowState) {
-      case 'START_POINT': return 'red';
-      case 'IN_PROGRESS': return 'yellow';
-      case 'COMPLETION': return 'green';
-      default: return 'yellow';
+      case "START_POINT":
+        return "red";
+      case "IN_PROGRESS":
+        return "yellow";
+      case "COMPLETION":
+        return "green";
+      default:
+        return "yellow";
     }
   }
 
   private getStatusText(workflowState: string): string {
     switch (workflowState) {
-      case 'START_POINT': return 'Critical';
-      case 'IN_PROGRESS': return 'In Progress';
-      case 'COMPLETION': return 'Completed';
-      default: return 'In Progress';
+      case "START_POINT":
+        return "Critical";
+      case "IN_PROGRESS":
+        return "In Progress";
+      case "COMPLETION":
+        return "Completed";
+      default:
+        return "In Progress";
     }
   }
 
   private extractEntitiesOfType(entities: any[] = [], type: string): string {
-    const filtered = entities.filter(e => e.type === type);
-    return JSON.stringify(filtered.map(e => e.value));
+    const filtered = entities.filter((e) => e.type === type);
+    return JSON.stringify(filtered.map((e) => e.value));
   }
 
   // =====================================================
@@ -1897,7 +2203,7 @@ export class EmailStorageService {
     try {
       const [dbMetrics, lazyLoaderStats] = await Promise.all([
         queryPerformanceMonitor.getPerformanceStatistics(),
-        Promise.resolve(this.lazyLoader.getStats())
+        Promise.resolve(this.lazyLoader.getStats()),
       ]);
 
       const cacheMetrics = performanceOptimizer.getPerformanceMetrics();
@@ -1908,11 +2214,14 @@ export class EmailStorageService {
         lazyLoader: lazyLoaderStats,
         recommendations: [
           ...cacheMetrics.recommendations,
-          ...(dbMetrics.alerts?.map(alert => alert.message) || [])
-        ]
+          ...(dbMetrics.alerts?.map((alert) => alert.message) || []),
+        ],
       };
     } catch (error) {
-      logger.error(`Failed to get performance metrics: ${error}`, 'EMAIL_STORAGE');
+      logger.error(
+        `Failed to get performance metrics: ${error}`,
+        "EMAIL_STORAGE",
+      );
       throw error;
     }
   }
@@ -1924,7 +2233,10 @@ export class EmailStorageService {
     try {
       return await queryPerformanceMonitor.getDetailedReport();
     } catch (error) {
-      logger.error(`Failed to get detailed performance report: ${error}`, 'EMAIL_STORAGE');
+      logger.error(
+        `Failed to get detailed performance report: ${error}`,
+        "EMAIL_STORAGE",
+      );
       throw error;
     }
   }
@@ -1937,10 +2249,13 @@ export class EmailStorageService {
       performanceOptimizer.clearCache();
       this.lazyLoader.clearCache();
       queryPerformanceMonitor.clearHistory();
-      
-      logger.info('All performance caches cleared', 'EMAIL_STORAGE');
+
+      logger.info("All performance caches cleared", "EMAIL_STORAGE");
     } catch (error) {
-      logger.error(`Failed to clear performance caches: ${error}`, 'EMAIL_STORAGE');
+      logger.error(
+        `Failed to clear performance caches: ${error}`,
+        "EMAIL_STORAGE",
+      );
       throw error;
     }
   }
@@ -1952,24 +2267,30 @@ export class EmailStorageService {
     currentIndex: number,
     options: {
       sortBy?: string;
-      sortOrder?: 'asc' | 'desc';
+      sortOrder?: "asc" | "desc";
       filters?: any;
       search?: string;
-    }
+    },
   ): Promise<void> {
     try {
       const loadFn = async (offset: number, limit: number) => {
         return this.getEmailsForTableViewLazy({
           startIndex: offset,
           chunkSize: limit,
-          ...options
-        }).then(result => result.data);
+          ...options,
+        }).then((result) => result.data);
       };
 
       await this.lazyLoader.preloadAdjacentChunks(currentIndex, loadFn);
-      logger.debug(`Preloaded adjacent chunks for index ${currentIndex}`, 'EMAIL_STORAGE');
+      logger.debug(
+        `Preloaded adjacent chunks for index ${currentIndex}`,
+        "EMAIL_STORAGE",
+      );
     } catch (error) {
-      logger.warn(`Failed to preload adjacent chunks: ${error}`, 'EMAIL_STORAGE');
+      logger.warn(
+        `Failed to preload adjacent chunks: ${error}`,
+        "EMAIL_STORAGE",
+      );
     }
   }
 
@@ -1982,14 +2303,14 @@ export class EmailStorageService {
     optimizationRecommendations: string[];
   }> {
     try {
-      logger.info('Starting database optimization', 'EMAIL_STORAGE');
+      logger.info("Starting database optimization", "EMAIL_STORAGE");
 
       // Rebuild indexes for better performance
       const indexQueries = [
-        'REINDEX idx_emails_received_at',
-        'REINDEX idx_emails_sender',
-        'REINDEX idx_workflow_state',
-        'REINDEX idx_sla_status'
+        "REINDEX idx_emails_received_at",
+        "REINDEX idx_emails_sender",
+        "REINDEX idx_workflow_state",
+        "REINDEX idx_sla_status",
       ];
 
       let indexesRebuilt = 0;
@@ -1998,32 +2319,37 @@ export class EmailStorageService {
           this.db.exec(indexQuery);
           indexesRebuilt++;
         } catch (indexError) {
-          logger.warn(`Failed to rebuild index: ${indexQuery}`, 'EMAIL_STORAGE');
+          logger.warn(
+            `Failed to rebuild index: ${indexQuery}`,
+            "EMAIL_STORAGE",
+          );
         }
       }
 
       // Run VACUUM to optimize database file
       let vacuumCompleted = false;
       try {
-        this.db.exec('VACUUM');
+        this.db.exec("VACUUM");
         vacuumCompleted = true;
       } catch (vacuumError) {
-        logger.warn(`Database VACUUM failed: ${vacuumError}`, 'EMAIL_STORAGE');
+        logger.warn(`Database VACUUM failed: ${vacuumError}`, "EMAIL_STORAGE");
       }
 
       // Get optimization recommendations
       const metrics = performanceOptimizer.getPerformanceMetrics();
 
-      logger.info(`Database optimization completed: ${indexesRebuilt} indexes rebuilt`, 'EMAIL_STORAGE');
+      logger.info(
+        `Database optimization completed: ${indexesRebuilt} indexes rebuilt`,
+        "EMAIL_STORAGE",
+      );
 
       return {
         indexesRebuilt,
         vacuumCompleted,
-        optimizationRecommendations: metrics.recommendations
+        optimizationRecommendations: metrics.recommendations,
       };
-
     } catch (error) {
-      logger.error(`Database optimization failed: ${error}`, 'EMAIL_STORAGE');
+      logger.error(`Database optimization failed: ${error}`, "EMAIL_STORAGE");
       throw error;
     }
   }
@@ -2031,28 +2357,31 @@ export class EmailStorageService {
   async close(): Promise<void> {
     // Stop SLA monitoring
     this.stopSLAMonitoring();
-    
+
     // Stop performance monitoring
     try {
       queryPerformanceMonitor.stopMonitoring();
       performanceOptimizer.destroy();
-      logger.info('Performance monitoring stopped', 'EMAIL_STORAGE');
+      logger.info("Performance monitoring stopped", "EMAIL_STORAGE");
     } catch (error) {
-      logger.warn(`Failed to stop performance monitoring: ${error}`, 'EMAIL_STORAGE');
+      logger.warn(
+        `Failed to stop performance monitoring: ${error}`,
+        "EMAIL_STORAGE",
+      );
     }
-    
+
     // Close database or connection pool
     if (this.useConnectionPool && this.connectionPool) {
       this.connectionPool.close();
-      logger.info('Connection pool closed', 'EMAIL_STORAGE');
+      logger.info("Connection pool closed", "EMAIL_STORAGE");
     } else {
       this.db.close();
-      logger.info('Database connection closed', 'EMAIL_STORAGE');
+      logger.info("Database connection closed", "EMAIL_STORAGE");
     }
-    
-    logger.info('EmailStorageService closed', 'EMAIL_STORAGE');
+
+    logger.info("EmailStorageService closed", "EMAIL_STORAGE");
   }
-  
+
   /**
    * Get connection pool statistics (if using pool)
    */
@@ -2075,7 +2404,7 @@ export class EmailStorageService {
       const email = stmt.get(emailId);
       return email || null;
     } catch (error) {
-      logger.error(`Failed to get email ${emailId}: ${error}`, 'EMAIL_STORAGE');
+      logger.error(`Failed to get email ${emailId}: ${error}`, "EMAIL_STORAGE");
       throw error;
     }
   }
@@ -2086,9 +2415,9 @@ export class EmailStorageService {
   async updateEmail(emailId: string, updates: Partial<any>): Promise<void> {
     try {
       const updateFields = Object.keys(updates)
-        .filter(key => key !== 'id')
-        .map(key => `${key} = @${key}`)
-        .join(', ');
+        .filter((key) => key !== "id")
+        .map((key) => `${key} = @${key}`)
+        .join(", ");
 
       const stmt = this.db.prepare(`
         UPDATE emails 
@@ -2097,9 +2426,12 @@ export class EmailStorageService {
       `);
 
       stmt.run({ id: emailId, ...updates });
-      logger.info(`Updated email ${emailId}`, 'EMAIL_STORAGE');
+      logger.info(`Updated email ${emailId}`, "EMAIL_STORAGE");
     } catch (error) {
-      logger.error(`Failed to update email ${emailId}: ${error}`, 'EMAIL_STORAGE');
+      logger.error(
+        `Failed to update email ${emailId}: ${error}`,
+        "EMAIL_STORAGE",
+      );
       throw error;
     }
   }
@@ -2126,12 +2458,12 @@ export class EmailStorageService {
         activity.action,
         activity.userId,
         JSON.stringify(activity.details || {}),
-        activity.timestamp
+        activity.timestamp,
       );
 
-      logger.info(`Logged activity: ${activity.action}`, 'EMAIL_STORAGE');
+      logger.info(`Logged activity: ${activity.action}`, "EMAIL_STORAGE");
     } catch (error) {
-      logger.error(`Failed to log activity: ${error}`, 'EMAIL_STORAGE');
+      logger.error(`Failed to log activity: ${error}`, "EMAIL_STORAGE");
       // Don't throw - logging should not break the main flow
     }
   }
@@ -2148,16 +2480,22 @@ export class EmailStorageService {
         GROUP BY assignedTo
       `);
 
-      const results = stmt.all() as Array<{ assignedTo: string; count: number }>;
+      const results = stmt.all() as Array<{
+        assignedTo: string;
+        count: number;
+      }>;
       const workload: Record<string, number> = {};
 
-      results.forEach(row => {
+      results.forEach((row) => {
         workload[row.assignedTo] = row.count;
       });
 
       return workload;
     } catch (error) {
-      logger.error(`Failed to get assignment workload: ${error}`, 'EMAIL_STORAGE');
+      logger.error(
+        `Failed to get assignment workload: ${error}`,
+        "EMAIL_STORAGE",
+      );
       throw error;
     }
   }
@@ -2176,7 +2514,7 @@ export class EmailStorageService {
       const result = stmt.get() as { count: number };
       return result.count;
     } catch (error) {
-      logger.error(`Failed to get unassigned count: ${error}`, 'EMAIL_STORAGE');
+      logger.error(`Failed to get unassigned count: ${error}`, "EMAIL_STORAGE");
       throw error;
     }
   }

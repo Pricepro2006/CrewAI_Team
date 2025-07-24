@@ -23,6 +23,9 @@ import {
   cleanupManager,
   registerDefaultCleanupTasks,
 } from "./services/ServiceCleanupManager";
+import { setupWalmartWebSocket } from "./websocket/walmart-updates";
+import { DealDataService } from "./services/DealDataService";
+import { EmailStorageService } from "./services/EmailStorageService";
 
 const app: Express = express();
 const PORT = appConfig.api.port;
@@ -32,7 +35,7 @@ app.use(helmet());
 app.use(cors(appConfig.api.cors));
 
 // Handle preflight requests for all routes
-app.options('*', cors(appConfig.api.cors));
+app.options("*", cors(appConfig.api.cors));
 
 app.use(express.json());
 
@@ -54,12 +57,9 @@ app.get("/health", async (_req, res) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const ollamaResponse = await fetch(
-      `${ollamaConfig.baseUrl}/api/tags`,
-      {
-        signal: controller.signal,
-      },
-    );
+    const ollamaResponse = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
+      signal: controller.signal,
+    });
     clearTimeout(timeoutId);
     services.ollama = ollamaResponse.ok ? "connected" : "disconnected";
   } catch (error) {
@@ -76,12 +76,9 @@ app.get("/health", async (_req, res) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const chromaResponse = await fetch(
-      `${chromaUrl}/api/v1/heartbeat`,
-      {
-        signal: controller.signal,
-      },
-    );
+    const chromaResponse = await fetch(`${chromaUrl}/api/v1/heartbeat`, {
+      signal: controller.signal,
+    });
     clearTimeout(timeoutId);
     services.chromadb = chromaResponse.ok ? "connected" : "disconnected";
   } catch (error) {
@@ -140,7 +137,7 @@ app.use(
     onError({ error, type, path, input }) {
       console.error("tRPC Error:", {
         type,
-        path: path || 'unknown',
+        path: path || "unknown",
         error: error.message,
         input,
       });
@@ -178,15 +175,15 @@ const wss = new WebSocketServer({
   verifyClient: (info: { origin?: string }) => {
     const origin = info.origin;
     const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:5175'
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5175",
     ];
     // Allow connections without origin (like direct WebSocket clients)
     if (!origin) return true;
     return allowedOrigins.includes(origin);
-  }
+  },
 });
 
 const wsHandler = applyWSSHandler({
@@ -206,6 +203,26 @@ const wsHandler = applyWSSHandler({
 console.log(
   `🔌 WebSocket server running on ws://localhost:${PORT + 1}/trpc-ws`,
 );
+
+// Setup Walmart-specific WebSocket handlers
+const dealDataService = DealDataService.getInstance();
+const emailStorageService = new EmailStorageService();
+const walmartRealtimeManager = setupWalmartWebSocket(
+  wss,
+  dealDataService,
+  emailStorageService,
+);
+
+// Register Walmart realtime manager for cleanup
+cleanupManager.register({
+  name: "walmart-realtime",
+  cleanup: async () => {
+    walmartRealtimeManager.cleanup();
+  },
+  priority: 5,
+});
+
+console.log(`🛒 Walmart WebSocket handlers initialized`);
 
 // Graceful shutdown
 const gracefulShutdown = async (signal: string) => {

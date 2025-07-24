@@ -3,11 +3,11 @@
  * Handles deal data operations with real database queries and integrations
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import Database from 'better-sqlite3';
-import { logger } from '../../utils/logger';
-import { wsService } from './WebSocketService';
-import appConfig from '../../config/app.config';
+import { v4 as uuidv4 } from "uuid";
+import Database from "better-sqlite3";
+import { logger } from "../../utils/logger";
+import { wsService } from "./WebSocketService";
+import appConfig from "../../config/app.config";
 
 export interface Deal {
   id: string;
@@ -15,7 +15,7 @@ export interface Deal {
   customer: string;
   endDate: string;
   version: number;
-  status: 'active' | 'expired' | 'pending';
+  status: "active" | "expired" | "pending";
   totalValue?: number;
   currency: string;
   createdAt: string;
@@ -57,14 +57,14 @@ export class DealDataService {
   }
 
   private initializeDatabase(): void {
-    logger.info('Initializing deal data database', 'DEAL_DATA');
+    logger.info("Initializing deal data database", "DEAL_DATA");
 
     // Enable performance optimizations
-    this.db.pragma('journal_mode = WAL');
-    this.db.pragma('synchronous = NORMAL');
-    this.db.pragma('cache_size = 10000');
-    this.db.pragma('temp_store = MEMORY');
-    this.db.pragma('foreign_keys = ON');
+    this.db.pragma("journal_mode = WAL");
+    this.db.pragma("synchronous = NORMAL");
+    this.db.pragma("cache_size = 10000");
+    this.db.pragma("temp_store = MEMORY");
+    this.db.pragma("foreign_keys = ON");
 
     // Create deals table
     this.db.exec(`
@@ -113,50 +113,106 @@ export class DealDataService {
     // Seed sample deal data if empty
     this.seedSampleData();
 
-    logger.info('Deal data database initialized successfully', 'DEAL_DATA');
+    logger.info("Deal data database initialized successfully", "DEAL_DATA");
   }
 
   private seedSampleData(): void {
-    const countStmt = this.db.prepare('SELECT COUNT(*) as count FROM deals');
+    const countStmt = this.db.prepare("SELECT COUNT(*) as count FROM deals");
     const count = (countStmt.get() as any).count;
 
     if (count === 0) {
-      logger.info('Seeding sample deal data', 'DEAL_DATA');
+      logger.info("Seeding sample deal data", "DEAL_DATA");
 
       const sampleDeals = [
         {
-          dealId: '45791720',
-          customer: 'ACME CORPORATION',
-          endDate: '2025-12-31',
-          totalValue: 125000.00,
+          dealId: "45791720",
+          customer: "ACME CORPORATION",
+          endDate: "2025-12-31",
+          totalValue: 125000.0,
         },
         {
-          dealId: '44892156',
-          customer: 'TECH SOLUTIONS INC',
-          endDate: '2025-08-15',
-          totalValue: 89500.00,
+          dealId: "44892156",
+          customer: "TECH SOLUTIONS INC",
+          endDate: "2025-08-15",
+          totalValue: 89500.0,
         },
         {
-          dealId: '46123789',
-          customer: 'GLOBAL SYSTEMS LLC',
-          endDate: '2025-06-30',
-          totalValue: 256800.00,
-        }
+          dealId: "46123789",
+          customer: "GLOBAL SYSTEMS LLC",
+          endDate: "2025-06-30",
+          totalValue: 256800.0,
+        },
       ];
 
       const sampleItems = [
         // Deal 45791720 items
-        { dealId: '45791720', productNumber: '7ED25UT', productFamily: 'IPG', remainingQuantity: 150, dealerNetPrice: 125.99, listPrice: 149.99, description: 'Enterprise Storage Unit' },
-        { dealId: '45791720', productNumber: '9VD15AA', productFamily: 'PSG', remainingQuantity: 75, dealerNetPrice: 89.50, listPrice: 109.99, description: 'Network Switch' },
-        { dealId: '45791720', productNumber: '4XDJ3UT#ABA', productFamily: 'IPG', remainingQuantity: 200, dealerNetPrice: 45.75, listPrice: 59.99, description: 'Memory Module' },
+        {
+          dealId: "45791720",
+          productNumber: "7ED25UT",
+          productFamily: "IPG",
+          remainingQuantity: 150,
+          dealerNetPrice: 125.99,
+          listPrice: 149.99,
+          description: "Enterprise Storage Unit",
+        },
+        {
+          dealId: "45791720",
+          productNumber: "9VD15AA",
+          productFamily: "PSG",
+          remainingQuantity: 75,
+          dealerNetPrice: 89.5,
+          listPrice: 109.99,
+          description: "Network Switch",
+        },
+        {
+          dealId: "45791720",
+          productNumber: "4XDJ3UT#ABA",
+          productFamily: "IPG",
+          remainingQuantity: 200,
+          dealerNetPrice: 45.75,
+          listPrice: 59.99,
+          description: "Memory Module",
+        },
 
-        // Deal 44892156 items  
-        { dealId: '44892156', productNumber: '2XHJ8UT', productFamily: 'PSG', remainingQuantity: 100, dealerNetPrice: 299.99, listPrice: 349.99, description: 'Server Blade' },
-        { dealId: '44892156', productNumber: '5TW10AA', productFamily: 'IPG', remainingQuantity: 50, dealerNetPrice: 189.00, listPrice: 229.99, description: 'Graphics Card' },
+        // Deal 44892156 items
+        {
+          dealId: "44892156",
+          productNumber: "2XHJ8UT",
+          productFamily: "PSG",
+          remainingQuantity: 100,
+          dealerNetPrice: 299.99,
+          listPrice: 349.99,
+          description: "Server Blade",
+        },
+        {
+          dealId: "44892156",
+          productNumber: "5TW10AA",
+          productFamily: "IPG",
+          remainingQuantity: 50,
+          dealerNetPrice: 189.0,
+          listPrice: 229.99,
+          description: "Graphics Card",
+        },
 
         // Deal 46123789 items
-        { dealId: '46123789', productNumber: '8QR45CV', productFamily: 'IPG', remainingQuantity: 300, dealerNetPrice: 67.25, listPrice: 89.99, description: 'Storage Drive' },
-        { dealId: '46123789', productNumber: '1ZX23MN', productFamily: 'PSG', remainingQuantity: 25, dealerNetPrice: 1250.00, listPrice: 1499.99, description: 'Enterprise Router' },
+        {
+          dealId: "46123789",
+          productNumber: "8QR45CV",
+          productFamily: "IPG",
+          remainingQuantity: 300,
+          dealerNetPrice: 67.25,
+          listPrice: 89.99,
+          description: "Storage Drive",
+        },
+        {
+          dealId: "46123789",
+          productNumber: "1ZX23MN",
+          productFamily: "PSG",
+          remainingQuantity: 25,
+          dealerNetPrice: 1250.0,
+          listPrice: 1499.99,
+          description: "Enterprise Router",
+        },
       ];
 
       // Insert deals
@@ -166,7 +222,13 @@ export class DealDataService {
       `);
 
       for (const deal of sampleDeals) {
-        insertDeal.run(uuidv4(), deal.dealId, deal.customer, deal.endDate, deal.totalValue);
+        insertDeal.run(
+          uuidv4(),
+          deal.dealId,
+          deal.customer,
+          deal.endDate,
+          deal.totalValue,
+        );
       }
 
       // Insert deal items
@@ -184,11 +246,11 @@ export class DealDataService {
           item.remainingQuantity,
           item.dealerNetPrice,
           item.listPrice,
-          item.description
+          item.description,
         );
       }
 
-      logger.info('Sample deal data seeded successfully', 'DEAL_DATA');
+      logger.info("Sample deal data seeded successfully", "DEAL_DATA");
     }
   }
 
@@ -217,7 +279,9 @@ export class DealDataService {
       // Calculate metadata
       const now = new Date();
       const endDate = new Date(dealResult.end_date);
-      const daysUntilExpiration = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const daysUntilExpiration = Math.ceil(
+        (endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      );
       const isExpired = endDate < now;
 
       const deal: Deal = {
@@ -226,14 +290,14 @@ export class DealDataService {
         customer: dealResult.customer,
         endDate: dealResult.end_date,
         version: dealResult.version,
-        status: isExpired ? 'expired' : dealResult.status,
+        status: isExpired ? "expired" : dealResult.status,
         totalValue: dealResult.total_value,
         currency: dealResult.currency,
         createdAt: dealResult.created_at,
         updatedAt: dealResult.updated_at,
       };
 
-      const items: DealItem[] = itemsResults.map(item => ({
+      const items: DealItem[] = itemsResults.map((item) => ({
         id: item.id,
         dealId: item.deal_id,
         productNumber: item.product_number,
@@ -246,7 +310,10 @@ export class DealDataService {
         updatedAt: item.updated_at,
       }));
 
-      const totalValue = items.reduce((sum, item) => sum + (item.dealerNetPrice * item.remainingQuantity), 0);
+      const totalValue = items.reduce(
+        (sum, item) => sum + item.dealerNetPrice * item.remainingQuantity,
+        0,
+      );
 
       return {
         deal,
@@ -258,9 +325,8 @@ export class DealDataService {
           isExpired,
         },
       };
-
     } catch (error) {
-      logger.error(`Failed to get deal ${dealId}: ${error}`, 'DEAL_DATA');
+      logger.error(`Failed to get deal ${dealId}: ${error}`, "DEAL_DATA");
       throw error;
     }
   }
@@ -268,7 +334,10 @@ export class DealDataService {
   /**
    * Get deal item by product number and deal ID
    */
-  async getDealItem(dealId: string, productNumber: string): Promise<DealItem | null> {
+  async getDealItem(
+    dealId: string,
+    productNumber: string,
+  ): Promise<DealItem | null> {
     try {
       const stmt = this.db.prepare(`
         SELECT * FROM deal_items 
@@ -292,9 +361,11 @@ export class DealDataService {
         createdAt: result.created_at,
         updatedAt: result.updated_at,
       };
-
     } catch (error) {
-      logger.error(`Failed to get deal item ${productNumber} from deal ${dealId}: ${error}`, 'DEAL_DATA');
+      logger.error(
+        `Failed to get deal item ${productNumber} from deal ${dealId}: ${error}`,
+        "DEAL_DATA",
+      );
       throw error;
     }
   }
@@ -304,15 +375,160 @@ export class DealDataService {
    */
   calculatePrice(dealerNetPrice: number, productFamily: string): number {
     try {
-      if (productFamily === 'IPG') {
-        return Math.round((dealerNetPrice * 1.04) * 100) / 100; // IPG: Dealer net × 1.04
+      if (productFamily === "IPG") {
+        return Math.round(dealerNetPrice * 1.04 * 100) / 100; // IPG: Dealer net ï¿½ 1.04
       } else {
         return dealerNetPrice; // PSG: Dealer net unchanged
       }
     } catch (error) {
-      logger.error(`Failed to calculate price: ${error}`, 'DEAL_DATA');
+      logger.error(`Failed to calculate price: ${error}`, "DEAL_DATA");
       return dealerNetPrice;
     }
+  }
+
+  /**
+   * Analyze deals for specific products
+   */
+  async analyzeDealForProducts(
+    productIds: string[],
+    customerId?: string,
+  ): Promise<any> {
+    try {
+      const deals: any[] = [];
+      let totalSavings = 0;
+
+      // Find deals containing these products
+      const placeholders = productIds.map(() => "?").join(",");
+      let query = `
+        SELECT DISTINCT d.*, di.* 
+        FROM deals d
+        JOIN deal_items di ON d.deal_id = di.deal_id
+        WHERE di.product_number IN (${placeholders})
+        AND d.status = 'active'
+        AND date(d.end_date) >= date('now')
+      `;
+
+      const params = [...productIds];
+
+      if (customerId) {
+        query += " AND d.customer = ?";
+        params.push(customerId);
+      }
+
+      const stmt = this.db.prepare(query);
+      const results = stmt.all(...params) as any[];
+
+      // Group by deal
+      const dealMap = new Map<string, any>();
+
+      results.forEach((row) => {
+        if (!dealMap.has(row.deal_id)) {
+          dealMap.set(row.deal_id, {
+            dealId: row.deal_id,
+            customer: row.customer,
+            endDate: row.end_date,
+            items: [],
+            totalValue: 0,
+          });
+        }
+
+        const deal = dealMap.get(row.deal_id);
+        const discountPrice = this.calculatePrice(
+          row.dealer_net_price,
+          row.product_family,
+        );
+        const savings = (row.list_price || 0) - discountPrice;
+
+        deal.items.push({
+          productNumber: row.product_number,
+          dealerNetPrice: row.dealer_net_price,
+          discountPrice,
+          listPrice: row.list_price,
+          savings,
+          remainingQuantity: row.remaining_quantity,
+        });
+
+        deal.totalValue += discountPrice * row.remaining_quantity;
+        totalSavings += savings * row.remaining_quantity;
+      });
+
+      return {
+        deals: Array.from(dealMap.values()),
+        totalSavings,
+        productIds,
+        customerId,
+      };
+    } catch (error) {
+      logger.error("Failed to analyze deals for products", "DEAL_DATA", {
+        error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get recent deals (for notifications)
+   */
+  async getRecentDeals(hoursAgo: number = 24): Promise<any[]> {
+    try {
+      const stmt = this.db.prepare(`
+        SELECT * FROM deals 
+        WHERE datetime(created_at) >= datetime('now', '-${hoursAgo} hours')
+        ORDER BY created_at DESC
+      `);
+
+      const results = stmt.all() as any[];
+
+      return results.map((deal) => ({
+        id: deal.deal_id,
+        customer: deal.customer,
+        endDate: deal.end_date,
+        status: deal.status,
+        createdAt: deal.created_at,
+        products: this.getDealProducts(deal.deal_id),
+      }));
+    } catch (error) {
+      logger.error("Failed to get recent deals", "DEAL_DATA", { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get products for a deal
+   */
+  private getDealProducts(dealId: string): string[] {
+    try {
+      const stmt = this.db.prepare(`
+        SELECT product_number FROM deal_items WHERE deal_id = ?
+      `);
+      const results = stmt.all(dealId) as any[];
+      return results.map((r) => r.product_number);
+    } catch (error) {
+      logger.error("Failed to get deal products", "DEAL_DATA", { error });
+      return [];
+    }
+  }
+
+  /**
+   * Get deal details (simplified)
+   */
+  async getDealDetails(dealId: string): Promise<any> {
+    const dealResponse = await this.getDeal(dealId);
+    if (!dealResponse) return null;
+
+    return {
+      dealId: dealResponse.deal.dealId,
+      customer: dealResponse.deal.customer,
+      endDate: dealResponse.deal.endDate,
+      totalValue: dealResponse.metadata.totalValue,
+      itemCount: dealResponse.metadata.totalItems,
+      daysUntilExpiration: dealResponse.metadata.daysUntilExpiration,
+      products: dealResponse.items.map((item) => ({
+        sku: item.productNumber,
+        price: this.calculatePrice(item.dealerNetPrice, item.productFamily),
+        quantity: item.remainingQuantity,
+      })),
+    };
   }
 
   /**
@@ -328,9 +544,9 @@ export class DealDataService {
   async close(): Promise<void> {
     try {
       this.db.close();
-      logger.info('Deal data database connection closed', 'DEAL_DATA');
+      logger.info("Deal data database connection closed", "DEAL_DATA");
     } catch (error) {
-      logger.error(`Failed to close deal data database: ${error}`, 'DEAL_DATA');
+      logger.error(`Failed to close deal data database: ${error}`, "DEAL_DATA");
       throw error;
     }
   }
