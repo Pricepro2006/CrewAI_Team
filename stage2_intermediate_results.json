@@ -20092,5 +20092,2068 @@
     "qualityScore": 7.800000000000001,
     "processingTime": 15.895,
     "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xjk0iaar5w8",
+    "contextualSummary": "A purchase order (PO) has been flagged for urgent attention due to potential issues with sold items. The PO number is 0337830611, and the ticket number is 11884156. The email is forwarded from an internal system, indicating a need for immediate action.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337830611"],
+      "quote_numbers": [],
+      "case_numbers": ["11884156"],
+      "part_numbers": [],
+      "companies": ["Medpace Inc"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the sold items and their quantities to ensure accuracy.",
+        "details": "Check the PO details, quote numbers, and case/ticket information to identify any discrepancies or issues.",
+        "assignee": "Procurement Team",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please acknowledge receipt of this email and indicate your plan for addressing the urgent order issue.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.875,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xjpnp215s2s",
+    "contextualSummary": "A purchase order (PO) has been flagged for urgent attention due to potential issues with sold items. The PO number is 0338031566, and the ticket number is 11884732. The email appears to be a forwarded message from an internal system, indicating that there may be discrepancies in the orders or that some items have not been properly fulfilled.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338031566"],
+      "quote_numbers": [],
+      "case_numbers": ["11884732"],
+      "part_numbers": [],
+      "companies": ["Versaterm Public Safety US, Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of sold items and investigate potential discrepancies.",
+        "details": "Review the order details to determine if there are any issues with the sold items. Check for any missing or damaged items, and verify that all orders have been fulfilled correctly.",
+        "assignee": "Procurement Team",
+        "deadline": "Within 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond to the recipient to acknowledge receipt of the forwarded message and express a willingness to investigate the issue further.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 17.563,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xjrf2c9f71i",
+    "contextualSummary": "A customer at HYATT REGENCY ARUBA RESORT & CASINO has placed an urgent order (Order #0338046714) that requires attention, potentially involving escalations related to sold items.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0338046714"],
+      "quote_numbers": [],
+      "case_numbers": ["11870450"],
+      "part_numbers": [],
+      "companies": ["HYATT REGENCY ARUBA RESORT & CASINO"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify order details and escalate if necessary",
+        "details": "Review the order to ensure all sold items are accounted for and make any necessary adjustments.",
+        "assignee": "Andy.Wang@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and express willingness to assist with resolving any issues.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.937,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xjrzb7behek",
+    "contextualSummary": "A customer at Hyatt Regency Aruba Resort & Casino has an urgent order (Order #0338046714) that requires attention from TD Synnex's EMT team. The email is a response to the initial ticket and includes details about the order, including PO numbers, quote numbers, and case/ticket numbers.",
+    "workflowState": "IN_PROGRESS",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338046714"],
+      "quote_numbers": [],
+      "case_numbers": ["11870450"],
+      "part_numbers": [],
+      "companies": ["Hyatt Regency Aruba Resort & Casino", "TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and escalate to a supervisor if necessary",
+        "details": "Review the order to ensure all information is accurate and up-to-date. If any discrepancies are found, notify a supervisor for further guidance.",
+        "assignee": "EMT Team Lead",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and express commitment to resolving the issue promptly.",
+    "qualityScore": 8.2,
+    "processingTime": 18.167,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xjsv5koyv0f",
+    "contextualSummary": "A business order has been flagged for urgent attention due to potential issues with sold items. The email forwards a ticket number (11884758) and order details (0338062396), indicating a need for HR Green, Inc to review and address the matter.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case Resolution",
+    "entities": {
+      "po_numbers": ["0338062396"],
+      "quote_numbers": [],
+      "case_numbers": ["11884758"],
+      "part_numbers": [],
+      "companies": ["HR Green, Inc"]
+    },
+    "actionItems": [
+      {
+        "task": "Review order details and escalate if necessary",
+        "details": "Verify the status of sold items and investigate any discrepancies.",
+        "assignee": "HR Green, Inc Team Lead",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the forwarded ticket and express willingness to assist with resolving the issue.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.637,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xjt3ld9e9tt",
+    "contextualSummary": "A support case has been sold to CDM Smith for order #0338043767, and the ticket number is 11874860. The request is classified as non-urgent.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338043767"],
+      "quote_numbers": [],
+      "case_numbers": ["11874860"],
+      "part_numbers": [],
+      "companies": ["CDM Smith"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the sale details with CDM Smith and confirm the order status.",
+        "details": "Confirm the order number, product sold, and any other relevant information.",
+        "assignee": "Stoney Li",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the email and confirm that the support case is being reviewed.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.697,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmcujasu3ip",
+    "contextualSummary": "A sales order has been sold to PPL Services Corp for Order #0337744610, which is not urgent. The email requests support for this non-urgent request.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337744610"],
+      "quote_numbers": [],
+      "case_numbers": ["11708495"],
+      "part_numbers": [],
+      "companies": ["PPL Services Corp"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to the customer with a non-urgent resolution approach",
+        "details": "Provide a detailed explanation of the order status and expected delivery timeline.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the request and provide an estimated delivery date for the sold item.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.829,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xjx8oud09dd",
+    "contextualSummary": "A sales order from Cisco Systems has been received for Ticket 11833677, which is now classified as non-urgent. The order details are as follows: Order #: 0337798045.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and confirm receipt with Cisco Systems.",
+        "details": "Confirm the order number, quantity, and any other relevant details to ensure accuracy.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the order and confirm our team's confirmation process.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.862,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmdewl9eozi",
+    "contextualSummary": "A customer has requested a non-urgent transfer of an order to Cisco Systems, with Order #0337798045, and Ticket #11833677. The email is from Insight Order Support, indicating a potential issue or request that needs attention.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order transfer request and confirm with Cisco Systems",
+        "details": "Ensure all necessary information is provided and that the transfer can be completed without any issues.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the request and confirm with Cisco Systems to verify their involvement in the order transfer.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 11.596,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xjzgns0a1no",
+    "contextualSummary": "A purchase order (PO) has been flagged for urgent attention from Winmark Corporation regarding Order #0338013400, which includes Ticket 11883162. The email requires escalation to a higher authority due to potential issues with the order.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0338013400"],
+      "quote_numbers": [],
+      "case_numbers": ["11883162"],
+      "part_numbers": [],
+      "companies": ["Winmark Corporation"]
+    },
+    "actionItems": [
+      {
+        "task": "Investigate the status of Order #0338013400 and Ticket 11883162 with Winmark Corporation",
+        "details": "Verify the order details, including any potential issues or delays.",
+        "assignee": "Procurement Team Lead",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond to Winmark Corporation to confirm receipt of the email and express urgency in resolving the issue.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.501,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xk6ufg5mq6z",
+    "contextualSummary": "A business request has been received for a non-urgent order sold to CDM Smith with Order #0338043767. The email requires further processing and action.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338043767"],
+      "quote_numbers": [],
+      "case_numbers": ["11874860"],
+      "part_numbers": [],
+      "companies": ["CDM Smith"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify order details and update internal records",
+        "details": "Confirm the sale, customer information, and any other relevant details.",
+        "assignee": "MarieCatherine.Grepo@insight.com"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledging receipt of the order request and confirming further processing steps.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 13.697,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xk7ymkogsmp",
+    "contextualSummary": "The email is related to a non-urgent request sold to PPL SERVICES CORP for Order #0337744610, with attached POD (Pick Order Details) document.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337744610"],
+      "quote_numbers": [],
+      "case_numbers": ["11708495"],
+      "part_numbers": [],
+      "companies": ["PPL SERVICES CORP"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify and confirm the order details with PPL SERVICES CORP",
+        "details": "Review the attached POD document to ensure accuracy and completeness.",
+        "assignee": "Ego.Rong@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the order request and confirm that it has been received by the team.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.617,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xka0vg58i6e",
+    "contextualSummary": "A procurement team at Insight is forwarding an urgent order notification for HYATT REGENCY ARUBA RESORT & CASINO, referencing Order #0338046714. The email requires attention to resolve potential issues and escalate the matter.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338046714"],
+      "quote_numbers": [],
+      "case_numbers": ["11870450"],
+      "part_numbers": [],
+      "companies": ["HYATT REGENCY ARUBA RESORT & CASINO"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order status and escalate to the relevant team if necessary",
+        "details": "Check the current status of Order #0338046714 and contact the sales team or customer support if there are any concerns.",
+        "assignee": "Procurement Team at Insight",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly to acknowledge receipt of the order notification and express willingness to assist with resolving any issues.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.413,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xkah967picu",
+    "contextualSummary": "A sales team at Insight is notifying their customer that a non-urgent request has been sold to Cisco Systems for order #0337798045.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems", "Insight"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the sale and confirm with Cisco Systems",
+        "details": "Ensure that all necessary documentation is in place for the order transfer.",
+        "assignee": "George.Katergaris@Insight.com"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the notification and confirm with Cisco Systems to ensure a smooth transition.",
+    "qualityScore": 8.2,
+    "processingTime": 15.106,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xkfh7crybat",
+    "contextualSummary": "A sales order from Cisco Systems has been received by TD Synnex for Order #0337798045, which includes a non-urgent request (Ticket 11833677). The email requires the recipient to acknowledge receipt and provide an update on the status of this order.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to the email and confirm receipt of the order",
+        "details": "Acknowledge the receipt of the order and provide an update on the status of Ticket 11833677.",
+        "assignee": "Chelsea.Byelick@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Respond to acknowledge receipt and provide a brief update on the status of the order.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.807,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xkfmzt3qx4e",
+    "contextualSummary": "The email is a follow-up regarding an order sold to Cisco Systems for Ticket 11833677, which was previously discussed in the context of Order #0337798045. The sender, Adam.Zorland@tdsynnex.com, is likely seeking clarification or confirmation on the status of this sale.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems"]
+    },
+    "actionItems": [
+      {
+        "task": "Confirm the status of Order #0337798045 and Ticket 11833677 with Cisco Systems",
+        "details": "Verify that the order has been fulfilled and the ticket is resolved to ensure a smooth transaction process.",
+        "assignee": "Adam.Zorland@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the email and express interest in confirming the order status with Cisco Systems.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.58,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmik8cc08d4",
+    "contextualSummary": "A customer at HYATT REGENCY ARUBA RESORT & CASINO has an urgent order (Order #0338046714) that requires attention from Insight Order Support team regarding sold-out items and potential escalations.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338046714"],
+      "quote_numbers": [],
+      "case_numbers": ["11870450"],
+      "part_numbers": [],
+      "companies": ["HYATT REGENCY ARUBA RESORT & CASINO"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify sold-out items and escalate if necessary",
+        "details": "Check inventory levels for the affected order and notify customer if any items are sold out.",
+        "assignee": "Insight Order Support Team"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and request additional information to ensure prompt attention.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.797,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmj0qpckcv0",
+    "contextualSummary": "A customer has requested assistance with an urgent order (Order #0337997152) from Grand Circle Travel, which is associated with Ticket 11870955. The email requires the support team to investigate and resolve any issues related to the sold orders.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management Support Case",
+    "entities": {
+      "po_numbers": ["0337997152"],
+      "quote_numbers": [],
+      "case_numbers": ["11870955"],
+      "part_numbers": [],
+      "companies": ["Grand Circle Travel"]
+    },
+    "actionItems": [
+      {
+        "task": "Investigate the sold orders and identify any issues or discrepancies.",
+        "details": "Review order details, customer information, and product specifications to determine the root cause of the problem.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the email and express commitment to resolving the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.027,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xkihp2rggxa",
+    "contextualSummary": "A customer at Grand Circle Travel has placed an urgent order (0337997152) for a specific product, and the email is requesting assistance with resolving any issues related to this order.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337997152"],
+      "quote_numbers": [],
+      "case_numbers": ["11870955"],
+      "part_numbers": [],
+      "companies": ["Grand Circle Travel"]
+    },
+    "actionItems": [
+      {
+        "task": "Review order details and escalate to relevant team for assistance",
+        "details": "Verify the status of the order and identify any potential issues that need to be resolved.",
+        "assignee": "Trafficus (original sender)",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the email and express willingness to assist with resolving any issues related to the order.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.236,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmkv0s4i29g",
+    "contextualSummary": "A customer at Grand Circle Travel has an urgent order (Order #0337997152) that requires attention from Insight Order Support regarding a ticket (11870955). The email is forwarded from another source, indicating potential miscommunication or escalation.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0337997152"],
+      "quote_numbers": [],
+      "case_numbers": ["11870955"],
+      "part_numbers": [],
+      "companies": ["Grand Circle Travel"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order status and provide an update to Grand Circle Travel",
+        "details": "Check on the current status of Order #0337997152 and ensure that it is being processed correctly. Provide a timely update to the customer regarding any progress or concerns.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the forwarded email and express willingness to assist with resolving the issue. Offer a specific timeline for resolution or next steps.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 17.269,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xhgpeewo1uc",
+    "contextualSummary": "A sales order has been sold to Cisco Systems for Order #0337798045, which is part of Ticket 11833677. The request is classified as non-urgent.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details with Cisco Systems and confirm receipt of the sale.",
+        "details": "Confirm that the order has been processed correctly and that all terms have been met.",
+        "assignee": "Iris.Chai",
+        "deadline": "Within 24 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the sale and confirm that the order will be processed accordingly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.899,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmkyqzljagc",
+    "contextualSummary": "A sales order has been sold to Cisco Systems for Order #0337798045, with Ticket #11833677 being transferred to the new customer. The email is a follow-up on an external request and requires further processing.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and ensure accurate transfer of Ticket #11833677 to Cisco Systems.",
+        "details": "Review the order and ticket information to confirm a smooth handover to the new customer.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond to acknowledge receipt of the email and express willingness to assist with order processing.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.83,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmm11smhtt6",
+    "contextualSummary": "The email is related to a non-urgent request from Autocam Medical for an order (PO #0338055947) that was previously assigned to another ticket. The sender, InsightOrderSupport, is requesting further information or clarification on the status of this new order.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338055947"],
+      "quote_numbers": [],
+      "case_numbers": ["11873019"],
+      "part_numbers": [],
+      "companies": ["Autocam Medical"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of PO #0338055947 and provide an update on its current status",
+        "details": "Please confirm if this order is still pending or has been processed, and if there are any changes to its original request.",
+        "assignee": "InsightOrderSupport"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please acknowledge receipt of the email and provide an update on the status of PO #0338055947 by [insert timeframe, e.g., next business day].",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 18.495,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmn5f0vdtlb",
+    "contextualSummary": "A customer has requested to sell an other non-urgent ticket (11874860) to CDM Smith for order #0338043767. The email is a response to this request and requires further processing.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338043767"],
+      "quote_numbers": [],
+      "case_numbers": ["11874860"],
+      "part_numbers": [],
+      "companies": ["CDM Smith"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the request and confirm with CDM Smith if they are willing to purchase the ticket.",
+        "details": "Review the order details and ensure that all necessary information is accurate. Also, confirm with CDM Smith about their interest in purchasing the ticket.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within 24 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the request and inform the customer that further verification is required. Provide a timeline for completion and keep them updated on any progress.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 17.817,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmohim4sdj3",
+    "contextualSummary": "A customer at Medpace Inc has an urgent order (Order #0337830611) that requires attention from Insight Order Support team due to potential escalations.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management and Escalation Response",
+    "entities": {
+      "po_numbers": ["0337830611"],
+      "quote_numbers": [],
+      "case_numbers": ["11871887"],
+      "part_numbers": [],
+      "companies": ["Medpace Inc"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify order details and escalate to relevant team if necessary",
+        "details": "Check the order status, confirm product availability, and notify the customer of any delays or issues.",
+        "assignee": "Insight Order Support Team"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and initiate investigation to ensure timely resolution.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.043,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmq3py4cygt",
+    "contextualSummary": "A sales order has been sold to Data Systems Inc. for ticket 11872471 with order #0338055401, which is not urgent.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338055401"],
+      "quote_numbers": [],
+      "case_numbers": ["11872471"],
+      "part_numbers": [],
+      "companies": ["Data Systems Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the sale and update the order status",
+        "details": "Confirm that the order has been successfully processed and update the ticket status accordingly.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Respond to acknowledge receipt of the sale and confirm that the order will be processed as per standard procedures.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.769,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xktlyf104wb",
+    "contextualSummary": "A procurement team at Insight has forwarded a non-urgent request for an order from Autocam Medical, Order #0338055947, which was previously assigned to Ticket 11873019.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338055947"],
+      "quote_numbers": [],
+      "case_numbers": ["11873019"],
+      "part_numbers": [],
+      "companies": ["Autocam Medical"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and confirm receipt with Autocam Medical",
+        "details": "Confirm that the order was sold to Autocam Medical and verify the order number.",
+        "assignee": "HWprocurement1@insight.com",
+        "deadline": "None"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the forwarded request and confirm that the team is aware of the order details.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 17.429,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xkux0sy3u6g",
+    "contextualSummary": "A sales order has been sold to CDM Smith for Order #0338043767, which was previously a non-urgent request (Ticket 11874860). The email forwards this information and requests further action.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338043767"],
+      "quote_numbers": [],
+      "case_numbers": ["11874860"],
+      "part_numbers": [],
+      "companies": ["CDM Smith"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and confirm receipt with CDM Smith.",
+        "details": "Confirm that the order has been received and processed correctly.",
+        "assignee": "Sales Team",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the order and confirm processing with CDM Smith.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.577,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xrqur6xrgpp",
+    "contextualSummary": "The email is from a supplier (TD Synnex) to a customer (Elekta Inc), inquiring about the status of an order (Ticket 11872024). The supplier reports that lead times are trending around 2-3 weeks, and inventory is fulfilling existing backorders due to high demand for popular models.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337998576"],
+      "quote_numbers": [],
+      "case_numbers": ["11872024"],
+      "part_numbers": [],
+      "companies": ["Elekta Inc", "TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order status and confirm the expected ship date with the supplier",
+        "details": "Confirm the details of the order, including the part numbers and quantity, to ensure accuracy.",
+        "assignee": "Customer Representative",
+        "deadline": "Within 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the email and confirm the expected ship date with the supplier to avoid any delays.",
+    "qualityScore": 8.2,
+    "processingTime": 18.225,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xl0f8eq5q6e",
+    "contextualSummary": "A procurement team at Insight is forwarding an urgent order for Medpace Inc (Order #0337830611) with a ticket number of 11871887. The email requires immediate attention as it involves sold items and potential escalations.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337830611"],
+      "quote_numbers": [],
+      "case_numbers": ["11871887"],
+      "part_numbers": [],
+      "companies": ["Medpace Inc"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the sold items and their quantities with Medpace Inc.",
+        "details": "Confirm the details of the sold items to ensure accuracy and prevent potential discrepancies.",
+        "assignee": "Procurement Team",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and confirm that it will be addressed promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.912,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xl2n0eiuvfh",
+    "contextualSummary": "A sales order from Cisco Systems has been processed, and the customer has requested to sell a non-urgent item. The email is a follow-up to an external request, and the sender, Chelsea Byelick, is seeking clarification on the status of the sale.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems"]
+    },
+    "actionItems": [
+      {
+        "task": "Confirm the sale status with Cisco Systems and provide an update on the order.",
+        "details": "Contact the customer to confirm if the sale is complete or still pending.",
+        "assignee": "Chelsea Byelick",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the email and express interest in resolving the matter. Provide a timeline for resolution to ensure customer satisfaction.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.775,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xl4gy77p1bc",
+    "contextualSummary": "A purchase order has been sold to a new company, DATA SYSTEMS INC., for an order number of 0338055401. The email is forwarded from the procurement team at Insight, indicating that the sale is non-urgent and part of their workflow.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338055401"],
+      "quote_numbers": [],
+      "case_numbers": ["11872471"],
+      "part_numbers": [],
+      "companies": ["DATA SYSTEMS INC."]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the sale details and ensure all necessary documentation is in place for DATA SYSTEMS INC.",
+        "details": "Review the order number, company information, and any relevant documentation to confirm the sale.",
+        "assignee": "Procurement Team",
+        "deadline": "Within 24 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the forwarded email and express interest in verifying the sale details.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.058,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xl4loggwzfi",
+    "contextualSummary": "A support case has been escalated to Insight Order Support from a previous sale of a non-urgent request sold to Cisco Systems. The order number is 0337798045.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case Resolution",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of the order and ensure it is properly documented in our system.",
+        "details": "Check the order details to confirm that all necessary information is accurate and up-to-date.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within 24 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Please acknowledge receipt of this email and confirm your plan to verify the order status.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.748,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmux2kb567n",
+    "contextualSummary": "A support case has been escalated to Insight Order Support regarding a non-urgent request sold to Cisco Systems for order #0337798045.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order status and provide an update on the expected delivery date.",
+        "details": "Check with the sales team to confirm the order details and any potential delays.",
+        "assignee": "Insight Order Support",
+        "deadline": "End of day"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the request and provide an estimated delivery date.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 9.472,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmuydvuc95x",
+    "contextualSummary": "A sales order has been sold to Cisco Systems for Order #0337798045, but it's not urgent. The email is a response to an external request regarding Ticket 11833677.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Sales Process",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and ensure accurate sales data",
+        "details": "Check the order status, product information, and pricing to confirm accuracy.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "The response acknowledges receipt of the request and expresses appreciation for Cisco Systems' business, while also requesting further information to verify order details.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.426,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmv07i5vv5k",
+    "contextualSummary": "A customer at Consolidated Edison Company has an urgent order (Order #0337969640) that requires attention due to potential escalations. The email is a response to this ticket, indicating the need for support and resolution.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0337969640"],
+      "quote_numbers": [],
+      "case_numbers": ["11843526"],
+      "part_numbers": [],
+      "companies": ["Consolidated Edison Company"]
+    },
+    "actionItems": [
+      {
+        "task": "Review order details and escalate if necessary",
+        "details": "Verify the urgency of the situation and take prompt action to resolve or escalate as needed.",
+        "assignee": "Insight Order Support Team"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and express commitment to resolving the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.318,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xrrj29hrm72",
+    "contextualSummary": "The email is a notification to a team regarding an order that has been sold to NCL Corporation Ltd. The team is informed that the POD (Proof of Delivery) cannot be obtained due to the age of the PO/shipment.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0333649448"],
+      "quote_numbers": [],
+      "case_numbers": ["11870504"],
+      "part_numbers": [],
+      "companies": ["NCL Corporation Ltd"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of the order with NCL Corporation Ltd",
+        "details": "Confirm if the order has been fulfilled and obtain any necessary documentation.",
+        "assignee": "Build Team",
+        "deadline": "Within 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the email and confirm that the action item will be addressed promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 17.094,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xmy0gmeqtgy",
+    "contextualSummary": "Avo Photonics, Inc. has an urgent order (Order #0338041403) that requires attention from Insight Order Support. The email is a response to Ticket 11860903, indicating a potential escalation or issue with the order.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0338041403"],
+      "quote_numbers": [],
+      "case_numbers": ["11860903"],
+      "part_numbers": [],
+      "companies": ["Avo Photonics, Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Order #0338041403 and provide an update on the ticket resolution.",
+        "details": "Check the order status and ensure that all necessary steps are taken to resolve the issue.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the email and express willingness to assist with resolving the order issue.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 17.246,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xrrmt2dqhvg",
+    "contextualSummary": "The email is related to a non-urgent request for an Xcel order from RCCL (Royal Caribbean Cruise Line) with PO/BO/SO number 0338034800. The sender is requesting assistance with the ticket and has provided some context, but the content is truncated.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338034800"],
+      "quote_numbers": [],
+      "case_numbers": ["11850765"],
+      "part_numbers": [],
+      "companies": ["RCCL"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the Xcel order details and confirm receipt with RCCL",
+        "details": "Ensure all information is accurate and up-to-date to avoid any discrepancies or delays.",
+        "assignee": "buildamac@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge the request and confirm receipt of the Xcel order details from RCCL.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.755,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xn14dymh7mi",
+    "contextualSummary": "A customer at Consolidated Edison Company has submitted an urgent order for a specific part number (0337969640) through Ticket 11843526, requesting immediate attention from Insight Order Support.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": [],
+      "quote_numbers": [],
+      "case_numbers": ["11843526"],
+      "part_numbers": ["0337969640"],
+      "companies": ["Consolidated Edison Company"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the part number and its availability for immediate shipment",
+        "details": "Check with internal stakeholders to confirm the part's status and expedited shipping options.",
+        "assignee": "Insight Order Support Team Lead",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and assure the customer that immediate attention is being given to their request.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 17.063,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xn1539gg57r",
+    "contextualSummary": "A customer at Consolidated Edison Company has a pending order (Ticket 11843526) with an urgent status, requiring immediate attention from the Insight Order Support team to resolve any issues or escalations.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0337969640"],
+      "quote_numbers": [],
+      "case_numbers": ["11843526"],
+      "part_numbers": [],
+      "companies": ["Consolidated Edison Company"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to the customer with an update on the status of their order and provide a resolution or next steps",
+        "details": "Ensure timely communication with the customer to manage expectations and resolve any issues promptly.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within the hour"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and express commitment to resolving the issue as soon as possible.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.925,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xn1czyscwur",
+    "contextualSummary": "A customer has an urgent order (Order #0337989194) that requires attention due to potential sales issues. The email is a response to the original ticket, indicating ongoing support for the customer.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0337989194"],
+      "quote_numbers": [],
+      "case_numbers": ["11864754"],
+      "part_numbers": [],
+      "companies": ["HD Supply"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order status and escalate if necessary",
+        "details": "Check on the current status of Order #0337989194 to determine if any further action is required.",
+        "assignee": "InsightOrderSupport",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please verify the order status and respond with an update on the current status of Order #0337989194.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.171,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xn20s07yczc",
+    "contextualSummary": "A business order from TD Synnex to Ford Motor regarding an urgent ticket (11858337) with Order #0337996033, requesting support for sold orders.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0337996033"],
+      "quote_numbers": [],
+      "case_numbers": ["11858337"],
+      "part_numbers": [],
+      "companies": ["Ford Motor"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order status and escalate to Ford Motor if necessary",
+        "details": "Check the current status of Order #0337996033 and notify Ford Motor if there are any updates or concerns.",
+        "assignee": "InsightOrderSupport@tdsynnex.com"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent ticket and express willingness to assist with order status verification.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.43,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xn2idyu11ym",
+    "contextualSummary": "A customer at Accordion Partners LLC has an urgent order (Order #: 0338045279) that requires attention from Insight Order Support team. The email is a response to the ticket and includes details about the order and potential escalations.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0338045279"],
+      "quote_numbers": [],
+      "case_numbers": ["11859334"],
+      "part_numbers": [],
+      "companies": ["Accordion Partners LLC"]
+    },
+    "actionItems": [
+      {
+        "task": "Review order details and escalate if necessary",
+        "details": "Verify the order status, check for any discrepancies or issues, and take appropriate action.",
+        "assignee": "Insight Order Support Team"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and indicate that it will be reviewed and escalated if necessary.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.644,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xn3oujdjvn3",
+    "contextualSummary": "A sales order for a non-urgent request has been sold to the US House of Representatives (ELEC) with Order #0337845691. The email is a response to this sale and includes details about the order.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337845691"],
+      "quote_numbers": [],
+      "case_numbers": ["11865807"],
+      "part_numbers": [],
+      "companies": ["US House of Representatives (ELEC)"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details with the customer and ensure all information is accurate.",
+        "details": "Double-check the PO number, quote numbers, case numbers, part numbers, and company name to prevent any errors or discrepancies.",
+        "assignee": "InsightOrderSupport",
+        "deadline": "Within 24 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the order and confirm that all necessary steps have been taken to process the sale.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.03,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xn5ecx2q2ue",
+    "contextualSummary": "A customer has submitted a support case for an urgent order (Order #0338020609) from NCH Corp, referencing Ticket 11862246. The email requires escalation due to potential issues with the sold items.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case Escalation",
+    "entities": {
+      "po_numbers": ["0338020609"],
+      "quote_numbers": [],
+      "case_numbers": ["11862246"],
+      "part_numbers": [],
+      "companies": ["NCH Corp"]
+    },
+    "actionItems": [
+      {
+        "task": "Review order details and escalate to relevant team members for further assistance",
+        "details": "Ensure all necessary information is gathered before proceeding with the case escalation.",
+        "assignee": "InsightOrderSupport Team Lead",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "We will review the order details and escalate to our relevant team members for further assistance. We appreciate your patience as we work to resolve this issue.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.422,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xn5nfgy0gik",
+    "contextualSummary": "A support case has been escalated to RTX Corporation for Order #0325439211, which was previously assigned as a non-urgent request (Ticket 11859674). The email requires the recipient to review and acknowledge the transfer of ownership.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0325439211"],
+      "quote_numbers": [],
+      "case_numbers": ["11859674"],
+      "part_numbers": [],
+      "companies": ["RTX Corporation", "TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Review and acknowledge the transfer of ownership to RTX Corporation",
+        "details": "Verify that all necessary information is transferred correctly and that the order is properly assigned.",
+        "assignee": "Insight Order Support Team"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Please confirm receipt of this email and acknowledge the transfer of ownership to RTX Corporation.",
+    "qualityScore": 8.2,
+    "processingTime": 15.754,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xn6p2vcz89d",
+    "contextualSummary": "A customer inquiry regarding a non-urgent order sold to Cisco Systems, with an order number of 0337798045. The email requests support for the order.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order status and provide an update to the customer",
+        "details": "Review the order details and respond with a confirmation of the sale, including any relevant documentation or next steps.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge the customer's inquiry and provide an update on the order status, ensuring they have all necessary information for their records.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.834,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xn6qll304lo",
+    "contextualSummary": "A customer at Sanofi has an urgent order (Order #: 0338047080) that requires attention due to sold-out items. The support team needs to escalate the issue and provide a solution.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0338047080"],
+      "quote_numbers": [],
+      "case_numbers": ["11861898"],
+      "part_numbers": [],
+      "companies": ["Sanofi"]
+    },
+    "actionItems": [
+      {
+        "task": "Escalate the issue to a supervisor and provide a solution within 2 hours",
+        "details": "The support team needs to investigate the cause of sold-out items and offer alternatives or backorders.",
+        "assignee": "Supervisor",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge the urgent order and provide a temporary solution to mitigate the impact on Sanofi's operations.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.115,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xrsq697xqh1",
+    "contextualSummary": "The email is a response to an urgent order and escalation regarding Ticket 11856158. The sender has flagged that the issue can be restored and expresses gratitude.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337979270"],
+      "quote_numbers": [],
+      "case_numbers": ["11856158"],
+      "part_numbers": [],
+      "companies": []
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Ticket 11856158 and provide an update on its resolution.",
+        "details": "Check if the issue has been resolved or if further action is required.",
+        "assignee": "BuildAMAC",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please confirm the status of Ticket 11856158 and provide an update on its resolution.",
+    "qualityScore": 7.4,
+    "processingTime": 16.307,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xrsz0th2j55",
+    "contextualSummary": "The email is related to an urgent order (Ticket 11856158) from Bounteous with Order #0337979270, where the PO has already been picked, indicating a potential issue or escalation in the order management process.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337979270"],
+      "quote_numbers": [],
+      "case_numbers": ["11856158"],
+      "part_numbers": [],
+      "companies": ["Bounteous"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of the order and investigate any potential issues",
+        "details": "Check if the PO has been correctly picked and if there are any outstanding payments or issues with the order.",
+        "assignee": "buildamac@tdsynnex.com",
+        "deadline": "Respond within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Please investigate the status of Order #0337979270 and respond with any updates or concerns.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 17.351,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2ydwdlg513al",
+    "contextualSummary": "A customer has reached out to Insight Order Support regarding a ticket for order #0338046706, which is related to urgent orders and escalations involving Sandvik Machining Solutions.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338046706"],
+      "quote_numbers": [],
+      "case_numbers": ["11861188"],
+      "part_numbers": [],
+      "companies": ["Sandvik Machining Solutions"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to the customer within 2 hours with a solution or escalation plan",
+        "details": "Provide a clear and concise response addressing the urgent orders and escalations, including any next steps or required information.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge the customer's concern and provide a prompt resolution plan to address their urgent orders and escalations.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.292,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnbbi99okk3",
+    "contextualSummary": "A customer at Thomas Edison State University has an urgent order (Order #0337906113) that requires immediate attention due to potential sales escalations. The email is a response to the original ticket, and the sender is requesting further clarification on the situation.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337906113"],
+      "quote_numbers": [],
+      "case_numbers": ["11798629"],
+      "part_numbers": [],
+      "companies": ["Thomas Edison State University"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Order #0337906113 and escalate if necessary",
+        "details": "Check with internal teams to determine the best course of action for this urgent order.",
+        "assignee": "Support Team Lead"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge the urgency of the situation and request further information to assist in resolving the issue.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.243,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xrt8xwyq5di",
+    "contextualSummary": "A customer has an urgent order (Ticket 11856158) that requires immediate attention due to a potential issue with the sold item. The order number is Bounteous Order #0337979270.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0337979270"],
+      "quote_numbers": [],
+      "case_numbers": ["11856158"],
+      "part_numbers": [],
+      "companies": ["Bounteous"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the sold item and its condition to determine the best course of action.",
+        "details": "Check the product details, packaging, and any other relevant information to assess the situation.",
+        "assignee": "buildamac",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and express commitment to resolving the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.874,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnbx7q2b5cc",
+    "contextualSummary": "A customer has reached out to InsightOrderSupport regarding an urgent order (Order #: 0338037011) that requires attention due to sold-out stock, prompting the need for escalation.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0338037011"],
+      "quote_numbers": [],
+      "case_numbers": ["11854269"],
+      "part_numbers": [],
+      "companies": ["UPL SERVICES LLC"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify sold-out stock and expedite order fulfillment",
+        "details": "Contact the supplier to confirm stock availability and arrange for expedited shipping if necessary.",
+        "assignee": "Order Management Team",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and assure the customer that steps are being taken to expedite fulfillment.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.247,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xrt9xbqq9uf",
+    "contextualSummary": "The email is related to a ticket for an urgent order (Order #0337973941) that has been escalated from Harmon's. The sender is requesting assistance with the order, which was sold through TD Synnex.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337973941"],
+      "quote_numbers": [],
+      "case_numbers": ["11861909"],
+      "part_numbers": [],
+      "companies": ["HARMONS"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and provide an update on the status of the shipment.",
+        "details": "The customer is expecting a prompt resolution to this issue to avoid any further delays.",
+        "assignee": "buildamac@tdsynnex.com",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "We will investigate the status of the shipment and provide an update to the customer within the next 2 hours.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.185,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnc31z1nps0",
+    "contextualSummary": "VM Consolidated, Inc. has an urgent order (Order #0338034152) that requires attention from Insight Order Support. The email is a response to Ticket 11851215, indicating an escalation of the issue.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0338034152"],
+      "quote_numbers": [],
+      "case_numbers": ["11851215"],
+      "part_numbers": [],
+      "companies": ["VM Consolidated, Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Investigate and resolve the urgent order as soon as possible",
+        "details": "Verify the status of Order #0338034152 and provide an update on the resolution timeline.",
+        "assignee": "Insight Order Support Team"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and confirm that it is being prioritized for immediate attention.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.766,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xncdwqquebk",
+    "contextualSummary": "A customer has requested to sell an order to RTX Corporation for Order #0325439211, which is not urgent. The email appears to be a notification from TD Synnex's InsightOrderSupport team.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0325439211"],
+      "quote_numbers": [],
+      "case_numbers": ["11859674"],
+      "part_numbers": [],
+      "companies": ["RTX Corporation", "TD Synnex"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and confirm with RTX Corporation before proceeding with the sale.",
+        "details": "Ensure all necessary information is accurate and up-to-date to avoid any potential issues.",
+        "assignee": "InsightOrderSupport team",
+        "deadline": "Within 24 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge the request and confirm receipt of the order details. Request additional information if necessary to ensure a smooth sale process.",
+    "qualityScore": 8.2,
+    "processingTime": 15.339,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnddbdpwka6",
+    "contextualSummary": "A customer from UPL SERVICES LLC has submitted a ticket regarding an urgent order (Order #: 0338037011) with a PO number of 11854269. The email is requesting support and escalation for the issue.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["11854269"],
+      "quote_numbers": [],
+      "case_numbers": ["11854269"],
+      "part_numbers": [],
+      "companies": ["UPL SERVICES LLC"]
+    },
+    "actionItems": [
+      {
+        "task": "Review and investigate the urgent order with PO number 11854269",
+        "details": "Check on the status of the order, verify any discrepancies or issues, and escalate to the relevant team if necessary.",
+        "assignee": "InsightOrderSupport@tdsynnex.com (original sender)",
+        "deadline": "Urgent response required within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the ticket and express willingness to assist with resolving the urgent order issue.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.361,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2ydwj0sdfoun",
+    "contextualSummary": "A customer at Sandvik Machining Solutions has an urgent order (Order #0338046706) that requires attention due to potential issues with sold items. The email forwards a ticket number (11861188) for further investigation and resolution.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case Resolution",
+    "entities": {
+      "po_numbers": ["0338046706"],
+      "quote_numbers": [],
+      "case_numbers": ["11861188"],
+      "part_numbers": [],
+      "companies": ["Sandvik Machining Solutions"]
+    },
+    "actionItems": [
+      {
+        "task": "Investigate the order and sold items to determine the cause of potential issues",
+        "details": "Review the ticket details, order history, and product information to identify the root cause.",
+        "assignee": "Insight Customer Support Team",
+        "deadline": "Respond within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and express commitment to resolving the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.904,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2ydwmgg71q84",
+    "contextualSummary": "A customer service alert regarding a sold order to Avo Photonics, Inc (Order #0338041403) with an urgent escalation needed.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0338041403"],
+      "quote_numbers": [],
+      "case_numbers": ["11860903"],
+      "part_numbers": [],
+      "companies": ["Avo Photonics, Inc"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the sold order details and escalate to the relevant team for prompt resolution.",
+        "details": "Check the order status, product availability, and any potential issues that may have arisen during shipping or delivery.",
+        "assignee": "Sales Team/Operations Manager",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the email and express commitment to resolving the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.152,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2ydwo6daiowc",
+    "contextualSummary": "Avo Photonics, Inc has an urgent order (Order #0338041403) that requires attention due to potential escalations. The email forwards a ticket number (11860903), and the sender is not managed by hardware. An analysis of the content suggests that this is related to order management or support case processing.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338041403"],
+      "quote_numbers": [],
+      "case_numbers": ["11860903"],
+      "part_numbers": [],
+      "companies": ["Avo Photonics, Inc"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Order #0338041403 and escalate if necessary",
+        "details": "Check with the customer to confirm their expectations and provide an update on the current status.",
+        "assignee": "Support Team Lead",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly to acknowledge receipt of the order and express a willingness to assist with any issues.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 12.416,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnk5r4m8v26",
+    "contextualSummary": "The email is related to a support case for an urgent order from the San Diego Housing Commission (Order #: 0337986929) with ticket number 11850211. The sender is requesting assistance with potential issues and providing order numbers.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337986929"],
+      "quote_numbers": [],
+      "case_numbers": ["11850211"],
+      "part_numbers": [],
+      "companies": ["San Diego Housing Commission"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Order #: 0337986929 and follow up with the customer to confirm any issues.",
+        "details": "Check on the current status of the order, including shipping details and any potential delays.",
+        "assignee": "Support Team Lead",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the email and express willingness to assist with resolving any issues related to Order #: 0337986929.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.911,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnki4kzwee7",
+    "contextualSummary": "A support case has been escalated from a non-urgent request to the City of Blaine for Order #0337828837. The ticket number is 11851428.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337828837"],
+      "quote_numbers": [],
+      "case_numbers": ["11851428"],
+      "part_numbers": [],
+      "companies": ["City of Blaine"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and ensure accurate information is provided to the City of Blaine",
+        "details": "Review the order details to confirm accuracy and completeness.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Next business day"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the request and express willingness to assist with any further information needed from the City of Blaine.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.408,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xrtw7emnovw",
+    "contextualSummary": "A sales order from Sanofi has been flagged for urgent attention due to potential issues with fulfillment. The order (0338036573) contains a sold quantity of products, indicating a possible discrepancy in the original quote or inventory levels.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0338036573"],
+      "quote_numbers": [],
+      "case_numbers": ["11849399"],
+      "part_numbers": [],
+      "companies": ["Sanofi"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify inventory levels and update the order status accordingly",
+        "details": "Check if there are any stockouts or overstock situations that could impact delivery timelines.",
+        "assignee": "Sales Team Lead",
+        "deadline": "End of day today"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the order and express concern about potential delays, while also offering support to ensure timely resolution.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.205,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnmaf267n1o",
+    "contextualSummary": "A non-urgent request has been sold to Cisco Systems for Order #0337798045, with a ticket number of 11833677. The email is requesting support from InsightOrderSupport@tdsynnex.com.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to the customer with a solution or escalate to a supervisor if necessary",
+        "details": "Provide a professional response to the customer's request, including any relevant information about the order and ticket.",
+        "assignee": "InsightOrderSupport@tdsynnex.com",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly to ensure timely resolution of the customer's request.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 17.884,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnokftjent6",
+    "contextualSummary": "A customer at VM Consolidated, Inc. has an urgent order (Order #: 0338034152) that requires attention from Insight Order Support team. The email is a response to the original ticket and includes details about the order and potential escalations.",
+    "workflowState": "IN_PROGRESS",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0338034152"],
+      "quote_numbers": [],
+      "case_numbers": ["11851215"],
+      "part_numbers": [],
+      "companies": ["VM Consolidated, Inc."]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Order #: 0338034152 and escalate if necessary",
+        "details": "Check with sales team to confirm order details and ensure timely delivery.",
+        "assignee": "Insight Order Support Team Lead"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond promptly to acknowledge receipt of the urgent order and provide an estimated resolution timeline.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.389,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnoyw9bcwsd",
+    "contextualSummary": "A customer from Eaton Corp has an urgent order (Order #0338025863) that requires attention due to potential issues with sold items. The email is a forwarded message about the ticket 11839741, indicating a need for support and escalation.",
+    "workflowState": "START_POINT",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0338025863"],
+      "quote_numbers": [],
+      "case_numbers": ["11839741"],
+      "part_numbers": [],
+      "companies": ["Eaton Corp"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of ticket 11839741 and escalate to next level if necessary",
+        "details": "Check on the current status of the ticket and ensure that all sold items are accounted for.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and express commitment to resolving the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.768,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnqk6ig3eyi",
+    "contextualSummary": "A customer has submitted a non-urgent request for an order sold to City of Redondo Beach with Order #0337914248, requesting support from TD Synnex's InsightOrderSupport team.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0337914248"],
+      "quote_numbers": [],
+      "case_numbers": ["11818983"],
+      "part_numbers": [],
+      "companies": ["City of Redondo Beach"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to the customer with a non-urgent response, providing an estimated timeframe for resolution and any additional information required.",
+        "details": "Provide a professional response that acknowledges the request and offers support without committing to immediate action.",
+        "assignee": "",
+        "deadline": ""
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Respond with a non-urgent message, acknowledging the request and offering support. Provide an estimated timeframe for resolution and any additional information required.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.582,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnqunhfjcl9",
+    "contextualSummary": "A customer has submitted a non-urgent request for an order sold to City of Redondo Beach with Order #0337914248. The email is requesting support assistance.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management Support Case",
+    "entities": {
+      "po_numbers": ["0337914248"],
+      "quote_numbers": [],
+      "case_numbers": ["11818983"],
+      "part_numbers": [],
+      "companies": ["City of Redondo Beach"]
+    },
+    "actionItems": [
+      {
+        "task": "Respond to the customer with a non-urgent response, providing an estimated time for resolution and any additional information required.",
+        "details": "Provide a brief professional response acknowledging the request and offering support assistance.",
+        "assignee": "InsightOrderSupport",
+        "deadline": "Next business day"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge the request, provide an estimated time for resolution, and offer support assistance.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 10.351,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnryvgy32xd",
+    "contextualSummary": "Insight Enterprises Australia PTY received an urgent order (Order #: 0338036967) with potential escalations for Ticket 11849994, requiring immediate attention from the support team.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case Management",
+    "entities": {
+      "po_numbers": ["0338036967"],
+      "quote_numbers": [],
+      "case_numbers": ["11849994"],
+      "part_numbers": [],
+      "companies": ["Insight Enterprises Australia PTY"]
+    },
+    "actionItems": [
+      {
+        "task": "Review order details and escalate ticket if necessary",
+        "details": "Verify the urgency of the situation and take prompt action to resolve any issues.",
+        "assignee": "Order Support Team",
+        "deadline": "Immediate attention required"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and express willingness to assist with resolving any escalations.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.597,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xrv5ljdn1u5",
+    "contextualSummary": "A sales order from World Kinect Corporation has been flagged for urgent attention due to potential issues with fulfillment. The order (0337794478) requires immediate resolution to avoid delays in delivery.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Fulfillment",
+    "entities": {
+      "po_numbers": ["0337794478"],
+      "quote_numbers": [],
+      "case_numbers": ["11730042"],
+      "part_numbers": [],
+      "companies": ["World Kinect Corporation"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify order details and confirm delivery timeline with World Kinect Corporation",
+        "details": "Ensure accurate fulfillment of the urgent order to avoid delays.",
+        "assignee": "Build AMC Team Lead",
+        "deadline": "End of day today"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and confirm next steps with World Kinect Corporation.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.237,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnud4qzso1r",
+    "contextualSummary": "A customer from Consolidated Edison Company has requested urgent attention for an order (Ticket 11843526) associated with Order #0337969640, indicating a potential issue that requires immediate resolution.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0337969640"],
+      "quote_numbers": [],
+      "case_numbers": ["11843526"],
+      "part_numbers": [],
+      "companies": ["Consolidated Edison Company"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Order #0337969640 and escalate the issue to a higher authority if necessary.",
+        "details": "Check the order details, including any outstanding payments or shipping issues.",
+        "assignee": "InsightOrderSupport",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent request and assure the customer that support is being escalated to resolve the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.763,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnueq4b16qg",
+    "contextualSummary": "A customer at Consolidated Edison Company has an urgent order with ticket number 11843526, requiring immediate attention for resolution.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Support Case",
+    "entities": {
+      "po_numbers": ["0337969640"],
+      "quote_numbers": [],
+      "case_numbers": ["11843526"],
+      "part_numbers": [],
+      "companies": ["Consolidated Edison Company"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify order details and escalate to relevant team for immediate resolution.",
+        "details": "Review the order and ticket information to ensure accurate representation of customer needs.",
+        "assignee": "Insight Order Support Team",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "HIGH",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and express commitment to resolving the issue promptly.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 14.417,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnuvjuntmm4",
+    "contextualSummary": "A sales order (Order #0337978256) has been escalated to Fisher-Rosemount Systems Inc due to urgent orders. The email is a response to Ticket 11843172.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0337978256"],
+      "quote_numbers": [],
+      "case_numbers": ["11843172"],
+      "part_numbers": [],
+      "companies": ["FISHER-ROSEMOUNT SYSTEMS INC"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Order #0337978256 and provide an update on the escalation process.",
+        "details": "Check if the order has been processed or is still pending, and inform the customer about any updates.",
+        "assignee": "InsightOrderSupport",
+        "deadline": "Same day"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge the escalation and provide a brief update on the status of Order #0337978256.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.479,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xnv4mctx8ch",
+    "contextualSummary": "The email is related to a hardware order from PNC with Order #0337955916, which has been escalated due to urgent orders. The sender, InsightOrderSupport, is requesting assistance in managing the situation.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0337955916"],
+      "quote_numbers": [],
+      "case_numbers": ["11794714"],
+      "part_numbers": [],
+      "companies": ["PNC"]
+    },
+    "actionItems": [
+      {
+        "task": "Review and process the urgent orders for PNC, ensuring timely delivery.",
+        "details": "Verify the status of the order and notify the customer if there are any delays or issues.",
+        "assignee": "Order Management Team",
+        "deadline": "End of day"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent orders and confirm that assistance is being provided to ensure timely delivery.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.13,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xen6ur6f5wi",
+    "contextualSummary": "The email is related to a non-urgent request from the City of Redondo Beach for an order number (0337914248). The sender seems to be forwarding this information without taking any action.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337914248"],
+      "quote_numbers": [],
+      "case_numbers": ["11818983"],
+      "part_numbers": [],
+      "companies": ["City of Redondo Beach"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and confirm receipt with City of Redondo Beach",
+        "details": "Ensure all information is accurate before responding to the request.",
+        "assignee": "Designated Order Management Representative",
+        "deadline": "Within the next 24 hours"
+      }
+    ],
+    "urgencyLevel": "LOW",
+    "suggestedResponse": "Acknowledge receipt of the order and confirm that it will be processed in accordance with standard procedures.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 15.624,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xen8svjf6gy",
+    "contextualSummary": "A procurement team at Insight is forwarding an urgent order from the San Diego Housing Commission (Order #0337986929) for a ticket related to sold items. The email requires attention to resolve any issues and ensure timely fulfillment.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337986929"],
+      "quote_numbers": [],
+      "case_numbers": ["11850211"],
+      "part_numbers": [],
+      "companies": ["San Diego Housing Commission"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the order details and confirm receipt with the San Diego Housing Commission.",
+        "details": "Ensure all necessary information is accurate and up-to-date to avoid any delays or discrepancies.",
+        "assignee": "Procurement Team",
+        "deadline": "Within 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the urgent order and confirm the team's plan for resolution.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.433,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xeog6bv0xvg",
+    "contextualSummary": "A sales order (Order #: 0338036967) has been escalated to Insight Enterprises Australia PTY due to urgent orders, indicating a potential issue that requires immediate attention.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management and Escalation Process",
+    "entities": {
+      "po_numbers": ["0338036967"],
+      "quote_numbers": [],
+      "case_numbers": ["11849994"],
+      "part_numbers": [],
+      "companies": ["Insight Enterprises Australia PTY"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the status of Order #: 0338036967 and provide an update on the current order status.",
+        "details": "Check if there are any outstanding issues or delays that need to be addressed.",
+        "assignee": "Sales Team",
+        "deadline": "Within the next 2 hours"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Acknowledge receipt of the escalated order and express willingness to assist in resolving any issues.",
+    "qualityScore": 7.800000000000001,
+    "processingTime": 16.766,
+    "model": "llama3.2:3b"
+  },
+  {
+    "emailId": "email_mdf2xeqbfqyvqp8",
+    "contextualSummary": "A sales representative from TDS Nexxus has sold a non-urgent request to Cisco Systems for Order #0337798045. The email requires further processing and review of the sale.",
+    "workflowState": "WAITING",
+    "businessProcess": "Order Management",
+    "entities": {
+      "po_numbers": ["0337798045"],
+      "quote_numbers": [],
+      "case_numbers": ["11833677"],
+      "part_numbers": [],
+      "companies": ["Cisco Systems", "TDS Nexxus"]
+    },
+    "actionItems": [
+      {
+        "task": "Verify the sale with Cisco Systems and confirm receipt of Order #0337798045.",
+        "details": "Confirm that the order has been received and processed by Cisco Systems.",
+        "assignee": "Barry.Feng@tdsynnex.com",
+        "deadline": "End of day today"
+      }
+    ],
+    "urgencyLevel": "MEDIUM",
+    "suggestedResponse": "Respond to confirm receipt of Order #0337798045 and verify the sale with Cisco Systems.",
+    "qualityScore": 8.2,
+    "processingTime": 16.324,
+    "model": "llama3.2:3b"
   }
 ]
