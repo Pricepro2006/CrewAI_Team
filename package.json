@@ -46,6 +46,7 @@
     "process-emails": "tsx src/scripts/email-batch-processor.ts --",
     "pipeline:test": "tsx src/scripts/test-pipeline-small-batch.ts",
     "pipeline:execute": "tsx src/scripts/run-three-stage-pipeline.ts",
+    "pipeline:execute:prod": "tsx src/scripts/execute-pipeline-production.ts",
     "pipeline:monitor": "tsx src/scripts/monitor-pipeline.ts"
   },
   "dependencies": {
