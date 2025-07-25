@@ -1,6 +1,5 @@
 import { BaseTool } from "../base/BaseTool";
 import axios from "axios";
-import * as cheerio from "cheerio";
 export class WebSearchTool extends BaseTool {
     searchEngines;
     constructor() {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, beforeAll } from "vitest";
 import { MasterOrchestrator } from "./MasterOrchestrator";
 import { createTestDatabase } from "../../test/utils/test-helpers";
-import { isOllamaRunning, skipIfNoOllama, generateWithTimeout, } from "../../test/utils/ollama-test-helper";
+import { isOllamaRunning, generateWithTimeout, } from "../../test/utils/ollama-test-helper";
 describe("MasterOrchestrator Integration Tests", () => {
     let orchestrator;
     let testDb;

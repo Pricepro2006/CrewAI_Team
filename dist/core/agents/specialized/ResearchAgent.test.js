@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ResearchAgent } from "./ResearchAgent";
-import { WebSearchTool } from "../../tools/web/WebSearchTool";
-import { WebScraperTool } from "../../tools/web/WebScraperTool";
 import { createMockOllamaProvider } from "../../../test/mocks/ollama.mock";
 vi.mock("../../llm/OllamaProvider", () => ({
     OllamaProvider: vi.fn().mockImplementation(() => createMockOllamaProvider()),

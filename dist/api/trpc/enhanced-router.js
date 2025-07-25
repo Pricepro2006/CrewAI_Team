@@ -1,8 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { createSecurityAuditMiddleware, createAuthMiddleware, createAuthorizationMiddleware, createInputValidation, sanitizationSchemas, } from "../middleware/security";
-// Import rate limiters from centralized middleware index (avoids circular dependency)
-import { chatProcedureRateLimiter, agentProcedureRateLimiter, taskProcedureRateLimiter, ragProcedureRateLimiter, strictProcedureRateLimiter, } from "../middleware/index";
 import { logger } from "../../utils/logger";
 import { z } from "zod";
 /**
@@ -71,14 +69,14 @@ export const userProcedure = t.procedure
 // Convert express rate limiters to tRPC middleware
 const createRateLimitMiddleware = (name) => t.middleware(async ({ ctx, next }) => {
     // For now, just proceed - rate limiting can be handled at HTTP level
-    logger.debug(`Rate limit check for ${name}`, 'TRPC_RATE_LIMIT');
+    logger.debug(`Rate limit check for ${name}`, "TRPC_RATE_LIMIT");
     return next();
 });
-export const chatProcedure = protectedProcedure.use(createRateLimitMiddleware('chat'));
-export const agentProcedure = protectedProcedure.use(createRateLimitMiddleware('agent'));
-export const taskProcedure = protectedProcedure.use(createRateLimitMiddleware('task'));
-export const ragProcedure = protectedProcedure.use(createRateLimitMiddleware('rag'));
-export const strictProcedure = protectedProcedure.use(createRateLimitMiddleware('strict'));
+export const chatProcedure = protectedProcedure.use(createRateLimitMiddleware("chat"));
+export const agentProcedure = protectedProcedure.use(createRateLimitMiddleware("agent"));
+export const taskProcedure = protectedProcedure.use(createRateLimitMiddleware("task"));
+export const ragProcedure = protectedProcedure.use(createRateLimitMiddleware("rag"));
+export const strictProcedure = protectedProcedure.use(createRateLimitMiddleware("strict"));
 // Procedures with input validation
 export const secureTextProcedure = protectedProcedure.use(secureStringValidation);
 export const secureQueryProcedure = protectedProcedure.use(secureQueryValidation);
@@ -138,7 +136,6 @@ const batchOperationMiddleware = t.middleware(async ({ next, ctx }) => {
     });
 });
 export const batchProcedure = protectedProcedure.use(batchOperationMiddleware);
-// Custom error handlers for different scenarios
 export function createCustomErrorHandler(errorType) {
     return t.middleware(async ({ next }) => {
         try {

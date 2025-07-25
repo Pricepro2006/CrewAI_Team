@@ -5,12 +5,19 @@ import { MaestroFramework } from "../../core/maestro/MaestroFramework";
 import { UserService, UserRole, } from "../services/UserService";
 import ollamaConfig from "../../config/ollama.config";
 import { logger } from "../../utils/logger";
+import { mcpToolsService } from "../services/MCPToolsService";
+import { DealDataService } from "../services/DealDataService";
+import { EmailStorageService } from "../services/EmailStorageService";
+import { WalmartGroceryService } from "../services/WalmartGroceryService";
 // Initialize services (singleton pattern)
 let masterOrchestrator;
 let conversationService;
 let maestroFramework;
 let taskService;
 let userService;
+let dealDataService;
+let emailStorageService;
+let walmartGroceryService;
 async function initializeServices() {
     if (!masterOrchestrator) {
         masterOrchestrator = new MasterOrchestrator({
@@ -45,7 +52,7 @@ async function initializeServices() {
             taskTimeout: 300000, // 5 minutes
             queueConfig: {
                 maxSize: 100,
-                strategy: 'fifo',
+                strategy: "fifo",
             },
         });
         await maestroFramework.initialize();
@@ -56,14 +63,27 @@ async function initializeServices() {
     if (!userService) {
         userService = new UserService();
     }
+    if (!dealDataService) {
+        dealDataService = new DealDataService();
+    }
+    if (!emailStorageService) {
+        emailStorageService = new EmailStorageService();
+    }
+    if (!walmartGroceryService) {
+        walmartGroceryService = WalmartGroceryService.getInstance();
+    }
     return {
         masterOrchestrator,
         conversationService,
         taskService,
         maestroFramework,
         userService,
+        dealDataService,
+        emailStorageService,
+        walmartGroceryService,
         agentRegistry: masterOrchestrator.agentRegistry,
         ragSystem: masterOrchestrator.ragSystem,
+        mcpTools: mcpToolsService.getAvailableTools(),
     };
 }
 // JWT verification utility
@@ -137,7 +157,7 @@ function validateRequest(req) {
     }
     return { ip, userAgent };
 }
-export async function createContext({ req, res }) {
+export async function createContext({ req, res, }) {
     // Validate request and extract security info
     const { ip, userAgent } = validateRequest(req);
     // Get services

@@ -1,24 +1,28 @@
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
 import { WebSocketAuthManager, type AuthenticatedWebSocket } from "../websocketAuth";
-import type { UserService } from "../../services/UserService";
+import type { UserService, User, JWTPayload } from "../../services/UserService";
+import { UserRole } from "../../services/UserService";
 import { WebSocket } from "ws";
 
 // Mock dependencies
-jest.mock("../../services/UserService");
-jest.mock("../../../utils/logger");
+vi.mock("../../services/UserService");
+vi.mock("../../../utils/logger");
 
 describe("WebSocketAuthManager", () => {
   let authManager: WebSocketAuthManager;
-  let mockUserService: jest.Mocked<UserService>;
+  let mockUserService: {
+    verifyToken: MockedFunction<UserService['verifyToken']>;
+    getById: MockedFunction<UserService['getById']>;
+  };
   let mockWs: AuthenticatedWebSocket;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Create mock UserService
     mockUserService = {
-      verifyToken: jest.fn(),
-      getById: jest.fn(),
+      verifyToken: vi.fn(),
+      getById: vi.fn(),
     } as any;
 
     // Create auth manager
@@ -26,9 +30,9 @@ describe("WebSocketAuthManager", () => {
 
     // Create mock WebSocket
     mockWs = {
-      send: jest.fn(),
-      on: jest.fn(),
-      close: jest.fn(),
+      send: vi.fn(),
+      on: vi.fn(),
+      close: vi.fn(),
       readyState: WebSocket.OPEN,
     } as any;
   });
@@ -41,13 +45,15 @@ describe("WebSocketAuthManager", () => {
       mockUserService.verifyToken.mockResolvedValue({
         userId,
         email: "user@example.com",
+        username: "testuser",
+        role: UserRole.USER,
       });
       
       mockUserService.getById.mockResolvedValue({
         id: userId,
         email: "user@example.com",
         username: "testuser",
-        role: "user",
+        role: UserRole.USER,
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -57,7 +63,7 @@ describe("WebSocketAuthManager", () => {
 
       expect(result.success).toBe(true);
       expect(result.userId).toBe(userId);
-      expect(result.userRole).toBe("user");
+      expect(result.userRole).toBe(UserRole.USER);
       expect(result.permissions).toEqual(["read", "write"]);
       
       expect(mockWs.userId).toBe(userId);
@@ -87,13 +93,15 @@ describe("WebSocketAuthManager", () => {
       mockUserService.verifyToken.mockResolvedValue({
         userId,
         email: "user@example.com",
+        username: "testuser",
+        role: UserRole.USER,
       });
       
       mockUserService.getById.mockResolvedValue({
         id: userId,
         email: "user@example.com",
         username: "testuser",
-        role: "user",
+        role: UserRole.USER,
         isActive: false, // Inactive user
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -112,13 +120,15 @@ describe("WebSocketAuthManager", () => {
       mockUserService.verifyToken.mockResolvedValue({
         userId,
         email: "admin@example.com",
+        username: "admin",
+        role: UserRole.ADMIN,
       });
       
       mockUserService.getById.mockResolvedValue({
         id: userId,
         email: "admin@example.com",
         username: "admin",
-        role: "admin",
+        role: UserRole.ADMIN,
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -145,7 +155,7 @@ describe("WebSocketAuthManager", () => {
       };
 
       // Mock successful authentication
-      jest.spyOn(authManager, "authenticate").mockResolvedValue({
+      vi.spyOn(authManager, "authenticate").mockResolvedValue({
         success: true,
         userId: "user-123",
         userRole: "user",
@@ -187,7 +197,7 @@ describe("WebSocketAuthManager", () => {
       };
 
       // Mock failed authentication
-      jest.spyOn(authManager, "authenticate").mockResolvedValue({
+      vi.spyOn(authManager, "authenticate").mockResolvedValue({
         success: false,
         error: "Invalid token",
       });
@@ -205,7 +215,7 @@ describe("WebSocketAuthManager", () => {
     beforeEach(() => {
       mockWs.isAuthenticated = true;
       mockWs.userId = "user-123";
-      mockWs.userRole = "user";
+      mockWs.userRole = UserRole.USER;
       mockWs.permissions = ["read", "write"];
     });
 
@@ -224,11 +234,11 @@ describe("WebSocketAuthManager", () => {
     });
 
     it("should correctly check roles", () => {
-      expect(authManager.hasRole(mockWs, ["user", "admin"])).toBe(true);
-      expect(authManager.hasRole(mockWs, ["admin", "moderator"])).toBe(false);
+      expect(authManager.hasRole(mockWs, [UserRole.USER, UserRole.ADMIN])).toBe(true);
+      expect(authManager.hasRole(mockWs, [UserRole.ADMIN, UserRole.MODERATOR])).toBe(false);
       
-      mockWs.userRole = "admin";
-      expect(authManager.hasRole(mockWs, ["admin"])).toBe(true);
+      mockWs.userRole = UserRole.ADMIN;
+      expect(authManager.hasRole(mockWs, [UserRole.ADMIN])).toBe(true);
     });
   });
 
@@ -240,13 +250,15 @@ describe("WebSocketAuthManager", () => {
       mockUserService.verifyToken.mockResolvedValue({
         userId,
         email: "user@example.com",
+        username: "testuser",
+        role: UserRole.USER,
       });
       
       mockUserService.getById.mockResolvedValue({
         id: userId,
         email: "user@example.com",
         username: "testuser",
-        role: "user",
+        role: UserRole.USER,
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -266,7 +278,7 @@ describe("WebSocketAuthManager", () => {
       // Add to tracking manually (simulating successful auth)
       (authManager as any).authenticatedClients.set(mockWs.clientId, {
         userId: mockWs.userId,
-        userRole: "user",
+        userRole: UserRole.USER,
         permissions: ["read", "write"],
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       });
@@ -280,10 +292,10 @@ describe("WebSocketAuthManager", () => {
     it("should get authentication statistics", async () => {
       // Add some test clients
       const clients = [
-        { clientId: "c1", userId: "u1", userRole: "admin" },
-        { clientId: "c2", userId: "u2", userRole: "user" },
-        { clientId: "c3", userId: "u1", userRole: "admin" }, // Same user, different client
-        { clientId: "c4", userId: "u3", userRole: "user" },
+        { clientId: "c1", userId: "u1", userRole: UserRole.ADMIN },
+        { clientId: "c2", userId: "u2", userRole: UserRole.USER },
+        { clientId: "c3", userId: "u1", userRole: UserRole.ADMIN }, // Same user, different client
+        { clientId: "c4", userId: "u3", userRole: UserRole.USER },
       ];
 
       clients.forEach(client => {
@@ -338,14 +350,14 @@ describe("WebSocketAuthManager", () => {
     it("should disconnect all clients for a user", () => {
       const userId = "user-123";
       const mockWsService = {
-        forceDisconnectClient: jest.fn(),
+        forceDisconnectClient: vi.fn(),
       };
 
       // Add multiple clients for the same user
       ["c1", "c2", "c3"].forEach(clientId => {
         (authManager as any).authenticatedClients.set(clientId, {
           userId,
-          userRole: "user",
+          userRole: UserRole.USER,
           permissions: ["read"],
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         });
@@ -365,7 +377,7 @@ describe("WebSocketAuthManager", () => {
 
   describe("cleanup", () => {
     it("should stop cleanup interval", () => {
-      const clearIntervalSpy = jest.spyOn(global, "clearInterval");
+      const clearIntervalSpy = vi.spyOn(global, "clearInterval");
       
       // Force create cleanup interval
       (authManager as any).startCleanupInterval();

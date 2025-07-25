@@ -1,4 +1,4 @@
-import { BaseRepository } from '../BaseRepository';
+import { BaseRepository } from '../../../database/repositories/BaseRepository';
 import { logger } from '../../../utils/logger';
 
 export interface EmailEntity {

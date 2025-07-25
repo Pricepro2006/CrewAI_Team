@@ -3,8 +3,8 @@
  * Provides production-ready ChromaDB operations with schema management
  */
 
-import { ChromaClient } from 'chromadb';
-import type { Collection } from 'chromadb';
+import { ChromaClient, OpenAIEmbeddingFunction } from 'chromadb';
+import type { Collection, IEmbeddingFunction } from 'chromadb';
 import { logger } from '../../utils/logger';
 
 export interface ChromaDocument {
@@ -36,6 +36,7 @@ export class ChromaDBManager {
   private client: ChromaClient;
   private collections: Map<string, Collection> = new Map();
   private isConnected: boolean = false;
+  private defaultEmbeddingFunction: IEmbeddingFunction;
 
   constructor(private config: {
     host?: string;
@@ -61,6 +62,11 @@ export class ChromaDBManager {
       tenant,
       database,
       ...headers && { headers }
+    });
+
+    // Initialize default embedding function (OpenAI compatible)
+    this.defaultEmbeddingFunction = new OpenAIEmbeddingFunction({
+      openai_api_key: process.env.OPENAI_API_KEY || 'dummy-key'
     });
   }
 
@@ -98,7 +104,8 @@ export class ChromaDBManager {
       // Try to get existing collection first
       try {
         collection = await this.client.getCollection({
-          name: config.name
+          name: config.name,
+          embeddingFunction: this.defaultEmbeddingFunction
         });
         logger.info(`Using existing ChromaDB collection: ${config.name}`, 'CHROMA_DB');
       } catch (getError) {
@@ -135,7 +142,10 @@ export class ChromaDBManager {
     }
 
     try {
-      const collection = await this.client.getCollection({ name });
+      const collection = await this.client.getCollection({ 
+        name,
+        embeddingFunction: this.defaultEmbeddingFunction
+      });
       this.collections.set(name, collection);
       return collection;
     } catch (error) {
@@ -287,7 +297,7 @@ export class ChromaDBManager {
       for (let i = 0; i < results.ids.length; i++) {
         documents.push({
           id: results.ids[i],
-          content: results.documents?.[i] || '',
+          content: results.documents?.[i] ?? '',
           metadata: results.metadatas?.[i] || {}
         });
       }
@@ -369,11 +379,26 @@ export class ChromaDBManager {
    */
   async listCollections(): Promise<Array<{ name: string; metadata: Record<string, any> }>> {
     try {
-      const collections = await this.client.listCollections();
-      return collections.map(col => ({
-        name: col.name,
-        metadata: col.metadata || {}
-      }));
+      const collectionNames = await this.client.listCollections();
+      const collections = [];
+      
+      for (const name of collectionNames) {
+        try {
+          const collection = await this.client.getCollection({
+            name,
+            embeddingFunction: this.defaultEmbeddingFunction
+          });
+          collections.push({
+            name,
+            metadata: collection.metadata || {}
+          });
+        } catch (error) {
+          // Collection might not be accessible, skip it
+          logger.warn(`Could not access collection ${name}: ${error}`, 'CHROMA_DB');
+        }
+      }
+      
+      return collections;
     } catch (error) {
       logger.error(`Failed to list collections: ${error}`, 'CHROMA_DB');
       throw error;

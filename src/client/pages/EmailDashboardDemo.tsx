@@ -5,7 +5,7 @@ import { trpc } from '@/utils/trpc';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import type { EmailRecord, EmailStatus } from '@/types/email-dashboard.interfaces';
+import type { EmailRecord, EmailStatus, WorkflowState } from '@/types/email-dashboard.interfaces';
 
 // Sample email data matching the screenshot
 const generateSampleEmails = (): EmailRecord[] => {

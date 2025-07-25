@@ -4615,3 +4615,94 @@
 2025-07-24T19:23:08.156Z INFO  [STAGE2] Stage 2 Progress: 950/1000 (95.0%)
 2025-07-24T19:24:19.620Z INFO  [STAGE2] Stage 2 Progress: 955/1000 (95.5%)
 2025-07-24T19:25:37.890Z INFO  [STAGE2] Stage 2 Progress: 960/1000 (96.0%)
+2025-07-24T21:21:22.678Z INFO  [STAGE3] Stage 3 Progress: 67/100 (67.0%)
+2025-07-24T21:21:22.679Z INFO  [STAGE3] Processing email 68/100: email_mdf2xlqwnnesx1u
+2025-07-24T21:22:48.370Z INFO  [STAGE3] Stage 3 Progress: 68/100 (68.0%)
+2025-07-24T21:22:48.370Z INFO  [STAGE3] Processing email 69/100: email_mdf2xy65z13y3z9
+2025-07-24T21:24:18.340Z INFO  [STAGE3] Stage 3 Progress: 69/100 (69.0%)
+2025-07-24T21:24:18.340Z INFO  [STAGE3] Processing email 70/100: email_mdf2xnmlwj09g9b
+2025-07-24T21:25:43.433Z INFO  [STAGE3] Stage 3 Progress: 70/100 (70.0%)
+2025-07-24T21:25:43.434Z INFO  [STAGE3] Processing email 71/100: email_mdf2xet14llezal
+2025-07-24T21:27:46.440Z INFO  [STAGE3] Stage 3 Progress: 71/100 (71.0%)
+2025-07-24T21:27:46.441Z INFO  [STAGE3] Processing email 72/100: email_mdf2xez0hc2zvdi
+2025-07-24T21:29:13.891Z INFO  [STAGE3] Stage 3 Progress: 72/100 (72.0%)
+2025-07-24T21:29:13.891Z INFO  [STAGE3] Processing email 73/100: email_mdf2xnyglaovl7t
+2025-07-24T21:30:31.503Z INFO  [STAGE3] Stage 3 Progress: 73/100 (73.0%)
+2025-07-24T21:30:31.503Z INFO  [STAGE3] Processing email 74/100: email_mdf2xez9kn3e4h7
+2025-07-24T21:32:00.389Z INFO  [STAGE3] Stage 3 Progress: 74/100 (74.0%)
+2025-07-24T21:32:00.390Z INFO  [STAGE3] Processing email 75/100: email_mdf2xnywp1oerrf
+2025-07-24T21:33:32.859Z INFO  [STAGE3] Stage 3 Progress: 75/100 (75.0%)
+2025-07-24T21:33:32.860Z INFO  [STAGE3] Processing email 76/100: email_mdf2xf22n06s2b9
+2025-07-24T21:34:57.176Z INFO  [STAGE3] Stage 3 Progress: 76/100 (76.0%)
+2025-07-24T21:34:57.176Z INFO  [STAGE3] Processing email 77/100: email_mdf2xogtcleeip9
+2025-07-24T21:36:18.743Z INFO  [STAGE3] Stage 3 Progress: 77/100 (77.0%)
+2025-07-24T21:36:18.744Z INFO  [STAGE3] Processing email 78/100: email_mdf2xg54ztxwbdl
+2025-07-24T21:37:37.379Z INFO  [STAGE3] Stage 3 Progress: 78/100 (78.0%)
+2025-07-24T21:37:37.380Z INFO  [STAGE3] Processing email 79/100: email_mdf2xg9b07ifd01
+2025-07-24T21:39:01.837Z INFO  [STAGE3] Stage 3 Progress: 79/100 (79.0%)
+2025-07-24T21:39:01.838Z INFO  [STAGE3] Processing email 80/100: email_mdf2xojbw30oyc3
+2025-07-24T21:40:27.776Z INFO  [STAGE3] Stage 3 Progress: 80/100 (80.0%)
+2025-07-24T21:40:27.777Z INFO  [STAGE3] Processing email 81/100: email_mdf2xolk6h8tsin
+2025-07-24T21:41:49.160Z INFO  [STAGE3] Stage 3 Progress: 81/100 (81.0%)
+2025-07-24T21:41:49.160Z INFO  [STAGE3] Processing email 82/100: email_mdf2xge8ce9ino5
+2025-07-24T21:43:12.512Z INFO  [STAGE3] Stage 3 Progress: 82/100 (82.0%)
+2025-07-24T21:43:12.512Z INFO  [STAGE3] Processing email 83/100: email_mdf2xgl927n6dos
+2025-07-24T21:44:35.479Z INFO  [STAGE3] Stage 3 Progress: 83/100 (83.0%)
+2025-07-24T21:44:35.480Z INFO  [STAGE3] Processing email 84/100: email_mdf2xh4m2fx68ew
+2025-07-24T21:46:06.599Z INFO  [STAGE3] Stage 3 Progress: 84/100 (84.0%)
+2025-07-24T21:46:06.600Z INFO  [STAGE3] Processing email 85/100: email_mdf2y76lpz9g5yv
+2025-07-24T21:47:28.097Z INFO  [STAGE3] Stage 3 Progress: 85/100 (85.0%)
+2025-07-24T21:47:28.098Z INFO  [STAGE3] Processing email 86/100: email_mdf2y76qbr2ctrn
+2025-07-24T21:48:48.685Z INFO  [STAGE3] Stage 3 Progress: 86/100 (86.0%)
+2025-07-24T21:48:48.686Z INFO  [STAGE3] Processing email 87/100: email_mdf2xh8ilae5mlc
+2025-07-24T21:50:11.094Z INFO  [STAGE3] Stage 3 Progress: 87/100 (87.0%)
+2025-07-24T21:50:11.095Z INFO  [STAGE3] Processing email 88/100: email_mdf2xp44854dy4k
+2025-07-24T21:51:35.838Z INFO  [STAGE3] Stage 3 Progress: 88/100 (88.0%)
+2025-07-24T21:51:35.839Z INFO  [STAGE3] Processing email 89/100: email_mdf2y4cflxq8y15
+2025-07-24T21:53:04.783Z INFO  [STAGE3] Stage 3 Progress: 89/100 (89.0%)
+2025-07-24T21:53:04.784Z INFO  [STAGE3] Processing email 90/100: email_mdf2xhnfiz1rt4t
+2025-07-24T21:54:52.686Z INFO  [STAGE3] Stage 3 Progress: 90/100 (90.0%)
+2025-07-24T21:54:52.687Z INFO  [STAGE3] Processing email 91/100: email_mdf2xhnqdzb6u3h
+2025-07-24T21:56:21.266Z INFO  [STAGE3] Stage 3 Progress: 91/100 (91.0%)
+2025-07-24T21:56:21.266Z INFO  [STAGE3] Processing email 92/100: email_mdf2xl60aplt340
+2025-07-24T21:57:53.233Z INFO  [STAGE3] Stage 3 Progress: 92/100 (92.0%)
+2025-07-24T21:57:53.233Z INFO  [STAGE3] Processing email 93/100: email_mdf2xhvhjddsk3s
+2025-07-24T21:59:32.622Z INFO  [STAGE3] Stage 3 Progress: 93/100 (93.0%)
+2025-07-24T21:59:32.623Z INFO  [STAGE3] Processing email 94/100: email_mdf2y0r3t7er8v5
+2025-07-24T22:01:17.925Z INFO  [STAGE3] Stage 3 Progress: 94/100 (94.0%)
+2025-07-24T22:01:17.926Z INFO  [STAGE3] Processing email 95/100: email_mdf2y3bbgai2zby
+2025-07-24T22:02:43.797Z INFO  [STAGE3] Stage 3 Progress: 95/100 (95.0%)
+2025-07-24T22:02:43.798Z INFO  [STAGE3] Processing email 96/100: email_mdf2xwc57l6mfha
+2025-07-24T22:04:17.893Z INFO  [STAGE3] Stage 3 Progress: 96/100 (96.0%)
+2025-07-24T22:04:17.893Z INFO  [STAGE3] Processing email 97/100: email_mdf2xpaqmdtcam1
+2025-07-24T22:05:37.552Z INFO  [STAGE3] Stage 3 Progress: 97/100 (97.0%)
+2025-07-24T22:05:37.552Z INFO  [STAGE3] Processing email 98/100: email_mdf2y0s2wjo5l0e
+2025-07-24T22:07:03.076Z INFO  [STAGE3] Stage 3 Progress: 98/100 (98.0%)
+2025-07-24T22:07:03.077Z INFO  [STAGE3] Processing email 99/100: email_mdf2y3fgrvrl071
+2025-07-24T22:08:35.006Z INFO  [STAGE3] Stage 3 Progress: 99/100 (99.0%)
+2025-07-24T22:08:35.006Z INFO  [STAGE3] Processing email 100/100: email_mdf2y3fq20cba8s
+2025-07-25T01:08:44.310Z INFO  [DB_MANAGER] SQLite database configured with performance optimizations
+2025-07-25T01:08:44.315Z INFO  [DB_MANAGER] DatabaseManager initialized
+2025-07-25T01:08:44.316Z INFO  [DB_MANAGER] Initializing database system...
+2025-07-25T01:08:44.316Z INFO  [DB_MANAGER] Applying database migrations...
+2025-07-25T01:08:44.316Z WARN  [DB_MANAGER] Migration statement warning: SqliteError: cannot commit - no transaction is active
+2025-07-25T01:08:44.316Z WARN  [DB_MANAGER] Migration statement warning: SqliteError: cannot commit - no transaction is active
+2025-07-25T01:08:44.316Z WARN  [DB_MANAGER] Migration statement warning: SqliteError: cannot commit - no transaction is active
+2025-07-25T01:08:44.316Z WARN  [DB_MANAGER] Migration statement warning: SqliteError: cannot commit - no transaction is active
+2025-07-25T01:08:44.316Z WARN  [DB_MANAGER] Migration statement warning: SqliteError: cannot commit - no transaction is active
+2025-07-25T01:08:44.317Z WARN  [DB_MANAGER] Migration statement warning: SqliteError: cannot commit - no transaction is active
+2025-07-25T01:08:44.317Z WARN  [DB_MANAGER] Migration statement warning: SqliteError: cannot commit - no transaction is active
+2025-07-25T01:08:44.317Z WARN  [DB_MANAGER] Migration statement warning: SqliteError: cannot commit - no transaction is active
+2025-07-25T01:08:44.317Z WARN  [DB_MANAGER] Migration statement warning: SqliteError: cannot commit - no transaction is active
+2025-07-25T01:08:44.317Z INFO  [MIGRATION] Running Walmart Grocery Agent migration...
+2025-07-25T01:08:44.320Z INFO  [MIGRATION] Walmart Grocery Agent migration completed successfully
+2025-07-25T01:08:44.320Z INFO  [DB_MANAGER] Walmart Grocery Agent migration applied successfully
+2025-07-25T01:08:44.320Z INFO  [DB_MANAGER] Database migrations applied successfully
+2025-07-25T01:08:44.320Z INFO  [DB_MANAGER] Initializing ChromaDB...
+2025-07-25T01:08:44.398Z INFO  [CHROMA_DB] ChromaDB connected successfully. Version: 1.0.0
+2025-07-25T01:08:44.402Z INFO  [CHROMA_DB] ChromaDB heartbeat: 1753405724401403400
+2025-07-25T01:08:44.409Z INFO  [DB_MANAGER] ChromaDB initialized successfully
+2025-07-25T01:08:45.277Z INFO  [DB_MANAGER] Database integrity verified
+2025-07-25T01:08:45.278Z INFO  [DB_MANAGER] Database system initialized successfully
+2025-07-25T01:08:45.282Z INFO  [CHROMA_DB] ChromaDB connections closed
+2025-07-25T01:08:45.299Z INFO  [DB_MANAGER] Database connections closed

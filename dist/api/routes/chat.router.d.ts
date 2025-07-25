@@ -1,19 +1,23 @@
 export declare const chatRouter: import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
     ctx: {
-        masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-        conversationService: import("../services/ConversationService").ConversationService;
-        taskService: import("../services/TaskService").TaskService;
-        maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-        userService: import("../services/UserService").UserService;
-        agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-        ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-        req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-        res: import("express").Response<any, Record<string, any>>;
+        req: import("express").Request;
+        res: import("express").Response;
         user: import("../trpc/context").User;
         requestId: string;
         timestamp: Date;
         batchId: string | undefined;
         validatedInput: unknown;
+        masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+        conversationService: import("../services/ConversationService").ConversationService;
+        taskService: import("../services/TaskService").TaskService;
+        maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+        userService: import("../services/UserService").UserService;
+        dealDataService: import("../services/DealDataService").DealDataService;
+        emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+        walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+        agentRegistry: any;
+        ragSystem: any;
+        mcpTools: any;
     };
     meta: object;
     errorShape: {
@@ -32,20 +36,24 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
     create: import("@trpc/server").BuildProcedure<"mutation", {
         _config: import("@trpc/server").RootConfig<{
             ctx: {
-                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-                conversationService: import("../services/ConversationService").ConversationService;
-                taskService: import("../services/TaskService").TaskService;
-                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-                userService: import("../services/UserService").UserService;
-                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-                res: import("express").Response<any, Record<string, any>>;
+                req: import("express").Request;
+                res: import("express").Response;
                 user: import("../trpc/context").User;
                 requestId: string;
                 timestamp: Date;
                 batchId: string | undefined;
                 validatedInput: unknown;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                dealDataService: import("../services/DealDataService").DealDataService;
+                emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+                walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+                agentRegistry: any;
+                ragSystem: any;
+                mcpTools: any;
             };
             meta: object;
             errorShape: {
@@ -69,14 +77,18 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
             req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
             res: import("express").Response<any, Record<string, any>>;
             requestId: string;
+            validatedInput: unknown;
             masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
             conversationService: import("../services/ConversationService").ConversationService;
             taskService: import("../services/TaskService").TaskService;
             maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
             userService: import("../services/UserService").UserService;
-            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-            validatedInput: unknown;
+            dealDataService: import("../services/DealDataService").DealDataService;
+            emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+            walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+            agentRegistry: any;
+            ragSystem: any;
+            mcpTools: any;
         };
         _input_in: {
             message: string;
@@ -101,20 +113,24 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
     message: import("@trpc/server").BuildProcedure<"mutation", {
         _config: import("@trpc/server").RootConfig<{
             ctx: {
-                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-                conversationService: import("../services/ConversationService").ConversationService;
-                taskService: import("../services/TaskService").TaskService;
-                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-                userService: import("../services/UserService").UserService;
-                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-                res: import("express").Response<any, Record<string, any>>;
+                req: import("express").Request;
+                res: import("express").Response;
                 user: import("../trpc/context").User;
                 requestId: string;
                 timestamp: Date;
                 batchId: string | undefined;
                 validatedInput: unknown;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                dealDataService: import("../services/DealDataService").DealDataService;
+                emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+                walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+                agentRegistry: any;
+                ragSystem: any;
+                mcpTools: any;
             };
             meta: object;
             errorShape: {
@@ -138,14 +154,18 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
             req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
             res: import("express").Response<any, Record<string, any>>;
             requestId: string;
+            validatedInput: unknown;
             masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
             conversationService: import("../services/ConversationService").ConversationService;
             taskService: import("../services/TaskService").TaskService;
             maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
             userService: import("../services/UserService").UserService;
-            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-            validatedInput: unknown;
+            dealDataService: import("../services/DealDataService").DealDataService;
+            emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+            walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+            agentRegistry: any;
+            ragSystem: any;
+            mcpTools: any;
         };
         _input_in: {
             message: string;
@@ -164,20 +184,24 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
     history: import("@trpc/server").BuildProcedure<"query", {
         _config: import("@trpc/server").RootConfig<{
             ctx: {
-                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-                conversationService: import("../services/ConversationService").ConversationService;
-                taskService: import("../services/TaskService").TaskService;
-                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-                userService: import("../services/UserService").UserService;
-                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-                res: import("express").Response<any, Record<string, any>>;
+                req: import("express").Request;
+                res: import("express").Response;
                 user: import("../trpc/context").User;
                 requestId: string;
                 timestamp: Date;
                 batchId: string | undefined;
                 validatedInput: unknown;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                dealDataService: import("../services/DealDataService").DealDataService;
+                emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+                walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+                agentRegistry: any;
+                ragSystem: any;
+                mcpTools: any;
             };
             meta: object;
             errorShape: {
@@ -201,14 +225,18 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
             req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
             res: import("express").Response<any, Record<string, any>>;
             requestId: string;
+            validatedInput: unknown;
             masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
             conversationService: import("../services/ConversationService").ConversationService;
             taskService: import("../services/TaskService").TaskService;
             maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
             userService: import("../services/UserService").UserService;
-            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-            validatedInput: unknown;
+            dealDataService: import("../services/DealDataService").DealDataService;
+            emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+            walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+            agentRegistry: any;
+            ragSystem: any;
+            mcpTools: any;
         };
         _input_in: {
             conversationId: string;
@@ -222,20 +250,24 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
     list: import("@trpc/server").BuildProcedure<"query", {
         _config: import("@trpc/server").RootConfig<{
             ctx: {
-                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-                conversationService: import("../services/ConversationService").ConversationService;
-                taskService: import("../services/TaskService").TaskService;
-                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-                userService: import("../services/UserService").UserService;
-                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-                res: import("express").Response<any, Record<string, any>>;
+                req: import("express").Request;
+                res: import("express").Response;
                 user: import("../trpc/context").User;
                 requestId: string;
                 timestamp: Date;
                 batchId: string | undefined;
                 validatedInput: unknown;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                dealDataService: import("../services/DealDataService").DealDataService;
+                emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+                walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+                agentRegistry: any;
+                ragSystem: any;
+                mcpTools: any;
             };
             meta: object;
             errorShape: {
@@ -259,14 +291,18 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
             req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
             res: import("express").Response<any, Record<string, any>>;
             requestId: string;
+            validatedInput: unknown;
             masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
             conversationService: import("../services/ConversationService").ConversationService;
             taskService: import("../services/TaskService").TaskService;
             maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
             userService: import("../services/UserService").UserService;
-            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-            validatedInput: unknown;
+            dealDataService: import("../services/DealDataService").DealDataService;
+            emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+            walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+            agentRegistry: any;
+            ragSystem: any;
+            mcpTools: any;
         };
         _input_in: {
             limit?: number | undefined;
@@ -282,20 +318,24 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
     delete: import("@trpc/server").BuildProcedure<"mutation", {
         _config: import("@trpc/server").RootConfig<{
             ctx: {
-                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-                conversationService: import("../services/ConversationService").ConversationService;
-                taskService: import("../services/TaskService").TaskService;
-                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-                userService: import("../services/UserService").UserService;
-                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-                res: import("express").Response<any, Record<string, any>>;
+                req: import("express").Request;
+                res: import("express").Response;
                 user: import("../trpc/context").User;
                 requestId: string;
                 timestamp: Date;
                 batchId: string | undefined;
                 validatedInput: unknown;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                dealDataService: import("../services/DealDataService").DealDataService;
+                emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+                walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+                agentRegistry: any;
+                ragSystem: any;
+                mcpTools: any;
             };
             meta: object;
             errorShape: {
@@ -319,14 +359,18 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
             req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
             res: import("express").Response<any, Record<string, any>>;
             requestId: string;
+            validatedInput: unknown;
             masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
             conversationService: import("../services/ConversationService").ConversationService;
             taskService: import("../services/TaskService").TaskService;
             maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
             userService: import("../services/UserService").UserService;
-            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-            validatedInput: unknown;
+            dealDataService: import("../services/DealDataService").DealDataService;
+            emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+            walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+            agentRegistry: any;
+            ragSystem: any;
+            mcpTools: any;
         };
         _input_in: {
             conversationId: string;
@@ -342,20 +386,24 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
     onMessage: import("@trpc/server").BuildProcedure<"subscription", {
         _config: import("@trpc/server").RootConfig<{
             ctx: {
-                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-                conversationService: import("../services/ConversationService").ConversationService;
-                taskService: import("../services/TaskService").TaskService;
-                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-                userService: import("../services/UserService").UserService;
-                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-                res: import("express").Response<any, Record<string, any>>;
+                req: import("express").Request;
+                res: import("express").Response;
                 user: import("../trpc/context").User;
                 requestId: string;
                 timestamp: Date;
                 batchId: string | undefined;
                 validatedInput: unknown;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                dealDataService: import("../services/DealDataService").DealDataService;
+                emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+                walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+                agentRegistry: any;
+                ragSystem: any;
+                mcpTools: any;
             };
             meta: object;
             errorShape: {
@@ -379,14 +427,18 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
             req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
             res: import("express").Response<any, Record<string, any>>;
             requestId: string;
+            validatedInput: unknown;
             masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
             conversationService: import("../services/ConversationService").ConversationService;
             taskService: import("../services/TaskService").TaskService;
             maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
             userService: import("../services/UserService").UserService;
-            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-            validatedInput: unknown;
+            dealDataService: import("../services/DealDataService").DealDataService;
+            emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+            walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+            agentRegistry: any;
+            ragSystem: any;
+            mcpTools: any;
         };
         _input_in: {
             conversationId: string;
@@ -400,20 +452,24 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
     generateTitle: import("@trpc/server").BuildProcedure<"mutation", {
         _config: import("@trpc/server").RootConfig<{
             ctx: {
-                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-                conversationService: import("../services/ConversationService").ConversationService;
-                taskService: import("../services/TaskService").TaskService;
-                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-                userService: import("../services/UserService").UserService;
-                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-                res: import("express").Response<any, Record<string, any>>;
+                req: import("express").Request;
+                res: import("express").Response;
                 user: import("../trpc/context").User;
                 requestId: string;
                 timestamp: Date;
                 batchId: string | undefined;
                 validatedInput: unknown;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                dealDataService: import("../services/DealDataService").DealDataService;
+                emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+                walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+                agentRegistry: any;
+                ragSystem: any;
+                mcpTools: any;
             };
             meta: object;
             errorShape: {
@@ -437,14 +493,18 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
             req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
             res: import("express").Response<any, Record<string, any>>;
             requestId: string;
+            validatedInput: unknown;
             masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
             conversationService: import("../services/ConversationService").ConversationService;
             taskService: import("../services/TaskService").TaskService;
             maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
             userService: import("../services/UserService").UserService;
-            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-            validatedInput: unknown;
+            dealDataService: import("../services/DealDataService").DealDataService;
+            emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+            walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+            agentRegistry: any;
+            ragSystem: any;
+            mcpTools: any;
         };
         _input_in: {
             conversationId: string;
@@ -460,20 +520,24 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
     search: import("@trpc/server").BuildProcedure<"query", {
         _config: import("@trpc/server").RootConfig<{
             ctx: {
-                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-                conversationService: import("../services/ConversationService").ConversationService;
-                taskService: import("../services/TaskService").TaskService;
-                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-                userService: import("../services/UserService").UserService;
-                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-                res: import("express").Response<any, Record<string, any>>;
+                req: import("express").Request;
+                res: import("express").Response;
                 user: import("../trpc/context").User;
                 requestId: string;
                 timestamp: Date;
                 batchId: string | undefined;
                 validatedInput: unknown;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                dealDataService: import("../services/DealDataService").DealDataService;
+                emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+                walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+                agentRegistry: any;
+                ragSystem: any;
+                mcpTools: any;
             };
             meta: object;
             errorShape: {
@@ -497,14 +561,18 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
             req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
             res: import("express").Response<any, Record<string, any>>;
             requestId: string;
+            validatedInput: unknown;
             masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
             conversationService: import("../services/ConversationService").ConversationService;
             taskService: import("../services/TaskService").TaskService;
             maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
             userService: import("../services/UserService").UserService;
-            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-            validatedInput: unknown;
+            dealDataService: import("../services/DealDataService").DealDataService;
+            emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+            walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+            agentRegistry: any;
+            ragSystem: any;
+            mcpTools: any;
         };
         _input_in: {
             query: string;
@@ -520,20 +588,24 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
     recent: import("@trpc/server").BuildProcedure<"query", {
         _config: import("@trpc/server").RootConfig<{
             ctx: {
-                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-                conversationService: import("../services/ConversationService").ConversationService;
-                taskService: import("../services/TaskService").TaskService;
-                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-                userService: import("../services/UserService").UserService;
-                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-                res: import("express").Response<any, Record<string, any>>;
+                req: import("express").Request;
+                res: import("express").Response;
                 user: import("../trpc/context").User;
                 requestId: string;
                 timestamp: Date;
                 batchId: string | undefined;
                 validatedInput: unknown;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                dealDataService: import("../services/DealDataService").DealDataService;
+                emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+                walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+                agentRegistry: any;
+                ragSystem: any;
+                mcpTools: any;
             };
             meta: object;
             errorShape: {
@@ -557,14 +629,18 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
             req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
             res: import("express").Response<any, Record<string, any>>;
             requestId: string;
+            validatedInput: unknown;
             masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
             conversationService: import("../services/ConversationService").ConversationService;
             taskService: import("../services/TaskService").TaskService;
             maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
             userService: import("../services/UserService").UserService;
-            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-            validatedInput: unknown;
+            dealDataService: import("../services/DealDataService").DealDataService;
+            emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+            walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+            agentRegistry: any;
+            ragSystem: any;
+            mcpTools: any;
         };
         _input_in: {
             limit?: number | undefined;
@@ -580,20 +656,24 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
     stats: import("@trpc/server").BuildProcedure<"query", {
         _config: import("@trpc/server").RootConfig<{
             ctx: {
-                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-                conversationService: import("../services/ConversationService").ConversationService;
-                taskService: import("../services/TaskService").TaskService;
-                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-                userService: import("../services/UserService").UserService;
-                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-                res: import("express").Response<any, Record<string, any>>;
+                req: import("express").Request;
+                res: import("express").Response;
                 user: import("../trpc/context").User;
                 requestId: string;
                 timestamp: Date;
                 batchId: string | undefined;
                 validatedInput: unknown;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                dealDataService: import("../services/DealDataService").DealDataService;
+                emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+                walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+                agentRegistry: any;
+                ragSystem: any;
+                mcpTools: any;
             };
             meta: object;
             errorShape: {
@@ -617,14 +697,18 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
             req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
             res: import("express").Response<any, Record<string, any>>;
             requestId: string;
+            validatedInput: unknown;
             masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
             conversationService: import("../services/ConversationService").ConversationService;
             taskService: import("../services/TaskService").TaskService;
             maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
             userService: import("../services/UserService").UserService;
-            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-            validatedInput: unknown;
+            dealDataService: import("../services/DealDataService").DealDataService;
+            emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+            walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+            agentRegistry: any;
+            ragSystem: any;
+            mcpTools: any;
         };
         _input_in: typeof import("@trpc/server").unsetMarker;
         _input_out: typeof import("@trpc/server").unsetMarker;
@@ -642,20 +726,24 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
     export: import("@trpc/server").BuildProcedure<"query", {
         _config: import("@trpc/server").RootConfig<{
             ctx: {
-                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-                conversationService: import("../services/ConversationService").ConversationService;
-                taskService: import("../services/TaskService").TaskService;
-                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-                userService: import("../services/UserService").UserService;
-                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-                res: import("express").Response<any, Record<string, any>>;
+                req: import("express").Request;
+                res: import("express").Response;
                 user: import("../trpc/context").User;
                 requestId: string;
                 timestamp: Date;
                 batchId: string | undefined;
                 validatedInput: unknown;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                dealDataService: import("../services/DealDataService").DealDataService;
+                emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+                walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+                agentRegistry: any;
+                ragSystem: any;
+                mcpTools: any;
             };
             meta: object;
             errorShape: {
@@ -679,14 +767,18 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
             req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
             res: import("express").Response<any, Record<string, any>>;
             requestId: string;
+            validatedInput: unknown;
             masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
             conversationService: import("../services/ConversationService").ConversationService;
             taskService: import("../services/TaskService").TaskService;
             maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
             userService: import("../services/UserService").UserService;
-            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-            validatedInput: unknown;
+            dealDataService: import("../services/DealDataService").DealDataService;
+            emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+            walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+            agentRegistry: any;
+            ragSystem: any;
+            mcpTools: any;
         };
         _input_in: {
             conversationId: string;
@@ -707,20 +799,24 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
     exportAll: import("@trpc/server").BuildProcedure<"query", {
         _config: import("@trpc/server").RootConfig<{
             ctx: {
-                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
-                conversationService: import("../services/ConversationService").ConversationService;
-                taskService: import("../services/TaskService").TaskService;
-                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
-                userService: import("../services/UserService").UserService;
-                agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-                ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-                req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
-                res: import("express").Response<any, Record<string, any>>;
+                req: import("express").Request;
+                res: import("express").Response;
                 user: import("../trpc/context").User;
                 requestId: string;
                 timestamp: Date;
                 batchId: string | undefined;
                 validatedInput: unknown;
+                masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
+                conversationService: import("../services/ConversationService").ConversationService;
+                taskService: import("../services/TaskService").TaskService;
+                maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
+                userService: import("../services/UserService").UserService;
+                dealDataService: import("../services/DealDataService").DealDataService;
+                emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+                walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+                agentRegistry: any;
+                ragSystem: any;
+                mcpTools: any;
             };
             meta: object;
             errorShape: {
@@ -744,14 +840,18 @@ export declare const chatRouter: import("@trpc/server").CreateRouterInner<import
             req: import("express").Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
             res: import("express").Response<any, Record<string, any>>;
             requestId: string;
+            validatedInput: unknown;
             masterOrchestrator: import("../../core/master-orchestrator/MasterOrchestrator").MasterOrchestrator;
             conversationService: import("../services/ConversationService").ConversationService;
             taskService: import("../services/TaskService").TaskService;
             maestroFramework: import("../../core/maestro/MaestroFramework").MaestroFramework;
             userService: import("../services/UserService").UserService;
-            agentRegistry: import("../../core/agents/registry/AgentRegistry").AgentRegistry;
-            ragSystem: import("../../core/rag/RAGSystem").RAGSystem;
-            validatedInput: unknown;
+            dealDataService: import("../services/DealDataService").DealDataService;
+            emailStorageService: import("../services/EmailStorageService").EmailStorageService;
+            walmartGroceryService: import("../services/WalmartGroceryService").WalmartGroceryService;
+            agentRegistry: any;
+            ragSystem: any;
+            mcpTools: any;
         };
         _input_in: {
             format?: "json" | "csv" | undefined;

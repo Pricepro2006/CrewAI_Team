@@ -9,7 +9,7 @@ export interface QuickAnalysis {
         primary: string;
         secondary?: string[];
     };
-    priority: 'Critical' | 'High' | 'Medium' | 'Low';
+    priority: "Critical" | "High" | "Medium" | "Low";
     intent: string;
     urgency: string;
     confidence: number;
@@ -49,7 +49,7 @@ export interface DeepWorkflowAnalysis {
         contacts: Array<{
             name: string;
             email?: string;
-            type: 'internal' | 'external';
+            type: "internal" | "external";
         }>;
     };
     actionItems: Array<{
@@ -57,7 +57,7 @@ export interface DeepWorkflowAnalysis {
         description: string;
         priority: string;
         slaHours: number;
-        slaStatus: 'on-track' | 'at-risk' | 'overdue';
+        slaStatus: "on-track" | "at-risk" | "overdue";
         estimatedCompletion?: string;
     }>;
     workflowState: {
@@ -68,7 +68,7 @@ export interface DeepWorkflowAnalysis {
     };
     businessImpact: {
         revenue?: number;
-        customerSatisfaction: 'high' | 'medium' | 'low';
+        customerSatisfaction: "high" | "medium" | "low";
         urgencyReason?: string;
     };
     contextualSummary: string;
@@ -160,11 +160,11 @@ export declare class EmailStorageService {
         requestedBy: string;
         subject: string;
         summary: string;
-        status: 'red' | 'yellow' | 'green';
+        status: "red" | "yellow" | "green";
         statusText: string;
-        workflowState: 'START_POINT' | 'IN_PROGRESS' | 'COMPLETION';
+        workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
         workflowType?: string;
-        priority?: 'Critical' | 'High' | 'Medium' | 'Low';
+        priority?: "Critical" | "High" | "Medium" | "Low";
         receivedDate: Date;
         hasAttachments?: boolean;
         isRead?: boolean;
@@ -175,7 +175,11 @@ export declare class EmailStorageService {
     /**
      * Update email status with audit trail
      */
-    updateEmailStatus(emailId: string, newStatus: 'red' | 'yellow' | 'green', newStatusText?: string, performedBy?: string): Promise<void>;
+    updateEmailStatus(emailId: string, newStatus: "red" | "yellow" | "green", newStatusText?: string, performedBy?: string): Promise<void>;
+    /**
+     * Get recent emails for a specific user
+     */
+    getRecentEmailsForUser(userId: string, daysBack?: number): Promise<any[]>;
     /**
      * Create audit log entry
      */
@@ -200,7 +204,7 @@ export declare class EmailStorageService {
         page?: number;
         pageSize?: number;
         sortBy?: string;
-        sortOrder?: 'asc' | 'desc';
+        sortOrder?: "asc" | "desc";
         filters?: {
             status?: string[];
             emailAlias?: string[];
@@ -245,7 +249,7 @@ export declare class EmailStorageService {
         startIndex?: number;
         chunkSize?: number;
         sortBy?: string;
-        sortOrder?: 'asc' | 'desc';
+        sortOrder?: "asc" | "desc";
         filters?: {
             status?: string[];
             emailAlias?: string[];
@@ -325,7 +329,7 @@ export declare class EmailStorageService {
      */
     preloadAdjacentChunks(currentIndex: number, options: {
         sortBy?: string;
-        sortOrder?: 'asc' | 'desc';
+        sortOrder?: "asc" | "desc";
         filters?: any;
         search?: string;
     }): Promise<void>;

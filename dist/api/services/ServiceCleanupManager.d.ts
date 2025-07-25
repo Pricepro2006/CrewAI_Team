@@ -11,6 +11,10 @@ export declare class ServiceCleanupManager {
      */
     registerCleanupTask(task: CleanupTask): void;
     /**
+     * Register a cleanup task (alias for registerCleanupTask)
+     */
+    register(task: CleanupTask): void;
+    /**
      * Execute all cleanup tasks
      */
     cleanup(): Promise<void>;

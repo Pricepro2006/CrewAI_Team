@@ -126,66 +126,53 @@ describe('EmailStorageService', () => {
         categories: []
       };
 
-      const mockAnalysis = {
+      const mockAnalysis: any = {
+        emailId: 'test-email-1',
         quick: {
-          workflow: {
-            primary: 'Order Management',
-            secondary: ['Customer Support']
-          },
-          priority: 'High' as const,
-          intent: 'Update',
-          urgency: '24 Hours',
-          confidence: 0.9,
-          suggestedState: 'In Progress'
+          priority: 'High',
+          urgency: 'High',
+          workflow: 'In Progress',
+          intent: 'Request',
+          category: 'Orders'
         },
         deep: {
-          detailedWorkflow: {
-            primary: 'Order Management',
-            secondary: ['Customer Support'],
-            relatedCategories: ['Shipping'],
-            confidence: 0.85
-          },
-          entities: {
-            poNumbers: [{ value: 'PO-12345', format: 'PO-XXXXX', confidence: 0.95 }],
-            quoteNumbers: [{ value: 'Q-98765', type: 'standard', confidence: 0.88 }],
-            caseNumbers: [{ value: 'C-11111', type: 'support', confidence: 0.92 }],
-            partNumbers: [{ value: 'P-99999', confidence: 0.9 }],
-            orderReferences: [{ value: 'ORD-55555', confidence: 0.87 }],
-            contacts: [{ name: 'John Doe', email: 'john@example.com', type: 'internal' as const }]
-          },
+          summary: 'Order management workflow for high-value customer',
+          workflowState: 'In Progress',
+          businessProcess: 'Orders',
           actionItems: [
             {
-              type: 'follow_up',
-              description: 'Review order status',
+              task: 'Review order status',
               priority: 'High',
-              slaHours: 24,
-              slaStatus: 'on-track' as const,
-              estimatedCompletion: '2025-01-19T10:00:00Z'
+              deadline: '2025-01-19T10:00:00Z',
+              status: 'Pending'
             }
           ],
-          workflowState: {
-            current: 'In Progress',
-            suggestedNext: 'Pending Review',
-            blockers: []
+          slaStatus: 'on-track',
+          entities: {
+            po_numbers: ['PO-12345'],
+            quote_numbers: ['Q-98765'],
+            case_numbers: ['C-11111'],
+            part_numbers: ['P-99999'],
+            companies: [],
+            contacts: ['John Doe'],
+            reference_numbers: [],
+            order_references: ['ORD-55555']
           },
           businessImpact: {
             revenue: 50000,
-            customerSatisfaction: 8.5,
+            customerSatisfaction: 'Positive',
             urgencyReason: 'High-value customer order'
           },
-          contextualSummary: 'Order management workflow for high-value customer',
           suggestedResponse: 'Acknowledge receipt and provide timeline',
-          relatedEmails: []
+          insights: ['High-value customer order requires prompt attention']
         },
-        actionSummary: 'Review and process high-priority order',
-        processingMetadata: {
-          models: {
-            stage1: 'qwen3:0.6b',
-            stage2: 'granite3.3:2b'
-          },
-          stage1Time: 150,
-          stage2Time: 850,
-          totalTime: 1000
+        metadata: {
+          analysisVersion: '1.0',
+          model: 'test-model',
+          timestamp: new Date().toISOString(),
+          confidence: 0.9,
+          processingTime: 1000,
+          dataSource: 'pipeline'
         }
       };
 
@@ -234,31 +221,46 @@ describe('EmailStorageService', () => {
         categories: []
       };
 
-      const mockAnalysis = {
+      const mockAnalysis: any = {
+        emailId: 'test-email-broadcast-fail',
         quick: {
-          workflow: { primary: 'General' },
-          priority: 'Low' as const,
-          intent: 'Info',
-          urgency: 'Normal',
-          confidence: 0.7,
-          suggestedState: 'New'
+          priority: 'Low',
+          urgency: 'Low',
+          workflow: 'New',
+          intent: 'Information',
+          category: 'General'
         },
         deep: {
-          detailedWorkflow: { primary: 'General', confidence: 0.7 },
-          entities: { poNumbers: [], quoteNumbers: [], caseNumbers: [], partNumbers: [], orderReferences: [], contacts: [] },
+          summary: 'General inquiry',
+          workflowState: 'New',
+          businessProcess: 'General',
           actionItems: [],
-          workflowState: { current: 'New', suggestedNext: 'In Review', blockers: [] },
-          businessImpact: { revenue: 0, customerSatisfaction: 5, urgencyReason: 'Standard inquiry' },
-          contextualSummary: 'General inquiry',
+          slaStatus: 'on-track',
+          entities: {
+            po_numbers: [],
+            quote_numbers: [],
+            case_numbers: [],
+            part_numbers: [],
+            companies: [],
+            contacts: [],
+            reference_numbers: [],
+            order_references: []
+          },
+          businessImpact: {
+            revenue: 0,
+            customerSatisfaction: 'Neutral',
+            urgencyReason: 'Standard inquiry'
+          },
           suggestedResponse: 'Standard response',
-          relatedEmails: []
+          insights: ['Standard inquiry - no immediate action required']
         },
-        actionSummary: 'Handle general inquiry',
-        processingMetadata: {
-          models: { stage1: 'qwen3:0.6b', stage2: 'granite3.3:2b' },
-          stage1Time: 100,
-          stage2Time: 500,
-          totalTime: 600
+        metadata: {
+          analysisVersion: '1.0',
+          model: 'test-model',
+          timestamp: new Date().toISOString(),
+          confidence: 0.7,
+          processingTime: 600,
+          dataSource: 'pipeline'
         }
       };
 

@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { MasterOrchestrator } from "./MasterOrchestrator";
 import { createMockOllamaProvider } from "../../test/mocks/ollama.mock";
 import { createTestDatabase } from "../../test/utils/test-helpers";
-import { AgentRegistry } from "../agents/AgentRegistry";
 import { ResearchAgent } from "../agents/specialized/ResearchAgent";
 vi.mock("../llm/OllamaProvider", () => ({
     OllamaProvider: vi.fn().mockImplementation(() => createMockOllamaProvider()),

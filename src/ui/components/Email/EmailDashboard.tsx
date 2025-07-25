@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { trpc } from "../../App";
+import { trpc } from "@/utils/trpc";
 import { EmailStats } from "./EmailStats";
 import { EmailCompose } from "./EmailCompose";
 import "./EmailDashboard.css";

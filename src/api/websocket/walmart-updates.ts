@@ -1,22 +1,58 @@
 import type { WebSocketServer } from "ws";
 import type { AuthenticatedWebSocket } from "../middleware/websocketAuth";
-import { wsService } from "../services/WebSocketService";
+import { wsService, type WebSocketMessage } from "../services/WebSocketService";
 import { logger } from "../../utils/logger";
 import type { DealDataService } from "../services/DealDataService";
 import type { EmailStorageService } from "../services/EmailStorageService";
 
-// Walmart-specific WebSocket message types
-interface WalmartWSMessage {
-  type:
-    | "price_update"
-    | "stock_update"
-    | "deal_alert"
-    | "cart_sync"
-    | "recommendation";
-  data: any;
+// Walmart-specific WebSocket message types that extend the base WebSocketMessage
+interface WalmartPriceUpdateMessage extends Omit<WebSocketMessage, 'type'> {
+  type: "walmart.price_update";
+  productId: string;
+  currentPrice: number;
+  previousPrice: number;
+  percentChange: number;
   timestamp: Date;
-  userId?: string;
 }
+
+interface WalmartStockUpdateMessage extends Omit<WebSocketMessage, 'type'> {
+  type: "walmart.stock_update";
+  productId: string;
+  inStock: boolean;
+  quantity?: number;
+  timestamp: Date;
+}
+
+interface WalmartDealAlertMessage extends Omit<WebSocketMessage, 'type'> {
+  type: "walmart.deal_alert";
+  dealId: string;
+  dealDetails: any;
+  affectedProducts: string[];
+  timestamp: Date;
+}
+
+interface WalmartCartSyncMessage extends Omit<WebSocketMessage, 'type'> {
+  type: "walmart.cart_sync";
+  cartData: any;
+  sourceClientId: string;
+  timestamp: Date;
+  userId: string;
+}
+
+interface WalmartRecommendationMessage extends Omit<WebSocketMessage, 'type'> {
+  type: "walmart.recommendation";
+  recommendations: any[];
+  preferences: any;
+  timestamp: Date;
+  userId: string;
+}
+
+type WalmartWSMessage = 
+  | WalmartPriceUpdateMessage 
+  | WalmartStockUpdateMessage 
+  | WalmartDealAlertMessage 
+  | WalmartCartSyncMessage 
+  | WalmartRecommendationMessage;
 
 // Price monitoring configuration
 interface PriceMonitor {
@@ -126,19 +162,13 @@ export class WalmartRealtimeManager {
       }
 
       if (shouldNotify) {
-        const message: WalmartWSMessage = {
-          type: "price_update",
-          data: {
-            productId,
-            currentPrice,
-            previousPrice,
-            percentChange,
-            targetReached: monitor.targetPrice
-              ? currentPrice <= monitor.targetPrice
-              : false,
-          },
+        const message: WalmartPriceUpdateMessage = {
+          type: "walmart.price_update",
+          productId,
+          currentPrice,
+          previousPrice,
+          percentChange,
           timestamp: new Date(),
-          userId: monitor.userId,
         };
 
         // Send to all user's connected clients
@@ -165,15 +195,12 @@ export class WalmartRealtimeManager {
     const interestedUsers = this.stockAlerts.get(productId) || new Set();
 
     interestedUsers.forEach((userId) => {
-      const message: WalmartWSMessage = {
-        type: "stock_update",
-        data: {
-          productId,
-          inStock,
-          quantity,
-        },
+      const message: WalmartStockUpdateMessage = {
+        type: "walmart.stock_update",
+        productId,
+        inStock,
+        quantity,
         timestamp: new Date(),
-        userId,
       };
 
       wsService.sendToUser(userId, message);
@@ -221,15 +248,12 @@ export class WalmartRealtimeManager {
 
       // Send deal alert to affected users
       affectedUsers.forEach((userId) => {
-        const message: WalmartWSMessage = {
-          type: "deal_alert",
-          data: {
-            dealId,
-            dealDetails,
-            affectedProducts,
-          },
+        const message: WalmartDealAlertMessage = {
+          type: "walmart.deal_alert",
+          dealId,
+          dealDetails,
+          affectedProducts,
           timestamp: new Date(),
-          userId,
         };
 
         wsService.sendToUser(userId, message);
@@ -254,12 +278,10 @@ export class WalmartRealtimeManager {
     userClients.forEach((clientId) => {
       // Don't send back to source client
       if (clientId !== sourceClientId) {
-        const message: WalmartWSMessage = {
-          type: "cart_sync",
-          data: {
-            cartData,
-            sourceClientId,
-          },
+        const message: WalmartCartSyncMessage = {
+          type: "walmart.cart_sync",
+          cartData,
+          sourceClientId,
           timestamp: new Date(),
           userId,
         };
@@ -298,9 +320,10 @@ export class WalmartRealtimeManager {
         preferences: context.preferences || {},
       };
 
-      const message: WalmartWSMessage = {
-        type: "recommendation",
-        data: recommendationData,
+      const message: WalmartRecommendationMessage = {
+        type: "walmart.recommendation",
+        recommendations: recommendationData.emailInsights || [],
+        preferences: recommendationData.preferences,
         timestamp: new Date(),
         userId,
       };
@@ -421,6 +444,19 @@ export class WalmartRealtimeManager {
   }
 
   /**
+   * Remove a client from cart sync
+   */
+  removeCartSyncClient(userId: string, clientId: string): void {
+    const clients = this.cartSyncClients.get(userId);
+    if (clients) {
+      clients.delete(clientId);
+      if (clients.size === 0) {
+        this.cartSyncClients.delete(userId);
+      }
+    }
+  }
+
+  /**
    * Cleanup resources
    */
   cleanup(): void {
@@ -480,12 +516,7 @@ export function setupWalmartWebSocket(
     ws.on("close", () => {
       if (ws.userId) {
         // Remove from cart sync if applicable
-        manager.cartSyncClients.forEach((clients, userId) => {
-          clients.delete(ws.clientId!);
-          if (clients.size === 0) {
-            manager.cartSyncClients.delete(userId);
-          }
-        });
+        manager.removeCartSyncClient(ws.userId, ws.clientId!);
       }
     });
   });

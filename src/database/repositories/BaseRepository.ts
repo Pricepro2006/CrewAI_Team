@@ -379,8 +379,8 @@ export abstract class BaseRepository<T extends BaseEntity> {
       updated_at: now
     })) as T[];
 
-    const columns = Object.keys(entitiesWithMetadata[0]).join(', ');
-    const placeholders = Object.keys(entitiesWithMetadata[0]).map(() => '?').join(', ');
+    const columns = Object.keys(entitiesWithMetadata[0] as object).join(', ');
+    const placeholders = Object.keys(entitiesWithMetadata[0] as object).map(() => '?').join(', ');
     const query = `INSERT INTO ${this.tableName} (${columns}) VALUES (${placeholders})`;
 
     const insertStmt = this.db.prepare(query);

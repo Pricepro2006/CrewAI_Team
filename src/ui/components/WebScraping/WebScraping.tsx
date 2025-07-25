@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { trpc } from "../../App";
+import { trpc } from "@/utils/trpc";
+import type { CollectedData } from "@/core/data-collection/types";
 import "./WebScraping.css";
 
 interface WebScrapingResult {
@@ -288,7 +289,7 @@ export const WebScraping: React.FC = () => {
                     strokeWidth="2"
                   />
                 </svg>
-                {result.data[0].quality} quality
+                {result.data[0]?.quality || 'Unknown'} quality
               </span>
               <span className="metadata-badge">
                 Request ID: {result.metadata.requestId}

@@ -3,12 +3,9 @@
  * Demonstrates how to use the comprehensive integration testing framework
  */
 
-import { 
-  expect, 
-  createTestContext, 
-  authenticateUser,
-  integrationCoordinator 
-} from './coordinator';
+import { IntegrationCoordinator } from './coordinator';
+import { createTestContext, authenticateUser } from '../testing/test-client';
+import { expect } from '@jest/globals';
 import type { 
   TestContext, 
   TestConfig,
@@ -22,12 +19,13 @@ import type {
 describe('CrewAI Team Integration Tests', () => {
   let testContext: TestContext;
   let authToken: string;
+  const integrationCoordinator = new IntegrationCoordinator();
 
   beforeAll(async () => {
     // Initialize the integration coordinator
     await integrationCoordinator.initialize({
       version: '1.0.0',
-      environment: 'test',
+      environment: 'development' as const,
       features: {
         email_dashboard: true,
         agent_coordination: true,

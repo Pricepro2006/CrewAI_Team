@@ -418,6 +418,8 @@ export class AgentPool {
 
       for (let i = 0; i < pool.length; i++) {
         const pooledAgent = pool[i];
+        if (!pooledAgent) continue; // Type guard for possibly undefined
+        
         const idleTime = now - pooledAgent.lastUsed.getTime();
 
         // Mark idle agents for removal
@@ -429,7 +431,10 @@ export class AgentPool {
       // Remove idle agents (in reverse order to maintain indices)
       for (let i = toRemove.length - 1; i >= 0; i--) {
         const index = toRemove[i];
+        if (index === undefined) continue; // Type guard for possibly undefined
+        
         const pooledAgent = pool[index];
+        if (!pooledAgent) continue; // Type guard for possibly undefined
         
         // Cleanup agent
         this.cleanupAgent(pooledAgent.agent).catch(error => {

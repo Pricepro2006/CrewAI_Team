@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { trpc } from "../../App";
+import { trpc } from "@/utils/trpc";
 import "./KnowledgeBase.css";
 
 interface Document {
@@ -26,8 +26,8 @@ export const KnowledgeBase: React.FC = () => {
   } | null>(null);
 
   // Load real documents from the backend
-  const documentsQuery = trpc.rag.list.useQuery({ limit: 100, offset: 0 });
-  const statsQuery = trpc.rag.stats.useQuery();
+  const documentsQuery = trpc.rag?.list?.useQuery ? trpc.rag.list.useQuery({ limit: 100, offset: 0 }) : undefined;
+  const statsQuery = trpc.rag?.stats?.useQuery ? trpc.rag.stats.useQuery() : undefined;
 
   useEffect(() => {
     if (documentsQuery.data) {
@@ -45,17 +45,17 @@ export const KnowledgeBase: React.FC = () => {
       }));
       setDocuments(transformedDocs);
     }
-  }, [documentsQuery.data]);
+  }, [documentsQuery?.data]);
 
-  const uploadFileMutation = trpc.rag.uploadFile.useMutation({
+  const uploadFileMutation = trpc.rag?.uploadFile?.useMutation ? trpc.rag.uploadFile.useMutation({
     onSuccess: () => {
-      documentsQuery.refetch();
+      documentsQuery?.refetch();
       setError(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       setError(`Upload failed: ${error.message}`);
     },
-  });
+  }) : undefined;
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -77,7 +77,7 @@ export const KnowledgeBase: React.FC = () => {
       setUploadProgress({ current: 0, total: filesArray.length });
 
       for (let i = 0; i < filesArray.length; i++) {
-        const file = filesArray[i];
+        const file = filesArray[i]!;
         try {
           // Update progress
           setUploadProgress({
@@ -87,27 +87,31 @@ export const KnowledgeBase: React.FC = () => {
           });
 
           // Validate file size
-          if (file.size > 10 * 1024 * 1024) {
+          if (file && file.size > 10 * 1024 * 1024) {
             throw new Error(`File "${file.name}" exceeds 10MB limit`);
           }
 
           // Convert file to base64 for tRPC compatibility
-          const base64 = await fileToBase64(file);
+          const base64 = await fileToBase64(file!);
 
           console.log(
             `Uploading file: ${file.name} (${formatFileSize(file.size)})`,
           );
 
-          await uploadFileMutation.mutateAsync({
-            filename: file.name,
-            mimeType: file.type || "application/octet-stream",
-            data: base64,
-            metadata: {
-              size: file.size,
-              lastModified: new Date(file.lastModified).toISOString(),
-              uploadedBy: "user", // Could be enhanced with actual user info
-            },
-          });
+          if (uploadFileMutation) {
+            await uploadFileMutation.mutateAsync({
+              filename: file.name,
+              mimeType: file.type || "application/octet-stream",
+              data: base64,
+              metadata: {
+                size: file.size,
+                lastModified: new Date(file.lastModified).toISOString(),
+                uploadedBy: "user", // Could be enhanced with actual user info
+              },
+            });
+          } else {
+            throw new Error("Upload service not available");
+          }
 
           uploadResults.successful++;
           console.log(`Successfully uploaded: ${file.name}`);
@@ -161,7 +165,7 @@ export const KnowledgeBase: React.FC = () => {
       documentsQuery.refetch();
       setError(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       setError(`Delete failed: ${error.message}`);
     },
   });

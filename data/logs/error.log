@@ -370,3 +370,23 @@ TimeoutError: Replanning timed out
 2025-07-21T17:08:18.412Z ERROR [IEMS_DATA] Failed to generate AI summary {}
 2025-07-21T17:08:18.412Z ERROR [IEMS_DATA] Failed to generate AI summary {}
 2025-07-21T17:08:18.412Z ERROR [IEMS_DATA] Failed to generate AI summary {}
+2025-07-25T01:08:44.408Z ERROR [CHROMA_DB] Failed to create/get collection knowledge_base: Error: Could not connect to database crewai_team for tenant default_tenant. Are you sure it exists? Underlying error:
+ChromaNotFoundError: The requested resource could not be found: http://localhost:8000/api/v2/tenants/default_tenant/databases/crewai_team
+2025-07-25T01:08:44.408Z ERROR [CHROMA_DB] Failed to create system collection 'knowledge_base': Error: Could not connect to database crewai_team for tenant default_tenant. Are you sure it exists? Underlying error:
+ChromaNotFoundError: The requested resource could not be found: http://localhost:8000/api/v2/tenants/default_tenant/databases/crewai_team
+2025-07-25T01:08:44.409Z ERROR [CHROMA_DB] Failed to create/get collection email_content: Error: Could not connect to database crewai_team for tenant default_tenant. Are you sure it exists? Underlying error:
+ChromaNotFoundError: The requested resource could not be found: http://localhost:8000/api/v2/tenants/default_tenant/databases/crewai_team
+2025-07-25T01:08:44.409Z ERROR [CHROMA_DB] Failed to create system collection 'email_content': Error: Could not connect to database crewai_team for tenant default_tenant. Are you sure it exists? Underlying error:
+ChromaNotFoundError: The requested resource could not be found: http://localhost:8000/api/v2/tenants/default_tenant/databases/crewai_team
+2025-07-25T01:08:44.409Z ERROR [CHROMA_DB] Failed to create/get collection deal_data: Error: Could not connect to database crewai_team for tenant default_tenant. Are you sure it exists? Underlying error:
+ChromaNotFoundError: The requested resource could not be found: http://localhost:8000/api/v2/tenants/default_tenant/databases/crewai_team
+2025-07-25T01:08:44.409Z ERROR [CHROMA_DB] Failed to create system collection 'deal_data': Error: Could not connect to database crewai_team for tenant default_tenant. Are you sure it exists? Underlying error:
+ChromaNotFoundError: The requested resource could not be found: http://localhost:8000/api/v2/tenants/default_tenant/databases/crewai_team
+2025-07-25T01:08:44.409Z ERROR [CHROMA_DB] Failed to create/get collection conversation_history: Error: Could not connect to database crewai_team for tenant default_tenant. Are you sure it exists? Underlying error:
+ChromaNotFoundError: The requested resource could not be found: http://localhost:8000/api/v2/tenants/default_tenant/databases/crewai_team
+2025-07-25T01:08:44.409Z ERROR [CHROMA_DB] Failed to create system collection 'conversation_history': Error: Could not connect to database crewai_team for tenant default_tenant. Are you sure it exists? Underlying error:
+ChromaNotFoundError: The requested resource could not be found: http://localhost:8000/api/v2/tenants/default_tenant/databases/crewai_team
+2025-07-25T01:08:44.409Z ERROR [CHROMA_DB] Failed to create/get collection code_repository: Error: Could not connect to database crewai_team for tenant default_tenant. Are you sure it exists? Underlying error:
+ChromaNotFoundError: The requested resource could not be found: http://localhost:8000/api/v2/tenants/default_tenant/databases/crewai_team
+2025-07-25T01:08:44.409Z ERROR [CHROMA_DB] Failed to create system collection 'code_repository': Error: Could not connect to database crewai_team for tenant default_tenant. Are you sure it exists? Underlying error:
+ChromaNotFoundError: The requested resource could not be found: http://localhost:8000/api/v2/tenants/default_tenant/databases/crewai_team

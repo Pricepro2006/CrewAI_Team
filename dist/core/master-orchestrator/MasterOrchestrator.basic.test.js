@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, beforeAll, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll } from "vitest";
 import { MasterOrchestrator } from "./MasterOrchestrator";
 import { createTestDatabase } from "../../test/utils/test-helpers";
-import { isOllamaRunning, skipIfNoOllama, generateWithTimeout, } from "../../test/utils/ollama-test-helper";
+import { isOllamaRunning, } from "../../test/utils/ollama-test-helper";
 // No mocking - use real Ollama per guardrails
 describe("MasterOrchestrator Basic Tests", () => {
     let orchestrator;

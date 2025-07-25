@@ -16,6 +16,7 @@ import { logger } from "../../utils/logger";
 import { mcpToolsService } from "../services/MCPToolsService";
 import { DealDataService } from "../services/DealDataService";
 import { EmailStorageService } from "../services/EmailStorageService";
+import { WalmartGroceryService } from "../services/WalmartGroceryService";
 
 // Context User interface (extends DB user with runtime properties)
 export interface User extends Omit<DBUser, "passwordHash"> {
@@ -31,6 +32,7 @@ let taskService: TaskService;
 let userService: UserService;
 let dealDataService: DealDataService;
 let emailStorageService: EmailStorageService;
+let walmartGroceryService: WalmartGroceryService;
 
 async function initializeServices() {
   if (!masterOrchestrator) {
@@ -90,6 +92,10 @@ async function initializeServices() {
     emailStorageService = new EmailStorageService();
   }
 
+  if (!walmartGroceryService) {
+    walmartGroceryService = WalmartGroceryService.getInstance();
+  }
+
   return {
     masterOrchestrator,
     conversationService,
@@ -98,9 +104,10 @@ async function initializeServices() {
     userService,
     dealDataService,
     emailStorageService,
+    walmartGroceryService,
     agentRegistry: masterOrchestrator.agentRegistry,
     ragSystem: masterOrchestrator.ragSystem,
-    mcpTools: mcpToolsService.getAllTools(),
+    mcpTools: mcpToolsService.getAvailableTools(),
   };
 }
 
@@ -203,6 +210,7 @@ type TRPCContext = {
   userService: UserService;
   dealDataService: DealDataService;
   emailStorageService: EmailStorageService;
+  walmartGroceryService: WalmartGroceryService;
   agentRegistry: any;
   ragSystem: any;
   mcpTools: any;

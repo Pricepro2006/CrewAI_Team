@@ -25,13 +25,8 @@ import { z } from "zod";
  * Based on TypeScript Expert tRPC API instructions and security best practices
  */
 
-// Explicit type for tRPC instance
-type TRPCInstance = ReturnType<
-  ReturnType<typeof initTRPC.context<Context>>["create"]
->;
-
 // Initialize tRPC with enhanced configuration
-const t: TRPCInstance = initTRPC.context<Context>().create({
+const t = initTRPC.context<Context>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     // Enhanced error formatting with security considerations
@@ -212,7 +207,7 @@ const batchOperationMiddleware = t.middleware(async ({ next, ctx }) => {
   });
 });
 
-export const batchProcedure: RateLimitedProcedure = protectedProcedure.use(
+export const batchProcedure = protectedProcedure.use(
   batchOperationMiddleware,
 );
 

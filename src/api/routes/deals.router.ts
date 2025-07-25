@@ -180,7 +180,7 @@ export const dealsRouter = router({
         ],
       };
     } catch (error) {
-      logger.error("Failed to get deal analytics", "DEALS_ROUTER", error);
+      logger.error("Failed to get deal analytics", "DEALS_ROUTER", { error });
       throw new Error("Failed to retrieve analytics");
     }
   }),

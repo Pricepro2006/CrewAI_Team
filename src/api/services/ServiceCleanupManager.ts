@@ -20,6 +20,13 @@ export class ServiceCleanupManager {
   }
 
   /**
+   * Register a cleanup task (alias for registerCleanupTask)
+   */
+  register(task: CleanupTask): void {
+    this.registerCleanupTask(task);
+  }
+
+  /**
    * Execute all cleanup tasks
    */
   async cleanup(): Promise<void> {

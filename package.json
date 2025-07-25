@@ -83,7 +83,8 @@
     "winston": "^3.11.0",
     "ws": "^8.16.0",
     "xlsx": "^0.18.5",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.41.0",

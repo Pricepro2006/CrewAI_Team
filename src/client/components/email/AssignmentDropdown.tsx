@@ -66,9 +66,11 @@ export function AssignmentDropdown({
     <Select
       value={selectedMember}
       onValueChange={handleAssign}
-      disabled={disabled || isAssigning}
     >
-      <SelectTrigger className={cn(sizeClasses[size], className)}>
+      <SelectTrigger 
+        className={cn(sizeClasses[size], className)}
+        disabled={disabled || isAssigning}
+      >
         <SelectValue placeholder="Assign to...">
           <div className="flex items-center gap-2">
             {currentMember ? (

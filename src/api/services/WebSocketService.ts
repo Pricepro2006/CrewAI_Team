@@ -222,6 +222,43 @@ export const WebSocketMessageSchema = z.discriminatedUnion("type", [
     severity: z.enum(["warning", "critical"]),
     timestamp: z.date(),
   }),
+  // Walmart-specific message types
+  z.object({
+    type: z.literal("walmart.price_update"),
+    productId: z.string(),
+    currentPrice: z.number(),
+    previousPrice: z.number(),
+    percentChange: z.number(),
+    timestamp: z.date(),
+  }),
+  z.object({
+    type: z.literal("walmart.stock_update"),
+    productId: z.string(),
+    inStock: z.boolean(),
+    quantity: z.number().optional(),
+    timestamp: z.date(),
+  }),
+  z.object({
+    type: z.literal("walmart.deal_alert"),
+    dealId: z.string(),
+    dealDetails: z.any(),
+    affectedProducts: z.array(z.string()),
+    timestamp: z.date(),
+  }),
+  z.object({
+    type: z.literal("walmart.cart_sync"),
+    cartData: z.any(),
+    sourceClientId: z.string(),
+    timestamp: z.date(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("walmart.recommendation"),
+    recommendations: z.array(z.any()),
+    preferences: z.any(),
+    timestamp: z.date(),
+    userId: z.string(),
+  }),
 ]);
 
 export type WebSocketMessage = z.infer<typeof WebSocketMessageSchema>;
@@ -385,6 +422,13 @@ export class WebSocketService extends EventEmitter {
         }
       });
     }
+  }
+
+  /**
+   * Send a message to a specific user (alias for sendToClient for backward compatibility)
+   */
+  sendToUser(userId: string, message: WebSocketMessage): void {
+    this.sendToClient(userId, message);
   }
 
   /**

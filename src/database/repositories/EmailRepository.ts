@@ -135,7 +135,7 @@ export class EmailRepository extends BaseRepository<EmailEnhanced> {
       priority: emailData.priority || 'medium'
     };
 
-    return this.create(emailToCreate);
+    return this.create(emailToCreate as Omit<EmailEnhanced, 'id' | 'created_at' | 'updated_at'>);
   }
 
   /**
@@ -302,8 +302,8 @@ export class EmailRepository extends BaseRepository<EmailEnhanced> {
    */
   async unassignEmail(emailId: string): Promise<EmailEnhanced | null> {
     return this.update(emailId, {
-      assigned_to: null,
-      assigned_at: null
+      assigned_to: undefined,
+      assigned_at: undefined
     });
   }
 

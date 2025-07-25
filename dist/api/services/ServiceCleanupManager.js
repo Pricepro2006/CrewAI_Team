@@ -11,6 +11,12 @@ export class ServiceCleanupManager {
         this.cleanupTasks.sort((a, b) => (b.priority || 0) - (a.priority || 0));
     }
     /**
+     * Register a cleanup task (alias for registerCleanupTask)
+     */
+    register(task) {
+        this.registerCleanupTask(task);
+    }
+    /**
      * Execute all cleanup tasks
      */
     async cleanup() {

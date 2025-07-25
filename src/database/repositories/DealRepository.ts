@@ -638,7 +638,7 @@ export class ProductFamilyRepository extends BaseRepository<ProductFamily> {
       is_active: true
     };
 
-    return this.create(familyToCreate);
+    return this.create(familyToCreate as Omit<ProductFamily, 'id' | 'created_at' | 'updated_at'>);
   }
 
   /**

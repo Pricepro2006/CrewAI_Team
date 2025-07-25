@@ -13,12 +13,15 @@ import appConfig from '../config/app.config';
 import { UserRepository } from './repositories/UserRepository';
 import { EmailRepository, EmailEntityRepository, EmailAttachmentRepository } from './repositories/EmailRepository';
 import { DealRepository, DealItemRepository, ProductFamilyRepository } from './repositories/DealRepository';
+import { GroceryListRepository, GroceryItemRepository, ShoppingSessionRepository } from './repositories/GroceryRepository';
+import { WalmartProductRepository, SubstitutionRepository, UserPreferencesRepository } from './repositories/WalmartProductRepository';
 
 // Vector database imports
 import { ChromaDBManager } from './vector/ChromaDBManager';
 
 // Migration system
 import { DatabaseMigrator } from './migrations/DatabaseMigrator';
+import WalmartGroceryAgentMigration from './migrations/005_walmart_grocery_agent';
 
 export interface DatabaseConfig {
   sqlite: {
@@ -51,6 +54,14 @@ export class DatabaseManager {
   public readonly deals: DealRepository;
   public readonly dealItems: DealItemRepository;
   public readonly productFamilies: ProductFamilyRepository;
+  
+  // Grocery repository instances
+  public readonly groceryLists: GroceryListRepository;
+  public readonly groceryItems: GroceryItemRepository;
+  public readonly shoppingSessions: ShoppingSessionRepository;
+  public readonly walmartProducts: WalmartProductRepository;
+  public readonly substitutions: SubstitutionRepository;
+  public readonly userPreferences: UserPreferencesRepository;
 
   constructor(config?: Partial<DatabaseConfig>) {
     const dbConfig: DatabaseConfig = {
@@ -88,6 +99,14 @@ export class DatabaseManager {
     this.deals = new DealRepository(this.db);
     this.dealItems = new DealItemRepository(this.db);
     this.productFamilies = new ProductFamilyRepository(this.db);
+    
+    // Initialize grocery repositories
+    this.groceryLists = new GroceryListRepository(this.db);
+    this.groceryItems = new GroceryItemRepository(this.db);
+    this.shoppingSessions = new ShoppingSessionRepository(this.db);
+    this.walmartProducts = new WalmartProductRepository(this.db);
+    this.substitutions = new SubstitutionRepository(this.db);
+    this.userPreferences = new UserPreferencesRepository(this.db);
 
     logger.info('DatabaseManager initialized', 'DB_MANAGER');
   }
@@ -178,9 +197,20 @@ export class DatabaseManager {
           this.db.exec(statement + ';');
         } catch (error) {
           // Log warning for statements that might already exist
-          if (!error.message.includes('already exists')) {
+          if (error instanceof Error && !error.message.includes('already exists')) {
             logger.warn(`Migration statement warning: ${error}`, 'DB_MANAGER');
           }
+        }
+      }
+
+      // Apply Walmart Grocery Agent migration
+      const groceryMigration = new WalmartGroceryAgentMigration(this.db);
+      try {
+        await groceryMigration.up();
+        logger.info('Walmart Grocery Agent migration applied successfully', 'DB_MANAGER');
+      } catch (error) {
+        if (error instanceof Error && !error.message.includes('already exists')) {
+          logger.warn(`Grocery migration warning: ${error}`, 'DB_MANAGER');
         }
       }
 

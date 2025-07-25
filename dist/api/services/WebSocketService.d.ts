@@ -614,6 +614,99 @@ export declare const WebSocketMessageSchema: z.ZodDiscriminatedUnion<"type", [z.
     metric: string;
     threshold: number;
     severity: "critical" | "warning";
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"walmart.price_update">;
+    productId: z.ZodString;
+    currentPrice: z.ZodNumber;
+    previousPrice: z.ZodNumber;
+    percentChange: z.ZodNumber;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "walmart.price_update";
+    timestamp: Date;
+    productId: string;
+    currentPrice: number;
+    previousPrice: number;
+    percentChange: number;
+}, {
+    type: "walmart.price_update";
+    timestamp: Date;
+    productId: string;
+    currentPrice: number;
+    previousPrice: number;
+    percentChange: number;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"walmart.stock_update">;
+    productId: z.ZodString;
+    inStock: z.ZodBoolean;
+    quantity: z.ZodOptional<z.ZodNumber>;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "walmart.stock_update";
+    timestamp: Date;
+    productId: string;
+    inStock: boolean;
+    quantity?: number | undefined;
+}, {
+    type: "walmart.stock_update";
+    timestamp: Date;
+    productId: string;
+    inStock: boolean;
+    quantity?: number | undefined;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"walmart.deal_alert">;
+    dealId: z.ZodString;
+    dealDetails: z.ZodAny;
+    affectedProducts: z.ZodArray<z.ZodString, "many">;
+    timestamp: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    type: "walmart.deal_alert";
+    timestamp: Date;
+    dealId: string;
+    affectedProducts: string[];
+    dealDetails?: any;
+}, {
+    type: "walmart.deal_alert";
+    timestamp: Date;
+    dealId: string;
+    affectedProducts: string[];
+    dealDetails?: any;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"walmart.cart_sync">;
+    cartData: z.ZodAny;
+    sourceClientId: z.ZodString;
+    timestamp: z.ZodDate;
+    userId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    type: "walmart.cart_sync";
+    timestamp: Date;
+    userId: string;
+    sourceClientId: string;
+    cartData?: any;
+}, {
+    type: "walmart.cart_sync";
+    timestamp: Date;
+    userId: string;
+    sourceClientId: string;
+    cartData?: any;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"walmart.recommendation">;
+    recommendations: z.ZodArray<z.ZodAny, "many">;
+    preferences: z.ZodAny;
+    timestamp: z.ZodDate;
+    userId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    type: "walmart.recommendation";
+    timestamp: Date;
+    userId: string;
+    recommendations: any[];
+    preferences?: any;
+}, {
+    type: "walmart.recommendation";
+    timestamp: Date;
+    userId: string;
+    recommendations: any[];
+    preferences?: any;
 }>]>;
 export type WebSocketMessage = z.infer<typeof WebSocketMessageSchema>;
 export declare class WebSocketService extends EventEmitter {
@@ -655,6 +748,10 @@ export declare class WebSocketService extends EventEmitter {
      * Send a message to a specific client
      */
     sendToClient(clientId: string, message: WebSocketMessage): void;
+    /**
+     * Send a message to a specific user (alias for sendToClient for backward compatibility)
+     */
+    sendToUser(userId: string, message: WebSocketMessage): void;
     /**
      * Get the number of connected clients
      */

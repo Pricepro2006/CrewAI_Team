@@ -81,7 +81,7 @@ export class UserRepository extends BaseRepository<User> {
       permissions: userData.permissions ? JSON.stringify(userData.permissions) : null
     };
 
-    return this.create(userToCreate);
+    return this.create(userToCreate as Omit<User, 'id' | 'created_at' | 'updated_at'>);
   }
 
   /**

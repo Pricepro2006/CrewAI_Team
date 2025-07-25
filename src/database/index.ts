@@ -38,39 +38,6 @@ export type {
   BaseEntity,
   QueryOptions,
   PaginatedResult,
-
-  // User types
-  User,
-  CreateUserData,
-
-  // Email types
-  EmailEnhanced,
-  EmailEntity,
-  EmailAttachment,
-  CreateEmailData,
-  EmailSearchOptions,
-
-  // Deal types
-  Deal,
-  DealItem,
-  ProductFamily,
-  CreateDealData,
-  CreateDealItemData,
-  DealQueryResult,
-
-  // Vector database types
-  ChromaDocument,
-  ChromaQueryResult,
-  CollectionConfig,
-
-  // File storage types
-  StoredFile,
-  FileMetadata,
-  StorageConfig,
-
-  // Migration types
-  Migration,
-  MigrationResult,
 } from './repositories/BaseRepository';
 
 export type { User, CreateUserData } from './repositories/UserRepository';
