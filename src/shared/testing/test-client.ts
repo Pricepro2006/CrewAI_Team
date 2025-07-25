@@ -14,13 +14,13 @@ import type {
   TestError,
   RequestConfig,
   TestWebSocketConnection,
-  WebSocketMessage,
   TestAssertions,
   TestUser,
   CleanupTask,
   CleanupManager,
   CleanupResult
 } from './integration-test-framework';
+import type { WebSocketMessage, WebSocketEventType } from '../types/websocket';
 
 // =====================================================
 // HTTP Test Client Implementation
@@ -51,7 +51,7 @@ export class HttpTestClient implements TestHttpClient {
       method: config.method,
       headers: {
         ...this.defaultHeaders,
-        ...config.headers
+        ...(config.headers || {})
       },
       body: config.body ? JSON.stringify(config.body) : undefined,
       timeout: config.timeout || this.timeout
@@ -76,23 +76,23 @@ export class HttpTestClient implements TestHttpClient {
   }
 
   async get<T = unknown>(url: string, config?: Partial<RequestConfig>): Promise<TestResponse<T>> {
-    return this.request<T>({ method: 'GET', url, ...config });
+    return this.request<T>({ method: 'GET', url, headers: {}, ...config });
   }
 
   async post<T = unknown>(url: string, body?: unknown, config?: Partial<RequestConfig>): Promise<TestResponse<T>> {
-    return this.request<T>({ method: 'POST', url, body, ...config });
+    return this.request<T>({ method: 'POST', url, body, headers: {}, ...config });
   }
 
   async put<T = unknown>(url: string, body?: unknown, config?: Partial<RequestConfig>): Promise<TestResponse<T>> {
-    return this.request<T>({ method: 'PUT', url, body, ...config });
+    return this.request<T>({ method: 'PUT', url, body, headers: {}, ...config });
   }
 
   async patch<T = unknown>(url: string, body?: unknown, config?: Partial<RequestConfig>): Promise<TestResponse<T>> {
-    return this.request<T>({ method: 'PATCH', url, body, ...config });
+    return this.request<T>({ method: 'PATCH', url, body, headers: {}, ...config });
   }
 
   async delete<T = unknown>(url: string, config?: Partial<RequestConfig>): Promise<TestResponse<T>> {
-    return this.request<T>({ method: 'DELETE', url, ...config });
+    return this.request<T>({ method: 'DELETE', url, headers: {}, ...config });
   }
 
   setAuthToken(token: string): void {
@@ -130,7 +130,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
   public autoReconnect: boolean = true;
   public reconnectAttempts: number = 0;
   public messageQueue: any[] = [];
-  public eventHandlers: Map<string, any[]> = new Map();
+  public eventHandlers: Map<WebSocketEventType, Array<{ handler: (message: WebSocketMessage) => void; once: boolean }>> = new Map();
 
   private ws?: WebSocket;
   private connectionPromise?: Promise<TestWebSocketConnection>;
@@ -275,20 +275,20 @@ export class WebSocketTestClient implements TestWebSocketClient {
 // =====================================================
 
 export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
-  constructor(private actual: T, private not: boolean = false) {}
+  constructor(private actual: T, private _not: boolean = false) {}
 
   toBe(expected: T): TestAssertions<T> {
-    const passed = this.not ? this.actual !== expected : this.actual === expected;
+    const passed = this._not ? this.actual !== expected : this.actual === expected;
     if (!passed) {
-      throw new Error(`Expected ${this.actual} ${this.not ? 'not ' : ''}to be ${expected}`);
+      throw new Error(`Expected ${this.actual} ${this._not ? 'not ' : ''}to be ${expected}`);
     }
     return this;
   }
 
   toEqual(expected: T): TestAssertions<T> {
-    const passed = this.not ? !this.deepEqual(this.actual, expected) : this.deepEqual(this.actual, expected);
+    const passed = this._not ? !this.deepEqual(this.actual, expected) : this.deepEqual(this.actual, expected);
     if (!passed) {
-      throw new Error(`Expected ${JSON.stringify(this.actual)} ${this.not ? 'not ' : ''}to equal ${JSON.stringify(expected)}`);
+      throw new Error(`Expected ${JSON.stringify(this.actual)} ${this._not ? 'not ' : ''}to equal ${JSON.stringify(expected)}`);
     }
     return this;
   }
@@ -306,78 +306,78 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
   }
 
   toBeDefined(): TestAssertions<T> {
-    const passed = this.not ? this.actual === undefined : this.actual !== undefined;
+    const passed = this._not ? this.actual === undefined : this.actual !== undefined;
     if (!passed) {
-      throw new Error(`Expected value ${this.not ? 'not ' : ''}to be defined`);
+      throw new Error(`Expected value ${this._not ? 'not ' : ''}to be defined`);
     }
     return this;
   }
 
   toBeTruthy(): TestAssertions<T> {
-    const passed = this.not ? !this.actual : !!this.actual;
+    const passed = this._not ? !this.actual : !!this.actual;
     if (!passed) {
-      throw new Error(`Expected ${this.actual} ${this.not ? 'not ' : ''}to be truthy`);
+      throw new Error(`Expected ${this.actual} ${this._not ? 'not ' : ''}to be truthy`);
     }
     return this;
   }
 
   toBeFalsy(): TestAssertions<T> {
-    const passed = this.not ? !!this.actual : !this.actual;
+    const passed = this._not ? !!this.actual : !this.actual;
     if (!passed) {
-      throw new Error(`Expected ${this.actual} ${this.not ? 'not ' : ''}to be falsy`);
+      throw new Error(`Expected ${this.actual} ${this._not ? 'not ' : ''}to be falsy`);
     }
     return this;
   }
 
   toBeInstanceOf(constructor: new (...args: any[]) => any): TestAssertions<T> {
-    const passed = this.not ? !(this.actual instanceof constructor) : (this.actual instanceof constructor);
+    const passed = this._not ? !(this.actual instanceof constructor) : (this.actual instanceof constructor);
     if (!passed) {
-      throw new Error(`Expected ${this.actual} ${this.not ? 'not ' : ''}to be instance of ${constructor.name}`);
+      throw new Error(`Expected ${this.actual} ${this._not ? 'not ' : ''}to be instance of ${constructor.name}`);
     }
     return this;
   }
 
   toBeTypeOf(type: string): TestAssertions<T> {
     const actualType = typeof this.actual;
-    const passed = this.not ? actualType !== type : actualType === type;
+    const passed = this._not ? actualType !== type : actualType === type;
     if (!passed) {
-      throw new Error(`Expected type ${actualType} ${this.not ? 'not ' : ''}to be ${type}`);
+      throw new Error(`Expected type ${actualType} ${this._not ? 'not ' : ''}to be ${type}`);
     }
     return this;
   }
 
   toBeGreaterThan(expected: number): TestAssertions<T> {
     const actual = this.actual as unknown as number;
-    const passed = this.not ? actual <= expected : actual > expected;
+    const passed = this._not ? actual <= expected : actual > expected;
     if (!passed) {
-      throw new Error(`Expected ${actual} ${this.not ? 'not ' : ''}to be greater than ${expected}`);
+      throw new Error(`Expected ${actual} ${this._not ? 'not ' : ''}to be greater than ${expected}`);
     }
     return this;
   }
 
   toBeGreaterThanOrEqual(expected: number): TestAssertions<T> {
     const actual = this.actual as unknown as number;
-    const passed = this.not ? actual < expected : actual >= expected;
+    const passed = this._not ? actual < expected : actual >= expected;
     if (!passed) {
-      throw new Error(`Expected ${actual} ${this.not ? 'not ' : ''}to be greater than or equal to ${expected}`);
+      throw new Error(`Expected ${actual} ${this._not ? 'not ' : ''}to be greater than or equal to ${expected}`);
     }
     return this;
   }
 
   toBeLessThan(expected: number): TestAssertions<T> {
     const actual = this.actual as unknown as number;
-    const passed = this.not ? actual >= expected : actual < expected;
+    const passed = this._not ? actual >= expected : actual < expected;
     if (!passed) {
-      throw new Error(`Expected ${actual} ${this.not ? 'not ' : ''}to be less than ${expected}`);
+      throw new Error(`Expected ${actual} ${this._not ? 'not ' : ''}to be less than ${expected}`);
     }
     return this;
   }
 
   toBeLessThanOrEqual(expected: number): TestAssertions<T> {
     const actual = this.actual as unknown as number;
-    const passed = this.not ? actual > expected : actual <= expected;
+    const passed = this._not ? actual > expected : actual <= expected;
     if (!passed) {
-      throw new Error(`Expected ${actual} ${this.not ? 'not ' : ''}to be less than or equal to ${expected}`);
+      throw new Error(`Expected ${actual} ${this._not ? 'not ' : ''}to be less than or equal to ${expected}`);
     }
     return this;
   }
@@ -386,74 +386,74 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
     const actual = this.actual as unknown as number;
     const diff = Math.abs(actual - expected);
     const maxDiff = Math.pow(10, -precision);
-    const passed = this.not ? diff >= maxDiff : diff < maxDiff;
+    const passed = this._not ? diff >= maxDiff : diff < maxDiff;
     if (!passed) {
-      throw new Error(`Expected ${actual} ${this.not ? 'not ' : ''}to be close to ${expected} (precision: ${precision})`);
+      throw new Error(`Expected ${actual} ${this._not ? 'not ' : ''}to be close to ${expected} (precision: ${precision})`);
     }
     return this;
   }
 
   toBeNaN(): TestAssertions<T> {
     const actual = this.actual as unknown as number;
-    const passed = this.not ? !isNaN(actual) : isNaN(actual);
+    const passed = this._not ? !isNaN(actual) : isNaN(actual);
     if (!passed) {
-      throw new Error(`Expected ${actual} ${this.not ? 'not ' : ''}to be NaN`);
+      throw new Error(`Expected ${actual} ${this._not ? 'not ' : ''}to be NaN`);
     }
     return this;
   }
 
   toContain(expected: string): TestAssertions<T> {
     const actual = this.actual as unknown as string;
-    const passed = this.not ? !actual.includes(expected) : actual.includes(expected);
+    const passed = this._not ? !actual.includes(expected) : actual.includes(expected);
     if (!passed) {
-      throw new Error(`Expected "${actual}" ${this.not ? 'not ' : ''}to contain "${expected}"`);
+      throw new Error(`Expected "${actual}" ${this._not ? 'not ' : ''}to contain "${expected}"`);
     }
     return this;
   }
 
   toStartWith(expected: string): TestAssertions<T> {
     const actual = this.actual as unknown as string;
-    const passed = this.not ? !actual.startsWith(expected) : actual.startsWith(expected);
+    const passed = this._not ? !actual.startsWith(expected) : actual.startsWith(expected);
     if (!passed) {
-      throw new Error(`Expected "${actual}" ${this.not ? 'not ' : ''}to start with "${expected}"`);
+      throw new Error(`Expected "${actual}" ${this._not ? 'not ' : ''}to start with "${expected}"`);
     }
     return this;
   }
 
   toEndWith(expected: string): TestAssertions<T> {
     const actual = this.actual as unknown as string;
-    const passed = this.not ? !actual.endsWith(expected) : actual.endsWith(expected);
+    const passed = this._not ? !actual.endsWith(expected) : actual.endsWith(expected);
     if (!passed) {
-      throw new Error(`Expected "${actual}" ${this.not ? 'not ' : ''}to end with "${expected}"`);
+      throw new Error(`Expected "${actual}" ${this._not ? 'not ' : ''}to end with "${expected}"`);
     }
     return this;
   }
 
   toMatch(regexp: RegExp): TestAssertions<T> {
     const actual = this.actual as unknown as string;
-    const passed = this.not ? !regexp.test(actual) : regexp.test(actual);
+    const passed = this._not ? !regexp.test(actual) : regexp.test(actual);
     if (!passed) {
-      throw new Error(`Expected "${actual}" ${this.not ? 'not ' : ''}to match ${regexp}`);
+      throw new Error(`Expected "${actual}" ${this._not ? 'not ' : ''}to match ${regexp}`);
     }
     return this;
   }
 
   toHaveLength(length: number): TestAssertions<T> {
     const actual = this.actual as unknown as { length: number };
-    const passed = this.not ? actual.length !== length : actual.length === length;
+    const passed = this._not ? actual.length !== length : actual.length === length;
     if (!passed) {
-      throw new Error(`Expected length ${actual.length} ${this.not ? 'not ' : ''}to be ${length}`);
+      throw new Error(`Expected length ${actual.length} ${this._not ? 'not ' : ''}to be ${length}`);
     }
     return this;
   }
 
   toContainEqual(expected: unknown): TestAssertions<T> {
     const actual = this.actual as unknown as unknown[];
-    const passed = this.not ? 
+    const passed = this._not ? 
       !actual.some(item => this.deepEqual(item, expected)) :
       actual.some(item => this.deepEqual(item, expected));
     if (!passed) {
-      throw new Error(`Expected array ${this.not ? 'not ' : ''}to contain equal ${JSON.stringify(expected)}`);
+      throw new Error(`Expected array ${this._not ? 'not ' : ''}to contain equal ${JSON.stringify(expected)}`);
     }
     return this;
   }
@@ -465,7 +465,7 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
     
     for (const key of keys) {
       if (current === null || current === undefined || !(key in current)) {
-        if (!this.not) {
+        if (!this._not) {
           throw new Error(`Expected object to have property "${path}"`);
         }
         return this;
@@ -474,11 +474,11 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
     }
 
     if (value !== undefined) {
-      const passed = this.not ? !this.deepEqual(current, value) : this.deepEqual(current, value);
+      const passed = this._not ? !this.deepEqual(current, value) : this.deepEqual(current, value);
       if (!passed) {
-        throw new Error(`Expected property "${path}" ${this.not ? 'not ' : ''}to equal ${JSON.stringify(value)}, but got ${JSON.stringify(current)}`);
+        throw new Error(`Expected property "${path}" ${this._not ? 'not ' : ''}to equal ${JSON.stringify(value)}, but got ${JSON.stringify(current)}`);
       }
-    } else if (this.not) {
+    } else if (this._not) {
       throw new Error(`Expected object not to have property "${path}"`);
     }
 
@@ -487,9 +487,9 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
 
   toHaveStatus(status: number): TestAssertions<TestResponse> {
     const response = this.actual as unknown as TestResponse;
-    const passed = this.not ? response.status !== status : response.status === status;
+    const passed = this._not ? response.status !== status : response.status === status;
     if (!passed) {
-      throw new Error(`Expected status ${response.status} ${this.not ? 'not ' : ''}to be ${status}`);
+      throw new Error(`Expected status ${response.status} ${this._not ? 'not ' : ''}to be ${status}`);
     }
     return this as unknown as TestAssertions<TestResponse>;
   }
@@ -499,14 +499,14 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
     const headerValue = response.headers[name.toLowerCase()];
     
     if (value !== undefined) {
-      const passed = this.not ? headerValue !== value : headerValue === value;
+      const passed = this._not ? headerValue !== value : headerValue === value;
       if (!passed) {
-        throw new Error(`Expected header "${name}" ${this.not ? 'not ' : ''}to equal "${value}", but got "${headerValue}"`);
+        throw new Error(`Expected header "${name}" ${this._not ? 'not ' : ''}to equal "${value}", but got "${headerValue}"`);
       }
     } else {
-      const passed = this.not ? headerValue === undefined : headerValue !== undefined;
+      const passed = this._not ? headerValue === undefined : headerValue !== undefined;
       if (!passed) {
-        throw new Error(`Expected response ${this.not ? 'not ' : ''}to have header "${name}"`);
+        throw new Error(`Expected response ${this._not ? 'not ' : ''}to have header "${name}"`);
       }
     }
 
@@ -515,9 +515,9 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
 
   toHaveResponseTime(maxTime: number): TestAssertions<TestResponse> {
     const response = this.actual as unknown as TestResponse;
-    const passed = this.not ? response.duration >= maxTime : response.duration < maxTime;
+    const passed = this._not ? response.duration >= maxTime : response.duration < maxTime;
     if (!passed) {
-      throw new Error(`Expected response time ${response.duration}ms ${this.not ? 'not ' : ''}to be less than ${maxTime}ms`);
+      throw new Error(`Expected response time ${response.duration}ms ${this._not ? 'not ' : ''}to be less than ${maxTime}ms`);
     }
     return this as unknown as TestAssertions<TestResponse>;
   }
@@ -531,9 +531,9 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
   toHaveReceivedMessage(eventType: string): TestAssertions<TestWebSocketConnection> {
     const connection = this.actual as unknown as TestWebSocketConnection;
     const hasMessage = connection.receivedMessages.some(msg => msg.type === eventType);
-    const passed = this.not ? !hasMessage : hasMessage;
+    const passed = this._not ? !hasMessage : hasMessage;
     if (!passed) {
-      throw new Error(`Expected WebSocket ${this.not ? 'not ' : ''}to have received message of type "${eventType}"`);
+      throw new Error(`Expected WebSocket ${this._not ? 'not ' : ''}to have received message of type "${eventType}"`);
     }
     return this as unknown as TestAssertions<TestWebSocketConnection>;
   }
@@ -541,9 +541,9 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
   toHaveSubscription(channel: string): TestAssertions<TestWebSocketConnection> {
     const connection = this.actual as unknown as TestWebSocketConnection;
     const hasSubscription = connection.subscriptions.includes(channel);
-    const passed = this.not ? !hasSubscription : hasSubscription;
+    const passed = this._not ? !hasSubscription : hasSubscription;
     if (!passed) {
-      throw new Error(`Expected WebSocket ${this.not ? 'not ' : ''}to have subscription to "${channel}"`);
+      throw new Error(`Expected WebSocket ${this._not ? 'not ' : ''}to have subscription to "${channel}"`);
     }
     return this as unknown as TestAssertions<TestWebSocketConnection>;
   }
@@ -561,7 +561,7 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
   }
 
   get not(): TestAssertions<T> {
-    return new TestAssertionsImpl(this.actual, !this.not);
+    return new TestAssertionsImpl(this.actual, !this._not);
   }
 
   private deepEqual(a: unknown, b: unknown): boolean {

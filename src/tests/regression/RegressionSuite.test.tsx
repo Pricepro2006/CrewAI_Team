@@ -1,5 +1,6 @@
 /** @jsx React.createElement */
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -9,53 +10,62 @@ import type { EmailStorageService } from '../../api/services/EmailStorageService
 // 2025 Best Practice: Comprehensive Regression Test Suite
 
 describe('Email Dashboard Regression Suite', () => {
-  let mockEmailService: jest.Mocked<EmailStorageService>;
+  let mockEmailService: vi.Mocked<EmailStorageService>;
   
   beforeEach(() => {
     // Reset all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Mock email service
     mockEmailService = {
-      getEmailsForTableView: jest.fn().mockResolvedValue({
+      getEmailsForTableView: vi.fn().mockResolvedValue({
         emails: [
           {
             id: '1',
-            emailAlias: 'test@example.com',
-            requestedBy: 'John Doe',
+            email_alias: 'test@example.com',
+            requested_by: 'John Doe',
             subject: 'Test Email 1',
             summary: 'This is a test email',
             status: 'pending',
-            createdAt: new Date('2025-01-01'),
-            updatedAt: new Date('2025-01-01'),
+            status_text: 'Pending',
+            workflow_state: 'open',
+            priority: 'Medium',
+            received_date: '2025-01-01',
+            is_read: false,
+            has_attachments: false,
           },
           {
             id: '2',
-            emailAlias: 'user@example.com',
-            requestedBy: 'Jane Smith',
+            email_alias: 'user@example.com',
+            requested_by: 'Jane Smith',
             subject: 'Another Test',
             summary: 'Another test email',
             status: 'in_progress',
-            createdAt: new Date('2025-01-02'),
-            updatedAt: new Date('2025-01-02'),
+            status_text: 'In Progress',
+            workflow_state: 'open',
+            priority: 'High',
+            received_date: '2025-01-02',
+            is_read: true,
+            has_attachments: false,
           }
         ],
-        total: 2,
+        totalCount: 2,
+        totalPages: 1,
         page: 1,
         pageSize: 10
       }),
-      updateEmailStatus: jest.fn().mockResolvedValue({ success: true }),
-      exportEmails: jest.fn().mockResolvedValue({ url: '/exports/test.csv' }),
+      updateEmailStatus: vi.fn().mockResolvedValue({ success: true }),
+      exportEmails: vi.fn().mockResolvedValue({ url: '/exports/test.csv' }),
     } as any;
   });
   
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Core Functionality Regression Tests', () => {
     it('should maintain table display after multiple re-renders', async () => {
-      const { rerender } = render(<EmailDashboard emailService={mockEmailService} />);
+      const { rerender } = render(<EmailDashboard />);
       
       // Initial render
       expect(await screen.findByText('Test Email 1')).toBeInTheDocument();
@@ -63,7 +73,7 @@ describe('Email Dashboard Regression Suite', () => {
       
       // Force multiple re-renders
       for (let i = 0; i < 5; i++) {
-        rerender(<EmailDashboard emailService={mockEmailService} key={i} />);
+        rerender(<EmailDashboard key={i} />);
       }
       
       // Verify data still displays correctly
@@ -72,7 +82,7 @@ describe('Email Dashboard Regression Suite', () => {
     });
 
     it('should preserve filter state across component updates', async () => {
-      render(<EmailDashboard emailService={mockEmailService} />);
+      render(<EmailDashboard />);
       
       // Apply filter
       const filterButton = screen.getByText('Filters');
@@ -97,7 +107,7 @@ describe('Email Dashboard Regression Suite', () => {
     });
 
     it('should handle rapid status updates without race conditions', async () => {
-      render(<EmailDashboard emailService={mockEmailService} />);
+      render(<EmailDashboard />);
       
       await screen.findByText('Test Email 1');
       
@@ -106,7 +116,9 @@ describe('Email Dashboard Regression Suite', () => {
       
       // Click multiple update buttons rapidly
       for (let i = 0; i < 5; i++) {
-        fireEvent.click(updateButtons[0]);
+        if (updateButtons[0]) {
+          fireEvent.click(updateButtons[0]);
+        }
         const modal = await screen.findByRole('dialog');
         const statusSelect = within(modal).getByLabelText('New Status');
         fireEvent.change(statusSelect, { target: { value: 'approved' } });
@@ -130,7 +142,7 @@ describe('Email Dashboard Regression Suite', () => {
         pageSize: 10
       });
       
-      render(<EmailDashboard emailService={mockEmailService} />);
+      render(<EmailDashboard />);
       
       expect(await screen.findByText('No emails found')).toBeInTheDocument();
       
@@ -144,7 +156,7 @@ describe('Email Dashboard Regression Suite', () => {
         new Error('Network error')
       );
       
-      render(<EmailDashboard emailService={mockEmailService} />);
+      render(<EmailDashboard />);
       
       // Should show error message
       expect(await screen.findByText(/error loading emails/i)).toBeInTheDocument();
@@ -157,7 +169,7 @@ describe('Email Dashboard Regression Suite', () => {
       mockEmailService.getEmailsForTableView.mockResolvedValueOnce({
         emails: [{
           id: '1',
-          emailAlias: 'test@example.com',
+          email_alias: 'test@example.com',
           requestedBy: 'John Doe',
           subject: 'Test Email 1',
           summary: 'This is a test email',
@@ -196,7 +208,7 @@ describe('Email Dashboard Regression Suite', () => {
         pageSize: 10
       } as any);
       
-      render(<EmailDashboard emailService={mockEmailService} />);
+      render(<EmailDashboard />);
       
       // Should render with fallbacks
       expect(await screen.findByText('No email alias')).toBeInTheDocument();
@@ -226,7 +238,7 @@ describe('Email Dashboard Regression Suite', () => {
       });
       
       const startTime = performance.now();
-      render(<EmailDashboard emailService={mockEmailService} />);
+      render(<EmailDashboard />);
       
       await screen.findByText('Email 0');
       const renderTime = performance.now() - startTime;
@@ -241,7 +253,7 @@ describe('Email Dashboard Regression Suite', () => {
 
     it('should debounce search input properly', async () => {
       const user = userEvent.setup();
-      render(<EmailDashboard emailService={mockEmailService} />);
+      render(<EmailDashboard />);
       
       const searchInput = screen.getByPlaceholderText('Search emails...');
       
@@ -263,15 +275,15 @@ describe('Email Dashboard Regression Suite', () => {
   describe('Integration Regression Tests', () => {
     it('should maintain WebSocket connection during filter operations', async () => {
       const mockWebSocket = {
-        send: jest.fn(),
-        close: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
+        send: vi.fn(),
+        close: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
       };
       
-      global.WebSocket = jest.fn(() => mockWebSocket) as any;
+      global.WebSocket = vi.fn(() => mockWebSocket) as any;
       
-      render(<EmailDashboard emailService={mockEmailService} />);
+      render(<EmailDashboard />);
       
       // Verify WebSocket connected
       expect(global.WebSocket).toHaveBeenCalled();
@@ -309,7 +321,7 @@ describe('Email Dashboard Regression Suite', () => {
     });
 
     it('should coordinate export with active filters and sorting', async () => {
-      render(<EmailDashboard emailService={mockEmailService} />);
+      render(<EmailDashboard />);
       
       // Apply sorting
       const subjectHeader = screen.getByText('Subject');
@@ -349,7 +361,7 @@ describe('Email Dashboard Regression Suite', () => {
 
   describe('Accessibility Regression Tests', () => {
     it('should maintain keyboard navigation after dynamic updates', async () => {
-      render(<EmailDashboard emailService={mockEmailService} />);
+      render(<EmailDashboard />);
       
       // Initial keyboard navigation
       const firstRow = screen.getByRole('row', { name: /test email 1/i });
@@ -392,7 +404,7 @@ describe('Email Dashboard Regression Suite', () => {
     });
 
     it('should announce dynamic content changes to screen readers', async () => {
-      render(<EmailDashboard emailService={mockEmailService} />);
+      render(<EmailDashboard />);
       
       // Check for live region
       const liveRegion = screen.getByRole('status', { hidden: true });
@@ -400,7 +412,9 @@ describe('Email Dashboard Regression Suite', () => {
       
       // Trigger status update
       const updateButton = screen.getAllByText('Update Status')[0];
-      fireEvent.click(updateButton);
+      if (updateButton) {
+        fireEvent.click(updateButton);
+      }
       
       // Verify announcement
       await waitFor(() => {

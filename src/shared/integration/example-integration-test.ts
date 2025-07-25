@@ -5,10 +5,12 @@
 
 import { IntegrationCoordinator } from './coordinator';
 import { createTestContext, authenticateUser } from '../testing/test-client';
-import { expect } from '@jest/globals';
+import { expect } from 'vitest';
 import type { 
   TestContext, 
-  TestConfig,
+  TestConfig
+} from '../testing/integration-test-framework';
+import type {
   EmailRecord
 } from '../types';
 
@@ -188,7 +190,7 @@ describe('CrewAI Team Integration Tests', () => {
       expect(health.timestamp).toBeDefined();
       
       // Check individual services
-      expect(health.services.api_server.status).toBe('healthy');
+      expect(health.services?.api_server?.status).toBe('healthy');
       
       console.log('✅ Health check passed:', health.status);
     });
@@ -314,7 +316,7 @@ describe('CrewAI Team Integration Tests', () => {
       
       // Set up message listener
       let receivedMessage: any = null;
-      testContext.services.websocket.once('email.create', (message) => {
+      testContext.services.websocket.once('email.create', (message: any) => {
         receivedMessage = message;
       });
 
@@ -452,7 +454,7 @@ describe('CrewAI Team Integration Tests', () => {
       expect(metrics.metrics.length).toBeGreaterThan(0);
       
       // Look for HTTP request metrics
-      const httpMetrics = metrics.metrics.filter(m => m.name === 'http_requests_total');
+      const httpMetrics = metrics.metrics.filter((m: any) => m.name === 'http_requests_total');
       expect(httpMetrics.length).toBeGreaterThan(0);
       
       console.log(`✅ Collected ${metrics.metrics.length} metrics`);

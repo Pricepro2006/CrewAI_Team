@@ -156,8 +156,8 @@ export class MetricsCollector {
     // Find the most recent value with matching labels
     for (let i = values.length - 1; i >= 0; i--) {
       const value = values[i];
-      if (this.labelsMatch(value.labels, labels)) {
-        return value.value;
+      if (this.labelsMatch(value?.labels, labels)) {
+        return value?.value || 0;
       }
     }
     
@@ -318,7 +318,7 @@ export class HealthMonitor {
       if (result.status === 'fulfilled') {
         healthResults.set(result.value[0], result.value[1]);
       } else {
-        healthResults.set(checkName, {
+        healthResults.set(checkName || 'unknown', {
           status: 'unhealthy',
           message: 'Failed to run health check',
           responseTime: 0
