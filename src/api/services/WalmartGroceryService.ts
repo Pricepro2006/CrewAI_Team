@@ -4,8 +4,8 @@
  */
 
 import { logger } from "../../utils/logger";
-import { WalmartProductRepository, SubstitutionRepository, UserPreferencesRepository } from "../../database/repositories/WalmartProductRepository";
-import { GroceryListRepository, GroceryItemRepository, ShoppingSessionRepository } from "../../database/repositories/GroceryRepository";
+import type { WalmartProductRepository, SubstitutionRepository, UserPreferencesRepository } from "../../database/repositories/WalmartProductRepository";
+import type { GroceryListRepository, GroceryItemRepository, ShoppingSessionRepository } from "../../database/repositories/GroceryRepository";
 import { getDatabaseManager } from "../../database/DatabaseManager";
 import { BrightDataScraper } from "./BrightDataScraper";
 import { ProductLookupService } from "./ProductLookupService";
@@ -250,48 +250,64 @@ export class WalmartGroceryService {
   }
 
   /**
-   * Add items to grocery list
+   * Add items to grocery list - OPTIMIZED to prevent N+1 queries
    */
   async addItemsToList(listId: string, items: CartItem[]): Promise<ServiceGroceryItem[]> {
     try {
-      const addedItems: ServiceGroceryItem[] = [];
+      if (items.length === 0) return [];
 
-      for (const item of items) {
-        // Get product details
-        const product = await this.getProductDetails(item.productId);
-        
-        if (!product) {
-          logger.warn("Product not found for list item", "WALMART_SERVICE", { 
-            productId: item.productId 
+      // OPTIMIZATION: Batch fetch all products at once instead of N queries
+      const productIds = items.map(item => item.productId);
+      const products = await this.productRepo.findByIds(productIds);
+      const productMap = new Map(products.map(p => [p.product_id, p]));
+
+      // Use database transaction for consistency
+      return await this.productRepo.transaction(async () => {
+        const addedItems: ServiceGroceryItem[] = [];
+
+        for (const item of items) {
+          const productEntity = productMap.get(item.productId);
+          
+          if (!productEntity) {
+            logger.warn("Product not found for list item", "WALMART_SERVICE", { 
+              productId: item.productId 
+            });
+            continue;
+          }
+
+          // Convert entity to product format
+          const product = this.productRepo.entityToProduct(productEntity);
+
+          const groceryItem = await this.itemRepo.addItem({
+            list_id: listId,
+            item_name: product.name,
+            product_id: product.id,
+            category: product.category?.split("/")[0],
+            quantity: item.quantity,
+            estimated_price: product.price,
+            notes: item.notes
           });
-          continue;
+
+          addedItems.push(convertRepoGroceryItemToService(groceryItem));
         }
 
-        const groceryItem = await this.itemRepo.addItem({
-          list_id: listId,
-          item_name: product.name,
-          product_id: product.id,
-          category: product.category?.split("/")[0],
-          quantity: item.quantity,
-          estimated_price: product.price,
-          notes: item.notes
+        logger.info("Added items to list with batch optimization", "WALMART_SERVICE", { 
+          listId, 
+          itemCount: addedItems.length,
+          batchSize: productIds.length
         });
 
-        addedItems.push(convertRepoGroceryItemToService(groceryItem));
-      }
-
-      // Update list total
-      await this.updateListTotal(listId);
-
-      logger.info("Added items to list", "WALMART_SERVICE", { 
-        listId, 
-        itemCount: addedItems.length 
+        return addedItems;
       });
 
-      return addedItems;
     } catch (error) {
       logger.error("Failed to add items to list", "WALMART_SERVICE", { error });
       throw error;
+    } finally {
+      // Update list total asynchronously to avoid blocking
+      this.updateListTotal(listId).catch(err => 
+        logger.error("Failed to update list total", "WALMART_SERVICE", { listId, error: err })
+      );
     }
   }
 

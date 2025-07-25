@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
-import Database from "better-sqlite3";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import Database from 'better-sqlite3';
+import * as bcrypt from "bcrypt";
+import * as jwt from "jsonwebtoken";
 import appConfig from "../../config/app.config";
 import { logger } from "../../utils/logger";
 
