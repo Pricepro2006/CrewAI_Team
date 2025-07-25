@@ -1,410 +1,583 @@
 /**
- * Walmart Product Repository - Data access layer for Walmart products
- * Handles product data, substitutions, and user preferences
+ * Walmart Product Repository - Data access layer for Walmart product data
+ * Handles product information, pricing, and substitutions
  */
 
-import Database from 'better-sqlite3';
+import type Database from "better-sqlite3";
 import { BaseRepository } from "./BaseRepository";
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger";
-import type { WalmartProduct } from "../../types/walmart-grocery";
 
-// Database entity types
-export interface ProductEntity {
-  id: string;
+// Types for Walmart product entities
+export interface WalmartProduct {
   product_id: string;
   name: string;
   brand?: string;
   description?: string;
-  category?: string;
-  subcategory?: string;
+  category_path?: string;
   department?: string;
-  price: number;
-  original_price?: number;
-  currency?: string;
-  unit?: string;
-  size?: string;
-  weight?: string;
-  sku?: string;
+  current_price?: number;
+  regular_price?: number;
+  unit_price?: number;
+  unit_measure?: string;
+  in_stock?: boolean;
+  stock_level?: number;
+  online_only?: boolean;
+  store_only?: boolean;
   upc?: string;
-  in_stock: boolean;
-  stock_quantity?: number;
-  store_id?: string;
-  aisle_location?: string;
-  image_url?: string;
+  sku?: string;
+  model_number?: string;
+  manufacturer?: string;
   thumbnail_url?: string;
-  rating?: number;
+  large_image_url?: string;
+  average_rating?: number;
   review_count?: number;
-  is_featured?: boolean;
-  is_on_sale?: boolean;
-  sale_end_date?: string;
-  attributes?: any;
   nutritional_info?: any;
-  created_at?: string;
-  updated_at?: string;
+  ingredients?: string;
+  allergens?: string[];
+  size_info?: string;
+  weight_info?: string;
+  product_attributes?: any;
+  search_keywords?: string;
+  embedding_vector?: Buffer;
+  first_seen_at?: string;
+  last_updated_at?: string;
+  last_checked_at?: string;
 }
 
-export interface SubstitutionEntity {
-  id: string;
-  original_product_id: string;
-  substitute_product_id: string;
-  confidence_score: number;
+export interface PriceHistory {
+  id?: string;
+  product_id: string;
+  price: number;
+  was_on_sale?: boolean;
+  sale_percentage?: number;
+  store_id?: string;
+  availability?: string;
+  recorded_at?: string;
+}
+
+export interface GrocerySubstitution {
+  id?: string;
+  original_product_id?: string;
+  substitute_product_id?: string;
   reason?: string;
+  similarity_score?: number;
   price_difference?: number;
-  size_difference?: string;
-  approved_count?: number;
-  rejected_count?: number;
+  user_id?: string;
+  accepted?: boolean;
+  rating?: number;
+  feedback?: string;
+  suggested_by?: "system" | "user" | "store";
   created_at?: string;
-  updated_at?: string;
 }
 
-export interface UserPreferencesEntity {
-  id: string;
+export interface UserPreferences {
+  id?: string;
   user_id: string;
-  preference_type: string;
-  preference_value: any;
+  default_store_id?: string;
+  preferred_brands?: any;
+  avoided_brands?: string[];
+  dietary_restrictions?: string[];
+  allergens?: string[];
+  preferred_organic?: boolean;
+  preferred_local?: boolean;
+  monthly_budget?: number;
+  price_sensitivity?: "low" | "medium" | "high";
+  typical_shop_day?: string;
+  typical_shop_time?: string;
+  avg_items_per_trip?: number;
+  allow_substitutions?: boolean;
+  substitution_rules?: any;
+  notification_preferences?: any;
+  language_preference?: string;
+  assistant_personality?: "professional" | "friendly" | "helpful" | "concise";
+  suggestion_frequency?: "minimal" | "moderate" | "frequent";
+  onboarding_completed?: boolean;
+  last_preference_review?: string;
   created_at?: string;
   updated_at?: string;
 }
 
-export class WalmartProductRepository extends BaseRepository<ProductEntity> {
+export class WalmartProductRepository extends BaseRepository {
   constructor(db: Database.Database) {
     super(db, "walmart_products");
   }
 
-  /**
-   * Create or update a product
-   */
-  async upsertProduct(product: Partial<WalmartProduct>): Promise<ProductEntity> {
-    const entity: ProductEntity = {
-      id: uuidv4(),
-      product_id: product.id!,
-      name: product.name!,
-      brand: product.brand,
-      description: product.description,
-      category: product.category,
-      subcategory: product.subcategory,
-      department: product.department,
-      price: product.price || 0,
-      original_price: product.originalPrice,
-      currency: "USD",
-      unit: product.unit,
-      size: product.size,
-      in_stock: product.inStock ?? true,
-      stock_quantity: product.stockLevel,
-      store_id: product.storeId,
-      aisle_location: product.location?.aisle,
-      image_url: product.imageUrl,
-      thumbnail_url: product.thumbnailUrl,
-      rating: product.ratings?.average,
-      review_count: product.ratings?.count,
-      nutritional_info: product.nutritionalInfo,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+  async upsertProduct(data: WalmartProduct): Promise<WalmartProduct> {
+    const stmt = this.db.prepare(`
+      INSERT INTO walmart_products (
+        product_id, name, brand, description, category_path, department,
+        current_price, regular_price, unit_price, unit_measure,
+        in_stock, stock_level, online_only, store_only,
+        upc, sku, model_number, manufacturer,
+        thumbnail_url, large_image_url, average_rating, review_count,
+        nutritional_info, ingredients, allergens,
+        size_info, weight_info, product_attributes,
+        search_keywords, embedding_vector,
+        last_updated_at, last_checked_at
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      )
+      ON CONFLICT(product_id) DO UPDATE SET
+        name = excluded.name,
+        brand = excluded.brand,
+        description = excluded.description,
+        category_path = excluded.category_path,
+        department = excluded.department,
+        current_price = excluded.current_price,
+        regular_price = excluded.regular_price,
+        unit_price = excluded.unit_price,
+        unit_measure = excluded.unit_measure,
+        in_stock = excluded.in_stock,
+        stock_level = excluded.stock_level,
+        online_only = excluded.online_only,
+        store_only = excluded.store_only,
+        upc = excluded.upc,
+        sku = excluded.sku,
+        model_number = excluded.model_number,
+        manufacturer = excluded.manufacturer,
+        thumbnail_url = excluded.thumbnail_url,
+        large_image_url = excluded.large_image_url,
+        average_rating = excluded.average_rating,
+        review_count = excluded.review_count,
+        nutritional_info = excluded.nutritional_info,
+        ingredients = excluded.ingredients,
+        allergens = excluded.allergens,
+        size_info = excluded.size_info,
+        weight_info = excluded.weight_info,
+        product_attributes = excluded.product_attributes,
+        search_keywords = excluded.search_keywords,
+        embedding_vector = excluded.embedding_vector,
+        last_updated_at = CURRENT_TIMESTAMP,
+        last_checked_at = CURRENT_TIMESTAMP
+    `);
 
-    // Check if product already exists
-    const existing = await this.findOne({ product_id: entity.product_id });
-    
-    if (existing) {
-      // Update existing product
-      const { id, created_at, ...updateData } = entity;
-      await this.update(existing.id, updateData);
-      return { ...existing, ...entity };
-    } else {
-      // Create new product
-      return await this.create(entity);
+    stmt.run(
+      data.product_id,
+      data.name,
+      data.brand,
+      data.description,
+      data.category_path,
+      data.department,
+      data.current_price,
+      data.regular_price,
+      data.unit_price,
+      data.unit_measure,
+      data.in_stock ? 1 : 0,
+      data.stock_level,
+      data.online_only ? 1 : 0,
+      data.store_only ? 1 : 0,
+      data.upc,
+      data.sku,
+      data.model_number,
+      data.manufacturer,
+      data.thumbnail_url,
+      data.large_image_url,
+      data.average_rating,
+      data.review_count,
+      JSON.stringify(data.nutritional_info),
+      data.ingredients,
+      JSON.stringify(data.allergens),
+      data.size_info,
+      data.weight_info,
+      JSON.stringify(data.product_attributes),
+      data.search_keywords,
+      data.embedding_vector,
+    );
+
+    logger.info(`Upserted Walmart product: ${data.product_id}`, "WALMART_REPO");
+    return this.getProduct(data.product_id);
+  }
+
+  async getProduct(productId: string): Promise<WalmartProduct> {
+    const row = this.db
+      .prepare("SELECT * FROM walmart_products WHERE product_id = ?")
+      .get(productId) as any;
+    if (!row) {
+      throw new Error(`Walmart product not found: ${productId}`);
     }
+    return this.mapRowToProduct(row);
   }
 
-  /**
-   * Find product by Walmart product ID
-   */
-  async findByProductId(productId: string): Promise<ProductEntity | null> {
-    return await this.findOne({ product_id: productId });
-  }
-
-  /**
-   * Find multiple products by their IDs (prevents N+1 queries)
-   */
-  async findByIds(productIds: string[]): Promise<ProductEntity[]> {
-    if (productIds.length === 0) return [];
-    
-    return await this.findAll({
-      where: { product_id: productIds }
-    });
-  }
-
-  /**
-   * Search products by name or brand
-   */
   async searchProducts(
     query: string,
-    options?: {
-      category?: string;
-      inStock?: boolean;
-      storeId?: string;
-      limit?: number;
-      offset?: number;
-    }
-  ): Promise<ProductEntity[]> {
-    const searchColumns = ["name", "brand", "description", "category"];
-    const where: Record<string, any> = {};
-
-    if (options?.category) {
-      where.category = options.category;
-    }
-    if (options?.inStock !== undefined) {
-      where.in_stock = options.inStock;
-    }
-    if (options?.storeId) {
-      where.store_id = options.storeId;
-    }
-
-    return await this.search(query, searchColumns, {
-      where,
-      limit: options?.limit,
-      offset: options?.offset
-    });
-  }
-
-  /**
-   * Get products by category
-   */
-  async getByCategory(
-    category: string,
-    options?: {
-      subcategory?: string;
-      inStock?: boolean;
-      limit?: number;
-      offset?: number;
-    }
-  ): Promise<ProductEntity[]> {
-    const where: Record<string, any> = { category };
-
-    if (options?.subcategory) {
-      where.subcategory = options.subcategory;
-    }
-    if (options?.inStock !== undefined) {
-      where.in_stock = options.inStock;
-    }
-
-    return await this.findAll({
-      where,
-      limit: options?.limit,
-      offset: options?.offset,
-      orderBy: "name"
-    });
-  }
-
-  /**
-   * Get featured products
-   */
-  async getFeaturedProducts(limit: number = 10): Promise<ProductEntity[]> {
-    return await this.findAll({
-      where: { is_featured: true, in_stock: true },
-      limit,
-      orderBy: "updated_at",
-      orderDirection: "DESC"
-    });
-  }
-
-  /**
-   * Get products on sale
-   */
-  async getOnSaleProducts(limit: number = 20): Promise<ProductEntity[]> {
-    const now = new Date().toISOString();
-    const query = `
+    limit: number = 20,
+  ): Promise<WalmartProduct[]> {
+    const rows = this.db
+      .prepare(
+        `
       SELECT * FROM walmart_products 
-      WHERE is_on_sale = 1 
-        AND in_stock = 1 
-        AND (sale_end_date IS NULL OR sale_end_date > ?)
-      ORDER BY (original_price - price) DESC
+      WHERE name LIKE ? OR brand LIKE ? OR search_keywords LIKE ?
+      ORDER BY 
+        CASE 
+          WHEN name LIKE ? THEN 1
+          WHEN brand LIKE ? THEN 2
+          ELSE 3
+        END,
+        average_rating DESC
       LIMIT ?
-    `;
-    
-    return this.executeQuery<ProductEntity[]>(query, [now, limit]);
+    `,
+      )
+      .all(
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        `${query}%`,
+        `${query}%`,
+        limit,
+      ) as any[];
+
+    return rows.map((row) => this.mapRowToProduct(row));
   }
 
-  /**
-   * Convert entity to WalmartProduct type
-   */
-  entityToProduct(entity: ProductEntity): WalmartProduct {
+  async getProductsByCategory(
+    category: string,
+    inStockOnly: boolean = false,
+  ): Promise<WalmartProduct[]> {
+    let query = "SELECT * FROM walmart_products WHERE category_path LIKE ?";
+    const params: any[] = [`%${category}%`];
+
+    if (inStockOnly) {
+      query += " AND in_stock = 1";
+    }
+
+    query += " ORDER BY average_rating DESC";
+
+    const rows = this.db.prepare(query).all(...params) as any[];
+    return rows.map((row) => this.mapRowToProduct(row));
+  }
+
+  async recordPriceHistory(
+    productId: string,
+    price: number,
+    onSale: boolean = false,
+  ): Promise<void> {
+    const product = await this.getProduct(productId);
+    const salePercentage =
+      onSale && product.regular_price
+        ? Math.round((1 - price / product.regular_price) * 100)
+        : null;
+
+    const stmt = this.db.prepare(`
+      INSERT INTO price_history (
+        id, product_id, price, was_on_sale, sale_percentage
+      ) VALUES (?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(uuidv4(), productId, price, onSale ? 1 : 0, salePercentage);
+  }
+
+  async getPriceHistory(
+    productId: string,
+    days: number = 30,
+  ): Promise<PriceHistory[]> {
+    const rows = this.db
+      .prepare(
+        `
+      SELECT * FROM price_history 
+      WHERE product_id = ? 
+        AND recorded_at >= datetime('now', '-${days} days')
+      ORDER BY recorded_at DESC
+    `,
+      )
+      .all(productId) as any[];
+
+    return rows.map((row) => ({
+      ...row,
+      was_on_sale: !!row.was_on_sale,
+    }));
+  }
+
+  async getLowestPrice(
+    productId: string,
+    days: number = 30,
+  ): Promise<number | null> {
+    const result = this.db
+      .prepare(
+        `
+      SELECT MIN(price) as lowest_price
+      FROM price_history 
+      WHERE product_id = ? 
+        AND recorded_at >= datetime('now', '-${days} days')
+    `,
+      )
+      .get(productId) as { lowest_price: number | null };
+
+    return result.lowest_price;
+  }
+
+  async findSimilarProducts(
+    productId: string,
+    limit: number = 5,
+  ): Promise<WalmartProduct[]> {
+    const product = await this.getProduct(productId);
+
+    // Simple similarity based on category and brand
+    const rows = this.db
+      .prepare(
+        `
+      SELECT * FROM walmart_products 
+      WHERE product_id != ?
+        AND category_path = ?
+        AND (brand = ? OR brand IS NULL)
+        AND in_stock = 1
+      ORDER BY 
+        ABS(current_price - ?) ASC,
+        average_rating DESC
+      LIMIT ?
+    `,
+      )
+      .all(
+        productId,
+        product.category_path,
+        product.brand,
+        product.current_price || 0,
+        limit,
+      ) as any[];
+
+    return rows.map((row) => this.mapRowToProduct(row));
+  }
+
+  private mapRowToProduct(row: any): WalmartProduct {
     return {
-      id: entity.product_id,
-      name: entity.name,
-      brand: entity.brand,
-      description: entity.description,
-      category: entity.category!,
-      subcategory: entity.subcategory,
-      department: entity.department,
-      price: entity.price,
-      originalPrice: entity.original_price,
-      unit: entity.unit || "each",
-      size: entity.size,
-      imageUrl: entity.image_url,
-      thumbnailUrl: entity.thumbnail_url,
-      inStock: entity.in_stock,
-      stockLevel: entity.stock_quantity,
-      storeId: entity.store_id,
-      location: entity.aisle_location ? { aisle: entity.aisle_location } : undefined,
-      ratings: entity.rating ? {
-        average: entity.rating,
-        count: entity.review_count || 0
-      } : undefined,
-      nutritionalInfo: entity.nutritional_info
+      ...row,
+      in_stock: !!row.in_stock,
+      online_only: !!row.online_only,
+      store_only: !!row.store_only,
+      nutritional_info: row.nutritional_info
+        ? JSON.parse(row.nutritional_info)
+        : null,
+      allergens: row.allergens ? JSON.parse(row.allergens) : [],
+      product_attributes: row.product_attributes
+        ? JSON.parse(row.product_attributes)
+        : null,
     };
   }
 }
 
-export class SubstitutionRepository extends BaseRepository<SubstitutionEntity> {
+export class SubstitutionRepository extends BaseRepository {
   constructor(db: Database.Database) {
-    super(db, "product_substitutions");
+    super(db, "grocery_substitutions");
   }
 
-  /**
-   * Find substitutions for a product
-   */
-  async findSubstitutions(
-    productId: string,
-    limit: number = 5
-  ): Promise<SubstitutionEntity[]> {
-    return await this.findAll({
-      where: { original_product_id: productId },
-      limit,
-      orderBy: "confidence_score",
-      orderDirection: "DESC"
-    });
-  }
-
-  /**
-   * Add or update a substitution
-   */
-  async upsertSubstitution(data: {
-    originalProductId: string;
-    substituteProductId: string;
-    confidence: number;
-    reason?: string;
-    priceDifference?: number;
-  }): Promise<SubstitutionEntity> {
-    const existing = await this.findOne({
-      original_product_id: data.originalProductId,
-      substitute_product_id: data.substituteProductId
-    });
-
-    const entity: Partial<SubstitutionEntity> = {
-      confidence_score: data.confidence,
-      reason: data.reason,
-      price_difference: data.priceDifference,
-      updated_at: new Date().toISOString()
+  async recordSubstitution(
+    data: GrocerySubstitution,
+  ): Promise<GrocerySubstitution> {
+    const substitution: GrocerySubstitution = {
+      ...data,
+      id: data.id || uuidv4(),
+      suggested_by: data.suggested_by || "system",
+      created_at: data.created_at || new Date().toISOString(),
     };
 
-    if (existing) {
-      await this.update(existing.id, entity);
-      return { ...existing, ...entity } as SubstitutionEntity;
-    } else {
-      return await this.create({
-        original_product_id: data.originalProductId,
-        substitute_product_id: data.substituteProductId,
-        confidence_score: data.confidence,
-        reason: data.reason,
-        price_difference: data.priceDifference,
-        approved_count: 0,
-        rejected_count: 0
-      });
-    }
+    const stmt = this.db.prepare(`
+      INSERT INTO grocery_substitutions (
+        id, original_product_id, substitute_product_id, reason,
+        similarity_score, price_difference, user_id, accepted,
+        rating, feedback, suggested_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(
+      substitution.id,
+      substitution.original_product_id,
+      substitution.substitute_product_id,
+      substitution.reason,
+      substitution.similarity_score,
+      substitution.price_difference,
+      substitution.user_id,
+      substitution.accepted ? 1 : 0,
+      substitution.rating,
+      substitution.feedback,
+      substitution.suggested_by,
+    );
+
+    return substitution;
   }
 
-  /**
-   * Update substitution feedback
-   */
+  async getSubstitutionHistory(
+    productId: string,
+  ): Promise<GrocerySubstitution[]> {
+    const rows = this.db
+      .prepare(
+        `
+      SELECT * FROM grocery_substitutions 
+      WHERE original_product_id = ? OR substitute_product_id = ?
+      ORDER BY created_at DESC
+    `,
+      )
+      .all(productId, productId) as any[];
+
+    return rows.map((row) => ({
+      ...row,
+      accepted: !!row.accepted,
+    }));
+  }
+
+  async getAcceptedSubstitutions(
+    userId: string,
+  ): Promise<GrocerySubstitution[]> {
+    const rows = this.db
+      .prepare(
+        `
+      SELECT * FROM grocery_substitutions 
+      WHERE user_id = ? AND accepted = 1 AND rating >= 4
+      ORDER BY created_at DESC
+    `,
+      )
+      .all(userId) as any[];
+
+    return rows.map((row) => ({
+      ...row,
+      accepted: true,
+    }));
+  }
+
   async updateFeedback(
     id: string,
-    approved: boolean
+    accepted: boolean,
+    rating?: number,
+    feedback?: string,
   ): Promise<void> {
-    const substitution = await this.findById(id);
-    if (!substitution) return;
+    const stmt = this.db.prepare(`
+      UPDATE grocery_substitutions 
+      SET accepted = ?, rating = ?, feedback = ?
+      WHERE id = ?
+    `);
 
-    await this.update(id, {
-      approved_count: (substitution.approved_count || 0) + (approved ? 1 : 0),
-      rejected_count: (substitution.rejected_count || 0) + (approved ? 0 : 1)
-    });
+    stmt.run(accepted ? 1 : 0, rating, feedback, id);
   }
 }
 
-export class UserPreferencesRepository extends BaseRepository<UserPreferencesEntity> {
+export class UserPreferencesRepository extends BaseRepository {
   constructor(db: Database.Database) {
-    super(db, "user_preferences");
+    super(db, "grocery_user_preferences");
   }
 
-  /**
-   * Get all preferences for a user
-   */
-  async getUserPreferences(userId: string): Promise<Record<string, any>> {
-    const prefs = await this.findAll({
-      where: { user_id: userId }
-    });
+  async upsertPreferences(data: UserPreferences): Promise<UserPreferences> {
+    const preferences: UserPreferences = {
+      ...data,
+      id: data.id || uuidv4(),
+      preferred_organic: data.preferred_organic ?? false,
+      preferred_local: data.preferred_local ?? false,
+      price_sensitivity: data.price_sensitivity || "medium",
+      allow_substitutions: data.allow_substitutions ?? true,
+      language_preference: data.language_preference || "en",
+      assistant_personality: data.assistant_personality || "helpful",
+      suggestion_frequency: data.suggestion_frequency || "moderate",
+      onboarding_completed: data.onboarding_completed ?? false,
+    };
 
-    const preferences: Record<string, any> = {};
-    prefs.forEach(pref => {
-      preferences[pref.preference_type] = pref.preference_value;
-    });
+    const stmt = this.db.prepare(`
+      INSERT INTO grocery_user_preferences (
+        id, user_id, default_store_id, preferred_brands, avoided_brands,
+        dietary_restrictions, allergens, preferred_organic, preferred_local,
+        monthly_budget, price_sensitivity, typical_shop_day, typical_shop_time,
+        avg_items_per_trip, allow_substitutions, substitution_rules,
+        notification_preferences, language_preference, assistant_personality,
+        suggestion_frequency, onboarding_completed, last_preference_review
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        default_store_id = excluded.default_store_id,
+        preferred_brands = excluded.preferred_brands,
+        avoided_brands = excluded.avoided_brands,
+        dietary_restrictions = excluded.dietary_restrictions,
+        allergens = excluded.allergens,
+        preferred_organic = excluded.preferred_organic,
+        preferred_local = excluded.preferred_local,
+        monthly_budget = excluded.monthly_budget,
+        price_sensitivity = excluded.price_sensitivity,
+        typical_shop_day = excluded.typical_shop_day,
+        typical_shop_time = excluded.typical_shop_time,
+        avg_items_per_trip = excluded.avg_items_per_trip,
+        allow_substitutions = excluded.allow_substitutions,
+        substitution_rules = excluded.substitution_rules,
+        notification_preferences = excluded.notification_preferences,
+        language_preference = excluded.language_preference,
+        assistant_personality = excluded.assistant_personality,
+        suggestion_frequency = excluded.suggestion_frequency,
+        onboarding_completed = excluded.onboarding_completed,
+        last_preference_review = excluded.last_preference_review,
+        updated_at = CURRENT_TIMESTAMP
+    `);
 
-    return preferences;
+    stmt.run(
+      preferences.id,
+      preferences.user_id,
+      preferences.default_store_id,
+      JSON.stringify(preferences.preferred_brands),
+      JSON.stringify(preferences.avoided_brands),
+      JSON.stringify(preferences.dietary_restrictions),
+      JSON.stringify(preferences.allergens),
+      preferences.preferred_organic ? 1 : 0,
+      preferences.preferred_local ? 1 : 0,
+      preferences.monthly_budget,
+      preferences.price_sensitivity,
+      preferences.typical_shop_day,
+      preferences.typical_shop_time,
+      preferences.avg_items_per_trip,
+      preferences.allow_substitutions ? 1 : 0,
+      JSON.stringify(preferences.substitution_rules),
+      JSON.stringify(preferences.notification_preferences),
+      preferences.language_preference,
+      preferences.assistant_personality,
+      preferences.suggestion_frequency,
+      preferences.onboarding_completed ? 1 : 0,
+      preferences.last_preference_review,
+    );
+
+    return this.getPreferences(preferences.user_id);
   }
 
-  /**
-   * Set a user preference
-   */
-  async setPreference(
-    userId: string,
-    type: string,
-    value: any
-  ): Promise<UserPreferencesEntity> {
-    const existing = await this.findOne({
-      user_id: userId,
-      preference_type: type
-    });
-
-    if (existing) {
-      await this.update(existing.id, {
-        preference_value: value,
-        updated_at: new Date().toISOString()
-      });
-      return { ...existing, preference_value: value };
-    } else {
-      return await this.create({
-        user_id: userId,
-        preference_type: type,
-        preference_value: value
-      });
+  async getPreferences(userId: string): Promise<UserPreferences | null> {
+    const row = this.db
+      .prepare("SELECT * FROM grocery_user_preferences WHERE user_id = ?")
+      .get(userId) as any;
+    if (!row) {
+      return null;
     }
+    return this.mapRowToPreferences(row);
   }
 
-  /**
-   * Delete a user preference
-   */
-  async deletePreference(userId: string, type: string): Promise<boolean> {
-    const deleted = await this.deleteWhere({
-      user_id: userId,
-      preference_type: type
-    });
-    return deleted > 0;
-  }
-
-  /**
-   * Get preference value with default
-   */
-  async getPreference<T = any>(
+  async updatePreference<K extends keyof UserPreferences>(
     userId: string,
-    type: string,
-    defaultValue: T
-  ): Promise<T> {
-    const pref = await this.findOne({
-      user_id: userId,
-      preference_type: type
-    });
+    key: K,
+    value: UserPreferences[K],
+  ): Promise<UserPreferences> {
+    const preferences = await this.getPreferences(userId);
+    if (!preferences) {
+      throw new Error(`User preferences not found: ${userId}`);
+    }
 
-    return pref ? pref.preference_value : defaultValue;
+    const updates: Partial<UserPreferences> = { [key]: value };
+    return this.upsertPreferences({ ...preferences, ...updates });
+  }
+
+  async completeOnboarding(userId: string): Promise<UserPreferences> {
+    return this.updatePreference(userId, "onboarding_completed", true);
+  }
+
+  private mapRowToPreferences(row: any): UserPreferences {
+    return {
+      ...row,
+      preferred_organic: !!row.preferred_organic,
+      preferred_local: !!row.preferred_local,
+      allow_substitutions: !!row.allow_substitutions,
+      onboarding_completed: !!row.onboarding_completed,
+      preferred_brands: row.preferred_brands
+        ? JSON.parse(row.preferred_brands)
+        : {},
+      avoided_brands: row.avoided_brands ? JSON.parse(row.avoided_brands) : [],
+      dietary_restrictions: row.dietary_restrictions
+        ? JSON.parse(row.dietary_restrictions)
+        : [],
+      allergens: row.allergens ? JSON.parse(row.allergens) : [],
+      substitution_rules: row.substitution_rules
+        ? JSON.parse(row.substitution_rules)
+        : {},
+      notification_preferences: row.notification_preferences
+        ? JSON.parse(row.notification_preferences)
+        : {},
+    };
   }
 }

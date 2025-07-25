@@ -37,7 +37,7 @@ async function testUIIntegration() {
         logger.info(`Email ${email.id} has analysis data:`, "TEST_UI", {
           quick: emailWithAnalysis.analysis.quick ? "Yes" : "No",
           deep: emailWithAnalysis.analysis.deep ? "Yes" : "No",
-          metadata: emailWithAnalysis.analysis.metadata ? "Yes" : "No",
+          metadata: emailWithAnalysis.analysis.processingMetadata ? "Yes" : "No",
         });
 
         // Log sample analysis data
@@ -46,8 +46,8 @@ async function testUIIntegration() {
             priority: emailWithAnalysis.analysis.quick?.priority,
             workflow: emailWithAnalysis.analysis.quick?.workflow,
             businessProcess: emailWithAnalysis.analysis.deep?.businessProcess,
-            model: emailWithAnalysis.analysis.metadata?.model,
-            confidence: emailWithAnalysis.analysis.metadata?.confidence,
+            model: emailWithAnalysis.analysis.processingMetadata?.model,
+            confidence: emailWithAnalysis.analysis.processingMetadata?.confidence,
           });
         }
       }

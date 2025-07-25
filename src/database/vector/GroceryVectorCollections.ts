@@ -1,516 +1,513 @@
 /**
- * Grocery Vector Collections - ChromaDB collections for Walmart grocery features
- * Manages product embeddings, search history, and recommendation vectors
+ * Grocery Vector Collections - ChromaDB collections for Walmart grocery agent
+ * Manages vector storage for products, recipes, and shopping patterns
  */
 
-import type { ChromaClient, Collection } from "chromadb";
+import type { ChromaDBManager, CollectionConfig } from "./ChromaDBManager";
 import { logger } from "../../utils/logger";
-import type { WalmartProduct } from "../../types/walmart-grocery";
 
-interface CollectionConfig {
+export interface ProductVector {
+  product_id: string;
   name: string;
-  metadata: Record<string, any>;
-  embeddingFunction?: any;
+  brand: string;
+  category: string;
+  description: string;
+  search_text: string;
+  price_range: "budget" | "mid" | "premium";
+  dietary_tags: string[];
 }
 
-interface ProductEmbedding {
-  id: string;
-  embedding: number[];
-  metadata: {
-    name: string;
-    brand?: string;
-    category?: string;
-    price?: number;
-    inStock?: boolean;
-    rating?: number;
-    department?: string;
-  };
-  document: string;
+export interface RecipeVector {
+  recipe_id: string;
+  name: string;
+  ingredients: string[];
+  cuisine_type: string;
+  meal_type: string;
+  prep_time: number;
+  difficulty: "easy" | "medium" | "hard";
+  dietary_info: string[];
+}
+
+export interface ShoppingPatternVector {
+  pattern_id: string;
+  user_id: string;
+  pattern_type: "weekly" | "monthly" | "seasonal";
+  common_items: string[];
+  shopping_frequency: number;
+  average_spend: number;
 }
 
 export class GroceryVectorCollections {
-  private client: ChromaClient;
-  private collections: Map<string, Collection> = new Map();
-  private initialized: boolean = false;
+  private chromaManager: ChromaDBManager;
 
-  // Collection names
-  private readonly PRODUCTS_COLLECTION = "walmart_products";
-  private readonly SEARCH_HISTORY_COLLECTION = "walmart_search_history";
-  private readonly USER_PREFERENCES_COLLECTION = "walmart_user_preferences";
-  private readonly RECOMMENDATIONS_COLLECTION = "walmart_recommendations";
+  // Collection configurations
+  private readonly COLLECTIONS: Record<string, CollectionConfig> = {
+    walmart_products: {
+      name: "walmart_products",
+      description: "Vector embeddings for Walmart grocery products",
+      metadataSchema: {
+        product_id: {
+          type: "string",
+          required: true,
+          description: "Walmart product ID",
+        },
+        name: { type: "string", required: true, description: "Product name" },
+        brand: {
+          type: "string",
+          required: false,
+          description: "Product brand",
+        },
+        category: {
+          type: "string",
+          required: true,
+          description: "Product category",
+        },
+        department: {
+          type: "string",
+          required: false,
+          description: "Store department",
+        },
+        price: {
+          type: "number",
+          required: false,
+          description: "Current price",
+        },
+        in_stock: {
+          type: "boolean",
+          required: false,
+          description: "Stock availability",
+        },
+        dietary_tags: {
+          type: "array",
+          required: false,
+          description: "Dietary information tags",
+        },
+        allergens: {
+          type: "array",
+          required: false,
+          description: "Allergen information",
+        },
+      },
+    },
 
-  constructor(client: ChromaClient) {
-    this.client = client;
+    recipes: {
+      name: "recipes",
+      description: "Vector embeddings for recipes and meal ideas",
+      metadataSchema: {
+        recipe_id: {
+          type: "string",
+          required: true,
+          description: "Recipe identifier",
+        },
+        name: { type: "string", required: true, description: "Recipe name" },
+        cuisine_type: {
+          type: "string",
+          required: false,
+          description: "Cuisine category",
+        },
+        meal_type: {
+          type: "string",
+          required: false,
+          description: "Meal type (breakfast, lunch, dinner)",
+        },
+        prep_time: {
+          type: "number",
+          required: false,
+          description: "Preparation time in minutes",
+        },
+        servings: {
+          type: "number",
+          required: false,
+          description: "Number of servings",
+        },
+        difficulty: {
+          type: "string",
+          required: false,
+          description: "Recipe difficulty level",
+        },
+        dietary_info: {
+          type: "array",
+          required: false,
+          description: "Dietary compatibility",
+        },
+        total_cost: {
+          type: "number",
+          required: false,
+          description: "Estimated total cost",
+        },
+      },
+    },
+
+    shopping_patterns: {
+      name: "shopping_patterns",
+      description: "User shopping patterns and preferences",
+      metadataSchema: {
+        user_id: {
+          type: "string",
+          required: true,
+          description: "User identifier",
+        },
+        pattern_type: {
+          type: "string",
+          required: true,
+          description: "Pattern classification",
+        },
+        frequency: {
+          type: "number",
+          required: false,
+          description: "Shopping frequency (times per month)",
+        },
+        avg_spend: {
+          type: "number",
+          required: false,
+          description: "Average spending amount",
+        },
+        preferred_day: {
+          type: "string",
+          required: false,
+          description: "Preferred shopping day",
+        },
+        store_preference: {
+          type: "string",
+          required: false,
+          description: "Preferred store location",
+        },
+      },
+    },
+
+    substitutions: {
+      name: "substitutions",
+      description: "Product substitution mappings and preferences",
+      metadataSchema: {
+        original_product_id: {
+          type: "string",
+          required: true,
+          description: "Original product ID",
+        },
+        substitute_product_id: {
+          type: "string",
+          required: true,
+          description: "Substitute product ID",
+        },
+        similarity_score: {
+          type: "number",
+          required: true,
+          description: "Similarity score (0-1)",
+        },
+        price_difference: {
+          type: "number",
+          required: false,
+          description: "Price difference",
+        },
+        substitution_reason: {
+          type: "string",
+          required: false,
+          description: "Reason for substitution",
+        },
+        user_rating: {
+          type: "number",
+          required: false,
+          description: "User rating of substitution",
+        },
+      },
+    },
+
+    meal_plans: {
+      name: "meal_plans",
+      description: "Weekly meal plans and shopping lists",
+      metadataSchema: {
+        plan_id: {
+          type: "string",
+          required: true,
+          description: "Meal plan identifier",
+        },
+        user_id: {
+          type: "string",
+          required: false,
+          description: "Associated user",
+        },
+        week_start: {
+          type: "string",
+          required: true,
+          description: "Week start date",
+        },
+        total_recipes: {
+          type: "number",
+          required: true,
+          description: "Number of recipes",
+        },
+        estimated_cost: {
+          type: "number",
+          required: false,
+          description: "Estimated weekly cost",
+        },
+        dietary_focus: {
+          type: "array",
+          required: false,
+          description: "Dietary considerations",
+        },
+        cuisine_variety: {
+          type: "array",
+          required: false,
+          description: "Cuisine types included",
+        },
+      },
+    },
+  };
+
+  constructor(chromaManager: ChromaDBManager) {
+    this.chromaManager = chromaManager;
   }
 
   /**
    * Initialize all grocery-related collections
    */
-  async initialize(): Promise<void> {
-    if (this.initialized) {
-      logger.info("Grocery vector collections already initialized", "GROCERY_VECTORS");
-      return;
+  async initializeCollections(): Promise<void> {
+    logger.info(
+      "Initializing grocery vector collections...",
+      "GROCERY_VECTORS",
+    );
+
+    for (const [key, config] of Object.entries(this.COLLECTIONS)) {
+      try {
+        await this.chromaManager.createCollection(config);
+        logger.info(`Created/verified collection: ${key}`, "GROCERY_VECTORS");
+      } catch (error) {
+        logger.error(
+          `Failed to create collection ${key}: ${error}`,
+          "GROCERY_VECTORS",
+        );
+        throw error;
+      }
     }
 
-    try {
-      logger.info("Initializing grocery vector collections", "GROCERY_VECTORS");
-
-      // Create collections
-      await this.createProductsCollection();
-      await this.createSearchHistoryCollection();
-      await this.createUserPreferencesCollection();
-      await this.createRecommendationsCollection();
-
-      this.initialized = true;
-      logger.info("Grocery vector collections initialized successfully", "GROCERY_VECTORS");
-    } catch (error) {
-      logger.error("Failed to initialize grocery vector collections", "GROCERY_VECTORS", { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Create products collection
-   */
-  private async createProductsCollection(): Promise<void> {
-    try {
-      const collection = await this.client.getOrCreateCollection({
-        name: this.PRODUCTS_COLLECTION,
-        metadata: {
-          description: "Walmart product embeddings for semantic search",
-          created_at: new Date().toISOString(),
-          vector_size: 384,
-          distance_metric: "cosine"
-        }
-      });
-
-      this.collections.set(this.PRODUCTS_COLLECTION, collection);
-      logger.info("Products collection created/loaded", "GROCERY_VECTORS");
-    } catch (error) {
-      logger.error("Failed to create products collection", "GROCERY_VECTORS", { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Create search history collection
-   */
-  private async createSearchHistoryCollection(): Promise<void> {
-    try {
-      const collection = await this.client.getOrCreateCollection({
-        name: this.SEARCH_HISTORY_COLLECTION,
-        metadata: {
-          description: "User search history embeddings for personalization",
-          created_at: new Date().toISOString(),
-          vector_size: 384,
-          distance_metric: "cosine"
-        }
-      });
-
-      this.collections.set(this.SEARCH_HISTORY_COLLECTION, collection);
-      logger.info("Search history collection created/loaded", "GROCERY_VECTORS");
-    } catch (error) {
-      logger.error("Failed to create search history collection", "GROCERY_VECTORS", { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Create user preferences collection
-   */
-  private async createUserPreferencesCollection(): Promise<void> {
-    try {
-      const collection = await this.client.getOrCreateCollection({
-        name: this.USER_PREFERENCES_COLLECTION,
-        metadata: {
-          description: "User preference embeddings for recommendation",
-          created_at: new Date().toISOString(),
-          vector_size: 384,
-          distance_metric: "cosine"
-        }
-      });
-
-      this.collections.set(this.USER_PREFERENCES_COLLECTION, collection);
-      logger.info("User preferences collection created/loaded", "GROCERY_VECTORS");
-    } catch (error) {
-      logger.error("Failed to create user preferences collection", "GROCERY_VECTORS", { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Create recommendations collection
-   */
-  private async createRecommendationsCollection(): Promise<void> {
-    try {
-      const collection = await this.client.getOrCreateCollection({
-        name: this.RECOMMENDATIONS_COLLECTION,
-        metadata: {
-          description: "Product recommendation embeddings",
-          created_at: new Date().toISOString(),
-          vector_size: 384,
-          distance_metric: "cosine"
-        }
-      });
-
-      this.collections.set(this.RECOMMENDATIONS_COLLECTION, collection);
-      logger.info("Recommendations collection created/loaded", "GROCERY_VECTORS");
-    } catch (error) {
-      logger.error("Failed to create recommendations collection", "GROCERY_VECTORS", { error });
-      throw error;
-    }
+    logger.info(
+      "All grocery vector collections initialized",
+      "GROCERY_VECTORS",
+    );
   }
 
   /**
    * Add product to vector database
    */
-  async addProduct(product: WalmartProduct, embedding: number[]): Promise<void> {
-    try {
-      const collection = this.collections.get(this.PRODUCTS_COLLECTION);
-      if (!collection) {
-        throw new Error("Products collection not initialized");
-      }
+  async addProduct(product: ProductVector): Promise<void> {
+    const collection =
+      await this.chromaManager.getCollection("walmart_products");
 
-      const document = this.createProductDocument(product);
-      const metadata = this.createProductMetadata(product);
+    const document = {
+      id: product.product_id,
+      content: `${product.name} ${product.brand} ${product.description} ${product.search_text}`,
+      metadata: {
+        product_id: product.product_id,
+        name: product.name,
+        brand: product.brand || "",
+        category: product.category,
+        dietary_tags: product.dietary_tags || [],
+        price_range: product.price_range,
+      },
+    };
 
-      await collection.add({
-        ids: [product.id],
-        embeddings: [embedding],
-        metadatas: [metadata],
-        documents: [document]
-      });
-
-      logger.info("Added product to vector database", "GROCERY_VECTORS", { 
-        productId: product.id 
-      });
-    } catch (error) {
-      logger.error("Failed to add product to vector database", "GROCERY_VECTORS", { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Add multiple products in batch
-   */
-  async addProductsBatch(products: Array<{ product: WalmartProduct; embedding: number[] }>): Promise<void> {
-    try {
-      const collection = this.collections.get(this.PRODUCTS_COLLECTION);
-      if (!collection) {
-        throw new Error("Products collection not initialized");
-      }
-
-      const ids = products.map(p => p.product.id);
-      const embeddings = products.map(p => p.embedding);
-      const metadatas = products.map(p => this.createProductMetadata(p.product));
-      const documents = products.map(p => this.createProductDocument(p.product));
-
-      await collection.add({
-        ids,
-        embeddings,
-        metadatas,
-        documents
-      });
-
-      logger.info("Added product batch to vector database", "GROCERY_VECTORS", { 
-        count: products.length 
-      });
-    } catch (error) {
-      logger.error("Failed to add product batch", "GROCERY_VECTORS", { error });
-      throw error;
-    }
+    await this.chromaManager.addDocuments("walmart_products", [document]);
   }
 
   /**
    * Search for similar products
    */
   async searchSimilarProducts(
-    queryEmbedding: number[],
-    limit: number = 10,
-    filters?: Record<string, any>
-  ): Promise<Array<{ id: string; score: number; metadata: any }>> {
-    try {
-      const collection = this.collections.get(this.PRODUCTS_COLLECTION);
-      if (!collection) {
-        throw new Error("Products collection not initialized");
-      }
-
-      const results = await collection.query({
-        queryEmbeddings: [queryEmbedding],
-        nResults: limit,
-        where: filters
-      });
-
-      if (!results.ids || !results.ids[0]) {
-        return [];
-      }
-
-      return results.ids[0].map((id, index) => ({
-        id,
-        score: results.distances && results.distances[0] && results.distances[0][index] !== undefined ? 1 - results.distances[0][index] : 0,
-        metadata: results.metadatas && results.metadatas[0] ? results.metadatas[0][index] : {}
-      }));
-    } catch (error) {
-      logger.error("Failed to search similar products", "GROCERY_VECTORS", { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Add search to history
-   */
-  async addSearchHistory(
-    userId: string,
     query: string,
-    embedding: number[],
-    results: string[]
-  ): Promise<void> {
-    try {
-      const collection = this.collections.get(this.SEARCH_HISTORY_COLLECTION);
-      if (!collection) {
-        throw new Error("Search history collection not initialized");
-      }
+    filters?: {
+      category?: string;
+      priceRange?: string;
+      dietaryTags?: string[];
+    },
+    limit: number = 10,
+  ): Promise<ProductVector[]> {
+    const whereClause: any = {};
 
-      const id = `${userId}_${Date.now()}`;
-      const metadata: Record<string, any> = {
-        userId,
-        query,
-        timestamp: new Date().toISOString(),
-        resultCount: results.length,
-        topResults: JSON.stringify(results.slice(0, 5))
-      };
-
-      await collection.add({
-        ids: [id],
-        embeddings: [embedding],
-        metadatas: [metadata],
-        documents: [query]
-      });
-
-      // Clean old entries (keep last 100 per user)
-      await this.cleanOldSearchHistory(userId);
-    } catch (error) {
-      logger.error("Failed to add search history", "GROCERY_VECTORS", { error });
+    if (filters?.category) {
+      whereClause.category = filters.category;
     }
-  }
 
-  /**
-   * Get user search patterns
-   */
-  async getUserSearchPatterns(
-    userId: string,
-    limit: number = 20
-  ): Promise<Array<{ query: string; timestamp: string; frequency: number }>> {
-    try {
-      const collection = this.collections.get(this.SEARCH_HISTORY_COLLECTION);
-      if (!collection) {
-        throw new Error("Search history collection not initialized");
-      }
-
-      const results = await collection.get({
-        where: { userId },
-        limit
-      });
-
-      // Aggregate by query
-      const patterns = new Map<string, { timestamp: string; count: number }>();
-      
-      if (results.metadatas) {
-        results.metadatas.forEach((metadata: any) => {
-          const query = metadata.query;
-          if (!patterns.has(query)) {
-            patterns.set(query, { timestamp: metadata.timestamp, count: 0 });
-          }
-          patterns.get(query)!.count++;
-        });
-      }
-
-      return Array.from(patterns.entries())
-        .map(([query, data]) => ({
-          query,
-          timestamp: data.timestamp,
-          frequency: data.count
-        }))
-        .sort((a, b) => b.frequency - a.frequency);
-    } catch (error) {
-      logger.error("Failed to get user search patterns", "GROCERY_VECTORS", { error });
-      return [];
+    if (filters?.priceRange) {
+      whereClause.price_range = filters.priceRange;
     }
-  }
 
-  /**
-   * Update user preference embedding
-   */
-  async updateUserPreferences(
-    userId: string,
-    preferenceEmbedding: number[],
-    metadata: Record<string, any>
-  ): Promise<void> {
-    try {
-      const collection = this.collections.get(this.USER_PREFERENCES_COLLECTION);
-      if (!collection) {
-        throw new Error("User preferences collection not initialized");
-      }
-
-      // Upsert user preferences
-      await collection.upsert({
-        ids: [userId],
-        embeddings: [preferenceEmbedding],
-        metadatas: [{
-          ...metadata,
-          userId,
-          updatedAt: new Date().toISOString()
-        }],
-        documents: [JSON.stringify(metadata)]
-      });
-
-      logger.info("Updated user preferences", "GROCERY_VECTORS", { userId });
-    } catch (error) {
-      logger.error("Failed to update user preferences", "GROCERY_VECTORS", { error });
-      throw error;
+    if (filters?.dietaryTags && filters.dietaryTags.length > 0) {
+      whereClause.dietary_tags = { $in: filters.dietaryTags };
     }
+
+    const results = await this.chromaManager.query("walmart_products", {
+      queryText: query,
+      nResults: limit,
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+    });
+
+    return results.map((result) => ({
+      product_id: result.metadata.product_id as string,
+      name: result.metadata.name as string,
+      brand: result.metadata.brand as string,
+      category: result.metadata.category as string,
+      description: result.content,
+      search_text: "",
+      price_range: result.metadata.price_range as "budget" | "mid" | "premium",
+      dietary_tags: result.metadata.dietary_tags as string[],
+    }));
   }
 
   /**
-   * Get personalized recommendations
+   * Add recipe to vector database
    */
-  async getPersonalizedRecommendations(
-    userId: string,
-    contextEmbedding: number[],
-    limit: number = 10
-  ): Promise<string[]> {
-    try {
-      // Get user preferences
-      const prefsCollection = this.collections.get(this.USER_PREFERENCES_COLLECTION);
-      const userPrefs = await prefsCollection?.get({ ids: [userId] });
-      
-      // Combine user preferences with context
-      let queryEmbedding = contextEmbedding;
-      if (userPrefs?.embeddings && userPrefs.embeddings[0]) {
-        // Average the embeddings
-        const prefEmbedding = userPrefs.embeddings[0];
-        queryEmbedding = contextEmbedding.map((val, idx) => 
-          (val + (prefEmbedding[idx] ?? 0)) / 2
-        );
-      }
-
-      // Search for products
-      const results = await this.searchSimilarProducts(queryEmbedding, limit);
-      
-      return results.map(r => r.id);
-    } catch (error) {
-      logger.error("Failed to get personalized recommendations", "GROCERY_VECTORS", { error });
-      return [];
-    }
-  }
-
-  /**
-   * Helper: Create product document for indexing
-   */
-  private createProductDocument(product: WalmartProduct): string {
-    const parts = [
-      product.name,
-      product.brand,
-      product.description,
-      product.category,
-      product.department
-    ].filter(Boolean);
-
-    return parts.join(" ");
-  }
-
-  /**
-   * Helper: Create product metadata
-   */
-  private createProductMetadata(product: WalmartProduct): Record<string, any> {
-    return {
-      name: product.name,
-      brand: product.brand,
-      category: product.category,
-      department: product.department,
-      price: product.price,
-      inStock: product.inStock,
-      rating: product.ratings?.average,
-      reviewCount: product.ratings?.count
+  async addRecipe(recipe: RecipeVector): Promise<void> {
+    const document = {
+      id: recipe.recipe_id,
+      content: `${recipe.name} ${recipe.cuisine_type} ${recipe.meal_type} ingredients: ${recipe.ingredients.join(" ")}`,
+      metadata: {
+        recipe_id: recipe.recipe_id,
+        name: recipe.name,
+        cuisine_type: recipe.cuisine_type,
+        meal_type: recipe.meal_type,
+        prep_time: recipe.prep_time,
+        difficulty: recipe.difficulty,
+        dietary_info: recipe.dietary_info,
+        ingredients: recipe.ingredients,
+      },
     };
+
+    await this.chromaManager.addDocuments("recipes", [document]);
   }
 
   /**
-   * Helper: Clean old search history
+   * Find recipes by ingredients
    */
-  private async cleanOldSearchHistory(userId: string): Promise<void> {
-    try {
-      const collection = this.collections.get(this.SEARCH_HISTORY_COLLECTION);
-      if (!collection) return;
+  async findRecipesByIngredients(
+    ingredients: string[],
+    dietaryRestrictions?: string[],
+    limit: number = 5,
+  ): Promise<RecipeVector[]> {
+    const query = `recipe with ${ingredients.join(" and ")}`;
+    const whereClause: any = {};
 
-      // Get all user's searches
-      const results = await collection.get({
-        where: { userId }
-      });
+    if (dietaryRestrictions && dietaryRestrictions.length > 0) {
+      whereClause.dietary_info = { $all: dietaryRestrictions };
+    }
 
-      if (results.ids && results.ids.length > 100) {
-        // Sort by timestamp and keep only recent 100
-        const sorted = results.ids
-          .map((id, idx) => ({
-            id,
-            timestamp: results.metadatas && results.metadatas[idx] && results.metadatas[idx].timestamp ? results.metadatas[idx].timestamp : ''
-          }))
-          .filter(item => item.timestamp)
-          .sort((a, b) => {
-            const timeA = String(a.timestamp);
-            const timeB = String(b.timestamp);
-            return timeB.localeCompare(timeA);
-          });
+    const results = await this.chromaManager.query("recipes", {
+      queryText: query,
+      nResults: limit,
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+    });
 
-        const toDelete = sorted.slice(100).map(item => item.id);
-        
-        if (toDelete.length > 0) {
-          await collection.delete({ ids: toDelete });
-          logger.info("Cleaned old search history", "GROCERY_VECTORS", { 
-            userId, 
-            deleted: toDelete.length 
-          });
+    return results.map((result) => ({
+      recipe_id: result.metadata.recipe_id as string,
+      name: result.metadata.name as string,
+      ingredients: result.metadata.ingredients as string[],
+      cuisine_type: result.metadata.cuisine_type as string,
+      meal_type: result.metadata.meal_type as string,
+      prep_time: result.metadata.prep_time as number,
+      difficulty: result.metadata.difficulty as "easy" | "medium" | "hard",
+      dietary_info: result.metadata.dietary_info as string[],
+    }));
+  }
+
+  /**
+   * Store user shopping pattern
+   */
+  async storeShoppingPattern(pattern: ShoppingPatternVector): Promise<void> {
+    const document = {
+      id: pattern.pattern_id,
+      content: `User ${pattern.user_id} ${pattern.pattern_type} shopping pattern: ${pattern.common_items.join(" ")}`,
+      metadata: {
+        user_id: pattern.user_id,
+        pattern_type: pattern.pattern_type,
+        frequency: pattern.shopping_frequency,
+        avg_spend: pattern.average_spend,
+        common_items: pattern.common_items,
+      },
+    };
+
+    await this.chromaManager.addDocuments("shopping_patterns", [document]);
+  }
+
+  /**
+   * Get user shopping recommendations
+   */
+  async getUserRecommendations(
+    userId: string,
+    currentList: string[],
+  ): Promise<string[]> {
+    // Find similar shopping patterns
+    const patterns = await this.chromaManager.query("shopping_patterns", {
+      queryText: currentList.join(" "),
+      nResults: 5,
+      where: { user_id: userId },
+    });
+
+    // Extract commonly purchased items not in current list
+    const recommendations = new Set<string>();
+
+    for (const pattern of patterns) {
+      const commonItems = pattern.metadata.common_items as string[];
+      for (const item of commonItems) {
+        if (!currentList.includes(item)) {
+          recommendations.add(item);
         }
       }
-    } catch (error) {
-      logger.error("Failed to clean search history", "GROCERY_VECTORS", { error });
     }
+
+    return Array.from(recommendations).slice(0, 10);
   }
 
   /**
-   * Get collection statistics
+   * Find product substitutions
    */
-  async getCollectionStats(): Promise<Record<string, { count: number; metadata: any }>> {
-    const stats: Record<string, { count: number; metadata: any }> = {};
+  async findSubstitutions(
+    productId: string,
+    pricePreference?: "cheaper" | "similar" | "any",
+  ): Promise<
+    {
+      substitute_id: string;
+      similarity: number;
+      price_difference: number;
+      reason: string;
+    }[]
+  > {
+    const whereClause: any = { original_product_id: productId };
 
-    for (const [name, collection] of this.collections) {
-      try {
-        const count = await collection.count();
-        stats[name] = {
-          count,
-          metadata: (collection as any).metadata || {}
-        };
-      } catch (error) {
-        stats[name] = { count: 0, metadata: {} };
-      }
-    }
+    const results = await this.chromaManager.query("substitutions", {
+      queryText: productId,
+      nResults: 5,
+      where: whereClause,
+    });
 
-    return stats;
+    return results
+      .map((result) => ({
+        substitute_id: result.metadata.substitute_product_id as string,
+        similarity: result.metadata.similarity_score as number,
+        price_difference: result.metadata.price_difference as number,
+        reason: result.metadata.substitution_reason as string,
+      }))
+      .filter((sub) => {
+        if (pricePreference === "cheaper") return sub.price_difference < 0;
+        if (pricePreference === "similar")
+          return Math.abs(sub.price_difference) < 1;
+        return true;
+      })
+      .sort((a, b) => b.similarity - a.similarity);
   }
 
   /**
-   * Delete all collections (for testing/reset)
+   * Clean up old patterns
    */
-  async deleteAllCollections(): Promise<void> {
-    for (const name of this.collections.keys()) {
-      try {
-        await this.client.deleteCollection({ name });
-        logger.info(`Deleted collection: ${name}`, "GROCERY_VECTORS");
-      } catch (error) {
-        logger.error(`Failed to delete collection: ${name}`, "GROCERY_VECTORS", { error });
-      }
-    }
-    this.collections.clear();
-    this.initialized = false;
+  async cleanupOldPatterns(daysOld: number = 180): Promise<number> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
+    // This would need to be implemented based on ChromaDB's capabilities
+    // for now returning 0
+    logger.info(
+      `Cleanup of patterns older than ${daysOld} days requested`,
+      "GROCERY_VECTORS",
+    );
+    return 0;
   }
 }
