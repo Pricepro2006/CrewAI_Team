@@ -1,618 +1,784 @@
-/**
- * Email Repository - Handles all email-related database operations
- * Uses the enhanced email schema with proper indexing and relationships
- */
+import type Database from "better-sqlite3";
+import { logger } from "@/utils/logger";
+import { metrics } from "@/api/monitoring/metrics";
+import type {
+  UnifiedEmailData,
+  WorkflowState,
+} from "@/types/unified-email.types";
 
-import Database from 'better-sqlite3';
-import { BaseRepository } from './BaseRepository';
-import type { BaseEntity, PaginatedResult, QueryOptions } from './BaseRepository';
-import { logger } from '../../utils/logger';
+export interface EmailRepositoryConfig {
+  db: Database.Database;
+}
 
-export interface EmailEnhanced extends BaseEntity {
-  graph_id?: string;
-  message_id: string;
-  
-  // Email content
+export interface EmailEntity {
+  type: string;
+  value: string;
+  format?: string;
+  confidence?: number;
+  extractionMethod?: string;
+}
+
+export interface CreateEmailParams {
+  graphId: string;
+  messageId: string;
   subject: string;
-  body_text?: string;
-  body_html?: string;
-  body_preview?: string;
-  
-  // Sender/Recipient info
-  sender_email: string;
-  sender_name?: string;
-  recipients?: string; // JSON array
-  cc_recipients?: string; // JSON array
-  bcc_recipients?: string; // JSON array
-  
-  // Email metadata
-  received_at: string;
-  sent_at?: string;
-  importance?: string;
-  categories?: string; // JSON array
-  has_attachments: boolean;
-  is_read: boolean;
-  is_flagged: boolean;
-  
-  // Threading
-  thread_id?: string;
-  conversation_id_ref?: string;
-  in_reply_to?: string;
-  references?: string; // JSON array
-  
-  // Workflow fields
-  status: 'new' | 'in_progress' | 'completed' | 'archived';
-  priority: 'critical' | 'high' | 'medium' | 'low';
-  assigned_to?: string;
-  assigned_at?: string;
-  due_date?: string;
-  
-  // Processing metadata
-  processed_at?: string;
-  processing_version?: string;
-  analysis_confidence?: number;
-}
-
-export interface EmailEntity extends BaseEntity {
-  email_id: string;
-  entity_type: string;
-  entity_value: string;
-  entity_format?: string;
-  confidence: number;
-  extraction_method?: string;
-  verified: boolean;
-}
-
-export interface EmailAttachment extends BaseEntity {
-  email_id: string;
-  filename: string;
-  content_type?: string;
-  size_bytes?: number;
-  content_id?: string;
-  is_inline: boolean;
-  storage_path?: string;
-  checksum?: string;
-  virus_scan_result?: string;
-}
-
-export interface CreateEmailData {
-  message_id: string;
-  subject: string;
-  sender_email: string;
-  received_at: string;
-  body_text?: string;
-  body_html?: string;
-  body_preview?: string;
-  sender_name?: string;
-  recipients?: any[];
-  cc_recipients?: any[];
-  bcc_recipients?: any[];
+  bodyText?: string;
+  bodyHtml?: string;
+  bodyPreview?: string;
+  senderEmail: string;
+  senderName?: string;
+  recipients: Array<{ address: string; name?: string }>;
+  ccRecipients?: Array<{ address: string; name?: string }>;
+  bccRecipients?: Array<{ address: string; name?: string }>;
+  receivedAt: Date;
+  sentAt?: Date;
   importance?: string;
   categories?: string[];
-  has_attachments?: boolean;
-  is_read?: boolean;
-  thread_id?: string;
-  in_reply_to?: string;
-  priority?: EmailEnhanced['priority'];
-  status?: EmailEnhanced['status'];
+  hasAttachments: boolean;
+  isRead?: boolean;
+  isFlagged?: boolean;
+  threadId?: string;
+  conversationId?: string;
+  inReplyTo?: string;
+  references?: string[];
 }
 
-export interface EmailSearchOptions extends QueryOptions {
-  status?: string[];
-  priority?: string[];
-  assigned_to?: string;
-  dateRange?: { start: string; end: string };
+export interface UpdateEmailParams {
+  status?: string;
+  priority?: string;
+  assignedTo?: string;
+  assignedAt?: Date;
+  dueDate?: Date;
+  workflowState?: WorkflowState;
+  workflowType?: string;
+  workflowChainId?: string;
+  isWorkflowComplete?: boolean;
+  analysisConfidence?: number;
+  processedAt?: Date;
+  processingVersion?: string;
+}
+
+export interface EmailQueryParams {
+  offset?: number;
+  limit?: number;
+  search?: string;
+  senderEmails?: string[];
+  statuses?: string[];
+  priorities?: string[];
+  workflowStates?: WorkflowState[];
+  workflowTypes?: string[];
+  dateRange?: { start: Date; end: Date };
+  assignedTo?: string;
   hasAttachments?: boolean;
   isRead?: boolean;
-  searchText?: string;
+  threadId?: string;
+  conversationId?: string;
 }
 
-export class EmailRepository extends BaseRepository<EmailEnhanced> {
-  constructor(db: Database.Database) {
-    super(db, 'emails_enhanced');
+export class EmailRepository {
+  private db: Database.Database;
+  private statements: Map<string, any> = new Map();
+
+  constructor(config: EmailRepositoryConfig) {
+    this.db = config.db;
+    this.prepareStatements();
+  }
+
+  private prepareStatements(): void {
+    // Insert statements
+    this.statements.set(
+      "insertEmail",
+      this.db.prepare(`
+      INSERT INTO emails_enhanced (
+        id, graph_id, message_id, subject, body_text, body_html, body_preview,
+        sender_email, sender_name, recipients, cc_recipients, bcc_recipients,
+        received_at, sent_at, importance, categories, has_attachments,
+        is_read, is_flagged, thread_id, conversation_id_ref, in_reply_to,
+        "references", status, priority, created_at, updated_at
+      ) VALUES (
+        @id, @graphId, @messageId, @subject, @bodyText, @bodyHtml, @bodyPreview,
+        @senderEmail, @senderName, @recipients, @ccRecipients, @bccRecipients,
+        @receivedAt, @sentAt, @importance, @categories, @hasAttachments,
+        @isRead, @isFlagged, @threadId, @conversationIdRef, @inReplyTo,
+        @references, @status, @priority, @createdAt, @updatedAt
+      )
+    `),
+    );
+
+    this.statements.set(
+      "insertAttachment",
+      this.db.prepare(`
+      INSERT INTO email_attachments (
+        id, email_id, filename, content_type, size_bytes, content_id,
+        is_inline, storage_path, created_at
+      ) VALUES (
+        @id, @emailId, @filename, @contentType, @sizeBytes, @contentId,
+        @isInline, @storagePath, @createdAt
+      )
+    `),
+    );
+
+    this.statements.set(
+      "insertEntity",
+      this.db.prepare(`
+      INSERT INTO email_entities (
+        id, email_id, entity_type, entity_value, entity_format,
+        confidence, extraction_method, verified, created_at
+      ) VALUES (
+        @id, @emailId, @entityType, @entityValue, @entityFormat,
+        @confidence, @extractionMethod, @verified, @createdAt
+      )
+    `),
+    );
+
+    // Update statements
+    this.statements.set(
+      "updateEmail",
+      this.db.prepare(`
+      UPDATE emails_enhanced SET
+        status = COALESCE(@status, status),
+        priority = COALESCE(@priority, priority),
+        assigned_to = COALESCE(@assignedTo, assigned_to),
+        assigned_at = COALESCE(@assignedAt, assigned_at),
+        due_date = COALESCE(@dueDate, due_date),
+        processed_at = COALESCE(@processedAt, processed_at),
+        processing_version = COALESCE(@processingVersion, processing_version),
+        analysis_confidence = COALESCE(@analysisConfidence, analysis_confidence),
+        updated_at = @updatedAt
+      WHERE id = @id
+    `),
+    );
+
+    // Query statements
+    this.statements.set(
+      "getEmailById",
+      this.db.prepare(`
+      SELECT * FROM emails_enhanced WHERE id = ?
+    `),
+    );
+
+    this.statements.set(
+      "getEmailByGraphId",
+      this.db.prepare(`
+      SELECT * FROM emails_enhanced WHERE graph_id = ?
+    `),
+    );
+
+    this.statements.set(
+      "getEmailEntities",
+      this.db.prepare(`
+      SELECT * FROM email_entities WHERE email_id = ? ORDER BY confidence DESC
+    `),
+    );
+
+    this.statements.set(
+      "getEmailAttachments",
+      this.db.prepare(`
+      SELECT * FROM email_attachments WHERE email_id = ?
+    `),
+    );
+
+    // Workflow chain statements
+    this.statements.set(
+      "createWorkflowChain",
+      this.db.prepare(`
+      INSERT INTO workflow_chains (
+        id, workflow_type, start_email_id, current_state, email_count,
+        is_complete, created_at, updated_at
+      ) VALUES (
+        @id, @workflowType, @startEmailId, @currentState, @emailCount,
+        @isComplete, @createdAt, @updatedAt
+      )
+    `),
+    );
+
+    this.statements.set(
+      "updateWorkflowChain",
+      this.db.prepare(`
+      UPDATE workflow_chains SET
+        current_state = @currentState,
+        email_count = email_count + 1,
+        is_complete = @isComplete,
+        completed_at = @completedAt,
+        updated_at = @updatedAt
+      WHERE id = @id
+    `),
+    );
+
+    this.statements.set(
+      "linkEmailToChain",
+      this.db.prepare(`
+      INSERT INTO workflow_chain_emails (
+        chain_id, email_id, sequence_number, created_at
+      ) VALUES (
+        @chainId, @emailId, @sequenceNumber, @createdAt
+      )
+    `),
+    );
+
+    // Analytics queries
+    this.statements.set(
+      "countTodaysEmails",
+      this.db.prepare(`
+      SELECT COUNT(*) as count FROM emails_enhanced 
+      WHERE received_at >= date('now', 'start of day')
+    `),
+    );
+
+    this.statements.set(
+      "countByPriority",
+      this.db.prepare(`
+      SELECT COUNT(*) as count FROM emails_enhanced 
+      WHERE priority IN (${new Array(10).fill("?").join(",")})
+    `),
+    );
+
+    this.statements.set(
+      "countUnassigned",
+      this.db.prepare(`
+      SELECT COUNT(*) as count FROM emails_enhanced 
+      WHERE assigned_to IS NULL AND status NOT IN ('completed', 'archived')
+    `),
+    );
+
+    this.statements.set(
+      "getWorkflowStats",
+      this.db.prepare(`
+      SELECT 
+        COUNT(DISTINCT wc.id) as total_chains,
+        SUM(CASE WHEN wc.is_complete = 1 THEN 1 ELSE 0 END) as complete_chains,
+        AVG(wc.email_count) as avg_emails_per_chain,
+        AVG(CASE 
+          WHEN wc.is_complete = 1 
+          THEN (julianday(wc.completed_at) - julianday(wc.created_at)) * 24 
+          ELSE NULL 
+        END) as avg_completion_hours
+      FROM workflow_chains wc
+      WHERE (@startDate IS NULL OR wc.created_at >= @startDate)
+        AND (@endDate IS NULL OR wc.created_at <= @endDate)
+    `),
+    );
   }
 
   /**
-   * Create a new email with proper validation
+   * Create a new email record
    */
-  async createEmail(emailData: CreateEmailData): Promise<EmailEnhanced> {
-    // Check for duplicate message ID
-    const existingEmail = await this.findByMessageId(emailData.message_id);
-    if (existingEmail) {
-      throw new Error(`Email with message_id ${emailData.message_id} already exists`);
+  async createEmail(params: CreateEmailParams): Promise<string> {
+    const startTime = Date.now();
+
+    try {
+      const id = this.generateId("email");
+      const now = new Date().toISOString();
+
+      const emailData = {
+        id,
+        graphId: params.graphId,
+        messageId: params.messageId,
+        subject: params.subject,
+        bodyText: params.bodyText,
+        bodyHtml: params.bodyHtml,
+        bodyPreview: params.bodyPreview || params.bodyText?.substring(0, 255),
+        senderEmail: params.senderEmail,
+        senderName: params.senderName,
+        recipients: JSON.stringify(params.recipients),
+        ccRecipients: params.ccRecipients
+          ? JSON.stringify(params.ccRecipients)
+          : null,
+        bccRecipients: params.bccRecipients
+          ? JSON.stringify(params.bccRecipients)
+          : null,
+        receivedAt: params.receivedAt.toISOString(),
+        sentAt: params.sentAt?.toISOString() || null,
+        importance: params.importance || "normal",
+        categories: params.categories
+          ? JSON.stringify(params.categories)
+          : null,
+        hasAttachments: params.hasAttachments ? 1 : 0,
+        isRead: params.isRead ? 1 : 0,
+        isFlagged: params.isFlagged ? 1 : 0,
+        threadId: params.threadId,
+        conversationIdRef: params.conversationId,
+        inReplyTo: params.inReplyTo,
+        references: params.references
+          ? JSON.stringify(params.references)
+          : null,
+        status: "new",
+        priority: "medium",
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      this.statements.get("insertEmail").run(emailData);
+
+      metrics.increment("email_repository.email_created");
+      metrics.histogram(
+        "email_repository.create_duration",
+        Date.now() - startTime,
+      );
+
+      logger.info("Email created in database", "EMAIL_REPOSITORY", {
+        emailId: id,
+        graphId: params.graphId,
+      });
+
+      return id;
+    } catch (error) {
+      logger.error("Failed to create email", "EMAIL_REPOSITORY", {
+        error: error instanceof Error ? error.message : String(error),
+        graphId: params.graphId,
+      });
+      metrics.increment("email_repository.create_error");
+      throw error;
     }
-
-    const emailToCreate = {
-      ...emailData,
-      recipients: emailData.recipients ? JSON.stringify(emailData.recipients) : null,
-      cc_recipients: emailData.cc_recipients ? JSON.stringify(emailData.cc_recipients) : null,
-      bcc_recipients: emailData.bcc_recipients ? JSON.stringify(emailData.bcc_recipients) : null,
-      categories: emailData.categories ? JSON.stringify(emailData.categories) : null,
-      has_attachments: emailData.has_attachments || false,
-      is_read: emailData.is_read || false,
-      is_flagged: false,
-      status: emailData.status || 'new',
-      priority: emailData.priority || 'medium'
-    };
-
-    return this.create(emailToCreate as Omit<EmailEnhanced, 'id' | 'created_at' | 'updated_at'>);
   }
 
   /**
-   * Find email by message ID
+   * Update an email record
    */
-  async findByMessageId(messageId: string): Promise<EmailEnhanced | null> {
-    return this.findOne({ message_id: messageId });
-  }
+  async updateEmail(emailId: string, params: UpdateEmailParams): Promise<void> {
+    const startTime = Date.now();
 
-  /**
-   * Find emails by thread ID
-   */
-  async findByThreadId(threadId: string): Promise<EmailEnhanced[]> {
-    return this.findAll({ 
-      where: { thread_id: threadId },
-      orderBy: 'received_at',
-      orderDirection: 'ASC'
-    });
-  }
+    try {
+      const updateData = {
+        id: emailId,
+        ...params,
+        updatedAt: new Date().toISOString(),
+      };
 
-  /**
-   * Find emails assigned to a specific user
-   */
-  async findAssignedEmails(userId: string, options: EmailSearchOptions = {}): Promise<PaginatedResult<EmailEnhanced>> {
-    const searchOptions = {
-      ...options,
-      where: {
-        ...options.where,
-        assigned_to: userId
+      const result = this.statements.get("updateEmail").run(updateData);
+
+      if (result.changes === 0) {
+        throw new Error(`Email not found: ${emailId}`);
       }
-    };
 
-    return this.findEmailsWithSearch(searchOptions);
+      metrics.increment("email_repository.email_updated");
+      metrics.histogram(
+        "email_repository.update_duration",
+        Date.now() - startTime,
+      );
+
+      logger.info("Email updated", "EMAIL_REPOSITORY", { emailId });
+    } catch (error) {
+      logger.error("Failed to update email", "EMAIL_REPOSITORY", {
+        error: error instanceof Error ? error.message : String(error),
+        emailId,
+      });
+      metrics.increment("email_repository.update_error");
+      throw error;
+    }
   }
 
   /**
-   * Find unassigned emails
+   * Store email entities
    */
-  async findUnassignedEmails(options: EmailSearchOptions = {}): Promise<PaginatedResult<EmailEnhanced>> {
-    const searchOptions = {
-      ...options,
-      where: {
-        ...options.where,
-        assigned_to: null
-      }
-    };
+  async storeEmailEntities(
+    emailId: string,
+    entities: EmailEntity[],
+  ): Promise<void> {
+    const startTime = Date.now();
 
-    return this.findEmailsWithSearch(searchOptions);
+    try {
+      const insertEntity = this.statements.get("insertEntity");
+
+      const transaction = this.db.transaction(() => {
+        for (const entity of entities) {
+          const entityData = {
+            id: this.generateId("entity"),
+            emailId,
+            entityType: entity.type,
+            entityValue: entity.value,
+            entityFormat: entity.format || null,
+            confidence: entity.confidence || 1.0,
+            extractionMethod: entity.extractionMethod || "pipeline",
+            verified: 0,
+            createdAt: new Date().toISOString(),
+          };
+
+          insertEntity.run(entityData);
+        }
+      });
+
+      transaction();
+
+      metrics.increment("email_repository.entities_stored", entities.length);
+      metrics.histogram(
+        "email_repository.store_entities_duration",
+        Date.now() - startTime,
+      );
+
+      logger.info("Email entities stored", "EMAIL_REPOSITORY", {
+        emailId,
+        entityCount: entities.length,
+      });
+    } catch (error) {
+      logger.error("Failed to store email entities", "EMAIL_REPOSITORY", {
+        error: error instanceof Error ? error.message : String(error),
+        emailId,
+      });
+      metrics.increment("email_repository.store_entities_error");
+      throw error;
+    }
   }
 
   /**
-   * Advanced email search with filtering
+   * Create or update workflow chain
    */
-  async findEmailsWithSearch(options: EmailSearchOptions = {}): Promise<PaginatedResult<EmailEnhanced>> {
-    const {
-      status,
-      priority,
-      assigned_to,
-      dateRange,
-      hasAttachments,
-      isRead,
-      searchText,
-      limit = 50,
-      offset = 0,
-      orderBy = 'received_at',
-      orderDirection = 'DESC'
-    } = options;
+  async createOrUpdateWorkflowChain(params: {
+    emailId: string;
+    workflowType: string;
+    workflowState: WorkflowState;
+    conversationId?: string;
+    isComplete?: boolean;
+  }): Promise<string> {
+    const startTime = Date.now();
 
-    const whereConditions: Record<string, any> = {};
-    const additionalClauses: string[] = [];
-    const additionalParams: any[] = [];
+    try {
+      // Check if chain exists for conversation
+      let chainId: string;
 
-    // Basic filters
-    if (status?.length) {
-      whereConditions.status = status;
-    }
-    
-    if (priority?.length) {
-      whereConditions.priority = priority;
-    }
+      if (params.conversationId) {
+        const existingChain = this.db
+          .prepare(
+            `
+          SELECT wc.* FROM workflow_chains wc
+          JOIN workflow_chain_emails wce ON wc.id = wce.chain_id
+          JOIN emails_enhanced e ON wce.email_id = e.id
+          WHERE e.conversation_id_ref = ? AND wc.is_complete = 0
+          ORDER BY wc.created_at DESC
+          LIMIT 1
+        `,
+          )
+          .get(params.conversationId) as any;
 
-    if (assigned_to !== undefined) {
-      whereConditions.assigned_to = assigned_to;
-    }
+        if (existingChain) {
+          chainId = existingChain.id;
 
-    if (hasAttachments !== undefined) {
-      whereConditions.has_attachments = hasAttachments;
-    }
-
-    if (isRead !== undefined) {
-      whereConditions.is_read = isRead;
-    }
-
-    // Date range filter
-    if (dateRange) {
-      additionalClauses.push('received_at BETWEEN ? AND ?');
-      additionalParams.push(dateRange.start, dateRange.end);
-    }
-
-    // Text search
-    if (searchText?.trim()) {
-      additionalClauses.push('(subject LIKE ? OR body_text LIKE ? OR sender_name LIKE ? OR sender_email LIKE ?)');
-      const searchPattern = `%${searchText}%`;
-      additionalParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
-    }
-
-    // Build the query
-    const { clause: whereClause, params: whereParams } = this.buildWhereClause(whereConditions);
-    const orderClause = this.buildOrderClause(orderBy, orderDirection);
-
-    const baseQuery = `SELECT * FROM ${this.tableName}`;
-    const countQuery = `SELECT COUNT(*) as total FROM ${this.tableName}`;
-    let allParams = whereParams;
-
-    // Combine where conditions
-    let finalWhereClause = whereClause;
-    if (additionalClauses.length > 0) {
-      const additionalWhere = additionalClauses.join(' AND ');
-      if (finalWhereClause) {
-        finalWhereClause += ` AND ${additionalWhere}`;
+          // Update existing chain
+          this.statements.get("updateWorkflowChain").run({
+            id: chainId,
+            currentState: params.workflowState,
+            isComplete: params.isComplete ? 1 : 0,
+            completedAt: params.isComplete ? new Date().toISOString() : null,
+            updatedAt: new Date().toISOString(),
+          });
+        } else {
+          chainId = this.createNewWorkflowChain(params);
+        }
       } else {
-        finalWhereClause = `WHERE ${additionalWhere}`;
+        chainId = this.createNewWorkflowChain(params);
       }
-      allParams = [...allParams, ...additionalParams];
+
+      // Link email to chain
+      const sequenceNumber = this.getNextSequenceNumber(chainId);
+      this.statements.get("linkEmailToChain").run({
+        chainId,
+        emailId: params.emailId,
+        sequenceNumber,
+        createdAt: new Date().toISOString(),
+      });
+
+      metrics.increment("email_repository.workflow_chain_updated");
+      metrics.histogram(
+        "email_repository.workflow_chain_duration",
+        Date.now() - startTime,
+      );
+
+      return chainId;
+    } catch (error) {
+      logger.error(
+        "Failed to create/update workflow chain",
+        "EMAIL_REPOSITORY",
+        {
+          error: error instanceof Error ? error.message : String(error),
+          emailId: params.emailId,
+        },
+      );
+      metrics.increment("email_repository.workflow_chain_error");
+      throw error;
     }
-
-    // Get total count
-    const totalQuery = `${countQuery} ${finalWhereClause}`;
-    const totalResult = this.executeQuery<{ total: number }>(totalQuery, allParams, 'get');
-    const total = totalResult?.total || 0;
-
-    // Get paginated data
-    const dataQuery = `${baseQuery} ${finalWhereClause} ${orderClause} LIMIT ? OFFSET ?`;
-    const dataParams = [...allParams, limit, offset];
-    const data = this.executeQuery<EmailEnhanced[]>(dataQuery, dataParams);
-
-    const page = Math.floor(offset / limit) + 1;
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      data,
-      total,
-      page,
-      pageSize: limit,
-      totalPages,
-      hasNext: page < totalPages,
-      hasPrevious: page > 1
-    };
   }
 
   /**
-   * Assign email to user
+   * Query emails with filters
    */
-  async assignEmail(emailId: string, userId: string): Promise<EmailEnhanced | null> {
+  async queryEmails(
+    params: EmailQueryParams,
+  ): Promise<{ emails: any[]; total: number }> {
+    const startTime = Date.now();
+
+    try {
+      let query = `SELECT * FROM emails_enhanced WHERE 1=1`;
+      let countQuery = `SELECT COUNT(*) as total FROM emails_enhanced WHERE 1=1`;
+      const queryParams: any = {};
+
+      // Build dynamic query
+      if (params.search) {
+        query += ` AND (subject LIKE @search OR body_text LIKE @search OR sender_email LIKE @search)`;
+        countQuery += ` AND (subject LIKE @search OR body_text LIKE @search OR sender_email LIKE @search)`;
+        queryParams.search = `%${params.search}%`;
+      }
+
+      if (params.senderEmails?.length) {
+        const placeholders = params.senderEmails
+          .map((_, i) => `@sender${i}`)
+          .join(",");
+        query += ` AND sender_email IN (${placeholders})`;
+        countQuery += ` AND sender_email IN (${placeholders})`;
+        params.senderEmails.forEach((email, i) => {
+          queryParams[`sender${i}`] = email;
+        });
+      }
+
+      if (params.statuses?.length) {
+        const placeholders = params.statuses
+          .map((_, i) => `@status${i}`)
+          .join(",");
+        query += ` AND status IN (${placeholders})`;
+        countQuery += ` AND status IN (${placeholders})`;
+        params.statuses.forEach((status, i) => {
+          queryParams[`status${i}`] = status;
+        });
+      }
+
+      if (params.priorities?.length) {
+        const placeholders = params.priorities
+          .map((_, i) => `@priority${i}`)
+          .join(",");
+        query += ` AND priority IN (${placeholders})`;
+        countQuery += ` AND priority IN (${placeholders})`;
+        params.priorities.forEach((priority, i) => {
+          queryParams[`priority${i}`] = priority;
+        });
+      }
+
+      if (params.dateRange) {
+        query += ` AND received_at >= @startDate AND received_at <= @endDate`;
+        countQuery += ` AND received_at >= @startDate AND received_at <= @endDate`;
+        queryParams.startDate = params.dateRange.start.toISOString();
+        queryParams.endDate = params.dateRange.end.toISOString();
+      }
+
+      if (params.assignedTo !== undefined) {
+        if (params.assignedTo === null) {
+          query += ` AND assigned_to IS NULL`;
+          countQuery += ` AND assigned_to IS NULL`;
+        } else {
+          query += ` AND assigned_to = @assignedTo`;
+          countQuery += ` AND assigned_to = @assignedTo`;
+          queryParams.assignedTo = params.assignedTo;
+        }
+      }
+
+      if (params.hasAttachments !== undefined) {
+        query += ` AND has_attachments = @hasAttachments`;
+        countQuery += ` AND has_attachments = @hasAttachments`;
+        queryParams.hasAttachments = params.hasAttachments ? 1 : 0;
+      }
+
+      if (params.isRead !== undefined) {
+        query += ` AND is_read = @isRead`;
+        countQuery += ` AND is_read = @isRead`;
+        queryParams.isRead = params.isRead ? 1 : 0;
+      }
+
+      if (params.threadId) {
+        query += ` AND thread_id = @threadId`;
+        countQuery += ` AND thread_id = @threadId`;
+        queryParams.threadId = params.threadId;
+      }
+
+      if (params.conversationId) {
+        query += ` AND conversation_id_ref = @conversationId`;
+        countQuery += ` AND conversation_id_ref = @conversationId`;
+        queryParams.conversationId = params.conversationId;
+      }
+
+      // Add ordering and pagination
+      query += ` ORDER BY received_at DESC`;
+
+      if (params.limit) {
+        query += ` LIMIT @limit`;
+        queryParams.limit = params.limit;
+      }
+
+      if (params.offset) {
+        query += ` OFFSET @offset`;
+        queryParams.offset = params.offset;
+      }
+
+      // Execute queries
+      const emails = this.db.prepare(query).all(queryParams);
+      const { total } = this.db.prepare(countQuery).get(queryParams) as any;
+
+      // Load entities for each email
+      for (const email of emails as any[]) {
+        email.entities = this.statements.get("getEmailEntities").all(email.id);
+        email.attachments = this.statements
+          .get("getEmailAttachments")
+          .all(email.id);
+      }
+
+      metrics.histogram(
+        "email_repository.query_duration",
+        Date.now() - startTime,
+      );
+      metrics.increment("email_repository.emails_queried", emails.length);
+
+      return { emails, total };
+    } catch (error) {
+      logger.error("Failed to query emails", "EMAIL_REPOSITORY", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      metrics.increment("email_repository.query_error");
+      throw error;
+    }
+  }
+
+  /**
+   * Get email by ID
+   */
+  async getEmailById(emailId: string): Promise<any | null> {
+    try {
+      const email = this.statements.get("getEmailById").get(emailId);
+
+      if (!email) {
+        return null;
+      }
+
+      // Load related data
+      email.entities = this.statements.get("getEmailEntities").all(emailId);
+      email.attachments = this.statements
+        .get("getEmailAttachments")
+        .all(emailId);
+
+      return email;
+    } catch (error) {
+      logger.error("Failed to get email by ID", "EMAIL_REPOSITORY", {
+        error: error instanceof Error ? error.message : String(error),
+        emailId,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get email by Graph ID
+   */
+  async getEmailByGraphId(graphId: string): Promise<any | null> {
+    try {
+      const email = this.statements.get("getEmailByGraphId").get(graphId);
+
+      if (!email) {
+        return null;
+      }
+
+      // Load related data
+      email.entities = this.statements.get("getEmailEntities").all(email.id);
+      email.attachments = this.statements
+        .get("getEmailAttachments")
+        .all(email.id);
+
+      return email;
+    } catch (error) {
+      logger.error("Failed to get email by Graph ID", "EMAIL_REPOSITORY", {
+        error: error instanceof Error ? error.message : String(error),
+        graphId,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get analytics data
+   */
+  async getAnalytics(dateRange?: { start: Date; end: Date }): Promise<any> {
+    try {
+      const todaysCount = this.statements.get("countTodaysEmails").get().count;
+
+      const urgentCount =
+        this.statements
+          .get("countByPriority")
+          .all(
+            "critical",
+            "high",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+          )[0]?.count || 0;
+
+      const unassignedCount = this.statements
+        .get("countUnassigned")
+        .get().count;
+
+      const workflowStats = this.statements.get("getWorkflowStats").get({
+        startDate: dateRange?.start?.toISOString() || null,
+        endDate: dateRange?.end?.toISOString() || null,
+      });
+
+      return {
+        todaysCount,
+        urgentCount,
+        unassignedCount,
+        workflowStats,
+      };
+    } catch (error) {
+      logger.error("Failed to get analytics", "EMAIL_REPOSITORY", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  // Helper methods
+
+  private generateId(prefix: string): string {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 9);
+    return `${prefix}_${timestamp}${random}`;
+  }
+
+  private createNewWorkflowChain(params: any): string {
+    const chainId = this.generateId("chain");
     const now = new Date().toISOString();
-    return this.update(emailId, {
-      assigned_to: userId,
-      assigned_at: now
+
+    this.statements.get("createWorkflowChain").run({
+      id: chainId,
+      workflowType: params.workflowType,
+      startEmailId: params.emailId,
+      currentState: params.workflowState,
+      emailCount: 1,
+      isComplete: params.isComplete ? 1 : 0,
+      createdAt: now,
+      updatedAt: now,
     });
+
+    return chainId;
+  }
+
+  private getNextSequenceNumber(chainId: string): number {
+    const result = this.db
+      .prepare(
+        `
+      SELECT MAX(sequence_number) as max_seq 
+      FROM workflow_chain_emails 
+      WHERE chain_id = ?
+    `,
+      )
+      .get(chainId) as any;
+
+    return (result?.max_seq || 0) + 1;
   }
 
   /**
-   * Unassign email from user
+   * Close prepared statements and database connection
    */
-  async unassignEmail(emailId: string): Promise<EmailEnhanced | null> {
-    return this.update(emailId, {
-      assigned_to: undefined,
-      assigned_at: undefined
-    });
-  }
-
-  /**
-   * Update email status
-   */
-  async updateEmailStatus(emailId: string, status: EmailEnhanced['status']): Promise<EmailEnhanced | null> {
-    return this.update(emailId, { status });
-  }
-
-  /**
-   * Update email priority
-   */
-  async updateEmailPriority(emailId: string, priority: EmailEnhanced['priority']): Promise<EmailEnhanced | null> {
-    return this.update(emailId, { priority });
-  }
-
-  /**
-   * Mark email as read/unread
-   */
-  async markAsRead(emailId: string, isRead: boolean = true): Promise<EmailEnhanced | null> {
-    return this.update(emailId, { is_read: isRead });
-  }
-
-  /**
-   * Flag/unflag email
-   */
-  async flagEmail(emailId: string, isFlagged: boolean = true): Promise<EmailEnhanced | null> {
-    return this.update(emailId, { is_flagged: isFlagged });
-  }
-
-  /**
-   * Set email due date
-   */
-  async setDueDate(emailId: string, dueDate: string): Promise<EmailEnhanced | null> {
-    return this.update(emailId, { due_date: dueDate });
-  }
-
-  /**
-   * Get email statistics
-   */
-  async getEmailStatistics(): Promise<{
-    total: number;
-    byStatus: Record<string, number>;
-    byPriority: Record<string, number>;
-    unassigned: number;
-    overdue: number;
-  }> {
-    const total = await this.count();
-
-    // Status distribution
-    const statusQuery = `
-      SELECT status, COUNT(*) as count
-      FROM ${this.tableName}
-      GROUP BY status
-    `;
-    const statusResults = this.executeQuery<Array<{ status: string; count: number }>>(statusQuery);
-    const byStatus: Record<string, number> = {};
-    statusResults.forEach(r => byStatus[r.status] = r.count);
-
-    // Priority distribution
-    const priorityQuery = `
-      SELECT priority, COUNT(*) as count
-      FROM ${this.tableName}
-      GROUP BY priority
-    `;
-    const priorityResults = this.executeQuery<Array<{ priority: string; count: number }>>(priorityQuery);
-    const byPriority: Record<string, number> = {};
-    priorityResults.forEach(r => byPriority[r.priority] = r.count);
-
-    // Unassigned count
-    const unassigned = await this.count({ assigned_to: null });
-
-    // Overdue count
-    const overdueQuery = `
-      SELECT COUNT(*) as count
-      FROM ${this.tableName}
-      WHERE due_date IS NOT NULL 
-        AND due_date < datetime('now')
-        AND status NOT IN ('completed', 'archived')
-    `;
-    const overdueResult = this.executeQuery<{ count: number }>(overdueQuery, [], 'get');
-    const overdue = overdueResult?.count || 0;
-
-    return {
-      total,
-      byStatus,
-      byPriority,
-      unassigned,
-      overdue
-    };
-  }
-
-  /**
-   * Get workload by assignee
-   */
-  async getWorkloadByAssignee(): Promise<Array<{
-    assignee: string;
-    total: number;
-    new: number;
-    in_progress: number;
-    completed: number;
-    overdue: number;
-  }>> {
-    const query = `
-      SELECT 
-        assigned_to as assignee,
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) as new,
-        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
-        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
-        SUM(CASE WHEN due_date IS NOT NULL AND due_date < datetime('now') AND status NOT IN ('completed', 'archived') THEN 1 ELSE 0 END) as overdue
-      FROM ${this.tableName}
-      WHERE assigned_to IS NOT NULL
-      GROUP BY assigned_to
-      ORDER BY total DESC
-    `;
-
-    return this.executeQuery<Array<{
-      assignee: string;
-      total: number;
-      new: number;
-      in_progress: number;
-      completed: number;
-      overdue: number;
-    }>>(query);
-  }
-}
-
-/**
- * Email Entity Repository - Handles extracted entities from emails
- */
-export class EmailEntityRepository extends BaseRepository<EmailEntity> {
-  constructor(db: Database.Database) {
-    super(db, 'email_entities');
-  }
-
-  /**
-   * Find entities by email ID
-   */
-  async findByEmailId(emailId: string): Promise<EmailEntity[]> {
-    return this.findAll({ where: { email_id: emailId } });
-  }
-
-  /**
-   * Find entities by type
-   */
-  async findByType(entityType: string): Promise<EmailEntity[]> {
-    return this.findAll({ where: { entity_type: entityType } });
-  }
-
-  /**
-   * Find entities by value
-   */
-  async findByValue(entityValue: string): Promise<EmailEntity[]> {
-    return this.findAll({ where: { entity_value: entityValue } });
-  }
-
-  /**
-   * Create entity with validation
-   */
-  async createEntity(entityData: {
-    email_id: string;
-    entity_type: string;
-    entity_value: string;
-    entity_format?: string;
-    confidence?: number;
-    extraction_method?: string;
-    verified?: boolean;
-  }): Promise<EmailEntity> {
-    const entityToCreate = {
-      ...entityData,
-      confidence: entityData.confidence || 1.0,
-      extraction_method: entityData.extraction_method || 'manual',
-      verified: entityData.verified || false
-    };
-
-    return this.create(entityToCreate);
-  }
-
-  /**
-   * Verify an entity
-   */
-  async verifyEntity(entityId: string): Promise<EmailEntity | null> {
-    return this.update(entityId, { verified: true });
-  }
-
-  /**
-   * Get entity statistics
-   */
-  async getEntityStatistics(): Promise<{
-    byType: Record<string, number>;
-    byConfidence: { high: number; medium: number; low: number };
-    verified: number;
-    unverified: number;
-  }> {
-    // By type
-    const typeQuery = `
-      SELECT entity_type, COUNT(*) as count
-      FROM ${this.tableName}
-      GROUP BY entity_type
-    `;
-    const typeResults = this.executeQuery<Array<{ entity_type: string; count: number }>>(typeQuery);
-    const byType: Record<string, number> = {};
-    typeResults.forEach(r => byType[r.entity_type] = r.count);
-
-    // By confidence level
-    const confidenceQuery = `
-      SELECT 
-        SUM(CASE WHEN confidence >= 0.8 THEN 1 ELSE 0 END) as high,
-        SUM(CASE WHEN confidence >= 0.5 AND confidence < 0.8 THEN 1 ELSE 0 END) as medium,
-        SUM(CASE WHEN confidence < 0.5 THEN 1 ELSE 0 END) as low
-      FROM ${this.tableName}
-    `;
-    const confidenceResult = this.executeQuery<{
-      high: number;
-      medium: number;
-      low: number;
-    }>(confidenceQuery, [], 'get');
-    const byConfidence = confidenceResult || { high: 0, medium: 0, low: 0 };
-
-    // Verification status
-    const verified = await this.count({ verified: true });
-    const unverified = await this.count({ verified: false });
-
-    return {
-      byType,
-      byConfidence,
-      verified,
-      unverified
-    };
-  }
-}
-
-/**
- * Email Attachment Repository
- */
-export class EmailAttachmentRepository extends BaseRepository<EmailAttachment> {
-  constructor(db: Database.Database) {
-    super(db, 'email_attachments');
-  }
-
-  /**
-   * Find attachments by email ID
-   */
-  async findByEmailId(emailId: string): Promise<EmailAttachment[]> {
-    return this.findAll({ where: { email_id: emailId } });
-  }
-
-  /**
-   * Create attachment with validation
-   */
-  async createAttachment(attachmentData: {
-    email_id: string;
-    filename: string;
-    content_type?: string;
-    size_bytes?: number;
-    content_id?: string;
-    is_inline?: boolean;
-    storage_path?: string;
-    checksum?: string;
-    virus_scan_result?: string;
-  }): Promise<EmailAttachment> {
-    const attachmentToCreate = {
-      ...attachmentData,
-      is_inline: attachmentData.is_inline || false
-    };
-
-    return this.create(attachmentToCreate);
-  }
-
-  /**
-   * Get attachment statistics
-   */
-  async getAttachmentStatistics(): Promise<{
-    total: number;
-    totalSize: number;
-    byContentType: Record<string, number>;
-    virusScanned: number;
-    cleanAttachments: number;
-  }> {
-    const total = await this.count();
-
-    // Total size
-    const sizeQuery = `SELECT SUM(size_bytes) as total_size FROM ${this.tableName}`;
-    const sizeResult = this.executeQuery<{ total_size: number }>(sizeQuery, [], 'get');
-    const totalSize = sizeResult?.total_size || 0;
-
-    // By content type
-    const typeQuery = `
-      SELECT content_type, COUNT(*) as count
-      FROM ${this.tableName}
-      WHERE content_type IS NOT NULL
-      GROUP BY content_type
-    `;
-    const typeResults = this.executeQuery<Array<{ content_type: string; count: number }>>(typeQuery);
-    const byContentType: Record<string, number> = {};
-    typeResults.forEach(r => byContentType[r.content_type] = r.count);
-
-    // Virus scan stats
-    const virusScanned = await this.count({ virus_scan_result: { operator: 'IS NOT', value: null } });
-    const cleanAttachments = await this.count({ virus_scan_result: 'clean' });
-
-    return {
-      total,
-      totalSize,
-      byContentType,
-      virusScanned,
-      cleanAttachments
-    };
+  close(): void {
+    this.statements.clear();
+    logger.info("Email repository closed", "EMAIL_REPOSITORY");
   }
 }

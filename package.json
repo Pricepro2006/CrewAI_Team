@@ -33,13 +33,21 @@
     "test:e2e": "playwright test",
     "test:all": "npm run test:full && npm run test:integration && npm run test:e2e",
     "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,css}\"",
     "typecheck": "tsc --noEmit",
+    "test:coverage": "vitest run --coverage",
     "prepare": "husky",
     "test:related": "vitest related",
     "test:watch": "vitest watch",
     "approve-builds": "echo \"Skipping native builds approval\"",
-    "monitor:cache": "tsx scripts/monitor-cache.ts"
+    "monitor:cache": "tsx scripts/monitor-cache.ts",
+    "process-emails": "tsx src/scripts/email-batch-processor.ts --",
+    "pipeline:test": "tsx src/scripts/test-pipeline-small-batch.ts",
+    "pipeline:execute": "tsx src/scripts/run-three-stage-pipeline.ts",
+    "pipeline:execute:prod": "tsx src/scripts/execute-pipeline-production.ts",
+    "pipeline:monitor": "tsx src/scripts/monitor-pipeline.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
@@ -87,6 +95,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.16.0",
     "@playwright/test": "^1.41.0",
     "@radix-ui/react-slot": "^1.2.3",
     "@testing-library/jest-dom": "^6.6.3",
@@ -99,6 +108,7 @@
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.11.0",
+    "@types/qs": "^6.9.16",
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",
     "@types/uuid": "^9.0.7",

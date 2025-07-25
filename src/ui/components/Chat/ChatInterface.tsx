@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { trpc } from "../../App";
+import { api } from "@/lib/trpc";
 import { MessageList } from "./MessageList";
 import { InputBox } from "./InputBox";
 import { AgentMonitor } from "../AgentStatus/AgentMonitor";
@@ -15,14 +15,11 @@ export const ChatInterface: React.FC = () => {
   );
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<
-    "connected" | "disconnected" | "connecting"
-  >("connecting");
   const messageEndRef = useRef<HTMLDivElement>(null);
 
-  const createConversation = trpc.chat.create.useMutation();
-  const sendMessage = trpc.chat.message.useMutation();
-  const conversationHistory = trpc.chat.history.useQuery(
+  const createConversation = (api.chat as any).create.useMutation();
+  const sendMessage = (api.chat as any).message.useMutation();
+  const conversationHistory = (api.chat as any).history.useQuery(
     { conversationId: conversationId! },
     { enabled: !!conversationId },
   );
@@ -34,50 +31,14 @@ export const ChatInterface: React.FC = () => {
     }
   }, [conversationHistory.data]);
 
-  // Subscribe to real-time updates with proper error handling
-  trpc.chat.onMessage.useSubscription(
+  // Subscribe to real-time updates
+  (api.chat as any).onMessage.useSubscription(
     { conversationId: conversationId! },
     {
       enabled: !!conversationId,
       onData: (data: unknown) => {
         const message = data as Message;
-        setConnectionStatus("connected");
-
-        // Prevent duplicate messages
-        setMessages((prev) => {
-          const exists = prev.some(
-            (m) =>
-              m.content === message.content &&
-              m.role === message.role &&
-              Math.abs(
-                new Date(m.timestamp || 0).getTime() -
-                  new Date(message.timestamp || 0).getTime(),
-              ) < 1000,
-          );
-          return exists ? prev : [...prev, message];
-        });
-
-        // Auto-scroll to new message
-        setTimeout(() => {
-          messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 100);
-      },
-      onError: (error) => {
-        console.error("WebSocket subscription error:", error);
-        setConnectionStatus("disconnected");
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "system",
-            content: "Connection error. Trying to reconnect...",
-          },
-        ]);
-      },
-      onStarted: () => {
-        setConnectionStatus("connected");
-      },
-      onStopped: () => {
-        setConnectionStatus("disconnected");
+        setMessages((prev) => [...prev, message]);
       },
     },
   );
@@ -147,32 +108,18 @@ export const ChatInterface: React.FC = () => {
     <div className="chat-interface">
       <div className="chat-header">
         <h2>AI Agent Team Chat</h2>
-        <div className="chat-header-controls">
-          <div
-            className={`connection-status connection-status--${connectionStatus}`}
+        {conversationId && (
+          <button
+            className="new-chat-btn"
+            onClick={() => {
+              setConversationId(null);
+              setMessages([]);
+              navigate("/chat");
+            }}
           >
-            <span className="connection-indicator"></span>
-            <span className="connection-text">
-              {connectionStatus === "connected"
-                ? "Connected"
-                : connectionStatus === "connecting"
-                  ? "Connecting..."
-                  : "Disconnected"}
-            </span>
-          </div>
-          {conversationId && (
-            <button
-              className="new-chat-btn"
-              onClick={() => {
-                setConversationId(null);
-                setMessages([]);
-                navigate("/chat");
-              }}
-            >
-              New Chat
-            </button>
-          )}
-        </div>
+            New Chat
+          </button>
+        )}
       </div>
 
       <div className="chat-container">

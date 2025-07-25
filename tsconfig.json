@@ -39,7 +39,8 @@
     "allowUnusedLabels": false,
     "exactOptionalPropertyTypes": false,
     "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": false
+    "noPropertyAccessFromIndexSignature": false,
+    "verbatimModuleSyntax": true
   },
   "include": [
     "src/**/*",

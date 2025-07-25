@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
-import { trpc } from '@/utils/trpc';
-import type { TeamMember } from '@/config/team-members.config';
+import { useCallback } from "react";
+import { api } from "@/lib/trpc";
+import type { TeamMember } from "@/config/team-members.config";
 
 export interface UseEmailAssignmentOptions {
   onSuccess?: (data: any) => void;
@@ -8,49 +8,63 @@ export interface UseEmailAssignmentOptions {
 }
 
 export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
-  const utils = trpc.useContext();
+  const utils = api.useUtils();
 
   // Queries
-  const { data: teamMembers = [], isLoading: loadingTeamMembers } = 
-    trpc.emailAssignment.getTeamMembers.useQuery();
+  const { data: teamMembers = [], isLoading: loadingTeamMembers } = (
+    api.emailAssignment as any
+  ).getTeamMembers.useQuery();
 
-  const { data: workloadData, isLoading: loadingWorkload } = 
-    trpc.emailAssignment.getWorkloadDistribution.useQuery();
+  const { data: workloadData, isLoading: loadingWorkload } = (
+    api.emailAssignment as any
+  ).getWorkloadDistribution.useQuery();
 
   // Mutations
-  const assignEmailMutation = trpc.emailAssignment.assignEmail.useMutation({
-    onSuccess: (data) => {
+  const assignEmailMutation = (
+    api.emailAssignment as any
+  ).assignEmail.useMutation({
+    onSuccess: (data: any) => {
       // Invalidate relevant queries
       utils.emails.invalidate();
-      utils.emailAssignment.getWorkloadDistribution.invalidate();
+      (utils.emailAssignment as any).getWorkloadDistribution.invalidate();
       options?.onSuccess?.(data);
     },
-    onError: (error) => {
-      console.error('Email assignment failed:', error);
+    onError: (error: any) => {
+      console.error("Email assignment failed:", error);
       options?.onError?.(error);
     },
-    retry: (failureCount, error) => {
+    retry: (failureCount: number, error: any) => {
       // Only retry for network errors, not for business logic errors
-      if (failureCount < 2 && error?.data?.code !== 'BAD_REQUEST' && error?.data?.code !== 'NOT_FOUND') {
+      if (
+        failureCount < 2 &&
+        error?.data?.code !== "BAD_REQUEST" &&
+        error?.data?.code !== "NOT_FOUND"
+      ) {
         return true;
       }
       return false;
     },
   });
 
-  const bulkAssignMutation = trpc.emailAssignment.bulkAssignEmails.useMutation({
-    onSuccess: (data) => {
+  const bulkAssignMutation = (
+    api.emailAssignment as any
+  ).bulkAssignEmails.useMutation({
+    onSuccess: (data: any) => {
       utils.emails.invalidate();
-      utils.emailAssignment.getWorkloadDistribution.invalidate();
+      (utils.emailAssignment as any).getWorkloadDistribution.invalidate();
       options?.onSuccess?.(data);
     },
-    onError: (error) => {
-      console.error('Bulk email assignment failed:', error);
+    onError: (error: any) => {
+      console.error("Bulk email assignment failed:", error);
       options?.onError?.(error);
     },
-    retry: (failureCount, error) => {
+    retry: (failureCount: number, error: any) => {
       // Only retry for network errors, not for business logic errors
-      if (failureCount < 2 && error?.data?.code !== 'BAD_REQUEST' && error?.data?.code !== 'NOT_FOUND') {
+      if (
+        failureCount < 2 &&
+        error?.data?.code !== "BAD_REQUEST" &&
+        error?.data?.code !== "NOT_FOUND"
+      ) {
         return true;
       }
       return false;
@@ -65,7 +79,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
         assignedTo,
       });
     },
-    [assignEmailMutation]
+    [assignEmailMutation],
   );
 
   const bulkAssignEmails = useCallback(
@@ -75,14 +89,16 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
         assignedTo,
       });
     },
-    [bulkAssignMutation]
+    [bulkAssignMutation],
   );
 
   const getAssignmentSuggestions = useCallback(
     async (emailId: string) => {
-      return utils.emailAssignment.getAssignmentSuggestions.fetch(emailId);
+      return (utils.emailAssignment as any).getAssignmentSuggestions.fetch({
+        emailId,
+      });
     },
-    [utils]
+    [utils],
   );
 
   // Helper functions
@@ -90,29 +106,29 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
     (memberId: string): TeamMember | undefined => {
       return teamMembers.find((member: TeamMember) => member.id === memberId);
     },
-    [teamMembers]
+    [teamMembers],
   );
 
   const getAssignedMemberName = useCallback(
     (assignedTo?: string): string => {
-      if (!assignedTo) return 'Unassigned';
+      if (!assignedTo) return "Unassigned";
       const member = getTeamMemberById(assignedTo);
       return member?.name || assignedTo;
     },
-    [getTeamMemberById]
+    [getTeamMemberById],
   );
 
   // Subscription for real-time updates
-  trpc.emailAssignment.onEmailUpdate.useSubscription(undefined, {
-    onData: (data) => {
+  (api.emailAssignment as any).onEmailUpdate.useSubscription(undefined, {
+    onData: (data: any) => {
       // Handle real-time email updates
-      console.log('Email update received:', data);
+      console.log("Email update received:", data);
       // You could dispatch to a global state manager here
       // or invalidate queries as needed
       utils.emails.invalidate();
     },
-    onError: (error) => {
-      console.error('Subscription error:', error);
+    onError: (error: any) => {
+      console.error("Subscription error:", error);
     },
   });
 
@@ -120,18 +136,18 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
     // Data
     teamMembers,
     workloadData,
-    
+
     // Loading states
     isLoading: loadingTeamMembers || loadingWorkload,
     isAssigning: assignEmailMutation.isLoading || bulkAssignMutation.isLoading,
-    
+
     // Functions
     assignEmail,
     bulkAssignEmails,
     getAssignmentSuggestions,
     getTeamMemberById,
     getAssignedMemberName,
-    
+
     // Errors
     error: assignEmailMutation.error || bulkAssignMutation.error,
   };

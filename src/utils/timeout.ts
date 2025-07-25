@@ -3,9 +3,12 @@
  */
 
 export class TimeoutError extends Error {
-  constructor(message: string, public readonly duration: number) {
+  constructor(
+    message: string,
+    public readonly duration: number,
+  ) {
     super(message);
-    this.name = 'TimeoutError';
+    this.name = "TimeoutError";
   }
 }
 
@@ -19,19 +22,21 @@ export class TimeoutError extends Error {
 export async function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
-  errorMessage?: string
+  errorMessage?: string,
 ): Promise<T> {
   let timeoutId: NodeJS.Timeout;
-  
+
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => {
-      reject(new TimeoutError(
-        errorMessage || `Operation timed out after ${timeoutMs}ms`,
-        timeoutMs
-      ));
+      reject(
+        new TimeoutError(
+          errorMessage || `Operation timed out after ${timeoutMs}ms`,
+          timeoutMs,
+        ),
+      );
     }, timeoutMs);
   });
-  
+
   try {
     const result = await Promise.race([promise, timeoutPromise]);
     clearTimeout(timeoutId!);
@@ -53,7 +58,7 @@ export function createTimeoutWrapper(defaultTimeout: number) {
     options?: {
       timeout?: number;
       errorMessage?: string;
-    }
+    },
   ): Promise<T> {
     const timeout = options?.timeout || defaultTimeout;
     return withTimeout(promise, timeout, options?.errorMessage);
@@ -71,42 +76,42 @@ export async function retryWithTimeout<T>(
     baseDelay?: number;
     maxDelay?: number;
     onRetry?: (error: Error, attempt: number) => void;
-  } = {}
+  } = {},
 ): Promise<T> {
   const {
     maxRetries = 3,
     timeoutMs = 30000,
     baseDelay = 1000,
     maxDelay = 10000,
-    onRetry
+    onRetry,
   } = options;
-  
+
   let lastError: Error;
-  
+
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await withTimeout(
         fn(),
         timeoutMs,
-        `Attempt ${attempt + 1} timed out after ${timeoutMs}ms`
+        `Attempt ${attempt + 1} timed out after ${timeoutMs}ms`,
       );
     } catch (error) {
       lastError = error as Error;
-      
+
       if (attempt < maxRetries - 1) {
         // Calculate delay with exponential backoff
         const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
-        
+
         if (onRetry) {
           onRetry(lastError, attempt + 1);
         }
-        
+
         // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
   }
-  
+
   throw lastError!;
 }
 
@@ -116,21 +121,23 @@ export async function retryWithTimeout<T>(
 export class CancellableTimeout {
   private timeoutId?: NodeJS.Timeout;
   private rejectFn?: (error: TimeoutError) => void;
-  
+
   constructor(private readonly duration: number) {}
-  
+
   start(errorMessage?: string): Promise<never> {
     return new Promise<never>((_, reject) => {
       this.rejectFn = reject;
       this.timeoutId = setTimeout(() => {
-        reject(new TimeoutError(
-          errorMessage || `Operation timed out after ${this.duration}ms`,
-          this.duration
-        ));
+        reject(
+          new TimeoutError(
+            errorMessage || `Operation timed out after ${this.duration}ms`,
+            this.duration,
+          ),
+        );
       }, this.duration);
     });
   }
-  
+
   cancel(): void {
     if (this.timeoutId) {
       clearTimeout(this.timeoutId);
@@ -144,12 +151,12 @@ export class CancellableTimeout {
  * Default timeout values for different operations
  */
 export const DEFAULT_TIMEOUTS = {
-  QUERY_PROCESSING: 30000,    // 30 seconds for query processing
-  AGENT_EXECUTION: 60000,     // 60 seconds for individual agent execution
-  TOOL_EXECUTION: 45000,      // 45 seconds for tool execution
-  LLM_GENERATION: 30000,      // 30 seconds for LLM generation
-  PLAN_CREATION: 20000,       // 20 seconds for plan creation
-  TOTAL_EXECUTION: 120000,    // 2 minutes for total execution
-  API_REQUEST: 10000,         // 10 seconds for API requests
-  DATABASE_QUERY: 5000,       // 5 seconds for database queries
+  QUERY_PROCESSING: 30000, // 30 seconds for query processing
+  AGENT_EXECUTION: 180000, // 3 minutes for agents (must match LLM_GENERATION for synthesis)
+  TOOL_EXECUTION: 180000, // 3 minutes for tool execution (increased for LLM synthesis)
+  LLM_GENERATION: 180000, // 3 minutes for granite3.3:2b on CPU
+  PLAN_CREATION: 20000, // 20 seconds for plan creation
+  TOTAL_EXECUTION: 300000, // 5 minutes total (increased to accommodate longer synthesis)
+  API_REQUEST: 10000, // 10 seconds for API requests
+  DATABASE_QUERY: 5000, // 5 seconds for database queries
 } as const;

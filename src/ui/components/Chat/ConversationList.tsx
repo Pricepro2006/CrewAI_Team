@@ -1,5 +1,5 @@
 import React from "react";
-import { trpc } from "../../App";
+import { api } from "@/lib/trpc";
 
 interface ConversationListProps {
   currentId: string | null;
@@ -12,7 +12,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   onSelect,
   onNew,
 }) => {
-  const { data: conversations, isLoading } = trpc.chat.list.useQuery({
+  const { data: conversations, isLoading } = (api.chat as any).list.useQuery({
     limit: 50,
     offset: 0,
   });

@@ -22,7 +22,3 @@ export * from './popover';
 export * from './calendar';
 export * from './tooltip';
 export * from './date-range-picker';
-export * from './radio-group';
-export * from './textarea';
-export * from './collapsible';
-export * from './accordion';

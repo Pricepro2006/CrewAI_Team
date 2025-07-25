@@ -172,32 +172,6 @@
   margin-bottom: 1.5rem;
 }
 
-.search-results-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.search-stats {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #9ca3af;
-}
-
-.stat-item svg {
-  width: 16px;
-  height: 16px;
-  color: #667eea;
-}
-
 .results-list {
   display: flex;
   flex-direction: column;

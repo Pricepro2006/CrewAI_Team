@@ -1,64 +1,20 @@
 import React, { useState } from "react";
-import { trpc } from "@/utils/trpc";
-import type { CollectedData } from "@/core/data-collection/types";
+import { api } from "@/lib/trpc";
 import "./WebScraping.css";
-
-interface WebScrapingResult {
-  success: boolean;
-  data: Array<{
-    id: string;
-    sourceId: string;
-    jobId: string;
-    data: {
-      url: string;
-      content: {
-        markdown: string;
-        html: string;
-        extractedData?: Record<string, unknown>;
-      };
-      timestamp: Date;
-      metadata: {
-        followLinks: boolean;
-        maxDepth: number;
-        respectRobots: boolean;
-        contentLength: {
-          markdown: number;
-          html: number;
-        };
-      };
-    };
-    extractedAt: Date;
-    tags: string[];
-    quality: string;
-  }>;
-  metadata: {
-    totalRecords: number;
-    url: string;
-    timestamp: string;
-    requestId: string;
-  };
-}
 
 export const WebScraping: React.FC = () => {
   const [url, setUrl] = useState("");
-  const [extractionPrompt, setExtractionPrompt] = useState("");
-  const [followLinks, setFollowLinks] = useState(false);
-  const [maxDepth, setMaxDepth] = useState(1);
-  const [respectRobots, setRespectRobots] = useState(true);
-  const [activeTab, setActiveTab] = useState<"markdown" | "html" | "extracted">(
-    "markdown",
-  );
-  const [result, setResult] = useState<WebScrapingResult | null>(null);
+  const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Use mutation from tRPC
-  const scrapeMutation = trpc.dataCollection.webScraping.useMutation({
-    onSuccess: (data) => {
+  // Use tRPC mutation hook
+  const scrapeMutation = (api.dataCollection as any).webScraping.useMutation({
+    onSuccess: (data: any) => {
       setResult(data);
       setError(null);
     },
-    onError: (error) => {
-      setError(error.message || "Failed to scrape website");
+    onError: (err: any) => {
+      setError(err.message || "Failed to scrape website");
       setResult(null);
     },
   });
@@ -69,25 +25,18 @@ export const WebScraping: React.FC = () => {
       return;
     }
 
-    try {
-      // Validate URL format
-      new URL(url.trim());
-    } catch {
-      setError("Please enter a valid URL (including http:// or https://)");
-      return;
-    }
-
     setError(null);
     setResult(null);
 
-    // Call the mutation
-    scrapeMutation.mutate({
-      url: url.trim(),
-      extractionPrompt: extractionPrompt.trim() || undefined,
-      followLinks,
-      maxDepth,
-      respectRobots,
-    });
+    try {
+      // Using the dataCollection.webScraping endpoint with React hook
+      await scrapeMutation.mutateAsync({
+        url: url.trim(),
+      });
+    } catch (err) {
+      // Error handling is done in onError callback
+      console.error("Scraping error:", err);
+    }
   };
 
   return (
@@ -101,74 +50,15 @@ export const WebScraping: React.FC = () => {
       </div>
 
       <div className="scraping-input-section">
-        <h2>Configure Web Scraping</h2>
-        <div className="scraping-form">
-          <div className="form-group">
-            <label htmlFor="url-input">Website URL</label>
-            <input
-              id="url-input"
-              type="url"
-              className="url-input"
-              placeholder="Enter website URL (e.g., https://example.com)"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleScrape()}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="extraction-prompt">
-              Extraction Prompt (Optional)
-              <span className="help-text">
-                Specify what data to extract from the page
-              </span>
-            </label>
-            <textarea
-              id="extraction-prompt"
-              className="extraction-prompt"
-              placeholder="e.g., Extract all product names and prices"
-              value={extractionPrompt}
-              onChange={(e) => setExtractionPrompt(e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          <div className="advanced-options">
-            <h3>Advanced Options</h3>
-            <div className="options-grid">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={followLinks}
-                  onChange={(e) => setFollowLinks(e.target.checked)}
-                />
-                <span>Follow Links</span>
-              </label>
-
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={respectRobots}
-                  onChange={(e) => setRespectRobots(e.target.checked)}
-                />
-                <span>Respect robots.txt</span>
-              </label>
-
-              <div className="form-group inline">
-                <label htmlFor="max-depth">Max Depth</label>
-                <input
-                  id="max-depth"
-                  type="number"
-                  min="1"
-                  max="5"
-                  value={maxDepth}
-                  onChange={(e) => setMaxDepth(parseInt(e.target.value) || 1)}
-                  className="depth-input"
-                />
-              </div>
-            </div>
-          </div>
-
+        <div className="input-group">
+          <input
+            type="url"
+            className="url-input"
+            placeholder="Enter website URL (e.g., https://example.com)"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleScrape()}
+          />
           <button
             className="scrape-button"
             onClick={handleScrape}
@@ -177,7 +67,7 @@ export const WebScraping: React.FC = () => {
             {scrapeMutation.isLoading ? (
               <>
                 <span className="spinner"></span>
-                Scraping with BrightData...
+                Scraping...
               </>
             ) : (
               <>
@@ -238,252 +128,86 @@ export const WebScraping: React.FC = () => {
         )}
       </div>
 
-      {result && result.success && result.data.length > 0 && (
+      {result && (
         <div className="scraping-results">
-          <div className="results-header">
-            <h2>Scraping Results</h2>
-            <div className="results-metadata">
-              <span className="metadata-badge">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                  <path
-                    d="M12 6V12L16 14"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                </svg>
-                {new Date(result.metadata.timestamp).toLocaleString()}
-              </span>
-              <span className="metadata-badge">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect
-                    x="2"
-                    y="7"
-                    width="20"
-                    height="14"
-                    rx="2"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                  <path
-                    d="M16 2L12 7L8 2"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                </svg>
-                {result.data[0]?.quality || 'Unknown'} quality
-              </span>
-              <span className="metadata-badge">
-                Request ID: {result.metadata.requestId}
-              </span>
-            </div>
-          </div>
+          <h2>Scraping Results</h2>
 
-          {result.data.map((item) => (
-            <div key={item.id} className="result-item">
-              <div className="result-tabs">
-                <button
-                  className={`tab-button ${activeTab === "markdown" ? "active" : ""}`}
-                  onClick={() => setActiveTab("markdown")}
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <rect
-                      x="3"
-                      y="3"
-                      width="18"
-                      height="18"
-                      rx="2"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                    <path
-                      d="M7 11L7 17M7 11L10 14M7 11L4 14"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                    <path
-                      d="M11 17V11L14 17V11"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                  Markdown (
-                  {(item.data.content.markdown.length / 1024).toFixed(1)} KB)
-                </button>
-                <button
-                  className={`tab-button ${activeTab === "html" ? "active" : ""}`}
-                  onClick={() => setActiveTab("html")}
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <polyline
-                      points="16 18 22 12 16 6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                    <polyline
-                      points="8 6 2 12 8 18"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                  HTML ({(item.data.content.html.length / 1024).toFixed(1)} KB)
-                </button>
-                {item.data.content.extractedData && (
-                  <button
-                    className={`tab-button ${activeTab === "extracted" ? "active" : ""}`}
-                    onClick={() => setActiveTab("extracted")}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <circle
-                        cx="11"
-                        cy="11"
-                        r="8"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      />
-                      <path
-                        d="M21 21L16.65 16.65"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      />
-                    </svg>
-                    Extracted Data
-                  </button>
-                )}
-              </div>
-
-              <div className="tab-content">
-                {activeTab === "markdown" && (
-                  <div className="content-preview markdown-preview">
-                    <pre>
-                      {item.data.content.markdown.substring(0, 2000)}
-                      {item.data.content.markdown.length > 2000 &&
-                        "...\n\n[Content truncated for preview]"}
-                    </pre>
-                  </div>
-                )}
-
-                {activeTab === "html" && (
-                  <div className="content-preview html-preview">
-                    <pre>
-                      {item.data.content.html.substring(0, 2000)}
-                      {item.data.content.html.length > 2000 &&
-                        "...\n\n[Content truncated for preview]"}
-                    </pre>
-                  </div>
-                )}
-
-                {activeTab === "extracted" &&
-                  item.data.content.extractedData && (
-                    <div className="content-preview extracted-preview">
-                      <pre>
-                        {JSON.stringify(
-                          item.data.content.extractedData,
-                          null,
-                          2,
-                        )}
-                      </pre>
-                    </div>
-                  )}
-              </div>
-
-              <div className="result-footer">
-                <div className="tags">
-                  {item.tags.map((tag, tagIndex) => (
-                    <span key={tagIndex} className="tag">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <div className="scraping-info">
-                  <span className="info-item">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12 2L2 7L12 12L22 7L12 2Z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      />
-                      <path
-                        d="M2 17L12 22L22 17"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      />
-                      <path
-                        d="M2 12L12 17L22 12"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      />
-                    </svg>
-                    Max Depth: {item.data.metadata.maxDepth}
+          {result.metadata && (
+            <div className="result-section">
+              <h3>Metadata</h3>
+              <div className="metadata-grid">
+                <div className="metadata-item">
+                  <span className="label">Title:</span>
+                  <span className="value">
+                    {result.metadata.title || "N/A"}
                   </span>
-                  <span className="info-item">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12 2C13.6569 2 15 3.34315 15 5V11C15 12.6569 13.6569 14 12 14C10.3431 14 9 12.6569 9 11V5C9 3.34315 10.3431 2 12 2Z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      />
-                      <path
-                        d="M19 11C19 14.866 15.866 18 12 18M5 11C5 14.866 8.13401 18 12 18M12 18V22"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      />
-                    </svg>
-                    Respects robots.txt:{" "}
-                    {item.data.metadata.respectRobots ? "Yes" : "No"}
+                </div>
+                <div className="metadata-item">
+                  <span className="label">Description:</span>
+                  <span className="value">
+                    {result.metadata.description || "N/A"}
+                  </span>
+                </div>
+                <div className="metadata-item">
+                  <span className="label">Keywords:</span>
+                  <span className="value">
+                    {result.metadata.keywords?.join(", ") || "N/A"}
                   </span>
                 </div>
               </div>
             </div>
-          ))}
+          )}
+
+          {result.content && (
+            <div className="result-section">
+              <h3>Content Preview</h3>
+              <div className="content-preview">
+                {result.content.substring(0, 500)}...
+              </div>
+            </div>
+          )}
+
+          {result.links && result.links.length > 0 && (
+            <div className="result-section">
+              <h3>Links Found ({result.links.length})</h3>
+              <div className="links-list">
+                {result.links.slice(0, 10).map((link: any, index: number) => (
+                  <div key={index} className="link-item">
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {link.text || link.url}
+                    </a>
+                  </div>
+                ))}
+                {result.links.length > 10 && (
+                  <div className="more-items">
+                    ... and {result.links.length - 10} more links
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {result.images && result.images.length > 0 && (
+            <div className="result-section">
+              <h3>Images Found ({result.images.length})</h3>
+              <div className="images-grid">
+                {result.images.slice(0, 6).map((image: any, index: number) => (
+                  <div key={index} className="image-item">
+                    <img src={image.src} alt={image.alt || "Image"} />
+                  </div>
+                ))}
+                {result.images.length > 6 && (
+                  <div className="more-items">
+                    ... and {result.images.length - 6} more images
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

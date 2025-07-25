@@ -23,16 +23,14 @@ describe("TaskQueue", () => {
     it("should add tasks to the queue", () => {
       const task1: Task = {
         id: "task-1",
-        type: "test",
+        type: "tool",
         data: { value: 1 },
-        createdAt: new Date(),
       };
 
       const task2: Task = {
         id: "task-2",
-        type: "test",
+        type: "tool",
         data: { value: 2 },
-        createdAt: new Date(),
       };
 
       queue.enqueue(task1);
@@ -49,26 +47,23 @@ describe("TaskQueue", () => {
       });
       const lowPriority: Task = {
         id: "low",
-        type: "test",
+        type: "tool",
         priority: 1,
         data: {},
-        createdAt: new Date(),
       };
 
       const highPriority: Task = {
         id: "high",
-        type: "test",
+        type: "tool",
         priority: 10,
         data: {},
-        createdAt: new Date(),
       };
 
       const mediumPriority: Task = {
         id: "medium",
-        type: "test",
+        type: "tool",
         priority: 5,
         data: {},
-        createdAt: new Date(),
       };
 
       priorityQueue.enqueue(lowPriority);
@@ -88,17 +83,15 @@ describe("TaskQueue", () => {
       });
       const task1: Task = {
         id: "task-1",
-        type: "test",
+        type: "tool",
         data: {},
-        createdAt: new Date(),
       };
 
       const task2: Task = {
         id: "task-2",
-        type: "test",
+        type: "tool",
         priority: 5,
         data: {},
-        createdAt: new Date(),
       };
 
       priorityQueue.enqueue(task1);
@@ -121,9 +114,9 @@ describe("TaskQueue", () => {
         strategy: "priority",
       });
       const tasks: Task[] = [
-        { id: "1", type: "test", priority: 3, data: {}, createdAt: new Date() },
-        { id: "2", type: "test", priority: 7, data: {}, createdAt: new Date() },
-        { id: "3", type: "test", priority: 5, data: {}, createdAt: new Date() },
+        { id: "1", type: "tool", priority: 3, data: {} },
+        { id: "2", type: "tool", priority: 7, data: {} },
+        { id: "3", type: "tool", priority: 5, data: {} },
       ];
 
       tasks.forEach((task) => priorityQueue.enqueue(task));
@@ -141,18 +134,16 @@ describe("TaskQueue", () => {
       });
       const task1: Task = {
         id: "first",
-        type: "test",
+        type: "tool",
         priority: 5,
         data: {},
-        createdAt: new Date(),
       };
 
       const task2: Task = {
         id: "second",
-        type: "test",
+        type: "tool",
         priority: 5,
         data: {},
-        createdAt: new Date(),
       };
 
       priorityQueue.enqueue(task1);
@@ -167,9 +158,8 @@ describe("TaskQueue", () => {
     it("should return the next task without removing it", () => {
       const task: Task = {
         id: "task-1",
-        type: "test",
+        type: "tool",
         data: {},
-        createdAt: new Date(),
       };
 
       queue.enqueue(task);
@@ -191,9 +181,9 @@ describe("TaskQueue", () => {
   describe("clear", () => {
     it("should remove all tasks from the queue", () => {
       const tasks: Task[] = [
-        { id: "1", type: "test", data: {}, createdAt: new Date() },
-        { id: "2", type: "test", data: {}, createdAt: new Date() },
-        { id: "3", type: "test", data: {}, createdAt: new Date() },
+        { id: "1", type: "tool", data: {} },
+        { id: "2", type: "tool", data: {} },
+        { id: "3", type: "tool", data: {} },
       ];
 
       tasks.forEach((task) => queue.enqueue(task));
@@ -213,9 +203,8 @@ describe("TaskQueue", () => {
     it("should return false for non-empty queue", () => {
       queue.enqueue({
         id: "task-1",
-        type: "test",
+        type: "tool",
         data: {},
-        createdAt: new Date(),
       });
 
       expect(queue.isEmpty()).toBe(false);
@@ -226,10 +215,10 @@ describe("TaskQueue", () => {
     it("should return the correct number of tasks", () => {
       expect(queue.size()).toBe(0);
 
-      queue.enqueue({ id: "1", type: "test", data: {}, createdAt: new Date() });
+      queue.enqueue({ id: "1", type: "tool", data: {} });
       expect(queue.size()).toBe(1);
 
-      queue.enqueue({ id: "2", type: "test", data: {}, createdAt: new Date() });
+      queue.enqueue({ id: "2", type: "tool", data: {} });
       expect(queue.size()).toBe(2);
 
       queue.dequeue();
@@ -250,24 +239,21 @@ describe("TaskQueue", () => {
       const tasks: Task[] = [
         {
           id: "low",
-          type: "test",
+          type: "tool",
           priority: 1,
           data: {},
-          createdAt: new Date(),
         },
         {
           id: "high",
-          type: "test",
+          type: "tool",
           priority: 10,
           data: {},
-          createdAt: new Date(),
         },
         {
           id: "medium",
-          type: "test",
+          type: "tool",
           priority: 5,
           data: {},
-          createdAt: new Date(),
         },
       ];
 
@@ -275,13 +261,13 @@ describe("TaskQueue", () => {
 
       const array = priorityQueue.toArray();
       expect(array).toHaveLength(3);
-      expect(array[0].id).toBe("high");
-      expect(array[1].id).toBe("medium");
-      expect(array[2].id).toBe("low");
+      expect(array[0]?.id).toBe("high");
+      expect(array[1]?.id).toBe("medium");
+      expect(array[2]?.id).toBe("low");
     });
 
     it("should not modify the original queue", () => {
-      queue.enqueue({ id: "1", type: "test", data: {}, createdAt: new Date() });
+      queue.enqueue({ id: "1", type: "tool", data: {} });
 
       const array = queue.toArray();
       expect(array).toHaveLength(1);
@@ -293,17 +279,15 @@ describe("TaskQueue", () => {
     it("should find a task by ID", () => {
       const task: Task = {
         id: "unique-id",
-        type: "test",
+        type: "tool",
         data: { value: 42 },
-        createdAt: new Date(),
       };
 
       queue.enqueue(task);
       queue.enqueue({
         id: "other",
-        type: "test",
+        type: "tool",
         data: {},
-        createdAt: new Date(),
       });
 
       const found = queue.findById("unique-id");
@@ -314,9 +298,8 @@ describe("TaskQueue", () => {
     it("should return null if task not found", () => {
       queue.enqueue({
         id: "task-1",
-        type: "test",
+        type: "tool",
         data: {},
-        createdAt: new Date(),
       });
 
       const found = queue.findById("non-existent");
@@ -328,15 +311,13 @@ describe("TaskQueue", () => {
     it("should remove a task by ID", () => {
       queue.enqueue({
         id: "remove-me",
-        type: "test",
+        type: "tool",
         data: {},
-        createdAt: new Date(),
       });
       queue.enqueue({
         id: "keep-me",
-        type: "test",
+        type: "tool",
         data: {},
-        createdAt: new Date(),
       });
 
       expect(queue.size()).toBe(2);
@@ -350,9 +331,8 @@ describe("TaskQueue", () => {
     it("should return false if task not found", () => {
       queue.enqueue({
         id: "task-1",
-        type: "test",
+        type: "tool",
         data: {},
-        createdAt: new Date(),
       });
 
       const removed = queue.removeById("non-existent");
@@ -367,27 +347,24 @@ describe("TaskQueue", () => {
         () =>
           queue.enqueue({
             id: "1",
-            type: "test",
+            type: "tool",
             priority: 5,
             data: {},
-            createdAt: new Date(),
           }),
         () =>
           queue.enqueue({
             id: "2",
-            type: "test",
+            type: "tool",
             priority: 3,
             data: {},
-            createdAt: new Date(),
           }),
         () => queue.dequeue(),
         () =>
           queue.enqueue({
             id: "3",
-            type: "test",
+            type: "tool",
             priority: 7,
             data: {},
-            createdAt: new Date(),
           }),
         () => queue.peek(),
         () => queue.removeById("2"),
@@ -417,10 +394,9 @@ describe("TaskQueue", () => {
       for (let i = 0; i < taskCount; i++) {
         largeQueue.enqueue({
           id: `task-${i}`,
-          type: "test",
+          type: "tool",
           priority: Math.random() * 100,
           data: { index: i },
-          createdAt: new Date(),
         });
       }
 

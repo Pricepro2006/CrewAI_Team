@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { trpc } from "../../App";
+import { api } from "@/lib/trpc";
 import "./VectorSearch.css";
 
 interface SearchResult {
@@ -15,122 +15,54 @@ interface SearchResult {
   score: number;
 }
 
-// Helper function to highlight search terms in text
-const highlightSearchTerms = (
-  text: string,
-  searchQuery: string,
-): React.ReactNode => {
-  if (!searchQuery.trim()) return text;
-
-  const terms = searchQuery
-    .toLowerCase()
-    .split(" ")
-    .filter((t) => t.length > 2);
-  if (terms.length === 0) return text;
-
-  const regex = new RegExp(`(${terms.join("|")})`, "gi");
-  const parts = text.split(regex);
-
-  return parts.map((part, index) =>
-    terms.some((term) => part.toLowerCase() === term) ? (
-      <mark
-        key={index}
-        style={{
-          backgroundColor: "#667eea",
-          color: "#fff",
-          padding: "0 2px",
-          borderRadius: "2px",
-        }}
-      >
-        {part}
-      </mark>
-    ) : (
-      part
-    ),
-  );
-};
-
 export const VectorSearch: React.FC = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [topK, setTopK] = useState(10);
-  const [searchStats, setSearchStats] = useState<{
-    totalDocuments: number;
-    searchTime: number;
-    averageScore: number;
-  } | null>(null);
+
+  // Create search query that we can trigger manually
+  const searchQuery = (api.rag as any).search.useQuery(
+    {
+      query: query.trim(),
+      limit: topK,
+    },
+    {
+      enabled: false, // Don't auto-run
+    },
+  );
 
   const handleSearch = async () => {
     if (!query.trim()) return;
 
     setIsSearching(true);
     setError(null);
-    const startTime = Date.now();
 
     try {
-      const response = await trpc.rag.search.query({
-        query: query.trim(),
-        limit: topK,
-      });
+      const response = await searchQuery.refetch();
 
-      // Transform the RAG response to match our interface
-      const transformedResults: SearchResult[] = response.map(
-        (item: any, index: number) => ({
-          id: item.metadata?.id || item.id || `result-${index}`,
-          content:
-            item.content ||
-            item.text ||
-            item.pageContent ||
-            "No content available",
-          metadata: {
-            source:
-              item.metadata?.source || item.metadata?.title || "Unknown source",
-            title: item.metadata?.title,
-            page: item.metadata?.page,
-            timestamp:
-              item.metadata?.uploadedAt ||
-              item.metadata?.timestamp ||
-              new Date().toISOString(),
-            documentId: item.metadata?.documentId,
-            chunkIndex: item.metadata?.chunkIndex,
-            ...item.metadata,
-          },
-          score:
-            item.score !== undefined
-              ? item.score
-              : item.similarity !== undefined
-                ? item.similarity
-                : 0.75,
-        }),
-      );
+      if (response.data) {
+        // Transform the RAG response to match our interface
+        const transformedResults: SearchResult[] = response.data.map(
+          (item: any, index: number) => ({
+            id: item.metadata?.id || `result-${index}`,
+            content: item.content || item.text || "No content available",
+            metadata: {
+              source:
+                item.metadata?.title ||
+                item.metadata?.source ||
+                "Unknown source",
+              title: item.metadata?.title,
+              timestamp: item.metadata?.uploadedAt || item.metadata?.timestamp,
+              ...item.metadata,
+            },
+            score: item.score || item.similarity || 0.5, // Fallback score if not provided
+          }),
+        );
 
-      setResults(transformedResults);
-
-      // Calculate search statistics
-      const searchTime = Date.now() - startTime;
-      const averageScore =
-        transformedResults.length > 0
-          ? transformedResults.reduce((acc, r) => acc + r.score, 0) /
-            transformedResults.length
-          : 0;
-
-      setSearchStats({
-        totalDocuments: transformedResults.length,
-        searchTime,
-        averageScore,
-      });
-
-      // Log successful search for monitoring
-      console.log(
-        `Vector search completed: Found ${transformedResults.length} results for query "${query.trim()}"`,
-        {
-          topK,
-          averageScore,
-          searchTimeMs: searchTime,
-        },
-      );
+        setResults(transformedResults);
+      }
     } catch (err) {
       console.error("Vector search error:", err);
       setError(
@@ -237,52 +169,7 @@ export const VectorSearch: React.FC = () => {
 
       {results.length > 0 && (
         <div className="search-results">
-          <div className="search-results-header">
-            <h2>Search Results ({results.length})</h2>
-            {searchStats && (
-              <div className="search-stats">
-                <span className="stat-item">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                    <path
-                      d="M12 6V12L16 14"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                  {searchStats.searchTime}ms
-                </span>
-                <span className="stat-item">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                  {(searchStats.averageScore * 100).toFixed(0)}% avg relevance
-                </span>
-              </div>
-            )}
-          </div>
+          <h2>Search Results ({results.length})</h2>
           <div className="results-list">
             {results.map((result) => (
               <div key={result.id} className="result-card">
@@ -325,9 +212,7 @@ export const VectorSearch: React.FC = () => {
                     </span>
                   </div>
                 </div>
-                <div className="result-content">
-                  {highlightSearchTerms(result.content, query)}
-                </div>
+                <div className="result-content">{result.content}</div>
                 {result.metadata.timestamp && (
                   <div className="result-footer">
                     <span className="timestamp">

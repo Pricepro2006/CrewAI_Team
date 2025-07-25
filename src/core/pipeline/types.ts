@@ -1,127 +1,132 @@
 /**
- * Pipeline Types
- * Core type definitions for the pipeline system
+ * Type definitions for the Three-Stage Pipeline
  */
 
-export interface PipelineStage {
-  id: string;
-  name: string;
-  description: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  startTime?: Date;
-  endTime?: Date;
-  progress?: number;
-  results?: any;
-  error?: string;
-}
-
-export interface PipelineContext {
-  id: string;
-  name: string;
-  description?: string;
-  stages: PipelineStage[];
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  startTime?: Date;
-  endTime?: Date;
-  metadata?: Record<string, any>;
-}
-
-export interface PipelineSummary {
-  totalProcessed: number;
-  executionTime: number;
-  success: boolean;
-  message?: string;
-}
-
-export interface PipelineExecutionResult {
-  success: boolean;
-  context: PipelineContext;
-  results?: any;
-  error?: string;
-  duration?: number;
-  stage2Count?: number;
-  stage3Count?: number;
-  stage1Count?: number;
-  totalEmails?: number;
-  summary?: PipelineSummary;
-  stage1Results?: any;
-  stage2Results?: any;
-  stage3Results?: any;
-}
-
-export interface StageProcessor {
-  process(context: PipelineContext, stage: PipelineStage): Promise<any>;
-}
-
-export interface PipelineConfig {
-  maxConcurrentStages?: number;
-  timeout?: number;
-  retryCount?: number;
-  retryDelay?: number;
-  stage2Limit?: number;
-  stage3Limit?: number;
-  batchSize?: number;
-  mockMode?: boolean;
-  resumeFromCheckpoint?: boolean;
-  maxConcurrency?: number;
-}
-
-/**
- * Email processing types
- */
 export interface Email {
   id: string;
   subject: string;
   body: string;
-  sender: string;
-  recipient: string;
-  timestamp: Date;
-  attachments?: string[];
-  priority?: 'low' | 'medium' | 'high';
-  status?: 'unread' | 'read' | 'processed';
+  sender_email: string;
+  recipient_emails?: string;
+  date_received: string;
+  raw_headers?: string;
+  message_id?: string;
+  in_reply_to?: string;
+  thread_id?: string;
+  labels?: string;
+  attachments?: string;
+  is_read?: boolean;
+  is_starred?: boolean;
+  folder?: string;
+  created_at: string;
+  updated_at: string;
 }
+
+export interface TriageResult {
+  emailId: string;
+  priorityScore: number;
+  workflow: string;
+  entities: {
+    po_numbers: string[];
+    quote_numbers: string[];
+    case_numbers: string[];
+    part_numbers: string[];
+    companies: string[];
+  };
+  urgencyLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  businessProcess: string;
+  processingTime: number;
+}
+
+export interface TriageResults {
+  all: TriageResult[];
+  top5000: Email[];
+  top500: Email[];
+}
+
+export interface LlamaAnalysisResult {
+  emailId: string;
+  contextualSummary: string;
+  workflowState: string;
+  businessProcess: string;
+  entities: {
+    po_numbers: string[];
+    quote_numbers: string[];
+    case_numbers: string[];
+    part_numbers: string[];
+    companies: string[];
+  };
+  actionItems: Array<{
+    task: string;
+    details: string;
+    assignee?: string;
+    deadline?: string;
+  }>;
+  urgencyLevel: string;
+  suggestedResponse: string;
+  qualityScore?: number;
+  processingTime: number;
+  model: string;
+  error?: string;
+}
+
+export type LlamaAnalysisResults = LlamaAnalysisResult[];
 
 export interface CriticalAnalysisResult {
-  id: string;
   emailId: string;
-  confidence: number;
-  categories: string[];
-  sentiment: 'positive' | 'negative' | 'neutral';
-  urgency: 'low' | 'medium' | 'high' | 'critical';
-  keyPhrases: string[];
-  entities: {
-    type: string;
-    value: string;
-    confidence: number;
-  }[];
-  summary: string;
-  timestamp: Date;
+  executiveSummary: string;
+  businessImpact: {
+    revenue?: string;
+    risk?: string;
+    opportunity?: string;
+  };
+  keyStakeholders: string[];
+  recommendedActions: Array<{
+    action: string;
+    priority: "HIGH" | "CRITICAL";
+    owner: string;
+    deadline: string;
+  }>;
+  strategicInsights: string;
+  modelUsed: string;
+  qualityScore?: number;
+  processingTime: number;
+  fallbackUsed?: boolean;
 }
 
-export interface CriticalAnalysisResults {
-  results: CriticalAnalysisResult[];
-  totalProcessed: number;
-  averageConfidence: number;
-  timestamp: Date;
+export type CriticalAnalysisResults = CriticalAnalysisResult[];
+
+export interface PipelineResults {
+  totalEmails: number;
+  stage1Count: number;
+  stage2Count: number;
+  stage3Count: number;
+  executionId: number;
+  results: Array<{
+    emailId: string;
+    stage1: TriageResult;
+    stage2: LlamaAnalysisResult | null;
+    stage3: CriticalAnalysisResult | null;
+    finalScore: number;
+    pipelineStage: number;
+  }>;
 }
 
-/**
- * Pipeline status object with detailed progress information
- */
-export interface PipelineStatusInfo {
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  stage1Progress: number;
-  stage1_count: number;
-  stage2Progress: number;
-  stage2_count: number;
-  stage3Progress: number;
-  stage3_count: number;
-  currentStage?: string;
-  totalProgress?: number;
+export interface PipelineStatus {
+  status: "not_running" | "running" | "completed" | "failed";
+  executionId?: number;
+  id?: number; // Alias for executionId for backward compatibility
+  startedAt?: string;
+  completedAt?: string;
+  stage1Progress?: number;
+  stage2Progress?: number;
+  stage3Progress?: number;
+  stage1_count?: number; // Alias for stage1Progress
+  stage2_count?: number; // Alias for stage2Progress
+  stage3_count?: number; // Alias for stage3Progress
+  estimatedCompletion?: string;
+  errorMessage?: string;
+  lastProcessedId?: number;
+  currentStage?: number;
+  processedCount?: number;
 }
-
-/**
- * Export common pipeline types
- */
-export type PipelineStatus = 'pending' | 'running' | 'completed' | 'failed';
-export type StageStatus = 'pending' | 'running' | 'completed' | 'failed';

@@ -1,5 +1,5 @@
 import React from "react";
-import { trpc } from "../../App";
+import { api } from "@/lib/trpc";
 import "./Dashboard.css";
 
 interface StatsCardProps {
@@ -42,10 +42,10 @@ const AgentCard: React.FC<AgentCardProps> = ({ name, status, specialty }) => (
 );
 
 export const Dashboard: React.FC = () => {
-  const { data: health } = trpc.health.status.useQuery();
-  const { data: agentStats } = trpc.agent.getStats.useQuery();
-  const { data: conversationStats } = trpc.chat.stats.useQuery();
-  const { data: ragStats } = trpc.rag.stats.useQuery();
+  const { data: health } = (api.health as any).status.useQuery();
+  const { data: agentStats } = (api.agent as any).list.useQuery();
+  const { data: conversationStats } = (api.chat as any).stats.useQuery();
+  const { data: ragStats } = (api.rag as any).stats.useQuery();
 
   const stats = [
     {
@@ -68,7 +68,9 @@ export const Dashboard: React.FC = () => {
           />
         </svg>
       ),
-      description: conversationStats?.todayMessages ? `${conversationStats.todayMessages} today` : "in conversations",
+      description: conversationStats?.totalMessages
+        ? `${conversationStats.totalMessages} total`
+        : "in conversations",
     },
     {
       title: "Active Agents",
@@ -90,7 +92,9 @@ export const Dashboard: React.FC = () => {
           />
         </svg>
       ),
-      description: agentStats?.totalAgents ? `${agentStats.totalAgents} agents total` : "agents available",
+      description: agentStats?.totalAgents
+        ? `${agentStats.totalAgents} agents total`
+        : "agents available",
     },
     {
       title: "Documents Processed",
@@ -140,7 +144,9 @@ export const Dashboard: React.FC = () => {
           />
         </svg>
       ),
-      description: ragStats?.chunksCount ? `${ragStats.chunksCount} chunks indexed` : "in knowledge base",
+      description: ragStats?.chunksCount
+        ? `${ragStats.chunksCount} chunks indexed`
+        : "in knowledge base",
     },
     {
       title: "Conversations",
@@ -190,7 +196,9 @@ export const Dashboard: React.FC = () => {
           />
         </svg>
       ),
-      description: conversationStats?.todayConversations ? `${conversationStats.todayConversations} today` : "total created",
+      description: conversationStats?.totalConversations
+        ? `${conversationStats.totalConversations} total`
+        : "total created",
     },
   ];
 
@@ -218,8 +226,10 @@ export const Dashboard: React.FC = () => {
     },
   ];
 
-  const ollamaStatus = health?.services?.ollama || health?.status || "disconnected";
-  const isOllamaConnected = ollamaStatus === "connected" || ollamaStatus === "healthy";
+  const ollamaStatus =
+    health?.services?.ollama || health?.status || "disconnected";
+  const isOllamaConnected =
+    ollamaStatus === "connected" || ollamaStatus === "healthy";
 
   return (
     <div className="dashboard">
@@ -253,12 +263,16 @@ export const Dashboard: React.FC = () => {
           <div className="agents-section">
             <h2>Available Agents</h2>
             <div className="agent-grid">
-              {availableAgents.map((agent, index) => (
+              {availableAgents.map((agent: any, index: number) => (
                 <AgentCard key={index} {...agent} />
               ))}
             </div>
             <p className="agents-count">
-              {agentStats?.activeAgents || availableAgents.filter(a => a.status === 'active').length} of {agentStats?.totalAgents || availableAgents.length} agents available
+              {agentStats?.activeAgents ||
+                availableAgents.filter((a: any) => a.status === "active")
+                  .length}{" "}
+              of {agentStats?.totalAgents || availableAgents.length} agents
+              available
             </p>
           </div>
         </div>

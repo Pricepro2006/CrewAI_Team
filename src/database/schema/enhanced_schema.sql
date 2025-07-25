@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS emails_enhanced (
     thread_id TEXT,
     conversation_id_ref TEXT, -- Link to conversations table
     in_reply_to TEXT,
-    references TEXT, -- JSON array of message references
+    "references" TEXT, -- JSON array of message references
     
     -- Workflow fields
     status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'in_progress', 'completed', 'archived')),

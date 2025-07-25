@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { trpc } from "@/utils/trpc";
+import { api } from "@/lib/trpc";
 import "./KnowledgeBase.css";
 
 interface Document {
@@ -19,15 +19,13 @@ export const KnowledgeBase: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<{
-    current: number;
-    total: number;
-    fileName?: string;
-  } | null>(null);
 
   // Load real documents from the backend
-  const documentsQuery = trpc.rag?.list?.useQuery ? trpc.rag.list.useQuery({ limit: 100, offset: 0 }) : undefined;
-  const statsQuery = trpc.rag?.stats?.useQuery ? trpc.rag.stats.useQuery() : undefined;
+  const documentsQuery = (api.rag as any).list.useQuery({
+    limit: 100,
+    offset: 0,
+  });
+  const statsQuery = (api.rag as any).stats.useQuery();
 
   useEffect(() => {
     if (documentsQuery.data) {
@@ -45,17 +43,17 @@ export const KnowledgeBase: React.FC = () => {
       }));
       setDocuments(transformedDocs);
     }
-  }, [documentsQuery?.data]);
+  }, [documentsQuery.data]);
 
-  const uploadFileMutation = trpc.rag?.uploadFile?.useMutation ? trpc.rag.uploadFile.useMutation({
+  const uploadFileMutation = (api.rag as any).uploadFile.useMutation({
     onSuccess: () => {
-      documentsQuery?.refetch();
+      documentsQuery.refetch();
       setError(null);
     },
     onError: (error: any) => {
       setError(`Upload failed: ${error.message}`);
     },
-  }) : undefined;
+  });
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -66,81 +64,25 @@ export const KnowledgeBase: React.FC = () => {
     setIsUploading(true);
     setError(null);
 
-    const uploadResults = {
-      successful: 0,
-      failed: 0,
-      errors: [] as string[],
-    };
-
     try {
-      const filesArray = Array.from(files);
-      setUploadProgress({ current: 0, total: filesArray.length });
+      for (const file of Array.from(files)) {
+        // Convert file to base64 for tRPC compatibility
+        const base64 = await fileToBase64(file);
 
-      for (let i = 0; i < filesArray.length; i++) {
-        const file = filesArray[i]!;
-        try {
-          // Update progress
-          setUploadProgress({
-            current: i,
-            total: filesArray.length,
-            fileName: file.name,
-          });
-
-          // Validate file size
-          if (file && file.size > 10 * 1024 * 1024) {
-            throw new Error(`File "${file.name}" exceeds 10MB limit`);
-          }
-
-          // Convert file to base64 for tRPC compatibility
-          const base64 = await fileToBase64(file!);
-
-          console.log(
-            `Uploading file: ${file.name} (${formatFileSize(file.size)})`,
-          );
-
-          if (uploadFileMutation) {
-            await uploadFileMutation.mutateAsync({
-              filename: file.name,
-              mimeType: file.type || "application/octet-stream",
-              data: base64,
-              metadata: {
-                size: file.size,
-                lastModified: new Date(file.lastModified).toISOString(),
-                uploadedBy: "user", // Could be enhanced with actual user info
-              },
-            });
-          } else {
-            throw new Error("Upload service not available");
-          }
-
-          uploadResults.successful++;
-          console.log(`Successfully uploaded: ${file.name}`);
-        } catch (fileError) {
-          uploadResults.failed++;
-          const errorMsg =
-            fileError instanceof Error ? fileError.message : "Unknown error";
-          uploadResults.errors.push(`${file.name}: ${errorMsg}`);
-          console.error(`Failed to upload ${file.name}:`, fileError);
-        }
-      }
-
-      // Show summary
-      if (uploadResults.successful > 0) {
-        console.log(
-          `Successfully uploaded ${uploadResults.successful} file(s)`,
-        );
-      }
-      if (uploadResults.failed > 0) {
-        setError(
-          `Failed to upload ${uploadResults.failed} file(s): ${uploadResults.errors.join(", ")}`,
-        );
+        await uploadFileMutation.mutateAsync({
+          filename: file.name,
+          mimeType: file.type,
+          data: base64,
+          metadata: {
+            size: file.size,
+            lastModified: new Date(file.lastModified).toISOString(),
+          },
+        });
       }
     } catch (error) {
       console.error("Upload error:", error);
-      setError(error instanceof Error ? error.message : "Upload failed");
     } finally {
       setIsUploading(false);
-      setUploadProgress(null);
       // Clear the input
       event.target.value = "";
     }
@@ -154,13 +96,17 @@ export const KnowledgeBase: React.FC = () => {
         const result = reader.result as string;
         // Remove the data URL prefix (e.g., "data:text/plain;base64,")
         const base64 = result.split(",")[1];
-        resolve(base64);
+        if (base64) {
+          resolve(base64);
+        } else {
+          reject(new Error("Failed to extract base64 data from file"));
+        }
       };
       reader.onerror = (error) => reject(error);
     });
   };
 
-  const deleteDocumentMutation = trpc.rag.delete.useMutation({
+  const deleteDocumentMutation = (api.rag as any).delete.useMutation({
     onSuccess: () => {
       documentsQuery.refetch();
       setError(null);
@@ -170,25 +116,39 @@ export const KnowledgeBase: React.FC = () => {
     },
   });
 
+  // Create search mutation to handle search properly
+  const searchMutation = (api.rag as any).search.useQuery(
+    {
+      query: searchQuery.trim(),
+      limit: 5,
+    },
+    {
+      enabled: false, // Don't auto-run, we'll trigger manually
+    },
+  );
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
     try {
-      const response = await trpc.rag.search.query({
-        query: searchQuery.trim(),
-        limit: 5,
-      });
+      const response = await searchMutation.refetch();
 
-      const transformedResults = response.map((item: any, index: number) => ({
-        id: item.metadata?.id || `result-${index}`,
-        documentName:
-          item.metadata?.title || item.metadata?.source || "Unknown Document",
-        chunk: item.content || item.text || "No content available",
-        score: item.score || item.similarity || 0.5,
-      }));
+      if (response.data) {
+        const transformedResults = response.data.map(
+          (item: any, index: number) => ({
+            id: item.metadata?.id || `result-${index}`,
+            documentName:
+              item.metadata?.title ||
+              item.metadata?.source ||
+              "Unknown Document",
+            chunk: item.content || item.text || "No content available",
+            score: item.score || item.similarity || 0.5,
+          }),
+        );
 
-      setSearchResults(transformedResults);
-      setError(null);
+        setSearchResults(transformedResults);
+        setError(null);
+      }
     } catch (err) {
       console.error("Search error:", err);
       setError(err instanceof Error ? err.message : "Search failed");
@@ -263,7 +223,6 @@ export const KnowledgeBase: React.FC = () => {
             onChange={handleFileUpload}
             multiple
             accept=".pdf,.txt,.md,.docx,.html"
-            disabled={isUploading}
           />
           <label htmlFor="file-upload" className="upload-label">
             <svg
@@ -310,56 +269,6 @@ export const KnowledgeBase: React.FC = () => {
             )}
           </label>
         </div>
-
-        {uploadProgress && (
-          <div className="upload-progress">
-            <div className="upload-progress-header">
-              <span className="upload-progress-title">
-                Uploading {uploadProgress.fileName || "files"}...
-              </span>
-              <span className="upload-progress-count">
-                {uploadProgress.current + 1} of {uploadProgress.total}
-              </span>
-            </div>
-            <div className="upload-progress-bar">
-              <div
-                className="upload-progress-fill"
-                style={{
-                  width: `${((uploadProgress.current + 1) / uploadProgress.total) * 100}%`,
-                }}
-              />
-            </div>
-            <div className="upload-progress-status">
-              <svg
-                className="upload-spinner"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeDasharray="31.416"
-                  strokeDashoffset="10.472"
-                  opacity="0.25"
-                />
-                <path
-                  d="M12 2C6.477 2 2 6.477 2 12"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-              Processing file...
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="search-section">
