@@ -45,7 +45,7 @@ async function testUIIntegration() {
           logger.info("Sample analysis data:", "TEST_UI", {
             priority: emailWithAnalysis.analysis.quick?.priority,
             workflow: emailWithAnalysis.analysis.quick?.workflow,
-            businessProcess: emailWithAnalysis.analysis.deep?.businessProcess,
+            businessProcess: emailWithAnalysis.analysis.deep?.detailedWorkflow?.primary,
             model: emailWithAnalysis.analysis.processingMetadata?.model,
             confidence: emailWithAnalysis.analysis.processingMetadata?.confidence,
           });
