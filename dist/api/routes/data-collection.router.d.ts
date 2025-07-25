@@ -94,8 +94,8 @@ export declare const dataCollectionRouter: import("@trpc/server").CreateRouterIn
             query: string;
             engine?: "google" | "bing" | "yandex" | undefined;
             language?: string | undefined;
-            cursor?: string | undefined;
             location?: string | undefined;
+            cursor?: string | undefined;
             maxResults?: number | undefined;
         };
         _input_out: {
@@ -103,8 +103,8 @@ export declare const dataCollectionRouter: import("@trpc/server").CreateRouterIn
             engine: "google" | "bing" | "yandex";
             maxResults: number;
             language?: string | undefined;
-            cursor?: string | undefined;
             location?: string | undefined;
+            cursor?: string | undefined;
         };
         _output_in: typeof import("@trpc/server").unsetMarker;
         _output_out: typeof import("@trpc/server").unsetMarker;

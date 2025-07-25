@@ -1,4 +1,4 @@
-import type { EmbeddingConfig } from './types';
+import type { EmbeddingConfig } from "./types";
 export declare class EmbeddingService {
     private client;
     private config;

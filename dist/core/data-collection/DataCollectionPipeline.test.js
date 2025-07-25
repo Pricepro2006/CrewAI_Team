@@ -43,8 +43,8 @@ describe("DataCollectionPipeline", () => {
             expect(typeof sourceId).toBe("string");
             const sources = pipeline.getDataSources();
             expect(sources.length).toBe(1);
-            expect(sources[0].name).toBe(source.name);
-            expect(sources[0].type).toBe(source.type);
+            expect(sources[0]?.name).toBe(source.name);
+            expect(sources[0]?.type).toBe(source.type);
         });
         it("should update an existing data source", async () => {
             const source = {
@@ -116,8 +116,8 @@ describe("DataCollectionPipeline", () => {
             expect(typeof jobId).toBe("string");
             const jobs = pipeline.getJobsForSource(sourceId);
             expect(jobs.length).toBe(1);
-            expect(jobs[0].status).toBe("completed");
-            expect(jobs[0].recordsCollected).toBe(1);
+            expect(jobs[0]?.status).toBe("completed");
+            expect(jobs[0]?.recordsCollected).toBe(1);
             collectSearchResultsSpy.mockRestore();
         });
         it("should handle collection errors gracefully", async () => {
@@ -136,8 +136,8 @@ describe("DataCollectionPipeline", () => {
             await expect(pipeline.collectFromSource(sourceId)).rejects.toThrow("Collection failed");
             const jobs = pipeline.getJobsForSource(sourceId);
             expect(jobs.length).toBe(1);
-            expect(jobs[0].status).toBe("failed");
-            expect(jobs[0].error).toBe("Collection failed");
+            expect(jobs[0]?.status).toBe("failed");
+            expect(jobs[0]?.error).toBe("Collection failed");
             collectWebScrapingDataSpy.mockRestore();
         });
         it("should not collect from inactive sources", async () => {

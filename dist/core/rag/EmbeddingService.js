@@ -1,20 +1,23 @@
-import axios from 'axios';
+import axios from "axios";
+import { MODEL_CONFIG } from "../../config/models.config";
 export class EmbeddingService {
     client;
     config;
     isInitialized = false;
     constructor(config) {
+        // Override to use Llama 3.2:3b for embeddings
         this.config = {
-            batchSize: 100,
-            dimensions: 768, // Default for nomic-embed-text
-            ...config
+            batchSize: MODEL_CONFIG.batchSizes.embedding,
+            dimensions: 4096, // Llama 3.2:3b embedding dimensions
+            ...config,
+            model: config.model || MODEL_CONFIG.models.embedding, // Use llama3.2:3b as fallback
         };
         this.client = axios.create({
-            baseURL: config.baseUrl || 'http://localhost:11434',
-            timeout: 60000, // 1 minute timeout for embeddings
+            baseURL: config.baseUrl || MODEL_CONFIG.api.ollamaUrl,
+            timeout: MODEL_CONFIG.timeouts.embedding,
             headers: {
-                'Content-Type': 'application/json'
-            }
+                "Content-Type": "application/json",
+            },
         });
     }
     async initialize() {
@@ -22,11 +25,11 @@ export class EmbeddingService {
             return;
         try {
             // Test connection
-            await this.client.get('/api/tags');
+            await this.client.get("/api/tags");
             // Verify embedding model is available
-            const response = await this.client.get('/api/tags');
+            const response = await this.client.get("/api/tags");
             const models = response.data.models || [];
-            const hasEmbeddingModel = models.some((m) => m.name === this.config.model || m.name.includes('embed'));
+            const hasEmbeddingModel = models.some((m) => m.name === this.config.model || m.name.includes("embed"));
             if (!hasEmbeddingModel) {
                 console.warn(`Embedding model ${this.config.model} not found. Please pull it first.`);
             }
@@ -41,14 +44,14 @@ export class EmbeddingService {
             await this.initialize();
         }
         try {
-            const response = await this.client.post('/api/embeddings', {
+            const response = await this.client.post("/api/embeddings", {
                 model: this.config.model,
-                prompt: text
+                prompt: text,
             });
             return response.data.embedding;
         }
         catch (error) {
-            console.error('Embedding generation failed:', error);
+            console.error("Embedding generation failed:", error);
             // Return a zero vector as fallback
             return new Array(this.config.dimensions).fill(0);
         }
@@ -63,7 +66,7 @@ export class EmbeddingService {
         for (let i = 0; i < texts.length; i += batchSize) {
             const batch = texts.slice(i, i + batchSize);
             // Process batch in parallel with rate limiting
-            const batchEmbeddings = await Promise.all(batch.map(text => this.embedWithRetry(text)));
+            const batchEmbeddings = await Promise.all(batch.map((text) => this.embedWithRetry(text)));
             embeddings.push(...batchEmbeddings);
             // Small delay between batches to avoid rate limiting
             if (i + batchSize < texts.length) {
@@ -90,11 +93,11 @@ export class EmbeddingService {
         return new Array(this.config.dimensions).fill(0);
     }
     delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise((resolve) => setTimeout(resolve, ms));
     }
     async cosineSimilarity(embedding1, embedding2) {
         if (embedding1.length !== embedding2.length) {
-            throw new Error('Embeddings must have the same dimension');
+            throw new Error("Embeddings must have the same dimension");
         }
         let dotProduct = 0;
         let norm1 = 0;
@@ -114,7 +117,7 @@ export class EmbeddingService {
     async findSimilar(queryEmbedding, embeddings, topK = 5) {
         const similarities = await Promise.all(embeddings.map(async (embedding, index) => ({
             index,
-            score: await this.cosineSimilarity(queryEmbedding, embedding)
+            score: await this.cosineSimilarity(queryEmbedding, embedding),
         })));
         // Sort by similarity score (descending)
         similarities.sort((a, b) => b.score - a.score);

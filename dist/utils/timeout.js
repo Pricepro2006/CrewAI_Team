@@ -6,7 +6,7 @@ export class TimeoutError extends Error {
     constructor(message, duration) {
         super(message);
         this.duration = duration;
-        this.name = 'TimeoutError';
+        this.name = "TimeoutError";
     }
 }
 /**
@@ -48,7 +48,7 @@ export function createTimeoutWrapper(defaultTimeout) {
  * Retry with exponential backoff and timeout
  */
 export async function retryWithTimeout(fn, options = {}) {
-    const { maxRetries = 3, timeoutMs = 30000, baseDelay = 1000, maxDelay = 10000, onRetry } = options;
+    const { maxRetries = 3, timeoutMs = 30000, baseDelay = 1000, maxDelay = 10000, onRetry, } = options;
     let lastError;
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
@@ -63,7 +63,7 @@ export async function retryWithTimeout(fn, options = {}) {
                     onRetry(lastError, attempt + 1);
                 }
                 // Wait before retrying
-                await new Promise(resolve => setTimeout(resolve, delay));
+                await new Promise((resolve) => setTimeout(resolve, delay));
             }
         }
     }
@@ -100,11 +100,11 @@ export class CancellableTimeout {
  */
 export const DEFAULT_TIMEOUTS = {
     QUERY_PROCESSING: 30000, // 30 seconds for query processing
-    AGENT_EXECUTION: 60000, // 60 seconds for individual agent execution
-    TOOL_EXECUTION: 45000, // 45 seconds for tool execution
-    LLM_GENERATION: 30000, // 30 seconds for LLM generation
+    AGENT_EXECUTION: 180000, // 3 minutes for agents (must match LLM_GENERATION for synthesis)
+    TOOL_EXECUTION: 180000, // 3 minutes for tool execution (increased for LLM synthesis)
+    LLM_GENERATION: 180000, // 3 minutes for granite3.3:2b on CPU
     PLAN_CREATION: 20000, // 20 seconds for plan creation
-    TOTAL_EXECUTION: 120000, // 2 minutes for total execution
+    TOTAL_EXECUTION: 300000, // 5 minutes total (increased to accommodate longer synthesis)
     API_REQUEST: 10000, // 10 seconds for API requests
     DATABASE_QUERY: 5000, // 5 seconds for database queries
 };

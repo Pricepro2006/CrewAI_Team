@@ -18,9 +18,9 @@ describe("DocumentProcessor", () => {
             });
             expect(result).toBeDefined();
             expect(result).toHaveLength(1);
-            expect(result[0].content).toContain("test document");
-            expect(result[0].metadata.sourceId).toBe("test-doc-1");
-            expect(result[0].metadata.contentType).toBe("text/plain");
+            expect(result[0]?.content).toContain("test document");
+            expect(result[0]?.metadata.sourceId).toBe("test-doc-1");
+            expect(result[0]?.metadata.contentType).toBe("text/plain");
         });
         it("should handle markdown documents", async () => {
             const content = `# Title
@@ -39,7 +39,7 @@ const x = 5;
             });
             expect(result).toBeDefined();
             expect(result.length).toBeGreaterThan(0);
-            expect(result[0].metadata.contentType).toBe("text/markdown");
+            expect(result[0]?.metadata.contentType).toBe("text/markdown");
         });
         it("should chunk large documents", async () => {
             const longContent = "This is a sentence. ".repeat(100);
@@ -59,14 +59,14 @@ const x = 5;
             const result = await processor.processDocument("  Hello   World  ", {
                 sourceId: "test-1",
             });
-            expect(result[0].content).toBe("Hello World");
+            expect(result[0]?.content).toBe("Hello World");
         });
         it("should remove control characters", async () => {
             const text = "Hello\x00World\x1F";
             const result = await processor.processDocument(text, {
                 sourceId: "test-2",
             });
-            expect(result[0].content).toBe("HelloWorld");
+            expect(result[0]?.content).toBe("HelloWorld");
         });
         it("should normalize line breaks by default", async () => {
             const text = "Line1\r\nLine2\rLine3\nLine4";
@@ -74,7 +74,7 @@ const x = 5;
                 sourceId: "test-3",
             });
             // Default behavior removes line breaks
-            expect(result[0].content).toBe("Line1 Line2 Line3 Line4");
+            expect(result[0]?.content).toBe("Line1 Line2 Line3 Line4");
         });
         it("should preserve line breaks when preserveFormatting is true", async () => {
             const formattingProcessor = new DocumentProcessor({
@@ -87,7 +87,7 @@ const x = 5;
             const result = await formattingProcessor.processDocument(text, {
                 sourceId: "test-4",
             });
-            expect(result[0].content).toContain("Line1\nLine2\nLine3");
+            expect(result[0]?.content).toContain("Line1\nLine2\nLine3");
         });
         it("should handle empty strings", async () => {
             const result = await processor.processDocument("", {
@@ -136,7 +136,7 @@ const x = 5;
                 sourceId: "test-short",
             });
             expect(result).toHaveLength(1);
-            expect(result[0].content).toBe(text);
+            expect(result[0]?.content).toBe(text);
         });
     });
     describe("different chunking strategies", () => {
@@ -180,13 +180,13 @@ const x = 5;
                 sourceId: "test-metadata",
                 contentType: "text/plain",
                 author: "Test Author",
-                createdAt: new Date("2025-01-01"),
+                createdAt: new Date("2025-01-01").toISOString(),
             });
-            expect(result[0].metadata.sourceId).toBe("test-metadata");
-            expect(result[0].metadata.contentType).toBe("text/plain");
-            expect(result[0].metadata.author).toBe("Test Author");
-            expect(result[0].metadata.createdAt).toEqual(new Date("2025-01-01"));
-            expect(result[0].metadata.totalChunks).toBe(1);
+            expect(result[0]?.metadata.sourceId).toBe("test-metadata");
+            expect(result[0]?.metadata.contentType).toBe("text/plain");
+            expect(result[0]?.metadata.author).toBe("Test Author");
+            expect(result[0]?.metadata.createdAt).toEqual(new Date("2025-01-01").toISOString());
+            expect(result[0]?.metadata.totalChunks).toBe(1);
         });
         it("should add chunk metadata", async () => {
             const content = "Unique content for testing metadata";
@@ -194,8 +194,8 @@ const x = 5;
                 sourceId: "test-hash",
                 contentType: "text/plain",
             });
-            expect(result[0].metadata.chunkIndex).toBe(0);
-            expect(result[0].metadata.chunkSize).toBe(result[0].content.length);
+            expect(result[0]?.metadata.chunkIndex).toBe(0);
+            expect(result[0]?.metadata.chunkSize).toBe(result[0]?.content.length);
         });
     });
     describe("edge cases", () => {
@@ -226,8 +226,8 @@ const x = 5;
                 sourceId: "test-special",
                 contentType: "text/plain",
             });
-            expect(result[0].content).toContain("émojis");
-            expect(result[0].content).toContain("🎉");
+            expect(result[0]?.content).toContain("émojis");
+            expect(result[0]?.content).toContain("🎉");
         });
     });
 });

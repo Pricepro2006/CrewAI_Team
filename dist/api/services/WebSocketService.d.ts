@@ -162,7 +162,7 @@ export declare const WebSocketMessageSchema: z.ZodDiscriminatedUnion<"type", [z.
 }, "strip", z.ZodTypeAny, {
     type: "rag.operation";
     timestamp: Date;
-    operation: "indexing" | "searching" | "embedding";
+    operation: "embedding" | "indexing" | "searching";
     status: "started" | "completed" | "failed";
     details?: {
         error?: string | undefined;
@@ -173,7 +173,7 @@ export declare const WebSocketMessageSchema: z.ZodDiscriminatedUnion<"type", [z.
 }, {
     type: "rag.operation";
     timestamp: Date;
-    operation: "indexing" | "searching" | "embedding";
+    operation: "embedding" | "indexing" | "searching";
     status: "started" | "completed" | "failed";
     details?: {
         error?: string | undefined;

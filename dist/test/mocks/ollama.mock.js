@@ -1,25 +1,18 @@
-import { vi } from "vitest";
-export const mockOllamaResponse = {
-    model: "qwen3:14b",
-    created_at: new Date().toISOString(),
-    response: "Mock response from Ollama",
-    done: true,
-};
-export const mockOllamaEmbedding = {
-    embedding: Array(768).fill(0.1),
-};
-export const createMockOllamaProvider = () => ({
-    initialize: vi.fn().mockResolvedValue(undefined),
-    chat: vi.fn().mockResolvedValue(mockOllamaResponse),
-    embeddings: vi.fn().mockResolvedValue(mockOllamaEmbedding),
-    generate: vi.fn().mockResolvedValue(mockOllamaResponse.response),
-    pull: vi.fn().mockResolvedValue({ status: "success" }),
-    list: vi.fn().mockResolvedValue({
-        models: [
-            { name: "qwen3:14b", size: 14000000000 },
-            { name: "qwen3:8b", size: 8000000000 },
-            { name: "nomic-embed-text", size: 274000000 },
-        ],
-    }),
-});
+import { vi } from 'vitest';
+export function createMockOllamaProvider() {
+    return {
+        generate: vi.fn().mockResolvedValue('Mock LLM response for testing purposes'),
+        generateCompletion: vi.fn().mockResolvedValue({
+            content: 'Mock completion response',
+            usage: {
+                prompt_tokens: 10,
+                completion_tokens: 20,
+                total_tokens: 30
+            }
+        }),
+        isAvailable: vi.fn().mockResolvedValue(true),
+        initialize: vi.fn().mockResolvedValue(undefined)
+    };
+}
+export const mockOllamaProvider = createMockOllamaProvider();
 //# sourceMappingURL=ollama.mock.js.map
