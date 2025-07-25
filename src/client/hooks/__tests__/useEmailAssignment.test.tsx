@@ -16,10 +16,10 @@ vi.mock('@/utils/trpc', () => ({
       },
       emailAssignment: {
         getTeamMembers: {
-          useQuery: jest.fn(),
+          useQuery: vi.fn(),
         },
         getWorkloadDistribution: {
-          useQuery: jest.fn(),
+          useQuery: vi.fn(),
           invalidate: mockInvalidate,
         },
         getAssignmentSuggestions: {

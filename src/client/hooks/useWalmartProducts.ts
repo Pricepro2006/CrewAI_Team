@@ -85,7 +85,7 @@ export function useWalmartRecommendations(params: {
 
 // Hook for analyzing deals
 export function useWalmartDealAnalysis() {
-  return trpc.walmartGrocery.analyzeDeal.useMutation();
+  return trpc.walmartGrocery.analyzeDeal.useQuery;
 }
 
 // Hook for scraping product data

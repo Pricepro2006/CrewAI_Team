@@ -43,7 +43,7 @@ export function useUpdateWalmartOrderStatus() {
   return trpc.walmartGrocery.updateOrderStatus.useMutation({
     onSuccess: (data) => {
       // Invalidate specific order and orders list
-      utils.walmartGrocery.getOrder.invalidate({ orderId: data.id });
+      utils.walmartGrocery.getOrder.invalidate({ orderId: data.orderId });
       utils.walmartGrocery.getOrders.invalidate();
     }
   });
