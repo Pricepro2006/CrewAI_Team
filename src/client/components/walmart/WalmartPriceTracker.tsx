@@ -94,8 +94,11 @@ const generatePriceHistory = (currentPrice: number): PricePoint[] => {
     if (Math.random() < 0.1) {
       if (price < currentPrice * 0.85) event = 'sale';
       else if (price > currentPrice * 1.1) event = 'increase';
-      else if (i > 0 && points.length > 0 && points[points.length - 1] && price < points[points.length - 1].price) {
-        event = 'decrease';
+      else if (i > 0 && points.length > 0) {
+        const lastPoint = points[points.length - 1];
+        if (lastPoint && price < lastPoint.price) {
+          event = 'decrease';
+        }
       }
     }
     
@@ -104,7 +107,10 @@ const generatePriceHistory = (currentPrice: number): PricePoint[] => {
   
   // Ensure last point is current price
   if (points.length > 0) {
-    points[points.length - 1].price = currentPrice;
+    const lastPoint = points[points.length - 1];
+    if (lastPoint) {
+      lastPoint.price = currentPrice;
+    }
   }
   
   return points;

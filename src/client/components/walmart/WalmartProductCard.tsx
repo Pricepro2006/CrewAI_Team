@@ -61,7 +61,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [isFavorite, setIsFavorite] = useState(
-    preferences.favoriteProducts.includes(product.id)
+    preferences.favoriteProducts?.includes(product.id) ?? false
   );
   const [showPriceAlert, setShowPriceAlert] = useState(false);
   const [targetPrice, setTargetPrice] = useState('');
@@ -87,8 +87,8 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
   const handleToggleFavorite = () => {
     const { updatePreferences, preferences } = useGroceryStore.getState();
     const newFavorites = isFavorite
-      ? preferences.favoriteProducts.filter(id => id !== product.id)
-      : [...preferences.favoriteProducts, product.id];
+      ? (preferences.favoriteProducts?.filter(id => id !== product.id) ?? [])
+      : [...(preferences.favoriteProducts ?? []), product.id];
     
     updatePreferences({ favoriteProducts: newFavorites });
     setIsFavorite(!isFavorite);
@@ -310,7 +310,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
                     key={i}
                     className={cn(
                       "h-3 w-3",
-                      i < Math.floor(product.ratings || 0)
+                      i < Math.floor(product.ratings?.average || 0)
                         ? "fill-yellow-400 text-yellow-400"
                         : "text-gray-300"
                     )}
@@ -318,7 +318,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
                 ))}
               </div>
               <span className="text-xs text-muted-foreground">
-                ({product.ratings ? Math.round(product.ratings * 100) : 0})
+                ({product.ratings?.count || 0})
               </span>
             </div>
           )}
@@ -340,11 +340,11 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
           {showDetails && (
             <div className="space-y-1 text-sm text-muted-foreground">
               {product.size && <p>Size: {product.size}</p>}
-              {product.nutrition && (
+              {product.nutritionalInfo && (
                 <div className="flex items-center gap-1">
                   <span>Nutrition Score:</span>
                   <Badge variant="outline" className="text-xs">
-                    {product.nutrition.calories ? `${product.nutrition.calories} cal` : 'N/A'}
+                    {product.nutritionalInfo.calories ? `${product.nutritionalInfo.calories} cal` : 'N/A'}
                   </Badge>
                 </div>
               )}
@@ -364,12 +364,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
                 Out of Stock
               </span>
             )}
-            {product.availability?.estimatedDelivery && (
-              <span className="flex items-center gap-1">
-                <Truck className="h-3 w-3" />
-                {product.availability.estimatedDelivery}
-              </span>
-            )}
+            {/* Delivery info could be added here when available */}
           </div>
         </div>
       </CardContent>

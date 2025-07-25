@@ -51,11 +51,11 @@ import {
 import { Calendar } from '../../../components/ui/calendar';
 import { cn } from '../../lib/utils';
 import { formatPrice } from '../../lib/utils';
-import type { DeliverySlot, DeliveryOptions, RecurringSchedule } from '../../../types/walmart-grocery';
+import type { DeliverySlot, DeliveryOptions, RecurringSchedule, Address } from '../../../types/walmart-grocery';
 
 interface WalmartDeliverySchedulerProps {
   onScheduleDelivery?: (slot: DeliverySlot, options: DeliveryOptions) => void;
-  defaultAddress?: string;
+  defaultAddress?: string | Address;
   subtotal?: number;
   showRecurring?: boolean;
   compactMode?: boolean;
@@ -333,12 +333,13 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
       
       const options: DeliveryOptions = {
         type: deliveryType,
-        address: deliveryType === 'delivery' && selectedAddress ? {
-          street: selectedAddress,
-          city: '',
-          state: '',
-          zipCode: '',
-        } : undefined,
+        address: deliveryType === 'delivery' && selectedAddress ? 
+          (typeof selectedAddress === 'string' ? {
+            street: selectedAddress,
+            city: '',
+            state: '',
+            zipCode: '',
+          } : selectedAddress) : undefined,
         instructions: specialInstructions || undefined,
         timeSlot: deliverySlot,
         recurring: recurringEnabled ? {
@@ -455,7 +456,11 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
                   <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
                     <p className="font-medium">Delivery Address</p>
-                    <p className="text-sm text-muted-foreground">{selectedAddress}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {typeof selectedAddress === 'string' 
+                        ? selectedAddress 
+                        : `${selectedAddress.street}, ${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.zipCode}`}
+                    </p>
                   </div>
                 </div>
                 <Button
@@ -637,12 +642,26 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
           </DialogHeader>
           
           <div className="space-y-3">
-            <RadioGroup value={selectedAddress} onValueChange={setSelectedAddress}>
+            <RadioGroup 
+              value={typeof selectedAddress === 'string' ? selectedAddress : JSON.stringify(selectedAddress)} 
+              onValueChange={(value) => {
+                try {
+                  const parsed = JSON.parse(value);
+                  setSelectedAddress(parsed);
+                } catch {
+                  setSelectedAddress(value);
+                }
+              }}
+            >
               <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                <RadioGroupItem value={defaultAddress} id="default" />
+                <RadioGroupItem value={typeof defaultAddress === 'string' ? defaultAddress : JSON.stringify(defaultAddress)} id="default" />
                 <Label htmlFor="default" className="flex-1 cursor-pointer">
                   <p className="font-medium">Home</p>
-                  <p className="text-sm text-muted-foreground">{defaultAddress}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {typeof defaultAddress === 'string' 
+                      ? defaultAddress 
+                      : `${defaultAddress.street}, ${defaultAddress.city}, ${defaultAddress.state} ${defaultAddress.zipCode}`}
+                  </p>
                 </Label>
               </div>
               <div className="flex items-center space-x-2 p-3 border rounded-lg">

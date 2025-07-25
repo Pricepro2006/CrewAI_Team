@@ -96,6 +96,11 @@ const orderStatusMap: Record<string, OrderStatusInfo> = {
     icon: Package,
     color: 'text-orange-600',
   },
+  ready: {
+    label: 'Ready',
+    icon: CheckCircle,
+    color: 'text-indigo-600',
+  },
   out_for_delivery: {
     label: 'Out for Delivery',
     icon: Truck,
@@ -171,14 +176,14 @@ const OrderCard: React.FC<{
   onToggleExpand: () => void;
   compactMode?: boolean;
 }> = ({ order, onReorder, onTrack, onViewDetails, isExpanded, onToggleExpand, compactMode = false }) => {
-  const statusInfo = orderStatusMap[order.status] ?? orderStatusMap.pending;
-  const StatusIcon = statusInfo.icon;
+  const statusInfo = orderStatusMap[order.status] || orderStatusMap.pending;
+  const StatusIcon = statusInfo!.icon;
   
   if (compactMode) {
     return (
       <div className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg">
         <div className="flex items-center gap-3">
-          <StatusIcon className={cn("h-4 w-4", statusInfo.color)} />
+          <StatusIcon className={cn("h-4 w-4", statusInfo!.color)} />
           <div>
             <p className="text-sm font-medium">Order #{order.orderNumber}</p>
             <p className="text-xs text-muted-foreground">
@@ -200,9 +205,9 @@ const OrderCard: React.FC<{
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold">Order #{order.orderNumber}</h3>
-              <Badge className={cn("gap-1", statusInfo.color)} variant="secondary">
+              <Badge className={cn("gap-1", statusInfo!.color)} variant="secondary">
                 <StatusIcon className="h-3 w-3" />
-                {statusInfo.label}
+                {statusInfo!.label}
               </Badge>
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -237,7 +242,7 @@ const OrderCard: React.FC<{
       </CardHeader>
       
       <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
-        <CollapsibleTrigger asChild>
+        <CollapsibleTrigger>
           <Button
             variant="ghost"
             size="sm"
@@ -366,7 +371,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
     // Search filter
     if (searchQuery) {
       filtered = filtered.filter(order =>
-        order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (order.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
         order.items.some(item =>
           item.product?.name.toLowerCase().includes(searchQuery.toLowerCase())
         )
