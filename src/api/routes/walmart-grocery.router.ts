@@ -14,6 +14,7 @@ import type { CollectedData } from "../../core/data-collection/types";
 import { WalmartGroceryService } from "../services/WalmartGroceryService";
 import { GroceryListRepository, GroceryItemRepository } from "../../database/repositories/GroceryRepository";
 import { getDatabaseManager } from "../../database/DatabaseManager";
+import type { WalmartProduct } from "../../types/walmart-grocery";
 
 // Event emitter for real-time updates
 const walmartEvents = new EventEmitter();
@@ -73,6 +74,7 @@ const walmartSchemas = {
     items: z.array(z.object({
       productId: z.string(),
       quantity: z.number().min(1).max(99),
+      listId: z.string().optional(),
       notes: z.string().optional(),
     })),
   }),
@@ -156,17 +158,42 @@ export const walmartGroceryRouter = createFeatureRouter(
             ctx.mcpTools, // Pass MCP tools from context
           );
 
-          const searchResults = await brightData.collectEcommerceData({
+          const collectedData = await brightData.collectEcommerceData({
             platform: "walmart",
             searchKeyword: input.query,
             maxProducts: input.limit,
           });
 
+          // Transform CollectedData to WalmartProduct format
+          const searchResults: WalmartProduct[] = collectedData.map(item => ({
+            id: item.data.id || item.id,
+            name: item.data.name || item.data.title || '',
+            description: item.data.description,
+            brand: item.data.brand,
+            category: item.data.category || 'Uncategorized',
+            price: parseFloat(item.data.price) || 0,
+            originalPrice: item.data.originalPrice ? parseFloat(item.data.originalPrice) : undefined,
+            unit: item.data.unit || 'each',
+            size: item.data.size,
+            imageUrl: item.data.imageUrl || item.data.image,
+            inStock: item.data.inStock !== false,
+            stockLevel: item.data.stockLevel,
+            ratings: item.data.rating ? {
+              average: parseFloat(item.data.rating),
+              count: parseInt(item.data.reviewCount) || 0
+            } : undefined,
+            nutritionalInfo: item.data.nutritionalInfo,
+            allergens: item.data.allergens,
+            isOrganic: item.data.isOrganic,
+            isGlutenFree: item.data.isGlutenFree,
+            isVegan: item.data.isVegan
+          }));
+
           // Process with MasterOrchestrator for enhanced analysis
           const processedResults = await ctx.masterOrchestrator.processQuery({
             text: `Analyze these Walmart grocery search results for "${input.query}" and provide recommendations`,
             metadata: {
-              searchResults: searchResults.map((r) => r.data),
+              searchResults: searchResults,
               filters: input,
               requestType: "product_search",
             },
@@ -644,8 +671,7 @@ export const walmartGroceryRouter = createFeatureRouter(
 
         try {
           const dbManager = await getDatabaseManager();
-          const groceryRepo = new GroceryListRepository(dbManager);
-          const lists = await groceryRepo.getUserLists(input.userId);
+          const lists = await dbManager.groceryLists.getUserLists(input.userId);
 
           return {
             lists: lists.map(list => ({
@@ -655,8 +681,8 @@ export const walmartGroceryRouter = createFeatureRouter(
               description: list.description,
               items: [],
               totalEstimate: list.estimated_total || 0,
-              createdAt: new Date(list.created_at),
-              updatedAt: new Date(list.updated_at),
+              createdAt: new Date(list.created_at || Date.now()),
+              updatedAt: new Date(list.updated_at || Date.now()),
               tags: [],
               isShared: false,
             })),
@@ -699,9 +725,8 @@ export const walmartGroceryRouter = createFeatureRouter(
 
         try {
           const dbManager = await getDatabaseManager();
-          const groceryRepo = new GroceryListRepository(dbManager);
           
-          await groceryRepo.updateList(input.listId, {
+          await dbManager.groceryLists.updateList(input.listId, {
             list_name: input.name,
             description: input.description,
             updated_at: new Date().toISOString(),
@@ -725,9 +750,8 @@ export const walmartGroceryRouter = createFeatureRouter(
 
         try {
           const dbManager = await getDatabaseManager();
-          const groceryRepo = new GroceryListRepository(dbManager);
           
-          await groceryRepo.deleteList(input.listId);
+          await dbManager.groceryLists.deleteList(input.listId);
 
           return {
             success: true,
@@ -750,9 +774,17 @@ export const walmartGroceryRouter = createFeatureRouter(
 
         try {
           const walmartService = WalmartGroceryService.getInstance();
+          // Transform input items to match CartItem interface
+          const cartItems = input.items.map(item => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            listId: input.listId,
+            notes: item.notes
+          }));
+
           const items = await walmartService.addItemsToList(
             input.listId,
-            input.items,
+            cartItems,
           );
 
           return {
@@ -773,9 +805,8 @@ export const walmartGroceryRouter = createFeatureRouter(
 
         try {
           const dbManager = await getDatabaseManager();
-          const itemRepo = new GroceryItemRepository(dbManager);
           
-          await itemRepo.deleteItem(input.itemId);
+          await dbManager.groceryItems.deleteItem(input.itemId);
 
           return {
             success: true,
