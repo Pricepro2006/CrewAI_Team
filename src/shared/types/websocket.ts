@@ -4,8 +4,9 @@
  */
 
 import type { Timestamp } from './index';
-import type { Task, Message, Document } from './core';
+import type { Task, Message, Document, Conversation } from './core';
 import type { EmailRecord } from './email';
+import type { AgentResult, AgentStep, TaskLog } from './api';
 
 // =====================================================
 // Core WebSocket Types
@@ -216,14 +217,7 @@ export interface AgentStep {
   confidence?: number;
 }
 
-export interface AgentResult {
-  success: boolean;
-  result?: unknown;
-  reasoning?: string;
-  confidence?: number;
-  totalSteps: number;
-  executionTime: number;
-}
+// AgentResult is imported from './api'
 
 export interface AgentToolEvent {
   agentId: string;

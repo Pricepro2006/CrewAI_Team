@@ -298,11 +298,7 @@ export interface ChatChoice {
   delta?: ChatMessage; // For streaming responses
 }
 
-export interface TokenUsage {
-  promptTokens: number;
-  completionTokens: number;
-  totalTokens: number;
-}
+// TokenUsage is defined in core.ts to avoid duplication
 
 // Agent API
 export interface AgentRequest {
@@ -471,8 +467,11 @@ export interface DocumentResponse extends Document {
 
 export interface DocumentChunkResponse {
   id: string;
+  documentId: string;
   content: string;
   index: number;
+  startOffset: number;
+  endOffset: number;
   tokens?: number;
   relevanceScore?: number;
   metadata?: Record<string, unknown>;

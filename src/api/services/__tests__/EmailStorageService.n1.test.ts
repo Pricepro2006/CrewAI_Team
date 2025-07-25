@@ -136,9 +136,10 @@ describe("EmailStorageService N+1 Query Tests", () => {
       
       // Verify email data is complete
       const firstEmail = emails[0];
-      expect(firstEmail.subject).toMatch(/Test Email/);
-      expect(firstEmail.analysis.quick.workflow.primary).toBe("Order Processing");
-      expect(firstEmail.analysis.deep.entities.poNumbers).toHaveLength(1);
+      expect(firstEmail).toBeDefined();
+      expect(firstEmail!.subject).toMatch(/Test Email/);
+      expect(firstEmail!.analysis.quick.workflow.primary).toBe("Order Processing");
+      expect(firstEmail!.analysis.deep.entities.poNumbers).toHaveLength(1);
     });
 
     it("should handle large result sets efficiently", async () => {

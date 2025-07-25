@@ -10,20 +10,17 @@ vi.mock("../../../utils/logger");
 
 describe("WebSocketAuthManager", () => {
   let authManager: WebSocketAuthManager;
-  let mockUserService: {
-    verifyToken: MockedFunction<UserService['verifyToken']>;
-    getById: MockedFunction<UserService['getById']>;
-  };
+  let mockUserService: UserService;
   let mockWs: AuthenticatedWebSocket;
 
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Create mock UserService
+    // Create mock UserService with only the required methods
     mockUserService = {
       verifyToken: vi.fn(),
       getById: vi.fn(),
-    } as any;
+    } as any as UserService;
 
     // Create auth manager
     authManager = new WebSocketAuthManager(mockUserService);
@@ -42,14 +39,14 @@ describe("WebSocketAuthManager", () => {
       const token = "valid-token";
       const userId = "user-123";
       
-      mockUserService.verifyToken.mockResolvedValue({
+      (mockUserService.verifyToken as any).mockResolvedValue({
         userId,
         email: "user@example.com",
         username: "testuser",
         role: UserRole.USER,
       });
       
-      mockUserService.getById.mockResolvedValue({
+      (mockUserService.getById as any).mockResolvedValue({
         id: userId,
         email: "user@example.com",
         username: "testuser",
@@ -75,7 +72,7 @@ describe("WebSocketAuthManager", () => {
     it("should reject invalid token", async () => {
       const token = "invalid-token";
       
-      mockUserService.verifyToken.mockRejectedValue(
+      (mockUserService.verifyToken as any).mockRejectedValue(
         new Error("Invalid token")
       );
 
@@ -90,14 +87,14 @@ describe("WebSocketAuthManager", () => {
       const token = "valid-token";
       const userId = "user-123";
       
-      mockUserService.verifyToken.mockResolvedValue({
+      (mockUserService.verifyToken as any).mockResolvedValue({
         userId,
         email: "user@example.com",
         username: "testuser",
         role: UserRole.USER,
       });
       
-      mockUserService.getById.mockResolvedValue({
+      (mockUserService.getById as any).mockResolvedValue({
         id: userId,
         email: "user@example.com",
         username: "testuser",
@@ -117,14 +114,14 @@ describe("WebSocketAuthManager", () => {
       const token = "admin-token";
       const userId = "admin-123";
       
-      mockUserService.verifyToken.mockResolvedValue({
+      (mockUserService.verifyToken as any).mockResolvedValue({
         userId,
         email: "admin@example.com",
         username: "admin",
         role: UserRole.ADMIN,
       });
       
-      mockUserService.getById.mockResolvedValue({
+      (mockUserService.getById as any).mockResolvedValue({
         id: userId,
         email: "admin@example.com",
         username: "admin",
@@ -247,14 +244,14 @@ describe("WebSocketAuthManager", () => {
       const token = "valid-token";
       const userId = "user-123";
       
-      mockUserService.verifyToken.mockResolvedValue({
+      (mockUserService.verifyToken as any).mockResolvedValue({
         userId,
         email: "user@example.com",
         username: "testuser",
         role: UserRole.USER,
       });
       
-      mockUserService.getById.mockResolvedValue({
+      (mockUserService.getById as any).mockResolvedValue({
         id: userId,
         email: "user@example.com",
         username: "testuser",

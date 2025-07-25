@@ -48,7 +48,7 @@ import {
   SelectValue,
 } from '../../../components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import { DealNotification, DealType, AlertSettings } from '../../../types/walmart-grocery';
+import type { DealNotification, DealType, AlertSettings } from '../../../types/walmart-grocery';
 import {
   Tooltip,
   TooltipContent,

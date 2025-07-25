@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import { TRPCError } from '@trpc/server';
 import { rateLimitMiddleware } from '../rateLimiter';
 
@@ -16,7 +17,7 @@ vi.mock('ioredis', () => ({
 }));
 
 describe('Rate Limiting Middleware Security Tests', () => {
-  let mockNext: ReturnType<typeof vi.fn>;
+  let mockNext: MockedFunction<() => Promise<any>>;
   let mockCtx: any;
 
   beforeEach(() => {
@@ -95,7 +96,7 @@ describe('Rate Limiting Middleware Security Tests', () => {
       const rateLimiter = rateLimitMiddleware(1, 60000);
       
       // Mock next to throw an error
-      const errorNext = vi.fn().mockRejectedValue(new Error('Database error'));
+      const errorNext: MockedFunction<() => Promise<any>> = vi.fn().mockRejectedValue(new Error('Database error'));
       
       // Should not throw rate limit error, should allow request
       await expect(
@@ -126,4 +127,3 @@ describe('Rate Limiting Middleware Security Tests', () => {
     });
   });
 });
-EOF < /dev/null

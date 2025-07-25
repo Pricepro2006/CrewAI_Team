@@ -20,8 +20,8 @@ import type {
   CleanupManager,
   CleanupResult,
 } from "./integration-test-framework";
-import type { WebSocketTypes } from "../types";
 import type { EventHandler } from "./integration-test-framework";
+import type { WebSocketMessage } from "../types";
 
 // =====================================================
 // HTTP Test Client Implementation
@@ -216,7 +216,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
         if (this.connection) {
           const message = JSON.parse(
             data.toString(),
-          ) as WebSocketTypes.WebSocketMessage;
+          ) as WebSocketMessage;
           this.connection.receivedMessages.push(message);
           this.connection.lastActivity = new Date().toISOString();
 
