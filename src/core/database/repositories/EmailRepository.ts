@@ -1,6 +1,11 @@
-import Database from 'better-sqlite3';
-import { BaseRepository, BaseEntity, QueryOptions, PaginatedResult } from '../../../database/repositories/BaseRepository';
-import { logger } from '../../../utils/logger';
+import type Database from "better-sqlite3";
+import {
+  BaseRepository,
+  type BaseEntity,
+  type QueryOptions,
+  type PaginatedResult,
+} from "../../../database/repositories/BaseRepository";
+import { logger } from "../../../utils/logger";
 
 export interface EmailEntity extends BaseEntity {
   graph_id?: string;
@@ -31,12 +36,12 @@ export interface EmailSearchFilters {
   limit?: number;
   offset?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 export class EmailRepository extends BaseRepository<EmailEntity> {
   constructor(db: Database.Database) {
-    super(db, 'emails');
+    super(db, "emails");
     this.initializeTable();
   }
 
@@ -71,95 +76,111 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
 
   protected getIndexes(): string[] {
     return [
-      'CREATE INDEX IF NOT EXISTS idx_emails_graph_id ON emails(graph_id)',
-      'CREATE INDEX IF NOT EXISTS idx_emails_received_at ON emails(received_at)',
-      'CREATE INDEX IF NOT EXISTS idx_emails_sender ON emails(sender_email)',
-      'CREATE INDEX IF NOT EXISTS idx_emails_assignedTo ON emails(assignedTo)',
-      'CREATE INDEX IF NOT EXISTS idx_emails_lastUpdated ON emails(lastUpdated)',
-      'CREATE INDEX IF NOT EXISTS idx_emails_is_read ON emails(is_read)',
-      'CREATE INDEX IF NOT EXISTS idx_emails_importance ON emails(importance)',
-      'CREATE INDEX IF NOT EXISTS idx_emails_created_at ON emails(created_at)',
+      "CREATE INDEX IF NOT EXISTS idx_emails_graph_id ON emails(graph_id)",
+      "CREATE INDEX IF NOT EXISTS idx_emails_received_at ON emails(received_at)",
+      "CREATE INDEX IF NOT EXISTS idx_emails_sender ON emails(sender_email)",
+      "CREATE INDEX IF NOT EXISTS idx_emails_assignedTo ON emails(assignedTo)",
+      "CREATE INDEX IF NOT EXISTS idx_emails_lastUpdated ON emails(lastUpdated)",
+      "CREATE INDEX IF NOT EXISTS idx_emails_is_read ON emails(is_read)",
+      "CREATE INDEX IF NOT EXISTS idx_emails_importance ON emails(importance)",
+      "CREATE INDEX IF NOT EXISTS idx_emails_created_at ON emails(created_at)",
     ];
   }
 
-  protected sanitizeColumnName(column: string): string {
+  protected override sanitizeColumnName(column: string): string {
     const allowedColumns = [
-      'id', 'subject', 'sender_email', 'sender_name', 'received_at',
-      'is_read', 'has_attachments', 'importance', 'assignedTo',
-      'lastUpdated', 'created_at', 'updated_at'
+      "id",
+      "subject",
+      "sender_email",
+      "sender_name",
+      "received_at",
+      "is_read",
+      "has_attachments",
+      "importance",
+      "assignedTo",
+      "lastUpdated",
+      "created_at",
+      "updated_at",
     ];
-    return allowedColumns.includes(column) ? column : 'received_at';
+    return allowedColumns.includes(column) ? column : "received_at";
   }
 
   // Custom search implementation
-  protected override buildWhereClause(conditions: Record<string, any>): { clause: string; params: any[] } {
+  protected override buildWhereClause(conditions: Record<string, any>): {
+    clause: string;
+    params: any[];
+  } {
     // Handle EmailSearchFilters if passed
     const options = conditions as EmailSearchFilters;
     const whereClauses: string[] = [];
     const params: any[] = [];
 
     if (options.sender_email?.length) {
-      const placeholders = options.sender_email.map(() => '?').join(',');
+      const placeholders = options.sender_email.map(() => "?").join(",");
       conditions.push(`sender_email IN (${placeholders})`);
       params.push(...options.sender_email);
     }
 
     if (options.assignedTo?.length) {
-      const placeholders = options.assignedTo.map(() => '?').join(',');
+      const placeholders = options.assignedTo.map(() => "?").join(",");
       conditions.push(`assignedTo IN (${placeholders})`);
       params.push(...options.assignedTo);
     }
 
-    if (typeof options.is_read === 'boolean') {
-      conditions.push('is_read = ?');
+    if (typeof options.is_read === "boolean") {
+      conditions.push("is_read = ?");
       params.push(options.is_read ? 1 : 0);
     }
 
-    if (typeof options.has_attachments === 'boolean') {
-      conditions.push('has_attachments = ?');
+    if (typeof options.has_attachments === "boolean") {
+      conditions.push("has_attachments = ?");
       params.push(options.has_attachments ? 1 : 0);
     }
 
     if (options.importance?.length) {
-      const placeholders = options.importance.map(() => '?').join(',');
+      const placeholders = options.importance.map(() => "?").join(",");
       conditions.push(`importance IN (${placeholders})`);
       params.push(...options.importance);
     }
 
     if (options.search) {
-      conditions.push('(subject LIKE ? OR body_preview LIKE ? OR sender_name LIKE ?)');
+      conditions.push(
+        "(subject LIKE ? OR body_preview LIKE ? OR sender_name LIKE ?)",
+      );
       const searchParam = `%${options.search}%`;
       params.push(searchParam, searchParam, searchParam);
     }
 
     if (options.dateRange) {
-      conditions.push('received_at BETWEEN ? AND ?');
+      conditions.push("received_at BETWEEN ? AND ?");
       params.push(options.dateRange.start, options.dateRange.end);
     }
 
-    const sql = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-    return { sql, params };
+    const clause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    return { clause, params };
   }
 
   // Enhanced search method
-  async searchEmails(options: EmailSearchFilters & {
-    page?: number;
-    pageSize?: number;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-  }): Promise<{
+  async searchEmails(
+    options: EmailSearchFilters & {
+      page?: number;
+      pageSize?: number;
+      sortBy?: string;
+      sortOrder?: "asc" | "desc";
+    },
+  ): Promise<{
     data: EmailEntity[];
     total: number;
     page: number;
     pageSize: number;
     totalPages: number;
   }> {
-    return this.findAll({
-      page: options.page || 1,
-      pageSize: options.pageSize || 50,
-      sortBy: options.sortBy || 'received_at',
-      sortOrder: options.sortOrder || 'desc',
-      ...options
+    return this.findPaginated(options.page || 1, options.pageSize || 50, {
+      orderBy: options.sortBy || "received_at",
+      orderDirection:
+        (options.sortOrder?.toUpperCase() as "ASC" | "DESC") || "DESC",
+      where: options,
     });
   }
 
@@ -187,12 +208,12 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
     `;
     const stmt = this.db.prepare(sql);
     const results = stmt.all() as Array<{ assignedTo: string; count: number }>;
-    
+
     const workload: Record<string, number> = {};
-    results.forEach(row => {
+    results.forEach((row) => {
       workload[row.assignedTo] = row.count;
     });
-    
+
     return workload;
   }
 
@@ -200,44 +221,50 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
   async assignEmail(emailId: string, assignee: string): Promise<void> {
     await this.update(emailId, {
       assignedTo: assignee,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     } as Partial<EmailEntity>);
-    
-    logger.info(`Email ${emailId} assigned to ${assignee}`, 'EMAIL_REPOSITORY');
+
+    logger.info(`Email ${emailId} assigned to ${assignee}`, "EMAIL_REPOSITORY");
   }
 
   // Unassign email
   async unassignEmail(emailId: string): Promise<void> {
     await this.update(emailId, {
-      assignedTo: null,
-      lastUpdated: new Date().toISOString()
+      assignedTo: undefined,
+      lastUpdated: new Date().toISOString(),
     } as Partial<EmailEntity>);
-    
-    logger.info(`Email ${emailId} unassigned`, 'EMAIL_REPOSITORY');
+
+    logger.info(`Email ${emailId} unassigned`, "EMAIL_REPOSITORY");
   }
 
   // Mark email as read/unread
   async markAsRead(emailId: string, isRead: boolean = true): Promise<void> {
     await this.update(emailId, {
       is_read: isRead,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     } as Partial<EmailEntity>);
-    
-    logger.debug(`Email ${emailId} marked as ${isRead ? 'read' : 'unread'}`, 'EMAIL_REPOSITORY');
+
+    logger.debug(
+      `Email ${emailId} marked as ${isRead ? "read" : "unread"}`,
+      "EMAIL_REPOSITORY",
+    );
   }
 
   // Bulk assign emails
   async bulkAssign(emailIds: string[], assignee: string): Promise<void> {
-    const updates = emailIds.map(id => ({
-      id,
-      data: {
+    // Perform bulk updates
+    const updatePromises = emailIds.map((emailId) =>
+      this.update(emailId, {
         assignedTo: assignee,
-        lastUpdated: new Date().toISOString()
-      } as Partial<EmailEntity>
-    }));
-    
-    await this.batchUpdate(updates);
-    logger.info(`Bulk assigned ${emailIds.length} emails to ${assignee}`, 'EMAIL_REPOSITORY');
+        lastUpdated: new Date().toISOString(),
+      } as Partial<EmailEntity>),
+    );
+
+    await Promise.all(updatePromises);
+    logger.info(
+      `Bulk assigned ${emailIds.length} emails to ${assignee}`,
+      "EMAIL_REPOSITORY",
+    );
   }
 
   // Get email statistics
@@ -258,7 +285,7 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
         SUM(CASE WHEN has_attachments = 1 THEN 1 ELSE 0 END) as with_attachments
       FROM emails
     `;
-    
+
     const importanceQuery = `
       SELECT 
         COALESCE(importance, 'Normal') as importance,
@@ -266,22 +293,25 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
       FROM emails
       GROUP BY importance
     `;
-    
+
     const stats = this.db.prepare(statsQuery).get() as any;
-    const importanceResults = this.db.prepare(importanceQuery).all() as Array<{ importance: string; count: number }>;
-    
+    const importanceResults = this.db.prepare(importanceQuery).all() as Array<{
+      importance: string;
+      count: number;
+    }>;
+
     const byImportance: Record<string, number> = {};
-    importanceResults.forEach(row => {
+    importanceResults.forEach((row) => {
       byImportance[row.importance] = row.count;
     });
-    
+
     return {
       totalEmails: stats.total,
       unreadEmails: stats.unread,
       assignedEmails: stats.assigned,
       unassignedEmails: stats.unassigned,
       withAttachments: stats.with_attachments,
-      byImportance
+      byImportance,
     };
   }
 
@@ -301,7 +331,10 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
   }
 
   // Find emails in date range
-  async findInDateRange(startDate: string, endDate: string): Promise<EmailEntity[]> {
+  async findInDateRange(
+    startDate: string,
+    endDate: string,
+  ): Promise<EmailEntity[]> {
     const sql = `
       SELECT * FROM emails 
       WHERE received_at BETWEEN ? AND ? 
@@ -312,24 +345,36 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
   }
 
   // Create email with proper validation
-  async createEmail(emailData: Omit<EmailEntity, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
+  async createEmail(
+    emailData: Omit<EmailEntity, "id" | "created_at" | "updated_at">,
+  ): Promise<string> {
     // Validate required fields
-    if (!emailData.subject || !emailData.sender_email || !emailData.received_at) {
-      throw new Error('Missing required fields: subject, sender_email, or received_at');
+    if (
+      !emailData.subject ||
+      !emailData.sender_email ||
+      !emailData.received_at
+    ) {
+      throw new Error(
+        "Missing required fields: subject, sender_email, or received_at",
+      );
     }
 
-    // Convert boolean values to integers for SQLite
-    const processedData = {
-      ...emailData,
-      is_read: emailData.is_read ? 1 : 0,
-      has_attachments: emailData.has_attachments ? 1 : 0,
-    };
+    // Convert boolean values to integers for SQLite compatibility
+    const processedData: Omit<EmailEntity, "id" | "created_at" | "updated_at"> =
+      {
+        ...emailData,
+        is_read: emailData.is_read,
+        has_attachments: emailData.has_attachments,
+      };
 
-    return this.create(processedData as Partial<EmailEntity>);
+    const createdEmail = await this.create(processedData);
+    return createdEmail.id;
   }
 
   // Upsert email (insert or update based on graph_id)
-  async upsertEmail(emailData: Omit<EmailEntity, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
+  async upsertEmail(
+    emailData: Omit<EmailEntity, "id" | "created_at" | "updated_at">,
+  ): Promise<string> {
     if (emailData.graph_id) {
       const existing = await this.findByGraphId(emailData.graph_id);
       if (existing) {
@@ -337,7 +382,7 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
         return existing.id;
       }
     }
-    
+
     return this.createEmail(emailData);
   }
 }
