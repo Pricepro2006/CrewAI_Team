@@ -1,8 +1,8 @@
-import { BaseRepository } from '../../../database/repositories/BaseRepository';
+import Database from 'better-sqlite3';
+import { BaseRepository, BaseEntity, QueryOptions, PaginatedResult } from '../../../database/repositories/BaseRepository';
 import { logger } from '../../../utils/logger';
 
-export interface EmailEntity {
-  id: string;
+export interface EmailEntity extends BaseEntity {
   graph_id?: string;
   subject: string;
   sender_email: string;
@@ -18,8 +18,6 @@ export interface EmailEntity {
   raw_content?: string; // JSON string
   assignedTo?: string;
   lastUpdated?: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface EmailSearchFilters {
@@ -30,15 +28,20 @@ export interface EmailSearchFilters {
   importance?: string[];
   dateRange?: { start: string; end: string };
   search?: string;
+  limit?: number;
+  offset?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export class EmailRepository extends BaseRepository<EmailEntity> {
-  constructor(useConnectionPool: boolean = false) {
-    super('emails', 'id', useConnectionPool);
+  constructor(db: Database.Database) {
+    super(db, 'emails');
+    this.initializeTable();
   }
 
-  protected initializeTable(): void {
-    this.createTable();
+  private initializeTable(): void {
+    this.db.exec(this.getTableSchema());
   }
 
   protected getTableSchema(): string {
@@ -89,8 +92,10 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
   }
 
   // Custom search implementation
-  protected buildWhereClause(options: EmailSearchFilters): { sql: string; params: any[] } {
-    const conditions: string[] = [];
+  protected override buildWhereClause(conditions: Record<string, any>): { clause: string; params: any[] } {
+    // Handle EmailSearchFilters if passed
+    const options = conditions as EmailSearchFilters;
+    const whereClauses: string[] = [];
     const params: any[] = [];
 
     if (options.sender_email?.length) {

@@ -1,5 +1,44 @@
 import rateLimit from 'express-rate-limit';
 import type { Request, Response } from 'express';
+import { TRPCError } from '@trpc/server';
+
+// tRPC middleware for rate limiting
+export function rateLimitMiddleware(maxRequests: number = 100, windowMs: number = 60000) {
+  const store = new Map<string, { count: number; resetTime: number }>();
+  
+  return async ({ ctx, next }: { ctx: any; next: () => Promise<any> }) => {
+    const identifier = ctx.user?.id || ctx.req?.ip || 'anonymous';
+    const now = Date.now();
+    const windowStart = now - windowMs;
+    
+    // Clean old entries
+    for (const [key, value] of store.entries()) {
+      if (value.resetTime < windowStart) {
+        store.delete(key);
+      }
+    }
+    
+    // Get or create counter for this identifier
+    const existing = store.get(identifier);
+    if (!existing) {
+      store.set(identifier, { count: 1, resetTime: now + windowMs });
+    } else if (existing.resetTime < now) {
+      // Reset window
+      store.set(identifier, { count: 1, resetTime: now + windowMs });
+    } else {
+      // Increment counter
+      existing.count++;
+      if (existing.count > maxRequests) {
+        throw new TRPCError({
+          code: 'TOO_MANY_REQUESTS',
+          message: 'Rate limit exceeded'
+        });
+      }
+    }
+    
+    return next();
+  };
+}
 
 // Standard API rate limiter
 export const apiRateLimiter = rateLimit({
@@ -81,3 +120,5 @@ export const premiumRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// rateLimitMiddleware is already exported above
