@@ -3,7 +3,7 @@
  * Handles product data, substitutions, and user preferences
  */
 
-import type Database from "better-sqlite3";
+import Database from 'better-sqlite3';
 import { BaseRepository } from "./BaseRepository";
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger";
@@ -122,6 +122,17 @@ export class WalmartProductRepository extends BaseRepository<ProductEntity> {
    */
   async findByProductId(productId: string): Promise<ProductEntity | null> {
     return await this.findOne({ product_id: productId });
+  }
+
+  /**
+   * Find multiple products by their IDs (prevents N+1 queries)
+   */
+  async findByIds(productIds: string[]): Promise<ProductEntity[]> {
+    if (productIds.length === 0) return [];
+    
+    return await this.findAll({
+      where: { product_id: productIds }
+    });
   }
 
   /**

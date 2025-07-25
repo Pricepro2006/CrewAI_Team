@@ -3,7 +3,7 @@
  * Handles list management, item tracking, and shopping session operations
  */
 
-import type Database from "better-sqlite3";
+import Database from 'better-sqlite3';
 import { BaseRepository } from "./BaseRepository";
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger";
