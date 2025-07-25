@@ -3,7 +3,7 @@
  * Creates tables for Walmart grocery shopping functionality
  */
 
-import type Database from 'better-sqlite3';
+import Database from 'better-sqlite3';
 import { logger } from '../../utils/logger';
 
 export default class WalmartGroceryAgentMigration {

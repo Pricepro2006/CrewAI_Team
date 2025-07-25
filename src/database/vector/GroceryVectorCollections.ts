@@ -3,7 +3,7 @@
  * Manages product embeddings, search history, and recommendation vectors
  */
 
-import { ChromaClient, Collection } from "chromadb";
+import type { ChromaClient, Collection } from "chromadb";
 import { logger } from "../../utils/logger";
 import type { WalmartProduct } from "../../types/walmart-grocery";
 
@@ -175,14 +175,14 @@ export class GroceryVectorCollections {
       const metadata = this.createProductMetadata(product);
 
       await collection.add({
-        ids: [product.product_id],
+        ids: [product.id],
         embeddings: [embedding],
         metadatas: [metadata],
         documents: [document]
       });
 
       logger.info("Added product to vector database", "GROCERY_VECTORS", { 
-        productId: product.product_id 
+        productId: product.id 
       });
     } catch (error) {
       logger.error("Failed to add product to vector database", "GROCERY_VECTORS", { error });
@@ -200,7 +200,7 @@ export class GroceryVectorCollections {
         throw new Error("Products collection not initialized");
       }
 
-      const ids = products.map(p => p.product.product_id);
+      const ids = products.map(p => p.product.id);
       const embeddings = products.map(p => p.embedding);
       const metadatas = products.map(p => this.createProductMetadata(p.product));
       const documents = products.map(p => this.createProductDocument(p.product));
@@ -247,8 +247,8 @@ export class GroceryVectorCollections {
 
       return results.ids[0].map((id, index) => ({
         id,
-        score: results.distances ? 1 - results.distances[0][index] : 0,
-        metadata: results.metadatas ? results.metadatas[0][index] : {}
+        score: results.distances && results.distances[0] && results.distances[0][index] !== undefined ? 1 - results.distances[0][index] : 0,
+        metadata: results.metadatas && results.metadatas[0] ? results.metadatas[0][index] : {}
       }));
     } catch (error) {
       logger.error("Failed to search similar products", "GROCERY_VECTORS", { error });
@@ -272,12 +272,12 @@ export class GroceryVectorCollections {
       }
 
       const id = `${userId}_${Date.now()}`;
-      const metadata = {
+      const metadata: Record<string, any> = {
         userId,
         query,
         timestamp: new Date().toISOString(),
         resultCount: results.length,
-        topResults: results.slice(0, 5)
+        topResults: JSON.stringify(results.slice(0, 5))
       };
 
       await collection.add({
@@ -388,8 +388,9 @@ export class GroceryVectorCollections {
       let queryEmbedding = contextEmbedding;
       if (userPrefs?.embeddings && userPrefs.embeddings[0]) {
         // Average the embeddings
+        const prefEmbedding = userPrefs.embeddings[0];
         queryEmbedding = contextEmbedding.map((val, idx) => 
-          (val + userPrefs.embeddings![0][idx]) / 2
+          (val + (prefEmbedding[idx] ?? 0)) / 2
         );
       }
 
@@ -411,7 +412,7 @@ export class GroceryVectorCollections {
       product.name,
       product.brand,
       product.description,
-      product.category_path,
+      product.category,
       product.department
     ].filter(Boolean);
 
@@ -425,12 +426,12 @@ export class GroceryVectorCollections {
     return {
       name: product.name,
       brand: product.brand,
-      category: product.category_path?.split("/")[0],
+      category: product.category,
       department: product.department,
-      price: product.current_price,
-      inStock: product.in_stock,
-      rating: product.average_rating,
-      reviewCount: product.review_count
+      price: product.price,
+      inStock: product.inStock,
+      rating: product.ratings?.average,
+      reviewCount: product.ratings?.count
     };
   }
 
@@ -452,9 +453,14 @@ export class GroceryVectorCollections {
         const sorted = results.ids
           .map((id, idx) => ({
             id,
-            timestamp: results.metadatas![idx].timestamp
+            timestamp: results.metadatas && results.metadatas[idx] && results.metadatas[idx].timestamp ? results.metadatas[idx].timestamp : ''
           }))
-          .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+          .filter(item => item.timestamp)
+          .sort((a, b) => {
+            const timeA = String(a.timestamp);
+            const timeB = String(b.timestamp);
+            return timeB.localeCompare(timeA);
+          });
 
         const toDelete = sorted.slice(100).map(item => item.id);
         
