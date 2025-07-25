@@ -1,16 +1,16 @@
 /**
- * Grocery Repository - Data access layer for grocery lists and shopping sessions
- * Handles list management, item tracking, and shopping session operations
+ * Grocery Repository - Data access layer for grocery-related tables
+ * Handles grocery lists, items, and shopping sessions
  */
 
-import Database from 'better-sqlite3';
+import type Database from "better-sqlite3";
 import { BaseRepository } from "./BaseRepository";
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger";
 
 // Types for grocery entities
 export interface GroceryList {
-  id: string;
+  id?: string;
   user_id: string;
   list_name: string;
   description?: string;
@@ -33,19 +33,25 @@ export interface GroceryList {
 }
 
 export interface GroceryItem {
-  id: string;
+  id?: string;
   list_id: string;
   item_name: string;
   brand_preference?: string;
   product_id?: string;
   category?: string;
-  quantity: number;
+  quantity?: number;
   unit?: string;
   package_size?: string;
   estimated_price?: number;
   actual_price?: number;
   discount_amount?: number;
-  status?: "pending" | "in_cart" | "purchased" | "unavailable" | "substituted" | "removed";
+  status?:
+    | "pending"
+    | "in_cart"
+    | "purchased"
+    | "unavailable"
+    | "substituted"
+    | "removed";
   priority?: "essential" | "high" | "normal" | "low";
   aisle_location?: string;
   added_to_cart_at?: string;
@@ -58,7 +64,7 @@ export interface GroceryItem {
 }
 
 export interface ShoppingSession {
-  id: string;
+  id?: string;
   user_id: string;
   list_id?: string;
   session_type?: "online" | "in_store" | "pickup" | "delivery";
@@ -85,32 +91,21 @@ export interface ShoppingSession {
   feedback_comment?: string;
 }
 
-export class GroceryListRepository extends BaseRepository<GroceryList> {
+export class GroceryListRepository extends BaseRepository {
   constructor(db: Database.Database) {
     super(db, "grocery_lists");
   }
 
-  async createList(data: Partial<GroceryList>): Promise<GroceryList> {
+  async createList(data: GroceryList): Promise<GroceryList> {
     const list: GroceryList = {
+      ...data,
       id: data.id || uuidv4(),
-      user_id: data.user_id!,
-      list_name: data.list_name!,
-      description: data.description,
       list_type: data.list_type || "shopping",
       status: data.status || "active",
       store_preference: data.store_preference || "walmart",
-      budget_limit: data.budget_limit,
-      estimated_total: data.estimated_total || 0,
-      actual_total: data.actual_total,
       is_recurring: data.is_recurring || false,
-      recurrence_pattern: data.recurrence_pattern ? JSON.stringify(data.recurrence_pattern) : null,
-      next_shop_date: data.next_shop_date,
-      last_shopped_date: data.last_shopped_date,
       tags: data.tags || [],
-      notes: data.notes,
       shared_with: data.shared_with || [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
     };
 
     const stmt = this.db.prepare(`
@@ -134,35 +129,29 @@ export class GroceryListRepository extends BaseRepository<GroceryList> {
       list.estimated_total,
       list.actual_total,
       list.is_recurring ? 1 : 0,
-      list.recurrence_pattern,
+      JSON.stringify(list.recurrence_pattern),
       list.next_shop_date,
       list.last_shopped_date,
       JSON.stringify(list.tags),
       list.notes,
-      JSON.stringify(list.shared_with)
+      JSON.stringify(list.shared_with),
     );
 
     logger.info(`Created grocery list: ${list.id}`, "GROCERY_REPO");
-    return this.getList(list.id);
+    return this.getList(list.id!);
   }
 
-  async getList(listId: string): Promise<GroceryList> {
+  async getList(id: string): Promise<GroceryList> {
     const row = this.db
       .prepare("SELECT * FROM grocery_lists WHERE id = ?")
-      .get(listId) as any;
-    
+      .get(id) as any;
     if (!row) {
-      throw new Error(`Grocery list not found: ${listId}`);
+      throw new Error(`Grocery list not found: ${id}`);
     }
-    
     return this.mapRowToList(row);
   }
 
-  async getUserLists(
-    userId: string, 
-    status?: string,
-    limit?: number
-  ): Promise<GroceryList[]> {
+  async getUserLists(userId: string, status?: string): Promise<GroceryList[]> {
     let query = "SELECT * FROM grocery_lists WHERE user_id = ?";
     const params: any[] = [userId];
 
@@ -173,23 +162,21 @@ export class GroceryListRepository extends BaseRepository<GroceryList> {
 
     query += " ORDER BY updated_at DESC";
 
-    if (limit) {
-      query += " LIMIT ?";
-      params.push(limit);
-    }
-
     const rows = this.db.prepare(query).all(...params) as any[];
-    return rows.map(row => this.mapRowToList(row));
+    return rows.map((row) => this.mapRowToList(row));
   }
 
-  async updateList(listId: string, updates: Partial<GroceryList>): Promise<GroceryList> {
-    const updateFields: string[] = [];
-    const values: any[] = [];
+  async updateList(
+    id: string,
+    updates: Partial<GroceryList>,
+  ): Promise<GroceryList> {
+    const fields = [];
+    const values = [];
 
-    Object.entries(updates).forEach(([key, value]) => {
-      if (key !== "id" && key !== "created_at") {
-        updateFields.push(`${key} = ?`);
-        if (key === "tags" || key === "shared_with") {
+    for (const [key, value] of Object.entries(updates)) {
+      if (key !== "id" && value !== undefined) {
+        fields.push(`${key} = ?`);
+        if (["tags", "shared_with", "recurrence_pattern"].includes(key)) {
           values.push(JSON.stringify(value));
         } else if (key === "is_recurring") {
           values.push(value ? 1 : 0);
@@ -197,85 +184,79 @@ export class GroceryListRepository extends BaseRepository<GroceryList> {
           values.push(value);
         }
       }
-    });
+    }
 
-    updateFields.push("updated_at = CURRENT_TIMESTAMP");
-    values.push(listId);
+    if (fields.length === 0) {
+      return this.getList(id);
+    }
+
+    fields.push("updated_at = CURRENT_TIMESTAMP");
+    values.push(id);
 
     const stmt = this.db.prepare(`
       UPDATE grocery_lists 
-      SET ${updateFields.join(", ")}
+      SET ${fields.join(", ")}
       WHERE id = ?
     `);
 
     stmt.run(...values);
-    return this.getList(listId);
+    return this.getList(id);
   }
 
-  async completeList(listId: string, actualTotal?: number): Promise<GroceryList> {
-    return this.updateList(listId, {
+  async completeList(id: string, actualTotal?: number): Promise<GroceryList> {
+    const updates: Partial<GroceryList> = {
       status: "completed",
-      actual_total: actualTotal,
-      completed_at: new Date().toISOString()
-    });
-  }
+      completed_at: new Date().toISOString(),
+    };
 
-  async archiveList(listId: string): Promise<GroceryList> {
-    return this.updateList(listId, { status: "archived" });
-  }
+    if (actualTotal !== undefined) {
+      updates.actual_total = actualTotal;
+    }
 
-  async deleteList(listId: string): Promise<void> {
-    this.db.prepare("DELETE FROM grocery_lists WHERE id = ?").run(listId);
-    logger.info(`Deleted grocery list: ${listId}`, "GROCERY_REPO");
+    if ((await this.getList(id)).is_recurring) {
+      // Calculate next shop date based on recurrence pattern
+      updates.last_shopped_date = new Date().toISOString();
+      // TODO: Calculate next_shop_date based on recurrence_pattern
+    }
+
+    return this.updateList(id, updates);
   }
 
   private mapRowToList(row: any): GroceryList {
     return {
       ...row,
       is_recurring: !!row.is_recurring,
-      recurrence_pattern: row.recurrence_pattern ? JSON.parse(row.recurrence_pattern) : null,
       tags: row.tags ? JSON.parse(row.tags) : [],
-      shared_with: row.shared_with ? JSON.parse(row.shared_with) : []
+      shared_with: row.shared_with ? JSON.parse(row.shared_with) : [],
+      recurrence_pattern: row.recurrence_pattern
+        ? JSON.parse(row.recurrence_pattern)
+        : null,
     };
   }
 }
 
-export class GroceryItemRepository extends BaseRepository<GroceryItem> {
+export class GroceryItemRepository extends BaseRepository {
   constructor(db: Database.Database) {
     super(db, "grocery_items");
   }
 
-  async addItem(data: Partial<GroceryItem>): Promise<GroceryItem> {
+  async addItem(data: GroceryItem): Promise<GroceryItem> {
     const item: GroceryItem = {
+      ...data,
       id: data.id || uuidv4(),
-      list_id: data.list_id!,
-      item_name: data.item_name!,
-      brand_preference: data.brand_preference,
-      product_id: data.product_id,
-      category: data.category,
-      quantity: data.quantity || 1,
+      quantity: data.quantity ?? 1,
       unit: data.unit || "each",
-      package_size: data.package_size,
-      estimated_price: data.estimated_price,
-      actual_price: data.actual_price,
-      discount_amount: data.discount_amount,
       status: data.status || "pending",
       priority: data.priority || "normal",
-      aisle_location: data.aisle_location,
-      substitution_id: data.substitution_id,
-      notes: data.notes,
       dietary_flags: data.dietary_flags || [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
     };
 
     const stmt = this.db.prepare(`
       INSERT INTO grocery_items (
         id, list_id, item_name, brand_preference, product_id, category,
         quantity, unit, package_size, estimated_price, actual_price,
-        discount_amount, status, priority, aisle_location, substitution_id,
-        notes, dietary_flags
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        discount_amount, status, priority, aisle_location, notes, dietary_flags
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -294,130 +275,163 @@ export class GroceryItemRepository extends BaseRepository<GroceryItem> {
       item.status,
       item.priority,
       item.aisle_location,
-      item.substitution_id,
       item.notes,
-      JSON.stringify(item.dietary_flags)
+      JSON.stringify(item.dietary_flags),
     );
 
     logger.info(`Added grocery item: ${item.id}`, "GROCERY_REPO");
-    return this.getItem(item.id);
+    return this.getItem(item.id!);
   }
 
-  async getItem(itemId: string): Promise<GroceryItem> {
+  async getItem(id: string): Promise<GroceryItem> {
     const row = this.db
       .prepare("SELECT * FROM grocery_items WHERE id = ?")
-      .get(itemId) as any;
-    
+      .get(id) as any;
     if (!row) {
-      throw new Error(`Grocery item not found: ${itemId}`);
+      throw new Error(`Grocery item not found: ${id}`);
     }
-    
     return this.mapRowToItem(row);
   }
 
-  async getItemsByList(listId: string): Promise<GroceryItem[]> {
-    const rows = this.db
-      .prepare("SELECT * FROM grocery_items WHERE list_id = ? ORDER BY priority DESC, created_at ASC")
-      .all(listId) as any[];
-    
-    return rows.map(row => this.mapRowToItem(row));
+  async getListItems(listId: string, status?: string): Promise<GroceryItem[]> {
+    let query = "SELECT * FROM grocery_items WHERE list_id = ?";
+    const params: any[] = [listId];
+
+    if (status) {
+      query += " AND status = ?";
+      params.push(status);
+    }
+
+    query += " ORDER BY priority DESC, created_at ASC";
+
+    const rows = this.db.prepare(query).all(...params) as any[];
+    return rows.map((row) => this.mapRowToItem(row));
   }
 
-  async getItemsByStatus(listId: string, status: string): Promise<GroceryItem[]> {
-    const rows = this.db
-      .prepare("SELECT * FROM grocery_items WHERE list_id = ? AND status = ?")
-      .all(listId, status) as any[];
-    
-    return rows.map(row => this.mapRowToItem(row));
-  }
+  async updateItem(
+    id: string,
+    updates: Partial<GroceryItem>,
+  ): Promise<GroceryItem> {
+    const fields = [];
+    const values = [];
 
-  async updateItem(itemId: string, updates: Partial<GroceryItem>): Promise<GroceryItem> {
-    const updateFields: string[] = [];
-    const values: any[] = [];
-
-    Object.entries(updates).forEach(([key, value]) => {
-      if (key !== "id" && key !== "created_at") {
-        updateFields.push(`${key} = ?`);
+    for (const [key, value] of Object.entries(updates)) {
+      if (key !== "id" && value !== undefined) {
+        fields.push(`${key} = ?`);
         if (key === "dietary_flags") {
           values.push(JSON.stringify(value));
         } else {
           values.push(value);
         }
       }
-    });
+    }
 
-    updateFields.push("updated_at = CURRENT_TIMESTAMP");
-    values.push(itemId);
+    if (fields.length === 0) {
+      return this.getItem(id);
+    }
+
+    fields.push("updated_at = CURRENT_TIMESTAMP");
+    values.push(id);
 
     const stmt = this.db.prepare(`
       UPDATE grocery_items 
-      SET ${updateFields.join(", ")}
+      SET ${fields.join(", ")}
       WHERE id = ?
     `);
 
     stmt.run(...values);
-    return this.getItem(itemId);
+    return this.getItem(id);
   }
 
-  async updateItemStatus(
-    itemId: string, 
-    status: GroceryItem["status"],
-    actualPrice?: number
+  async markAsCart(id: string): Promise<GroceryItem> {
+    return this.updateItem(id, {
+      status: "in_cart",
+      added_to_cart_at: new Date().toISOString(),
+    });
+  }
+
+  async markAsPurchased(
+    id: string,
+    actualPrice?: number,
   ): Promise<GroceryItem> {
-    const updates: Partial<GroceryItem> = { status };
-    
-    if (status === "purchased" && actualPrice !== undefined) {
+    const updates: Partial<GroceryItem> = {
+      status: "purchased",
+      purchased_at: new Date().toISOString(),
+    };
+
+    if (actualPrice !== undefined) {
       updates.actual_price = actualPrice;
-      updates.purchased_at = new Date().toISOString();
-    } else if (status === "in_cart") {
-      updates.added_to_cart_at = new Date().toISOString();
     }
 
-    return this.updateItem(itemId, updates);
+    return this.updateItem(id, updates);
   }
 
-  async deleteItem(itemId: string): Promise<void> {
-    this.db.prepare("DELETE FROM grocery_items WHERE id = ?").run(itemId);
-    logger.info(`Deleted grocery item: ${itemId}`, "GROCERY_REPO");
+  async substituteItem(
+    id: string,
+    substitutionId: string,
+  ): Promise<GroceryItem> {
+    return this.updateItem(id, {
+      status: "substituted",
+      substitution_id: substitutionId,
+    });
   }
 
-  async deleteItemsByList(listId: string): Promise<void> {
-    this.db.prepare("DELETE FROM grocery_items WHERE list_id = ?").run(listId);
-    logger.info(`Deleted all items for list: ${listId}`, "GROCERY_REPO");
+  async updateListTotal(listId: string): Promise<void> {
+    const result = this.db
+      .prepare(
+        `
+      SELECT 
+        SUM(CASE WHEN status = 'purchased' THEN actual_price * quantity ELSE estimated_price * quantity END) as total
+      FROM grocery_items
+      WHERE list_id = ? AND status NOT IN ('removed', 'unavailable')
+    `,
+      )
+      .get(listId) as { total: number };
+
+    this.db
+      .prepare(
+        `
+      UPDATE grocery_lists 
+      SET estimated_total = ?
+      WHERE id = ?
+    `,
+      )
+      .run(result.total || 0, listId);
   }
 
   private mapRowToItem(row: any): GroceryItem {
     return {
       ...row,
-      dietary_flags: row.dietary_flags ? JSON.parse(row.dietary_flags) : []
+      dietary_flags: row.dietary_flags ? JSON.parse(row.dietary_flags) : [],
     };
   }
 }
 
-export class ShoppingSessionRepository extends BaseRepository<ShoppingSession> {
+export class ShoppingSessionRepository extends BaseRepository {
   constructor(db: Database.Database) {
     super(db, "shopping_sessions");
   }
 
-  async createSession(data: Partial<ShoppingSession>): Promise<ShoppingSession> {
+  async createSession(data: ShoppingSession): Promise<ShoppingSession> {
     const session: ShoppingSession = {
+      ...data,
       id: data.id || uuidv4(),
-      user_id: data.user_id!,
-      list_id: data.list_id,
       session_type: data.session_type || "online",
       status: data.status || "active",
       items_total: data.items_total || 0,
       items_found: data.items_found || 0,
       items_substituted: data.items_substituted || 0,
       items_unavailable: data.items_unavailable || 0,
-      started_at: new Date().toISOString()
+      started_at: data.started_at || new Date().toISOString(),
     };
 
     const stmt = this.db.prepare(`
       INSERT INTO shopping_sessions (
         id, user_id, list_id, session_type, status,
-        items_total, items_found, items_substituted, items_unavailable
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        items_total, items_found, items_substituted, items_unavailable,
+        subtotal, tax_amount, delivery_fee, tip_amount, total_amount, savings_amount,
+        fulfillment_type, delivery_address, delivery_time_slot
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -429,110 +443,116 @@ export class ShoppingSessionRepository extends BaseRepository<ShoppingSession> {
       session.items_total,
       session.items_found,
       session.items_substituted,
-      session.items_unavailable
+      session.items_unavailable,
+      session.subtotal,
+      session.tax_amount,
+      session.delivery_fee,
+      session.tip_amount,
+      session.total_amount,
+      session.savings_amount,
+      session.fulfillment_type,
+      session.delivery_address,
+      session.delivery_time_slot,
     );
 
     logger.info(`Created shopping session: ${session.id}`, "GROCERY_REPO");
-    return this.getSession(session.id);
+    return this.getSession(session.id!);
   }
 
-  async getSession(sessionId: string): Promise<ShoppingSession> {
+  async getSession(id: string): Promise<ShoppingSession> {
     const row = this.db
       .prepare("SELECT * FROM shopping_sessions WHERE id = ?")
-      .get(sessionId) as any;
-    
+      .get(id) as any;
     if (!row) {
-      throw new Error(`Shopping session not found: ${sessionId}`);
+      throw new Error(`Shopping session not found: ${id}`);
     }
-    
     return row;
-  }
-
-  async getUserSessions(
-    userId: string,
-    status?: string,
-    limit?: number
-  ): Promise<ShoppingSession[]> {
-    let query = "SELECT * FROM shopping_sessions WHERE user_id = ?";
-    const params: any[] = [userId];
-
-    if (status) {
-      query += " AND status = ?";
-      params.push(status);
-    }
-
-    query += " ORDER BY started_at DESC";
-
-    if (limit) {
-      query += " LIMIT ?";
-      params.push(limit);
-    }
-
-    const rows = this.db.prepare(query).all(...params) as any[];
-    return rows;
   }
 
   async getActiveSession(userId: string): Promise<ShoppingSession | null> {
     const row = this.db
-      .prepare("SELECT * FROM shopping_sessions WHERE user_id = ? AND status = 'active' ORDER BY started_at DESC LIMIT 1")
+      .prepare(
+        `
+      SELECT * FROM shopping_sessions 
+      WHERE user_id = ? AND status = 'active' 
+      ORDER BY started_at DESC 
+      LIMIT 1
+    `,
+      )
       .get(userId) as any;
-    
+
     return row || null;
   }
 
-  async updateSession(sessionId: string, updates: Partial<ShoppingSession>): Promise<ShoppingSession> {
-    const updateFields: string[] = [];
-    const values: any[] = [];
+  async updateSession(
+    id: string,
+    updates: Partial<ShoppingSession>,
+  ): Promise<ShoppingSession> {
+    const fields = [];
+    const values = [];
 
-    Object.entries(updates).forEach(([key, value]) => {
-      if (key !== "id" && key !== "started_at") {
-        updateFields.push(`${key} = ?`);
+    for (const [key, value] of Object.entries(updates)) {
+      if (key !== "id" && value !== undefined) {
+        fields.push(`${key} = ?`);
         values.push(value);
       }
-    });
+    }
 
-    values.push(sessionId);
+    if (fields.length === 0) {
+      return this.getSession(id);
+    }
+
+    values.push(id);
 
     const stmt = this.db.prepare(`
       UPDATE shopping_sessions 
-      SET ${updateFields.join(", ")}
+      SET ${fields.join(", ")}
       WHERE id = ?
     `);
 
     stmt.run(...values);
-    return this.getSession(sessionId);
+    return this.getSession(id);
   }
 
-  async completeSession(sessionId: string, totals: {
-    subtotal: number;
-    tax_amount?: number;
-    delivery_fee?: number;
-    tip_amount?: number;
-    total_amount: number;
-    savings_amount?: number;
-  }): Promise<ShoppingSession> {
-    const session = await this.getSession(sessionId);
+  async completeSession(
+    id: string,
+    orderNumber?: string,
+  ): Promise<ShoppingSession> {
+    const session = await this.getSession(id);
     const duration = Math.floor(
-      (Date.now() - new Date(session.started_at!).getTime()) / (1000 * 60)
+      (Date.now() - new Date(session.started_at!).getTime()) / 60000,
     );
 
-    return this.updateSession(sessionId, {
-      ...totals,
+    const updates: Partial<ShoppingSession> = {
       status: "completed",
       completed_at: new Date().toISOString(),
-      duration_minutes: duration
-    });
+      duration_minutes: duration,
+      order_number: orderNumber,
+    };
+
+    return this.updateSession(id, updates);
   }
 
-  async abandonSession(sessionId: string): Promise<ShoppingSession> {
-    return this.updateSession(sessionId, {
-      status: "abandoned",
-      completed_at: new Date().toISOString()
-    });
-  }
+  async updateProgress(
+    id: string,
+    progress: {
+      itemsFound?: number;
+      itemsSubstituted?: number;
+      itemsUnavailable?: number;
+    },
+  ): Promise<ShoppingSession> {
+    const updates: Partial<ShoppingSession> = {};
 
-  async deleteSession(sessionId: string): Promise<void> {
-    this.db.prepare("DELETE FROM shopping_sessions WHERE id = ?").run(sessionId);
-    logger.info(`Deleted shopping session: ${sessionId}`, "GROCERY_REPO");
+    if (progress.itemsFound !== undefined) {
+      updates.items_found = progress.itemsFound;
+    }
+    if (progress.itemsSubstituted !== undefined) {
+      updates.items_substituted = progress.itemsSubstituted;
+    }
+    if (progress.itemsUnavailable !== undefined) {
+      updates.items_unavailable = progress.itemsUnavailable;
+    }
+
+    return this.updateSession(id, updates);
   }
 }

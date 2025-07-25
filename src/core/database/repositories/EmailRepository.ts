@@ -117,34 +117,34 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
 
     if (options.sender_email?.length) {
       const placeholders = options.sender_email.map(() => "?").join(",");
-      conditions.push(`sender_email IN (${placeholders})`);
+      whereClauses.push(`sender_email IN (${placeholders})`);
       params.push(...options.sender_email);
     }
 
     if (options.assignedTo?.length) {
       const placeholders = options.assignedTo.map(() => "?").join(",");
-      conditions.push(`assignedTo IN (${placeholders})`);
+      whereClauses.push(`assignedTo IN (${placeholders})`);
       params.push(...options.assignedTo);
     }
 
     if (typeof options.is_read === "boolean") {
-      conditions.push("is_read = ?");
+      whereClauses.push("is_read = ?");
       params.push(options.is_read ? 1 : 0);
     }
 
     if (typeof options.has_attachments === "boolean") {
-      conditions.push("has_attachments = ?");
+      whereClauses.push("has_attachments = ?");
       params.push(options.has_attachments ? 1 : 0);
     }
 
     if (options.importance?.length) {
       const placeholders = options.importance.map(() => "?").join(",");
-      conditions.push(`importance IN (${placeholders})`);
+      whereClauses.push(`importance IN (${placeholders})`);
       params.push(...options.importance);
     }
 
     if (options.search) {
-      conditions.push(
+      whereClauses.push(
         "(subject LIKE ? OR body_preview LIKE ? OR sender_name LIKE ?)",
       );
       const searchParam = `%${options.search}%`;
@@ -152,12 +152,12 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
     }
 
     if (options.dateRange) {
-      conditions.push("received_at BETWEEN ? AND ?");
+      whereClauses.push("received_at BETWEEN ? AND ?");
       params.push(options.dateRange.start, options.dateRange.end);
     }
 
     const clause =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
     return { clause, params };
   }
 

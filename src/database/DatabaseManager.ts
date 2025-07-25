@@ -3,25 +3,42 @@
  * Coordinates SQLite and ChromaDB operations with proper initialization
  */
 
-import Database from 'better-sqlite3';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { logger } from '../utils/logger';
-import appConfig from '../config/app.config';
+import Database from "better-sqlite3";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { logger } from "../utils/logger";
+import appConfig from "../config/app.config";
 
 // Repository imports
-import { UserRepository } from './repositories/UserRepository';
-import { EmailRepository } from './repositories/EmailRepository';
-import { DealRepository, DealItemRepository, ProductFamilyRepository } from './repositories/DealRepository';
-import { GroceryListRepository, GroceryItemRepository, ShoppingSessionRepository } from './repositories/GroceryRepository';
-import { WalmartProductRepository, SubstitutionRepository, UserPreferencesRepository } from './repositories/WalmartProductRepository';
+import { UserRepository } from "./repositories/UserRepository";
+import {
+  EmailRepository,
+  EmailEntityRepository,
+  EmailAttachmentRepository,
+} from "./repositories/EmailRepository";
+import {
+  DealRepository,
+  DealItemRepository,
+  ProductFamilyRepository,
+} from "./repositories/DealRepository";
+import {
+  GroceryListRepository,
+  GroceryItemRepository,
+  ShoppingSessionRepository,
+} from "./repositories/GroceryRepository";
+import {
+  WalmartProductRepository,
+  SubstitutionRepository,
+  UserPreferencesRepository,
+} from "./repositories/WalmartProductRepository";
 
 // Vector database imports
-import { ChromaDBManager } from './vector/ChromaDBManager';
+import { ChromaDBManager } from "./vector/ChromaDBManager";
+import { GroceryVectorCollections } from "./vector/GroceryVectorCollections";
 
 // Migration system
-import { DatabaseMigrator } from './migrations/DatabaseMigrator';
-import WalmartGroceryAgentMigration from './migrations/005_walmart_grocery_agent';
+import { DatabaseMigrator } from "./migrations/DatabaseMigrator";
+import WalmartGroceryAgentMigration from "./migrations/005_walmart_grocery_agent";
 
 export interface DatabaseConfig {
   sqlite: {
@@ -49,10 +66,12 @@ export class DatabaseManager {
   // Repository instances
   public readonly users: UserRepository;
   public readonly emails: EmailRepository;
+  public readonly emailEntities: EmailEntityRepository;
+  public readonly emailAttachments: EmailAttachmentRepository;
   public readonly deals: DealRepository;
   public readonly dealItems: DealItemRepository;
   public readonly productFamilies: ProductFamilyRepository;
-  
+
   // Grocery repository instances
   public readonly groceryLists: GroceryListRepository;
   public readonly groceryItems: GroceryItemRepository;
@@ -68,15 +87,15 @@ export class DatabaseManager {
         enableWAL: config?.sqlite?.enableWAL !== false,
         enableForeignKeys: config?.sqlite?.enableForeignKeys !== false,
         cacheSize: config?.sqlite?.cacheSize || 10000,
-        memoryMap: config?.sqlite?.memoryMap || 268435456 // 256MB
+        memoryMap: config?.sqlite?.memoryMap || 268435456, // 256MB
       },
       chromadb: {
-        host: config?.chromadb?.host || 'localhost',
+        host: config?.chromadb?.host || "localhost",
         port: config?.chromadb?.port || 8000,
         ssl: config?.chromadb?.ssl || false,
-        tenant: config?.chromadb?.tenant || 'default_tenant',
-        database: config?.chromadb?.database || 'crewai_team'
-      }
+        tenant: config?.chromadb?.tenant || "default_tenant",
+        database: config?.chromadb?.database || "crewai_team",
+      },
     };
 
     // Initialize SQLite database
@@ -91,11 +110,13 @@ export class DatabaseManager {
 
     // Initialize repositories
     this.users = new UserRepository(this.db);
-    this.emails = new EmailRepository({ db: this.db });
+    this.emails = new EmailRepository(this.db);
+    this.emailEntities = new EmailEntityRepository(this.db);
+    this.emailAttachments = new EmailAttachmentRepository(this.db);
     this.deals = new DealRepository(this.db);
     this.dealItems = new DealItemRepository(this.db);
     this.productFamilies = new ProductFamilyRepository(this.db);
-    
+
     // Initialize grocery repositories
     this.groceryLists = new GroceryListRepository(this.db);
     this.groceryItems = new GroceryItemRepository(this.db);
@@ -104,36 +125,39 @@ export class DatabaseManager {
     this.substitutions = new SubstitutionRepository(this.db);
     this.userPreferences = new UserPreferencesRepository(this.db);
 
-    logger.info('DatabaseManager initialized', 'DB_MANAGER');
+    logger.info("DatabaseManager initialized", "DB_MANAGER");
   }
 
   /**
    * Configure SQLite database with performance optimizations
    */
-  private configureSQLite(config: DatabaseConfig['sqlite']): void {
+  private configureSQLite(config: DatabaseConfig["sqlite"]): void {
     try {
       // Enable WAL mode for better concurrency
       if (config.enableWAL) {
-        this.db.pragma('journal_mode = WAL');
+        this.db.pragma("journal_mode = WAL");
       }
 
       // Performance optimizations
-      this.db.pragma('synchronous = NORMAL');
+      this.db.pragma("synchronous = NORMAL");
       this.db.pragma(`cache_size = ${config.cacheSize}`);
-      this.db.pragma('temp_store = MEMORY');
+      this.db.pragma("temp_store = MEMORY");
       this.db.pragma(`mmap_size = ${config.memoryMap}`);
-      
+
       // Enable foreign keys
       if (config.enableForeignKeys) {
-        this.db.pragma('foreign_keys = ON');
+        this.db.pragma("foreign_keys = ON");
       }
 
       // Set busy timeout
-      this.db.pragma('busy_timeout = 30000'); // 30 seconds
+      this.db.pragma("busy_timeout = 30000"); // 30 seconds
 
-      logger.info('SQLite database configured with performance optimizations', 'DB_MANAGER');
+      logger.info(
+        "SQLite database configured with performance optimizations",
+        "DB_MANAGER",
+      );
     } catch (error) {
-      logger.error(`Failed to configure SQLite: ${error}`, 'DB_MANAGER');
+      logger.error(`Failed to configure SQLite: ${error}`, "DB_MANAGER");
       throw error;
     }
   }
@@ -143,12 +167,12 @@ export class DatabaseManager {
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
-      logger.warn('Database already initialized', 'DB_MANAGER');
+      logger.warn("Database already initialized", "DB_MANAGER");
       return;
     }
 
     try {
-      logger.info('Initializing database system...', 'DB_MANAGER');
+      logger.info("Initializing database system...", "DB_MANAGER");
 
       // Step 1: Apply database migrations
       await this.applyMigrations();
@@ -163,10 +187,9 @@ export class DatabaseManager {
       await this.seedInitialData();
 
       this.isInitialized = true;
-      logger.info('Database system initialized successfully', 'DB_MANAGER');
-
+      logger.info("Database system initialized successfully", "DB_MANAGER");
     } catch (error) {
-      logger.error(`Database initialization failed: ${error}`, 'DB_MANAGER');
+      logger.error(`Database initialization failed: ${error}`, "DB_MANAGER");
       throw error;
     }
   }
@@ -176,25 +199,25 @@ export class DatabaseManager {
    */
   private async applyMigrations(): Promise<void> {
     try {
-      logger.info('Applying database migrations...', 'DB_MANAGER');
+      logger.info("Applying database migrations...", "DB_MANAGER");
 
       // Load and apply the enhanced schema
-      const schemaPath = join(__dirname, 'schema/enhanced_schema.sql');
-      const schemaSql = readFileSync(schemaPath, 'utf8');
-      
+      const schemaPath = join(__dirname, "schema/enhanced_schema.sql");
+      const schemaSql = readFileSync(schemaPath, "utf8");
+
       // Split schema into individual statements and execute
       const statements = schemaSql
-        .split(';')
-        .map(stmt => stmt.trim())
-        .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
+        .split(";")
+        .map((stmt) => stmt.trim())
+        .filter((stmt) => stmt.length > 0 && !stmt.startsWith("--"));
 
       for (const statement of statements) {
         try {
-          this.db.exec(statement + ';');
+          this.db.exec(statement + ";");
         } catch (error) {
           // Log warning for statements that might already exist
-          if (error instanceof Error && !error.message.includes('already exists')) {
-            logger.warn(`Migration statement warning: ${error}`, 'DB_MANAGER');
+          if (!error.message.includes("already exists")) {
+            logger.warn(`Migration statement warning: ${error}`, "DB_MANAGER");
           }
         }
       }
@@ -203,16 +226,19 @@ export class DatabaseManager {
       const groceryMigration = new WalmartGroceryAgentMigration(this.db);
       try {
         await groceryMigration.up();
-        logger.info('Walmart Grocery Agent migration applied successfully', 'DB_MANAGER');
+        logger.info(
+          "Walmart Grocery Agent migration applied successfully",
+          "DB_MANAGER",
+        );
       } catch (error) {
-        if (error instanceof Error && !error.message.includes('already exists')) {
-          logger.warn(`Grocery migration warning: ${error}`, 'DB_MANAGER');
+        if (!error.message.includes("already exists")) {
+          logger.warn(`Grocery migration warning: ${error}`, "DB_MANAGER");
         }
       }
 
-      logger.info('Database migrations applied successfully', 'DB_MANAGER');
+      logger.info("Database migrations applied successfully", "DB_MANAGER");
     } catch (error) {
-      logger.error(`Migration failed: ${error}`, 'DB_MANAGER');
+      logger.error(`Migration failed: ${error}`, "DB_MANAGER");
       throw error;
     }
   }
@@ -222,14 +248,14 @@ export class DatabaseManager {
    */
   private async initializeVectorDatabase(): Promise<void> {
     try {
-      logger.info('Initializing ChromaDB...', 'DB_MANAGER');
-      
+      logger.info("Initializing ChromaDB...", "DB_MANAGER");
+
       await this.chromaManager.initialize();
       await this.chromaManager.createSystemCollections();
 
-      logger.info('ChromaDB initialized successfully', 'DB_MANAGER');
+      logger.info("ChromaDB initialized successfully", "DB_MANAGER");
     } catch (error) {
-      logger.warn(`ChromaDB initialization failed: ${error}`, 'DB_MANAGER');
+      logger.warn(`ChromaDB initialization failed: ${error}`, "DB_MANAGER");
       // Don't throw error - ChromaDB is optional
     }
   }
@@ -240,15 +266,18 @@ export class DatabaseManager {
   private async verifyDatabaseIntegrity(): Promise<void> {
     try {
       const integrity = await this.migrator.validateIntegrity();
-      
+
       if (!integrity.valid) {
-        logger.error(`Database integrity check failed: ${integrity.errors.join(', ')}`, 'DB_MANAGER');
-        throw new Error('Database integrity validation failed');
+        logger.error(
+          `Database integrity check failed: ${integrity.errors.join(", ")}`,
+          "DB_MANAGER",
+        );
+        throw new Error("Database integrity validation failed");
       }
 
-      logger.info('Database integrity verified', 'DB_MANAGER');
+      logger.info("Database integrity verified", "DB_MANAGER");
     } catch (error) {
-      logger.error(`Database integrity check failed: ${error}`, 'DB_MANAGER');
+      logger.error(`Database integrity check failed: ${error}`, "DB_MANAGER");
       throw error;
     }
   }
@@ -263,43 +292,43 @@ export class DatabaseManager {
       const productFamilyCount = await this.productFamilies.count();
 
       if (userCount === 0 || productFamilyCount === 0) {
-        logger.info('Seeding initial data...', 'DB_MANAGER');
+        logger.info("Seeding initial data...", "DB_MANAGER");
 
         // Create default admin user
         if (userCount === 0) {
           await this.users.createUser({
-            email: 'admin@crewai-team.local',
-            name: 'System Administrator',
-            role: 'admin',
-            status: 'active',
-            permissions: ['*']
+            email: "admin@crewai-team.local",
+            name: "System Administrator",
+            role: "admin",
+            status: "active",
+            permissions: ["*"],
           });
-          logger.info('Created default admin user', 'DB_MANAGER');
+          logger.info("Created default admin user", "DB_MANAGER");
         }
 
         // Create product families
         if (productFamilyCount === 0) {
           await this.productFamilies.createProductFamily({
-            family_code: 'IPG',
-            family_name: 'Infrastructure Products Group',
+            family_code: "IPG",
+            family_name: "Infrastructure Products Group",
             pricing_multiplier: 1.04,
-            description: 'Infrastructure products with 4% markup'
+            description: "Infrastructure products with 4% markup",
           });
 
           await this.productFamilies.createProductFamily({
-            family_code: 'PSG',
-            family_name: 'Personal Systems Group',
-            pricing_multiplier: 1.00,
-            description: 'Personal systems with no markup'
+            family_code: "PSG",
+            family_name: "Personal Systems Group",
+            pricing_multiplier: 1.0,
+            description: "Personal systems with no markup",
           });
 
-          logger.info('Created default product families', 'DB_MANAGER');
+          logger.info("Created default product families", "DB_MANAGER");
         }
 
-        logger.info('Initial data seeding completed', 'DB_MANAGER');
+        logger.info("Initial data seeding completed", "DB_MANAGER");
       }
     } catch (error) {
-      logger.error(`Data seeding failed: ${error}`, 'DB_MANAGER');
+      logger.error(`Data seeding failed: ${error}`, "DB_MANAGER");
       throw error;
     }
   }
@@ -325,21 +354,33 @@ export class DatabaseManager {
   }> {
     try {
       // SQLite statistics
-      const tableCountResult = this.db.prepare(`
+      const tableCountResult = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as count 
         FROM sqlite_master 
         WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
-      `).get() as { count: number };
+      `,
+        )
+        .get() as { count: number };
 
-      const indexCountResult = this.db.prepare(`
+      const indexCountResult = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as count 
         FROM sqlite_master 
         WHERE type = 'index' AND name NOT LIKE 'sqlite_%'
-      `).get() as { count: number };
+      `,
+        )
+        .get() as { count: number };
 
       // Get page count and page size to calculate database size
-      const pageCountResult = this.db.pragma('page_count', { simple: true }) as number;
-      const pageSizeResult = this.db.pragma('page_size', { simple: true }) as number;
+      const pageCountResult = this.db.pragma("page_count", {
+        simple: true,
+      }) as number;
+      const pageSizeResult = this.db.pragma("page_size", {
+        simple: true,
+      }) as number;
       const size = pageCountResult * pageSizeResult;
 
       const sqliteStats = {
@@ -347,9 +388,9 @@ export class DatabaseManager {
         tables: tableCountResult.count,
         indexes: indexCountResult.count,
         users: await this.users.count(),
-        emails: 0, // EmailRepository doesn't implement count method yet
+        emails: await this.emails.count(),
         deals: await this.deals.count(),
-        dealItems: await this.dealItems.count()
+        dealItems: await this.dealItems.count(),
       };
 
       // ChromaDB statistics
@@ -359,39 +400,40 @@ export class DatabaseManager {
         if (health.connected) {
           const collections = await this.chromaManager.listCollections();
           let totalDocuments = 0;
-          
+
           for (const collection of collections) {
-            const stats = await this.chromaManager.getCollectionStats(collection.name);
+            const stats = await this.chromaManager.getCollectionStats(
+              collection.name,
+            );
             totalDocuments += stats.count;
           }
 
           chromaStats = {
             connected: true,
             collections: collections.length,
-            documents: totalDocuments
+            documents: totalDocuments,
           };
         } else {
           chromaStats = {
             connected: false,
             collections: 0,
-            documents: 0
+            documents: 0,
           };
         }
       } catch (error) {
         chromaStats = {
           connected: false,
           collections: 0,
-          documents: 0
+          documents: 0,
         };
       }
 
       return {
         sqlite: sqliteStats,
-        chromadb: chromaStats
+        chromadb: chromaStats,
       };
-
     } catch (error) {
-      logger.error(`Failed to get database statistics: ${error}`, 'DB_MANAGER');
+      logger.error(`Failed to get database statistics: ${error}`, "DB_MANAGER");
       throw error;
     }
   }
@@ -399,7 +441,9 @@ export class DatabaseManager {
   /**
    * Execute a database transaction
    */
-  async transaction<T>(callback: (db: Database.Database) => Promise<T>): Promise<T> {
+  async transaction<T>(
+    callback: (db: Database.Database) => Promise<T>,
+  ): Promise<T> {
     const transaction = this.db.transaction(() => {
       return callback(this.db);
     });
@@ -442,43 +486,45 @@ export class DatabaseManager {
       const sqliteHealth = {
         connected: true,
         writable: false,
-        integrity: false
+        integrity: false,
       };
 
       try {
         // Test write operation
-        this.db.prepare('SELECT 1').get();
+        this.db.prepare("SELECT 1").get();
         sqliteHealth.writable = true;
 
         // Test integrity
         const integrity = await this.migrator.validateIntegrity();
         sqliteHealth.integrity = integrity.valid;
       } catch (error) {
-        logger.warn(`SQLite health check warning: ${error}`, 'DB_MANAGER');
+        logger.warn(`SQLite health check warning: ${error}`, "DB_MANAGER");
         sqliteHealth.connected = false;
       }
 
       // ChromaDB health check
       const chromaHealth = await this.chromaManager.healthCheck();
 
-      const overall = sqliteHealth.connected && sqliteHealth.writable && sqliteHealth.integrity;
+      const overall =
+        sqliteHealth.connected &&
+        sqliteHealth.writable &&
+        sqliteHealth.integrity;
 
       return {
         sqlite: sqliteHealth,
         chromadb: {
           connected: chromaHealth.connected,
           version: chromaHealth.version,
-          collections: chromaHealth.collections
+          collections: chromaHealth.collections,
         },
-        overall
+        overall,
       };
-
     } catch (error) {
-      logger.error(`Database health check failed: ${error}`, 'DB_MANAGER');
+      logger.error(`Database health check failed: ${error}`, "DB_MANAGER");
       return {
         sqlite: { connected: false, writable: false, integrity: false },
         chromadb: { connected: false, collections: 0 },
-        overall: false
+        overall: false,
       };
     }
   }
@@ -495,9 +541,12 @@ export class DatabaseManager {
       this.db.close();
 
       this.isInitialized = false;
-      logger.info('Database connections closed', 'DB_MANAGER');
+      logger.info("Database connections closed", "DB_MANAGER");
     } catch (error) {
-      logger.error(`Failed to close database connections: ${error}`, 'DB_MANAGER');
+      logger.error(
+        `Failed to close database connections: ${error}`,
+        "DB_MANAGER",
+      );
       throw error;
     }
   }
@@ -506,7 +555,9 @@ export class DatabaseManager {
 // Create singleton instance
 let databaseManager: DatabaseManager | null = null;
 
-export function getDatabaseManager(config?: Partial<DatabaseConfig>): DatabaseManager {
+export function getDatabaseManager(
+  config?: Partial<DatabaseConfig>,
+): DatabaseManager {
   if (!databaseManager) {
     databaseManager = new DatabaseManager(config);
   }

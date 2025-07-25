@@ -54,11 +54,11 @@ async function testPipelineRun() {
     const results = await pipeline.runThreeStagePipeline();
 
     logger.info("Pipeline results:", "PIPELINE_TEST", {
-      stage1Count: results.stage1Results.length,
-      stage2Count: results.stage2Results.length,
-      stage3Count: results.stage3Results.length,
-      totalProcessed: results.summary.totalProcessed,
-      executionTime: results.summary.executionTime,
+      stage1Count: results.stage1Count,
+      stage2Count: results.stage2Count,
+      stage3Count: results.stage3Count,
+      totalEmails: results.totalEmails,
+      executionId: results.executionId,
     });
 
     // Verify data was saved

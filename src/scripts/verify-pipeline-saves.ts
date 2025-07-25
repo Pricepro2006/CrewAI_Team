@@ -219,10 +219,10 @@ async function verifyPipelineSaves() {
     try {
       const results = await orchestrator.runThreeStagePipeline();
       logger.info("Pipeline completed:", "VERIFY", {
-        totalProcessed: results.summary.totalProcessed,
-        stage1: results.stage1Results.length,
-        stage2: results.stage2Results.length,
-        stage3: results.stage3Results.length,
+        totalEmails: results.totalEmails,
+        stage1: results.stage1Count,
+        stage2: results.stage2Count,
+        stage3: results.stage3Count,
       });
 
       // Check final counts

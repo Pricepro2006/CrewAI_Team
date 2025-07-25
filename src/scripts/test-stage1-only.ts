@@ -28,9 +28,9 @@ async function testStage1Only() {
     const results = await pipeline.runThreeStagePipeline();
 
     logger.info("Pipeline completed:", "STAGE1_TEST", {
-      totalProcessed: results.summary.totalProcessed,
-      stage1Count: results.stage1Results.length,
-      executionTime: results.summary.executionTime,
+      totalEmails: results.totalEmails,
+      stage1Count: results.stage1Count,
+      executionId: results.executionId,
     });
 
     // Check if data was saved
