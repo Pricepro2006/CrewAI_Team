@@ -1,0 +1,216 @@
+/* VMware/TD SYNNEX Section Styles */
+.vmware-tdsynnex-section {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Section Header */
+.vmware-tdsynnex-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: #16a34a;
+  color: white;
+}
+
+.vmware-tdsynnex-section .section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.vmware-tdsynnex-section .section-count {
+  font-size: 0.875rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+
+/* Table Layout */
+.vmware-tdsynnex-section .section-table {
+  width: 100%;
+}
+
+.vmware-tdsynnex-section .table-header {
+  display: grid;
+  grid-template-columns: 150px 150px 1fr 2fr 150px 120px;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.vmware-tdsynnex-section .table-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.vmware-tdsynnex-section .table-row {
+  display: grid;
+  grid-template-columns: 150px 150px 1fr 2fr 150px 120px;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s;
+}
+
+.vmware-tdsynnex-section .table-row:hover {
+  background-color: #f9fafb;
+}
+
+.vmware-tdsynnex-section .table-cell {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Cell Content */
+.vmware-tdsynnex-section .email-alias-name {
+  font-weight: 500;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vmware-tdsynnex-section .requestor-name {
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vmware-tdsynnex-section .email-subject {
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vmware-tdsynnex-section .attachment-indicator {
+  font-size: 0.875rem;
+  cursor: help;
+}
+
+.vmware-tdsynnex-section .email-summary {
+  color: #6b7280;
+  font-size: 0.875rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
+/* Status Display */
+.status-display {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.status-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.status-icon--red {
+  color: #dc2626;
+}
+
+.status-icon--yellow {
+  color: #f59e0b;
+}
+
+.status-icon--green {
+  color: #10b981;
+}
+
+.status-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-text--red {
+  color: #dc2626;
+}
+
+.status-text--yellow {
+  color: #d97706;
+}
+
+.status-text--green {
+  color: #059669;
+}
+
+/* Action Button */
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background-color: white;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-button:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+.action-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Empty State */
+.vmware-tdsynnex-section .table-empty {
+  padding: 3rem;
+  text-align: center;
+  color: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .vmware-tdsynnex-section .table-header,
+  .vmware-tdsynnex-section .table-row {
+    grid-template-columns: 120px 120px 1fr 1.5fr 120px 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .vmware-tdsynnex-section .table-header {
+    display: none;
+  }
+  
+  .vmware-tdsynnex-section .table-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+  }
+  
+  .vmware-tdsynnex-section .table-cell::before {
+    content: attr(data-label);
+    font-weight: 600;
+    margin-right: 0.5rem;
+    color: #6b7280;
+  }
+}

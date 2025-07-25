@@ -1,0 +1,136 @@
+/* AgentMonitor.css - Dark Theme */
+.agent-monitor {
+  padding: 20px;
+  background-color: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.agent-monitor h2 {
+  margin-bottom: 20px;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.agent-card {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.agent-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+  border-color: var(--accent-primary);
+}
+
+.agent-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.agent-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.agent-status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+.agent-status.active {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: var(--success);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.agent-status.idle {
+  background-color: rgba(251, 191, 36, 0.2);
+  color: var(--warning);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.agent-status.error {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.agent-details {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+.detail-label {
+  color: var(--text-secondary);
+}
+
+.detail-value {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.no-agents {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+  font-size: 1.1em;
+}
+
+/* Progress Indicator */
+.agent-progress {
+  margin-top: 12px;
+  height: 4px;
+  background-color: var(--bg-secondary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.agent-progress-bar {
+  height: 100%;
+  background-color: var(--accent-primary);
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+/* Task Info */
+.agent-task {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.agent-task-label {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-right: 8px;
+}
