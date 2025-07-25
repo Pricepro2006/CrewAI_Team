@@ -26,6 +26,7 @@ export interface ExecutionResult {
     success: boolean;
     results: StepResult[];
     summary: string;
+    plan?: Plan;
     metadata?: Record<string, any>;
 }
 export interface PlanExecutionResult extends ExecutionResult {

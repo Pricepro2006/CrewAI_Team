@@ -21,7 +21,7 @@ export class MasterOrchestrator {
     constructor(config) {
         logger.info("Initializing MasterOrchestrator", "ORCHESTRATOR", { config });
         this.llm = new OllamaProvider({
-            model: config.model || "phi3:mini", // Good balance for CPU performance
+            model: config.model || "granite3.3:2b", // Best accuracy for complex tasks
             baseUrl: config.ollamaUrl,
         });
         this.agentRegistry = new AgentRegistry();

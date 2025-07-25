@@ -1,5 +1,6 @@
-import { logger } from '../../../utils/logger';
-import { OllamaProvider } from '../../llm/OllamaProvider';
+import { logger } from "../../../utils/logger";
+import { OllamaProvider } from "../../llm/OllamaProvider";
+import { MODEL_CONFIG, getModelConfig, getModelTimeout } from "../../../config/models.config";
 export class BaseAgent {
     name;
     description;
@@ -8,15 +9,18 @@ export class BaseAgent {
     capabilities = new Set();
     initialized = false;
     llm;
-    constructor(name, description, model = 'qwen3:0.6b') {
+    timeout;
+    constructor(name, description, model = getModelConfig('primary')) {
         this.name = name;
         this.description = description;
         this.model = model;
-        logger.info(`Initializing agent: ${name}`, 'AGENT');
+        logger.info(`Initializing agent: ${name} with model: ${model}`, "AGENT");
+        // Get timeout for this model
+        this.timeout = getModelTimeout('primary');
         // Initialize LLM provider
         this.llm = new OllamaProvider({
             model: this.model,
-            baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+            baseUrl: MODEL_CONFIG.api.ollamaUrl,
         });
     }
     async executeWithTool(params) {
@@ -45,7 +49,7 @@ export class BaseAgent {
     }
     registerTool(tool) {
         this.tools.set(tool.name, tool);
-        logger.debug(`Registered tool ${tool.name} with ${this.name}`, 'AGENT');
+        logger.debug(`Registered tool ${tool.name} with ${this.name}`, "AGENT");
     }
     getTools() {
         return Array.from(this.tools.values());
@@ -61,28 +65,36 @@ export class BaseAgent {
     }
     async initialize() {
         if (this.initialized) {
-            logger.debug(`Agent ${this.name} already initialized`, 'AGENT');
+            logger.debug(`Agent ${this.name} already initialized`, "AGENT");
             return;
         }
-        logger.info(`Initializing agent ${this.name}`, 'AGENT');
+        logger.info(`Initializing agent ${this.name}`, "AGENT");
+        // Register default tools first
+        if (typeof this.registerDefaultTools === "function") {
+            this.registerDefaultTools();
+            logger.debug(`Registered default tools for ${this.name}`, "AGENT");
+        }
         // Initialize any tools (if they have initialization method)
         for (const tool of this.tools.values()) {
-            if ('initialize' in tool && typeof tool.initialize === 'function') {
+            if ("initialize" in tool &&
+                typeof tool.initialize === "function") {
                 await tool.initialize();
             }
         }
         this.initialized = true;
-        logger.info(`Agent ${this.name} initialized successfully`, 'AGENT');
+        logger.info(`Agent ${this.name} initialized successfully with ${this.tools.size} tools`, "AGENT");
     }
     handleError(error) {
-        logger.error(`Error in agent ${this.name}: ${error.message}`, 'AGENT', { error });
+        logger.error(`Error in agent ${this.name}: ${error.message}`, "AGENT", {
+            error,
+        });
         return {
             success: false,
             error: error.message,
             metadata: {
                 agent: this.name,
                 timestamp: new Date().toISOString(),
-                errorType: error.name || 'UnknownError',
+                errorType: error.name || "UnknownError",
             },
         };
     }

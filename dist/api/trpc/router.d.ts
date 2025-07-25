@@ -1043,8 +1043,8 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
                 query: string;
                 engine?: "google" | "bing" | "yandex" | undefined;
                 language?: string | undefined;
-                cursor?: string | undefined;
                 location?: string | undefined;
+                cursor?: string | undefined;
                 maxResults?: number | undefined;
             };
             _input_out: {
@@ -1052,8 +1052,8 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
                 engine: "google" | "bing" | "yandex";
                 maxResults: number;
                 language?: string | undefined;
-                cursor?: string | undefined;
                 location?: string | undefined;
+                cursor?: string | undefined;
             };
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
@@ -1900,10 +1900,10 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
                 mcpTools: any;
             };
             _input_in: {
+                search?: string | undefined;
                 limit?: number | undefined;
                 priority?: "Critical" | "High" | "Medium" | "Low" | undefined;
                 status?: string | undefined;
-                search?: string | undefined;
                 workflow?: string | undefined;
                 slaStatus?: "on-track" | "at-risk" | "overdue" | undefined;
                 offset?: number | undefined;
@@ -1916,9 +1916,9 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _input_out: {
                 limit: number;
                 offset: number;
+                search?: string | undefined;
                 priority?: "Critical" | "High" | "Medium" | "Low" | undefined;
                 status?: string | undefined;
-                search?: string | undefined;
                 workflow?: string | undefined;
                 slaStatus?: "on-track" | "at-risk" | "overdue" | undefined;
                 dateRange?: {
@@ -4895,7 +4895,7 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
             success: boolean;
-            products: import("../../core/data-collection/types").CollectedData[];
+            products: import("../../types/walmart-grocery").WalmartProduct[];
             analysis: string;
             metadata: {
                 totalResults: number;
@@ -5493,7 +5493,18 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
-            lists: any;
+            lists: {
+                id: string;
+                userId: string;
+                name: string;
+                description: string | undefined;
+                items: never[];
+                totalEstimate: number;
+                createdAt: Date;
+                updatedAt: Date;
+                tags: never[];
+                isShared: boolean;
+            }[];
         }>;
         createList: import("@trpc/server").BuildProcedure<"mutation", {
             _config: import("@trpc/server").RootConfig<{
@@ -5566,7 +5577,7 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
             success: boolean;
-            list: any;
+            list: import("../../types/walmart-grocery").GroceryList;
         }>;
         updateList: import("@trpc/server").BuildProcedure<"mutation", {
             _config: import("@trpc/server").RootConfig<{
@@ -5772,6 +5783,7 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
                     productId: string;
                     quantity: number;
                     notes?: string | undefined;
+                    listId?: string | undefined;
                 }[];
                 listId: string;
             };
@@ -5780,6 +5792,7 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
                     productId: string;
                     quantity: number;
                     notes?: string | undefined;
+                    listId?: string | undefined;
                 }[];
                 listId: string;
             };
@@ -5787,7 +5800,7 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
             success: boolean;
-            items: any;
+            items: import("../../types/walmart-grocery").GroceryItem[];
         }>;
         removeItemFromList: import("@trpc/server").BuildProcedure<"mutation", {
             _config: import("@trpc/server").RootConfig<{

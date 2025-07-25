@@ -1,9 +1,37 @@
-import { BaseAgent } from '../base/BaseAgent';
-import { WebSearchTool } from '../../tools/web/WebSearchTool';
-import { WebScraperTool } from '../../tools/web/WebScraperTool';
+import { BaseAgent } from "../base/BaseAgent";
+import { WebSearchTool } from "../../tools/web/WebSearchTool";
+import { WebScraperTool } from "../../tools/web/WebScraperTool";
+import { SearXNGSearchTool } from "../../tools/web/SearXNGProvider";
+import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout";
+import { businessSearchPromptEnhancer } from "../../prompts/BusinessSearchPromptEnhancer";
+import { SearchKnowledgeService } from "../../services/SearchKnowledgeService";
 export class ResearchAgent extends BaseAgent {
+    searchKnowledgeService;
     constructor() {
-        super('ResearchAgent', 'Specializes in web research, information gathering, and fact-checking');
+        super("ResearchAgent", "Specializes in web research, information gathering, and fact-checking");
+        this.initializeKnowledgeService();
+    }
+    async initializeKnowledgeService() {
+        try {
+            this.searchKnowledgeService = new SearchKnowledgeService({
+                vectorStore: {
+                    type: "chromadb",
+                    collectionName: "search_knowledge",
+                    baseUrl: "http://localhost:8000",
+                },
+                chunking: {
+                    chunkSize: 1000,
+                    overlap: 200,
+                },
+                retrieval: {
+                    topK: 5,
+                },
+            });
+            await this.searchKnowledgeService.initialize();
+        }
+        catch (error) {
+            console.warn("Failed to initialize SearchKnowledgeService:", error);
+        }
     }
     async execute(task, context) {
         try {
@@ -18,7 +46,7 @@ export class ResearchAgent extends BaseAgent {
                 data: {
                     findings: results,
                     synthesis: synthesis,
-                    sources: this.extractSources(results)
+                    sources: this.extractSources(results),
                 },
                 output: synthesis,
                 metadata: {
@@ -26,11 +54,112 @@ export class ResearchAgent extends BaseAgent {
                     toolsUsed: researchPlan.tools,
                     queriesExecuted: researchPlan.queries.length,
                     sourcesFound: results.length,
-                    timestamp: new Date().toISOString()
-                }
+                    timestamp: new Date().toISOString(),
+                },
             };
         }
         catch (error) {
+            return this.handleError(error);
+        }
+    }
+    async executeWithTool(params) {
+        const { tool, context, parameters } = params;
+        try {
+            // If it's not a web search tool, use default behavior
+            if (tool.name !== "web_search") {
+                return super.executeWithTool(params);
+            }
+            console.log("[ResearchAgent] Starting executeWithTool for web_search");
+            // For web search, we need to create a proper research query
+            // Extract the query from the task description (format: "Process and respond to: <query>")
+            const taskDescription = context.task || "";
+            const taskMatch = taskDescription.match(/Process and respond to: (.+)/);
+            const query = taskMatch ? taskMatch[1] : taskDescription;
+            console.log("[ResearchAgent] Query extracted:", query);
+            // Check if this is a business query and enhance search parameters
+            const isBusinessQuery = businessSearchPromptEnhancer.needsEnhancement(query || taskDescription);
+            if (isBusinessQuery) {
+                console.log("[ResearchAgent] Business query detected - will enhance synthesis");
+            }
+            // For tool execution, skip the LLM-based research plan creation
+            // and go directly to search execution
+            // Get whichever search tool is registered (SearXNG or WebSearchTool)
+            const searchTool = this.tools.get("searxng_search") || this.tools.get("web_search");
+            if (!searchTool) {
+                return {
+                    success: false,
+                    error: "Web search tool not found",
+                };
+            }
+            if (!query) {
+                return {
+                    success: false,
+                    error: "No query provided for web search",
+                };
+            }
+            // Check for cached results first
+            let cachedResults = [];
+            if (this.searchKnowledgeService) {
+                try {
+                    cachedResults =
+                        await this.searchKnowledgeService.searchPreviousResults(query, 3);
+                    if (cachedResults.length > 0) {
+                        console.log(`[ResearchAgent] Found ${cachedResults.length} cached results for similar queries`);
+                    }
+                }
+                catch (error) {
+                    console.warn("Failed to search cached results:", error);
+                }
+            }
+            console.log("[ResearchAgent] Executing web search...");
+            const searchResult = await searchTool.execute({
+                query,
+                limit: 5,
+            });
+            console.log("[ResearchAgent] Search completed:", searchResult.success);
+            if (!searchResult.success || !searchResult.data) {
+                return {
+                    success: true,
+                    output: "I couldn't find any relevant information for your query. This might be due to search limitations or the specificity of your request.",
+                    data: { findings: [], sources: [] },
+                    metadata: {
+                        agent: this.name,
+                        tool: tool.name,
+                        timestamp: new Date().toISOString(),
+                    },
+                };
+            }
+            // Convert search results to research results
+            const results = searchResult.data.results.map((item) => ({
+                source: item.url,
+                title: item.title,
+                content: item.snippet,
+                type: "search_result",
+                relevance: 0.8,
+            }));
+            console.log("[ResearchAgent] Found", results.length, "results, synthesizing...");
+            // Synthesize the findings
+            const synthesis = await this.synthesizeFindings(results, query || taskDescription);
+            console.log("[ResearchAgent] Synthesis complete");
+            return {
+                success: true,
+                data: {
+                    findings: results,
+                    synthesis: synthesis,
+                    sources: this.extractSources(results),
+                },
+                output: synthesis,
+                metadata: {
+                    agent: this.name,
+                    tool: tool.name,
+                    queriesExecuted: 1,
+                    sourcesFound: results.length,
+                    timestamp: new Date().toISOString(),
+                },
+            };
+        }
+        catch (error) {
+            console.error("[ResearchAgent] Error in executeWithTool:", error);
             return this.handleError(error);
         }
     }
@@ -39,7 +168,7 @@ export class ResearchAgent extends BaseAgent {
       You are a research specialist. Create a research plan for the following task:
       "${task}"
       
-      ${context.ragDocuments ? `Existing knowledge base context:\n${context.ragDocuments.map(d => d.content).join('\n\n')}` : ''}
+      ${context.ragDocuments ? `Existing knowledge base context:\n${context.ragDocuments.map((d) => d.content).join("\n\n")}` : ""}
       
       Create a research plan that includes:
       1. Key search queries to execute
@@ -64,28 +193,29 @@ export class ResearchAgent extends BaseAgent {
             if (jsonMatch) {
                 const parsed = JSON.parse(jsonMatch[0]);
                 return {
-                    queries: parsed.queries || ['general research query'],
-                    sourceTypes: parsed.sourceTypes || ['general'],
-                    extractionFocus: parsed.extractionFocus || ['information'],
-                    tools: parsed.tools || ['web_search']
+                    queries: parsed.queries || ["general research query"],
+                    sourceTypes: parsed.sourceTypes || ["general"],
+                    extractionFocus: parsed.extractionFocus || ["information"],
+                    tools: parsed.tools || ["web_search"],
                 };
             }
         }
         catch (error) {
-            console.error('Failed to parse research plan:', error);
+            console.error("Failed to parse research plan:", error);
         }
         // Fallback plan
         return {
-            queries: ['general research query'],
-            sourceTypes: ['general'],
-            extractionFocus: ['information'],
-            tools: ['web_search']
+            queries: ["general research query"],
+            sourceTypes: ["general"],
+            extractionFocus: ["information"],
+            tools: ["web_search"],
         };
     }
     async executeResearchPlan(plan, context) {
         const results = [];
-        const searchTool = this.tools.get('web_search');
-        const scraperTool = this.tools.get('web_scraper');
+        // Get whichever search tool is registered (SearXNG or WebSearchTool)
+        const searchTool = this.tools.get("searxng_search") || this.tools.get("web_search");
+        const scraperTool = this.tools.get("web_scraper");
         // Check if we have existing context that might reduce search needs
         const hasExistingContext = context.ragDocuments && context.ragDocuments.length > 0;
         // If we have existing context, limit the search scope
@@ -95,30 +225,31 @@ export class ResearchAgent extends BaseAgent {
             if (searchTool) {
                 const searchResult = await searchTool.execute({
                     query,
-                    limit: searchLimit
+                    limit: searchLimit,
                 });
                 if (searchResult.success && searchResult.data) {
                     // For each search result, potentially scrape the content
                     for (const item of searchResult.data.results) {
+                        const relevance = this.calculateRelevance(item, plan);
                         results.push({
                             source: item.url,
                             title: item.title,
                             content: item.snippet,
-                            type: 'search_result',
-                            relevance: this.calculateRelevance(item, plan)
+                            type: "search_result",
+                            relevance: relevance,
                         });
                         // Scrape full content for highly relevant results
-                        if (scraperTool && item.relevance > 0.7) {
+                        if (scraperTool && relevance > 0.7) {
                             const scraped = await scraperTool.execute({
-                                url: item.url
+                                url: item.url,
                             });
                             if (scraped.success && scraped.data) {
                                 results.push({
                                     source: item.url,
                                     title: item.title,
                                     content: scraped.data.content,
-                                    type: 'scraped_content',
-                                    relevance: item.relevance
+                                    type: "scraped_content",
+                                    relevance: item.relevance,
                                 });
                             }
                         }
@@ -134,14 +265,14 @@ export class ResearchAgent extends BaseAgent {
         let score = 0.5; // Base score
         const text = `${item.title} ${item.snippet}`.toLowerCase();
         // Check for extraction focus keywords
-        plan.extractionFocus.forEach(focus => {
+        plan.extractionFocus.forEach((focus) => {
             if (text.includes(focus.toLowerCase())) {
                 score += 0.1;
             }
         });
         // Check for source type indicators
         const url = item.url.toLowerCase();
-        plan.sourceTypes.forEach(type => {
+        plan.sourceTypes.forEach((type) => {
             if (url.includes(type) || text.includes(type)) {
                 score += 0.1;
             }
@@ -153,16 +284,37 @@ export class ResearchAgent extends BaseAgent {
             return "No relevant information found for the given task.";
         }
         const topResults = results.slice(0, 5);
-        const prompt = `
+        // Check if we have any cached results that might be helpful
+        let cachedContext = "";
+        if (this.searchKnowledgeService) {
+            try {
+                const cachedResults = await this.searchKnowledgeService.searchPreviousResults(task, 2);
+                if (cachedResults.length > 0) {
+                    cachedContext = `\n\nPreviously cached relevant information:\n${cachedResults
+                        .map((r) => r.content)
+                        .join("\n\n")}\n\n`;
+                }
+            }
+            catch (error) {
+                // Ignore cache errors
+            }
+        }
+        // Check if this is a business-related query
+        const isBusinessQuery = businessSearchPromptEnhancer.needsEnhancement(task);
+        // Increase content size for business queries to capture contact info
+        const contentLength = isBusinessQuery ? 1500 : 500;
+        let basePrompt = `
       Synthesize the following research findings to answer the task: "${task}"
-      
+      ${cachedContext}
       Research Findings:
-      ${topResults.map((r, i) => `
+      ${topResults
+            .map((r, i) => `
         ${i + 1}. Source: ${r.source}
         Title: ${r.title}
-        Content: ${r.content.substring(0, 500)}...
+        Content: ${r.content.substring(0, contentLength)}...
         Relevance: ${r.relevance}
-      `).join('\n\n')}
+      `)
+            .join("\n\n")}
       
       Create a comprehensive summary that:
       1. Directly addresses the original task
@@ -173,17 +325,55 @@ export class ResearchAgent extends BaseAgent {
       
       Format the response in clear paragraphs.
     `;
-        return await this.llm.generate(prompt);
+        // Enhance the prompt for business queries
+        if (isBusinessQuery) {
+            console.log("[ResearchAgent] Detected business query, enhancing synthesis prompt");
+            // Determine enhancement level based on urgency keywords
+            const urgentKeywords = [
+                "urgent",
+                "emergency",
+                "asap",
+                "immediately",
+                "now",
+            ];
+            const hasUrgency = urgentKeywords.some((keyword) => task.toLowerCase().includes(keyword));
+            // Extract location if present
+            const locationMatch = task.match(/(?:in|near|at|around)\s+([^.?!]+?)(?:\.|$)/i);
+            const customInstructions = locationMatch
+                ? `Focus on businesses in or near ${locationMatch[1]}. Include distance/travel information.`
+                : "";
+            basePrompt = businessSearchPromptEnhancer.enhance(basePrompt, {
+                enhancementLevel: hasUrgency ? "aggressive" : "standard",
+                includeExamples: true,
+                customInstructions: `
+          ${customInstructions}
+          
+          CRITICAL: Extract and include the following business information:
+          - Business name and type
+          - Complete phone number(s)
+          - Full street address
+          - Business hours/availability
+          - Website URL and/or email
+          - Service areas and travel availability
+          - Initial visit costs or pricing information
+          - Any special certifications or qualifications
+          
+          Format business listings clearly with a "Recommendations" section.
+          Each business should be a separate subsection with contact details prominently displayed.
+        `,
+            });
+        }
+        return await withTimeout(this.llm.generate(basePrompt), DEFAULT_TIMEOUTS.LLM_GENERATION, "LLM synthesis timed out");
     }
     extractSources(results) {
         const uniqueSources = new Map();
-        results.forEach(result => {
+        results.forEach((result) => {
             if (!uniqueSources.has(result.source)) {
                 uniqueSources.set(result.source, {
                     url: result.source,
                     title: result.title,
                     type: result.type,
-                    accessedAt: new Date().toISOString()
+                    accessedAt: new Date().toISOString(),
                 });
             }
         });
@@ -192,29 +382,45 @@ export class ResearchAgent extends BaseAgent {
     getAgentSpecificCapabilities() {
         return [
             {
-                name: 'web_research',
-                description: 'Can search the web for information',
-                type: 'retrieval'
+                name: "web_research",
+                description: "Can search the web for information",
+                type: "retrieval",
             },
             {
-                name: 'content_extraction',
-                description: 'Can extract and parse content from web pages',
-                type: 'analysis'
+                name: "content_extraction",
+                description: "Can extract and parse content from web pages",
+                type: "analysis",
             },
             {
-                name: 'fact_checking',
-                description: 'Can verify information across multiple sources',
-                type: 'analysis'
+                name: "fact_checking",
+                description: "Can verify information across multiple sources",
+                type: "analysis",
             },
             {
-                name: 'source_evaluation',
-                description: 'Can assess the credibility and relevance of sources',
-                type: 'analysis'
-            }
+                name: "source_evaluation",
+                description: "Can assess the credibility and relevance of sources",
+                type: "analysis",
+            },
         ];
     }
     registerDefaultTools() {
-        this.registerTool(new WebSearchTool());
+        // Try to use SearXNG first if available
+        const searxng = new SearXNGSearchTool();
+        searxng
+            .isAvailable()
+            .then((available) => {
+            if (available) {
+                console.log("[ResearchAgent] Using SearXNG for search (unlimited, better results)");
+                this.registerTool(searxng);
+            }
+            else {
+                console.log("[ResearchAgent] SearXNG not available, using DuckDuckGo fallback");
+                this.registerTool(new WebSearchTool());
+            }
+        })
+            .catch(() => {
+            this.registerTool(new WebSearchTool());
+        });
         this.registerTool(new WebScraperTool());
     }
 }

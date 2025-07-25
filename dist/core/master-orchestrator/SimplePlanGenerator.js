@@ -1,4 +1,4 @@
-import { logger } from '../../utils/logger';
+import { logger } from "../../utils/logger";
 export class SimplePlanGenerator {
     static createSimplePlan(query, routingPlan) {
         // For CPU performance, bypass complex LLM plan generation
@@ -6,27 +6,32 @@ export class SimplePlanGenerator {
         // Determine the best agent based on query patterns
         const agentType = routingPlan?.selectedAgents?.[0]?.agentType ||
             this.selectAgentByPattern(query.text) ||
-            'ResearchAgent'; // Default to ResearchAgent instead of WriterAgent
-        logger.debug('SimplePlanGenerator selecting agent', 'PLAN_GENERATOR', {
+            "ResearchAgent"; // Default to ResearchAgent instead of WriterAgent
+        logger.debug("SimplePlanGenerator selecting agent", "PLAN_GENERATOR", {
             query: query.text.substring(0, 100),
             selectedAgent: agentType,
-            hasRoutingPlan: !!routingPlan
+            hasRoutingPlan: !!routingPlan,
         });
+        const requiresTool = this.doesRequireTool(query.text, agentType);
+        const toolName = requiresTool
+            ? this.selectTool(query.text, agentType)
+            : undefined;
         return {
             id: `plan-${Date.now()}`,
             steps: [
                 {
-                    id: 'step-1',
-                    task: 'Answer user query',
+                    id: "step-1",
+                    task: "Answer user query",
                     description: `Process and respond to: ${query.text}`,
                     agentType,
-                    requiresTool: this.doesRequireTool(query.text, agentType),
+                    requiresTool: requiresTool,
+                    toolName: toolName,
                     ragQuery: query.text,
-                    expectedOutput: 'Comprehensive answer to user query',
+                    expectedOutput: "Comprehensive answer to user query",
                     dependencies: [],
-                    parameters: {}
-                }
-            ]
+                    parameters: {},
+                },
+            ],
         };
     }
     static selectAgentByPattern(queryText) {
@@ -36,73 +41,142 @@ export class SimplePlanGenerator {
             // CodeAgent patterns - highest priority for code-related queries
             [
                 [
-                    'function', 'implement', 'debug', 'fix', 'error',
-                    'program', 'script', 'class', 'method', 'api', 'bug',
-                    'syntax', 'compile', 'runtime', 'exception', 'typescript',
-                    'javascript', 'python', 'java', 'code', 'coding',
-                    'programming', 'develop', 'fix the', 'write a function',
-                    'create a function', 'implement a'
+                    "function",
+                    "implement",
+                    "debug",
+                    "fix",
+                    "error",
+                    "program",
+                    "script",
+                    "class",
+                    "method",
+                    "api",
+                    "bug",
+                    "syntax",
+                    "compile",
+                    "runtime",
+                    "exception",
+                    "typescript",
+                    "javascript",
+                    "python",
+                    "java",
+                    "code",
+                    "coding",
+                    "programming",
+                    "develop",
+                    "fix the",
+                    "write a function",
+                    "create a function",
+                    "implement a",
                 ],
-                'CodeAgent'
+                "CodeAgent",
             ],
             // DataAnalysisAgent patterns
             [
                 [
-                    'analyze', 'data', 'statistics', 'metrics',
-                    'report', 'chart', 'graph', 'trend',
-                    'pattern', 'insight', 'correlation', 'dataset',
-                    'analytics', 'analysis'
+                    "analyze",
+                    "data",
+                    "statistics",
+                    "metrics",
+                    "report",
+                    "chart",
+                    "graph",
+                    "trend",
+                    "pattern",
+                    "insight",
+                    "correlation",
+                    "dataset",
+                    "analytics",
+                    "analysis",
                 ],
-                'DataAnalysisAgent'
+                "DataAnalysisAgent",
             ],
             // ResearchAgent patterns
             [
                 [
-                    'research', 'find', 'search', 'investigate', 'explore',
-                    'discover', 'learn about', 'what is', 'how does', 'why',
-                    'when', 'where', 'explain the', 'tell me about',
-                    'information about', 'latest', 'current', 'recent',
-                    'what are the', 'developments', 'best practices',
-                    'trends', 'news about'
+                    "research",
+                    "find",
+                    "search",
+                    "investigate",
+                    "explore",
+                    "discover",
+                    "learn about",
+                    "what is",
+                    "how does",
+                    "why",
+                    "when",
+                    "where",
+                    "explain the",
+                    "tell me about",
+                    "information about",
+                    "latest",
+                    "current",
+                    "recent",
+                    "what are the",
+                    "developments",
+                    "best practices",
+                    "trends",
+                    "news about",
                 ],
-                'ResearchAgent'
+                "ResearchAgent",
             ],
             // WriterAgent patterns - lower priority, only for pure writing tasks
             [
                 [
-                    'write an article', 'write a blog', 'write a story',
-                    'compose', 'draft', 'create content', 'documentation',
-                    'summarize', 'rewrite', 'edit text', 'proofread',
-                    'blog post', 'newsletter', 'article about'
+                    "write an article",
+                    "write a blog",
+                    "write a story",
+                    "compose",
+                    "draft",
+                    "create content",
+                    "documentation",
+                    "summarize",
+                    "rewrite",
+                    "edit text",
+                    "proofread",
+                    "blog post",
+                    "newsletter",
+                    "article about",
                 ],
-                'WriterAgent'
+                "WriterAgent",
             ],
             // ToolExecutorAgent patterns
             [
                 [
-                    'execute', 'run', 'deploy', 'install', 'configure',
-                    'setup', 'automate', 'workflow', 'pipeline', 'integrate'
+                    "execute",
+                    "run",
+                    "deploy",
+                    "install",
+                    "configure",
+                    "setup",
+                    "automate",
+                    "workflow",
+                    "pipeline",
+                    "integrate",
                 ],
-                'ToolExecutorAgent'
-            ]
+                "ToolExecutorAgent",
+            ],
         ];
         // Special case checks for specific phrases
-        if (lowerQuery.includes('write a blog') || lowerQuery.includes('blog post')) {
-            return 'WriterAgent';
+        if (lowerQuery.includes("write a blog") ||
+            lowerQuery.includes("blog post")) {
+            return "WriterAgent";
         }
-        if (lowerQuery.includes('create a visualization') || lowerQuery.includes('visualization')) {
-            return 'DataAnalysisAgent';
+        if (lowerQuery.includes("create a visualization") ||
+            lowerQuery.includes("visualization")) {
+            return "DataAnalysisAgent";
         }
-        if (lowerQuery.includes('what are the') && lowerQuery.includes('developments')) {
-            return 'ResearchAgent';
+        if (lowerQuery.includes("what are the") &&
+            lowerQuery.includes("developments")) {
+            return "ResearchAgent";
         }
-        if (lowerQuery.includes('best practices') && !lowerQuery.includes('code')) {
-            return 'ResearchAgent';
+        if (lowerQuery.includes("best practices") && !lowerQuery.includes("code")) {
+            return "ResearchAgent";
         }
         // Check patterns in priority order
         for (const [patterns, agent] of agentPatterns) {
             if (Array.isArray(patterns)) {
-                if (patterns.some(pattern => lowerQuery.includes(pattern))) {
+                if (patterns.some((pattern) => lowerQuery.includes(pattern))) {
                     return agent;
                 }
             }
@@ -113,22 +187,59 @@ export class SimplePlanGenerator {
         const lowerQuery = queryText.toLowerCase();
         // Tool indicators
         const toolIndicators = [
-            'search the web', 'look up', 'find online', 'browse',
-            'create file', 'write file', 'read file', 'execute',
-            'run command', 'fetch data', 'scrape', 'download'
+            "search the web",
+            "look up",
+            "find online",
+            "browse",
+            "create file",
+            "write file",
+            "read file",
+            "execute",
+            "run command",
+            "fetch data",
+            "scrape",
+            "download",
         ];
         // Agent-specific tool requirements
-        if (agentType === 'ResearchAgent' &&
-            (lowerQuery.includes('latest') || lowerQuery.includes('current') ||
-                lowerQuery.includes('recent') || lowerQuery.includes('search'))) {
+        if (agentType === "ResearchAgent" &&
+            (lowerQuery.includes("latest") ||
+                lowerQuery.includes("current") ||
+                lowerQuery.includes("recent") ||
+                lowerQuery.includes("search") ||
+                lowerQuery.includes("find"))) {
             return true;
         }
-        if (agentType === 'CodeAgent' &&
-            (lowerQuery.includes('create') || lowerQuery.includes('write') ||
-                lowerQuery.includes('implement'))) {
+        if (agentType === "CodeAgent" &&
+            (lowerQuery.includes("create") ||
+                lowerQuery.includes("write") ||
+                lowerQuery.includes("implement"))) {
             return true;
         }
-        return toolIndicators.some(indicator => lowerQuery.includes(indicator));
+        return toolIndicators.some((indicator) => lowerQuery.includes(indicator));
+    }
+    static selectTool(queryText, agentType) {
+        const lowerQuery = queryText.toLowerCase();
+        // Agent-specific tool selection
+        if (agentType === "ResearchAgent") {
+            // For research tasks, prefer web search
+            if (lowerQuery.includes("latest") ||
+                lowerQuery.includes("current") ||
+                lowerQuery.includes("recent") ||
+                lowerQuery.includes("find") ||
+                lowerQuery.includes("search") ||
+                lowerQuery.includes("specialists")) {
+                return "web_search";
+            }
+            return "web_search"; // Default for research
+        }
+        if (agentType === "CodeAgent") {
+            return "code_executor"; // Default tool for code agent
+        }
+        if (agentType === "DataAnalysisAgent") {
+            return "data_analyzer"; // Default tool for data analysis
+        }
+        // Fallback
+        return "web_search";
     }
 }
 //# sourceMappingURL=SimplePlanGenerator.js.map

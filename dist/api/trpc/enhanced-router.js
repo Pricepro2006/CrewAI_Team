@@ -1,6 +1,8 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { createSecurityAuditMiddleware, createAuthMiddleware, createAuthorizationMiddleware, createInputValidation, sanitizationSchemas, } from "../middleware/security";
+// Import rate limiters from centralized middleware index (avoids circular dependency)
+import { chatProcedureRateLimiter, agentProcedureRateLimiter, taskProcedureRateLimiter, ragProcedureRateLimiter, strictProcedureRateLimiter, } from "../middleware/index";
 import { logger } from "../../utils/logger";
 import { z } from "zod";
 /**

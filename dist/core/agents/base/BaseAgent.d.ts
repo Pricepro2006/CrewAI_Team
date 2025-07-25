@@ -1,6 +1,6 @@
-import type { BaseTool } from '../../tools/base/BaseTool';
-import type { AgentContext, AgentResult, ToolExecutionParams } from './AgentTypes';
-import { OllamaProvider } from '../../llm/OllamaProvider';
+import type { BaseTool } from "../../tools/base/BaseTool";
+import type { AgentContext, AgentResult, ToolExecutionParams } from "./AgentTypes";
+import { OllamaProvider } from "../../llm/OllamaProvider";
 export declare abstract class BaseAgent {
     readonly name: string;
     readonly description: string;
@@ -9,6 +9,7 @@ export declare abstract class BaseAgent {
     protected capabilities: Set<string>;
     protected initialized: boolean;
     protected llm: OllamaProvider;
+    protected timeout: number;
     constructor(name: string, description: string, model?: string);
     abstract execute(task: string, context: AgentContext): Promise<AgentResult>;
     executeWithTool(params: ToolExecutionParams): Promise<AgentResult>;
