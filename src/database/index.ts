@@ -9,11 +9,7 @@ export { DatabaseManager, getDatabaseManager } from './DatabaseManager';
 // Repository Pattern Implementation
 export { BaseRepository } from './repositories/BaseRepository';
 export { UserRepository } from './repositories/UserRepository';
-export { 
-  EmailRepository, 
-  EmailEntityRepository, 
-  EmailAttachmentRepository 
-} from './repositories/EmailRepository';
+export { EmailRepository } from './repositories/EmailRepository';
 export { 
   DealRepository, 
   DealItemRepository, 
@@ -42,11 +38,8 @@ export type {
 
 export type { User, CreateUserData } from './repositories/UserRepository';
 export type { 
-  EmailEnhanced, 
   EmailEntity, 
-  EmailAttachment, 
-  CreateEmailData, 
-  EmailSearchOptions 
+  CreateEmailParams
 } from './repositories/EmailRepository';
 export type { 
   Deal, 

@@ -4,16 +4,11 @@
  */
 
 import type {
-  APITypes,
-  CoreTypes,
-  DatabaseTypes,
-  WebSocketTypes,
   ApiResponse,
   Timestamp,
+  BaseEntity,
+  WebSocketMessage,
 } from "../types";
-
-// Import BaseEntity from CoreTypes
-type BaseEntity = CoreTypes.BaseEntity;
 
 // =====================================================
 // Test Configuration and Setup
@@ -259,21 +254,21 @@ export interface TestWebSocketConnection {
   connected: boolean;
   connectedAt: Timestamp;
   lastActivity: Timestamp;
-  sentMessages: WebSocketTypes.WebSocketMessage[];
-  receivedMessages: WebSocketTypes.WebSocketMessage[];
+  sentMessages: WebSocketMessage[];
+  receivedMessages: WebSocketMessage[];
   subscriptions: string[];
   metadata: Record<string, unknown>;
 }
 
 export interface QueuedMessage {
-  message: WebSocketTypes.WebSocketMessage;
+  message: WebSocketMessage;
   queuedAt: Timestamp;
   attempts: number;
   maxAttempts: number;
 }
 
 export interface EventHandler {
-  handler: (message: WebSocketTypes.WebSocketMessage) => Promise<void>;
+  handler: (message: WebSocketMessage) => Promise<void>;
   once: boolean;
   timeout?: number;
 }

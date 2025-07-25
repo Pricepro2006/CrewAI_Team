@@ -262,11 +262,8 @@ describe('Email Router', () => {
       mockEmailStorage.getEmailWithAnalysis.mockResolvedValueOnce(null);
 
       const caller = emailRouter.createCaller(mockContext);
-      const result = await caller.getById({ id: 'nonexistent-email' });
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Email not found');
-      expect(result.data).toBeNull();
+      
+      await expect(caller.getById({ id: 'nonexistent-email' })).rejects.toThrow('Email not found');
     });
 
     it('should handle fetch errors', async () => {

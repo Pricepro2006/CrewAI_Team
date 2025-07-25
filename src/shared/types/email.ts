@@ -431,7 +431,7 @@ export interface EmailAssignmentRule {
   name: string;
   description: string;
   enabled: boolean;
-  priority: number;
+  rulePriority: number; // Rule execution order (lower numbers execute first)
   
   // Conditions
   conditions: EmailAssignmentCondition[];
@@ -440,7 +440,7 @@ export interface EmailAssignmentRule {
   assignTo?: string;
   assignToRole?: string;
   assignToTeam?: string;
-  priority?: EmailPriority;
+  priority?: EmailPriority; // Priority to assign to the email
   dueInHours?: number;
   addTags?: string[];
   setWorkflowState?: EmailWorkflowState;

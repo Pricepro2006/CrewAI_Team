@@ -11,7 +11,7 @@ import appConfig from '../config/app.config';
 
 // Repository imports
 import { UserRepository } from './repositories/UserRepository';
-import { EmailRepository, EmailEntityRepository, EmailAttachmentRepository } from './repositories/EmailRepository';
+import { EmailRepository } from './repositories/EmailRepository';
 import { DealRepository, DealItemRepository, ProductFamilyRepository } from './repositories/DealRepository';
 import { GroceryListRepository, GroceryItemRepository, ShoppingSessionRepository } from './repositories/GroceryRepository';
 import { WalmartProductRepository, SubstitutionRepository, UserPreferencesRepository } from './repositories/WalmartProductRepository';
@@ -49,8 +49,6 @@ export class DatabaseManager {
   // Repository instances
   public readonly users: UserRepository;
   public readonly emails: EmailRepository;
-  public readonly emailEntities: EmailEntityRepository;
-  public readonly emailAttachments: EmailAttachmentRepository;
   public readonly deals: DealRepository;
   public readonly dealItems: DealItemRepository;
   public readonly productFamilies: ProductFamilyRepository;
@@ -93,9 +91,7 @@ export class DatabaseManager {
 
     // Initialize repositories
     this.users = new UserRepository(this.db);
-    this.emails = new EmailRepository(this.db);
-    this.emailEntities = new EmailEntityRepository(this.db);
-    this.emailAttachments = new EmailAttachmentRepository(this.db);
+    this.emails = new EmailRepository({ db: this.db });
     this.deals = new DealRepository(this.db);
     this.dealItems = new DealItemRepository(this.db);
     this.productFamilies = new ProductFamilyRepository(this.db);
@@ -351,7 +347,7 @@ export class DatabaseManager {
         tables: tableCountResult.count,
         indexes: indexCountResult.count,
         users: await this.users.count(),
-        emails: await this.emails.count(),
+        emails: 0, // EmailRepository doesn't implement count method yet
         deals: await this.deals.count(),
         dealItems: await this.dealItems.count()
       };

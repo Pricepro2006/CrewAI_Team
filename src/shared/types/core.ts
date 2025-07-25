@@ -3,7 +3,23 @@
  * Fundamental data structures used throughout the application
  */
 
-import type { Timestamp, TimestampedEntity } from './index';
+// Define base types locally to avoid circular imports
+export type Timestamp = string; // ISO 8601 string
+
+export interface TimestampedEntity {
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// Import database configs to avoid duplication
+import type { 
+  DatabaseConfig, 
+  PoolConfig, 
+  MigrationConfig, 
+  BackupConfig,
+  LoggingConfig,
+  EncryptionConfig
+} from './database';
 
 // =====================================================
 // Base Entity Types
@@ -277,34 +293,7 @@ export interface ServiceConfiguration {
   monitoring: MonitoringConfig;
 }
 
-export interface DatabaseConfig {
-  type: 'sqlite' | 'postgres' | 'mysql';
-  url?: string;
-  path?: string;
-  pool?: PoolConfig;
-  migrations?: MigrationConfig;
-  backup?: BackupConfig;
-}
-
-export interface PoolConfig {
-  min: number;
-  max: number;
-  acquireTimeoutMillis: number;
-  idleTimeoutMillis: number;
-}
-
-export interface MigrationConfig {
-  directory: string;
-  autoMigrate: boolean;
-  backupBeforeMigration: boolean;
-}
-
-export interface BackupConfig {
-  enabled: boolean;
-  schedule: string;
-  retention: number;
-  location: string;
-}
+// DatabaseConfig, PoolConfig, MigrationConfig, BackupConfig are imported from './database'
 
 export interface LLMConfig {
   provider: 'ollama' | 'openai' | 'anthropic' | 'huggingface';
@@ -383,12 +372,7 @@ export interface MetricExport {
   tags?: Record<string, string>;
 }
 
-export interface LoggingConfig {
-  level: 'debug' | 'info' | 'warn' | 'error';
-  format: 'json' | 'text';
-  outputs: LogOutput[];
-  sampling?: SamplingConfig;
-}
+// LoggingConfig is imported from './database'
 
 export interface LogOutput {
   type: 'console' | 'file' | 'elasticsearch' | 'cloudwatch';
@@ -497,11 +481,7 @@ export interface PermissionConfig {
   actions: string[];
 }
 
-export interface EncryptionConfig {
-  algorithm: string;
-  keySize: number;
-  secrets: SecretConfig[];
-}
+// EncryptionConfig is imported from './database'
 
 export interface SecretConfig {
   name: string;
