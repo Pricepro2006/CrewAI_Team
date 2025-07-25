@@ -4,7 +4,8 @@
  */
 
 import { logger } from "../../utils/logger";
-import { AgentRole } from "../agents/types";
+
+export type AgentRole = 'analyst' | 'coordinator' | 'executor' | 'researcher' | 'validator';
 
 export interface Query {
   text: string;
@@ -93,7 +94,9 @@ export class MasterOrchestrator {
         // Limit cache size
         if (this.cache.size > 1000) {
           const firstKey = this.cache.keys().next().value;
-          this.cache.delete(firstKey);
+          if (firstKey) {
+            this.cache.delete(firstKey);
+          }
         }
       }
 

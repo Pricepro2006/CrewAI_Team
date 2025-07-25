@@ -1,6 +1,18 @@
-import { getDatabaseConnection } from "@/database/connection";
-import { logger } from "@/utils/logger";
-import type { LlamaAnalysisResult, CriticalAnalysisResult } from "./types";
+import { getDatabaseManager } from "../../database/DatabaseManager";
+import { logger } from "../../utils/logger";
+// TODO: Fix types import - create types file or use correct path
+// import type { LlamaAnalysisResult, CriticalAnalysisResult } from "./types";
+
+// Mock types for now
+interface LlamaAnalysisResult {
+  summary: string;
+  priority: number;
+}
+
+interface CriticalAnalysisResult {
+  isUrgent: boolean;
+  businessImpact: string;
+}
 
 export interface AnalysisToSave {
   emailId: string;
@@ -17,7 +29,8 @@ export interface AnalysisToSave {
 export async function saveAnalysisResults(
   analyses: AnalysisToSave[],
 ): Promise<void> {
-  const db = getDatabaseConnection();
+  const dbManager = getDatabaseManager();
+  const db = dbManager.getSQLiteDatabase();
 
   // Prepare the insert statement
   const stmt = db.prepare(`
@@ -85,7 +98,8 @@ export async function saveAnalysisResults(
  * This transforms the pipeline JSON into the expected schema
  */
 export async function createCompatibilityView(): Promise<void> {
-  const db = getDatabaseConnection();
+  const dbManager = getDatabaseManager();
+  const db = dbManager.getSQLiteDatabase();
 
   try {
     // Drop existing view if it exists
