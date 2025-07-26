@@ -1,0 +1,50 @@
+[
+  {
+    "MessageID": "DEMO-QUOTE-001",
+    "Subject": "Re: Quote for Panasonic Toughbooks",
+    "SenderEmail": "Chris.Ignacio@tdsynnex.com",
+    "SenderName": "Ignacio, Chris (c)",
+    "Recipients": "{\"to\": [\"teamCrigler@insight.com\"], \"cc\": [\"Joel.Clark@tdsynnex.com\"]}",
+    "ReceivedTime": "2025-05-19T12:05:50Z",
+    "FolderPath": "Inbox",
+    "BodyText": "Quote request for Panasonic Toughbooks CF-33 models. Customer needs rugged laptops for field operations. Please provide pricing for quantity 25 units.",
+    "HasAttachments": 1,
+    "Importance": "normal",
+    "ThreadID": "DEMO-THREAD-001",
+    "IsRead": 0,
+    "ExtractedAt": "2025-05-21T11:26:34.678689",
+    "IsSynthetic": 0
+  },
+  {
+    "MessageID": "DEMO-RENEWAL-002",
+    "Subject": "RE: Easy Lobby FY26 - Annual Renewal - URGENT: Price increase effective 06/01/2025",
+    "SenderEmail": "Kyle.Jarrio@tdsynnex.com",
+    "SenderName": "Jarrio, Kyle",
+    "Recipients": "{\"to\": [\"TeamNJ@insight.com\"], \"cc\": []}",
+    "ReceivedTime": "2025-05-19T11:47:38Z",
+    "FolderPath": "Inbox",
+    "BodyText": "Working on Easy Lobby FY26 renewal. Axis Communications has confirmed price increase effective 06/01/2025. Need to process this renewal before the deadline to avoid higher costs.",
+    "HasAttachments": 0,
+    "Importance": "high",
+    "ThreadID": "DEMO-THREAD-002",
+    "IsRead": 0,
+    "ExtractedAt": "2025-05-21T11:26:34.684688",
+    "IsSynthetic": 0
+  },
+  {
+    "MessageID": "DEMO-REFUSE-003",
+    "Subject": "A New Refuse Order Created ##6106141",
+    "SenderEmail": "brian.moon@tdsynnex.com",
+    "SenderName": "brian.moon@tdsynnex.com",
+    "Recipients": "{\"to\": [\"Vivi.Luo@tdsynnex.com\"], \"cc\": []}",
+    "ReceivedTime": "2025-05-19T11:08:43Z",
+    "FolderPath": "Inbox",
+    "BodyText": "Refuse order# is: 6106141 Original order# is: 162271845 Refusal Reason: Wrong Address Reseller# is: 116396 Reseller name is: COMPUCOM Date shipped: 05/02/25 08:20 Total value of the order: $15.00 OrderLine# part# qty 1 APL-MWVV3AM/A -1",
+    "HasAttachments": 0,
+    "Importance": "normal",
+    "ThreadID": "DEMO-THREAD-003",
+    "IsRead": 0,
+    "ExtractedAt": "2025-05-21T11:26:34.689597",
+    "IsSynthetic": 0
+  }
+]

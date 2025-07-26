@@ -222,20 +222,6 @@ export class GroceryListRepository extends BaseRepository {
     return this.updateList(id, updates);
   }
 
-  async deleteList(id: string): Promise<void> {
-    // First delete all items in the list
-    this.db.prepare("DELETE FROM grocery_items WHERE list_id = ?").run(id);
-    
-    // Then delete the list itself
-    const result = this.db.prepare("DELETE FROM grocery_lists WHERE id = ?").run(id);
-    
-    if (result.changes === 0) {
-      throw new Error(`Grocery list not found: ${id}`);
-    }
-    
-    logger.info(`Deleted grocery list: ${id}`, "GROCERY_REPO");
-  }
-
   private mapRowToList(row: any): GroceryList {
     return {
       ...row,
@@ -388,16 +374,6 @@ export class GroceryItemRepository extends BaseRepository {
       status: "substituted",
       substitution_id: substitutionId,
     });
-  }
-
-  async deleteItem(id: string): Promise<void> {
-    const result = this.db.prepare("DELETE FROM grocery_items WHERE id = ?").run(id);
-    
-    if (result.changes === 0) {
-      throw new Error(`Grocery item not found: ${id}`);
-    }
-    
-    logger.info(`Deleted grocery item: ${id}`, "GROCERY_REPO");
   }
 
   async updateListTotal(listId: string): Promise<void> {

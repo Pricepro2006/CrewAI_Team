@@ -1,0 +1,185 @@
+{
+  "extraction_date": "2025-07-20",
+  "user": "Nicholas P",
+  "total_orders_scraped": 36,
+  "pages_scraped": 4,
+  "store_locations": {
+    "Mount Pleasant Supercenter": {
+      "primary_address": "1481 N HIGHWAY 17",
+      "secondary_address": "3000 PROPRIETORS PL",
+      "city": "Mount Pleasant",
+      "state": "SC",
+      "order_count": 22
+    },
+    "Charleston Supercenter": {
+      "address": "1231 FOLLY RD",
+      "city": "Charleston", 
+      "state": "SC",
+      "order_count": 2
+    }
+  },
+  "product_categories": {
+    "Fresh Produce": {
+      "items": [
+        "Fresh Banana",
+        "Fresh Blueberries",
+        "Fresh Strawberries",
+        "Fresh Mandarin Oranges",
+        "Fresh Sweet Corn on the Cob",
+        "Fresh Color Bell Peppers",
+        "Fresh Clementines",
+        "Fresh Cosmic Crisp Apples",
+        "Fresh Romaine Lettuce Hearts"
+      ],
+      "frequency": "High - appears in most orders"
+    },
+    "Protein": {
+      "items": [
+        "Sanderson Farms Fresh Boneless Skinless Chicken Thigh Fillets",
+        "Perdue Harvestland Fresh Boneless Skinless Chicken Thighs",
+        "StarKist Chunk Light Tuna in Sunflower Oil",
+        "Hillshire Farm Ultra Thin Sliced Honey Ham",
+        "Sara Lee Premium Meats Gluten Free Honey Roasted Turkey Breast",
+        "80% Lean / 20% Fat Ground Beef Chuck",
+        "Jimmy Dean Premium Pork Sausage Roll"
+      ],
+      "frequency": "High - chicken and tuna are staples"
+    },
+    "Yogurt & Dairy": {
+      "items": [
+        "Oikos Triple Zero Strawberry and Mixed Berry Greek Yogurt",
+        "Dannon Light + Fit Greek Yogurt",
+        "Too Good Lower Sugar Vanilla Greek Yogurt",
+        "Kozy Shack Rice Pudding",
+        "Senor Rico Rice Pudding"
+      ],
+      "frequency": "Very High - appears in almost every order"
+    },
+    "Salads & Greens": {
+      "items": [
+        "Marketside Fresh Spinach",
+        "Marketside Caesar Salad Kit",
+        "Marketside Asian Chopped Salad Kit",
+        "Marketside Southwest Chopped Salad Kit",
+        "Taylor Farms Mediterranean Crunch Chopped Salad Kit"
+      ],
+      "frequency": "Very High - consistent pattern"
+    },
+    "Snacks": {
+      "items": [
+        "Nature Valley Protein Oats and Dark Chocolate Granola",
+        "Nature Valley Protein Granola Bars",
+        "Funables Fruity Snacks",
+        "Welch's Fruit Snacks",
+        "Town House Pita Sea Salt Crackers",
+        "Cheetos Oven Baked Crunchy Cheese Snacks",
+        "Goldfish Cheddar Crackers",
+        "Pringles",
+        "Lay's Kettle Cooked Chips"
+      ],
+      "frequency": "High - granola is a staple"
+    },
+    "Beverages": {
+      "items": [
+        "bettergoods Unsweetened Vanilla Almond milk",
+        "Silk Dairy Free Unsweet Vanilla Almond Milk",
+        "Sunkist Zero Sugar Orange Soda",
+        "Diet Coke",
+        "Sam's Cola Soda",
+        "Great Value Purified Drinking Water"
+      ],
+      "frequency": "Medium"
+    },
+    "Bread & Wraps": {
+      "items": [
+        "Arnold Whole Grains Healthy Multi-Grain Bread",
+        "Mission Wraps Garden Spinach",
+        "Olé Xtreme Wellness High Fiber Spinach & Herbs Tortilla Wraps",
+        "Rio Rancho Tostada Bowls"
+      ],
+      "frequency": "High - Arnold bread is a regular purchase"
+    },
+    "Household & Personal Care": {
+      "items": [
+        "Great Value Strong Flex 13-Gallon Trash Bags",
+        "Tresemme Flawless Curls Moisturizing Conditioner",
+        "Tresemme Moisturizing Shampoo Flawless Curls",
+        "Always Pure Cotton Feminine Pads",
+        "Crest 3D White Brilliance Toothpaste",
+        "Colgate Optic White Pro Series Whitening Toothpaste",
+        "Dove Men+Care Deodorant",
+        "Neutrogena Oil-Free Pink Grapefruit Acne Face Wash"
+      ],
+      "frequency": "Medium - regular replenishment"
+    },
+    "Pantry Staples": {
+      "items": [
+        "Jif Natural Creamy Peanut Butter",
+        "Heinz Tomato Ketchup",
+        "Great Value Mayonnaise",
+        "Great Value Yellow Mustard",
+        "Great Value Traditional Italian Salad Dressing",
+        "Patak's Tikka Masala Curry Simmer Sauce",
+        "Old El Paso Taco Seasoning Mix",
+        "Quaker Old Fashioned Instant Oatmeal"
+      ],
+      "frequency": "Medium"
+    },
+    "Specialty Items": {
+      "items": [
+        "Purina Pro Plan Puppy Dry Dog Food",
+        "GIANNA 9FT Outdoor Patio Umbrella",
+        "30 Titleist Used Recycled White Golf Balls",
+        "PHANCIR Dish Drying Rack",
+        "Collapsible Colander Set"
+      ],
+      "frequency": "Low - one-time purchases"
+    }
+  },
+  "shopping_patterns": {
+    "primary_shopping_method": "Curbside pickup",
+    "secondary_method": "Delivery from store",
+    "average_order_frequency": "Weekly to bi-weekly",
+    "consistent_staples": [
+      "Nature Valley Protein Oats and Dark Chocolate Granola",
+      "Oikos Triple Zero Greek Yogurt",
+      "Marketside Fresh Spinach",
+      "Fresh Bananas",
+      "Chicken Thighs",
+      "Marketside Salad Kits"
+    ],
+    "seasonal_patterns": {
+      "summer_items": ["Fresh Sweet Corn", "Watermelon", "Outdoor items"],
+      "spring_items": ["Party supplies", "Decorating items"]
+    }
+  },
+  "dietary_preferences": {
+    "protein_focus": "High emphasis on lean proteins (chicken, tuna, yogurt)",
+    "healthy_choices": "Preference for whole grains, fresh produce, Greek yogurt",
+    "special_dietary_needs": [
+      "Gluten-free options (hummus, tortilla wraps)",
+      "Dairy-free alternatives (almond milk)",
+      "Sugar-free beverages"
+    ]
+  },
+  "brand_preferences": {
+    "preferred_brands": [
+      "Oikos (yogurt)",
+      "Nature Valley (granola)",
+      "Marketside (salads and produce)",
+      "Arnold (bread)",
+      "Great Value (store brand for basics)",
+      "Tresemme (hair care)"
+    ]
+  },
+  "purchase_history_summary": {
+    "total_unique_products": 150,
+    "most_frequent_purchases": {
+      "Nature Valley Protein Oats and Dark Chocolate Granola": "Appears in 15+ orders",
+      "Oikos Triple Zero Greek Yogurt": "Appears in 12+ orders",
+      "Fresh Bananas": "Appears in 10+ orders with quantities 4-6",
+      "Marketside Fresh Spinach": "Appears in 10+ orders",
+      "Chicken Thighs (various brands)": "Appears in 8+ orders"
+    }
+  }
+}

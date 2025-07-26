@@ -3,12 +3,10 @@
  * Comprehensive type definitions for real-time features
  */
 
+import type { Timestamp } from './index';
 import type { Task, Message, Document, Conversation } from './core';
 import type { EmailRecord } from './email';
 import type { AgentResult, AgentStep, TaskLog } from './api';
-
-// Define Timestamp locally to avoid circular import
-export type Timestamp = string;
 
 // =====================================================
 // Core WebSocket Types
@@ -43,10 +41,10 @@ export interface WebSocketMessage<T = unknown> {
   data: T;
   timestamp: Timestamp;
   userId?: string;
-  metadata?: WebSocketMessageMetadata;
+  metadata?: MessageMetadata;
 }
 
-export interface WebSocketMessageMetadata {
+export interface MessageMetadata {
   requestId?: string;
   correlationId?: string;
   priority?: 'low' | 'medium' | 'high' | 'critical';
@@ -187,7 +185,12 @@ export interface TaskProgressEvent {
   logs?: TaskLog[];
 }
 
-// TaskLog is imported from './api' to avoid duplicate definitions
+export interface TaskLog {
+  timestamp: Timestamp;
+  level: 'debug' | 'info' | 'warn' | 'error';
+  message: string;
+  context?: Record<string, unknown>;
+}
 
 export interface AgentEvent {
   agentId: string;
@@ -203,7 +206,16 @@ export interface AgentEventData {
   metadata?: Record<string, unknown>;
 }
 
-// AgentStep is imported from './api' to avoid duplicate definitions
+export interface AgentStep {
+  stepId: string;
+  type: 'thinking' | 'tool_call' | 'response' | 'search' | 'analysis';
+  description: string;
+  input?: unknown;
+  output?: unknown;
+  tool?: string;
+  duration?: number;
+  confidence?: number;
+}
 
 // AgentResult is imported from './api'
 
@@ -342,7 +354,7 @@ export interface PublishRequest<T = unknown> {
   channel: string;
   type: WebSocketEventType;
   data: T;
-  metadata?: WebSocketMessageMetadata;
+  metadata?: MessageMetadata;
 }
 
 export interface BroadcastRequest<T = unknown> {
@@ -350,7 +362,7 @@ export interface BroadcastRequest<T = unknown> {
   type: WebSocketEventType;
   data: T;
   filters?: BroadcastFilters;
-  metadata?: WebSocketMessageMetadata;
+  metadata?: MessageMetadata;
 }
 
 export interface BroadcastFilters {
@@ -431,13 +443,13 @@ export interface ReconnectPolicy {
 }
 
 export interface WebSocketRateLimits {
-  connectionsPerIp: WebSocketRateLimit;
-  messagesPerConnection: WebSocketRateLimit;
-  subscriptionsPerConnection: WebSocketRateLimit;
-  channelsPerUser: WebSocketRateLimit;
+  connectionsPerIp: RateLimit;
+  messagesPerConnection: RateLimit;
+  subscriptionsPerConnection: RateLimit;
+  channelsPerUser: RateLimit;
 }
 
-export interface WebSocketRateLimit {
+export interface RateLimit {
   windowMs: number;
   maxRequests: number;
   burst?: number;
@@ -546,7 +558,7 @@ export interface WebSocketServerConfig {
   pongTimeout: number;
   connectionPool: ConnectionConfig;
   security: WebSocketSecurity;
-  monitoring: WebSocketMonitoringConfig;
+  monitoring: MonitoringConfig;
 }
 
 export interface WebSocketSecurity {
@@ -587,7 +599,7 @@ export interface CertificateConfig {
   passphrase?: string;
 }
 
-export interface WebSocketMonitoringConfig {
+export interface MonitoringConfig {
   metrics: {
     enabled: boolean;
     interval: number;

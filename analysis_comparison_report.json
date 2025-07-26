@@ -1,0 +1,317 @@
+{
+  "comparison_summary": {
+    "total_emails_compared": 10,
+    "granite_models_used": [
+      "qwen3:0.6b",
+      "qwen3:1.7b"
+    ],
+    "overall_scores": {
+      "granite": {
+        "context": 5.9,
+        "entities": 2.0,
+        "business": 8.0,
+        "actions": 3.0,
+        "response": 6.5
+      },
+      "iteration": {
+        "context": 7.0,
+        "entities": 1.6,
+        "business": 8.5,
+        "actions": 3.0,
+        "response": 2.9
+      }
+    }
+  },
+  "detailed_comparisons": [
+    {
+      "email_id": "email-8ef42296-42ba-4e7d-90be-0db338a66daf",
+      "subject": "Insight PO 505729474 missing EU information",
+      "granite_model": "qwen3:0.6b",
+      "granite_summary": "This email is about a missing EU information in a PO for drop ship, requesting contact details from ",
+      "iteration_workflow": "START_POINT",
+      "iteration_process": "Order Management",
+      "entity_accuracy": {
+        "po_numbers": 100.0,
+        "quote_numbers": 100,
+        "case_numbers": 100,
+        "part_numbers": 0.0
+      },
+      "granite_entities_total": 4,
+      "iteration_entities_total": 1,
+      "scores": {
+        "context_granite": 5,
+        "context_iteration": 8,
+        "entities_granite": 2,
+        "entities_iteration": 1,
+        "business_granite": 8,
+        "business_iteration": 9,
+        "actions_granite": 3,
+        "actions_iteration": 3,
+        "response_granite": 7,
+        "response_iteration": 3
+      }
+    },
+    {
+      "email_id": "email-caa27fb2-eb96-4a20-b007-3891e38263af",
+      "subject": "V#35565 BOs list 05/21/2025",
+      "granite_model": "qwen3:0.6b",
+      "granite_summary": "The email is about updating the BO (Business Opportunity) list for May 21, 2025, to ensure it's prop",
+      "iteration_workflow": "NEW",
+      "iteration_process": "General",
+      "entity_accuracy": {
+        "po_numbers": 100,
+        "quote_numbers": 100,
+        "case_numbers": 100,
+        "part_numbers": 100
+      },
+      "granite_entities_total": 0,
+      "iteration_entities_total": 0,
+      "scores": {
+        "context_granite": 6,
+        "context_iteration": 6,
+        "entities_granite": 2,
+        "entities_iteration": 1,
+        "business_granite": 8,
+        "business_iteration": 4,
+        "actions_granite": 3,
+        "actions_iteration": 3,
+        "response_granite": 3,
+        "response_iteration": 2
+      }
+    },
+    {
+      "email_id": "email-9bc600d9-a47a-4cef-8972-d05dea17b9ef",
+      "subject": "TD SYNNEX Daily Media Briefing for Wednesday, May 21, 2025",
+      "granite_model": "qwen3:1.7b",
+      "granite_summary": "The email is a daily media briefing for Wednesday, May 21, 2025, with the body containing CSS stylin",
+      "iteration_workflow": "NEW",
+      "iteration_process": "Order Management",
+      "entity_accuracy": {
+        "po_numbers": 100,
+        "quote_numbers": 100,
+        "case_numbers": 100,
+        "part_numbers": 20.0
+      },
+      "granite_entities_total": 5,
+      "iteration_entities_total": 1,
+      "scores": {
+        "context_granite": 10,
+        "context_iteration": 6,
+        "entities_granite": 2,
+        "entities_iteration": 1,
+        "business_granite": 8,
+        "business_iteration": 9,
+        "actions_granite": 3,
+        "actions_iteration": 3,
+        "response_granite": 8,
+        "response_iteration": 3
+      }
+    },
+    {
+      "email_id": "email-9cc82b32-7e12-4012-b41a-83757a77f210",
+      "subject": "Re: Freight for PO 505571311",
+      "granite_model": "qwen3:0.6b",
+      "granite_summary": "This email is about confirming the shipment for PO 505571311, which includes freight details.",
+      "iteration_workflow": "NEW",
+      "iteration_process": "Order Management",
+      "entity_accuracy": {
+        "po_numbers": 100.0,
+        "quote_numbers": 100,
+        "case_numbers": 100,
+        "part_numbers": 0.0
+      },
+      "granite_entities_total": 2,
+      "iteration_entities_total": 1,
+      "scores": {
+        "context_granite": 4,
+        "context_iteration": 6,
+        "entities_granite": 2,
+        "entities_iteration": 1,
+        "business_granite": 8,
+        "business_iteration": 9,
+        "actions_granite": 3,
+        "actions_iteration": 3,
+        "response_granite": 3,
+        "response_iteration": 3
+      }
+    },
+    {
+      "email_id": "email-ff0620c2-1900-4808-a12e-51db1a7ba6ea",
+      "subject": "RE: Quote for Laptops - US",
+      "granite_model": "qwen3:1.7b",
+      "granite_summary": "The email is a request for a quote for laptops in the United States, with additional formatting inst",
+      "iteration_workflow": "NEW",
+      "iteration_process": "Quote Processing",
+      "entity_accuracy": {
+        "po_numbers": 100,
+        "quote_numbers": 100,
+        "case_numbers": 100,
+        "part_numbers": 0.0
+      },
+      "granite_entities_total": 2,
+      "iteration_entities_total": 0,
+      "scores": {
+        "context_granite": 6,
+        "context_iteration": 6,
+        "entities_granite": 2,
+        "entities_iteration": 1,
+        "business_granite": 8,
+        "business_iteration": 9,
+        "actions_granite": 3,
+        "actions_iteration": 3,
+        "response_granite": 7,
+        "response_iteration": 3
+      }
+    },
+    {
+      "email_id": "email-0b7ae5b6-5246-49c5-aed5-c06e56c9f3a9",
+      "subject": "Sales EDI PO UPLOAD Alert (US)",
+      "granite_model": "qwen3:1.7b",
+      "granite_summary": "Alert about a failed PO upload for CUST850, indicating a potential issue with the purchase order pro",
+      "iteration_workflow": "COMPLETION",
+      "iteration_process": "Order Management",
+      "entity_accuracy": {
+        "po_numbers": 100,
+        "quote_numbers": 100,
+        "case_numbers": 100,
+        "part_numbers": 33.33333333333333
+      },
+      "granite_entities_total": 3,
+      "iteration_entities_total": 1,
+      "scores": {
+        "context_granite": 5,
+        "context_iteration": 8,
+        "entities_granite": 2,
+        "entities_iteration": 1,
+        "business_granite": 8,
+        "business_iteration": 9,
+        "actions_granite": 3,
+        "actions_iteration": 3,
+        "response_granite": 10,
+        "response_iteration": 3
+      }
+    },
+    {
+      "email_id": "email-d534d622-7058-4422-9111-9f8c8fd249fc",
+      "subject": "RE: Getac S410 quote request ",
+      "granite_model": "qwen3:0.6b",
+      "granite_summary": "This email requests end user details from a team to process a Getac S410 quote request.",
+      "iteration_workflow": "START_POINT",
+      "iteration_process": "Quote Processing",
+      "entity_accuracy": {
+        "po_numbers": 100,
+        "quote_numbers": 100,
+        "case_numbers": 100,
+        "part_numbers": 0.0
+      },
+      "granite_entities_total": 3,
+      "iteration_entities_total": 0,
+      "scores": {
+        "context_granite": 4,
+        "context_iteration": 8,
+        "entities_granite": 2,
+        "entities_iteration": 1,
+        "business_granite": 8,
+        "business_iteration": 9,
+        "actions_granite": 3,
+        "actions_iteration": 3,
+        "response_granite": 4,
+        "response_iteration": 3
+      }
+    },
+    {
+      "email_id": "email-98dc5793-e04e-4597-8299-d2194105aff5",
+      "subject": "RE: 2nd OPEN CARRIER Synnex // deadline 04.24.2025 //  ''PLEASE REPLY IN THIS EMAIL\"---SO#161253720/PO#37456173",
+      "granite_model": "qwen3:1.7b",
+      "granite_summary": "The email requests a reply to a deadline-related task for the 2nd Open Carrier Synnex project, with ",
+      "iteration_workflow": "START_POINT",
+      "iteration_process": "Order Management",
+      "entity_accuracy": {
+        "po_numbers": 100.0,
+        "quote_numbers": 100,
+        "case_numbers": 100,
+        "part_numbers": 66.66666666666666
+      },
+      "granite_entities_total": 8,
+      "iteration_entities_total": 6,
+      "scores": {
+        "context_granite": 6,
+        "context_iteration": 8,
+        "entities_granite": 2,
+        "entities_iteration": 6,
+        "business_granite": 8,
+        "business_iteration": 9,
+        "actions_granite": 3,
+        "actions_iteration": 3,
+        "response_granite": 9,
+        "response_iteration": 3
+      }
+    },
+    {
+      "email_id": "email-b69eaf2d-1c09-4051-9cb5-b1a707b7b707",
+      "subject": "RE: Poly prefix HPP - Back Order#162795700 / HPP-8X214AA / QTY 1 / Please change to Other LOC",
+      "granite_model": "qwen3:1.7b",
+      "granite_summary": "The email requests a location change for a back-ordered product (HPP-8X214AA) to 'Other LOC' due to ",
+      "iteration_workflow": "START_POINT",
+      "iteration_process": "Order Management",
+      "entity_accuracy": {
+        "po_numbers": 100,
+        "quote_numbers": 100,
+        "case_numbers": 100,
+        "part_numbers": 14.285714285714285
+      },
+      "granite_entities_total": 8,
+      "iteration_entities_total": 2,
+      "scores": {
+        "context_granite": 7,
+        "context_iteration": 8,
+        "entities_granite": 2,
+        "entities_iteration": 2,
+        "business_granite": 8,
+        "business_iteration": 9,
+        "actions_granite": 3,
+        "actions_iteration": 3,
+        "response_granite": 10,
+        "response_iteration": 3
+      }
+    },
+    {
+      "email_id": "email-41bdb30a-ee78-4c20-9afa-5448275be868",
+      "subject": "RE: Logitech quote - Nielsen",
+      "granite_model": "qwen3:0.6b",
+      "granite_summary": "The email outlines a Logitech quote related to Nielsen collaboration. It may involve a business oppo",
+      "iteration_workflow": "NEW",
+      "iteration_process": "Quote Processing",
+      "entity_accuracy": {
+        "po_numbers": 100,
+        "quote_numbers": 100,
+        "case_numbers": 100,
+        "part_numbers": 0.0
+      },
+      "granite_entities_total": 3,
+      "iteration_entities_total": 0,
+      "scores": {
+        "context_granite": 6,
+        "context_iteration": 6,
+        "entities_granite": 2,
+        "entities_iteration": 1,
+        "business_granite": 8,
+        "business_iteration": 9,
+        "actions_granite": 3,
+        "actions_iteration": 3,
+        "response_granite": 4,
+        "response_iteration": 3
+      }
+    }
+  ],
+  "methodology": {
+    "scoring_scale": "1-10 scale per metric",
+    "metrics": [
+      "Context Understanding - How well each approach understands email context",
+      "Entity Extraction - Accuracy and completeness of business entity extraction",
+      "Business Process Recognition - Identification of relevant business processes",
+      "Action Item Identification - Recognition of required actions",
+      "Response Suggestions - Quality of suggested responses"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+Email ID,Subject,Granite Model,Granite Summary Score,Iteration Workflow Score,Granite Entities,Iteration Entities,Entity Accuracy %
+email-8ef42296-42ba-4e7d-90be-0db338a66daf,Insight PO 505729474 missing EU information,qwen3:0.6b,5.0,4.8,4,1,75.0
+email-caa27fb2-eb96-4a20-b007-3891e38263af,V#35565 BOs list 05/21/2025,qwen3:0.6b,4.4,3.2,0,0,100.0
+email-9bc600d9-a47a-4cef-8972-d05dea17b9ef,"TD SYNNEX Daily Media Briefing for Wednesday, May ",qwen3:1.7b,6.2,4.4,5,1,80.0
+email-9cc82b32-7e12-4012-b41a-83757a77f210,Re: Freight for PO 505571311,qwen3:0.6b,4.0,4.4,2,1,75.0
+email-ff0620c2-1900-4808-a12e-51db1a7ba6ea,RE: Quote for Laptops - US,qwen3:1.7b,5.2,4.4,2,0,75.0
+email-0b7ae5b6-5246-49c5-aed5-c06e56c9f3a9,Sales EDI PO UPLOAD Alert (US),qwen3:1.7b,5.6,4.8,3,1,83.3
+email-d534d622-7058-4422-9111-9f8c8fd249fc,RE: Getac S410 quote request ,qwen3:0.6b,4.2,4.8,3,0,75.0
+email-98dc5793-e04e-4597-8299-d2194105aff5,RE: 2nd OPEN CARRIER Synnex // deadline 04.24.2025,qwen3:1.7b,5.6,5.8,8,6,91.7
+email-b69eaf2d-1c09-4051-9cb5-b1a707b7b707,RE: Poly prefix HPP - Back Order#162795700 / HPP-8,qwen3:1.7b,6.0,5.0,8,2,78.6
+email-41bdb30a-ee78-4c20-9afa-5448275be868,RE: Logitech quote - Nielsen,qwen3:0.6b,4.6,4.4,3,0,75.0

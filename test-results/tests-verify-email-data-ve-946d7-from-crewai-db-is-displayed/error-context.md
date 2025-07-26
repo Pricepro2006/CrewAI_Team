@@ -1,0 +1,57 @@
+# Page snapshot
+
+```yaml
+- complementary:
+    - heading "TypeScript AI" [level=2]
+    - text: Enterprise Assistant
+    - button "Toggle sidebar":
+        - img
+    - navigation:
+        - link "Dashboard":
+            - /url: /
+            - img
+            - text: Dashboard
+        - link "Chat":
+            - /url: /chat
+            - img
+            - text: Chat
+        - link "Agents":
+            - /url: /agents
+            - img
+            - text: Agents
+        - img
+        - text: Email Management
+        - link "Web Scraping":
+            - /url: /web-scraping
+            - img
+            - text: Web Scraping
+        - link "Knowledge Base":
+            - /url: /knowledge-base
+            - img
+            - text: Knowledge Base
+        - link "Vector Search":
+            - /url: /vector-search
+            - img
+            - text: Vector Search
+        - link "Settings":
+            - /url: /settings
+            - img
+            - text: Settings
+    - text: System Ready
+- main:
+    - heading "Dashboard" [level=1]
+    - paragraph: Welcome back, User! Here's an overview of your AI Assistant.
+    - img
+    - text: Total Messages 70 70 total
+    - img
+    - text: Active Agents 0 agents available
+    - img
+    - text: Documents Processed 0 in knowledge base
+    - img
+    - text: Conversations 35 35 total
+    - heading "Ollama Status" [level=2]
+    - text: Connected
+    - heading "Available Agents" [level=2]
+    - text: Research Agent Information Gathering Code Agent Code Generation Data Analysis Agent Data Processing Writer Agent Content Creation
+    - paragraph: 2 of 4 agents available
+```

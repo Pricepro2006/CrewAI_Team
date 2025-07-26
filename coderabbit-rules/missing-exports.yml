@@ -1,0 +1,55 @@
+# Missing Module Exports Detection Rule
+# Detects classes, functions, and types that should be exported
+id: missing-exports
+language: TypeScript
+message: "Class, interface, or function appears to be missing export statement"
+severity: warning
+rule:
+  any:
+    # Match classes that might need exports
+    - pattern: |
+        class $NAME {
+          $$$
+        }
+      constraints:
+        NAME:
+          # Common patterns that should be exported
+          regex: ".*Service$|.*Manager$|.*Router$|.*Controller$|.*Agent$|.*Orchestrator$"
+    
+    # Match interfaces that might need exports  
+    - pattern: |
+        interface $NAME {
+          $$$
+        }
+      constraints:
+        NAME:
+          # Interface patterns that should be exported
+          regex: ".*Config$|.*Options$|.*Props$|.*State$|.*Context$"
+    
+    # Match functions that might need exports
+    - pattern: |
+        function $NAME($$$) {
+          $$$
+        }
+      constraints:
+        NAME:
+          # Function patterns that should be exported
+          regex: "create.*|init.*|setup.*|configure.*"
+
+# Only flag if no export is present in same file
+not:
+  any:
+    - pattern: export class $NAME
+    - pattern: export interface $NAME  
+    - pattern: export function $NAME
+    - pattern: export { $NAME }
+    - pattern: export default $NAME
+
+note: |
+  Consider adding export statement if this should be available to other modules.
+  
+  Examples:
+  - export class UserService { ... }
+  - export interface UserConfig { ... }
+  - export function createUser() { ... }
+  - export { ClassName, functionName }

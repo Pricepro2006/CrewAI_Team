@@ -1,0 +1,10 @@
+Simple test server running on http://localhost:3000
+Endpoints:
+  POST /trpc/chat.create - Create chat conversation
+  GET  /health - Health check
+Received chat.create request: {
+  "0": {
+    "message": "Research the latest trends in AI agent architectures and create a summary report"
+  }
+}
+Sent response for conversation: 1752645997776

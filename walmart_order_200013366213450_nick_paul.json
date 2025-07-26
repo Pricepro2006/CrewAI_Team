@@ -1,0 +1,213 @@
+{
+  "order_number": "200013366213450",
+  "order_date": "Jul 05, 2025",
+  "customer_name": "Nick Paul",
+  "fulfillment_type": "Delivery from store",
+  "delivery_status": "Delivered on Jul 05",
+  "delivery_address": "9002 Palmetto Dr, Apt 314, Isle Of Palms, SC 29451",
+  "return_eligible_until": "Fri, Oct 03",
+  "items_received": [
+    {
+      "name": "Goldfish Cheddar Crackers, 6.6 oz Bag",
+      "quantity": "Qty 1",
+      "price": "$2.37",
+      "original_price": "$2.74",
+      "savings": "$0.37 from savings",
+      "unit_price": "35.9¢/oz"
+    },
+    {
+      "name": "Goldfish Colors Cheddar Baked Snack Crackers, 6.6 oz Bag",
+      "quantity": "Qty 1",
+      "price": "$2.37",
+      "original_price": "$2.74",
+      "savings": "$0.37 from savings",
+      "unit_price": "35.9¢/oz"
+    },
+    {
+      "name": "Frito Lay French Onion Dip, 8.5 oz. Canister",
+      "quantity": "Qty 1",
+      "price": "$3.98",
+      "unit_price": "46.8¢/oz"
+    },
+    {
+      "name": "Great Value Purified Drinking Water, 16.9 fl oz, 24 Count",
+      "quantity": "Qty 1",
+      "price": "$3.64",
+      "unit_price": "0.9¢/fl oz",
+      "count_per_pack": "24"
+    },
+    {
+      "name": "Sunkist Zero Sugar Orange Soda Pop, 12 fl oz, 12 Pack Cans",
+      "quantity": "Qty 1",
+      "price": "$5.47",
+      "original_price": "$6.28",
+      "savings": "$0.81 from savings",
+      "unit_price": "3.8¢/fl oz"
+    },
+    {
+      "name": "Diet Coke Diet Cola Soda Pop, 2 Liters Bottle",
+      "quantity": "Qty 1",
+      "price": "$2.52",
+      "original_price": "$2.74",
+      "savings": "$0.22 from savings",
+      "unit_price": "3.7¢/fl oz"
+    },
+    {
+      "name": "Lay's Kettle Cooked Mesquite Barbecue Flavored Potato Chips, 8 oz Bag",
+      "quantity": "Qty 1",
+      "price": "$2.50",
+      "original_price": "$3.50",
+      "savings": "$1.00 from savings",
+      "unit_price": "31.3¢/oz"
+    },
+    {
+      "name": "Nestle Toll House Chocolate Chip Cookie Dough, Makes 36 Cookies, 36 oz",
+      "quantity": "Qty 1",
+      "price": "$7.84",
+      "unit_price": "21.8¢/oz"
+    },
+    {
+      "name": "Great Value Mayonnaise, 15 fl oz",
+      "quantity": "Qty 1",
+      "price": "$2.12",
+      "unit_price": "14.1¢/fl oz"
+    },
+    {
+      "name": "Great Value Yellow Mustard, 20 oz Squeeze Bottle",
+      "quantity": "Qty 1",
+      "price": "$0.98",
+      "unit_price": "4.9¢/oz"
+    },
+    {
+      "name": "Galileo Salame Deli Thin Sliced Italian Dry Salami, 7 oz",
+      "quantity": "Qty 1",
+      "price": "$4.73",
+      "unit_price": "$10.75/lb"
+    },
+    {
+      "name": "Hillshire Farm Ultra Thin Oven Roasted Turkey Breast Deli Lunch Meat, 9 oz Plastic Tub",
+      "quantity": "Qty 1",
+      "price": "$3.97",
+      "original_price": "$4.56",
+      "savings": "$0.59 from savings",
+      "unit_price": "$7.09/lb"
+    },
+    {
+      "name": "Pepperidge Farm Whole Grain 15 Grain Bread, 24 oz Loaf",
+      "quantity": "Qty 1",
+      "price": "$3.84",
+      "unit_price": "16.0¢/oz"
+    },
+    {
+      "name": "Great Value Original Syrup, 24 oz",
+      "quantity": "Qty 1",
+      "price": "$2.36",
+      "unit_price": "9.8¢/fl oz"
+    },
+    {
+      "name": "Krusteaz Sweet Cream Pancake and Waffle Mix, Light & Fluffy, 26 oz Box",
+      "quantity": "Qty 1",
+      "price": "$2.76",
+      "unit_price": "10.6¢/oz"
+    },
+    {
+      "name": "Great Value Large White Eggs, 18 Count",
+      "quantity": "Qty 1",
+      "price": "$3.97"
+    },
+    {
+      "name": "HORMEL BLACK LABEL Bacon, Thick Cut, Gluten Free, Refrigerated, 16 oz Plastic Package",
+      "quantity": "Qty 1",
+      "price": "$6.47",
+      "unit_price": "$6.47/lb"
+    },
+    {
+      "name": "Great Value Nonpareille Capers Glass Jar, 3 fl oz",
+      "quantity": "Qty 1",
+      "price": "$1.72",
+      "unit_price": "57.3¢/fl oz"
+    },
+    {
+      "name": "Vita Classic Sliced Smoked Nova Salmon, 4oz, 12g protein/serving, 1.3mg of Omega 3 fatty acids, Serving size 2oz",
+      "quantity": "Qty 1",
+      "price": "$6.98",
+      "unit_price": "$1.75/oz"
+    },
+    {
+      "name": "Philadelphia Chive & Onion Cream Cheese Spread, 7.5 oz Tub",
+      "quantity": "Qty 1",
+      "price": "$3.97",
+      "unit_price": "52.9¢/oz"
+    },
+    {
+      "name": "Thomas' Onion Bagels, 6 count, 9g Protein, Kosher Bagels, 20 oz Bag",
+      "quantity": "Qty 1",
+      "price": "$3.97",
+      "unit_price": "19.9¢/oz"
+    },
+    {
+      "name": "Hampton Farms Salted In-Shell Peanut Bag, 16 oz",
+      "quantity": "Qty 1",
+      "price": "$2.64",
+      "unit_price": "16.5¢/oz"
+    },
+    {
+      "name": "Fresh Lemon, Each",
+      "quantity": "Qty 3",
+      "price": "$1.92",
+      "unit_price": "$0.64 ea"
+    },
+    {
+      "name": "Fresh Yellow Peach, Each",
+      "quantity": "Qty 6",
+      "price": "$3.48",
+      "unit_price": "$0.58 ea"
+    }
+  ],
+  "substitutions": [
+    {
+      "name": "Cape Cod Potato Chips, Less Fat Original Kettle Chips, 14 oz",
+      "quantity": "Qty 1",
+      "price": "$4.98",
+      "original_price": "$5.42",
+      "savings": "$0.44 from savings",
+      "notes": "Substitution"
+    },
+    {
+      "name": "Organic Fresh Whole Carrots, 2 lb Bag",
+      "quantity": "Qty 1",
+      "price": "$2.62",
+      "notes": "Substitution"
+    },
+    {
+      "name": "Great Value S'mores Trail Mix, 21 oz",
+      "quantity": "Qty 1",
+      "price": "$8.42",
+      "notes": "Substitution"
+    }
+  ],
+  "weight_adjusted": [
+    {
+      "name": "Fresh Red Cherries, 2.25 lb Bag",
+      "quantity": "Qty 1",
+      "price": "$4.83",
+      "original_price": "$11.56",
+      "savings": "$6.73 from savings",
+      "price_per_lb": "$2.97/lb",
+      "notes": "Weight-adjusted"
+    }
+  ],
+  "payment": {
+    "method": "Visa ending in 7954",
+    "subtotal": "$117.95",
+    "subtotal_after_savings": "$107.42",
+    "free_delivery_from_store": "$9.95 (was $9.95, now $0)",
+    "express_fee": "$10.00",
+    "tax": "$2.16",
+    "driver_tip": "$16.11",
+    "total": "$135.69"
+  },
+  "total_items_received": 35,
+  "total_substitutions": 3,
+  "total_weight_adjusted": 1
+}

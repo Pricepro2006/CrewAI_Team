@@ -1,0 +1,1 @@
+{"version":3,"file":"microsoft-graph.d.ts","sourceRoot":"","sources":["../../../src/api/webhooks/microsoft-graph.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,OAAO,EAAE,QAAQ,EAAE,MAAM,SAAS,CAAC;AAgDjD,eAAO,MAAM,mBAAmB,GAAU,KAAK,OAAO,EAAE,KAAK,QAAQ,gDAqFpE,CAAC;AAGF,eAAO,MAAM,kBAAkB;;mBAxFgB,OAAO,OAAO,QAAQ;;CA4FpE,CAAC"}

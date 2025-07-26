@@ -9,42 +9,6 @@ import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger";
 
 // Types for Walmart product entities
-export interface ProductEntity {
-  product_id: string;
-  name: string;
-  brand?: string;
-  description?: string;
-  category_path?: string;
-  department?: string;
-  current_price?: number;
-  regular_price?: number;
-  unit_price?: number;
-  unit_measure?: string;
-  in_stock?: boolean;
-  stock_level?: number;
-  online_only?: boolean;
-  store_only?: boolean;
-  upc?: string;
-  sku?: string;
-  model_number?: string;
-  manufacturer?: string;
-  thumbnail_url?: string;
-  large_image_url?: string;
-  average_rating?: number;
-  review_count?: number;
-  nutritional_info?: any;
-  ingredients?: string;
-  allergens?: string[];
-  size_info?: string;
-  weight_info?: string;
-  product_attributes?: any;
-  search_keywords?: string;
-  embedding_vector?: Buffer;
-  first_seen_at?: string;
-  last_updated_at?: string;
-  last_checked_at?: string;
-}
-
 export interface WalmartProduct {
   product_id: string;
   name: string;
@@ -54,7 +18,6 @@ export interface WalmartProduct {
   department?: string;
   current_price?: number;
   regular_price?: number;
-  originalPrice?: number;
   unit_price?: number;
   unit_measure?: string;
   in_stock?: boolean;
@@ -63,7 +26,6 @@ export interface WalmartProduct {
   store_only?: boolean;
   upc?: string;
   sku?: string;
-  barcode?: string;
   model_number?: string;
   manufacturer?: string;
   thumbnail_url?: string;
@@ -234,21 +196,6 @@ export class WalmartProductRepository extends BaseRepository {
     if (!row) {
       throw new Error(`Walmart product not found: ${productId}`);
     }
-    return this.mapRowToProduct(row);
-  }
-
-  async findById(productId: string): Promise<WalmartProduct | null> {
-    const row = this.db
-      .prepare("SELECT * FROM walmart_products WHERE product_id = ?")
-      .get(productId) as any;
-    return row ? this.mapRowToProduct(row) : null;
-  }
-
-  async findByProductId(productId: string): Promise<WalmartProduct | null> {
-    return this.findById(productId);
-  }
-
-  entityToProduct(row: any): WalmartProduct {
     return this.mapRowToProduct(row);
   }
 

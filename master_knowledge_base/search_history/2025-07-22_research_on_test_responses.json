@@ -1,0 +1,31 @@
+{
+  "query": "research on test responses",
+  "timestamp": "2025-07-22T23:34:57.699Z",
+  "results": [
+    {
+      "title": "research on test responses - Result 1",
+      "url": "https://example.com/search?q=research%20on%20test%20responses&result=1",
+      "snippet": "Information about research on test responses. This is result 1 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "research on test responses - Result 2",
+      "url": "https://example.com/search?q=research%20on%20test%20responses&result=2",
+      "snippet": "Information about research on test responses. This is result 2 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    },
+    {
+      "title": "research on test responses - Result 3",
+      "url": "https://example.com/search?q=research%20on%20test%20responses&result=3",
+      "snippet": "Information about research on test responses. This is result 3 of your search.",
+      "source": "duckduckgo",
+      "relevance": 0.7,
+      "metadata": {}
+    }
+  ],
+  "provider": "Duckduckgo"
+}

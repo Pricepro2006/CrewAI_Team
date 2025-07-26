@@ -340,72 +340,30 @@ export class BrightDataScraper {
   private transformToWalmartProduct(data: any, detailed: boolean = false): WalmartProduct {
     return {
       id: data.id || data.productId || "",
-      walmartId: data.id || data.productId || "",
-      upc: data.upc,
-      ean: data.ean,
-      gtin: data.gtin,
       name: data.name || data.title || "",
-      brand: data.brand || "",
-      category: {
-        id: 'unknown',
-        name: data.category || data.categoryPath || "Uncategorized",
-        path: data.categoryPath ? data.categoryPath.split('/') : ["Uncategorized"],
-        level: 1
-      },
+      brand: data.brand,
+      description: detailed ? data.description : undefined,
+      category: data.category || data.categoryPath || "Uncategorized",
       subcategory: data.subcategory,
-      description: detailed ? data.description || "" : "",
-      shortDescription: data.shortDescription,
-      price: {
-        currency: 'USD',
-        regular: data.price || data.currentPrice || 0,
-        sale: data.salePrice,
-        unit: data.unitPrice,
-        unitOfMeasure: data.unitMeasure || "each",
-        pricePerUnit: data.pricePerUnit,
-        wasPrice: data.wasPrice,
-        rollback: data.rollback || false,
-        clearance: data.clearance || false
-      },
-      images: [{
-        id: '1',
-        url: data.largeImageUrl || data.imageUrl || "",
-        type: 'primary' as const,
-        alt: data.name || data.title
-      }],
-      nutritionFacts: detailed ? data.nutritionalInfo : undefined,
-      ingredients: detailed ? data.ingredients : undefined,
-      allergens: detailed ? (data.allergens || []).map((allergen: string) => ({
-        type: allergen.toLowerCase() as any,
-        contains: true,
-        mayContain: false
-      })) : undefined,
-      specifications: detailed ? data.specifications : undefined,
-      availability: {
-        inStock: data.inStock !== false,
-        stockLevel: data.inStock ? 'in_stock' as const : 'out_of_stock' as const,
-        quantity: data.stockLevel,
-        locations: data.aisleLocation ? [{
-          storeId: 'unknown',
-          storeName: 'Walmart',
-          inStock: data.inStock !== false,
-          aisle: data.aisleLocation
-        }] : undefined
-      },
+      price: data.price || data.currentPrice || 0,
+      originalPrice: data.regularPrice || data.wasPrice,
+      unit: data.unitMeasure || "each",
+      size: detailed ? data.size : undefined,
+      imageUrl: data.largeImageUrl || data.imageUrl,
+      thumbnailUrl: data.thumbnailUrl || data.imageUrl,
+      barcode: detailed ? data.upc : undefined,
+      inStock: data.inStock !== false,
+      stockLevel: data.stockLevel,
+      location: data.aisleLocation ? { aisle: data.aisleLocation } : undefined,
       ratings: (data.rating || data.averageRating) ? {
         average: data.rating || data.averageRating,
-        count: data.reviewCount || 0,
-        distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+        count: data.reviewCount || 0
       } : undefined,
-      variants: [],
-      bundleComponents: [],
-      metadata: {
-        source: 'scrape' as const,
-        lastScraped: new Date().toISOString(),
-        confidence: 0.8,
-        dealEligible: true
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      nutritionalInfo: detailed ? data.nutritionalInfo : undefined,
+      allergens: detailed ? data.allergens : undefined,
+      isOrganic: data.isOrganic || false,
+      isGlutenFree: data.isGlutenFree || false,
+      isVegan: data.isVegan || false
     };
   }
 
@@ -415,16 +373,7 @@ export class BrightDataScraper {
   private async getProductPrice(productId: string): Promise<number | null> {
     try {
       const details = await this.getProductDetails(productId);
-      if (!details?.price) return null;
-      
-      // Handle both number and ProductPrice object
-      if (typeof details.price === 'number') {
-        return details.price;
-      } else if (details.price && typeof details.price === 'object' && 'regular' in details.price) {
-        return details.price.regular;
-      }
-      
-      return null;
+      return details?.price || null;
     } catch (error) {
       return null;
     }
