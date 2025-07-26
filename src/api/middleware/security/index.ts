@@ -1,35 +1,64 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import crypto from "crypto";
 import type { Context } from "../../trpc/context";
 import { logger } from "../../../utils/logger";
+import { xssProtection, XSSSchemas, XSSEncoder } from "../../../utils/xss-protection";
 
 /**
  * Security middleware implementations for tRPC
  */
 
-// Sanitization schemas for common input types
+// Enhanced sanitization schemas with XSS protection
 export const sanitizationSchemas = {
-  string: z.string().max(1000).trim(),
+  // Basic string with XSS sanitization
+  string: z.string().max(1000).trim().transform(str => xssProtection.sanitizeString(str)),
   
+  // SQL-safe string (uses parameterized queries, this is for display)
   sqlSafe: z.string()
     .max(500)
     .trim()
-    .regex(/^[a-zA-Z0-9\s\-_,.()'"%]+$/, "Invalid characters detected"),
+    .transform(str => xssProtection.sanitizeString(str))
+    .refine(str => /^[a-zA-Z0-9\s\-_,.()'"%;@!#$*+=]+$/.test(str), {
+      message: "Contains potentially unsafe characters"
+    }),
   
-  htmlSafe: z.string()
-    .transform(str => str
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;")
-      .replace(/&/g, "&amp;")
-    ),
+  // HTML content with DOMPurify sanitization
+  htmlSafe: z.string().transform(str => xssProtection.sanitizeHTML(str, 'strict')),
   
-  email: z.string().email().toLowerCase().trim(),
+  // HTML content with moderate sanitization (allows more tags)
+  htmlModerate: z.string().transform(str => xssProtection.sanitizeHTML(str, 'moderate')),
   
+  // Plain text (no HTML allowed)
+  plainText: z.string().transform(str => xssProtection.sanitizeString(str)),
+  
+  // Email with sanitization
+  email: XSSSchemas.safeEmail,
+  
+  // UUID validation
   uuid: z.string().uuid(),
   
-  url: z.string().url().max(2048),
+  // URL with XSS protection
+  url: XSSSchemas.safeURL,
+  
+  // Safe identifier
+  identifier: XSSSchemas.safeId,
+  
+  // JSON string with validation
+  jsonString: z.string().transform(str => {
+    try {
+      // Parse to validate, then sanitize the parsed object
+      const parsed = JSON.parse(str);
+      const sanitized = xssProtection.sanitizeInput(parsed);
+      return JSON.stringify(sanitized);
+    } catch (e) {
+      throw new z.ZodError([{
+        code: z.ZodIssueCode.custom,
+        message: "Invalid JSON string",
+        path: [],
+      }]);
+    }
+  }),
 };
 
 /**
@@ -375,6 +404,119 @@ export function createRequestSizeLimit(maxSizeBytes: number) {
       });
     }
 
+    return next();
+  };
+}
+
+/**
+ * Create XSS protection middleware
+ */
+export function createXSSProtection() {
+  return async (opts: {
+    ctx: Context;
+    next: () => Promise<any>;
+    input: unknown;
+  }) => {
+    const { ctx, next, input } = opts;
+
+    try {
+      // Sanitize input to prevent XSS
+      if (input && typeof input === 'object') {
+        ctx.sanitizedInput = xssProtection.sanitizeInput(input);
+      } else if (typeof input === 'string') {
+        ctx.sanitizedInput = xssProtection.sanitizeString(input);
+      } else {
+        ctx.sanitizedInput = input;
+      }
+
+      // Process request
+      const result = await next();
+
+      // Sanitize output for API responses
+      if (result && typeof result === 'object') {
+        return sanitizeOutput(result);
+      }
+
+      return result;
+    } catch (error) {
+      logger.error("XSS Protection Error", "SECURITY", {
+        userId: ctx.user?.id,
+        requestId: ctx.requestId,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+      
+      throw error;
+    }
+  };
+}
+
+/**
+ * Sanitize output data recursively
+ */
+function sanitizeOutput(data: any): any {
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizeOutput(item));
+  }
+  
+  if (data && typeof data === 'object') {
+    const sanitized: any = {};
+    
+    for (const [key, value] of Object.entries(data)) {
+      // Skip internal fields
+      if (key.startsWith('_') || key.startsWith('$')) {
+        continue;
+      }
+      
+      // Sanitize based on value type
+      if (typeof value === 'string') {
+        // Detect if it might contain HTML
+        if (/<[^>]*>/.test(value)) {
+          sanitized[key] = xssProtection.sanitizeHTML(value, 'moderate');
+        } else {
+          sanitized[key] = value; // Plain text doesn't need encoding for JSON
+        }
+      } else {
+        sanitized[key] = sanitizeOutput(value);
+      }
+    }
+    
+    return sanitized;
+  }
+  
+  return data;
+}
+
+/**
+ * Create Content Security Policy middleware
+ */
+export function createCSPMiddleware(options?: {
+  reportOnly?: boolean;
+  reportUri?: string;
+}) {
+  return async (opts: {
+    ctx: Context;
+    next: () => Promise<any>;
+  }) => {
+    const { ctx, next } = opts;
+    
+    // Generate nonce for this request
+    const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+    ctx.cspNonce = nonce;
+    
+    // Generate CSP header
+    const csp = xssProtection.generateCSP({
+      nonce,
+      reportUri: options?.reportUri,
+      upgradeInsecureRequests: true,
+    });
+    
+    // Set CSP header
+    const headerName = options?.reportOnly 
+      ? 'Content-Security-Policy-Report-Only' 
+      : 'Content-Security-Policy';
+    
+    ctx.res.setHeader(headerName, csp);
+    
     return next();
   };
 }
