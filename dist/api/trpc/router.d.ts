@@ -5577,7 +5577,7 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
             success: boolean;
-            list: ServiceGroceryList;
+            list: import("../../database/repositories/GroceryRepository").GroceryList;
         }>;
         updateList: import("@trpc/server").BuildProcedure<"mutation", {
             _config: import("@trpc/server").RootConfig<{
@@ -5800,7 +5800,7 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
             success: boolean;
-            items: ServiceGroceryItem[];
+            items: import("../../database/repositories/GroceryRepository").GroceryItem[];
         }>;
         removeItemFromList: import("@trpc/server").BuildProcedure<"mutation", {
             _config: import("@trpc/server").RootConfig<{
@@ -6445,10 +6445,10 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _input_in: {
                 userId: string;
                 preferences: {
+                    preferredBrands?: string[] | undefined;
                     dietaryRestrictions?: string[] | undefined;
                     allergies?: string[] | undefined;
                     favoriteCategories?: string[] | undefined;
-                    preferredBrands?: string[] | undefined;
                     avoidBrands?: string[] | undefined;
                     deliveryPreferences?: {
                         preferredDays?: string[] | undefined;
@@ -6459,10 +6459,10 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _input_out: {
                 userId: string;
                 preferences: {
+                    preferredBrands?: string[] | undefined;
                     dietaryRestrictions?: string[] | undefined;
                     allergies?: string[] | undefined;
                     favoriteCategories?: string[] | undefined;
-                    preferredBrands?: string[] | undefined;
                     avoidBrands?: string[] | undefined;
                     deliveryPreferences?: {
                         preferredDays?: string[] | undefined;
@@ -6475,10 +6475,10 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
         }, {
             success: boolean;
             preferences: {
+                preferredBrands?: string[] | undefined;
                 dietaryRestrictions?: string[] | undefined;
                 allergies?: string[] | undefined;
                 favoriteCategories?: string[] | undefined;
-                preferredBrands?: string[] | undefined;
                 avoidBrands?: string[] | undefined;
                 deliveryPreferences?: {
                     preferredDays?: string[] | undefined;
