@@ -27,6 +27,13 @@ export class ConversationService {
   }
 
   private initializeDatabase(): void {
+    // Enable foreign keys and performance optimizations
+    this.db.pragma("foreign_keys = ON");
+    this.db.pragma("journal_mode = WAL");
+    this.db.pragma("synchronous = NORMAL");
+    this.db.pragma("cache_size = 10000");
+    this.db.pragma("temp_store = MEMORY");
+    
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS conversations (
         id TEXT PRIMARY KEY,

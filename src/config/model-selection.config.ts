@@ -1,6 +1,8 @@
 /**
  * Model Selection Configuration
- * Implements granite3.3:2b as main model and qwen3:0.6b for simple tasks
+ * Implements Three-Stage Pipeline based on crewai.db production implementation
+ * Stage 2: llama3.2:3b (6.56/10 accuracy, 9.35s/email, 100% success rate)
+ * Stage 3: doomgrave/phi-4:14b-tools-Q3_K_S with llama3.2:3b fallback for critical analysis
  * Based on comprehensive testing results
  */
 
@@ -52,13 +54,13 @@ export const MODEL_CONFIGS = {
     description: "Balanced model for medium complexity",
   } as ModelSelectionConfig,
 
-  // High quality model for critical tasks
+  // Stage 3 Critical Analysis Model
   HIGH_QUALITY: {
-    model: "granite3.3:8b",
-    temperature: 0.6,
-    maxTokens: 4096,
-    timeout: 90000, // 90 seconds
-    description: "Highest quality for critical analysis",
+    model: "doomgrave/phi-4:14b-tools-Q3_K_S",
+    temperature: 0.3,
+    maxTokens: 1000,
+    timeout: 180000, // 180 seconds (pipeline spec)
+    description: "Stage 3 Critical Analysis - for top 100 most critical emails",
   } as ModelSelectionConfig,
 };
 
@@ -281,6 +283,14 @@ export const MODEL_PERFORMANCE = {
     successRate: 0.93,
     bestFor: ["critical_analysis", "deep_understanding", "high_accuracy"],
   },
+  "doomgrave/phi-4:14b-tools-Q3_K_S": {
+    avgResponseTime: 180, // 3 minutes for critical analysis
+    qualityScore: 0.775, // ~7.5-8.0/10 estimated
+    successRate: 1.0,
+    pipelineStage: "Stage 3",
+    emailsProcessed: 100, // Top critical emails
+    bestFor: ["critical_analysis", "deep_reasoning", "complex_decision_making"],
+  },
 };
 
 /**
@@ -290,7 +300,7 @@ export const defaultModelSelection = {
   main: MODEL_CONFIGS.COMPLEX,
   simple: MODEL_CONFIGS.SIMPLE,
   balanced: MODEL_CONFIGS.BALANCED,
-  highQuality: MODEL_CONFIGS.HIGH_QUALITY,
+  stage3: MODEL_CONFIGS.HIGH_QUALITY, // doomgrave/phi-4:14b-tools-Q3_K_S critical analysis
 };
 
 export default {

@@ -7,6 +7,7 @@ import { performanceOptimizer } from "./PerformanceOptimizer";
 import { queryPerformanceMonitor } from "./QueryPerformanceMonitor";
 import { LazyLoader } from "../../utils/LazyLoader";
 import { ConnectionPool } from "../../core/database/ConnectionPool";
+import { EmailAnalyticsService, emailAnalytics } from "../../core/database/EmailAnalyticsService";
 
 // Enhanced email analysis interfaces
 export interface EmailAnalysisResult {
@@ -393,7 +394,7 @@ export class EmailStorageService {
         quick_confidence REAL,
         quick_suggested_state TEXT,
         quick_model TEXT,
-        quick_processing_time INTEGER,
+        quick_processing_time INTEGER CHECK (quick_processing_time >= 0),
         
         -- Deep analysis (Stage 2)
         deep_workflow_primary TEXT,
@@ -434,8 +435,8 @@ export class EmailStorageService {
         
         -- Processing metadata
         deep_model TEXT,
-        deep_processing_time INTEGER,
-        total_processing_time INTEGER,
+        deep_processing_time INTEGER CHECK (deep_processing_time >= 0),
+        total_processing_time INTEGER CHECK (total_processing_time >= 0),
         
         -- Timestamps
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -573,6 +574,31 @@ export class EmailStorageService {
 
   async storeEmail(email: Email, analysis: EmailAnalysisResult): Promise<void> {
     logger.info(`Storing email analysis: ${email.subject}`, "EMAIL_STORAGE");
+
+    // Validate processing times before storing
+    const validation = EmailAnalyticsService.getInstance().validateProcessingTime({
+      emailId: email.id,
+      stage1Time: analysis.processingMetadata.stage1Time,
+      stage2Time: analysis.processingMetadata.stage2Time,
+      totalTime: analysis.processingMetadata.totalTime
+    });
+
+    if (!validation.isValid && validation.correctedData) {
+      logger.warn(
+        "Correcting invalid processing times before storage",
+        "EMAIL_STORAGE",
+        {
+          emailId: email.id,
+          errors: validation.errors,
+          original: analysis.processingMetadata,
+          corrected: validation.correctedData
+        }
+      );
+      // Update the analysis object with corrected values
+      analysis.processingMetadata.stage1Time = validation.correctedData.stage1Time || analysis.processingMetadata.stage1Time;
+      analysis.processingMetadata.stage2Time = validation.correctedData.stage2Time || analysis.processingMetadata.stage2Time;
+      analysis.processingMetadata.totalTime = validation.correctedData.totalTime;
+    }
 
     const transaction = this.db.transaction(() => {
       // Store email

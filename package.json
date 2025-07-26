@@ -79,7 +79,7 @@
     "ioredis": "^5.3.2",
     "isomorphic-dompurify": "^2.26.0",
     "jsonwebtoken": "^9.0.2",
-    "lru-cache": "^11.1.0",
+    "lru-cache": "^10.4.3",
     "lucide-react": "^0.525.0",
     "multer": "^2.0.1",
     "node-fetch": "^3.3.2",
