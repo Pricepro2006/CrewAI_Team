@@ -5,7 +5,7 @@
 
 import { logger } from "../../utils/logger";
 import { DealDataService } from "./DealDataService";
-import { WalmartProductRepository } from "../../database/repositories/WalmartProductRepository";
+import type { WalmartProductRepository } from "../../database/repositories/WalmartProductRepository";
 import { getDatabaseManager } from "../../database/DatabaseManager";
 import type { WalmartProduct } from "../../types/walmart-grocery";
 import type { Deal, DealItem } from "../types/deal.types";
@@ -25,15 +25,18 @@ interface DealAnalysis {
   averageSavingsPercent: number;
   bestDeals: DealMatch[];
   expiringDeals: DealMatch[];
-  categoryBreakdown: Record<string, {
-    count: number;
-    totalSavings: number;
-  }>;
+  categoryBreakdown: Record<
+    string,
+    {
+      count: number;
+      totalSavings: number;
+    }
+  >;
 }
 
 export class DealMatchingService {
   private static instance: DealMatchingService;
-  
+
   private dealService: DealDataService;
   private productRepo: WalmartProductRepository;
   private matchCache: Map<string, DealMatch[]>;
@@ -68,14 +71,15 @@ export class DealMatchingService {
       if (!productEntity) {
         throw new Error(`Product not found: ${productId}`);
       }
-      const product = this.productRepo.entityToProduct(productEntity);
+      const repoProduct = this.productRepo.entityToProduct(productEntity);
+      const product = this.convertToTypesProduct(repoProduct);
 
       // Search for exact matches by SKU/UPC
       const exactMatches = await this.findExactMatches(product);
-      
+
       // Search for similar products in deals
       const similarMatches = await this.findSimilarMatches(product);
-      
+
       // Search by category
       const categoryMatches = await this.findCategoryMatches(product);
 
@@ -83,12 +87,12 @@ export class DealMatchingService {
       const allMatches = this.combineAndRankMatches(
         exactMatches,
         similarMatches,
-        categoryMatches
+        categoryMatches,
       );
 
       // Cache results
       this.matchCache.set(cacheKey, allMatches);
-      
+
       // Clear old cache entries
       if (this.matchCache.size > 1000) {
         const firstKey = this.matchCache.keys().next().value;
@@ -99,7 +103,9 @@ export class DealMatchingService {
 
       return allMatches;
     } catch (error) {
-      logger.error("Failed to find deals for product", "DEAL_MATCHING", { error });
+      logger.error("Failed to find deals for product", "DEAL_MATCHING", {
+        error,
+      });
       throw error;
     }
   }
@@ -107,10 +113,12 @@ export class DealMatchingService {
   /**
    * Find deals for multiple products (e.g., shopping cart)
    */
-  async findDealsForProducts(productIds: string[]): Promise<Map<string, DealMatch[]>> {
+  async findDealsForProducts(
+    productIds: string[],
+  ): Promise<Map<string, DealMatch[]>> {
     try {
-      logger.info("Finding deals for multiple products", "DEAL_MATCHING", { 
-        count: productIds.length 
+      logger.info("Finding deals for multiple products", "DEAL_MATCHING", {
+        count: productIds.length,
       });
 
       const results = new Map<string, DealMatch[]>();
@@ -120,7 +128,7 @@ export class DealMatchingService {
       for (let i = 0; i < productIds.length; i += batchSize) {
         const batch = productIds.slice(i, i + batchSize);
         const batchResults = await Promise.all(
-          batch.map(id => this.findDealsForProduct(id))
+          batch.map((id) => this.findDealsForProduct(id)),
         );
 
         batch.forEach((id, index) => {
@@ -130,7 +138,9 @@ export class DealMatchingService {
 
       return results;
     } catch (error) {
-      logger.error("Failed to find deals for products", "DEAL_MATCHING", { error });
+      logger.error("Failed to find deals for products", "DEAL_MATCHING", {
+        error,
+      });
       throw error;
     }
   }
@@ -143,11 +153,14 @@ export class DealMatchingService {
       logger.info("Analyzing deals for shopping list", "DEAL_MATCHING");
 
       const dealMap = await this.findDealsForProducts(productIds);
-      
+
       let totalSavings = 0;
       let totalProducts = 0;
       const allDeals: DealMatch[] = [];
-      const categoryBreakdown: Record<string, { count: number; totalSavings: number }> = {};
+      const categoryBreakdown: Record<
+        string,
+        { count: number; totalSavings: number }
+      > = {};
 
       // Aggregate all deals
       dealMap.forEach((deals, productId) => {
@@ -160,7 +173,7 @@ export class DealMatchingService {
             totalProducts++;
 
             // Update category breakdown
-            const category = bestDeal.product?.category?.split("/")[0] || "Other";
+            const category = bestDeal.product?.category?.name || "Other";
             if (!categoryBreakdown[category]) {
               categoryBreakdown[category] = { count: 0, totalSavings: 0 };
             }
@@ -177,7 +190,7 @@ export class DealMatchingService {
 
       // Find expiring deals (within 7 days)
       const expiringDeals = allDeals
-        .filter(match => {
+        .filter((match) => {
           const daysUntilExpiry = this.getDaysUntilExpiry(match.deal);
           return daysUntilExpiry >= 0 && daysUntilExpiry <= 7;
         })
@@ -187,19 +200,23 @@ export class DealMatchingService {
           return aDays - bDays;
         });
 
-      const averageSavingsPercent = totalProducts > 0
-        ? allDeals.reduce((sum, d) => sum + d.savingsPercent, 0) / totalProducts
-        : 0;
+      const averageSavingsPercent =
+        totalProducts > 0
+          ? allDeals.reduce((sum, d) => sum + d.savingsPercent, 0) /
+            totalProducts
+          : 0;
 
       return {
         totalSavings,
         averageSavingsPercent,
         bestDeals,
         expiringDeals,
-        categoryBreakdown
+        categoryBreakdown,
       };
     } catch (error) {
-      logger.error("Failed to analyze shopping list deals", "DEAL_MATCHING", { error });
+      logger.error("Failed to analyze shopping list deals", "DEAL_MATCHING", {
+        error,
+      });
       throw error;
     }
   }
@@ -207,13 +224,19 @@ export class DealMatchingService {
   /**
    * Get trending deals
    */
-  async getTrendingDeals(category?: string, limit: number = 10): Promise<DealMatch[]> {
+  async getTrendingDeals(
+    category?: string,
+    limit: number = 10,
+  ): Promise<DealMatch[]> {
     try {
-      logger.info("Getting trending deals", "DEAL_MATCHING", { category, limit });
+      logger.info("Getting trending deals", "DEAL_MATCHING", {
+        category,
+        limit,
+      });
 
       // Get recent deals
       const recentDeals = await this.dealService.getRecentDeals(24); // Last 24 hours
-      
+
       const matches: DealMatch[] = [];
 
       for (const deal of recentDeals) {
@@ -221,8 +244,8 @@ export class DealMatchingService {
 
         // Filter by category if specified
         if (category) {
-          const hasCategory = deal.items.some((item: any) => 
-            item.product_family?.toLowerCase().includes(category.toLowerCase())
+          const hasCategory = deal.items.some((item: any) =>
+            item.product_family?.toLowerCase().includes(category.toLowerCase()),
           );
           if (!hasCategory) continue;
         }
@@ -231,11 +254,11 @@ export class DealMatchingService {
         const bestItem = deal.items.reduce((best: any, item: any) => {
           const itemDiscount = this.calculateDiscount(
             item.dealer_net_price,
-            item.msrp || item.dealer_net_price * 1.2
+            item.msrp || item.dealer_net_price * 1.2,
           );
           const bestDiscount = this.calculateDiscount(
             best.dealer_net_price,
-            best.msrp || best.dealer_net_price * 1.2
+            best.msrp || best.dealer_net_price * 1.2,
           );
           return itemDiscount > bestDiscount ? item : best;
         });
@@ -247,21 +270,21 @@ export class DealMatchingService {
             product,
             deal,
             dealItem: bestItem,
-            savings: (product.originalPrice || product.price || 0) - bestItem.dealer_net_price,
+            savings:
+              (product.price.wasPrice || product.price.regular || 0) -
+              bestItem.dealer_net_price,
             savingsPercent: this.calculateDiscount(
               bestItem.dealer_net_price,
-              product.originalPrice || product.price || 0
+              product.price.wasPrice || product.price.regular || 0,
             ),
             matchConfidence: 0.8,
-            matchType: "similar"
+            matchType: "similar",
           });
         }
       }
 
       // Sort by savings and return top results
-      return matches
-        .sort((a, b) => b.savings - a.savings)
-        .slice(0, limit);
+      return matches.sort((a, b) => b.savings - a.savings).slice(0, limit);
     } catch (error) {
       logger.error("Failed to get trending deals", "DEAL_MATCHING", { error });
       return [];
@@ -271,49 +294,45 @@ export class DealMatchingService {
   /**
    * Find exact matches by SKU/UPC
    */
-  private async findExactMatches(product: WalmartProduct): Promise<DealMatch[]> {
+  private async findExactMatches(
+    product: WalmartProduct,
+  ): Promise<DealMatch[]> {
     const matches: DealMatch[] = [];
 
     try {
       // Search by SKU
-      if (product.barcode) {
+      if (product.upc) {
         // For now, we'll use a placeholder approach
         // TODO: Implement proper SKU search in DealDataService
         const dealsBySku: any[] = [];
 
         for (const deal of dealsBySku) {
-          const matchingItem = deal.items?.find((item: any) => 
-            item.part_number === product.barcode
+          const matchingItem = deal.items?.find(
+            (item: any) => item.part_number === product.upc,
           );
 
           if (matchingItem) {
-            matches.push(this.createDealMatch(
-              product,
-              deal,
-              matchingItem,
-              "exact"
-            ));
+            matches.push(
+              this.createDealMatch(product, deal, matchingItem, "exact"),
+            );
           }
         }
       }
 
       // Search by UPC/Barcode
-      if (product.barcode) {
+      if (product.upc) {
         // TODO: Implement proper UPC search in DealDataService
         const dealsByUpc: any[] = [];
 
         for (const deal of dealsByUpc) {
-          const matchingItem = deal.items?.find((item: any) => 
-            item.description?.includes(product.barcode!)
+          const matchingItem = deal.items?.find((item: any) =>
+            item.description?.includes(product.upc!),
           );
 
           if (matchingItem) {
-            matches.push(this.createDealMatch(
-              product,
-              deal,
-              matchingItem,
-              "exact"
-            ));
+            matches.push(
+              this.createDealMatch(product, deal, matchingItem, "exact"),
+            );
           }
         }
       }
@@ -327,17 +346,23 @@ export class DealMatchingService {
   /**
    * Find similar product matches
    */
-  private async findSimilarMatches(product: WalmartProduct): Promise<DealMatch[]> {
+  private async findSimilarMatches(
+    product: WalmartProduct,
+  ): Promise<DealMatch[]> {
     const matches: DealMatch[] = [];
 
     try {
       // Get recent deals and filter by product name
       const recentDeals = await this.dealService.getRecentDeals(168); // Last week
-      const nameSearch = recentDeals.filter((deal: any) => 
-        deal.items?.some((item: any) => 
-          item.description?.toLowerCase().includes(product.name.toLowerCase())
+      const nameSearch = recentDeals
+        .filter((deal: any) =>
+          deal.items?.some((item: any) =>
+            item.description
+              ?.toLowerCase()
+              .includes(product.name.toLowerCase()),
+          ),
         )
-      ).slice(0, 10);
+        .slice(0, 10);
 
       for (const deal of nameSearch) {
         if (!deal.items?.length) continue;
@@ -345,7 +370,7 @@ export class DealMatchingService {
         // Find best matching item
         const scoredItems = deal.items.map((item: any) => ({
           item,
-          score: this.calculateSimilarity(product, item)
+          score: this.calculateSimilarity(product, item),
         }));
 
         const bestMatch = scoredItems
@@ -353,12 +378,9 @@ export class DealMatchingService {
           .sort((a: any, b: any) => b.score - a.score)[0];
 
         if (bestMatch) {
-          matches.push(this.createDealMatch(
-            product,
-            deal,
-            bestMatch.item,
-            "similar"
-          ));
+          matches.push(
+            this.createDealMatch(product, deal, bestMatch.item, "similar"),
+          );
         }
       }
     } catch (error) {
@@ -371,53 +393,56 @@ export class DealMatchingService {
   /**
    * Find matches by category
    */
-  private async findCategoryMatches(product: WalmartProduct): Promise<DealMatch[]> {
+  private async findCategoryMatches(
+    product: WalmartProduct,
+  ): Promise<DealMatch[]> {
     const matches: DealMatch[] = [];
 
     try {
       if (!product.category) return matches;
 
-      const category = product.category.split("/")[0];
-      
+      const category = product.category.name;
+
       // Map Walmart categories to deal product families
       const familyMapping: Record<string, string[]> = {
-        "Electronics": ["Computers", "Monitors", "Accessories"],
-        "Grocery": ["Food", "Beverages", "Snacks"],
-        "Home": ["Furniture", "Appliances", "Decor"],
-        "Office": ["Printers", "Supplies", "Furniture"]
+        Electronics: ["Computers", "Monitors", "Accessories"],
+        Grocery: ["Food", "Beverages", "Snacks"],
+        Home: ["Furniture", "Appliances", "Decor"],
+        Office: ["Printers", "Supplies", "Furniture"],
       };
 
-      const families = category ? (familyMapping[category] || [category]) : ["General"];
+      const families = category
+        ? familyMapping[category] || [category]
+        : ["General"];
 
       for (const family of families) {
         // Get recent deals and filter by product family
         const recentDeals = await this.dealService.getRecentDeals(168); // Last week
-        const categoryDeals = recentDeals.filter((deal: any) => 
-          deal.items?.some((item: any) => 
-            item.product_family?.toLowerCase().includes(family.toLowerCase())
+        const categoryDeals = recentDeals
+          .filter((deal: any) =>
+            deal.items?.some((item: any) =>
+              item.product_family?.toLowerCase().includes(family.toLowerCase()),
+            ),
           )
-        ).slice(0, 5);
+          .slice(0, 5);
 
         for (const deal of categoryDeals) {
           if (!deal.items?.length) continue;
 
           // Find items that might match
-          const relevantItems = deal.items.filter((item: any) => 
-            item.product_family === family
+          const relevantItems = deal.items.filter(
+            (item: any) => item.product_family === family,
           );
 
           for (const item of relevantItems.slice(0, 2)) {
-            matches.push(this.createDealMatch(
-              product,
-              deal,
-              item,
-              "category"
-            ));
+            matches.push(this.createDealMatch(product, deal, item, "category"));
           }
         }
       }
     } catch (error) {
-      logger.error("Error finding category matches", "DEAL_MATCHING", { error });
+      logger.error("Error finding category matches", "DEAL_MATCHING", {
+        error,
+      });
     }
 
     return matches;
@@ -430,14 +455,13 @@ export class DealMatchingService {
     product: WalmartProduct,
     deal: Deal,
     dealItem: DealItem,
-    matchType: "exact" | "similar" | "category"
+    matchType: "exact" | "similar" | "category",
   ): DealMatch {
-    const walmartPrice = product.price || 0;
+    const walmartPrice = product.price.regular || 0;
     const dealPrice = dealItem.dealer_net_price;
     const savings = Math.max(0, walmartPrice - dealPrice);
-    const savingsPercent = walmartPrice > 0 
-      ? (savings / walmartPrice) * 100 
-      : 0;
+    const savingsPercent =
+      walmartPrice > 0 ? (savings / walmartPrice) * 100 : 0;
 
     // Calculate match confidence
     let matchConfidence = 0.5;
@@ -452,7 +476,7 @@ export class DealMatchingService {
       savings,
       savingsPercent,
       matchConfidence,
-      matchType
+      matchType,
     };
   }
 
@@ -467,7 +491,7 @@ export class DealMatchingService {
     if (product.name && item.description) {
       const nameSimilarity = this.stringSimilarity(
         product.name.toLowerCase(),
-        item.description.toLowerCase()
+        item.description.toLowerCase(),
       );
       score += nameSimilarity * 0.4;
       factors += 0.4;
@@ -481,7 +505,7 @@ export class DealMatchingService {
 
     // Category/family match
     if (product.category && item.product_family) {
-      const categoryMatch = product.category
+      const categoryMatch = product.category.name
         .toLowerCase()
         .includes(item.product_family.toLowerCase());
       if (categoryMatch) {
@@ -499,10 +523,12 @@ export class DealMatchingService {
   private stringSimilarity(str1: string, str2: string): number {
     const words1 = str1.split(/\s+/);
     const words2 = str2.split(/\s+/);
-    
+
     let matches = 0;
     for (const word1 of words1) {
-      if (words2.some(word2 => word2.includes(word1) || word1.includes(word2))) {
+      if (
+        words2.some((word2) => word2.includes(word1) || word1.includes(word2))
+      ) {
         matches++;
       }
     }
@@ -523,35 +549,51 @@ export class DealMatchingService {
    */
   private getDaysUntilExpiry(deal: Deal): number {
     if (!deal.end_date) return -1;
-    
+
     const endDate = new Date(deal.end_date);
     const today = new Date();
     const diffTime = endDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays;
   }
 
   /**
    * Try to find a Walmart product for a deal item
    */
-  private async findWalmartProduct(item: DealItem): Promise<WalmartProduct | null> {
+  private async findWalmartProduct(
+    item: DealItem,
+  ): Promise<WalmartProduct | null> {
     try {
       // Search by part number
       if (item.part_number) {
-        const products = await this.productRepo.searchProducts(item.part_number, { limit: 1 });
+        const products = await this.productRepo.searchProducts(
+          item.part_number,
+          1,
+        );
         if (products.length > 0) {
           const productEntity = products[0];
-          return productEntity ? this.productRepo.entityToProduct(productEntity) : null;
+          return productEntity
+            ? this.convertToTypesProduct(
+                this.productRepo.entityToProduct(productEntity),
+              )
+            : null;
         }
       }
 
       // Search by description
       if (item.description) {
-        const products = await this.productRepo.searchProducts(item.description, { limit: 1 });
+        const products = await this.productRepo.searchProducts(
+          item.description,
+          1,
+        );
         if (products.length > 0) {
           const productEntity = products[0];
-          return productEntity ? this.productRepo.entityToProduct(productEntity) : null;
+          return productEntity
+            ? this.convertToTypesProduct(
+                this.productRepo.entityToProduct(productEntity),
+              )
+            : null;
         }
       }
 
@@ -567,13 +609,13 @@ export class DealMatchingService {
   private combineAndRankMatches(
     exact: DealMatch[],
     similar: DealMatch[],
-    category: DealMatch[]
+    category: DealMatch[],
   ): DealMatch[] {
     const allMatches = [...exact, ...similar, ...category];
-    
+
     // Deduplicate by deal ID + item part number
     const seen = new Set<string>();
-    const unique = allMatches.filter(match => {
+    const unique = allMatches.filter((match) => {
       const key = `${match.deal.id}:${match.dealItem.part_number}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -589,5 +631,90 @@ export class DealMatchingService {
       // Then by savings amount
       return b.savings - a.savings;
     });
+  }
+
+  /**
+   * Convert repository WalmartProduct to types WalmartProduct
+   */
+  private convertToTypesProduct(
+    repoProduct: import("../../database/repositories/WalmartProductRepository").WalmartProduct,
+  ): WalmartProduct {
+    return {
+      id: repoProduct.product_id,
+      walmartId: repoProduct.product_id,
+      upc: repoProduct.upc,
+      name: repoProduct.name || "",
+      brand: repoProduct.brand || "",
+      category: {
+        id: "1",
+        name:
+          typeof repoProduct.category_path === "string"
+            ? repoProduct.category_path
+            : "Uncategorized",
+        path:
+          typeof repoProduct.category_path === "string"
+            ? [repoProduct.category_path]
+            : ["Uncategorized"],
+        level: 1,
+      },
+      description: repoProduct.description || "",
+      shortDescription: repoProduct.description || "",
+      price: {
+        currency: "USD",
+        regular: repoProduct.current_price || 0,
+        sale: repoProduct.regular_price,
+        unit: repoProduct.unit_price,
+        unitOfMeasure: repoProduct.unit_measure || "each",
+        wasPrice: repoProduct.regular_price,
+      },
+      images: [
+        {
+          id: "1",
+          url: repoProduct.large_image_url || repoProduct.thumbnail_url || "",
+          type: "primary" as const,
+          alt: repoProduct.name || "",
+        },
+      ],
+      availability: {
+        inStock: repoProduct.in_stock !== false,
+        stockLevel: repoProduct.in_stock
+          ? ("in_stock" as const)
+          : ("out_of_stock" as const),
+        quantity: repoProduct.stock_level,
+        onlineOnly: repoProduct.online_only,
+        instoreOnly: repoProduct.store_only,
+      },
+      ratings: repoProduct.average_rating
+        ? {
+            average: repoProduct.average_rating,
+            count: repoProduct.review_count || 0,
+            distribution: {
+              5: 0,
+              4: 0,
+              3: 0,
+              2: 0,
+              1: 0,
+            },
+          }
+        : undefined,
+      nutritionFacts: repoProduct.nutritional_info,
+      ingredients:
+        typeof repoProduct.ingredients === "string"
+          ? [repoProduct.ingredients]
+          : repoProduct.ingredients,
+      allergens: repoProduct.allergens?.map((allergen) => ({
+        type: allergen.toLowerCase() as any,
+        contains: true,
+        mayContain: false,
+      })),
+      metadata: {
+        source: "api" as const,
+        lastScraped: repoProduct.last_updated_at,
+        confidence: 0.9,
+        dealEligible: true,
+      },
+      createdAt: repoProduct.first_seen_at || new Date().toISOString(),
+      updatedAt: repoProduct.last_updated_at || new Date().toISOString(),
+    };
   }
 }

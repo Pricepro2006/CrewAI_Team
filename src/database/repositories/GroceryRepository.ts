@@ -222,6 +222,24 @@ export class GroceryListRepository extends BaseRepository {
     return this.updateList(id, updates);
   }
 
+  async deleteList(id: string): Promise<void> {
+    // First delete all items in the list
+    const stmt1 = this.db.prepare(
+      `DELETE FROM grocery_items WHERE list_id = ?`,
+    );
+    stmt1.run(id);
+
+    // Then delete the list itself
+    const stmt2 = this.db.prepare(`DELETE FROM grocery_lists WHERE id = ?`);
+    const result = stmt2.run(id);
+
+    if (result.changes === 0) {
+      throw new Error(`Grocery list not found: ${id}`);
+    }
+
+    logger.info(`Deleted grocery list: ${id}`, "GROCERY_REPO");
+  }
+
   private mapRowToList(row: any): GroceryList {
     return {
       ...row,
@@ -374,6 +392,17 @@ export class GroceryItemRepository extends BaseRepository {
       status: "substituted",
       substitution_id: substitutionId,
     });
+  }
+
+  async deleteItem(id: string): Promise<void> {
+    const stmt = this.db.prepare(`DELETE FROM grocery_items WHERE id = ?`);
+    const result = stmt.run(id);
+
+    if (result.changes === 0) {
+      throw new Error(`Grocery item not found: ${id}`);
+    }
+
+    logger.info(`Deleted grocery item: ${id}`, "GROCERY_REPO");
   }
 
   async updateListTotal(listId: string): Promise<void> {

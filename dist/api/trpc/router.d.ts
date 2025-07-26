@@ -2206,12 +2206,12 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
                 mcpTools: any;
             };
             _input_in: {
-                action: "mark-read" | "archive" | "set-priority" | "change-state";
+                action: "archive" | "mark-read" | "set-priority" | "change-state";
                 emailIds: string[];
                 value?: string | undefined;
             };
             _input_out: {
-                action: "mark-read" | "archive" | "set-priority" | "change-state";
+                action: "archive" | "mark-read" | "set-priority" | "change-state";
                 emailIds: string[];
                 value?: string | undefined;
             };
@@ -2297,13 +2297,13 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
                 to: string[];
                 priority?: "low" | "high" | "normal" | undefined;
                 template?: string | undefined;
-                cc?: string[] | undefined;
-                bcc?: string[] | undefined;
                 attachments?: {
                     content: string;
                     contentType: string;
                     filename: string;
                 }[] | undefined;
+                cc?: string[] | undefined;
+                bcc?: string[] | undefined;
             };
             _input_out: {
                 body: string;
@@ -2311,13 +2311,13 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
                 priority: "low" | "high" | "normal";
                 to: string[];
                 template?: string | undefined;
-                cc?: string[] | undefined;
-                bcc?: string[] | undefined;
                 attachments?: {
                     content: string;
                     contentType: string;
                     filename: string;
                 }[] | undefined;
+                cc?: string[] | undefined;
+                bcc?: string[] | undefined;
             };
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
@@ -4878,18 +4878,18 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
                 limit?: number | undefined;
                 inStock?: boolean | undefined;
                 category?: string | undefined;
-                storeId?: string | undefined;
                 minPrice?: number | undefined;
                 maxPrice?: number | undefined;
+                storeId?: string | undefined;
             };
             _input_out: {
                 query: string;
                 limit: number;
                 inStock?: boolean | undefined;
                 category?: string | undefined;
-                storeId?: string | undefined;
                 minPrice?: number | undefined;
                 maxPrice?: number | undefined;
+                storeId?: string | undefined;
             };
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
@@ -5334,14 +5334,14 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _input_in: {
                 userId: string;
                 category?: string | undefined;
-                dietaryRestrictions?: string[] | undefined;
                 budget?: number | undefined;
+                dietaryRestrictions?: string[] | undefined;
             };
             _input_out: {
                 userId: string;
                 category?: string | undefined;
-                dietaryRestrictions?: string[] | undefined;
                 budget?: number | undefined;
+                dietaryRestrictions?: string[] | undefined;
             };
             _output_in: typeof import("@trpc/server").unsetMarker;
             _output_out: typeof import("@trpc/server").unsetMarker;
@@ -5494,7 +5494,7 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
             lists: {
-                id: string;
+                id: string | undefined;
                 userId: string;
                 name: string;
                 description: string | undefined;
@@ -5577,7 +5577,7 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
             success: boolean;
-            list: import("../../types/walmart-grocery").GroceryList;
+            list: ServiceGroceryList;
         }>;
         updateList: import("@trpc/server").BuildProcedure<"mutation", {
             _config: import("@trpc/server").RootConfig<{
@@ -5800,7 +5800,7 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
             _output_out: typeof import("@trpc/server").unsetMarker;
         }, {
             success: boolean;
-            items: import("../../types/walmart-grocery").GroceryItem[];
+            items: ServiceGroceryItem[];
         }>;
         removeItemFromList: import("@trpc/server").BuildProcedure<"mutation", {
             _config: import("@trpc/server").RootConfig<{
@@ -6213,11 +6213,11 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
                 mcpTools: any;
             };
             _input_in: {
-                status: "cancelled" | "pending" | "confirmed" | "preparing" | "delivered" | "out_for_delivery";
+                status: "cancelled" | "pending" | "delivered" | "confirmed" | "preparing" | "out_for_delivery";
                 orderId: string;
             };
             _input_out: {
-                status: "cancelled" | "pending" | "confirmed" | "preparing" | "delivered" | "out_for_delivery";
+                status: "cancelled" | "pending" | "delivered" | "confirmed" | "preparing" | "out_for_delivery";
                 orderId: string;
             };
             _output_in: typeof import("@trpc/server").unsetMarker;
@@ -6225,7 +6225,7 @@ export declare const appRouter: import("@trpc/server").CreateRouterInner<import(
         }, {
             success: boolean;
             orderId: string;
-            status: "cancelled" | "pending" | "confirmed" | "preparing" | "delivered" | "out_for_delivery";
+            status: "cancelled" | "pending" | "delivered" | "confirmed" | "preparing" | "out_for_delivery";
         }>;
         trackOrder: import("@trpc/server").BuildProcedure<"query", {
             _config: import("@trpc/server").RootConfig<{
