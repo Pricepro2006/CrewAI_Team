@@ -1,0 +1,220 @@
+# CodeRabbit Configuration for AI Agent Team Framework
+# Enhanced configuration for TypeScript, React, and tRPC projects
+
+# General settings
+language: en
+early_access: true
+reviews:
+  # Enable comprehensive code analysis
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_placeholder: "## CodeRabbit Summary\n\n<!-- Summary will be added here -->"
+  poem: false
+  review_status: true
+
+  # Advanced analysis features
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+      - develop
+      - "feature/.*"
+
+  # Path-specific review instructions (2025 best practice)
+  path_instructions:
+    - path: "**/*.{ts,tsx,js,jsx}"
+      instructions: |
+        Review TypeScript/React/JavaScript code for:
+        - Type safety and proper TypeScript usage
+        - **verbatimModuleSyntax compliance**: Ensure type-only imports use `import type` syntax
+        - **Type import patterns**: Check for correct use of `import type` vs `import` for TypeScript types
+        - Missing module exports and circular dependencies
+        - React hooks and component patterns
+        - tRPC patterns and security
+        - Performance optimization opportunities
+        - Security vulnerabilities (injection, XSS, CSRF)
+        - TypeScript compilation errors and strict mode compliance
+        - Code maintainability and readability
+        - ESLint rule violations and auto-fixable issues
+
+    - path: "**/*.test.{ts,tsx,js,jsx}"
+      instructions: |
+        Review test code for:
+        - Test coverage and effectiveness
+        - Proper test structure and naming
+        - Mock usage and test isolation
+        - Performance and reliability
+
+    - path: "src/api/**/*.{ts,tsx,js,jsx}"
+      instructions: |
+        Review API code with extra attention to:
+        - Security vulnerabilities (injection, auth, validation)
+        - Rate limiting and abuse prevention
+        - Error handling and logging
+        - Performance and scalability
+        - tRPC middleware patterns
+
+    - path: "src/core/**/*.{ts,tsx,js,jsx}"
+      instructions: |
+        Review core system code for:
+        - Architecture patterns and design
+        - LLM integration best practices
+        - Agent orchestration patterns
+        - Performance and resource management
+        - Error handling and recovery
+
+    - path: "**/*.md"
+      instructions: |
+        Review documentation for:
+        - Clarity and completeness
+        - Accuracy and up-to-date information
+        - Structure and organization
+        - Code examples and formatting
+
+  # Tool configuration (2025 enhanced)
+  tools:
+    # TypeScript/JavaScript specific tools
+    eslint:
+      enabled: true
+
+    # High-performance linting (2025)
+    oxlint:
+      enabled: true
+      
+    # Security scanning
+    gitleaks:
+      enabled: true
+
+    # Additional linting
+    shellcheck:
+      enabled: true
+
+    # AST-based security rules (2025 best practice)
+    ast-grep:
+      essential_rules: true
+      rule_dirs:
+        - "coderabbit-rules"
+      packages:
+        - "security/typescript-rules"
+        - "ast-grep-essentials"
+
+    # Additional tools
+    hadolint:
+      enabled: true
+
+  # Specific to our tech stack
+  path_filters:
+    # Include TypeScript/React files
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/*.js"
+    - "**/*.jsx"
+    - "**/*.json"
+    - "**/*.md"
+    - "**/*.yml"
+    - "**/*.yaml"
+
+    # Exclude generated/build files
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/coverage/**"
+    - "!**/*.min.js"
+    - "!**/pnpm-lock.yaml"
+
+  # Review instructions for all files
+  review_instructions: |
+    You are an expert TypeScript/React developer reviewing code for an AI Agent Team Framework.
+    Focus on:
+
+    **TypeScript Error Detection & Resolution (2025):**
+    - **verbatimModuleSyntax compliance**: Flag missing `import type` for type-only imports
+    - **Missing exports**: Identify classes, interfaces, functions that should be exported
+    - **Type safety violations**: Catch unsafe `any` usage and missing type annotations
+    - **Compilation errors**: Detect patterns that cause TypeScript compilation failures
+    - **ESLint violations**: Identify auto-fixable issues with consistent-type-imports rule
+
+    **Architecture & Design:**
+    - tRPC best practices and type safety
+    - React component patterns and hooks usage
+    - Agent architecture and orchestration patterns
+    - Separation of concerns and modularity
+
+    **Security & Performance:**
+    - Authentication and authorization patterns
+    - Input validation and sanitization
+    - Rate limiting and security middleware
+    - Performance optimization opportunities
+    - Memory leaks and resource management
+
+    **Code Quality:**
+    - TypeScript strict mode compliance
+    - Error handling and edge cases
+    - Test coverage and testability
+    - Documentation and code clarity
+    - Consistent naming conventions
+
+    **AI/LLM Integration:**
+    - Ollama integration best practices
+    - RAG system implementation
+    - Vector store usage patterns
+    - Agent communication protocols
+
+    **Production Readiness:**
+    - Environment configuration
+    - Logging and monitoring
+    - Database patterns and migrations
+    - CI/CD pipeline optimization
+
+    **Error Prevention Patterns:**
+    - Suggest automated fixes using ESLint --fix
+    - Recommend TypeScript configuration improvements
+    - Identify patterns that prevent future compilation errors
+    - Suggest codemod tools for large-scale refactoring
+
+    Provide specific, actionable feedback with code examples when possible.
+    Prioritize TypeScript compilation errors and security vulnerabilities.
+    Suggest modern TypeScript/React patterns and 2025 best practices.
+
+# Chat configuration for interactive reviews
+chat:
+  auto_reply: false
+
+# Code generation features (2025 enhancement)
+code_generation:
+  docstrings:
+    path_instructions:
+      - path: "**/*.{ts,tsx,js,jsx}"
+        instructions: |
+          Generate comprehensive JSDoc comments for functions, classes, and interfaces.
+          Include parameter descriptions, return types, and examples where helpful.
+          Use proper TypeScript type annotations.
+          End with "Auto-generated by CodeRabbit."
+
+# Knowledge base for project-specific context
+knowledge_base:
+  # Project-specific patterns to recognize
+  learnings:
+    - pattern: "TypeScript AI Agent System"
+      description: "This is a TypeScript-based AI Agent orchestration system"
+    - pattern: "tRPC v10 Usage"
+      description: "Uses tRPC v10 for type-safe API communication"
+    - pattern: "Master Orchestrator Pattern"
+      description: "Implements Master Orchestrator pattern with specialized agents"
+    - pattern: "Ollama Integration"
+      description: "Integrates with Ollama for local LLM deployment"
+    - pattern: "ChromaDB RAG"
+      description: "Uses ChromaDB for vector storage and RAG capabilities"
+    - pattern: "Security-First Approach"
+      description: "Follows security-first approach with comprehensive middleware"
+    - pattern: "WebSocket Real-time"
+      description: "Implements real-time updates via WebSocket subscriptions"
+    - pattern: "React with Vite"
+      description: "Uses React with Vite for frontend, not Next.js"
+    - pattern: "SQLite Database"
+      description: "Database layer uses SQLite with better-sqlite3"
+    - pattern: "Testing Stack"
+      description: "Testing uses Vitest for unit tests and Playwright for E2E"

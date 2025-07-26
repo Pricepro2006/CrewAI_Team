@@ -68,7 +68,7 @@ export class DealMatchingService {
       if (!productEntity) {
         throw new Error(`Product not found: ${productId}`);
       }
-      const product = this.transformEntityToWalmartProduct(productEntity);
+      const product = this.productRepo.entityToProduct(productEntity);
 
       // Search for exact matches by SKU/UPC
       const exactMatches = await this.findExactMatches(product);
@@ -160,7 +160,7 @@ export class DealMatchingService {
             totalProducts++;
 
             // Update category breakdown
-            const category = bestDeal.product?.category?.name || bestDeal.product?.category?.path?.[0] || "Other";
+            const category = bestDeal.product?.category?.split("/")[0] || "Other";
             if (!categoryBreakdown[category]) {
               categoryBreakdown[category] = { count: 0, totalSavings: 0 };
             }
@@ -247,10 +247,10 @@ export class DealMatchingService {
             product,
             deal,
             dealItem: bestItem,
-            savings: (product.price?.wasPrice || product.price?.regular || 0) - bestItem.dealer_net_price,
+            savings: (product.originalPrice || product.price || 0) - bestItem.dealer_net_price,
             savingsPercent: this.calculateDiscount(
               bestItem.dealer_net_price,
-              product.price?.wasPrice || product.price?.regular || 0
+              product.originalPrice || product.price || 0
             ),
             matchConfidence: 0.8,
             matchType: "similar"
@@ -276,14 +276,14 @@ export class DealMatchingService {
 
     try {
       // Search by SKU
-      if (product.upc) {
+      if (product.barcode) {
         // For now, we'll use a placeholder approach
         // TODO: Implement proper SKU search in DealDataService
         const dealsBySku: any[] = [];
 
         for (const deal of dealsBySku) {
           const matchingItem = deal.items?.find((item: any) => 
-            item.part_number === product.upc
+            item.part_number === product.barcode
           );
 
           if (matchingItem) {
@@ -298,13 +298,13 @@ export class DealMatchingService {
       }
 
       // Search by UPC/Barcode
-      if (product.upc) {
+      if (product.barcode) {
         // TODO: Implement proper UPC search in DealDataService
         const dealsByUpc: any[] = [];
 
         for (const deal of dealsByUpc) {
           const matchingItem = deal.items?.find((item: any) => 
-            item.description?.includes(product.upc!)
+            item.description?.includes(product.barcode!)
           );
 
           if (matchingItem) {
@@ -377,7 +377,7 @@ export class DealMatchingService {
     try {
       if (!product.category) return matches;
 
-      const category = product.category.name || product.category.path?.[0] || "Other";
+      const category = product.category.split("/")[0];
       
       // Map Walmart categories to deal product families
       const familyMapping: Record<string, string[]> = {
@@ -432,7 +432,7 @@ export class DealMatchingService {
     dealItem: DealItem,
     matchType: "exact" | "similar" | "category"
   ): DealMatch {
-    const walmartPrice = typeof product.price === 'number' ? product.price : product.price?.regular || 0;
+    const walmartPrice = product.price || 0;
     const dealPrice = dealItem.dealer_net_price;
     const savings = Math.max(0, walmartPrice - dealPrice);
     const savingsPercent = walmartPrice > 0 
@@ -481,8 +481,8 @@ export class DealMatchingService {
 
     // Category/family match
     if (product.category && item.product_family) {
-      const categoryMatch = product.category?.name
-        ?.toLowerCase()
+      const categoryMatch = product.category
+        .toLowerCase()
         .includes(item.product_family.toLowerCase());
       if (categoryMatch) {
         score += 0.3;
@@ -508,79 +508,6 @@ export class DealMatchingService {
     }
 
     return matches / Math.max(words1.length, words2.length);
-  }
-
-  /**
-   * Transform repository ProductEntity to unified WalmartProduct interface
-   */
-  private transformEntityToWalmartProduct(entity: any): WalmartProduct {
-    return {
-      id: entity.product_id,
-      walmartId: entity.product_id,
-      upc: entity.upc,
-      ean: entity.ean,
-      gtin: entity.gtin,
-      name: entity.name || '',
-      brand: entity.brand || '',
-      category: {
-        id: 'unknown',
-        name: entity.category_path?.split('/')[0] || 'Uncategorized',
-        path: entity.category_path ? entity.category_path.split('/') : ['Uncategorized'],
-        level: 1
-      },
-      subcategory: entity.subcategory,
-      description: entity.description || '',
-      shortDescription: entity.short_description,
-      price: {
-        currency: 'USD',
-        regular: entity.current_price || entity.regular_price || 0,
-        sale: (entity.current_price && entity.regular_price && entity.current_price < entity.regular_price) ? entity.current_price : undefined,
-        unit: entity.unit_price,
-        unitOfMeasure: entity.unit_measure || "each",
-        pricePerUnit: entity.unit_price ? `$${entity.unit_price}/${entity.unit_measure || 'each'}` : undefined,
-        wasPrice: entity.regular_price,
-        rollback: false,
-        clearance: false
-      },
-      images: entity.large_image_url || entity.thumbnail_url ? [{
-        id: '1',
-        url: entity.large_image_url || entity.thumbnail_url || "",
-        type: 'primary' as const,
-        alt: entity.name
-      }] : [],
-      nutritionFacts: entity.nutritional_info ? JSON.parse(entity.nutritional_info) : undefined,
-      ingredients: entity.ingredients ? [entity.ingredients] : undefined,
-      allergens: entity.allergens ? JSON.parse(entity.allergens).map((allergen: string) => ({
-        type: allergen.toLowerCase() as any,
-        contains: true,
-        mayContain: false
-      })) : undefined,
-      specifications: entity.product_attributes ? Object.entries(JSON.parse(entity.product_attributes)).map(([name, value]) => ({
-        name,
-        value: String(value)
-      })) : undefined,
-      availability: {
-        inStock: entity.in_stock !== false,
-        stockLevel: entity.in_stock ? 'in_stock' as const : 'out_of_stock' as const,
-        quantity: entity.stock_level,
-        onlineOnly: entity.online_only || false,
-        instoreOnly: entity.store_only || false
-      },
-      ratings: (entity.average_rating && entity.review_count) ? {
-        average: entity.average_rating,
-        count: entity.review_count,
-        distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
-      } : undefined,
-      variants: [],
-      bundleComponents: [],
-      metadata: {
-        source: 'api' as const,
-        confidence: 0.8,
-        dealEligible: true
-      },
-      createdAt: entity.first_seen_at || new Date().toISOString(),
-      updatedAt: entity.last_updated_at || new Date().toISOString()
-    };
   }
 
   /**
@@ -612,19 +539,19 @@ export class DealMatchingService {
     try {
       // Search by part number
       if (item.part_number) {
-        const products = await this.productRepo.searchProducts(item.part_number, 1);
+        const products = await this.productRepo.searchProducts(item.part_number, { limit: 1 });
         if (products.length > 0) {
           const productEntity = products[0];
-          return productEntity ? this.transformEntityToWalmartProduct(productEntity) : null;
+          return productEntity ? this.productRepo.entityToProduct(productEntity) : null;
         }
       }
 
       // Search by description
       if (item.description) {
-        const products = await this.productRepo.searchProducts(item.description, 1);
+        const products = await this.productRepo.searchProducts(item.description, { limit: 1 });
         if (products.length > 0) {
           const productEntity = products[0];
-          return productEntity ? this.transformEntityToWalmartProduct(productEntity) : null;
+          return productEntity ? this.productRepo.entityToProduct(productEntity) : null;
         }
       }
 

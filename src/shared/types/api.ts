@@ -5,7 +5,7 @@
 
 import type { z } from 'zod';
 import type { Timestamp, PaginationRequest, PaginationResponse, ApiResponse } from './index';
-import type { Message, Conversation, Task, Document, TokenUsage } from './core';
+import type { Message, Conversation, Task, Document } from './core';
 import type { ApiError } from './errors';
 
 // =====================================================

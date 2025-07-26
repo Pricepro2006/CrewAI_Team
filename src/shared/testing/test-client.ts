@@ -267,7 +267,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
     }
   }
 
-  async send(message: WebSocketMessage): Promise<void> {
+  async send(message: WebSocketTypes.WebSocketMessage): Promise<void> {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       await this.connect();
     }
@@ -295,7 +295,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
 
   on(
     eventType: string,
-    handler: (message: WebSocketMessage) => Promise<void>,
+    handler: (message: WebSocketTypes.WebSocketMessage) => Promise<void>,
   ): void {
     if (!this.eventHandlers.has(eventType)) {
       this.eventHandlers.set(eventType, []);
@@ -305,7 +305,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
 
   once(
     eventType: string,
-    handler: (message: WebSocketMessage) => Promise<void>,
+    handler: (message: WebSocketTypes.WebSocketMessage) => Promise<void>,
   ): void {
     if (!this.eventHandlers.has(eventType)) {
       this.eventHandlers.set(eventType, []);
@@ -316,7 +316,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
   async waitForMessage(
     eventType: string,
     timeout: number = 5000,
-  ): Promise<WebSocketMessage> {
+  ): Promise<WebSocketTypes.WebSocketMessage> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject(new Error(`Timeout waiting for message of type: ${eventType}`));

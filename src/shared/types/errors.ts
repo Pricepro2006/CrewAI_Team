@@ -3,8 +3,7 @@
  * Comprehensive error types and handling utilities
  */
 
-// Define Timestamp locally to avoid circular imports
-export type Timestamp = string; // ISO 8601 string
+import type { Timestamp } from './index';
 
 // =====================================================
 // Base Error Types

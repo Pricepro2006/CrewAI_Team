@@ -210,7 +210,7 @@ export class ProductLookupService {
     query: string, 
     filters?: ProductFilters
   ): Promise<SemanticSearchResult[]> {
-    const products = await this.productRepo.searchProducts(query, 20);
+    const products = await this.productRepo.searchProducts(query, { limit: 20 });
     
     return products.map(productEntity => {
       // Transform ProductEntity to WalmartProduct
@@ -371,7 +371,7 @@ export class ProductLookupService {
       // Category filter
       if (filters.categories?.length) {
         const hasCategory = filters.categories.some(cat => 
-          product.category?.name?.includes(cat) || product.category?.path?.includes(cat)
+          product.category?.includes(cat)
         );
         if (!hasCategory) return false;
       }
@@ -385,7 +385,7 @@ export class ProductLookupService {
 
       // Price filter
       if (filters.priceRange) {
-        const price = typeof product.price === 'number' ? product.price : product.price?.regular || 0;
+        const price = product.price || 0;
         if (price < filters.priceRange.min || price > filters.priceRange.max) {
           return false;
         }
@@ -393,7 +393,7 @@ export class ProductLookupService {
 
       // Stock filter
       if (filters.inStock !== undefined) {
-        if (product.availability?.inStock !== filters.inStock) {
+        if (product.inStock !== filters.inStock) {
           return false;
         }
       }
@@ -547,51 +547,27 @@ export class ProductLookupService {
    */
   private transformToWalmartProduct(entity: ProductEntity): WalmartProduct {
     return {
-      id: entity.product_id,
-      walmartId: entity.product_id,
-      name: entity.name || '',
-      brand: entity.brand || '',
-      description: entity.description || '',
-      category: {
-        id: 'unknown',
-        name: entity.category_path?.split('/')[0] || 'Uncategorized',
-        path: entity.category_path ? entity.category_path.split('/') : ['Uncategorized'],
-        level: 1
-      },
-      price: {
-        currency: 'USD',
-        regular: entity.current_price || 0,
-        sale: entity.regular_price && entity.current_price && entity.current_price < entity.regular_price 
-          ? entity.current_price : undefined,
-        wasPrice: entity.regular_price
-      },
-      images: [{
-        id: '1',
-        url: entity.large_image_url || entity.thumbnail_url || '',
-        type: 'primary' as const
-      }],
-      availability: {
-        inStock: entity.in_stock !== false,
-        stockLevel: entity.in_stock ? 'in_stock' : 'out_of_stock' as const,
-        quantity: entity.stock_level
-      },
-      ratings: entity.average_rating && entity.review_count ? {
-        average: entity.average_rating,
-        count: entity.review_count,
-        distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+      id: entity.product_id || entity.id,
+      name: entity.name,
+      brand: entity.brand,
+      description: entity.description,
+      category: entity.category || "Uncategorized",
+      subcategory: entity.subcategory,
+      price: entity.price,
+      originalPrice: entity.original_price,
+      unit: entity.unit || "each",
+      size: entity.size,
+      imageUrl: entity.image_url,
+      thumbnailUrl: entity.thumbnail_url,
+      barcode: entity.upc,
+      inStock: entity.in_stock,
+      stockLevel: entity.stock_quantity,
+      location: entity.aisle_location ? { aisle: entity.aisle_location } : undefined,
+      ratings: entity.rating && entity.review_count ? {
+        average: entity.rating,
+        count: entity.review_count
       } : undefined,
-      nutritionFacts: entity.nutritional_info,
-      allergens: (entity.allergens || []).map((allergen: string) => ({
-        type: allergen.toLowerCase() as any,
-        contains: true,
-        mayContain: false
-      })),
-      metadata: {
-        source: 'api' as const,
-        confidence: 0.9
-      },
-      createdAt: entity.first_seen_at || new Date().toISOString() as any,
-      updatedAt: entity.last_updated_at || new Date().toISOString() as any
+      nutritionalInfo: entity.nutritional_info,
     };
   }
 }

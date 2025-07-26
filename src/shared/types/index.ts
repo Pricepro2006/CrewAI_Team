@@ -6,50 +6,18 @@
 
 // Core System Types
 export * from './core';
+export * from './api';
 export * from './database';
 export * from './websocket';
+export * from './agents';
 export * from './monitoring';
+export * from './validation';
 export * from './email';
 export * from './orchestration';
 export * from './rag';
 export * from './auth';
+export * from './errors';
 export * from './events';
-
-// Selective exports to avoid conflicts
-export type {
-  // API Types with renamed conflicting ones
-  TaskProgress as ApiTaskProgress,
-  TaskLog as ApiTaskLog,
-  TaskError as ApiTaskError,
-  AgentResult,
-  AgentStep
-} from './api';
-
-export type {
-  // Agent Types with renamed conflicting ones  
-  TaskProgress as AgentTaskProgress,
-  TaskLog as AgentTaskLog,
-  TaskError as AgentTaskError
-} from './agents';
-
-export type {
-  // Validation Types with renamed conflicting ones
-  ValidationError as ValidationErrorType
-} from './validation';
-
-export type {
-  // Error Types
-  BaseError,
-  SystemError,
-  BusinessError,
-  ValidationError as ErrorValidationError,
-  ApiError,
-  ErrorCode,
-  ErrorCategory,
-  ErrorContext,
-  ErrorHandler,
-  ErrorReport
-} from './errors';
 
 // Re-export common utility types
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
@@ -126,13 +94,7 @@ export interface BaseFilter {
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: Record<string, unknown>;
-    timestamp: string;
-    httpStatus?: number;
-  };
+  error?: ApiError;
   metadata?: ResponseMetadata;
 }
 

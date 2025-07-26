@@ -11,7 +11,11 @@ import appConfig from "../config/app.config";
 
 // Repository imports
 import { UserRepository } from "./repositories/UserRepository";
-import { EmailRepository } from "./repositories/EmailRepository";
+import {
+  EmailRepository,
+  EmailEntityRepository,
+  EmailAttachmentRepository,
+} from "./repositories/EmailRepository";
 import {
   DealRepository,
   DealItemRepository,
@@ -62,6 +66,8 @@ export class DatabaseManager {
   // Repository instances
   public readonly users: UserRepository;
   public readonly emails: EmailRepository;
+  public readonly emailEntities: EmailEntityRepository;
+  public readonly emailAttachments: EmailAttachmentRepository;
   public readonly deals: DealRepository;
   public readonly dealItems: DealItemRepository;
   public readonly productFamilies: ProductFamilyRepository;
@@ -104,7 +110,9 @@ export class DatabaseManager {
 
     // Initialize repositories
     this.users = new UserRepository(this.db);
-    this.emails = new EmailRepository({ db: this.db });
+    this.emails = new EmailRepository(this.db);
+    this.emailEntities = new EmailEntityRepository(this.db);
+    this.emailAttachments = new EmailAttachmentRepository(this.db);
     this.deals = new DealRepository(this.db);
     this.dealItems = new DealItemRepository(this.db);
     this.productFamilies = new ProductFamilyRepository(this.db);
@@ -208,7 +216,7 @@ export class DatabaseManager {
           this.db.exec(statement + ";");
         } catch (error) {
           // Log warning for statements that might already exist
-          if (error instanceof Error && !error.message.includes("already exists")) {
+          if (!error.message.includes("already exists")) {
             logger.warn(`Migration statement warning: ${error}`, "DB_MANAGER");
           }
         }
@@ -223,7 +231,7 @@ export class DatabaseManager {
           "DB_MANAGER",
         );
       } catch (error) {
-        if (error instanceof Error && !error.message.includes("already exists")) {
+        if (!error.message.includes("already exists")) {
           logger.warn(`Grocery migration warning: ${error}`, "DB_MANAGER");
         }
       }
@@ -380,7 +388,7 @@ export class DatabaseManager {
         tables: tableCountResult.count,
         indexes: indexCountResult.count,
         users: await this.users.count(),
-        emails: 0, // EmailRepository uses different query interface
+        emails: await this.emails.count(),
         deals: await this.deals.count(),
         dealItems: await this.dealItems.count(),
       };
