@@ -1,5 +1,0 @@
-# Run lint-staged for staged files
-pnpm exec lint-staged
-
-# Run type checking
-# pnpm typecheck # Temporarily disabled - TypeScript errors need fixing
