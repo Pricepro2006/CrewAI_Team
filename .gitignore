@@ -215,11 +215,22 @@ data/
 *.bak
 *.orig
 */test/*
-*walmart*
-*nick*
-*paul*
 *.tmp
 *.temp
 .cache/
 *Zone.Identifier
 untitled.codediagram
+
+# Personal Data & Internal Files (not for public repository)
+*walmart*
+*nick*
+*paul*
+*nicholas*
+*spartanburg*
+walmart_*.json
+nicholas_*.json
+*_nick_*.json
+*extraction_progress.json
+*_spartanburg.json
+*purchase*.json
+*order*.json
