@@ -7,28 +7,28 @@ import {
 } from "../trpc/enhanced-router";
 import { observable } from "@trpc/server/observable";
 import { EventEmitter } from "events";
-// Router type available via enhanced-router
-// Security schemas available via enhanced-router
+import { sanitizationSchemas } from "../middleware/security";
+import { sanitizeForContext, autoSanitize } from "../../utils/output-sanitizer";
 import { logger } from "../../utils/logger";
 import { withTimeout, DEFAULT_TIMEOUTS } from "../../utils/timeout";
 
 // Event emitter for real-time updates
 const chatEvents = new EventEmitter();
 
-// Enhanced input validation schemas
+// Enhanced input validation schemas with XSS protection
 const chatSchemas = {
   message: z.object({
-    message: z.string().min(1).max(5000),
-    conversationId: z.string().uuid().optional(),
+    message: sanitizationSchemas.string.min(1).max(5000),
+    conversationId: sanitizationSchemas.uuid.optional(),
     priority: z.enum(["low", "medium", "high"]).default("medium"),
   }),
 
   conversation: z.object({
-    id: commonSchemas.id,
+    id: sanitizationSchemas.identifier,
   }),
 
   messageHistory: z.object({
-    conversationId: commonSchemas.id,
+    conversationId: sanitizationSchemas.identifier,
     page: z.number().min(1).default(1),
     limit: z.number().min(1).max(100).default(10),
   }),
@@ -61,9 +61,12 @@ export const chatRouter = createFeatureRouter(
           content: input.message,
         });
 
+        // Sanitize the response content
+        const sanitizedResponse = autoSanitize(result.summary);
+        
         await ctx.conversationService.addMessage(conversation.id, {
           role: "assistant",
-          content: result.summary,
+          content: sanitizedResponse.content,
         });
 
         // Emit event for real-time updates
@@ -71,21 +74,23 @@ export const chatRouter = createFeatureRouter(
           conversationId: conversation.id,
           message: {
             role: "assistant",
-            content: result.summary,
+            content: sanitizedResponse.content,
           },
         });
 
         logger.info("Chat conversation created successfully", "CHAT", {
           conversationId: conversation.id,
           userId: ctx.user?.id,
-          responseLength: result.summary.length,
+          responseLength: sanitizedResponse.content.length,
+          xssProtected: sanitizedResponse.metadata?.xssProtected,
         });
 
         return {
           conversationId: conversation.id,
-          response: result.summary,
+          response: sanitizedResponse.content,
           metadata: {
             ...result.metadata,
+            ...sanitizedResponse.metadata,
             requestId: ctx.requestId,
             timestamp: ctx.timestamp,
           },
@@ -96,8 +101,8 @@ export const chatRouter = createFeatureRouter(
     message: publicProcedure
       .input(
         z.object({
-          conversationId: commonSchemas.id,
-          message: z.string().min(1).max(5000),
+          conversationId: sanitizationSchemas.identifier,
+          message: sanitizationSchemas.string.min(1).max(5000),
         }),
       )
       .mutation(async ({ input, ctx }) => {
@@ -128,10 +133,13 @@ export const chatRouter = createFeatureRouter(
           history: conversation.messages,
         });
 
+        // Sanitize the response content
+        const sanitizedResponse = autoSanitize(result.summary);
+        
         // Add assistant response
         await ctx.conversationService.addMessage(input.conversationId, {
           role: "assistant",
-          content: result.summary,
+          content: sanitizedResponse.content,
         });
 
         // Emit event
@@ -139,13 +147,16 @@ export const chatRouter = createFeatureRouter(
           conversationId: input.conversationId,
           message: {
             role: "assistant",
-            content: result.summary,
+            content: sanitizedResponse.content,
           },
         });
 
         return {
-          response: result.summary,
-          metadata: result.metadata,
+          response: sanitizedResponse.content,
+          metadata: {
+            ...result.metadata,
+            ...sanitizedResponse.metadata,
+          },
         };
       }),
 

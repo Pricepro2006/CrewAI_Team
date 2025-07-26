@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Message } from './types';
+import { SafeContent, SafeText } from '../SafeContent';
 import './MessageList.css';
 
 interface MessageListProps {
@@ -14,46 +15,60 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isProcessing
       return <p className="text-gray-500">No content</p>;
     }
     
-    // Simple markdown-like formatting
-    return content
-      .split('\n')
-      .map((line, i) => {
-        // Code blocks
-        if (line.startsWith('```')) {
-          return <pre key={i} className="code-block">{line.substring(3)}</pre>;
+    // Convert markdown to HTML safely
+    const convertedContent = convertMarkdownToHTML(content);
+    
+    // Use SafeContent to render with XSS protection
+    return <SafeContent content={convertedContent} level="moderate" />;
+  };
+  
+  // Safe markdown to HTML conversion
+  const convertMarkdownToHTML = (markdown: string): string => {
+    let html = markdown;
+    
+    // Escape HTML first to prevent XSS
+    html = html
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+    
+    // Convert code blocks
+    html = html.replace(/```([^`]+)```/g, '<pre class="code-block"><code>$1</code></pre>');
+    
+    // Convert headers
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h4>$1</h4>');
+    html = html.replace(/^# (.+)$/gm, '<h5>$1</h5>');
+    
+    // Convert bold text
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // Convert italic text
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    
+    // Convert lists
+    html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>');
+    
+    // Wrap consecutive list items in ul/ol tags
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => {
+      return `<ul>${match}</ul>`;
+    });
+    
+    // Convert line breaks to paragraphs
+    const lines = html.split('\n');
+    html = lines
+      .map(line => {
+        if (line.trim() && !line.startsWith('<')) {
+          return `<p>${line}</p>`;
         }
-        
-        // Headers
-        if (line.startsWith('# ')) {
-          return <h3 key={i}>{line.substring(2)}</h3>;
-        }
-        if (line.startsWith('## ')) {
-          return <h4 key={i}>{line.substring(3)}</h4>;
-        }
-        
-        // Bold text
-        if (line.includes('**')) {
-          const parts = line.split('**');
-          return (
-            <p key={i}>
-              {parts.map((part, j) => 
-                j % 2 === 1 ? <strong key={j}>{part}</strong> : part
-              )}
-            </p>
-          );
-        }
-        
-        // Lists
-        if (line.startsWith('- ') || line.startsWith('* ')) {
-          return <li key={i}>{line.substring(2)}</li>;
-        }
-        if (/^\d+\.\s/.test(line)) {
-          return <li key={i}>{line.substring(line.indexOf('.') + 2)}</li>;
-        }
-        
-        // Regular paragraph
-        return line.trim() ? <p key={i}>{line}</p> : <br key={i} />;
-      });
+        return line;
+      })
+      .join('\n');
+    
+    return html;
   };
 
   return (

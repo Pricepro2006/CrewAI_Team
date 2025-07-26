@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import Database from 'better-sqlite3';
 import * as bcrypt from "bcrypt";
 import * as jwt from "jsonwebtoken";
+import * as crypto from "crypto";
 import appConfig from "../../config/app.config";
 import { logger } from "../../utils/logger";
 
@@ -57,17 +58,114 @@ export class UserService {
 
   constructor() {
     this.db = new Database(appConfig.database.path);
-    this.jwtSecret =
-      process.env["JWT_SECRET"] || "dev-secret-key-change-in-production";
-
-    if (
-      this.jwtSecret === "dev-secret-key-change-in-production" &&
-      process.env["NODE_ENV"] === "production"
-    ) {
-      throw new Error("JWT_SECRET must be set in production environment");
-    }
-
+    
+    // Initialize JWT secret with enhanced security validation
+    this.jwtSecret = this.initializeJwtSecret();
+    
     this.initializeDatabase();
+  }
+
+  private initializeJwtSecret(): string {
+    const nodeEnv = process.env["NODE_ENV"] || "development";
+    const envJwtSecret = process.env["JWT_SECRET"];
+    
+    // Define insecure patterns that should never be used
+    const insecurePatterns = [
+      "dev-secret-key-change-in-production",
+      "secret",
+      "password",
+      "123456",
+      "default",
+      "changeme",
+      "your-jwt-secret-here"
+    ];
+    
+    // Check if JWT_SECRET is set
+    if (!envJwtSecret) {
+      const errorMsg = "JWT_SECRET environment variable is not set";
+      
+      if (nodeEnv === "production") {
+        // In production, fail immediately
+        logger.error(errorMsg, "SECURITY", { 
+          severity: "CRITICAL",
+          recommendation: "Set JWT_SECRET to a secure random string of at least 32 characters"
+        });
+        throw new Error(`${errorMsg}. Application cannot start in production without a secure JWT secret.`);
+      } else {
+        // In development, generate a temporary secure secret and warn
+        const tempSecret = crypto.randomBytes(32).toString('hex');
+        logger.warn(
+          `${errorMsg}. Using temporary generated secret for development ONLY.`,
+          "SECURITY",
+          {
+            environment: nodeEnv,
+            recommendation: "Set JWT_SECRET in your .env file for consistent development"
+          }
+        );
+        return tempSecret;
+      }
+    }
+    
+    // Validate JWT secret strength
+    const jwtSecretLower = envJwtSecret.toLowerCase();
+    
+    // Check against insecure patterns
+    const hasInsecurePattern = insecurePatterns.some(pattern => 
+      jwtSecretLower.includes(pattern.toLowerCase())
+    );
+    
+    if (hasInsecurePattern) {
+      const errorMsg = "JWT_SECRET contains insecure or default values";
+      logger.error(errorMsg, "SECURITY", {
+        severity: "CRITICAL",
+        environment: nodeEnv,
+        recommendation: "Replace with a cryptographically secure random string"
+      });
+      
+      if (nodeEnv === "production") {
+        throw new Error(`${errorMsg}. Application cannot start with an insecure JWT secret.`);
+      }
+    }
+    
+    // Check minimum length requirement
+    if (envJwtSecret.length < 32) {
+      const errorMsg = `JWT_SECRET is too short (${envJwtSecret.length} characters). Minimum 32 characters required.`;
+      logger.error(errorMsg, "SECURITY", {
+        severity: "HIGH",
+        environment: nodeEnv,
+        currentLength: envJwtSecret.length,
+        requiredLength: 32
+      });
+      
+      if (nodeEnv === "production") {
+        throw new Error(errorMsg);
+      }
+    }
+    
+    // Check for sufficient entropy (basic check)
+    const uniqueChars = new Set(envJwtSecret).size;
+    if (uniqueChars < 10) {
+      const errorMsg = "JWT_SECRET has insufficient character diversity";
+      logger.warn(errorMsg, "SECURITY", {
+        severity: "MEDIUM",
+        environment: nodeEnv,
+        uniqueCharacters: uniqueChars,
+        recommendation: "Use a mix of uppercase, lowercase, numbers, and special characters"
+      });
+      
+      if (nodeEnv === "production" && uniqueChars < 8) {
+        throw new Error(`${errorMsg}. Production requires higher entropy.`);
+      }
+    }
+    
+    // Log successful initialization (without exposing the secret)
+    logger.info("JWT secret initialized successfully", "SECURITY", {
+      environment: nodeEnv,
+      secretLength: envJwtSecret.length,
+      entropyCheck: uniqueChars >= 10 ? "PASS" : "WARN"
+    });
+    
+    return envJwtSecret;
   }
 
   private initializeDatabase(): void {
@@ -230,35 +328,88 @@ export class UserService {
   }
 
   async refreshTokens(refreshToken: string): Promise<AuthTokens> {
-    // Verify refresh token
+    // Verify refresh token JWT structure and signature
     let payload: JWTPayload;
     try {
       payload = jwt.verify(refreshToken, this.jwtSecret) as JWTPayload;
     } catch (error) {
+      logger.warn("Invalid refresh token JWT verification failed", "SECURITY", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
       throw new Error("Invalid or expired refresh token");
     }
 
-    // Check if refresh token exists and is valid
-    const tokenHash = await bcrypt.hash(refreshToken, 5);
-    const storedToken = this.db
+    // Get all valid refresh tokens for the user
+    const storedTokens = this.db
       .prepare(
         `
       SELECT * FROM refresh_tokens 
       WHERE user_id = ? AND expires_at > datetime('now') AND revoked_at IS NULL
-      ORDER BY created_at DESC
-      LIMIT 1
     `,
       )
-      .get(payload.userId) as { id: string; user_id: string; token_hash: string; expires_at: string; created_at: string; revoked_at: string | null } | undefined;
+      .all(payload.userId) as Array<{ 
+        id: string; 
+        user_id: string; 
+        token_hash: string; 
+        expires_at: string; 
+        created_at: string; 
+        revoked_at: string | null 
+      }>;
 
-    if (!storedToken) {
+    if (!storedTokens || storedTokens.length === 0) {
+      logger.warn("No valid refresh tokens found for user", "SECURITY", {
+        userId: payload.userId,
+      });
+      throw new Error("Invalid refresh token");
+    }
+
+    // CRITICAL FIX: Actually verify the token hash matches a stored token
+    let matchingToken: typeof storedTokens[0] | null = null;
+    for (const storedToken of storedTokens) {
+      const isMatch = await bcrypt.compare(refreshToken, storedToken.token_hash);
+      if (isMatch) {
+        matchingToken = storedToken;
+        break;
+      }
+    }
+
+    if (!matchingToken) {
+      logger.error("Refresh token hash verification failed", "SECURITY", {
+        userId: payload.userId,
+        severity: "HIGH",
+        message: "Attempted token refresh with invalid token hash",
+      });
       throw new Error("Invalid refresh token");
     }
 
     // Get user
     const user = await this.getById(payload.userId);
     if (!user || !user.isActive) {
+      logger.warn("Refresh token used for inactive or non-existent user", "SECURITY", {
+        userId: payload.userId,
+      });
       throw new Error("User not found or inactive");
+    }
+
+    // CRITICAL: Immediately revoke the used refresh token to ensure one-time use
+    const revokeResult = this.db
+      .prepare(
+        `
+      UPDATE refresh_tokens 
+      SET revoked_at = ? 
+      WHERE id = ? AND revoked_at IS NULL
+    `,
+      )
+      .run(new Date().toISOString(), matchingToken.id);
+
+    // Verify the token was actually revoked (prevent race conditions)
+    if (revokeResult.changes === 0) {
+      logger.error("Refresh token already used - possible replay attack", "SECURITY", {
+        userId: payload.userId,
+        tokenId: matchingToken.id,
+        severity: "CRITICAL",
+      });
+      throw new Error("Invalid refresh token");
     }
 
     // Generate new tokens
@@ -272,34 +423,61 @@ export class UserService {
     // Store new refresh token
     await this.storeRefreshToken(user.id, newTokens.refreshToken);
 
-    // Revoke old refresh token
-    this.db
-      .prepare(
-        `
-      UPDATE refresh_tokens SET revoked_at = ? WHERE id = ?
-    `,
-      )
-      .run(new Date().toISOString(), storedToken.id);
+    logger.info("Tokens refreshed successfully", "AUTH", {
+      userId: user.id,
+      oldTokenId: matchingToken.id,
+    });
 
     return newTokens;
   }
 
   async logout(userId: string, refreshToken?: string): Promise<void> {
     if (refreshToken) {
-      // Revoke specific refresh token
-      const tokenHash = await bcrypt.hash(refreshToken, 5);
-      this.db
+      // Get all valid refresh tokens for the user
+      const storedTokens = this.db
         .prepare(
           `
-        UPDATE refresh_tokens 
-        SET revoked_at = ? 
-        WHERE user_id = ? AND token_hash = ?
+        SELECT id, token_hash FROM refresh_tokens 
+        WHERE user_id = ? AND revoked_at IS NULL
       `,
         )
-        .run(new Date().toISOString(), userId, tokenHash);
+        .all(userId) as Array<{ id: string; token_hash: string }>;
+
+      // Find matching token by comparing hashes
+      let tokenToRevoke: string | null = null;
+      for (const storedToken of storedTokens) {
+        const isMatch = await bcrypt.compare(refreshToken, storedToken.token_hash);
+        if (isMatch) {
+          tokenToRevoke = storedToken.id;
+          break;
+        }
+      }
+
+      if (tokenToRevoke) {
+        // Revoke the specific refresh token
+        this.db
+          .prepare(
+            `
+          UPDATE refresh_tokens 
+          SET revoked_at = ? 
+          WHERE id = ? AND revoked_at IS NULL
+        `,
+          )
+          .run(new Date().toISOString(), tokenToRevoke);
+        
+        logger.info("Specific refresh token revoked", "AUTH", { 
+          userId, 
+          tokenId: tokenToRevoke 
+        });
+      } else {
+        logger.warn("Logout attempted with invalid refresh token", "SECURITY", {
+          userId,
+          message: "Token not found or already revoked",
+        });
+      }
     } else {
       // Revoke all refresh tokens for user
-      this.db
+      const result = this.db
         .prepare(
           `
         UPDATE refresh_tokens 
@@ -308,9 +486,12 @@ export class UserService {
       `,
         )
         .run(new Date().toISOString(), userId);
-    }
 
-    logger.info("User logged out", "AUTH", { userId });
+      logger.info("All refresh tokens revoked for user", "AUTH", { 
+        userId,
+        tokensRevoked: result.changes,
+      });
+    }
   }
 
   async getById(id: string): Promise<User | null> {
@@ -518,21 +699,36 @@ export class UserService {
     userId: string,
     refreshToken: string,
   ): Promise<void> {
-    const tokenHash = await bcrypt.hash(refreshToken, 5);
+    // Use higher bcrypt cost factor (10) for refresh tokens for better security
+    const tokenHash = await bcrypt.hash(refreshToken, 10);
     const id = uuidv4();
     const now = new Date().toISOString();
     const expiresAt = new Date(
       Date.now() + 7 * 24 * 60 * 60 * 1000,
     ).toISOString(); // 7 days
 
-    this.db
-      .prepare(
-        `
-      INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, created_at)
-      VALUES (?, ?, ?, ?, ?)
-    `,
-      )
-      .run(id, userId, tokenHash, expiresAt, now);
+    try {
+      this.db
+        .prepare(
+          `
+        INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `,
+        )
+        .run(id, userId, tokenHash, expiresAt, now);
+      
+      logger.debug("Refresh token stored", "AUTH", {
+        userId,
+        tokenId: id,
+        expiresAt,
+      });
+    } catch (error) {
+      logger.error("Failed to store refresh token", "SECURITY", {
+        userId,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+      throw new Error("Failed to store refresh token");
+    }
   }
 
   async cleanupExpiredTokens(): Promise<void> {
