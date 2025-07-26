@@ -24,6 +24,10 @@ import { WalmartDashboard } from "../client/components/walmart/WalmartDashboard"
 import "./App.css";
 
 function App() {
+  // Apply dark mode by default
+  React.useEffect(() => {
+    document.documentElement.classList.add('dark');
+  }, []);
   // Create query client inside component
   const [queryClient] = React.useState(
     () =>
@@ -114,11 +118,11 @@ function App() {
                 element={<Navigate to="/email-dashboard" replace />}
               />
               <Route path="walmart" element={<WalmartDashboard />} />
-              <Route path="walmart/search" element={<WalmartDashboard />} />
-              <Route path="walmart/cart" element={<WalmartDashboard />} />
-              <Route path="walmart/lists" element={<WalmartDashboard />} />
-              <Route path="walmart/budget" element={<WalmartDashboard />} />
-              <Route path="walmart/orders" element={<WalmartDashboard />} />
+              <Route path="walmart/search" element={<WalmartDashboard activeTab="search" />} />
+              <Route path="walmart/cart" element={<WalmartDashboard activeTab="cart" />} />
+              <Route path="walmart/lists" element={<WalmartDashboard activeTab="lists" />} />
+              <Route path="walmart/budget" element={<WalmartDashboard activeTab="budget" />} />
+              <Route path="walmart/orders" element={<WalmartDashboard activeTab="orders" />} />
               <Route path="web-scraping" element={<WebScraping />} />
               <Route path="knowledge-base" element={<KnowledgeBase />} />
               <Route path="vector-search" element={<VectorSearch />} />

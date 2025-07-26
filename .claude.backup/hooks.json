@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "pre-commit": {
+      "enabled": true,
+      "commands": ["pnpm lint", "pnpm typecheck", "pnpm test:related"]
+    },
+    "pre-push": {
+      "enabled": true,
+      "commands": ["pnpm test", "pnpm build"]
+    },
+    "post-merge": {
+      "enabled": true,
+      "commands": ["pnpm install", "pnpm approve-builds"]
+    },
+    "pre-code-change": {
+      "enabled": true,
+      "actions": ["backup-file", "create-test-if-missing", "update-imports"]
+    },
+    "post-code-change": {
+      "enabled": true,
+      "actions": ["format-code", "update-documentation", "run-affected-tests"]
+    }
+  },
+  "settings": {
+    "autoBackup": true,
+    "backupDir": ".claude/backups",
+    "testCoverage": {
+      "threshold": 80,
+      "enforceOnCommit": true
+    },
+    "codeQuality": {
+      "enforceESLint": true,
+      "enforceTypeScript": true,
+      "maxComplexity": 10
+    }
+  }
+}

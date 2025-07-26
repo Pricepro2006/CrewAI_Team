@@ -1,0 +1,275 @@
+{
+  "templates": [
+    {
+      "name": "React Functional Component",
+      "file": "react-component-functional.tsx",
+      "description": "Basic React functional component with TypeScript",
+      "category": "React",
+      "variables": [
+        {
+          "name": "ComponentName",
+          "description": "Component name in PascalCase",
+          "example": "UserProfile"
+        },
+        {
+          "name": "ComponentDescription",
+          "description": "Brief description of the component",
+          "example": "Displays user profile information"
+        }
+      ]
+    },
+    {
+      "name": "React Component with Hooks",
+      "file": "react-component-with-hooks.tsx",
+      "description": "Advanced React component with comprehensive hooks usage",
+      "category": "React",
+      "variables": [
+        {
+          "name": "ComponentName",
+          "description": "Component name in PascalCase",
+          "example": "SearchForm"
+        }
+      ]
+    },
+    {
+      "name": "React Context Provider",
+      "file": "react-context-provider.tsx",
+      "description": "Context API provider with TypeScript",
+      "category": "React",
+      "variables": [
+        {
+          "name": "ContextName",
+          "description": "Context name in PascalCase",
+          "example": "Authentication"
+        },
+        {
+          "name": "contextDescription",
+          "description": "What this context provides",
+          "example": "user authentication state and methods"
+        }
+      ]
+    },
+    {
+      "name": "React Custom Hook",
+      "file": "react-custom-hook.ts",
+      "description": "Custom React hook with async data fetching",
+      "category": "React",
+      "variables": [
+        {
+          "name": "HookName",
+          "description": "Hook name starting with 'use'",
+          "example": "useApiData"
+        },
+        {
+          "name": "hookDescription",
+          "description": "What this hook does",
+          "example": "Fetches and manages API data with caching"
+        }
+      ]
+    },
+    {
+      "name": "TypeScript API Endpoint",
+      "file": "typescript-api-endpoint.ts",
+      "description": "Express API endpoint with Zod validation",
+      "category": "API",
+      "variables": [
+        {
+          "name": "EndpointName",
+          "description": "Endpoint name in PascalCase",
+          "example": "CreateUser"
+        },
+        {
+          "name": "endpointName",
+          "description": "Endpoint name in camelCase",
+          "example": "createUser"
+        },
+        {
+          "name": "endpoint-path",
+          "description": "URL path for the endpoint",
+          "example": "users"
+        }
+      ]
+    },
+    {
+      "name": "Express Router",
+      "file": "express-router.ts",
+      "description": "Complete Express router with middleware",
+      "category": "API",
+      "variables": [
+        {
+          "name": "ServiceName",
+          "description": "Service name in PascalCase",
+          "example": "UserService"
+        },
+        {
+          "name": "serviceName",
+          "description": "Service name in camelCase",
+          "example": "userService"
+        },
+        {
+          "name": "resource",
+          "description": "Resource name (lowercase)",
+          "example": "users"
+        },
+        {
+          "name": "routerName",
+          "description": "Router export name",
+          "example": "users"
+        }
+      ]
+    },
+    {
+      "name": "tRPC Router",
+      "file": "trpc-router.ts",
+      "description": "Type-safe tRPC router implementation",
+      "category": "API",
+      "variables": [
+        {
+          "name": "RouterName",
+          "description": "Router name in PascalCase",
+          "example": "User"
+        },
+        {
+          "name": "routerName",
+          "description": "Router name in camelCase",
+          "example": "user"
+        },
+        {
+          "name": "ServiceName",
+          "description": "Service class name",
+          "example": "UserService"
+        }
+      ]
+    },
+    {
+      "name": "TypeScript Service Class",
+      "file": "typescript-service-class.ts",
+      "description": "Singleton service class with events",
+      "category": "Services",
+      "variables": [
+        {
+          "name": "ServiceName",
+          "description": "Service name in PascalCase",
+          "example": "EmailService"
+        },
+        {
+          "name": "ServiceDescription",
+          "description": "What this service does",
+          "example": "Handles email sending and processing"
+        }
+      ]
+    },
+    {
+      "name": "Node.js Module",
+      "file": "nodejs-module.js",
+      "description": "CommonJS module with EventEmitter",
+      "category": "Services",
+      "variables": [
+        {
+          "name": "ModuleName",
+          "description": "Module name in PascalCase",
+          "example": "DataProcessor"
+        },
+        {
+          "name": "moduleName",
+          "description": "Module name in camelCase",
+          "example": "dataProcessor"
+        }
+      ]
+    },
+    {
+      "name": "TypeScript Interface Types",
+      "file": "typescript-interface-types.ts",
+      "description": "Comprehensive type definitions",
+      "category": "Types",
+      "variables": [
+        {
+          "name": "InterfaceName",
+          "description": "Main interface name",
+          "example": "Product"
+        },
+        {
+          "name": "EntityName",
+          "description": "Entity name for enums",
+          "example": "Product"
+        }
+      ]
+    },
+    {
+      "name": "Utility Functions",
+      "file": "utility-functions.ts",
+      "description": "Common utility functions library",
+      "category": "Utilities",
+      "variables": [
+        {
+          "name": "UtilityName",
+          "description": "Utility module name",
+          "example": "StringHelpers"
+        },
+        {
+          "name": "utilityName",
+          "description": "Utility name in camelCase",
+          "example": "stringHelpers"
+        }
+      ]
+    },
+    {
+      "name": "Jest Test Suite",
+      "file": "jest-test-suite.ts",
+      "description": "Comprehensive Jest test suite",
+      "category": "Testing",
+      "variables": [
+        {
+          "name": "ModuleName",
+          "description": "Module being tested",
+          "example": "UserService"
+        },
+        {
+          "name": "module-path",
+          "description": "Path to the module",
+          "example": "services/UserService"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    {
+      "name": "React",
+      "description": "React component templates",
+      "icon": "⚛️"
+    },
+    {
+      "name": "API",
+      "description": "API endpoint and router templates",
+      "icon": "🔌"
+    },
+    {
+      "name": "Services",
+      "description": "Service and module templates",
+      "icon": "⚙️"
+    },
+    {
+      "name": "Types",
+      "description": "TypeScript type definition templates",
+      "icon": "📝"
+    },
+    {
+      "name": "Utilities",
+      "description": "Utility function templates",
+      "icon": "🛠️"
+    },
+    {
+      "name": "Testing",
+      "description": "Test suite templates",
+      "icon": "🧪"
+    }
+  ],
+  "configuration": {
+    "variablePattern": "{{([^}]+)}}",
+    "defaultCategory": "Utilities",
+    "fileExtensions": {
+      "typescript": [".ts", ".tsx"],
+      "javascript": [".js", ".jsx"]
+    }
+  }
+}
