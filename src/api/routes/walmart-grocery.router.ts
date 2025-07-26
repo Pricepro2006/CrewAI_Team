@@ -167,26 +167,63 @@ export const walmartGroceryRouter = createFeatureRouter(
           // Transform CollectedData to WalmartProduct format
           const searchResults: WalmartProduct[] = collectedData.map(item => ({
             id: item.data.id || item.id,
+            walmartId: item.data.id || item.id,
+            upc: item.data.upc,
             name: item.data.name || item.data.title || '',
-            description: item.data.description,
-            brand: item.data.brand,
-            category: item.data.category || 'Uncategorized',
-            price: parseFloat(item.data.price) || 0,
-            originalPrice: item.data.originalPrice ? parseFloat(item.data.originalPrice) : undefined,
-            unit: item.data.unit || 'each',
-            size: item.data.size,
-            imageUrl: item.data.imageUrl || item.data.image,
-            inStock: item.data.inStock !== false,
-            stockLevel: item.data.stockLevel,
+            brand: item.data.brand || '',
+            category: {
+              id: item.data.categoryId || '1',
+              name: typeof item.data.category === 'string' ? item.data.category : 'Uncategorized',
+              path: typeof item.data.category === 'string' ? [item.data.category] : ['Uncategorized'],
+              level: 1
+            },
+            subcategory: item.data.subcategory,
+            description: item.data.description || '',
+            shortDescription: item.data.shortDescription,
+            price: {
+              currency: 'USD',
+              regular: parseFloat(item.data.price) || 0,
+              sale: item.data.originalPrice ? parseFloat(item.data.originalPrice) : undefined,
+              unit: item.data.unitPrice ? parseFloat(item.data.unitPrice) : undefined,
+              unitOfMeasure: item.data.unit || 'each',
+              pricePerUnit: item.data.pricePerUnit,
+              wasPrice: item.data.originalPrice ? parseFloat(item.data.originalPrice) : undefined
+            },
+            images: [{
+              id: '1',
+              url: item.data.imageUrl || item.data.image || '',
+              type: 'primary' as const,
+              alt: item.data.name || item.data.title || ''
+            }],
+            availability: {
+              inStock: item.data.inStock !== false,
+              stockLevel: item.data.stockLevel ? (item.data.inStock ? ('in_stock' as const) : ('out_of_stock' as const)) : undefined,
+              quantity: item.data.quantity,
+              onlineOnly: item.data.onlineOnly,
+              instoreOnly: item.data.instoreOnly
+            },
             ratings: item.data.rating ? {
               average: parseFloat(item.data.rating),
-              count: parseInt(item.data.reviewCount) || 0
+              count: parseInt(item.data.reviewCount) || 0,
+              distribution: {
+                5: 0,
+                4: 0,
+                3: 0,
+                2: 0,
+                1: 0
+              }
             } : undefined,
-            nutritionalInfo: item.data.nutritionalInfo,
+            nutritionFacts: item.data.nutritionalInfo,
+            ingredients: item.data.ingredients,
             allergens: item.data.allergens,
-            isOrganic: item.data.isOrganic,
-            isGlutenFree: item.data.isGlutenFree,
-            isVegan: item.data.isVegan
+            metadata: {
+              source: 'scrape' as const,
+              lastScraped: new Date().toISOString(),
+              confidence: 0.8,
+              dealEligible: true
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           }));
 
           // Process with MasterOrchestrator for enhanced analysis

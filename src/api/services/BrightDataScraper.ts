@@ -46,7 +46,7 @@ export class BrightDataScraper {
       apiKey: process.env.BRIGHTDATA_API_KEY || "",
       apiSecret: process.env.BRIGHTDATA_API_SECRET,
       timeout: 30000,
-      retries: 3
+      retries: 3,
     };
 
     // Initialize BrightData client
@@ -65,12 +65,14 @@ export class BrightDataScraper {
       // In production, this would initialize the actual BrightData SDK
       // For now, we'll use a mock implementation
       this.brightDataClient = {
-        scrape: async (options: any) => this.mockScrape(options)
+        scrape: async (options: any) => this.mockScrape(options),
       };
 
       logger.info("BrightData scraper initialized", "BRIGHTDATA");
     } catch (error) {
-      logger.error("Failed to initialize BrightData client", "BRIGHTDATA", { error });
+      logger.error("Failed to initialize BrightData client", "BRIGHTDATA", {
+        error,
+      });
       throw error;
     }
   }
@@ -85,9 +87,9 @@ export class BrightDataScraper {
     filters?: SearchFilters;
   }): Promise<WalmartProduct[]> {
     try {
-      logger.info("Searching Walmart products", "BRIGHTDATA", { 
+      logger.info("Searching Walmart products", "BRIGHTDATA", {
         query: options.query,
-        limit: options.limit 
+        limit: options.limit,
       });
 
       const scrapeOptions = {
@@ -95,7 +97,7 @@ export class BrightDataScraper {
         platform: "walmart",
         searchKeyword: options.query,
         maxProducts: options.limit || 20,
-        filters: this.buildSearchFilters(options.filters)
+        filters: this.buildSearchFilters(options.filters),
       };
 
       const results = await this.executeWithRetry(async () => {
@@ -104,7 +106,9 @@ export class BrightDataScraper {
 
       return this.transformSearchResults(results);
     } catch (error) {
-      logger.error("Failed to search Walmart products", "BRIGHTDATA", { error });
+      logger.error("Failed to search Walmart products", "BRIGHTDATA", {
+        error,
+      });
       throw error;
     }
   }
@@ -119,7 +123,7 @@ export class BrightDataScraper {
       const scrapeOptions = {
         url: `https://www.walmart.com/ip/${productId}`,
         platform: "walmart",
-        extractDetails: true
+        extractDetails: true,
       };
 
       const result = await this.executeWithRetry(async () => {
@@ -130,7 +134,10 @@ export class BrightDataScraper {
 
       return this.transformProductDetails(result);
     } catch (error) {
-      logger.error("Failed to get product details", "BRIGHTDATA", { error, productId });
+      logger.error("Failed to get product details", "BRIGHTDATA", {
+        error,
+        productId,
+      });
       return null;
     }
   }
@@ -140,18 +147,18 @@ export class BrightDataScraper {
    */
   async monitorPrices(productIds: string[]): Promise<Map<string, number>> {
     try {
-      logger.info("Monitoring prices", "BRIGHTDATA", { 
-        count: productIds.length 
+      logger.info("Monitoring prices", "BRIGHTDATA", {
+        count: productIds.length,
       });
 
       const priceMap = new Map<string, number>();
-      
+
       // Batch process for efficiency
       const batchSize = 10;
       for (let i = 0; i < productIds.length; i += batchSize) {
         const batch = productIds.slice(i, i + batchSize);
         const batchResults = await Promise.all(
-          batch.map(id => this.getProductPrice(id))
+          batch.map((id) => this.getProductPrice(id)),
         );
 
         batch.forEach((id, index) => {
@@ -171,7 +178,10 @@ export class BrightDataScraper {
   /**
    * Get product availability by store
    */
-  async checkStoreAvailability(productId: string, zipCode: string): Promise<{
+  async checkStoreAvailability(
+    productId: string,
+    zipCode: string,
+  ): Promise<{
     online: boolean;
     stores: Array<{
       storeId: string;
@@ -182,16 +192,16 @@ export class BrightDataScraper {
     }>;
   }> {
     try {
-      logger.info("Checking store availability", "BRIGHTDATA", { 
-        productId, 
-        zipCode 
+      logger.info("Checking store availability", "BRIGHTDATA", {
+        productId,
+        zipCode,
       });
 
       const scrapeOptions = {
         url: `https://www.walmart.com/ip/${productId}`,
         platform: "walmart",
         checkAvailability: true,
-        zipCode
+        zipCode,
       };
 
       const result = await this.executeWithRetry(async () => {
@@ -208,18 +218,21 @@ export class BrightDataScraper {
   /**
    * Scrape category listings
    */
-  async scrapeCategoryProducts(categoryPath: string, limit: number = 50): Promise<WalmartProduct[]> {
+  async scrapeCategoryProducts(
+    categoryPath: string,
+    limit: number = 50,
+  ): Promise<WalmartProduct[]> {
     try {
-      logger.info("Scraping category products", "BRIGHTDATA", { 
+      logger.info("Scraping category products", "BRIGHTDATA", {
         category: categoryPath,
-        limit 
+        limit,
       });
 
       const scrapeOptions = {
         url: `https://www.walmart.com/browse/${categoryPath}`,
         platform: "walmart",
         maxProducts: limit,
-        extractDetails: false
+        extractDetails: false,
       };
 
       const results = await this.executeWithRetry(async () => {
@@ -236,14 +249,19 @@ export class BrightDataScraper {
   /**
    * Get product reviews
    */
-  async getProductReviews(productId: string, limit: number = 10): Promise<Array<{
-    rating: number;
-    title: string;
-    comment: string;
-    author: string;
-    date: string;
-    verified: boolean;
-  }>> {
+  async getProductReviews(
+    productId: string,
+    limit: number = 10,
+  ): Promise<
+    Array<{
+      rating: number;
+      title: string;
+      comment: string;
+      author: string;
+      date: string;
+      verified: boolean;
+    }>
+  > {
     try {
       logger.info("Fetching product reviews", "BRIGHTDATA", { productId });
 
@@ -251,7 +269,7 @@ export class BrightDataScraper {
         url: `https://www.walmart.com/reviews/product/${productId}`,
         platform: "walmart",
         extractReviews: true,
-        maxReviews: limit
+        maxReviews: limit,
       };
 
       const result = await this.executeWithRetry(async () => {
@@ -270,21 +288,25 @@ export class BrightDataScraper {
    */
   private async executeWithRetry<T>(operation: () => Promise<T>): Promise<T> {
     let lastError: any;
-    
+
     for (let attempt = 1; attempt <= this.config.retries!; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error;
-        logger.warn(`Scrape attempt ${attempt} failed`, "BRIGHTDATA", { error });
-        
+        logger.warn(`Scrape attempt ${attempt} failed`, "BRIGHTDATA", {
+          error,
+        });
+
         if (attempt < this.config.retries!) {
           // Exponential backoff
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.pow(2, attempt) * 1000),
+          );
         }
       }
     }
-    
+
     throw lastError;
   }
 
@@ -324,7 +346,7 @@ export class BrightDataScraper {
    * Helper: Transform search results to WalmartProduct format
    */
   private transformSearchResults(results: any[]): WalmartProduct[] {
-    return results.map(item => this.transformToWalmartProduct(item));
+    return results.map((item) => this.transformToWalmartProduct(item));
   }
 
   /**
@@ -337,33 +359,86 @@ export class BrightDataScraper {
   /**
    * Helper: Transform scraped data to WalmartProduct
    */
-  private transformToWalmartProduct(data: any, detailed: boolean = false): WalmartProduct {
+  private transformToWalmartProduct(
+    data: any,
+    detailed: boolean = false,
+  ): WalmartProduct {
     return {
       id: data.id || data.productId || "",
+      walmartId: data.id || data.productId || "",
+      upc: detailed ? data.upc : undefined,
       name: data.name || data.title || "",
-      brand: data.brand,
-      description: detailed ? data.description : undefined,
-      category: data.category || data.categoryPath || "Uncategorized",
+      brand: data.brand || "",
+      category: {
+        id: data.categoryId || "1",
+        name:
+          typeof data.category === "string"
+            ? data.category
+            : data.categoryPath || "Uncategorized",
+        path:
+          typeof data.category === "string"
+            ? [data.category]
+            : data.categoryPath
+              ? [data.categoryPath]
+              : ["Uncategorized"],
+        level: 1,
+      },
       subcategory: data.subcategory,
-      price: data.price || data.currentPrice || 0,
-      originalPrice: data.regularPrice || data.wasPrice,
-      unit: data.unitMeasure || "each",
-      size: detailed ? data.size : undefined,
-      imageUrl: data.largeImageUrl || data.imageUrl,
-      thumbnailUrl: data.thumbnailUrl || data.imageUrl,
-      barcode: detailed ? data.upc : undefined,
-      inStock: data.inStock !== false,
-      stockLevel: data.stockLevel,
-      location: data.aisleLocation ? { aisle: data.aisleLocation } : undefined,
-      ratings: (data.rating || data.averageRating) ? {
-        average: data.rating || data.averageRating,
-        count: data.reviewCount || 0
-      } : undefined,
-      nutritionalInfo: detailed ? data.nutritionalInfo : undefined,
+      description: detailed ? data.description || "" : "",
+      shortDescription: data.shortDescription,
+      price: {
+        currency: "USD",
+        regular: parseFloat(data.price || data.currentPrice) || 0,
+        sale: data.regularPrice ? parseFloat(data.regularPrice) : undefined,
+        unit: data.unitPrice ? parseFloat(data.unitPrice) : undefined,
+        unitOfMeasure: data.unitMeasure || "each",
+        pricePerUnit: data.pricePerUnit,
+        wasPrice: data.wasPrice ? parseFloat(data.wasPrice) : undefined,
+      },
+      images: [
+        {
+          id: "1",
+          url: data.largeImageUrl || data.imageUrl || "",
+          type: "primary" as const,
+          alt: data.name || data.title || "",
+        },
+      ],
+      availability: {
+        inStock: data.inStock !== false,
+        stockLevel: data.stockLevel
+          ? data.inStock
+            ? ("in_stock" as const)
+            : ("out_of_stock" as const)
+          : undefined,
+        quantity: data.quantity,
+        onlineOnly: data.onlineOnly,
+        instoreOnly: data.instoreOnly,
+      },
+      ratings:
+        data.rating || data.averageRating
+          ? {
+              average: data.rating || data.averageRating,
+              count: data.reviewCount || 0,
+              distribution: {
+                5: 0,
+                4: 0,
+                3: 0,
+                2: 0,
+                1: 0,
+              },
+            }
+          : undefined,
+      nutritionFacts: detailed ? data.nutritionalInfo : undefined,
+      ingredients: detailed ? data.ingredients : undefined,
       allergens: detailed ? data.allergens : undefined,
-      isOrganic: data.isOrganic || false,
-      isGlutenFree: data.isGlutenFree || false,
-      isVegan: data.isVegan || false
+      metadata: {
+        source: "scrape" as const,
+        lastScraped: new Date().toISOString(),
+        confidence: 0.8,
+        dealEligible: true,
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
   }
 
@@ -373,7 +448,14 @@ export class BrightDataScraper {
   private async getProductPrice(productId: string): Promise<number | null> {
     try {
       const details = await this.getProductDetails(productId);
-      return details?.price || null;
+      if (details?.price) {
+        // Extract number from ProductPrice object
+        if (typeof details.price === "object" && "regular" in details.price) {
+          return details.price.regular;
+        }
+        return typeof details.price === "number" ? details.price : null;
+      }
+      return null;
     } catch (error) {
       return null;
     }
@@ -399,8 +481,8 @@ export class BrightDataScraper {
         name: store.name,
         distance: store.distance,
         inStock: store.inStock,
-        quantity: store.quantity
-      }))
+        quantity: store.quantity,
+      })),
     };
   }
 
@@ -421,7 +503,7 @@ export class BrightDataScraper {
       comment: review.comment || review.text || "",
       author: review.author || "Anonymous",
       date: review.date || new Date().toISOString(),
-      verified: review.verifiedPurchase || false
+      verified: review.verifiedPurchase || false,
     }));
   }
 
@@ -430,7 +512,7 @@ export class BrightDataScraper {
    */
   private async mockScrape(options: any): Promise<any> {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     if (options.searchKeyword) {
       // Mock search results
@@ -444,7 +526,7 @@ export class BrightDataScraper {
         inStock: Math.random() > 0.2,
         rating: 3.5 + Math.random() * 1.5,
         reviewCount: Math.floor(Math.random() * 1000),
-        imageUrl: `https://via.placeholder.com/150?text=Product${i + 1}`
+        imageUrl: `https://via.placeholder.com/150?text=Product${i + 1}`,
       }));
     } else if (options.extractDetails) {
       // Mock product details
@@ -462,8 +544,8 @@ export class BrightDataScraper {
         specifications: {
           weight: "16 oz",
           dimensions: "6 x 4 x 2 inches",
-          manufacturer: "Walmart Inc."
-        }
+          manufacturer: "Walmart Inc.",
+        },
       };
     }
 

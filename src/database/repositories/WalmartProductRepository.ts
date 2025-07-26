@@ -45,6 +45,9 @@ export interface WalmartProduct {
   last_checked_at?: string;
 }
 
+// Alias for backward compatibility
+export type ProductEntity = WalmartProduct;
+
 export interface PriceHistory {
   id?: string;
   product_id: string;
@@ -336,6 +339,39 @@ export class WalmartProductRepository extends BaseRepository {
       ) as any[];
 
     return rows.map((row) => this.mapRowToProduct(row));
+  }
+
+  async findByProductId(productId: string): Promise<WalmartProduct | null> {
+    try {
+      return await this.getProduct(productId);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async findById(productId: string): Promise<WalmartProduct | null> {
+    return this.findByProductId(productId);
+  }
+
+  async findByIds(productIds: string[]): Promise<WalmartProduct[]> {
+    if (productIds.length === 0) return [];
+    
+    const placeholders = productIds.map(() => '?').join(',');
+    const rows = this.db
+      .prepare(`SELECT * FROM walmart_products WHERE product_id IN (${placeholders})`)
+      .all(...productIds) as any[];
+    
+    return rows.map((row) => this.mapRowToProduct(row));
+  }
+
+  entityToProduct(entity: any): WalmartProduct {
+    return this.mapRowToProduct(entity);
+  }
+
+  async transaction<T>(callback: () => Promise<T>): Promise<T> {
+    // SQLite doesn't need explicit transaction management in most cases
+    // but we can implement it if needed
+    return await callback();
   }
 
   private mapRowToProduct(row: any): WalmartProduct {

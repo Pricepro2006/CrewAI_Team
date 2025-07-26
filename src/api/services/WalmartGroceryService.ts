@@ -12,18 +12,14 @@ import { ProductLookupService } from "./ProductLookupService";
 import { DealMatchingService } from "./DealMatchingService";
 import { ChromaDBManager } from "../../database/vector/ChromaDBManager";
 import type { 
-  WalmartProduct, 
-  GroceryList as ServiceGroceryList, 
-  GroceryItem as ServiceGroceryItem, 
-  ShoppingSession as ServiceShoppingSession,
-  Substitution,
-  UserPreferences as ServiceUserPreferences 
+  WalmartProduct
 } from "../../types/walmart-grocery";
 import type { 
   GroceryList as RepoGroceryList,
   GroceryItem as RepoGroceryItem,
   ShoppingSession as RepoShoppingSession
 } from "../../database/repositories/GroceryRepository";
+import type { UserPreferences } from "../../database/repositories/WalmartProductRepository";
 
 export interface SearchOptions {
   query: string;
@@ -50,29 +46,9 @@ export interface SubstitutionOptions {
 
 // Type adapters to convert between repository and service types
 type WalmartProductWithScore = WalmartProduct & { similarity_score: number };
-const convertRepoGroceryItemToService = (repoItem: RepoGroceryItem): ServiceGroceryItem => ({
-  id: repoItem.id,
-  listId: repoItem.list_id,
-  productId: repoItem.product_id || '',
-  quantity: repoItem.quantity,
-  notes: repoItem.notes,
-  isPurchased: repoItem.status === 'purchased',
-  addedAt: new Date(repoItem.created_at || Date.now()),
-  purchasedAt: repoItem.status === 'purchased' ? new Date() : undefined,
-  estimatedPrice: repoItem.estimated_price
-});
+const convertRepoGroceryItemToService = (repoItem: RepoGroceryItem): RepoGroceryItem => repoItem;
 
-const convertRepoShoppingSessionToService = (repoSession: RepoShoppingSession): ServiceShoppingSession => ({
-  id: repoSession.id,
-  userId: repoSession.user_id,
-  listId: repoSession.list_id,
-  startTime: new Date(repoSession.started_at || Date.now()),
-  endTime: repoSession.completed_at ? new Date(repoSession.completed_at) : undefined,
-  status: repoSession.status === 'cancelled' ? 'abandoned' : (repoSession.status || 'active') as 'active' | 'paused' | 'completed' | 'abandoned',
-  itemsScanned: repoSession.items_found || 0,
-  totalAmount: repoSession.total_amount || 0,
-  storeId: ''
-});
+const convertRepoShoppingSessionToService = (repoSession: RepoShoppingSession): RepoShoppingSession => repoSession;
 
 export class WalmartGroceryService {
   private static instance: WalmartGroceryService;
@@ -121,15 +97,14 @@ export class WalmartGroceryService {
       logger.info("Searching products", "WALMART_SERVICE", { options });
 
       // First check local database
-      let localResults = await this.productRepo.searchProducts(options.query, {
-        category: options.category,
-        inStock: options.inStockOnly,
-        limit: options.limit || 20
-      });
+      let localResults = await this.productRepo.searchProducts(options.query, options.limit || 20);
 
       // Apply filters
       if (options.category) {
-        localResults = localResults.filter(p => p.category?.includes(options.category!));
+        localResults = localResults.filter(p => 
+          p.category_path?.includes(options.category!) || 
+          p.department?.includes(options.category!)
+        );
       }
 
       if (options.inStockOnly) {
@@ -138,7 +113,7 @@ export class WalmartGroceryService {
 
       if (options.priceRange) {
         localResults = localResults.filter(p => {
-          const price = p.price || 0;
+          const price = p.current_price || 0;
           return price >= options.priceRange!.min && price <= options.priceRange!.max;
         });
       }
@@ -163,7 +138,7 @@ export class WalmartGroceryService {
         
         // Update local database with new products
         for (const product of webResults) {
-          await this.productRepo.upsertProduct(product);
+          await this.productRepo.upsertProduct(this.convertToRepoProduct(product));
         }
 
         return mergedResults;
@@ -189,7 +164,7 @@ export class WalmartGroceryService {
         // Try to fetch from web
         const webProduct = await this.scraper.getProductDetails(productId);
         if (webProduct) {
-          await this.productRepo.upsertProduct(webProduct);
+          await this.productRepo.upsertProduct(this.convertToRepoProduct(webProduct));
           return webProduct;
         }
         return null;
@@ -199,10 +174,10 @@ export class WalmartGroceryService {
       if (includeRealTime && this.needsPriceUpdate(product)) {
         const updatedProduct = await this.scraper.getProductDetails(productId);
         if (updatedProduct) {
-          await this.productRepo.upsertProduct(updatedProduct);
+          await this.productRepo.upsertProduct(this.convertToRepoProduct(updatedProduct));
           
           // Record price history if price changed
-          if (updatedProduct.price !== product.price) {
+          if (updatedProduct.price.regular !== (product as any).current_price) {
             // TODO: Implement recordPriceHistory method in repository
             // await this.productRepo.recordPriceHistory(
             //   productId, 
@@ -225,7 +200,7 @@ export class WalmartGroceryService {
   /**
    * Create a new grocery list
    */
-  async createGroceryList(userId: string, name: string, description?: string): Promise<ServiceGroceryList> {
+  async createGroceryList(userId: string, name: string, description?: string): Promise<RepoGroceryList> {
     try {
       const list = await this.listRepo.createList({
         user_id: userId,
@@ -252,7 +227,7 @@ export class WalmartGroceryService {
   /**
    * Add items to grocery list - OPTIMIZED to prevent N+1 queries
    */
-  async addItemsToList(listId: string, items: CartItem[]): Promise<ServiceGroceryItem[]> {
+  async addItemsToList(listId: string, items: CartItem[]): Promise<RepoGroceryItem[]> {
     try {
       if (items.length === 0) return [];
 
@@ -263,7 +238,7 @@ export class WalmartGroceryService {
 
       // Use database transaction for consistency
       return await this.productRepo.transaction(async () => {
-        const addedItems: ServiceGroceryItem[] = [];
+        const addedItems: RepoGroceryItem[] = [];
 
         for (const item of items) {
           const productEntity = productMap.get(item.productId);
@@ -281,10 +256,10 @@ export class WalmartGroceryService {
           const groceryItem = await this.itemRepo.addItem({
             list_id: listId,
             item_name: product.name,
-            product_id: product.id,
-            category: product.category?.split("/")[0],
+            product_id: product.product_id,
+            category: product.category_path,
             quantity: item.quantity,
-            estimated_price: product.price,
+            estimated_price: product.current_price,
             notes: item.notes
           });
 
@@ -373,7 +348,7 @@ export class WalmartGroceryService {
     userId: string, 
     listId?: string,
     type: "online" | "in_store" | "pickup" | "delivery" = "online"
-  ): Promise<ServiceShoppingSession> {
+  ): Promise<RepoShoppingSession> {
     try {
       const session = await this.sessionRepo.createSession({
         user_id: userId,
@@ -398,7 +373,7 @@ export class WalmartGroceryService {
   /**
    * Process checkout for a shopping session
    */
-  async processCheckout(sessionId: string): Promise<ServiceShoppingSession> {
+  async processCheckout(sessionId: string): Promise<RepoShoppingSession> {
     try {
       const session = await this.sessionRepo.getSession(sessionId);
       if (!session) {
@@ -512,7 +487,7 @@ export class WalmartGroceryService {
    */
   private applyUserPreferences(
     products: WalmartProduct[], 
-    preferences: ServiceUserPreferences,
+    preferences: UserPreferences,
     options?: SubstitutionOptions
   ): WalmartProduct[] {
     let filtered = products;
@@ -660,9 +635,42 @@ export class WalmartGroceryService {
   }
 
   /**
+   * Convert types WalmartProduct to repository WalmartProduct
+   */
+  private convertToRepoProduct(product: WalmartProduct): import("../../database/repositories/WalmartProductRepository").WalmartProduct {
+    return {
+      product_id: product.walmartId,
+      name: product.name,
+      brand: product.brand,
+      description: product.description,
+      category_path: product.category.name,
+      department: product.category.path[0],
+      current_price: product.price.regular,
+      regular_price: product.price.wasPrice,
+      unit_price: product.price.unit,
+      unit_measure: product.price.unitOfMeasure,
+      in_stock: product.availability.inStock,
+      stock_level: product.availability.quantity,
+      online_only: product.availability.onlineOnly,
+      store_only: product.availability.instoreOnly,
+      upc: product.upc,
+      large_image_url: product.images[0]?.url,
+      thumbnail_url: product.images[0]?.url,
+      average_rating: product.ratings?.average,
+      review_count: product.ratings?.count,
+      nutritional_info: product.nutritionFacts,
+      ingredients: Array.isArray(product.ingredients) ? product.ingredients.join(', ') : product.ingredients,
+      allergens: product.allergens?.map(a => typeof a === 'string' ? a : a.type),
+      first_seen_at: product.createdAt,
+      last_updated_at: product.updatedAt,
+      last_checked_at: new Date().toISOString()
+    };
+  }
+
+  /**
    * Transform database GroceryList to expected type interface
    */
-  private transformDatabaseListToType(dbList: any): ServiceGroceryList {
+  private transformDatabaseListToType(dbList: any): RepoGroceryList {
     return {
       id: dbList.id,
       userId: dbList.user_id,

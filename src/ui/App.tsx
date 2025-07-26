@@ -20,6 +20,7 @@ import { WebScraping } from "./components/WebScraping/WebScraping";
 import { KnowledgeBase } from "./components/KnowledgeBase/KnowledgeBase";
 import { VectorSearch } from "./components/VectorSearch/VectorSearch";
 import { Settings } from "./components/Settings/Settings";
+import { WalmartDashboard } from "../client/components/walmart/WalmartDashboard";
 import "./App.css";
 
 function App() {
@@ -112,6 +113,12 @@ function App() {
                 path="iems-dashboard"
                 element={<Navigate to="/email-dashboard" replace />}
               />
+              <Route path="walmart" element={<WalmartDashboard />} />
+              <Route path="walmart/search" element={<WalmartDashboard />} />
+              <Route path="walmart/cart" element={<WalmartDashboard />} />
+              <Route path="walmart/lists" element={<WalmartDashboard />} />
+              <Route path="walmart/budget" element={<WalmartDashboard />} />
+              <Route path="walmart/orders" element={<WalmartDashboard />} />
               <Route path="web-scraping" element={<WebScraping />} />
               <Route path="knowledge-base" element={<KnowledgeBase />} />
               <Route path="vector-search" element={<VectorSearch />} />

@@ -5,7 +5,10 @@
 
 import { logger } from "../../utils/logger";
 import { ChromaDBManager } from "../../database/vector/ChromaDBManager";
-import { WalmartProductRepository, type ProductEntity } from "../../database/repositories/WalmartProductRepository";
+import type {
+  WalmartProductRepository,
+  ProductEntity,
+} from "../../database/repositories/WalmartProductRepository";
 import { getDatabaseManager } from "../../database/DatabaseManager";
 import type { WalmartProduct } from "../../types/walmart-grocery";
 import { MasterOrchestrator } from "../../core/orchestration/MasterOrchestrator";
@@ -34,7 +37,7 @@ interface SemanticSearchResult {
 
 export class ProductLookupService {
   private static instance: ProductLookupService;
-  
+
   private chromadb: ChromaDBManager;
   private productRepo: WalmartProductRepository;
   private orchestrator: MasterOrchestrator;
@@ -58,17 +61,20 @@ export class ProductLookupService {
    * Perform intelligent product lookup
    */
   async lookupProducts(
-    query: string, 
-    options: LookupOptions = {}
+    query: string,
+    options: LookupOptions = {},
   ): Promise<SemanticSearchResult[]> {
     try {
       logger.info("Looking up products", "LOOKUP_SERVICE", { query, options });
 
       // First try exact match
       const exactMatches = await this.findExactMatches(query, options.filters);
-      
+
       // If we have enough exact matches and don't need similar, return them
-      if (exactMatches.length >= (options.maxResults || 10) && !options.includeSimilar) {
+      if (
+        exactMatches.length >= (options.maxResults || 10) &&
+        !options.includeSimilar
+      ) {
         return exactMatches.slice(0, options.maxResults || 10);
       }
 
@@ -80,13 +86,13 @@ export class ProductLookupService {
 
       // Combine and deduplicate results
       const combined = this.combineResults(exactMatches, semanticMatches);
-      
+
       // Apply filters
       const filtered = this.applyFilters(combined, options.filters);
-      
+
       // Sort by relevance score
       const sorted = filtered.sort((a, b) => b.score - a.score);
-      
+
       return sorted.slice(0, options.maxResults || 10);
     } catch (error) {
       logger.error("Product lookup failed", "LOOKUP_SERVICE", { error });
@@ -97,19 +103,23 @@ export class ProductLookupService {
   /**
    * Find products by attributes
    */
-  async findByAttributes(attributes: Record<string, any>): Promise<WalmartProduct[]> {
+  async findByAttributes(
+    attributes: Record<string, any>,
+  ): Promise<WalmartProduct[]> {
     try {
-      logger.info("Finding products by attributes", "LOOKUP_SERVICE", { attributes });
+      logger.info("Finding products by attributes", "LOOKUP_SERVICE", {
+        attributes,
+      });
 
       // Build query from attributes
       const query = this.buildQueryFromAttributes(attributes);
-      
+
       // Perform lookup
       const results = await this.lookupProducts(query, {
-        filters: { attributes }
+        filters: { attributes },
       });
 
-      return results.map(r => r.product);
+      return results.map((r) => r.product);
     } catch (error) {
       logger.error("Attribute search failed", "LOOKUP_SERVICE", { error });
       throw error;
@@ -121,10 +131,12 @@ export class ProductLookupService {
    */
   async getPersonalizedRecommendations(
     userId: string,
-    context: any
+    context: any,
   ): Promise<WalmartProduct[]> {
     try {
-      logger.info("Generating personalized recommendations", "LOOKUP_SERVICE", { userId });
+      logger.info("Generating personalized recommendations", "LOOKUP_SERVICE", {
+        userId,
+      });
 
       // Use orchestrator to analyze context and generate recommendations
       const analysisResult = await this.orchestrator.processQuery({
@@ -132,19 +144,21 @@ export class ProductLookupService {
         metadata: {
           userId,
           context,
-          task: "recommendation"
-        }
+          task: "recommendation",
+        },
       });
 
       // Extract product IDs from analysis
       const recommendedIds = this.extractProductIds(analysisResult.response);
-      
+
       // Fetch full product details
       const products: WalmartProduct[] = [];
       for (const id of recommendedIds) {
         try {
           const productEntity = await this.productRepo.findById(id);
-          const product = productEntity ? this.transformToWalmartProduct(productEntity) : null;
+          const product = productEntity
+            ? this.transformToWalmartProduct(productEntity)
+            : null;
           if (product) products.push(product);
         } catch (error) {
           // Skip invalid IDs
@@ -155,15 +169,17 @@ export class ProductLookupService {
       if (products.length < 10) {
         const semanticQuery = this.buildRecommendationQuery(context);
         const additional = await this.performSemanticSearch(semanticQuery, {
-          maxResults: 10 - products.length
+          maxResults: 10 - products.length,
         });
-        
-        products.push(...additional.map(r => r.product));
+
+        products.push(...additional.map((r) => r.product));
       }
 
       return products;
     } catch (error) {
-      logger.error("Failed to generate recommendations", "LOOKUP_SERVICE", { error });
+      logger.error("Failed to generate recommendations", "LOOKUP_SERVICE", {
+        error,
+      });
       return [];
     }
   }
@@ -171,11 +187,13 @@ export class ProductLookupService {
   /**
    * Match products from text (e.g., shopping list)
    */
-  async matchProductsFromText(text: string): Promise<Array<{
-    item: string;
-    matches: WalmartProduct[];
-    confidence: number;
-  }>> {
+  async matchProductsFromText(text: string): Promise<
+    Array<{
+      item: string;
+      matches: WalmartProduct[];
+      confidence: number;
+    }>
+  > {
     try {
       logger.info("Matching products from text", "LOOKUP_SERVICE");
 
@@ -186,19 +204,21 @@ export class ProductLookupService {
       for (const item of items) {
         const matches = await this.lookupProducts(item.name, {
           maxResults: 3,
-          includeSimilar: true
+          includeSimilar: true,
         });
 
         results.push({
           item: item.original,
-          matches: matches.map(m => m.product),
-          confidence: matches[0]?.score || 0
+          matches: matches.map((m) => m.product),
+          confidence: matches[0]?.score || 0,
         });
       }
 
       return results;
     } catch (error) {
-      logger.error("Failed to match products from text", "LOOKUP_SERVICE", { error });
+      logger.error("Failed to match products from text", "LOOKUP_SERVICE", {
+        error,
+      });
       throw error;
     }
   }
@@ -207,24 +227,28 @@ export class ProductLookupService {
    * Find exact matches
    */
   private async findExactMatches(
-    query: string, 
-    filters?: ProductFilters
+    query: string,
+    filters?: ProductFilters,
   ): Promise<SemanticSearchResult[]> {
-    const products = await this.productRepo.searchProducts(query, { limit: 20 });
-    
-    return products.map(productEntity => {
+    const products = await this.productRepo.searchProducts(query, 20);
+
+    return products.map((productEntity) => {
       // Transform ProductEntity to WalmartProduct
       const product = this.transformToWalmartProduct(productEntity);
-      
+
       // Calculate match score based on how well the query matches
-      const nameMatch = product.name.toLowerCase().includes(query.toLowerCase());
-      const brandMatch = product.brand?.toLowerCase().includes(query.toLowerCase());
+      const nameMatch = product.name
+        .toLowerCase()
+        .includes(query.toLowerCase());
+      const brandMatch = product.brand
+        ?.toLowerCase()
+        .includes(query.toLowerCase());
       const score = nameMatch ? 1.0 : brandMatch ? 0.8 : 0.5;
 
       return {
         product,
         score,
-        matchType: "exact" as const
+        matchType: "exact" as const,
       };
     });
   }
@@ -234,12 +258,12 @@ export class ProductLookupService {
    */
   private async performSemanticSearch(
     query: string,
-    options: LookupOptions
+    options: LookupOptions,
   ): Promise<SemanticSearchResult[]> {
     try {
       // Get or create embedding for query
       const queryEmbedding = await this.getEmbedding(query);
-      
+
       // Search in vector database
       const collection = await this.chromadb.getCollection("walmart_products");
       if (!collection) {
@@ -250,27 +274,31 @@ export class ProductLookupService {
       const results = await collection.query({
         queryEmbeddings: [queryEmbedding],
         nResults: options.maxResults || 10,
-        where: this.buildChromaFilters(options.filters)
+        where: this.buildChromaFilters(options.filters),
       });
 
       // Transform results
       const semanticResults: SemanticSearchResult[] = [];
-      
+
       if (results.ids?.[0]) {
         for (let i = 0; i < results.ids[0].length; i++) {
           const productId = results.ids[0][i];
           if (!productId) continue; // Type guard for possibly undefined
-          
-          const score = results.distances ? 1 - (results.distances[0]?.[i] || 0) : 0.5;
-          
+
+          const score = results.distances
+            ? 1 - (results.distances[0]?.[i] || 0)
+            : 0.5;
+
           try {
             const productEntity = await this.productRepo.findById(productId);
-            const product = productEntity ? this.transformToWalmartProduct(productEntity) : null;
+            const product = productEntity
+              ? this.transformToWalmartProduct(productEntity)
+              : null;
             if (product) {
               semanticResults.push({
                 product,
                 score,
-                matchType: "semantic"
+                matchType: "semantic",
               });
             }
           } catch (error) {
@@ -301,16 +329,16 @@ export class ProductLookupService {
         text: `Generate embedding for: ${text}`,
         metadata: {
           task: "embedding",
-          dimension: 384 // Standard embedding size
-        }
+          dimension: 384, // Standard embedding size
+        },
       });
 
       // Parse embedding from response
       const embedding = this.parseEmbedding(result.response);
-      
+
       // Cache it
       this.embeddingCache.set(text, embedding);
-      
+
       // Limit cache size
       if (this.embeddingCache.size > 1000) {
         const firstKey = this.embeddingCache.keys().next().value;
@@ -331,8 +359,8 @@ export class ProductLookupService {
    * Combine and deduplicate results
    */
   private combineResults(
-    exact: SemanticSearchResult[], 
-    semantic: SemanticSearchResult[]
+    exact: SemanticSearchResult[],
+    semantic: SemanticSearchResult[],
   ): SemanticSearchResult[] {
     const seen = new Set<string>();
     const combined: SemanticSearchResult[] = [];
@@ -360,18 +388,20 @@ export class ProductLookupService {
    * Apply filters to results
    */
   private applyFilters(
-    results: SemanticSearchResult[], 
-    filters?: ProductFilters
+    results: SemanticSearchResult[],
+    filters?: ProductFilters,
   ): SemanticSearchResult[] {
     if (!filters) return results;
 
-    return results.filter(result => {
+    return results.filter((result) => {
       const product = result.product;
 
       // Category filter
       if (filters.categories?.length) {
-        const hasCategory = filters.categories.some(cat => 
-          product.category?.includes(cat)
+        const hasCategory = filters.categories.some(
+          (cat) =>
+            product.category?.name?.includes(cat) ||
+            product.category?.path?.includes(cat),
         );
         if (!hasCategory) return false;
       }
@@ -385,7 +415,7 @@ export class ProductLookupService {
 
       // Price filter
       if (filters.priceRange) {
-        const price = product.price || 0;
+        const price = product.price.regular || 0;
         if (price < filters.priceRange.min || price > filters.priceRange.max) {
           return false;
         }
@@ -393,14 +423,17 @@ export class ProductLookupService {
 
       // Stock filter
       if (filters.inStock !== undefined) {
-        if (product.inStock !== filters.inStock) {
+        if (product.availability.inStock !== filters.inStock) {
           return false;
         }
       }
 
       // Rating filter
       if (filters.minRating) {
-        if (!product.ratings?.average || product.ratings.average < filters.minRating) {
+        if (
+          !product.ratings?.average ||
+          product.ratings.average < filters.minRating
+        ) {
           return false;
         }
       }
@@ -412,17 +445,19 @@ export class ProductLookupService {
   /**
    * Build ChromaDB filter object
    */
-  private buildChromaFilters(filters?: ProductFilters): Record<string, any> | undefined {
+  private buildChromaFilters(
+    filters?: ProductFilters,
+  ): Record<string, any> | undefined {
     if (!filters) return undefined;
 
     const where: Record<string, any> = {};
 
     if (filters.categories?.length) {
-      where.category = { "$in": filters.categories };
+      where.category = { $in: filters.categories };
     }
 
     if (filters.brands?.length) {
-      where.brand = { "$in": filters.brands };
+      where.brand = { $in: filters.brands };
     }
 
     if (filters.inStock !== undefined) {
@@ -452,11 +487,11 @@ export class ProductLookupService {
    */
   private extractProductIds(response: string): string[] {
     const ids: string[] = [];
-    
+
     // Look for patterns like "product_id: XXX" or "id: XXX"
     const idPattern = /(?:product_)?id:\s*([A-Za-z0-9-]+)/gi;
     let match;
-    
+
     while ((match = idPattern.exec(response)) !== null) {
       if (match[1]) {
         ids.push(match[1]);
@@ -504,19 +539,21 @@ export class ProductLookupService {
       if (!cleaned) continue;
 
       // Parse quantity if present
-      const quantityMatch = cleaned.match(/^(\d+(?:\.\d+)?)\s*([a-z]+)?\s+(.+)$/i);
-      
+      const quantityMatch = cleaned.match(
+        /^(\d+(?:\.\d+)?)\s*([a-z]+)?\s+(.+)$/i,
+      );
+
       if (quantityMatch && quantityMatch[3]) {
         items.push({
           original: cleaned,
           name: quantityMatch[3] || cleaned,
-          quantity: parseFloat(quantityMatch[1] || '1'),
-          unit: quantityMatch[2] || 'each'
+          quantity: parseFloat(quantityMatch[1] || "1"),
+          unit: quantityMatch[2] || "each",
         });
       } else {
         items.push({
           original: cleaned,
-          name: cleaned
+          name: cleaned,
         });
       }
     }
@@ -547,27 +584,84 @@ export class ProductLookupService {
    */
   private transformToWalmartProduct(entity: ProductEntity): WalmartProduct {
     return {
-      id: entity.product_id || entity.id,
-      name: entity.name,
-      brand: entity.brand,
-      description: entity.description,
-      category: entity.category || "Uncategorized",
-      subcategory: entity.subcategory,
-      price: entity.price,
-      originalPrice: entity.original_price,
-      unit: entity.unit || "each",
-      size: entity.size,
-      imageUrl: entity.image_url,
-      thumbnailUrl: entity.thumbnail_url,
-      barcode: entity.upc,
-      inStock: entity.in_stock,
-      stockLevel: entity.stock_quantity,
-      location: entity.aisle_location ? { aisle: entity.aisle_location } : undefined,
-      ratings: entity.rating && entity.review_count ? {
-        average: entity.rating,
-        count: entity.review_count
-      } : undefined,
-      nutritionalInfo: entity.nutritional_info,
+      id: entity.product_id,
+      walmartId: entity.product_id,
+      upc: entity.upc,
+      name: entity.name || "",
+      brand: entity.brand || "",
+      category: {
+        id: "1",
+        name:
+          typeof entity.category_path === "string"
+            ? entity.category_path
+            : "Uncategorized",
+        path:
+          typeof entity.category_path === "string"
+            ? [entity.category_path]
+            : ["Uncategorized"],
+        level: 1,
+      },
+      description: entity.description || "",
+      shortDescription: entity.description || "",
+      price: {
+        currency: "USD",
+        regular: entity.current_price || 0,
+        sale: entity.regular_price,
+        unit: entity.unit_price,
+        unitOfMeasure: entity.unit_measure || "each",
+        wasPrice: entity.regular_price,
+      },
+      images:
+        entity.large_image_url || entity.thumbnail_url
+          ? [
+              {
+                id: "1",
+                url: entity.large_image_url || entity.thumbnail_url || "",
+                type: "primary" as const,
+                alt: entity.name || "",
+              },
+            ]
+          : [],
+      availability: {
+        inStock: entity.in_stock !== false,
+        stockLevel: entity.in_stock
+          ? ("in_stock" as const)
+          : ("out_of_stock" as const),
+        quantity: entity.stock_level,
+        onlineOnly: entity.online_only,
+        instoreOnly: entity.store_only,
+      },
+      ratings: entity.average_rating
+        ? {
+            average: entity.average_rating,
+            count: entity.review_count || 0,
+            distribution: {
+              5: 0,
+              4: 0,
+              3: 0,
+              2: 0,
+              1: 0,
+            },
+          }
+        : undefined,
+      nutritionFacts: entity.nutritional_info,
+      ingredients:
+        typeof entity.ingredients === "string"
+          ? [entity.ingredients]
+          : entity.ingredients,
+      allergens: entity.allergens?.map((allergen) => ({
+        type: allergen.toLowerCase() as any,
+        contains: true,
+        mayContain: false,
+      })),
+      metadata: {
+        source: "api" as const,
+        lastScraped: entity.last_updated_at,
+        confidence: 0.9,
+        dealEligible: true,
+      },
+      createdAt: entity.first_seen_at || new Date().toISOString(),
+      updatedAt: entity.last_updated_at || new Date().toISOString(),
     };
   }
 }
