@@ -31,7 +31,7 @@ export interface TDSynnexPriorityRules {
  */
 export const PRODUCTION_EMAIL_CONFIG: EmailAnalysisModelConfig = {
   primaryModel: 'granite3.3:2b',     // 80% accuracy, 100% critical detection in tests
-  criticalBackup: 'granite3.3:8b',   // For critical validation if needed
+  criticalBackup: 'doomgrave/phi-4:14b-tools-Q3_K_S',   // Stage 3 critical analysis model
   entityExtraction: 'qwen3:0.6b',    // Fast entity-only extraction (optional)
   temperature: 0.1,                  // Low temperature for consistency
   maxTokens: 500,                    // Sufficient for email analysis
@@ -195,7 +195,7 @@ export const ANALYSIS_SCENARIOS = {
   // Quality-focused analysis
   qualityFocus: {
     ...PRODUCTION_EMAIL_CONFIG,
-    primaryModel: 'granite3.3:8b',  // Larger model for better quality
+    primaryModel: 'doomgrave/phi-4:14b-tools-Q3_K_S',  // Stage 3 model for critical emails
     maxTokens: 1000,
     timeout: 15000
   },

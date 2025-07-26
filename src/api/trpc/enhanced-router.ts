@@ -9,6 +9,13 @@ import {
   createInputValidation,
   sanitizationSchemas,
 } from "../middleware/security";
+import {
+  createPermissionMiddleware,
+  createGuestAllowedMiddleware,
+  createStrictAuthMiddleware,
+  createGuestRateLimitMiddleware,
+  createEnhancedAuthorizationMiddleware,
+} from "../middleware/security/guest-auth";
 // Import rate limiters from centralized middleware index (avoids circular dependency)
 import {
   chatProcedureRateLimiter,
@@ -56,11 +63,23 @@ const t = initTRPC.context<Context>().create({
 
 // Enhanced middleware stack
 const securityAudit = createSecurityAuditMiddleware();
-const authRequired = createAuthMiddleware();
+const authRequired = createStrictAuthMiddleware(); // Now blocks guest users
+const authOrGuest = createGuestAllowedMiddleware(); // Allows guest with restrictions
 
 // Role-based authorization procedures
-const requireAdmin = createAuthorizationMiddleware(["admin"]);
-const requireUser = createAuthorizationMiddleware(["admin", "user"]);
+const requireAdmin = createEnhancedAuthorizationMiddleware(["admin"], []);
+const requireUser = createEnhancedAuthorizationMiddleware(["admin", "user"], []);
+
+// Permission-based procedures
+const requireChatRead = createPermissionMiddleware(["chat.read"]);
+const requireChatCreate = createPermissionMiddleware(["chat.create.limited"]);
+const requireAgentExecute = createPermissionMiddleware(["agent.execute"]);
+const requireTaskCreate = createPermissionMiddleware(["task.create"]);
+const requireRagQuery = createPermissionMiddleware(["rag.query"]);
+
+// Guest rate limiting
+const guestChatLimit = createGuestRateLimitMiddleware(20, 60000); // 20 per minute
+const guestHealthLimit = createGuestRateLimitMiddleware(10, 60000); // 10 per minute
 
 // Input validation with security sanitization
 const secureStringValidation = createInputValidation(
@@ -81,11 +100,11 @@ const secureQueryValidation = createInputValidation(
 export const router: typeof t.router = t.router;
 export const middleware: typeof t.middleware = t.middleware;
 
-// Public procedure with basic security
+// Public procedure with basic security (allows guests)
 export const publicProcedure: ReturnType<typeof t.procedure.use> =
-  t.procedure.use(securityAudit);
+  t.procedure.use(securityAudit).use(authOrGuest).use(guestHealthLimit);
 
-// Protected procedure requiring authentication
+// Protected procedure requiring authentication (no guests)
 export const protectedProcedure: ReturnType<typeof t.procedure.use> =
   t.procedure.use(securityAudit).use(authRequired);
 
@@ -113,21 +132,29 @@ const createRateLimitMiddleware = (name: string) =>
 // Type for rate-limited procedures
 type RateLimitedProcedure = ReturnType<typeof protectedProcedure.use>;
 
-export const chatProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("chat"),
-);
-export const agentProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("agent"),
-);
-export const taskProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("task"),
-);
-export const ragProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("rag"),
-);
-export const strictProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("strict"),
-);
+// Guest-aware procedures with appropriate permissions
+export const chatProcedure: RateLimitedProcedure = t.procedure
+  .use(securityAudit)
+  .use(authOrGuest)
+  .use(requireChatCreate)
+  .use(guestChatLimit)
+  .use(createRateLimitMiddleware("chat"));
+
+// These procedures require full authentication (no guests)
+export const agentProcedure: RateLimitedProcedure = protectedProcedure
+  .use(requireAgentExecute)
+  .use(createRateLimitMiddleware("agent"));
+
+export const taskProcedure: RateLimitedProcedure = protectedProcedure
+  .use(requireTaskCreate)
+  .use(createRateLimitMiddleware("task"));
+
+export const ragProcedure: RateLimitedProcedure = protectedProcedure
+  .use(requireRagQuery)
+  .use(createRateLimitMiddleware("rag"));
+
+export const strictProcedure: RateLimitedProcedure = protectedProcedure
+  .use(createRateLimitMiddleware("strict"));
 
 // Procedures with input validation
 export const secureTextProcedure: ReturnType<typeof protectedProcedure.use> =

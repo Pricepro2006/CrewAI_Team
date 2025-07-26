@@ -39,6 +39,7 @@ import { GroceryVectorCollections } from "./vector/GroceryVectorCollections";
 // Migration system
 import { DatabaseMigrator } from "./migrations/DatabaseMigrator";
 import WalmartGroceryAgentMigration from "./migrations/005_walmart_grocery_agent";
+import FixNegativeProcessingTimesMigration from "./migrations/006_fix_negative_processing_times";
 
 export interface DatabaseConfig {
   sqlite: {
@@ -233,6 +234,20 @@ export class DatabaseManager {
       } catch (error) {
         if (!error.message.includes("already exists")) {
           logger.warn(`Grocery migration warning: ${error}`, "DB_MANAGER");
+        }
+      }
+
+      // Apply Fix Negative Processing Times migration
+      const fixProcessingTimesMigration = new FixNegativeProcessingTimesMigration(this.db);
+      try {
+        await fixProcessingTimesMigration.up();
+        logger.info(
+          "Fix Negative Processing Times migration applied successfully",
+          "DB_MANAGER",
+        );
+      } catch (error) {
+        if (!error.message.includes("already exists") && !error.message.includes("trigger") && !error.message.includes("index")) {
+          logger.warn(`Processing times migration warning: ${error}`, "DB_MANAGER");
         }
       }
 

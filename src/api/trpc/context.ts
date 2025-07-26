@@ -17,11 +17,18 @@ import { mcpToolsService } from "../services/MCPToolsService";
 import { DealDataService } from "../services/DealDataService";
 import { EmailStorageService } from "../services/EmailStorageService";
 import { WalmartGroceryService } from "../services/WalmartGroceryService";
+import { guestUserService } from "../services/GuestUserService";
 
 // Context User interface (extends DB user with runtime properties)
 export interface User extends Omit<DBUser, "passwordHash"> {
   permissions: string[];
   lastActivity: Date;
+  metadata?: {
+    isGuest?: boolean;
+    ip?: string;
+    userAgent?: string;
+    sessionStart?: string;
+  };
 }
 
 // Initialize services (singleton pattern)
@@ -187,9 +194,32 @@ function validateRequest(req: any) {
     hasAuth: !!req.headers.authorization,
   });
 
-  // Basic security checks
+  // Enhanced security checks
   if (userAgent.includes("bot") && !userAgent.includes("GoogleBot")) {
     logger.warn("Potential bot detected", "SECURITY", { ip, userAgent });
+  }
+  
+  // Check for suspicious patterns
+  const suspiciousPatterns = [
+    /sql.*inject/i,
+    /union.*select/i,
+    /<script>/i,
+    /javascript:/i,
+    /onerror=/i,
+  ];
+  
+  const isSuspicious = suspiciousPatterns.some(pattern => 
+    pattern.test(userAgent) || pattern.test(req.url || '') || 
+    pattern.test(JSON.stringify(req.query || {}))
+  );
+  
+  if (isSuspicious) {
+    logger.error("Suspicious request detected", "SECURITY_ALERT", {
+      ip,
+      userAgent,
+      url: req.url,
+      method: req.method,
+    });
   }
 
   return { ip, userAgent };
@@ -234,19 +264,24 @@ export async function createContext({
     user = await verifyJWT(token, services.userService);
   }
 
-  // Set default guest user if no authentication
+  // Create secure guest user if no authentication
   if (!user) {
-    user = {
-      id: `guest-${ip.replace(/\./g, "-")}-${Date.now()}`,
-      email: "",
-      username: "guest",
-      role: UserRole.USER, // Default to user role from UserRole enum
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      permissions: ["read"],
-      lastActivity: new Date(),
-    };
+    // Use secure guest user service
+    const guestUser = await guestUserService.createGuestUser(ip, userAgent);
+    
+    if (!guestUser) {
+      // Guest user creation failed (likely rate limited)
+      logger.error("Failed to create guest user", "SECURITY", {
+        ip,
+        userAgent,
+        reason: "Rate limit or validation failure",
+      });
+      
+      // Return a minimal error response
+      throw new Error("Unable to process request. Please try again later.");
+    }
+    
+    user = guestUser;
   }
 
   // Set security headers

@@ -36,7 +36,7 @@ export const Settings: React.FC = () => {
     },
     llm: {
       provider: 'ollama',
-      model: 'granite3.3:2b',
+      model: 'llama3.2:3b',
       temperature: 0.7,
       maxTokens: 4096,
       endpoint: 'http://localhost:11434'
@@ -214,9 +214,12 @@ export const Settings: React.FC = () => {
                       value={settings.llm.model}
                       onChange={(e) => updateSetting('llm', 'model', e.target.value)}
                     >
-                      <option value="phi3:mini">Phi-3 Mini</option>
+                      <option value="llama3.2:3b">Llama 3.2 (3B) - Stage 2</option>
+                      <option value="doomgrave/phi-4:14b-tools-Q3_K_S">Phi-4 (14B) - Stage 3</option>
+                      <option value="nomic-embed-text">Nomic Embed Text</option>
                       <option value="qwen3:0.6b">Qwen 3 (0.6B)</option>
-                      <option value="llama3.1:8b">Llama 3.1 (8B)</option>
+                      <option value="granite3.3:2b">Granite 3.3 (2B)</option>
+                      <option value="granite3.3:8b">Granite 3.3 (8B)</option>
                     </select>
                   </div>
 

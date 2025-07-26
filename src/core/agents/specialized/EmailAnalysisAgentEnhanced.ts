@@ -4,6 +4,7 @@ import { OllamaProvider } from '../../llm/OllamaProvider';
 import { logger } from '../../../utils/logger';
 import { EmailAnalysisCache } from '../../cache/EmailAnalysisCache';
 import type { EmailAnalysis } from './EmailAnalysisTypes';
+import { EmailAnalyticsService } from '../../database/EmailAnalyticsService';
 
 // Email interfaces
 interface Email {
@@ -346,12 +347,12 @@ export class EmailAnalysisAgentEnhanced extends BaseAgent {
     // Stage 1: Quick categorization (always run)
     const stage1Start = Date.now();
     const quickAnalysis = await this.quickCategorize(email);
-    const stage1Time = Date.now() - stage1Start;
+    const stage1Time = EmailAnalyticsService.calculateProcessingTime(stage1Start);
     
     // Stage 2: Deep analysis (always run for TD SYNNEX requirements)
     const stage2Start = Date.now();
     const deepAnalysis = await this.deepWorkflowAnalysis(email, quickAnalysis);
-    const stage2Time = Date.now() - stage2Start;
+    const stage2Time = EmailAnalyticsService.calculateProcessingTime(stage2Start);
     
     // Stage 3: Extract action summary
     const actionSummary = await this.extractActionSummary(email, deepAnalysis);
@@ -363,7 +364,7 @@ export class EmailAnalysisAgentEnhanced extends BaseAgent {
       processingMetadata: {
         stage1Time,
         stage2Time,
-        totalTime: Date.now() - startTime,
+        totalTime: EmailAnalyticsService.calculateProcessingTime(startTime),
         models: {
           stage1: 'qwen3:0.6b',
           stage2: 'granite3.3:2b'
