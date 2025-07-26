@@ -1,8 +1,0 @@
-{
-    "frontend_url": "http://localhost:5173",
-    "backend_url": "http://localhost:3000",
-    "ollama_url": "http://localhost:11434",
-    "websocket_url": "ws://localhost:3001/trpc-ws",
-    "status": "ready",
-    "timestamp": "2025-07-17T15:34:50Z"
-}
