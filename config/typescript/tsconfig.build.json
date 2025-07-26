@@ -7,10 +7,10 @@
     "allowImportingTsExtensions": false
   },
   "include": [
-    "src/api/**/*",
-    "src/core/**/*",
-    "src/config/**/*",
-    "src/utils/**/*"
+    "../../src/api/**/*",
+    "../../src/core/**/*",
+    "../../src/config/**/*",
+    "../../src/utils/**/*"
   ],
   "exclude": [
     "node_modules",

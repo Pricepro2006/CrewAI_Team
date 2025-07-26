@@ -1,10 +1,10 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "module": "ESNext",
     "target": "ES2022",
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "outDir": "../../dist",
+    "rootDir": "../../src",
     "noEmit": false,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
@@ -13,7 +13,7 @@
     "allowImportingTsExtensions": false,
     "types": ["node"],
     "lib": ["ES2022"],
-    "baseUrl": "./src",
+    "baseUrl": "../../src",
     "paths": {
       "@/*": ["*"],
       "@core/*": ["core/*"],
@@ -23,10 +23,10 @@
     }
   },
   "include": [
-    "src/api/**/*",
-    "src/core/**/*",
-    "src/config/**/*",
-    "src/utils/**/*"
+    "../../src/api/**/*",
+    "../../src/core/**/*",
+    "../../src/config/**/*",
+    "../../src/utils/**/*"
   ],
   "exclude": [
     "src/ui/**/*",

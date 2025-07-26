@@ -1,0 +1,502 @@
+name: Memory Leak Detection
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Test duration in minutes'
+        required: false
+        default: '10'
+      interval:
+        description: 'Memory sampling interval in seconds'
+        required: false
+        default: '30'
+        
+  schedule:
+    # Run memory leak detection every Saturday at 2 AM UTC
+    - cron: '0 2 * * 6'
+
+jobs:
+  memory-leak-detection:
+    name: Memory Leak Detection
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Install system monitoring tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y htop psmisc procps
+          
+      - name: Install and setup Ollama
+        run: |
+          # Install Ollama
+          curl -fsSL https://ollama.com/install.sh | sh
+          
+          # Start Ollama server in background
+          ollama serve &
+          
+          # Wait for Ollama to be ready
+          echo "Waiting for Ollama to start..."
+          for i in {1..30}; do
+            if curl -s -f http://localhost:11434/api/version > /dev/null 2>&1; then
+              echo "Ollama is ready!"
+              break
+            fi
+            echo "Attempt $i: Ollama not ready yet, waiting..."
+            sleep 2
+          done
+          
+          # Pull required models
+          ollama pull qwen2.5:0.5b
+          ollama pull nomic-embed-text
+          
+      - name: Create memory monitoring script
+        run: |
+          mkdir -p memory-tests
+          cat > memory-tests/memory-monitor.js << 'EOF'
+          const fs = require('fs');
+          const { exec } = require('child_process');
+          const util = require('util');
+          const execAsync = util.promisify(exec);
+          
+          class MemoryMonitor {
+            constructor(interval = 30000) {
+              this.interval = interval;
+              this.measurements = [];
+              this.isRunning = false;
+              this.startTime = null;
+            }
+            
+            async getProcessMemory(pid) {
+              try {
+                const { stdout } = await execAsync(`ps -p ${pid} -o pid,vsz,rss,pmem --no-headers`);
+                const parts = stdout.trim().split(/\s+/);
+                return {
+                  pid: parseInt(parts[0]),
+                  vsz: parseInt(parts[1]), // Virtual memory size in KB
+                  rss: parseInt(parts[2]), // Resident set size in KB
+                  pmem: parseFloat(parts[3]) // Percentage of memory
+                };
+              } catch (error) {
+                return null;
+              }
+            }
+            
+            async getSystemMemory() {
+              try {
+                const { stdout } = await execAsync('free -m');
+                const lines = stdout.trim().split('\n');
+                const memLine = lines[1].split(/\s+/);
+                return {
+                  total: parseInt(memLine[1]),
+                  used: parseInt(memLine[2]),
+                  free: parseInt(memLine[3]),
+                  available: parseInt(memLine[6])
+                };
+              } catch (error) {
+                return null;
+              }
+            }
+            
+            async measureMemory(serverPid) {
+              const timestamp = new Date().toISOString();
+              const processMemory = await this.getProcessMemory(serverPid);
+              const systemMemory = await this.getSystemMemory();
+              
+              const measurement = {
+                timestamp,
+                elapsed: this.startTime ? Date.now() - this.startTime : 0,
+                process: processMemory,
+                system: systemMemory
+              };
+              
+              this.measurements.push(measurement);
+              
+              console.log(`[${timestamp}] Process Memory: ${processMemory?.rss || 'N/A'} KB, System Available: ${systemMemory?.available || 'N/A'} MB`);
+              
+              return measurement;
+            }
+            
+            async start(serverPid, duration) {
+              this.isRunning = true;
+              this.startTime = Date.now();
+              const endTime = this.startTime + (duration * 60 * 1000);
+              
+              console.log(`Starting memory monitoring for PID ${serverPid} for ${duration} minutes`);
+              
+              while (this.isRunning && Date.now() < endTime) {
+                await this.measureMemory(serverPid);
+                await new Promise(resolve => setTimeout(resolve, this.interval));
+              }
+              
+              console.log('Memory monitoring completed');
+            }
+            
+            stop() {
+              this.isRunning = false;
+            }
+            
+            generateReport() {
+              if (this.measurements.length === 0) {
+                return { error: 'No measurements collected' };
+              }
+              
+              const processMemories = this.measurements
+                .map(m => m.process?.rss)
+                .filter(rss => rss !== null && rss !== undefined);
+              
+              if (processMemories.length === 0) {
+                return { error: 'No process memory measurements collected' };
+              }
+              
+              const initialMemory = processMemories[0];
+              const finalMemory = processMemories[processMemories.length - 1];
+              const maxMemory = Math.max(...processMemories);
+              const avgMemory = processMemories.reduce((a, b) => a + b, 0) / processMemories.length;
+              
+              // Calculate memory growth trend
+              const memoryGrowth = finalMemory - initialMemory;
+              const memoryGrowthPercent = (memoryGrowth / initialMemory) * 100;
+              
+              // Detect potential memory leaks
+              const isMemoryLeak = memoryGrowthPercent > 20; // More than 20% growth
+              const isSignificantLeak = memoryGrowthPercent > 50; // More than 50% growth
+              
+              return {
+                summary: {
+                  duration: Math.round((Date.now() - this.startTime) / 60000),
+                  measurements: this.measurements.length,
+                  initialMemory: initialMemory,
+                  finalMemory: finalMemory,
+                  maxMemory: maxMemory,
+                  avgMemory: Math.round(avgMemory),
+                  memoryGrowth: memoryGrowth,
+                  memoryGrowthPercent: Math.round(memoryGrowthPercent * 100) / 100,
+                  isMemoryLeak: isMemoryLeak,
+                  isSignificantLeak: isSignificantLeak
+                },
+                measurements: this.measurements
+              };
+            }
+          }
+          
+          // Export for use in other modules
+          if (typeof module !== 'undefined' && module.exports) {
+            module.exports = MemoryMonitor;
+          }
+          
+          // Run if called directly
+          if (require.main === module) {
+            const monitor = new MemoryMonitor(parseInt(process.env.MONITOR_INTERVAL || '30') * 1000);
+            const serverPid = parseInt(process.argv[2]);
+            const duration = parseInt(process.argv[3] || '10');
+            
+            if (!serverPid) {
+              console.error('Usage: node memory-monitor.js <server-pid> [duration-minutes]');
+              process.exit(1);
+            }
+            
+            monitor.start(serverPid, duration).then(() => {
+              const report = monitor.generateReport();
+              fs.writeFileSync('memory-report.json', JSON.stringify(report, null, 2));
+              console.log('Memory report saved to memory-report.json');
+              
+              // Exit with error code if memory leak detected
+              if (report.summary?.isSignificantLeak) {
+                console.error('SIGNIFICANT MEMORY LEAK DETECTED!');
+                process.exit(1);
+              } else if (report.summary?.isMemoryLeak) {
+                console.warn('Potential memory leak detected');
+                process.exit(0);
+              }
+            }).catch(error => {
+              console.error('Memory monitoring failed:', error);
+              process.exit(1);
+            });
+          }
+          EOF
+          
+      - name: Create load generation script
+        run: |
+          cat > memory-tests/generate-load.js << 'EOF'
+          const http = require('http');
+          
+          class LoadGenerator {
+            constructor(baseUrl = 'http://localhost:3000') {
+              this.baseUrl = baseUrl;
+              this.isRunning = false;
+              this.requestCount = 0;
+              this.errorCount = 0;
+            }
+            
+            async makeRequest(path, method = 'GET', data = null) {
+              return new Promise((resolve, reject) => {
+                const options = {
+                  hostname: 'localhost',
+                  port: 3000,
+                  path: path,
+                  method: method,
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'MemoryTest/1.0'
+                  }
+                };
+                
+                const req = http.request(options, (res) => {
+                  let data = '';
+                  res.on('data', chunk => data += chunk);
+                  res.on('end', () => {
+                    this.requestCount++;
+                    resolve({ status: res.statusCode, data });
+                  });
+                });
+                
+                req.on('error', (error) => {
+                  this.errorCount++;
+                  reject(error);
+                });
+                
+                if (data) {
+                  req.write(JSON.stringify(data));
+                }
+                
+                req.end();
+              });
+            }
+            
+            async start(duration) {
+              this.isRunning = true;
+              const endTime = Date.now() + (duration * 60 * 1000);
+              
+              console.log(`Starting load generation for ${duration} minutes`);
+              
+              while (this.isRunning && Date.now() < endTime) {
+                try {
+                  // Generate various types of requests
+                  const requests = [
+                    this.makeRequest('/health'),
+                    this.makeRequest('/api/trpc/health.check'),
+                    this.makeRequest('/api/trpc/chat.getHistory'),
+                  ];
+                  
+                  await Promise.allSettled(requests);
+                  
+                  // Wait a bit between batches
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                  
+                } catch (error) {
+                  console.error('Load generation error:', error.message);
+                }
+              }
+              
+              console.log(`Load generation completed. Requests: ${this.requestCount}, Errors: ${this.errorCount}`);
+            }
+            
+            stop() {
+              this.isRunning = false;
+            }
+          }
+          
+          // Run if called directly
+          if (require.main === module) {
+            const generator = new LoadGenerator();
+            const duration = parseInt(process.argv[2] || '10');
+            
+            generator.start(duration).catch(error => {
+              console.error('Load generation failed:', error);
+              process.exit(1);
+            });
+          }
+          
+          module.exports = LoadGenerator;
+          EOF
+          
+      - name: Start application for memory testing
+        run: |
+          # Start the server in background
+          echo "Starting server for memory leak detection..."
+          pnpm dev:server &
+          SERVER_PID=$!
+          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+          
+          # Wait for server to start
+          echo "Waiting for server to start..."
+          for i in {1..30}; do
+            if curl -s -f http://localhost:3000/health > /dev/null 2>&1; then
+              echo "Server is ready! PID: $SERVER_PID"
+              break
+            fi
+            echo "Waiting for server... ($i/30)"
+            sleep 2
+          done
+          
+          # Verify server is running
+          if ! ps -p $SERVER_PID > /dev/null; then
+            echo "Server failed to start or crashed"
+            exit 1
+          fi
+          
+          echo "Server started successfully with PID: $SERVER_PID"
+          
+      - name: Run memory leak detection
+        run: |
+          cd memory-tests
+          
+          # Start load generation in background
+          echo "Starting load generation..."
+          node generate-load.js ${{ github.event.inputs.duration || '10' }} &
+          LOAD_PID=$!
+          
+          # Start memory monitoring
+          echo "Starting memory monitoring..."
+          node memory-monitor.js $SERVER_PID ${{ github.event.inputs.duration || '10' }}
+          
+          # Stop load generation
+          kill $LOAD_PID 2>/dev/null || true
+          
+          echo "Memory leak detection completed!"
+        env:
+          MONITOR_INTERVAL: ${{ github.event.inputs.interval || '30' }}
+          OLLAMA_URL: http://localhost:11434
+          
+      - name: Analyze memory leak results
+        run: |
+          echo "Analyzing memory leak results..."
+          
+          if [ -f "memory-tests/memory-report.json" ]; then
+            node -e "
+              const fs = require('fs');
+              const report = JSON.parse(fs.readFileSync('memory-tests/memory-report.json', 'utf8'));
+              
+              console.log('=== Memory Leak Detection Report ===');
+              console.log('Duration:', report.summary.duration, 'minutes');
+              console.log('Initial Memory:', report.summary.initialMemory, 'KB');
+              console.log('Final Memory:', report.summary.finalMemory, 'KB');
+              console.log('Max Memory:', report.summary.maxMemory, 'KB');
+              console.log('Average Memory:', report.summary.avgMemory, 'KB');
+              console.log('Memory Growth:', report.summary.memoryGrowth, 'KB');
+              console.log('Memory Growth %:', report.summary.memoryGrowthPercent, '%');
+              console.log('Memory Leak Detected:', report.summary.isMemoryLeak);
+              console.log('Significant Leak:', report.summary.isSignificantLeak);
+              
+              // Create human-readable report
+              let humanReport = '# Memory Leak Detection Report\n\n';
+              humanReport += '## Summary\n';
+              humanReport += '- **Test Duration**: ' + report.summary.duration + ' minutes\n';
+              humanReport += '- **Measurements**: ' + report.summary.measurements + '\n';
+              humanReport += '- **Initial Memory**: ' + report.summary.initialMemory + ' KB\n';
+              humanReport += '- **Final Memory**: ' + report.summary.finalMemory + ' KB\n';
+              humanReport += '- **Max Memory**: ' + report.summary.maxMemory + ' KB\n';
+              humanReport += '- **Average Memory**: ' + report.summary.avgMemory + ' KB\n';
+              humanReport += '- **Memory Growth**: ' + report.summary.memoryGrowth + ' KB (' + report.summary.memoryGrowthPercent + '%)\n\n';
+              
+              if (report.summary.isSignificantLeak) {
+                humanReport += '## 🚨 SIGNIFICANT MEMORY LEAK DETECTED!\n\n';
+                humanReport += 'Memory usage increased by more than 50% during the test period.\n';
+                humanReport += 'This indicates a serious memory leak that needs immediate attention.\n\n';
+              } else if (report.summary.isMemoryLeak) {
+                humanReport += '## ⚠️ Potential Memory Leak Detected\n\n';
+                humanReport += 'Memory usage increased by more than 20% during the test period.\n';
+                humanReport += 'This may indicate a memory leak that should be investigated.\n\n';
+              } else {
+                humanReport += '## ✅ No Memory Leak Detected\n\n';
+                humanReport += 'Memory usage remained stable during the test period.\n\n';
+              }
+              
+              humanReport += '## Recommendations\n';
+              if (report.summary.isMemoryLeak) {
+                humanReport += '- Review code for potential memory leaks\n';
+                humanReport += '- Check for unclosed resources (files, connections, etc.)\n';
+                humanReport += '- Verify that event listeners are properly removed\n';
+                humanReport += '- Consider using memory profiling tools for deeper analysis\n';
+              } else {
+                humanReport += '- Continue monitoring memory usage in production\n';
+                humanReport += '- Consider running longer tests for more thorough analysis\n';
+              }
+              
+              fs.writeFileSync('memory-leak-report.md', humanReport);
+              console.log('Human-readable report saved to memory-leak-report.md');
+            "
+          else
+            echo "No memory report generated"
+            exit 1
+          fi
+          
+      - name: Upload memory leak results
+        uses: actions/upload-artifact@v4
+        with:
+          name: memory-leak-results
+          path: |
+            memory-tests/memory-report.json
+            memory-leak-report.md
+          retention-days: 90
+          
+      - name: Create issue if significant memory leak detected
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            try {
+              const report = fs.readFileSync('memory-leak-report.md', 'utf8');
+              
+              github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🚨 Significant Memory Leak Detected',
+                body: `## Memory Leak Detection Alert
+
+A significant memory leak has been detected in the application.
+
+${report}
+
+### Action Required
+- Investigate the memory leak immediately
+- Review recent code changes for potential issues
+- Run memory profiling tools for detailed analysis
+- Fix the memory leak before deploying to production
+
+### Workflow Details
+- **Workflow**: ${context.workflow}
+- **Run ID**: ${context.runId}
+- **Triggered by**: ${context.eventName}
+- **Commit**: ${context.sha}
+
+🤖 This issue was created automatically by the memory leak detection workflow.`,
+                labels: ['bug', 'memory-leak', 'critical', 'automated']
+              });
+            } catch (error) {
+              console.log('Failed to create issue:', error.message);
+            }
+            
+      - name: Cleanup
+        if: always()
+        run: |
+          # Kill server and any remaining processes
+          if [ ! -z "$SERVER_PID" ]; then
+            echo "Stopping server (PID: $SERVER_PID)"
+            kill $SERVER_PID 2>/dev/null || true
+          fi
+          
+          # Kill any remaining processes
+          pkill -f "pnpm dev:server" || true
+          pkill -f "node generate-load.js" || true
+          pkill -f "node memory-monitor.js" || true
+          pkill -f "ollama serve" || true
+          
+          echo "Cleanup completed!"

@@ -1,0 +1,183 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  pr-title:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+
+  size-label:
+    name: Add Size Label
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          xs_label: "size/xs"
+          xs_max_size: "10"
+          s_label: "size/s"
+          s_max_size: "100"
+          m_label: "size/m"
+          m_max_size: "500"
+          l_label: "size/l"
+          l_max_size: "1000"
+          xl_label: "size/xl"
+
+  code-review:
+    name: Automated Code Review
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history for better context
+
+      - name: Run CodeRabbit AI Review
+        uses: coderabbitai/ai-pr-reviewer@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          debug: false
+          review_simple_changes: false
+          review_comment_lgtm: false
+          system_message: |
+            You are reviewing code for an AI Agent Team Framework built with TypeScript, React, tRPC, and Ollama.
+            Focus on security, performance, type safety, and AI/LLM integration best practices.
+            Pay special attention to:
+            - tRPC middleware and security patterns
+            - Agent orchestration and communication
+            - Type safety and error handling
+            - Performance optimization opportunities
+            - Security vulnerabilities in auth/validation
+          openai_light_model: gpt-3.5-turbo
+          openai_heavy_model: gpt-4
+          max_files: 50
+
+  security-scan:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    # Skip SARIF upload for PRs from forks due to permission restrictions
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+
+  # Alternative security scan for PRs from forks (no SARIF upload)
+  security-scan-fork:
+    name: Security Analysis (Fork PRs)
+    runs-on: ubuntu-latest
+    # Only run for PRs from forks
+    if: github.event.pull_request.head.repo.full_name != github.repository
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "table"
+          exit-code: "1"
+          severity: "CRITICAL,HIGH"
+
+      - name: Run Trivy in JSON format for comment
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "json"
+          output: "trivy-results.json"
+
+      - name: Create PR comment with security findings
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## 🔒 Security Scan Results\n\n';
+
+            try {
+              const results = JSON.parse(fs.readFileSync('trivy-results.json', 'utf8'));
+              const vulnerabilities = [];
+              
+              results.Results?.forEach(result => {
+                result.Vulnerabilities?.forEach(vuln => {
+                  if (vuln.Severity === 'CRITICAL' || vuln.Severity === 'HIGH') {
+                    vulnerabilities.push({
+                      pkg: vuln.PkgName,
+                      vulnerability: vuln.VulnerabilityID,
+                      severity: vuln.Severity,
+                      title: vuln.Title
+                    });
+                  }
+                });
+              });
+              
+              if (vulnerabilities.length > 0) {
+                comment += '⚠️ **Security vulnerabilities found:**\n\n';
+                comment += '| Package | Vulnerability | Severity | Description |\n';
+                comment += '|---------|---------------|----------|-------------|\n';
+                vulnerabilities.forEach(v => {
+                  comment += `| ${v.pkg} | ${v.vulnerability} | ${v.severity} | ${v.title || 'N/A'} |\n`;
+                });
+              } else {
+                comment += '✅ **No critical or high severity vulnerabilities found!**\n';
+              }
+            } catch (error) {
+              comment += '❌ **Error parsing security scan results**\n';
+              comment += `\`\`\`\n${error.message}\n\`\`\`\n`;
+            }
+
+            comment += '\n*Note: Full SARIF results are not uploaded for PRs from forks due to GitHub security restrictions.*';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
