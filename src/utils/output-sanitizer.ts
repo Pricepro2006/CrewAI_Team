@@ -1,7 +1,9 @@
 /**
  * Output sanitizer for LLM responses
- * Removes sensitive information and ensures clean output
+ * Removes sensitive information and ensures clean output with XSS protection
  */
+
+import { xssProtection, XSSEncoder } from './xss-protection';
 
 export interface SanitizedOutput {
   content: string;
@@ -9,6 +11,7 @@ export interface SanitizedOutput {
     sanitized: boolean;
     removedItems?: string[];
     warnings?: string[];
+    xssProtected?: boolean;
   };
 }
 
@@ -95,6 +98,13 @@ export function sanitizeLLMOutput(content: string): SanitizedOutput {
   sanitized = sanitized.replace(/[ \t]+/g, ' '); // Replace multiple spaces/tabs with single space
   sanitized = sanitized.trim();
 
+  // Apply XSS protection
+  const xssProtected = xssProtection.sanitizeString(sanitized);
+  if (xssProtected !== sanitized) {
+    removedItems.push('xss_patterns');
+    sanitized = xssProtected;
+  }
+
   // Check for remaining potential issues
   if (sanitized.includes('OPENAI_API_KEY') || sanitized.includes('sk-')) {
     warnings.push('Potential OpenAI API key detected');
@@ -114,7 +124,8 @@ export function sanitizeLLMOutput(content: string): SanitizedOutput {
     metadata: {
       sanitized: removedItems.length > 0,
       removedItems,
-      warnings
+      warnings,
+      xssProtected: removedItems.includes('xss_patterns')
     }
   };
 }
@@ -148,30 +159,81 @@ export function sanitizeJSONOutput(content: string): { valid: boolean; content: 
 }
 
 /**
- * Sanitize output for specific contexts
+ * Sanitize output for specific contexts with comprehensive XSS protection
  */
-export function sanitizeForContext(content: string, context: 'email' | 'web' | 'api' | 'general'): SanitizedOutput {
+export function sanitizeForContext(content: string, context: 'email' | 'web' | 'api' | 'general' | 'html' | 'markdown'): SanitizedOutput {
   const result = sanitizeLLMOutput(content);
   
   switch (context) {
     case 'email':
       // Additional email-specific sanitization
       result.content = result.content.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[EMAIL_PROTECTED]');
+      // Apply strict HTML sanitization for email content
+      result.content = xssProtection.sanitizeHTML(result.content, 'minimal');
+      result.metadata = { ...result.metadata, xssProtected: true };
       break;
+      
     case 'web':
-      // Web-specific sanitization (XSS prevention)
-      result.content = result.content.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '[SCRIPT_REMOVED]');
-      result.content = result.content.replace(/javascript:/gi, '[JAVASCRIPT_REMOVED]');
+      // Web-specific sanitization with DOMPurify
+      result.content = xssProtection.sanitizeHTML(result.content, 'strict');
+      result.metadata = { ...result.metadata, xssProtected: true };
       break;
+      
+    case 'html':
+      // HTML content with moderate sanitization (allows more formatting)
+      result.content = xssProtection.sanitizeHTML(result.content, 'moderate');
+      result.metadata = { ...result.metadata, xssProtected: true };
+      break;
+      
+    case 'markdown':
+      // Markdown content - sanitize while preserving markdown syntax
+      // First sanitize dangerous patterns, then allow markdown
+      result.content = xssProtection.sanitizeString(result.content);
+      // Preserve markdown but encode HTML entities within
+      result.content = result.content.replace(/<([^>]+)>/g, (match, tag) => {
+        // Allow markdown image syntax
+        if (tag.startsWith('!')) return match;
+        // Encode other HTML tags
+        return XSSEncoder.html(match);
+      });
+      result.metadata = { ...result.metadata, xssProtected: true };
+      break;
+      
     case 'api':
       // API-specific sanitization (more aggressive)
       result.content = result.content.replace(/\b[A-Za-z0-9_-]{20,}\b/g, '[TOKEN_REDACTED]');
+      // Ensure no HTML in API responses unless explicitly needed
+      result.content = xssProtection.sanitizeString(result.content);
+      result.metadata = { ...result.metadata, xssProtected: true };
       break;
+      
     case 'general':
     default:
-      // Use default sanitization
+      // Use string sanitization for general content
+      result.content = xssProtection.sanitizeString(result.content);
+      result.metadata = { ...result.metadata, xssProtected: true };
       break;
   }
   
   return result;
+}
+
+/**
+ * Sanitize content based on detected content type
+ */
+export function autoSanitize(content: string): SanitizedOutput {
+  // Detect content type
+  const hasHTML = /<[^>]*>/.test(content);
+  const hasMarkdown = /^#{1,6}\s|^\*{1,2}[^*]+\*{1,2}|^\[.+\]\(.+\)|^```/m.test(content);
+  const hasEmail = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/i.test(content);
+  
+  if (hasHTML) {
+    return sanitizeForContext(content, 'html');
+  } else if (hasMarkdown) {
+    return sanitizeForContext(content, 'markdown');
+  } else if (hasEmail) {
+    return sanitizeForContext(content, 'email');
+  } else {
+    return sanitizeForContext(content, 'general');
+  }
 }
