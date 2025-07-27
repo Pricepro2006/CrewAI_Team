@@ -6,7 +6,7 @@
 import { VectorStore } from "../VectorStore";
 import { BERTRanker } from "./BERTRanker";
 import { QueryComplexityAnalyzer } from "./QueryComplexityAnalyzer";
-import {
+import type {
   ScoredDocument,
   QueryProcessingResult,
   ConfidenceConfig,
@@ -115,6 +115,11 @@ export class ConfidenceRAGRetriever {
       queryComplexity: complexityAnalysis.score,
       expectedDomains: complexityAnalysis.analysis.domains,
       retrievalConfidence,
+      averageConfidence:
+        finalDocuments.length > 0
+          ? finalDocuments.reduce((sum, doc) => sum + doc.confidenceScore, 0) /
+            finalDocuments.length
+          : 0,
       documents: finalDocuments,
     };
   }
