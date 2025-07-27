@@ -8,7 +8,8 @@ import type { ScoredDocument } from "./types";
 
 // Configure Xenova Transformers for optimal CPU performance
 env.allowRemoteModels = true;
-env.localURL = "/models/"; // Local model cache directory
+// Type assertion needed due to incomplete TypeScript definitions in @xenova/transformers
+(env as any).localURL = "/models/"; // Local model cache directory
 
 export interface RerankResult {
   document: ScoredDocument;
@@ -148,8 +149,8 @@ export class BERTRanker {
     // The output format depends on the transformers.js version
     if (Array.isArray(output)) {
       return new Float32Array(output);
-    } else if (output.data) {
-      return new Float32Array(output.data);
+    } else if (output && typeof output === "object" && "data" in output) {
+      return new Float32Array(output.data as ArrayLike<number>);
     } else {
       throw new Error("Unexpected embedding output format");
     }
@@ -174,9 +175,13 @@ export class BERTRanker {
     let norm2 = 0;
 
     for (let i = 0; i < embedding1.length; i++) {
-      dotProduct += embedding1[i] * embedding2[i];
-      norm1 += embedding1[i] * embedding1[i];
-      norm2 += embedding2[i] * embedding2[i];
+      const val1 = embedding1[i];
+      const val2 = embedding2[i];
+      if (val1 !== undefined && val2 !== undefined) {
+        dotProduct += val1 * val2;
+        norm1 += val1 * val1;
+        norm2 += val2 * val2;
+      }
     }
 
     norm1 = Math.sqrt(norm1);
@@ -235,9 +240,13 @@ export class BERTRanker {
     }
 
     const results = await Promise.all(
-      queries.map((query, index) =>
-        this.rerank(query, documentSets[index], topK),
-      ),
+      queries.map((query, index) => {
+        const documents = documentSets[index];
+        if (!documents) {
+          return Promise.resolve([]);
+        }
+        return this.rerank(query, documents, topK);
+      }),
     );
 
     return results;
@@ -251,7 +260,11 @@ export class BERTRanker {
     if (results.length === 0) return 0;
 
     // Calculate score statistics
-    const scores = results.map((r) => r.combinedScore);
+    const scores = results
+      .map((r) => r.combinedScore)
+      .filter((score) => score !== undefined);
+    if (scores.length === 0) return 0;
+
     const maxScore = Math.max(...scores);
     const minScore = Math.min(...scores);
     const scoreRange = maxScore - minScore;
@@ -260,7 +273,11 @@ export class BERTRanker {
     const separation = scoreRange > 0.3 ? 1.0 : scoreRange / 0.3;
 
     // Check semantic score distribution
-    const semanticScores = results.map((r) => r.semanticScore);
+    const semanticScores = results
+      .map((r) => r.semanticScore)
+      .filter((score) => score !== undefined);
+    if (semanticScores.length === 0) return separation * 0.6;
+
     const avgSemanticScore =
       semanticScores.reduce((a, b) => a + b, 0) / semanticScores.length;
 

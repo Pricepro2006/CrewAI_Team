@@ -19,6 +19,7 @@ export interface Plan {
 
 export interface PlanStep {
   id: string;
+  title: string;
   task: string;
   description: string;
   agentType: AgentType;

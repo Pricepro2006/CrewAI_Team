@@ -458,6 +458,7 @@ export class MasterOrchestrator {
         steps: [
           {
             id: "fallback-1",
+            title: "General Query Processing",
             task: "Process query with general approach",
             description: "Process query with general approach",
             agentType: "ResearchAgent",

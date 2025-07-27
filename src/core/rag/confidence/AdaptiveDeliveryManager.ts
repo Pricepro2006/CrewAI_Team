@@ -127,7 +127,7 @@ export class AdaptiveDeliveryManager {
     const evidence = this.prepareEvidence(evaluation, options);
     const feedbackId = this.generateFeedbackId();
 
-    let content = evaluation.response;
+    let content = evaluation.response || "";
 
     // Add confidence indicator if requested
     if (options.includeConfidenceScore) {
@@ -173,7 +173,7 @@ export class AdaptiveDeliveryManager {
     const warnings = this.generateWarnings(evaluation);
     const feedbackId = this.generateFeedbackId();
 
-    let content = evaluation.response;
+    let content = evaluation.response || "";
 
     // Add uncertainty warnings
     if (options.includeUncertaintyWarnings && warnings.length > 0) {
@@ -362,8 +362,8 @@ export class AdaptiveDeliveryManager {
     return sortedSources.slice(0, maxItems).map((source) => ({
       source:
         source.metadata?.title || source.metadata?.source || "Unknown source",
-      relevance: source.score,
-      excerpt: this.extractExcerpt(source.content, evaluation.query),
+      relevance: source.retrievalScore,
+      excerpt: this.extractExcerpt(source.content, evaluation.query || ""),
       confidence: source.confidenceScore,
     }));
   }

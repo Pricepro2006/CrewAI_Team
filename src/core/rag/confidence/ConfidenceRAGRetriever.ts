@@ -3,19 +3,20 @@
  * Integrates with existing VectorStore and adds confidence-aware filtering
  */
 
-import { VectorStore } from '../VectorStore';
-import { BERTRanker } from './BERTRanker';
-import { QueryComplexityAnalyzer } from './QueryComplexityAnalyzer';
-import { 
-  ScoredDocument, 
+import { VectorStore } from "../VectorStore";
+import { BERTRanker } from "./BERTRanker";
+import { QueryComplexityAnalyzer } from "./QueryComplexityAnalyzer";
+import {
+  ScoredDocument,
   QueryProcessingResult,
-  ConfidenceConfig
-} from './types';
-import { getConfidenceConfig } from '../../../config/confidence.config';
+  ConfidenceConfig,
+} from "./types";
+import { getConfidenceConfig } from "../../../config/confidence.config";
 
 export interface RetrievalOptions {
   topK?: number;
   minScore?: number;
+  minConfidence?: number;
   includeMetadata?: boolean;
   useBERTReranking?: boolean;
   confidenceConfig?: Partial<ConfidenceConfig>;
@@ -27,10 +28,7 @@ export class ConfidenceRAGRetriever {
   private queryAnalyzer: QueryComplexityAnalyzer;
   private config: ConfidenceConfig;
 
-  constructor(
-    vectorStore: VectorStore,
-    config?: Partial<ConfidenceConfig>
-  ) {
+  constructor(vectorStore: VectorStore, config?: Partial<ConfidenceConfig>) {
     this.vectorStore = vectorStore;
     this.bertRanker = new BERTRanker();
     this.queryAnalyzer = new QueryComplexityAnalyzer();
@@ -44,9 +42,12 @@ export class ConfidenceRAGRetriever {
     // Initialize BERT ranker if available
     try {
       await this.bertRanker.initialize();
-      console.log('BERT reranker initialized for confidence-aware retrieval');
+      console.log("BERT reranker initialized for confidence-aware retrieval");
     } catch (error) {
-      console.warn('BERT reranker initialization failed, will use retrieval scores only:', error);
+      console.warn(
+        "BERT reranker initialization failed, will use retrieval scores only:",
+        error,
+      );
     }
   }
 
@@ -58,27 +59,27 @@ export class ConfidenceRAGRetriever {
    */
   async retrieve(
     query: string,
-    options: RetrievalOptions = {}
+    options: RetrievalOptions = {},
   ): Promise<QueryProcessingResult> {
     // Analyze query complexity
     const complexityAnalysis = this.queryAnalyzer.assessComplexity(query);
-    
+
     // Adjust retrieval parameters based on complexity
     const adjustedOptions = this.adjustRetrievalOptions(
       options,
-      complexityAnalysis.score
+      complexityAnalysis.score,
     );
 
     // Stage 1: Initial vector retrieval
     const initialDocuments = await this.performVectorRetrieval(
       query,
-      adjustedOptions
+      adjustedOptions,
     );
 
     // Stage 2: Confidence filtering
     const filteredDocuments = this.filterByConfidence(
       initialDocuments,
-      adjustedOptions
+      adjustedOptions,
     );
 
     // Stage 3: BERT reranking (if available and enabled)
@@ -87,17 +88,17 @@ export class ConfidenceRAGRetriever {
       const rerankResults = await this.bertRanker.rerank(
         query,
         filteredDocuments,
-        adjustedOptions.topK
+        adjustedOptions.topK,
       );
-      
+
       // Update confidence scores based on reranking
-      finalDocuments = rerankResults.map(result => ({
+      finalDocuments = rerankResults.map((result) => ({
         ...result.document,
         confidenceScore: this.calculateFinalConfidence(
           result.document.retrievalScore,
           result.semanticScore,
-          result.combinedScore
-        )
+          result.combinedScore,
+        ),
       }));
     } else {
       finalDocuments = filteredDocuments.slice(0, adjustedOptions.topK || 5);
@@ -106,7 +107,7 @@ export class ConfidenceRAGRetriever {
     // Calculate overall retrieval confidence
     const retrievalConfidence = this.calculateRetrievalConfidence(
       finalDocuments,
-      complexityAnalysis.score
+      complexityAnalysis.score,
     );
 
     return {
@@ -114,7 +115,7 @@ export class ConfidenceRAGRetriever {
       queryComplexity: complexityAnalysis.score,
       expectedDomains: complexityAnalysis.analysis.domains,
       retrievalConfidence,
-      documents: finalDocuments
+      documents: finalDocuments,
     };
   }
 
@@ -123,13 +124,13 @@ export class ConfidenceRAGRetriever {
    */
   private async performVectorRetrieval(
     query: string,
-    options: RetrievalOptions
+    options: RetrievalOptions,
   ): Promise<ScoredDocument[]> {
     try {
       // Query the vector store
       const results = await this.vectorStore.query(
         query,
-        options.topK ? options.topK * 2 : 10 // Get more for filtering
+        options.topK ? options.topK * 2 : 10, // Get more for filtering
       );
 
       // Convert to ScoredDocument format
@@ -138,14 +139,14 @@ export class ConfidenceRAGRetriever {
         content: result.content,
         retrievalScore: result.score || 0,
         confidenceScore: result.score || 0, // Initial confidence equals retrieval score
-        source: result.metadata?.source || 'unknown',
+        source: result.metadata?.source || "unknown",
         metadata: {
           ...result.metadata,
-          retrievalRank: index + 1
-        }
+          retrievalRank: index + 1,
+        },
       }));
     } catch (error) {
-      console.error('Vector retrieval failed:', error);
+      console.error("Vector retrieval failed:", error);
       return [];
     }
   }
@@ -155,11 +156,11 @@ export class ConfidenceRAGRetriever {
    */
   private filterByConfidence(
     documents: ScoredDocument[],
-    options: RetrievalOptions
+    options: RetrievalOptions,
   ): ScoredDocument[] {
     const minConfidence = options.minScore || this.config.retrieval.minimum;
-    
-    return documents.filter(doc => {
+
+    return documents.filter((doc) => {
       // Apply minimum confidence threshold
       if (doc.retrievalScore < minConfidence) {
         return false;
@@ -187,8 +188,9 @@ export class ConfidenceRAGRetriever {
     const words = doc.content.toLowerCase().split(/\s+/);
     const uniqueWords = new Set(words);
     const uniqueRatio = uniqueWords.size / words.length;
-    
-    if (uniqueRatio < 0.3) { // Too repetitive
+
+    if (uniqueRatio < 0.3) {
+      // Too repetitive
       return true;
     }
 
@@ -201,16 +203,16 @@ export class ConfidenceRAGRetriever {
   private calculateFinalConfidence(
     retrievalScore: number,
     semanticScore: number,
-    combinedScore: number
+    combinedScore: number,
   ): number {
     // Weight the scores based on reliability
     const weights = {
       retrieval: 0.3,
       semantic: 0.4,
-      combined: 0.3
+      combined: 0.3,
     };
 
-    const finalScore = 
+    const finalScore =
       retrievalScore * weights.retrieval +
       semanticScore * weights.semantic +
       combinedScore * weights.combined;
@@ -223,23 +225,21 @@ export class ConfidenceRAGRetriever {
    */
   private calculateRetrievalConfidence(
     documents: ScoredDocument[],
-    queryComplexity: number
+    queryComplexity: number,
   ): number {
     if (documents.length === 0) {
       return 0;
     }
 
     // Factor 1: Document quality
-    const avgConfidence = documents.reduce((sum, doc) => 
-      sum + doc.confidenceScore, 0
-    ) / documents.length;
+    const avgConfidence =
+      documents.reduce((sum, doc) => sum + doc.confidenceScore, 0) /
+      documents.length;
 
     // Factor 2: Score distribution
-    const scores = documents.map(d => d.confidenceScore);
+    const scores = documents.map((d) => d.confidenceScore);
     const maxScore = Math.max(...scores);
-    const scoreSpread = scores.length > 1 
-      ? maxScore - Math.min(...scores)
-      : 0;
+    const scoreSpread = scores.length > 1 ? maxScore - Math.min(...scores) : 0;
 
     // Factor 3: Query complexity penalty
     const complexityPenalty = Math.max(0, 1 - (queryComplexity - 5) * 0.1);
@@ -248,7 +248,7 @@ export class ConfidenceRAGRetriever {
     const countScore = Math.min(documents.length / 3, 1); // At least 3 docs is good
 
     // Combine factors
-    const confidence = 
+    const confidence =
       avgConfidence * 0.4 +
       (scoreSpread > 0.2 ? 0.2 : scoreSpread) + // Bonus for clear winner
       complexityPenalty * 0.2 +
@@ -262,7 +262,7 @@ export class ConfidenceRAGRetriever {
    */
   private adjustRetrievalOptions(
     options: RetrievalOptions,
-    complexity: number
+    complexity: number,
   ): RetrievalOptions {
     const adjusted = { ...options };
 
@@ -293,10 +293,10 @@ export class ConfidenceRAGRetriever {
    */
   async batchRetrieve(
     queries: string[],
-    options: RetrievalOptions = {}
+    options: RetrievalOptions = {},
   ): Promise<QueryProcessingResult[]> {
     const results = await Promise.all(
-      queries.map(query => this.retrieve(query, options))
+      queries.map((query) => this.retrieve(query, options)),
     );
     return results;
   }
@@ -312,27 +312,30 @@ export class ConfidenceRAGRetriever {
     confidenceDistribution: Record<string, number>;
   } {
     const docs = result.documents;
-    
+
     if (docs.length === 0) {
       return {
         totalDocuments: 0,
         avgConfidence: 0,
         maxConfidence: 0,
         minConfidence: 0,
-        confidenceDistribution: { low: 0, medium: 0, high: 0 }
+        confidenceDistribution: { low: 0, medium: 0, high: 0 },
       };
     }
 
-    const confidences = docs.map(d => d.confidenceScore);
-    
+    const confidences = docs.map((d) => d.confidenceScore);
+
     // Calculate distribution
     const distribution = {
-      low: docs.filter(d => d.confidenceScore < this.config.overall.low).length,
-      medium: docs.filter(d => 
-        d.confidenceScore >= this.config.overall.low && 
-        d.confidenceScore < this.config.overall.high
+      low: docs.filter((d) => d.confidenceScore < this.config.overall.low)
+        .length,
+      medium: docs.filter(
+        (d) =>
+          d.confidenceScore >= this.config.overall.low &&
+          d.confidenceScore < this.config.overall.high,
       ).length,
-      high: docs.filter(d => d.confidenceScore >= this.config.overall.high).length
+      high: docs.filter((d) => d.confidenceScore >= this.config.overall.high)
+        .length,
     };
 
     return {
@@ -340,7 +343,7 @@ export class ConfidenceRAGRetriever {
       avgConfidence: confidences.reduce((a, b) => a + b, 0) / docs.length,
       maxConfidence: Math.max(...confidences),
       minConfidence: Math.min(...confidences),
-      confidenceDistribution: distribution
+      confidenceDistribution: distribution,
     };
   }
 

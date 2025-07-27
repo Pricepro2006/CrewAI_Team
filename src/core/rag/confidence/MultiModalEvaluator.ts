@@ -3,18 +3,18 @@
  * Integrates factuality, relevance, and coherence checking with confidence calibration
  */
 
-import { FactualityChecker } from './evaluators/FactualityChecker';
-import { RelevanceScorer } from './evaluators/RelevanceScorer';
-import { CoherenceAnalyzer } from './evaluators/CoherenceAnalyzer';
-import { 
+import { FactualityChecker } from "./evaluators/FactualityChecker";
+import { RelevanceScorer } from "./evaluators/RelevanceScorer";
+import { CoherenceAnalyzer } from "./evaluators/CoherenceAnalyzer";
+import {
   ResponseEvaluationResult,
   ActionType,
   QualityMetrics,
   ScoredDocument,
   TokenConfidence,
-  ConfidenceConfig
-} from './types';
-import { getConfidenceConfig } from '../../config/confidence.config';
+  ConfidenceConfig,
+} from "./types";
+import { getConfidenceConfig } from "../../../config/confidence.config";
 
 export interface EvaluationOptions {
   includeFactuality?: boolean;
@@ -51,20 +51,20 @@ export class MultiModalEvaluator {
     response: string,
     sources: ScoredDocument[],
     tokenConfidence: TokenConfidence[] = [],
-    options: EvaluationOptions = {}
+    options: EvaluationOptions = {},
   ): Promise<ResponseEvaluationResult> {
     const {
       includeFactuality = true,
       includeRelevance = true,
       includeCoherence = true,
-      useLLMJudge = false
+      useLLMJudge = false,
     } = options;
 
     // Initialize quality metrics
     const qualityMetrics: QualityMetrics = {
       factuality: 0.5,
       relevance: 0.5,
-      coherence: 0.5
+      coherence: 0.5,
     };
 
     // Perform evaluations
@@ -87,7 +87,7 @@ export class MultiModalEvaluator {
     const rawConfidence = this.calculateRawConfidence(
       qualityMetrics,
       tokenConfidence,
-      sources
+      sources,
     );
 
     // Apply calibration (placeholder for now - will be implemented in ConfidenceCalibrator)
@@ -98,10 +98,13 @@ export class MultiModalEvaluator {
     const humanReviewNeeded = recommendedAction === ActionType.REVIEW;
 
     // Calculate source confidence
-    const sourceConfidence = sources.map(doc => doc.confidenceScore);
+    const sourceConfidence = sources.map((doc) => doc.confidenceScore);
 
     // Extract uncertainty markers
-    const uncertaintyMarkers = this.extractUncertaintyMarkers(response, tokenConfidence);
+    const uncertaintyMarkers = this.extractUncertaintyMarkers(
+      response,
+      tokenConfidence,
+    );
 
     return {
       overallConfidence: calibratedConfidence,
@@ -117,7 +120,7 @@ export class MultiModalEvaluator {
       sourceConfidence,
       uncertaintyMarkers,
       tokenConfidence,
-      id: this.generateEvaluationId()
+      id: this.generateEvaluationId(),
     };
   }
 
@@ -126,15 +129,18 @@ export class MultiModalEvaluator {
    */
   private evaluateFactuality(
     response: string,
-    sources: ScoredDocument[]
+    sources: ScoredDocument[],
   ): { score: number; details: any } {
     // Extract and verify claims
     const claims = this.factualityChecker.extractClaims(response);
-    const verificationResult = this.factualityChecker.verifyClaims(claims, sources);
+    const verificationResult = this.factualityChecker.verifyClaims(
+      claims,
+      sources,
+    );
 
     return {
       score: verificationResult.score,
-      details: verificationResult
+      details: verificationResult,
     };
   }
 
@@ -144,17 +150,17 @@ export class MultiModalEvaluator {
   private evaluateRelevance(
     query: string,
     response: string,
-    sources: ScoredDocument[]
+    sources: ScoredDocument[],
   ): { score: number; details: any } {
     const relevanceResult = this.relevanceScorer.calculateRelevance(
       query,
       response,
-      sources
+      sources,
     );
 
     return {
       score: relevanceResult.score,
-      details: relevanceResult
+      details: relevanceResult,
     };
   }
 
@@ -166,7 +172,7 @@ export class MultiModalEvaluator {
 
     return {
       score: coherenceResult.score,
-      details: coherenceResult
+      details: coherenceResult,
     };
   }
 
@@ -176,10 +182,10 @@ export class MultiModalEvaluator {
   private calculateRawConfidence(
     qualityMetrics: QualityMetrics,
     tokenConfidence: TokenConfidence[],
-    sources: ScoredDocument[]
+    sources: ScoredDocument[],
   ): number {
     // Base confidence from quality metrics (weighted average)
-    const qualityScore = 
+    const qualityScore =
       qualityMetrics.factuality * 0.4 +
       qualityMetrics.relevance * 0.3 +
       qualityMetrics.coherence * 0.3;
@@ -187,22 +193,22 @@ export class MultiModalEvaluator {
     // Token-level confidence if available
     let tokenScore = 0.7; // Default
     if (tokenConfidence.length > 0) {
-      const avgTokenConfidence = tokenConfidence.reduce(
-        (sum, tc) => sum + tc.confidence, 0
-      ) / tokenConfidence.length;
+      const avgTokenConfidence =
+        tokenConfidence.reduce((sum, tc) => sum + tc.confidence, 0) /
+        tokenConfidence.length;
       tokenScore = avgTokenConfidence;
     }
 
     // Source confidence
-    const avgSourceConfidence = sources.length > 0
-      ? sources.reduce((sum, doc) => sum + doc.confidenceScore, 0) / sources.length
-      : 0.5;
+    const avgSourceConfidence =
+      sources.length > 0
+        ? sources.reduce((sum, doc) => sum + doc.confidenceScore, 0) /
+          sources.length
+        : 0.5;
 
     // Combine scores with weights
-    const rawConfidence = 
-      qualityScore * 0.5 +
-      tokenScore * 0.3 +
-      avgSourceConfidence * 0.2;
+    const rawConfidence =
+      qualityScore * 0.5 + tokenScore * 0.3 + avgSourceConfidence * 0.2;
 
     return Math.max(0, Math.min(1, rawConfidence));
   }
@@ -227,18 +233,26 @@ export class MultiModalEvaluator {
    */
   private extractUncertaintyMarkers(
     response: string,
-    tokenConfidence: TokenConfidence[]
+    tokenConfidence: TokenConfidence[],
   ): string[] {
     const markers: Set<string> = new Set();
 
     // Linguistic uncertainty markers
     const uncertainPhrases = [
-      'maybe', 'perhaps', 'possibly', 'might', 'could be',
-      'uncertain', 'not sure', 'unclear', 'it seems', 'appears to be'
+      "maybe",
+      "perhaps",
+      "possibly",
+      "might",
+      "could be",
+      "uncertain",
+      "not sure",
+      "unclear",
+      "it seems",
+      "appears to be",
     ];
 
     const responseLower = response.toLowerCase();
-    uncertainPhrases.forEach(phrase => {
+    uncertainPhrases.forEach((phrase) => {
       if (responseLower.includes(phrase)) {
         markers.add(phrase);
       }
@@ -247,9 +261,9 @@ export class MultiModalEvaluator {
     // Low confidence tokens
     if (tokenConfidence.length > 0) {
       const lowConfidenceTokens = tokenConfidence
-        .filter(tc => tc.confidence < 0.5)
-        .map(tc => tc.token);
-      
+        .filter((tc) => tc.confidence < 0.5)
+        .map((tc) => tc.token);
+
       if (lowConfidenceTokens.length > 3) {
         markers.add(`${lowConfidenceTokens.length} low-confidence tokens`);
       }
@@ -270,66 +284,70 @@ export class MultiModalEvaluator {
    */
   generateDetailedReport(result: ResponseEvaluationResult): string {
     const report: string[] = [
-      '# Response Evaluation Report',
-      '',
+      "# Response Evaluation Report",
+      "",
       `**Evaluation ID:** ${result.id}`,
       `**Date:** ${new Date().toISOString()}`,
-      '',
-      '## Summary',
+      "",
+      "## Summary",
       `- **Overall Confidence:** ${(result.overallConfidence * 100).toFixed(1)}%`,
       `- **Recommended Action:** ${result.recommendedAction}`,
-      `- **Human Review Needed:** ${result.humanReviewNeeded ? 'Yes' : 'No'}`,
-      '',
-      '## Quality Metrics',
+      `- **Human Review Needed:** ${result.humanReviewNeeded ? "Yes" : "No"}`,
+      "",
+      "## Quality Metrics",
       `- **Factuality:** ${(result.factualityScore * 100).toFixed(1)}%`,
       `- **Relevance:** ${(result.relevanceScore * 100).toFixed(1)}%`,
       `- **Coherence:** ${(result.coherenceScore * 100).toFixed(1)}%`,
-      '',
-      '## Source Analysis',
+      "",
+      "## Source Analysis",
       `- **Number of Sources:** ${result.sources?.length || 0}`,
       `- **Average Source Confidence:** ${this.calculateAverage(result.sourceConfidence || [])}%`,
-      '',
-      '## Uncertainty Analysis',
-      `- **Uncertainty Markers Found:** ${result.uncertaintyMarkers?.length || 0}`
+      "",
+      "## Uncertainty Analysis",
+      `- **Uncertainty Markers Found:** ${result.uncertaintyMarkers?.length || 0}`,
     ];
 
     if (result.uncertaintyMarkers && result.uncertaintyMarkers.length > 0) {
-      report.push('- **Markers:**');
-      result.uncertaintyMarkers.forEach(marker => {
+      report.push("- **Markers:**");
+      result.uncertaintyMarkers.forEach((marker) => {
         report.push(`  - ${marker}`);
       });
     }
 
-    report.push('', '## Recommendations');
-    
+    report.push("", "## Recommendations");
+
     switch (result.recommendedAction) {
       case ActionType.ACCEPT:
-        report.push('✅ Response is high quality and can be delivered as-is.');
+        report.push("✅ Response is high quality and can be delivered as-is.");
         break;
       case ActionType.REVIEW:
-        report.push('⚠️ Response should be reviewed by a human before delivery.');
-        report.push('Consider clarifying uncertain areas or adding caveats.');
+        report.push(
+          "⚠️ Response should be reviewed by a human before delivery.",
+        );
+        report.push("Consider clarifying uncertain areas or adding caveats.");
         break;
       case ActionType.REGENERATE:
-        report.push('🔄 Response quality is low. Consider regenerating with:');
-        report.push('- More specific retrieval parameters');
-        report.push('- Lower temperature for more focused generation');
-        report.push('- Additional context or examples');
+        report.push("🔄 Response quality is low. Consider regenerating with:");
+        report.push("- More specific retrieval parameters");
+        report.push("- Lower temperature for more focused generation");
+        report.push("- Additional context or examples");
         break;
       case ActionType.FALLBACK:
-        report.push('❌ Response quality is very low. Use fallback response or');
-        report.push('escalate to human support.');
+        report.push(
+          "❌ Response quality is very low. Use fallback response or",
+        );
+        report.push("escalate to human support.");
         break;
     }
 
-    return report.join('\n');
+    return report.join("\n");
   }
 
   /**
    * Calculate average of an array
    */
   private calculateAverage(values: number[]): string {
-    if (values.length === 0) return '0';
+    if (values.length === 0) return "0";
     const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
     return (avg * 100).toFixed(1);
   }
@@ -340,20 +358,21 @@ export class MultiModalEvaluator {
   quickEvaluate(
     query: string,
     response: string,
-    baseConfidence: number
+    baseConfidence: number,
   ): ResponseEvaluationResult {
     // Simplified evaluation using heuristics
     const relevanceScore = this.quickRelevanceCheck(query, response);
     const coherenceScore = this.quickCoherenceCheck(response);
-    
-    const overallConfidence = (baseConfidence * 0.5 + relevanceScore * 0.3 + coherenceScore * 0.2);
-    
+
+    const overallConfidence =
+      baseConfidence * 0.5 + relevanceScore * 0.3 + coherenceScore * 0.2;
+
     return {
       overallConfidence,
       qualityMetrics: {
         factuality: baseConfidence, // Use base as proxy
         relevance: relevanceScore,
-        coherence: coherenceScore
+        coherence: coherenceScore,
       },
       factualityScore: baseConfidence,
       relevanceScore,
@@ -362,7 +381,7 @@ export class MultiModalEvaluator {
       humanReviewNeeded: overallConfidence < this.config.generation.review,
       query,
       response,
-      id: this.generateEvaluationId()
+      id: this.generateEvaluationId(),
     };
   }
 
@@ -370,11 +389,16 @@ export class MultiModalEvaluator {
    * Quick relevance check using term overlap
    */
   private quickRelevanceCheck(query: string, response: string): number {
-    const queryTerms = new Set(query.toLowerCase().split(/\s+/).filter(t => t.length > 3));
+    const queryTerms = new Set(
+      query
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((t) => t.length > 3),
+    );
     const responseTerms = new Set(response.toLowerCase().split(/\s+/));
-    
+
     let matches = 0;
-    queryTerms.forEach(term => {
+    queryTerms.forEach((term) => {
       if (responseTerms.has(term)) matches++;
     });
 
@@ -385,17 +409,19 @@ export class MultiModalEvaluator {
    * Quick coherence check
    */
   private quickCoherenceCheck(response: string): number {
-    const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    
+    const sentences = response
+      .split(/[.!?]+/)
+      .filter((s) => s.trim().length > 0);
+
     // Basic checks
     if (sentences.length === 0) return 0.3;
     if (sentences.length === 1) return 0.7;
-    
+
     // Check for reasonable length
     const avgLength = response.length / sentences.length;
     if (avgLength > 200) return 0.6; // Sentences too long
-    if (avgLength < 20) return 0.6;  // Sentences too short
-    
+    if (avgLength < 20) return 0.6; // Sentences too short
+
     return 0.8; // Default decent coherence
   }
 }

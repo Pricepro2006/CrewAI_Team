@@ -12,6 +12,7 @@ export interface ContextBuildOptions {
   includeConfidenceLabels?: boolean;
   confidenceFormat?: "label" | "percentage" | "both";
   separateByConfidence?: boolean;
+  mode?: "standard" | "summarized" | "detailed";
 }
 
 export class ConfidenceContextBuilder {

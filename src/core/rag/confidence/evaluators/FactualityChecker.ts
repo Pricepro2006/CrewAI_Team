@@ -3,7 +3,7 @@
  * Checks claims against source documents
  */
 
-import { ScoredDocument } from '../types';
+import type { ScoredDocument } from "../types";
 
 export interface Claim {
   text: string;
@@ -29,25 +29,25 @@ export class FactualityChecker {
    */
   extractClaims(response: string): Claim[] {
     const claims: Claim[] = [];
-    
+
     // Split into sentences
     const sentences = this.splitIntoSentences(response);
-    
+
     for (const sentence of sentences) {
       // Skip questions and meta-statements
       if (this.isQuestion(sentence) || this.isMetaStatement(sentence)) {
         continue;
       }
-      
+
       // Extract factual claims
       if (this.containsFactualClaim(sentence)) {
         claims.push({
           text: sentence.trim(),
-          confidence: this.assessClaimConfidence(sentence)
+          confidence: this.assessClaimConfidence(sentence),
         });
       }
     }
-    
+
     return claims;
   }
 
@@ -68,8 +68,12 @@ export class FactualityChecker {
 
     // Verify each claim
     for (const claim of claims) {
-      const verification = this.verifyClaimAgainstSources(claim, sourceContent, sources);
-      
+      const verification = this.verifyClaimAgainstSources(
+        claim,
+        sourceContent,
+        sources,
+      );
+
       claim.supportingEvidence = verification.supporting;
       claim.contradictingEvidence = verification.contradicting;
 
@@ -85,14 +89,17 @@ export class FactualityChecker {
     }
 
     // Calculate factuality score
-    const totalVerifiableClaims = supportedClaims + unsupportedClaims + contradictedClaims;
+    const totalVerifiableClaims =
+      supportedClaims + unsupportedClaims + contradictedClaims;
     let score = 0;
 
     if (totalVerifiableClaims > 0) {
       // Supported claims get full credit
       // Unsupported get partial credit (they're not contradicted)
       // Contradicted claims reduce score
-      score = (supportedClaims + (unsupportedClaims * 0.5) - contradictedClaims) / totalVerifiableClaims;
+      score =
+        (supportedClaims + unsupportedClaims * 0.5 - contradictedClaims) /
+        totalVerifiableClaims;
       score = Math.max(0, Math.min(1, score)); // Clamp to [0, 1]
     } else if (unverifiableClaims > 0) {
       // If all claims are unverifiable, give neutral score
@@ -105,7 +112,7 @@ export class FactualityChecker {
       supportedClaims,
       unsupportedClaims,
       contradictedClaims,
-      unverifiableClaims
+      unverifiableClaims,
     };
   }
 
@@ -123,16 +130,14 @@ export class FactualityChecker {
    */
   private splitIntoSentences(text: string): string[] {
     // Simple sentence splitting - can be enhanced with NLP
-    return text
-      .split(/(?<=[.!?])\s+/)
-      .filter(s => s.trim().length > 0);
+    return text.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 0);
   }
 
   /**
    * Check if sentence is a question
    */
   private isQuestion(sentence: string): boolean {
-    return sentence.trim().endsWith('?');
+    return sentence.trim().endsWith("?");
   }
 
   /**
@@ -143,10 +148,10 @@ export class FactualityChecker {
       /^(Based on|According to|From) (the|these) (sources?|documents?|information)/i,
       /^I (found|can see|notice|observe)/i,
       /^The (sources?|documents?|information) (shows?|indicates?|suggests?)/i,
-      /^(Please note|Note that|Keep in mind)/i
+      /^(Please note|Note that|Keep in mind)/i,
     ];
 
-    return metaPatterns.some(pattern => pattern.test(sentence));
+    return metaPatterns.some((pattern) => pattern.test(sentence));
   }
 
   /**
@@ -159,10 +164,10 @@ export class FactualityChecker {
       /\b(contains?|includes?|consists?|comprises?)\b/i,
       /\b(means?|refers? to|defines?|describes?)\b/i,
       /\b\d+\b/, // Numbers often indicate facts
-      /\b(always|never|all|none|every)\b/i // Absolute statements
+      /\b(always|never|all|none|every)\b/i, // Absolute statements
     ];
 
-    return factualPatterns.some(pattern => pattern.test(sentence));
+    return factualPatterns.some((pattern) => pattern.test(sentence));
   }
 
   /**
@@ -172,12 +177,16 @@ export class FactualityChecker {
     let confidence = 0.8; // Base confidence
 
     // High confidence indicators
-    if (/\b(definitely|certainly|clearly|obviously|undoubtedly)\b/i.test(sentence)) {
+    if (
+      /\b(definitely|certainly|clearly|obviously|undoubtedly)\b/i.test(sentence)
+    ) {
       confidence += 0.1;
     }
 
     // Low confidence indicators
-    if (/\b(maybe|perhaps|possibly|might|could|seems?|appears?)\b/i.test(sentence)) {
+    if (
+      /\b(maybe|perhaps|possibly|might|could|seems?|appears?)\b/i.test(sentence)
+    ) {
       confidence -= 0.3;
     }
 
@@ -196,9 +205,13 @@ export class FactualityChecker {
     const content = new Map<string, string[]>();
 
     for (const source of sources) {
+      if (!source.content || source.content.trim().length === 0) continue;
+
       // Split source content into searchable chunks
       const sentences = this.splitIntoSentences(source.content);
-      content.set(source.id, sentences);
+      if (sentences.length > 0) {
+        content.set(source.id, sentences);
+      }
     }
 
     return content;
@@ -210,7 +223,7 @@ export class FactualityChecker {
   private verifyClaimAgainstSources(
     claim: Claim,
     sourceContent: Map<string, string[]>,
-    sources: ScoredDocument[]
+    sources: ScoredDocument[],
   ): {
     supporting: string[];
     contradicting: string[];
@@ -222,19 +235,28 @@ export class FactualityChecker {
 
     // Extract key terms from claim
     const claimTerms = this.extractKeyTerms(claim.text);
-    
-    if (claimTerms.length === 0) {
+
+    if (
+      claimTerms.length === 0 ||
+      !claim.text ||
+      claim.text.trim().length === 0
+    ) {
       return { supporting, contradicting, isVerifiable: false };
     }
 
     // Search each source
     for (const [sourceId, sentences] of sourceContent.entries()) {
+      if (!sentences || sentences.length === 0) continue;
+
       for (const sentence of sentences) {
+        if (!sentence || sentence.trim().length === 0) continue;
+
         const relevance = this.calculateRelevance(claimTerms, sentence);
-        
-        if (relevance > 0.3) { // Relevant to claim
+
+        if (relevance > 0.3) {
+          // Relevant to claim
           isVerifiable = true;
-          
+
           if (this.supportsClaimBool(claim.text, sentence)) {
             supporting.push(`[Source ${sourceId}]: ${sentence}`);
           } else if (this.contradictsClaimBool(claim.text, sentence)) {
@@ -253,27 +275,65 @@ export class FactualityChecker {
   private extractKeyTerms(text: string): string[] {
     // Remove common words and extract meaningful terms
     const stopWords = new Set([
-      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-      'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
-      'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
-      'could', 'should', 'may', 'might', 'must', 'shall', 'can', 'cannot'
+      "the",
+      "a",
+      "an",
+      "and",
+      "or",
+      "but",
+      "in",
+      "on",
+      "at",
+      "to",
+      "for",
+      "of",
+      "with",
+      "by",
+      "from",
+      "as",
+      "is",
+      "was",
+      "are",
+      "were",
+      "been",
+      "be",
+      "have",
+      "has",
+      "had",
+      "do",
+      "does",
+      "did",
+      "will",
+      "would",
+      "could",
+      "should",
+      "may",
+      "might",
+      "must",
+      "shall",
+      "can",
+      "cannot",
     ]);
 
     return text
       .toLowerCase()
       .split(/\W+/)
-      .filter(term => term.length > 2 && !stopWords.has(term));
+      .filter((term) => term.length > 2 && !stopWords.has(term));
   }
 
   /**
    * Calculate relevance between claim terms and sentence
    */
   private calculateRelevance(claimTerms: string[], sentence: string): number {
+    if (claimTerms.length === 0 || !sentence || sentence.trim().length === 0) {
+      return 0;
+    }
+
     const sentenceLower = sentence.toLowerCase();
     let matches = 0;
 
     for (const term of claimTerms) {
-      if (sentenceLower.includes(term)) {
+      if (term && sentenceLower.includes(term)) {
         matches++;
       }
     }
@@ -285,6 +345,15 @@ export class FactualityChecker {
    * Check if source sentence supports the claim
    */
   private supportsClaimBool(claim: string, sourceSentence: string): boolean {
+    if (
+      !claim ||
+      !sourceSentence ||
+      claim.trim().length === 0 ||
+      sourceSentence.trim().length === 0
+    ) {
+      return false;
+    }
+
     // This is a simplified check - in production, use NLP similarity
     const claimLower = claim.toLowerCase();
     const sourceLower = sourceSentence.toLowerCase();
@@ -293,13 +362,19 @@ export class FactualityChecker {
     const agreementPatterns = [
       { claim: /is|are/, source: /is|are/ },
       { claim: /was|were/, source: /was|were/ },
-      { claim: /(\d+)/, source: /same \1/ }, // Same numbers
     ];
 
     // Check key term overlap
     const claimTerms = this.extractKeyTerms(claim);
     const sourceTerms = this.extractKeyTerms(sourceSentence);
-    const overlap = claimTerms.filter(term => sourceTerms.includes(term)).length;
+
+    if (claimTerms.length === 0 || sourceTerms.length === 0) {
+      return false;
+    }
+
+    const overlap = claimTerms.filter((term) =>
+      sourceTerms.includes(term),
+    ).length;
 
     return overlap >= Math.min(3, claimTerms.length * 0.5);
   }
@@ -308,6 +383,15 @@ export class FactualityChecker {
    * Check if source sentence contradicts the claim
    */
   private contradictsClaimBool(claim: string, sourceSentence: string): boolean {
+    if (
+      !claim ||
+      !sourceSentence ||
+      claim.trim().length === 0 ||
+      sourceSentence.trim().length === 0
+    ) {
+      return false;
+    }
+
     // Look for contradictory patterns
     const contradictionIndicators = [
       /\bnot\b/i,
@@ -317,12 +401,12 @@ export class FactualityChecker {
       /\bfalse\b/i,
       /\binstead\b/i,
       /\bhowever\b/i,
-      /\bcontrary\b/i
+      /\bcontrary\b/i,
     ];
 
     // Check if source contains contradiction indicators
-    const hasContradiction = contradictionIndicators.some(pattern => 
-      pattern.test(sourceSentence)
+    const hasContradiction = contradictionIndicators.some((pattern) =>
+      pattern.test(sourceSentence),
     );
 
     if (!hasContradiction) {
@@ -332,7 +416,14 @@ export class FactualityChecker {
     // Verify it's about the same topic
     const claimTerms = this.extractKeyTerms(claim);
     const sourceTerms = this.extractKeyTerms(sourceSentence);
-    const overlap = claimTerms.filter(term => sourceTerms.includes(term)).length;
+
+    if (claimTerms.length === 0 || sourceTerms.length === 0) {
+      return false;
+    }
+
+    const overlap = claimTerms.filter((term) =>
+      sourceTerms.includes(term),
+    ).length;
 
     return overlap >= 2; // At least 2 common terms for contradiction
   }

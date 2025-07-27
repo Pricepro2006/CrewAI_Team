@@ -1,4 +1,5 @@
 import { OllamaProvider } from "../llm/OllamaProvider";
+import type { AgentType } from "../shared/types";
 import type {
   QueryAnalysis,
   AgentRoutingPlan,
@@ -189,8 +190,8 @@ export class AgentRouter {
     return selections.sort((a, b) => a.priority - b.priority);
   }
 
-  private getPrimaryAgentForIntent(intent: string): string | null {
-    const intentMapping: Record<string, string> = {
+  private getPrimaryAgentForIntent(intent: string): AgentType | null {
+    const intentMapping: Record<string, AgentType> = {
       research: "ResearchAgent",
       analyze: "DataAnalysisAgent",
       create: "CodeAgent",
@@ -207,8 +208,8 @@ export class AgentRouter {
     return intentMapping[intent] || null;
   }
 
-  private getAgentForDomain(domain: string): string | null {
-    const domainMapping: Record<string, string> = {
+  private getAgentForDomain(domain: string): AgentType | null {
+    const domainMapping: Record<string, AgentType> = {
       development: "CodeAgent",
       web: "CodeAgent",
       data: "DataAnalysisAgent",
@@ -361,8 +362,10 @@ export class AgentRouter {
     return mitigations;
   }
 
-  private identifyFallbackAgents(selectedAgents: AgentSelection[]): string[] {
-    const fallbacks: string[] = [];
+  private identifyFallbackAgents(
+    selectedAgents: AgentSelection[],
+  ): AgentType[] {
+    const fallbacks: AgentType[] = [];
     const selectedTypes = selectedAgents.map((a) => a.agentType);
 
     // Always have ResearchAgent as a fallback if not selected

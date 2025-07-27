@@ -631,6 +631,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     };
 
     return {
+      success: false,
       results: [],
       summary: delivered.content,
       confidence: 0,
@@ -665,8 +666,10 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     processingPath: ConfidenceOrchestratorResult["processingPath"],
   ): ConfidenceOrchestratorResult {
     return {
+      success: true,
       results: [
         {
+          stepId: "response-generation",
           success: true,
           output: response,
           metadata: {

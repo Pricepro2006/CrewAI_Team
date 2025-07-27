@@ -1,5 +1,5 @@
-import { Ollama } from 'ollama';
-import { EventEmitter } from 'events';
+import { Ollama } from "ollama";
+import { EventEmitter } from "events";
 
 export interface OllamaJSConfig {
   model: string;
@@ -9,7 +9,7 @@ export interface OllamaJSConfig {
   topK?: number;
   maxTokens?: number;
   systemPrompt?: string;
-  format?: 'json' | string;
+  format?: "json" | string;
   stream?: boolean;
   keepAlive?: string;
 }
@@ -37,17 +37,17 @@ export class OllamaJSProvider extends EventEmitter {
   constructor(config: OllamaJSConfig) {
     super();
     this.config = {
-      host: 'http://localhost:11434',
+      host: "http://localhost:11434",
       temperature: 0.7,
       topP: 0.9,
       maxTokens: 4096,
       stream: false,
-      keepAlive: '15m', // Default 15 minutes keep alive
-      ...config
+      keepAlive: "15m", // Default 15 minutes keep alive
+      ...config,
     };
 
     this.client = new Ollama({
-      host: this.config.host
+      host: this.config.host,
     });
   }
 
@@ -57,33 +57,35 @@ export class OllamaJSProvider extends EventEmitter {
     try {
       // Check if the model is available
       const models = await this.listModels();
-      const modelExists = models.some(m => m.name === this.config.model);
-      
+      const modelExists = models.some((m) => m.name === this.config.model);
+
       if (!modelExists) {
-        throw new Error(`Model ${this.config.model} not found. Please pull it first.`);
+        throw new Error(
+          `Model ${this.config.model} not found. Please pull it first.`,
+        );
       }
 
       this.isInitialized = true;
-      this.emit('initialized');
+      this.emit("initialized");
     } catch (error) {
       const err = error as any;
-      if (err.code === 'ECONNREFUSED') {
-        throw new Error('Ollama is not running. Please start Ollama first.');
+      if (err.code === "ECONNREFUSED") {
+        throw new Error("Ollama is not running. Please start Ollama first.");
       }
       throw error;
     }
   }
 
   async generate(
-    prompt: string, 
+    prompt: string,
     options?: {
       temperature?: number;
       topP?: number;
       topK?: number;
       maxTokens?: number;
       systemPrompt?: string;
-      format?: 'json' | string;
-    }
+      format?: "json" | string;
+    },
   ): Promise<string> {
     if (!this.isInitialized) {
       await this.initialize();
@@ -91,7 +93,7 @@ export class OllamaJSProvider extends EventEmitter {
 
     const requestOptions = {
       ...this.config,
-      ...options
+      ...options,
     };
 
     try {
@@ -104,27 +106,29 @@ export class OllamaJSProvider extends EventEmitter {
           temperature: requestOptions.temperature,
           top_p: requestOptions.topP,
           top_k: requestOptions.topK,
-          num_predict: requestOptions.maxTokens
+          num_predict: requestOptions.maxTokens,
         },
-        format: requestOptions.format
+        format: requestOptions.format,
       });
 
-      this.emit('generation', {
+      this.emit("generation", {
         prompt,
         response: response.response,
-        duration: response.total_duration
+        duration: response.total_duration,
       });
 
       return response.response;
     } catch (error: any) {
-      this.emit('error', error);
-      
+      this.emit("error", error);
+
       // If timeout or connection error, provide a fallback response
-      if (error.code === 'ECONNABORTED' || error.code === 'ECONNREFUSED') {
-        console.warn(`Ollama error for model ${this.config.model}. Providing fallback response.`);
+      if (error.code === "ECONNABORTED" || error.code === "ECONNREFUSED") {
+        console.warn(
+          `Ollama error for model ${this.config.model}. Providing fallback response.`,
+        );
         return this.generateFallbackResponse(prompt, options);
       }
-      
+
       throw error;
     }
   }
@@ -137,9 +141,9 @@ export class OllamaJSProvider extends EventEmitter {
       topK?: number;
       maxTokens?: number;
       systemPrompt?: string;
-      format?: 'json' | string;
+      format?: "json" | string;
     },
-    onChunk?: (chunk: string) => void
+    onChunk?: (chunk: string) => void,
   ): Promise<string> {
     if (!this.isInitialized) {
       await this.initialize();
@@ -147,12 +151,12 @@ export class OllamaJSProvider extends EventEmitter {
 
     const requestOptions = {
       ...this.config,
-      ...options
+      ...options,
     };
 
     try {
-      let fullResponse = '';
-      
+      let fullResponse = "";
+
       const response = await this.client.generate({
         model: this.config.model,
         prompt: this.buildPrompt(prompt, requestOptions.systemPrompt),
@@ -162,9 +166,9 @@ export class OllamaJSProvider extends EventEmitter {
           temperature: requestOptions.temperature,
           top_p: requestOptions.topP,
           top_k: requestOptions.topK,
-          num_predict: requestOptions.maxTokens
+          num_predict: requestOptions.maxTokens,
         },
-        format: requestOptions.format
+        format: requestOptions.format,
       });
 
       for await (const part of response) {
@@ -178,21 +182,21 @@ export class OllamaJSProvider extends EventEmitter {
 
       return fullResponse;
     } catch (error) {
-      this.emit('error', error);
+      this.emit("error", error);
       throw error;
     }
   }
 
   async chat(
-    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
+    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
     options?: {
       temperature?: number;
       topP?: number;
       topK?: number;
       maxTokens?: number;
-      format?: 'json' | string;
+      format?: "json" | string;
       stream?: boolean;
-    }
+    },
   ): Promise<any> {
     if (!this.isInitialized) {
       await this.initialize();
@@ -200,27 +204,45 @@ export class OllamaJSProvider extends EventEmitter {
 
     const requestOptions = {
       ...this.config,
-      ...options
+      ...options,
     };
 
     try {
-      const response = await this.client.chat({
-        model: this.config.model,
-        messages,
-        stream: requestOptions.stream || false,
-        keep_alive: this.config.keepAlive,
-        options: {
-          temperature: requestOptions.temperature,
-          top_p: requestOptions.topP,
-          top_k: requestOptions.topK,
-          num_predict: requestOptions.maxTokens
-        },
-        format: requestOptions.format
-      });
+      let response;
+
+      if (requestOptions.stream) {
+        response = await this.client.chat({
+          model: this.config.model,
+          messages,
+          stream: true,
+          keep_alive: this.config.keepAlive,
+          options: {
+            temperature: requestOptions.temperature,
+            top_p: requestOptions.topP,
+            top_k: requestOptions.topK,
+            num_predict: requestOptions.maxTokens,
+          },
+          format: requestOptions.format,
+        });
+      } else {
+        response = await this.client.chat({
+          model: this.config.model,
+          messages,
+          stream: false,
+          keep_alive: this.config.keepAlive,
+          options: {
+            temperature: requestOptions.temperature,
+            top_p: requestOptions.topP,
+            top_k: requestOptions.topK,
+            num_predict: requestOptions.maxTokens,
+          },
+          format: requestOptions.format,
+        });
+      }
 
       return response;
     } catch (error) {
-      this.emit('error', error);
+      this.emit("error", error);
       throw error;
     }
   }
@@ -233,12 +255,12 @@ export class OllamaJSProvider extends EventEmitter {
     try {
       const response = await this.client.embeddings({
         model: this.config.model,
-        prompt: text
+        prompt: text,
       });
 
       return response.embedding;
     } catch (error) {
-      this.emit('error', error);
+      this.emit("error", error);
       throw error;
     }
   }
@@ -248,7 +270,7 @@ export class OllamaJSProvider extends EventEmitter {
       const response = await this.client.list();
       return response.models || [];
     } catch (error) {
-      this.emit('error', error);
+      this.emit("error", error);
       throw error;
     }
   }
@@ -262,8 +284,8 @@ export class OllamaJSProvider extends EventEmitter {
 
   private generateFallbackResponse(prompt: string, options?: any): string {
     const lowerPrompt = prompt.toLowerCase();
-    
-    if (lowerPrompt.includes('plan') || lowerPrompt.includes('steps')) {
+
+    if (lowerPrompt.includes("plan") || lowerPrompt.includes("steps")) {
       return JSON.stringify({
         steps: [
           {
@@ -274,16 +296,16 @@ export class OllamaJSProvider extends EventEmitter {
             requiresTool: false,
             ragQuery: prompt.substring(0, 100),
             expectedOutput: "Response to user query",
-            dependencies: []
-          }
-        ]
+            dependencies: [],
+          },
+        ],
       });
     }
-    
-    if (lowerPrompt.includes('hello') || lowerPrompt.includes('test')) {
+
+    if (lowerPrompt.includes("hello") || lowerPrompt.includes("test")) {
       return "Hello! I'm experiencing technical difficulties with the AI models but I'm still here to help. The system is working on resolving the issue.";
     }
-    
+
     return "I apologize, but I'm experiencing technical difficulties with the AI models. Please try again in a moment, or contact support if the issue persists.";
   }
 

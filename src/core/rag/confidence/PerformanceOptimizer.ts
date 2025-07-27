@@ -3,11 +3,11 @@
  * Implements caching, batching, and resource management
  */
 
-import { LRUCache } from 'lru-cache';
-import { ScoredDocument, TokenConfidence } from './types';
-import { createHash } from 'crypto';
-import { logger } from '../../../utils/logger';
-import { loadavg, cpus, totalmem } from 'os';
+import { LRUCache } from "lru-cache";
+import { ScoredDocument, TokenConfidence } from "./types";
+import { createHash } from "crypto";
+import { logger } from "../../../utils/logger";
+import { loadavg, cpus, totalmem } from "os";
 
 export interface OptimizationConfig {
   enableCache?: boolean;
@@ -92,7 +92,7 @@ export class PerformanceOptimizer {
   async withCache<T>(
     key: string,
     fn: () => Promise<T>,
-    ttl?: number
+    ttl?: number,
   ): Promise<T> {
     if (!this.config.enableCache) {
       return fn();
@@ -100,34 +100,49 @@ export class PerformanceOptimizer {
 
     // Increment request count for statistics
     this.metrics.requests++;
-    
+
     const cachedResult = this.cache.get(key);
     if (cachedResult) {
       this.metrics.cacheHits++;
       cachedResult.hits++;
       this.cache.set(key, cachedResult);
-      logger.debug('Cache hit', 'PERFORMANCE', { key, hits: cachedResult.hits });
+      logger.debug("Cache hit", "PERFORMANCE", {
+        key,
+        hits: cachedResult.hits,
+      });
       return cachedResult.data;
     }
 
     this.metrics.cacheMisses++;
     const startTime = Date.now();
-    
+
     try {
       const result = await fn();
       const latency = Date.now() - startTime;
       this.metrics.totalLatency += latency;
 
-      this.cache.set(key, {
-        data: result,
-        timestamp: Date.now(),
-        hits: 0,
-      }, { ttl: ttl || this.config.cacheTTL });
+      this.cache.set(
+        key,
+        {
+          data: result,
+          timestamp: Date.now(),
+          hits: 0,
+        },
+        { ttl: ttl || this.config.cacheTTL },
+      );
 
-      logger.debug('Cache miss - cached result', 'PERFORMANCE', { key, latency });
+      logger.debug("Cache miss - cached result", "PERFORMANCE", {
+        key,
+        latency,
+      });
       return result;
     } catch (error) {
-      logger.error('Cache execution failed', 'PERFORMANCE', { key }, error as Error);
+      logger.error(
+        "Cache execution failed",
+        "PERFORMANCE",
+        { key },
+        error as Error,
+      );
       throw error;
     }
   }
@@ -138,7 +153,7 @@ export class PerformanceOptimizer {
   async withBatching<T, R>(
     batchKey: string,
     data: T,
-    batchFn: (items: T[]) => Promise<R[]>
+    batchFn: (items: T[]) => Promise<R[]>,
   ): Promise<R> {
     if (!this.config.enableBatching) {
       const results = await batchFn([data]);
@@ -157,11 +172,14 @@ export class PerformanceOptimizer {
       if (!this.batchQueue.has(batchKey)) {
         this.batchQueue.set(batchKey, []);
       }
-      this.batchQueue.get(batchKey)!.push(request);
+      const queue = this.batchQueue.get(batchKey);
+      if (queue) {
+        queue.push(request);
+      }
 
       // Process if batch is full
-      const queue = this.batchQueue.get(batchKey)!;
-      if (queue.length >= this.config.batchSize) {
+      const queue = this.batchQueue.get(batchKey);
+      if (queue && queue.length >= this.config.batchSize) {
         this.processBatch(batchKey, batchFn);
       } else {
         // Set timeout for partial batch
@@ -175,7 +193,7 @@ export class PerformanceOptimizer {
    */
   private async processBatch<T, R>(
     batchKey: string,
-    batchFn: (items: T[]) => Promise<R[]>
+    batchFn: (items: T[]) => Promise<R[]>,
   ): Promise<void> {
     const queue = this.batchQueue.get(batchKey);
     if (!queue || queue.length === 0) return;
@@ -191,22 +209,23 @@ export class PerformanceOptimizer {
     const requests = [...queue];
     this.batchQueue.set(batchKey, []);
 
-    const items = requests.map(r => r.data);
-    
+    const items = requests.map((r) => r.data);
+
     try {
       const results = await batchFn(items);
-      
+
       // Resolve individual requests
       requests.forEach((request, index) => {
-        if (results[index] !== undefined) {
-          request.resolve(results[index]);
+        const result = results[index];
+        if (result !== undefined) {
+          request.resolve(result);
         } else {
-          request.reject(new Error('No result for batch item'));
+          request.reject(new Error("No result for batch item"));
         }
       });
     } catch (error) {
       // Reject all requests
-      requests.forEach(request => {
+      requests.forEach((request) => {
         request.reject(error as Error);
       });
     }
@@ -217,7 +236,7 @@ export class PerformanceOptimizer {
    */
   private scheduleBatch<T, R>(
     batchKey: string,
-    batchFn: (items: T[]) => Promise<R[]>
+    batchFn: (items: T[]) => Promise<R[]>,
   ): void {
     // Clear existing timer
     const existingTimer = this.batchTimers.get(batchKey);
@@ -238,15 +257,18 @@ export class PerformanceOptimizer {
    */
   generateQueryKey(query: string, options?: any): string {
     const data = { query, options };
-    return createHash('sha256').update(JSON.stringify(data)).digest('hex');
+    return createHash("sha256").update(JSON.stringify(data)).digest("hex");
   }
 
   /**
    * Generate cache key for documents
    */
   generateDocumentKey(documents: ScoredDocument[]): string {
-    const ids = documents.map(d => d.id).sort().join(':');
-    return createHash('sha256').update(ids).digest('hex');
+    const ids = documents
+      .map((d) => d.id)
+      .sort()
+      .join(":");
+    return createHash("sha256").update(ids).digest("hex");
   }
 
   /**
@@ -254,18 +276,21 @@ export class PerformanceOptimizer {
    */
   async optimizeRetrieval(
     documents: ScoredDocument[],
-    topK: number
+    topK: number,
   ): Promise<ScoredDocument[]> {
+    if (documents.length === 0) return [];
+
     // Sort by confidence score
-    const sorted = [...documents].sort((a, b) => 
-      b.confidenceScore - a.confidenceScore
+    const sorted = [...documents].sort(
+      (a, b) => b.confidenceScore - a.confidenceScore,
     );
 
     // Apply early stopping if confidence drops significantly
-    const threshold = sorted[0]?.confidenceScore * 0.5;
-    const filtered = sorted.filter(doc => 
-      doc.confidenceScore >= threshold
-    );
+    const firstDoc = sorted[0];
+    if (!firstDoc) return [];
+
+    const threshold = firstDoc.confidenceScore * 0.5;
+    const filtered = sorted.filter((doc) => doc.confidenceScore >= threshold);
 
     return filtered.slice(0, topK);
   }
@@ -275,13 +300,13 @@ export class PerformanceOptimizer {
    */
   optimizeTokenConfidence(
     tokens: TokenConfidence[],
-    maxTokens: number = 1000
+    maxTokens: number = 1000,
   ): TokenConfidence[] {
     if (tokens.length <= maxTokens) return tokens;
 
     // Keep high confidence tokens and sample low confidence ones
-    const highConfidence = tokens.filter(t => t.confidence >= 0.8);
-    const lowConfidence = tokens.filter(t => t.confidence < 0.8);
+    const highConfidence = tokens.filter((t) => t.confidence >= 0.8);
+    const lowConfidence = tokens.filter((t) => t.confidence < 0.8);
 
     // Sample low confidence tokens
     const sampleSize = Math.max(0, maxTokens - highConfidence.length);
@@ -295,10 +320,10 @@ export class PerformanceOptimizer {
    */
   private sampleArray<T>(array: T[], size: number): T[] {
     if (size >= array.length) return array;
-    
+
     const sampled: T[] = [];
     const indices = new Set<number>();
-    
+
     while (sampled.length < size) {
       const index = Math.floor(Math.random() * array.length);
       if (!indices.has(index)) {
@@ -306,7 +331,7 @@ export class PerformanceOptimizer {
         sampled.push(array[index]);
       }
     }
-    
+
     return sampled;
   }
 
@@ -316,12 +341,14 @@ export class PerformanceOptimizer {
   async getResourceMetrics(): Promise<ResourceMetrics> {
     const cpuUsage = await this.getCPUUsage();
     const memoryUsage = this.getMemoryUsage();
-    const cacheHitRate = this.metrics.requests > 0
-      ? this.metrics.cacheHits / this.metrics.requests
-      : 0;
-    const averageLatency = this.metrics.requests > 0
-      ? this.metrics.totalLatency / this.metrics.requests
-      : 0;
+    const cacheHitRate =
+      this.metrics.requests > 0
+        ? this.metrics.cacheHits / this.metrics.requests
+        : 0;
+    const averageLatency =
+      this.metrics.requests > 0
+        ? this.metrics.totalLatency / this.metrics.requests
+        : 0;
 
     return {
       cpuUsage,
@@ -357,7 +384,7 @@ export class PerformanceOptimizer {
    */
   private getActiveRequests(): number {
     let count = 0;
-    this.batchQueue.forEach(queue => {
+    this.batchQueue.forEach((queue) => {
       count += queue.length;
     });
     return count;
@@ -369,17 +396,17 @@ export class PerformanceOptimizer {
   private startResourceMonitoring(): void {
     setInterval(async () => {
       const metrics = await this.getResourceMetrics();
-      
+
       if (metrics.cpuUsage > this.config.cpuThreshold) {
-        logger.warn('High CPU usage detected', 'PERFORMANCE', { 
-          cpuUsage: metrics.cpuUsage 
+        logger.warn("High CPU usage detected", "PERFORMANCE", {
+          cpuUsage: metrics.cpuUsage,
         });
         // Could trigger model switching or request throttling
       }
 
       if (metrics.memoryUsage > this.config.memoryThreshold) {
-        logger.warn('High memory usage detected', 'PERFORMANCE', { 
-          memoryUsage: metrics.memoryUsage 
+        logger.warn("High memory usage detected", "PERFORMANCE", {
+          memoryUsage: metrics.memoryUsage,
         });
         // Could trigger cache clearing or garbage collection
         this.cache.clear();
@@ -390,25 +417,25 @@ export class PerformanceOptimizer {
   /**
    * Suggest optimal model based on complexity
    */
-  suggestModel(complexity: number): string {
+  async suggestModel(complexity: number): Promise<string> {
     if (!this.config.enableModelSwitching) {
-      return 'qwen3:8b'; // Default
+      return "qwen3:8b"; // Default
     }
 
-    const metrics = this.getResourceMetrics();
-    
+    const metrics = await this.getResourceMetrics();
+
     // Use smaller models under high load
     if (metrics.cpuUsage > this.config.cpuThreshold) {
-      return 'qwen2.5:0.5b';
+      return "qwen2.5:0.5b";
     }
 
     // Use model based on complexity
     if (complexity <= 3) {
-      return 'qwen2.5:0.5b'; // Simple queries
+      return "qwen2.5:0.5b"; // Simple queries
     } else if (complexity <= 7) {
-      return 'qwen3:8b'; // Medium queries
+      return "qwen3:8b"; // Medium queries
     } else {
-      return 'qwen3:14b'; // Complex queries
+      return "qwen3:14b"; // Complex queries
     }
   }
 
@@ -421,7 +448,7 @@ export class PerformanceOptimizer {
     this.metrics.cacheMisses = 0;
     this.metrics.requests = 0;
     this.metrics.totalLatency = 0;
-    logger.info('Cache cleared', 'PERFORMANCE');
+    logger.info("Cache cleared", "PERFORMANCE");
   }
 
   /**
@@ -432,11 +459,11 @@ export class PerformanceOptimizer {
     const loadAvg = loadavg();
     const used = process.memoryUsage();
     const total = totalmem();
-    
+
     return {
       cpu: Math.min(100, (loadAvg[0] / cpuCount) * 100),
       memory: Math.min(100, (used.heapUsed / total) * 100),
-      queueLength: this.getActiveRequests()
+      queueLength: this.getActiveRequests(),
     };
   }
 
@@ -445,7 +472,7 @@ export class PerformanceOptimizer {
    */
   async getStatistics() {
     const metrics = await this.getResourceMetrics();
-    
+
     return {
       cache: {
         size: this.cache.size,
@@ -475,7 +502,7 @@ export class PerformanceOptimizer {
    */
   cleanup(): void {
     // Clear all batch timers
-    this.batchTimers.forEach(timer => clearTimeout(timer));
+    this.batchTimers.forEach((timer) => clearTimeout(timer));
     this.batchTimers.clear();
     this.batchQueue.clear();
     this.cache.clear();

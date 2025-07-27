@@ -64,8 +64,8 @@ export class ConfidenceCalibrator {
   ): CalibrationResult {
     // Use provided temperature or default
     const temperature =
-      parameters?.temperature ||
-      this.temperatureScalingParams?.temperature ||
+      parameters?.temperature ??
+      this.temperatureScalingParams?.temperature ??
       1.5; // Default temperature
 
     // Convert confidence to logit space
@@ -93,9 +93,14 @@ export class ConfidenceCalibrator {
     parameters?: Record<string, any>,
   ): CalibrationResult {
     // Use provided model or trained model
-    const model = parameters?.model || this.isotonicRegressionModel;
+    const model = parameters?.model ?? this.isotonicRegressionModel;
 
-    if (!model || !model.x || !model.y) {
+    if (
+      !model?.x ||
+      !model?.y ||
+      model.x.length === 0 ||
+      model.y.length === 0
+    ) {
       // Fallback to simple linear adjustment
       return {
         calibratedScore: confidence * 0.9, // Conservative adjustment
@@ -127,8 +132,8 @@ export class ConfidenceCalibrator {
     parameters?: Record<string, any>,
   ): CalibrationResult {
     // Use provided parameters or trained parameters
-    const a = parameters?.a || this.plattScalingParams?.a || 1.0;
-    const b = parameters?.b || this.plattScalingParams?.b || 0.0;
+    const a = parameters?.a ?? this.plattScalingParams?.a ?? 1.0;
+    const b = parameters?.b ?? this.plattScalingParams?.b ?? 0.0;
 
     // Apply Platt scaling: 1 / (1 + exp(a * confidence + b))
     const calibratedScore = 1 / (1 + Math.exp(a * confidence + b));
@@ -215,15 +220,21 @@ export class ConfidenceCalibrator {
 
     let i = 0;
     while (i < sorted.length) {
-      let sumX = sorted[i].predictedConfidence;
-      let sumY = sorted[i].actualAccuracy;
+      const currentPoint = sorted[i];
+      if (!currentPoint) break;
+
+      let sumX = currentPoint.predictedConfidence;
+      let sumY = currentPoint.actualAccuracy;
       let count = 1;
 
       // Pool violators
       let j = i + 1;
-      while (j < sorted.length && sorted[j].actualAccuracy < sumY / count) {
-        sumX += sorted[j].predictedConfidence;
-        sumY += sorted[j].actualAccuracy;
+      while (j < sorted.length) {
+        const nextPoint = sorted[j];
+        if (!nextPoint || nextPoint.actualAccuracy >= sumY / count) break;
+
+        sumX += nextPoint.predictedConfidence;
+        sumY += nextPoint.actualAccuracy;
         count++;
         j++;
       }
@@ -234,7 +245,9 @@ export class ConfidenceCalibrator {
       i = j;
     }
 
-    this.isotonicRegressionModel = { x, y };
+    if (x.length > 0 && y.length > 0) {
+      this.isotonicRegressionModel = { x, y };
+    }
   }
 
   /**
@@ -257,11 +270,12 @@ export class ConfidenceCalibrator {
     }
 
     // Linear regression
-    const regression = ss.linearRegression(logitPairs);
+    const regressionInput = logitPairs.map((pair) => [pair.x, pair.y]);
+    const regression = ss.linearRegression(regressionInput);
 
     this.plattScalingParams = {
-      a: regression.m || 1.0,
-      b: regression.b || 0.0,
+      a: regression.m ?? 1.0,
+      b: regression.b ?? 0.0,
     };
   }
 
@@ -285,18 +299,30 @@ export class ConfidenceCalibrator {
    * Interpolate isotonic regression model
    */
   private interpolateIsotonic(value: number, x: number[], y: number[]): number {
-    if (x.length === 0) return value;
+    if (x.length === 0 || y.length === 0) return value;
 
     // Handle edge cases
-    if (value <= x[0]) return y[0];
-    if (value >= x[x.length - 1]) return y[y.length - 1];
+    if (value <= x[0]!) return y[0]!;
+    if (value >= x[x.length - 1]!) return y[y.length - 1]!;
 
     // Find interpolation points
     for (let i = 0; i < x.length - 1; i++) {
-      if (value >= x[i] && value <= x[i + 1]) {
-        // Linear interpolation
-        const t = (value - x[i]) / (x[i + 1] - x[i]);
-        return y[i] + t * (y[i + 1] - y[i]);
+      const xi = x[i];
+      const xi1 = x[i + 1];
+      const yi = y[i];
+      const yi1 = y[i + 1];
+
+      if (
+        xi !== undefined &&
+        xi1 !== undefined &&
+        yi !== undefined &&
+        yi1 !== undefined
+      ) {
+        if (value >= xi && value <= xi1) {
+          // Linear interpolation
+          const t = (value - xi) / (xi1 - xi);
+          return yi + t * (yi1 - yi);
+        }
       }
     }
 
@@ -376,7 +402,7 @@ export class ConfidenceCalibrator {
     if (this.temperatureScalingParams) {
       method = "temperature_scaling";
       parameters = this.temperatureScalingParams;
-    } else if (this.isotonicRegressionModel) {
+    } else if (this.isotonicRegressionModel?.x) {
       method = "isotonic_regression";
       parameters = { modelSize: this.isotonicRegressionModel.x.length };
     } else if (this.plattScalingParams) {
