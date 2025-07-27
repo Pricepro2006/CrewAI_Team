@@ -574,6 +574,9 @@ export class EmailStorageService {
   async storeEmail(email: Email, analysis: EmailAnalysisResult): Promise<void> {
     logger.info(`Storing email analysis: ${email.subject}`, "EMAIL_STORAGE");
 
+    // Validate and sanitize processing times before storage
+    const validatedProcessingTimes = this.validateProcessingTimes(analysis.processingMetadata);
+    
     const transaction = this.db.transaction(() => {
       // Store email
       const emailStmt = this.db.prepare(`
@@ -634,7 +637,7 @@ export class EmailStorageService {
         analysis.quick.confidence,
         analysis.quick.suggestedState,
         analysis.processingMetadata.models.stage1,
-        analysis.processingMetadata.stage1Time,
+        validatedProcessingTimes.stage1Time,
         // Deep analysis
         analysis.deep.detailedWorkflow.primary,
         JSON.stringify(analysis.deep.detailedWorkflow.secondary || []),
@@ -665,8 +668,8 @@ export class EmailStorageService {
         JSON.stringify(analysis.deep.relatedEmails || []),
         // Metadata
         analysis.processingMetadata.models.stage2,
-        analysis.processingMetadata.stage2Time,
-        analysis.processingMetadata.totalTime,
+        validatedProcessingTimes.stage2Time,
+        validatedProcessingTimes.totalTime,
         new Date().toISOString(),
       );
     });
@@ -2516,6 +2519,139 @@ export class EmailStorageService {
     } catch (error) {
       logger.error(`Failed to get unassigned count: ${error}`, "EMAIL_STORAGE");
       throw error;
+    }
+  }
+
+  /**
+   * Validate and sanitize processing times to prevent negative values
+   * 
+   * This method ensures data integrity by:
+   * 1. Checking for negative values
+   * 2. Logging warnings when issues are detected
+   * 3. Providing reasonable default values
+   * 4. Tracking patterns that might lead to negative times
+   */
+  private validateProcessingTimes(metadata: ProcessingMetadata): ProcessingMetadata {
+    const validated = { ...metadata };
+    const issues: string[] = [];
+
+    // Check stage1Time
+    if (metadata.stage1Time < 0) {
+      issues.push(`stage1Time was negative: ${metadata.stage1Time}ms`);
+      validated.stage1Time = Math.abs(metadata.stage1Time);
+      
+      // Log detailed information to help identify the root cause
+      logger.warn('Negative stage1Time detected', 'EMAIL_STORAGE', {
+        original: metadata.stage1Time,
+        corrected: validated.stage1Time,
+        model: metadata.models.stage1,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Check stage2Time
+    if (metadata.stage2Time < 0) {
+      issues.push(`stage2Time was negative: ${metadata.stage2Time}ms`);
+      validated.stage2Time = Math.abs(metadata.stage2Time);
+      
+      logger.warn('Negative stage2Time detected', 'EMAIL_STORAGE', {
+        original: metadata.stage2Time,
+        corrected: validated.stage2Time,
+        model: metadata.models.stage2,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Check totalTime
+    if (metadata.totalTime < 0) {
+      issues.push(`totalTime was negative: ${metadata.totalTime}ms`);
+      // For total time, use the sum of stages if available
+      validated.totalTime = Math.max(
+        Math.abs(metadata.totalTime),
+        validated.stage1Time + validated.stage2Time
+      );
+      
+      logger.warn('Negative totalTime detected', 'EMAIL_STORAGE', {
+        original: metadata.totalTime,
+        corrected: validated.totalTime,
+        stage1Time: validated.stage1Time,
+        stage2Time: validated.stage2Time,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Ensure totalTime is at least the sum of stages
+    const minTotalTime = validated.stage1Time + validated.stage2Time;
+    if (validated.totalTime < minTotalTime) {
+      logger.warn('Total time less than sum of stages', 'EMAIL_STORAGE', {
+        totalTime: validated.totalTime,
+        stage1Time: validated.stage1Time,
+        stage2Time: validated.stage2Time,
+        minExpected: minTotalTime
+      });
+      validated.totalTime = minTotalTime;
+    }
+
+    // Log summary if any issues were found
+    if (issues.length > 0) {
+      logger.error('Processing time validation issues detected', 'EMAIL_STORAGE', {
+        issues,
+        correctedValues: validated,
+        originalValues: metadata
+      });
+
+      // Track this incident for pattern analysis
+      try {
+        this.trackProcessingTimeAnomaly({
+          type: 'negative_values',
+          issues,
+          original: metadata,
+          corrected: validated,
+          timestamp: new Date().toISOString()
+        });
+      } catch (trackingError) {
+        logger.error('Failed to track processing time anomaly', 'EMAIL_STORAGE', trackingError);
+      }
+    }
+
+    return validated;
+  }
+
+  /**
+   * Track processing time anomalies for pattern analysis
+   */
+  private trackProcessingTimeAnomaly(anomaly: any): void {
+    try {
+      // Create table if it doesn't exist
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS processing_time_anomalies (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          issues TEXT,
+          original_values TEXT,
+          corrected_values TEXT,
+          timestamp TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Insert anomaly record
+      const stmt = this.db.prepare(`
+        INSERT INTO processing_time_anomalies (id, type, issues, original_values, corrected_values, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+
+      stmt.run(
+        uuidv4(),
+        anomaly.type,
+        JSON.stringify(anomaly.issues),
+        JSON.stringify(anomaly.original),
+        JSON.stringify(anomaly.corrected),
+        anomaly.timestamp
+      );
+    } catch (error) {
+      // Don't throw - this is auxiliary tracking
+      logger.error('Failed to track processing time anomaly', 'EMAIL_STORAGE', error);
     }
   }
 

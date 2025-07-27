@@ -2,8 +2,7 @@ import { config } from "dotenv";
 config(); // Load environment variables
 
 import express from "express";
-import cors from "cors";
-import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { createContext } from "./trpc/context";
 import { appRouter } from "./trpc/router";
@@ -12,13 +11,15 @@ import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import appConfig from "../config/app.config";
 import ollamaConfig from "../config/ollama.config";
 import type { Express } from "express";
-import { apiRateLimiter } from "./middleware/rateLimiter";
+import { apiRateLimiter, authRateLimiter, uploadRateLimiter, websocketRateLimit, getRateLimitStatus, cleanupRateLimiting } from "./middleware/rateLimiter";
+import { authenticateToken, AuthenticatedRequest } from "../../middleware/auth";
 import { wsService } from "./services/WebSocketService";
 import { logger } from "../utils/logger";
 import uploadRoutes from "./routes/upload.routes";
 import { webhookRouter } from "./routes/webhook.router";
 import { emailAnalysisRouter } from "./routes/email-analysis.router";
 import emailAssignmentRouter from "./routes/email-assignment.router";
+import csrfRouter from "./routes/csrf.router";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
@@ -26,18 +27,28 @@ import {
 import { setupWalmartWebSocket } from "./websocket/walmart-updates";
 import { DealDataService } from "./services/DealDataService";
 import { EmailStorageService } from "./services/EmailStorageService";
+import { applySecurityHeaders } from "./middleware/security/headers";
 
 const app: Express = express();
 const PORT = appConfig.api.port;
 
-// Middleware
-app.use(helmet());
-app.use(cors(appConfig.api.cors));
+// Trust proxy for accurate IP addresses in rate limiting
+app.set('trust proxy', 1);
 
-// Handle preflight requests for all routes
-app.options("*", cors(appConfig.api.cors));
+// Apply comprehensive security headers (includes CORS)
+applySecurityHeaders(app, {
+  cors: {
+    origins: appConfig.api.cors.origin as string[],
+    credentials: appConfig.api.cors.credentials
+  }
+});
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser()); // Enable cookie parsing for CSRF tokens
+
+// Authentication middleware (runs before rate limiting to enable user-aware limits)
+app.use(authenticateToken);
 
 // Apply general rate limiting to all routes
 app.use(apiRateLimiter);
@@ -112,12 +123,43 @@ app.get("/health", async (_req, res) => {
     status: overallStatus,
     timestamp: new Date().toISOString(),
     responseTime: Date.now() - startTime,
-    services,
+    services: {
+      ...services,
+      rateLimit: 'active',
+      redis: process.env.REDIS_HOST ? 'configured' : 'memory_fallback'
+    },
   });
 });
 
-// File upload routes (before tRPC to handle multipart forms)
+// Rate limit status endpoint for debugging (admin only)
+app.get('/api/rate-limit-status', async (req: AuthenticatedRequest, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    
+    // Only allow admins to check rate limit status
+    if (!authReq.user?.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const status = await getRateLimitStatus(req);
+    res.json(status);
+  } catch (error) {
+    console.error('Rate limit status error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Authentication routes with strict rate limiting
+app.use("/auth", authRateLimiter);
+app.use("/api/auth", authRateLimiter);
+
+// File upload routes with strict rate limiting (before tRPC to handle multipart forms)
+app.use("/upload", uploadRateLimiter);
+app.use("/api/upload", uploadRateLimiter);
 app.use("/api", uploadRoutes);
+
+// CSRF routes (no auth required for token fetching)
+app.use("/api", csrfRouter);
 
 // Webhook routes (needs to be before tRPC)
 app.use("/api/webhooks", webhookRouter);
@@ -167,23 +209,88 @@ const server = app.listen(PORT, () => {
   logger.info("WebSocket health monitoring started", "WEBSOCKET");
 });
 
-// WebSocket server for subscriptions
+// WebSocket server for subscriptions with enhanced security
 const wss = new WebSocketServer({
   port: PORT + 1,
   path: "/trpc-ws",
-  // Add origin validation
-  verifyClient: (info: { origin?: string }) => {
+  // Add origin validation and rate limiting
+  verifyClient: (info: { origin?: string; req: any }) => {
     const origin = info.origin;
-    const allowedOrigins = [
-      "http://localhost:3000",
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:5175",
-    ];
+    
+    // Get allowed origins from environment or use defaults
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || 
+      process.env.CORS_ORIGIN?.split(',') || [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'http://localhost:5175'
+      ];
+    
+    // Add production origins if configured
+    if (process.env.NODE_ENV === 'production' && process.env.PRODUCTION_ORIGINS) {
+      allowedOrigins.push(...process.env.PRODUCTION_ORIGINS.split(','));
+    }
+    
     // Allow connections without origin (like direct WebSocket clients)
     if (!origin) return true;
-    return allowedOrigins.includes(origin);
+    
+    // Check origin
+    if (!allowedOrigins.includes(origin)) {
+      logger.warn('WebSocket connection rejected - invalid origin', 'SECURITY', {
+        origin,
+        allowedOrigins
+      });
+      return false;
+    }
+    
+    return true;
   },
+});
+
+// Apply rate limiting to WebSocket connections
+wss.on('connection', async (ws, req) => {
+  try {
+    // Create a mock Express request for rate limiting
+    const mockReq = {
+      ip: req.socket.remoteAddress,
+      path: '/ws',
+      method: 'GET',
+      headers: req.headers,
+      connection: req.socket,
+      user: null // WebSocket connections start anonymous
+    } as any;
+    
+    const mockRes = {
+      status: () => mockRes,
+      json: () => {},
+      end: () => {}
+    } as any;
+    
+    // Check WebSocket rate limit
+    await new Promise<void>((resolve, reject) => {
+      websocketRateLimit(mockReq, mockRes, (err?: any) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+    
+    console.log('WebSocket connection established:', {
+      ip: req.socket.remoteAddress,
+      userAgent: req.headers['user-agent'],
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.warn('WebSocket rate limit exceeded:', {
+      ip: req.socket.remoteAddress,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    
+    ws.close(1008, 'Rate limit exceeded');
+    return;
+  }
 });
 
 const wsHandler = applyWSSHandler({
@@ -247,6 +354,10 @@ const gracefulShutdown = async (signal: string) => {
     // Stop WebSocket health monitoring
     wsService.stopHealthMonitoring();
     logger.info("WebSocket health monitoring stopped", "SHUTDOWN");
+
+    // Cleanup rate limiting resources
+    await cleanupRateLimiting();
+    logger.info("Rate limiting resources cleaned up", "SHUTDOWN");
 
     // Execute all registered cleanup tasks
     await cleanupManager.cleanup();

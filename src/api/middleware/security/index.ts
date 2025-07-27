@@ -262,43 +262,16 @@ export function createRateLimitMiddleware(options: {
   };
 }
 
-/**
- * Create CSRF protection middleware
- */
-export function createCSRFProtection() {
-  return async (opts: {
-    ctx: Context;
-    next: () => Promise<any>;
-    type?: string;
-  }) => {
-    const { ctx, next } = opts;
-
-    // Skip CSRF check for safe methods
-    if (opts.type && ["query", "subscription"].includes(opts.type)) {
-      return next();
-    }
-
-    // Check CSRF token
-    const token = ctx.req.headers["x-csrf-token"] as string | undefined;
-    const sessionToken = (ctx.req as any).session?.csrfToken;
-
-    if (!token || token !== sessionToken) {
-      logger.warn("CSRF Token Mismatch", "SECURITY", {
-        userId: ctx.user?.id,
-        requestId: ctx.requestId,
-        hasToken: !!token,
-        hasSessionToken: !!sessionToken,
-      });
-
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Invalid CSRF token",
-      });
-    }
-
-    return next();
-  };
-}
+// Re-export enhanced CSRF protection from dedicated module
+export { 
+  createEnhancedCSRFProtection as createCSRFProtection,
+  ensureCSRFToken,
+  generateCSRFToken,
+  setCSRFCookie,
+  getStoredCSRFToken,
+  getRequestCSRFToken,
+  getCSRFStats
+} from './csrf';
 
 /**
  * Create IP allowlist/blocklist middleware

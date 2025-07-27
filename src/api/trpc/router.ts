@@ -33,6 +33,7 @@ import { emailAssignmentRouter } from "./routers/emailAssignment.router";
 import { iemsEmailRouter } from "../routes/iems-email.router";
 import { dealsRouter } from "../routes/deals.router";
 import { walmartGroceryRouter } from "../routes/walmart-grocery.router";
+import { securityRouter } from "./routers/security.router";
 
 // Import the router function from enhanced-router
 import { router as createRouter } from "./enhanced-router";
@@ -54,6 +55,7 @@ export const appRouter = createRouter({
   iemsEmails: iemsEmailRouter, // IEMS email dashboard endpoints
   deals: dealsRouter, // Deal data management
   walmartGrocery: walmartGroceryRouter, // Walmart grocery agent endpoints
+  security: securityRouter, // Security endpoints (CSRF token management)
 });
 
 export type AppRouter = typeof appRouter;
