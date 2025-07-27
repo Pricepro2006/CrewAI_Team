@@ -1,8 +1,16 @@
-import { OllamaProvider } from '../../llm/OllamaProvider';
-import { BaseTool } from '../../tools/base/BaseTool';
-import type { AgentCapability, AgentContext, AgentResult, ToolExecutionParams } from './AgentTypes';
-import { getAgentModel } from '../../../config/model-selection.config';
-import { sanitizeLLMOutput, sanitizeAgentOutput } from '../../../utils/output-sanitizer';
+import { OllamaProvider } from "../../llm/OllamaProvider";
+import { BaseTool } from "../../tools/base/BaseTool";
+import type {
+  AgentCapability,
+  AgentContext,
+  AgentResult,
+  ToolExecutionParams,
+} from "./AgentTypes";
+import { getAgentModel } from "../../../config/model-selection.config";
+import {
+  sanitizeLLMOutput,
+  sanitizeAgentOutput,
+} from "../../../utils/output-sanitizer";
 // import { wsService } from '../../../api/services/WebSocketService';
 // import { v4 as uuidv4 } from 'uuid';
 
@@ -13,27 +21,32 @@ export abstract class BaseAgent {
   protected isInitialized: boolean = false;
 
   constructor(
-    protected name: string,
-    protected description: string
+    protected _name: string,
+    protected _description: string,
   ) {
     // Use model selection config for agent tasks
-    const modelConfig = getAgentModel(this.name, 'general');
+    const modelConfig = getAgentModel(this._name, "general");
     this.llm = new OllamaProvider({
       model: modelConfig.model,
       temperature: modelConfig.temperature,
-      maxTokens: modelConfig.maxTokens
+      maxTokens: modelConfig.maxTokens,
     });
     this.tools = new Map();
     this.capabilities = [];
   }
 
+  get name(): string {
+    return this._name;
+  }
+
+  get description(): string {
+    return this._description;
+  }
+
   /**
    * Execute a task with the given context
    */
-  abstract execute(
-    task: string, 
-    context: AgentContext
-  ): Promise<AgentResult>;
+  abstract execute(task: string, context: AgentContext): Promise<AgentResult>;
 
   /**
    * Execute a task using a specific tool
@@ -43,26 +56,28 @@ export abstract class BaseAgent {
       // Validate tool exists
       const tool = this.tools.get(params.tool.name);
       if (!tool) {
-        throw new Error(`Tool ${params.tool.name} not found for agent ${this.name}`);
+        throw new Error(
+          `Tool ${params.tool.name} not found for agent ${this._name}`,
+        );
       }
 
       // Use simple model for tool selection and parameter extraction
-      const toolSelectionModel = getAgentModel(this.name, 'tool_selection');
+      const toolSelectionModel = getAgentModel(this._name, "tool_selection");
       const toolLLM = new OllamaProvider({
         model: toolSelectionModel.model,
         temperature: toolSelectionModel.temperature,
-        maxTokens: toolSelectionModel.maxTokens
+        maxTokens: toolSelectionModel.maxTokens,
       });
-      
+
       // Prepare prompt with context
       const prompt = this.buildPromptWithContext(params);
-      
+
       // Get LLM guidance for tool usage
       const guidance = await toolLLM.generate(prompt);
-      
+
       // Parse LLM response to get tool parameters
       const toolParams = this.parseToolParameters(guidance, params.parameters);
-      
+
       // Execute tool
       const toolResult = await tool.execute(toolParams);
 
@@ -99,7 +114,7 @@ export abstract class BaseAgent {
    * Check if agent has a specific capability
    */
   hasCapability(capability: string): boolean {
-    return this.capabilities.some(cap => cap.name === capability);
+    return this.capabilities.some((cap) => cap.name === capability);
   }
 
   /**
@@ -107,7 +122,7 @@ export abstract class BaseAgent {
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
-    
+
     await this.llm.initialize();
     this.registerDefaultTools();
     this.isInitialized = true;
@@ -118,9 +133,9 @@ export abstract class BaseAgent {
    */
   protected buildPromptWithContext(params: ToolExecutionParams): string {
     const contextStr = this.formatContext(params.context);
-    
+
     return `
-      You are ${this.name}, ${this.description}.
+      You are ${this._name}, ${this._description}.
       
       Task: ${params.context.task}
       
@@ -144,19 +159,16 @@ export abstract class BaseAgent {
   /**
    * Process tool execution result
    */
-  protected processToolResult(
-    result: any, 
-    context: AgentContext
-  ): AgentResult {
+  protected processToolResult(result: any, context: AgentContext): AgentResult {
     if (!result.success) {
       return {
         success: false,
-        error: result.error || 'Tool execution failed',
+        error: result.error || "Tool execution failed",
         metadata: {
-          agent: this.name,
+          agent: this._name,
           timestamp: new Date().toISOString(),
-          ...(context.tool && { tool: context.tool })
-        }
+          ...(context.tool && { tool: context.tool }),
+        },
       };
     }
 
@@ -165,11 +177,11 @@ export abstract class BaseAgent {
       data: result.data,
       output: sanitizeLLMOutput(this.formatToolOutput(result.data)),
       metadata: {
-        agent: this.name,
+        agent: this._name,
         timestamp: new Date().toISOString(),
         ...(context.tool && { tool: context.tool }),
-        ...(result.metadata && { toolMetadata: result.metadata })
-      }
+        ...(result.metadata && { toolMetadata: result.metadata }),
+      },
     };
   }
 
@@ -178,36 +190,33 @@ export abstract class BaseAgent {
    */
   protected formatContext(context: AgentContext): string {
     const parts: string[] = [];
-    
+
     if (context.previousResults && context.previousResults.length > 0) {
-      parts.push('Previous Results:');
+      parts.push("Previous Results:");
       context.previousResults.forEach((result, index) => {
         parts.push(`${index + 1}. ${result.summary || JSON.stringify(result)}`);
       });
     }
-    
+
     if (context.ragDocuments && context.ragDocuments.length > 0) {
-      parts.push('\nRelevant Documents:');
+      parts.push("\nRelevant Documents:");
       context.ragDocuments.forEach((doc, index) => {
         parts.push(`${index + 1}. ${doc.content.substring(0, 200)}...`);
       });
     }
-    
+
     if (context.userPreferences) {
-      parts.push('\nUser Preferences:');
+      parts.push("\nUser Preferences:");
       parts.push(JSON.stringify(context.userPreferences, null, 2));
     }
-    
-    return parts.join('\n');
+
+    return parts.join("\n");
   }
 
   /**
    * Parse tool parameters from LLM response
    */
-  protected parseToolParameters(
-    llmResponse: string, 
-    userParams: any
-  ): any {
+  protected parseToolParameters(llmResponse: string, userParams: any): any {
     try {
       // Try to extract JSON from the response
       const jsonMatch = llmResponse.match(/\{[\s\S]*\}/);
@@ -217,9 +226,9 @@ export abstract class BaseAgent {
         return { ...parsed, ...userParams };
       }
     } catch (error) {
-      console.error('Failed to parse LLM response:', error);
+      console.error("Failed to parse LLM response:", error);
     }
-    
+
     // Fallback to user parameters
     return userParams;
   }
@@ -228,11 +237,13 @@ export abstract class BaseAgent {
    * Format tool output for presentation
    */
   protected formatToolOutput(data: any): string {
-    if (typeof data === 'string') return data;
+    if (typeof data === "string") return data;
     if (data.results && Array.isArray(data.results)) {
       return data.results
-        .map((r: any) => r.title ? `- ${r.title}: ${r.summary}` : JSON.stringify(r))
-        .join('\n');
+        .map((r: any) =>
+          r.title ? `- ${r.title}: ${r.summary}` : JSON.stringify(r),
+        )
+        .join("\n");
     }
     return JSON.stringify(data, null, 2);
   }
@@ -241,16 +252,16 @@ export abstract class BaseAgent {
    * Handle errors uniformly
    */
   protected handleError(error: Error): AgentResult {
-    console.error(`Error in ${this.name}:`, error);
-    
+    console.error(`Error in ${this._name}:`, error);
+
     return {
       success: false,
       error: error.message,
       metadata: {
-        agent: this.name,
+        agent: this._name,
         errorType: error.name,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 
@@ -259,16 +270,18 @@ export abstract class BaseAgent {
    */
   protected updateCapabilities(): void {
     // Base capabilities from tools
-    const toolCapabilities: AgentCapability[] = Array.from(this.tools.values()).map(tool => ({
+    const toolCapabilities: AgentCapability[] = Array.from(
+      this.tools.values(),
+    ).map((tool) => ({
       name: `tool:${tool.name}`,
       description: `Can use ${tool.name}: ${tool.description}`,
-      type: 'tool'
+      type: "tool",
     }));
-    
+
     // Combine with agent-specific capabilities
     this.capabilities = [
       ...this.getAgentSpecificCapabilities(),
-      ...toolCapabilities
+      ...toolCapabilities,
     ];
   }
 

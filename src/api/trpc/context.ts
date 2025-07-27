@@ -1,6 +1,7 @@
 import type { inferAsyncReturnType } from "@trpc/server";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator";
+import { ConfidenceMasterOrchestrator } from "../../core/master-orchestrator/ConfidenceMasterOrchestrator";
 import { ConversationService } from "../services/ConversationService";
 import { TaskService } from "../services/TaskService";
 import { MaestroFramework } from "../../core/maestro/MaestroFramework";
@@ -20,7 +21,7 @@ export interface User extends Omit<DBUser, "passwordHash"> {
 }
 
 // Initialize services (singleton pattern)
-let masterOrchestrator: MasterOrchestrator;
+let masterOrchestrator: MasterOrchestrator | ConfidenceMasterOrchestrator;
 let conversationService: ConversationService;
 let maestroFramework: MaestroFramework;
 let taskService: TaskService;
@@ -28,11 +29,11 @@ let userService: UserService;
 
 async function initializeServices() {
   if (!masterOrchestrator) {
-    masterOrchestrator = new MasterOrchestrator({
+    const config = {
       ollamaUrl: ollamaConfig.main.baseUrl!,
       rag: {
         vectorStore: {
-          type: "chromadb",
+          type: "chromadb" as const,
           path: "./data/chroma",
           collectionName: "crewai-knowledge",
           dimension: 384,
@@ -40,7 +41,7 @@ async function initializeServices() {
         chunking: {
           size: 500,
           overlap: 50,
-          method: "sentence",
+          method: "sentence" as const,
         },
         retrieval: {
           topK: 5,
@@ -48,7 +49,18 @@ async function initializeServices() {
           reranking: true,
         },
       },
-    });
+    };
+
+    // Check if confidence scoring is enabled
+    const useConfidenceScoring =
+      process.env.ENABLE_CONFIDENCE_SCORING === "true";
+
+    if (useConfidenceScoring) {
+      masterOrchestrator = new ConfidenceMasterOrchestrator(config);
+    } else {
+      masterOrchestrator = new MasterOrchestrator(config);
+    }
+
     await masterOrchestrator.initialize();
   }
 
@@ -62,7 +74,7 @@ async function initializeServices() {
       taskTimeout: 300000, // 5 minutes
       queueConfig: {
         maxSize: 100,
-        strategy: 'fifo',
+        strategy: "fifo",
       },
     });
     await maestroFramework.initialize();

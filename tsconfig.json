@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
+    "preserveSymlinks": true,
     "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
@@ -42,11 +43,7 @@
     "noPropertyAccessFromIndexSignature": false,
     "verbatimModuleSyntax": true
   },
-  "include": [
-    "src/**/*",
-    "src/**/*.tsx",
-    "src/**/*.ts"
-  ],
+  "include": ["src/**/*", "src/**/*.tsx", "src/**/*.ts"],
   "exclude": [
     "node_modules",
     "dist",

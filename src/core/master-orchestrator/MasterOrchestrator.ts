@@ -16,7 +16,11 @@ import type {
 import type { QueryAnalysis, AgentRoutingPlan } from "./enhanced-types";
 import { logger, createPerformanceMonitor } from "../../utils/logger";
 import { wsService } from "../../api/services/WebSocketService";
-import { withTimeout, DEFAULT_TIMEOUTS, TimeoutError } from "../../utils/timeout";
+import {
+  withTimeout,
+  DEFAULT_TIMEOUTS,
+  TimeoutError,
+} from "../../utils/timeout";
 
 export class MasterOrchestrator {
   private llm: OllamaProvider;
@@ -32,7 +36,7 @@ export class MasterOrchestrator {
     logger.info("Initializing MasterOrchestrator", "ORCHESTRATOR", { config });
 
     this.llm = new OllamaProvider({
-      model: config.model || "phi3:mini",  // Good balance for CPU performance
+      model: config.model || "phi3:mini", // Good balance for CPU performance
       baseUrl: config.ollamaUrl,
     });
 
@@ -65,6 +69,10 @@ export class MasterOrchestrator {
     this.agentRouter = new AgentRouter(this.llm);
 
     logger.info("MasterOrchestrator initialized successfully", "ORCHESTRATOR");
+  }
+
+  get llmProvider(): OllamaProvider {
+    return this.llm;
   }
 
   async initialize(): Promise<void> {
@@ -108,7 +116,7 @@ export class MasterOrchestrator {
       const queryAnalysis = await withTimeout(
         this.enhancedParser.parseQuery(query),
         DEFAULT_TIMEOUTS.QUERY_PROCESSING,
-        "Query analysis timed out"
+        "Query analysis timed out",
       );
 
       logger.info("Query analysis completed", "ORCHESTRATOR", {
@@ -123,7 +131,7 @@ export class MasterOrchestrator {
       const routingPlan = await withTimeout(
         this.agentRouter.createRoutingPlan(queryAnalysis),
         DEFAULT_TIMEOUTS.PLAN_CREATION,
-        "Agent routing plan creation timed out"
+        "Agent routing plan creation timed out",
       );
 
       logger.info("Agent routing plan created", "ORCHESTRATOR", {
@@ -138,7 +146,7 @@ export class MasterOrchestrator {
       let plan = await withTimeout(
         this.createPlan(query, queryAnalysis, routingPlan),
         DEFAULT_TIMEOUTS.PLAN_CREATION,
-        "Plan creation timed out"
+        "Plan creation timed out",
       );
       logger.info("Plan created successfully", "ORCHESTRATOR", {
         steps: plan.steps.length,
@@ -166,7 +174,7 @@ export class MasterOrchestrator {
           });
           break;
         }
-        
+
         logger.debug(
           `Executing plan (attempt ${attempts + 1}/${maxAttempts})`,
           "ORCHESTRATOR",
@@ -178,14 +186,14 @@ export class MasterOrchestrator {
         executionResult = await withTimeout(
           this.planExecutor.execute(plan),
           DEFAULT_TIMEOUTS.AGENT_EXECUTION,
-          "Plan execution timed out"
+          "Plan execution timed out",
         );
 
         // Step 3: Review execution results with timeout
         const review = await withTimeout(
           this.planReviewer.review(query, plan, executionResult),
           DEFAULT_TIMEOUTS.PLAN_CREATION,
-          "Plan review timed out"
+          "Plan review timed out",
         );
 
         logger.debug("Plan review completed", "ORCHESTRATOR", {
@@ -195,9 +203,10 @@ export class MasterOrchestrator {
 
         if (!review.satisfactory && attempts < maxAttempts) {
           // Check if failures are only infrastructure-related
-          const hasOnlyInfrastructureFailures = review.failedSteps.length === 0 && 
-            review.feedback.includes('infrastructure limitations');
-            
+          const hasOnlyInfrastructureFailures =
+            review.failedSteps.length === 0 &&
+            review.feedback.includes("infrastructure limitations");
+
           if (hasOnlyInfrastructureFailures) {
             logger.info(
               "Skipping replan due to infrastructure limitations",
@@ -208,7 +217,7 @@ export class MasterOrchestrator {
             );
             break;
           }
-          
+
           // Step 4: Replan if necessary
           logger.info(
             "Replanning due to unsatisfactory results",
@@ -222,7 +231,7 @@ export class MasterOrchestrator {
           plan = await withTimeout(
             this.replan(query, plan, review, queryAnalysis),
             DEFAULT_TIMEOUTS.PLAN_CREATION,
-            "Replanning timed out"
+            "Replanning timed out",
           );
           attempts++;
         } else {
@@ -248,32 +257,33 @@ export class MasterOrchestrator {
         logger.error(
           "Query processing timed out",
           "ORCHESTRATOR",
-          { 
+          {
             query: query.text,
             duration: error.duration,
-            message: error.message
+            message: error.message,
           },
-          error
+          error,
         );
-        
+
         // Return a timeout response instead of throwing
         return {
           success: false,
-          output: "I apologize, but processing your request took too long. This can happen with complex queries or when the system is under heavy load. Please try simplifying your request or try again later.",
+          output:
+            "I apologize, but processing your request took too long. This can happen with complex queries or when the system is under heavy load. Please try simplifying your request or try again later.",
           plan: {
             id: `plan-timeout-${Date.now()}`,
             steps: [],
-            status: 'failed',
-            error: error.message
+            status: "failed",
+            error: error.message,
           },
           metadata: {
-            error: 'timeout',
+            error: "timeout",
             duration: error.duration,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         };
       }
-      
+
       logger.error(
         "Query processing failed",
         "ORCHESTRATOR",
@@ -291,9 +301,12 @@ export class MasterOrchestrator {
     routingPlan?: AgentRoutingPlan,
   ): Promise<Plan> {
     // Use simple plan generator for CPU performance
-    const USE_SIMPLE_PLAN = process.env['USE_SIMPLE_PLAN'] !== 'false';
+    const USE_SIMPLE_PLAN = process.env["USE_SIMPLE_PLAN"] !== "false";
     if (USE_SIMPLE_PLAN) {
-      logger.info("Using simple plan generator for CPU performance", "ORCHESTRATOR");
+      logger.info(
+        "Using simple plan generator for CPU performance",
+        "ORCHESTRATOR",
+      );
       return SimplePlanGenerator.createSimplePlan(query, routingPlan);
     }
     const analysisContext = analysis
@@ -367,7 +380,7 @@ export class MasterOrchestrator {
         maxTokens: 2000,
       }),
       DEFAULT_TIMEOUTS.LLM_GENERATION,
-      "LLM generation timed out during plan creation"
+      "LLM generation timed out during plan creation",
     );
     return this.parsePlan(response, query);
   }
@@ -402,7 +415,7 @@ export class MasterOrchestrator {
         maxTokens: 2000,
       }),
       DEFAULT_TIMEOUTS.LLM_GENERATION,
-      "LLM generation timed out during replanning"
+      "LLM generation timed out during replanning",
     );
     return this.parsePlan(response, query);
   }

@@ -3,7 +3,7 @@
  * Allows users to select between conservative, balanced, or permissive settings
  */
 
-import { ConfidenceConfig } from "../core/rag/confidence/types";
+import type { ConfidenceConfig } from "../core/rag/confidence/types";
 
 export interface ConfidenceProfile {
   name: string;
@@ -19,6 +19,36 @@ export interface ConfidenceProfile {
     defaultWarnings: boolean;
   };
 }
+
+// Default profile to use as fallback
+const DEFAULT_PROFILE: ConfidenceProfile = {
+  name: "Default",
+  description: "Default fallback profile",
+  config: {
+    retrieval: {
+      minimum: 0.5,
+      preferred: 0.7,
+    },
+    generation: {
+      acceptable: 0.6,
+      review: 0.4,
+    },
+    overall: {
+      high: 0.8,
+      medium: 0.6,
+      low: 0.4,
+    },
+  },
+  complexityThresholds: {
+    simple: 3,
+    medium: 6,
+  },
+  deliveryOptions: {
+    alwaysIncludeConfidence: false,
+    alwaysIncludeEvidence: false,
+    defaultWarnings: true,
+  },
+};
 
 export const CONFIDENCE_PROFILES: Record<string, ConfidenceProfile> = {
   conservative: {
@@ -178,7 +208,7 @@ export function getConfidenceProfile(
   const profile = CONFIDENCE_PROFILES[profileName];
   if (!profile) {
     console.warn(`Unknown confidence profile: ${profileName}, using balanced`);
-    return CONFIDENCE_PROFILES.balanced;
+    return CONFIDENCE_PROFILES.balanced || DEFAULT_PROFILE;
   }
   return profile;
 }
@@ -196,13 +226,13 @@ export function getEnvironmentProfile(): ConfidenceProfile {
 
   switch (env) {
     case "production":
-      return CONFIDENCE_PROFILES.production;
+      return CONFIDENCE_PROFILES.production || DEFAULT_PROFILE;
     case "development":
-      return CONFIDENCE_PROFILES.research;
+      return CONFIDENCE_PROFILES.research || DEFAULT_PROFILE;
     case "test":
-      return CONFIDENCE_PROFILES.permissive;
+      return CONFIDENCE_PROFILES.permissive || DEFAULT_PROFILE;
     default:
-      return CONFIDENCE_PROFILES.balanced;
+      return CONFIDENCE_PROFILES.balanced || DEFAULT_PROFILE;
   }
 }
 

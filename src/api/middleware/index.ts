@@ -19,6 +19,8 @@ import { initTRPC } from "@trpc/server";
 import type { MiddlewareBuilder } from "@trpc/server";
 
 // Initialize tRPC for middleware creation
+import type { AnyRouter } from "@trpc/server";
+
 const t = initTRPC.context<Context>().create();
 
 // Type for middleware functions

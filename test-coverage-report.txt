@@ -1,0 +1,1635 @@
+
+ RUN  v3.2.4 /home/pricepro2006/CrewAI_Team
+      Coverage enabled with v8
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   23.77 |     12.7 |    12.7 |   23.77 |                   
+ CrewAI_Team       |       0 |        0 |       0 |       0 |                   
+  ...c_requests.js |       0 |        0 |       0 |       0 | 1-167             
+  ...g_frontend.js |       0 |        0 |       0 |       0 | 1-91              
+  ...pc-server.cjs |       0 |        0 |       0 |       0 | 1-227             
+  ...css.config.js |       0 |        0 |       0 |       0 | 1-6               
+  ...st-server.cjs |       0 |        0 |       0 |       0 | 1-89              
+  ...ind.config.js |       0 |        0 |       0 |       0 | 1-11              
+  ...-app-debug.js |       0 |        0 |       0 |       0 | 1-67              
+  test-app.js      |       0 |        0 |       0 |       0 | 1-174             
+  ...dels-quick.ts |       0 |        0 |       0 |       0 | 1-253             
+  ...x-planning.ts |       0 |        0 |       0 |       0 | 1-329             
+  ...hensive-ui.ts |       0 |        0 |       0 |       0 | 1-493             
+  ...els-simple.ts |       0 |        0 |       0 |       0 | 1-520             
+  ...nce-models.ts |       0 |        0 |       0 |       0 | 1-554             
+  ...list-query.ts |       0 |        0 |       0 |       0 | 1-589             
+  ...onsistency.ts |       0 |        0 |       0 |       0 | 1-459             
+  ...ance-quick.ts |       0 |        0 |       0 |       0 | 1-262             
+  ...erformance.ts |       0 |        0 |       0 |       0 | 1-182             
+  ...onsistency.ts |       0 |        0 |       0 |       0 | 1-211             
+  ...irrigation.ts |       0 |        0 |       0 |       0 | 1-125             
+  ...ted-models.ts |       0 |        0 |       0 |       0 | 1-358             
+  ...simple-llm.ts |       0 |        0 |       0 |       0 | 1-24              
+  test-startup.cjs |       0 |        0 |       0 |       0 | 1-68              
+  ...raction-v2.js |       0 |        0 |       0 |       0 | 1-82              
+  ...raction-v3.js |       0 |        0 |       0 |       0 | 1-75              
+  ...nteraction.js |       0 |        0 |       0 |       0 | 1-116             
+  ...experience.js |       0 |        0 |       0 |       0 | 1-220             
+  ...rpc_client.js |       0 |        0 |       0 |       0 | 1-78              
+  ...c_detailed.js |       0 |        0 |       0 |       0 | 1-115             
+  ...rpc_simple.js |       0 |        0 |       0 |       0 | 1-82              
+  ...estigation.js |       0 |        0 |       0 |       0 | 1-128             
+  tsx.config.js    |       0 |        0 |       0 |       0 | 1-10              
+  vite.config.ts   |       0 |        0 |       0 |       0 | 1-56              
+  ....ci.config.ts |       0 |        0 |       0 |       0 | 1-104             
+  vitest.config.ts |       0 |        0 |       0 |       0 | 1-36              
+  ...ion.config.ts |       0 |        0 |       0 |       0 | 1-27              
+ .../dist/adapters |       0 |        0 |       0 |       0 |                   
+  ...sAdapter.d.ts |       0 |        0 |       0 |       0 |                   
+ ..._Team/dist/api |       0 |       50 |      50 |       0 |                   
+  app.d.ts         |       0 |        0 |       0 |       0 |                   
+  test-server.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...api/middleware |       0 |       40 |      40 |       0 |                   
+  ...cHandler.d.ts |       0 |        0 |       0 |       0 |                   
+  auth.d.ts        |       0 |        0 |       0 |       0 | 1                 
+  index.d.ts       |       0 |        0 |       0 |       0 | 1                 
+  rateLimiter.d.ts |       0 |        0 |       0 |       0 |                   
+  ...cketAuth.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...ware/__tests__ |       0 |        0 |       0 |       0 |                   
+  auth.test.d.ts   |       0 |        0 |       0 |       0 | 1                 
+  ...ter.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...uth.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...api/monitoring |       0 |        0 |       0 |       0 |                   
+  metrics.d.ts     |       0 |        0 |       0 |       0 | 1                 
+ ...ist/api/routes |       0 |     90.9 |    90.9 |       0 |                   
+  ...t.router.d.ts |       0 |        0 |       0 |       0 |                   
+  auth.router.d.ts |       0 |        0 |       0 |       0 |                   
+  chat.router.d.ts |       0 |        0 |       0 |       0 |                   
+  ...n.router.d.ts |       0 |        0 |       0 |       0 |                   
+  ...s.router.d.ts |       0 |        0 |       0 |       0 |                   
+  ...ter.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...l.router.d.ts |       0 |        0 |       0 |       0 |                   
+  ...s.router.d.ts |       0 |        0 |       0 |       0 |                   
+  task.router.d.ts |       0 |        0 |       0 |       0 |                   
+  ...a.router.d.ts |       0 |        0 |       0 |       0 |                   
+  ...t.router.d.ts |       0 |        0 |       0 |       0 |                   
+ ...t/api/services |       0 |    46.66 |   46.66 |       0 |                   
+  ...aScraper.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...nService.d.ts |       0 |        0 |       0 |       0 |                   
+  ...aService.d.ts |       0 |        0 |       0 |       0 |                   
+  ...gService.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ice.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...nManager.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...aService.d.ts |       0 |        0 |       0 |       0 |                   
+  ...sService.d.ts |       0 |        0 |       0 |       0 |                   
+  ...ptimizer.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...pService.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...eMonitor.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...pManager.d.ts |       0 |        0 |       0 |       0 |                   
+  ...lService.d.ts |       0 |        0 |       0 |       0 | 1                 
+  UserService.d.ts |       0 |        0 |       0 |       0 |                   
+  ...yService.d.ts |       0 |        0 |       0 |       0 |                   
+ ...ices/__tests__ |       0 |        0 |       0 |       0 |                   
+  ....n1.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ity.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...dist/api/types |       0 |        0 |       0 |       0 |                   
+  deal.types.d.ts  |       0 |        0 |       0 |       0 |                   
+ ...dist/api/utils |       0 |        0 |       0 |       0 |                   
+  errors.d.ts      |       0 |        0 |       0 |       0 |                   
+  password.d.ts    |       0 |        0 |       0 |       0 |                   
+  type-guards.d.ts |       0 |        0 |       0 |       0 |                   
+ ...t/api/webhooks |       0 |        0 |       0 |       0 |                   
+  ...enhanced.d.ts |       0 |        0 |       0 |       0 |                   
+ .../api/websocket |       0 |        0 |       0 |       0 |                   
+  ...-updates.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...am/dist/config |       0 |        0 |       0 |       0 |                   
+  ...profiles.d.ts |       0 |        0 |       0 |       0 |                   
+  ...n.config.d.ts |       0 |        0 |       0 |       0 |                   
+  ...w.config.d.ts |       0 |        0 |       0 |       0 |                   
+  ...s.config.d.ts |       0 |        0 |       0 |       0 |                   
+  ...e.config.d.ts |       0 |        0 |       0 |       0 |                   
+  ...s.config.d.ts |       0 |        0 |       0 |       0 |                   
+  ...ceConfig.d.ts |       0 |        0 |       0 |       0 |                   
+ ...ures/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...ice.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...ts/specialized |       0 |    33.33 |   33.33 |       0 |                   
+  ...sisTypes.d.ts |       0 |        0 |       0 |       0 |                   
+  ...ion.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ent.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...dist/core/auth |       0 |        0 |       0 |       0 |                   
+  AuthService.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...ist/core/cache |       0 |       25 |      25 |       0 |                   
+  AgentPool.d.ts   |       0 |        0 |       0 |       0 | 1                 
+  ...rchCache.d.ts |       0 |        0 |       0 |       0 |                   
+  QueryCache.d.ts  |       0 |        0 |       0 |       0 | 1                 
+  ...sService.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...ache/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...che.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...ata-collection |       0 |    66.66 |   66.66 |       0 |                   
+  ...aService.d.ts |       0 |        0 |       0 |       0 |                   
+  ...ine.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  types.d.ts       |       0 |        0 |       0 |       0 |                   
+ .../core/database |       0 |    33.33 |   33.33 |       0 |                   
+  ...eService.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...sService.d.ts |       0 |        0 |       0 |       0 |                   
+  ...yBuilder.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...base/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...ice.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+ .../dist/core/llm |       0 |        0 |       0 |       0 |                   
+  ...LogProbs.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...t/core/maestro |       0 |       60 |      60 |       0 |                   
+  ...nContext.d.ts |       0 |        0 |       0 |       0 |                   
+  TaskQueue.d.ts   |       0 |        0 |       0 |       0 |                   
+  ...eue.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  types.d.ts       |       0 |        0 |       0 |       0 |                   
+  types.js         |       0 |        0 |       0 |       0 | 1                 
+ ...r-orchestrator |       0 |    33.33 |   33.33 |       0 |                   
+  ...sic.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ion.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...tor.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...tor.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...enerator.d.ts |       0 |        0 |       0 |       0 |                   
+  ...ed-types.d.ts |       0 |        0 |       0 |       0 |                   
+  ...entation.d.ts |       0 |        0 |       0 |       0 | 1                 
+  types.d.ts       |       0 |        0 |       0 |       0 |                   
+  types.js         |       0 |        0 |       0 |       0 | 1                 
+ ...ore/middleware |       0 |        0 |       0 |       0 |                   
+  RateLimiter.d.ts |       0 |        0 |       0 |       0 |                   
+ ...ware/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...ing.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ing.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...are.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ter.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+ .../orchestration |       0 |        0 |       0 |       0 |                   
+  ...estrator.d.ts |       0 |        0 |       0 |       0 |                   
+ .../core/pipeline |       0 |    83.33 |   83.33 |       0 |                   
+  ...estrator.d.ts |       0 |        0 |       0 |       0 |                   
+  ...rnTriage.d.ts |       0 |        0 |       0 |       0 |                   
+  ...Analysis.d.ts |       0 |        0 |       0 |       0 |                   
+  ...Analysis.d.ts |       0 |        0 |       0 |       0 |                   
+  ...-results.d.ts |       0 |        0 |       0 |       0 | 1                 
+  types.d.ts       |       0 |        0 |       0 |       0 |                   
+ ...line/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...nce.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...ore/processors |       0 |        0 |       0 |       0 |                   
+  ...Pipeline.d.ts |       0 |        0 |       0 |       0 |                   
+  ...rocessor.d.ts |       0 |        0 |       0 |       0 |                   
+ ...t/core/prompts |       0 |        0 |       0 |       0 |                   
+  ...Enhancer.d.ts |       0 |        0 |       0 |       0 |                   
+  ...le-usage.d.ts |       0 |        0 |       0 |       0 |                   
+ ...mpts/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...cer.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+ .../dist/core/rag |       0 |       50 |      50 |       0 |                   
+  ...rocessor.d.ts |       0 |        0 |       0 |       0 |                   
+  ...sor.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...gService.d.ts |       0 |        0 |       0 |       0 |                   
+  ...ice.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...torStore.d.ts |       0 |        0 |       0 |       0 |                   
+  IVectorStore.js  |       0 |        0 |       0 |       0 | 1                 
+  RAGSystem.d.ts   |       0 |        0 |       0 |       0 | 1                 
+  ...lService.d.ts |       0 |        0 |       0 |       0 |                   
+  ...ice.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  VectorStore.d.ts |       0 |        0 |       0 |       0 |                   
+  types.d.ts       |       0 |        0 |       0 |       0 |                   
+  types.js         |       0 |        0 |       0 |       0 | 1                 
+ ...rag/confidence |       0 |    33.33 |   33.33 |       0 |                   
+  BERTRanker.d.ts  |       0 |        0 |       0 |       0 |                   
+  ...ker.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...librator.d.ts |       0 |        0 |       0 |       0 |                   
+  ...ion.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...tor.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...tBuilder.d.ts |       0 |        0 |       0 |       0 |                   
+  ...der.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...xtractor.d.ts |       0 |        0 |       0 |       0 |                   
+  ...tor.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ver.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...tor.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ion.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...tor.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...Analyzer.d.ts |       0 |        0 |       0 |       0 |                   
+  ...zer.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...le-usage.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...enchmark.d.ts |       0 |        0 |       0 |       0 | 1-2               
+  types.d.ts       |       0 |        0 |       0 |       0 |                   
+ ...ence/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...ger.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...zer.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...nce/evaluators |       0 |    33.33 |   33.33 |       0 |                   
+  ...Analyzer.d.ts |       0 |        0 |       0 |       0 |                   
+  ...zer.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ker.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ceScorer.d.ts |       0 |        0 |       0 |       0 |                   
+  ...rer.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ion.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...t/core/reports |       0 |        0 |       0 |       0 |                   
+  ...nService.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...st/core/search |       0 |        0 |       0 |       0 |                   
+  ...ptimizer.d.ts |       0 |        0 |       0 |       0 |                   
+  types.d.ts       |       0 |        0 |       0 |       0 |                   
+ ...re/search/data |       0 |        0 |       0 |       0 |                   
+  ...Database.d.ts |       0 |        0 |       0 |       0 |                   
+ ...earch/examples |       0 |        0 |       0 |       0 |                   
+  ...Examples.d.ts |       0 |        0 |       0 |       0 |                   
+ ...e/search/tests |       0 |        0 |       0 |       0 |                   
+  ...rityTest.d.ts |       0 |        0 |       0 |       0 | 1                 
+ .../core/services |       0 |        0 |       0 |       0 |                   
+  ...eService.d.ts |       0 |        0 |       0 |       0 |                   
+ ...st/core/shared |       0 |        0 |       0 |       0 |                   
+  types.d.ts       |       0 |        0 |       0 |       0 |                   
+ ...ore/tools/base |       0 |    66.66 |   66.66 |       0 |                   
+  BaseTool.d.ts    |       0 |        0 |       0 |       0 |                   
+  ToolTypes.d.ts   |       0 |        0 |       0 |       0 |                   
+  ToolTypes.js     |       0 |        0 |       0 |       0 | 1                 
+ ...ore/validators |       0 |        0 |       0 |       0 |                   
+  ...alidator.d.ts |       0 |        0 |       0 |       0 |                   
+ ...tors/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...tor.test.d.ts |       0 |        0 |       0 |       0 | 1                 
+ ...ators/fallback |       0 |        0 |       0 |       0 |                   
+  ...hManager.d.ts |       0 |        0 |       0 |       0 |                   
+  ...ollector.d.ts |       0 |        0 |       0 |       0 |                   
+ ...ators/patterns |       0 |        0 |       0 |       0 |                   
+  ...Patterns.d.ts |       0 |        0 |       0 |       0 |                   
+ ...ase/migrations |       0 |        0 |       0 |       0 |                   
+  ...Migrator.d.ts |       0 |        0 |       0 |       0 |                   
+ ...e/repositories |       0 |        0 |       0 |       0 |                   
+  ...pository.d.ts |       0 |        0 |       0 |       0 |                   
+ ...atabase/vector |       0 |        0 |       0 |       0 |                   
+  ...BManager.d.ts |       0 |        0 |       0 |       0 |                   
+  ...lections.d.ts |       0 |        0 |       0 |       0 |                   
+ ...cripts/scripts |       0 |        0 |       0 |       0 |                   
+  ...ails-quick.js |       0 |        0 |       0 |       0 | 1-160             
+ ...re/agents/base |       0 |        0 |       0 |       0 |                   
+  AgentTypes.js    |       0 |        0 |       0 |       0 | 1-2               
+  BaseAgent.js     |       0 |        0 |       0 |       0 | 1-88              
+ ...ts/specialized |       0 |        0 |       0 |       0 |                   
+  ...lysisAgent.js |       0 |        0 |       0 |       0 | 1-483             
+  ...lysisTypes.js |       0 |        0 |       0 |       0 | 1-5               
+ ...src/core/cache |       0 |        0 |       0 |       0 |                   
+  ...lysisCache.js |       0 |        0 |       0 |       0 | 1-100             
+ ...s/src/core/llm |       0 |        0 |       0 |       0 |                   
+  ...maProvider.js |       0 |        0 |       0 |       0 | 1-328             
+ ...rc/core/shared |       0 |        0 |       0 |       0 |                   
+  types.js         |       0 |        0 |       0 |       0 | 1-2               
+ ...ore/tools/base |       0 |        0 |       0 |       0 |                   
+  BaseTool.js      |       0 |        0 |       0 |       0 | 1-144             
+ ...ipts/src/utils |       0 |        0 |       0 |       0 |                   
+  logger.js        |       0 |        0 |       0 |       0 | 1-214             
+  ...-sanitizer.js |       0 |        0 |       0 |       0 | 1-152             
+ .../dist/services |       0 |        0 |       0 |       0 |                   
+  ...onParser.d.ts |       0 |        0 |       0 |       0 |                   
+ ...t/shared/types |       0 |    68.42 |   68.42 |       0 |                   
+  agents.d.ts      |       0 |        0 |       0 |       0 |                   
+  api.d.ts         |       0 |        0 |       0 |       0 |                   
+  auth.d.ts        |       0 |        0 |       0 |       0 |                   
+  auth.js          |       0 |        0 |       0 |       0 | 1                 
+  core.d.ts        |       0 |        0 |       0 |       0 |                   
+  database.d.ts    |       0 |        0 |       0 |       0 |                   
+  email.d.ts       |       0 |        0 |       0 |       0 |                   
+  errors.d.ts      |       0 |        0 |       0 |       0 |                   
+  events.d.ts      |       0 |        0 |       0 |       0 |                   
+  events.js        |       0 |        0 |       0 |       0 | 1                 
+  monitoring.d.ts  |       0 |        0 |       0 |       0 |                   
+  monitoring.js    |       0 |        0 |       0 |       0 | 1                 
+  ...stration.d.ts |       0 |        0 |       0 |       0 |                   
+  orchestration.js |       0 |        0 |       0 |       0 | 1                 
+  rag.d.ts         |       0 |        0 |       0 |       0 |                   
+  rag.js           |       0 |        0 |       0 |       0 | 1                 
+  validation.d.ts  |       0 |        0 |       0 |       0 |                   
+  validation.js    |       0 |        0 |       0 |       0 | 1                 
+  websocket.d.ts   |       0 |        0 |       0 |       0 |                   
+ ...eam/dist/types |       0 |        0 |       0 |       0 |                   
+  ...-results.d.ts |       0 |        0 |       0 |       0 |                   
+  ...il.types.d.ts |       0 |        0 |       0 |       0 |                   
+  ...analysis.d.ts |       0 |        0 |       0 |       0 |                   
+  ...il.types.d.ts |       0 |        0 |       0 |       0 |                   
+  ...-grocery.d.ts |       0 |        0 |       0 |       0 |                   
+ ...eam/dist/utils |       0 |    83.33 |   83.33 |       0 |                   
+  LazyLoader.d.ts  |       0 |        0 |       0 |       0 | 1                 
+  logger.d.ts      |       0 |        0 |       0 |       0 |                   
+  ...-manager.d.ts |       0 |        0 |       0 |       0 |                   
+  ...anitizer.d.ts |       0 |        0 |       0 |       0 |                   
+  timeout.d.ts     |       0 |        0 |       0 |       0 |                   
+  trpc.d.ts        |       0 |        0 |       0 |       0 |                   
+ ...soft-graph/src |       0 |        0 |       0 |       0 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1-248             
+ ...24/outline/esm |     100 |      100 |     100 |     100 |                   
+  ArrowPathIcon.js |     100 |      100 |     100 |     100 |                   
+  ...ngDownIcon.js |     100 |      100 |     100 |     100 |                   
+  ...dingUpIcon.js |     100 |      100 |     100 |     100 |                   
+  ChartBarIcon.js  |     100 |      100 |     100 |     100 |                   
+  ChartPieIcon.js  |     100 |      100 |     100 |     100 |                   
+  ...CircleIcon.js |     100 |      100 |     100 |     100 |                   
+  ...onDownIcon.js |     100 |      100 |     100 |     100 |                   
+  ...nRightIcon.js |     100 |      100 |     100 |     100 |                   
+  ClockIcon.js     |     100 |      100 |     100 |     100 |                   
+  Cog6ToothIcon.js |     100 |      100 |     100 |     100 |                   
+  EnvelopeIcon.js  |     100 |      100 |     100 |     100 |                   
+  ...iangleIcon.js |     100 |      100 |     100 |     100 |                   
+  UserGroupIcon.js |     100 |      100 |     100 |     100 |                   
+ ...kle/color/dist |     100 |      100 |     100 |     100 |                   
+  color.esm.js     |     100 |      100 |     100 |     100 |                   
+ ...pose-refs/dist |     100 |      100 |     100 |     100 |                   
+  index.mjs        |     100 |      100 |     100 |     100 |                   
+ ...eact-slot/dist |     100 |      100 |     100 |     100 |                   
+  index.mjs        |     100 |      100 |     100 |     100 |                   
+ ...un/router/dist |     100 |      100 |     100 |     100 |                   
+  router.js        |     100 |      100 |     100 |     100 |                   
+ ...core/build/lib |   99.02 |        0 |       0 |   99.02 |                   
+  focusManager.mjs |     100 |      100 |     100 |     100 |                   
+  ...yBehavior.mjs |     100 |      100 |     100 |     100 |                   
+  ...yObserver.mjs |     100 |      100 |     100 |     100 |                   
+  logger.mjs       |     100 |      100 |     100 |     100 |                   
+  mutation.mjs     |     100 |      100 |     100 |     100 |                   
+  ...tionCache.mjs |     100 |      100 |     100 |     100 |                   
+  ...nObserver.mjs |     100 |      100 |     100 |     100 |                   
+  ...fyManager.mjs |     100 |      100 |     100 |     100 |                   
+  ...neManager.mjs |     100 |      100 |     100 |     100 |                   
+  ...sObserver.mjs |     100 |      100 |     100 |     100 |                   
+  query.mjs        |     100 |      100 |     100 |     100 |                   
+  queryCache.mjs   |     100 |      100 |     100 |     100 |                   
+  queryClient.mjs  |     100 |      100 |     100 |     100 |                   
+  ...yObserver.mjs |     100 |      100 |     100 |     100 |                   
+  removable.mjs    |     100 |      100 |     100 |     100 |                   
+  retryer.mjs      |     100 |      100 |     100 |     100 |                   
+  subscribable.mjs |       0 |        0 |       0 |       0 | 1-32              
+  utils.mjs        |     100 |      100 |     100 |     100 |                   
+ ...uery/build/lib |     100 |      100 |     100 |     100 |                   
+  ...tProvider.mjs |     100 |      100 |     100 |     100 |                   
+  ...tBoundary.mjs |     100 |      100 |     100 |     100 |                   
+  ...daryUtils.mjs |     100 |      100 |     100 |     100 |                   
+  isRestoring.mjs  |     100 |      100 |     100 |     100 |                   
+  suspense.mjs     |     100 |      100 |     100 |     100 |                   
+  useBaseQuery.mjs |     100 |      100 |     100 |     100 |                   
+  ...niteQuery.mjs |     100 |      100 |     100 |     100 |                   
+  useMutation.mjs  |     100 |      100 |     100 |     100 |                   
+  useQueries.mjs   |     100 |      100 |     100 |     100 |                   
+  useQuery.mjs     |     100 |      100 |     100 |     100 |                   
+  ...rnalStore.mjs |     100 |      100 |     100 |     100 |                   
+  utils.mjs        |     100 |      100 |     100 |     100 |                   
+ ...pc/client/dist |     100 |      100 |     100 |     100 |                   
+  ...-38f9a32a.mjs |     100 |      100 |     100 |     100 |                   
+  ...-b9d0cb48.mjs |     100 |      100 |     100 |     100 |                   
+  index.mjs        |     100 |      100 |     100 |     100 |                   
+  ...-4c75f7be.mjs |     100 |      100 |     100 |     100 |                   
+  ...-ace864b8.mjs |     100 |      100 |     100 |     100 |                   
+ ...ent/dist/links |     100 |      100 |     100 |     100 |                   
+  httpLink.mjs     |     100 |      100 |     100 |     100 |                   
+  wsLink.mjs       |     100 |      100 |     100 |     100 |                   
+ ...act-query/dist |     100 |      100 |     100 |     100 |                   
+  ...-063195fc.mjs |     100 |      100 |     100 |     100 |                   
+  ...-86134f8b.mjs |     100 |      100 |     100 |     100 |                   
+  index.mjs        |     100 |      100 |     100 |     100 |                   
+ ...pc/server/dist |     100 |      100 |     100 |     100 |                   
+  ...-c924c3db.mjs |     100 |      100 |     100 |     100 |                   
+  ...-2d66414a.mjs |     100 |      100 |     100 |     100 |                   
+  ...-f91d720c.mjs |     100 |      100 |     100 |     100 |                   
+  ...-ade1bad8.mjs |     100 |      100 |     100 |     100 |                   
+ ...ist/observable |     100 |      100 |     100 |     100 |                   
+  index.mjs        |     100 |      100 |     100 |     100 |                   
+ .../chart.js/auto |     100 |      100 |     100 |     100 |                   
+  auto.js          |     100 |      100 |     100 |     100 |                   
+ .../chart.js/dist |     100 |      100 |     100 |     100 |                   
+  chart.js         |     100 |      100 |     100 |     100 |                   
+ ...js/dist/chunks |     100 |      100 |     100 |     100 |                   
+  ...rs.dataset.js |     100 |      100 |     100 |     100 |                   
+ ...authority/dist |     100 |      100 |     100 |     100 |                   
+  index.mjs        |     100 |      100 |     100 |     100 |                   
+ ...ules/clsx/dist |       0 |        0 |       0 |       0 |                   
+  clsx.mjs         |       0 |        0 |       0 |       0 | 1                 
+ ...-anything/dist |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ ...s/is-what/dist |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ ...react/dist/esm |     100 |      100 |     100 |     100 |                   
+  Icon.js          |     100 |      100 |     100 |     100 |                   
+  ...LucideIcon.js |     100 |      100 |     100 |     100 |                   
+  ...Attributes.js |     100 |      100 |     100 |     100 |                   
+ ...dist/esm/icons |     100 |      100 |     100 |     100 |                   
+  ban.js           |     100 |      100 |     100 |     100 |                   
+  bell-off.js      |     100 |      100 |     100 |     100 |                   
+  bell.js          |     100 |      100 |     100 |     100 |                   
+  bot.js           |     100 |      100 |     100 |     100 |                   
+  calendar.js      |     100 |      100 |     100 |     100 |                   
+  chart-column.js  |     100 |      100 |     100 |     100 |                   
+  chart-line.js    |     100 |      100 |     100 |     100 |                   
+  chart-pie.js     |     100 |      100 |     100 |     100 |                   
+  check.js         |     100 |      100 |     100 |     100 |                   
+  chevron-down.js  |     100 |      100 |     100 |     100 |                   
+  chevron-left.js  |     100 |      100 |     100 |     100 |                   
+  chevron-right.js |     100 |      100 |     100 |     100 |                   
+  chevron-up.js    |     100 |      100 |     100 |     100 |                   
+  circle-alert.js  |     100 |      100 |     100 |     100 |                   
+  ...-check-big.js |     100 |      100 |     100 |     100 |                   
+  circle-check.js  |     100 |      100 |     100 |     100 |                   
+  circle.js        |     100 |      100 |     100 |     100 |                   
+  clock.js         |     100 |      100 |     100 |     100 |                   
+  coffee.js        |     100 |      100 |     100 |     100 |                   
+  copy.js          |     100 |      100 |     100 |     100 |                   
+  dollar-sign.js   |     100 |      100 |     100 |     100 |                   
+  download.js      |     100 |      100 |     100 |     100 |                   
+  ...s-vertical.js |     100 |      100 |     100 |     100 |                   
+  eye.js           |     100 |      100 |     100 |     100 |                   
+  file-text.js     |     100 |      100 |     100 |     100 |                   
+  fish.js          |     100 |      100 |     100 |     100 |                   
+  funnel.js        |     100 |      100 |     100 |     100 |                   
+  gift.js          |     100 |      100 |     100 |     100 |                   
+  grid-3x3.js      |     100 |      100 |     100 |     100 |                   
+  heart.js         |     100 |      100 |     100 |     100 |                   
+  history.js       |     100 |      100 |     100 |     100 |                   
+  house.js         |     100 |      100 |     100 |     100 |                   
+  info.js          |     100 |      100 |     100 |     100 |                   
+  ...-dashboard.js |     100 |      100 |     100 |     100 |                   
+  leaf.js          |     100 |      100 |     100 |     100 |                   
+  list-checks.js   |     100 |      100 |     100 |     100 |                   
+  list.js          |     100 |      100 |     100 |     100 |                   
+  loader-circle.js |     100 |      100 |     100 |     100 |                   
+  map-pin.js       |     100 |      100 |     100 |     100 |                   
+  ...age-circle.js |     100 |      100 |     100 |     100 |                   
+  mic-off.js       |     100 |      100 |     100 |     100 |                   
+  mic.js           |     100 |      100 |     100 |     100 |                   
+  milk.js          |     100 |      100 |     100 |     100 |                   
+  minus.js         |     100 |      100 |     100 |     100 |                   
+  moon.js          |     100 |      100 |     100 |     100 |                   
+  package.js       |     100 |      100 |     100 |     100 |                   
+  paperclip.js     |     100 |      100 |     100 |     100 |                   
+  pen.js           |     100 |      100 |     100 |     100 |                   
+  piggy-bank.js    |     100 |      100 |     100 |     100 |                   
+  plus.js          |     100 |      100 |     100 |     100 |                   
+  receipt.js       |     100 |      100 |     100 |     100 |                   
+  refresh-cw.js    |     100 |      100 |     100 |     100 |                   
+  repeat.js        |     100 |      100 |     100 |     100 |                   
+  rotate-ccw.js    |     100 |      100 |     100 |     100 |                   
+  save.js          |     100 |      100 |     100 |     100 |                   
+  search.js        |     100 |      100 |     100 |     100 |                   
+  send.js          |     100 |      100 |     100 |     100 |                   
+  settings.js      |     100 |      100 |     100 |     100 |                   
+  share-2.js       |     100 |      100 |     100 |     100 |                   
+  shield.js        |     100 |      100 |     100 |     100 |                   
+  shopping-bag.js  |     100 |      100 |     100 |     100 |                   
+  shopping-cart.js |     100 |      100 |     100 |     100 |                   
+  sparkles.js      |     100 |      100 |     100 |     100 |                   
+  star.js          |     100 |      100 |     100 |     100 |                   
+  sun.js           |     100 |      100 |     100 |     100 |                   
+  tag.js           |     100 |      100 |     100 |     100 |                   
+  target.js        |     100 |      100 |     100 |     100 |                   
+  thumbs-down.js   |     100 |      100 |     100 |     100 |                   
+  thumbs-up.js     |     100 |      100 |     100 |     100 |                   
+  timer.js         |     100 |      100 |     100 |     100 |                   
+  trash-2.js       |     100 |      100 |     100 |     100 |                   
+  trending-down.js |     100 |      100 |     100 |     100 |                   
+  trending-up.js   |     100 |      100 |     100 |     100 |                   
+  ...ngle-alert.js |     100 |      100 |     100 |     100 |                   
+  truck.js         |     100 |      100 |     100 |     100 |                   
+  user.js          |     100 |      100 |     100 |     100 |                   
+  users.js         |     100 |      100 |     100 |     100 |                   
+  utensils.js      |     100 |      100 |     100 |     100 |                   
+  wheat.js         |     100 |      100 |     100 |     100 |                   
+  x.js             |     100 |      100 |     100 |     100 |                   
+  zap.js           |     100 |      100 |     100 |     100 |                   
+ ...esm/shared/src |     100 |      100 |     100 |     100 |                   
+  utils.js         |     100 |      100 |     100 |     100 |                   
+ ..._modules/react |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+  ...ev-runtime.js |     100 |      100 |     100 |     100 |                   
+  jsx-runtime.js   |     100 |      100 |     100 |     100 |                   
+ ...ules/react-dom |     100 |      100 |     100 |     100 |                   
+  client.js        |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ .../react-dom/cjs |     100 |      100 |     100 |     100 |                   
+  ...evelopment.js |     100 |      100 |     100 |     100 |                   
+ ...outer-dom/dist |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ ...ct-router/dist |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ ...ules/react/cjs |   26.34 |        0 |       0 |   26.34 |                   
+  ...evelopment.js |       0 |        0 |       0 |       0 | 1-1315            
+  ...evelopment.js |     100 |      100 |     100 |     100 |                   
+  ...evelopment.js |       0 |        0 |       0 |       0 | 1-2739            
+ ...ules/scheduler |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ .../scheduler/cjs |     100 |      100 |     100 |     100 |                   
+  ...evelopment.js |     100 |      100 |     100 |     100 |                   
+ ...superjson/dist |     100 |      100 |     100 |     100 |                   
+  accessDeep.js    |     100 |      100 |     100 |     100 |                   
+  ...s-registry.js |     100 |      100 |     100 |     100 |                   
+  ...r-registry.js |     100 |      100 |     100 |     100 |                   
+  ...indexed-kv.js |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+  is.js            |     100 |      100 |     100 |     100 |                   
+  ...tringifier.js |     100 |      100 |     100 |     100 |                   
+  plainer.js       |     100 |      100 |     100 |     100 |                   
+  registry.js      |     100 |      100 |     100 |     100 |                   
+  transformer.js   |     100 |      100 |     100 |     100 |                   
+  util.js          |     100 |      100 |     100 |     100 |                   
+ ...ind-merge/dist |     100 |      100 |     100 |     100 |                   
+  bundle-mjs.mjs   |     100 |      100 |     100 |     100 |                   
+ ...rnal-store/cjs |     100 |      100 |     100 |     100 |                   
+  ...evelopment.js |     100 |      100 |     100 |     100 |                   
+ ...nal-store-shim |     100 |      100 |     100 |     100 |                   
+  ...evelopment.js |     100 |      100 |     100 |     100 |                   
+ ...nal-store/shim |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+  with-selector.js |     100 |      100 |     100 |     100 |                   
+ ...es/zustand/esm |     100 |      100 |     100 |     100 |                   
+  index.mjs        |     100 |      100 |     100 |     100 |                   
+  middleware.mjs   |     100 |      100 |     100 |     100 |                   
+  vanilla.mjs      |     100 |      100 |     100 |     100 |                   
+ ...driver/package |       0 |        0 |       0 |       0 |                   
+  cli.js           |       0 |        0 |       0 |       0 | 1-18              
+  index.d.ts       |       0 |        0 |       0 |       0 | 1-17              
+  index.js         |       0 |        0 |       0 |       0 | 1-32              
+  index.mjs        |       0 |        0 |       0 |       0 | 1-28              
+ ...er/package/lib |       0 |        0 |       0 |       0 |                   
+  ...ServerImpl.js |       0 |        0 |       0 |       0 | 1-63              
+  ...ServerImpl.js |       0 |        0 |       0 |       0 | 1-90              
+  ...essFactory.js |       0 |        0 |       0 |       0 | 1-57              
+  inprocess.js     |       0 |        0 |       0 |       0 | 1-3               
+  outofprocess.js  |       0 |        0 |       0 |       0 | 1-76              
+  utils.js         |       0 |        0 |       0 |       0 | 1-105             
+  utilsBundle.js   |       0 |        0 |       0 |       0 | 1-106             
+  zipBundle.js     |       0 |        0 |       0 |       0 | 1-34              
+  zipBundleImpl.js |       0 |        0 |       0 |       0 | 1-5               
+ ...ackage/lib/cli |       0 |        0 |       0 |       0 |                   
+  driver.js        |       0 |        0 |       0 |       0 | 1-97              
+  program.js       |       0 |        0 |       0 |       0 | 1-624             
+  ...thTestStub.js |       0 |        0 |       0 |       0 | 1-74              
+ ...age/lib/client |       0 |        0 |       0 |       0 |                   
+  accessibility.js |       0 |        0 |       0 |       0 | 1-49              
+  android.js       |       0 |        0 |       0 |       0 | 1-361             
+  api.js           |       0 |        0 |       0 |       0 | 1-137             
+  artifact.js      |       0 |        0 |       0 |       0 | 1-79              
+  browser.js       |       0 |        0 |       0 |       0 | 1-162             
+  ...serContext.js |       0 |        0 |       0 |       0 | 1-520             
+  browserType.js   |       0 |        0 |       0 |       0 | 1-183             
+  cdpSession.js    |       0 |        0 |       0 |       0 | 1-51              
+  channelOwner.js  |       0 |        0 |       0 |       0 | 1-197             
+  clientHelper.js  |       0 |        0 |       0 |       0 | 1-64              
+  ...umentation.js |       0 |        0 |       0 |       0 | 1-55              
+  ...StackTrace.js |       0 |        0 |       0 |       0 | 1-69              
+  clock.js         |       0 |        0 |       0 |       0 | 1-68              
+  connection.js    |       0 |        0 |       0 |       0 | 1-314             
+  ...oleMessage.js |       0 |        0 |       0 |       0 | 1-55              
+  coverage.js      |       0 |        0 |       0 |       0 | 1-44              
+  dialog.js        |       0 |        0 |       0 |       0 | 1-56              
+  download.js      |       0 |        0 |       0 |       0 | 1-62              
+  electron.js      |       0 |        0 |       0 |       0 | 1-138             
+  elementHandle.js |       0 |        0 |       0 |       0 | 1-285             
+  errors.js        |       0 |        0 |       0 |       0 | 1-77              
+  eventEmitter.js  |       0 |        0 |       0 |       0 | 1-314             
+  events.js        |       0 |        0 |       0 |       0 | 1-98              
+  fetch.js         |       0 |        0 |       0 |       0 | 1-369             
+  fileChooser.js   |       0 |        0 |       0 |       0 | 1-46              
+  fileUtils.js     |       0 |        0 |       0 |       0 | 1-34              
+  frame.js         |       0 |        0 |       0 |       0 | 1-396             
+  harRouter.js     |       0 |        0 |       0 |       0 | 1-87              
+  input.js         |       0 |        0 |       0 |       0 | 1-84              
+  jsHandle.js      |       0 |        0 |       0 |       0 | 1-105             
+  jsonPipe.js      |       0 |        0 |       0 |       0 | 1-39              
+  localUtils.js    |       0 |        0 |       0 |       0 | 1-60              
+  locator.js       |       0 |        0 |       0 |       0 | 1-365             
+  network.js       |       0 |        0 |       0 |       0 | 1-743             
+  page.js          |       0 |        0 |       0 |       0 | 1-706             
+  platform.js      |       0 |        0 |       0 |       0 | 1-74              
+  playwright.js    |       0 |        0 |       0 |       0 | 1-76              
+  selectors.js     |       0 |        0 |       0 |       0 | 1-53              
+  stream.js        |       0 |        0 |       0 |       0 | 1-39              
+  ...utSettings.js |       0 |        0 |       0 |       0 | 1-79              
+  tracing.js       |       0 |        0 |       0 |       0 | 1-109             
+  types.js         |       0 |        0 |       0 |       0 | 1-28              
+  video.js         |       0 |        0 |       0 |       0 | 1-59              
+  waiter.js        |       0 |        0 |       0 |       0 | 1-142             
+  webError.js      |       0 |        0 |       0 |       0 | 1-39              
+  webSocket.js     |       0 |        0 |       0 |       0 | 1-93              
+  worker.js        |       0 |        0 |       0 |       0 | 1-63              
+  ...ableStream.js |       0 |        0 |       0 |       0 | 1-39              
+ .../lib/generated |       0 |        0 |       0 |       0 |                   
+  ...llerSource.js |       0 |        0 |       0 |       0 | 1-28              
+  clockSource.js   |       0 |        0 |       0 |       0 | 1-28              
+  ...riptSource.js |       0 |        0 |       0 |       0 | 1-28              
+  ...rderSource.js |       0 |        0 |       0 |       0 | 1-28              
+  ...riptSource.js |       0 |        0 |       0 |       0 | 1-28              
+  ...riptSource.js |       0 |        0 |       0 |       0 | 1-28              
+  ...MockSource.js |       0 |        0 |       0 |       0 | 1-336             
+ ...e/lib/protocol |       0 |        0 |       0 |       0 |                   
+  serializers.js   |       0 |        0 |       0 |       0 | 1-192             
+  validator.js     |       0 |        0 |       0 |       0 | 1-2881            
+  ...Primitives.js |       0 |        0 |       0 |       0 | 1-179             
+ ...age/lib/remote |       0 |        0 |       0 |       0 |                   
+  ...Connection.js |       0 |        0 |       0 |       0 | 1-271             
+  ...ightServer.js |       0 |        0 |       0 |       0 | 1-146             
+ ...age/lib/server |       0 |        0 |       0 |       0 |                   
+  accessibility.js |       0 |        0 |       0 |       0 | 1-69              
+  artifact.js      |       0 |        0 |       0 |       0 | 1-127             
+  browser.js       |       0 |        0 |       0 |       0 | 1-142             
+  ...serContext.js |       0 |        0 |       0 |       0 | 1-659             
+  browserType.js   |       0 |        0 |       0 |       0 | 1-324             
+  callLog.js       |       0 |        0 |       0 |       0 | 1-82              
+  clock.js         |       0 |        0 |       0 |       0 | 1-137             
+  console.js       |       0 |        0 |       0 |       0 | 1-53              
+  cookieStore.js   |       0 |        0 |       0 |       0 | 1-206             
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-185             
+  debugger.js      |       0 |        0 |       0 |       0 | 1-140             
+  ...escriptors.js |       0 |        0 |       0 |       0 | 1-39              
+  dialog.js        |       0 |        0 |       0 |       0 | 1-116             
+  dom.js           |       0 |        0 |       0 |       0 | 1-890             
+  download.js      |       0 |        0 |       0 |       0 | 1-70              
+  errors.js        |       0 |        0 |       0 |       0 | 1-69              
+  fetch.js         |       0 |        0 |       0 |       0 | 1-635             
+  fileChooser.js   |       0 |        0 |       0 |       0 | 1-43              
+  ...ploadUtils.js |       0 |        0 |       0 |       0 | 1-84              
+  formData.js      |       0 |        0 |       0 |       0 | 1-147             
+  ...eSelectors.js |       0 |        0 |       0 |       0 | 1-155             
+  frames.js        |       0 |        0 |       0 |       0 | 1-1503            
+  harBackend.js    |       0 |        0 |       0 |       0 | 1-157             
+  helper.js        |       0 |        0 |       0 |       0 | 1-100             
+  index.js         |       0 |        0 |       0 |       0 | 1-61              
+  input.js         |       0 |        0 |       0 |       0 | 1-280             
+  ...umentation.js |       0 |        0 |       0 |       0 | 1-75              
+  javascript.js    |       0 |        0 |       0 |       0 | 1-291             
+  launchApp.js     |       0 |        0 |       0 |       0 | 1-112             
+  localUtils.js    |       0 |        0 |       0 |       0 | 1-211             
+  ...ngCommands.js |       0 |        0 |       0 |       0 | 1-143             
+  network.js       |       0 |        0 |       0 |       0 | 1-608             
+  page.js          |       0 |        0 |       0 |       0 | 1-829             
+  pipeTransport.js |       0 |        0 |       0 |       0 | 1-89              
+  playwright.js    |       0 |        0 |       0 |       0 | 1-79              
+  progress.js      |       0 |        0 |       0 |       0 | 1-104             
+  protocolError.js |       0 |        0 |       0 |       0 | 1-52              
+  recorder.js      |       0 |        0 |       0 |       0 | 1-358             
+  screenshotter.js |       0 |        0 |       0 |       0 | 1-331             
+  selectors.js     |       0 |        0 |       0 |       0 | 1-112             
+  ...nterceptor.js |       0 |        0 |       0 |       0 | 1-321             
+  ...nterceptor.js |       0 |        0 |       0 |       0 | 1-95              
+  transport.js     |       0 |        0 |       0 |       0 | 1-183             
+  types.js         |       0 |        0 |       0 |       0 | 1-28              
+  ...oardLayout.js |       0 |        0 |       0 |       0 | 1-145             
+ ...server/android |       0 |        0 |       0 |       0 |                   
+  android.js       |       0 |        0 |       0 |       0 | 1-450             
+  backendAdb.js    |       0 |        0 |       0 |       0 | 1-179             
+ ...ib/server/bidi |       0 |        0 |       0 |       0 |                   
+  bidiBrowser.js   |       0 |        0 |       0 |       0 | 1-448             
+  bidiChromium.js  |       0 |        0 |       0 |       0 | 1-164             
+  ...Connection.js |       0 |        0 |       0 |       0 | 1-187             
+  ...ionContext.js |       0 |        0 |       0 |       0 | 1-221             
+  bidiFirefox.js   |       0 |        0 |       0 |       0 | 1-112             
+  bidiInput.js     |       0 |        0 |       0 |       0 | 1-146             
+  ...orkManager.js |       0 |        0 |       0 |       0 | 1-320             
+  bidiOverCdp.js   |       0 |        0 |       0 |       0 | 1-102             
+  bidiPage.js      |       0 |        0 |       0 |       0 | 1-502             
+  bidiPdf.js       |       0 |        0 |       0 |       0 | 1-106             
+ ...di/third_party |       0 |        0 |       0 |       0 |                   
+  ...Commands.d.js |       0 |        0 |       0 |       0 | 1-22              
+  ...serializer.js |       0 |        0 |       0 |       0 | 1-98              
+  bidiKeyboard.js  |       0 |        0 |       0 |       0 | 1-256             
+  bidiProtocol.js  |       0 |        0 |       0 |       0 | 1-24              
+  ...otocolCore.js |       0 |        0 |       0 |       0 | 1-152             
+  ...ermissions.js |       0 |        0 |       0 |       0 | 1-42              
+  ...Serializer.js |       0 |        0 |       0 |       0 | 1-148             
+  firefoxPrefs.js  |       0 |        0 |       0 |       0 | 1-259             
+ ...erver/chromium |       0 |        0 |       0 |       0 |                   
+  chromium.js      |       0 |        0 |       0 |       0 | 1-389             
+  ...umSwitches.js |       0 |        0 |       0 |       0 | 1-98              
+  ...essibility.js |       0 |        0 |       0 |       0 | 1-263             
+  crBrowser.js     |       0 |        0 |       0 |       0 | 1-499             
+  crConnection.js  |       0 |        0 |       0 |       0 | 1-203             
+  crCoverage.js    |       0 |        0 |       0 |       0 | 1-234             
+  crDevTools.js    |       0 |        0 |       0 |       0 | 1-113             
+  crDragDrop.js    |       0 |        0 |       0 |       0 | 1-126             
+  ...ionContext.js |       0 |        0 |       0 |       0 | 1-146             
+  crInput.js       |       0 |        0 |       0 |       0 | 1-186             
+  ...orkManager.js |       0 |        0 |       0 |       0 | 1-666             
+  crPage.js        |       0 |        0 |       0 |       0 | 1-1061            
+  crPdf.js         |       0 |        0 |       0 |       0 | 1-121             
+  ...ocolHelper.js |       0 |        0 |       0 |       0 | 1-145             
+  ...viceWorker.js |       0 |        0 |       0 |       0 | 1-123             
+  ...ntFamilies.js |       0 |        0 |       0 |       0 | 1-162             
+  protocol.d.js    |       0 |        0 |       0 |       0 | 1-16              
+  videoRecorder.js |       0 |        0 |       0 |       0 | 1-121             
+ ...server/codegen |       0 |        0 |       0 |       0 |                   
+  csharp.js        |       0 |        0 |       0 |       0 | 1-329             
+  java.js          |       0 |        0 |       0 |       0 | 1-270             
+  javascript.js    |       0 |        0 |       0 |       0 | 1-268             
+  jsonl.js         |       0 |        0 |       0 |       0 | 1-51              
+  language.js      |       0 |        0 |       0 |       0 | 1-111             
+  languages.js     |       0 |        0 |       0 |       0 | 1-68              
+  python.js        |       0 |        0 |       0 |       0 | 1-277             
+  types.js         |       0 |        0 |       0 |       0 | 1-16              
+ ...er/dispatchers |       0 |        0 |       0 |       0 |                   
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-287             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-118             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-367             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-119             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-57              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-44              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-87              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-47              
+  dispatcher.js    |       0 |        0 |       0 |       0 | 1-346             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-89              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-184             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-224             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-84              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-58              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-155             
+  ...ispatchers.js |       0 |        0 |       0 |       0 | 1-210             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-370             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-127             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-60              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-59              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-154             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-73              
+ ...erver/electron |       0 |        0 |       0 |       0 |                   
+  electron.js      |       0 |        0 |       0 |       0 | 1-275             
+  loader.js        |       0 |        0 |       0 |       0 | 1-29              
+ ...server/firefox |       0 |        0 |       0 |       0 |                   
+  ...essibility.js |       0 |        0 |       0 |       0 | 1-238             
+  ffBrowser.js     |       0 |        0 |       0 |       0 | 1-410             
+  ffConnection.js  |       0 |        0 |       0 |       0 | 1-147             
+  ...ionContext.js |       0 |        0 |       0 |       0 | 1-150             
+  ffInput.js       |       0 |        0 |       0 |       0 | 1-159             
+  ...orkManager.js |       0 |        0 |       0 |       0 | 1-254             
+  ffPage.js        |       0 |        0 |       0 |       0 | 1-505             
+  firefox.js       |       0 |        0 |       0 |       0 | 1-106             
+  protocol.d.js    |       0 |        0 |       0 |       0 | 1-16              
+ ...lib/server/har |       0 |        0 |       0 |       0 |                   
+  harRecorder.js   |       0 |        0 |       0 |       0 | 1-147             
+  harTracer.js     |       0 |        0 |       0 |       0 | 1-608             
+ ...erver/recorder |       0 |        0 |       0 |       0 |                   
+  chat.js          |       0 |        0 |       0 |       0 | 1-161             
+  ...xtRecorder.js |       0 |        0 |       0 |       0 | 1-289             
+  recorderApp.js   |       0 |        0 |       0 |       0 | 1-187             
+  ...Collection.js |       0 |        0 |       0 |       0 | 1-116             
+  ...erFrontend.js |       0 |        0 |       0 |       0 | 1-16              
+  ...rderRunner.js |       0 |        0 |       0 |       0 | 1-135             
+  recorderUtils.js |       0 |        0 |       0 |       0 | 1-98              
+  throttledFile.js |       0 |        0 |       0 |       0 | 1-57              
+ ...erver/registry |       0 |        0 |       0 |       0 |                   
+  ...serFetcher.js |       0 |        0 |       0 |       0 | 1-175             
+  dependencies.js  |       0 |        0 |       0 |       0 | 1-371             
+  index.js         |       0 |        0 |       0 |       0 | 1-1299            
+  nativeDeps.js    |       0 |        0 |       0 |       0 | 1-1105            
+  ...rowserMain.js |       0 |        0 |       0 |       0 | 1-120             
+ ...trace/recorder |       0 |        0 |       0 |       0 |                   
+  snapshotter.js   |       0 |        0 |       0 |       0 | 1-135             
+  ...erInjected.js |       0 |        0 |       0 |       0 | 1-539             
+  tracing.js       |       0 |        0 |       0 |       0 | 1-594             
+ ...ver/trace/test |       0 |        0 |       0 |       0 |                   
+  ...napshotter.js |       0 |        0 |       0 |       0 | 1-87              
+ ...r/trace/viewer |       0 |        0 |       0 |       0 |                   
+  traceViewer.js   |       0 |        0 |       0 |       0 | 1-242             
+ ...b/server/utils |       0 |        0 |       0 |       0 |                   
+  ascii.js         |       0 |        0 |       0 |       0 | 1-44              
+  comparators.js   |       0 |        0 |       0 |       0 | 1-161             
+  crypto.js        |       0 |        0 |       0 |       0 | 1-216             
+  debug.js         |       0 |        0 |       0 |       0 | 1-42              
+  debugLogger.js   |       0 |        0 |       0 |       0 | 1-114             
+  env.js           |       0 |        0 |       0 |       0 | 1-68              
+  eventsHelper.js  |       0 |        0 |       0 |       0 | 1-39              
+  expectUtils.js   |       0 |        0 |       0 |       0 | 1-38              
+  fileUtils.js     |       0 |        0 |       0 |       0 | 1-191             
+  happyEyeballs.js |       0 |        0 |       0 |       0 | 1-207             
+  hostPlatform.js  |       0 |        0 |       0 |       0 | 1-109             
+  httpServer.js    |       0 |        0 |       0 |       0 | 1-218             
+  linuxUtils.js    |       0 |        0 |       0 |       0 | 1-71              
+  network.js       |       0 |        0 |       0 |       0 | 1-217             
+  nodePlatform.js  |       0 |        0 |       0 |       0 | 1-148             
+  pipeTransport.js |       0 |        0 |       0 |       0 | 1-84              
+  ...ssLauncher.js |       0 |        0 |       0 |       0 | 1-238             
+  profiler.js      |       0 |        0 |       0 |       0 | 1-65              
+  socksProxy.js    |       0 |        0 |       0 |       0 | 1-511             
+  spawnAsync.js    |       0 |        0 |       0 |       0 | 1-41              
+  task.js          |       0 |        0 |       0 |       0 | 1-51              
+  userAgent.js     |       0 |        0 |       0 |       0 | 1-98              
+  wsServer.js      |       0 |        0 |       0 |       0 | 1-132             
+  zipFile.js       |       0 |        0 |       0 |       0 | 1-74              
+  zones.js         |       0 |        0 |       0 |       0 | 1-57              
+ ...ls/image_tools |       0 |        0 |       0 |       0 |                   
+  colorUtils.js    |       0 |        0 |       0 |       0 | 1-89              
+  compare.js       |       0 |        0 |       0 |       0 | 1-109             
+  imageChannel.js  |       0 |        0 |       0 |       0 | 1-78              
+  stats.js         |       0 |        0 |       0 |       0 | 1-102             
+ .../server/webkit |       0 |        0 |       0 |       0 |                   
+  protocol.d.js    |       0 |        0 |       0 |       0 | 1-16              
+  webkit.js        |       0 |        0 |       0 |       0 | 1-100             
+  ...essibility.js |       0 |        0 |       0 |       0 | 1-237             
+  wkBrowser.js     |       0 |        0 |       0 |       0 | 1-318             
+  wkConnection.js  |       0 |        0 |       0 |       0 | 1-149             
+  ...ionContext.js |       0 |        0 |       0 |       0 | 1-154             
+  wkInput.js       |       0 |        0 |       0 |       0 | 1-181             
+  ...bleRequest.js |       0 |        0 |       0 |       0 | 1-169             
+  wkPage.js        |       0 |        0 |       0 |       0 | 1-1134            
+  ...sionalPage.js |       0 |        0 |       0 |       0 | 1-83              
+  wkWorkers.js     |       0 |        0 |       0 |       0 | 1-104             
+ ...ib/third_party |       0 |        0 |       0 |       0 |                   
+  pixelmatch.js    |       0 |        0 |       0 |       0 | 1-255             
+ ...ils/isomorphic |       0 |        0 |       0 |       0 |                   
+  ariaSnapshot.js  |       0 |        0 |       0 |       0 | 1-384             
+  assert.js        |       0 |        0 |       0 |       0 | 1-31              
+  colors.js        |       0 |        0 |       0 |       0 | 1-72              
+  cssParser.js     |       0 |        0 |       0 |       0 | 1-245             
+  cssTokenizer.js  |       0 |        0 |       0 |       0 | 1-1051            
+  headers.js       |       0 |        0 |       0 |       0 | 1-53              
+  ...Generators.js |       0 |        0 |       0 |       0 | 1-666             
+  locatorParser.js |       0 |        0 |       0 |       0 | 1-176             
+  locatorUtils.js  |       0 |        0 |       0 |       0 | 1-81              
+  manualPromise.js |       0 |        0 |       0 |       0 | 1-114             
+  mimeType.js      |       0 |        0 |       0 |       0 | 1-459             
+  multimap.js      |       0 |        0 |       0 |       0 | 1-80              
+  ...lFormatter.js |       0 |        0 |       0 |       0 | 1-68              
+  ...olMetainfo.js |       0 |        0 |       0 |       0 | 1-320             
+  rtti.js          |       0 |        0 |       0 |       0 | 1-43              
+  ...ctorParser.js |       0 |        0 |       0 |       0 | 1-386             
+  semaphore.js     |       0 |        0 |       0 |       0 | 1-54              
+  stackTrace.js    |       0 |        0 |       0 |       0 | 1-158             
+  stringUtils.js   |       0 |        0 |       0 |       0 | 1-155             
+  time.js          |       0 |        0 |       0 |       0 | 1-49              
+  timeoutRunner.js |       0 |        0 |       0 |       0 | 1-66              
+  traceUtils.js    |       0 |        0 |       0 |       0 | 1-58              
+  types.js         |       0 |        0 |       0 |       0 | 1-16              
+  urlMatch.js      |       0 |        0 |       0 |       0 | 1-166             
+  ...erializers.js |       0 |        0 |       0 |       0 | 1-251             
+ ...tilsBundleImpl |       0 |        0 |       0 |       0 |                   
+  index.js         |       0 |        0 |       0 |       0 | 1-208             
+ ...ecorder/assets |       0 |        0 |       0 |       0 |                   
+  ...e-DRsk21vu.js |       0 |        0 |       0 |       0 | 1-24              
+  ...x-YwXrOGhp.js |       0 |        0 |       0 |       0 | 1-184             
+ ...te/traceViewer |       0 |        0 |       0 |       0 |                   
+  ...x.BjQ9je-p.js |       0 |        0 |       0 |       0 | 1-2               
+  sw.bundle.js     |       0 |        0 |       0 |       0 | 1-3               
+  ...e.D5wwC2E1.js |       0 |        0 |       0 |       0 | 1-5               
+ ...eViewer/assets |       0 |        0 |       0 |       0 |                   
+  ...e-DECADVLv.js |       0 |        0 |       0 |       0 | 1-24              
+  ...w-Cjl_e5YM.js |       0 |        0 |       0 |       0 | 1-256             
+  ...e-BoAIEibi.js |       0 |        0 |       0 |       0 | 1-9               
+ .../package/types |       0 |    33.33 |   33.33 |       0 |                   
+  protocol.d.ts    |       0 |        0 |       0 |       0 |                   
+  structs.d.ts     |       0 |        0 |       0 |       0 | 1-17              
+  types.d.ts       |       0 |        0 |       0 |       0 | 1-22814           
+ ...I_Team/scripts |       0 |        0 |       0 |       0 |                   
+  check-secrets.ts |       0 |        0 |       0 |       0 | 1-227             
+  ...int-issues.ts |       0 |        0 |       0 |       0 | 1-167             
+  ...jwt-secret.ts |       0 |        0 |       0 |       0 | 1-38              
+  init-db.ts       |       0 |        0 |       0 |       0 | 1-133             
+  ...duction-db.ts |       0 |        0 |       0 |       0 | 1-222             
+  ...ntegration.ts |       0 |        0 |       0 |       0 | 1-151             
+ CrewAI_Team/src   |       0 |    66.66 |   66.66 |       0 |                   
+  index.ts         |       0 |      100 |     100 |       0 | 11-385            
+  ...ntegration.ts |       0 |      100 |     100 |       0 | 6-440             
+  ...-framework.ts |       0 |        0 |       0 |       0 | 1-337             
+ ...m/src/adapters |       0 |        0 |       0 |       0 |                   
+  ...sisAdapter.ts |       0 |        0 |       0 |       0 | 1-241             
+ ...I_Team/src/api |       0 |        0 |       0 |       0 |                   
+  app.ts           |       0 |        0 |       0 |       0 | 1-121             
+  server.ts        |       0 |        0 |       0 |       0 | 1-237             
+  test-server.ts   |       0 |        0 |       0 |       0 | 1-19              
+ .../api/contracts |       0 |        0 |       0 |       0 |                   
+  ...hboard-api.ts |       0 |        0 |       0 |       0 | 1-313             
+ ...api/middleware |       0 |    16.66 |   16.66 |       0 |                   
+  asyncHandler.ts  |       0 |      100 |     100 |       0 | 3-9               
+  auth.ts          |       0 |        0 |       0 |       0 | 1-129             
+  index.ts         |       0 |        0 |       0 |       0 | 1-228             
+  rateLimiter.ts   |       0 |        0 |       0 |       0 | 1-206             
+  security.ts      |       0 |        0 |       0 |       0 | 1-402             
+  websocketAuth.ts |       0 |        0 |       0 |       0 | 1-299             
+ ...ware/__tests__ |       0 |        0 |       0 |       0 |                   
+  auth.test.ts     |       0 |        0 |       0 |       0 | 1-101             
+  ...miter.test.ts |       0 |        0 |       0 |       0 | 1-90              
+  ...tAuth.test.ts |       0 |        0 |       0 |       0 | 1-303             
+ ...eware/security |       0 |        0 |       0 |       0 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1-285             
+ ...api/monitoring |       0 |        0 |       0 |       0 |                   
+  metrics.ts       |       0 |        0 |       0 |       0 | 1-81              
+ ...src/api/routes |       0 |        0 |       0 |       0 |                   
+  agent.router.ts  |       0 |        0 |       0 |       0 | 1-236             
+  auth.router.ts   |       0 |        0 |       0 |       0 | 1-375             
+  ...nessSearch.ts |       0 |        0 |       0 |       0 | 1-191             
+  chat.router.ts   |       0 |        0 |       0 |       0 | 1-366             
+  ...hat.router.ts |       0 |        0 |       0 |       0 | 1-659             
+  ...ion.router.ts |       0 |        0 |       0 |       0 | 1-427             
+  deals.router.ts  |       0 |        0 |       0 |       0 | 1-151             
+  ...sis.router.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ics.router.ts |       0 |        0 |       0 |       0 | 1-235             
+  ...ent.router.ts |       0 |        0 |       0 |       0 | 1-205             
+  ...outer.test.ts |       0 |        0 |       0 |       0 | 1-409             
+  email.router.ts  |       0 |        0 |       0 |       0 | 1-943             
+  health.router.ts |       0 |        0 |       0 |       0 | 1-413             
+  ...ail.router.ts |       0 |        0 |       0 |       0 | 1-232             
+  ...ics.router.ts |       0 |        0 |       0 |       0 | 1-39              
+  rag.router.ts    |       0 |        0 |       0 |       0 | 1-365             
+  task.router.ts   |       0 |        0 |       0 |       0 | 1-150             
+  upload.routes.ts |       0 |        0 |       0 |       0 | 1-204             
+  ...ata.router.ts |       0 |        0 |       0 |       0 | 1-144             
+  ...ery.router.ts |       0 |        0 |       0 |       0 | 1-1034            
+  ...ook.router.ts |       0 |        0 |       0 |       0 | 1                 
+  ...ket.router.ts |       0 |        0 |       0 |       0 | 1-247             
+ ...c/api/services |       0 |        0 |       0 |       0 |                   
+  ...ataScraper.ts |       0 |        0 |       0 |       0 | 1-424             
+  ...ionService.ts |       0 |        0 |       0 |       0 | 1-416             
+  ...ataService.ts |       0 |        0 |       0 |       0 | 1-442             
+  ...ingService.ts |       0 |        0 |       0 |       0 | 1-544             
+  ...rvice.test.ts |       0 |        0 |       0 |       0 | 1-390             
+  ...ionManager.ts |       0 |        0 |       0 |       0 | 1-322             
+  ...lowService.ts |       0 |        0 |       0 |       0 | 1-484             
+  ...ataService.ts |       0 |        0 |       0 |       0 | 1-418             
+  ...olsService.ts |       0 |        0 |       0 |       0 | 1-101             
+  ...eOptimizer.ts |       0 |        0 |       0 |       0 | 1-467             
+  ...kupService.ts |       0 |        0 |       0 |       0 | 1-528             
+  ...nceMonitor.ts |       0 |        0 |       0 |       0 | 1-488             
+  ...yncService.ts |       0 |        0 |       0 |       0 | 1-487             
+  ...nupManager.ts |       0 |        0 |       0 |       0 | 1-157             
+  TaskService.ts   |       0 |        0 |       0 |       0 | 1-132             
+  ...ailService.ts |       0 |        0 |       0 |       0 | 1-656             
+  UserService.ts   |       0 |        0 |       0 |       0 | 1-554             
+  ...eryService.ts |       0 |        0 |       0 |       0 | 1-548             
+  ...ketService.ts |       0 |        0 |       0 |       0 | 1-472             
+ ...ices/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...ce.n1.test.ts |       0 |        0 |       0 |       0 | 1-240             
+  ...urity.test.ts |       0 |        0 |       0 |       0 | 1-274             
+ ...m/src/api/trpc |       0 |        0 |       0 |       0 |                   
+  context.ts       |       0 |        0 |       0 |       0 | 1-230             
+  ...ced-router.ts |       0 |        0 |       0 |       0 | 1-322             
+  router.ts        |       0 |        0 |       0 |       0 | 1-44              
+ ...i/trpc/routers |       0 |        0 |       0 |       0 |                   
+  ...ent.router.ts |       0 |        0 |       0 |       0 | 1-204             
+ .../src/api/types |       0 |        0 |       0 |       0 |                   
+  deal.types.ts    |       0 |        0 |       0 |       0 | 1-3               
+ .../src/api/utils |       0 |    33.33 |   33.33 |       0 |                   
+  errors.ts        |       0 |        0 |       0 |       0 | 1-44              
+  password.ts      |       0 |        0 |       0 |       0 | 1-221             
+  type-guards.ts   |       0 |      100 |     100 |       0 | 13-42             
+ ...c/api/webhooks |       0 |        0 |       0 |       0 |                   
+  ...h-enhanced.ts |       0 |        0 |       0 |       0 | 1-158             
+ .../api/websocket |       0 |        0 |       0 |       0 |                   
+  ...ce-updates.ts |       0 |        0 |       0 |       0 | 1-239             
+  index.ts         |       0 |        0 |       0 |       0 | 1-9               
+  setup.ts         |       0 |        0 |       0 |       0 | 1-213             
+  ...rt-updates.ts |       0 |        0 |       0 |       0 | 1-380             
+ ...ponents/charts |     100 |      100 |     100 |     100 |                   
+  ChartBase.tsx    |     100 |      100 |     100 |     100 |                   
+  ...tionChart.tsx |     100 |      100 |     100 |     100 |                   
+  ...lineChart.tsx |     100 |      100 |     100 |     100 |                   
+ ...onents/walmart |     100 |      100 |     100 |     100 |                   
+  ...etTracker.tsx |     100 |      100 |     100 |     100 |                   
+  ...Interface.tsx |     100 |      100 |     100 |     100 |                   
+  ...Dashboard.tsx |     100 |      100 |     100 |     100 |                   
+  ...DealAlert.tsx |     100 |      100 |     100 |     100 |                   
+  ...Scheduler.tsx |     100 |      100 |     100 |     100 |                   
+  ...oceryList.tsx |     100 |      100 |     100 |     100 |                   
+  ...erHistory.tsx |     100 |      100 |     100 |     100 |                   
+  ...ceTracker.tsx |     100 |      100 |     100 |     100 |                   
+  ...oductCard.tsx |     100 |      100 |     100 |     100 |                   
+  ...uctSearch.tsx |     100 |      100 |     100 |     100 |                   
+  ...ppingCart.tsx |     100 |      100 |     100 |     100 |                   
+  ...onManager.tsx |     100 |      100 |     100 |     100 |                   
+  ...eferences.tsx |     100 |      100 |     100 |     100 |                   
+ ...c/client/hooks |     100 |      100 |     100 |     100 |                   
+  useCart.ts       |     100 |      100 |     100 |     100 |                   
+  useDebounce.ts   |     100 |      100 |     100 |     100 |                   
+  ...lmartDeals.ts |     100 |      100 |     100 |     100 |                   
+  ...martSearch.ts |     100 |      100 |     100 |     100 |                   
+ ...src/client/lib |     100 |      100 |     100 |     100 |                   
+  utils.ts         |     100 |      100 |     100 |     100 |                   
+ ...c/client/store |     100 |      100 |     100 |     100 |                   
+  groceryStore.ts  |     100 |      100 |     100 |     100 |                   
+ .../components/ui |     100 |      100 |     100 |     100 |                   
+  accordion.tsx    |     100 |      100 |     100 |     100 |                   
+  avatar.tsx       |     100 |      100 |     100 |     100 |                   
+  badge.tsx        |     100 |      100 |     100 |     100 |                   
+  button.tsx       |     100 |      100 |     100 |     100 |                   
+  card.tsx         |     100 |      100 |     100 |     100 |                   
+  checkbox.tsx     |     100 |      100 |     100 |     100 |                   
+  collapsible.tsx  |     100 |      100 |     100 |     100 |                   
+  dialog.tsx       |     100 |      100 |     100 |     100 |                   
+  ...down-menu.tsx |     100 |      100 |     100 |     100 |                   
+  input.tsx        |     100 |      100 |     100 |     100 |                   
+  label.tsx        |     100 |      100 |     100 |     100 |                   
+  progress.tsx     |     100 |      100 |     100 |     100 |                   
+  radio-group.tsx  |     100 |      100 |     100 |     100 |                   
+  scroll-area.tsx  |     100 |      100 |     100 |     100 |                   
+  select.tsx       |     100 |      100 |     100 |     100 |                   
+  separator.tsx    |     100 |      100 |     100 |     100 |                   
+  sheet.tsx        |     100 |      100 |     100 |     100 |                   
+  slider.tsx       |     100 |      100 |     100 |     100 |                   
+  switch.tsx       |     100 |      100 |     100 |     100 |                   
+  tabs.tsx         |     100 |      100 |     100 |     100 |                   
+  textarea.tsx     |     100 |      100 |     100 |     100 |                   
+  tooltip.tsx      |     100 |      100 |     100 |     100 |                   
+ ...eam/src/config |       0 |    58.33 |   58.33 |       0 |                   
+  app.config.ts    |       0 |        0 |       0 |       0 | 1-67              
+  ...e-profiles.ts |       0 |      100 |     100 |       0 | 24-311            
+  ...nce.config.ts |       0 |      100 |     100 |       0 | 12-262            
+  ...ion.config.ts |       0 |      100 |     100 |       0 | 6-191             
+  ...low.config.ts |       0 |      100 |     100 |       0 | 30-83             
+  ...ion.config.ts |       0 |      100 |     100 |       0 | 27-304            
+  models.config.ts |       0 |        0 |       0 |       0 | 1-108             
+  ollama.config.ts |       0 |      100 |     100 |       0 | 3-29              
+  ...age.config.ts |       0 |        0 |       0 |       0 | 1-44              
+  rag.config.ts    |       0 |      100 |     100 |       0 | 3-29              
+  ...ers.config.ts |       0 |        0 |       0 |       0 | 1-113             
+  ...enceConfig.ts |       0 |        0 |       0 |       0 | 1-98              
+ ...onfig/features |       0 |        0 |       0 |       0 |                   
+  ...lagService.ts |       0 |        0 |       0 |       0 | 1-372             
+ ...ures/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...rvice.test.ts |       0 |        0 |       0 |       0 | 1-295             
+ ...re/agents/base |       0 |        0 |       0 |       0 |                   
+  AgentTypes.ts    |       0 |        0 |       0 |       0 | 1-72              
+  BaseAgent.ts     |       0 |        0 |       0 |       0 | 1-292             
+ ...gents/registry |       0 |        0 |       0 |       0 |                   
+  AgentRegistry.ts |       0 |        0 |       0 |       0 | 1-226             
+ ...ts/specialized |       0 |        0 |       0 |       0 |                   
+  CodeAgent.ts     |       0 |        0 |       0 |       0 | 1-318             
+  ...lysisAgent.ts |       0 |        0 |       0 |       0 | 1-331             
+  ...ysisConfig.ts |       0 |        0 |       0 |       0 | 1-175             
+  ...lysisTypes.ts |       0 |        0 |       0 |       0 | 1-4               
+  ...ation.test.ts |       0 |        0 |       0 |       0 | 1-308             
+  ...Agent.test.ts |       0 |        0 |       0 |       0 | 1-295             
+  ResearchAgent.ts |       0 |        0 |       0 |       0 | 1-258             
+  ...cutorAgent.ts |       0 |        0 |       0 |       0 | 1-332             
+  WriterAgent.ts   |       0 |        0 |       0 |       0 | 1-397             
+ .../src/core/auth |       0 |        0 |       0 |       0 |                   
+  AuthService.ts   |       0 |        0 |       0 |       0 | 1-281             
+ ...src/core/cache |       0 |        0 |       0 |       0 |                   
+  AgentPool.ts     |       0 |        0 |       0 |       0 | 1-432             
+  ...earchCache.ts |       0 |        0 |       0 |       0 | 1-345             
+  QueryCache.ts    |       0 |        0 |       0 |       0 | 1-260             
+  RedisService.ts  |       0 |        0 |       0 |       0 | 1-265             
+ ...ache/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...Cache.test.ts |       0 |        0 |       0 |       0 | 1-339             
+ ...ata-collection |       0 |       25 |      25 |       0 |                   
+  ...ataService.ts |       0 |        0 |       0 |       0 | 1-465             
+  ...eline.test.ts |       0 |        0 |       0 |       0 | 1-376             
+  ...onPipeline.ts |       0 |        0 |       0 |       0 | 1-432             
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ .../core/database |       0 |        0 |       0 |       0 |                   
+  ...uleService.ts |       0 |        0 |       0 |       0 | 1-253             
+  ...ectionPool.ts |       0 |        0 |       0 |       0 | 1-301             
+  ...icsService.ts |       0 |        0 |       0 |       0 | 1-124             
+  ...eryBuilder.ts |       0 |        0 |       0 |       0 | 1-170             
+ ...base/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...rvice.test.ts |       0 |        0 |       0 |       0 | 1-147             
+ ...e/repositories |       0 |        0 |       0 |       0 |                   
+  ...Repository.ts |       0 |        0 |       0 |       0 | 1-260             
+ ...m/src/core/llm |       0 |        0 |       0 |       0 |                   
+  ...JSProvider.ts |       0 |        0 |       0 |       0 | 1-297             
+  ...maProvider.ts |       0 |        0 |       0 |       0 | 1-451             
+  ...maLogProbs.ts |       0 |        0 |       0 |       0 | 1-79              
+ ...c/core/maestro |       0 |       60 |      60 |       0 |                   
+  ...ionContext.ts |       0 |      100 |     100 |       0 | 10-113            
+  ...oFramework.ts |       0 |        0 |       0 |       0 | 1-254             
+  ...Queue.test.ts |       0 |        0 |       0 |       0 | 1-441             
+  TaskQueue.ts     |       0 |      100 |     100 |       0 | 3-168             
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ ...r-orchestrator |       0 |    13.33 |   13.33 |       0 |                   
+  AgentRouter.ts   |       0 |        0 |       0 |       0 | 1-452             
+  ...chestrator.ts |       0 |        0 |       0 |       0 | 1-10              
+  ...chestrator.ts |       0 |        0 |       0 |       0 | 1-789             
+  ...ncedParser.ts |       0 |        0 |       0 |       0 | 1-604             
+  ...basic.test.ts |       0 |        0 |       0 |       0 | 1-283             
+  ...ation.test.ts |       0 |        0 |       0 |       0 | 1-487             
+  ...rator.test.ts |       0 |        0 |       0 |       0 | 1-285             
+  ...chestrator.ts |       0 |        0 |       0 |       0 | 1-479             
+  ...cutor.test.ts |       0 |        0 |       0 |       0 | 1-385             
+  PlanExecutor.ts  |       0 |        0 |       0 |       0 | 1-420             
+  PlanReviewer.ts  |       0 |        0 |       0 |       0 | 1-110             
+  ...nGenerator.ts |       0 |        0 |       0 |       0 | 1-154             
+  ...nced-types.ts |       0 |        0 |       0 |       0 |                   
+  ...ementation.ts |       0 |        0 |       0 |       0 | 1-180             
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ ...ore/middleware |       0 |        0 |       0 |       0 |                   
+  ...Middleware.ts |       0 |        0 |       0 |       0 | 1-596             
+  RateLimiter.ts   |       0 |        0 |       0 |       0 | 1-235             
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...ware/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...ching.test.ts |       0 |        0 |       0 |       0 | 1-282             
+  ...iting.test.ts |       0 |        0 |       0 |       0 | 1-189             
+  ...eware.test.ts |       0 |        0 |       0 |       0 | 1-310             
+  ...miter.test.ts |       0 |        0 |       0 |       0 | 1-216             
+ .../orchestration |       0 |        0 |       0 |       0 |                   
+  ...chestrator.ts |       0 |        0 |       0 |       0 | 1-221             
+ .../core/pipeline |       0 |        0 |       0 |       0 |                   
+  ...chestrator.ts |       0 |        0 |       0 |       0 | 1-273             
+  ...ternTriage.ts |       0 |        0 |       0 |       0 | 1-287             
+  ...maAnalysis.ts |       0 |        0 |       0 |       0 | 1-334             
+  ...alAnalysis.ts |       0 |        0 |       0 |       0 | 1-319             
+  ...is-results.ts |       0 |        0 |       0 |       0 | 1-109             
+  types.ts         |       0 |        0 |       0 |       0 | 1-3               
+ ...line/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...tence.test.ts |       0 |        0 |       0 |       0 | 1-165             
+ ...ore/processors |       0 |        0 |       0 |       0 |                   
+  ...isPipeline.ts |       0 |        0 |       0 |       0 | 1-534             
+  ...eProcessor.ts |       0 |        0 |       0 |       0 | 1-390             
+ ...c/core/prompts |       0 |        0 |       0 |       0 |                   
+  ...ptEnhancer.ts |       0 |        0 |       0 |       0 | 1-248             
+  example-usage.ts |       0 |        0 |       0 |       0 | 1-221             
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...mpts/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...ancer.test.ts |       0 |        0 |       0 |       0 | 1-301             
+ ...m/src/core/rag |       0 |    33.33 |   33.33 |       0 |                   
+  ...essor.test.ts |       0 |        0 |       0 |       0 | 1-271             
+  ...tProcessor.ts |       0 |      100 |     100 |       0 | 8-216             
+  ...rvice.test.ts |       0 |        0 |       0 |       0 | 1-273             
+  ...ingService.ts |       0 |        0 |       0 |       0 | 1-169             
+  RAGSystem.ts     |       0 |        0 |       0 |       0 | 1-273             
+  ...rvice.test.ts |       0 |        0 |       0 |       0 | 1-267             
+  ...valService.ts |       0 |      100 |     100 |       0 | 3-252             
+  VectorStore.ts   |       0 |        0 |       0 |       0 | 1-310             
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ ...rag/confidence |       0 |     12.5 |    12.5 |       0 |                   
+  ...eryManager.ts |       0 |        0 |       0 |       0 | 1-583             
+  ...anker.test.ts |       0 |        0 |       0 |       0 | 1-296             
+  BERTRanker.ts    |       0 |        0 |       0 |       0 | 1-298             
+  ...ation.test.ts |       0 |        0 |       0 |       0 | 1-115             
+  ...rator.test.ts |       0 |        0 |       0 |       0 | 1-277             
+  ...Calibrator.ts |       0 |        0 |       0 |       0 | 1-433             
+  ...ilder.test.ts |       0 |        0 |       0 |       0 | 1-280             
+  ...extBuilder.ts |       0 |        0 |       0 |       0 | 1-400             
+  ...actor.test.ts |       0 |        0 |       0 |       0 | 1-215             
+  ...eExtractor.ts |       0 |      100 |     100 |       0 | 8-282             
+  ...iever.test.ts |       0 |        0 |       0 |       0 | 1-309             
+  ...GRetriever.ts |       0 |        0 |       0 |       0 | 1-360             
+  ...rator.test.ts |       0 |        0 |       0 |       0 | 1-460             
+  ...eGenerator.ts |       0 |        0 |       0 |       0 | 1-399             
+  ...ation.test.ts |       0 |        0 |       0 |       0 | 1-106             
+  ...uator.test.ts |       0 |        0 |       0 |       0 | 1-419             
+  ...lEvaluator.ts |       0 |        0 |       0 |       0 | 1-401             
+  ...eOptimizer.ts |       0 |        0 |       0 |       0 | 1-483             
+  ...lyzer.test.ts |       0 |        0 |       0 |       0 | 1-235             
+  ...tyAnalyzer.ts |       0 |      100 |     100 |       0 | 6-391             
+  example-usage.ts |       0 |        0 |       0 |       0 | 1-177             
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+  ...-benchmark.ts |       0 |        0 |       0 |       0 | 1-254             
+  types.ts         |       0 |      100 |     100 |       0 | 84-191            
+ ...ence/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...nager.test.ts |       0 |        0 |       0 |       0 | 1-390             
+  ...mizer.test.ts |       0 |        0 |       0 |       0 | 1-319             
+ ...nce/evaluators |       0 |    28.57 |   28.57 |       0 |                   
+  ...lyzer.test.ts |       0 |        0 |       0 |       0 | 1-282             
+  ...ceAnalyzer.ts |       0 |      100 |     100 |       0 | 21-455            
+  ...ecker.test.ts |       0 |        0 |       0 |       0 | 1-219             
+  ...ityChecker.ts |       0 |        0 |       0 |       0 | 1-339             
+  ...corer.test.ts |       0 |        0 |       0 |       0 | 1-233             
+  ...anceScorer.ts |       0 |      100 |     100 |       0 | 17-338            
+  ...ation.test.ts |       0 |        0 |       0 |       0 | 1-114             
+ ...c/core/reports |       0 |        0 |       0 |       0 |                   
+  ...ionService.ts |       0 |        0 |       0 |       0 | 1-356             
+ ...ore/resilience |       0 |        0 |       0 |       0 |                   
+  ...uitBreaker.ts |       0 |        0 |       0 |       0 | 1-303             
+ ...rc/core/search |       0 |        0 |       0 |       0 |                   
+  ...yOptimizer.ts |       0 |        0 |       0 |       0 | 1-496             
+  QueryEnhancer.ts |       0 |        0 |       0 |       0 | 1-238             
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+  types.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...re/search/data |       0 |        0 |       0 |       0 |                   
+  ...onDatabase.ts |       0 |        0 |       0 |       0 | 1-667             
+ ...earch/examples |       0 |        0 |       0 |       0 |                   
+  ...onExamples.ts |       0 |        0 |       0 |       0 | 1-139             
+ ...e/search/tests |       0 |        0 |       0 |       0 |                   
+  securityTest.ts  |       0 |        0 |       0 |       0 | 1-105             
+ .../core/services |       0 |        0 |       0 |       0 |                   
+  ...dgeService.ts |       0 |        0 |       0 |       0 | 1-203             
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...rc/core/shared |       0 |        0 |       0 |       0 |                   
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ ...ore/tools/base |       0 |       50 |      50 |       0 |                   
+  BaseTool.ts      |       0 |      100 |     100 |       0 | 25-201            
+  ValidatedTool.ts |       0 |        0 |       0 |       0 | 1-34              
+ ...core/tools/web |       0 |        0 |       0 |       0 |                   
+  ...NGProvider.ts |       0 |        0 |       0 |       0 | 1-212             
+  ...craperTool.ts |       0 |        0 |       0 |       0 | 1-230             
+  ...ool.backup.ts |       0 |        0 |       0 |       0 | 1-172             
+  WebSearchTool.ts |       0 |        0 |       0 |       0 | 1-215             
+  ...hToolFixed.ts |       0 |        0 |       0 |       0 | 1-230             
+ ...ore/validators |       0 |        0 |       0 |       0 |                   
+  ...eValidator.ts |       0 |        0 |       0 |       0 | 1-370             
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...tors/__tests__ |       0 |        0 |       0 |       0 |                   
+  ...dator.test.ts |       0 |        0 |       0 |       0 | 1-265             
+ ...ators/examples |       0 |        0 |       0 |       0 |                   
+  ...ation-demo.ts |       0 |        0 |       0 |       0 | 1-181             
+ ...ators/fallback |       0 |    66.66 |   66.66 |       0 |                   
+  ...rchManager.ts |       0 |      100 |     100 |       0 | 26-255            
+  ...ionService.ts |       0 |        0 |       0 |       0 | 1-223             
+  ...kCollector.ts |       0 |      100 |     100 |       0 | 35-249            
+ ...ators/patterns |       0 |        0 |       0 |       0 |                   
+  ...ctPatterns.ts |       0 |        0 |       0 |       0 | 1-155             
+ ...core/websocket |       0 |        0 |       0 |       0 |                   
+  ...ketManager.ts |       0 |        0 |       0 |       0 | 1-359             
+ ...m/src/database |       0 |        0 |       0 |       0 |                   
+  ...aseManager.ts |       0 |        0 |       0 |       0 | 1-431             
+  connection.ts    |       0 |        0 |       0 |       0 | 1-113             
+ ...ase/migrations |       0 |        0 |       0 |       0 |                   
+  ...cery_agent.ts |       0 |        0 |       0 |       0 | 1-429             
+  ...seMigrator.ts |       0 |        0 |       0 |       0 | 1-362             
+ ...e/repositories |       0 |        0 |       0 |       0 |                   
+  ...Repository.ts |       0 |        0 |       0 |       0 | 1-356             
+  ...Repository.ts |       0 |        0 |       0 |       0 | 1-432             
+  ...Repository.ts |       0 |        0 |       0 |       0 | 1-546             
+  ...Repository.ts |       0 |        0 |       0 |       0 | 1-344             
+  ...Repository.ts |       0 |        0 |       0 |       0 | 1-178             
+  ...Repository.ts |       0 |        0 |       0 |       0 | 1-350             
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...atabase/vector |       0 |        0 |       0 |       0 |                   
+  ...aDBManager.ts |       0 |        0 |       0 |       0 | 1-594             
+  ...ollections.ts |       0 |        0 |       0 |       0 | 1-409             
+ ...I_Team/src/lib |     100 |      100 |     100 |     100 |                   
+  trpc.ts          |     100 |      100 |     100 |     100 |                   
+  utils.ts         |     100 |      100 |     100 |     100 |                   
+ ...m/src/services |       0 |        0 |       0 |       0 |                   
+  ...JsonParser.ts |       0 |        0 |       0 |       0 | 1-363             
+ ...c/shared/types |       0 |        0 |       0 |       0 |                   
+  agents.ts        |       0 |        0 |       0 |       0 | 1-4               
+  api.ts           |       0 |        0 |       0 |       0 | 1-4               
+  core.ts          |       0 |        0 |       0 |       0 | 1-4               
+  database.ts      |       0 |        0 |       0 |       0 | 1-4               
+  email.ts         |       0 |        0 |       0 |       0 | 1-4               
+  errors.ts        |       0 |        0 |       0 |       0 | 1-102             
+  index.ts         |       0 |        0 |       0 |       0 | 1-39              
+  websocket.ts     |       0 |        0 |       0 |       0 | 1-4               
+ ...c/test/helpers |       0 |        0 |       0 |       0 |                   
+  ...est-helper.ts |       0 |        0 |       0 |       0 | 1-105             
+ ...src/test/utils |       0 |        0 |       0 |       0 |                   
+  ...est-helper.ts |       0 |        0 |       0 |       0 | 1-238             
+  test-helpers.ts  |       0 |        0 |       0 |       0 | 1-175             
+ ...Team/src/tests |       0 |        0 |       0 |       0 |                   
+  ...ama-direct.ts |       0 |        0 |       0 |       0 | 1-67              
+  ...rovider-v2.ts |       0 |        0 |       0 |       0 | 1-111             
+  ...a-provider.ts |       0 |        0 |       0 |       0 | 1-133             
+  ...connection.ts |       0 |        0 |       0 |       0 | 1-63              
+ ...Team/src/types |       0 |        0 |       0 |       0 |                   
+  ...is-results.ts |       0 |        0 |       0 |       0 | 1-4               
+  ...mail.types.ts |       0 |        0 |       0 |       0 | 1-4               
+  ...e-analysis.ts |       0 |        0 |       0 |       0 | 1-4               
+  ...mail.types.ts |       0 |        0 |       0 |       0 | 1                 
+  ...rt-grocery.ts |       0 |        0 |       0 |       0 | 1-6               
+ ...AI_Team/src/ui |     100 |      100 |     100 |     100 |                   
+  App.tsx          |     100 |      100 |     100 |     100 |                   
+  main.tsx         |     100 |      100 |     100 |     100 |                   
+ ...ts/AgentStatus |     100 |      100 |     100 |     100 |                   
+  AgentMonitor.tsx |     100 |      100 |     100 |     100 |                   
+ ...ponents/Agents |     100 |      100 |     100 |     100 |                   
+  Agents.tsx       |     100 |      100 |     100 |     100 |                   
+ ...omponents/Chat |     100 |      100 |     100 |     100 |                   
+  ...Interface.tsx |     100 |      100 |     100 |     100 |                   
+  InputBox.tsx     |     100 |      100 |     100 |     100 |                   
+  MessageList.tsx  |     100 |      100 |     100 |     100 |                   
+ ...ents/Dashboard |     100 |      100 |     100 |     100 |                   
+  Dashboard.tsx    |     100 |      100 |     100 |     100 |                   
+ .../KnowledgeBase |     100 |      100 |     100 |     100 |                   
+  ...ledgeBase.tsx |     100 |      100 |     100 |     100 |                   
+ ...ponents/Layout |     100 |      100 |     100 |     100 |                   
+  MainLayout.tsx   |     100 |      100 |     100 |     100 |                   
+  Sidebar.tsx      |     100 |      100 |     100 |     100 |                   
+ ...nents/Settings |     100 |      100 |     100 |     100 |                   
+  Settings.tsx     |     100 |      100 |     100 |     100 |                   
+ ...s/UnifiedEmail |     100 |      100 |     100 |     100 |                   
+  AgentView.tsx    |     100 |      100 |     100 |     100 |                   
+  ...yticsView.tsx |     100 |      100 |     100 |     100 |                   
+  ...lListView.tsx |     100 |      100 |     100 |     100 |                   
+  MetricsBar.tsx   |     100 |      100 |     100 |     100 |                   
+  StatusLegend.tsx |     100 |      100 |     100 |     100 |                   
+  ...Dashboard.tsx |     100 |      100 |     100 |     100 |                   
+ ...s/VectorSearch |     100 |      100 |     100 |     100 |                   
+  VectorSearch.tsx |     100 |      100 |     100 |     100 |                   
+ ...ts/WebScraping |     100 |      100 |     100 |     100 |                   
+  WebScraping.tsx  |     100 |      100 |     100 |     100 |                   
+ ...m/src/ui/hooks |     100 |      100 |     100 |     100 |                   
+  useWebSocket.ts  |     100 |      100 |     100 |     100 |                   
+ ...Team/src/utils |       0 |    28.57 |   28.57 |       0 |                   
+  LazyLoader.ts    |       0 |        0 |       0 |       0 | 1-276             
+  cn.ts            |       0 |        0 |       0 |       0 | 1-10              
+  logger.ts        |       0 |        0 |       0 |       0 | 1-271             
+  ...ma-manager.ts |       0 |        0 |       0 |       0 | 1-209             
+  ...-sanitizer.ts |       0 |      100 |     100 |       0 | 10-90             
+  timeout.ts       |       0 |      100 |     100 |       0 | 5-155             
+  trpc.ts          |       0 |        0 |       0 |       0 | 1                 
+ ...driver/package |       0 |        0 |       0 |       0 |                   
+  cli.js           |       0 |        0 |       0 |       0 | 1-18              
+  index.d.ts       |       0 |        0 |       0 |       0 | 1-17              
+  index.js         |       0 |        0 |       0 |       0 | 1-32              
+  index.mjs        |       0 |        0 |       0 |       0 | 1-28              
+ ...er/package/lib |       0 |        0 |       0 |       0 |                   
+  ...ServerImpl.js |       0 |        0 |       0 |       0 | 1-63              
+  ...ServerImpl.js |       0 |        0 |       0 |       0 | 1-90              
+  ...essFactory.js |       0 |        0 |       0 |       0 | 1-57              
+  inprocess.js     |       0 |        0 |       0 |       0 | 1-3               
+  outofprocess.js  |       0 |        0 |       0 |       0 | 1-76              
+  utils.js         |       0 |        0 |       0 |       0 | 1-105             
+  utilsBundle.js   |       0 |        0 |       0 |       0 | 1-106             
+  zipBundle.js     |       0 |        0 |       0 |       0 | 1-34              
+  zipBundleImpl.js |       0 |        0 |       0 |       0 | 1-5               
+ ...ackage/lib/cli |       0 |        0 |       0 |       0 |                   
+  driver.js        |       0 |        0 |       0 |       0 | 1-97              
+  program.js       |       0 |        0 |       0 |       0 | 1-624             
+  ...thTestStub.js |       0 |        0 |       0 |       0 | 1-74              
+ ...age/lib/client |       0 |        0 |       0 |       0 |                   
+  accessibility.js |       0 |        0 |       0 |       0 | 1-49              
+  android.js       |       0 |        0 |       0 |       0 | 1-361             
+  api.js           |       0 |        0 |       0 |       0 | 1-137             
+  artifact.js      |       0 |        0 |       0 |       0 | 1-79              
+  browser.js       |       0 |        0 |       0 |       0 | 1-162             
+  ...serContext.js |       0 |        0 |       0 |       0 | 1-520             
+  browserType.js   |       0 |        0 |       0 |       0 | 1-183             
+  cdpSession.js    |       0 |        0 |       0 |       0 | 1-51              
+  channelOwner.js  |       0 |        0 |       0 |       0 | 1-197             
+  clientHelper.js  |       0 |        0 |       0 |       0 | 1-64              
+  ...umentation.js |       0 |        0 |       0 |       0 | 1-55              
+  ...StackTrace.js |       0 |        0 |       0 |       0 | 1-69              
+  clock.js         |       0 |        0 |       0 |       0 | 1-68              
+  connection.js    |       0 |        0 |       0 |       0 | 1-314             
+  ...oleMessage.js |       0 |        0 |       0 |       0 | 1-55              
+  coverage.js      |       0 |        0 |       0 |       0 | 1-44              
+  dialog.js        |       0 |        0 |       0 |       0 | 1-56              
+  download.js      |       0 |        0 |       0 |       0 | 1-62              
+  electron.js      |       0 |        0 |       0 |       0 | 1-138             
+  elementHandle.js |       0 |        0 |       0 |       0 | 1-285             
+  errors.js        |       0 |        0 |       0 |       0 | 1-77              
+  eventEmitter.js  |       0 |        0 |       0 |       0 | 1-314             
+  events.js        |       0 |        0 |       0 |       0 | 1-98              
+  fetch.js         |       0 |        0 |       0 |       0 | 1-369             
+  fileChooser.js   |       0 |        0 |       0 |       0 | 1-46              
+  fileUtils.js     |       0 |        0 |       0 |       0 | 1-34              
+  frame.js         |       0 |        0 |       0 |       0 | 1-396             
+  harRouter.js     |       0 |        0 |       0 |       0 | 1-87              
+  input.js         |       0 |        0 |       0 |       0 | 1-84              
+  jsHandle.js      |       0 |        0 |       0 |       0 | 1-105             
+  jsonPipe.js      |       0 |        0 |       0 |       0 | 1-39              
+  localUtils.js    |       0 |        0 |       0 |       0 | 1-60              
+  locator.js       |       0 |        0 |       0 |       0 | 1-365             
+  network.js       |       0 |        0 |       0 |       0 | 1-743             
+  page.js          |       0 |        0 |       0 |       0 | 1-706             
+  platform.js      |       0 |        0 |       0 |       0 | 1-74              
+  playwright.js    |       0 |        0 |       0 |       0 | 1-76              
+  selectors.js     |       0 |        0 |       0 |       0 | 1-53              
+  stream.js        |       0 |        0 |       0 |       0 | 1-39              
+  ...utSettings.js |       0 |        0 |       0 |       0 | 1-79              
+  tracing.js       |       0 |        0 |       0 |       0 | 1-109             
+  types.js         |       0 |        0 |       0 |       0 | 1-28              
+  video.js         |       0 |        0 |       0 |       0 | 1-59              
+  waiter.js        |       0 |        0 |       0 |       0 | 1-142             
+  webError.js      |       0 |        0 |       0 |       0 | 1-39              
+  webSocket.js     |       0 |        0 |       0 |       0 | 1-93              
+  worker.js        |       0 |        0 |       0 |       0 | 1-63              
+  ...ableStream.js |       0 |        0 |       0 |       0 | 1-39              
+ .../lib/generated |       0 |        0 |       0 |       0 |                   
+  ...llerSource.js |       0 |        0 |       0 |       0 | 1-28              
+  clockSource.js   |       0 |        0 |       0 |       0 | 1-28              
+  ...riptSource.js |       0 |        0 |       0 |       0 | 1-28              
+  ...rderSource.js |       0 |        0 |       0 |       0 | 1-28              
+  ...riptSource.js |       0 |        0 |       0 |       0 | 1-28              
+  ...riptSource.js |       0 |        0 |       0 |       0 | 1-28              
+  ...MockSource.js |       0 |        0 |       0 |       0 | 1-336             
+ ...e/lib/protocol |       0 |        0 |       0 |       0 |                   
+  serializers.js   |       0 |        0 |       0 |       0 | 1-192             
+  validator.js     |       0 |        0 |       0 |       0 | 1-2881            
+  ...Primitives.js |       0 |        0 |       0 |       0 | 1-179             
+ ...age/lib/remote |       0 |        0 |       0 |       0 |                   
+  ...Connection.js |       0 |        0 |       0 |       0 | 1-271             
+  ...ightServer.js |       0 |        0 |       0 |       0 | 1-146             
+ ...age/lib/server |       0 |        0 |       0 |       0 |                   
+  accessibility.js |       0 |        0 |       0 |       0 | 1-69              
+  artifact.js      |       0 |        0 |       0 |       0 | 1-127             
+  browser.js       |       0 |        0 |       0 |       0 | 1-142             
+  ...serContext.js |       0 |        0 |       0 |       0 | 1-659             
+  browserType.js   |       0 |        0 |       0 |       0 | 1-324             
+  callLog.js       |       0 |        0 |       0 |       0 | 1-82              
+  clock.js         |       0 |        0 |       0 |       0 | 1-137             
+  console.js       |       0 |        0 |       0 |       0 | 1-53              
+  cookieStore.js   |       0 |        0 |       0 |       0 | 1-206             
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-185             
+  debugger.js      |       0 |        0 |       0 |       0 | 1-140             
+  ...escriptors.js |       0 |        0 |       0 |       0 | 1-39              
+  dialog.js        |       0 |        0 |       0 |       0 | 1-116             
+  dom.js           |       0 |        0 |       0 |       0 | 1-890             
+  download.js      |       0 |        0 |       0 |       0 | 1-70              
+  errors.js        |       0 |        0 |       0 |       0 | 1-69              
+  fetch.js         |       0 |        0 |       0 |       0 | 1-635             
+  fileChooser.js   |       0 |        0 |       0 |       0 | 1-43              
+  ...ploadUtils.js |       0 |        0 |       0 |       0 | 1-84              
+  formData.js      |       0 |        0 |       0 |       0 | 1-147             
+  ...eSelectors.js |       0 |        0 |       0 |       0 | 1-155             
+  frames.js        |       0 |        0 |       0 |       0 | 1-1503            
+  harBackend.js    |       0 |        0 |       0 |       0 | 1-157             
+  helper.js        |       0 |        0 |       0 |       0 | 1-100             
+  index.js         |       0 |        0 |       0 |       0 | 1-61              
+  input.js         |       0 |        0 |       0 |       0 | 1-280             
+  ...umentation.js |       0 |        0 |       0 |       0 | 1-75              
+  javascript.js    |       0 |        0 |       0 |       0 | 1-291             
+  launchApp.js     |       0 |        0 |       0 |       0 | 1-112             
+  localUtils.js    |       0 |        0 |       0 |       0 | 1-211             
+  ...ngCommands.js |       0 |        0 |       0 |       0 | 1-143             
+  network.js       |       0 |        0 |       0 |       0 | 1-608             
+  page.js          |       0 |        0 |       0 |       0 | 1-829             
+  pipeTransport.js |       0 |        0 |       0 |       0 | 1-89              
+  playwright.js    |       0 |        0 |       0 |       0 | 1-79              
+  progress.js      |       0 |        0 |       0 |       0 | 1-104             
+  protocolError.js |       0 |        0 |       0 |       0 | 1-52              
+  recorder.js      |       0 |        0 |       0 |       0 | 1-358             
+  screenshotter.js |       0 |        0 |       0 |       0 | 1-331             
+  selectors.js     |       0 |        0 |       0 |       0 | 1-112             
+  ...nterceptor.js |       0 |        0 |       0 |       0 | 1-321             
+  ...nterceptor.js |       0 |        0 |       0 |       0 | 1-95              
+  transport.js     |       0 |        0 |       0 |       0 | 1-183             
+  types.js         |       0 |        0 |       0 |       0 | 1-28              
+  ...oardLayout.js |       0 |        0 |       0 |       0 | 1-145             
+ ...server/android |       0 |        0 |       0 |       0 |                   
+  android.js       |       0 |        0 |       0 |       0 | 1-450             
+  backendAdb.js    |       0 |        0 |       0 |       0 | 1-179             
+ ...ib/server/bidi |       0 |        0 |       0 |       0 |                   
+  bidiBrowser.js   |       0 |        0 |       0 |       0 | 1-448             
+  bidiChromium.js  |       0 |        0 |       0 |       0 | 1-164             
+  ...Connection.js |       0 |        0 |       0 |       0 | 1-187             
+  ...ionContext.js |       0 |        0 |       0 |       0 | 1-221             
+  bidiFirefox.js   |       0 |        0 |       0 |       0 | 1-112             
+  bidiInput.js     |       0 |        0 |       0 |       0 | 1-146             
+  ...orkManager.js |       0 |        0 |       0 |       0 | 1-320             
+  bidiOverCdp.js   |       0 |        0 |       0 |       0 | 1-102             
+  bidiPage.js      |       0 |        0 |       0 |       0 | 1-502             
+  bidiPdf.js       |       0 |        0 |       0 |       0 | 1-106             
+ ...di/third_party |       0 |        0 |       0 |       0 |                   
+  ...Commands.d.js |       0 |        0 |       0 |       0 | 1-22              
+  ...serializer.js |       0 |        0 |       0 |       0 | 1-98              
+  bidiKeyboard.js  |       0 |        0 |       0 |       0 | 1-256             
+  bidiProtocol.js  |       0 |        0 |       0 |       0 | 1-24              
+  ...otocolCore.js |       0 |        0 |       0 |       0 | 1-152             
+  ...ermissions.js |       0 |        0 |       0 |       0 | 1-42              
+  ...Serializer.js |       0 |        0 |       0 |       0 | 1-148             
+  firefoxPrefs.js  |       0 |        0 |       0 |       0 | 1-259             
+ ...erver/chromium |       0 |        0 |       0 |       0 |                   
+  chromium.js      |       0 |        0 |       0 |       0 | 1-389             
+  ...umSwitches.js |       0 |        0 |       0 |       0 | 1-98              
+  ...essibility.js |       0 |        0 |       0 |       0 | 1-263             
+  crBrowser.js     |       0 |        0 |       0 |       0 | 1-499             
+  crConnection.js  |       0 |        0 |       0 |       0 | 1-203             
+  crCoverage.js    |       0 |        0 |       0 |       0 | 1-234             
+  crDevTools.js    |       0 |        0 |       0 |       0 | 1-113             
+  crDragDrop.js    |       0 |        0 |       0 |       0 | 1-126             
+  ...ionContext.js |       0 |        0 |       0 |       0 | 1-146             
+  crInput.js       |       0 |        0 |       0 |       0 | 1-186             
+  ...orkManager.js |       0 |        0 |       0 |       0 | 1-666             
+  crPage.js        |       0 |        0 |       0 |       0 | 1-1061            
+  crPdf.js         |       0 |        0 |       0 |       0 | 1-121             
+  ...ocolHelper.js |       0 |        0 |       0 |       0 | 1-145             
+  ...viceWorker.js |       0 |        0 |       0 |       0 | 1-123             
+  ...ntFamilies.js |       0 |        0 |       0 |       0 | 1-162             
+  protocol.d.js    |       0 |        0 |       0 |       0 | 1-16              
+  videoRecorder.js |       0 |        0 |       0 |       0 | 1-121             
+ ...server/codegen |       0 |        0 |       0 |       0 |                   
+  csharp.js        |       0 |        0 |       0 |       0 | 1-329             
+  java.js          |       0 |        0 |       0 |       0 | 1-270             
+  javascript.js    |       0 |        0 |       0 |       0 | 1-268             
+  jsonl.js         |       0 |        0 |       0 |       0 | 1-51              
+  language.js      |       0 |        0 |       0 |       0 | 1-111             
+  languages.js     |       0 |        0 |       0 |       0 | 1-68              
+  python.js        |       0 |        0 |       0 |       0 | 1-277             
+  types.js         |       0 |        0 |       0 |       0 | 1-16              
+ ...er/dispatchers |       0 |        0 |       0 |       0 |                   
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-287             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-118             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-367             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-119             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-57              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-44              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-87              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-47              
+  dispatcher.js    |       0 |        0 |       0 |       0 | 1-346             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-89              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-184             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-224             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-84              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-58              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-155             
+  ...ispatchers.js |       0 |        0 |       0 |       0 | 1-210             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-370             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-127             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-60              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-59              
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-154             
+  ...Dispatcher.js |       0 |        0 |       0 |       0 | 1-73              
+ ...erver/electron |       0 |        0 |       0 |       0 |                   
+  electron.js      |       0 |        0 |       0 |       0 | 1-275             
+  loader.js        |       0 |        0 |       0 |       0 | 1-29              
+ ...server/firefox |       0 |        0 |       0 |       0 |                   
+  ...essibility.js |       0 |        0 |       0 |       0 | 1-238             
+  ffBrowser.js     |       0 |        0 |       0 |       0 | 1-410             
+  ffConnection.js  |       0 |        0 |       0 |       0 | 1-147             
+  ...ionContext.js |       0 |        0 |       0 |       0 | 1-150             
+  ffInput.js       |       0 |        0 |       0 |       0 | 1-159             
+  ...orkManager.js |       0 |        0 |       0 |       0 | 1-254             
+  ffPage.js        |       0 |        0 |       0 |       0 | 1-505             
+  firefox.js       |       0 |        0 |       0 |       0 | 1-106             
+  protocol.d.js    |       0 |        0 |       0 |       0 | 1-16              
+ ...lib/server/har |       0 |        0 |       0 |       0 |                   
+  harRecorder.js   |       0 |        0 |       0 |       0 | 1-147             
+  harTracer.js     |       0 |        0 |       0 |       0 | 1-608             
+ ...erver/recorder |       0 |        0 |       0 |       0 |                   
+  chat.js          |       0 |        0 |       0 |       0 | 1-161             
+  ...xtRecorder.js |       0 |        0 |       0 |       0 | 1-289             
+  recorderApp.js   |       0 |        0 |       0 |       0 | 1-187             
+  ...Collection.js |       0 |        0 |       0 |       0 | 1-116             
+  ...erFrontend.js |       0 |        0 |       0 |       0 | 1-16              
+  ...rderRunner.js |       0 |        0 |       0 |       0 | 1-135             
+  recorderUtils.js |       0 |        0 |       0 |       0 | 1-98              
+  throttledFile.js |       0 |        0 |       0 |       0 | 1-57              
+ ...erver/registry |       0 |        0 |       0 |       0 |                   
+  ...serFetcher.js |       0 |        0 |       0 |       0 | 1-175             
+  dependencies.js  |       0 |        0 |       0 |       0 | 1-371             
+  index.js         |       0 |        0 |       0 |       0 | 1-1299            
+  nativeDeps.js    |       0 |        0 |       0 |       0 | 1-1105            
+  ...rowserMain.js |       0 |        0 |       0 |       0 | 1-120             
+ ...trace/recorder |       0 |        0 |       0 |       0 |                   
+  snapshotter.js   |       0 |        0 |       0 |       0 | 1-135             
+  ...erInjected.js |       0 |        0 |       0 |       0 | 1-539             
+  tracing.js       |       0 |        0 |       0 |       0 | 1-594             
+ ...ver/trace/test |       0 |        0 |       0 |       0 |                   
+  ...napshotter.js |       0 |        0 |       0 |       0 | 1-87              
+ ...r/trace/viewer |       0 |        0 |       0 |       0 |                   
+  traceViewer.js   |       0 |        0 |       0 |       0 | 1-242             
+ ...b/server/utils |       0 |        0 |       0 |       0 |                   
+  ascii.js         |       0 |        0 |       0 |       0 | 1-44              
+  comparators.js   |       0 |        0 |       0 |       0 | 1-161             
+  crypto.js        |       0 |        0 |       0 |       0 | 1-216             
+  debug.js         |       0 |        0 |       0 |       0 | 1-42              
+  debugLogger.js   |       0 |        0 |       0 |       0 | 1-114             
+  env.js           |       0 |        0 |       0 |       0 | 1-68              
+  eventsHelper.js  |       0 |        0 |       0 |       0 | 1-39              
+  expectUtils.js   |       0 |        0 |       0 |       0 | 1-38              
+  fileUtils.js     |       0 |        0 |       0 |       0 | 1-191             
+  happyEyeballs.js |       0 |        0 |       0 |       0 | 1-207             
+  hostPlatform.js  |       0 |        0 |       0 |       0 | 1-109             
+  httpServer.js    |       0 |        0 |       0 |       0 | 1-218             
+  linuxUtils.js    |       0 |        0 |       0 |       0 | 1-71              
+  network.js       |       0 |        0 |       0 |       0 | 1-217             
+  nodePlatform.js  |       0 |        0 |       0 |       0 | 1-148             
+  pipeTransport.js |       0 |        0 |       0 |       0 | 1-84              
+  ...ssLauncher.js |       0 |        0 |       0 |       0 | 1-238             
+  profiler.js      |       0 |        0 |       0 |       0 | 1-65              
+  socksProxy.js    |       0 |        0 |       0 |       0 | 1-511             
+  spawnAsync.js    |       0 |        0 |       0 |       0 | 1-41              
+  task.js          |       0 |        0 |       0 |       0 | 1-51              
+  userAgent.js     |       0 |        0 |       0 |       0 | 1-98              
+  wsServer.js      |       0 |        0 |       0 |       0 | 1-132             
+  zipFile.js       |       0 |        0 |       0 |       0 | 1-74              
+  zones.js         |       0 |        0 |       0 |       0 | 1-57              
+ ...ls/image_tools |       0 |        0 |       0 |       0 |                   
+  colorUtils.js    |       0 |        0 |       0 |       0 | 1-89              
+  compare.js       |       0 |        0 |       0 |       0 | 1-109             
+  imageChannel.js  |       0 |        0 |       0 |       0 | 1-78              
+  stats.js         |       0 |        0 |       0 |       0 | 1-102             
+ .../server/webkit |       0 |        0 |       0 |       0 |                   
+  protocol.d.js    |       0 |        0 |       0 |       0 | 1-16              
+  webkit.js        |       0 |        0 |       0 |       0 | 1-100             
+  ...essibility.js |       0 |        0 |       0 |       0 | 1-237             
+  wkBrowser.js     |       0 |        0 |       0 |       0 | 1-318             
+  wkConnection.js  |       0 |        0 |       0 |       0 | 1-149             
+  ...ionContext.js |       0 |        0 |       0 |       0 | 1-154             
+  wkInput.js       |       0 |        0 |       0 |       0 | 1-181             
+  ...bleRequest.js |       0 |        0 |       0 |       0 | 1-169             
+  wkPage.js        |       0 |        0 |       0 |       0 | 1-1134            
+  ...sionalPage.js |       0 |        0 |       0 |       0 | 1-83              
+  wkWorkers.js     |       0 |        0 |       0 |       0 | 1-104             
+ ...ib/third_party |       0 |        0 |       0 |       0 |                   
+  pixelmatch.js    |       0 |        0 |       0 |       0 | 1-255             
+ ...ils/isomorphic |       0 |        0 |       0 |       0 |                   
+  ariaSnapshot.js  |       0 |        0 |       0 |       0 | 1-384             
+  assert.js        |       0 |        0 |       0 |       0 | 1-31              
+  colors.js        |       0 |        0 |       0 |       0 | 1-72              
+  cssParser.js     |       0 |        0 |       0 |       0 | 1-245             
+  cssTokenizer.js  |       0 |        0 |       0 |       0 | 1-1051            
+  headers.js       |       0 |        0 |       0 |       0 | 1-53              
+  ...Generators.js |       0 |        0 |       0 |       0 | 1-666             
+  locatorParser.js |       0 |        0 |       0 |       0 | 1-176             
+  locatorUtils.js  |       0 |        0 |       0 |       0 | 1-81              
+  manualPromise.js |       0 |        0 |       0 |       0 | 1-114             
+  mimeType.js      |       0 |        0 |       0 |       0 | 1-459             
+  multimap.js      |       0 |        0 |       0 |       0 | 1-80              
+  ...lFormatter.js |       0 |        0 |       0 |       0 | 1-68              
+  ...olMetainfo.js |       0 |        0 |       0 |       0 | 1-320             
+  rtti.js          |       0 |        0 |       0 |       0 | 1-43              
+  ...ctorParser.js |       0 |        0 |       0 |       0 | 1-386             
+  semaphore.js     |       0 |        0 |       0 |       0 | 1-54              
+  stackTrace.js    |       0 |        0 |       0 |       0 | 1-158             
+  stringUtils.js   |       0 |        0 |       0 |       0 | 1-155             
+  time.js          |       0 |        0 |       0 |       0 | 1-49              
+  timeoutRunner.js |       0 |        0 |       0 |       0 | 1-66              
+  traceUtils.js    |       0 |        0 |       0 |       0 | 1-58              
+  types.js         |       0 |        0 |       0 |       0 | 1-16              
+  urlMatch.js      |       0 |        0 |       0 |       0 | 1-166             
+  ...erializers.js |       0 |        0 |       0 |       0 | 1-251             
+ ...tilsBundleImpl |       0 |        0 |       0 |       0 |                   
+  index.js         |       0 |        0 |       0 |       0 | 1-208             
+ ...ecorder/assets |       0 |        0 |       0 |       0 |                   
+  ...e-DRsk21vu.js |       0 |        0 |       0 |       0 | 1-24              
+  ...x-YwXrOGhp.js |       0 |        0 |       0 |       0 | 1-184             
+ ...te/traceViewer |       0 |        0 |       0 |       0 |                   
+  ...x.BjQ9je-p.js |       0 |        0 |       0 |       0 | 1-2               
+  sw.bundle.js     |       0 |        0 |       0 |       0 | 1-3               
+  ...e.D5wwC2E1.js |       0 |        0 |       0 |       0 | 1-5               
+ ...eViewer/assets |       0 |        0 |       0 |       0 |                   
+  ...e-DECADVLv.js |       0 |        0 |       0 |       0 | 1-24              
+  ...w-Cjl_e5YM.js |       0 |        0 |       0 |       0 | 1-256             
+  ...e-BoAIEibi.js |       0 |        0 |       0 |       0 | 1-9               
+ .../package/types |       0 |    33.33 |   33.33 |       0 |                   
+  protocol.d.ts    |       0 |        0 |       0 |       0 |                   
+  structs.d.ts     |       0 |        0 |       0 |       0 | 1-17              
+  types.d.ts       |       0 |        0 |       0 |       0 | 1-22814           
+ ...rib/emscripten |       0 |        0 |       0 |       0 |                   
+  ...tch_worker.js |       0 |        0 |       0 |       0 | 1-110             
+-------------------|---------|----------|---------|---------|-------------------

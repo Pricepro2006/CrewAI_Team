@@ -3,8 +3,8 @@
  * Implements temperature scaling, isotonic regression, and Platt scaling
  */
 
-import * as ss from 'simple-statistics';
-import { CalibrationOptions } from './types';
+import * as ss from "simple-statistics";
+import type { CalibrationOptions } from "./types";
 
 export interface CalibrationData {
   predictedConfidence: number;
@@ -31,25 +31,25 @@ export class ConfidenceCalibrator {
    */
   calibrate(
     rawConfidence: number,
-    options: CalibrationOptions = { method: 'temperature_scaling' }
+    options: CalibrationOptions = { method: "temperature_scaling" },
   ): CalibrationResult {
     // Ensure confidence is in valid range
     rawConfidence = Math.max(0, Math.min(1, rawConfidence));
 
     switch (options.method) {
-      case 'temperature_scaling':
+      case "temperature_scaling":
         return this.temperatureScaling(rawConfidence, options.parameters);
-      
-      case 'isotonic_regression':
+
+      case "isotonic_regression":
         return this.isotonicRegression(rawConfidence, options.parameters);
-      
-      case 'platt_scaling':
+
+      case "platt_scaling":
         return this.plattScaling(rawConfidence, options.parameters);
-      
+
       default:
         return {
           calibratedScore: rawConfidence,
-          method: 'none'
+          method: "none",
         };
     }
   }
@@ -60,26 +60,27 @@ export class ConfidenceCalibrator {
    */
   private temperatureScaling(
     confidence: number,
-    parameters?: Record<string, any>
+    parameters?: Record<string, any>,
   ): CalibrationResult {
     // Use provided temperature or default
-    const temperature = parameters?.temperature || 
-                       this.temperatureScalingParams?.temperature || 
-                       1.5; // Default temperature
+    const temperature =
+      parameters?.temperature ||
+      this.temperatureScalingParams?.temperature ||
+      1.5; // Default temperature
 
     // Convert confidence to logit space
     const logit = this.confidenceToLogit(confidence);
-    
+
     // Apply temperature scaling
     const scaledLogit = logit / temperature;
-    
+
     // Convert back to probability
     const calibratedScore = this.logitToConfidence(scaledLogit);
 
     return {
       calibratedScore,
-      method: 'temperature_scaling',
-      parameters: { temperature }
+      method: "temperature_scaling",
+      parameters: { temperature },
     };
   }
 
@@ -89,7 +90,7 @@ export class ConfidenceCalibrator {
    */
   private isotonicRegression(
     confidence: number,
-    parameters?: Record<string, any>
+    parameters?: Record<string, any>,
   ): CalibrationResult {
     // Use provided model or trained model
     const model = parameters?.model || this.isotonicRegressionModel;
@@ -98,18 +99,22 @@ export class ConfidenceCalibrator {
       // Fallback to simple linear adjustment
       return {
         calibratedScore: confidence * 0.9, // Conservative adjustment
-        method: 'isotonic_regression',
-        parameters: { fallback: true }
+        method: "isotonic_regression",
+        parameters: { fallback: true },
       };
     }
 
     // Find calibrated value using linear interpolation
-    const calibratedScore = this.interpolateIsotonic(confidence, model.x, model.y);
+    const calibratedScore = this.interpolateIsotonic(
+      confidence,
+      model.x,
+      model.y,
+    );
 
     return {
       calibratedScore,
-      method: 'isotonic_regression',
-      parameters: { modelSize: model.x.length }
+      method: "isotonic_regression",
+      parameters: { modelSize: model.x.length },
     };
   }
 
@@ -119,7 +124,7 @@ export class ConfidenceCalibrator {
    */
   private plattScaling(
     confidence: number,
-    parameters?: Record<string, any>
+    parameters?: Record<string, any>,
   ): CalibrationResult {
     // Use provided parameters or trained parameters
     const a = parameters?.a || this.plattScalingParams?.a || 1.0;
@@ -130,8 +135,8 @@ export class ConfidenceCalibrator {
 
     return {
       calibratedScore,
-      method: 'platt_scaling',
-      parameters: { a, b }
+      method: "platt_scaling",
+      parameters: { a, b },
     };
   }
 
@@ -142,25 +147,25 @@ export class ConfidenceCalibrator {
    */
   trainCalibration(
     data: CalibrationData[],
-    method: 'temperature_scaling' | 'isotonic_regression' | 'platt_scaling'
+    method: "temperature_scaling" | "isotonic_regression" | "platt_scaling",
   ): void {
     if (data.length < 10) {
-      console.warn('Insufficient calibration data. Need at least 10 samples.');
+      console.warn("Insufficient calibration data. Need at least 10 samples.");
       return;
     }
 
     this.calibrationHistory = [...this.calibrationHistory, ...data];
 
     switch (method) {
-      case 'temperature_scaling':
+      case "temperature_scaling":
         this.trainTemperatureScaling(data);
         break;
-      
-      case 'isotonic_regression':
+
+      case "isotonic_regression":
         this.trainIsotonicRegression(data);
         break;
-      
-      case 'platt_scaling':
+
+      case "platt_scaling":
         this.trainPlattScaling(data);
         break;
     }
@@ -177,16 +182,15 @@ export class ConfidenceCalibrator {
     // Grid search for optimal temperature
     for (let temp = 0.5; temp <= 3.0; temp += 0.1) {
       let error = 0;
-      
+
       for (const point of data) {
-        const calibrated = this.temperatureScaling(
-          point.predictedConfidence,
-          { temperature: temp }
-        ).calibratedScore;
-        
+        const calibrated = this.temperatureScaling(point.predictedConfidence, {
+          temperature: temp,
+        }).calibratedScore;
+
         error += Math.pow(calibrated - point.actualAccuracy, 2);
       }
-      
+
       if (error < bestError) {
         bestError = error;
         bestTemperature = temp;
@@ -201,18 +205,20 @@ export class ConfidenceCalibrator {
    */
   private trainIsotonicRegression(data: CalibrationData[]): void {
     // Sort data by predicted confidence
-    const sorted = [...data].sort((a, b) => a.predictedConfidence - b.predictedConfidence);
-    
+    const sorted = [...data].sort(
+      (a, b) => a.predictedConfidence - b.predictedConfidence,
+    );
+
     // Pool adjacent violators algorithm for isotonic regression
     const x: number[] = [];
     const y: number[] = [];
-    
+
     let i = 0;
     while (i < sorted.length) {
       let sumX = sorted[i].predictedConfidence;
       let sumY = sorted[i].actualAccuracy;
       let count = 1;
-      
+
       // Pool violators
       let j = i + 1;
       while (j < sorted.length && sorted[j].actualAccuracy < sumY / count) {
@@ -221,7 +227,7 @@ export class ConfidenceCalibrator {
         count++;
         j++;
       }
-      
+
       // Add pooled point
       x.push(sumX / count);
       y.push(sumY / count);
@@ -237,23 +243,25 @@ export class ConfidenceCalibrator {
   private trainPlattScaling(data: CalibrationData[]): void {
     // Use simple linear regression in log space
     // This is a simplified version - in production use proper optimization
-    
-    const logitPairs = data.map(point => ({
-      x: this.confidenceToLogit(point.predictedConfidence),
-      y: this.confidenceToLogit(point.actualAccuracy)
-    })).filter(pair => isFinite(pair.x) && isFinite(pair.y));
+
+    const logitPairs = data
+      .map((point) => ({
+        x: this.confidenceToLogit(point.predictedConfidence),
+        y: this.confidenceToLogit(point.actualAccuracy),
+      }))
+      .filter((pair) => isFinite(pair.x) && isFinite(pair.y));
 
     if (logitPairs.length < 5) {
-      console.warn('Insufficient valid data for Platt scaling');
+      console.warn("Insufficient valid data for Platt scaling");
       return;
     }
 
     // Linear regression
     const regression = ss.linearRegression(logitPairs);
-    
+
     this.plattScalingParams = {
       a: regression.m || 1.0,
-      b: regression.b || 0.0
+      b: regression.b || 0.0,
     };
   }
 
@@ -278,11 +286,11 @@ export class ConfidenceCalibrator {
    */
   private interpolateIsotonic(value: number, x: number[], y: number[]): number {
     if (x.length === 0) return value;
-    
+
     // Handle edge cases
     if (value <= x[0]) return y[0];
     if (value >= x[x.length - 1]) return y[y.length - 1];
-    
+
     // Find interpolation points
     for (let i = 0; i < x.length - 1; i++) {
       if (value >= x[i] && value <= x[i + 1]) {
@@ -291,7 +299,7 @@ export class ConfidenceCalibrator {
         return y[i] + t * (y[i + 1] - y[i]);
       }
     }
-    
+
     return value; // Fallback
   }
 
@@ -301,8 +309,8 @@ export class ConfidenceCalibrator {
    * @returns Calibration metrics
    */
   evaluateCalibration(data: CalibrationData[]): {
-    ece: number;  // Expected Calibration Error
-    mce: number;  // Maximum Calibration Error
+    ece: number; // Expected Calibration Error
+    mce: number; // Maximum Calibration Error
     brier: number; // Brier score
   } {
     if (data.length === 0) {
@@ -311,43 +319,45 @@ export class ConfidenceCalibrator {
 
     // Bin data for ECE calculation
     const numBins = 10;
-    const bins: Array<{ sum: number; count: number; accuracy: number }> = 
-      new Array(numBins).fill(null).map(() => ({ sum: 0, count: 0, accuracy: 0 }));
-    
+    const bins: Array<{ sum: number; count: number; accuracy: number }> =
+      new Array(numBins)
+        .fill(null)
+        .map(() => ({ sum: 0, count: 0, accuracy: 0 }));
+
     let brierSum = 0;
-    
+
     // Assign data to bins
     for (const point of data) {
       const binIndex = Math.min(
         Math.floor(point.predictedConfidence * numBins),
-        numBins - 1
+        numBins - 1,
       );
-      
+
       bins[binIndex].sum += point.predictedConfidence;
       bins[binIndex].count += 1;
       bins[binIndex].accuracy += point.actualAccuracy;
-      
+
       // Brier score component
       brierSum += Math.pow(point.predictedConfidence - point.actualAccuracy, 2);
     }
-    
+
     // Calculate ECE and MCE
     let ece = 0;
     let mce = 0;
-    
+
     for (const bin of bins) {
       if (bin.count > 0) {
         const avgConfidence = bin.sum / bin.count;
         const avgAccuracy = bin.accuracy / bin.count;
         const binError = Math.abs(avgConfidence - avgAccuracy);
-        
+
         ece += (bin.count / data.length) * binError;
         mce = Math.max(mce, binError);
       }
     }
-    
+
     const brier = brierSum / data.length;
-    
+
     return { ece, mce, brier };
   }
 
@@ -360,30 +370,30 @@ export class ConfidenceCalibrator {
     dataPoints: number;
     metrics?: { ece: number; mce: number; brier: number };
   } {
-    let method = 'none';
+    let method = "none";
     let parameters: any = {};
-    
+
     if (this.temperatureScalingParams) {
-      method = 'temperature_scaling';
+      method = "temperature_scaling";
       parameters = this.temperatureScalingParams;
     } else if (this.isotonicRegressionModel) {
-      method = 'isotonic_regression';
+      method = "isotonic_regression";
       parameters = { modelSize: this.isotonicRegressionModel.x.length };
     } else if (this.plattScalingParams) {
-      method = 'platt_scaling';
+      method = "platt_scaling";
       parameters = this.plattScalingParams;
     }
-    
+
     const diagnostics: any = {
       method,
       parameters,
-      dataPoints: this.calibrationHistory.length
+      dataPoints: this.calibrationHistory.length,
     };
-    
+
     if (this.calibrationHistory.length > 0) {
       diagnostics.metrics = this.evaluateCalibration(this.calibrationHistory);
     }
-    
+
     return diagnostics;
   }
 
@@ -408,7 +418,7 @@ export class ConfidenceCalibrator {
     return {
       temperatureScaling: this.temperatureScalingParams,
       isotonicRegression: this.isotonicRegressionModel,
-      plattScaling: this.plattScalingParams
+      plattScaling: this.plattScalingParams,
     };
   }
 

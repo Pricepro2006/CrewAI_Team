@@ -32,26 +32,11 @@ export class AgentRegistry {
 
   private registerDefaultAgents(): void {
     // Register agent factories
-    this.agentFactories.set(
-      "ResearchAgent",
-      () => new ResearchAgent() as unknown as BaseAgent,
-    );
-    this.agentFactories.set(
-      "CodeAgent",
-      () => new CodeAgent() as unknown as BaseAgent,
-    );
-    this.agentFactories.set(
-      "DataAnalysisAgent",
-      () => new DataAnalysisAgent() as unknown as BaseAgent,
-    );
-    this.agentFactories.set(
-      "WriterAgent",
-      () => new WriterAgent() as unknown as BaseAgent,
-    );
-    this.agentFactories.set(
-      "ToolExecutorAgent",
-      () => new ToolExecutorAgent() as unknown as BaseAgent,
-    );
+    this.agentFactories.set("ResearchAgent", () => new ResearchAgent());
+    this.agentFactories.set("CodeAgent", () => new CodeAgent());
+    this.agentFactories.set("DataAnalysisAgent", () => new DataAnalysisAgent());
+    this.agentFactories.set("WriterAgent", () => new WriterAgent());
+    this.agentFactories.set("ToolExecutorAgent", () => new ToolExecutorAgent());
   }
 
   async initialize(): Promise<void> {

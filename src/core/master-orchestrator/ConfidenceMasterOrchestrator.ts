@@ -19,9 +19,9 @@ import {
   ConfidenceCalibrator,
   AdaptiveDeliveryManager,
   ActionType,
-  ResponseEvaluationResult,
-  DeliveredResponse,
+  type DeliveredResponse,
 } from "../rag/confidence";
+import type { ResponseEvaluationResult } from "../rag/confidence";
 import type {
   Plan,
   ExecutionResult,
@@ -142,6 +142,10 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     );
   }
 
+  get llmProvider(): OllamaProvider {
+    return this.llm;
+  }
+
   async initialize(): Promise<void> {
     // Initialize RAG system
     try {
@@ -217,12 +221,12 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
       );
 
       // Switch model if different from current
-      if (adjustedModelConfig.model !== this.llm.config.model) {
+      if (adjustedModelConfig.model !== this.llm.model) {
         logger.info(
           "Switching model based on complexity and system load",
           "CONFIDENCE_ORCHESTRATOR",
           {
-            from: this.llm.config.model,
+            from: this.llm.model,
             to: adjustedModelConfig.model,
             complexity: complexity.score,
             systemLoad,
@@ -230,7 +234,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
         );
         this.llm = new OllamaProvider({
           model: adjustedModelConfig.model,
-          baseUrl: this.llm.config.baseUrl,
+          baseUrl: (this.llm as any).config.baseUrl,
           temperature: adjustedModelConfig.temperature,
           maxTokens: adjustedModelConfig.maxTokens,
         });
@@ -288,7 +292,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     // Use simple model for quick responses
     const simpleModel = new OllamaProvider({
       model: MODEL_CONFIGS.SIMPLE.model,
-      baseUrl: this.llm.config.baseUrl,
+      baseUrl: (this.llm as any).config.baseUrl,
       temperature: MODEL_CONFIGS.SIMPLE.temperature,
       maxTokens: MODEL_CONFIGS.SIMPLE.maxTokens,
     });

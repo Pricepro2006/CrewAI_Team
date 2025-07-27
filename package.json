@@ -41,6 +41,7 @@
     "@trpc/react-query": "^10.45.0",
     "@trpc/server": "^10.45.0",
     "@types/multer": "^2.0.0",
+    "@xenova/transformers": "^2.17.2",
     "bcrypt": "^5.1.1",
     "better-sqlite3": "^9.3.0",
     "cheerio": "^1.0.0-rc.12",
@@ -54,10 +55,13 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
     "node-fetch": "^3.3.2",
+    "ollama": "^0.5.16",
     "p-queue": "^8.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.0",
+    "simple-statistics": "^7.8.8",
+    "socket.io": "^4.8.1",
     "sqlite3": "^5.1.7",
     "superjson": "^2.2.2",
     "uuid": "^9.0.1",
@@ -80,6 +84,7 @@
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
     "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/coverage-v8": "^3.2.4",
     "autoprefixer": "^10.4.16",
     "axios": "^1.6.5",
     "concurrently": "^8.2.2",
@@ -95,7 +100,7 @@
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vite": "^5.0.11",
-    "vitest": "^1.2.0"
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=18.0.0"

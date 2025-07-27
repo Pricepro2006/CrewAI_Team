@@ -3,16 +3,28 @@
  * Based on 2025 best practices for confidence calibration
  */
 
-import { TokenConfidence, GenerationMetrics } from './types';
+import type { TokenConfidence, GenerationMetrics } from "./types";
 
 export class ConfidenceExtractor {
   private readonly EPSILON = 1e-10; // Small value to avoid log(0)
   private readonly UNCERTAINTY_PHRASES = [
-    'maybe', 'perhaps', 'possibly', 'might', 'could be', 
-    'uncertain', 'not sure', 'i think', 'i believe', 'probably',
-    'it seems', 'appears to be', 'likely', 'unlikely', 'sometimes'
+    "maybe",
+    "perhaps",
+    "possibly",
+    "might",
+    "could be",
+    "uncertain",
+    "not sure",
+    "i think",
+    "i believe",
+    "probably",
+    "it seems",
+    "appears to be",
+    "likely",
+    "unlikely",
+    "sometimes",
   ];
-  
+
   /**
    * Extract token-level confidence from log probabilities
    * @param tokens Array of tokens
@@ -20,18 +32,18 @@ export class ConfidenceExtractor {
    * @returns Array of TokenConfidence objects
    */
   extractTokenConfidence(
-    tokens: string[], 
-    logProbs: number[]
+    tokens: string[],
+    logProbs: number[],
   ): TokenConfidence[] {
     if (!tokens || !logProbs || tokens.length !== logProbs.length) {
-      throw new Error('Tokens and log probabilities must have the same length');
+      throw new Error("Tokens and log probabilities must have the same length");
     }
 
     return tokens.map((token, index) => ({
       token,
       logProbability: logProbs[index],
       confidence: this.logProbToConfidence(logProbs[index]),
-      position: index
+      position: index,
     }));
   }
 
@@ -45,12 +57,12 @@ export class ConfidenceExtractor {
     // Handle edge cases
     if (logProb >= 0) return 1.0; // Perfect confidence
     if (logProb <= -10) return 0.0; // No confidence
-    
+
     // Sigmoid transformation: confidence = 1 / (1 + e^(-k*logProb))
     // k=0.5 provides good scaling for typical log prob ranges
     const k = 0.5;
     const confidence = 1 / (1 + Math.exp(-k * logProb));
-    
+
     // Ensure result is in [0, 1]
     return Math.max(0, Math.min(1, confidence));
   }
@@ -68,16 +80,20 @@ export class ConfidenceExtractor {
 
     // Filter out tokens with very low confidence (< 0.1)
     const validConfidences = tokenConfidences
-      .map(tc => tc.confidence)
-      .filter(c => c >= 0.1);
+      .map((tc) => tc.confidence)
+      .filter((c) => c >= 0.1);
 
     if (validConfidences.length === 0) {
       return 0;
     }
 
     // Calculate harmonic mean
-    const harmonicMean = validConfidences.length / 
-      validConfidences.reduce((sum, conf) => sum + 1 / (conf + this.EPSILON), 0);
+    const harmonicMean =
+      validConfidences.length /
+      validConfidences.reduce(
+        (sum, conf) => sum + 1 / (conf + this.EPSILON),
+        0,
+      );
 
     return harmonicMean;
   }
@@ -95,10 +111,10 @@ export class ConfidenceExtractor {
     let weightedSum = 0;
     let totalWeight = 0;
 
-    tokenConfidences.forEach(tc => {
+    tokenConfidences.forEach((tc) => {
       // Assign weights based on token importance
       let weight = 1.0;
-      
+
       // Punctuation and short tokens get lower weight
       if (tc.token.length <= 2 || /^[.,!?;:]$/.test(tc.token)) {
         weight = 0.3;
@@ -126,14 +142,14 @@ export class ConfidenceExtractor {
    * @returns Array of uncertainty markers found
    */
   detectUncertaintyMarkers(
-    text: string, 
-    tokenConfidences?: TokenConfidence[]
+    text: string,
+    tokenConfidences?: TokenConfidence[],
   ): string[] {
     const uncertaintyMarkers: Set<string> = new Set();
     const lowerText = text.toLowerCase();
 
     // Check for uncertainty phrases
-    this.UNCERTAINTY_PHRASES.forEach(phrase => {
+    this.UNCERTAINTY_PHRASES.forEach((phrase) => {
       if (lowerText.includes(phrase)) {
         uncertaintyMarkers.add(phrase);
       }
@@ -141,15 +157,18 @@ export class ConfidenceExtractor {
 
     // Check for low confidence regions if token data available
     if (tokenConfidences && tokenConfidences.length > 0) {
-      const lowConfidenceRegions = this.findLowConfidenceRegions(tokenConfidences);
-      lowConfidenceRegions.forEach(region => {
-        uncertaintyMarkers.add(`Low confidence region: tokens ${region.start}-${region.end}`);
+      const lowConfidenceRegions =
+        this.findLowConfidenceRegions(tokenConfidences);
+      lowConfidenceRegions.forEach((region) => {
+        uncertaintyMarkers.add(
+          `Low confidence region: tokens ${region.start}-${region.end}`,
+        );
       });
     }
 
     // Check for contradictions or alternatives
     if (/\b(or|alternatively|however|but|although)\b/i.test(text)) {
-      uncertaintyMarkers.add('Contains alternatives or contradictions');
+      uncertaintyMarkers.add("Contains alternatives or contradictions");
     }
 
     return Array.from(uncertaintyMarkers);
@@ -160,26 +179,29 @@ export class ConfidenceExtractor {
    * @param tokenConfidences Token confidence data
    * @returns Generation metrics object
    */
-  calculateGenerationMetrics(tokenConfidences: TokenConfidence[]): GenerationMetrics {
+  calculateGenerationMetrics(
+    tokenConfidences: TokenConfidence[],
+  ): GenerationMetrics {
     if (!tokenConfidences || tokenConfidences.length === 0) {
       return {
         tokensGenerated: 0,
         averageConfidence: 0,
         minConfidence: 0,
         maxConfidence: 0,
-        uncertaintyRatio: 1
+        uncertaintyRatio: 1,
       };
     }
 
-    const confidences = tokenConfidences.map(tc => tc.confidence);
-    const uncertainTokens = confidences.filter(c => c < 0.6).length;
+    const confidences = tokenConfidences.map((tc) => tc.confidence);
+    const uncertainTokens = confidences.filter((c) => c < 0.6).length;
 
     return {
       tokensGenerated: tokenConfidences.length,
-      averageConfidence: confidences.reduce((a, b) => a + b, 0) / confidences.length,
+      averageConfidence:
+        confidences.reduce((a, b) => a + b, 0) / confidences.length,
       minConfidence: Math.min(...confidences),
       maxConfidence: Math.max(...confidences),
-      uncertaintyRatio: uncertainTokens / tokenConfidences.length
+      uncertaintyRatio: uncertainTokens / tokenConfidences.length,
     };
   }
 
@@ -190,27 +212,42 @@ export class ConfidenceExtractor {
    * @returns Array of low confidence regions
    */
   private findLowConfidenceRegions(
-    tokenConfidences: TokenConfidence[], 
-    threshold: number = 0.5
+    tokenConfidences: TokenConfidence[],
+    threshold: number = 0.5,
   ): Array<{ start: number; end: number; avgConfidence: number }> {
-    const regions: Array<{ start: number; end: number; avgConfidence: number }> = [];
-    let currentRegion: { start: number; end: number; confidences: number[] } | null = null;
+    const regions: Array<{
+      start: number;
+      end: number;
+      avgConfidence: number;
+    }> = [];
+    let currentRegion: {
+      start: number;
+      end: number;
+      confidences: number[];
+    } | null = null;
 
     tokenConfidences.forEach((tc, index) => {
       if (tc.confidence < threshold) {
         if (!currentRegion) {
-          currentRegion = { start: index, end: index, confidences: [tc.confidence] };
+          currentRegion = {
+            start: index,
+            end: index,
+            confidences: [tc.confidence],
+          };
         } else {
           currentRegion.end = index;
           currentRegion.confidences.push(tc.confidence);
         }
       } else if (currentRegion) {
         // End of low confidence region
-        if (currentRegion.confidences.length >= 3) { // Only report regions of 3+ tokens
+        if (currentRegion.confidences.length >= 3) {
+          // Only report regions of 3+ tokens
           regions.push({
             start: currentRegion.start,
             end: currentRegion.end,
-            avgConfidence: currentRegion.confidences.reduce((a, b) => a + b, 0) / currentRegion.confidences.length
+            avgConfidence:
+              currentRegion.confidences.reduce((a, b) => a + b, 0) /
+              currentRegion.confidences.length,
           });
         }
         currentRegion = null;
@@ -222,7 +259,9 @@ export class ConfidenceExtractor {
       regions.push({
         start: currentRegion.start,
         end: currentRegion.end,
-        avgConfidence: currentRegion.confidences.reduce((a, b) => a + b, 0) / currentRegion.confidences.length
+        avgConfidence:
+          currentRegion.confidences.reduce((a, b) => a + b, 0) /
+          currentRegion.confidences.length,
       });
     }
 
@@ -236,12 +275,46 @@ export class ConfidenceExtractor {
    */
   private isStopWord(token: string): boolean {
     const stopWords = new Set([
-      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-      'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
-      'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
-      'could', 'should', 'may', 'might', 'must', 'shall', 'can', 'cannot'
+      "the",
+      "a",
+      "an",
+      "and",
+      "or",
+      "but",
+      "in",
+      "on",
+      "at",
+      "to",
+      "for",
+      "of",
+      "with",
+      "by",
+      "from",
+      "as",
+      "is",
+      "was",
+      "are",
+      "were",
+      "been",
+      "be",
+      "have",
+      "has",
+      "had",
+      "do",
+      "does",
+      "did",
+      "will",
+      "would",
+      "could",
+      "should",
+      "may",
+      "might",
+      "must",
+      "shall",
+      "can",
+      "cannot",
     ]);
-    
+
     return stopWords.has(token.toLowerCase());
   }
 
@@ -263,7 +336,9 @@ export class ConfidenceExtractor {
     confidence -= uncertaintyMarkers.length * 0.1;
 
     // Boost for assertive language
-    if (/\b(definitely|certainly|clearly|obviously|undoubtedly)\b/i.test(text)) {
+    if (
+      /\b(definitely|certainly|clearly|obviously|undoubtedly)\b/i.test(text)
+    ) {
       confidence += 0.1;
     }
 

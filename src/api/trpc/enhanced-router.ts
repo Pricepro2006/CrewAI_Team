@@ -77,8 +77,21 @@ const secureQueryValidation = createInputValidation(
 );
 
 // Export router and procedure helpers with explicit types
+import type {
+  AnyRouter,
+  inferRouterInputs,
+  inferRouterOutputs,
+} from "@trpc/server";
+
+// Explicit type for router to avoid TS2742 error with pnpm
+export type TRPCRouter = ReturnType<typeof t.router>;
+export type RouterInputs = inferRouterInputs<TRPCRouter>;
+export type RouterOutputs = inferRouterOutputs<TRPCRouter>;
+
+// Export with explicit type annotations
 export const router: typeof t.router = t.router;
 export const middleware: typeof t.middleware = t.middleware;
+export type Router = TRPCRouter;
 
 // Public procedure with basic security
 export const publicProcedure: ReturnType<typeof t.procedure.use> =

@@ -4,13 +4,13 @@
  */
 
 import {
-  ResponseEvaluationResult,
+  type ResponseEvaluationResult,
   ActionType,
-  ScoredDocument,
-  ConfidenceConfig,
-  TokenConfidence
-} from './types';
-import { getConfidenceConfig } from '../../config/confidence.config';
+  type ScoredDocument,
+  type ConfidenceConfig,
+  type TokenConfidence,
+} from "./types";
+import { getConfidenceConfig } from "../../../config/confidence.config";
 
 export interface DeliveryOptions {
   includeConfidenceScore?: boolean;
@@ -18,7 +18,7 @@ export interface DeliveryOptions {
   includeUncertaintyWarnings?: boolean;
   includeEvidence?: boolean;
   maxEvidenceItems?: number;
-  confidenceFormat?: 'percentage' | 'category' | 'detailed';
+  confidenceFormat?: "percentage" | "category" | "detailed";
   fallbackMessage?: string;
 }
 
@@ -76,7 +76,7 @@ export class AdaptiveDeliveryManager {
    */
   async deliver(
     evaluation: ResponseEvaluationResult,
-    options: DeliveryOptions = {}
+    options: DeliveryOptions = {},
   ): Promise<DeliveredResponse> {
     const startTime = Date.now();
 
@@ -87,19 +87,19 @@ export class AdaptiveDeliveryManager {
       case ActionType.ACCEPT:
         deliveredResponse = this.deliverHighConfidence(evaluation, options);
         break;
-      
+
       case ActionType.REVIEW:
         deliveredResponse = this.deliverWithCaveats(evaluation, options);
         break;
-      
+
       case ActionType.REGENERATE:
         deliveredResponse = this.deliverLowConfidence(evaluation, options);
         break;
-      
+
       case ActionType.FALLBACK:
         deliveredResponse = this.deliverFallback(evaluation, options);
         break;
-      
+
       default:
         deliveredResponse = this.deliverWithCaveats(evaluation, options);
     }
@@ -118,9 +118,12 @@ export class AdaptiveDeliveryManager {
    */
   private deliverHighConfidence(
     evaluation: ResponseEvaluationResult,
-    options: DeliveryOptions
+    options: DeliveryOptions,
   ): DeliveredResponse {
-    const confidence = this.formatConfidence(evaluation.overallConfidence, options);
+    const confidence = this.formatConfidence(
+      evaluation.overallConfidence,
+      options,
+    );
     const evidence = this.prepareEvidence(evaluation, options);
     const feedbackId = this.generateFeedbackId();
 
@@ -133,7 +136,7 @@ export class AdaptiveDeliveryManager {
 
     // Add source attribution if requested
     if (options.includeSourceAttribution && evidence.length > 0) {
-      content += '\n\n**Sources:**';
+      content += "\n\n**Sources:**";
       evidence.forEach((ev, idx) => {
         content += `\n${idx + 1}. ${ev.source}`;
       });
@@ -149,9 +152,9 @@ export class AdaptiveDeliveryManager {
         humanReviewNeeded: false,
         uncertaintyAreas: evaluation.uncertaintyMarkers || [],
         processingTime: 0,
-        modelUsed: evaluation.modelUsed
+        modelUsed: evaluation.modelUsed,
       },
-      feedbackId
+      feedbackId,
     };
   }
 
@@ -160,9 +163,12 @@ export class AdaptiveDeliveryManager {
    */
   private deliverWithCaveats(
     evaluation: ResponseEvaluationResult,
-    options: DeliveryOptions
+    options: DeliveryOptions,
   ): DeliveredResponse {
-    const confidence = this.formatConfidence(evaluation.overallConfidence, options);
+    const confidence = this.formatConfidence(
+      evaluation.overallConfidence,
+      options,
+    );
     const evidence = this.prepareEvidence(evaluation, options);
     const warnings = this.generateWarnings(evaluation);
     const feedbackId = this.generateFeedbackId();
@@ -179,7 +185,7 @@ export class AdaptiveDeliveryManager {
 
     // Add evidence with confidence scores
     if (options.includeEvidence && evidence.length > 0) {
-      content += '\n\n**Supporting Evidence:**';
+      content += "\n\n**Supporting Evidence:**";
       evidence.forEach((ev, idx) => {
         content += `\n${idx + 1}. [${Math.round(ev.confidence * 100)}%] ${ev.excerpt}`;
         content += `\n   _Source: ${ev.source}_`;
@@ -187,7 +193,8 @@ export class AdaptiveDeliveryManager {
     }
 
     // Add feedback request
-    content += '\n\n_This response may benefit from human review. Your feedback helps improve accuracy._';
+    content +=
+      "\n\n_This response may benefit from human review. Your feedback helps improve accuracy._";
 
     return {
       content,
@@ -199,9 +206,9 @@ export class AdaptiveDeliveryManager {
         humanReviewNeeded: true,
         uncertaintyAreas: evaluation.uncertaintyMarkers || [],
         processingTime: 0,
-        modelUsed: evaluation.modelUsed
+        modelUsed: evaluation.modelUsed,
       },
-      feedbackId
+      feedbackId,
     };
   }
 
@@ -210,21 +217,28 @@ export class AdaptiveDeliveryManager {
    */
   private deliverLowConfidence(
     evaluation: ResponseEvaluationResult,
-    options: DeliveryOptions
+    options: DeliveryOptions,
   ): DeliveredResponse {
-    const confidence = this.formatConfidence(evaluation.overallConfidence, options);
+    const confidence = this.formatConfidence(
+      evaluation.overallConfidence,
+      options,
+    );
     const evidence = this.prepareEvidence(evaluation, options);
     const warnings = this.generateWarnings(evaluation);
     const feedbackId = this.generateFeedbackId();
 
     // Start with strong disclaimer
-    let content = '⚠️ **Low Confidence Response**\n\n';
-    content += 'The following response has low confidence and may contain inaccuracies:\n\n';
+    let content = "⚠️ **Low Confidence Response**\n\n";
+    content +=
+      "The following response has low confidence and may contain inaccuracies:\n\n";
     content += `---\n${evaluation.response}\n---`;
 
     // Add specific uncertainty areas
-    if (evaluation.uncertaintyMarkers && evaluation.uncertaintyMarkers.length > 0) {
-      content += '\n\n**Areas of Uncertainty:**';
+    if (
+      evaluation.uncertaintyMarkers &&
+      evaluation.uncertaintyMarkers.length > 0
+    ) {
+      content += "\n\n**Areas of Uncertainty:**";
       evaluation.uncertaintyMarkers.forEach((marker, idx) => {
         content += `\n${idx + 1}. ${marker}`;
       });
@@ -232,17 +246,17 @@ export class AdaptiveDeliveryManager {
 
     // Add evidence if available
     if (evidence.length > 0) {
-      content += '\n\n**Limited Evidence Found:**';
+      content += "\n\n**Limited Evidence Found:**";
       evidence.forEach((ev, idx) => {
         content += `\n${idx + 1}. [${Math.round(ev.confidence * 100)}%] ${ev.excerpt}`;
       });
     }
 
     // Suggest alternatives
-    content += '\n\n**Recommended Actions:**';
-    content += '\n- Try rephrasing your question for better results';
-    content += '\n- Provide more context or specific details';
-    content += '\n- Consult additional sources or human experts';
+    content += "\n\n**Recommended Actions:**";
+    content += "\n- Try rephrasing your question for better results";
+    content += "\n- Provide more context or specific details";
+    content += "\n- Consult additional sources or human experts";
 
     return {
       content,
@@ -254,9 +268,9 @@ export class AdaptiveDeliveryManager {
         humanReviewNeeded: true,
         uncertaintyAreas: evaluation.uncertaintyMarkers || [],
         processingTime: 0,
-        modelUsed: evaluation.modelUsed
+        modelUsed: evaluation.modelUsed,
       },
-      feedbackId
+      feedbackId,
     };
   }
 
@@ -265,27 +279,28 @@ export class AdaptiveDeliveryManager {
    */
   private deliverFallback(
     evaluation: ResponseEvaluationResult,
-    options: DeliveryOptions
+    options: DeliveryOptions,
   ): DeliveredResponse {
     const feedbackId = this.generateFeedbackId();
-    const fallbackMessage = options.fallbackMessage || this.getDefaultFallbackMessage();
+    const fallbackMessage =
+      options.fallbackMessage || this.getDefaultFallbackMessage();
 
     return {
       content: fallbackMessage,
       confidence: {
         score: 0,
-        category: 'very_low',
-        display: 'Unable to generate confident response'
+        category: "very_low",
+        display: "Unable to generate confident response",
       },
-      warnings: ['Unable to generate a reliable response for this query'],
+      warnings: ["Unable to generate a reliable response for this query"],
       metadata: {
         action: ActionType.FALLBACK,
         humanReviewNeeded: true,
-        uncertaintyAreas: ['entire_response'],
+        uncertaintyAreas: ["entire_response"],
         processingTime: 0,
-        modelUsed: evaluation.modelUsed
+        modelUsed: evaluation.modelUsed,
       },
-      feedbackId
+      feedbackId,
     };
   }
 
@@ -294,23 +309,23 @@ export class AdaptiveDeliveryManager {
    */
   private formatConfidence(
     score: number,
-    options: DeliveryOptions
-  ): DeliveredResponse['confidence'] {
+    options: DeliveryOptions,
+  ): DeliveredResponse["confidence"] {
     const category = this.getConfidenceCategory(score);
 
     let display: string;
     switch (options.confidenceFormat) {
-      case 'percentage':
+      case "percentage":
         display = `${Math.round(score * 100)}%`;
         break;
-      
-      case 'detailed':
+
+      case "detailed":
         display = `${Math.round(score * 100)}% (${category})`;
         break;
-      
-      case 'category':
+
+      case "category":
       default:
-        display = category.replace('_', ' ');
+        display = category.replace("_", " ");
     }
 
     return { score, category, display };
@@ -320,10 +335,10 @@ export class AdaptiveDeliveryManager {
    * Get confidence category
    */
   private getConfidenceCategory(score: number): string {
-    if (score >= this.config.overall.high) return 'high';
-    if (score >= this.config.overall.medium) return 'medium';
-    if (score >= this.config.overall.low) return 'low';
-    return 'very_low';
+    if (score >= this.config.overall.high) return "high";
+    if (score >= this.config.overall.medium) return "medium";
+    if (score >= this.config.overall.low) return "low";
+    return "very_low";
   }
 
   /**
@@ -331,24 +346,25 @@ export class AdaptiveDeliveryManager {
    */
   private prepareEvidence(
     evaluation: ResponseEvaluationResult,
-    options: DeliveryOptions
+    options: DeliveryOptions,
   ): Evidence[] {
     if (!evaluation.sources || evaluation.sources.length === 0) {
       return [];
     }
 
     const maxItems = options.maxEvidenceItems || 3;
-    
+
     // Sort by confidence and relevance
-    const sortedSources = [...evaluation.sources].sort((a, b) => 
-      b.confidenceScore - a.confidenceScore
+    const sortedSources = [...evaluation.sources].sort(
+      (a, b) => b.confidenceScore - a.confidenceScore,
     );
 
-    return sortedSources.slice(0, maxItems).map(source => ({
-      source: source.metadata?.title || source.metadata?.source || 'Unknown source',
+    return sortedSources.slice(0, maxItems).map((source) => ({
+      source:
+        source.metadata?.title || source.metadata?.source || "Unknown source",
       relevance: source.score,
       excerpt: this.extractExcerpt(source.content, evaluation.query),
-      confidence: source.confidenceScore
+      confidence: source.confidenceScore,
     }));
   }
 
@@ -357,8 +373,11 @@ export class AdaptiveDeliveryManager {
    */
   private extractExcerpt(content: string, query: string): string {
     const maxLength = 150;
-    const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 3);
-    
+    const queryTerms = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((t) => t.length > 3);
+
     // Find first occurrence of any query term
     let bestIndex = -1;
     for (const term of queryTerms) {
@@ -370,7 +389,7 @@ export class AdaptiveDeliveryManager {
 
     if (bestIndex === -1) {
       // No query terms found, use beginning
-      return content.substring(0, maxLength) + '...';
+      return content.substring(0, maxLength) + "...";
     }
 
     // Extract around the found term
@@ -379,8 +398,8 @@ export class AdaptiveDeliveryManager {
     let excerpt = content.substring(start, end);
 
     // Clean up
-    if (start > 0) excerpt = '...' + excerpt;
-    if (end < content.length) excerpt = excerpt + '...';
+    if (start > 0) excerpt = "..." + excerpt;
+    if (end < content.length) excerpt = excerpt + "...";
 
     return excerpt;
   }
@@ -393,22 +412,31 @@ export class AdaptiveDeliveryManager {
 
     // Low factuality warning
     if (evaluation.factualityScore < 0.6) {
-      warnings.push('Some claims in this response could not be verified against available sources');
+      warnings.push(
+        "Some claims in this response could not be verified against available sources",
+      );
     }
 
     // Low relevance warning
     if (evaluation.relevanceScore < 0.6) {
-      warnings.push('This response may not fully address your question');
+      warnings.push("This response may not fully address your question");
     }
 
     // Low coherence warning
     if (evaluation.coherenceScore < 0.6) {
-      warnings.push('This response may contain inconsistencies or unclear sections');
+      warnings.push(
+        "This response may contain inconsistencies or unclear sections",
+      );
     }
 
     // Uncertainty markers
-    if (evaluation.uncertaintyMarkers && evaluation.uncertaintyMarkers.length > 2) {
-      warnings.push('This response contains multiple uncertain or qualified statements');
+    if (
+      evaluation.uncertaintyMarkers &&
+      evaluation.uncertaintyMarkers.length > 2
+    ) {
+      warnings.push(
+        "This response contains multiple uncertain or qualified statements",
+      );
     }
 
     return warnings;
@@ -444,15 +472,18 @@ Would you like to try rephrasing your question, or would you prefer assistance w
   /**
    * Capture user feedback
    */
-  captureFeedback(feedbackId: string, feedback: Partial<FeedbackCapture>): void {
+  captureFeedback(
+    feedbackId: string,
+    feedback: Partial<FeedbackCapture>,
+  ): void {
     const existing = this.feedbackStore.get(feedbackId) || {
       feedbackId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     this.feedbackStore.set(feedbackId, {
       ...existing,
-      ...feedback
+      ...feedback,
     });
   }
 
@@ -485,10 +516,10 @@ Would you like to try rephrasing your question, or would you prefer assistance w
         [ActionType.ACCEPT]: 0,
         [ActionType.REVIEW]: 0,
         [ActionType.REGENERATE]: 0,
-        [ActionType.FALLBACK]: 0
+        [ActionType.FALLBACK]: 0,
       },
       averageConfidence: 0,
-      feedbackRate: 0
+      feedbackRate: 0,
     };
 
     if (stats.total === 0) return stats;
@@ -496,10 +527,10 @@ Would you like to try rephrasing your question, or would you prefer assistance w
     let totalConfidence = 0;
     let feedbackCount = 0;
 
-    this.deliveryHistory.forEach(delivery => {
+    this.deliveryHistory.forEach((delivery) => {
       stats.byAction[delivery.metadata.action]++;
       totalConfidence += delivery.confidence.score;
-      
+
       if (this.feedbackStore.has(delivery.feedbackId)) {
         feedbackCount++;
       }
@@ -517,52 +548,58 @@ Would you like to try rephrasing your question, or would you prefer assistance w
   generatePerformanceReport(): string {
     const stats = this.getDeliveryStats();
     const feedback = this.getAllFeedback();
-    
-    const helpfulCount = feedback.filter(f => f.helpful === true).length;
-    const accurateCount = feedback.filter(f => f.accurate === true).length;
+
+    const helpfulCount = feedback.filter((f) => f.helpful === true).length;
+    const accurateCount = feedback.filter((f) => f.accurate === true).length;
 
     const report: string[] = [
-      '# Adaptive Delivery Performance Report',
-      '',
+      "# Adaptive Delivery Performance Report",
+      "",
       `**Total Deliveries:** ${stats.total}`,
       `**Average Confidence:** ${(stats.averageConfidence * 100).toFixed(1)}%`,
       `**Feedback Rate:** ${(stats.feedbackRate * 100).toFixed(1)}%`,
-      '',
-      '## Delivery Breakdown',
+      "",
+      "## Delivery Breakdown",
       `- High Confidence (Accept): ${stats.byAction[ActionType.ACCEPT]} (${this.getPercentage(stats.byAction[ActionType.ACCEPT], stats.total)}%)`,
       `- Medium Confidence (Review): ${stats.byAction[ActionType.REVIEW]} (${this.getPercentage(stats.byAction[ActionType.REVIEW], stats.total)}%)`,
       `- Low Confidence (Regenerate): ${stats.byAction[ActionType.REGENERATE]} (${this.getPercentage(stats.byAction[ActionType.REGENERATE], stats.total)}%)`,
       `- Fallback: ${stats.byAction[ActionType.FALLBACK]} (${this.getPercentage(stats.byAction[ActionType.FALLBACK], stats.total)}%)`,
-      '',
-      '## User Feedback',
+      "",
+      "## User Feedback",
       `- Total Feedback: ${feedback.length}`,
       `- Helpful: ${helpfulCount} (${this.getPercentage(helpfulCount, feedback.length)}%)`,
       `- Accurate: ${accurateCount} (${this.getPercentage(accurateCount, feedback.length)}%)`,
-      '',
-      '## Recommendations'
+      "",
+      "## Recommendations",
     ];
 
     // Add recommendations based on stats
     if (stats.averageConfidence < 0.6) {
-      report.push('- ⚠️ Low average confidence - consider improving retrieval and generation quality');
+      report.push(
+        "- ⚠️ Low average confidence - consider improving retrieval and generation quality",
+      );
     }
 
     if (stats.feedbackRate < 0.1) {
-      report.push('- 📊 Low feedback rate - encourage more user feedback for improvements');
+      report.push(
+        "- 📊 Low feedback rate - encourage more user feedback for improvements",
+      );
     }
 
     if (stats.byAction[ActionType.FALLBACK] > stats.total * 0.1) {
-      report.push('- ❌ High fallback rate - investigate common failure patterns');
+      report.push(
+        "- ❌ High fallback rate - investigate common failure patterns",
+      );
     }
 
-    return report.join('\n');
+    return report.join("\n");
   }
 
   /**
    * Calculate percentage
    */
   private getPercentage(value: number, total: number): string {
-    if (total === 0) return '0';
+    if (total === 0) return "0";
     return ((value / total) * 100).toFixed(1);
   }
 

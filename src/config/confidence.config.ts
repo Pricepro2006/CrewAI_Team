@@ -3,7 +3,7 @@
  * Based on 2025 best practices for confidence calibration
  */
 
-import { ConfidenceConfig } from "../core/rag/confidence/types";
+import type { ConfidenceConfig } from "../core/rag/confidence/types";
 
 /**
  * Default confidence thresholds based on research findings
@@ -185,43 +185,52 @@ export function getConfidenceConfigFromEnv(): Partial<ConfidenceConfig> {
   const config: Partial<ConfidenceConfig> = {};
 
   // Retrieval thresholds
-  if (process.env.CONFIDENCE_RETRIEVAL_MIN) {
-    config.retrieval = config.retrieval || {};
-    config.retrieval.minimum = parseFloat(process.env.CONFIDENCE_RETRIEVAL_MIN);
-  }
-  if (process.env.CONFIDENCE_RETRIEVAL_PREFERRED) {
-    config.retrieval = config.retrieval || {};
-    config.retrieval.preferred = parseFloat(
-      process.env.CONFIDENCE_RETRIEVAL_PREFERRED,
-    );
+  if (
+    process.env.CONFIDENCE_RETRIEVAL_MIN ||
+    process.env.CONFIDENCE_RETRIEVAL_PREFERRED
+  ) {
+    config.retrieval = {
+      minimum: process.env.CONFIDENCE_RETRIEVAL_MIN
+        ? parseFloat(process.env.CONFIDENCE_RETRIEVAL_MIN)
+        : 0.5,
+      preferred: process.env.CONFIDENCE_RETRIEVAL_PREFERRED
+        ? parseFloat(process.env.CONFIDENCE_RETRIEVAL_PREFERRED)
+        : 0.7,
+    };
   }
 
   // Generation thresholds
-  if (process.env.CONFIDENCE_GENERATION_ACCEPTABLE) {
-    config.generation = config.generation || {};
-    config.generation.acceptable = parseFloat(
-      process.env.CONFIDENCE_GENERATION_ACCEPTABLE,
-    );
-  }
-  if (process.env.CONFIDENCE_GENERATION_REVIEW) {
-    config.generation = config.generation || {};
-    config.generation.review = parseFloat(
-      process.env.CONFIDENCE_GENERATION_REVIEW,
-    );
+  if (
+    process.env.CONFIDENCE_GENERATION_ACCEPTABLE ||
+    process.env.CONFIDENCE_GENERATION_REVIEW
+  ) {
+    config.generation = {
+      acceptable: process.env.CONFIDENCE_GENERATION_ACCEPTABLE
+        ? parseFloat(process.env.CONFIDENCE_GENERATION_ACCEPTABLE)
+        : 0.6,
+      review: process.env.CONFIDENCE_GENERATION_REVIEW
+        ? parseFloat(process.env.CONFIDENCE_GENERATION_REVIEW)
+        : 0.4,
+    };
   }
 
   // Overall thresholds
-  if (process.env.CONFIDENCE_OVERALL_HIGH) {
-    config.overall = config.overall || {};
-    config.overall.high = parseFloat(process.env.CONFIDENCE_OVERALL_HIGH);
-  }
-  if (process.env.CONFIDENCE_OVERALL_MEDIUM) {
-    config.overall = config.overall || {};
-    config.overall.medium = parseFloat(process.env.CONFIDENCE_OVERALL_MEDIUM);
-  }
-  if (process.env.CONFIDENCE_OVERALL_LOW) {
-    config.overall = config.overall || {};
-    config.overall.low = parseFloat(process.env.CONFIDENCE_OVERALL_LOW);
+  if (
+    process.env.CONFIDENCE_OVERALL_HIGH ||
+    process.env.CONFIDENCE_OVERALL_MEDIUM ||
+    process.env.CONFIDENCE_OVERALL_LOW
+  ) {
+    config.overall = {
+      high: process.env.CONFIDENCE_OVERALL_HIGH
+        ? parseFloat(process.env.CONFIDENCE_OVERALL_HIGH)
+        : 0.8,
+      medium: process.env.CONFIDENCE_OVERALL_MEDIUM
+        ? parseFloat(process.env.CONFIDENCE_OVERALL_MEDIUM)
+        : 0.6,
+      low: process.env.CONFIDENCE_OVERALL_LOW
+        ? parseFloat(process.env.CONFIDENCE_OVERALL_LOW)
+        : 0.4,
+    };
   }
 
   return config;

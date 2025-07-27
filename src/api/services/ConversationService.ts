@@ -165,6 +165,53 @@ export class ConversationService {
       .run(title, new Date().toISOString(), conversationId);
   }
 
+  async update(
+    conversationId: string,
+    conversation: Conversation,
+  ): Promise<void> {
+    const timestamp = new Date().toISOString();
+
+    // Update conversation metadata
+    this.db
+      .prepare(
+        `
+      UPDATE conversations 
+      SET title = ?, updated_at = ?
+      WHERE id = ?
+    `,
+      )
+      .run(conversation.title || null, timestamp, conversationId);
+
+    // Delete existing messages
+    this.db
+      .prepare(
+        `
+      DELETE FROM messages WHERE conversation_id = ?
+    `,
+      )
+      .run(conversationId);
+
+    // Re-insert all messages
+    const stmt = this.db.prepare(`
+      INSERT INTO messages (id, conversation_id, role, content, timestamp, metadata)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const message of conversation.messages) {
+      const messageId = message.id || uuidv4();
+      const messageTimestamp = message.timestamp || timestamp;
+
+      stmt.run(
+        messageId,
+        conversationId,
+        message.role,
+        message.content,
+        messageTimestamp,
+        message.metadata ? JSON.stringify(message.metadata) : null,
+      );
+    }
+  }
+
   async delete(conversationId: string): Promise<void> {
     this.db
       .prepare(

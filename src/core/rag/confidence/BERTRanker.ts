@@ -3,12 +3,12 @@
  * Uses @xenova/transformers for CPU-optimized inference
  */
 
-import { pipeline, env, Pipeline } from '@xenova/transformers';
-import { ScoredDocument } from './types';
+import { pipeline, env, Pipeline } from "@xenova/transformers";
+import type { ScoredDocument } from "./types";
 
 // Configure Xenova Transformers for optimal CPU performance
 env.allowRemoteModels = true;
-env.localURL = '/models/'; // Local model cache directory
+env.localURL = "/models/"; // Local model cache directory
 
 export interface RerankResult {
   document: ScoredDocument;
@@ -19,8 +19,8 @@ export interface RerankResult {
 export class BERTRanker {
   private rerankerPipeline: Pipeline | null = null;
   private isInitialized = false;
-  private readonly modelName = 'Xenova/ms-marco-MiniLM-L-6-v2'; // Optimized for CPU
-  
+  private readonly modelName = "Xenova/ms-marco-MiniLM-L-6-v2"; // Optimized for CPU
+
   constructor() {
     // Model will be loaded on first use
   }
@@ -33,23 +33,23 @@ export class BERTRanker {
     if (this.isInitialized) return;
 
     try {
-      console.log('Initializing BERT reranker with model:', this.modelName);
-      
+      console.log("Initializing BERT reranker with model:", this.modelName);
+
       // Create a feature extraction pipeline for semantic similarity
       // Note: For reranking, we'll use feature extraction and compute similarity
       this.rerankerPipeline = await pipeline(
-        'feature-extraction',
+        "feature-extraction",
         this.modelName,
         {
           // Optimization options for CPU
           quantized: true, // Use quantized model for faster CPU inference
-        }
+        },
       );
 
       this.isInitialized = true;
-      console.log('BERT reranker initialized successfully');
+      console.log("BERT reranker initialized successfully");
     } catch (error) {
-      console.error('Failed to initialize BERT reranker:', error);
+      console.error("Failed to initialize BERT reranker:", error);
       throw new Error(`BERT initialization failed: ${error}`);
     }
   }
@@ -64,46 +64,49 @@ export class BERTRanker {
   async rerank(
     query: string,
     documents: ScoredDocument[],
-    topK?: number
+    topK?: number,
   ): Promise<RerankResult[]> {
     if (!this.isInitialized) {
       await this.initialize();
     }
 
     if (!this.rerankerPipeline) {
-      console.warn('BERT reranker not available, returning original order');
-      return documents.map(doc => ({
+      console.warn("BERT reranker not available, returning original order");
+      return documents.map((doc) => ({
         document: doc,
         semanticScore: doc.retrievalScore,
-        combinedScore: doc.retrievalScore
+        combinedScore: doc.retrievalScore,
       }));
     }
 
     try {
       // Compute embeddings for query
       const queryEmbedding = await this.getEmbedding(query);
-      
+
       // Compute semantic scores for all documents
       const rerankResults = await Promise.all(
         documents.map(async (doc) => {
           const docEmbedding = await this.getEmbedding(doc.content);
-          const semanticScore = this.cosineSimilarity(queryEmbedding, docEmbedding);
-          
+          const semanticScore = this.cosineSimilarity(
+            queryEmbedding,
+            docEmbedding,
+          );
+
           // Combine retrieval score and semantic score
           // Using weighted geometric mean for better balance
           const combinedScore = this.combineScores(
             doc.retrievalScore,
             semanticScore,
             0.4, // Weight for retrieval score
-            0.6  // Weight for semantic score (higher weight for BERT)
+            0.6, // Weight for semantic score (higher weight for BERT)
           );
 
           return {
             document: doc,
             semanticScore,
-            combinedScore
+            combinedScore,
           };
-        })
+        }),
       );
 
       // Sort by combined score
@@ -112,12 +115,12 @@ export class BERTRanker {
       // Return top K if specified
       return topK ? rerankResults.slice(0, topK) : rerankResults;
     } catch (error) {
-      console.error('Error during reranking:', error);
+      console.error("Error during reranking:", error);
       // Fallback to original scores
-      return documents.map(doc => ({
+      return documents.map((doc) => ({
         document: doc,
         semanticScore: doc.retrievalScore,
-        combinedScore: doc.retrievalScore
+        combinedScore: doc.retrievalScore,
       }));
     }
   }
@@ -129,16 +132,16 @@ export class BERTRanker {
    */
   private async getEmbedding(text: string): Promise<Float32Array> {
     if (!this.rerankerPipeline) {
-      throw new Error('BERT pipeline not initialized');
+      throw new Error("BERT pipeline not initialized");
     }
 
     // Truncate text if too long (BERT has token limits)
     const truncatedText = text.substring(0, 512);
-    
+
     // Get embeddings
     const output = await this.rerankerPipeline(truncatedText, {
-      pooling: 'mean', // Mean pooling for sentence embeddings
-      normalize: true  // Normalize embeddings
+      pooling: "mean", // Mean pooling for sentence embeddings
+      normalize: true, // Normalize embeddings
     });
 
     // Extract the embedding array
@@ -148,7 +151,7 @@ export class BERTRanker {
     } else if (output.data) {
       return new Float32Array(output.data);
     } else {
-      throw new Error('Unexpected embedding output format');
+      throw new Error("Unexpected embedding output format");
     }
   }
 
@@ -160,10 +163,10 @@ export class BERTRanker {
    */
   private cosineSimilarity(
     embedding1: Float32Array,
-    embedding2: Float32Array
+    embedding2: Float32Array,
   ): number {
     if (embedding1.length !== embedding2.length) {
-      throw new Error('Embeddings must have the same length');
+      throw new Error("Embeddings must have the same length");
     }
 
     let dotProduct = 0;
@@ -201,7 +204,7 @@ export class BERTRanker {
     retrievalScore: number,
     semanticScore: number,
     retrievalWeight: number,
-    semanticWeight: number
+    semanticWeight: number,
   ): number {
     // Ensure scores are positive
     const epsilon = 1e-6;
@@ -210,9 +213,9 @@ export class BERTRanker {
 
     // Weighted geometric mean
     const combinedScore = Math.pow(
-      Math.pow(retrievalScore, retrievalWeight) * 
-      Math.pow(semanticScore, semanticWeight),
-      1 / (retrievalWeight + semanticWeight)
+      Math.pow(retrievalScore, retrievalWeight) *
+        Math.pow(semanticScore, semanticWeight),
+      1 / (retrievalWeight + semanticWeight),
     );
 
     return combinedScore;
@@ -225,16 +228,16 @@ export class BERTRanker {
   async batchRerank(
     queries: string[],
     documentSets: ScoredDocument[][],
-    topK?: number
+    topK?: number,
   ): Promise<RerankResult[][]> {
     if (queries.length !== documentSets.length) {
-      throw new Error('Number of queries must match number of document sets');
+      throw new Error("Number of queries must match number of document sets");
     }
 
     const results = await Promise.all(
-      queries.map((query, index) => 
-        this.rerank(query, documentSets[index], topK)
-      )
+      queries.map((query, index) =>
+        this.rerank(query, documentSets[index], topK),
+      ),
     );
 
     return results;
@@ -248,7 +251,7 @@ export class BERTRanker {
     if (results.length === 0) return 0;
 
     // Calculate score statistics
-    const scores = results.map(r => r.combinedScore);
+    const scores = results.map((r) => r.combinedScore);
     const maxScore = Math.max(...scores);
     const minScore = Math.min(...scores);
     const scoreRange = maxScore - minScore;
@@ -257,14 +260,15 @@ export class BERTRanker {
     const separation = scoreRange > 0.3 ? 1.0 : scoreRange / 0.3;
 
     // Check semantic score distribution
-    const semanticScores = results.map(r => r.semanticScore);
-    const avgSemanticScore = semanticScores.reduce((a, b) => a + b, 0) / semanticScores.length;
+    const semanticScores = results.map((r) => r.semanticScore);
+    const avgSemanticScore =
+      semanticScores.reduce((a, b) => a + b, 0) / semanticScores.length;
 
     // Higher confidence when semantic scores are high
     const semanticConfidence = Math.min(avgSemanticScore * 1.2, 1.0);
 
     // Combined confidence
-    return (separation * 0.6 + semanticConfidence * 0.4);
+    return separation * 0.6 + semanticConfidence * 0.4;
   }
 
   /**
@@ -281,7 +285,7 @@ export class BERTRanker {
     return {
       name: this.modelName,
       initialized: this.isInitialized,
-      type: 'feature-extraction'
+      type: "feature-extraction",
     };
   }
 

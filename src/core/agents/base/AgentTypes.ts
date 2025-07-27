@@ -1,10 +1,10 @@
-import { BaseTool } from '../../tools/base/BaseTool';
-import type { Document } from '../../shared/types';
+import { BaseTool } from "../../tools/base/BaseTool";
+import type { Document } from "../../shared/types";
 
 export interface AgentCapability {
   name: string;
   description: string;
-  type: 'tool' | 'analysis' | 'generation' | 'retrieval';
+  type: "tool" | "analysis" | "generation" | "retrieval";
 }
 
 export interface AgentContext {
@@ -59,9 +59,9 @@ export interface AgentRegistration {
 }
 
 export abstract class BaseAgent {
-  abstract name: string;
-  abstract description: string;
-  
+  abstract get name(): string;
+  abstract get description(): string;
+
   abstract execute(task: string, context: AgentContext): Promise<AgentResult>;
   abstract executeWithTool(params: ToolExecutionParams): Promise<AgentResult>;
   abstract registerTool(tool: BaseTool): void;
@@ -82,7 +82,7 @@ export interface AgentPoolConfig {
 export interface AgentStatus {
   id: string;
   type: string;
-  status: 'idle' | 'busy' | 'error';
+  status: "idle" | "busy" | "error";
   currentTask?: string;
   lastActivity: Date;
   tasksCompleted: number;
