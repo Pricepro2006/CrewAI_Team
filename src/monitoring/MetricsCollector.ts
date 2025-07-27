@@ -1,18 +1,18 @@
-import { EventEmitter } from 'events';
-import { performance } from 'perf_hooks';
-import os from 'os';
+import { EventEmitter } from "events";
+import { performance } from "perf_hooks";
+import os from "os";
 
 export interface Metric {
   name: string;
   value: number;
-  type: 'counter' | 'gauge' | 'histogram';
+  type: "counter" | "gauge" | "histogram";
   timestamp: Date;
   labels?: Record<string, string>;
 }
 
 export interface HealthStatus {
   service: string;
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: "healthy" | "degraded" | "unhealthy";
   latency?: number;
   error?: string;
   lastCheck: Date;
@@ -31,13 +31,17 @@ export class MetricsCollector extends EventEmitter {
   }
 
   // Counter operations
-  increment(name: string, value: number = 1, labels?: Record<string, string>): void {
+  increment(
+    name: string,
+    value: number = 1,
+    labels?: Record<string, string>,
+  ): void {
     this.recordMetric({
       name,
       value,
-      type: 'counter',
+      type: "counter",
       timestamp: new Date(),
-      labels
+      labels,
     });
   }
 
@@ -46,22 +50,26 @@ export class MetricsCollector extends EventEmitter {
     this.recordMetric({
       name,
       value,
-      type: 'gauge',
+      type: "gauge",
       timestamp: new Date(),
-      labels
+      labels,
     });
   }
 
   // Histogram operations
-  histogram(name: string, value: number, labels?: Record<string, string>): void {
+  histogram(
+    name: string,
+    value: number,
+    labels?: Record<string, string>,
+  ): void {
     this.recordMetric({
       name,
       value,
-      type: 'histogram',
+      type: "histogram",
       timestamp: new Date(),
-      labels
+      labels,
     });
-    
+
     // Update histogram buckets
     const buckets = this.histogramBuckets.get(name) || [];
     buckets.push(value);
@@ -81,9 +89,9 @@ export class MetricsCollector extends EventEmitter {
   recordHealthCheck(service: string, status: HealthStatus): void {
     this.healthChecks.set(service, {
       ...status,
-      lastCheck: new Date()
+      lastCheck: new Date(),
     });
-    this.emit('health-check', { service, status });
+    this.emit("health-check", { service, status });
   }
 
   // Get current metrics
@@ -91,9 +99,9 @@ export class MetricsCollector extends EventEmitter {
     if (name) {
       return this.metrics.get(name) || [];
     }
-    
+
     const allMetrics: Metric[] = [];
-    this.metrics.forEach(metrics => {
+    this.metrics.forEach((metrics) => {
       allMetrics.push(...metrics);
     });
     return allMetrics;
@@ -102,53 +110,55 @@ export class MetricsCollector extends EventEmitter {
   // Get aggregated metrics
   getAggregatedMetrics(): Record<string, any> {
     const aggregated: Record<string, any> = {};
-    
+
     this.metrics.forEach((metrics, name) => {
-      const recent = metrics.filter(m => 
-        Date.now() - m.timestamp.getTime() < 300000 // Last 5 minutes
+      const recent = metrics.filter(
+        (m) => Date.now() - m.timestamp.getTime() < 300000, // Last 5 minutes
       );
-      
+
       if (recent.length === 0) return;
-      
+
       const type = recent[0].type;
-      
+
       switch (type) {
-        case 'counter':
+        case "counter":
           aggregated[name] = {
-            type: 'counter',
+            type: "counter",
             value: recent.reduce((sum, m) => sum + m.value, 0),
-            count: recent.length
+            count: recent.length,
           };
           break;
-          
-        case 'gauge':
+
+        case "gauge": {
           const lastGauge = recent[recent.length - 1];
           aggregated[name] = {
-            type: 'gauge',
+            type: "gauge",
             value: lastGauge.value,
-            min: Math.min(...recent.map(m => m.value)),
-            max: Math.max(...recent.map(m => m.value)),
-            avg: recent.reduce((sum, m) => sum + m.value, 0) / recent.length
+            min: Math.min(...recent.map((m) => m.value)),
+            max: Math.max(...recent.map((m) => m.value)),
+            avg: recent.reduce((sum, m) => sum + m.value, 0) / recent.length,
           };
           break;
-          
-        case 'histogram':
-          const values = recent.map(m => m.value);
+        }
+
+        case "histogram": {
+          const values = recent.map((m) => m.value);
           values.sort((a, b) => a - b);
           aggregated[name] = {
-            type: 'histogram',
+            type: "histogram",
             count: values.length,
             min: values[0],
             max: values[values.length - 1],
             avg: values.reduce((sum, v) => sum + v, 0) / values.length,
             p50: this.percentile(values, 0.5),
             p95: this.percentile(values, 0.95),
-            p99: this.percentile(values, 0.99)
+            p99: this.percentile(values, 0.99),
           };
           break;
+        }
       }
     });
-    
+
     return aggregated;
   }
 
@@ -167,34 +177,34 @@ export class MetricsCollector extends EventEmitter {
     const totalMemory = os.totalmem();
     const freeMemory = os.freemem();
     const loadAverage = os.loadavg();
-    
+
     // Calculate CPU usage
     let totalIdle = 0;
     let totalTick = 0;
-    cpus.forEach(cpu => {
+    cpus.forEach((cpu) => {
       for (const type in cpu.times) {
         totalTick += cpu.times[type as keyof typeof cpu.times];
       }
       totalIdle += cpu.times.idle;
     });
-    
-    const cpuUsage = 100 - (100 * totalIdle / totalTick);
-    
+
+    const cpuUsage = 100 - (100 * totalIdle) / totalTick;
+
     return {
       cpu: {
         usage: cpuUsage.toFixed(2),
         count: cpus.length,
         loadAverage: {
-          '1m': loadAverage[0].toFixed(2),
-          '5m': loadAverage[1].toFixed(2),
-          '15m': loadAverage[2].toFixed(2)
-        }
+          "1m": loadAverage[0].toFixed(2),
+          "5m": loadAverage[1].toFixed(2),
+          "15m": loadAverage[2].toFixed(2),
+        },
       },
       memory: {
         total: Math.round(totalMemory / 1024 / 1024),
         free: Math.round(freeMemory / 1024 / 1024),
         used: Math.round((totalMemory - freeMemory) / 1024 / 1024),
-        usage: ((totalMemory - freeMemory) / totalMemory * 100).toFixed(2)
+        usage: (((totalMemory - freeMemory) / totalMemory) * 100).toFixed(2),
       },
       process: {
         uptime: process.uptime(),
@@ -203,9 +213,9 @@ export class MetricsCollector extends EventEmitter {
           rss: Math.round(process.memoryUsage().rss / 1024 / 1024),
           heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
           heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-          external: Math.round(process.memoryUsage().external / 1024 / 1024)
-        }
-      }
+          external: Math.round(process.memoryUsage().external / 1024 / 1024),
+        },
+      },
     };
   }
 
@@ -213,22 +223,22 @@ export class MetricsCollector extends EventEmitter {
   exportPrometheus(): string {
     const lines: string[] = [];
     const aggregated = this.getAggregatedMetrics();
-    
+
     Object.entries(aggregated).forEach(([name, data]) => {
-      const safeName = name.replace(/[^a-zA-Z0-9_]/g, '_');
-      
+      const safeName = name.replace(/[^a-zA-Z0-9_]/g, "_");
+
       switch (data.type) {
-        case 'counter':
+        case "counter":
           lines.push(`# TYPE ${safeName} counter`);
           lines.push(`${safeName} ${data.value}`);
           break;
-          
-        case 'gauge':
+
+        case "gauge":
           lines.push(`# TYPE ${safeName} gauge`);
           lines.push(`${safeName} ${data.value}`);
           break;
-          
-        case 'histogram':
+
+        case "histogram":
           lines.push(`# TYPE ${safeName} histogram`);
           lines.push(`${safeName}_count ${data.count}`);
           lines.push(`${safeName}_sum ${data.avg * data.count}`);
@@ -240,11 +250,11 @@ export class MetricsCollector extends EventEmitter {
           lines.push(`${safeName}_bucket{le="+Inf"} ${data.count}`);
           break;
       }
-      
-      lines.push('');
+
+      lines.push("");
     });
-    
-    return lines.join('\n');
+
+    return lines.join("\n");
   }
 
   // Private methods
@@ -252,7 +262,7 @@ export class MetricsCollector extends EventEmitter {
     const metrics = this.metrics.get(metric.name) || [];
     metrics.push(metric);
     this.metrics.set(metric.name, metrics);
-    this.emit('metric', metric);
+    this.emit("metric", metric);
   }
 
   private percentile(values: number[], p: number): number {
@@ -264,12 +274,10 @@ export class MetricsCollector extends EventEmitter {
   private startCleanupInterval(): void {
     this.cleanupInterval = setInterval(() => {
       const cutoff = Date.now() - this.metricsRetentionMs;
-      
+
       this.metrics.forEach((metrics, name) => {
-        const filtered = metrics.filter(m => 
-          m.timestamp.getTime() > cutoff
-        );
-        
+        const filtered = metrics.filter((m) => m.timestamp.getTime() > cutoff);
+
         if (filtered.length === 0) {
           this.metrics.delete(name);
           this.histogramBuckets.delete(name);
@@ -293,5 +301,5 @@ export class MetricsCollector extends EventEmitter {
 export const metricsCollector = new MetricsCollector();
 
 // Graceful shutdown
-process.once('SIGINT', () => metricsCollector.shutdown());
-process.once('SIGTERM', () => metricsCollector.shutdown());
+process.once("SIGINT", () => metricsCollector.shutdown());
+process.once("SIGTERM", () => metricsCollector.shutdown());

@@ -18,6 +18,7 @@ try {
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   TokenCredentialAuthenticationProvider =
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     require("@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials").TokenCredentialAuthenticationProvider;
 } catch {
   logger.warn(

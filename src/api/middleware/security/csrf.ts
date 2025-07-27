@@ -1,48 +1,55 @@
-import { randomBytes } from 'crypto';
-import { TRPCError } from '@trpc/server';
-import type { Request, Response } from 'express';
-import { logger } from '../../../utils/logger';
+import { randomBytes, createHash } from "crypto";
+import { TRPCError } from "@trpc/server";
+import type { Request, Response } from "express";
+import { logger } from "../../../utils/logger";
 
 /**
  * CSRF Token configuration
  */
 const CSRF_TOKEN_LENGTH = 32; // 256 bits
-const CSRF_TOKEN_HEADER = 'x-csrf-token';
-const CSRF_COOKIE_NAME = '__Host-csrf-token'; // Using __Host- prefix for additional security
-const CSRF_SESSION_KEY = 'csrfToken';
+const CSRF_TOKEN_HEADER = "x-csrf-token";
+const CSRF_COOKIE_NAME = "__Host-csrf-token"; // Using __Host- prefix for additional security
+const CSRF_SESSION_KEY = "csrfToken";
 const CSRF_TOKEN_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 const CSRF_TOKEN_ROTATION_INTERVAL = 60 * 60 * 1000; // 1 hour
 
 // Store for token metadata (in production, use Redis or similar)
-const tokenMetadata = new Map<string, {
-  createdAt: number;
-  lastUsedAt: number;
-  rotationCount: number;
-  userId?: string;
-}>();
+const tokenMetadata = new Map<
+  string,
+  {
+    createdAt: number;
+    lastUsedAt: number;
+    rotationCount: number;
+    userId?: string;
+  }
+>();
 
 /**
  * Generate a cryptographically secure CSRF token
  */
 export function generateCSRFToken(): string {
-  return randomBytes(CSRF_TOKEN_LENGTH).toString('hex');
+  return randomBytes(CSRF_TOKEN_LENGTH).toString("hex");
 }
 
 /**
  * Set CSRF token in secure httpOnly cookie
  */
-export function setCSRFCookie(res: Response, token: string, isSecure: boolean = true): void {
+export function setCSRFCookie(
+  res: Response,
+  token: string,
+  isSecure: boolean = true,
+): void {
   // Using __Host- prefix requires these exact settings for additional security
   res.cookie(CSRF_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: isSecure && process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/',
+    secure: isSecure && process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
     maxAge: CSRF_TOKEN_MAX_AGE,
     // domain is intentionally omitted when using __Host- prefix
   });
 
-  logger.debug('CSRF cookie set', 'CSRF', {
+  logger.debug("CSRF cookie set", "CSRF", {
     tokenHash: hashToken(token),
     secure: isSecure,
     maxAge: CSRF_TOKEN_MAX_AGE,
@@ -89,11 +96,7 @@ export function getRequestCSRFToken(req: Request): string | undefined {
  * Hash token for logging (never log raw tokens)
  */
 function hashToken(token: string): string {
-  return require('crypto')
-    .createHash('sha256')
-    .update(token)
-    .digest('hex')
-    .substring(0, 8);
+  return createHash("sha256").update(token).digest("hex").substring(0, 8);
 }
 
 /**
@@ -110,7 +113,9 @@ export function shouldRotateToken(token: string): boolean {
   const timeSinceLastUse = now - metadata.lastUsedAt;
 
   // Rotate if token is old or hasn't been used recently
-  return age > CSRF_TOKEN_ROTATION_INTERVAL || timeSinceLastUse > CSRF_TOKEN_MAX_AGE;
+  return (
+    age > CSRF_TOKEN_ROTATION_INTERVAL || timeSinceLastUse > CSRF_TOKEN_MAX_AGE
+  );
 }
 
 /**
@@ -118,7 +123,7 @@ export function shouldRotateToken(token: string): boolean {
  */
 export function updateTokenMetadata(token: string, userId?: string): void {
   const existing = tokenMetadata.get(token);
-  
+
   if (existing) {
     existing.lastUsedAt = Date.now();
     if (userId) {
@@ -134,7 +139,8 @@ export function updateTokenMetadata(token: string, userId?: string): void {
   }
 
   // Clean up old tokens periodically
-  if (Math.random() < 0.01) { // 1% chance
+  if (Math.random() < 0.01) {
+    // 1% chance
     cleanupOldTokens();
   }
 }
@@ -157,7 +163,7 @@ function cleanupOldTokens(): void {
   }
 
   if (expiredTokens.length > 0) {
-    logger.debug('Cleaned up expired CSRF tokens', 'CSRF', {
+    logger.debug("Cleaned up expired CSRF tokens", "CSRF", {
       count: expiredTokens.length,
     });
   }
@@ -173,26 +179,26 @@ export function validateCSRFToken(
     userId?: string;
     requestId?: string;
     path?: string;
-  } = {}
+  } = {},
 ): { valid: boolean; reason?: string; shouldRotate?: boolean } {
   // Both tokens must exist
   if (!requestToken || !storedToken) {
     return {
       valid: false,
-      reason: !requestToken ? 'Missing request token' : 'Missing stored token',
+      reason: !requestToken ? "Missing request token" : "Missing stored token",
     };
   }
 
   // Tokens must match exactly
   if (requestToken !== storedToken) {
-    logger.warn('CSRF token mismatch', 'SECURITY', {
+    logger.warn("CSRF token mismatch", "SECURITY", {
       requestTokenHash: hashToken(requestToken),
       storedTokenHash: hashToken(storedToken),
       ...options,
     });
     return {
       valid: false,
-      reason: 'Token mismatch',
+      reason: "Token mismatch",
     };
   }
 
@@ -209,11 +215,13 @@ export function validateCSRFToken(
 /**
  * Create enhanced CSRF protection middleware
  */
-export function createEnhancedCSRFProtection(options: {
-  skipPaths?: string[];
-  customHeader?: string;
-  enableAutoRotation?: boolean;
-} = {}) {
+export function createEnhancedCSRFProtection(
+  options: {
+    skipPaths?: string[];
+    customHeader?: string;
+    enableAutoRotation?: boolean;
+  } = {},
+) {
   const {
     skipPaths = [],
     customHeader = CSRF_TOKEN_HEADER,
@@ -229,13 +237,13 @@ export function createEnhancedCSRFProtection(options: {
     const { ctx, next, type, path } = opts;
 
     // Skip CSRF check for safe methods
-    if (type && ['query', 'subscription'].includes(type)) {
+    if (type && ["query", "subscription"].includes(type)) {
       return next();
     }
 
     // Skip specific paths if configured
     if (path && skipPaths.includes(path)) {
-      logger.debug('Skipping CSRF check for path', 'CSRF', { path });
+      logger.debug("Skipping CSRF check for path", "CSRF", { path });
       return next();
     }
 
@@ -251,18 +259,18 @@ export function createEnhancedCSRFProtection(options: {
     });
 
     if (!validation.valid) {
-      logger.warn('CSRF validation failed', 'SECURITY', {
+      logger.warn("CSRF validation failed", "SECURITY", {
         reason: validation.reason,
         userId: ctx.user?.id,
         requestId: ctx.requestId,
         path,
         ip: ctx.req.ip,
-        userAgent: ctx.req.headers['user-agent'],
+        userAgent: ctx.req.headers["user-agent"],
       });
 
       throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: 'Invalid CSRF token',
+        code: "FORBIDDEN",
+        message: "Invalid CSRF token",
         cause: validation.reason,
       });
     }
@@ -271,7 +279,7 @@ export function createEnhancedCSRFProtection(options: {
     if (enableAutoRotation && validation.shouldRotate) {
       const newToken = generateCSRFToken();
       setCSRFCookie(ctx.res, newToken, true);
-      
+
       // Store in session if available
       if ((ctx.req as any).session) {
         (ctx.req as any).session[CSRF_SESSION_KEY] = newToken;
@@ -288,7 +296,7 @@ export function createEnhancedCSRFProtection(options: {
         tokenMetadata.delete(storedToken!);
       }
 
-      logger.info('CSRF token rotated', 'SECURITY', {
+      logger.info("CSRF token rotated", "SECURITY", {
         oldTokenHash: hashToken(storedToken!),
         newTokenHash: hashToken(newToken),
         rotationCount: metadata?.rotationCount || 0,
@@ -312,10 +320,7 @@ export function createEnhancedCSRFProtection(options: {
  * Middleware to ensure CSRF token exists (for queries that need to return it)
  */
 export function ensureCSRFToken() {
-  return async (opts: {
-    ctx: any;
-    next: () => Promise<any>;
-  }) => {
+  return async (opts: { ctx: any; next: () => Promise<any> }) => {
     const { ctx, next } = opts;
 
     let token = getStoredCSRFToken(ctx.req);
@@ -330,7 +335,7 @@ export function ensureCSRFToken() {
         (ctx.req as any).session[CSRF_SESSION_KEY] = token;
       }
 
-      logger.info('Generated new CSRF token', 'SECURITY', {
+      logger.info("Generated new CSRF token", "SECURITY", {
         tokenHash: hashToken(token),
         userId: ctx.user?.id,
         requestId: ctx.requestId,
@@ -374,9 +379,8 @@ export function getCSRFStats() {
     }
   }
 
-  stats.averageRotationCount = stats.totalTokens > 0 
-    ? totalRotations / stats.totalTokens 
-    : 0;
+  stats.averageRotationCount =
+    stats.totalTokens > 0 ? totalRotations / stats.totalTokens : 0;
 
   return stats;
 }
