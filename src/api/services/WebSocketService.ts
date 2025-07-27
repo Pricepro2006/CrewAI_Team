@@ -267,6 +267,8 @@ export class WebSocketService extends EventEmitter {
   private clients: Map<string, Set<AuthenticatedWebSocket>> = new Map();
   private subscriptions: Map<string, Set<string>> = new Map();
   private healthInterval: NodeJS.Timeout | null = null;
+  private memoryCleanupInterval: NodeJS.Timeout | null = null;
+  private performanceMonitorInterval: NodeJS.Timeout | null = null;
   
   // Authentication tracking
   private authenticatedClients: Map<string, AuthenticatedWebSocket> = new Map();
@@ -285,8 +287,11 @@ export class WebSocketService extends EventEmitter {
   };
   private readonly MAX_QUEUE_SIZE = 100; // Prevent memory leaks
   private readonly MAX_MESSAGE_HISTORY = 50; // Limit message history per client
+  private readonly MAX_CLIENTS = 10000; // Prevent unbounded growth
+  private readonly MAX_SUBSCRIPTIONS_PER_CLIENT = 100; // Limit subscriptions
   private connectionHealthChecks: Map<string, NodeJS.Timeout> = new Map();
   private retryAttempts: Map<string, number> = new Map();
+  private clientCleanupHandlers: Map<string, () => void> = new Map();
 
   constructor() {
     super();
@@ -306,6 +311,12 @@ export class WebSocketService extends EventEmitter {
    * Register a WebSocket client
    */
   registerClient(clientId: string, ws: AuthenticatedWebSocket): void {
+    // Check client limit to prevent unbounded growth
+    if (this.clients.size >= this.MAX_CLIENTS && !this.clients.has(clientId)) {
+      ws.close(1008, "Server at capacity");
+      return;
+    }
+
     if (!this.clients.has(clientId)) {
       this.clients.set(clientId, new Set());
     }
@@ -327,9 +338,21 @@ export class WebSocketService extends EventEmitter {
       });
     }
 
-    // Clean up on disconnect
-    ws.on("close", () => {
+    // Create cleanup handler to prevent memory leaks
+    const cleanupHandler = () => {
       this.unregisterClient(clientId, ws);
+    };
+    
+    // Store cleanup handler for later removal
+    this.clientCleanupHandlers.set(clientId, cleanupHandler);
+    
+    // Clean up on disconnect
+    ws.once("close", cleanupHandler);
+    
+    // Handle errors to prevent uncaught exceptions
+    ws.on("error", (error) => {
+      logger.error(`WebSocket error for client ${clientId}: ${error.message}`, "WS_SERVICE");
+      this.performanceMetrics.connectionErrors++;
     });
   }
 
@@ -341,10 +364,8 @@ export class WebSocketService extends EventEmitter {
     if (clientSockets) {
       clientSockets.delete(ws);
       if (clientSockets.size === 0) {
-        this.clients.delete(clientId);
-        this.subscriptions.delete(clientId);
-        this.authenticatedClients.delete(clientId);
-        this.clientPermissions.delete(clientId);
+        // Complete cleanup to prevent memory leaks
+        this.cleanupClient(clientId);
         
         if (ws.isAuthenticated) {
           logger.info("Authenticated WebSocket client unregistered", "WS_SERVICE", {
@@ -354,6 +375,12 @@ export class WebSocketService extends EventEmitter {
         }
       }
     }
+    
+    // Remove all event listeners to prevent memory leaks
+    ws.removeAllListeners();
+    
+    // Remove cleanup handler reference
+    this.clientCleanupHandlers.delete(clientId);
   }
 
   /**
@@ -364,7 +391,15 @@ export class WebSocketService extends EventEmitter {
       this.subscriptions.set(clientId, new Set());
     }
     const clientSubs = this.subscriptions.get(clientId)!;
-    types.forEach((type) => clientSubs.add(type));
+    
+    // Limit subscriptions per client to prevent memory issues
+    types.forEach((type) => {
+      if (clientSubs.size < this.MAX_SUBSCRIPTIONS_PER_CLIENT) {
+        clientSubs.add(type);
+      } else {
+        logger.warn(`Client ${clientId} reached subscription limit`, "WS_SERVICE");
+      }
+    });
   }
 
   /**
@@ -544,52 +579,74 @@ export class WebSocketService extends EventEmitter {
    * Memory cleanup routine to prevent memory leaks
    */
   private startMemoryCleanup(): void {
-    const cleanupInterval = setInterval(() => {
-      // Clean up message queues that exceed max size
-      this.messageQueue.forEach((queue, clientId) => {
-        if (queue.length > this.MAX_MESSAGE_HISTORY) {
-          this.messageQueue.set(clientId, queue.slice(-this.MAX_MESSAGE_HISTORY));
+    this.memoryCleanupInterval = setInterval(() => {
+      try {
+        // Clean up message queues that exceed max size
+        this.messageQueue.forEach((queue, clientId) => {
+          if (queue.length > this.MAX_MESSAGE_HISTORY) {
+            this.messageQueue.set(clientId, queue.slice(-this.MAX_MESSAGE_HISTORY));
+          }
+        });
+        
+        // Clean up disconnected clients
+        this.clients.forEach((sockets, clientId) => {
+          const activeSockets = Array.from(sockets).filter(ws => ws.readyState === ws.OPEN);
+          if (activeSockets.length === 0) {
+            this.cleanupClient(clientId);
+          } else if (activeSockets.length !== sockets.size) {
+            // Update client with only active sockets
+            this.clients.set(clientId, new Set(activeSockets));
+          }
+        });
+        
+        // Clean up orphaned data structures
+        this.cleanupOrphanedData();
+        
+        this.performanceMetrics.lastCleanup = Date.now();
+        
+        // Log memory usage for monitoring
+        const memUsage = process.memoryUsage();
+        if (memUsage.heapUsed > memUsage.heapTotal * 0.9) {
+          logger.warn("High memory usage detected", "WS_SERVICE", {
+            heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024) + "MB",
+            heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024) + "MB",
+            clients: this.clients.size
+          });
         }
-      });
-      
-      // Clean up disconnected clients
-      this.clients.forEach((sockets, clientId) => {
-        const activeSockets = Array.from(sockets).filter(ws => ws.readyState === ws.OPEN);
-        if (activeSockets.length === 0) {
-          this.cleanupClient(clientId);
-        } else if (activeSockets.length !== sockets.size) {
-          // Update client with only active sockets
-          this.clients.set(clientId, new Set(activeSockets));
-        }
-      });
-      
-      this.performanceMetrics.lastCleanup = Date.now();
+      } catch (error) {
+        logger.error(`Memory cleanup error: ${error}`, "WS_SERVICE");
+      }
     }, 30000); // Clean up every 30 seconds
-    
-    // Store reference for cleanup on shutdown
-    this.healthInterval = cleanupInterval;
   }
   
   /**
    * Start performance monitoring with alerts
    */
   private startPerformanceMonitoring(): void {
-    setInterval(() => {
-      const stats = this.getConnectionStats();
-      
-      // Check for performance issues
-      if (stats.totalConnections > 1000) {
-        this.broadcastPerformanceWarning('websocket', 'connections', stats.totalConnections, 1000, 'warning');
+    this.performanceMonitorInterval = setInterval(() => {
+      try {
+        const stats = this.getConnectionStats();
+        
+        // Check for performance issues
+        if (stats.totalConnections > 1000) {
+          this.broadcastPerformanceWarning('websocket', 'connections', stats.totalConnections, 1000, 'warning');
+        }
+        
+        if (this.performanceMetrics.connectionErrors > 10) {
+          this.broadcastPerformanceWarning('websocket', 'connection_errors', this.performanceMetrics.connectionErrors, 10, 'critical');
+          this.performanceMetrics.connectionErrors = 0; // Reset after alert
+        }
+        
+        // Update response time metrics
+        this.performanceMetrics.averageResponseTime = this.calculateAverageResponseTime();
+        
+        // Force garbage collection if available (requires --expose-gc flag)
+        if (global.gc && this.clients.size === 0) {
+          global.gc();
+        }
+      } catch (error) {
+        logger.error(`Performance monitoring error: ${error}`, "WS_SERVICE");
       }
-      
-      if (this.performanceMetrics.connectionErrors > 10) {
-        this.broadcastPerformanceWarning('websocket', 'connection_errors', this.performanceMetrics.connectionErrors, 10, 'critical');
-        this.performanceMetrics.connectionErrors = 0; // Reset after alert
-      }
-      
-      // Update response time metrics
-      this.performanceMetrics.averageResponseTime = this.calculateAverageResponseTime();
-      
     }, 60000); // Monitor every minute
   }
   
@@ -597,10 +654,14 @@ export class WebSocketService extends EventEmitter {
    * Clean up client data completely
    */
   private cleanupClient(clientId: string): void {
+    // Remove from all data structures
     this.clients.delete(clientId);
     this.subscriptions.delete(clientId);
+    this.authenticatedClients.delete(clientId);
+    this.clientPermissions.delete(clientId);
     this.messageQueue.delete(clientId);
     this.retryAttempts.delete(clientId);
+    this.clientCleanupHandlers.delete(clientId);
     
     // Clear health check timeout
     const healthCheck = this.connectionHealthChecks.get(clientId);
@@ -608,6 +669,51 @@ export class WebSocketService extends EventEmitter {
       clearTimeout(healthCheck);
       this.connectionHealthChecks.delete(clientId);
     }
+    
+    // Clear any throttle timers associated with this client
+    const throttleTimer = this.throttleTimers.get(clientId);
+    if (throttleTimer) {
+      clearTimeout(throttleTimer);
+      this.throttleTimers.delete(clientId);
+    }
+  }
+  
+  /**
+   * Clean up orphaned data structures
+   */
+  private cleanupOrphanedData(): void {
+    // Clean up authenticated clients that don't have active connections
+    const clientIds = new Set(this.clients.keys());
+    
+    this.authenticatedClients.forEach((_, clientId) => {
+      if (!clientIds.has(clientId)) {
+        this.authenticatedClients.delete(clientId);
+      }
+    });
+    
+    this.clientPermissions.forEach((_, clientId) => {
+      if (!clientIds.has(clientId)) {
+        this.clientPermissions.delete(clientId);
+      }
+    });
+    
+    this.subscriptions.forEach((_, clientId) => {
+      if (!clientIds.has(clientId)) {
+        this.subscriptions.delete(clientId);
+      }
+    });
+    
+    this.messageQueue.forEach((_, clientId) => {
+      if (!clientIds.has(clientId)) {
+        this.messageQueue.delete(clientId);
+      }
+    });
+    
+    this.retryAttempts.forEach((_, clientId) => {
+      if (!clientIds.has(clientId)) {
+        this.retryAttempts.delete(clientId);
+      }
+    });
   }
   
   /**
@@ -623,7 +729,7 @@ export class WebSocketService extends EventEmitter {
   /**
    * Enhanced client registration with health monitoring
    */
-  registerClientEnhanced(clientId: string, ws: WebSocket): void {
+  registerClientEnhanced(clientId: string, ws: AuthenticatedWebSocket): void {
     this.registerClient(clientId, ws);
     
     // Setup health monitoring for this client
@@ -635,34 +741,42 @@ export class WebSocketService extends EventEmitter {
           this.performanceMetrics.connectionErrors++;
           this.handleConnectionError(clientId, ws);
         }
+      } else {
+        // Clean up if connection is no longer open
+        clearInterval(healthCheck);
+        this.connectionHealthChecks.delete(clientId);
       }
     }, 30000); // Ping every 30 seconds
     
     this.connectionHealthChecks.set(clientId, healthCheck);
     
-    // Enhanced error handling
-    ws.on('error', (error) => {
-      this.performanceMetrics.connectionErrors++;
-      this.handleConnectionError(clientId, ws);
-    });
-    
-    ws.on('pong', () => {
+    // Setup pong handler with proper cleanup
+    const pongHandler = () => {
       // Reset retry attempts on successful pong
       this.retryAttempts.delete(clientId);
+    };
+    
+    ws.on('pong', pongHandler);
+    
+    // Store reference to remove listener later
+    ws.once('close', () => {
+      ws.removeListener('pong', pongHandler);
     });
   }
   
   /**
    * Handle connection errors with retry logic
    */
-  private handleConnectionError(clientId: string, ws: WebSocket): void {
+  private handleConnectionError(clientId: string, ws: AuthenticatedWebSocket): void {
     const attempts = this.retryAttempts.get(clientId) || 0;
     
     if (attempts < 3) {
       this.retryAttempts.set(clientId, attempts + 1);
-      // Could implement retry logic here
+      logger.warn(`WebSocket connection error for client ${clientId}, attempt ${attempts + 1}/3`, "WS_SERVICE");
     } else {
-      // Max retries reached, clean up
+      // Max retries reached, force disconnect and clean up
+      logger.error(`Max connection errors reached for client ${clientId}, disconnecting`, "WS_SERVICE");
+      ws.close(1006, "Connection unstable");
       this.cleanupClient(clientId);
     }
   }
@@ -1141,7 +1255,70 @@ export class WebSocketService extends EventEmitter {
       this.healthInterval = null;
     }
   }
+  
+  /**
+   * Gracefully shutdown the WebSocket service
+   */
+  shutdown(): void {
+    logger.info("Shutting down WebSocket service", "WS_SERVICE");
+    
+    // Stop all intervals
+    if (this.healthInterval) {
+      clearInterval(this.healthInterval);
+      this.healthInterval = null;
+    }
+    
+    if (this.memoryCleanupInterval) {
+      clearInterval(this.memoryCleanupInterval);
+      this.memoryCleanupInterval = null;
+    }
+    
+    if (this.performanceMonitorInterval) {
+      clearInterval(this.performanceMonitorInterval);
+      this.performanceMonitorInterval = null;
+    }
+    
+    // Clear all throttle timers
+    this.throttleTimers.forEach((timer) => {
+      clearTimeout(timer);
+    });
+    this.throttleTimers.clear();
+    
+    // Clear all health check timers
+    this.connectionHealthChecks.forEach((timer) => {
+      clearTimeout(timer);
+    });
+    this.connectionHealthChecks.clear();
+    
+    // Close all active connections
+    this.clients.forEach((sockets, clientId) => {
+      sockets.forEach((ws) => {
+        if (ws.readyState === ws.OPEN) {
+          ws.close(1001, "Server shutting down");
+        }
+      });
+    });
+    
+    // Clear all data structures
+    this.clients.clear();
+    this.subscriptions.clear();
+    this.authenticatedClients.clear();
+    this.clientPermissions.clear();
+    this.messageQueue.clear();
+    this.throttledBroadcasts.clear();
+    this.retryAttempts.clear();
+    this.clientCleanupHandlers.clear();
+    
+    // Remove all event listeners
+    this.removeAllListeners();
+    
+    logger.info("WebSocket service shutdown complete", "WS_SERVICE");
+  }
 }
 
 // Singleton instance
 export const wsService = new WebSocketService();
+
+// Clean up on process exit
+process.once('SIGINT', () => wsService.shutdown());
+process.once('SIGTERM', () => wsService.shutdown());

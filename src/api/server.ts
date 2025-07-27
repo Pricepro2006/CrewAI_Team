@@ -20,6 +20,7 @@ import { webhookRouter } from "./routes/webhook.router";
 import { emailAnalysisRouter } from "./routes/email-analysis.router";
 import emailAssignmentRouter from "./routes/email-assignment.router";
 import csrfRouter from "./routes/csrf.router";
+import websocketMonitorRouter from "./routes/websocket-monitor.router";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
@@ -173,6 +174,9 @@ app.use("/api/email-analysis", emailAnalysisRouter);
 // Email assignment routes
 app.use("/api/email-assignment", emailAssignmentRouter);
 
+// WebSocket monitoring routes (authenticated)
+app.use("/api/websocket", websocketMonitorRouter);
+
 // tRPC middleware
 app.use(
   "/trpc",
@@ -216,7 +220,7 @@ gracefulShutdown.register(async () => {
 gracefulShutdown.register(async () => {
   logger.info('Shutting down WebSocket server...');
   wss.close();
-  await wsService.cleanup();
+  wsService.shutdown();
 });
 
 gracefulShutdown.register(async () => {
