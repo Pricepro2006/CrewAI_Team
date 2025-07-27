@@ -142,7 +142,14 @@ export const ragRouter: Router<any> = router({
 
   // Get RAG statistics
   stats: publicProcedure.query(async ({ ctx }) => {
-    return await ctx.ragSystem.getStats();
+    const stats = await ctx.ragSystem.getStats();
+    
+    // Map the stats to match what the Dashboard expects
+    return {
+      ...stats,
+      documentCount: stats.totalDocuments,
+      chunksCount: stats.totalChunks,
+    };
   }),
 
   // Clear all documents
