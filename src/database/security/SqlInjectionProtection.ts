@@ -3,8 +3,8 @@
  * Comprehensive protection against SQL injection attacks
  */
 
-import { z } from 'zod';
-import { logger } from '../../utils/logger';
+import { z } from "zod";
+import { logger } from "../../utils/logger";
 
 export interface SqlSecurityConfig {
   enableStrictValidation: boolean;
@@ -15,9 +15,12 @@ export interface SqlSecurityConfig {
 }
 
 export class SqlInjectionError extends Error {
-  constructor(message: string, public readonly suspiciousInput?: string) {
+  constructor(
+    message: string,
+    public readonly suspiciousInput?: string,
+  ) {
     super(message);
-    this.name = 'SqlInjectionError';
+    this.name = "SqlInjectionError";
   }
 }
 
@@ -27,14 +30,14 @@ export class SqlInjectionError extends Error {
 export class SqlInjectionProtection {
   private static readonly SQL_INJECTION_PATTERNS = [
     // Basic SQL injection patterns
-    /('|(\\%27)|(\\%2527))/i,
-    /((\%3D)|(=))[^\n]*(((\%27)|')|(\-\-)|(\%3B)|(;))/i,
-    /\w*((\%27)|(\'))((\%6F)|o|(\%4F))((\%72)|r|(\%52))/i,
-    /((\%27)|(\'))union/i,
-    /((\%27)|(\'))\s*((\%6F)|o|(\%4F))((\%72)|r|(\%52))/i,
-    /((\%27)|(\'))\s*((\%41)|a|(\%61))((\%4E)|n|(\%6E))((\%44)|d|(\%64))/i,
-    /((\%27)|(\'))\s*((\%4F)|o|(\%6F))((\%52)|r|(\%72))/i,
-    
+    /('|(%27)|(%2527))/i,
+    /((%3D)|(=))[^\n]*(((%27)|')|(--)|(%3B)|(;))/i,
+    /\w*((%27)|('))((%6F)|o|(%4F))((%72)|r|(%52))/i,
+    /((%27)|(''))union/i,
+    /((%27)|('))\s*((%6F)|o|(%4F))((%72)|r|(%52))/i,
+    /((%27)|('))\s*((%41)|a|(%61))((%4E)|n|(%6E))((%44)|d|(%64))/i,
+    /((%27)|('))\s*((%4F)|o|(%6F))((%52)|r|(%72))/i,
+
     // Advanced patterns
     /exec(\s|\+)+(s|x)p\w+/i,
     /union\s+.*select/i,
@@ -46,7 +49,7 @@ export class SqlInjectionProtection {
     /create\s+(table|database|schema|user)/i,
     /grant\s+/i,
     /revoke\s+/i,
-    
+
     // Database specific functions
     /xp_cmdshell/i,
     /sp_executesql/i,
@@ -54,25 +57,25 @@ export class SqlInjectionProtection {
     /sys\.(tables|columns|databases)/i,
     /sqlite_master/i,
     /pragma\s+/i,
-    
+
     // Boolean-based blind injection
     /\s+(and|or)\s+\d+\s*=\s*\d+/i,
     /\s+(and|or)\s+\w+\s*=\s*\w+/i,
-    
+
     // Time-based blind injection
     /waitfor\s+delay/i,
     /sleep\s*\(/i,
     /benchmark\s*\(/i,
-    
+
     // Comment injection
     /\/\*.*\*\//,
     /--[^\r\n]*/,
-    /#[^\r\n]*/
+    /#[^\r\n]*/,
   ];
 
   private static readonly ALLOWED_COLUMN_CHARS = /^[a-zA-Z0-9_]+$/;
   private static readonly ALLOWED_TABLE_CHARS = /^[a-zA-Z0-9_]+$/;
-  
+
   private config: SqlSecurityConfig;
 
   constructor(config: Partial<SqlSecurityConfig> = {}) {
@@ -82,7 +85,7 @@ export class SqlInjectionProtection {
       enableBlacklist: true,
       maxQueryLength: 10000,
       maxParameterCount: 100,
-      ...config
+      ...config,
     };
   }
 
@@ -92,7 +95,7 @@ export class SqlInjectionProtection {
   validateQueryParameters(params: any[]): any[] {
     if (params.length > this.config.maxParameterCount) {
       throw new SqlInjectionError(
-        `Too many parameters: ${params.length} (max: ${this.config.maxParameterCount})`
+        `Too many parameters: ${params.length} (max: ${this.config.maxParameterCount})`,
       );
     }
 
@@ -100,14 +103,15 @@ export class SqlInjectionProtection {
       try {
         return this.sanitizeParameter(param);
       } catch (error) {
-        logger.error('Parameter validation failed', 'SQL_SECURITY', {
+        logger.error("Parameter validation failed", "SQL_SECURITY", {
           parameterIndex: index,
-          parameterValue: typeof param === 'string' ? param.substring(0, 100) : param,
-          error: error instanceof Error ? error.message : String(error)
+          parameterValue:
+            typeof param === "string" ? param.substring(0, 100) : param,
+          error: error instanceof Error ? error.message : String(error),
         });
         throw new SqlInjectionError(
           `Invalid parameter at index ${index}: ${error instanceof Error ? error.message : String(error)}`,
-          typeof param === 'string' ? param : undefined
+          typeof param === "string" ? param : undefined,
         );
       }
     });
@@ -121,28 +125,29 @@ export class SqlInjectionProtection {
       return param;
     }
 
-    if (typeof param === 'string') {
+    if (typeof param === "string") {
       // Check for suspicious patterns
       if (this.config.enableBlacklist && this.containsSqlInjection(param)) {
-        throw new SqlInjectionError('Suspicious SQL pattern detected', param);
+        throw new SqlInjectionError("Suspicious SQL pattern detected", param);
       }
 
       // Validate length
-      if (param.length > 5000) { // Individual parameter limit
-        throw new SqlInjectionError('Parameter too long');
+      if (param.length > 5000) {
+        // Individual parameter limit
+        throw new SqlInjectionError("Parameter too long");
       }
 
       return param;
     }
 
-    if (typeof param === 'number') {
+    if (typeof param === "number") {
       if (!Number.isFinite(param)) {
-        throw new SqlInjectionError('Invalid number parameter');
+        throw new SqlInjectionError("Invalid number parameter");
       }
       return param;
     }
 
-    if (typeof param === 'boolean') {
+    if (typeof param === "boolean") {
       return param;
     }
 
@@ -153,7 +158,10 @@ export class SqlInjectionProtection {
     // For other types, convert to string and validate
     const stringParam = String(param);
     if (this.config.enableBlacklist && this.containsSqlInjection(stringParam)) {
-      throw new SqlInjectionError('Suspicious SQL pattern in parameter', stringParam);
+      throw new SqlInjectionError(
+        "Suspicious SQL pattern in parameter",
+        stringParam,
+      );
     }
 
     return stringParam;
@@ -164,9 +172,9 @@ export class SqlInjectionProtection {
    */
   private containsSqlInjection(input: string): boolean {
     const normalizedInput = input.toLowerCase().trim();
-    
-    return SqlInjectionProtection.SQL_INJECTION_PATTERNS.some(pattern => 
-      pattern.test(normalizedInput)
+
+    return SqlInjectionProtection.SQL_INJECTION_PATTERNS.some((pattern) =>
+      pattern.test(normalizedInput),
     );
   }
 
@@ -174,21 +182,26 @@ export class SqlInjectionProtection {
    * Validate SQL query structure
    */
   validateQuery(query: string): void {
-    if (!query || typeof query !== 'string') {
-      throw new SqlInjectionError('Invalid query: must be a non-empty string');
+    if (!query || typeof query !== "string") {
+      throw new SqlInjectionError("Invalid query: must be a non-empty string");
     }
 
     if (query.length > this.config.maxQueryLength) {
-      throw new SqlInjectionError(`Query too long: ${query.length} (max: ${this.config.maxQueryLength})`);
+      throw new SqlInjectionError(
+        `Query too long: ${query.length} (max: ${this.config.maxQueryLength})`,
+      );
     }
 
     // Check for suspicious patterns in the query structure
     if (this.config.enableBlacklist && this.containsSqlInjection(query)) {
-      logger.warn('Suspicious SQL query detected', 'SQL_SECURITY', {
+      logger.warn("Suspicious SQL query detected", "SQL_SECURITY", {
         queryPreview: query.substring(0, 200),
-        queryLength: query.length
+        queryLength: query.length,
       });
-      throw new SqlInjectionError('Suspicious SQL pattern detected in query', query.substring(0, 100));
+      throw new SqlInjectionError(
+        "Suspicious SQL pattern detected in query",
+        query.substring(0, 100),
+      );
     }
 
     // Validate that query uses parameterized structure
@@ -197,10 +210,10 @@ export class SqlInjectionProtection {
     }
 
     if (this.config.enableQueryLogging) {
-      logger.debug('SQL query validated', 'SQL_SECURITY', {
+      logger.debug("SQL query validated", "SQL_SECURITY", {
         queryType: this.getQueryType(query),
         queryLength: query.length,
-        parameterCount: (query.match(/\?/g) || []).length
+        parameterCount: (query.match(/\?/g) || []).length,
       });
     }
   }
@@ -210,17 +223,19 @@ export class SqlInjectionProtection {
    */
   private validateParameterizedQuery(query: string): void {
     const normalizedQuery = query.toLowerCase().trim();
-    
+
     // Check for string concatenation patterns that might indicate injection
     const dangerousPatterns = [
-      /\+\s*['"`]/,  // String concatenation
+      /\+\s*['"`]/, // String concatenation
       /\|\|\s*['"`]/, // String concatenation (Oracle/PostgreSQL)
       /concat\s*\(/i, // CONCAT function with user input
     ];
 
     for (const pattern of dangerousPatterns) {
       if (pattern.test(normalizedQuery)) {
-        throw new SqlInjectionError('Query appears to use string concatenation instead of parameters');
+        throw new SqlInjectionError(
+          "Query appears to use string concatenation instead of parameters",
+        );
       }
     }
   }
@@ -230,47 +245,68 @@ export class SqlInjectionProtection {
    */
   private getQueryType(query: string): string {
     const normalizedQuery = query.toLowerCase().trim();
-    
-    if (normalizedQuery.startsWith('select')) return 'SELECT';
-    if (normalizedQuery.startsWith('insert')) return 'INSERT';
-    if (normalizedQuery.startsWith('update')) return 'UPDATE';
-    if (normalizedQuery.startsWith('delete')) return 'DELETE';
-    if (normalizedQuery.startsWith('create')) return 'CREATE';
-    if (normalizedQuery.startsWith('alter')) return 'ALTER';
-    if (normalizedQuery.startsWith('drop')) return 'DROP';
-    if (normalizedQuery.startsWith('pragma')) return 'PRAGMA';
-    
-    return 'OTHER';
+
+    if (normalizedQuery.startsWith("select")) return "SELECT";
+    if (normalizedQuery.startsWith("insert")) return "INSERT";
+    if (normalizedQuery.startsWith("update")) return "UPDATE";
+    if (normalizedQuery.startsWith("delete")) return "DELETE";
+    if (normalizedQuery.startsWith("create")) return "CREATE";
+    if (normalizedQuery.startsWith("alter")) return "ALTER";
+    if (normalizedQuery.startsWith("drop")) return "DROP";
+    if (normalizedQuery.startsWith("pragma")) return "PRAGMA";
+
+    return "OTHER";
   }
 
   /**
    * Sanitize column name for ORDER BY and similar clauses
    */
   sanitizeColumnName(columnName: string): string {
-    if (!columnName || typeof columnName !== 'string') {
-      throw new SqlInjectionError('Invalid column name: must be a non-empty string');
+    if (!columnName || typeof columnName !== "string") {
+      throw new SqlInjectionError(
+        "Invalid column name: must be a non-empty string",
+      );
     }
 
     const sanitized = columnName.trim();
 
     // Allow only alphanumeric characters, underscores, and dots
     if (!SqlInjectionProtection.ALLOWED_COLUMN_CHARS.test(sanitized)) {
-      throw new SqlInjectionError('Invalid column name: contains invalid characters', sanitized);
+      throw new SqlInjectionError(
+        "Invalid column name: contains invalid characters",
+        sanitized,
+      );
     }
 
     // Check length
-    if (sanitized.length > 64) { // Standard SQL column name limit
-      throw new SqlInjectionError('Column name too long');
+    if (sanitized.length > 64) {
+      // Standard SQL column name limit
+      throw new SqlInjectionError("Column name too long");
     }
 
     // Check for SQL keywords that shouldn't be column names
     const sqlKeywords = [
-      'select', 'insert', 'update', 'delete', 'drop', 'create', 'alter',
-      'union', 'where', 'having', 'group', 'order', 'limit', 'offset'
+      "select",
+      "insert",
+      "update",
+      "delete",
+      "drop",
+      "create",
+      "alter",
+      "union",
+      "where",
+      "having",
+      "group",
+      "order",
+      "limit",
+      "offset",
     ];
 
     if (sqlKeywords.includes(sanitized.toLowerCase())) {
-      throw new SqlInjectionError('Column name conflicts with SQL keyword', sanitized);
+      throw new SqlInjectionError(
+        "Column name conflicts with SQL keyword",
+        sanitized,
+      );
     }
 
     return sanitized;
@@ -280,18 +316,23 @@ export class SqlInjectionProtection {
    * Sanitize table name
    */
   sanitizeTableName(tableName: string): string {
-    if (!tableName || typeof tableName !== 'string') {
-      throw new SqlInjectionError('Invalid table name: must be a non-empty string');
+    if (!tableName || typeof tableName !== "string") {
+      throw new SqlInjectionError(
+        "Invalid table name: must be a non-empty string",
+      );
     }
 
     const sanitized = tableName.trim();
 
     if (!SqlInjectionProtection.ALLOWED_TABLE_CHARS.test(sanitized)) {
-      throw new SqlInjectionError('Invalid table name: contains invalid characters', sanitized);
+      throw new SqlInjectionError(
+        "Invalid table name: contains invalid characters",
+        sanitized,
+      );
     }
 
     if (sanitized.length > 64) {
-      throw new SqlInjectionError('Table name too long');
+      throw new SqlInjectionError("Table name too long");
     }
 
     return sanitized;
@@ -300,9 +341,12 @@ export class SqlInjectionProtection {
   /**
    * Create secure WHERE clause with parameterized conditions
    */
-  createSecureWhereClause(conditions: Record<string, any>): { clause: string; params: any[] } {
+  createSecureWhereClause(conditions: Record<string, any>): {
+    clause: string;
+    params: any[];
+  } {
     if (!conditions || Object.keys(conditions).length === 0) {
-      return { clause: '', params: [] };
+      return { clause: "", params: [] };
     }
 
     const clauses: string[] = [];
@@ -315,18 +359,28 @@ export class SqlInjectionProtection {
         clauses.push(`${sanitizedKey} IS NULL`);
       } else if (Array.isArray(value)) {
         if (value.length === 0) {
-          clauses.push('1=0'); // No match condition
+          clauses.push("1=0"); // No match condition
         } else {
-          const placeholders = value.map(() => '?').join(',');
+          const placeholders = value.map(() => "?").join(",");
           clauses.push(`${sanitizedKey} IN (${placeholders})`);
           params.push(...this.validateQueryParameters(value));
         }
-      } else if (typeof value === 'object' && value.operator) {
+      } else if (typeof value === "object" && value.operator) {
         // Support for complex conditions like { operator: '>', value: 100 }
         const { operator, value: conditionValue } = value;
-        
+
         // Validate operator
-        const allowedOperators = ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'];
+        const allowedOperators = [
+          "=",
+          "!=",
+          "<>",
+          "<",
+          ">",
+          "<=",
+          ">=",
+          "LIKE",
+          "NOT LIKE",
+        ];
         if (!allowedOperators.includes(operator.toUpperCase())) {
           throw new SqlInjectionError(`Invalid operator: ${operator}`);
         }
@@ -340,23 +394,26 @@ export class SqlInjectionProtection {
     }
 
     return {
-      clause: `WHERE ${clauses.join(' AND ')}`,
-      params
+      clause: `WHERE ${clauses.join(" AND ")}`,
+      params,
     };
   }
 
   /**
    * Create secure ORDER BY clause
    */
-  createSecureOrderClause(orderBy?: string, orderDirection: 'ASC' | 'DESC' = 'ASC'): string {
+  createSecureOrderClause(
+    orderBy?: string,
+    orderDirection: "ASC" | "DESC" = "ASC",
+  ): string {
     if (!orderBy) {
-      return 'ORDER BY id ASC';
+      return "ORDER BY id ASC";
     }
 
     const sanitizedColumn = this.sanitizeColumnName(orderBy);
-    
+
     // Validate order direction
-    if (!['ASC', 'DESC'].includes(orderDirection.toUpperCase())) {
+    if (!["ASC", "DESC"].includes(orderDirection.toUpperCase())) {
       throw new SqlInjectionError(`Invalid order direction: ${orderDirection}`);
     }
 
@@ -366,21 +423,24 @@ export class SqlInjectionProtection {
   /**
    * Validate and execute query with comprehensive protection
    */
-  validateQueryExecution(query: string, params: any[] = []): { query: string; params: any[] } {
+  validateQueryExecution(
+    query: string,
+    params: any[] = [],
+  ): { query: string; params: any[] } {
     try {
       // Validate query structure
       this.validateQuery(query);
-      
+
       // Validate and sanitize parameters
       const sanitizedParams = this.validateQueryParameters(params);
-      
+
       return { query, params: sanitizedParams };
     } catch (error) {
       if (error instanceof SqlInjectionError) {
-        logger.error('SQL injection attempt blocked', 'SQL_SECURITY', {
+        logger.error("SQL injection attempt blocked", "SQL_SECURITY", {
           error: error.message,
           suspiciousInput: error.suspiciousInput,
-          queryPreview: query.substring(0, 100)
+          queryPreview: query.substring(0, 100),
         });
       }
       throw error;
@@ -393,43 +453,51 @@ export class SqlInjectionProtection {
  */
 export const DatabaseInputSchemas = {
   // Basic types
-  id: z.string().uuid('Invalid ID format'),
-  
+  id: z.string().uuid("Invalid ID format"),
+
   // Text fields with length limits
   shortText: z.string().min(1).max(255).trim(),
   mediumText: z.string().min(1).max(1000).trim(),
   longText: z.string().min(1).max(10000).trim(),
-  
+
   // SQL-safe identifiers
-  columnName: z.string()
+  columnName: z
+    .string()
     .min(1)
     .max(64)
-    .regex(/^[a-zA-Z0-9_]+$/, 'Invalid column name format'),
-  
-  tableName: z.string()
+    .regex(/^[a-zA-Z0-9_]+$/, "Invalid column name format"),
+
+  tableName: z
+    .string()
     .min(1)
     .max(64)
-    .regex(/^[a-zA-Z0-9_]+$/, 'Invalid table name format'),
-  
+    .regex(/^[a-zA-Z0-9_]+$/, "Invalid table name format"),
+
   // Email validation
   email: z.string().email().toLowerCase().trim(),
-  
+
   // Date validation
-  isoDate: z.string().datetime('Invalid ISO date format'),
-  
+  isoDate: z.string().datetime("Invalid ISO date format"),
+
   // Numeric validation
   positiveInteger: z.number().int().positive(),
   nonNegativeInteger: z.number().int().min(0),
   currency: z.number().min(0).max(999999999.99),
-  
+
   // Enums for controlled values
-  userRole: z.enum(['admin', 'manager', 'user', 'viewer']),
-  userStatus: z.enum(['active', 'inactive', 'suspended']),
-  emailStatus: z.enum(['new', 'in_progress', 'completed', 'archived']),
-  emailPriority: z.enum(['critical', 'high', 'medium', 'low']),
-  dealStatus: z.enum(['active', 'expired', 'pending', 'cancelled']),
-  taskStatus: z.enum(['pending', 'in_progress', 'completed', 'cancelled', 'blocked']),
-  
+  userRole: z.enum(["admin", "manager", "user", "viewer"]),
+  userStatus: z.enum(["active", "inactive", "suspended"]),
+  emailStatus: z.enum(["new", "in_progress", "completed", "archived"]),
+  emailPriority: z.enum(["critical", "high", "medium", "low"]),
+  dealStatus: z.enum(["active", "expired", "pending", "cancelled"]),
+  taskStatus: z.enum([
+    "pending",
+    "in_progress",
+    "completed",
+    "cancelled",
+    "blocked",
+  ]),
+
   // Complex object validation
   jsonField: z.string().refine((val) => {
     try {
@@ -438,10 +506,11 @@ export const DatabaseInputSchemas = {
     } catch {
       return false;
     }
-  }, 'Invalid JSON format'),
-  
+  }, "Invalid JSON format"),
+
   // Search query validation
-  searchQuery: z.string()
+  searchQuery: z
+    .string()
     .min(1)
     .max(500)
     .trim()
@@ -453,16 +522,18 @@ export const DatabaseInputSchemas = {
         /delete\s+from/i,
         /drop\s+table/i,
         /exec\s+/i,
-        /script\s*>/i
+        /script\s*>/i,
       ];
-      return !maliciousPatterns.some(pattern => pattern.test(val));
-    }, 'Search query contains invalid patterns')
+      return !maliciousPatterns.some((pattern) => pattern.test(val));
+    }, "Search query contains invalid patterns"),
 };
 
 /**
  * Factory function to create SQL injection protection instance
  */
-export function createSqlInjectionProtection(config?: Partial<SqlSecurityConfig>): SqlInjectionProtection {
+export function createSqlInjectionProtection(
+  config?: Partial<SqlSecurityConfig>,
+): SqlInjectionProtection {
   return new SqlInjectionProtection(config);
 }
 

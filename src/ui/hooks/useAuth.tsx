@@ -1,5 +1,12 @@
-import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
-import { trpc } from '../utils/trpc';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  createContext,
+  useContext,
+  ReactNode,
+} from "react";
+import { trpc } from "../utils/trpc";
 
 /**
  * Authentication Hook and Context
@@ -13,7 +20,7 @@ export interface User {
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
-  role: 'user' | 'admin' | 'moderator';
+  role: "user" | "admin" | "moderator";
   is_active: boolean;
   is_verified: boolean;
   last_login_at?: string;
@@ -25,7 +32,7 @@ export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
-  tokenType: 'Bearer';
+  tokenType: "Bearer";
 }
 
 export interface LoginCredentials {
@@ -68,7 +75,7 @@ export interface AuthContextType {
   checkPasswordStrength: (password: string) => Promise<{
     isValid: boolean;
     errors: string[];
-    strength: 'weak' | 'medium' | 'strong';
+    strength: "weak" | "medium" | "strong";
     entropy: number;
     isCompromised: boolean;
     recommendations: string[];
@@ -79,8 +86,8 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Token storage keys
-const ACCESS_TOKEN_KEY = 'accessToken';
-const REFRESH_TOKEN_KEY = 'refreshToken';
+const ACCESS_TOKEN_KEY = "accessToken";
+const REFRESH_TOKEN_KEY = "refreshToken";
 
 // Storage utilities
 const getStoredToken = (key: string): string | null => {
@@ -95,7 +102,7 @@ const setStoredToken = (key: string, token: string): void => {
   try {
     localStorage.setItem(key, token);
   } catch (error) {
-    console.warn('Failed to store token:', error);
+    console.warn("Failed to store token:", error);
   }
 };
 
@@ -103,7 +110,7 @@ const removeStoredToken = (key: string): void => {
   try {
     localStorage.removeItem(key);
   } catch (error) {
-    console.warn('Failed to remove token:', error);
+    console.warn("Failed to remove token:", error);
   }
 };
 
@@ -116,7 +123,7 @@ const clearAllTokens = (): void => {
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -139,14 +146,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const refreshTokenMutation = trpc.auth.refreshToken.useMutation();
   const updateProfileMutation = trpc.auth.updateProfile.useMutation();
   const changePasswordMutation = trpc.auth.changePassword.useMutation();
-  
-  // TRPC queries
-  const { data: userData, refetch: refetchUser } = trpc.auth.me.useQuery(undefined, {
-    enabled: !!tokens?.accessToken,
-    retry: false,
-  });
 
-  const checkPasswordStrengthMutation = trpc.auth.checkPasswordStrength.useMutation();
+  // TRPC queries
+  const { data: userData, refetch: refetchUser } = trpc.auth.me.useQuery(
+    undefined,
+    {
+      enabled: !!tokens?.accessToken,
+      retry: false,
+    },
+  );
+
+  const checkPasswordStrengthMutation =
+    trpc.auth.checkPasswordStrength.useMutation();
 
   // Initialize auth state from storage
   useEffect(() => {
@@ -158,7 +169,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         accessToken,
         refreshToken,
         expiresIn: 0, // Will be updated on refresh
-        tokenType: 'Bearer',
+        tokenType: "Bearer",
       });
     }
 
@@ -178,7 +189,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Parse JWT to get expiration time
     try {
-      const payload = JSON.parse(atob(tokens.accessToken.split('.')[1]));
+      const payload = JSON.parse(atob(tokens.accessToken.split(".")[1]));
       const expirationTime = payload.exp * 1000; // Convert to milliseconds
       const currentTime = Date.now();
       const timeUntilExpiry = expirationTime - currentTime;
@@ -192,40 +203,42 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       return () => clearTimeout(refreshTimer);
     } catch (error) {
-      console.warn('Failed to parse access token:', error);
+      console.warn("Failed to parse access token:", error);
     }
   }, [tokens?.accessToken]);
 
   // Login function
-  const login = useCallback(async (credentials: LoginCredentials): Promise<void> => {
-    try {
-      const result = await loginMutation.mutateAsync(credentials);
-      
-      const newTokens = result.tokens;
-      setTokens(newTokens);
-      setUser(result.user);
+  const login = useCallback(
+    async (credentials: LoginCredentials): Promise<void> => {
+      try {
+        const result = await loginMutation.mutateAsync(credentials);
 
-      // Store tokens
-      setStoredToken(ACCESS_TOKEN_KEY, newTokens.accessToken);
-      setStoredToken(REFRESH_TOKEN_KEY, newTokens.refreshToken);
-    } catch (error) {
-      // Clear any partial state
-      setTokens(null);
-      setUser(null);
-      clearAllTokens();
-      throw error;
-    }
-  }, [loginMutation]);
+        const newTokens = result.tokens;
+        setTokens(newTokens);
+        setUser(result.user);
+
+        // Store tokens
+        setStoredToken(ACCESS_TOKEN_KEY, newTokens.accessToken);
+        setStoredToken(REFRESH_TOKEN_KEY, newTokens.refreshToken);
+      } catch (error) {
+        // Clear any partial state
+        setTokens(null);
+        setUser(null);
+        clearAllTokens();
+        throw error;
+      }
+    },
+    [loginMutation],
+  );
 
   // Register function
-  const register = useCallback(async (data: RegisterData): Promise<void> => {
-    try {
+  const register = useCallback(
+    async (data: RegisterData): Promise<void> => {
       await registerMutation.mutateAsync(data);
       // Note: After registration, user needs to login separately
-    } catch (error) {
-      throw error;
-    }
-  }, [registerMutation]);
+    },
+    [registerMutation],
+  );
 
   // Logout function
   const logout = useCallback(async (): Promise<void> => {
@@ -234,7 +247,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         await logoutMutation.mutateAsync({ refreshToken: tokens.refreshToken });
       }
     } catch (error) {
-      console.warn('Logout request failed:', error);
+      console.warn("Logout request failed:", error);
       // Continue with local logout even if server request fails
     } finally {
       // Clear state and storage
@@ -249,7 +262,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       await logoutAllMutation.mutateAsync();
     } catch (error) {
-      console.warn('Logout all request failed:', error);
+      console.warn("Logout all request failed:", error);
     } finally {
       // Clear state and storage
       setTokens(null);
@@ -261,7 +274,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Refresh token function
   const handleRefreshToken = useCallback(async (): Promise<void> => {
     if (!tokens?.refreshToken) {
-      throw new Error('No refresh token available');
+      throw new Error("No refresh token available");
     }
 
     try {
@@ -277,7 +290,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setStoredToken(REFRESH_TOKEN_KEY, newTokens.refreshToken);
     } catch (error) {
       // If refresh fails, logout user
-      console.warn('Token refresh failed:', error);
+      console.warn("Token refresh failed:", error);
       setTokens(null);
       setUser(null);
       clearAllTokens();
@@ -286,35 +299,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [refreshTokenMutation, tokens?.refreshToken]);
 
   // Update profile function
-  const updateProfile = useCallback(async (data: UpdateProfileData): Promise<void> => {
-    try {
+  const updateProfile = useCallback(
+    async (data: UpdateProfileData): Promise<void> => {
       const result = await updateProfileMutation.mutateAsync(data);
       setUser(result.user);
-    } catch (error) {
-      throw error;
-    }
-  }, [updateProfileMutation]);
+    },
+    [updateProfileMutation],
+  );
 
   // Change password function
-  const changePassword = useCallback(async (data: ChangePasswordData): Promise<void> => {
-    try {
+  const changePassword = useCallback(
+    async (data: ChangePasswordData): Promise<void> => {
       await changePasswordMutation.mutateAsync(data);
       // After password change, logout user for security
       await logout();
-    } catch (error) {
-      throw error;
-    }
-  }, [changePasswordMutation, logout]);
+    },
+    [changePasswordMutation, logout],
+  );
 
   // Check password strength function
-  const checkPasswordStrength = useCallback(async (password: string) => {
-    try {
-      const result = await checkPasswordStrengthMutation.mutateAsync({ password });
+  const checkPasswordStrength = useCallback(
+    async (password: string) => {
+      const result = await checkPasswordStrengthMutation.mutateAsync({
+        password,
+      });
       return result;
-    } catch (error) {
-      throw error;
-    }
-  }, [checkPasswordStrengthMutation]);
+    },
+    [checkPasswordStrengthMutation],
+  );
 
   const isAuthenticated = !!user && !!tokens?.accessToken;
 
@@ -334,9 +346,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };
 
@@ -345,7 +355,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 /**
  * Hook to check if user has specific role
  */
-export const useRole = (role: 'user' | 'admin' | 'moderator'): boolean => {
+export const useRole = (role: "user" | "admin" | "moderator"): boolean => {
   const { user } = useAuth();
   return user?.role === role;
 };
@@ -355,7 +365,7 @@ export const useRole = (role: 'user' | 'admin' | 'moderator'): boolean => {
  */
 export const useIsAdmin = (): boolean => {
   const { user } = useAuth();
-  return user?.role === 'admin';
+  return user?.role === "admin";
 };
 
 /**
@@ -363,7 +373,7 @@ export const useIsAdmin = (): boolean => {
  */
 export const useIsModerator = (): boolean => {
   const { user } = useAuth();
-  return user?.role === 'moderator' || user?.role === 'admin';
+  return user?.role === "moderator" || user?.role === "admin";
 };
 
 /**
@@ -376,7 +386,7 @@ export const useRequireAuth = (redirectTo?: string): boolean => {
     if (!isLoading && !isAuthenticated) {
       // In a real app, you would handle routing here
       // For now, we'll just log the redirect intent
-      console.warn('Authentication required', { redirectTo });
+      console.warn("Authentication required", { redirectTo });
     }
   }, [isAuthenticated, isLoading, redirectTo]);
 

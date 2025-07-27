@@ -1,6 +1,6 @@
-import Database from 'better-sqlite3';
-import { resolve } from 'path';
-import { readdir } from 'fs/promises';
+import Database from "better-sqlite3";
+import { resolve } from "path";
+import { readdir } from "fs/promises";
 
 /**
  * Database Migration System
@@ -34,27 +34,27 @@ export class MigrationRunner {
   }
 
   async getAppliedMigrations(): Promise<MigrationRecord[]> {
-    const stmt = this.db.prepare('SELECT * FROM migrations ORDER BY id');
+    const stmt = this.db.prepare("SELECT * FROM migrations ORDER BY id");
     return stmt.all() as MigrationRecord[];
   }
 
   async getPendingMigrations(): Promise<string[]> {
     const applied = await this.getAppliedMigrations();
-    const appliedFilenames = new Set(applied.map(m => m.filename));
+    const appliedFilenames = new Set(applied.map((m) => m.filename));
 
     const files = await readdir(this.migrationsPath);
     const migrationFiles = files
-      .filter(f => f.endsWith('.ts') && f !== 'migrate.ts')
+      .filter((f) => f.endsWith(".ts") && f !== "migrate.ts")
       .sort();
 
-    return migrationFiles.filter(f => !appliedFilenames.has(f));
+    return migrationFiles.filter((f) => !appliedFilenames.has(f));
   }
 
   async runMigrations(): Promise<void> {
     const pending = await this.getPendingMigrations();
-    
+
     if (pending.length === 0) {
-      console.log('✅ No pending migrations');
+      console.log("✅ No pending migrations");
       return;
     }
 
@@ -62,13 +62,13 @@ export class MigrationRunner {
 
     for (const filename of pending) {
       console.log(`📦 Running migration: ${filename}`);
-      
+
       try {
         // Import the migration file
         const migrationPath = resolve(this.migrationsPath, filename);
         const migration = await import(migrationPath);
-        
-        if (!migration.up || typeof migration.up !== 'function') {
+
+        if (!migration.up || typeof migration.up !== "function") {
           throw new Error(`Migration ${filename} missing 'up' function`);
         }
 
@@ -89,20 +89,20 @@ export class MigrationRunner {
       }
     }
 
-    console.log('✅ All migrations completed successfully');
+    console.log("✅ All migrations completed successfully");
   }
 
   async rollbackMigration(filename?: string): Promise<void> {
     const applied = await this.getAppliedMigrations();
-    
+
     if (applied.length === 0) {
-      console.log('No migrations to rollback');
+      console.log("No migrations to rollback");
       return;
     }
 
     // If no filename provided, rollback the last migration
-    const target = filename 
-      ? applied.find(m => m.filename === filename)
+    const target = filename
+      ? applied.find((m) => m.filename === filename)
       : applied[applied.length - 1];
 
     if (!target) {
@@ -115,8 +115,8 @@ export class MigrationRunner {
       // Import the migration file
       const migrationPath = resolve(this.migrationsPath, target.filename);
       const migration = await import(migrationPath);
-      
-      if (!migration.down || typeof migration.down !== 'function') {
+
+      if (!migration.down || typeof migration.down !== "function") {
         throw new Error(`Migration ${target.filename} missing 'down' function`);
       }
 
@@ -124,7 +124,7 @@ export class MigrationRunner {
       migration.down(this.db);
 
       // Remove the migration record
-      const stmt = this.db.prepare('DELETE FROM migrations WHERE filename = ?');
+      const stmt = this.db.prepare("DELETE FROM migrations WHERE filename = ?");
       stmt.run(target.filename);
 
       console.log(`✅ Migration ${target.filename} rolled back successfully`);
@@ -138,20 +138,20 @@ export class MigrationRunner {
     const applied = await this.getAppliedMigrations();
     const pending = await this.getPendingMigrations();
 
-    console.log('\n📊 Migration Status:');
+    console.log("\n📊 Migration Status:");
     console.log(`Applied: ${applied.length}`);
     console.log(`Pending: ${pending.length}`);
 
     if (applied.length > 0) {
-      console.log('\n✅ Applied Migrations:');
-      applied.forEach(m => {
+      console.log("\n✅ Applied Migrations:");
+      applied.forEach((m) => {
         console.log(`  ${m.filename} (${m.applied_at})`);
       });
     }
 
     if (pending.length > 0) {
-      console.log('\n⏳ Pending Migrations:');
-      pending.forEach(f => {
+      console.log("\n⏳ Pending Migrations:");
+      pending.forEach((f) => {
         console.log(`  ${f}`);
       });
     }
@@ -164,7 +164,7 @@ export class MigrationRunner {
 
 // CLI interface for running migrations
 if (require.main === module) {
-  const dbPath = process.env.DATABASE_PATH || './data/app.db';
+  const dbPath = process.env.DATABASE_PATH || "./data/app.db";
   const runner = new MigrationRunner(dbPath);
 
   const command = process.argv[2];
@@ -172,24 +172,27 @@ if (require.main === module) {
   (async () => {
     try {
       switch (command) {
-        case 'up':
+        case "up":
           await runner.runMigrations();
           break;
-        case 'down':
+        case "down": {
           const filename = process.argv[3];
           await runner.rollbackMigration(filename);
           break;
-        case 'status':
+        }
+        case "status":
           await runner.getMigrationStatus();
           break;
         default:
-          console.log('Usage: npx tsx migrate.ts [up|down|status] [filename]');
-          console.log('  up     - Run pending migrations');
-          console.log('  down   - Rollback last migration (or specific filename)');
-          console.log('  status - Show migration status');
+          console.log("Usage: npx tsx migrate.ts [up|down|status] [filename]");
+          console.log("  up     - Run pending migrations");
+          console.log(
+            "  down   - Rollback last migration (or specific filename)",
+          );
+          console.log("  status - Show migration status");
       }
     } catch (error) {
-      console.error('Migration failed:', error);
+      console.error("Migration failed:", error);
       process.exit(1);
     } finally {
       runner.close();

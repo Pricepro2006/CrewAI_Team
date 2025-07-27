@@ -11,7 +11,14 @@ import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import appConfig from "../config/app.config";
 import ollamaConfig from "../config/ollama.config";
 import type { Express } from "express";
-import { apiRateLimiter, authRateLimiter, uploadRateLimiter, websocketRateLimit, getRateLimitStatus, cleanupRateLimiting } from "./middleware/rateLimiter";
+import {
+  apiRateLimiter,
+  authRateLimiter,
+  uploadRateLimiter,
+  websocketRateLimit,
+  getRateLimitStatus,
+  cleanupRateLimiting,
+} from "./middleware/rateLimiter";
 import { authenticateToken, AuthenticatedRequest } from "../../middleware/auth";
 import { wsService } from "./services/WebSocketService";
 import { logger } from "../utils/logger";
@@ -31,7 +38,13 @@ import { EmailStorageService } from "./services/EmailStorageService";
 import { applySecurityHeaders } from "./middleware/security/headers";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { GracefulShutdown } from "../utils/error-handling";
-import { requestTracking, errorTracking, requestSizeTracking, rateLimitTracking, authTracking } from "./middleware/monitoring";
+import {
+  requestTracking,
+  errorTracking,
+  requestSizeTracking,
+  rateLimitTracking,
+  authTracking,
+} from "./middleware/monitoring";
 import monitoringRouter from "./routes/monitoring.router";
 
 const app: Express = express();
@@ -39,18 +52,18 @@ const gracefulShutdown = new GracefulShutdown();
 const PORT = appConfig.api.port;
 
 // Trust proxy for accurate IP addresses in rate limiting
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 // Apply comprehensive security headers (includes CORS)
 applySecurityHeaders(app, {
   cors: {
     origins: appConfig.api.cors.origin as string[],
-    credentials: appConfig.api.cors.credentials
-  }
+    credentials: appConfig.api.cors.credentials,
+  },
 });
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser()); // Enable cookie parsing for CSRF tokens
 
 // Monitoring middleware (must be early in the chain)
@@ -137,27 +150,27 @@ app.get("/health", async (_req, res) => {
     responseTime: Date.now() - startTime,
     services: {
       ...services,
-      rateLimit: 'active',
-      redis: process.env.REDIS_HOST ? 'configured' : 'memory_fallback'
+      rateLimit: "active",
+      redis: process.env.REDIS_HOST ? "configured" : "memory_fallback",
     },
   });
 });
 
 // Rate limit status endpoint for debugging (admin only)
-app.get('/api/rate-limit-status', async (req: AuthenticatedRequest, res) => {
+app.get("/api/rate-limit-status", async (req: AuthenticatedRequest, res) => {
   try {
     const authReq = req as AuthenticatedRequest;
-    
+
     // Only allow admins to check rate limit status
     if (!authReq.user?.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
+      return res.status(403).json({ error: "Admin access required" });
     }
 
     const status = await getRateLimitStatus(req);
     res.json(status);
   } catch (error) {
-    console.error('Rate limit status error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Rate limit status error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -223,20 +236,20 @@ registerDefaultCleanupTasks();
 
 // Register graceful shutdown handlers
 gracefulShutdown.register(async () => {
-  logger.info('Shutting down HTTP server...');
+  logger.info("Shutting down HTTP server...");
   await new Promise<void>((resolve) => {
     server.close(() => resolve());
   });
 });
 
 gracefulShutdown.register(async () => {
-  logger.info('Shutting down WebSocket server...');
+  logger.info("Shutting down WebSocket server...");
   wss.close();
   wsService.shutdown();
 });
 
 gracefulShutdown.register(async () => {
-  logger.info('Running cleanup tasks...');
+  logger.info("Running cleanup tasks...");
   await cleanupManager.cleanup();
 });
 
@@ -261,56 +274,63 @@ const wss = new WebSocketServer({
   // Add origin validation and rate limiting
   verifyClient: (info: { origin?: string; req: any }) => {
     const origin = info.origin;
-    
+
     // Get allowed origins from environment or use defaults
-    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || 
-      process.env.CORS_ORIGIN?.split(',') || [
-        'http://localhost:3000',
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://localhost:5175'
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") ||
+      process.env.CORS_ORIGIN?.split(",") || [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
       ];
-    
+
     // Add production origins if configured
-    if (process.env.NODE_ENV === 'production' && process.env.PRODUCTION_ORIGINS) {
-      allowedOrigins.push(...process.env.PRODUCTION_ORIGINS.split(','));
+    if (
+      process.env.NODE_ENV === "production" &&
+      process.env.PRODUCTION_ORIGINS
+    ) {
+      allowedOrigins.push(...process.env.PRODUCTION_ORIGINS.split(","));
     }
-    
+
     // Allow connections without origin (like direct WebSocket clients)
     if (!origin) return true;
-    
+
     // Check origin
     if (!allowedOrigins.includes(origin)) {
-      logger.warn('WebSocket connection rejected - invalid origin', 'SECURITY', {
-        origin,
-        allowedOrigins
-      });
+      logger.warn(
+        "WebSocket connection rejected - invalid origin",
+        "SECURITY",
+        {
+          origin,
+          allowedOrigins,
+        },
+      );
       return false;
     }
-    
+
     return true;
   },
 });
 
 // Apply rate limiting to WebSocket connections
-wss.on('connection', async (ws, req) => {
+wss.on("connection", async (ws, req) => {
   try {
     // Create a mock Express request for rate limiting
     const mockReq = {
       ip: req.socket.remoteAddress,
-      path: '/ws',
-      method: 'GET',
+      path: "/ws",
+      method: "GET",
       headers: req.headers,
       connection: req.socket,
-      user: null // WebSocket connections start anonymous
+      user: null, // WebSocket connections start anonymous
     } as any;
-    
+
     const mockRes = {
       status: () => mockRes,
       json: () => {},
-      end: () => {}
+      end: () => {},
     } as any;
-    
+
     // Check WebSocket rate limit
     await new Promise<void>((resolve, reject) => {
       websocketRateLimit(mockReq, mockRes, (err?: any) => {
@@ -321,19 +341,19 @@ wss.on('connection', async (ws, req) => {
         }
       });
     });
-    
-    console.log('WebSocket connection established:', {
+
+    console.log("WebSocket connection established:", {
       ip: req.socket.remoteAddress,
-      userAgent: req.headers['user-agent'],
-      timestamp: new Date().toISOString()
+      userAgent: req.headers["user-agent"],
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.warn('WebSocket rate limit exceeded:', {
+    console.warn("WebSocket rate limit exceeded:", {
       ip: req.socket.remoteAddress,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : "Unknown error",
     });
-    
-    ws.close(1008, 'Rate limit exceeded');
+
+    ws.close(1008, "Rate limit exceeded");
     return;
   }
 });
@@ -376,8 +396,8 @@ cleanupManager.register({
 
 console.log(`🛒 Walmart WebSocket handlers initialized`);
 
-// Graceful shutdown
-const gracefulShutdown = async (signal: string) => {
+// Graceful shutdown handler
+const handleGracefulShutdown = async (signal: string) => {
   console.log(`${signal} received, starting graceful shutdown...`);
   logger.info("Shutdown initiated", "SHUTDOWN", { signal });
 
@@ -421,19 +441,19 @@ const gracefulShutdown = async (signal: string) => {
 };
 
 // Handle different termination signals
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-process.on("SIGUSR2", () => gracefulShutdown("SIGUSR2"));
+process.on("SIGTERM", () => handleGracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => handleGracefulShutdown("SIGINT"));
+process.on("SIGUSR2", () => handleGracefulShutdown("SIGUSR2"));
 
 // Handle uncaught errors
 process.on("uncaughtException", (error) => {
   logger.error("Uncaught exception", "CRITICAL", { error });
-  gracefulShutdown("UNCAUGHT_EXCEPTION");
+  handleGracefulShutdown("UNCAUGHT_EXCEPTION");
 });
 
 process.on("unhandledRejection", (reason, promise) => {
   logger.error("Unhandled rejection", "CRITICAL", { reason, promise });
-  gracefulShutdown("UNHANDLED_REJECTION");
+  handleGracefulShutdown("UNHANDLED_REJECTION");
 });
 
 export { app, server, wss };

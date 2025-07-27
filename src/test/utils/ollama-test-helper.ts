@@ -294,6 +294,7 @@ export async function ensureModelAvailable(modelName: string): Promise<boolean> 
     // Wait for pull to complete (this is a streaming response)
     const reader = pullResponse.body?.getReader();
     if (reader) {
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
