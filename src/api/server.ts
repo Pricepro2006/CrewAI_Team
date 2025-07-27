@@ -19,6 +19,7 @@ import uploadRoutes from "./routes/upload.routes";
 import { webhookRouter } from "./routes/webhook.router";
 import { emailAnalysisRouter } from "./routes/email-analysis.router";
 import emailAssignmentRouter from "./routes/email-assignment.router";
+import { xssProtection } from "../utils/xss-protection";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
@@ -30,14 +31,56 @@ import { EmailStorageService } from "./services/EmailStorageService";
 const app: Express = express();
 const PORT = appConfig.api.port;
 
-// Middleware
-app.use(helmet());
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // Note: In production, use nonces instead
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      fontSrc: ["'self'"],
+      connectSrc: ["'self'", "ws:", "wss:"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Needed for WebSocket connections
+}));
+
 app.use(cors(appConfig.api.cors));
 
 // Handle preflight requests for all routes
 app.options("*", cors(appConfig.api.cors));
 
-app.use(express.json());
+// XSS Protection middleware - sanitize all incoming JSON
+app.use(express.json({
+  verify: (req: any, res, buf) => {
+    // Store raw body for potential verification needs
+    req.rawBody = buf;
+  }
+}));
+
+// Apply XSS sanitization to request bodies
+app.use((req, res, next) => {
+  if (req.body && typeof req.body === 'object') {
+    try {
+      req.body = xssProtection.sanitizeInput(req.body);
+    } catch (error) {
+      logger.warn('XSS sanitization failed for request body', 'SECURITY', {
+        url: req.url,
+        method: req.method,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      res.status(400).json({ error: 'Invalid request data' });
+      return;
+    }
+  }
+  next();
+});
 
 // Apply general rate limiting to all routes
 app.use(apiRateLimiter);
