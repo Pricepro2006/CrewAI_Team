@@ -1,49 +1,89 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
 import { ResearchAgent } from "./ResearchAgent";
-import { skipIfNoOllama } from "../../../test/utils/ollama-test-helper";
+import {
+  setupOllamaForTesting,
+  cleanupOllamaTests,
+  isOllamaRunning,
+  createTestOllamaConfig,
+  ensureModelAvailable,
+  getTestModel,
+} from "../../../test/utils/ollama-test-helper";
+import {
+  withOllama,
+  assertSuccessResponse,
+  getTestConfiguration,
+} from "../../../test/utils/integration-test-helpers";
 
 describe("ResearchAgent Integration Tests", () => {
   let agent: ResearchAgent;
+  let isOllamaAvailable = false;
+
+  beforeAll(async () => {
+    try {
+      await setupOllamaForTesting();
+      isOllamaAvailable = await isOllamaRunning();
+      
+      if (isOllamaAvailable) {
+        const testModel = getTestModel();
+        await ensureModelAvailable(testModel);
+      }
+    } catch (error) {
+      console.error("Failed to setup Ollama for ResearchAgent tests:", error);
+      isOllamaAvailable = false;
+    }
+  });
+
+  afterAll(async () => {
+    await cleanupOllamaTests();
+  });
 
   beforeEach(async () => {
-    const skip = await skipIfNoOllama().skip();
-    if (skip) {
-      console.log("Skipping integration tests:", skipIfNoOllama().reason);
+    if (!isOllamaAvailable) {
+      console.log("Skipping test: Ollama not available");
       return;
     }
 
+    const testConfig = createTestOllamaConfig();
     agent = new ResearchAgent();
+    
+    // Configure agent to use test Ollama instance
+    if (agent['llm']) {
+      agent['llm'].config = {
+        ...agent['llm'].config,
+        ...testConfig,
+      };
+    }
+    
     await agent.initialize();
   });
 
   describe("Real Research Operations", () => {
     it("should perform actual web search", async () => {
-      const task = {
-        type: "research",
-        input: {
-          query: "TypeScript programming language",
-          depth: "basic",
-        },
-      };
+      await withOllama(async () => {
+        const testConfig = getTestConfiguration();
+        
+        const result = await agent.execute("TypeScript programming language", {
+          task: "TypeScript programming language",
+          ragDocuments: [],
+        });
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
-        ragDocuments: [],
+        assertSuccessResponse(result);
+        expect(result.data?.synthesis).toBeDefined();
+        expect(result.data.synthesis.length).toBeGreaterThan(testConfig.expectations.minResponseLength);
+        expect(result.data?.sources).toBeInstanceOf(Array);
+
+        // Real LLM should provide relevant information about TypeScript
+        const summaryLower = result.data.synthesis.toLowerCase();
+        const hasRelevantContent = [
+          "typescript",
+          "javascript", 
+          "programming",
+          "language",
+          "microsoft"
+        ].some(term => summaryLower.includes(term));
+        
+        expect(hasRelevantContent).toBe(true);
       });
-
-      expect(result).toBeDefined();
-      expect(result.success).toBe(true);
-      expect(result.data?.synthesis).toBeDefined();
-      expect(result.data.synthesis.length).toBeGreaterThan(50);
-      expect(result.data?.sources).toBeInstanceOf(Array);
-
-      // Should contain relevant information
-      const summaryLower = result.data.synthesis.toLowerCase();
-      expect(
-        summaryLower.includes("typescript") ||
-          summaryLower.includes("javascript") ||
-          summaryLower.includes("programming"),
-      ).toBe(true);
     });
 
     it("should extract key findings from research", async () => {

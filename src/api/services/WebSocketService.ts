@@ -4,6 +4,9 @@ import { z } from "zod";
 // import _ from "lodash"; // Commented out - types not available
 import type { AuthenticatedWebSocket } from "../middleware/websocketAuth";
 import { logger } from "../../utils/logger";
+import { trackWebSocketConnection, trackWebSocketMessage } from "../middleware/monitoring";
+import { metricsCollector } from "../../monitoring/MetricsCollector";
+import { performanceMonitor } from "../../monitoring/PerformanceMonitor";
 
 // Message types for WebSocket communication
 export const WebSocketMessageSchema = z.discriminatedUnion("type", [

@@ -31,6 +31,8 @@ import { EmailStorageService } from "./services/EmailStorageService";
 import { applySecurityHeaders } from "./middleware/security/headers";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { GracefulShutdown } from "../utils/error-handling";
+import { requestTracking, errorTracking, requestSizeTracking, rateLimitTracking, authTracking } from "./middleware/monitoring";
+import monitoringRouter from "./routes/monitoring.router";
 
 const app: Express = express();
 const gracefulShutdown = new GracefulShutdown();
@@ -50,6 +52,12 @@ applySecurityHeaders(app, {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser()); // Enable cookie parsing for CSRF tokens
+
+// Monitoring middleware (must be early in the chain)
+app.use(requestTracking);
+app.use(requestSizeTracking);
+app.use(rateLimitTracking);
+app.use(authTracking);
 
 // Authentication middleware (runs before rate limiting to enable user-aware limits)
 app.use(authenticateToken);
@@ -177,6 +185,9 @@ app.use("/api/email-assignment", emailAssignmentRouter);
 // WebSocket monitoring routes (authenticated)
 app.use("/api/websocket", websocketMonitorRouter);
 
+// Monitoring routes
+app.use("/api/monitoring", monitoringRouter);
+
 // tRPC middleware
 app.use(
   "/trpc",
@@ -204,6 +215,7 @@ if (process.env["NODE_ENV"] === "production") {
 
 // Error handling middleware (must be last)
 app.use(notFoundHandler);
+app.use(errorTracking); // Add monitoring error tracking before the default error handler
 app.use(errorHandler);
 
 // Register default cleanup tasks
