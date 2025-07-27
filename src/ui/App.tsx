@@ -23,7 +23,14 @@ import { Settings } from "./components/Settings/Settings";
 import { WalmartDashboard } from "../client/components/walmart/WalmartDashboard";
 import { CSRFProvider, useCSRF } from "./hooks/useCSRF";
 import { CSRFErrorBoundary } from "./components/Security/CSRFMonitor";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { setupGlobalErrorHandlers } from "../utils/error-handling";
+import { ToastContainer } from "./components/Toast";
+import { NetworkStatus } from "./components/NetworkStatus";
 import "./App.css";
+
+// Setup global error handlers
+setupGlobalErrorHandlers();
 
 // Separate component that uses CSRF hook
 function AppWithCSRF() {
@@ -99,6 +106,10 @@ function AppWithCSRF() {
   return (
     <api.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
+        {/* Global UI Components */}
+        <NetworkStatus position="top" showWhenOnline={true} />
+        <ToastContainer position="top-right" maxToasts={5} />
+        
         <Router>
           <Routes>
             <Route path="/" element={<MainLayout />}>
@@ -151,11 +162,17 @@ function AppWithCSRF() {
 // Main App component with CSRF Provider
 function App() {
   return (
-    <CSRFErrorBoundary>
-      <CSRFProvider>
-        <AppWithCSRF />
-      </CSRFProvider>
-    </CSRFErrorBoundary>
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('App Error Boundary:', error, errorInfo);
+      }}
+    >
+      <CSRFErrorBoundary>
+        <CSRFProvider>
+          <AppWithCSRF />
+        </CSRFProvider>
+      </CSRFErrorBoundary>
+    </ErrorBoundary>
   );
 }
 

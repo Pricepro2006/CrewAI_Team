@@ -5,7 +5,7 @@
  * Enforces conventional commit format: type(scope): subject
  */
 
-const fs = require('fs');
+import fs from 'fs';
 
 // Read commit message
 const commitMsgFile = process.argv[2];
@@ -14,11 +14,11 @@ if (!commitMsgFile) {
   process.exit(1);
 }
 
-let commitMsg;
+let commitMsg: string;
 try {
   commitMsg = fs.readFileSync(commitMsgFile, 'utf8').trim();
 } catch (error) {
-  console.error('Error reading commit message:', error.message);
+  console.error('Error reading commit message:', error instanceof Error ? error.message : String(error));
   process.exit(1);
 }
 
@@ -28,7 +28,9 @@ if (commitMsg.startsWith('Merge')) {
 }
 
 // Commit message format
-const commitTypes = [
+type CommitType = 'feat' | 'fix' | 'docs' | 'style' | 'refactor' | 'perf' | 'test' | 'build' | 'ci' | 'chore' | 'revert' | 'security';
+
+const commitTypes: CommitType[] = [
   'feat',     // New feature
   'fix',      // Bug fix
   'docs',     // Documentation only changes
@@ -48,7 +50,8 @@ const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|perf|test|build|
 const typeRegex = /^(\w+)(\(.+\))?:/;
 
 // Validate format
-const firstLine = commitMsg.split('\n')[0];
+const lines = commitMsg.split('\n');
+const firstLine = lines[0] || '';
 
 if (!conventionalCommitRegex.test(firstLine)) {
   console.log('\n❌ Invalid commit message format!\n');
@@ -60,7 +63,7 @@ if (!conventionalCommitRegex.test(firstLine)) {
   const typeMatch = firstLine.match(typeRegex);
   if (typeMatch) {
     const type = typeMatch[1];
-    if (!commitTypes.includes(type)) {
+    if (!commitTypes.includes(type as CommitType)) {
       console.log(`❌ Invalid commit type: "${type}"`);
       console.log(`✅ Valid types: ${commitTypes.join(', ')}\n`);
     }
@@ -79,8 +82,8 @@ if (!conventionalCommitRegex.test(firstLine)) {
   console.log('- Reference issues and PRs after first line\n');
   
   console.log('Valid commit types:');
-  commitTypes.forEach(type => {
-    const descriptions = {
+  commitTypes.forEach((type: CommitType) => {
+    const descriptions: Record<CommitType, string> = {
       'feat': 'A new feature',
       'fix': 'A bug fix',
       'docs': 'Documentation only changes',
@@ -94,7 +97,7 @@ if (!conventionalCommitRegex.test(firstLine)) {
       'revert': 'Reverting a previous commit',
       'security': 'Security improvements or fixes'
     };
-    console.log(`  ${type}: ${descriptions[type]}`);
+    console.log(`  ${type}: ${descriptions[type] || 'Unknown type'}`);
   });
   
   console.log('\n💡 To edit your commit message: git commit --amend');
@@ -107,9 +110,9 @@ if (!conventionalCommitRegex.test(firstLine)) {
 const subject = firstLine.replace(typeRegex, '').trim();
 
 // Check for common issues
-const issues = [];
+const issues: string[] = [];
 
-if (subject[0] !== subject[0].toLowerCase()) {
+if (subject.length > 0 && subject[0] !== subject[0]?.toLowerCase()) {
   issues.push('Subject should start with lowercase letter');
 }
 

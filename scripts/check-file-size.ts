@@ -4,8 +4,8 @@
  * Check file sizes to prevent large files from being committed
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 // Get all staged files from command line arguments
 const files = process.argv.slice(2);
@@ -15,11 +15,18 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const WARNING_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 const LARGE_IMAGE_SIZE = 500 * 1024; // 500KB for images
 
+interface FileIssue {
+  file: string;
+  size: number;
+  message: string;
+  severity: 'error' | 'warning';
+}
+
 let hasErrors = false;
-const issues = [];
+const issues: FileIssue[] = [];
 
 // File extensions that should be smaller
-const strictSizeExtensions = {
+const strictSizeExtensions: Record<string, number> = {
   '.js': 100 * 1024,   // 100KB
   '.ts': 100 * 1024,   // 100KB
   '.jsx': 100 * 1024,  // 100KB
@@ -30,14 +37,14 @@ const strictSizeExtensions = {
 };
 
 // Binary file extensions to check
-const binaryExtensions = [
+const binaryExtensions: string[] = [
   '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg',
   '.pdf', '.zip', '.tar', '.gz', '.rar',
   '.mp4', '.mp3', '.avi', '.mov',
   '.exe', '.dll', '.so', '.dylib'
 ];
 
-function formatFileSize(bytes) {
+function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
   
   const k = 1024;
@@ -48,7 +55,7 @@ function formatFileSize(bytes) {
 }
 
 // Check each file
-files.forEach(file => {
+files.forEach((file: string) => {
   try {
     const stats = fs.statSync(file);
     const fileSize = stats.size;
@@ -127,7 +134,7 @@ files.forEach(file => {
     }
     
   } catch (error) {
-    console.error(`Error checking file ${file}:`, error.message);
+    console.error(`Error checking file ${file}:`, error instanceof Error ? error.message : String(error));
   }
 });
 

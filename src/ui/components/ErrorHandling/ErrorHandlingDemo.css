@@ -1,0 +1,146 @@
+/* Error Handling Demo Styles */
+.error-handling-demo {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.error-handling-demo h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--foreground);
+}
+
+.error-handling-demo > p {
+  font-size: 1.125rem;
+  color: var(--muted-foreground);
+  margin-bottom: 2rem;
+}
+
+.demo-section {
+  margin-bottom: 2rem;
+  padding: 2rem;
+}
+
+.demo-section h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--foreground);
+}
+
+.demo-section h3 {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: var(--foreground);
+}
+
+.demo-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.demo-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.error-boundary-demo {
+  padding: 1.5rem;
+  background: var(--muted);
+  border-radius: 8px;
+}
+
+.component-container {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--background);
+  border-radius: 4px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.loading-demo-grid > div {
+  padding: 1.5rem;
+  background: var(--muted);
+  border-radius: 8px;
+}
+
+.skeleton-demo,
+.content-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.content-demo p {
+  margin: 0;
+  padding: 0.25rem 0;
+  color: var(--foreground);
+}
+
+.circuit-breaker-status {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.circuit-breaker-status p {
+  margin: 0;
+  color: var(--muted-foreground);
+}
+
+.circuit-breaker-status strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .error-handling-demo {
+    padding: 1rem;
+  }
+
+  .demo-section {
+    padding: 1.5rem;
+  }
+
+  .demo-buttons {
+    flex-direction: column;
+  }
+
+  .demo-buttons button {
+    width: 100%;
+  }
+
+  .loading-demo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark Mode Adjustments */
+@media (prefers-color-scheme: dark) {
+  .error-boundary-demo {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .component-container {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .loading-demo-grid > div {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}

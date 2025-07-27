@@ -264,7 +264,7 @@ export class EmailStorageService {
   }
 
   /**
-   * Execute optimized database query with performance monitoring
+   * Execute optimized database query with performance monitoring and enhanced error handling
    */
   private async executeOptimizedQuery<T>(
     queryDescription: string,
@@ -275,27 +275,66 @@ export class EmailStorageService {
     const startTime = Date.now();
     let result: T;
     let error: string | undefined;
+    let retryCount = 0;
+    const maxRetries = 3;
 
-    try {
-      // Optimize the query using 2025 best practices
-      const optimizedQuery = performanceOptimizer.optimizeQuery(query, params);
-      logger.debug(
-        `Query optimized: ${optimizedQuery.estimatedPerformanceGain}% improvement`,
-        "EMAIL_STORAGE",
-      );
+    while (retryCount <= maxRetries) {
+      try {
+        // Optimize the query using 2025 best practices
+        const optimizedQuery = performanceOptimizer.optimizeQuery(query, params);
+        logger.debug(
+          `Query optimized: ${optimizedQuery.estimatedPerformanceGain}% improvement`,
+          "EMAIL_STORAGE",
+        );
 
-      // Execute the optimized query with prepared statement
-      const stmt = this.db.prepare(optimizedQuery.optimizedQuery);
-      result =
-        method === "get"
-          ? (stmt.get(...params) as T)
-          : (stmt.all(...params) as T);
-    } catch (queryError) {
-      error =
-        queryError instanceof Error ? queryError.message : String(queryError);
-      logger.error(`Database query failed: ${error}`, "EMAIL_STORAGE");
-      throw queryError;
-    } finally {
+        // Execute the optimized query with prepared statement
+        const stmt = this.db.prepare(optimizedQuery.optimizedQuery);
+        result =
+          method === "get"
+            ? (stmt.get(...params) as T)
+            : (stmt.all(...params) as T);
+        
+        // Success - break the retry loop
+        break;
+      } catch (queryError) {
+        error =
+          queryError instanceof Error ? queryError.message : String(queryError);
+        
+        // Check if error is retryable
+        const isRetryable = error.includes('SQLITE_BUSY') || 
+                           error.includes('SQLITE_LOCKED') ||
+                           error.includes('database is locked');
+        
+        if (isRetryable && retryCount < maxRetries) {
+          retryCount++;
+          const delay = Math.min(100 * Math.pow(2, retryCount), 1000);
+          logger.warn(
+            `Database query failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms: ${error}`,
+            "EMAIL_STORAGE"
+          );
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        // Non-retryable error or max retries exceeded
+        logger.error(
+          `Database query failed after ${retryCount} retries: ${error}`,
+          "EMAIL_STORAGE",
+          {
+            query: queryDescription,
+            params,
+            error
+          }
+        );
+        
+        // Wrap in a more descriptive error
+        const enhancedError = new Error(
+          `Database operation failed: ${queryDescription}. ${error}`
+        );
+        (enhancedError as any).originalError = queryError;
+        (enhancedError as any).retryCount = retryCount;
+        throw enhancedError;
+      } finally {
       // Record performance metrics
       const executionTime = Date.now() - startTime;
       queryPerformanceMonitor.recordQuery({
@@ -572,12 +611,17 @@ export class EmailStorageService {
   }
 
   async storeEmail(email: Email, analysis: EmailAnalysisResult): Promise<void> {
-    logger.info(`Storing email analysis: ${email.subject}`, "EMAIL_STORAGE");
-
-    // Validate and sanitize processing times before storage
-    const validatedProcessingTimes = this.validateProcessingTimes(analysis.processingMetadata);
+    const maxRetries = 3;
+    let attempt = 0;
     
-    const transaction = this.db.transaction(() => {
+    while (attempt < maxRetries) {
+      try {
+        logger.info(`Storing email analysis: ${email.subject} (attempt ${attempt + 1})`, "EMAIL_STORAGE");
+
+        // Validate and sanitize processing times before storage
+        const validatedProcessingTimes = this.validateProcessingTimes(analysis.processingMetadata);
+        
+        const transaction = this.db.transaction(() => {
       // Store email
       const emailStmt = this.db.prepare(`
         INSERT OR REPLACE INTO emails (
@@ -675,31 +719,73 @@ export class EmailStorageService {
     });
 
     transaction();
-    logger.info(
-      `Email analysis stored successfully: ${email.id}`,
-      "EMAIL_STORAGE",
-    );
+        logger.info(
+          `Email analysis stored successfully: ${email.id}`,
+          "EMAIL_STORAGE",
+        );
 
-    // Broadcast real-time update for email analysis completion
-    try {
-      wsService.broadcastEmailAnalyzed(
-        email.id,
-        analysis.deep.detailedWorkflow.primary,
-        analysis.quick.priority,
-        analysis.actionSummary,
-        analysis.deep.detailedWorkflow.confidence,
-        analysis.deep.actionItems[0]?.slaStatus || "on-track",
-        analysis.deep.workflowState.current,
-      );
-      logger.debug(
-        `WebSocket broadcast sent for email analysis: ${email.id}`,
-        "EMAIL_STORAGE",
-      );
-    } catch (error) {
-      logger.error(
-        `Failed to broadcast email analysis update: ${error}`,
-        "EMAIL_STORAGE",
-      );
+        // Broadcast real-time update for email analysis completion
+        try {
+          wsService.broadcastEmailAnalyzed(
+            email.id,
+            analysis.deep.detailedWorkflow.primary,
+            analysis.quick.priority,
+            analysis.actionSummary,
+            analysis.deep.detailedWorkflow.confidence,
+            analysis.deep.actionItems[0]?.slaStatus || "on-track",
+            analysis.deep.workflowState.current,
+          );
+          logger.debug(
+            `WebSocket broadcast sent for email analysis: ${email.id}`,
+            "EMAIL_STORAGE",
+          );
+        } catch (broadcastError) {
+          logger.error(
+            `Failed to broadcast email analysis update: ${broadcastError}`,
+            "EMAIL_STORAGE",
+          );
+          // Don't throw - broadcasting is not critical
+        }
+        
+        // Success - exit retry loop
+        return;
+      } catch (error) {
+        attempt++;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        // Check if error is retryable
+        const isRetryable = errorMessage.includes('SQLITE_BUSY') || 
+                           errorMessage.includes('SQLITE_LOCKED') ||
+                           errorMessage.includes('database is locked');
+        
+        if (!isRetryable || attempt >= maxRetries) {
+          logger.error(
+            `Failed to store email after ${attempt} attempts: ${errorMessage}`,
+            "EMAIL_STORAGE",
+            {
+              emailId: email.id,
+              subject: email.subject,
+              error: errorMessage
+            }
+          );
+          
+          // Wrap in a more descriptive error
+          const enhancedError = new Error(
+            `Failed to store email analysis for "${email.subject}": ${errorMessage}`
+          );
+          (enhancedError as any).emailId = email.id;
+          (enhancedError as any).attempts = attempt;
+          throw enhancedError;
+        }
+        
+        // Wait before retry with exponential backoff
+        const delay = Math.min(100 * Math.pow(2, attempt), 2000);
+        logger.warn(
+          `Email storage failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms: ${errorMessage}`,
+          "EMAIL_STORAGE"
+        );
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
   }
 
