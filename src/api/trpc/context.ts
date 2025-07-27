@@ -203,6 +203,7 @@ type TRPCContext = {
   timestamp: Date;
   batchId: string | undefined;
   validatedInput: unknown;
+  csrfToken?: string;
   masterOrchestrator: MasterOrchestrator;
   conversationService: ConversationService;
   taskService: TaskService;
@@ -263,6 +264,7 @@ export async function createContext({
     timestamp: new Date(),
     batchId: undefined as string | undefined, // Will be set by batch middleware when needed
     validatedInput: undefined as unknown, // Will be set by input validation middleware when needed
+    csrfToken: undefined as string | undefined, // Will be set by CSRF middleware when needed
     ...services,
   };
 }

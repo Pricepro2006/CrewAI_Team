@@ -244,4 +244,15 @@ export const websocketRouter: Router<any> = router({
       timestamp: new Date(),
     };
   }),
+
+  // Get WebSocket connection status for security monitoring
+  status: publicProcedure.query(() => {
+    const clientCount = wsService.getClientCount();
+    return {
+      connected: clientCount > 0 || true, // Always true if server is responding
+      clients: clientCount,
+      health: wsService.getHealth(),
+      timestamp: new Date(),
+    };
+  }),
 });

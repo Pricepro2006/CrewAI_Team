@@ -21,13 +21,19 @@ import { KnowledgeBase } from "./components/KnowledgeBase/KnowledgeBase";
 import { VectorSearch } from "./components/VectorSearch/VectorSearch";
 import { Settings } from "./components/Settings/Settings";
 import { WalmartDashboard } from "../client/components/walmart/WalmartDashboard";
+import { CSRFProvider, useCSRF } from "./hooks/useCSRF";
+import { CSRFErrorBoundary } from "./components/Security/CSRFMonitor";
 import "./App.css";
 
-function App() {
+// Separate component that uses CSRF hook
+function AppWithCSRF() {
+  const { token, getHeaders } = useCSRF();
+  
   // Apply dark mode by default
   React.useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
+  
   // Create query client inside component
   const [queryClient] = React.useState(
     () =>
@@ -41,7 +47,7 @@ function App() {
       }),
   );
 
-  // Create tRPC client inside component
+  // Create tRPC client with CSRF support
   const [trpcClient] = React.useState(() =>
     api.createClient({
       transformer: superjson,
@@ -58,17 +64,24 @@ function App() {
                 return Math.min(1000 * 2 ** 0, 30000);
               },
               WebSocket: window.WebSocket,
+              connectionParams: () => ({
+                headers: {
+                  ...getHeaders(),
+                  authorization: localStorage.getItem("token") 
+                    ? `Bearer ${localStorage.getItem("token")}` 
+                    : undefined,
+                },
+              }),
             }),
           }),
-          false: httpLink({
+          false: httpBatchLink({
             url: "http://localhost:3001/trpc",
             headers() {
-              const token = localStorage.getItem("token");
-              return token
-                ? {
-                    authorization: `Bearer ${token}`,
-                  }
-                : {};
+              const authToken = localStorage.getItem("token");
+              return {
+                ...getHeaders(), // Include CSRF headers
+                ...(authToken && { authorization: `Bearer ${authToken}` }),
+              };
             },
             // Add CORS credentials
             fetch(url, options) {
@@ -132,6 +145,17 @@ function App() {
         </Router>
       </QueryClientProvider>
     </api.Provider>
+  );
+}
+
+// Main App component with CSRF Provider
+function App() {
+  return (
+    <CSRFErrorBoundary>
+      <CSRFProvider>
+        <AppWithCSRF />
+      </CSRFProvider>
+    </CSRFErrorBoundary>
   );
 }
 

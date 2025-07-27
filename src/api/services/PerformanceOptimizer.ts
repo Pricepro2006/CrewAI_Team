@@ -221,6 +221,14 @@ export class PerformanceOptimizer {
    * Optimized pagination with offset optimization
    */
   optimizePagination(baseQuery: string, page: number, pageSize: number): PaginationQuery {
+    // Validate pagination parameters
+    if (!Number.isInteger(page) || page < 1) {
+      throw new Error('Page must be a positive integer');
+    }
+    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 1000) {
+      throw new Error('Page size must be an integer between 1 and 1000');
+    }
+    
     // Use cursor-based pagination for large datasets (2025 best practice)
     const offset = (page - 1) * pageSize;
     
@@ -230,11 +238,13 @@ export class PerformanceOptimizer {
     }
     
     // Standard pagination for smaller datasets
+    // Note: This returns parameterized placeholders - the calling code must use prepared statements
     return {
-      query: `${baseQuery} LIMIT ${pageSize} OFFSET ${offset}`,
+      query: `${baseQuery} LIMIT ? OFFSET ?`,
       countQuery: `SELECT COUNT(*) as total FROM (${baseQuery}) as count_query`,
       isPaginationOptimized: true,
-      paginationType: 'offset'
+      paginationType: 'offset',
+      params: [pageSize, offset]
     };
   }
   
@@ -242,14 +252,20 @@ export class PerformanceOptimizer {
    * Generate cursor-based pagination for large datasets
    */
   private generateCursorPagination(baseQuery: string, page: number, pageSize: number): PaginationQuery {
+    // Validate pageSize
+    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 1000) {
+      throw new Error('Page size must be an integer between 1 and 1000');
+    }
+    
     // Simplified cursor implementation - would need last ID from previous page
-    const cursorQuery = `${baseQuery} ORDER BY id LIMIT ${pageSize}`;
+    const cursorQuery = `${baseQuery} ORDER BY id LIMIT ?`;
     
     return {
       query: cursorQuery,
       countQuery: `SELECT COUNT(*) as total FROM (${baseQuery}) as count_query`,
       isPaginationOptimized: true,
       paginationType: 'cursor',
+      params: [pageSize],
       recommendations: [
         'Consider implementing cursor-based pagination for better performance with large datasets',
         'Store cursor position to avoid expensive OFFSET calculations'
@@ -595,6 +611,7 @@ interface PaginationQuery {
   isPaginationOptimized: boolean;
   paginationType: 'offset' | 'cursor';
   recommendations?: string[];
+  params?: any[];
 }
 
 interface PerformanceReport {

@@ -32,7 +32,7 @@ export class MasterOrchestrator {
     logger.info("Initializing MasterOrchestrator", "ORCHESTRATOR", { config });
 
     this.llm = new OllamaProvider({
-      model: config.model || "granite3.3:2b",  // Best accuracy for complex tasks
+      model: config.model || "llama3.2:3b",  // Primary model from three-stage pipeline
       baseUrl: config.ollamaUrl,
     });
 

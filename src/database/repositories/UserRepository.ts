@@ -196,14 +196,19 @@ export class UserRepository extends BaseRepository<User> {
    * Find users who haven't logged in for a specified number of days
    */
   async findInactiveUsers(daysSinceLastLogin: number): Promise<User[]> {
+    // Validate input to ensure it's a positive integer
+    if (!Number.isInteger(daysSinceLastLogin) || daysSinceLastLogin < 0) {
+      throw new Error('daysSinceLastLogin must be a non-negative integer');
+    }
+    
     const query = `
       SELECT * FROM ${this.tableName}
       WHERE status = 'active'
-        AND (last_login_at IS NULL OR date(last_login_at) < date('now', '-${daysSinceLastLogin} days'))
+        AND (last_login_at IS NULL OR date(last_login_at) < date('now', ? || ' days'))
       ORDER BY last_login_at ASC
     `;
 
-    return this.executeQuery<User[]>(query);
+    return this.executeQuery<User[]>(query, [`-${daysSinceLastLogin}`]);
   }
 
   /**

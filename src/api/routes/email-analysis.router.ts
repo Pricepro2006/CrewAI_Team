@@ -125,8 +125,8 @@ emailAnalysisRouter.get("/status", async (req, res) => {
       agent: "EmailAnalysisAgent",
       capabilities,
       models: {
-        primary: "qwen3:0.6b",
-        secondary: "granite3.3:2b",
+        primary: "llama3.2:3b",
+        secondary: "doomgrave/phi-4:14b-tools-Q3_K_S",
       },
     });
   } catch (error) {
