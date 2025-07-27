@@ -29,36 +29,65 @@ export function useWebSocket(options: WebSocketOptions = {}): {
   } = options;
 
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const clientRef = useRef<ReturnType<typeof createWSClient>>();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const isReconnectingRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   const connect = useCallback(() => {
-    const wsClient = createWSClient({
-      url: `ws://localhost:${parseInt(import.meta.env.VITE_API_PORT || "3000") + 1}/trpc-ws`,
-      onOpen: () => {
-        setIsConnected(true);
-        setReconnectAttempts(0);
-        onConnect?.();
-      },
-      onClose: () => {
-        setIsConnected(false);
-        onDisconnect?.();
+    // Prevent multiple simultaneous connections
+    if (isReconnectingRef.current || !isMountedRef.current) {
+      return;
+    }
+    
+    setConnectionStatus('connecting');
+    
+    try {
+      const wsClient = createWSClient({
+        url: `ws://localhost:${parseInt(import.meta.env.VITE_API_PORT || "3000") + 1}/trpc-ws`,
+        onOpen: () => {
+          if (!isMountedRef.current) return;
+          
+          setIsConnected(true);
+          setConnectionStatus('connected');
+          setReconnectAttempts(0);
+          isReconnectingRef.current = false;
+          onConnect?.();
+        },
+        onClose: () => {
+          if (!isMountedRef.current) return;
+          
+          setIsConnected(false);
+          setConnectionStatus('disconnected');
+          onDisconnect?.();
 
-        // Attempt to reconnect
-        if (reconnectAttempts < maxReconnectAttempts) {
-          reconnectTimeoutRef.current = setTimeout(() => {
-            setReconnectAttempts((prev) => prev + 1);
-            connect();
-          }, reconnectDelay);
-        }
-      },
-      // onError is not supported in tRPC WebSocket client
-      // Error handling happens in subscription error callbacks
-    });
+          // Attempt to reconnect if not manually disconnected
+          if (reconnectAttempts < maxReconnectAttempts && isMountedRef.current) {
+            isReconnectingRef.current = true;
+            reconnectTimeoutRef.current = setTimeout(() => {
+              if (isMountedRef.current) {
+                setReconnectAttempts((prev) => prev + 1);
+                connect();
+              }
+            }, reconnectDelay);
+          } else if (reconnectAttempts >= maxReconnectAttempts) {
+            setConnectionStatus('error');
+            onError?.(new Error('Max reconnection attempts reached'));
+          }
+        },
+        // onError is not supported in tRPC WebSocket client
+        // Error handling happens in subscription error callbacks
+      });
 
-    clientRef.current = wsClient;
-    return wsClient;
+      clientRef.current = wsClient;
+      return wsClient;
+    } catch (error) {
+      setConnectionStatus('error');
+      onError?.(error as Error);
+      isReconnectingRef.current = false;
+    }
   }, [
     onConnect,
     onDisconnect,
@@ -68,16 +97,34 @@ export function useWebSocket(options: WebSocketOptions = {}): {
     maxReconnectAttempts,
   ]);
 
+  const disconnect = useCallback(() => {
+    isMountedRef.current = false;
+    isReconnectingRef.current = false;
+    
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = undefined;
+    }
+    
+    if (clientRef.current) {
+      clientRef.current.close();
+      clientRef.current = undefined;
+    }
+    
+    setIsConnected(false);
+    setConnectionStatus('disconnected');
+    setReconnectAttempts(0);
+  }, []);
+
   useEffect(() => {
+    isMountedRef.current = true;
     const wsClient = connect();
 
     return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      wsClient.close();
+      isMountedRef.current = false;
+      disconnect();
     };
-  }, [connect]);
+  }, []); // Empty dependency array to prevent reconnection loops
 
   const client = createTRPCProxyClient<AppRouter>({
     transformer: superjson,
@@ -88,14 +135,29 @@ export function useWebSocket(options: WebSocketOptions = {}): {
     ],
   });
 
+  const sendMessage = useCallback((message: any) => {
+    if (!clientRef.current || !isConnected) {
+      console.warn('WebSocket not connected, cannot send message');
+      return;
+    }
+    
+    // tRPC WebSocket client doesn't have a direct send method
+    // Messages are sent through subscriptions and mutations
+    console.warn('Direct message sending not supported in tRPC WebSocket');
+  }, [isConnected]);
+
   return {
     client,
     isConnected,
-    connectionStatus: isConnected ? 'connected' as const : 'disconnected' as const,
+    connectionStatus,
     reconnectAttempts,
-    connect: () => {}, // TODO: Implement connect functionality
-    disconnect: () => {}, // TODO: Implement disconnect functionality  
-    sendMessage: (message: any) => {}, // TODO: Implement sendMessage functionality
+    connect: () => {
+      isMountedRef.current = true;
+      setReconnectAttempts(0);
+      connect();
+    },
+    disconnect,
+    sendMessage,
   };
 }
 
@@ -108,17 +170,22 @@ export function useAgentStatus(agentId?: string) {
   } | null>(null);
 
   const { client, isConnected } = useWebSocket();
+  const unsubscribeRef = useRef<any>(null);
 
   useEffect(() => {
     if (!isConnected) return;
 
-    let unsubscribe: any = null;
+    // Clean up previous subscription
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current.unsubscribe?.();
+      unsubscribeRef.current = null;
+    }
 
     try {
       if (client && typeof client === "object" && "ws" in client) {
         const ws = (client as any).ws;
         if (ws && typeof ws.subscribe === "function") {
-          unsubscribe = ws.subscribe(
+          unsubscribeRef.current = ws.subscribe(
             {
               types: ["agent.status"],
               filter: { agentId },
@@ -139,9 +206,22 @@ export function useAgentStatus(agentId?: string) {
     }
 
     return () => {
-      unsubscribe?.unsubscribe?.();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef.current = null;
+      }
     };
   }, [client, agentId, isConnected]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef.current = null;
+      }
+    };
+  }, []);
 
   return status;
 }
@@ -159,17 +239,22 @@ export function usePlanProgress(planId: string) {
   } | null>(null);
 
   const { client, isConnected } = useWebSocket();
+  const unsubscribeRef = useRef<any>(null);
 
   useEffect(() => {
     if (!isConnected || !planId) return;
 
-    let unsubscribe: any = null;
+    // Clean up previous subscription
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current.unsubscribe?.();
+      unsubscribeRef.current = null;
+    }
 
     try {
       if (client && typeof client === "object" && "ws" in client) {
         const ws = (client as any).ws;
         if (ws && typeof ws.subscribe === "function") {
-          unsubscribe = ws.subscribe(
+          unsubscribeRef.current = ws.subscribe(
             {
               types: ["plan.update"],
               filter: { planId },
@@ -190,9 +275,22 @@ export function usePlanProgress(planId: string) {
     }
 
     return () => {
-      unsubscribe?.unsubscribe?.();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef.current = null;
+      }
     };
   }, [client, planId, isConnected]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef.current = null;
+      }
+    };
+  }, []);
 
   return progress;
 }
@@ -212,17 +310,23 @@ export function useTaskQueue() {
   >(new Map());
 
   const { client, isConnected } = useWebSocket();
+  const unsubscribeRef = useRef<any>(null);
+  const MAX_TASKS = 100; // Prevent unbounded growth
 
   useEffect(() => {
     if (!isConnected) return;
 
-    let unsubscribe: any = null;
+    // Clean up previous subscription
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current.unsubscribe?.();
+      unsubscribeRef.current = null;
+    }
 
     try {
       if (client && typeof client === "object" && "ws" in client) {
         const ws = (client as any).ws;
         if (ws && typeof ws.subscribe === "function") {
-          unsubscribe = ws.subscribe(
+          unsubscribeRef.current = ws.subscribe(
             {
               types: ["task.update"],
             },
@@ -231,6 +335,19 @@ export function useTaskQueue() {
                 setTasks((prev) => {
                   const newTasks = new Map(prev);
                   newTasks.set(data.taskId, data);
+                  
+                  // Limit map size to prevent memory leaks
+                  if (newTasks.size > MAX_TASKS) {
+                    // Remove oldest completed/failed tasks
+                    const entries = Array.from(newTasks.entries());
+                    const toRemove = entries
+                      .filter(([_, task]) => task.status === 'completed' || task.status === 'failed')
+                      .sort((a, b) => a[1].timestamp.getTime() - b[1].timestamp.getTime())
+                      .slice(0, newTasks.size - MAX_TASKS);
+                    
+                    toRemove.forEach(([taskId]) => newTasks.delete(taskId));
+                  }
+                  
                   return newTasks;
                 });
               },
@@ -246,9 +363,23 @@ export function useTaskQueue() {
     }
 
     return () => {
-      unsubscribe?.unsubscribe?.();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef.current = null;
+      }
     };
   }, [client, isConnected]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef.current = null;
+      }
+      setTasks(new Map()); // Clear tasks on unmount
+    };
+  }, []);
 
   return Array.from(tasks.values());
 }
@@ -267,17 +398,22 @@ export function useSystemHealth() {
   } | null>(null);
 
   const { client, isConnected } = useWebSocket();
+  const unsubscribeRef = useRef<any>(null);
 
   useEffect(() => {
     if (!isConnected) return;
 
-    let unsubscribe: any = null;
+    // Clean up previous subscription
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current.unsubscribe?.();
+      unsubscribeRef.current = null;
+    }
 
     try {
       if (client && typeof client === "object" && "ws" in client) {
         const ws = (client as any).ws;
         if (ws && typeof ws.subscribe === "function") {
-          unsubscribe = ws.subscribe(
+          unsubscribeRef.current = ws.subscribe(
             {
               types: ["system.health"],
             },
@@ -297,9 +433,22 @@ export function useSystemHealth() {
     }
 
     return () => {
-      unsubscribe?.unsubscribe?.();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef.current = null;
+      }
     };
   }, [client, isConnected]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef.current = null;
+      }
+    };
+  }, []);
 
   return health;
 }
@@ -321,17 +470,22 @@ export function useRAGOperations() {
   >([]);
 
   const { client, isConnected } = useWebSocket();
+  const unsubscribeRef = useRef<any>(null);
 
   useEffect(() => {
     if (!isConnected) return;
 
-    let unsubscribe: any = null;
+    // Clean up previous subscription
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current.unsubscribe?.();
+      unsubscribeRef.current = null;
+    }
 
     try {
       if (client && typeof client === "object" && "ws" in client) {
         const ws = (client as any).ws;
         if (ws && typeof ws.subscribe === "function") {
-          unsubscribe = ws.subscribe(
+          unsubscribeRef.current = ws.subscribe(
             {
               types: ["rag.operation"],
             },
@@ -351,9 +505,23 @@ export function useRAGOperations() {
     }
 
     return () => {
-      unsubscribe?.unsubscribe?.();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef.current = null;
+      }
     };
   }, [client, isConnected]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef.current = null;
+      }
+      setOperations([]); // Clear operations on unmount
+    };
+  }, []);
 
   return operations;
 }
