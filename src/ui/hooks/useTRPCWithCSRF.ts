@@ -3,7 +3,7 @@ import { httpBatchLink, httpLink, wsLink, splitLink, createWSClient } from '@trp
 import superjson from 'superjson';
 import { api } from '@/lib/trpc';
 import { useCSRF, handleCSRFError } from './useCSRF';
-import { logger } from '@/utils/logger';
+import { logger } from '../utils/logger';
 
 interface TRPCClientConfig {
   apiUrl?: string;
