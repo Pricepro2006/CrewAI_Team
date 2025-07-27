@@ -304,13 +304,14 @@ export class RelevanceScorer {
         }
         break;
 
-      case 'enumeration':
+      case 'enumeration': {
         // Check for list markers
         const listMarkers = response.match(/(\d+[.)]\s|[-*]\s|\b(first|second|third)\b)/gi);
         if (listMarkers && listMarkers.length > 1) {
           return Math.max(0.8, fulfillmentRatio);
         }
         break;
+      }
     }
 
     return fulfillmentRatio;
