@@ -2,6 +2,10 @@ import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import { EventEmitter } from 'events';
 import { sanitizeLLMOutput } from '../../utils/output-sanitizer';
+import { trackOllamaRequest } from '../../api/middleware/monitoring';
+import { performanceMonitor } from '../../monitoring/PerformanceMonitor';
+import { errorTracker } from '../../monitoring/ErrorTracker';
+import { metricsCollector } from '../../monitoring/MetricsCollector';
 
 export interface OllamaConfig {
   model: string;
@@ -85,6 +89,8 @@ export class OllamaProvider extends EventEmitter {
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
+    const tracker = trackOllamaRequest(this.config.model, 'initialize');
+
     try {
       // Check if Ollama is running
       await this.client.get('/api/tags', { timeout: 5000 });
@@ -98,8 +104,10 @@ export class OllamaProvider extends EventEmitter {
       }
 
       this.isInitialized = true;
+      tracker.success();
       this.emit('initialized');
     } catch (error) {
+      tracker.error(error as Error);
       const err = error as any;
       if (err.code === 'ECONNREFUSED') {
         throw new Error('Ollama is not running. Please start Ollama first.');
@@ -138,6 +146,9 @@ export class OllamaProvider extends EventEmitter {
       context: requestOptions.context || this.context
     };
 
+    const tracker = trackOllamaRequest(this.config.model, 'generate');
+    const perfTracker = performanceMonitor.mark('ollama_generate');
+
     try {
       const response = await this.client.post<OllamaResponse>(
         '/api/generate',
@@ -154,6 +165,17 @@ export class OllamaProvider extends EventEmitter {
 
       const sanitizedResponse = sanitizeLLMOutput(response.data.response);
       
+      // Track successful generation
+      const tokensUsed = response.data.eval_count || 0;
+      tracker.success(tokensUsed);
+      performanceMonitor.measure('ollama_generate', {
+        model: this.config.model,
+        promptLength: prompt.length,
+        responseLength: sanitizedResponse.content.length,
+        tokensUsed,
+        duration: response.data.total_duration
+      });
+      
       this.emit('generation', {
         prompt,
         response: sanitizedResponse.content,
@@ -164,6 +186,24 @@ export class OllamaProvider extends EventEmitter {
 
       return sanitizedResponse.content;
     } catch (error: any) {
+      tracker.error(error);
+      performanceMonitor.measure('ollama_generate', {
+        model: this.config.model,
+        error: error.message,
+        status: 'error'
+      });
+      
+      errorTracker.trackError(
+        error,
+        {
+          endpoint: '/api/generate',
+          method: 'POST'
+        },
+        'medium',
+        false,
+        ['ollama', 'llm', this.config.model]
+      );
+      
       this.emit('error', error);
       
       // If timeout or connection error, provide a fallback response
@@ -187,6 +227,8 @@ export class OllamaProvider extends EventEmitter {
     if (!this.isInitialized) {
       await this.initialize();
     }
+
+    const tracker = trackOllamaRequest(this.config.model, 'generateWithLogProbs');
 
     const requestOptions = {
       ...this.config,

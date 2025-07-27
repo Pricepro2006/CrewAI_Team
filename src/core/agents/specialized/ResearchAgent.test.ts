@@ -2,10 +2,30 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ResearchAgent } from "./ResearchAgent";
 import { WebSearchTool } from "../../tools/web/WebSearchTool";
 import { WebScraperTool } from "../../tools/web/WebScraperTool";
-import { createMockOllamaProvider } from "../../../test/mocks/ollama.mock";
 
+// Note: This is a unit test file that focuses on ResearchAgent logic
+// without external dependencies. For real Ollama integration tests,
+// see ResearchAgent.integration.test.ts
+
+// Mock external tools for unit testing
+vi.mock("../../tools/web/WebSearchTool");
+vi.mock("../../tools/web/WebScraperTool");
+
+// Mock LLM provider for isolated unit testing
 vi.mock("../../llm/OllamaProvider", () => ({
-  OllamaProvider: vi.fn().mockImplementation(() => createMockOllamaProvider()),
+  OllamaProvider: vi.fn().mockImplementation(() => ({
+    generate: vi.fn().mockResolvedValue('Mock LLM response for unit testing'),
+    generateCompletion: vi.fn().mockResolvedValue({
+      content: 'Mock completion response',
+      usage: {
+        prompt_tokens: 10,
+        completion_tokens: 20,
+        total_tokens: 30
+      }
+    }),
+    isAvailable: vi.fn().mockResolvedValue(true),
+    initialize: vi.fn().mockResolvedValue(undefined)
+  })),
 }));
 
 describe("ResearchAgent", () => {

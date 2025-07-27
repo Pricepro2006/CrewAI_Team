@@ -5,12 +5,9 @@ import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchest
 import { ConversationService } from "../services/ConversationService";
 import { TaskService } from "../services/TaskService";
 import { MaestroFramework } from "../../core/maestro/MaestroFramework";
-import {
-  UserService,
-  UserRole,
-  type User as DBUser,
-  type JWTPayload,
-} from "../services/UserService";
+import { UserService } from "../services/UserService";
+import { PublicUser } from "../../database/models/User";
+import { jwtManager, JWTError } from "../utils/jwt";
 import ollamaConfig from "../../config/ollama.config";
 import { logger } from "../../utils/logger";
 import { mcpToolsService } from "../services/MCPToolsService";
@@ -18,8 +15,8 @@ import { DealDataService } from "../services/DealDataService";
 import { EmailStorageService } from "../services/EmailStorageService";
 import { WalmartGroceryService } from "../services/WalmartGroceryService";
 
-// Context User interface (extends DB user with runtime properties)
-export interface User extends Omit<DBUser, "passwordHash"> {
+// Context User interface (extends PublicUser with runtime properties)
+export interface User extends PublicUser {
   permissions: string[];
   lastActivity: Date;
 }
@@ -117,14 +114,14 @@ async function verifyJWT(
   userService: UserService,
 ): Promise<User | null> {
   try {
-    // Verify token using UserService
-    const payload = await userService.verifyToken(token);
+    // Verify token using JWT manager
+    const payload = jwtManager.verifyAccessToken(token);
 
     // Get full user data from database
-    const dbUser = await userService.getById(payload.userId);
-    if (!dbUser || !dbUser.isActive) {
+    const dbUser = userService.getUserById(payload.sub);
+    if (!dbUser || !dbUser.is_active) {
       logger.warn("User not found or inactive", "AUTH", {
-        userId: payload.userId,
+        userId: payload.sub,
       });
       return null;
     }
@@ -136,11 +133,15 @@ async function verifyJWT(
       id: dbUser.id,
       email: dbUser.email,
       username: dbUser.username,
+      first_name: dbUser.first_name,
+      last_name: dbUser.last_name,
+      avatar_url: dbUser.avatar_url,
       role: dbUser.role,
-      isActive: dbUser.isActive,
-      createdAt: dbUser.createdAt,
-      updatedAt: dbUser.updatedAt,
-      lastLoginAt: dbUser.lastLoginAt,
+      is_active: dbUser.is_active,
+      is_verified: dbUser.is_verified,
+      last_login_at: dbUser.last_login_at,
+      created_at: dbUser.created_at,
+      updated_at: dbUser.updated_at,
       permissions,
       lastActivity: new Date(),
     };
@@ -152,9 +153,16 @@ async function verifyJWT(
 
     return user;
   } catch (error) {
-    logger.warn("JWT verification failed", "AUTH", {
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+    if (error instanceof JWTError) {
+      logger.warn("JWT verification failed", "AUTH", {
+        error: error.message,
+        code: error.code,
+      });
+    } else {
+      logger.warn("JWT verification failed", "AUTH", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
     return null;
   }
 }
@@ -241,10 +249,11 @@ export async function createContext({
       id: `guest-${ip.replace(/\./g, "-")}-${Date.now()}`,
       email: "",
       username: "guest",
-      role: UserRole.USER, // Default to user role from UserRole enum
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      role: "user",
+      is_active: true,
+      is_verified: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       permissions: ["read"],
       lastActivity: new Date(),
     };

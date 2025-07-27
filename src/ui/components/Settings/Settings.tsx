@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Settings.css';
+import { MonitoringDashboard } from '../Monitoring/MonitoringDashboard';
 
 interface SettingsState {
   general: {
@@ -363,6 +364,12 @@ export const Settings: React.FC = () => {
                   <option value="qdrant">Qdrant</option>
                 </select>
               </div>
+            </div>
+          )}
+          
+          {activeTab === 'monitoring' && (
+            <div className="settings-section">
+              <MonitoringDashboard />
             </div>
           )}
         </div>
