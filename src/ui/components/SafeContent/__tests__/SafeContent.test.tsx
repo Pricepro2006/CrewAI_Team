@@ -62,7 +62,7 @@ describe('SafeContent Component', () => {
 
     it('should remove event handlers', () => {
       const { container } = render(
-        <SafeContent content='<div onclick="alert(\'XSS\')">Click me</div>' />
+        <SafeContent content={`<div onclick="alert('XSS')">Click me</div>`} />
       );
       
       expect(screen.getByText('Click me')).toBeInTheDocument();
