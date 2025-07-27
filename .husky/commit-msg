@@ -2,4 +2,4 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 # Run commit message validation
-node scripts/check-commit-msg.js "$1"
+tsx scripts/check-commit-msg.ts "$1"

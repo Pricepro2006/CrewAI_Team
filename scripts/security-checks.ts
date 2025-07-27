@@ -5,17 +5,31 @@
  * Checks for common security issues in TypeScript/JavaScript files
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 // Get all staged files from command line arguments
 const files = process.argv.slice(2);
 
+interface SecurityError {
+  file: string;
+  line: number;
+  message: string;
+  severity: 'error' | 'warning' | 'info';
+  code: string;
+}
+
+interface SecurityPattern {
+  pattern: RegExp;
+  message: string;
+  severity: 'error' | 'warning' | 'info';
+}
+
 let hasErrors = false;
-const errors = [];
+const errors: SecurityError[] = [];
 
 // Security patterns to check
-const securityPatterns = [
+const securityPatterns: SecurityPattern[] = [
   {
     pattern: /console\.(log|info|warn|error|debug)\s*\(/g,
     message: 'Console statements found. Remove before committing.',
@@ -74,7 +88,7 @@ const securityPatterns = [
 ];
 
 // Check each file
-files.forEach(file => {
+files.forEach((file: string) => {
   if (!file.endsWith('.ts') && !file.endsWith('.tsx') && !file.endsWith('.js') && !file.endsWith('.jsx')) {
     return;
   }
@@ -87,7 +101,7 @@ files.forEach(file => {
       let match;
       while ((match = pattern.exec(content)) !== null) {
         const lineNumber = content.substring(0, match.index).split('\n').length;
-        const line = lines[lineNumber - 1].trim();
+        const line = lines[lineNumber - 1]?.trim() || '';
         
         // Skip if it's in a comment
         if (line.startsWith('//') || line.startsWith('*')) {
@@ -108,7 +122,7 @@ files.forEach(file => {
       }
     });
   } catch (error) {
-    console.error(`Error reading file ${file}:`, error.message);
+    console.error(`Error reading file ${file}:`, error instanceof Error ? error.message : String(error));
   }
 });
 
@@ -116,9 +130,9 @@ files.forEach(file => {
 if (errors.length > 0) {
   console.log('\n🔍 Security Check Results:\n');
   
-  const errorsByFile = errors.reduce((acc, error) => {
+  const errorsByFile = errors.reduce<Record<string, SecurityError[]>>((acc, error) => {
     if (!acc[error.file]) acc[error.file] = [];
-    acc[error.file].push(error);
+    acc[error.file]!.push(error);
     return acc;
   }, {});
 

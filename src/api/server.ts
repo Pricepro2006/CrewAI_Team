@@ -28,8 +28,11 @@ import { setupWalmartWebSocket } from "./websocket/walmart-updates";
 import { DealDataService } from "./services/DealDataService";
 import { EmailStorageService } from "./services/EmailStorageService";
 import { applySecurityHeaders } from "./middleware/security/headers";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { GracefulShutdown } from "../utils/error-handling";
 
 const app: Express = express();
+const gracefulShutdown = new GracefulShutdown();
 const PORT = appConfig.api.port;
 
 // Trust proxy for accurate IP addresses in rate limiting
@@ -195,8 +198,34 @@ if (process.env["NODE_ENV"] === "production") {
   });
 }
 
+// Error handling middleware (must be last)
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 // Register default cleanup tasks
 registerDefaultCleanupTasks();
+
+// Register graceful shutdown handlers
+gracefulShutdown.register(async () => {
+  logger.info('Shutting down HTTP server...');
+  await new Promise<void>((resolve) => {
+    server.close(() => resolve());
+  });
+});
+
+gracefulShutdown.register(async () => {
+  logger.info('Shutting down WebSocket server...');
+  wss.close();
+  await wsService.cleanup();
+});
+
+gracefulShutdown.register(async () => {
+  logger.info('Running cleanup tasks...');
+  await cleanupManager.cleanup();
+});
+
+// Setup graceful shutdown signal handlers
+gracefulShutdown.setupSignalHandlers();
 
 // Start HTTP server
 const server = app.listen(PORT, () => {
