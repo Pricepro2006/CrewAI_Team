@@ -3,7 +3,7 @@
  * Implements CORS, CSP, and other security headers for web application protection
  */
 
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { logger } from '../../../utils/logger';
 

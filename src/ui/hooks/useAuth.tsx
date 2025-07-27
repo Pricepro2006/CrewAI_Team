@@ -4,7 +4,7 @@ import {
   useCallback,
   createContext,
   useContext,
-  ReactNode,
+  type ReactNode,
 } from "react";
 import { trpc } from "../utils/trpc";
 
@@ -189,7 +189,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Parse JWT to get expiration time
     try {
-      const payload = JSON.parse(atob(tokens.accessToken.split(".")[1]));
+      const payload = JSON.parse(atob(tokens.accessToken.split(".")[1]!));
       const expirationTime = payload.exp * 1000; // Convert to milliseconds
       const currentTime = Date.now();
       const timeUntilExpiry = expirationTime - currentTime;
@@ -204,6 +204,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return () => clearTimeout(refreshTimer);
     } catch (error) {
       console.warn("Failed to parse access token:", error);
+      return; // Add explicit return for catch block
     }
   }, [tokens?.accessToken]);
 

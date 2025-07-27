@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { AppError, isOperationalError, sanitizeError } from '../../utils/error-handling';
+import type { Request, Response, NextFunction } from 'express';
+import { AppError, ErrorCode, isOperationalError, sanitizeError } from '../../utils/error-handling';
 import { getUserFriendlyError, getErrorSeverity } from '../../utils/error-handling/error-messages';
 import { logger } from '../../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
@@ -127,7 +127,7 @@ export function errorHandler(
   // For critical errors, consider alerting
   if (err instanceof AppError && getErrorSeverity(err.code) === 'critical') {
     // TODO: Send alert to monitoring service or admin
-    logger.alert('Critical error requires immediate attention', {
+    logger.error('Critical error requires immediate attention', 'ERROR_HANDLER', {
       errorId,
       code: err.code,
       message: err.message,
@@ -140,7 +140,7 @@ export function errorHandler(
  */
 export function notFoundHandler(req: Request, res: Response): void {
   const error = new AppError(
-    'NOT_FOUND',
+    ErrorCode.NOT_FOUND,
     `Route ${req.method} ${req.path} not found`,
     404,
     { method: req.method, path: req.path }
@@ -173,7 +173,7 @@ export function validationErrorFormatter(errors: any[]): AppError {
   }, {});
 
   return new AppError(
-    'VALIDATION_ERROR',
+    ErrorCode.VALIDATION_ERROR,
     'Validation failed',
     422,
     { fields: formattedErrors }

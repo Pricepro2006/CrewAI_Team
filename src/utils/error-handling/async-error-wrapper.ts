@@ -41,7 +41,7 @@ export function withAsyncErrorHandler<T extends (...args: any[]) => Promise<any>
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         
-        logger.error(`${context}: Error on attempt ${attempt + 1}/${retries + 1}`, {
+        logger.error(`${context}: Error on attempt ${attempt + 1}/${retries + 1}`, 'ASYNC_ERROR_WRAPPER', {
           error: lastError.message,
           stack: lastError.stack,
           args: args.length > 0 ? args : undefined,
@@ -53,7 +53,7 @@ export function withAsyncErrorHandler<T extends (...args: any[]) => Promise<any>
           try {
             onError(lastError);
           } catch (handlerError) {
-            logger.error(`${context}: Error handler threw`, handlerError);
+            logger.error(`${context}: Error handler threw`, 'ASYNC_ERROR_WRAPPER', undefined, handlerError instanceof Error ? handlerError : new Error(String(handlerError)));
           }
         }
         
@@ -141,7 +141,7 @@ export class CircuitBreaker {
       
       if (this.failureCount >= this.threshold) {
         this.state = 'open';
-        logger.error('Circuit breaker opened due to failures', {
+        logger.error('Circuit breaker opened due to failures', 'CIRCUIT_BREAKER', {
           threshold: this.threshold,
           failures: this.failureCount,
         });
@@ -195,7 +195,7 @@ export class GracefulShutdown {
       await Promise.all(
         this.shutdownHandlers.map(handler =>
           handler().catch(error =>
-            logger.error('Error during shutdown handler', error)
+            logger.error('Error during shutdown handler', 'GRACEFUL_SHUTDOWN', undefined, error instanceof Error ? error : new Error(String(error)))
           )
         )
       );
@@ -205,7 +205,7 @@ export class GracefulShutdown {
       process.exit(0);
     } catch (error) {
       clearTimeout(timeout);
-      logger.error('Error during graceful shutdown', error);
+      logger.error('Error during graceful shutdown', 'GRACEFUL_SHUTDOWN', undefined, error instanceof Error ? error : new Error(String(error)));
       process.exit(1);
     }
   }
@@ -214,11 +214,11 @@ export class GracefulShutdown {
     process.on('SIGTERM', () => this.shutdown('SIGTERM'));
     process.on('SIGINT', () => this.shutdown('SIGINT'));
     process.on('uncaughtException', (error) => {
-      logger.error('Uncaught exception', error);
+      logger.error('Uncaught exception', 'GRACEFUL_SHUTDOWN', undefined, error);
       this.shutdown('uncaughtException');
     });
     process.on('unhandledRejection', (reason, promise) => {
-      logger.error('Unhandled rejection', { reason, promise });
+      logger.error('Unhandled rejection', 'GRACEFUL_SHUTDOWN', { reason, promise });
       this.shutdown('unhandledRejection');
     });
   }

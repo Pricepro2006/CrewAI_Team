@@ -72,7 +72,7 @@ router.post('/csrf-token/validate', (req, res) => {
   
   const isValid = requestToken === storedToken;
   
-  res.json({
+  return res.json({
     valid: isValid,
     message: isValid ? 'Token is valid' : 'Token mismatch',
   });

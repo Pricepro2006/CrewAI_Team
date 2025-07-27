@@ -4,7 +4,7 @@ import {
   useState,
   useEffect,
   useCallback,
-  ReactNode,
+  type ReactNode,
 } from "react";
 import { logger } from "@/utils/logger";
 
@@ -112,7 +112,7 @@ export function CSRFProvider({ children }: CSRFProviderProps) {
   }, [fetchCSRFToken]);
 
   // Get headers with CSRF token
-  const getHeaders = useCallback(() => {
+  const getHeaders = useCallback((): Record<string, string> => {
     if (!token) {
       logger.warn("Attempting to get CSRF headers without token", "CSRF");
       return {};
@@ -167,6 +167,7 @@ export function CSRFProvider({ children }: CSRFProviderProps) {
         clearInterval(timer);
       };
     }
+    // No return needed for else case in useEffect
   }, [token, error, refreshToken]);
 
   // Handle visibility change - refresh token when tab becomes visible

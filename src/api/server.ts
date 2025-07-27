@@ -19,7 +19,7 @@ import {
   getRateLimitStatus,
   cleanupRateLimiting,
 } from "./middleware/rateLimiter";
-import { authenticateToken, AuthenticatedRequest } from "../../middleware/auth";
+import { optionalAuthenticateJWT as authenticateToken, type AuthenticatedRequest } from "./middleware/auth";
 import { wsService } from "./services/WebSocketService";
 import { logger } from "../utils/logger";
 import uploadRoutes from "./routes/upload.routes";
@@ -162,15 +162,15 @@ app.get("/api/rate-limit-status", async (req: AuthenticatedRequest, res) => {
     const authReq = req as AuthenticatedRequest;
 
     // Only allow admins to check rate limit status
-    if (!authReq.user?.isAdmin) {
+    if (!authReq.user || authReq.user.role !== 'admin') {
       return res.status(403).json({ error: "Admin access required" });
     }
 
     const status = await getRateLimitStatus(req);
-    res.json(status);
+    return res.json(status);
   } catch (error) {
     console.error("Rate limit status error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

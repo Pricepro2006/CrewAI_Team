@@ -53,12 +53,16 @@ export class WebSocketAuthManager {
       // Verify JWT token
       const payload = await this.userService.verifyToken(token);
       
-      // Get user details
-      const user = await this.userService.getById(payload.userId);
+      if (!payload) {
+        return { success: false, error: "Invalid token" };
+      }
       
-      if (!user || !user.isActive) {
+      // Get user details
+      const user = await this.userService.getById(payload.sub);
+      
+      if (!user || !user.is_active) {
         logger.warn("WebSocket auth failed: User not found or inactive", "WS_AUTH", {
-          userId: payload.userId,
+          userId: payload.sub,
         });
         return { success: false, error: "Invalid user" };
       }

@@ -122,7 +122,7 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
   }, [state.canRetry, state.retryCount, maxRetries, reset, onRetry, onMaxRetriesExceeded, retryDelay, exponentialBackoff]);
 
   const handleError = useCallback((error: Error, retryFn?: () => Promise<void>) => {
-    logger.error('Error caught by recovery hook:', error);
+    logger.error('Error caught by recovery hook', 'ERROR_RECOVERY', undefined, error);
 
     setState({
       error,
@@ -187,7 +187,9 @@ export function useAutoReconnect(
       setAttempts(0);
       if (onReconnect) onReconnect();
     } catch (error) {
-      logger.warn(`Reconnection attempt ${attempts + 1} failed:`, error);
+      logger.warn(`Reconnection attempt ${attempts + 1} failed`, 'RECONNECTION_RECOVERY', { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
       
       if (attempts + 1 < maxAttempts) {
         const nextDelay = delay * Math.min(Math.pow(2, attempts), 10);
@@ -317,14 +319,14 @@ export function useCircuitBreaker(
 
       if (newFailures >= threshold) {
         setState('open');
-        logger.error('Circuit breaker opened due to failures', {
+        logger.error('Circuit breaker opened due to failures', 'CIRCUIT_BREAKER', {
           threshold,
           failures: newFailures,
         });
-      }
-
-      if (fallback && state === 'open') {
-        return fallback();
+        
+        if (fallback) {
+          return fallback();
+        }
       }
 
       throw error;

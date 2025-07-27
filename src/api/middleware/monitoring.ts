@@ -1,8 +1,12 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { metricsCollector } from '../../monitoring/MetricsCollector';
 import { errorTracker } from '../../monitoring/ErrorTracker';
 import { performanceMonitor } from '../../monitoring/PerformanceMonitor';
 import { logger } from '../../utils/logger';
+
+interface MonitoredRequest extends Request {
+  id?: string;
+}
 
 // Generate request ID
 export function generateRequestId(): string {
@@ -10,7 +14,7 @@ export function generateRequestId(): string {
 }
 
 // Request tracking middleware
-export function requestTracking(req: Request, res: Response, next: NextFunction): void {
+export function requestTracking(req: MonitoredRequest, res: Response, next: NextFunction): void {
   // Generate and attach request ID
   const requestId = generateRequestId();
   req.id = requestId;
@@ -131,7 +135,7 @@ export function requestTracking(req: Request, res: Response, next: NextFunction)
 }
 
 // Error handling middleware
-export function errorTracking(err: Error, req: Request, res: Response, next: NextFunction): void {
+export function errorTracking(err: Error, req: MonitoredRequest, res: Response, next: NextFunction): void {
   const requestId = req.id || generateRequestId();
   
   // Track error
@@ -222,7 +226,7 @@ export function rateLimitTracking(req: Request, res: Response, next: NextFunctio
       metricsCollector.increment('rate_limit_exceeded_total', 1, {
         method: req.method,
         route: req.route?.path || req.path,
-        ip: req.ip
+        ip: req.ip || 'unknown'
       });
 
       errorTracker.trackError(
@@ -230,7 +234,7 @@ export function rateLimitTracking(req: Request, res: Response, next: NextFunctio
         {
           endpoint: req.path,
           method: req.method,
-          ip: req.ip,
+          ip: req.ip || 'unknown',
           userAgent: req.get('user-agent'),
           userId: (req as any).user?.id
         },
@@ -258,7 +262,7 @@ export function authTracking(req: Request, res: Response, next: NextFunction): v
       if (!success && res.statusCode === 401) {
         metricsCollector.increment('auth_failures_total', 1, {
           endpoint: req.path,
-          ip: req.ip
+          ip: req.ip || 'unknown'
         });
 
         errorTracker.trackError(
@@ -266,7 +270,7 @@ export function authTracking(req: Request, res: Response, next: NextFunction): v
           {
             endpoint: req.path,
             method: req.method,
-            ip: req.ip,
+            ip: req.ip || 'unknown',
             userAgent: req.get('user-agent')
           },
           'medium',

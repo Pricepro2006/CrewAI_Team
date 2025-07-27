@@ -11,18 +11,18 @@ import { getUserFriendlyError } from './error-messages';
  */
 export function setupGlobalErrorHandlers(): void {
   process.on('uncaughtException', (error: Error) => {
-    logger.error('Uncaught Exception:', error);
+    logger.error('Uncaught Exception', 'GLOBAL_ERROR_HANDLER', undefined, error);
     // Give the logger time to write before exiting
     setTimeout(() => process.exit(1), 1000);
   });
 
   process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
-    logger.error('Unhandled Rejection:', { reason, promise });
+    logger.error('Unhandled Rejection', 'GLOBAL_ERROR_HANDLER', { reason, promise });
   });
 
   if (typeof window !== 'undefined') {
     window.addEventListener('error', (event: ErrorEvent) => {
-      logger.error('Window Error:', {
+      logger.error('Window Error', 'GLOBAL_ERROR_HANDLER', {
         message: event.message,
         filename: event.filename,
         lineno: event.lineno,
@@ -32,7 +32,7 @@ export function setupGlobalErrorHandlers(): void {
     });
 
     window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
-      logger.error('Unhandled Promise Rejection:', {
+      logger.error('Unhandled Promise Rejection', 'GLOBAL_ERROR_HANDLER', {
         reason: event.reason,
       });
     });
@@ -96,7 +96,7 @@ export function tryCatch<T extends (...args: any[]) => any>(
       if (errorHandler) {
         errorHandler(err);
       } else {
-        logger.error(`Error in ${fn.name || 'anonymous function'}:`, err);
+        logger.error(`Error in ${fn.name || 'anonymous function'}`, 'TRY_CATCH', undefined, err);
         throw err;
       }
     }

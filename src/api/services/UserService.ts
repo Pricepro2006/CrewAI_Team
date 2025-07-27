@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { randomUUID } from 'crypto';
-import { 
+import type { 
   User, 
   PublicUser, 
   CreateUserInput, 
@@ -90,6 +90,31 @@ export class UserService {
   getUserById(id: string): User | null {
     const stmt = this.db.prepare('SELECT * FROM users WHERE id = ?');
     return stmt.get(id) as User | null;
+  }
+
+  /**
+   * Get user by ID (alias for getUserById for compatibility)
+   */
+  getById(id: string): User | null {
+    return this.getUserById(id);
+  }
+
+  /**
+   * Verify token and return user
+   */
+  async verifyToken(token: string): Promise<User | null> {
+    try {
+      const decoded = jwtManager.verifyAccessToken(token);
+      const user = this.getUserById(decoded.sub);
+      
+      if (!user || !user.is_active) {
+        return null;
+      }
+      
+      return user;
+    } catch (error) {
+      return null;
+    }
   }
 
   /**

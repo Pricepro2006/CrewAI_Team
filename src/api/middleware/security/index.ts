@@ -109,7 +109,7 @@ export function createAuthMiddleware() {
     }
 
     // Check if user is active
-    if (!ctx.user.isActive) {
+    if (!ctx.user.is_active) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Account is inactive",
