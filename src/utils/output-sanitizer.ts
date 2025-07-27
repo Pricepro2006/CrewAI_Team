@@ -32,7 +32,7 @@ export function sanitizeLLMOutput(output: string): string {
  */
 export function sanitizeJSONResponse(response: string): string {
   // First remove thinking tags
-  let cleaned = sanitizeLLMOutput(response);
+  const cleaned = sanitizeLLMOutput(response);
   
   // Try to extract JSON from the response
   // Look for JSON between triple backticks
@@ -51,7 +51,7 @@ export function sanitizeJSONResponse(response: string): string {
   }
   
   // Look for raw JSON
-  const jsonStart = cleaned.search(/[{\[]/);
+  const jsonStart = cleaned.search(/[{[]/);
   if (jsonStart !== -1) {
     return cleaned.substring(jsonStart).trim();
   }

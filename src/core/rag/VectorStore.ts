@@ -19,7 +19,7 @@ export class VectorStore {
     
     // Check if path is a URL or file path and configure accordingly
     const chromaPath = config.path || "http://localhost:8000";
-    let clientConfig: any = {};
+    const clientConfig: any = {};
     
     if (chromaPath.startsWith('http')) {
       // HTTP URL - use as-is

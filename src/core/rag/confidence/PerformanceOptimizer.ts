@@ -7,6 +7,7 @@ import { LRUCache } from 'lru-cache';
 import { ScoredDocument, TokenConfidence } from './types';
 import { createHash } from 'crypto';
 import { logger } from '../../../utils/logger';
+import { loadavg, cpus, totalmem } from 'os';
 
 export interface OptimizationConfig {
   enableCache?: boolean;
@@ -337,8 +338,8 @@ export class PerformanceOptimizer {
   private async getCPUUsage(): Promise<number> {
     // In production, use proper CPU monitoring
     // This is a simplified version
-    const loadAvg = require('os').loadavg();
-    const cpuCount = require('os').cpus().length;
+    const loadAvg = loadavg();
+    const cpuCount = cpus().length;
     return Math.min(1, loadAvg[0] / cpuCount);
   }
 
@@ -347,7 +348,7 @@ export class PerformanceOptimizer {
    */
   private getMemoryUsage(): number {
     const used = process.memoryUsage();
-    const total = require('os').totalmem();
+    const total = totalmem();
     return used.heapUsed / total;
   }
 
@@ -427,10 +428,10 @@ export class PerformanceOptimizer {
    * Get system load for model selection
    */
   getSystemLoad(): { cpu: number; memory: number; queueLength: number } {
-    const cpuCount = require('os').cpus().length;
-    const loadAvg = require('os').loadavg();
+    const cpuCount = cpus().length;
+    const loadAvg = loadavg();
     const used = process.memoryUsage();
-    const total = require('os').totalmem();
+    const total = totalmem();
     
     return {
       cpu: Math.min(100, (loadAvg[0] / cpuCount) * 100),
