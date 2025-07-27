@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { UseTRPCMutationOptions, UseTRPCMutationResult } from '@trpc/react-query';
 import { useCSRF, handleCSRFError } from './useCSRF';
-import { logger } from '@/utils/logger';
+import { logger } from '../utils/logger';
 
 /**
  * Enhanced mutation hook with automatic CSRF protection and retry logic
