@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { wsService } from "../services/WebSocketService";
-import { AuthenticatedRequest } from "../../../middleware/auth";
+import type { AuthenticatedRequest } from "../middleware/auth";
 import { logger } from "../../utils/logger";
 
 const router = Router();
@@ -19,7 +19,7 @@ router.get("/stats", (req: AuthenticatedRequest, res) => {
     const stats = wsService.getConnectionStats();
     const performanceMetrics = wsService.getPerformanceMetrics();
 
-    res.json({
+    return res.json({
       timestamp: new Date().toISOString(),
       connections: {
         total: stats.totalClients,
@@ -44,7 +44,7 @@ router.get("/stats", (req: AuthenticatedRequest, res) => {
     });
   } catch (error) {
     logger.error("Error getting WebSocket stats", "WS_MONITOR", { error });
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -55,13 +55,13 @@ router.get("/stats", (req: AuthenticatedRequest, res) => {
 router.get("/clients", (req: AuthenticatedRequest, res) => {
   try {
     // Only allow admins to view detailed client info
-    if (!req.user?.isAdmin) {
+    if (!req.user || req.user.role !== 'admin') {
       return res.status(403).json({ error: "Admin access required" });
     }
 
     const stats = wsService.getConnectionStats();
     
-    res.json({
+    return res.json({
       timestamp: new Date().toISOString(),
       totalClients: stats.totalClients,
       authenticatedClients: stats.authenticatedClients,
@@ -69,7 +69,7 @@ router.get("/clients", (req: AuthenticatedRequest, res) => {
     });
   } catch (error) {
     logger.error("Error getting WebSocket clients", "WS_MONITOR", { error });
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -80,7 +80,7 @@ router.get("/clients", (req: AuthenticatedRequest, res) => {
 router.post("/broadcast", (req: AuthenticatedRequest, res) => {
   try {
     // Only allow admins to broadcast
-    if (!req.user?.isAdmin) {
+    if (!req.user || req.user.role !== 'admin') {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -100,14 +100,14 @@ router.post("/broadcast", (req: AuthenticatedRequest, res) => {
       requiredPermission
     );
 
-    res.json({
+    return res.json({
       success: true,
       message: "Broadcast sent",
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
     logger.error("Error broadcasting message", "WS_MONITOR", { error });
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -118,7 +118,7 @@ router.post("/broadcast", (req: AuthenticatedRequest, res) => {
 router.delete("/client/:clientId", (req: AuthenticatedRequest, res) => {
   try {
     // Only allow admins to disconnect clients
-    if (!req.user?.isAdmin) {
+    if (!req.user || req.user.role !== 'admin') {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -131,14 +131,14 @@ router.delete("/client/:clientId", (req: AuthenticatedRequest, res) => {
     // Force disconnect the client
     wsService.forceDisconnectClient(clientId);
 
-    res.json({
+    return res.json({
       success: true,
       message: `Client ${clientId} disconnected`,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
     logger.error("Error disconnecting client", "WS_MONITOR", { error });
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -170,10 +170,10 @@ router.get("/health", (_req, res) => {
       health.status = "degraded";
     }
 
-    res.json(health);
+    return res.json(health);
   } catch (error) {
     logger.error("Error checking WebSocket health", "WS_MONITOR", { error });
-    res.status(500).json({ 
+    return res.status(500).json({ 
       status: "error",
       timestamp: new Date().toISOString(),
       error: "Failed to check WebSocket health"

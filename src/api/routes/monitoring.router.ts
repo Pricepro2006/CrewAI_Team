@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth } from '../middleware/auth';
+import { authenticateJWT as requireAuth } from '../middleware/auth';
 import { metricsCollector } from '../../monitoring/MetricsCollector';
 import { errorTracker } from '../../monitoring/ErrorTracker';
 import { performanceMonitor } from '../../monitoring/PerformanceMonitor';

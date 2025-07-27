@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import { logger } from "../../utils/logger";
-import { AppError } from "../../utils/error-handling";
+import { AppError, ErrorCode } from "../../utils/error-handling";
 
 /**
  * Wraps async route handlers to properly catch errors with enhanced error handling
@@ -11,7 +11,7 @@ export const asyncHandler = (fn: RequestHandler): RequestHandler => {
       await Promise.resolve(fn(req, res, next));
     } catch (error) {
       // Log the error with request context
-      logger.error("Async handler error:", {
+      logger.error("Async handler error", "ASYNC_HANDLER", {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         path: req.path,
@@ -25,14 +25,14 @@ export const asyncHandler = (fn: RequestHandler): RequestHandler => {
         // Check for common error patterns
         if (error.message.includes("ECONNREFUSED")) {
           processedError = new AppError(
-            "SERVICE_UNAVAILABLE",
+            ErrorCode.SERVICE_UNAVAILABLE,
             "Service connection refused",
             503,
             { originalError: error.message },
           );
         } else if (error.message.includes("ETIMEDOUT")) {
           processedError = new AppError(
-            "SERVICE_UNAVAILABLE",
+            ErrorCode.SERVICE_UNAVAILABLE,
             "Service request timed out",
             503,
             { originalError: error.message },

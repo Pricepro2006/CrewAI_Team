@@ -422,7 +422,7 @@ export function createEnhancedAuthMiddleware() {
     }
 
     // Check if user is active
-    if (!ctx.user.isActive) {
+    if (!ctx.user.is_active) {
       logger.warn("Inactive User Access Attempt", "SECURITY", {
         userId: ctx.user.id,
         username: ctx.user.username,

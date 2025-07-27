@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { TRPCError } from '@trpc/server';
 import { jwtManager, JWTError } from '../utils/jwt';
 import { UserService } from '../services/UserService';
-import { PublicUser } from '../../database/models/User';
+import type { PublicUser } from '../../database/models/User';
 
 /**
  * Authentication Middleware
@@ -26,7 +26,7 @@ export function authenticateJWT(
   req: AuthenticatedRequest, 
   res: Response, 
   next: NextFunction
-): void {
+) {
   try {
     const token = jwtManager.extractTokenFromHeader(req.headers.authorization);
     
@@ -62,7 +62,7 @@ export function authenticateJWT(
       req.user = publicUser;
       req.token = token;
       
-      next();
+      return next();
     } finally {
       userService.close();
     }
@@ -90,7 +90,7 @@ export function optionalAuthenticateJWT(
   req: AuthenticatedRequest, 
   res: Response, 
   next: NextFunction
-): void {
+) {
   try {
     const token = jwtManager.extractTokenFromHeader(req.headers.authorization);
     
@@ -111,14 +111,14 @@ export function optionalAuthenticateJWT(
         req.token = token;
       }
       
-      next();
+      return next();
     } finally {
       userService.close();
     }
   } catch (error) {
     // For optional auth, continue even if token is invalid
     req.user = undefined;
-    next();
+    return next();
   }
 }
 
@@ -126,7 +126,7 @@ export function optionalAuthenticateJWT(
  * Role-based authorization middleware
  */
 export function requireRole(...roles: ('user' | 'admin' | 'moderator')[]) {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ 
         error: 'Authentication required',
@@ -143,7 +143,7 @@ export function requireRole(...roles: ('user' | 'admin' | 'moderator')[]) {
       });
     }
 
-    next();
+    return next();
   };
 }
 
@@ -277,7 +277,7 @@ export function createAuthRateLimit() {
   const maxAttempts = 5;
   const windowMs = 15 * 60 * 1000; // 15 minutes
 
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, res: Response, next: NextFunction) => {
     const key = req.ip || 'unknown';
     const now = Date.now();
     
@@ -296,6 +296,6 @@ export function createAuthRateLimit() {
       attempts.set(key, { count: 1, resetAt: now + windowMs });
     }
     
-    next();
+    return next();
   };
 }

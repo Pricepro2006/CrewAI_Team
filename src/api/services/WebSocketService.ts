@@ -794,6 +794,21 @@ export class WebSocketService extends EventEmitter {
     };
   }
 
+  /**
+   * Get health status of the WebSocket service
+   */
+  getHealth(): { status: string; connections: number; uptime: number; metrics: any } {
+    const stats = this.getConnectionStats();
+    const uptime = Date.now() - (this.performanceMetrics.lastCleanup || Date.now());
+    
+    return {
+      status: stats.totalConnections > 0 ? 'healthy' : 'idle',
+      connections: stats.totalConnections,
+      uptime: uptime,
+      metrics: this.getPerformanceMetrics()
+    };
+  }
+
   // Enhanced broadcast methods for table data (Agent 11)
   
   /**
