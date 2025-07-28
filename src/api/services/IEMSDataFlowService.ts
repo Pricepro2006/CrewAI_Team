@@ -1,24 +1,32 @@
-import { EventEmitter } from 'events';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import * as path from 'path';
-import * as fs from 'fs/promises';
-import type { EmailStorageService } from './EmailStorageService.js';
-import type { WebSocketService } from './WebSocketService.js';
-import { logger } from '../../utils/logger.js';
-import { z } from 'zod';
+import { EventEmitter } from "events";
+import { exec } from "child_process";
+import { promisify } from "util";
+import * as path from "path";
+import * as fs from "fs/promises";
+import { fileURLToPath } from "url";
+import type { EmailStorageService } from "./EmailStorageService.js";
+import type { WebSocketService } from "./WebSocketService.js";
+import { logger } from "../../utils/logger.js";
+import { z } from "zod";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const execAsync = promisify(exec);
 
 // Data flow configuration schema
 const DataFlowConfigSchema = z.object({
-  iemsAnalysisDir: z.string().default('/home/pricepro2006/iems_project/analysis_results'),
-  iemsDatabase: z.string().default('/home/pricepro2006/iems_project/iems.db'),
-  dashboardDatabase: z.string().default('/home/pricepro2006/CrewAI_Team/data/email_dashboard.db'),
+  iemsAnalysisDir: z
+    .string()
+    .default("/home/pricepro2006/iems_project/analysis_results"),
+  iemsDatabase: z.string().default("/home/pricepro2006/iems_project/iems.db"),
+  dashboardDatabase: z
+    .string()
+    .default("/home/pricepro2006/CrewAI_Team/data/email_dashboard.db"),
   syncIntervalMinutes: z.number().default(30),
   batchSize: z.number().default(100),
   enableRealTimeSync: z.boolean().default(true),
-  watchNewFiles: z.boolean().default(true)
+  watchNewFiles: z.boolean().default(true),
 });
 
 type DataFlowConfig = z.infer<typeof DataFlowConfigSchema>;
@@ -55,7 +63,7 @@ export class IEMSDataFlowService extends EventEmitter {
   constructor(
     config: Partial<DataFlowConfig> = {},
     emailService: EmailStorageService,
-    wsService: WebSocketService
+    wsService: WebSocketService,
   ) {
     super();
     this.config = DataFlowConfigSchema.parse(config);
@@ -64,7 +72,7 @@ export class IEMSDataFlowService extends EventEmitter {
     this.status = {
       isRunning: false,
       totalSyncs: 0,
-      totalRecordsProcessed: 0
+      totalRecordsProcessed: 0,
     };
   }
 
@@ -73,11 +81,11 @@ export class IEMSDataFlowService extends EventEmitter {
    */
   async start(): Promise<void> {
     if (this.status.isRunning) {
-      logger.warn('Data flow service is already running');
+      logger.warn("Data flow service is already running");
       return;
     }
 
-    logger.info('Starting IEMS data flow service');
+    logger.info("Starting IEMS data flow service");
     this.status.isRunning = true;
 
     // Perform initial sync
@@ -98,15 +106,15 @@ export class IEMSDataFlowService extends EventEmitter {
       this.setupRealTimeSync();
     }
 
-    this.emit('started');
-    logger.info('IEMS data flow service started successfully');
+    this.emit("started");
+    logger.info("IEMS data flow service started successfully");
   }
 
   /**
    * Stop the data flow service
    */
   async stop(): Promise<void> {
-    logger.info('Stopping IEMS data flow service');
+    logger.info("Stopping IEMS data flow service");
     this.status.isRunning = false;
 
     // Clear scheduled sync
@@ -121,8 +129,8 @@ export class IEMSDataFlowService extends EventEmitter {
       this.fileWatcher = undefined;
     }
 
-    this.emit('stopped');
-    logger.info('IEMS data flow service stopped');
+    this.emit("stopped");
+    logger.info("IEMS data flow service stopped");
   }
 
   /**
@@ -130,13 +138,13 @@ export class IEMSDataFlowService extends EventEmitter {
    */
   async performSync(): Promise<SyncResult> {
     if (this.isSyncing) {
-      logger.warn('Sync already in progress, skipping');
+      logger.warn("Sync already in progress, skipping");
       return {
         success: false,
         recordsProcessed: 0,
         recordsFailed: 0,
         duration: 0,
-        errors: ['Sync already in progress']
+        errors: ["Sync already in progress"],
       };
     }
 
@@ -147,30 +155,38 @@ export class IEMSDataFlowService extends EventEmitter {
       recordsProcessed: 0,
       recordsFailed: 0,
       duration: 0,
-      errors: []
+      errors: [],
     };
 
     try {
-      logger.info('Starting IEMS data sync');
-      this.emit('sync:start');
+      logger.info("Starting IEMS data sync");
+      this.emit("sync:start");
 
       // Run the migration pipeline
       const migrationScript = path.join(
-        __dirname, '..', '..', 'scripts', 'migration', 'data_pipeline.py'
+        __dirname,
+        "..",
+        "..",
+        "scripts",
+        "migration",
+        "data_pipeline.py",
       );
 
-      const { stdout, stderr } = await execAsync(`python3 "${migrationScript}"`, {
-        timeout: 300000 // 5 minute timeout
-      });
+      const { stdout, stderr } = await execAsync(
+        `python3 "${migrationScript}"`,
+        {
+          timeout: 300000, // 5 minute timeout
+        },
+      );
 
-      if (stderr && !stderr.includes('INFO')) {
+      if (stderr && !stderr.includes("INFO")) {
         result.errors?.push(stderr);
       }
 
       // Parse results from stdout
-      const lines = stdout.split('\n');
+      const lines = stdout.split("\n");
       for (const line of lines) {
-        if (line.includes('Transformed') && line.includes('emails')) {
+        if (line.includes("Transformed") && line.includes("emails")) {
           const match = line.match(/Transformed (\d+) emails/);
           if (match && match[1]) {
             result.recordsProcessed = parseInt(match[1], 10);
@@ -184,38 +200,35 @@ export class IEMSDataFlowService extends EventEmitter {
       this.status.totalRecordsProcessed += result.recordsProcessed;
 
       // Notify via WebSocket
-      this.wsService.broadcastEmailBulkUpdate(
-        'sync_complete',
-        [],
-        {
-          successful: result.recordsProcessed || 0,
-          failed: 0,
-          total: result.recordsProcessed || 0
-        }
+      this.wsService.broadcastEmailBulkUpdate("sync_complete", [], {
+        successful: result.recordsProcessed || 0,
+        failed: 0,
+        total: result.recordsProcessed || 0,
+      });
+
+      logger.info(
+        `Sync completed: ${result.recordsProcessed} records processed`,
       );
-
-      logger.info(`Sync completed: ${result.recordsProcessed} records processed`);
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       result.errors?.push(errorMessage as string);
       this.status.lastError = errorMessage;
-      logger.error('Sync failed:', error instanceof Error ? error.message : String(error));
-      
-      // Notify error via WebSocket
-      this.wsService.broadcastEmailBulkUpdate(
-        'sync_error',
-        [],
-        {
-          successful: 0,
-          failed: 1,
-          total: 1
-        }
+      logger.error(
+        "Sync failed:",
+        error instanceof Error ? error.message : String(error),
       );
+
+      // Notify error via WebSocket
+      this.wsService.broadcastEmailBulkUpdate("sync_error", [], {
+        successful: 0,
+        failed: 1,
+        total: 1,
+      });
     } finally {
       result.duration = Date.now() - startTime;
       this.isSyncing = false;
-      this.emit('sync:complete', result);
+      this.emit("sync:complete", result);
     }
 
     return result;
@@ -231,52 +244,50 @@ export class IEMSDataFlowService extends EventEmitter {
       // Extract batch info from filename
       const filename = path.basename(filePath);
       const match = filename.match(/analysis_batch_(\d+)_(\d{8})_(\d{6})\.txt/);
-      
+
       if (!match) {
         logger.warn(`Invalid filename format: ${filename}`);
         return;
       }
 
-      const batchNumber = parseInt(match[1] || '0', 10);
-      const dateStr = match[2] || '';
-      const timeStr = match[3] || '';
+      const batchNumber = parseInt(match[1] || "0", 10);
+      const dateStr = match[2] || "";
+      const timeStr = match[3] || "";
 
       // Read and parse the file
-      const content = await fs.readFile(filePath, 'utf-8');
+      const content = await fs.readFile(filePath, "utf-8");
       const jsonMatch = content.match(/```json\s*(.*?)\s*```/s);
-      
+
       if (!jsonMatch) {
         logger.warn(`No JSON found in ${filename}`);
         return;
       }
 
-      const analysisData = JSON.parse(jsonMatch[1] || '{}');
-      
+      const analysisData = JSON.parse(jsonMatch[1] || "{}");
+
       // Create email record from analysis
       const emailData = this.transformAnalysisToEmail(analysisData, {
         batchNumber,
         dateStr,
-        timeStr
+        timeStr,
       });
 
       // Save to database
       await this.emailService.createEmail(emailData);
 
       // Broadcast update
-      this.wsService.broadcastEmailBulkUpdate(
-        'new_email',
-        [emailData.id],
-        {
-          successful: 1,
-          failed: 0,
-          total: 1
-        }
-      );
+      this.wsService.broadcastEmailBulkUpdate("new_email", [emailData.id], {
+        successful: 1,
+        failed: 0,
+        total: 1,
+      });
 
       logger.info(`Successfully processed ${filename}`);
-
     } catch (error) {
-      logger.error(`Failed to process file ${filePath}:`, error instanceof Error ? error.message : String(error));
+      logger.error(
+        `Failed to process file ${filePath}:`,
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -291,37 +302,40 @@ export class IEMSDataFlowService extends EventEmitter {
     const customer = participants.customer || {};
 
     // Determine email alias based on workflow type
-    let emailAlias = 'Team4401@tdsynnex.com';
-    const primaryFocus = workflowAnalysis.primary_focus || '';
-    
-    if (primaryFocus.includes('Quote')) {
-      emailAlias = 'InsightHPI@tdsynnex.com';
-    } else if (primaryFocus.includes('Order')) {
-      emailAlias = 'InsightOrderSupport@tdsynnex.com';
-    } else if (primaryFocus.includes('Surface')) {
-      emailAlias = 'US.InsightSurface@tdsynnex.com';
-    } else if (primaryFocus.includes('Renewal')) {
-      emailAlias = 'Insight3@tdsynnex.com';
+    let emailAlias = "Team4401@tdsynnex.com";
+    const primaryFocus = workflowAnalysis.primary_focus || "";
+
+    if (primaryFocus.includes("Quote")) {
+      emailAlias = "InsightHPI@tdsynnex.com";
+    } else if (primaryFocus.includes("Order")) {
+      emailAlias = "InsightOrderSupport@tdsynnex.com";
+    } else if (primaryFocus.includes("Surface")) {
+      emailAlias = "US.InsightSurface@tdsynnex.com";
+    } else if (primaryFocus.includes("Renewal")) {
+      emailAlias = "Insight3@tdsynnex.com";
     }
 
     // Map workflow state to status
-    const workflowState = workflowAnalysis.overall_state || '';
-    let status = 'yellow';
-    let statusText = 'In Progress';
-    
-    if (workflowState.includes('🔴') || workflowState.includes('Started')) {
-      status = 'red';
-      statusText = 'Critical';
-    } else if (workflowState.includes('🟢') || workflowState.includes('Completed')) {
-      status = 'green';
-      statusText = 'Completed';
+    const workflowState = workflowAnalysis.overall_state || "";
+    let status = "yellow";
+    let statusText = "In Progress";
+
+    if (workflowState.includes("🔴") || workflowState.includes("Started")) {
+      status = "red";
+      statusText = "Critical";
+    } else if (
+      workflowState.includes("🟢") ||
+      workflowState.includes("Completed")
+    ) {
+      status = "green";
+      statusText = "Completed";
     }
 
     // Create email record
     return {
       messageId: `MSG_batch_${metadata.batchNumber}_${metadata.dateStr}_${metadata.timeStr}`,
       emailAlias,
-      requestedBy: customer.name || 'Unknown Requester',
+      requestedBy: customer.name || "Unknown Requester",
       subject: primaryFocus || `Email Batch ${metadata.batchNumber}`,
       summary: this.generateSummary(workflowAnalysis, priorityAssessment),
       status,
@@ -334,7 +348,7 @@ export class IEMSDataFlowService extends EventEmitter {
       isRead: false,
       body: JSON.stringify(analysis, null, 2),
       entities: this.extractEntities(entityExtraction),
-      recipients: this.extractRecipients(participants)
+      recipients: this.extractRecipients(participants),
     };
   }
 
@@ -343,22 +357,25 @@ export class IEMSDataFlowService extends EventEmitter {
    */
   private generateSummary(workflow: any, priority: any): string {
     const parts = [
-      `Workflow: ${workflow.overall_state || 'Unknown'}`,
-      workflow.primary_focus || 'Processing',
-      `Priority: ${priority.urgency_level || 'Medium'}`,
-      `Impact: ${priority.business_impact || 'Normal'}`
+      `Workflow: ${workflow.overall_state || "Unknown"}`,
+      workflow.primary_focus || "Processing",
+      `Priority: ${priority.urgency_level || "Medium"}`,
+      `Impact: ${priority.business_impact || "Normal"}`,
     ];
-    
-    return parts.join(' - ').substring(0, 500);
+
+    return parts.join(" - ").substring(0, 500);
   }
 
   /**
    * Map workflow state
    */
-  private mapWorkflowState(state: string): 'START_POINT' | 'IN_PROGRESS' | 'COMPLETION' {
-    if (state.includes('Started')) return 'START_POINT';
-    if (state.includes('Completed') || state.includes('Resolved')) return 'COMPLETION';
-    return 'IN_PROGRESS';
+  private mapWorkflowState(
+    state: string,
+  ): "START_POINT" | "IN_PROGRESS" | "COMPLETION" {
+    if (state.includes("Started")) return "START_POINT";
+    if (state.includes("Completed") || state.includes("Resolved"))
+      return "COMPLETION";
+    return "IN_PROGRESS";
   }
 
   /**
@@ -366,13 +383,13 @@ export class IEMSDataFlowService extends EventEmitter {
    */
   private mapWorkflowType(primaryFocus: string): string {
     const mappings = [
-      { pattern: /Quote/i, type: 'Quote Processing' },
-      { pattern: /Order/i, type: 'Order Management' },
-      { pattern: /Invoice/i, type: 'Billing Support' },
-      { pattern: /Technical/i, type: 'Technical Support' },
-      { pattern: /Return|RMA/i, type: 'RMA Processing' },
-      { pattern: /Shipping/i, type: 'Shipping Management' },
-      { pattern: /Account/i, type: 'Account Management' }
+      { pattern: /Quote/i, type: "Quote Processing" },
+      { pattern: /Order/i, type: "Order Management" },
+      { pattern: /Invoice/i, type: "Billing Support" },
+      { pattern: /Technical/i, type: "Technical Support" },
+      { pattern: /Return|RMA/i, type: "RMA Processing" },
+      { pattern: /Shipping/i, type: "Shipping Management" },
+      { pattern: /Account/i, type: "Account Management" },
     ];
 
     for (const mapping of mappings) {
@@ -381,25 +398,25 @@ export class IEMSDataFlowService extends EventEmitter {
       }
     }
 
-    return 'General Support';
+    return "General Support";
   }
 
   /**
    * Map priority level
    */
   private mapPriority(urgencyLevel?: string): string {
-    if (!urgencyLevel) return 'Medium';
-    
+    if (!urgencyLevel) return "Medium";
+
     switch (urgencyLevel.toLowerCase()) {
-      case 'critical':
-      case 'urgent':
-        return 'Critical';
-      case 'high':
-        return 'High';
-      case 'low':
-        return 'Low';
+      case "critical":
+      case "urgent":
+        return "Critical";
+      case "high":
+        return "High";
+      case "low":
+        return "Low";
       default:
-        return 'Medium';
+        return "Medium";
     }
   }
 
@@ -413,7 +430,7 @@ export class IEMSDataFlowService extends EventEmitter {
     const hour = parseInt(timeStr.substring(0, 2), 10);
     const minute = parseInt(timeStr.substring(2, 4), 10);
     const second = parseInt(timeStr.substring(4, 6), 10);
-    
+
     return new Date(year, month, day, hour, minute, second);
   }
 
@@ -423,27 +440,27 @@ export class IEMSDataFlowService extends EventEmitter {
   private extractEntities(entityData: any): any[] {
     const entities = [];
     const refNumbers = entityData.reference_numbers || {};
-    
+
     // PO Numbers
     for (const po of refNumbers.po_numbers || []) {
       entities.push({
-        type: 'po_number',
+        type: "po_number",
         value: po,
-        context: 'Purchase Order'
+        context: "Purchase Order",
       });
     }
-    
+
     // Products
     for (const product of refNumbers.products || []) {
-      if (typeof product === 'object') {
+      if (typeof product === "object") {
         entities.push({
-          type: 'product',
-          value: product.name || '',
-          context: product.type || ''
+          type: "product",
+          value: product.name || "",
+          context: product.type || "",
         });
       }
     }
-    
+
     return entities;
   }
 
@@ -452,26 +469,27 @@ export class IEMSDataFlowService extends EventEmitter {
    */
   private extractRecipients(participants: any): any[] {
     const recipients = [];
-    
+
     // Customer
     const customer = participants.customer || {};
     if (customer.name) {
       recipients.push({
-        type: 'to',
+        type: "to",
         name: customer.name,
-        email: customer.email || `${customer.name.replace(/\s+/g, '.')}@unknown.com`
+        email:
+          customer.email || `${customer.name.replace(/\s+/g, ".")}@unknown.com`,
       });
     }
-    
+
     // Internal team
     for (const member of participants.internal_team || []) {
       recipients.push({
-        type: 'cc',
-        name: member.name || '',
-        email: member.email || ''
+        type: "cc",
+        name: member.name || "",
+        email: member.email || "",
       });
     }
-    
+
     return recipients;
   }
 
@@ -480,15 +498,17 @@ export class IEMSDataFlowService extends EventEmitter {
    */
   private setupScheduledSync(): void {
     const intervalMs = this.config.syncIntervalMinutes * 60 * 1000;
-    
+
     this.syncInterval = setInterval(async () => {
-      logger.info('Running scheduled sync');
+      logger.info("Running scheduled sync");
       await this.performSync();
     }, intervalMs);
 
     // Calculate next sync time
     this.status.nextSync = new Date(Date.now() + intervalMs);
-    logger.info(`Scheduled sync every ${this.config.syncIntervalMinutes} minutes`);
+    logger.info(
+      `Scheduled sync every ${this.config.syncIntervalMinutes} minutes`,
+    );
   }
 
   /**
@@ -496,8 +516,11 @@ export class IEMSDataFlowService extends EventEmitter {
    */
   private async setupFileWatcher(): Promise<void> {
     // TODO: Install chokidar package and types
-    logger.warn('File watching disabled - chokidar not available', 'IEMS_DATAFLOW');
-    
+    logger.warn(
+      "File watching disabled - chokidar not available",
+      "IEMS_DATAFLOW",
+    );
+
     /* TODO: Uncomment when chokidar is installed
     const chokidar = await import('chokidar');
     
@@ -528,25 +551,21 @@ export class IEMSDataFlowService extends EventEmitter {
    */
   private setupRealTimeSync(): void {
     // Listen for manual sync requests
-    this.wsService.on('sync:request', async () => {
-      logger.info('Manual sync requested via WebSocket');
+    this.wsService.on("sync:request", async () => {
+      logger.info("Manual sync requested via WebSocket");
       await this.performSync();
     });
 
     // Listen for status requests
-    this.wsService.on('status:request', () => {
-      this.wsService.broadcastEmailBulkUpdate(
-        'status_update',
-        [],
-        {
-          successful: 0,
-          failed: 0,
-          total: 0
-        }
-      );
+    this.wsService.on("status:request", () => {
+      this.wsService.broadcastEmailBulkUpdate("status_update", [], {
+        successful: 0,
+        failed: 0,
+        total: 0,
+      });
     });
 
-    logger.info('Real-time sync listeners configured');
+    logger.info("Real-time sync listeners configured");
   }
 
   /**
@@ -566,25 +585,30 @@ export class IEMSDataFlowService extends EventEmitter {
         syncInterval: this.config.syncIntervalMinutes,
         batchSize: this.config.batchSize,
         realTimeSync: this.config.enableRealTimeSync,
-        fileWatching: this.config.watchNewFiles
+        fileWatching: this.config.watchNewFiles,
       },
       analysisFileCount: 0,
-      lastAnalysisFile: null as string | null
+      lastAnalysisFile: null as string | null,
     };
 
     try {
       // Count analysis files
       const files = await fs.readdir(this.config.iemsAnalysisDir);
-      const analysisFiles = files.filter(f => f.match(/analysis_batch_.*\.txt$/));
+      const analysisFiles = files.filter((f) =>
+        f.match(/analysis_batch_.*\.txt$/),
+      );
       stats.analysisFileCount = analysisFiles.length;
-      
+
       // Find most recent file
       if (analysisFiles.length > 0) {
         analysisFiles.sort().reverse();
         stats.lastAnalysisFile = analysisFiles[0] || null;
       }
     } catch (error) {
-      logger.error('Failed to get analysis file stats:', error instanceof Error ? error.message : String(error));
+      logger.error(
+        "Failed to get analysis file stats:",
+        error instanceof Error ? error.message : String(error),
+      );
     }
 
     return stats;

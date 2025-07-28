@@ -57,8 +57,8 @@ export const walmartDataRouter = router({
         // Transform response for frontend
         const response = {
           query: input.query,
-          totalFound: searchResult.data.totalFound || 0,
-          products: searchResult.data.products || [],
+          totalFound: searchResult.totalResults || 0,
+          products: searchResult.products || [],
           timestamp: new Date()
         };
 

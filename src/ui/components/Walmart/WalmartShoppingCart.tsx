@@ -1,19 +1,27 @@
 import React, { useState } from "react";
 import { TrashIcon, PlusIcon, MinusIcon, ShoppingCartIcon, CreditCardIcon } from "@heroicons/react/24/outline";
 import { api } from "../../../lib/trpc.js";
-import { useCartStore } from "../../../client/store/groceryStore.js";
+import { useGroceryStore } from "../../../client/store/groceryStore.js";
 
 export const WalmartShoppingCart: React.FC = () => {
-  const { items, updateQuantity, removeItem, clearCart, getTotal } = useCartStore();
+  const { 
+    cart, 
+    updateCartItemQuantity: updateQuantity, 
+    removeFromCart: removeItem, 
+    clearCart 
+  } = useGroceryStore();
+  
+  const items = cart.items;
+  const getTotal = () => cart.total;
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
 
-  const checkout = api.walmartGrocery.checkout.useMutation({
+  const checkout = api.walmartGrocery.createOrder.useMutation({
     onSuccess: (data) => {
       // Handle successful checkout
       clearCart();
-      alert(`Order placed successfully! Order ID: ${data.orderId}`);
+      alert(`Order placed successfully! Order ID: ${data.order.id}`);
     },
   });
 
@@ -37,7 +45,7 @@ export const WalmartShoppingCart: React.FC = () => {
   const total = subtotal - discountAmount + tax + shipping;
 
   const handleCheckout = () => {
-    const cartItems = items.map(item => ({
+    const cartItems = items.map((item: any) => ({
       productId: item.productId,
       quantity: item.quantity,
       price: item.price,
@@ -46,10 +54,9 @@ export const WalmartShoppingCart: React.FC = () => {
     checkout.mutate({
       items: cartItems,
       userId: "default-user", // In production, get from auth context
+      deliveryAddress: "123 Main St, City, State 12345",
       deliveryDate: new Date().toISOString(),
-      deliveryTime: "10:00-12:00",
-      paymentMethod: "credit_card",
-      promoCode: appliedPromo || undefined,
+      deliverySlot: "10:00-12:00",
     });
   };
 
@@ -85,14 +92,14 @@ export const WalmartShoppingCart: React.FC = () => {
             {items.map((item) => (
               <div key={item.productId} className="p-4 flex gap-4">
                 <img
-                  src={item.imageUrl || "/api/placeholder/80/80"}
-                  alt={item.name}
+                  src={item.product?.images?.[0]?.url || "/api/placeholder/80/80"}
+                  alt={item.product?.name || "Product"}
                   className="w-20 h-20 object-cover rounded"
                 />
                 
                 <div className="flex-1">
-                  <h3 className="font-medium text-gray-900">{item.name}</h3>
-                  <p className="text-sm text-gray-500">{item.unit}</p>
+                  <h3 className="font-medium text-gray-900">{item.product?.name || `Product ${item.productId}`}</h3>
+                  <p className="text-sm text-gray-500">each</p>
                   <p className="text-lg font-semibold text-blue-600 mt-1">
                     ${item.price.toFixed(2)}
                   </p>

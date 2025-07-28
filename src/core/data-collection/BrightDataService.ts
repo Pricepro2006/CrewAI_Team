@@ -18,12 +18,23 @@ import type {
 
 // Import MCP Bright Data tool types
 interface MCPBrightDataTool {
-  searchEngine: (params: { query: string; engine?: string; cursor?: string }) => Promise<any>;
+  searchEngine: (params: {
+    query: string;
+    engine?: string;
+    cursor?: string;
+  }) => Promise<any>;
   scrapeAsMarkdown: (params: { url: string }) => Promise<{ content: string }>;
   scrapeAsHtml: (params: { url: string }) => Promise<{ content: string }>;
-  extract: (params: { url: string; extraction_prompt?: string }) => Promise<any>;
+  extract: (params: {
+    url: string;
+    extraction_prompt?: string;
+  }) => Promise<any>;
   webDataAmazonProduct: (params: { url: string }) => Promise<any>;
-  webDataAmazonProductSearch: (params: { keyword: string; url: string; pages_to_search?: string }) => Promise<any>;
+  webDataAmazonProductSearch: (params: {
+    keyword: string;
+    url: string;
+    pages_to_search?: string;
+  }) => Promise<any>;
   webDataWalmartProduct: (params: { url: string }) => Promise<any>;
   webDataEbayProduct: (params: { url: string }) => Promise<any>;
   webDataLinkedinPersonProfile: (params: { url: string }) => Promise<any>;
@@ -36,9 +47,12 @@ export class BrightDataService {
   private rateLimitTracker = new Map<string, number[]>();
   private mcpTools: MCPBrightDataTool;
 
-  constructor(credentials: BrightDataCredentials, mcpTools?: MCPBrightDataTool) {
+  constructor(
+    credentials: BrightDataCredentials,
+    mcpTools?: MCPBrightDataTool,
+  ) {
     this.credentials = credentials;
-    
+
     // If no MCP tools provided, create a mock implementation for development
     this.mcpTools = mcpTools || {
       searchEngine: async () => ({ results: [] }),
@@ -134,14 +148,16 @@ export class BrightDataService {
       }
 
       // Call actual MCP Bright Data scraping tools
-      const markdownResult = await this.mcpTools.scrapeAsMarkdown({ url: params.url });
+      const markdownResult = await this.mcpTools.scrapeAsMarkdown({
+        url: params.url,
+      });
       const htmlResult = await this.mcpTools.scrapeAsHtml({ url: params.url });
-      
+
       let extractedData;
       if (params.extractionPrompt) {
-        extractedData = await this.mcpTools.extract({ 
-          url: params.url, 
-          extraction_prompt: params.extractionPrompt 
+        extractedData = await this.mcpTools.extract({
+          url: params.url,
+          extraction_prompt: params.extractionPrompt,
         });
       }
 
@@ -348,7 +364,7 @@ export class BrightDataService {
 
   private async collectAmazonProduct(url: string): Promise<CollectedData> {
     const productData = await this.mcpTools.webDataAmazonProduct({ url });
-    
+
     return {
       id: `amazon_${Date.now()}`,
       sourceId: "amazon_products",
@@ -372,7 +388,9 @@ export class BrightDataService {
     const searchData = await this.mcpTools.webDataAmazonProductSearch({
       keyword,
       url: "https://www.amazon.com",
-      pages_to_search: maxProducts ? Math.ceil(maxProducts / 16).toString() : "1",
+      pages_to_search: maxProducts
+        ? Math.ceil(maxProducts / 16).toString()
+        : "1",
     });
 
     return [
@@ -396,7 +414,7 @@ export class BrightDataService {
 
   private async collectWalmartProduct(url: string): Promise<CollectedData> {
     const productData = await this.mcpTools.webDataWalmartProduct({ url });
-    
+
     return {
       id: `walmart_${Date.now()}`,
       sourceId: "walmart_products",
@@ -415,7 +433,7 @@ export class BrightDataService {
 
   private async collectEbayProduct(url: string): Promise<CollectedData> {
     const productData = await this.mcpTools.webDataEbayProduct({ url });
-    
+
     return {
       id: `ebay_${Date.now()}`,
       sourceId: "ebay_products",
@@ -433,8 +451,10 @@ export class BrightDataService {
   }
 
   private async collectLinkedInProfile(url: string): Promise<CollectedData> {
-    const profileData = await this.mcpTools.webDataLinkedinPersonProfile({ url });
-    
+    const profileData = await this.mcpTools.webDataLinkedinPersonProfile({
+      url,
+    });
+
     return {
       id: `linkedin_${Date.now()}`,
       sourceId: "linkedin_profiles",
@@ -453,7 +473,7 @@ export class BrightDataService {
 
   private async collectInstagramProfile(url: string): Promise<CollectedData> {
     const profileData = await this.mcpTools.webDataInstagramProfiles({ url });
-    
+
     return {
       id: `instagram_${Date.now()}`,
       sourceId: "instagram_profiles",
@@ -472,7 +492,7 @@ export class BrightDataService {
 
   private async collectTikTokProfile(url: string): Promise<CollectedData> {
     const profileData = await this.mcpTools.webDataTiktokProfiles({ url });
-    
+
     return {
       id: `tiktok_${Date.now()}`,
       sourceId: "tiktok_profiles",
@@ -487,6 +507,51 @@ export class BrightDataService {
       tags: ["social_media", "tiktok", "profile"],
       quality: "high",
     };
+  }
+
+  /**
+   * Search Walmart Products
+   * Specific method for Walmart product search integration
+   */
+  async searchWalmartProducts(
+    query: string,
+    maxResults?: number,
+  ): Promise<{
+    products: any[];
+    query: string;
+    totalResults: number;
+  }> {
+    try {
+      logger.info("Starting Walmart product search", "BRIGHT_DATA", {
+        query,
+        maxResults,
+      });
+
+      if (!this.checkRateLimit("walmart_search")) {
+        throw new Error("Rate limit exceeded for Walmart search requests");
+      }
+
+      // For now, return a structure that matches what the router expects
+      // This would integrate with actual Walmart search API or MCP tools
+      const mockResults = {
+        products: [],
+        query,
+        totalResults: 0,
+      };
+
+      logger.info("Walmart product search completed", "BRIGHT_DATA", {
+        query,
+        resultsFound: mockResults.totalResults,
+      });
+
+      return mockResults;
+    } catch (error) {
+      logger.error("Walmart product search failed", "BRIGHT_DATA", {
+        error,
+        query,
+      });
+      throw error;
+    }
   }
 
   /**

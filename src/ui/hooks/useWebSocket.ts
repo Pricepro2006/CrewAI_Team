@@ -14,7 +14,7 @@ interface WebSocketOptions {
 export function useWebSocket(options: WebSocketOptions = {}): {
   client: any;
   isConnected: boolean;
-  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  connectionStatus: "connecting" | "connected" | "disconnected" | "error";
   reconnectAttempts: number;
   connect: () => void;
   disconnect: () => void;
@@ -29,7 +29,9 @@ export function useWebSocket(options: WebSocketOptions = {}): {
   } = options;
 
   const [isConnected, setIsConnected] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
+  const [connectionStatus, setConnectionStatus] = useState<
+    "connecting" | "connected" | "disconnected" | "error"
+  >("disconnected");
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const clientRef = useRef<ReturnType<typeof createWSClient>>();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
@@ -39,32 +41,35 @@ export function useWebSocket(options: WebSocketOptions = {}): {
   const connect = useCallback(() => {
     // Prevent multiple simultaneous connections
     if (isReconnectingRef.current || !isMountedRef.current) {
-      return;
+      return undefined;
     }
-    
-    setConnectionStatus('connecting');
-    
+
+    setConnectionStatus("connecting");
+
     try {
       const wsClient = createWSClient({
         url: `ws://localhost:${parseInt(import.meta.env.VITE_API_PORT || "3000") + 1}/trpc-ws`,
         onOpen: () => {
           if (!isMountedRef.current) return;
-          
+
           setIsConnected(true);
-          setConnectionStatus('connected');
+          setConnectionStatus("connected");
           setReconnectAttempts(0);
           isReconnectingRef.current = false;
           onConnect?.();
         },
         onClose: () => {
           if (!isMountedRef.current) return;
-          
+
           setIsConnected(false);
-          setConnectionStatus('disconnected');
+          setConnectionStatus("disconnected");
           onDisconnect?.();
 
           // Attempt to reconnect if not manually disconnected
-          if (reconnectAttempts < maxReconnectAttempts && isMountedRef.current) {
+          if (
+            reconnectAttempts < maxReconnectAttempts &&
+            isMountedRef.current
+          ) {
             isReconnectingRef.current = true;
             reconnectTimeoutRef.current = setTimeout(() => {
               if (isMountedRef.current) {
@@ -73,8 +78,8 @@ export function useWebSocket(options: WebSocketOptions = {}): {
               }
             }, reconnectDelay);
           } else if (reconnectAttempts >= maxReconnectAttempts) {
-            setConnectionStatus('error');
-            onError?.(new Error('Max reconnection attempts reached'));
+            setConnectionStatus("error");
+            onError?.(new Error("Max reconnection attempts reached"));
           }
         },
         // onError is not supported in tRPC WebSocket client
@@ -84,7 +89,7 @@ export function useWebSocket(options: WebSocketOptions = {}): {
       clientRef.current = wsClient;
       return wsClient;
     } catch (error) {
-      setConnectionStatus('error');
+      setConnectionStatus("error");
       onError?.(error as Error);
       isReconnectingRef.current = false;
     }
@@ -100,19 +105,19 @@ export function useWebSocket(options: WebSocketOptions = {}): {
   const disconnect = useCallback(() => {
     isMountedRef.current = false;
     isReconnectingRef.current = false;
-    
+
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = undefined;
     }
-    
+
     if (clientRef.current) {
       clientRef.current.close();
       clientRef.current = undefined;
     }
-    
+
     setIsConnected(false);
-    setConnectionStatus('disconnected');
+    setConnectionStatus("disconnected");
     setReconnectAttempts(0);
   }, []);
 
@@ -135,16 +140,19 @@ export function useWebSocket(options: WebSocketOptions = {}): {
     ],
   });
 
-  const sendMessage = useCallback((message: any) => {
-    if (!clientRef.current || !isConnected) {
-      console.warn('WebSocket not connected, cannot send message');
-      return;
-    }
-    
-    // tRPC WebSocket client doesn't have a direct send method
-    // Messages are sent through subscriptions and mutations
-    console.warn('Direct message sending not supported in tRPC WebSocket');
-  }, [isConnected]);
+  const sendMessage = useCallback(
+    (message: any) => {
+      if (!clientRef.current || !isConnected) {
+        console.warn("WebSocket not connected, cannot send message");
+        return;
+      }
+
+      // tRPC WebSocket client doesn't have a direct send method
+      // Messages are sent through subscriptions and mutations
+      console.warn("Direct message sending not supported in tRPC WebSocket");
+    },
+    [isConnected],
+  );
 
   return {
     client,
@@ -335,19 +343,26 @@ export function useTaskQueue() {
                 setTasks((prev) => {
                   const newTasks = new Map(prev);
                   newTasks.set(data.taskId, data);
-                  
+
                   // Limit map size to prevent memory leaks
                   if (newTasks.size > MAX_TASKS) {
                     // Remove oldest completed/failed tasks
                     const entries = Array.from(newTasks.entries());
                     const toRemove = entries
-                      .filter(([_, task]) => task.status === 'completed' || task.status === 'failed')
-                      .sort((a, b) => a[1].timestamp.getTime() - b[1].timestamp.getTime())
+                      .filter(
+                        ([_, task]) =>
+                          task.status === "completed" ||
+                          task.status === "failed",
+                      )
+                      .sort(
+                        (a, b) =>
+                          a[1].timestamp.getTime() - b[1].timestamp.getTime(),
+                      )
                       .slice(0, newTasks.size - MAX_TASKS);
-                    
+
                     toRemove.forEach(([taskId]) => newTasks.delete(taskId));
                   }
-                  
+
                   return newTasks;
                 });
               },

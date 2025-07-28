@@ -19,7 +19,10 @@ import {
   getRateLimitStatus,
   cleanupRateLimiting,
 } from "./middleware/rateLimiter.js";
-import { optionalAuthenticateJWT as authenticateToken, type AuthenticatedRequest } from "./middleware/auth.js";
+import {
+  optionalAuthenticateJWT as authenticateToken,
+  type AuthenticatedRequest,
+} from "./middleware/auth.js";
 import { wsService } from "./services/WebSocketService.js";
 import { logger } from "../utils/logger.js";
 import uploadRoutes from "./routes/upload.routes.js";
@@ -47,9 +50,16 @@ import {
 } from "./middleware/monitoring.js";
 import monitoringRouter from "./routes/monitoring.router.js";
 
+import { errorTracker } from "../monitoring/ErrorTracker.js";
+
 const app: Express = express();
 const gracefulShutdown = new GracefulShutdown();
 const PORT = appConfig.api.port;
+
+// Add error listener to prevent crashes
+errorTracker.on("error", () => {
+  // Silently handle error events to prevent unhandled error exceptions
+});
 
 // Trust proxy for accurate IP addresses in rate limiting
 app.set("trust proxy", 1);
@@ -162,7 +172,7 @@ app.get("/api/rate-limit-status", async (req: AuthenticatedRequest, res) => {
     const authReq = req as AuthenticatedRequest;
 
     // Only allow admins to check rate limit status
-    if (!authReq.user || authReq.user.role !== 'admin') {
+    if (!authReq.user || authReq.user.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
     }
 

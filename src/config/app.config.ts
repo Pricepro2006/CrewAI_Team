@@ -19,6 +19,7 @@ interface ApiConfig {
 
 interface OllamaConfig {
   url: string;
+  baseUrl: string;
   model?: string;
 }
 
@@ -28,10 +29,21 @@ interface SecurityConfig {
   refreshTokenExpiration: string;
 }
 
+interface VectorStoreConfig {
+  baseUrl: string;
+  collection?: string;
+}
+
+interface RAGConfig {
+  vectorStore: VectorStoreConfig;
+  embeddingModel?: string;
+}
+
 interface AppConfig {
   database: DatabaseConfig;
   api: ApiConfig;
   ollama?: OllamaConfig;
+  rag?: RAGConfig;
   security: SecurityConfig;
 }
 
@@ -56,7 +68,15 @@ const appConfig: AppConfig = {
   },
   ollama: process.env.OLLAMA_URL ? {
     url: process.env.OLLAMA_URL,
+    baseUrl: process.env.OLLAMA_URL,
     model: process.env.OLLAMA_MODEL,
+  } : undefined,
+  rag: process.env.CHROMADB_URL ? {
+    vectorStore: {
+      baseUrl: process.env.CHROMADB_URL,
+      collection: process.env.CHROMADB_COLLECTION || 'default',
+    },
+    embeddingModel: process.env.EMBEDDING_MODEL || 'nomic-embed-text',
   } : undefined,
   security: {
     jwtSecret: process.env.JWT_SECRET || 'dev-secret-key-change-in-production',

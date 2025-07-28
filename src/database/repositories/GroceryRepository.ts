@@ -30,6 +30,11 @@ export interface GroceryList {
   created_at?: string;
   updated_at?: string;
   completed_at?: string;
+
+  // Additional properties for service compatibility
+  items?: GroceryItem[];
+  totalEstimate?: number;
+  isShared?: boolean;
 }
 
 export interface GroceryItem {

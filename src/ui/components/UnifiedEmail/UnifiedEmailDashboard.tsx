@@ -8,11 +8,13 @@ import {
   ArrowPathIcon,
   Cog6ToothIcon,
   FunnelIcon,
+  ArrowTrendingUpIcon,
 } from "@heroicons/react/24/outline";
 import { api } from "../../../lib/trpc.js";
 import { useWebSocket } from "../../hooks/useWebSocket.js";
 import { MetricsBar } from "./MetricsBar.js";
 import { EmailListView } from "./EmailListView.js";
+import { EmailDashboardView } from "./EmailDashboardView.js";
 import { AnalyticsView } from "./AnalyticsView.js";
 import { AgentView } from "./AgentView.js";
 import { StatusLegend } from "./StatusLegend.js";
@@ -48,7 +50,7 @@ const defaultFilters: FilterConfig = {
 
 export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
   className,
-  initialView = "list",
+  initialView = "dashboard",
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>(initialView);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
@@ -132,6 +134,14 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
 
         <div className="unified-dashboard__nav">
           <button
+            className={`unified-dashboard__nav-btn ${viewMode === "dashboard" ? "active" : ""}`}
+            onClick={() => setViewMode("dashboard")}
+            title="Dashboard"
+          >
+            <ChartBarIcon className="unified-dashboard__nav-icon" />
+            Dashboard
+          </button>
+          <button
             className={`unified-dashboard__nav-btn ${viewMode === "list" ? "active" : ""}`}
             onClick={() => setViewMode("list")}
             title="Email List"
@@ -144,7 +154,7 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
             onClick={() => setViewMode("analytics")}
             title="Analytics"
           >
-            <ChartBarIcon className="unified-dashboard__nav-icon" />
+            <ArrowTrendingUpIcon className="unified-dashboard__nav-icon" />
             Analytics
           </button>
           <button
@@ -209,6 +219,8 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
 
       {/* Main Content Area */}
       <div className="unified-dashboard__content">
+        {viewMode === "dashboard" && <EmailDashboardView metrics={metrics} />}
+
         {viewMode === "list" && (
           <EmailListView
             emails={emailData?.data?.emails || emailData?.emails || []}

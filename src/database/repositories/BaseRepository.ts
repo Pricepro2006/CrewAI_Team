@@ -4,11 +4,17 @@
  * Enhanced with comprehensive SQL injection protection
  */
 
-import Database from 'better-sqlite3';
-import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../../utils/logger.js';
-import { SqlInjectionProtection, SqlInjectionError } from '../security/SqlInjectionProtection.js';
-import { DatabaseErrorHandler, DatabaseSecurityError } from '../security/DatabaseErrorHandler.js';
+import Database from "better-sqlite3";
+import { v4 as uuidv4 } from "uuid";
+import { logger } from "../../utils/logger.js";
+import {
+  SqlInjectionProtection,
+  SqlInjectionError,
+} from "../security/SqlInjectionProtection.js";
+import {
+  DatabaseErrorHandler,
+  DatabaseSecurityError,
+} from "../security/DatabaseErrorHandler.js";
 
 export interface BaseEntity {
   id: string;
@@ -20,7 +26,7 @@ export interface QueryOptions {
   limit?: number;
   offset?: number;
   orderBy?: string;
-  orderDirection?: 'ASC' | 'DESC';
+  orderDirection?: "ASC" | "DESC";
   where?: Record<string, any>;
 }
 
@@ -37,19 +43,19 @@ export interface PaginatedResult<T> {
 export abstract class BaseRepository<T extends BaseEntity> {
   protected db: Database.Database;
   protected tableName: string;
-  protected primaryKey: string = 'id';
+  protected primaryKey: string = "id";
   protected sqlSecurity: SqlInjectionProtection;
 
   constructor(db: Database.Database, tableName: string) {
     this.db = db;
-    this.tableName = this.sanitizeTableName(tableName);
     this.sqlSecurity = new SqlInjectionProtection({
       enableStrictValidation: true,
-      enableQueryLogging: process.env.NODE_ENV === 'development',
+      enableQueryLogging: process.env.NODE_ENV === "development",
       enableBlacklist: true,
       maxQueryLength: 10000,
-      maxParameterCount: 100
+      maxParameterCount: 100,
     });
+    this.tableName = this.sanitizeTableName(tableName);
   }
 
   /**
@@ -59,10 +65,14 @@ export abstract class BaseRepository<T extends BaseEntity> {
     try {
       return this.sqlSecurity.sanitizeTableName(tableName);
     } catch (error) {
-      logger.error('Invalid table name provided to repository', 'REPOSITORY_SECURITY', {
-        tableName,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logger.error(
+        "Invalid table name provided to repository",
+        "REPOSITORY_SECURITY",
+        {
+          tableName,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      );
       throw new Error(`Invalid table name: ${tableName}`);
     }
   }
@@ -78,12 +88,12 @@ export abstract class BaseRepository<T extends BaseEntity> {
    * Validate entity data before database operations
    */
   protected validateEntityData(data: any): void {
-    if (!data || typeof data !== 'object') {
-      throw new Error('Invalid entity data: must be an object');
+    if (!data || typeof data !== "object") {
+      throw new Error("Invalid entity data: must be an object");
     }
 
     // Check for suspicious properties that might indicate injection attempts
-    const suspiciousKeys = Object.keys(data).filter(key => {
+    const suspiciousKeys = Object.keys(data).filter((key) => {
       try {
         this.sanitizeColumnName(key);
         return false;
@@ -93,25 +103,29 @@ export abstract class BaseRepository<T extends BaseEntity> {
     });
 
     if (suspiciousKeys.length > 0) {
-      logger.error('Suspicious entity keys detected', 'REPOSITORY_SECURITY', {
+      logger.error("Suspicious entity keys detected", "REPOSITORY_SECURITY", {
         tableName: this.tableName,
-        suspiciousKeys
+        suspiciousKeys,
       });
-      throw new Error('Invalid entity properties detected');
+      throw new Error("Invalid entity properties detected");
     }
 
     // Validate string values for potential SQL injection
     for (const [key, value] of Object.entries(data)) {
-      if (typeof value === 'string') {
+      if (typeof value === "string") {
         try {
           this.sqlSecurity.validateQueryParameters([value]);
         } catch (error) {
           if (error instanceof SqlInjectionError) {
-            logger.error('Suspicious entity value detected', 'REPOSITORY_SECURITY', {
-              tableName: this.tableName,
-              key,
-              error: error.message
-            });
+            logger.error(
+              "Suspicious entity value detected",
+              "REPOSITORY_SECURITY",
+              {
+                tableName: this.tableName,
+                key,
+                error: error.message,
+              },
+            );
             throw new Error(`Invalid value for property: ${key}`);
           }
         }
@@ -122,17 +136,24 @@ export abstract class BaseRepository<T extends BaseEntity> {
   /**
    * Build WHERE clause from conditions object with SQL injection protection
    */
-  protected buildWhereClause(conditions: Record<string, any>): { clause: string; params: any[] } {
+  protected buildWhereClause(conditions: Record<string, any>): {
+    clause: string;
+    params: any[];
+  } {
     try {
       return this.sqlSecurity.createSecureWhereClause(conditions);
     } catch (error) {
       if (error instanceof SqlInjectionError) {
-        logger.error('SQL injection attempt in WHERE clause', 'REPOSITORY_SECURITY', {
-          tableName: this.tableName,
-          conditions,
-          error: error.message
-        });
-        throw new Error('Invalid query conditions');
+        logger.error(
+          "SQL injection attempt in WHERE clause",
+          "REPOSITORY_SECURITY",
+          {
+            tableName: this.tableName,
+            conditions,
+            error: error.message,
+          },
+        );
+        throw new Error("Invalid query conditions");
       }
       throw error;
     }
@@ -141,18 +162,28 @@ export abstract class BaseRepository<T extends BaseEntity> {
   /**
    * Build ORDER BY clause with SQL injection protection
    */
-  protected buildOrderClause(orderBy?: string, orderDirection: 'ASC' | 'DESC' = 'ASC'): string {
+  protected buildOrderClause(
+    orderBy?: string,
+    orderDirection: "ASC" | "DESC" = "ASC",
+  ): string {
     try {
-      return this.sqlSecurity.createSecureOrderClause(orderBy || this.primaryKey, orderDirection);
+      return this.sqlSecurity.createSecureOrderClause(
+        orderBy || this.primaryKey,
+        orderDirection,
+      );
     } catch (error) {
       if (error instanceof SqlInjectionError) {
-        logger.error('SQL injection attempt in ORDER BY clause', 'REPOSITORY_SECURITY', {
-          tableName: this.tableName,
-          orderBy,
-          orderDirection,
-          error: error.message
-        });
-        throw new Error('Invalid order parameters');
+        logger.error(
+          "SQL injection attempt in ORDER BY clause",
+          "REPOSITORY_SECURITY",
+          {
+            tableName: this.tableName,
+            orderBy,
+            orderDirection,
+            error: error.message,
+          },
+        );
+        throw new Error("Invalid order parameters");
       }
       throw error;
     }
@@ -166,12 +197,12 @@ export abstract class BaseRepository<T extends BaseEntity> {
       return this.sqlSecurity.sanitizeColumnName(columnName);
     } catch (error) {
       if (error instanceof SqlInjectionError) {
-        logger.error('Invalid column name in query', 'REPOSITORY_SECURITY', {
+        logger.error("Invalid column name in query", "REPOSITORY_SECURITY", {
           tableName: this.tableName,
           columnName,
-          error: error.message
+          error: error.message,
         });
-        throw new Error('Invalid column name');
+        throw new Error("Invalid column name");
       }
       throw error;
     }
@@ -181,24 +212,25 @@ export abstract class BaseRepository<T extends BaseEntity> {
    * Execute a query with performance monitoring and SQL injection protection
    */
   protected executeQuery<R = any>(
-    query: string, 
-    params: any[] = [], 
-    operation: 'get' | 'all' | 'run' = 'all'
+    query: string,
+    params: any[] = [],
+    operation: "get" | "all" | "run" = "all",
   ): R {
     const startTime = Date.now();
-    
+
     try {
       // Validate query and parameters for SQL injection
-      const { query: validatedQuery, params: validatedParams } = this.sqlSecurity.validateQueryExecution(query, params);
-      
+      const { query: validatedQuery, params: validatedParams } =
+        this.sqlSecurity.validateQueryExecution(query, params);
+
       const stmt = this.db.prepare(validatedQuery);
       let result: R;
 
       switch (operation) {
-        case 'get':
+        case "get":
           result = stmt.get(...validatedParams) as R;
           break;
-        case 'run':
+        case "run":
           result = stmt.run(...validatedParams) as R;
           break;
         default:
@@ -206,41 +238,50 @@ export abstract class BaseRepository<T extends BaseEntity> {
       }
 
       const executionTime = Date.now() - startTime;
-      
-      if (executionTime > 1000) { // Log slow queries
-        logger.warn(`Slow query detected (${executionTime}ms)`, 'DATABASE', {
+
+      if (executionTime > 1000) {
+        // Log slow queries
+        logger.warn(`Slow query detected (${executionTime}ms)`, "DATABASE", {
           tableName: this.tableName,
           executionTime,
-          queryType: this.getQueryType(validatedQuery)
+          queryType: this.getQueryType(validatedQuery),
         });
       }
 
       return result;
     } catch (error) {
       if (error instanceof SqlInjectionError) {
-        logger.error('SQL injection attempt blocked in query execution', 'REPOSITORY_SECURITY', {
-          tableName: this.tableName,
-          error: error.message,
-          queryPreview: query.substring(0, 100)
-        });
-        throw new DatabaseSecurityError('Invalid query detected', 'SQL_INJECTION_BLOCKED', error);
+        logger.error(
+          "SQL injection attempt blocked in query execution",
+          "REPOSITORY_SECURITY",
+          {
+            tableName: this.tableName,
+            error: error.message,
+            queryPreview: query.substring(0, 100),
+          },
+        );
+        throw new DatabaseSecurityError(
+          "Invalid query detected",
+          "SQL_INJECTION_BLOCKED",
+          error,
+        );
       }
-      
+
       // Handle database errors securely
       const dbError = DatabaseErrorHandler.handleError(
         error instanceof Error ? error : new Error(String(error)),
         {
           operation: operation,
           table: this.tableName,
-          queryPreview: query.substring(0, 100)
-        }
+          queryPreview: query.substring(0, 100),
+        },
       );
-      
+
       // Re-throw with user-friendly message
       throw new DatabaseSecurityError(
         dbError.userMessage,
         dbError.code,
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -250,13 +291,13 @@ export abstract class BaseRepository<T extends BaseEntity> {
    */
   private getQueryType(query: string): string {
     const normalizedQuery = query.toLowerCase().trim();
-    
-    if (normalizedQuery.startsWith('select')) return 'SELECT';
-    if (normalizedQuery.startsWith('insert')) return 'INSERT';
-    if (normalizedQuery.startsWith('update')) return 'UPDATE';
-    if (normalizedQuery.startsWith('delete')) return 'DELETE';
-    
-    return 'OTHER';
+
+    if (normalizedQuery.startsWith("select")) return "SELECT";
+    if (normalizedQuery.startsWith("insert")) return "INSERT";
+    if (normalizedQuery.startsWith("update")) return "UPDATE";
+    if (normalizedQuery.startsWith("delete")) return "DELETE";
+
+    return "OTHER";
   }
 
   /**
@@ -264,7 +305,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
    */
   async findById(id: string): Promise<T | null> {
     const query = `SELECT * FROM ${this.tableName} WHERE ${this.primaryKey} = ?`;
-    const result = this.executeQuery<T>(query, [id], 'get');
+    const result = this.executeQuery<T>(query, [id], "get");
     return result || null;
   }
 
@@ -273,18 +314,20 @@ export abstract class BaseRepository<T extends BaseEntity> {
    */
   async findAll(options: QueryOptions = {}): Promise<T[]> {
     const { limit, offset, orderBy, orderDirection, where } = options;
-    const { clause: whereClause, params: whereParams } = this.buildWhereClause(where || {});
+    const { clause: whereClause, params: whereParams } = this.buildWhereClause(
+      where || {},
+    );
     const orderClause = this.buildOrderClause(orderBy, orderDirection);
-    
+
     let query = `SELECT * FROM ${this.tableName} ${whereClause} ${orderClause}`;
     const params = [...whereParams];
 
     if (limit !== undefined) {
-      query += ' LIMIT ?';
+      query += " LIMIT ?";
       params.push(limit);
 
       if (offset !== undefined) {
-        query += ' OFFSET ?';
+        query += " OFFSET ?";
         params.push(offset);
       }
     }
@@ -298,21 +341,27 @@ export abstract class BaseRepository<T extends BaseEntity> {
   async findPaginated(
     page: number = 1,
     pageSize: number = 50,
-    options: Omit<QueryOptions, 'limit' | 'offset'> = {}
+    options: Omit<QueryOptions, "limit" | "offset"> = {},
   ): Promise<PaginatedResult<T>> {
     const offset = (page - 1) * pageSize;
-    
+
     // Get total count
-    const { clause: whereClause, params: whereParams } = this.buildWhereClause(options.where || {});
+    const { clause: whereClause, params: whereParams } = this.buildWhereClause(
+      options.where || {},
+    );
     const countQuery = `SELECT COUNT(*) as total FROM ${this.tableName} ${whereClause}`;
-    const countResult = this.executeQuery<{ total: number }>(countQuery, whereParams, 'get');
+    const countResult = this.executeQuery<{ total: number }>(
+      countQuery,
+      whereParams,
+      "get",
+    );
     const total = countResult?.total || 0;
 
     // Get paginated data
     const data = await this.findAll({
       ...options,
       limit: pageSize,
-      offset
+      offset,
     });
 
     const totalPages = Math.ceil(total / pageSize);
@@ -324,7 +373,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
       pageSize,
       totalPages,
       hasNext: page < totalPages,
-      hasPrevious: page > 1
+      hasPrevious: page > 1,
     };
   }
 
@@ -334,7 +383,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
   async findOne(conditions: Record<string, any>): Promise<T | null> {
     const { clause: whereClause, params } = this.buildWhereClause(conditions);
     const query = `SELECT * FROM ${this.tableName} ${whereClause} LIMIT 1`;
-    const result = this.executeQuery<T>(query, params, 'get');
+    const result = this.executeQuery<T>(query, params, "get");
     return result || null;
   }
 
@@ -344,7 +393,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
   async count(conditions: Record<string, any> = {}): Promise<number> {
     const { clause: whereClause, params } = this.buildWhereClause(conditions);
     const query = `SELECT COUNT(*) as total FROM ${this.tableName} ${whereClause}`;
-    const result = this.executeQuery<{ total: number }>(query, params, 'get');
+    const result = this.executeQuery<{ total: number }>(query, params, "get");
     return result?.total || 0;
   }
 
@@ -359,44 +408,48 @@ export abstract class BaseRepository<T extends BaseEntity> {
   /**
    * Create a new entity with comprehensive validation
    */
-  async create(data: Omit<T, 'id' | 'created_at' | 'updated_at'>): Promise<T> {
+  async create(data: Omit<T, "id" | "created_at" | "updated_at">): Promise<T> {
     // Validate entity data
     this.validateEntityData(data);
-    
+
     const now = new Date().toISOString();
     const entityData = {
       ...data,
       id: this.generateId(),
       created_at: now,
-      updated_at: now
+      updated_at: now,
     } as T;
 
-    const columns = Object.keys(entityData).map(key => this.sanitizeColumnName(key)).join(', ');
-    const placeholders = Object.keys(entityData).map(() => '?').join(', ');
+    const columns = Object.keys(entityData)
+      .map((key) => this.sanitizeColumnName(key))
+      .join(", ");
+    const placeholders = Object.keys(entityData)
+      .map(() => "?")
+      .join(", ");
     const values = Object.values(entityData);
 
     const query = `INSERT INTO ${this.tableName} (${columns}) VALUES (${placeholders})`;
-    
+
     try {
-      this.executeQuery(query, values, 'run');
-      logger.info('Entity created successfully', 'DATABASE', {
+      this.executeQuery(query, values, "run");
+      logger.info("Entity created successfully", "DATABASE", {
         tableName: this.tableName,
-        entityId: entityData.id
+        entityId: entityData.id,
       });
       return entityData;
     } catch (error) {
       const dbError = DatabaseErrorHandler.handleError(
         error instanceof Error ? error : new Error(String(error)),
         {
-          operation: 'create',
-          table: this.tableName
-        }
+          operation: "create",
+          table: this.tableName,
+        },
       );
-      
+
       throw new DatabaseSecurityError(
         dbError.userMessage,
         dbError.code,
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -404,25 +457,28 @@ export abstract class BaseRepository<T extends BaseEntity> {
   /**
    * Update an entity by ID with comprehensive validation
    */
-  async update(id: string, data: Partial<Omit<T, 'id' | 'created_at'>>): Promise<T | null> {
+  async update(
+    id: string,
+    data: Partial<Omit<T, "id" | "created_at">>,
+  ): Promise<T | null> {
     // Validate ID format
     try {
       this.sqlSecurity.validateQueryParameters([id]);
     } catch (error) {
       if (error instanceof SqlInjectionError) {
-        logger.error('Invalid ID in update operation', 'REPOSITORY_SECURITY', {
+        logger.error("Invalid ID in update operation", "REPOSITORY_SECURITY", {
           tableName: this.tableName,
           id,
-          error: error.message
+          error: error.message,
         });
-        throw new Error('Invalid entity ID');
+        throw new Error("Invalid entity ID");
       }
       throw error;
     }
-    
+
     // Validate update data
     this.validateEntityData(data);
-    
+
     // Check if entity exists
     const existingEntity = await this.findById(id);
     if (!existingEntity) {
@@ -431,38 +487,38 @@ export abstract class BaseRepository<T extends BaseEntity> {
 
     const updateData = {
       ...data,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     const updateFields = Object.keys(updateData)
-      .map(key => `${this.sanitizeColumnName(key)} = ?`)
-      .join(', ');
+      .map((key) => `${this.sanitizeColumnName(key)} = ?`)
+      .join(", ");
     const values = [...Object.values(updateData), id];
 
     const query = `UPDATE ${this.tableName} SET ${updateFields} WHERE ${this.sanitizeColumnName(this.primaryKey)} = ?`;
-    
+
     try {
-      this.executeQuery(query, values, 'run');
-      logger.info('Entity updated successfully', 'DATABASE', {
+      this.executeQuery(query, values, "run");
+      logger.info("Entity updated successfully", "DATABASE", {
         tableName: this.tableName,
-        entityId: id
+        entityId: id,
       });
-      
+
       // Return updated entity
       return await this.findById(id);
     } catch (error) {
       const dbError = DatabaseErrorHandler.handleError(
         error instanceof Error ? error : new Error(String(error)),
         {
-          operation: 'update',
-          table: this.tableName
-        }
+          operation: "update",
+          table: this.tableName,
+        },
       );
-      
+
       throw new DatabaseSecurityError(
         dbError.userMessage,
         dbError.code,
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -472,29 +528,29 @@ export abstract class BaseRepository<T extends BaseEntity> {
    */
   async delete(id: string): Promise<boolean> {
     const query = `DELETE FROM ${this.tableName} WHERE ${this.primaryKey} = ?`;
-    
+
     try {
-      const result = this.executeQuery<Database.RunResult>(query, [id], 'run');
+      const result = this.executeQuery<Database.RunResult>(query, [id], "run");
       const deleted = result.changes > 0;
-      
+
       if (deleted) {
-        logger.info(`Deleted ${this.tableName} with id: ${id}`, 'DATABASE');
+        logger.info(`Deleted ${this.tableName} with id: ${id}`, "DATABASE");
       }
-      
+
       return deleted;
     } catch (error) {
       const dbError = DatabaseErrorHandler.handleError(
         error instanceof Error ? error : new Error(String(error)),
         {
-          operation: 'delete',
-          table: this.tableName
-        }
+          operation: "delete",
+          table: this.tableName,
+        },
       );
-      
+
       throw new DatabaseSecurityError(
         dbError.userMessage,
         dbError.code,
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -505,26 +561,33 @@ export abstract class BaseRepository<T extends BaseEntity> {
   async deleteWhere(conditions: Record<string, any>): Promise<number> {
     const { clause: whereClause, params } = this.buildWhereClause(conditions);
     const query = `DELETE FROM ${this.tableName} ${whereClause}`;
-    
+
     try {
-      const result = this.executeQuery<Database.RunResult>(query, params, 'run');
+      const result = this.executeQuery<Database.RunResult>(
+        query,
+        params,
+        "run",
+      );
       const deletedCount = result.changes;
-      
-      logger.info(`Deleted ${deletedCount} records from ${this.tableName}`, 'DATABASE');
+
+      logger.info(
+        `Deleted ${deletedCount} records from ${this.tableName}`,
+        "DATABASE",
+      );
       return deletedCount;
     } catch (error) {
       const dbError = DatabaseErrorHandler.handleError(
         error instanceof Error ? error : new Error(String(error)),
         {
-          operation: 'deleteWhere',
-          table: this.tableName
-        }
+          operation: "deleteWhere",
+          table: this.tableName,
+        },
       );
-      
+
       throw new DatabaseSecurityError(
         dbError.userMessage,
         dbError.code,
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -534,12 +597,12 @@ export abstract class BaseRepository<T extends BaseEntity> {
    * WARNING: Use with extreme caution. Prefer typed repository methods.
    */
   async raw<R = any>(query: string, params: any[] = []): Promise<R> {
-    logger.warn('Raw SQL query execution', 'REPOSITORY_SECURITY', {
+    logger.warn("Raw SQL query execution", "REPOSITORY_SECURITY", {
       tableName: this.tableName,
       queryType: this.getQueryType(query),
-      paramCount: params.length
+      paramCount: params.length,
     });
-    
+
     return this.executeQuery<R>(query, params);
   }
 
@@ -557,15 +620,15 @@ export abstract class BaseRepository<T extends BaseEntity> {
       const dbError = DatabaseErrorHandler.handleError(
         error instanceof Error ? error : new Error(String(error)),
         {
-          operation: 'transaction',
-          table: this.tableName
-        }
+          operation: "transaction",
+          table: this.tableName,
+        },
       );
-      
+
       throw new DatabaseSecurityError(
         dbError.userMessage,
         dbError.code,
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -573,21 +636,25 @@ export abstract class BaseRepository<T extends BaseEntity> {
   /**
    * Bulk insert entities
    */
-  async bulkCreate(entities: Array<Omit<T, 'id' | 'created_at' | 'updated_at'>>): Promise<T[]> {
+  async bulkCreate(
+    entities: Array<Omit<T, "id" | "created_at" | "updated_at">>,
+  ): Promise<T[]> {
     if (entities.length === 0) {
       return [];
     }
 
     const now = new Date().toISOString();
-    const entitiesWithMetadata = entities.map(entity => ({
+    const entitiesWithMetadata = entities.map((entity) => ({
       ...entity,
       id: this.generateId(),
       created_at: now,
-      updated_at: now
+      updated_at: now,
     })) as T[];
 
-    const columns = Object.keys(entitiesWithMetadata[0] as object).join(', ');
-    const placeholders = Object.keys(entitiesWithMetadata[0] as object).map(() => '?').join(', ');
+    const columns = Object.keys(entitiesWithMetadata[0] as object).join(", ");
+    const placeholders = Object.keys(entitiesWithMetadata[0] as object)
+      .map(() => "?")
+      .join(", ");
     const query = `INSERT INTO ${this.tableName} (${columns}) VALUES (${placeholders})`;
 
     const insertStmt = this.db.prepare(query);
@@ -599,21 +666,24 @@ export abstract class BaseRepository<T extends BaseEntity> {
 
     try {
       transaction(entitiesWithMetadata);
-      logger.info(`Bulk created ${entities.length} records in ${this.tableName}`, 'DATABASE');
+      logger.info(
+        `Bulk created ${entities.length} records in ${this.tableName}`,
+        "DATABASE",
+      );
       return entitiesWithMetadata;
     } catch (error) {
       const dbError = DatabaseErrorHandler.handleError(
         error instanceof Error ? error : new Error(String(error)),
         {
-          operation: 'bulkCreate',
-          table: this.tableName
-        }
+          operation: "bulkCreate",
+          table: this.tableName,
+        },
       );
-      
+
       throw new DatabaseSecurityError(
         dbError.userMessage,
         dbError.code,
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
     }
   }
@@ -621,7 +691,11 @@ export abstract class BaseRepository<T extends BaseEntity> {
   /**
    * Search entities with text-based search and SQL injection protection
    */
-  async search(searchTerm: string, searchColumns: string[], options: QueryOptions = {}): Promise<T[]> {
+  async search(
+    searchTerm: string,
+    searchColumns: string[],
+    options: QueryOptions = {},
+  ): Promise<T[]> {
     if (!searchTerm.trim() || searchColumns.length === 0) {
       return [];
     }
@@ -631,36 +705,47 @@ export abstract class BaseRepository<T extends BaseEntity> {
       this.sqlSecurity.validateQueryParameters([searchTerm]);
     } catch (error) {
       if (error instanceof SqlInjectionError) {
-        logger.error('SQL injection attempt in search term', 'REPOSITORY_SECURITY', {
-          tableName: this.tableName,
-          searchTerm,
-          error: error.message
-        });
-        throw new Error('Invalid search term');
+        logger.error(
+          "SQL injection attempt in search term",
+          "REPOSITORY_SECURITY",
+          {
+            tableName: this.tableName,
+            searchTerm,
+            error: error.message,
+          },
+        );
+        throw new Error("Invalid search term");
       }
       throw error;
     }
 
     // Sanitize search columns
-    const sanitizedColumns = searchColumns.map(column => {
+    const sanitizedColumns = searchColumns.map((column) => {
       try {
         return this.sanitizeColumnName(column);
       } catch (error) {
-        logger.error('Invalid search column', 'REPOSITORY_SECURITY', {
+        logger.error("Invalid search column", "REPOSITORY_SECURITY", {
           tableName: this.tableName,
           column,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         });
         throw new Error(`Invalid search column: ${column}`);
       }
     });
 
-    const searchConditions = sanitizedColumns.map(column => `${column} LIKE ?`).join(' OR ');
+    const searchConditions = sanitizedColumns
+      .map((column) => `${column} LIKE ?`)
+      .join(" OR ");
     const searchParams = sanitizedColumns.map(() => `%${searchTerm}%`);
-    
-    const { clause: whereClause, params: whereParams } = this.buildWhereClause(options.where || {});
-    const orderClause = this.buildOrderClause(options.orderBy, options.orderDirection);
-    
+
+    const { clause: whereClause, params: whereParams } = this.buildWhereClause(
+      options.where || {},
+    );
+    const orderClause = this.buildOrderClause(
+      options.orderBy,
+      options.orderDirection,
+    );
+
     let query = `SELECT * FROM ${this.tableName}`;
     const params: any[] = [];
 
@@ -675,11 +760,11 @@ export abstract class BaseRepository<T extends BaseEntity> {
     query += ` ${orderClause}`;
 
     if (options.limit !== undefined) {
-      query += ' LIMIT ?';
+      query += " LIMIT ?";
       params.push(options.limit);
 
       if (options.offset !== undefined) {
-        query += ' OFFSET ?';
+        query += " OFFSET ?";
         params.push(options.offset);
       }
     }

@@ -11,12 +11,20 @@ export interface User {
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
-  role: 'user' | 'admin' | 'moderator';
+  role: "user" | "admin" | "moderator";
   is_active: boolean;
   is_verified: boolean;
   last_login_at?: string;
   created_at: string;
   updated_at: string;
+
+  // Computed properties for convenience
+  isAdmin?: boolean;
+  rateLimits?: {
+    requests: number;
+    windowMs: number;
+    lastReset: Date;
+  };
 }
 
 export interface PublicUser {
@@ -26,12 +34,20 @@ export interface PublicUser {
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
-  role: 'user' | 'admin' | 'moderator';
+  role: "user" | "admin" | "moderator";
   is_active: boolean;
   is_verified: boolean;
   last_login_at?: string;
   created_at: string;
   updated_at: string;
+
+  // Computed properties for convenience
+  isAdmin?: boolean;
+  rateLimits?: {
+    requests: number;
+    windowMs: number;
+    lastReset: Date;
+  };
 }
 
 export interface CreateUserInput {
@@ -41,7 +57,7 @@ export interface CreateUserInput {
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
-  role?: 'user' | 'admin' | 'moderator';
+  role?: "user" | "admin" | "moderator";
 }
 
 export interface UpdateUserInput {
@@ -50,7 +66,7 @@ export interface UpdateUserInput {
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
-  role?: 'user' | 'admin' | 'moderator';
+  role?: "user" | "admin" | "moderator";
   is_active?: boolean;
   is_verified?: boolean;
 }
@@ -110,7 +126,7 @@ export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
-  tokenType: 'Bearer';
+  tokenType: "Bearer";
 }
 
 export interface AuthResponse {
@@ -139,11 +155,16 @@ export interface UserListQuery {
   page?: number;
   limit?: number;
   search?: string;
-  role?: 'user' | 'admin' | 'moderator';
+  role?: "user" | "admin" | "moderator";
   is_active?: boolean;
   is_verified?: boolean;
-  sort_by?: 'created_at' | 'updated_at' | 'last_login_at' | 'email' | 'username';
-  sort_order?: 'asc' | 'desc';
+  sort_by?:
+    | "created_at"
+    | "updated_at"
+    | "last_login_at"
+    | "email"
+    | "username";
+  sort_order?: "asc" | "desc";
 }
 
 export interface UserListResponse {

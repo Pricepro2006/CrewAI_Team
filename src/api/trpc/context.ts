@@ -212,6 +212,7 @@ type TRPCContext = {
   batchId: string | undefined;
   validatedInput: unknown;
   csrfToken?: string;
+  rateLimits?: Map<string, { count: number; resetTime: number }>;
   masterOrchestrator: MasterOrchestrator;
   conversationService: ConversationService;
   taskService: TaskService;

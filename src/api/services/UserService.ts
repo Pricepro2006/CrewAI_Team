@@ -1,21 +1,21 @@
-import Database from 'better-sqlite3';
-import { randomUUID } from 'crypto';
-import type { 
-  User, 
-  PublicUser, 
-  CreateUserInput, 
-  UpdateUserInput, 
+import Database from "better-sqlite3";
+import { randomUUID } from "crypto";
+import type {
+  User,
+  PublicUser,
+  CreateUserInput,
+  UpdateUserInput,
   RefreshToken,
   UserSession,
   PasswordResetToken,
   EmailVerificationToken,
   UserListQuery,
   UserListResponse,
-  ChangePasswordInput
-} from '../../database/models/User.js';
-import { passwordManager } from '../utils/password.js';
-import { jwtManager } from '../utils/jwt.js';
-import appConfig from '../../config/app.config.js';
+  ChangePasswordInput,
+} from "../../database/models/User.js";
+import { passwordManager } from "../utils/password.js";
+import { jwtManager } from "../utils/jwt.js";
+import appConfig from "../../config/app.config.js";
 
 /**
  * UserService - Manages user authentication and user data operations
@@ -24,7 +24,7 @@ import appConfig from '../../config/app.config.js';
  */
 
 export class UserService {
-  private db: Database;
+  private db: Database.Database;
 
   constructor(dbPath?: string) {
     const path = dbPath || appConfig.database.path;
@@ -36,15 +36,21 @@ export class UserService {
    */
   async createUser(input: CreateUserInput): Promise<PublicUser> {
     // Validate password strength
-    const passwordValidation = passwordManager.validatePasswordStrength(input.password);
+    const passwordValidation = passwordManager.validatePasswordStrength(
+      input.password,
+    );
     if (!passwordValidation.isValid) {
-      throw new Error(`Password validation failed: ${passwordValidation.errors.join(', ')}`);
+      throw new Error(
+        `Password validation failed: ${passwordValidation.errors.join(", ")}`,
+      );
     }
 
     // Check if user already exists
-    const existingUser = this.getUserByEmail(input.email) || this.getUserByUsername(input.username);
+    const existingUser =
+      this.getUserByEmail(input.email) ||
+      this.getUserByUsername(input.username);
     if (existingUser) {
-      throw new Error('User with this email or username already exists');
+      throw new Error("User with this email or username already exists");
     }
 
     // Hash password
@@ -69,16 +75,16 @@ export class UserService {
       input.first_name || null,
       input.last_name || null,
       input.avatar_url || null,
-      input.role || 'user',
+      input.role || "user",
       true,
       false,
       now,
-      now
+      now,
     );
 
     const user = this.getUserById(userId);
     if (!user) {
-      throw new Error('Failed to create user');
+      throw new Error("Failed to create user");
     }
 
     return this.toPublicUser(user);
@@ -88,7 +94,7 @@ export class UserService {
    * Get user by ID
    */
   getUserById(id: string): User | null {
-    const stmt = this.db.prepare('SELECT * FROM users WHERE id = ?');
+    const stmt = this.db.prepare("SELECT * FROM users WHERE id = ?");
     return stmt.get(id) as User | null;
   }
 
@@ -106,11 +112,11 @@ export class UserService {
     try {
       const decoded = jwtManager.verifyAccessToken(token);
       const user = this.getUserById(decoded.sub);
-      
+
       if (!user || !user.is_active) {
         return null;
       }
-      
+
       return user;
     } catch (error) {
       return null;
@@ -121,7 +127,7 @@ export class UserService {
    * Get user by email
    */
   getUserByEmail(email: string): User | null {
-    const stmt = this.db.prepare('SELECT * FROM users WHERE email = ?');
+    const stmt = this.db.prepare("SELECT * FROM users WHERE email = ?");
     return stmt.get(email.toLowerCase()) as User | null;
   }
 
@@ -129,7 +135,7 @@ export class UserService {
    * Get user by username
    */
   getUserByUsername(username: string): User | null {
-    const stmt = this.db.prepare('SELECT * FROM users WHERE username = ?');
+    const stmt = this.db.prepare("SELECT * FROM users WHERE username = ?");
     return stmt.get(username) as User | null;
   }
 
@@ -139,21 +145,21 @@ export class UserService {
   async updateUser(id: string, input: UpdateUserInput): Promise<PublicUser> {
     const user = this.getUserById(id);
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     // Check for duplicate email/username if they're being changed
     if (input.email && input.email !== user.email) {
       const existingUser = this.getUserByEmail(input.email);
       if (existingUser) {
-        throw new Error('Email already in use');
+        throw new Error("Email already in use");
       }
     }
 
     if (input.username && input.username !== user.username) {
       const existingUser = this.getUserByUsername(input.username);
       if (existingUser) {
-        throw new Error('Username already in use');
+        throw new Error("Username already in use");
       }
     }
 
@@ -161,44 +167,44 @@ export class UserService {
     const updateValues: any[] = [];
 
     if (input.email !== undefined) {
-      updateFields.push('email = ?');
+      updateFields.push("email = ?");
       updateValues.push(input.email.toLowerCase());
     }
     if (input.username !== undefined) {
-      updateFields.push('username = ?');
+      updateFields.push("username = ?");
       updateValues.push(input.username);
     }
     if (input.first_name !== undefined) {
-      updateFields.push('first_name = ?');
+      updateFields.push("first_name = ?");
       updateValues.push(input.first_name);
     }
     if (input.last_name !== undefined) {
-      updateFields.push('last_name = ?');
+      updateFields.push("last_name = ?");
       updateValues.push(input.last_name);
     }
     if (input.avatar_url !== undefined) {
-      updateFields.push('avatar_url = ?');
+      updateFields.push("avatar_url = ?");
       updateValues.push(input.avatar_url);
     }
     if (input.role !== undefined) {
-      updateFields.push('role = ?');
+      updateFields.push("role = ?");
       updateValues.push(input.role);
     }
     if (input.is_active !== undefined) {
-      updateFields.push('is_active = ?');
+      updateFields.push("is_active = ?");
       updateValues.push(input.is_active);
     }
     if (input.is_verified !== undefined) {
-      updateFields.push('is_verified = ?');
+      updateFields.push("is_verified = ?");
       updateValues.push(input.is_verified);
     }
 
-    updateFields.push('updated_at = ?');
+    updateFields.push("updated_at = ?");
     updateValues.push(new Date().toISOString());
     updateValues.push(id);
 
     const stmt = this.db.prepare(`
-      UPDATE users SET ${updateFields.join(', ')} WHERE id = ?
+      UPDATE users SET ${updateFields.join(", ")} WHERE id = ?
     `);
     stmt.run(...updateValues);
 
@@ -209,29 +215,38 @@ export class UserService {
   /**
    * Change user password
    */
-  async changePassword(userId: string, input: ChangePasswordInput): Promise<void> {
+  async changePassword(
+    userId: string,
+    input: ChangePasswordInput,
+  ): Promise<void> {
     const user = this.getUserById(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     // Verify current password
     const isCurrentPasswordValid = await passwordManager.verifyPassword(
-      input.currentPassword, 
-      user.password_hash
+      input.currentPassword,
+      user.password_hash,
     );
     if (!isCurrentPasswordValid) {
-      throw new Error('Current password is incorrect');
+      throw new Error("Current password is incorrect");
     }
 
     // Validate new password
-    const passwordValidation = passwordManager.validatePasswordStrength(input.newPassword);
+    const passwordValidation = passwordManager.validatePasswordStrength(
+      input.newPassword,
+    );
     if (!passwordValidation.isValid) {
-      throw new Error(`Password validation failed: ${passwordValidation.errors.join(', ')}`);
+      throw new Error(
+        `Password validation failed: ${passwordValidation.errors.join(", ")}`,
+      );
     }
 
     // Hash new password
-    const newPasswordHash = await passwordManager.hashPassword(input.newPassword);
+    const newPasswordHash = await passwordManager.hashPassword(
+      input.newPassword,
+    );
 
     // Update password
     const stmt = this.db.prepare(`
@@ -246,7 +261,10 @@ export class UserService {
   /**
    * Authenticate user with email/username and password
    */
-  async authenticateUser(emailOrUsername: string, password: string): Promise<User | null> {
+  async authenticateUser(
+    emailOrUsername: string,
+    password: string,
+  ): Promise<User | null> {
     let user = this.getUserByEmail(emailOrUsername);
     if (!user) {
       user = this.getUserByUsername(emailOrUsername);
@@ -257,10 +275,13 @@ export class UserService {
     }
 
     if (!user.is_active) {
-      throw new Error('Account is deactivated');
+      throw new Error("Account is deactivated");
     }
 
-    const isPasswordValid = await passwordManager.verifyPassword(password, user.password_hash);
+    const isPasswordValid = await passwordManager.verifyPassword(
+      password,
+      user.password_hash,
+    );
     if (!isPasswordValid) {
       return null;
     }
@@ -285,8 +306,8 @@ export class UserService {
       role,
       is_active,
       is_verified,
-      sort_by = 'created_at',
-      sort_order = 'desc'
+      sort_by = "created_at",
+      sort_order = "desc",
     } = query;
 
     const offset = (page - 1) * limit;
@@ -294,27 +315,30 @@ export class UserService {
     const params: any[] = [];
 
     if (search) {
-      conditions.push('(email LIKE ? OR username LIKE ? OR first_name LIKE ? OR last_name LIKE ?)');
+      conditions.push(
+        "(email LIKE ? OR username LIKE ? OR first_name LIKE ? OR last_name LIKE ?)",
+      );
       const searchPattern = `%${search}%`;
       params.push(searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
     if (role) {
-      conditions.push('role = ?');
+      conditions.push("role = ?");
       params.push(role);
     }
 
     if (is_active !== undefined) {
-      conditions.push('is_active = ?');
+      conditions.push("is_active = ?");
       params.push(is_active);
     }
 
     if (is_verified !== undefined) {
-      conditions.push('is_verified = ?');
+      conditions.push("is_verified = ?");
       params.push(is_verified);
     }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const orderClause = `ORDER BY ${sort_by} ${sort_order.toUpperCase()}`;
 
     // Get total count
@@ -332,15 +356,15 @@ export class UserService {
     const pages = Math.ceil(total / limit);
 
     return {
-      users: users.map(user => this.toPublicUser(user)),
+      users: users.map((user) => this.toPublicUser(user)),
       pagination: {
         page,
         limit,
         total,
         pages,
         hasNext: page < pages,
-        hasPrev: page > 1
-      }
+        hasPrev: page > 1,
+      },
     };
   }
 
@@ -350,7 +374,7 @@ export class UserService {
   async deleteUser(id: string): Promise<void> {
     const user = this.getUserById(id);
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     // Deactivate instead of hard delete
@@ -367,7 +391,11 @@ export class UserService {
   /**
    * Create refresh token
    */
-  createRefreshToken(userId: string, token: string, expiresAt: Date): RefreshToken {
+  createRefreshToken(
+    userId: string,
+    token: string,
+    expiresAt: Date,
+  ): RefreshToken {
     const tokenId = randomUUID();
     const tokenHash = jwtManager.hashToken(token);
     const now = new Date().toISOString();
@@ -384,7 +412,7 @@ export class UserService {
       token_hash: tokenHash,
       expires_at: expiresAt.toISOString(),
       revoked: false,
-      created_at: now
+      created_at: now,
     };
   }
 
@@ -392,7 +420,9 @@ export class UserService {
    * Get refresh token by ID
    */
   getRefreshToken(tokenId: string): RefreshToken | null {
-    const stmt = this.db.prepare('SELECT * FROM refresh_tokens WHERE id = ? AND revoked = false');
+    const stmt = this.db.prepare(
+      "SELECT * FROM refresh_tokens WHERE id = ? AND revoked = false",
+    );
     return stmt.get(tokenId) as RefreshToken | null;
   }
 
@@ -421,11 +451,16 @@ export class UserService {
    */
   cleanupExpiredTokens(): void {
     const now = new Date().toISOString();
-    
+
     try {
       // Check if tables exist before attempting cleanup
-      const tables = ['refresh_tokens', 'user_sessions', 'password_reset_tokens', 'email_verification_tokens'];
-      
+      const tables = [
+        "refresh_tokens",
+        "user_sessions",
+        "password_reset_tokens",
+        "email_verification_tokens",
+      ];
+
       for (const table of tables) {
         try {
           // Check if table exists
@@ -433,7 +468,7 @@ export class UserService {
             SELECT name FROM sqlite_master WHERE type='table' AND name=?
           `);
           const tableExists = checkStmt.get(table);
-          
+
           if (tableExists) {
             // Delete expired tokens from this table
             const deleteStmt = this.db.prepare(`
@@ -443,23 +478,34 @@ export class UserService {
           }
         } catch (error) {
           // Log table-specific errors but continue with other tables
-          console.warn(`Token cleanup warning for table ${table}:`, error instanceof Error ? error.message : error);
+          console.warn(
+            `Token cleanup warning for table ${table}:`,
+            error instanceof Error ? error.message : error,
+          );
         }
       }
     } catch (error) {
       // Log general cleanup errors but don't throw
-      console.warn('Token cleanup warning:', error instanceof Error ? error.message : error);
+      console.warn(
+        "Token cleanup warning:",
+        error instanceof Error ? error.message : error,
+      );
     }
   }
 
   /**
    * Create user session
    */
-  createUserSession(userId: string, sessionToken: string, deviceInfo?: {
-    ip_address?: string;
-    user_agent?: string;
-    device_info?: string;
-  }, expiresAt?: Date): UserSession {
+  createUserSession(
+    userId: string,
+    sessionToken: string,
+    deviceInfo?: {
+      ip_address?: string;
+      user_agent?: string;
+      device_info?: string;
+    },
+    expiresAt?: Date,
+  ): UserSession {
     const sessionId = randomUUID();
     const now = new Date().toISOString();
     const expires = expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
@@ -480,7 +526,7 @@ export class UserService {
       deviceInfo?.user_agent || null,
       expires.toISOString(),
       now,
-      now
+      now,
     );
 
     return {
@@ -492,7 +538,7 @@ export class UserService {
       user_agent: deviceInfo?.user_agent,
       expires_at: expires.toISOString(),
       created_at: now,
-      last_activity_at: now
+      last_activity_at: now,
     };
   }
 
