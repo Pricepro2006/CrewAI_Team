@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { JWTPayload, RefreshTokenPayload } from '../../database/models/User';
-import appConfig from '../../config/app.config';
+import { type JWTPayload, type RefreshTokenPayload } from '../../database/models/User.js';
+import appConfig from '../../config/app.config.js';
 
 /**
  * JWT Utilities for Authentication

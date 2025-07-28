@@ -1,12 +1,12 @@
 import { ChromaClient, type Collection } from "chromadb";
-import { EmbeddingService } from "./EmbeddingService";
+import { EmbeddingService } from "./EmbeddingService.js";
 import type {
   Document,
   QueryResult,
   VectorStoreConfig,
   ProcessedDocument,
-} from "./types";
-import type { DocumentMetadata } from "../shared/types";
+} from "./types.js";
+import type { DocumentMetadata } from "../shared/types.js";
 
 export class VectorStore {
   private client: ChromaClient;

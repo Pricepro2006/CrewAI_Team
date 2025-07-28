@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCSRFStatus } from '../../hooks/useTRPCWithCSRF';
+import { useCSRFStatus } from '../../hooks/useTRPCWithCSRF.js';
 import { Shield, AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 
 interface CSRFMonitorProps {

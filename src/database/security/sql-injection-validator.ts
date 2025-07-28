@@ -5,7 +5,7 @@
 
 import { glob } from 'glob';
 import { readFileSync } from 'fs';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.js';
 
 interface VulnerabilityReport {
   file: string;

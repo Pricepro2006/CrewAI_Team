@@ -1,4 +1,4 @@
-import { logger } from '../logger';
+import { logger } from '../logger.js';
 
 export interface AsyncErrorOptions {
   fallbackValue?: any;
@@ -172,6 +172,7 @@ export class CircuitBreaker {
 export class GracefulShutdown {
   private shutdownHandlers: Array<() => Promise<void>> = [];
   private isShuttingDown = false;
+  private signalHandlersRegistered = false;
   
   register(handler: () => Promise<void>): void {
     this.shutdownHandlers.push(handler);
@@ -211,6 +212,13 @@ export class GracefulShutdown {
   }
   
   setupSignalHandlers(): void {
+    if (this.signalHandlersRegistered) {
+      logger.warn('Signal handlers already registered, skipping duplicate registration');
+      return;
+    }
+    
+    this.signalHandlersRegistered = true;
+    
     process.on('SIGTERM', () => this.shutdown('SIGTERM'));
     process.on('SIGINT', () => this.shutdown('SIGINT'));
     process.on('uncaughtException', (error) => {
@@ -218,6 +226,12 @@ export class GracefulShutdown {
       this.shutdown('uncaughtException');
     });
     process.on('unhandledRejection', (reason, promise) => {
+      // Filter out empty/malformed promise rejections that can cause infinite loops
+      if (!reason || (typeof reason === 'object' && Object.keys(reason).length === 0)) {
+        logger.warn('Ignoring empty/malformed promise rejection', 'GRACEFUL_SHUTDOWN', { reason, promise });
+        return;
+      }
+      
       logger.error('Unhandled rejection', 'GRACEFUL_SHUTDOWN', { reason, promise });
       this.shutdown('unhandledRejection');
     });

@@ -1,6 +1,6 @@
-import type { QueryAnalysis, AgentRoutingPlan } from "./enhanced-types";
-import type { AgentType } from "../shared/types";
-import { logger } from "../../utils/logger";
+import type { QueryAnalysis, AgentRoutingPlan } from "./enhanced-types.js";
+import type { AgentType } from "../shared/types.js";
+import { logger } from "../../utils/logger.js";
 
 export class AgentRouter {
   constructor() {

@@ -1,7 +1,7 @@
 import type Database from "better-sqlite3";
-import { getDatabaseConnection } from "@/database/connection";
-import { logger } from "@/utils/logger";
-import { metrics } from "@/api/monitoring/metrics";
+import { getDatabaseConnection } from "../connection.js";
+import { logger } from "../../utils/logger.js";
+import { metrics } from "../../api/monitoring/metrics.js";
 import { EventEmitter } from "events";
 
 export interface QueryMetrics {

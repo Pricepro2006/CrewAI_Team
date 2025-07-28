@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { WebSocketService } from "../WebSocketService";
+import { WebSocketService } from "../WebSocketService.js";
 import { EventEmitter } from "events";
-import type { AuthenticatedWebSocket } from "../../middleware/websocketAuth";
+import type { AuthenticatedWebSocket } from "../../middleware/websocketAuth.js";
 
 // Mock logger
 vi.mock("../../../utils/logger", () => ({

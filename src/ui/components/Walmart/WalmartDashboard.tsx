@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { ShoppingCartIcon, ClipboardListIcon, TruckIcon, ChartBarIcon } from "@heroicons/react/24/outline";
-import { WalmartGroceryList } from "./WalmartGroceryList";
-import { WalmartProductSearch } from "./WalmartProductSearch";
-import { WalmartShoppingCart } from "./WalmartShoppingCart";
-import { WalmartOrderHistory } from "./WalmartOrderHistory";
-import { WalmartPriceTracker } from "./WalmartPriceTracker";
-import { WalmartDealAlert } from "./WalmartDealAlert";
-import { WalmartBudgetTracker } from "./WalmartBudgetTracker";
-import { WalmartDeliveryScheduler } from "./WalmartDeliveryScheduler";
-import { WalmartSubstitutionManager } from "./WalmartSubstitutionManager";
-import { WalmartUserPreferences } from "./WalmartUserPreferences";
-import { WalmartChatInterface } from "./WalmartChatInterface";
+import { WalmartGroceryList } from "./WalmartGroceryList.js";
+import { WalmartProductSearch } from "./WalmartProductSearch.js";
+import { WalmartShoppingCart } from "./WalmartShoppingCart.js";
+import { WalmartOrderHistory } from "./WalmartOrderHistory.js";
+import { WalmartPriceTracker } from "./WalmartPriceTracker.js";
+import { WalmartDealAlert } from "./WalmartDealAlert.js";
+import { WalmartBudgetTracker } from "./WalmartBudgetTracker.js";
+import { WalmartDeliveryScheduler } from "./WalmartDeliveryScheduler.js";
+import { WalmartSubstitutionManager } from "./WalmartSubstitutionManager.js";
+import { WalmartUserPreferences } from "./WalmartUserPreferences.js";
+import { WalmartChatInterface } from "./WalmartChatInterface.js";
 
 type ViewType = "dashboard" | "search" | "list" | "cart" | "orders" | "tracking" | "chat";
 

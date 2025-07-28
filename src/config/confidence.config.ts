@@ -3,7 +3,7 @@
  * Based on 2025 best practices for confidence calibration
  */
 
-import type { ConfidenceConfig } from "../core/rag/confidence/types";
+import type { ConfidenceConfig } from "../core/rag/confidence/types.js";
 
 /**
  * Default confidence thresholds based on research findings

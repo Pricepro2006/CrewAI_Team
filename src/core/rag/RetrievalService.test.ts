@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { RetrievalService } from "./RetrievalService";
-import type { QueryResult, RetrievalConfig } from "./types";
+import { RetrievalService } from "./RetrievalService.js";
+import type { QueryResult, RetrievalConfig } from "./types.js";
 
 describe("RetrievalService", () => {
   let service: RetrievalService;

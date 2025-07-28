@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc/router";
+import { router, publicProcedure } from "../trpc/router.js";
 import type { Router } from "@trpc/server";
-import { getAgentModel } from "../../config/model-selection.config";
+import { getAgentModel } from "../../config/model-selection.config.js";
 
 export const agentRouter: Router<any> = router({
   // List all registered agents

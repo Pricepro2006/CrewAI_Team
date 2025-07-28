@@ -13,7 +13,7 @@ import type {
   UserPreferences,
   PriceAlert,
   Order,
-} from '../../types/walmart-grocery';
+} from '../../types/walmart-grocery.js';
 
 interface GroceryState {
   // Cart State

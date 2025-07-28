@@ -1,12 +1,12 @@
-import { EmailStorageService } from "./EmailStorageService";
-import type { EmailAnalysisResult } from "./EmailStorageService";
-import { IEMSDataService } from "./IEMSDataService";
-import { EmailAnalysisAgent } from "@/core/agents/specialized/EmailAnalysisAgent";
-import { EmailAnalysisPipeline } from "@/core/processors/EmailAnalysisPipeline";
-import { EmailRepository } from "@/database/repositories";
-import { getDatabaseConnection } from "@/database/connection";
-import { logger } from "@/utils/logger";
-import { metrics } from "../monitoring/metrics";
+import { EmailStorageService } from "./EmailStorageService.js";
+import type { EmailAnalysisResult } from "./EmailStorageService.js";
+import { IEMSDataService } from "./IEMSDataService.js";
+import { EmailAnalysisAgent } from "../../core/agents/specialized/EmailAnalysisAgent.js";
+import { EmailAnalysisPipeline } from "../../core/processors/EmailAnalysisPipeline.js";
+import { EmailRepository } from "../../database/repositories/index.js";
+import { getDatabaseConnection } from "../../database/connection.js";
+import { logger } from "../../utils/logger.js";
+import { metrics } from "../monitoring/metrics.js";
 import type {
   UnifiedEmailData,
   FilterConfig,
@@ -16,7 +16,7 @@ import type {
   WorkflowState,
   WorkflowTypeStats,
   BottleneckInfo,
-} from "@/types/unified-email.types";
+} from "../../types/unified-email.types.js";
 
 interface GraphEmailData {
   id: string;

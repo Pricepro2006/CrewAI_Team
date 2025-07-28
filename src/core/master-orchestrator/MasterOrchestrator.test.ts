@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { MasterOrchestrator } from "./MasterOrchestrator";
-import type { Plan, Query, PlanStep } from "./types";
+import { MasterOrchestrator } from "./MasterOrchestrator.js";
+import type { Plan, Query, PlanStep } from "./types.js";
 
 // Mock Ollama provider
 const mockOllamaProvider = {

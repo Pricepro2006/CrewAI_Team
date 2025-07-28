@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { ResearchAgent } from "./ResearchAgent";
-import { WebSearchTool } from "../../tools/web/WebSearchTool";
-import { WebScraperTool } from "../../tools/web/WebScraperTool";
+import { ResearchAgent } from "./ResearchAgent.js";
+import { WebSearchTool } from "../../tools/web/WebSearchTool.js";
+import { WebScraperTool } from "../../tools/web/WebScraperTool.js";
 
 // Note: This is a unit test file that focuses on ResearchAgent logic
 // without external dependencies. For real Ollama integration tests,

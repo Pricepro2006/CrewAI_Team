@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
-import { ResearchAgent } from "./ResearchAgent";
+import { ResearchAgent } from "./ResearchAgent.js";
 import {
   setupOllamaForTesting,
   cleanupOllamaTests,
@@ -7,12 +7,12 @@ import {
   createTestOllamaConfig,
   ensureModelAvailable,
   getTestModel,
-} from "../../../test/utils/ollama-test-helper";
+} from "../../../test/utils/ollama-test-helper.js";
 import {
   withOllama,
   assertSuccessResponse,
   getTestConfiguration,
-} from "../../../test/utils/integration-test-helpers";
+} from "../../../test/utils/integration-test-helpers.js";
 
 describe("ResearchAgent Integration Tests", () => {
   let agent: ResearchAgent;

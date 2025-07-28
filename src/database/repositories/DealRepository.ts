@@ -4,9 +4,9 @@
  */
 
 import type Database from "better-sqlite3";
-import { BaseRepository } from "./BaseRepository";
-import type { BaseEntity } from "./BaseRepository";
-import { logger } from "../../utils/logger";
+import { BaseRepository } from "./BaseRepository.js";
+import type { BaseEntity } from "./BaseRepository.js";
+import { logger } from "../../utils/logger.js";
 
 export interface Deal extends BaseEntity {
   deal_id: string; // 8-digit deal ID

@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
-import { metricsCollector } from "./MetricsCollector";
-import { logger } from "../utils/logger";
-import ollamaConfig from "../config/ollama.config";
-import appConfig from "../config/app.config";
+import { metricsCollector } from "./MetricsCollector.js";
+import { logger } from "../utils/logger.js";
+import ollamaConfig from "../config/ollama.config.js";
+import appConfig from "../config/app.config.js";
 
 export interface HealthCheck {
   name: string;
@@ -366,7 +366,24 @@ export class HealthChecker extends EventEmitter {
         critical: false,
         check: async () => {
           try {
-            const { redisClient } = await import("../config/redis.config");
+            // Try to import Redis config, fallback to direct Redis import if config doesn't exist
+            let redisClient;
+            try {
+              const redisConfig = await import("../config/redis.config.js");
+              redisClient = redisConfig.redisClient;
+            } catch (importError) {
+              // Fallback: create a basic Redis client directly
+              const Redis = (await import("ioredis")).default;
+              redisClient = new Redis({
+                host: process.env.REDIS_HOST || 'localhost',
+                port: parseInt(process.env.REDIS_PORT || '6379'),
+                password: process.env.REDIS_PASSWORD,
+                retryDelayOnFailover: 100,
+                maxRetriesPerRequest: 3,
+                lazyConnect: true
+              });
+            }
+            
             await redisClient.ping();
             return { status: "healthy" };
           } catch (error) {

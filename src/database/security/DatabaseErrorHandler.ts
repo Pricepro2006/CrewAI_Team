@@ -3,7 +3,7 @@
  * Secure error handling to prevent database structure exposure
  */
 
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.js';
 
 export interface DatabaseError {
   message: string;

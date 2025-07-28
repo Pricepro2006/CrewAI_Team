@@ -1,4 +1,4 @@
-import { logger } from "../utils/logger";
+import { logger } from "../utils/logger.js";
 
 /**
  * Service to manage MCP (Model Context Protocol) tools integration

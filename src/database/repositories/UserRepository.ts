@@ -3,9 +3,9 @@
  */
 
 import Database from 'better-sqlite3';
-import { BaseRepository } from './BaseRepository';
-import type { BaseEntity } from './BaseRepository';
-import { logger } from '../../utils/logger';
+import { BaseRepository } from './BaseRepository.js';
+import type { BaseEntity } from './BaseRepository.js';
+import { logger } from '../../utils/logger.js';
 
 export interface User extends BaseEntity {
   email: string;

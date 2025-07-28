@@ -1,19 +1,19 @@
 import type { inferAsyncReturnType } from "@trpc/server";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { Request, Response } from "express";
-import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator";
-import { ConversationService } from "../services/ConversationService";
-import { TaskService } from "../services/TaskService";
-import { MaestroFramework } from "../../core/maestro/MaestroFramework";
-import { UserService } from "../services/UserService";
-import { PublicUser } from "../../database/models/User";
-import { jwtManager, JWTError } from "../utils/jwt";
-import ollamaConfig from "../../config/ollama.config";
-import { logger } from "../../utils/logger";
-import { mcpToolsService } from "../services/MCPToolsService";
-import { DealDataService } from "../services/DealDataService";
-import { EmailStorageService } from "../services/EmailStorageService";
-import { WalmartGroceryService } from "../services/WalmartGroceryService";
+import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator.js";
+import { ConversationService } from "../services/ConversationService.js";
+import { TaskService } from "../services/TaskService.js";
+import { MaestroFramework } from "../../core/maestro/MaestroFramework.js";
+import { UserService } from "../services/UserService.js";
+import type { PublicUser } from "../../database/models/User.js";
+import { jwtManager, JWTError } from "../utils/jwt.js";
+import ollamaConfig from "../../config/ollama.config.js";
+import { logger } from "../../utils/logger.js";
+import { mcpToolsService } from "../services/MCPToolsService.js";
+import { DealDataService } from "../services/DealDataService.js";
+import { EmailStorageService } from "../services/EmailStorageService.js";
+import { WalmartGroceryService } from "../services/WalmartGroceryService.js";
 
 // Context User interface (extends PublicUser with runtime properties)
 export interface User extends PublicUser {

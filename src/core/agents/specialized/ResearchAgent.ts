@@ -1,16 +1,16 @@
-import { BaseAgent } from "../base/BaseAgent";
+import { BaseAgent } from "../base/BaseAgent.js";
 import type {
   AgentCapability,
   AgentContext,
   AgentResult,
   ToolExecutionParams,
-} from "../base/AgentTypes";
-import { WebSearchTool } from "../../tools/web/WebSearchTool";
-import { WebScraperTool } from "../../tools/web/WebScraperTool";
-import { SearXNGSearchTool } from "../../tools/web/SearXNGProvider";
-import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout";
-import { businessSearchPromptEnhancer } from "../../prompts/BusinessSearchPromptEnhancer";
-import { SearchKnowledgeService } from "../../services/SearchKnowledgeService";
+} from "../base/AgentTypes.js";
+import { WebSearchTool } from "../../tools/web/WebSearchTool.js";
+import { WebScraperTool } from "../../tools/web/WebScraperTool.js";
+import { SearXNGSearchTool } from "../../tools/web/SearXNGProvider.js";
+import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout.js";
+import { businessSearchPromptEnhancer } from "../../prompts/BusinessSearchPromptEnhancer.js";
+import { SearchKnowledgeService } from "../../services/SearchKnowledgeService.js";
 
 export class ResearchAgent extends BaseAgent {
   private searchKnowledgeService?: SearchKnowledgeService;

@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.js';
 
 /**
  * Migration: Add Composite Indexes for Email Analytics Performance

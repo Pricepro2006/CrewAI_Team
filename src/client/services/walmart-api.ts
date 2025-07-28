@@ -5,7 +5,7 @@
 
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import superjson from 'superjson';
-import type { AppRouter } from '../../api/trpc/router';
+import type { AppRouter } from '../../api/trpc/router.js';
 
 // Create a vanilla client for non-hook usage
 const client = createTRPCProxyClient<AppRouter>({
@@ -24,7 +24,7 @@ import type {
   SubstitutionOptions,
   DeliverySlot,
   UserPreferences,
-} from '../../types/walmart-grocery';
+} from '../../types/walmart-grocery.js';
 
 // Product Search API
 export const walmartProductAPI = {

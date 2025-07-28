@@ -9,4 +9,4 @@ export function setIoInstance(instance: any) {
 }
 
 // Re-export setup functions
-export * from "./setup";
+export * from "./setup.js";

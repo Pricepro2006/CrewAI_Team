@@ -29,31 +29,31 @@ import {
   ChevronDown,
   Info,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Input } from '../../../components/ui/input';
-import { ScrollArea } from '../../../components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
+import { Button } from '../../../components/ui/button.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Input } from '../../../components/ui/input.js';
+import { ScrollArea } from '../../../components/ui/scroll-area.js';
+import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar.js';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../components/ui/dropdown-menu';
+} from '../../../components/ui/dropdown-menu.js';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../components/ui/tooltip';
-import { Separator } from '../../../components/ui/separator';
-import { cn } from '../../lib/utils';
-import { formatPrice } from '../../lib/utils';
-import { useCart } from '../../hooks/useCart';
-import { useGroceryStore } from '../../store/groceryStore';
-import type { WalmartProduct } from '../../../types/walmart-grocery';
+} from '../../../components/ui/tooltip.js';
+import { Separator } from '../../../components/ui/separator.js';
+import { cn } from '../../lib/utils.js';
+import { formatPrice } from '../../lib/utils.js';
+import { useCart } from '../../hooks/useCart.js';
+import { useGroceryStore } from '../../store/groceryStore.js';
+import type { WalmartProduct } from '../../../types/walmart-grocery.js';
 
 interface WalmartChatInterfaceProps {
   onProductSelect?: (product: WalmartProduct) => void;

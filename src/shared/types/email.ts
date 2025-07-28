@@ -3,7 +3,7 @@
  * Comprehensive email management and processing types
  */
 
-import type { BaseEntity, TimestampedEntity, Timestamp } from './core';
+import type { BaseEntity, TimestampedEntity, Timestamp } from './core.js';
 
 // =====================================================
 // Email Record Types

@@ -3,8 +3,8 @@
  */
 
 import { useState, useCallback } from "react";
-import { trpc } from "../../utils/trpc";
-import type { WalmartProduct } from "../../types/walmart-grocery";
+import { trpc } from "../../utils/trpc.js";
+import type { WalmartProduct } from "../../types/walmart-grocery.js";
 
 // Hook for searching products
 export function useWalmartProductSearch() {

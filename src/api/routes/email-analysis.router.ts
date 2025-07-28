@@ -1,6 +1,6 @@
 import { Router, type Router as ExpressRouter } from "express";
-import { EmailAnalysisAgent } from "../../core/agents/specialized/EmailAnalysisAgent";
-import { logger } from "../../utils/logger";
+import { EmailAnalysisAgent } from "../../core/agents/specialized/EmailAnalysisAgent.js";
+import { logger } from "../../utils/logger.js";
 
 const emailAnalysisRouter: ExpressRouter = Router();
 

@@ -4,8 +4,8 @@
  */
 
 import Database from 'better-sqlite3';
-import { logger } from '../../utils/logger';
-import { metrics } from '../../api/monitoring/metrics';
+import { logger } from '../../utils/logger.js';
+import { metrics } from '../../api/monitoring/metrics.js';
 
 export interface QueryPlan {
   id: number;

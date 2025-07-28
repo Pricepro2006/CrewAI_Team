@@ -6,7 +6,7 @@
 import type {
   TestConfig,
   TestContext,
-} from "../testing/integration-test-framework";
+} from "../testing/integration-test-framework.js";
 
 // Define missing types directly
 interface HealthStatus {
@@ -30,7 +30,7 @@ import {
   defaultCircuitBreakerConfig,
   createApiError,
   createSystemError,
-} from "../errors/error-handler";
+} from "../errors/error-handler.js";
 
 // Mock missing functions
 const globalHealthMonitor = {
@@ -87,7 +87,7 @@ import {
   WebSocketTestClient,
   createTestContext,
   authenticateUser,
-} from "../testing/test-client";
+} from "../testing/test-client.js";
 
 // =====================================================
 // Integration Coordinator Class

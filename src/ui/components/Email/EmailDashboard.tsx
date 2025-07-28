@@ -9,21 +9,21 @@ import {
   PlusIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
-import { trpc } from "../../utils/trpc";
-import { api } from "@/lib/trpc";
-import { EmailTable } from "@/client/components/email/EmailTable";
+import { trpc } from "../../utils/trpc.js";
+import { api } from "../../../lib/trpc.js";
+import { EmailTable } from "../../../client/components/email/EmailTable.js";
 import {
   FilterPanel,
   QuickFilters,
-} from "@/client/components/email/FilterPanel";
-import { StatusLegend } from "@/client/components/email/StatusIndicator";
-import { EmailStats } from "./EmailStats";
-import { EmailCompose } from "./EmailCompose";
+} from "../../../client/components/email/FilterPanel.js";
+import { StatusLegend } from "../../../client/components/email/StatusIndicator.js";
+import { EmailStats } from "./EmailStats.js";
+import { EmailCompose } from "./EmailCompose.js";
 import type {
   EmailRecord,
   FilterConfig,
   FilterOptions,
-} from "@/types/email-dashboard.interfaces";
+} from "../../../types/email-dashboard.interfaces.js";
 import "./EmailDashboard.css";
 
 export interface EmailDashboardProps {

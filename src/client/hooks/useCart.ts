@@ -4,10 +4,10 @@
  */
 
 import { useCallback, useEffect } from 'react';
-import { useGroceryStore } from '../store/groceryStore';
+import { useGroceryStore } from '../store/groceryStore.js';
 // TODO: Replace with proper tRPC hooks
-// import { api } from '../lib/api';
-import type { CartItem, WalmartProduct } from '../../types/walmart-grocery';
+// import { api } from '../lib/api.js';
+import type { CartItem, WalmartProduct } from '../../types/walmart-grocery.js';
 
 interface UseCartResult {
   items: CartItem[];

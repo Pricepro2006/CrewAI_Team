@@ -11,8 +11,8 @@ import type {
   QueryOptimizationResult,
   SecurityFlag,
   ServiceMapping
-} from './types';
-import { UrgencyLevel } from './types';
+} from './types.js';
+import { UrgencyLevel } from './types.js';
 
 export class BusinessQueryOptimizer {
   private static readonly DANGEROUS_PATTERNS = [

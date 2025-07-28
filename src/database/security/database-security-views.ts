@@ -4,7 +4,7 @@
  */
 
 import Database from 'better-sqlite3';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.js';
 
 export class DatabaseSecurityViews {
   private db: Database.Database;

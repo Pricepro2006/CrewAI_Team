@@ -1,4 +1,4 @@
-import { ErrorCode } from "./error-types";
+import { ErrorCode } from "./error-types.js";
 
 export interface UserFriendlyError {
   title: string;

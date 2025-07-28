@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import { PipelineAnalysisAdapter } from "../PipelineAnalysisAdapter";
-import type { PipelineEmailAnalysis } from "../../types/pipeline-analysis";
+import { PipelineAnalysisAdapter } from "../PipelineAnalysisAdapter.js";
+import type { PipelineEmailAnalysis } from "../../types/pipeline-analysis.js";
 
 describe("PipelineAnalysisAdapter", () => {
   let adapter: PipelineAnalysisAdapter;

@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { logger } from '../../utils/logger';
+import { logger } from '../utils/logger';
 
 export interface ErrorRecoveryOptions {
   maxRetries?: number;

@@ -4,12 +4,12 @@
  */
 
 // Base chart component and utilities
-export { ChartBase, CHART_COLORS, CHART_CONFIGS } from './ChartBase';
+export { ChartBase, CHART_COLORS, CHART_CONFIGS } from './ChartBase.js';
 
 // Specific chart components
-export { StatusDistributionChart } from './StatusDistributionChart';
-export { WorkflowTimelineChart } from './WorkflowTimelineChart';
-export { SLATrackingDashboard } from './SLATrackingDashboard';
+export { StatusDistributionChart } from './StatusDistributionChart.js';
+export { WorkflowTimelineChart } from './WorkflowTimelineChart.js';
+export { SLATrackingDashboard } from './SLATrackingDashboard.js';
 
 // Export default chart configurations for easy reuse
 export const DEFAULT_CHART_THEMES = {

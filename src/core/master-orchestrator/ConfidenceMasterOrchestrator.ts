@@ -3,13 +3,13 @@
  * Replaces the 6-step planning approach with a streamlined 4-step confidence workflow
  */
 
-import { OllamaProvider } from "../llm/OllamaProvider";
-import { AgentRegistry } from "../agents/registry/AgentRegistry";
-import { RAGSystem } from "../rag/RAGSystem";
-import { PlanExecutor } from "./PlanExecutor";
-import { EnhancedParser } from "./EnhancedParser";
-import { AgentRouter } from "./AgentRouter";
-import { SimplePlanGenerator } from "./SimplePlanGenerator";
+import { OllamaProvider } from "../llm/OllamaProvider.js";
+import { AgentRegistry } from "../agents/registry/AgentRegistry.js";
+import { RAGSystem } from "../rag/RAGSystem.js";
+import { PlanExecutor } from "./PlanExecutor.js";
+import { EnhancedParser } from "./EnhancedParser.js";
+import { AgentRouter } from "./AgentRouter.js";
+import { SimplePlanGenerator } from "./SimplePlanGenerator.js";
 import {
   QueryComplexityAnalyzer,
   ConfidenceRAGRetriever,
@@ -21,24 +21,24 @@ import {
   ActionType,
   type ResponseEvaluationResult,
   type DeliveredResponse,
-} from "../rag/confidence";
+} from "../rag/confidence/index.js";
 import type {
   Plan,
   ExecutionResult,
   Query,
   MasterOrchestratorConfig,
-} from "./types";
-import type { QueryAnalysis, AgentRoutingPlan } from "./enhanced-types";
-import { logger, createPerformanceMonitor } from "../../utils/logger";
-// import { wsService } from "../../api/services/WebSocketService"; // TODO: Integrate WebSocket updates
-import { VectorStore } from "../rag/VectorStore";
+} from "./types.js";
+import type { QueryAnalysis, AgentRoutingPlan } from "./enhanced-types.js";
+import { logger, createPerformanceMonitor } from "../../utils/logger.js";
+// import { wsService } from "../../api/services/WebSocketService.js"; // TODO: Integrate WebSocket updates
+import { VectorStore } from "../rag/VectorStore.js";
 import { EventEmitter } from "events";
-import { PerformanceOptimizer } from "../../api/services/PerformanceOptimizer";
+import { PerformanceOptimizer } from "../../api/services/PerformanceOptimizer.js";
 import {
   selectModel,
   getModelForSystemLoad,
   MODEL_CONFIGS,
-} from "../../config/model-selection.config";
+} from "../../config/model-selection.config.js";
 
 export interface ConfidenceOrchestratorResult extends ExecutionResult {
   confidence: number;

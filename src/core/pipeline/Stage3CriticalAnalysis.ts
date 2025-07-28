@@ -3,13 +3,13 @@
  * Deep analysis for top 500 critical emails using Phi-4 with Llama fallback
  */
 
-import { logger } from "../../utils/logger";
-import { MODEL_CONFIG } from "../../config/models.config";
+import { logger } from "../../utils/logger.js";
+import { MODEL_CONFIG } from "../../config/models.config.js";
 import type {
   Email,
   CriticalAnalysisResult,
   CriticalAnalysisResults,
-} from "./types";
+} from "./types.js";
 import axios from "axios";
 
 export class Stage3CriticalAnalysis {

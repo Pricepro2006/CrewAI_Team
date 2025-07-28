@@ -1,6 +1,6 @@
 import { createTRPCReact } from '@trpc/react-query';
 import { createTRPCMsw } from 'msw-trpc';
-import type { AppRouter } from '../../api/trpc/router';
+import type { AppRouter } from '../../api/trpc/router.js';
 
 /**
  * TRPC React utilities for type-safe API communication

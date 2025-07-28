@@ -12,10 +12,10 @@ import type {
   UserListQuery,
   UserListResponse,
   ChangePasswordInput
-} from '../../database/models/User';
-import { passwordManager } from '../utils/password';
-import { jwtManager } from '../utils/jwt';
-import appConfig from '../../config/app.config';
+} from '../../database/models/User.js';
+import { passwordManager } from '../utils/password.js';
+import { jwtManager } from '../utils/jwt.js';
+import appConfig from '../../config/app.config.js';
 
 /**
  * UserService - Manages user authentication and user data operations
@@ -422,29 +422,34 @@ export class UserService {
   cleanupExpiredTokens(): void {
     const now = new Date().toISOString();
     
-    // Delete expired refresh tokens
-    const refreshStmt = this.db.prepare(`
-      DELETE FROM refresh_tokens WHERE expires_at < ?
-    `);
-    refreshStmt.run(now);
-
-    // Delete expired sessions
-    const sessionStmt = this.db.prepare(`
-      DELETE FROM user_sessions WHERE expires_at < ?
-    `);
-    sessionStmt.run(now);
-
-    // Delete expired password reset tokens
-    const resetStmt = this.db.prepare(`
-      DELETE FROM password_reset_tokens WHERE expires_at < ?
-    `);
-    resetStmt.run(now);
-
-    // Delete expired email verification tokens
-    const verifyStmt = this.db.prepare(`
-      DELETE FROM email_verification_tokens WHERE expires_at < ?
-    `);
-    verifyStmt.run(now);
+    try {
+      // Check if tables exist before attempting cleanup
+      const tables = ['refresh_tokens', 'user_sessions', 'password_reset_tokens', 'email_verification_tokens'];
+      
+      for (const table of tables) {
+        try {
+          // Check if table exists
+          const checkStmt = this.db.prepare(`
+            SELECT name FROM sqlite_master WHERE type='table' AND name=?
+          `);
+          const tableExists = checkStmt.get(table);
+          
+          if (tableExists) {
+            // Delete expired tokens from this table
+            const deleteStmt = this.db.prepare(`
+              DELETE FROM ${table} WHERE expires_at < ?
+            `);
+            deleteStmt.run(now);
+          }
+        } catch (error) {
+          // Log table-specific errors but continue with other tables
+          console.warn(`Token cleanup warning for table ${table}:`, error instanceof Error ? error.message : error);
+        }
+      }
+    } catch (error) {
+      // Log general cleanup errors but don't throw
+      console.warn('Token cleanup warning:', error instanceof Error ? error.message : error);
+    }
   }
 
   /**

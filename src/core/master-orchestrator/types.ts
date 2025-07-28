@@ -2,7 +2,7 @@ import type {
   Message,
   AgentType,
   Document as CustomDocument,
-} from "../shared/types";
+} from "../shared/types.js";
 
 export interface Query {
   text: string;
@@ -72,7 +72,7 @@ export type {
   DocumentMetadata,
   Message,
   AgentType,
-} from "../shared/types";
+} from "../shared/types.js";
 
 export interface MasterOrchestratorConfig {
   model?: string;

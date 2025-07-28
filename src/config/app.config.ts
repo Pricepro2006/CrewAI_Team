@@ -22,10 +22,17 @@ interface OllamaConfig {
   model?: string;
 }
 
+interface SecurityConfig {
+  jwtSecret: string;
+  jwtExpiration: string;
+  refreshTokenExpiration: string;
+}
+
 interface AppConfig {
   database: DatabaseConfig;
   api: ApiConfig;
   ollama?: OllamaConfig;
+  security: SecurityConfig;
 }
 
 const appConfig: AppConfig = {
@@ -51,6 +58,11 @@ const appConfig: AppConfig = {
     url: process.env.OLLAMA_URL,
     model: process.env.OLLAMA_MODEL,
   } : undefined,
+  security: {
+    jwtSecret: process.env.JWT_SECRET || 'dev-secret-key-change-in-production',
+    jwtExpiration: process.env.JWT_EXPIRATION || '1h',
+    refreshTokenExpiration: process.env.REFRESH_TOKEN_EXPIRATION || '7d',
+  },
 };
 
 export default appConfig;

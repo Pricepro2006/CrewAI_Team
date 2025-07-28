@@ -4,9 +4,9 @@
  * Part of GROUP 2B WebSearch Enhancement
  */
 
-import { businessSearchPromptEnhancer } from './BusinessSearchPromptEnhancer';
-import { OllamaProvider } from '../llm/OllamaProvider';
-import { logger } from '../../utils/logger';
+import { businessSearchPromptEnhancer } from './BusinessSearchPromptEnhancer.js';
+import { OllamaProvider } from '../llm/OllamaProvider.js';
+import { logger } from '../../utils/logger.js';
 
 // Example 1: Basic Enhancement
 export function basicEnhancementExample() {

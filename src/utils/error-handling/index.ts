@@ -1,24 +1,49 @@
-export * from './error-types';
-export * from './error-messages';
-export * from './async-error-wrapper';
+export * from './error-types.js';
+export * from './error-messages.js';
+export * from './async-error-wrapper.js';
 
-import { logger } from '../logger';
-import { AppError, ErrorCode } from './error-types';
-import { getUserFriendlyError } from './error-messages';
+import { AppError, ErrorCode } from './error-types.js';
+import { getUserFriendlyError } from './error-messages.js';
+
+// Use browser-compatible logger for client-side code
+let logger: any;
+if (typeof window !== 'undefined') {
+  // Browser environment - use console as logger
+  logger = {
+    error: (message: string, component?: string, metadata?: any, error?: Error) => {
+      console.error(`[${component || 'ERROR'}] ${message}`, metadata, error);
+    },
+    warn: (message: string, component?: string, metadata?: any) => {
+      console.warn(`[${component || 'WARN'}] ${message}`, metadata);
+    },
+    info: (message: string, component?: string, metadata?: any) => {
+      console.info(`[${component || 'INFO'}] ${message}`, metadata);
+    },
+    debug: (message: string, component?: string, metadata?: any) => {
+      console.debug(`[${component || 'DEBUG'}] ${message}`, metadata);
+    }
+  };
+} else {
+  // Server environment - use the full logger
+  const loggerModule = await import('../logger.js');
+  logger = loggerModule.logger;
+}
 
 /**
  * Global error handler for unhandled errors
  */
 export function setupGlobalErrorHandlers(): void {
-  process.on('uncaughtException', (error: Error) => {
-    logger.error('Uncaught Exception', 'GLOBAL_ERROR_HANDLER', undefined, error);
-    // Give the logger time to write before exiting
-    setTimeout(() => process.exit(1), 1000);
-  });
+  if (typeof process !== 'undefined' && process.on) {
+    process.on('uncaughtException', (error: Error) => {
+      logger.error('Uncaught Exception', 'GLOBAL_ERROR_HANDLER', undefined, error);
+      // Give the logger time to write before exiting
+      setTimeout(() => process.exit(1), 1000);
+    });
 
-  process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
-    logger.error('Unhandled Rejection', 'GLOBAL_ERROR_HANDLER', { reason, promise });
-  });
+    process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+      logger.error('Unhandled Rejection', 'GLOBAL_ERROR_HANDLER', { reason, promise });
+    });
+  }
 
   if (typeof window !== 'undefined') {
     window.addEventListener('error', (event: ErrorEvent) => {

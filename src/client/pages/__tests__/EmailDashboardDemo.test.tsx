@@ -5,11 +5,11 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCMsw } from "msw-trpc";
 import { setupServer } from "msw/node";
-import { api } from "@/lib/trpc";
+import { api } from "../../../lib/trpc.js";
 import { httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
-import { EmailDashboardDemo } from "../EmailDashboardDemo";
-import type { AppRouter } from "../../../api/trpc/router";
+import { EmailDashboardDemo } from "../EmailDashboardDemo.js";
+import type { AppRouter } from "../../../api/trpc/router.js";
 
 // Mock the EmailDashboardMultiPanel component
 jest.mock("../../components/dashboard/EmailDashboardMultiPanel", () => ({

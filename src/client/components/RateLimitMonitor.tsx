@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card.js";
+import { Progress } from "../../components/ui/progress.js";
+import { Badge } from "../../components/ui/badge.js";
+import { Alert, AlertDescription } from "../../components/ui/alert.js";
 import {
   BarChart3,
   AlertCircle,
@@ -12,7 +12,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
-import { api as trpc } from "@/lib/trpc";
+import { api as trpc } from "../../lib/trpc.js";
 
 interface RateLimitMetrics {
   totalRequests: number;

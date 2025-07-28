@@ -1,12 +1,12 @@
 import Database from 'better-sqlite3';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { 
   AppError, 
   DatabaseError, 
   ErrorCode,
   withAsyncErrorHandler,
   CircuitBreaker,
-} from '../utils/error-handling';
+} from "../utils/error-handling/index.js";
 
 /**
  * Database-specific error codes

@@ -7,7 +7,7 @@
 
 import Redis from "ioredis";
 import crypto from "crypto";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 
 interface CacheConfig {
   host?: string;

@@ -26,14 +26,14 @@ import {
   ShoppingBag,
   Plus,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Label } from '../../../components/ui/label';
-import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
-import { Switch } from '../../../components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
+import { Button } from '../../../components/ui/button.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Label } from '../../../components/ui/label.js';
+import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group.js';
+import { Switch } from '../../../components/ui/switch.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.js';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
 import {
   Dialog,
   DialogContent,
@@ -41,17 +41,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog';
+} from '../../../components/ui/dialog.js';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../components/ui/tooltip';
-import { Calendar } from '../../../components/ui/calendar';
-import { cn } from '../../lib/utils';
-import { formatPrice } from '../../lib/utils';
-import type { DeliverySlot, DeliveryOptions, RecurringSchedule, Address } from '../../../types/walmart-grocery';
+} from '../../../components/ui/tooltip.js';
+import { Calendar } from '../../../components/ui/calendar.js';
+import { cn } from '../../lib/utils.js';
+import { formatPrice } from '../../lib/utils.js';
+import type { DeliverySlot, DeliveryOptions, RecurringSchedule, Address } from '../../../types/walmart-grocery.js';
 
 interface WalmartDeliverySchedulerProps {
   onScheduleDelivery?: (slot: DeliverySlot, options: DeliveryOptions) => void;

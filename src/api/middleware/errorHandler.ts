@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
-import { AppError, ErrorCode, isOperationalError, sanitizeError } from '../../utils/error-handling';
-import { getUserFriendlyError, getErrorSeverity } from '../../utils/error-handling/error-messages';
-import { logger } from '../../utils/logger';
+import { AppError, ErrorCode, isOperationalError, sanitizeError } from "../../utils/error-handling/index.js";
+import { getUserFriendlyError, getErrorSeverity } from '../../utils/error-handling/error-messages.js';
+import { logger } from '../../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ErrorResponse {

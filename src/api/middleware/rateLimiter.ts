@@ -33,11 +33,14 @@ try {
 function createKeyGenerator(prefix: string) {
   return (req: Request): string => {
     const user = (req as any).user;
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
     
-    // Use user ID if authenticated, otherwise use IP
-    const identifier = user?.id ? `user:${user.id}` : `ip:${ip}`;
-    return `${prefix}:${identifier}`;
+    // Use user ID if authenticated, otherwise return undefined to use default IP handling
+    if (user?.id) {
+      return `${prefix}:user:${user.id}`;
+    }
+    
+    // Return undefined to let express-rate-limit handle IP extraction properly
+    return undefined as any;
   };
 }
 

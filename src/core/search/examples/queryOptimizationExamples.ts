@@ -3,7 +3,7 @@
  * Demonstrates various query optimization scenarios
  */
 
-import { QueryEnhancer, BusinessQueryOptimizer, LocationDatabase } from '../index';
+import { QueryEnhancer, BusinessQueryOptimizer, LocationDatabase } from '../index.js';
 
 // Example queries to test
 const exampleQueries = [

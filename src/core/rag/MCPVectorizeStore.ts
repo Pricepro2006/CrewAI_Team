@@ -1,5 +1,5 @@
-import type { ProcessedDocument, QueryResult, Document, VectorStoreConfig } from './types';
-import type { IVectorStore } from './IVectorStore';
+import type { ProcessedDocument, QueryResult, Document, VectorStoreConfig } from './types.js';
+import type { IVectorStore } from './IVectorStore.js';
 
 export class MCPVectorizeStore implements IVectorStore {
   private config: VectorStoreConfig;

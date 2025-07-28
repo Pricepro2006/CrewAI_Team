@@ -1,5 +1,5 @@
-import { RAGSystem } from "../../core/rag/RAGSystem";
-import type { RAGConfig } from "../../core/rag/types";
+import { RAGSystem } from "../../core/rag/RAGSystem.js";
+import type { RAGConfig } from "../../core/rag/types.js";
 
 export interface ChromaDBTestConfig {
   skipIfUnavailable?: boolean;

@@ -1,7 +1,7 @@
-import type { Plan, Query } from "./types";
-import type { AgentRoutingPlan } from "./enhanced-types";
-import type { AgentType } from "../shared/types";
-import { logger } from "../../utils/logger";
+import type { Plan, Query } from "./types.js";
+import type { AgentRoutingPlan } from "./enhanced-types.js";
+import type { AgentType } from "../shared/types.js";
+import { logger } from "../../utils/logger.js";
 
 export class SimplePlanGenerator {
   static createSimplePlan(query: Query, routingPlan?: AgentRoutingPlan): Plan {

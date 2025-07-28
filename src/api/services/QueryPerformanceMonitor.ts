@@ -1,5 +1,5 @@
-import { logger } from '../../utils/logger';
-import { wsService } from './WebSocketService';
+import { logger } from '../../utils/logger.js';
+import { wsService } from './WebSocketService.js';
 
 /**
  * Query Performance Monitor for real-time database performance tracking

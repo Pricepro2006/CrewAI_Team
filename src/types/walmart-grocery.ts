@@ -11,7 +11,7 @@ import type {
   TimestampedEntity,
   PaginationRequest,
   PaginationResponse,
-} from "../shared/types";
+} from "../shared/types/index.js";
 
 // =====================================================
 // Core Product Types

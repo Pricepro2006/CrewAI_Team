@@ -1,8 +1,8 @@
 import { WebSocketServer } from "ws";
-import { WebSocketAuthManager, createWebSocketAuthMiddleware, type AuthenticatedWebSocket } from "../middleware/websocketAuth";
-import { wsService } from "../services/WebSocketService";
-import type { UserService } from "../services/UserService";
-import { logger } from "../../utils/logger";
+import { WebSocketAuthManager, createWebSocketAuthMiddleware, type AuthenticatedWebSocket } from "../middleware/websocketAuth.js";
+import { wsService } from "../services/WebSocketService.js";
+import type { UserService } from "../services/UserService.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Setup authenticated WebSocket server

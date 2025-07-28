@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { router, publicProcedure, csrfTokenProcedure } from '../enhanced-router';
-import type { Context } from '../context';
-import { logger } from '../../../utils/logger';
-import { getCSRFStats } from '../../middleware/security';
+import { router, publicProcedure, csrfTokenProcedure } from '../enhanced-router.js';
+import type { Context } from '../context.js';
+import { logger } from '../../../utils/logger.js';
+import { getCSRFStats } from "../../middleware/security/index.js";
 
 /**
  * Security router for CSRF token management and security-related operations

@@ -3,10 +3,10 @@ import request from 'supertest';
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
-import { authenticateToken } from '../auth';
-import { AdvancedRateLimit } from '../advancedRateLimit';
-import { generateToken } from '../auth';
-import { appRouter } from '../../api/trpc/router';
+import { authenticateToken } from '../auth.js';
+import { AdvancedRateLimit } from '../advancedRateLimit.js';
+import { generateToken } from '../auth.js';
+import { appRouter } from '../../api/trpc/router.js';
 
 // Mock dependencies
 vi.mock('ioredis', () => {

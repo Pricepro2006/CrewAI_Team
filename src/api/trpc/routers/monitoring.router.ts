@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { router, publicProcedure, protectedProcedure } from '../trpc';
+import { router, publicProcedure, protectedProcedure } from '../enhanced-router.js';
 import { TRPCError } from '@trpc/server';
-import { metricsCollector } from '../../../monitoring/MetricsCollector';
-import { errorTracker } from '../../../monitoring/ErrorTracker';
-import { performanceMonitor } from '../../../monitoring/PerformanceMonitor';
-import { healthChecker } from '../../../monitoring/HealthChecker';
+import { metricsCollector } from '../../../monitoring/MetricsCollector.js';
+import { errorTracker } from '../../../monitoring/ErrorTracker.js';
+import { performanceMonitor } from '../../../monitoring/PerformanceMonitor.js';
+import { healthChecker } from '../../../monitoring/HealthChecker.js';
 
 export const monitoringRouter = router({
   // Public health check endpoint
