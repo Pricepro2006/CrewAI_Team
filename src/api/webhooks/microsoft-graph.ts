@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 
 // Dynamic import for BullMQ
 let emailQueue: any;

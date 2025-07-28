@@ -1,8 +1,8 @@
-import { BaseTool } from "../base/BaseTool";
-import type { ToolResult } from "../base/BaseTool";
+import { BaseTool } from "../base/BaseTool.js";
+import type { ToolResult } from "../base/BaseTool.js";
 import axios from "axios";
 import * as cheerio from "cheerio";
-import { SearchKnowledgeService } from "../../services/SearchKnowledgeService";
+import { SearchKnowledgeService } from "../../services/SearchKnowledgeService.js";
 
 export class WebSearchTool extends BaseTool {
   private searchEngines: SearchEngine[];

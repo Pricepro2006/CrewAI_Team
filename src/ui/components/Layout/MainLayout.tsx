@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import { CSRFStatusBadge } from '../Security/CSRFMonitor';
+import Sidebar from './Sidebar.js';
+import { CSRFStatusBadge } from '../Security/CSRFMonitor.js';
 import './MainLayout.css';
 
 export const MainLayout: React.FC = () => {

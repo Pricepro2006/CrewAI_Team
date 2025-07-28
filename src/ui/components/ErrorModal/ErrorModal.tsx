@@ -1,8 +1,8 @@
 import React from 'react';
 import { AlertTriangle, X, Copy, Check } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/utils/cn';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../../components/ui/dialog.js';
+import { Button } from '../../../components/ui/button.js';
+import { cn } from '../../../utils/cn.js';
 import './ErrorModal.css';
 
 interface ErrorModalProps {

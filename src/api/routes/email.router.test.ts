@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { router } from '@trpc/server';
-import { emailRouter } from './email.router';
-import { EmailStorageService } from '../services/EmailStorageService';
-import { wsService } from '../services/WebSocketService';
-import { logger } from '../../utils/logger';
+import { emailRouter } from './email.router.js';
+import { EmailStorageService } from '../services/EmailStorageService.js';
+import { wsService } from '../services/WebSocketService.js';
+import { logger } from '../../utils/logger.js';
 
 // Mock dependencies
 vi.mock('../services/EmailStorageService');

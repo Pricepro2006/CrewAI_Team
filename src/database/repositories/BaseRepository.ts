@@ -6,9 +6,9 @@
 
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../../utils/logger';
-import { SqlInjectionProtection, SqlInjectionError } from '../security/SqlInjectionProtection';
-import { DatabaseErrorHandler, DatabaseSecurityError } from '../security/DatabaseErrorHandler';
+import { logger } from '../../utils/logger.js';
+import { SqlInjectionProtection, SqlInjectionError } from '../security/SqlInjectionProtection.js';
+import { DatabaseErrorHandler, DatabaseSecurityError } from '../security/DatabaseErrorHandler.js';
 
 export interface BaseEntity {
   id: string;

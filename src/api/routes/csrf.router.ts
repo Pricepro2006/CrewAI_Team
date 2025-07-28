@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { ensureCSRFToken, generateCSRFToken, setCSRFCookie } from '../middleware/security/csrf';
-import { logger } from '../../utils/logger';
+import { ensureCSRFToken, generateCSRFToken, setCSRFCookie } from '../middleware/security/csrf.js';
+import { logger } from '../../utils/logger.js';
 
 const router = Router();
 

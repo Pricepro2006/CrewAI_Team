@@ -3,7 +3,7 @@
  * Manages query processing, agent coordination, and response generation
  */
 
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 
 export type AgentRole = 'analyst' | 'coordinator' | 'executor' | 'researcher' | 'validator';
 

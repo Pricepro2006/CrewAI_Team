@@ -1,22 +1,22 @@
-import { OllamaProvider } from "../llm/OllamaProvider";
-import { AgentRegistry } from "../agents/registry/AgentRegistry";
-import { RAGSystem } from "../rag/RAGSystem";
-import { PlanExecutor } from "./PlanExecutor";
-import { PlanReviewer } from "./PlanReviewer";
-import { EnhancedParser } from "./EnhancedParser";
-import { AgentRouter } from "./AgentRouter";
-import { SimplePlanGenerator } from "./SimplePlanGenerator";
+import { OllamaProvider } from "../llm/OllamaProvider.js";
+import { AgentRegistry } from "../agents/registry/AgentRegistry.js";
+import { RAGSystem } from "../rag/RAGSystem.js";
+import { PlanExecutor } from "./PlanExecutor.js";
+import { PlanReviewer } from "./PlanReviewer.js";
+import { EnhancedParser } from "./EnhancedParser.js";
+import { AgentRouter } from "./AgentRouter.js";
+import { SimplePlanGenerator } from "./SimplePlanGenerator.js";
 import type {
   Plan,
   ExecutionResult,
   Query,
   MasterOrchestratorConfig,
   ReviewResult,
-} from "./types";
-import type { QueryAnalysis, AgentRoutingPlan } from "./enhanced-types";
-import { logger, createPerformanceMonitor } from "../../utils/logger";
-import { wsService } from "../../api/services/WebSocketService";
-import { withTimeout, DEFAULT_TIMEOUTS, TimeoutError } from "../../utils/timeout";
+} from "./types.js";
+import type { QueryAnalysis, AgentRoutingPlan } from "./enhanced-types.js";
+import { logger, createPerformanceMonitor } from "../../utils/logger.js";
+import { wsService } from "../../api/services/WebSocketService.js";
+import { withTimeout, DEFAULT_TIMEOUTS, TimeoutError } from "../../utils/timeout.js";
 
 export class MasterOrchestrator {
   private llm: OllamaProvider;

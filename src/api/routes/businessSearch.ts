@@ -4,10 +4,10 @@ import {
   webSearchRateLimit,
   businessSearchRateLimit,
   premiumRateLimit,
-} from "../../core/middleware/RateLimiter";
-import { BusinessSearchMiddleware } from "../../core/middleware/BusinessSearchMiddleware";
-import { OllamaProvider } from "../../core/llm/OllamaProvider";
-import { logger } from "../../utils/logger";
+} from "../../core/middleware/RateLimiter.js";
+import { BusinessSearchMiddleware } from "../../core/middleware/BusinessSearchMiddleware.js";
+import { OllamaProvider } from "../../core/llm/OllamaProvider.js";
+import { logger } from "../../utils/logger.js";
 
 const router: ExpressRouter = Router();
 

@@ -1,8 +1,8 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import Database from 'better-sqlite3';
-import { EmailStorageService } from '../EmailStorageService';
-import { EmailAnalysisResult, ProcessingMetadata } from '../EmailStorageService';
-import { logger } from '../../../utils/logger';
+import { EmailStorageService } from '../EmailStorageService.js';
+import { EmailAnalysisResult, ProcessingMetadata } from '../EmailStorageService.js';
+import { logger } from '../../../utils/logger.js';
 
 // Mock logger to prevent console output during tests
 jest.mock('../../../utils/logger', () => ({
@@ -289,7 +289,7 @@ describe('EmailStorageService - Processing Time Validation', () => {
   describe('Database triggers for processing time validation', () => {
     it('should prevent insertion of negative processing times after migration', async () => {
       // Run the migration to add triggers
-      const { up } = await import('../../../database/migrations/006_fix_negative_processing_times');
+      const { up } = await import('../../../database/migrations/006_fix_negative_processing_times.js');
       up(testDb);
 
       // Try to insert a record with negative processing time
@@ -306,7 +306,7 @@ describe('EmailStorageService - Processing Time Validation', () => {
 
     it('should prevent update to negative processing times after migration', async () => {
       // Run the migration to add triggers
-      const { up } = await import('../../../database/migrations/006_fix_negative_processing_times');
+      const { up } = await import('../../../database/migrations/006_fix_negative_processing_times.js');
       up(testDb);
 
       // First insert a valid record

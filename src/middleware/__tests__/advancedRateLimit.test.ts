@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import express from 'express';
-import { AdvancedRateLimit, DEFAULT_RATE_LIMIT_CONFIG } from '../advancedRateLimit';
-import { authenticateToken } from '../auth';
+import { AdvancedRateLimit, DEFAULT_RATE_LIMIT_CONFIG } from '../advancedRateLimit.js';
+import { authenticateToken } from '../auth.js';
 
 // Mock Redis for testing
 vi.mock('ioredis', () => {

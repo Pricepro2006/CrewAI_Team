@@ -6,8 +6,8 @@
  */
 
 import { EventEmitter } from "events";
-import { logger } from "../../utils/logger";
-import type { Timestamp } from "../types";
+import { logger } from "../../utils/logger.js";
+import type { Timestamp } from "../types/index.js";
 // Removed unused import for cleaner code
 
 // =====================================================

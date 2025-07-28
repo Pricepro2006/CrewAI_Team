@@ -4,8 +4,8 @@
  */
 
 import { join } from 'path';
-import { getDatabaseManager } from '../DatabaseManager';
-import { logger } from '../../utils/logger';
+import { getDatabaseManager } from '../DatabaseManager.js';
+import { logger } from '../../utils/logger.js';
 
 interface SampleData {
   users: Array<{

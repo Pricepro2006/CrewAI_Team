@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './Settings.css';
-import { MonitoringDashboard } from '../Monitoring/MonitoringDashboard';
+import { MonitoringDashboard } from '../Monitoring/MonitoringDashboard.js';
 
 interface SettingsState {
   general: {

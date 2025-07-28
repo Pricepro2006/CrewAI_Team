@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { cn } from '@/utils/cn';
+import { cn } from '../../utils/cn.js';
 
 const TooltipProvider = ({ children }: { children: React.ReactNode }) => (
   <>{children}</>

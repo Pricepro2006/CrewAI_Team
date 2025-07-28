@@ -8,19 +8,19 @@
 import Database from "better-sqlite3";
 import { join } from "path";
 import { existsSync } from "fs";
-import { DatabaseMigrator } from "../database/migrations/DatabaseMigrator";
-import { logger } from "../utils/logger";
-import appConfig from "../config/app.config";
+import { DatabaseMigrator } from "../database/migrations/DatabaseMigrator.js";
+import { logger } from "../utils/logger.js";
+import appConfig from "../config/app.config.js";
 
 // Import all migrations
 import {
   up as fixNegativeProcessingTimes,
   down as rollbackNegativeProcessingTimes,
-} from "../database/migrations/006_fix_negative_processing_times";
+} from "../database/migrations/006_fix_negative_processing_times.js";
 import {
   up as addCompositeIndexes,
   down as rollbackCompositeIndexes,
-} from "../database/migrations/007_add_composite_indexes";
+} from "../database/migrations/007_add_composite_indexes.js";
 
 interface MigrationModule {
   version: number;

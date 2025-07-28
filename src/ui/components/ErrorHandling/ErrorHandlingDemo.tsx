@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { useToast } from '../Toast';
-import { ErrorModal } from '../ErrorModal';
-import { ErrorBoundary, withErrorBoundary } from '../ErrorBoundary';
-import { ErrorRecoveryBoundary } from '../ErrorRecovery';
-import { LoadingState, Skeleton, LoadingCard } from '../LoadingState';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useErrorRecovery, useCircuitBreaker } from '../../hooks/useErrorRecovery';
+import { useToast } from "../Toast/index.js";
+import { ErrorModal } from "../ErrorModal/index.js";
+import { ErrorBoundary, withErrorBoundary } from "../ErrorBoundary/index.js";
+import { ErrorRecoveryBoundary } from "../ErrorRecovery/index.js";
+import { LoadingState, Skeleton, LoadingCard } from "../LoadingState/index.js";
+import { Button } from '../../../components/ui/button.js';
+import { Card } from '../../../components/ui/card.js';
+import { Alert, AlertDescription } from '../../../components/ui/alert.js';
+import { useErrorRecovery, useCircuitBreaker } from '../../hooks/useErrorRecovery.js';
 import './ErrorHandlingDemo.css';
 
 // Component that throws errors for testing

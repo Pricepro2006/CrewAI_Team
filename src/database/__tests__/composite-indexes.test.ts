@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { up as addCompositeIndexes, down as removeCompositeIndexes } from '../migrations/007_add_composite_indexes';
-import { logger } from '../../utils/logger';
+import { up as addCompositeIndexes, down as removeCompositeIndexes } from '../migrations/007_add_composite_indexes.js';
+import { logger } from '../../utils/logger.js';
 
 describe('Composite Index Performance Tests', () => {
   let db: Database.Database;

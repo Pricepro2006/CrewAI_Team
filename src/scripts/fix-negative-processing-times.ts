@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import Database from 'better-sqlite3';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import path from 'path';
-import { up as fixNegativeProcessingTimes } from '../database/migrations/006_fix_negative_processing_times';
+import { up as fixNegativeProcessingTimes } from '../database/migrations/006_fix_negative_processing_times.js';
 
 /**
  * Script to fix negative processing times in the database

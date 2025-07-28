@@ -3,23 +3,23 @@
  * Handles product search, cart management, list operations, and substitutions
  */
 
-import { logger } from "../../utils/logger";
-import type { WalmartProductRepository, SubstitutionRepository, UserPreferencesRepository } from "../../database/repositories/WalmartProductRepository";
-import type { GroceryListRepository, GroceryItemRepository, ShoppingSessionRepository } from "../../database/repositories/GroceryRepository";
-import { getDatabaseManager } from "../../database/DatabaseManager";
-import { BrightDataScraper } from "./BrightDataScraper";
-import { ProductLookupService } from "./ProductLookupService";
-import { DealMatchingService } from "./DealMatchingService";
-import { ChromaDBManager } from "../../database/vector/ChromaDBManager";
+import { logger } from "../../utils/logger.js";
+import type { WalmartProductRepository, SubstitutionRepository, UserPreferencesRepository } from "../../database/repositories/WalmartProductRepository.js";
+import type { GroceryListRepository, GroceryItemRepository, ShoppingSessionRepository } from "../../database/repositories/GroceryRepository.js";
+import { getDatabaseManager } from "../../database/DatabaseManager.js";
+import { BrightDataScraper } from "./BrightDataScraper.js";
+import { ProductLookupService } from "./ProductLookupService.js";
+import { DealMatchingService } from "./DealMatchingService.js";
+import { ChromaDBManager } from "../../database/vector/ChromaDBManager.js";
 import type { 
   WalmartProduct
-} from "../../types/walmart-grocery";
+} from "../../types/walmart-grocery.js";
 import type { 
   GroceryList as RepoGroceryList,
   GroceryItem as RepoGroceryItem,
   ShoppingSession as RepoShoppingSession
-} from "../../database/repositories/GroceryRepository";
-import type { UserPreferences } from "../../database/repositories/WalmartProductRepository";
+} from "../../database/repositories/GroceryRepository.js";
+import type { UserPreferences } from "../../database/repositories/WalmartProductRepository.js";
 
 export interface SearchOptions {
   query: string;
@@ -637,7 +637,7 @@ export class WalmartGroceryService {
   /**
    * Convert types WalmartProduct to repository WalmartProduct
    */
-  private convertToRepoProduct(product: WalmartProduct): import("../../database/repositories/WalmartProductRepository").WalmartProduct {
+  private convertToRepoProduct(product: WalmartProduct): import("../../database/repositories/WalmartProductRepository.js").WalmartProduct {
     return {
       product_id: product.walmartId,
       name: product.name,

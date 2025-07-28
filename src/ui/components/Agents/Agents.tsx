@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '@/lib/trpc';
+import { api } from '../../../lib/trpc.js';
 import './Agents.css';
 
 interface AgentData {

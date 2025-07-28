@@ -4,7 +4,7 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.js';
 
 let ollamaProcess: ChildProcess | null = null;
 let isSetupComplete = false;

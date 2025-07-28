@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Shield, CheckCircle, AlertCircle, XCircle, Wifi, Lock, Key } from 'lucide-react';
-import { useCSRFStatus } from '@/hooks/useCSRF';
-import { api } from '@/lib/trpc';
+import { useCSRFStatus } from '../../../hooks/useCSRF.js';
+import { api } from '../../../lib/trpc.js';
 
 interface SecurityStatus {
   cors: boolean;

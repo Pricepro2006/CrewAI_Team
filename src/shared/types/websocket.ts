@@ -3,10 +3,10 @@
  * Comprehensive type definitions for real-time features
  */
 
-import type { Timestamp } from './index';
-import type { Task, Message, Document, Conversation } from './core';
-import type { EmailRecord } from './email';
-import type { AgentResult, AgentStep, TaskLog } from './api';
+import type { Timestamp } from './index.js';
+import type { Task, Message, Document, Conversation } from './core.js';
+import type { EmailRecord } from './email.js';
+import type { AgentResult, AgentStep, TaskLog } from './api.js';
 
 // =====================================================
 // Core WebSocket Types

@@ -3,13 +3,13 @@
  * Processes priority emails with contextual understanding
  */
 
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 import {
   MODEL_CONFIG,
   getModelTimeout,
   getModelBatchSize,
-} from "../../config/models.config";
-import type { Email, LlamaAnalysisResult, LlamaAnalysisResults } from "./types";
+} from "../../config/models.config.js";
+import type { Email, LlamaAnalysisResult, LlamaAnalysisResults } from "./types.js";
 import axios from "axios";
 
 export class Stage2LlamaAnalysis {

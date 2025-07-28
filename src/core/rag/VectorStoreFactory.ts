@@ -1,8 +1,8 @@
-import type { VectorStoreConfig } from './types';
-import type { IVectorStore } from './IVectorStore';
-import { VectorStore } from './VectorStore';
-import { MCPVectorizeStore } from './MCPVectorizeStore';
-import { PineconeVectorStore } from './PineconeVectorStore';
+import type { VectorStoreConfig } from './types.js';
+import type { IVectorStore } from './IVectorStore.js';
+import { VectorStore } from './VectorStore.js';
+import { MCPVectorizeStore } from './MCPVectorizeStore.js';
+import { PineconeVectorStore } from './PineconeVectorStore.js';
 
 export class VectorStoreFactory {
   static create(config: VectorStoreConfig): IVectorStore {

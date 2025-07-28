@@ -3,7 +3,7 @@
  * Uses LLM to generate responses with token-level confidence tracking
  */
 
-import type { OllamaProvider } from '../../llm/OllamaProvider';
+import type { OllamaProvider } from '../../llm/OllamaProvider.js';
 import type { 
   GenerationRequest, 
   GenerationResult, 

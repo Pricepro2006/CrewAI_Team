@@ -5,14 +5,14 @@ import {
   type Router as ExpressRouter,
 } from "express";
 import { z } from "zod";
-import { EmailStorageService } from "../services/EmailStorageService";
-import { WebSocketService } from "../services/WebSocketService";
+import { EmailStorageService } from "../services/EmailStorageService.js";
+import { WebSocketService } from "../services/WebSocketService.js";
 import {
   getTeamMemberById,
   TEAM_MEMBERS,
-} from "../../config/team-members.config";
-import { AppError } from "../utils/errors";
-import { asyncHandler } from "../middleware/asyncHandler";
+} from "../../config/team-members.config.js";
+import { AppError } from "../utils/errors.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
 
 const router: ExpressRouter = Router();
 
@@ -201,7 +201,7 @@ router.get(
 
     // Get suggestions based on email alias
     const { getSuggestedAssignees } = await import(
-      "../../config/team-members.config"
+      "../../config/team-members.config.js"
     );
     const suggestions = getSuggestedAssignees(email.email_alias);
 

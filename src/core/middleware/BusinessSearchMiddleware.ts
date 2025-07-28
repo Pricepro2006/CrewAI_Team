@@ -14,14 +14,14 @@
  */
 
 import { EventEmitter } from 'events';
-import type { OllamaProvider, OllamaGenerateOptions, OllamaGenerateWithLogProbsResponse } from '../llm/OllamaProvider';
-import { BusinessSearchPromptEnhancer, type BusinessSearchEnhancementOptions } from '../prompts/BusinessSearchPromptEnhancer';
-import { BusinessQueryOptimizer } from '../search/BusinessQueryOptimizer';
-import { BusinessResponseValidator, type ValidationResult } from '../validators/BusinessResponseValidator';
-import { logger } from '../../utils/logger';
-import { FeatureFlagService } from '../../config/features/FeatureFlagService';
-import { RateLimiter } from './RateLimiter';
-import { BusinessSearchCache } from '../cache/BusinessSearchCache';
+import type { OllamaProvider, OllamaGenerateOptions, OllamaGenerateWithLogProbsResponse } from '../llm/OllamaProvider.js';
+import { BusinessSearchPromptEnhancer, type BusinessSearchEnhancementOptions } from '../prompts/BusinessSearchPromptEnhancer.js';
+import { BusinessQueryOptimizer } from '../search/BusinessQueryOptimizer.js';
+import { BusinessResponseValidator, type ValidationResult } from '../validators/BusinessResponseValidator.js';
+import { logger } from '../../utils/logger.js';
+import { FeatureFlagService } from '../../config/features/FeatureFlagService.js';
+import { RateLimiter } from './RateLimiter.js';
+import { BusinessSearchCache } from '../cache/BusinessSearchCache.js';
 
 export interface MiddlewareMetrics {
   totalRequests: number;

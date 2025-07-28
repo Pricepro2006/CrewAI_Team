@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createTRPCMsw } from 'msw-trpc';
 import { setupServer } from 'msw/node';
 import { TRPCError } from '@trpc/server';
-import { appRouter } from '../router';
-import type { AppRouter } from '../router';
+import { appRouter } from '../router.js';
+import type { AppRouter } from '../router.js';
 
 // Mock dependencies
 vi.mock('../../../utils/logger', () => ({
@@ -84,7 +84,7 @@ describe('TRPC Rate Limiting', () => {
   describe('Rate Limit Middleware', () => {
     it('should allow requests within rate limit', async () => {
       // Create a mock procedure with rate limiting
-      const { createRateLimitMiddleware } = await import('../enhanced-router');
+      const { createRateLimitMiddleware } = await import('../enhanced-router.js');
       
       // Mock the middleware function
       const rateLimitMiddleware = createRateLimitMiddleware('test', 5, 60000);
@@ -102,7 +102,7 @@ describe('TRPC Rate Limiting', () => {
     });
 
     it('should block requests exceeding rate limit', async () => {
-      const { createRateLimitMiddleware } = await import('../enhanced-router');
+      const { createRateLimitMiddleware } = await import('../enhanced-router.js');
       
       const rateLimitMiddleware = createRateLimitMiddleware('test', 2, 60000);
       const next = vi.fn().mockResolvedValue({ success: true });
@@ -120,7 +120,7 @@ describe('TRPC Rate Limiting', () => {
     });
 
     it('should apply different limits for different user types', async () => {
-      const { createRateLimitMiddleware } = await import('../enhanced-router');
+      const { createRateLimitMiddleware } = await import('../enhanced-router.js');
       
       const rateLimitMiddleware = createRateLimitMiddleware('test', 2, 60000);
       const next = vi.fn().mockResolvedValue({ success: true });
@@ -145,7 +145,7 @@ describe('TRPC Rate Limiting', () => {
     });
 
     it('should give admin users higher limits', async () => {
-      const { createRateLimitMiddleware } = await import('../enhanced-router');
+      const { createRateLimitMiddleware } = await import('../enhanced-router.js');
       
       const rateLimitMiddleware = createRateLimitMiddleware('test', 2, 60000);
       const next = vi.fn().mockResolvedValue({ success: true });
@@ -170,7 +170,7 @@ describe('TRPC Rate Limiting', () => {
     });
 
     it('should clean up expired rate limit entries', async () => {
-      const { createRateLimitMiddleware } = await import('../enhanced-router');
+      const { createRateLimitMiddleware } = await import('../enhanced-router.js');
       
       // Very short window for testing
       const rateLimitMiddleware = createRateLimitMiddleware('test', 1, 100);
@@ -194,7 +194,7 @@ describe('TRPC Rate Limiting', () => {
     });
 
     it('should use different keys for different users', async () => {
-      const { createRateLimitMiddleware } = await import('../enhanced-router');
+      const { createRateLimitMiddleware } = await import('../enhanced-router.js');
       
       const rateLimitMiddleware = createRateLimitMiddleware('test', 1, 60000);
       const next = vi.fn().mockResolvedValue({ success: true });
@@ -224,7 +224,7 @@ describe('TRPC Rate Limiting', () => {
 
   describe('Procedure-Specific Rate Limits', () => {
     it('should apply chat-specific rate limits', async () => {
-      const { chatProcedure } = await import('../enhanced-router');
+      const { chatProcedure } = await import('../enhanced-router.js');
       
       // Mock the chat procedure context
       const chatContext = {
@@ -238,25 +238,25 @@ describe('TRPC Rate Limiting', () => {
     });
 
     it('should apply agent-specific rate limits', async () => {
-      const { agentProcedure } = await import('../enhanced-router');
+      const { agentProcedure } = await import('../enhanced-router.js');
       
       expect(agentProcedure).toBeDefined();
     });
 
     it('should apply task-specific rate limits', async () => {
-      const { taskProcedure } = await import('../enhanced-router');
+      const { taskProcedure } = await import('../enhanced-router.js');
       
       expect(taskProcedure).toBeDefined();
     });
 
     it('should apply RAG-specific rate limits', async () => {
-      const { ragProcedure } = await import('../enhanced-router');
+      const { ragProcedure } = await import('../enhanced-router.js');
       
       expect(ragProcedure).toBeDefined();
     });
 
     it('should apply strict rate limits for sensitive operations', async () => {
-      const { strictProcedure } = await import('../enhanced-router');
+      const { strictProcedure } = await import('../enhanced-router.js');
       
       expect(strictProcedure).toBeDefined();
     });
@@ -264,7 +264,7 @@ describe('TRPC Rate Limiting', () => {
 
   describe('Rate Limit Error Handling', () => {
     it('should throw TRPCError with correct code when rate limited', async () => {
-      const { createRateLimitMiddleware } = await import('../enhanced-router');
+      const { createRateLimitMiddleware } = await import('../enhanced-router.js');
       
       const rateLimitMiddleware = createRateLimitMiddleware('test', 1, 60000);
       const next = vi.fn().mockResolvedValue({ success: true });
@@ -284,7 +284,7 @@ describe('TRPC Rate Limiting', () => {
     });
 
     it('should include helpful error message with procedure name', async () => {
-      const { createRateLimitMiddleware } = await import('../enhanced-router');
+      const { createRateLimitMiddleware } = await import('../enhanced-router.js');
       
       const rateLimitMiddleware = createRateLimitMiddleware('chatMessage', 1, 60000);
       const next = vi.fn().mockResolvedValue({ success: true });
@@ -303,8 +303,8 @@ describe('TRPC Rate Limiting', () => {
 
   describe('Rate Limit Logging', () => {
     it('should log rate limit violations', async () => {
-      const { logger } = await import('../../../utils/logger');
-      const { createRateLimitMiddleware } = await import('../enhanced-router');
+      const { logger } = await import('../../../utils/logger.js');
+      const { createRateLimitMiddleware } = await import('../enhanced-router.js');
       
       const rateLimitMiddleware = createRateLimitMiddleware('test', 1, 60000);
       const next = vi.fn().mockResolvedValue({ success: true });
@@ -330,8 +330,8 @@ describe('TRPC Rate Limiting', () => {
     });
 
     it('should log successful rate limit checks in debug mode', async () => {
-      const { logger } = await import('../../../utils/logger');
-      const { createRateLimitMiddleware } = await import('../enhanced-router');
+      const { logger } = await import('../../../utils/logger.js');
+      const { createRateLimitMiddleware } = await import('../enhanced-router.js');
       
       const rateLimitMiddleware = createRateLimitMiddleware('test', 5, 60000);
       const next = vi.fn().mockResolvedValue({ success: true });
@@ -353,7 +353,7 @@ describe('TRPC Rate Limiting', () => {
 
   describe('Memory Management', () => {
     it('should limit memory usage by cleaning old entries', async () => {
-      const { createRateLimitMiddleware } = await import('../enhanced-router');
+      const { createRateLimitMiddleware } = await import('../enhanced-router.js');
       
       const rateLimitMiddleware = createRateLimitMiddleware('test', 10, 100); // Short window
       const next = vi.fn().mockResolvedValue({ success: true });

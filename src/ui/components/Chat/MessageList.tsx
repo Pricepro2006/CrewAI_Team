@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Message } from './types';
+import type { Message } from './types.js';
 import './MessageList.css';
 
 interface MessageListProps {

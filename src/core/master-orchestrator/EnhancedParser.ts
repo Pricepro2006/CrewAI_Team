@@ -1,7 +1,7 @@
-import type { OllamaProvider } from "../llm/OllamaProvider";
-import type { Query } from "./types";
-import type { QueryAnalysis, ResourceRequirements } from "./enhanced-types";
-import { logger } from "../../utils/logger";
+import type { OllamaProvider } from "../llm/OllamaProvider.js";
+import type { Query } from "./types.js";
+import type { QueryAnalysis, ResourceRequirements } from "./enhanced-types.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Enhanced parser for structured query analysis

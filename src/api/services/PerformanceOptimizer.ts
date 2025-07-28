@@ -1,4 +1,4 @@
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.js';
 
 // Performance optimization service implementing 2025 best practices
 export class PerformanceOptimizer {

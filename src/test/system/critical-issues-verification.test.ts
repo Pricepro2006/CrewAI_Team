@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { spawn, type ChildProcess } from 'child_process';
 import axios from 'axios';
-import { MasterOrchestrator } from '@/core/master-orchestrator/MasterOrchestrator';
-import { OllamaProvider } from '@/core/llm/OllamaProvider';
-import { AgentRegistry } from '@/core/agents/registry/AgentRegistry';
-import { ChromaDBService } from '@/core/rag/ChromaDBService';
-import { InMemoryVectorDB } from '@/core/rag/InMemoryVectorDB';
+import { MasterOrchestrator } from '../../core/master-orchestrator/MasterOrchestrator.js';
+import { OllamaProvider } from '../../core/llm/OllamaProvider.js';
+import { AgentRegistry } from '../../core/agents/registry/AgentRegistry.js';
+import { ChromaDBService } from '../../core/rag/ChromaDBService.js';
+import { InMemoryVectorDB } from '../../core/rag/InMemoryVectorDB.js';
 import path from 'path';
 import fs from 'fs/promises';
 

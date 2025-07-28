@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, beforeAll, afterEach } from "vitest";
-import { MasterOrchestrator } from "./MasterOrchestrator";
-import { createTestDatabase } from "../../test/utils/test-helpers";
+import { MasterOrchestrator } from "./MasterOrchestrator.js";
+import { createTestDatabase } from "../../test/utils/test-helpers.js";
 import {
   isOllamaRunning,
   skipIfNoOllama,
   generateWithTimeout,
-} from "../../test/utils/ollama-test-helper";
-import type { Plan, Task } from "./types";
+} from "../../test/utils/ollama-test-helper.js";
+import type { Plan, Task } from "./types.js";
 
 // No mocking - use real Ollama per guardrails
 

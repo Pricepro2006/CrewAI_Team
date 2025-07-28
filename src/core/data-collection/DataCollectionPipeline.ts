@@ -4,8 +4,8 @@
  */
 
 import { EventEmitter } from "events";
-import { BrightDataService } from "./BrightDataService";
-import { logger } from "../../utils/logger";
+import { BrightDataService } from "./BrightDataService.js";
+import { logger } from "../../utils/logger.js";
 import type {
   DataSource,
   DataCollectionJob,
@@ -13,7 +13,7 @@ import type {
   DataProcessingRule,
   DataPipelineStats,
   BrightDataCredentials,
-} from "./types";
+} from "./types.js";
 
 export class DataCollectionPipeline extends EventEmitter {
   private brightDataService: BrightDataService;

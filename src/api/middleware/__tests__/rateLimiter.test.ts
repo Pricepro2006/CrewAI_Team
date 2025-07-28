@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import { TRPCError } from '@trpc/server';
-import { rateLimitMiddleware } from '../rateLimiter';
+import { rateLimitMiddleware } from '../rateLimiter.js';
 
 // Mock Redis to test both Redis and in-memory implementations
 vi.mock('ioredis', () => ({

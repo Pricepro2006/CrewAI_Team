@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ErrorBoundary, withErrorBoundary, useErrorHandler } from '../ErrorBoundary';
-import { ErrorFallback } from '../ErrorFallback';
+import { ErrorBoundary, withErrorBoundary, useErrorHandler } from '../ErrorBoundary.js';
+import { ErrorFallback } from '../ErrorFallback.js';
 import '@testing-library/jest-dom';
 
 // Mock logger
-jest.mock('../../../../utils/logger', () => ({
+jest.mock('../../../utils/logger', () => ({
   logger: {
     error: jest.fn(),
   },

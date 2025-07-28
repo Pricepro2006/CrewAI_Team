@@ -7,7 +7,7 @@ import type {
   PriorityLevel,
   WorkflowState,
   BusinessProcess,
-} from "./pipeline-analysis";
+} from "./pipeline-analysis.js";
 
 /**
  * Quick analysis results (triage stage)
@@ -117,4 +117,4 @@ export type {
   WorkflowState,
   PriorityLevel,
   BusinessProcess,
-} from "./pipeline-analysis";
+} from "./pipeline-analysis.js";

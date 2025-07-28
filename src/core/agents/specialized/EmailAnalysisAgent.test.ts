@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { EmailAnalysisAgent } from './EmailAnalysisAgent';
-import { OllamaProvider } from '../../llm/OllamaProvider';
+import { EmailAnalysisAgent } from './EmailAnalysisAgent.js';
+import { OllamaProvider } from '../../llm/OllamaProvider.js';
 
 // Mock the OllamaProvider
 vi.mock('../../llm/OllamaProvider', () => ({

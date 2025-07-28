@@ -4,9 +4,9 @@
  */
 
 import type Database from "better-sqlite3";
-import { BaseRepository } from "./BaseRepository";
+import { BaseRepository } from "./BaseRepository.js";
 import { v4 as uuidv4 } from "uuid";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 
 // Types for grocery entities
 export interface GroceryList {

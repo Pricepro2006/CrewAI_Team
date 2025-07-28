@@ -4,12 +4,12 @@ config(); // Load environment variables
 import express from "express";
 import cookieParser from "cookie-parser";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { createContext } from "./trpc/context";
-import { appRouter } from "./trpc/router";
+import { createContext } from "./trpc/context.js";
+import { appRouter } from "./trpc/router.js";
 import { WebSocketServer } from "ws";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
-import appConfig from "../config/app.config";
-import ollamaConfig from "../config/ollama.config";
+import appConfig from "../config/app.config.js";
+import ollamaConfig from "../config/ollama.config.js";
 import type { Express } from "express";
 import {
   apiRateLimiter,
@@ -18,34 +18,34 @@ import {
   websocketRateLimit,
   getRateLimitStatus,
   cleanupRateLimiting,
-} from "./middleware/rateLimiter";
-import { optionalAuthenticateJWT as authenticateToken, type AuthenticatedRequest } from "./middleware/auth";
-import { wsService } from "./services/WebSocketService";
-import { logger } from "../utils/logger";
-import uploadRoutes from "./routes/upload.routes";
-import { webhookRouter } from "./routes/webhook.router";
-import { emailAnalysisRouter } from "./routes/email-analysis.router";
-import emailAssignmentRouter from "./routes/email-assignment.router";
-import csrfRouter from "./routes/csrf.router";
-import websocketMonitorRouter from "./routes/websocket-monitor.router";
+} from "./middleware/rateLimiter.js";
+import { optionalAuthenticateJWT as authenticateToken, type AuthenticatedRequest } from "./middleware/auth.js";
+import { wsService } from "./services/WebSocketService.js";
+import { logger } from "../utils/logger.js";
+import uploadRoutes from "./routes/upload.routes.js";
+import { webhookRouter } from "./routes/webhook.router.js";
+import { emailAnalysisRouter } from "./routes/email-analysis.router.js";
+import emailAssignmentRouter from "./routes/email-assignment.router.js";
+import csrfRouter from "./routes/csrf.router.js";
+import websocketMonitorRouter from "./routes/websocket-monitor.router.js";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
-} from "./services/ServiceCleanupManager";
-import { setupWalmartWebSocket } from "./websocket/walmart-updates";
-import { DealDataService } from "./services/DealDataService";
-import { EmailStorageService } from "./services/EmailStorageService";
-import { applySecurityHeaders } from "./middleware/security/headers";
-import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
-import { GracefulShutdown } from "../utils/error-handling";
+} from "./services/ServiceCleanupManager.js";
+import { setupWalmartWebSocket } from "./websocket/walmart-updates.js";
+import { DealDataService } from "./services/DealDataService.js";
+import { EmailStorageService } from "./services/EmailStorageService.js";
+import { applySecurityHeaders } from "./middleware/security/headers.js";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { GracefulShutdown } from "../utils/error-handling/index.js";
 import {
   requestTracking,
   errorTracking,
   requestSizeTracking,
   rateLimitTracking,
   authTracking,
-} from "./middleware/monitoring";
-import monitoringRouter from "./routes/monitoring.router";
+} from "./middleware/monitoring.js";
+import monitoringRouter from "./routes/monitoring.router.js";
 
 const app: Express = express();
 const gracefulShutdown = new GracefulShutdown();
@@ -396,64 +396,7 @@ cleanupManager.register({
 
 console.log(`🛒 Walmart WebSocket handlers initialized`);
 
-// Graceful shutdown handler
-const handleGracefulShutdown = async (signal: string) => {
-  console.log(`${signal} received, starting graceful shutdown...`);
-  logger.info("Shutdown initiated", "SHUTDOWN", { signal });
-
-  // Stop accepting new connections
-  server.close(() => {
-    console.log("HTTP server closed");
-    logger.info("HTTP server closed", "SHUTDOWN");
-  });
-
-  // Close WebSocket connections
-  wsHandler.broadcastReconnectNotification();
-  wss.close(() => {
-    console.log("WebSocket server closed");
-    logger.info("WebSocket server closed", "SHUTDOWN");
-  });
-
-  // Cleanup services
-  try {
-    // Stop WebSocket health monitoring
-    wsService.stopHealthMonitoring();
-    logger.info("WebSocket health monitoring stopped", "SHUTDOWN");
-
-    // Cleanup rate limiting resources
-    await cleanupRateLimiting();
-    logger.info("Rate limiting resources cleaned up", "SHUTDOWN");
-
-    // Execute all registered cleanup tasks
-    await cleanupManager.cleanup();
-
-    // Add a small delay to allow pending operations to complete
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    logger.info("All services cleaned up successfully", "SHUTDOWN");
-
-    // Exit the process
-    process.exit(0);
-  } catch (error) {
-    logger.error("Error during shutdown", "SHUTDOWN", { error });
-    process.exit(1);
-  }
-};
-
-// Handle different termination signals
-process.on("SIGTERM", () => handleGracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => handleGracefulShutdown("SIGINT"));
-process.on("SIGUSR2", () => handleGracefulShutdown("SIGUSR2"));
-
-// Handle uncaught errors
-process.on("uncaughtException", (error) => {
-  logger.error("Uncaught exception", "CRITICAL", { error });
-  handleGracefulShutdown("UNCAUGHT_EXCEPTION");
-});
-
-process.on("unhandledRejection", (reason, promise) => {
-  logger.error("Unhandled rejection", "CRITICAL", { reason, promise });
-  handleGracefulShutdown("UNHANDLED_REJECTION");
-});
+// Note: Graceful shutdown is now handled by the GracefulShutdown class
+// which prevents duplicate signal handler registration and infinite loops
 
 export { app, server, wss };

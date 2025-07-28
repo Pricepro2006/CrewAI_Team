@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { metricsCollector } from './MetricsCollector';
+import { metricsCollector } from './MetricsCollector.js';
 import { performance, PerformanceObserver } from 'perf_hooks';
 
 export interface PerformanceMetric {

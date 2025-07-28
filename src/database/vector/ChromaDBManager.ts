@@ -5,7 +5,7 @@
 
 import { ChromaClient } from "chromadb";
 import type { Collection } from "chromadb";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 
 export interface ChromaDocument {
   id: string;

@@ -1,4 +1,4 @@
-import type { QueueConfig, QueueItem, QueueStatus, Task } from "./types";
+import type { QueueConfig, QueueItem, QueueStatus, Task } from "./types.js";
 
 export class TaskQueue {
   private queue: Task[] = [];

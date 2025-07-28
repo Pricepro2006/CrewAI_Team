@@ -1,12 +1,12 @@
 import type Database from "better-sqlite3";
-import { logger } from "@/utils/logger";
-import { metrics } from "@/api/monitoring/metrics";
+import { logger } from "../../utils/logger.js";
+import { metrics } from "../../api/monitoring/metrics.js";
 import type {
   UnifiedEmailData,
   WorkflowState,
-} from "@/types/unified-email.types";
+} from "../../types/unified-email.types.js";
 import { z } from "zod";
-import { DatabaseInputSchemas } from "../security/SqlInjectionProtection";
+import { DatabaseInputSchemas } from "../security/SqlInjectionProtection.js";
 
 export interface EmailRepositoryConfig {
   db: Database.Database;

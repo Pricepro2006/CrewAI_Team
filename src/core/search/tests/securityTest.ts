@@ -3,7 +3,7 @@
  * Tests SQL injection and XSS prevention
  */
 
-import { BusinessQueryOptimizer } from '../BusinessQueryOptimizer';
+import { BusinessQueryOptimizer } from '../BusinessQueryOptimizer.js';
 
 console.log("=== Security Testing for Query Optimizer ===\n");
 

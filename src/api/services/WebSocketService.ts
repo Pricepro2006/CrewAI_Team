@@ -2,11 +2,11 @@ import { EventEmitter } from "events";
 import type { WebSocket } from "ws";
 import { z } from "zod";
 // import _ from "lodash"; // Commented out - types not available
-import type { AuthenticatedWebSocket } from "../middleware/websocketAuth";
-import { logger } from "../../utils/logger";
-import { trackWebSocketConnection, trackWebSocketMessage } from "../middleware/monitoring";
-import { metricsCollector } from "../../monitoring/MetricsCollector";
-import { performanceMonitor } from "../../monitoring/PerformanceMonitor";
+import type { AuthenticatedWebSocket } from "../middleware/websocketAuth.js";
+import { logger } from "../../utils/logger.js";
+import { trackWebSocketConnection, trackWebSocketMessage } from "../middleware/monitoring.js";
+import { metricsCollector } from "../../monitoring/MetricsCollector.js";
+import { performanceMonitor } from "../../monitoring/PerformanceMonitor.js";
 
 // Message types for WebSocket communication
 export const WebSocketMessageSchema = z.discriminatedUnion("type", [

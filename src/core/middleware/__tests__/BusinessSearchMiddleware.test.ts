@@ -4,9 +4,9 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { BusinessSearchMiddleware } from '../BusinessSearchMiddleware';
-import { OllamaProvider } from '../../llm/OllamaProvider';
-import { FeatureFlagService } from '../../../config/features/FeatureFlagService';
+import { BusinessSearchMiddleware } from '../BusinessSearchMiddleware.js';
+import { OllamaProvider } from '../../llm/OllamaProvider.js';
+import { FeatureFlagService } from '../../../config/features/FeatureFlagService.js';
 
 // Mock modules
 vi.mock('../../llm/OllamaProvider');

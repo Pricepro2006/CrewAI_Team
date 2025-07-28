@@ -6,9 +6,9 @@ import {
   withAsyncErrorHandler,
   CircuitBreaker,
   withTimeout,
-} from '../../utils/error-handling';
-import { logger } from '../../utils/logger';
-import type { OllamaProvider, OllamaGenerateOptions, OllamaGenerateWithLogProbsResponse } from './OllamaProvider';
+} from "../../utils/error-handling/index.js";
+import { logger } from '../../utils/logger.js';
+import type { OllamaProvider, OllamaGenerateOptions, OllamaGenerateWithLogProbsResponse } from './OllamaProvider.js';
 
 /**
  * Enhanced Ollama provider with comprehensive error handling

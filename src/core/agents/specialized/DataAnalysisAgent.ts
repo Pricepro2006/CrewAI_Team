@@ -1,5 +1,5 @@
-import { BaseAgent } from '../base/BaseAgent';
-import type { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
+import { BaseAgent } from '../base/BaseAgent.js';
+import type { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes.js';
 
 export class DataAnalysisAgent extends BaseAgent {
   constructor() {

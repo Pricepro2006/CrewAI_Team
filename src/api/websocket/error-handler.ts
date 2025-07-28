@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws';
-import { logger } from '../../utils/logger';
-import { AppError, WebSocketError } from '../../utils/error-handling';
-import { getUserFriendlyError } from '../../utils/error-handling/error-messages';
+import { logger } from '../../utils/logger.js';
+import { AppError, WebSocketError } from "../../utils/error-handling/index.js";
+import { getUserFriendlyError } from '../../utils/error-handling/error-messages.js';
 
 export interface WebSocketErrorMessage {
   type: 'error';

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ChartBase, CHART_COLORS, CHART_CONFIGS } from './ChartBase';
+import { ChartBase, CHART_COLORS, CHART_CONFIGS } from './ChartBase.js';
 
 /**
  * Status Distribution Chart Component

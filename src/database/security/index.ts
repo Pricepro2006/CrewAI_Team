@@ -10,7 +10,7 @@ export {
   DatabaseInputSchemas,
   createSqlInjectionProtection,
   type SqlSecurityConfig
-} from './SqlInjectionProtection';
+} from './SqlInjectionProtection.js';
 
 export {
   DatabaseErrorHandler,
@@ -19,7 +19,7 @@ export {
   createDatabaseErrorMiddleware,
   databaseErrorHandler,
   type DatabaseError
-} from './DatabaseErrorHandler';
+} from './DatabaseErrorHandler.js';
 
 // Security configuration
 export interface DatabaseSecurityConfig {
@@ -245,7 +245,7 @@ export class DatabaseSecurityManager {
     const violationCount = this.violationCounter.increment(type, identifier);
 
     if (this.config.monitoring.logSecurityEvents) {
-      import('../../utils/logger').then(({ logger }) => {
+      import('../../utils/logger.js').then(({ logger }) => {
         logger.warn('Database Security Violation', 'DATABASE_SECURITY', {
           violationType: type,
           violationCount,
@@ -270,7 +270,7 @@ export class DatabaseSecurityManager {
     count: number, 
     context: any
   ): void {
-    import('../../utils/logger').then(({ logger }) => {
+    import('../../utils/logger.js').then(({ logger }) => {
       logger.error('Security Alert - Repeated Violations', 'DATABASE_SECURITY_ALERT', {
         violationType: type,
         identifier,

@@ -7,14 +7,14 @@ import { beforeAll, afterAll } from "vitest";
 import {
   setupOllamaForTesting,
   cleanupOllamaTests,
-} from "./utils/ollama-test-helper";
+} from "./utils/ollama-test-helper.js";
 import {
   setupTestErrorHandling,
   validateTestEnvironment,
   handleTestError,
   testErrorReporter,
-} from "./utils/error-handling";
-import { logger } from "../utils/logger";
+} from "./utils/error-handling.js";
+import { logger } from "../utils/logger.js";
 
 // Set up test environment variables
 process.env['NODE_ENV'] = "test";
@@ -45,7 +45,7 @@ beforeAll(async () => {
     await setupOllamaForTesting();
     
     // Final health check
-    const healthCheck = await import("./utils/error-handling").then(
+    const healthCheck = await import("./utils/error-handling.js").then(
       module => module.checkOllamaHealth(process.env.OLLAMA_BASE_URL!)
     );
     

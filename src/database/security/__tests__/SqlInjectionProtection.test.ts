@@ -9,7 +9,7 @@ import {
   SqlInjectionError, 
   DatabaseInputSchemas,
   createSqlInjectionProtection 
-} from '../SqlInjectionProtection';
+} from '../SqlInjectionProtection.js';
 
 describe('SqlInjectionProtection', () => {
   let sqlSecurity: SqlInjectionProtection;

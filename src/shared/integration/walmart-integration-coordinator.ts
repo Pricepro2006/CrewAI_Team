@@ -6,24 +6,24 @@
  */
 
 import { EventEmitter } from "events";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 import {
   walmartErrorHandler,
   type WalmartBaseError,
   type ErrorContext,
-} from "../errors/walmart-error-handler";
-import { WalmartMonitoringSystem } from "../monitoring/walmart-monitoring";
+} from "../errors/walmart-error-handler.js";
+import { WalmartMonitoringSystem } from "../monitoring/walmart-monitoring.js";
 import type {
   WalmartWebSocketEventType,
   WalmartEventSubscription,
   WalmartEventHandler,
-} from "../../types/walmart-websocket-events";
+} from "../../types/walmart-websocket-events.js";
 import type {
   ShoppingCart,
   SearchQuery,
   WalmartApiResponse,
-} from "../../types/walmart-grocery";
-import type { WebSocketService } from "../../api/services/WebSocketService";
+} from "../../types/walmart-grocery.js";
+import type { WebSocketService } from "../../api/services/WebSocketService.js";
 
 // =====================================================
 // Integration Coordinator

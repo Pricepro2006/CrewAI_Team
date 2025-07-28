@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { TaskQueue } from "./TaskQueue";
-import type { Task } from "./types";
+import { TaskQueue } from "./TaskQueue.js";
+import type { Task } from "./types.js";
 
 describe("TaskQueue", () => {
   let queue: TaskQueue;

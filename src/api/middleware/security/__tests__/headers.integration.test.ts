@@ -4,7 +4,7 @@
 
 import { describe, test, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
-import { app, server } from '../../../server';
+import { app, server } from '../../../server.js';
 
 describe('Security Headers Integration', () => {
   beforeAll(() => {

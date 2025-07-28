@@ -3,7 +3,7 @@
  * Part of GROUP 2B WebSearch Enhancement
  */
 
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.js';
 
 export interface BusinessSearchEnhancementOptions {
   enhancementLevel?: 'minimal' | 'standard' | 'aggressive';

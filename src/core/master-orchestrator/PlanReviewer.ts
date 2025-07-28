@@ -1,5 +1,5 @@
-import type { Plan, ExecutionResult, ReviewResult } from "./types";
-import { logger } from "../../utils/logger";
+import type { Plan, ExecutionResult, ReviewResult } from "./types.js";
+import { logger } from "../../utils/logger.js";
 
 export class PlanReviewer {
   constructor() {

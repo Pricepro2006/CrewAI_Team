@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
-import { logger } from "../../utils/logger";
-import { AppError, ErrorCode } from "../../utils/error-handling";
+import { logger } from "../../utils/logger.js";
+import { AppError, ErrorCode } from "../../utils/error-handling/index.js";
 
 /**
  * Wraps async route handlers to properly catch errors with enhanced error handling

@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { SqlInjectionProtection, SqlInjectionError, DatabaseInputSchemas } from '../SqlInjectionProtection';
+import { SqlInjectionProtection, SqlInjectionError, DatabaseInputSchemas } from '../SqlInjectionProtection.js';
 
 describe('SqlInjectionProtection', () => {
   let sqlSecurity: SqlInjectionProtection;

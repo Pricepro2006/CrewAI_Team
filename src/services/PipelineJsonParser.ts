@@ -3,7 +3,7 @@
  * Implements safe parsing with validation and fallback values
  */
 
-import { logger } from "../utils/logger";
+import { logger } from "../utils/logger.js";
 import type {
   LlamaAnalysisData,
   Phi4AnalysisData,
@@ -11,12 +11,12 @@ import type {
   PriorityLevel,
   BusinessProcess,
   ValidationResult,
-} from "../types/pipeline-analysis";
+} from "../types/pipeline-analysis.js";
 import type {
   ExtractedEntities,
   ActionItem,
   BusinessImpact,
-} from "../types/analysis-results";
+} from "../types/analysis-results.js";
 
 export class PipelineJsonParser {
   private readonly logger = logger;

@@ -5,9 +5,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+} from "../../../components/ui/select.js";
+import { Button } from "../../../components/ui/button.js";
+import { cn } from "../../../lib/utils.js";
 import { User, UserPlus } from "lucide-react";
 
 interface TeamMember {

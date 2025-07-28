@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { router, publicProcedure, protectedProcedure } from '../trpc/enhanced-router';
-import { EmailStorageService } from '../services/EmailStorageService';
-import { logger } from '../../utils/logger';
+import { router, publicProcedure, protectedProcedure } from '../trpc/enhanced-router.js';
+import { EmailStorageService } from '../services/EmailStorageService.js';
+import { logger } from '../../utils/logger.js';
 
 // Initialize email storage service
 const emailStorage = new EmailStorageService();
@@ -129,7 +129,7 @@ export const emailRouter = router({
         
         // Broadcast table data update for real-time synchronization
         try {
-          const { wsService } = await import('../services/WebSocketService');
+          const { wsService } = await import('../services/WebSocketService.js');
           wsService.broadcastEmailTableDataUpdated(result.emails.length, input);
         } catch (error) {
           logger.error('Failed to broadcast table data update', 'EMAIL_ROUTER', { error });
@@ -158,7 +158,7 @@ export const emailRouter = router({
         
         // Broadcast stats update for real-time dashboard sync
         try {
-          const { wsService } = await import('../services/WebSocketService');
+          const { wsService } = await import('../services/WebSocketService.js');
           wsService.broadcastEmailStatsUpdated({
             total: stats.totalEmails,
             critical: stats.criticalCount,
@@ -192,7 +192,7 @@ export const emailRouter = router({
         
         // Broadcast analytics update for real-time dashboard updates
         try {
-          const { wsService } = await import('../services/WebSocketService');
+          const { wsService } = await import('../services/WebSocketService.js');
           wsService.broadcastEmailAnalyticsUpdated(
             analytics.totalEmails,
             analytics.workflowDistribution,
@@ -365,7 +365,7 @@ export const emailRouter = router({
 
         // Broadcast the update
         try {
-          const { wsService } = await import('../services/WebSocketService');
+          const { wsService } = await import('../services/WebSocketService.js');
           const updatedEmail = await emailStorage.getEmail(input.id);
           if (updatedEmail) {
             wsService.emitEmailUpdate({
@@ -434,7 +434,7 @@ export const emailRouter = router({
         
         // Broadcast bulk update completion
         try {
-          const { wsService } = await import('../services/WebSocketService');
+          const { wsService } = await import('../services/WebSocketService.js');
           wsService.broadcastEmailBulkUpdate(
             input.action,
             input.emailIds,
@@ -701,7 +701,7 @@ export const emailRouter = router({
         
         // Broadcast batch creation completion
         try {
-          const { wsService } = await import('../services/WebSocketService');
+          const { wsService } = await import('../services/WebSocketService.js');
           wsService.broadcastEmailBatchCreated(
             input.batchId || `batch_${Date.now()}`,
             results.length,
@@ -765,7 +765,7 @@ export const emailRouter = router({
         
         // Broadcast batch status update completion
         try {
-          const { wsService } = await import('../services/WebSocketService');
+          const { wsService } = await import('../services/WebSocketService.js');
           wsService.broadcastEmailBatchStatusUpdated(
             input.updates.map(u => u.emailId),
             results.length,
@@ -834,7 +834,7 @@ export const emailRouter = router({
         
         // Broadcast batch deletion completion
         try {
-          const { wsService } = await import('../services/WebSocketService');
+          const { wsService } = await import('../services/WebSocketService.js');
           wsService.broadcastEmailBatchDeleted(
             input.emailIds,
             results.length,
@@ -989,7 +989,7 @@ export const emailRouter = router({
     }))
     .subscription(async function* ({ input }) {
       try {
-        const { wsService } = await import('../services/WebSocketService');
+        const { wsService } = await import('../services/WebSocketService.js');
         const clientId = `email-dashboard-${Date.now()}-${Math.random()}`;
         
         // Subscribe to email-specific message types

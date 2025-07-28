@@ -3,7 +3,7 @@
  * Coordinates between SQLite repositories and ChromaDB collections
  */
 
-import { getDatabaseManager } from "../DatabaseManager";
+import { getDatabaseManager } from "../DatabaseManager.js";
 import {
   GroceryListRepository,
   GroceryItemRepository,
@@ -11,7 +11,7 @@ import {
   type GroceryList,
   type GroceryItem,
   type ShoppingSession,
-} from "../repositories/GroceryRepository";
+} from "../repositories/GroceryRepository.js";
 import {
   WalmartProductRepository,
   SubstitutionRepository,
@@ -19,9 +19,9 @@ import {
   type WalmartProduct,
   type GrocerySubstitution,
   type UserPreferences,
-} from "../repositories/WalmartProductRepository";
-import { GroceryVectorCollections } from "../vector/GroceryVectorCollections";
-import { logger } from "../../utils/logger";
+} from "../repositories/WalmartProductRepository.js";
+import { GroceryVectorCollections } from "../vector/GroceryVectorCollections.js";
+import { logger } from "../../utils/logger.js";
 
 export interface CreateListParams {
   userId: string;

@@ -5,19 +5,19 @@
  */
 
 // Core System Types
-export * from './core';
-export * from './api';
-export * from './database';
-export * from './websocket';
-export * from './agents';
-export * from './monitoring';
-export * from './validation';
-export * from './email';
-export * from './orchestration';
-export * from './rag';
-export * from './auth';
-export * from './errors';
-export * from './events';
+export * from './core.js';
+export * from './api.js';
+export * from './database.js';
+export * from './websocket.js';
+export * from './agents.js';
+export * from './monitoring.js';
+export * from './validation.js';
+export * from './email.js';
+export * from './orchestration.js';
+export * from './rag.js';
+export * from './auth.js';
+export * from './errors.js';
+export * from './events.js';
 
 // Re-export common utility types
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;

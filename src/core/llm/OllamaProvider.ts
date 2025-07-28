@@ -1,11 +1,11 @@
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import { EventEmitter } from 'events';
-import { sanitizeLLMOutput } from '../../utils/output-sanitizer';
-import { trackOllamaRequest } from '../../api/middleware/monitoring';
-import { performanceMonitor } from '../../monitoring/PerformanceMonitor';
-import { errorTracker } from '../../monitoring/ErrorTracker';
-import { metricsCollector } from '../../monitoring/MetricsCollector';
+import { sanitizeLLMOutput } from '../../utils/output-sanitizer.js';
+import { trackOllamaRequest } from '../../api/middleware/monitoring.js';
+import { performanceMonitor } from '../../monitoring/PerformanceMonitor.js';
+import { errorTracker } from '../../monitoring/ErrorTracker.js';
+import { metricsCollector } from '../../monitoring/MetricsCollector.js';
 
 export interface OllamaConfig {
   model: string;

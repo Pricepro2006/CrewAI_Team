@@ -26,12 +26,12 @@ import {
   Timer,
   ArrowRight,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Switch } from '../../../components/ui/switch';
-import { Label } from '../../../components/ui/label';
-import { Slider } from '../../../components/ui/slider';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
+import { Button } from '../../../components/ui/button.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Switch } from '../../../components/ui/switch.js';
+import { Label } from '../../../components/ui/label.js';
+import { Slider } from '../../../components/ui/slider.js';
 import {
   Dialog,
   DialogContent,
@@ -39,26 +39,26 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog';
+} from '../../../components/ui/dialog.js';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import type { DealNotification, DealType, AlertSettings } from '../../../types/walmart-grocery';
+} from '../../../components/ui/select.js';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
+import type { DealNotification, DealType, AlertSettings } from '../../../types/walmart-grocery.js';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../components/ui/tooltip';
-import { cn } from '../../lib/utils';
-import { formatPrice } from '../../lib/utils';
-import { useCart } from '../../hooks/useCart';
-import type { DealMatch, WalmartProduct } from '../../../types/walmart-grocery';
+} from '../../../components/ui/tooltip.js';
+import { cn } from '../../lib/utils.js';
+import { formatPrice } from '../../lib/utils.js';
+import { useCart } from '../../hooks/useCart.js';
+import type { DealMatch, WalmartProduct } from '../../../types/walmart-grocery.js';
 
 interface WalmartDealAlertProps {
   deals?: DealMatch[];

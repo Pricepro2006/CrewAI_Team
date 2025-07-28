@@ -5,7 +5,7 @@
  * Integration Coordinator: Event-driven architecture for real-time updates
  */
 
-import type { WebSocketMessage, Timestamp } from "../shared/types/websocket";
+import type { WebSocketMessage, Timestamp } from "../shared/types/websocket.js";
 
 import type {
   WalmartProduct,
@@ -18,7 +18,7 @@ import type {
   StoreAvailability,
   TimeSlot,
   RecommendedProduct,
-} from "./walmart-grocery";
+} from "./walmart-grocery.js";
 
 // =====================================================
 // Walmart-Specific Event Types

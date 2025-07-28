@@ -3,7 +3,7 @@
  * Comprehensive database and data persistence types
  */
 
-import type { Timestamp } from './index';
+import type { Timestamp } from './index.js';
 
 // =====================================================
 // Database Configuration Types

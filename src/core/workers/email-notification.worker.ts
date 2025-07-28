@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { Worker } = require("bullmq") as any;
-import { logger } from "../../utils/logger";
-import { EmailAnalysisAgent } from "../agents/specialized/EmailAnalysisAgent";
+import { logger } from "../../utils/logger.js";
+import { EmailAnalysisAgent } from "../agents/specialized/EmailAnalysisAgent.js";
 
 // Worker configuration
 const WORKER_CONCURRENCY = 5;

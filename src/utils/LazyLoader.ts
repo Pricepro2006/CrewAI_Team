@@ -1,5 +1,5 @@
-import { performanceOptimizer } from '../api/services/PerformanceOptimizer';
-import { logger } from './logger';
+import { performanceOptimizer } from '../api/services/PerformanceOptimizer.js';
+import { logger } from './logger.js';
 
 /**
  * Lazy loading utilities for virtual scrolling and large datasets

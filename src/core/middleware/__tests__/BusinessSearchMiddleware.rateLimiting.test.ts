@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { BusinessSearchMiddleware } from "../BusinessSearchMiddleware";
-import type { OllamaProvider } from "../../llm/OllamaProvider";
+import { BusinessSearchMiddleware } from "../BusinessSearchMiddleware.js";
+import type { OllamaProvider } from "../../llm/OllamaProvider.js";
 
 // Mock dependencies
 vi.mock("../../llm/OllamaProvider");

@@ -1,9 +1,9 @@
 import React from 'react';
 import { AlertCircle, RefreshCw, Home, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { cn } from '@/utils/cn';
+import { Button } from '../../../components/ui/button.js';
+import { Card } from '../../../components/ui/card.js';
+import { Alert, AlertDescription } from '../../../components/ui/alert.js';
+import { cn } from '../../../utils/cn.js';
 import './ErrorFallback.css';
 
 interface ErrorFallbackProps {

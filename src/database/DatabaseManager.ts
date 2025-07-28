@@ -6,39 +6,35 @@
 import Database from "better-sqlite3";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { logger } from "../utils/logger";
-import appConfig from "../config/app.config";
+import { logger } from "../utils/logger.js";
+import appConfig from "../config/app.config.js";
 
 // Repository imports
-import { UserRepository } from "./repositories/UserRepository";
-import {
-  EmailRepository,
-  EmailEntityRepository,
-  EmailAttachmentRepository,
-} from "./repositories/EmailRepository";
+import { UserRepository } from "./repositories/UserRepository.js";
+import { EmailRepository } from "./repositories/EmailRepository.js";
 import {
   DealRepository,
   DealItemRepository,
   ProductFamilyRepository,
-} from "./repositories/DealRepository";
+} from "./repositories/DealRepository.js";
 import {
   GroceryListRepository,
   GroceryItemRepository,
   ShoppingSessionRepository,
-} from "./repositories/GroceryRepository";
+} from "./repositories/GroceryRepository.js";
 import {
   WalmartProductRepository,
   SubstitutionRepository,
   UserPreferencesRepository,
-} from "./repositories/WalmartProductRepository";
+} from "./repositories/WalmartProductRepository.js";
 
 // Vector database imports
-import { ChromaDBManager } from "./vector/ChromaDBManager";
-import { GroceryVectorCollections } from "./vector/GroceryVectorCollections";
+import { ChromaDBManager } from "./vector/ChromaDBManager.js";
+import { GroceryVectorCollections } from "./vector/GroceryVectorCollections.js";
 
 // Migration system
-import { DatabaseMigrator } from "./migrations/DatabaseMigrator";
-import WalmartGroceryAgentMigration from "./migrations/005_walmart_grocery_agent";
+import { DatabaseMigrator } from "./migrations/DatabaseMigrator.js";
+import WalmartGroceryAgentMigration from "./migrations/005_walmart_grocery_agent.js";
 
 export interface DatabaseConfig {
   sqlite: {
@@ -66,8 +62,6 @@ export class DatabaseManager {
   // Repository instances
   public readonly users: UserRepository;
   public readonly emails: EmailRepository;
-  public readonly emailEntities: EmailEntityRepository;
-  public readonly emailAttachments: EmailAttachmentRepository;
   public readonly deals: DealRepository;
   public readonly dealItems: DealItemRepository;
   public readonly productFamilies: ProductFamilyRepository;
@@ -110,9 +104,7 @@ export class DatabaseManager {
 
     // Initialize repositories
     this.users = new UserRepository(this.db);
-    this.emails = new EmailRepository(this.db);
-    this.emailEntities = new EmailEntityRepository(this.db);
-    this.emailAttachments = new EmailAttachmentRepository(this.db);
+    this.emails = new EmailRepository({ db: this.db });
     this.deals = new DealRepository(this.db);
     this.dealItems = new DealItemRepository(this.db);
     this.productFamilies = new ProductFamilyRepository(this.db);

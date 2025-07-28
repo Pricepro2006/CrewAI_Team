@@ -4,9 +4,9 @@
  */
 
 import type { z } from 'zod';
-import type { Timestamp, PaginationRequest, PaginationResponse, ApiResponse } from './index';
-import type { Message, Conversation, Task, Document } from './core';
-import type { ApiError } from './errors';
+import type { Timestamp, PaginationRequest, PaginationResponse, ApiResponse } from './index.js';
+import type { Message, Conversation, Task, Document } from './core.js';
+import type { ApiError } from './errors.js';
 
 // =====================================================
 // Common API Types
