@@ -1,0 +1,19 @@
+{
+  "*.{ts,tsx}": [
+    "eslint --fix",
+    "prettier --write",
+    "bash -c 'tsx scripts/security-checks.ts'"
+  ],
+  "*.{js,jsx}": [
+    "eslint --fix",
+    "prettier --write",
+    "bash -c 'tsx scripts/security-checks.ts'"
+  ],
+  "*.{json,md,css}": [
+    "prettier --write"
+  ],
+  "*": [
+    "bash -c 'tsx scripts/check-secrets.ts'",
+    "bash -c 'tsx scripts/check-file-size.ts'"
+  ]
+}

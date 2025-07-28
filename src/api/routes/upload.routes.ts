@@ -1,9 +1,9 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import multer from "multer";
-import { logger } from "../../utils/logger";
-import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator";
-import ollamaConfig from "../../config/ollama.config";
+import { logger } from "../../utils/logger.js";
+import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator.js";
+import ollamaConfig from "../../config/ollama.config.js";
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();

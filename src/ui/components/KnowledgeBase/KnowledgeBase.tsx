@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { api } from "@/lib/trpc";
+import { api } from "../../../lib/trpc.js";
 import "./KnowledgeBase.css";
 
 interface Document {

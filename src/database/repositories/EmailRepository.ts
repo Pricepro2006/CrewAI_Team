@@ -1,10 +1,12 @@
 import type Database from "better-sqlite3";
-import { logger } from "@/utils/logger";
-import { metrics } from "@/api/monitoring/metrics";
+import { logger } from "../../utils/logger.js";
+import { metrics } from "../../api/monitoring/metrics.js";
 import type {
   UnifiedEmailData,
   WorkflowState,
-} from "@/types/unified-email.types";
+} from "../../types/unified-email.types.js";
+import { z } from "zod";
+import { DatabaseInputSchemas } from "../security/SqlInjectionProtection.js";
 
 export interface EmailRepositoryConfig {
   db: Database.Database;
@@ -57,6 +59,27 @@ export interface UpdateEmailParams {
   processedAt?: Date;
   processingVersion?: string;
 }
+
+// Validation schema for email query parameters
+const EmailQueryParamsSchema = z.object({
+  offset: z.number().int().min(0).optional(),
+  limit: z.number().int().min(1).max(1000).optional(),
+  search: DatabaseInputSchemas.searchQuery.optional(),
+  senderEmails: z.array(DatabaseInputSchemas.email).optional(),
+  statuses: z.array(DatabaseInputSchemas.emailStatus).optional(),
+  priorities: z.array(DatabaseInputSchemas.emailPriority).optional(),
+  workflowStates: z.array(z.string()).optional(),
+  workflowTypes: z.array(z.string()).optional(),
+  dateRange: z.object({
+    start: z.date(),
+    end: z.date()
+  }).optional(),
+  assignedTo: z.string().optional(),
+  hasAttachments: z.boolean().optional(),
+  isRead: z.boolean().optional(),
+  threadId: z.string().optional(),
+  conversationId: z.string().optional()
+});
 
 export interface EmailQueryParams {
   offset?: number;
@@ -507,108 +530,95 @@ export class EmailRepository {
     const startTime = Date.now();
 
     try {
-      let query = `SELECT * FROM emails_enhanced WHERE 1=1`;
-      let countQuery = `SELECT COUNT(*) as total FROM emails_enhanced WHERE 1=1`;
-      const queryParams: any = {};
+      // Validate input parameters
+      const validatedParams = EmailQueryParamsSchema.parse(params);
+      
+      const whereClauses: string[] = [];
+      const queryParams: any[] = [];
 
-      // Build dynamic query
-      if (params.search) {
-        query += ` AND (subject LIKE @search OR body_text LIKE @search OR sender_email LIKE @search)`;
-        countQuery += ` AND (subject LIKE @search OR body_text LIKE @search OR sender_email LIKE @search)`;
-        queryParams.search = `%${params.search}%`;
+      // Build WHERE clauses with proper parameterization using validated params
+      if (validatedParams.search) {
+        whereClauses.push(`(subject LIKE ? OR body_text LIKE ? OR sender_email LIKE ?)`);
+        const searchPattern = `%${validatedParams.search}%`;
+        queryParams.push(searchPattern, searchPattern, searchPattern);
       }
 
-      if (params.senderEmails?.length) {
-        const placeholders = params.senderEmails
-          .map((_, i) => `@sender${i}`)
-          .join(",");
-        query += ` AND sender_email IN (${placeholders})`;
-        countQuery += ` AND sender_email IN (${placeholders})`;
-        params.senderEmails.forEach((email, i) => {
-          queryParams[`sender${i}`] = email;
-        });
+      if (validatedParams.senderEmails?.length) {
+        const placeholders = validatedParams.senderEmails.map(() => '?').join(',');
+        whereClauses.push(`sender_email IN (${placeholders})`);
+        queryParams.push(...validatedParams.senderEmails);
       }
 
-      if (params.statuses?.length) {
-        const placeholders = params.statuses
-          .map((_, i) => `@status${i}`)
-          .join(",");
-        query += ` AND status IN (${placeholders})`;
-        countQuery += ` AND status IN (${placeholders})`;
-        params.statuses.forEach((status, i) => {
-          queryParams[`status${i}`] = status;
-        });
+      if (validatedParams.statuses?.length) {
+        const placeholders = validatedParams.statuses.map(() => '?').join(',');
+        whereClauses.push(`status IN (${placeholders})`);
+        queryParams.push(...validatedParams.statuses);
       }
 
-      if (params.priorities?.length) {
-        const placeholders = params.priorities
-          .map((_, i) => `@priority${i}`)
-          .join(",");
-        query += ` AND priority IN (${placeholders})`;
-        countQuery += ` AND priority IN (${placeholders})`;
-        params.priorities.forEach((priority, i) => {
-          queryParams[`priority${i}`] = priority;
-        });
+      if (validatedParams.priorities?.length) {
+        const placeholders = validatedParams.priorities.map(() => '?').join(',');
+        whereClauses.push(`priority IN (${placeholders})`);
+        queryParams.push(...validatedParams.priorities);
       }
 
-      if (params.dateRange) {
-        query += ` AND received_at >= @startDate AND received_at <= @endDate`;
-        countQuery += ` AND received_at >= @startDate AND received_at <= @endDate`;
-        queryParams.startDate = params.dateRange.start.toISOString();
-        queryParams.endDate = params.dateRange.end.toISOString();
+      if (validatedParams.dateRange) {
+        whereClauses.push(`received_at >= ? AND received_at <= ?`);
+        queryParams.push(validatedParams.dateRange.start.toISOString(), validatedParams.dateRange.end.toISOString());
       }
 
-      if (params.assignedTo !== undefined) {
-        if (params.assignedTo === null) {
-          query += ` AND assigned_to IS NULL`;
-          countQuery += ` AND assigned_to IS NULL`;
+      if (validatedParams.assignedTo !== undefined) {
+        if (validatedParams.assignedTo === null) {
+          whereClauses.push(`assigned_to IS NULL`);
         } else {
-          query += ` AND assigned_to = @assignedTo`;
-          countQuery += ` AND assigned_to = @assignedTo`;
-          queryParams.assignedTo = params.assignedTo;
+          whereClauses.push(`assigned_to = ?`);
+          queryParams.push(validatedParams.assignedTo);
         }
       }
 
-      if (params.hasAttachments !== undefined) {
-        query += ` AND has_attachments = @hasAttachments`;
-        countQuery += ` AND has_attachments = @hasAttachments`;
-        queryParams.hasAttachments = params.hasAttachments ? 1 : 0;
+      if (validatedParams.hasAttachments !== undefined) {
+        whereClauses.push(`has_attachments = ?`);
+        queryParams.push(validatedParams.hasAttachments ? 1 : 0);
       }
 
-      if (params.isRead !== undefined) {
-        query += ` AND is_read = @isRead`;
-        countQuery += ` AND is_read = @isRead`;
-        queryParams.isRead = params.isRead ? 1 : 0;
+      if (validatedParams.isRead !== undefined) {
+        whereClauses.push(`is_read = ?`);
+        queryParams.push(validatedParams.isRead ? 1 : 0);
       }
 
-      if (params.threadId) {
-        query += ` AND thread_id = @threadId`;
-        countQuery += ` AND thread_id = @threadId`;
-        queryParams.threadId = params.threadId;
+      if (validatedParams.threadId) {
+        whereClauses.push(`thread_id = ?`);
+        queryParams.push(validatedParams.threadId);
       }
 
-      if (params.conversationId) {
-        query += ` AND conversation_id_ref = @conversationId`;
-        countQuery += ` AND conversation_id_ref = @conversationId`;
-        queryParams.conversationId = params.conversationId;
+      if (validatedParams.conversationId) {
+        whereClauses.push(`conversation_id_ref = ?`);
+        queryParams.push(validatedParams.conversationId);
       }
 
-      // Add ordering and pagination
-      query += ` ORDER BY received_at DESC`;
+      // Build final queries
+      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+      const baseQuery = `FROM emails_enhanced ${whereClause}`;
+      
+      // Count query
+      const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
+      const { total } = this.db.prepare(countQuery).get(...queryParams) as any;
 
-      if (params.limit) {
-        query += ` LIMIT @limit`;
-        queryParams.limit = params.limit;
+      // Data query with ordering and pagination
+      let dataQuery = `SELECT * ${baseQuery} ORDER BY received_at DESC`;
+      const dataParams = [...queryParams];
+      
+      if (validatedParams.limit) {
+        dataQuery += ` LIMIT ?`;
+        dataParams.push(validatedParams.limit);
+        
+        if (validatedParams.offset) {
+          dataQuery += ` OFFSET ?`;
+          dataParams.push(validatedParams.offset);
+        }
       }
 
-      if (params.offset) {
-        query += ` OFFSET @offset`;
-        queryParams.offset = params.offset;
-      }
-
-      // Execute queries
-      const emails = this.db.prepare(query).all(queryParams);
-      const { total } = this.db.prepare(countQuery).get(queryParams) as any;
+      // Execute query
+      const emails = this.db.prepare(dataQuery).all(...dataParams);
 
       // Load entities for each email
       for (const email of emails as any[]) {

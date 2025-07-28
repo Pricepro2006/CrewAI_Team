@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc/router";
+import { router, publicProcedure } from "../trpc/router.js";
 import { observable } from "@trpc/server/observable";
-import { wsService } from "../services/WebSocketService";
+import { wsService } from "../services/WebSocketService.js";
 import type { Router } from "@trpc/server";
 
 export const websocketRouter: Router<any> = router({
@@ -241,6 +241,17 @@ export const websocketRouter: Router<any> = router({
   connectionStats: publicProcedure.query(() => {
     return {
       connectedClients: wsService.getClientCount(),
+      timestamp: new Date(),
+    };
+  }),
+
+  // Get WebSocket connection status for security monitoring
+  status: publicProcedure.query(() => {
+    const clientCount = wsService.getClientCount();
+    return {
+      connected: clientCount > 0 || true, // Always true if server is responding
+      clients: clientCount,
+      health: wsService.getHealth(),
       timestamp: new Date(),
     };
   }),

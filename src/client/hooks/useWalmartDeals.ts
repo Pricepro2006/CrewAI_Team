@@ -4,8 +4,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { trpc } from '../../utils/trpc';
-import type { DealMatch } from '../../types/walmart-grocery';
+import { trpc } from '../../utils/trpc.js';
+import type { DealMatch } from '../../types/walmart-grocery.js';
 
 interface UseWalmartDealsResult {
   deals: Record<string, DealMatch[]>;

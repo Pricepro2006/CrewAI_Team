@@ -3,7 +3,7 @@
  * Integrates with vector stores and applies confidence-based filtering
  */
 
-import type { VectorStore } from '../VectorStore';
+import type { VectorStore } from '../VectorStore.js';
 import type { RetrievalResult, RetrievalOptions, ScoredDocument } from './types.js';
 
 export class ConfidenceRAGRetriever {

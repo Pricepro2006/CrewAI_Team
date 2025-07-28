@@ -4,8 +4,8 @@ import {
   type BaseEntity,
   type QueryOptions,
   type PaginatedResult,
-} from "../../../database/repositories/BaseRepository";
-import { logger } from "../../../utils/logger";
+} from "../../../database/repositories/BaseRepository.js";
+import { logger } from "../../../utils/logger.js";
 
 export interface EmailEntity extends BaseEntity {
   graph_id?: string;

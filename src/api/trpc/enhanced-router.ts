@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError, type AnyRouter } from "@trpc/server";
 import superjson from "superjson";
-import type { Context } from "./context";
+import type { Context } from "./context.js";
 import type { Request, Response } from "express";
 import {
   createSecurityAuditMiddleware,
@@ -8,7 +8,9 @@ import {
   createAuthorizationMiddleware,
   createInputValidation,
   sanitizationSchemas,
-} from "../middleware/security";
+  createCSRFProtection,
+  ensureCSRFToken,
+} from "../middleware/security/index.js";
 // Import rate limiters from centralized middleware index (avoids circular dependency)
 import {
   chatProcedureRateLimiter,
@@ -16,8 +18,8 @@ import {
   taskProcedureRateLimiter,
   ragProcedureRateLimiter,
   strictProcedureRateLimiter,
-} from "../middleware/index";
-import { logger } from "../../utils/logger";
+} from "../middleware/index.js";
+import { logger } from "../../utils/logger.js";
 import { z } from "zod";
 
 /**
@@ -57,6 +59,13 @@ const t = initTRPC.context<Context>().create({
 // Enhanced middleware stack
 const securityAudit = createSecurityAuditMiddleware();
 const authRequired = createAuthMiddleware();
+const csrfProtection = createCSRFProtection({
+  enableAutoRotation: true,
+  skipPaths: [
+    // Add any paths that should skip CSRF protection here
+  ],
+});
+const csrfTokenProvider = ensureCSRFToken();
 
 // Role-based authorization procedures
 const requireAdmin = createAuthorizationMiddleware(["admin"]);
@@ -85,28 +94,88 @@ export const middleware: typeof t.middleware = t.middleware;
 export const publicProcedure: ReturnType<typeof t.procedure.use> =
   t.procedure.use(securityAudit);
 
-// Protected procedure requiring authentication
+// Protected procedure requiring authentication and CSRF protection for mutations
 export const protectedProcedure: ReturnType<typeof t.procedure.use> =
-  t.procedure.use(securityAudit).use(authRequired);
+  t.procedure.use(securityAudit).use(authRequired).use(csrfProtection);
 
-// Admin-only procedure
+// Admin-only procedure with CSRF protection
 export const adminProcedure: ReturnType<typeof t.procedure.use> = t.procedure
   .use(securityAudit)
   .use(authRequired)
+  .use(csrfProtection)
   .use(requireAdmin);
 
-// User-level procedure (admin or user)
+// User-level procedure (admin or user) with CSRF protection
 export const userProcedure: ReturnType<typeof t.procedure.use> = t.procedure
   .use(securityAudit)
   .use(authRequired)
+  .use(csrfProtection)
   .use(requireUser);
 
 // Rate-limited procedures for different operation types
 // Convert express rate limiters to tRPC middleware
-const createRateLimitMiddleware = (name: string) =>
+const createRateLimitMiddleware = (name: string, maxRequests: number, windowMs: number) =>
   t.middleware(async ({ ctx, next }) => {
-    // For now, just proceed - rate limiting can be handled at HTTP level
-    logger.debug(`Rate limit check for ${name}`, "TRPC_RATE_LIMIT");
+    const identifier = ctx.user?.id || ctx.req.ip || 'anonymous';
+    const rateLimitKey = `trpc_${name}_${identifier}`;
+    
+    // Implement simple in-memory rate limiting for tRPC procedures
+    // This works alongside the Express-level rate limiting
+    const now = Date.now();
+    const windowStart = now - windowMs;
+    
+    // Get existing rate limit data from context or create new
+    if (!ctx.rateLimits) {
+      (ctx as any).rateLimits = new Map();
+    }
+    
+    const rateLimits = (ctx as any).rateLimits as Map<string, { count: number; resetTime: number }>;
+    
+    // Clean old entries
+    for (const [key, value] of rateLimits.entries()) {
+      if (value.resetTime < now) {
+        rateLimits.delete(key);
+      }
+    }
+    
+    // Check current rate limit
+    const existing = rateLimits.get(rateLimitKey);
+    if (!existing) {
+      rateLimits.set(rateLimitKey, { count: 1, resetTime: now + windowMs });
+    } else {
+      existing.count++;
+      
+      // Determine max requests based on user type
+      let limit = maxRequests;
+      if (ctx.user?.isAdmin || ctx.user?.role === 'admin') {
+        limit = maxRequests * 5; // Admins get 5x more
+      } else if (ctx.user?.id) {
+        limit = Math.floor(maxRequests * 1.5); // Authenticated users get 50% more
+      }
+      
+      if (existing.count > limit) {
+        logger.warn(`tRPC Rate limit exceeded for ${name}`, "TRPC_RATE_LIMIT", {
+          procedure: name,
+          identifier,
+          count: existing.count,
+          limit,
+          userId: ctx.user?.id
+        });
+        
+        throw new TRPCError({
+          code: 'TOO_MANY_REQUESTS',
+          message: `Rate limit exceeded for ${name}. Please try again later.`
+        });
+      }
+    }
+    
+    logger.debug(`Rate limit check passed for ${name}`, "TRPC_RATE_LIMIT", {
+      procedure: name,
+      identifier,
+      current: existing?.count || 1,
+      limit: maxRequests
+    });
+    
     return next();
   });
 
@@ -114,19 +183,19 @@ const createRateLimitMiddleware = (name: string) =>
 type RateLimitedProcedure = ReturnType<typeof protectedProcedure.use>;
 
 export const chatProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("chat"),
+  createRateLimitMiddleware("chat", 30, 60000), // 30 requests per minute
 );
 export const agentProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("agent"),
+  createRateLimitMiddleware("agent", 20, 300000), // 20 requests per 5 minutes
 );
 export const taskProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("task"),
+  createRateLimitMiddleware("task", 25, 600000), // 25 requests per 10 minutes
 );
 export const ragProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("rag"),
+  createRateLimitMiddleware("rag", 15, 120000), // 15 requests per 2 minutes
 );
 export const strictProcedure: RateLimitedProcedure = protectedProcedure.use(
-  createRateLimitMiddleware("strict"),
+  createRateLimitMiddleware("strict", 5, 1800000), // 5 requests per 30 minutes
 );
 
 // Procedures with input validation
@@ -186,7 +255,8 @@ export const monitoredPublicProcedure: ReturnType<typeof publicProcedure.use> =
 export const enhancedProcedure: ReturnType<typeof t.procedure.use> = t.procedure
   .use(securityAudit)
   .use(performanceMonitoring)
-  .use(authRequired);
+  .use(authRequired)
+  .use(csrfProtection);
 
 // Batch operation middleware for efficient data handling
 const batchOperationMiddleware = t.middleware(async ({ next, ctx }) => {
@@ -210,6 +280,10 @@ const batchOperationMiddleware = t.middleware(async ({ next, ctx }) => {
 export const batchProcedure = protectedProcedure.use(
   batchOperationMiddleware,
 );
+
+// Procedure that ensures CSRF token exists and returns it (for client initialization)
+export const csrfTokenProcedure: ReturnType<typeof t.procedure.use> = 
+  t.procedure.use(securityAudit).use(csrfTokenProvider);
 
 // Custom error handlers for different scenarios
 type CustomErrorHandler = ReturnType<typeof t.middleware>;
@@ -291,6 +365,7 @@ export type EnhancedContext = Context & {
   batchId?: string;
   requestId: string;
   timestamp: Date;
+  csrfToken?: string;
 };
 
 // Utility function for creating feature-specific routers

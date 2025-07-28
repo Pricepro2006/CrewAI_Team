@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { Context } from "../../trpc/context";
-import { logger } from "../../../utils/logger";
+import type { Context } from "../../trpc/context.js";
+import { logger } from "../../../utils/logger.js";
 
 /**
  * Security middleware implementations for tRPC
@@ -109,7 +109,7 @@ export function createAuthMiddleware() {
     }
 
     // Check if user is active
-    if (!ctx.user.isActive) {
+    if (!ctx.user.is_active) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Account is inactive",
@@ -262,43 +262,16 @@ export function createRateLimitMiddleware(options: {
   };
 }
 
-/**
- * Create CSRF protection middleware
- */
-export function createCSRFProtection() {
-  return async (opts: {
-    ctx: Context;
-    next: () => Promise<any>;
-    type?: string;
-  }) => {
-    const { ctx, next } = opts;
-
-    // Skip CSRF check for safe methods
-    if (opts.type && ["query", "subscription"].includes(opts.type)) {
-      return next();
-    }
-
-    // Check CSRF token
-    const token = ctx.req.headers["x-csrf-token"] as string | undefined;
-    const sessionToken = (ctx.req as any).session?.csrfToken;
-
-    if (!token || token !== sessionToken) {
-      logger.warn("CSRF Token Mismatch", "SECURITY", {
-        userId: ctx.user?.id,
-        requestId: ctx.requestId,
-        hasToken: !!token,
-        hasSessionToken: !!sessionToken,
-      });
-
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Invalid CSRF token",
-      });
-    }
-
-    return next();
-  };
-}
+// Re-export enhanced CSRF protection from dedicated module
+export { 
+  createEnhancedCSRFProtection as createCSRFProtection,
+  ensureCSRFToken,
+  generateCSRFToken,
+  setCSRFCookie,
+  getStoredCSRFToken,
+  getRequestCSRFToken,
+  getCSRFStats
+} from './csrf.js';
 
 /**
  * Create IP allowlist/blocklist middleware

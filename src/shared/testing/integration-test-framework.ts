@@ -8,7 +8,7 @@ import type {
   Timestamp,
   BaseEntity,
   WebSocketMessage,
-} from "../types";
+} from "../types/index.js";
 
 // =====================================================
 // Test Configuration and Setup

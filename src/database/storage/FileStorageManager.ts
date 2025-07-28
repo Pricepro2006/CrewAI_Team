@@ -8,7 +8,7 @@ import { createReadStream, createWriteStream } from 'fs';
 import { join, dirname, extname, basename } from 'path';
 import { createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.js';
 
 export interface StoredFile {
   id: string;

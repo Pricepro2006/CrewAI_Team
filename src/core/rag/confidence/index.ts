@@ -34,7 +34,7 @@ export { ConfidenceCalibrator } from './ConfidenceCalibrator.js';
 export { AdaptiveDeliveryManager } from './AdaptiveDeliveryManager.js';
 
 // Performance optimization
-export { PerformanceOptimizer } from '../../../api/services/PerformanceOptimizer';
+export { PerformanceOptimizer } from '../../../api/services/PerformanceOptimizer.js';
 
 // BERT ranking
 // export { BERTRanker } from './BERTRanker.js'; // TODO: Implement BERTRanker

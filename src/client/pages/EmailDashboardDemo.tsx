@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { EmailDashboardMultiPanel } from "../components/dashboard/EmailDashboardMultiPanel";
-import { useEmailAssignment } from "../hooks/useEmailAssignment";
-import { api } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { EmailDashboardMultiPanel } from "../components/dashboard/EmailDashboardMultiPanel.js";
+import { useEmailAssignment } from "../hooks/useEmailAssignment.js";
+import { api } from "../../lib/trpc.js";
+import { Button } from "../../components/ui/button.js";
+import { Alert, AlertDescription } from "../../components/ui/alert.js";
+import { Badge } from "../../components/ui/badge.js";
 import type {
   EmailRecord,
   EmailStatus,
   WorkflowState,
-} from "@/types/email-dashboard.interfaces";
+} from "../../types/email-dashboard.interfaces.js";
 
 // Sample email data matching the screenshot
 const generateSampleEmails = (): EmailRecord[] => {

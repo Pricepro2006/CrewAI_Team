@@ -5,11 +5,11 @@
  * for improved performance through query caching and agent pooling.
  */
 
-import { MasterOrchestrator } from "./MasterOrchestrator";
-import { getQueryCache } from "../cache/QueryCache";
-import { getAgentPool, type AgentPoolStats } from "../cache/AgentPool";
-import type { Query, ExecutionResult, MasterOrchestratorConfig } from "./types";
-import { logger, createPerformanceMonitor } from "../../utils/logger";
+import { MasterOrchestrator } from "./MasterOrchestrator.js";
+import { getQueryCache } from "../cache/QueryCache.js";
+import { getAgentPool, type AgentPoolStats } from "../cache/AgentPool.js";
+import type { Query, ExecutionResult, MasterOrchestratorConfig } from "./types.js";
+import { logger, createPerformanceMonitor } from "../../utils/logger.js";
 
 export class CachedMasterOrchestrator extends MasterOrchestrator {
   private queryCache = getQueryCache();

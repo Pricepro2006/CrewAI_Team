@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { X, Filter, Search, Calendar, Tag, User, Mail } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '../../../components/ui/button.js';
+import { Input } from '../../../components/ui/input.js';
+import { Label } from '../../../components/ui/label.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Checkbox } from '../../../components/ui/checkbox.js';
+import { ScrollArea } from '../../../components/ui/scroll-area.js';
+import { Separator } from '../../../components/ui/separator.js';
 import {
   Sheet,
   SheetContent,
@@ -15,16 +15,16 @@ import {
   SheetTitle,
   SheetTrigger,
   SheetFooter,
-} from '@/components/ui/sheet';
+} from '../../../components/ui/sheet.js';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { DateRangePicker, type DateRange } from '@/components/ui/date-range-picker';
-import { StatusIndicator } from './StatusIndicator';
+} from '../../../components/ui/select.js';
+import { DateRangePicker, type DateRange } from '../../../components/ui/date-range-picker.js';
+import { StatusIndicator } from './StatusIndicator.js';
 import type {
   EmailStatus,
   WorkflowState,
@@ -32,7 +32,7 @@ import type {
   FilterConfig,
   FilterOptions,
   StatusOption,
-} from '@/types/email-dashboard.interfaces';
+} from '../../../types/email-dashboard.interfaces.js';
 
 interface FilterPanelProps {
   filters: FilterConfig;

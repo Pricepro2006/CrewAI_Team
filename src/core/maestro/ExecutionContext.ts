@@ -1,4 +1,4 @@
-import type { Task, MaestroConfig } from "./types";
+import type { Task, MaestroConfig } from "./types.js";
 
 export interface ExecutionContextConfig {
   taskId: string;

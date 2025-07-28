@@ -3,7 +3,7 @@
  * Integrates with MCP Bright Data tools for comprehensive data collection
  */
 
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 import type {
   DataSource,
   DataCollectionJob,
@@ -14,7 +14,7 @@ import type {
   EcommerceScrapingParams,
   SocialMediaParams,
   DataPipelineStats,
-} from "./types";
+} from "./types.js";
 
 // Import MCP Bright Data tool types
 interface MCPBrightDataTool {

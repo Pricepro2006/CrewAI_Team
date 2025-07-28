@@ -25,8 +25,8 @@ import type {
   ErrorCode,
   ErrorCategory,
   Timestamp,
-} from "../types/errors";
-import { ERROR_CODES } from "../types/errors";
+} from "../types/errors.js";
+import { ERROR_CODES } from "../types/errors.js";
 
 // =====================================================
 // Custom Error Classes

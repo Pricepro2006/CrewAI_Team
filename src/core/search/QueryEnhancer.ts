@@ -7,9 +7,9 @@ import {
   type QueryComponents, 
   type QueryOptimizationResult,
   UrgencyLevel 
-} from './types';
-import { BusinessQueryOptimizer } from './BusinessQueryOptimizer';
-import { LocationDatabase } from './data/locationDatabase';
+} from './types.js';
+import { BusinessQueryOptimizer } from './BusinessQueryOptimizer.js';
+import { LocationDatabase } from './data/locationDatabase.js';
 
 export interface EnhancedQuery {
   primary: string;

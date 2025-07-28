@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, publicProcedure, protectedProcedure } from '../enhanced-router';
-import type { Context } from '../context';
-import { EmailStorageService } from '../../services/EmailStorageService';
-import { WebSocketService } from '../../services/WebSocketService';
-import { getTeamMemberById, TEAM_MEMBERS, getSuggestedAssignees } from '../../../config/team-members.config';
+import { router, publicProcedure, protectedProcedure } from '../enhanced-router.js';
+import type { Context } from '../context.js';
+import { EmailStorageService } from '../../services/EmailStorageService.js';
+import { WebSocketService } from '../../services/WebSocketService.js';
+import { getTeamMemberById, TEAM_MEMBERS, getSuggestedAssignees } from '../../../config/team-members.config.js';
 
 const emailStorage = new EmailStorageService();
 const wsService = new WebSocketService();

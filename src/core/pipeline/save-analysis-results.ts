@@ -1,7 +1,7 @@
-import { getDatabaseManager } from "../../database/DatabaseManager";
-import { logger } from "../../utils/logger";
+import { getDatabaseManager } from "../../database/DatabaseManager.js";
+import { logger } from "../../utils/logger.js";
 // TODO: Fix types import - create types file or use correct path
-// import type { LlamaAnalysisResult, CriticalAnalysisResult } from "./types";
+// import type { LlamaAnalysisResult, CriticalAnalysisResult } from "./types.js";
 
 // Mock types for now
 interface LlamaAnalysisResult {

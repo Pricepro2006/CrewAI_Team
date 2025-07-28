@@ -3,7 +3,7 @@
  * Based on agent template patterns for better query analysis and routing
  */
 
-import type { AgentType } from '../shared/types';
+import type { AgentType } from '../shared/types.js';
 
 export interface QueryAnalysis {
   intent: string;

@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { EmailDashboardMultiPanel } from '../EmailDashboardMultiPanel';
-import type { EmailRecord, EmailStatus } from '@/types/email-dashboard.interfaces';
+import { EmailDashboardMultiPanel } from '../EmailDashboardMultiPanel.js';
+import type { EmailRecord, EmailStatus } from '../../../../types/email-dashboard.interfaces.js';
 
 // Mock the UI components
 jest.mock('@/components/ui/card', () => ({

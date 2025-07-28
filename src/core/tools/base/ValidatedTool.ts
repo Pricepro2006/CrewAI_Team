@@ -1,5 +1,5 @@
-import { BaseTool } from "./BaseTool";
-import type { ToolParameter, ToolResult } from "./BaseTool";
+import { BaseTool } from "./BaseTool.js";
+import type { ToolParameter, ToolResult } from "./BaseTool.js";
 
 /**
  * ValidatedTool extends BaseTool with additional validation capabilities

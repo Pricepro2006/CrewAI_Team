@@ -1,6 +1,6 @@
 import { LRUCache } from 'lru-cache';
-import type { EmailAnalysis } from '../agents/specialized/EmailAnalysisTypes';
-import { logger } from '../../utils/logger';
+import type { EmailAnalysis } from '../agents/specialized/EmailAnalysisTypes.js';
+import { logger } from '../../utils/logger.js';
 
 interface CacheEntry {
   analysis: EmailAnalysis;

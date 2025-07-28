@@ -1,20 +1,25 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc/router";
+import { router, publicProcedure } from "../trpc/router.js";
 import type { Router } from "@trpc/server";
-import { getAgentModel } from "../../config/model-selection.config";
+import { getAgentModel } from "../../config/model-selection.config.js";
 
 export const agentRouter: Router<any> = router({
   // List all registered agents
   list: publicProcedure.query(async ({ ctx }) => {
     const types = ctx.agentRegistry.getRegisteredTypes();
+    const activeAgents = ctx.agentRegistry.getActiveAgents();
 
-    return types.map((type: string) => {
+    const agents = types.map((type: string) => {
       const modelConfig = getAgentModel(type, 'general');
       const toolSelectionModel = getAgentModel(type, 'tool_selection');
+      const isActive = activeAgents.some((agent: any) => agent.type === type);
       
       return {
         type,
+        name: type,
         available: true,
+        status: isActive ? 'active' as const : 'idle' as const,
+        specialty: getAgentDescription(type),
         description: getAgentDescription(type),
         capabilities: getAgentCapabilities(type),
         tools: getAgentTools(type),
@@ -28,6 +33,15 @@ export const agentRouter: Router<any> = router({
         }
       };
     });
+
+    // Return both the array and the summary stats
+    return {
+      agents,
+      totalAgents: agents.length,
+      activeAgents: agents.filter((a: any) => a.status === 'active').length,
+      // Backward compatibility - also return the array directly
+      ...agents
+    };
   }),
 
   // Get agent status

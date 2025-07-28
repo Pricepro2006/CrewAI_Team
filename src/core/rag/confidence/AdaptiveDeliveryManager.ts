@@ -3,7 +3,7 @@
  * TODO: Implement full adaptive delivery system
  */
 
-import type { ResponseEvaluationResult, DeliveredResponse as TypedDeliveredResponse, ConfidenceDisplay, ActionType, ScoredDocument } from './types';
+import type { ResponseEvaluationResult, DeliveredResponse as TypedDeliveredResponse, ConfidenceDisplay, ActionType, ScoredDocument } from './types.js';
 
 export interface DeliveryOptions {
   includeConfidenceScore?: boolean;

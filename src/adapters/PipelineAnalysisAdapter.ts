@@ -3,19 +3,19 @@
  * Implements the database adapter pattern for clean separation of concerns
  */
 
-import { logger } from "../utils/logger";
-import { PipelineJsonParser } from "../services/PipelineJsonParser";
+import { logger } from "../utils/logger.js";
+import { PipelineJsonParser } from "../services/PipelineJsonParser.js";
 import type {
   PipelineEmailAnalysis,
   LlamaAnalysisData,
   Phi4AnalysisData,
-} from "../types/pipeline-analysis";
+} from "../types/pipeline-analysis.js";
 import type {
   EmailAnalysisResult,
   QuickAnalysis,
   DeepWorkflowAnalysis,
   ProcessingMetadata,
-} from "../types/analysis-results";
+} from "../types/analysis-results.js";
 
 /**
  * Database adapter interface for type-safe transformations

@@ -1,12 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
-import Database from 'better-sqlite3';
-import appConfig from "../../config/app.config";
-import { logger } from "../../utils/logger";
-import { wsService } from "./WebSocketService";
-import { performanceOptimizer } from "./PerformanceOptimizer";
-import { queryPerformanceMonitor } from "./QueryPerformanceMonitor";
-import { LazyLoader } from "../../utils/LazyLoader";
-import { ConnectionPool } from "../../core/database/ConnectionPool";
+import Database from "better-sqlite3";
+import appConfig from "../../config/app.config.js";
+import { logger } from "../../utils/logger.js";
+import { wsService } from "./WebSocketService.js";
+import { performanceOptimizer } from "./PerformanceOptimizer.js";
+import { queryPerformanceMonitor } from "./QueryPerformanceMonitor.js";
+import { LazyLoader } from "../../utils/LazyLoader.js";
+import { ConnectionPool } from "../../core/database/ConnectionPool.js";
 
 // Enhanced email analysis interfaces
 export interface EmailAnalysisResult {
@@ -264,7 +264,7 @@ export class EmailStorageService {
   }
 
   /**
-   * Execute optimized database query with performance monitoring
+   * Execute optimized database query with performance monitoring and enhanced error handling
    */
   private async executeOptimizedQuery<T>(
     queryDescription: string,
@@ -275,36 +275,80 @@ export class EmailStorageService {
     const startTime = Date.now();
     let result: T;
     let error: string | undefined;
+    let retryCount = 0;
+    const maxRetries = 3;
 
-    try {
-      // Optimize the query using 2025 best practices
-      const optimizedQuery = performanceOptimizer.optimizeQuery(query, params);
-      logger.debug(
-        `Query optimized: ${optimizedQuery.estimatedPerformanceGain}% improvement`,
-        "EMAIL_STORAGE",
-      );
+    while (retryCount <= maxRetries) {
+      try {
+        // Optimize the query using 2025 best practices
+        const optimizedQuery = performanceOptimizer.optimizeQuery(
+          query,
+          params,
+        );
+        logger.debug(
+          `Query optimized: ${optimizedQuery.estimatedPerformanceGain}% improvement`,
+          "EMAIL_STORAGE",
+        );
 
-      // Execute the optimized query with prepared statement
-      const stmt = this.db.prepare(optimizedQuery.optimizedQuery);
-      result =
-        method === "get"
-          ? (stmt.get(...params) as T)
-          : (stmt.all(...params) as T);
-    } catch (queryError) {
-      error =
-        queryError instanceof Error ? queryError.message : String(queryError);
-      logger.error(`Database query failed: ${error}`, "EMAIL_STORAGE");
-      throw queryError;
-    } finally {
-      // Record performance metrics
-      const executionTime = Date.now() - startTime;
-      queryPerformanceMonitor.recordQuery({
-        query: queryDescription,
-        executionTime,
-        params: params.slice(0, 5), // Limit params for privacy
-        error,
-        cacheHit: false, // TODO: Implement cache hit detection
-      });
+        // Execute the optimized query with prepared statement
+        const stmt = this.db.prepare(optimizedQuery.optimizedQuery);
+        result =
+          method === "get"
+            ? (stmt.get(...params) as T)
+            : (stmt.all(...params) as T);
+
+        // Success - break the retry loop
+        break;
+      } catch (queryError) {
+        error =
+          queryError instanceof Error ? queryError.message : String(queryError);
+
+        // Check if error is retryable
+        const isRetryable =
+          error.includes("SQLITE_BUSY") ||
+          error.includes("SQLITE_LOCKED") ||
+          error.includes("database is locked");
+
+        if (isRetryable && retryCount < maxRetries) {
+          retryCount++;
+          const delay = Math.min(100 * Math.pow(2, retryCount), 1000);
+          logger.warn(
+            `Database query failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms: ${error}`,
+            "EMAIL_STORAGE",
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // Non-retryable error or max retries exceeded
+        logger.error(
+          `Database query failed after ${retryCount} retries: ${error}`,
+          "EMAIL_STORAGE",
+          {
+            query: queryDescription,
+            params,
+            error,
+          },
+        );
+
+        // Wrap in a more descriptive error
+        const enhancedError = new Error(
+          `Database operation failed: ${queryDescription}. ${error}`,
+        );
+        (enhancedError as any).originalError = queryError;
+        (enhancedError as any).retryCount = retryCount;
+        throw enhancedError;
+      } finally {
+        // Record performance metrics
+        const executionTime = Date.now() - startTime;
+        queryPerformanceMonitor.recordQuery({
+          query: queryDescription,
+          executionTime,
+          params: params.slice(0, 5), // Limit params for privacy
+          error,
+          cacheHit: false, // TODO: Implement cache hit detection
+        });
+      }
     }
 
     return result;
@@ -572,11 +616,24 @@ export class EmailStorageService {
   }
 
   async storeEmail(email: Email, analysis: EmailAnalysisResult): Promise<void> {
-    logger.info(`Storing email analysis: ${email.subject}`, "EMAIL_STORAGE");
+    const maxRetries = 3;
+    let attempt = 0;
 
-    const transaction = this.db.transaction(() => {
-      // Store email
-      const emailStmt = this.db.prepare(`
+    while (attempt < maxRetries) {
+      try {
+        logger.info(
+          `Storing email analysis: ${email.subject} (attempt ${attempt + 1})`,
+          "EMAIL_STORAGE",
+        );
+
+        // Validate and sanitize processing times before storage
+        const validatedProcessingTimes = this.validateProcessingTimes(
+          analysis.processingMetadata,
+        );
+
+        const transaction = this.db.transaction(() => {
+          // Store email
+          const emailStmt = this.db.prepare(`
         INSERT OR REPLACE INTO emails (
           id, graph_id, subject, sender_email, sender_name, to_addresses,
           received_at, is_read, has_attachments, body_preview, body,
@@ -584,26 +641,26 @@ export class EmailStorageService {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
-      emailStmt.run(
-        email.id,
-        email.graphId,
-        email.subject,
-        email.from.emailAddress.address,
-        email.from.emailAddress.name,
-        JSON.stringify(email.to?.map((t) => t.emailAddress) || []),
-        email.receivedDateTime,
-        email.isRead ? 1 : 0,
-        email.hasAttachments ? 1 : 0,
-        email.bodyPreview,
-        email.body,
-        email.importance,
-        JSON.stringify(email.categories || []),
-        JSON.stringify(email),
-        new Date().toISOString(),
-      );
+          emailStmt.run(
+            email.id,
+            email.graphId,
+            email.subject,
+            email.from.emailAddress.address,
+            email.from.emailAddress.name,
+            JSON.stringify(email.to?.map((t) => t.emailAddress) || []),
+            email.receivedDateTime,
+            email.isRead ? 1 : 0,
+            email.hasAttachments ? 1 : 0,
+            email.bodyPreview,
+            email.body,
+            email.importance,
+            JSON.stringify(email.categories || []),
+            JSON.stringify(email),
+            new Date().toISOString(),
+          );
 
-      // Store enhanced analysis
-      const analysisStmt = this.db.prepare(`
+          // Store enhanced analysis
+          const analysisStmt = this.db.prepare(`
         INSERT OR REPLACE INTO email_analysis (
           id, email_id,
           quick_workflow, quick_priority, quick_intent, quick_urgency,
@@ -623,80 +680,126 @@ export class EmailStorageService {
         )
       `);
 
-      analysisStmt.run(
-        uuidv4(),
-        email.id,
-        // Quick analysis
-        analysis.quick.workflow.primary,
-        analysis.quick.priority,
-        analysis.quick.intent,
-        analysis.quick.urgency,
-        analysis.quick.confidence,
-        analysis.quick.suggestedState,
-        analysis.processingMetadata.models.stage1,
-        analysis.processingMetadata.stage1Time,
-        // Deep analysis
-        analysis.deep.detailedWorkflow.primary,
-        JSON.stringify(analysis.deep.detailedWorkflow.secondary || []),
-        JSON.stringify(analysis.deep.detailedWorkflow.relatedCategories || []),
-        analysis.deep.detailedWorkflow.confidence,
-        // Entities
-        JSON.stringify(analysis.deep.entities.poNumbers),
-        JSON.stringify(analysis.deep.entities.quoteNumbers),
-        JSON.stringify(analysis.deep.entities.caseNumbers),
-        JSON.stringify(analysis.deep.entities.partNumbers),
-        JSON.stringify(analysis.deep.entities.orderReferences),
-        JSON.stringify(analysis.deep.entities.contacts),
-        // Actions
-        analysis.actionSummary,
-        JSON.stringify(analysis.deep.actionItems),
-        analysis.deep.actionItems[0]?.slaStatus || "on-track",
-        // Workflow state
-        analysis.deep.workflowState.current,
-        analysis.deep.workflowState.suggestedNext,
-        JSON.stringify(analysis.deep.workflowState.blockers || []),
-        // Business impact
-        analysis.deep.businessImpact.revenue,
-        analysis.deep.businessImpact.customerSatisfaction,
-        analysis.deep.businessImpact.urgencyReason,
-        // Context
-        analysis.deep.contextualSummary,
-        analysis.deep.suggestedResponse,
-        JSON.stringify(analysis.deep.relatedEmails || []),
-        // Metadata
-        analysis.processingMetadata.models.stage2,
-        analysis.processingMetadata.stage2Time,
-        analysis.processingMetadata.totalTime,
-        new Date().toISOString(),
-      );
-    });
+          analysisStmt.run(
+            uuidv4(),
+            email.id,
+            // Quick analysis
+            analysis.quick.workflow.primary,
+            analysis.quick.priority,
+            analysis.quick.intent,
+            analysis.quick.urgency,
+            analysis.quick.confidence,
+            analysis.quick.suggestedState,
+            analysis.processingMetadata.models.stage1,
+            validatedProcessingTimes.stage1Time,
+            // Deep analysis
+            analysis.deep.detailedWorkflow.primary,
+            JSON.stringify(analysis.deep.detailedWorkflow.secondary || []),
+            JSON.stringify(
+              analysis.deep.detailedWorkflow.relatedCategories || [],
+            ),
+            analysis.deep.detailedWorkflow.confidence,
+            // Entities
+            JSON.stringify(analysis.deep.entities.poNumbers),
+            JSON.stringify(analysis.deep.entities.quoteNumbers),
+            JSON.stringify(analysis.deep.entities.caseNumbers),
+            JSON.stringify(analysis.deep.entities.partNumbers),
+            JSON.stringify(analysis.deep.entities.orderReferences),
+            JSON.stringify(analysis.deep.entities.contacts),
+            // Actions
+            analysis.actionSummary,
+            JSON.stringify(analysis.deep.actionItems),
+            analysis.deep.actionItems[0]?.slaStatus || "on-track",
+            // Workflow state
+            analysis.deep.workflowState.current,
+            analysis.deep.workflowState.suggestedNext,
+            JSON.stringify(analysis.deep.workflowState.blockers || []),
+            // Business impact
+            analysis.deep.businessImpact.revenue,
+            analysis.deep.businessImpact.customerSatisfaction,
+            analysis.deep.businessImpact.urgencyReason,
+            // Context
+            analysis.deep.contextualSummary,
+            analysis.deep.suggestedResponse,
+            JSON.stringify(analysis.deep.relatedEmails || []),
+            // Metadata
+            analysis.processingMetadata.models.stage2,
+            validatedProcessingTimes.stage2Time,
+            validatedProcessingTimes.totalTime,
+            new Date().toISOString(),
+          );
+        });
 
-    transaction();
-    logger.info(
-      `Email analysis stored successfully: ${email.id}`,
-      "EMAIL_STORAGE",
-    );
+        transaction();
+        logger.info(
+          `Email analysis stored successfully: ${email.id}`,
+          "EMAIL_STORAGE",
+        );
 
-    // Broadcast real-time update for email analysis completion
-    try {
-      wsService.broadcastEmailAnalyzed(
-        email.id,
-        analysis.deep.detailedWorkflow.primary,
-        analysis.quick.priority,
-        analysis.actionSummary,
-        analysis.deep.detailedWorkflow.confidence,
-        analysis.deep.actionItems[0]?.slaStatus || "on-track",
-        analysis.deep.workflowState.current,
-      );
-      logger.debug(
-        `WebSocket broadcast sent for email analysis: ${email.id}`,
-        "EMAIL_STORAGE",
-      );
-    } catch (error) {
-      logger.error(
-        `Failed to broadcast email analysis update: ${error}`,
-        "EMAIL_STORAGE",
-      );
+        // Broadcast real-time update for email analysis completion
+        try {
+          wsService.broadcastEmailAnalyzed(
+            email.id,
+            analysis.deep.detailedWorkflow.primary,
+            analysis.quick.priority,
+            analysis.actionSummary,
+            analysis.deep.detailedWorkflow.confidence,
+            analysis.deep.actionItems[0]?.slaStatus || "on-track",
+            analysis.deep.workflowState.current,
+          );
+          logger.debug(
+            `WebSocket broadcast sent for email analysis: ${email.id}`,
+            "EMAIL_STORAGE",
+          );
+        } catch (broadcastError) {
+          logger.error(
+            `Failed to broadcast email analysis update: ${broadcastError}`,
+            "EMAIL_STORAGE",
+          );
+          // Don't throw - broadcasting is not critical
+        }
+
+        // Success - exit retry loop
+        return;
+      } catch (error) {
+        attempt++;
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
+        // Check if error is retryable
+        const isRetryable =
+          errorMessage.includes("SQLITE_BUSY") ||
+          errorMessage.includes("SQLITE_LOCKED") ||
+          errorMessage.includes("database is locked");
+
+        if (!isRetryable || attempt >= maxRetries) {
+          logger.error(
+            `Failed to store email after ${attempt} attempts: ${errorMessage}`,
+            "EMAIL_STORAGE",
+            {
+              emailId: email.id,
+              subject: email.subject,
+              error: errorMessage,
+            },
+          );
+
+          // Wrap in a more descriptive error
+          const enhancedError = new Error(
+            `Failed to store email analysis for "${email.subject}": ${errorMessage}`,
+          );
+          (enhancedError as any).emailId = email.id;
+          (enhancedError as any).attempts = attempt;
+          throw enhancedError;
+        }
+
+        // Wait before retry with exponential backoff
+        const delay = Math.min(100 * Math.pow(2, attempt), 2000);
+        logger.warn(
+          `Email storage failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms: ${errorMessage}`,
+          "EMAIL_STORAGE",
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
     }
   }
 
@@ -2516,6 +2619,153 @@ export class EmailStorageService {
     } catch (error) {
       logger.error(`Failed to get unassigned count: ${error}`, "EMAIL_STORAGE");
       throw error;
+    }
+  }
+
+  /**
+   * Validate and sanitize processing times to prevent negative values
+   *
+   * This method ensures data integrity by:
+   * 1. Checking for negative values
+   * 2. Logging warnings when issues are detected
+   * 3. Providing reasonable default values
+   * 4. Tracking patterns that might lead to negative times
+   */
+  private validateProcessingTimes(
+    metadata: ProcessingMetadata,
+  ): ProcessingMetadata {
+    const validated = { ...metadata };
+    const issues: string[] = [];
+
+    // Check stage1Time
+    if (metadata.stage1Time < 0) {
+      issues.push(`stage1Time was negative: ${metadata.stage1Time}ms`);
+      validated.stage1Time = Math.abs(metadata.stage1Time);
+
+      // Log detailed information to help identify the root cause
+      logger.warn("Negative stage1Time detected", "EMAIL_STORAGE", {
+        original: metadata.stage1Time,
+        corrected: validated.stage1Time,
+        model: metadata.models.stage1,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Check stage2Time
+    if (metadata.stage2Time < 0) {
+      issues.push(`stage2Time was negative: ${metadata.stage2Time}ms`);
+      validated.stage2Time = Math.abs(metadata.stage2Time);
+
+      logger.warn("Negative stage2Time detected", "EMAIL_STORAGE", {
+        original: metadata.stage2Time,
+        corrected: validated.stage2Time,
+        model: metadata.models.stage2,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Check totalTime
+    if (metadata.totalTime < 0) {
+      issues.push(`totalTime was negative: ${metadata.totalTime}ms`);
+      // For total time, use the sum of stages if available
+      validated.totalTime = Math.max(
+        Math.abs(metadata.totalTime),
+        validated.stage1Time + validated.stage2Time,
+      );
+
+      logger.warn("Negative totalTime detected", "EMAIL_STORAGE", {
+        original: metadata.totalTime,
+        corrected: validated.totalTime,
+        stage1Time: validated.stage1Time,
+        stage2Time: validated.stage2Time,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Ensure totalTime is at least the sum of stages
+    const minTotalTime = validated.stage1Time + validated.stage2Time;
+    if (validated.totalTime < minTotalTime) {
+      logger.warn("Total time less than sum of stages", "EMAIL_STORAGE", {
+        totalTime: validated.totalTime,
+        stage1Time: validated.stage1Time,
+        stage2Time: validated.stage2Time,
+        minExpected: minTotalTime,
+      });
+      validated.totalTime = minTotalTime;
+    }
+
+    // Log summary if any issues were found
+    if (issues.length > 0) {
+      logger.error(
+        "Processing time validation issues detected",
+        "EMAIL_STORAGE",
+        {
+          issues,
+          correctedValues: validated,
+          originalValues: metadata,
+        },
+      );
+
+      // Track this incident for pattern analysis
+      try {
+        this.trackProcessingTimeAnomaly({
+          type: "negative_values",
+          issues,
+          original: metadata,
+          corrected: validated,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (trackingError) {
+        logger.error(
+          "Failed to track processing time anomaly",
+          "EMAIL_STORAGE",
+          trackingError,
+        );
+      }
+    }
+
+    return validated;
+  }
+
+  /**
+   * Track processing time anomalies for pattern analysis
+   */
+  private trackProcessingTimeAnomaly(anomaly: any): void {
+    try {
+      // Create table if it doesn't exist
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS processing_time_anomalies (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          issues TEXT,
+          original_values TEXT,
+          corrected_values TEXT,
+          timestamp TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Insert anomaly record
+      const stmt = this.db.prepare(`
+        INSERT INTO processing_time_anomalies (id, type, issues, original_values, corrected_values, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+
+      stmt.run(
+        uuidv4(),
+        anomaly.type,
+        JSON.stringify(anomaly.issues),
+        JSON.stringify(anomaly.original),
+        JSON.stringify(anomaly.corrected),
+        anomaly.timestamp,
+      );
+    } catch (error) {
+      // Don't throw - this is auxiliary tracking
+      logger.error(
+        "Failed to track processing time anomaly",
+        "EMAIL_STORAGE",
+        error,
+      );
     }
   }
 

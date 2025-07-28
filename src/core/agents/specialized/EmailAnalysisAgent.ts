@@ -1,15 +1,15 @@
-import { BaseAgent } from '../base/BaseAgent';
-import type { AgentContext, AgentResult } from '../base/AgentTypes';
-import { OllamaProvider } from '../../llm/OllamaProvider';
-import { logger } from '../../../utils/logger';
+import { BaseAgent } from '../base/BaseAgent.js';
+import type { AgentContext, AgentResult } from '../base/AgentTypes.js';
+import { OllamaProvider } from '../../llm/OllamaProvider.js';
+import { logger } from '../../../utils/logger.js';
 // Re-export types for backward compatibility
-export * from './EmailAnalysisTypes';
-import type { Email, EmailAnalysis, EmailEntities, EmailProcessingResult } from './EmailAnalysisTypes';
+export * from './EmailAnalysisTypes.js';
+import type { Email, EmailAnalysis, EmailEntities, EmailProcessingResult } from './EmailAnalysisTypes.js';
 import { 
   PRODUCTION_EMAIL_CONFIG, 
   enhancePriorityDetection,
   ANALYSIS_SCENARIOS 
-} from './EmailAnalysisConfig';
+} from './EmailAnalysisConfig.js';
 
 export class EmailAnalysisAgent extends BaseAgent {
   private ollamaProvider: OllamaProvider;
@@ -91,7 +91,7 @@ export class EmailAnalysisAgent extends BaseAgent {
 
   private async initializeCache(): Promise<void> {
     if (!this.cache) {
-      const { EmailAnalysisCache } = await import('../../cache/EmailAnalysisCache');
+      const { EmailAnalysisCache } = await import('../../cache/EmailAnalysisCache.js');
       this.cache = new EmailAnalysisCache({
         maxSize: 500,
         ttl: 1000 * 60 * 30 // 30 minutes

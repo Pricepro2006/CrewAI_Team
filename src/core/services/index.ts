@@ -1,2 +1,2 @@
-export { SearchKnowledgeService } from "./SearchKnowledgeService";
-export type { SearchResult, SearchQuery } from "./SearchKnowledgeService";
+export { SearchKnowledgeService } from "./SearchKnowledgeService.js";
+export type { SearchResult, SearchQuery } from "./SearchKnowledgeService.js";

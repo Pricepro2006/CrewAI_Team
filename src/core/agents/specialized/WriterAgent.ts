@@ -1,6 +1,6 @@
-import { BaseAgent } from '../base/BaseAgent';
-import type { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes';
-import { sanitizeLLMOutput } from '../../../utils/output-sanitizer';
+import { BaseAgent } from '../base/BaseAgent.js';
+import type { AgentCapability, AgentContext, AgentResult } from '../base/AgentTypes.js';
+import { sanitizeLLMOutput } from '../../../utils/output-sanitizer.js';
 
 export class WriterAgent extends BaseAgent {
   constructor() {

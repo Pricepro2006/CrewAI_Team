@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { EmbeddingService } from "./EmbeddingService";
+import { EmbeddingService } from "./EmbeddingService.js";
 import axios from "axios";
 
 // Mock axios

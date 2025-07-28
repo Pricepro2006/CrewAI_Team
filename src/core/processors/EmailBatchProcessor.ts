@@ -1,7 +1,7 @@
 import PQueue from 'p-queue';
-import type { EmailAnalysisAgent, EmailAnalysis } from '../agents/specialized/EmailAnalysisAgent';
-import type { EmailAnalysisCache } from '../cache/EmailAnalysisCache';
-import { logger } from '../../utils/logger';
+import type { EmailAnalysisAgent, EmailAnalysis } from '../agents/specialized/EmailAnalysisAgent.js';
+import type { EmailAnalysisCache } from '../cache/EmailAnalysisCache.js';
+import { logger } from '../../utils/logger.js';
 
 interface BatchProcessingOptions {
   concurrency?: number;

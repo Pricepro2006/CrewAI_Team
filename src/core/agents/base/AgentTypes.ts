@@ -1,5 +1,5 @@
-import type { BaseTool } from '../../tools/base/BaseTool';
-import type { Document } from '../../shared/types';
+import type { BaseTool } from '../../tools/base/BaseTool.js';
+import type { Document } from '../../shared/types.js';
 
 export interface AgentCapability {
   name: string;

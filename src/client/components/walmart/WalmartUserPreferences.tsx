@@ -32,13 +32,13 @@ import {
   Milk,
   Egg,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { Switch } from '../../../components/ui/switch';
-import { Separator } from '../../../components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '../../../components/ui/card.js';
+import { Button } from '../../../components/ui/button.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Input } from '../../../components/ui/input.js';
+import { Label } from '../../../components/ui/label.js';
+import { Switch } from '../../../components/ui/switch.js';
+import { Separator } from '../../../components/ui/separator.js';
 import {
   Dialog,
   DialogContent,
@@ -46,26 +46,26 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog';
+} from '../../../components/ui/dialog.js';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import { Checkbox } from '../../../components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
+} from '../../../components/ui/select.js';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
+import { Checkbox } from '../../../components/ui/checkbox.js';
+import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group.js';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '../../../components/ui/accordion';
-import { cn } from '../../lib/utils';
-import { useGroceryStore } from '../../store/groceryStore';
-import type { UserPreferences } from '../../../types/walmart-grocery';
+} from '../../../components/ui/accordion.js';
+import { cn } from '../../lib/utils.js';
+import { useGroceryStore } from '../../store/groceryStore.js';
+import type { UserPreferences } from '../../../types/walmart-grocery.js';
 
 interface WalmartUserPreferencesProps {
   onSavePreferences?: (preferences: UserPreferences) => void;

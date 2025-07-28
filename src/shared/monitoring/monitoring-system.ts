@@ -8,7 +8,7 @@ import type {
   HealthStatus,
   ServiceHealth,
   MemoryInfo,
-} from "../types";
+} from "../types/index.js";
 
 // =====================================================
 // Core Monitoring Types

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { AdaptiveDeliveryManager } from "../AdaptiveDeliveryManager";
+import { AdaptiveDeliveryManager } from "../AdaptiveDeliveryManager.js";
 import {
   type ResponseEvaluationResult,
   ActionType,
   type ScoredDocument,
-} from "../types";
+} from "../types.js";
 
 describe("AdaptiveDeliveryManager", () => {
   let manager: AdaptiveDeliveryManager;

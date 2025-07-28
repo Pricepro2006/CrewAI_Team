@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import Database from "better-sqlite3";
-import appConfig from "../../config/app.config";
+import appConfig from "../../config/app.config.js";
 
 export interface Conversation {
   id: string;

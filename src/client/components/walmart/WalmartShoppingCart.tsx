@@ -15,10 +15,10 @@ import {
   Package,
   ChevronRight,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Separator } from '../../../components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
+import { Button } from '../../../components/ui/button.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Separator } from '../../../components/ui/separator.js';
 import {
   Dialog,
   DialogContent,
@@ -26,18 +26,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog';
+} from '../../../components/ui/dialog.js';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../components/ui/tooltip';
-import { Input } from '../../../components/ui/input';
-import { useCart } from '../../hooks/useCart';
-import { useWalmartDeals } from '../../hooks/useWalmartDeals';
-import { formatPrice } from '../../lib/utils';
-import type { WalmartProduct, CartItem, DealMatch } from '../../../types/walmart-grocery';
+} from '../../../components/ui/tooltip.js';
+import { Input } from '../../../components/ui/input.js';
+import { useCart } from '../../hooks/useCart.js';
+import { useWalmartDeals } from '../../hooks/useWalmartDeals.js';
+import { formatPrice } from '../../lib/utils.js';
+import type { WalmartProduct, CartItem, DealMatch } from '../../../types/walmart-grocery.js';
 
 interface WalmartShoppingCartProps {
   onCheckout?: () => void;

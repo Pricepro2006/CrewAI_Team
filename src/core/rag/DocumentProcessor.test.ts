@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { DocumentProcessor } from "./DocumentProcessor";
-import type { ProcessedDocument, ChunkingConfig } from "./types";
+import { DocumentProcessor } from "./DocumentProcessor.js";
+import type { ProcessedDocument, ChunkingConfig } from "./types.js";
 
 describe("DocumentProcessor", () => {
   let processor: DocumentProcessor;

@@ -6,12 +6,12 @@
  */
 
 import React from "react";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 import type {
   WalmartError,
   WalmartErrorCode,
-} from "../../types/walmart-grocery";
-import type { WebSocketError } from "../types/websocket";
+} from "../../types/walmart-grocery.js";
+import type { WebSocketError } from "../types/websocket.js";
 
 // =====================================================
 // Error Classes

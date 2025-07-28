@@ -4,7 +4,7 @@
  */
 
 import type Database from "better-sqlite3";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 
 export class WalmartGroceryAgentMigration {
   private db: Database.Database;

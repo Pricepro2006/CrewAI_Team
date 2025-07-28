@@ -2,7 +2,7 @@
  * React hooks for Walmart order operations
  */
 
-import { trpc } from "../../utils/trpc";
+import { trpc } from "../../utils/trpc.js";
 
 // Hook for getting user orders
 export function useWalmartOrders(params: {

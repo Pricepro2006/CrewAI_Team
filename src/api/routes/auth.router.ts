@@ -1,375 +1,474 @@
-import { z } from "zod";
-import {
-  router,
-  publicProcedure,
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import { 
+  router, 
+  publicProcedure, 
   protectedProcedure,
-  adminProcedure,
-} from "../trpc/enhanced-router";
-import { TRPCError } from "@trpc/server";
-import type { Router } from "@trpc/server";
-import { UserService, UserRole } from "../services/UserService";
-import { logger } from "../../utils/logger";
+  csrfTokenProcedure,
+  createCustomErrorHandler 
+} from '../trpc/enhanced-router.js';
+import { UserService } from '../services/UserService.js';
+import { jwtManager } from '../utils/jwt.js';
+import { passwordManager } from '../utils/password.js';
+import { randomUUID } from 'crypto';
+import { logger } from '../../utils/logger.js';
 
-const userService = new UserService();
+/**
+ * Authentication Router
+ * Handles user authentication endpoints including login, register, logout, refresh tokens
+ */
 
-// Validation schemas
-const emailSchema = z.string().email("Invalid email format");
-const usernameSchema = z
-  .string()
-  .min(3)
-  .max(30)
-  .regex(
-    /^[a-zA-Z0-9_-]+$/,
-    "Username can only contain letters, numbers, underscores, and hyphens",
-  );
-const passwordSchema = z
-  .string()
-  .min(8)
-  .max(100)
-  .regex(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-    "Password must contain at least one uppercase letter, one lowercase letter, and one number",
-  );
+// Input validation schemas
+const registerSchema = z.object({
+  email: z.string().email('Invalid email format').max(255),
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(50, 'Username must be less than 50 characters')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, hyphens, and underscores'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  first_name: z.string().max(100).optional(),
+  last_name: z.string().max(100).optional(),
+});
 
-export const authRouter: Router<any> = router({
-  // Register a new user
+const loginSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(1, 'Password is required'),
+  rememberMe: z.boolean().optional().default(false),
+});
+
+const refreshTokenSchema = z.object({
+  refreshToken: z.string().min(1, 'Refresh token is required'),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+});
+
+const updateProfileSchema = z.object({
+  first_name: z.string().max(100).optional(),
+  last_name: z.string().max(100).optional(),
+  avatar_url: z.string().url().optional(),
+});
+
+// Custom error handler for auth operations
+const authErrorHandler = createCustomErrorHandler('auth');
+
+export const authRouter = router({
+  /**
+   * Get CSRF token for authentication requests
+   */
+  getCsrfToken: csrfTokenProcedure
+    .use(authErrorHandler)
+    .query(({ ctx }) => {
+      return {
+        csrfToken: ctx.csrfToken,
+        message: 'CSRF token generated successfully'
+      };
+    }),
+
+  /**
+   * Register a new user
+   */
   register: publicProcedure
-    .input(
-      z.object({
-        email: emailSchema,
-        username: usernameSchema,
-        password: passwordSchema,
-        role: z.nativeEnum(UserRole).optional(),
-      }),
-    )
+    .use(authErrorHandler)
+    .input(registerSchema)
     .mutation(async ({ input }) => {
-      try {
-        const user = await userService.create({
-          email: input.email,
-          username: input.username,
-          password: input.password,
-          role: input.role,
-        });
+      const userService = new UserService();
 
-        logger.info("User registered", "AUTH", {
+      try {
+        // Validate password strength
+        const passwordValidation = passwordManager.validatePasswordStrength(input.password);
+        if (!passwordValidation.isValid) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Password does not meet security requirements',
+            cause: {
+              errors: passwordValidation.errors,
+              strength: passwordValidation.strength
+            }
+          });
+        }
+
+        // Create user
+        const user = await userService.createUser(input);
+
+        logger.info('User registered successfully', 'AUTH', {
           userId: user.id,
           email: user.email,
+          username: user.username
         });
 
         return {
-          success: true,
-          user: {
-            id: user.id,
-            email: user.email,
-            username: user.username,
-            role: user.role,
-          },
+          user,
+          message: 'User registered successfully. Please check your email to verify your account.'
         };
       } catch (error) {
-        logger.error("Registration failed", "AUTH", {
-          error: String(error),
-          email: input.email,
-        });
+        if (error instanceof Error && error.message.includes('already exists')) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'User with this email or username already exists'
+          });
+        }
+        throw error;
+      } finally {
+        userService.close();
+      }
+    }),
 
-        if (error instanceof Error) {
-          if (error.message.includes("already exists")) {
-            throw new TRPCError({
-              code: "CONFLICT",
-              message: "User with this email or username already exists",
-            });
-          }
+  /**
+   * Login user with email and password
+   */
+  login: publicProcedure
+    .use(authErrorHandler)
+    .input(loginSchema)
+    .mutation(async ({ input }) => {
+      const userService = new UserService();
+
+      try {
+        // Authenticate user
+        const user = await userService.authenticateUser(input.email, input.password);
+        
+        if (!user) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Invalid email or password'
+          });
         }
 
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to register user",
-        });
-      }
-    }),
+        // Generate refresh token
+        const refreshTokenId = randomUUID();
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + (input.rememberMe ? 30 : 7)); // 30 days if remember me, 7 days otherwise
 
-  // Login user
-  login: publicProcedure
-    .input(
-      z.object({
-        emailOrUsername: z.string().min(1),
-        password: z.string().min(1),
-      }),
-    )
-    .mutation(async ({ input }) => {
-      try {
-        const { user, tokens } = await userService.login({
-          emailOrUsername: input.emailOrUsername,
-          password: input.password,
+        // Create token pair
+        const tokens = jwtManager.generateTokenPair({
+          userId: user.id,
+          email: user.email,
+          username: user.username,
+          role: user.role
+        }, refreshTokenId);
+
+        // Store refresh token in database
+        userService.createRefreshToken(
+          user.id, 
+          tokens.refreshToken, 
+          expiresAt
+        );
+
+        // Remove sensitive data from user object
+        const { password_hash, ...publicUser } = user;
+
+        logger.info('User logged in successfully', 'AUTH', {
+          userId: user.id,
+          email: user.email,
+          rememberMe: input.rememberMe
         });
 
         return {
-          success: true,
-          user: {
-            id: user.id,
-            email: user.email,
-            username: user.username,
-            role: user.role,
+          user: publicUser,
+          tokens: {
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            expiresIn: tokens.expiresIn,
+            tokenType: 'Bearer' as const
           },
-          tokens,
+          message: 'Login successful'
         };
-      } catch (error) {
-        logger.error("Login failed", "AUTH", {
-          error: String(error),
-          emailOrUsername: input.emailOrUsername,
-        });
-
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Invalid credentials",
-        });
+      } finally {
+        userService.close();
       }
     }),
 
-  // Refresh access token
-  refresh: publicProcedure
-    .input(
-      z.object({
-        refreshToken: z.string(),
-      }),
-    )
+  /**
+   * Refresh access token using refresh token
+   */
+  refreshToken: publicProcedure
+    .use(authErrorHandler)
+    .input(refreshTokenSchema)
     .mutation(async ({ input }) => {
+      const userService = new UserService();
+
       try {
-        const tokens = await userService.refreshTokens(input.refreshToken);
+        // Verify refresh token
+        const payload = jwtManager.verifyRefreshToken(input.refreshToken);
+        
+        // Get refresh token from database
+        const refreshToken = userService.getRefreshToken(payload.tokenId);
+        if (!refreshToken || refreshToken.revoked) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Invalid or revoked refresh token'
+          });
+        }
+
+        // Check if token is expired
+        if (new Date(refreshToken.expires_at) <= new Date()) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Refresh token has expired'
+          });
+        }
+
+        // Get user
+        const user = userService.getUserById(payload.sub);
+        if (!user || !user.is_active) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'User not found or inactive'
+          });
+        }
+
+        // Generate new token pair
+        const newRefreshTokenId = randomUUID();
+        const newTokens = jwtManager.generateTokenPair({
+          userId: user.id,
+          email: user.email,
+          username: user.username,
+          role: user.role
+        }, newRefreshTokenId);
+
+        // Revoke old refresh token and create new one
+        userService.revokeRefreshToken(payload.tokenId);
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+
+        userService.createRefreshToken(
+          user.id,
+          newTokens.refreshToken,
+          expiresAt
+        );
+
+        logger.info('Token refreshed successfully', 'AUTH', {
+          userId: user.id,
+          oldTokenId: payload.tokenId,
+          newTokenId: newRefreshTokenId
+        });
 
         return {
-          success: true,
-          tokens,
+          tokens: {
+            accessToken: newTokens.accessToken,
+            refreshToken: newTokens.refreshToken,
+            expiresIn: newTokens.expiresIn,
+            tokenType: 'Bearer' as const
+          },
+          message: 'Token refreshed successfully'
         };
-      } catch (error) {
-        logger.error("Token refresh failed", "AUTH", { error: String(error) });
-
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Invalid or expired refresh token",
-        });
+      } finally {
+        userService.close();
       }
     }),
 
-  // Logout user (protected - user must be authenticated)
+  /**
+   * Logout user (revoke refresh token)
+   */
   logout: protectedProcedure
-    .input(
-      z.object({
-        refreshToken: z.string().optional(),
-      }),
-    )
+    .use(authErrorHandler)
+    .input(refreshTokenSchema)
     .mutation(async ({ input, ctx }) => {
-      try {
-        await userService.logout(ctx.user.id, input.refreshToken);
+      const userService = new UserService();
 
-        return {
-          success: true,
-          message: "Logged out successfully",
-        };
-      } catch (error) {
-        logger.error("Logout failed", "AUTH", {
-          error: String(error),
+      try {
+        // Verify and revoke refresh token
+        const payload = jwtManager.verifyRefreshToken(input.refreshToken);
+        userService.revokeRefreshToken(payload.tokenId);
+
+        // Also revoke all user sessions for security
+        userService.revokeAllUserSessions(ctx.user.id);
+
+        logger.info('User logged out successfully', 'AUTH', {
           userId: ctx.user.id,
+          tokenId: payload.tokenId
         });
 
-        // Don't throw error on logout, just log it
         return {
-          success: true,
-          message: "Logged out",
+          message: 'Logout successful'
         };
+      } catch (error) {
+        // Even if token verification fails, we should still log the logout attempt
+        logger.info('Logout attempted with invalid token', 'AUTH', {
+          userId: ctx.user.id
+        });
+        
+        return {
+          message: 'Logout successful'
+        };
+      } finally {
+        userService.close();
       }
     }),
 
-  // Get current user
-  me: protectedProcedure.query(async ({ ctx }) => {
-    try {
-      const user = await userService.getById(ctx.user.id);
+  /**
+   * Logout from all devices (revoke all refresh tokens)
+   */
+  logoutAll: protectedProcedure
+    .use(authErrorHandler)
+    .mutation(async ({ ctx }) => {
+      const userService = new UserService();
 
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
+      try {
+        // Revoke all refresh tokens and sessions
+        userService.revokeAllUserRefreshTokens(ctx.user.id);
+        userService.revokeAllUserSessions(ctx.user.id);
+
+        logger.info('User logged out from all devices', 'AUTH', {
+          userId: ctx.user.id
         });
+
+        return {
+          message: 'Logged out from all devices successfully'
+        };
+      } finally {
+        userService.close();
       }
+    }),
+
+  /**
+   * Get current user profile
+   */
+  me: protectedProcedure
+    .use(authErrorHandler)
+    .query(({ ctx }) => {
+      return {
+        user: ctx.user,
+        message: 'User profile retrieved successfully'
+      };
+    }),
+
+  /**
+   * Update user profile
+   */
+  updateProfile: protectedProcedure
+    .use(authErrorHandler)
+    .input(updateProfileSchema)
+    .mutation(async ({ input, ctx }) => {
+      const userService = new UserService();
+
+      try {
+        const updatedUser = await userService.updateUser(ctx.user.id, input);
+
+        logger.info('User profile updated', 'AUTH', {
+          userId: ctx.user.id,
+          updatedFields: Object.keys(input)
+        });
+
+        return {
+          user: updatedUser,
+          message: 'Profile updated successfully'
+        };
+      } finally {
+        userService.close();
+      }
+    }),
+
+  /**
+   * Change password
+   */
+  changePassword: protectedProcedure
+    .use(authErrorHandler)
+    .input(changePasswordSchema)
+    .mutation(async ({ input, ctx }) => {
+      const userService = new UserService();
+
+      try {
+        await userService.changePassword(ctx.user.id, input);
+
+        logger.info('Password changed successfully', 'AUTH', {
+          userId: ctx.user.id
+        });
+
+        return {
+          message: 'Password changed successfully. Please log in again with your new password.'
+        };
+      } finally {
+        userService.close();
+      }
+    }),
+
+  /**
+   * Check password strength
+   */
+  checkPasswordStrength: publicProcedure
+    .use(authErrorHandler)
+    .input(z.object({ password: z.string() }))
+    .query(({ input }) => {
+      const validation = passwordManager.validatePasswordStrength(input.password);
+      const entropy = passwordManager.calculatePasswordEntropy(input.password);
+      const isCompromised = passwordManager.isPasswordCompromised(input.password);
 
       return {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role,
-        isActive: user.isActive,
-        createdAt: user.createdAt,
-        lastLoginAt: user.lastLoginAt,
+        ...validation,
+        entropy,
+        isCompromised,
+        recommendations: validation.errors.length > 0 ? validation.errors : [
+          'Your password meets all security requirements!'
+        ]
       };
-    } catch (error) {
-      if (error instanceof TRPCError) throw error;
-
-      logger.error("Failed to get user", "AUTH", {
-        error: String(error),
-        userId: ctx.user.id,
-      });
-
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to get user information",
-      });
-    }
-  }),
-
-  // List users (admin only)
-  listUsers: adminProcedure
-    .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(20),
-        offset: z.number().min(0).default(0),
-      }),
-    )
-    .query(async ({ input }) => {
-      try {
-        const users = await userService.list(input.limit, input.offset);
-
-        return {
-          users: users.map((user) => ({
-            id: user.id,
-            email: user.email,
-            username: user.username,
-            role: user.role,
-            isActive: user.isActive,
-            createdAt: user.createdAt,
-            lastLoginAt: user.lastLoginAt,
-          })),
-          total: users.length,
-        };
-      } catch (error) {
-        logger.error("Failed to list users", "AUTH", { error: String(error) });
-
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to list users",
-        });
-      }
     }),
 
-  // Get user statistics (admin only)
-  stats: adminProcedure.query(async () => {
-    try {
-      const stats = await userService.getUserStats();
-
-      return stats;
-    } catch (error) {
-      logger.error("Failed to get user stats", "AUTH", {
-        error: String(error),
-      });
-
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to get user statistics",
-      });
-    }
-  }),
-
-  // Update user role (admin only)
-  updateRole: adminProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-        role: z.nativeEnum(UserRole),
-      }),
-    )
+  /**
+   * Verify email (placeholder for email verification)
+   */
+  verifyEmail: publicProcedure
+    .use(authErrorHandler)
+    .input(z.object({ token: z.string() }))
     .mutation(async ({ input }) => {
-      try {
-        await userService.updateRole(input.userId, input.role);
+      // This would implement email verification logic
+      // For now, return a placeholder response
+      logger.info('Email verification attempted', 'AUTH', {
+        token: input.token.substring(0, 10) + '...'
+      });
 
-        return {
-          success: true,
-          message: "User role updated successfully",
-        };
-      } catch (error) {
-        logger.error("Failed to update user role", "AUTH", {
-          error: String(error),
-          userId: input.userId,
-        });
-
-        if (error instanceof Error && error.message.includes("not found")) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "User not found",
-          });
-        }
-
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update user role",
-        });
-      }
+      return {
+        message: 'Email verification feature coming soon'
+      };
     }),
 
-  // Deactivate user (admin only)
-  deactivateUser: adminProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-      }),
-    )
+  /**
+   * Request password reset (placeholder)
+   */
+  requestPasswordReset: publicProcedure
+    .use(authErrorHandler)
+    .input(z.object({ email: z.string().email() }))
     .mutation(async ({ input }) => {
-      try {
-        await userService.deactivate(input.userId);
+      // This would implement password reset logic
+      logger.info('Password reset requested', 'AUTH', {
+        email: input.email
+      });
 
-        return {
-          success: true,
-          message: "User deactivated successfully",
-        };
-      } catch (error) {
-        logger.error("Failed to deactivate user", "AUTH", {
-          error: String(error),
-          userId: input.userId,
-        });
-
-        if (error instanceof Error && error.message.includes("not found")) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "User not found",
-          });
-        }
-
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to deactivate user",
-        });
-      }
+      return {
+        message: 'If an account with this email exists, you will receive password reset instructions.'
+      };
     }),
 
-  // Reactivate user (admin only)
-  reactivateUser: adminProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-      }),
-    )
-    .mutation(async ({ input }) => {
-      try {
-        await userService.reactivate(input.userId);
-
-        return {
-          success: true,
-          message: "User reactivated successfully",
-        };
-      } catch (error) {
-        logger.error("Failed to reactivate user", "AUTH", {
-          error: String(error),
-          userId: input.userId,
-        });
-
-        if (error instanceof Error && error.message.includes("not found")) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "User not found",
-          });
-        }
-
+  /**
+   * Clean up expired tokens (admin only)
+   */
+  cleanupExpiredTokens: protectedProcedure
+    .use(authErrorHandler)
+    .mutation(async ({ ctx }) => {
+      // Check if user is admin
+      if (ctx.user.role !== 'admin') {
         throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to reactivate user",
+          code: 'FORBIDDEN',
+          message: 'Admin access required'
         });
       }
-    }),
+
+      const userService = new UserService();
+
+      try {
+        userService.cleanupExpiredTokens();
+
+        logger.info('Expired tokens cleaned up', 'AUTH', {
+          adminUserId: ctx.user.id
+        });
+
+        return {
+          message: 'Expired tokens cleaned up successfully'
+        };
+      } finally {
+        userService.close();
+      }
+    })
 });

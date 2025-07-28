@@ -1,4 +1,4 @@
-import type { Document, DocumentMetadata } from '../shared/types';
+import type { Document, DocumentMetadata } from '../shared/types.js';
 export type { Document, DocumentMetadata };
 
 export interface ProcessedDocument extends Document {
