@@ -1,4 +1,4 @@
-import type { QueryResult, RetrievalConfig } from "./types";
+import type { QueryResult, RetrievalConfig } from "./types.js";
 
 export class RetrievalService {
   constructor(private config: RetrievalConfig) {}

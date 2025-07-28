@@ -4,11 +4,11 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { integrationCoordinator } from "./coordinator";
+import { integrationCoordinator } from "./coordinator.js";
 import type {
   TestConfig,
   TestContext,
-} from "../testing/integration-test-framework";
+} from "../testing/integration-test-framework.js";
 
 // Mock types for the test
 interface EmailRecord {

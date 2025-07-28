@@ -20,13 +20,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
-import { StatusIndicator } from './StatusIndicator';
-import { InlineAssignment } from './AssignmentDropdown';
+} from '../../../components/ui/table.js';
+import { Checkbox } from '../../../components/ui/checkbox.js';
+import { StatusIndicator } from './StatusIndicator.js';
+import { InlineAssignment } from './AssignmentDropdown.js';
 import { formatDistanceToNow } from 'date-fns';
-import { cn } from '@/lib/utils';
-import type { EmailRecord, SortableColumn, SortDirection } from '@/types/email-dashboard.interfaces';
+import { cn } from '../../../lib/utils.js';
+import type { EmailRecord, SortableColumn, SortDirection } from '../../../types/email-dashboard.interfaces.js';
 
 interface TeamMember {
   id: string;

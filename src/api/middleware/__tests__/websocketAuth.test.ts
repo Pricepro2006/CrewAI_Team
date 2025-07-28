@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
-import { WebSocketAuthManager, type AuthenticatedWebSocket } from "../websocketAuth";
-import type { UserService, User, JWTPayload } from "../../services/UserService";
-import { UserRole } from "../../services/UserService";
+import { WebSocketAuthManager, type AuthenticatedWebSocket } from "../websocketAuth.js";
+import type { UserService, User, JWTPayload } from "../../services/UserService.js";
+import { UserRole } from "../../services/UserService.js";
 import { WebSocket } from "ws";
 
 // Mock dependencies

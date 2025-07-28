@@ -1,13 +1,13 @@
-import { VectorStore } from "./VectorStore";
-import { DocumentProcessor } from "./DocumentProcessor";
-import { EmbeddingService } from "./EmbeddingService";
-import { RetrievalService } from "./RetrievalService";
+import { VectorStore } from "./VectorStore.js";
+import { DocumentProcessor } from "./DocumentProcessor.js";
+import { EmbeddingService } from "./EmbeddingService.js";
+import { RetrievalService } from "./RetrievalService.js";
 import type {
   Document,
   QueryResult,
   RAGConfig,
   ProcessedDocument,
-} from "./types";
+} from "./types.js";
 
 export class RAGSystem {
   private vectorStore: VectorStore;

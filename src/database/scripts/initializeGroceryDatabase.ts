@@ -3,10 +3,10 @@
  * Sets up the database schema and initial data for the Walmart grocery agent
  */
 
-import { getDatabaseManager } from "../DatabaseManager";
-import { getGroceryDataService } from "../services/GroceryDataService";
-import { getGroceryFileStorage } from "../storage/GroceryFileStorage";
-import { logger } from "../../utils/logger";
+import { getDatabaseManager } from "../DatabaseManager.js";
+import { getGroceryDataService } from "../services/GroceryDataService.js";
+import { getGroceryFileStorage } from "../storage/GroceryFileStorage.js";
+import { logger } from "../../utils/logger.js";
 
 async function initializeGroceryDatabase() {
   logger.info("Initializing Grocery Database...", "GROCERY_INIT");

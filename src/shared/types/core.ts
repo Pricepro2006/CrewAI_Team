@@ -19,7 +19,7 @@ import type {
   BackupConfig,
   LoggingConfig,
   EncryptionConfig
-} from './database';
+} from './database.js';
 
 // =====================================================
 // Base Entity Types

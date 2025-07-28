@@ -3,7 +3,7 @@ import type {
   ProcessedDocument,
   DocumentMetadata,
   ChunkOptions,
-} from "./types";
+} from "./types.js";
 
 export class DocumentProcessor {
   private config: ChunkingConfig;

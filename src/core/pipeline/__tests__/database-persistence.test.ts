@@ -4,10 +4,10 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { getDatabaseConnection } from "../../../database/connection";
-import { PipelineOrchestrator } from "../PipelineOrchestrator";
-import { logger } from "../../../utils/logger";
-import type { Email } from "../types";
+import { getDatabaseConnection } from "../../../database/connection.js";
+import { PipelineOrchestrator } from "../PipelineOrchestrator.js";
+import { logger } from "../../../utils/logger.js";
+import type { Email } from "../types.js";
 
 // Mock emails for testing
 const TEST_EMAILS = [

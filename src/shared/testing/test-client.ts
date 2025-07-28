@@ -19,9 +19,9 @@ import type {
   CleanupTask,
   CleanupManager,
   CleanupResult,
-} from "./integration-test-framework";
-import type { EventHandler } from "./integration-test-framework";
-import type { WebSocketMessage } from "../types";
+} from "./integration-test-framework.js";
+import type { EventHandler } from "./integration-test-framework.js";
+import type { WebSocketMessage } from "../types/index.js";
 
 // =====================================================
 // HTTP Test Client Implementation

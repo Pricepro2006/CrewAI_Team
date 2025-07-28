@@ -3,12 +3,12 @@
  * Analyzes pricing, identifies savings opportunities, and tracks deal performance
  */
 
-import { logger } from "../../utils/logger";
-import { DealDataService } from "./DealDataService";
-import type { WalmartProductRepository } from "../../database/repositories/WalmartProductRepository";
-import { getDatabaseManager } from "../../database/DatabaseManager";
-import type { WalmartProduct } from "../../types/walmart-grocery";
-import type { Deal, DealItem } from "../types/deal.types";
+import { logger } from "../../utils/logger.js";
+import { DealDataService } from "./DealDataService.js";
+import type { WalmartProductRepository } from "../../database/repositories/WalmartProductRepository.js";
+import { getDatabaseManager } from "../../database/DatabaseManager.js";
+import type { WalmartProduct } from "../../types/walmart-grocery.js";
+import type { Deal, DealItem } from "../types/deal.types.js";
 
 interface DealMatch {
   product: WalmartProduct;
@@ -637,7 +637,7 @@ export class DealMatchingService {
    * Convert repository WalmartProduct to types WalmartProduct
    */
   private convertToTypesProduct(
-    repoProduct: import("../../database/repositories/WalmartProductRepository").WalmartProduct,
+    repoProduct: import("../../database/repositories/WalmartProductRepository.js").WalmartProduct,
   ): WalmartProduct {
     return {
       id: repoProduct.product_id,

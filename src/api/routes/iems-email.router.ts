@@ -4,11 +4,11 @@
  */
 
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc/router';
-import { IEMSDataService } from '../services/IEMSDataService';
-import type { EmailStatus } from '../../types/iems-email.types';
-import { logger } from '../../utils/logger';
-import { wsService } from '../services/WebSocketService';
+import { router, publicProcedure } from '../trpc/router.js';
+import { IEMSDataService } from '../services/IEMSDataService.js';
+import type { EmailStatus } from '../../types/iems-email.types.js';
+import { logger } from '../../utils/logger.js';
+import { wsService } from '../services/WebSocketService.js';
 
 // Get singleton instance
 const iemsDataService = IEMSDataService.getInstance();

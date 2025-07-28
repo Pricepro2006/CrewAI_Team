@@ -1,5 +1,5 @@
-import type { ProcessedDocument, QueryResult, Document, VectorStoreConfig } from './types';
-import type { IVectorStore } from './IVectorStore';
+import type { ProcessedDocument, QueryResult, Document, VectorStoreConfig } from './types.js';
+import type { IVectorStore } from './IVectorStore.js';
 // Note: Requires @pinecone-database/pinecone package
 // import { Pinecone } from '@pinecone-database/pinecone';
 

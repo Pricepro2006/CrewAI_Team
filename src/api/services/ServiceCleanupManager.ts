@@ -1,4 +1,4 @@
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 
 export interface CleanupTask {
   name: string;
@@ -152,7 +152,7 @@ export function registerDefaultCleanupTasks(): void {
     priority: 3,
     cleanup: async () => {
       try {
-        const { UserService } = await import("./UserService");
+        const { UserService } = await import("./UserService.js");
         const userService = new UserService();
         await userService.cleanupExpiredTokens();
         logger.info("Expired tokens cleaned", "CLEANUP");

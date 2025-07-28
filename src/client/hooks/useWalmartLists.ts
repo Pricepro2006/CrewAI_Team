@@ -2,7 +2,7 @@
  * React hooks for Walmart grocery list operations
  */
 
-import { trpc } from "../../utils/trpc";
+import { trpc } from "../../utils/trpc.js";
 
 // Hook for getting user lists
 export function useWalmartLists(userId: string) {

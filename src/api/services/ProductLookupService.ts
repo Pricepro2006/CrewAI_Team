@@ -3,15 +3,15 @@
  * Uses vector embeddings and semantic search for intelligent product discovery
  */
 
-import { logger } from "../../utils/logger";
-import { ChromaDBManager } from "../../database/vector/ChromaDBManager";
+import { logger } from "../../utils/logger.js";
+import { ChromaDBManager } from "../../database/vector/ChromaDBManager.js";
 import type {
   WalmartProductRepository,
   ProductEntity,
-} from "../../database/repositories/WalmartProductRepository";
-import { getDatabaseManager } from "../../database/DatabaseManager";
-import type { WalmartProduct } from "../../types/walmart-grocery";
-import { MasterOrchestrator } from "../../core/orchestration/MasterOrchestrator";
+} from "../../database/repositories/WalmartProductRepository.js";
+import { getDatabaseManager } from "../../database/DatabaseManager.js";
+import type { WalmartProduct } from "../../types/walmart-grocery.js";
+import { MasterOrchestrator } from "../../core/orchestration/MasterOrchestrator.js";
 
 interface LookupOptions {
   useVector?: boolean;

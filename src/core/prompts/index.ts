@@ -8,4 +8,4 @@ export {
   businessSearchPromptEnhancer,
   type BusinessSearchEnhancementOptions,
   type BusinessSearchExample
-} from './BusinessSearchPromptEnhancer';
+} from './BusinessSearchPromptEnhancer.js';

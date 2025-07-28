@@ -3,7 +3,7 @@
  * Allows users to select between conservative, balanced, or permissive settings
  */
 
-import type { ConfidenceConfig } from "../core/rag/confidence/types";
+import type { ConfidenceConfig } from "../core/rag/confidence/types.js";
 
 export interface ConfidenceProfile {
   name: string;

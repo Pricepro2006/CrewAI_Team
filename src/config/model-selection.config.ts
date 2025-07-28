@@ -1,7 +1,11 @@
 /**
  * Model Selection Configuration
- * Implements granite3.3:2b as main model and qwen3:0.6b for simple tasks
- * Based on comprehensive testing results
+ * Aligned with three-stage pipeline architecture:
+ * Stage 1: pattern-script (local pattern matching)
+ * Stage 2: llama3.2:3b (primary analysis)
+ * Stage 3: doomgrave/phi-4:14b-tools-Q3_K_S (critical analysis)
+ * 
+ * Also supports dynamic model selection based on query complexity
  */
 
 export interface ModelSelectionConfig {
@@ -22,43 +26,67 @@ export interface QueryComplexityFactors {
 }
 
 /**
- * Model configurations based on testing results
+ * Model configurations aligned with three-stage pipeline
  */
 export const MODEL_CONFIGS = {
-  // Main model for complex queries
+  // Stage 1: Pattern matching (not an LLM)
+  PATTERN: {
+    model: "pattern-script",
+    temperature: 0,
+    maxTokens: 0,
+    timeout: 100, // 0.1 seconds
+    description: "Local pattern matching for Stage 1 triage",
+  } as ModelSelectionConfig,
+
+  // Stage 2: Primary analysis model
+  PRIMARY: {
+    model: "llama3.2:3b",
+    temperature: 0.3,
+    maxTokens: 1000,
+    timeout: 45000, // 45 seconds for CPU inference
+    description: "Primary model for Stage 2 analysis",
+  } as ModelSelectionConfig,
+
+  // Stage 3: Critical analysis model
+  CRITICAL: {
+    model: "doomgrave/phi-4:14b-tools-Q3_K_S",
+    temperature: 0.3,
+    maxTokens: 4096,
+    timeout: 180000, // 180 seconds for CPU inference
+    description: "Critical analysis model for Stage 3",
+  } as ModelSelectionConfig,
+
+  // Legacy models (kept for backward compatibility)
   COMPLEX: {
-    model: "granite3.3:2b",
+    model: "llama3.2:3b", // Use primary model as default complex
     temperature: 0.7,
     maxTokens: 2048,
-    timeout: 30000, // 30 seconds
-    description: "Best overall model for complex queries",
+    timeout: 45000,
+    description: "Complex queries default to primary model",
   } as ModelSelectionConfig,
 
-  // Fast model for simple queries and tool selection
   SIMPLE: {
-    model: "qwen3:0.6b",
+    model: "llama3.2:3b", // Use primary model for consistency
     temperature: 0.3,
     maxTokens: 512,
-    timeout: 15000, // 15 seconds
-    description: "Fastest model for simple queries and tool selection",
+    timeout: 30000,
+    description: "Simple queries use primary model with lower token limit",
   } as ModelSelectionConfig,
 
-  // Fallback balanced model
   BALANCED: {
-    model: "qwen3:1.7b",
+    model: "llama3.2:3b", // Use primary model
     temperature: 0.5,
     maxTokens: 1024,
-    timeout: 25000, // 25 seconds
-    description: "Balanced model for medium complexity",
+    timeout: 45000,
+    description: "Balanced queries use primary model",
   } as ModelSelectionConfig,
 
-  // High quality model for critical tasks
   HIGH_QUALITY: {
-    model: "granite3.3:8b",
+    model: "doomgrave/phi-4:14b-tools-Q3_K_S", // Use critical model for high quality
     temperature: 0.6,
     maxTokens: 4096,
-    timeout: 90000, // 90 seconds
-    description: "Highest quality for critical analysis",
+    timeout: 180000,
+    description: "High quality tasks use Stage 3 critical model",
   } as ModelSelectionConfig,
 };
 
@@ -254,9 +282,28 @@ export function getModelForSystemLoad(
 }
 
 /**
- * Model performance metrics from testing
+ * Model performance metrics aligned with pipeline
  */
 export const MODEL_PERFORMANCE = {
+  "pattern-script": {
+    avgResponseTime: 0.1,
+    qualityScore: 0.46, // From models.config.ts
+    successRate: 0.98,
+    bestFor: ["initial_triage", "pattern_matching", "fast_filtering"],
+  },
+  "llama3.2:3b": {
+    avgResponseTime: 45, // CPU inference time
+    qualityScore: 0.656, // From models.config.ts (6.56/10)
+    successRate: 0.92,
+    bestFor: ["general_analysis", "structured_responses", "primary_processing"],
+  },
+  "doomgrave/phi-4:14b-tools-Q3_K_S": {
+    avgResponseTime: 180, // CPU inference time
+    qualityScore: 0.775, // From models.config.ts (7.75/10)
+    successRate: 0.95,
+    bestFor: ["critical_analysis", "tool_usage", "complex_reasoning"],
+  },
+  // Legacy models (for reference)
   "granite3.3:2b": {
     avgResponseTime: 26.01,
     qualityScore: 0.85,
@@ -269,29 +316,39 @@ export const MODEL_PERFORMANCE = {
     successRate: 0.9,
     bestFor: ["simple_queries", "tool_selection", "quick_responses"],
   },
-  "qwen3:1.7b": {
-    avgResponseTime: 21.44,
-    qualityScore: 0.75,
-    successRate: 0.92,
-    bestFor: ["balanced_tasks", "medium_complexity"],
-  },
-  "granite3.3:8b": {
-    avgResponseTime: 64.7,
-    qualityScore: 0.9,
-    successRate: 0.93,
-    bestFor: ["critical_analysis", "deep_understanding", "high_accuracy"],
-  },
 };
 
 /**
  * Export configuration for use in other modules
  */
 export const defaultModelSelection = {
-  main: MODEL_CONFIGS.COMPLEX,
+  // Three-stage pipeline models
+  pattern: MODEL_CONFIGS.PATTERN,
+  primary: MODEL_CONFIGS.PRIMARY,
+  critical: MODEL_CONFIGS.CRITICAL,
+  
+  // Legacy mappings (point to pipeline models)
+  main: MODEL_CONFIGS.PRIMARY,
   simple: MODEL_CONFIGS.SIMPLE,
   balanced: MODEL_CONFIGS.BALANCED,
   highQuality: MODEL_CONFIGS.HIGH_QUALITY,
 };
+
+/**
+ * Get model for pipeline stage
+ */
+export function getModelForStage(stage: 1 | 2 | 3): ModelSelectionConfig {
+  switch (stage) {
+    case 1:
+      return MODEL_CONFIGS.PATTERN;
+    case 2:
+      return MODEL_CONFIGS.PRIMARY;
+    case 3:
+      return MODEL_CONFIGS.CRITICAL;
+    default:
+      return MODEL_CONFIGS.PRIMARY;
+  }
+}
 
 export default {
   selectModel,

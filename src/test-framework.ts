@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-// import { EnhancedMasterOrchestrator, SuperClaudeResearchAgent } from './implementation-examples';
+// import { EnhancedMasterOrchestrator, SuperClaudeResearchAgent } from './implementation-examples.js';
 
 // Mock implementation for missing module
 class EnhancedMasterOrchestrator {

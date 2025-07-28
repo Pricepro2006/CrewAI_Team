@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { DataCollectionPipeline } from "./DataCollectionPipeline";
-import type { DataSource, BrightDataCredentials } from "./types";
+import { DataCollectionPipeline } from "./DataCollectionPipeline.js";
+import type { DataSource, BrightDataCredentials } from "./types.js";
 
 // Mock credentials for testing
 const mockCredentials: BrightDataCredentials = {

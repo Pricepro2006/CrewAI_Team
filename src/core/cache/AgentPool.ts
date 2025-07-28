@@ -5,9 +5,9 @@
  * by avoiding the overhead of agent initialization on each request.
  */
 
-import type { BaseAgent } from "../agents/base/BaseAgent";
-import { EmailAnalysisAgent } from "../agents/specialized/EmailAnalysisAgent";
-import { logger } from "../../utils/logger";
+import type { BaseAgent } from "../agents/base/BaseAgent.js";
+import { EmailAnalysisAgent } from "../agents/specialized/EmailAnalysisAgent.js";
+import { logger } from "../../utils/logger.js";
 
 type AgentType = "email" | "business" | "customer" | "workflow" | "master";
 

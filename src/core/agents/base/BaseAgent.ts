@@ -1,13 +1,13 @@
-import type { BaseTool } from "../../tools/base/BaseTool";
+import type { BaseTool } from "../../tools/base/BaseTool.js";
 import type {
   AgentCapability,
   AgentContext,
   AgentResult,
   ToolExecutionParams,
-} from "./AgentTypes";
-import { logger } from "../../../utils/logger";
-import { OllamaProvider } from "../../llm/OllamaProvider";
-import { MODEL_CONFIG, getModelConfig, getModelTimeout } from "../../../config/models.config";
+} from "./AgentTypes.js";
+import { logger } from "../../../utils/logger.js";
+import { OllamaProvider } from "../../llm/OllamaProvider.js";
+import { MODEL_CONFIG, getModelConfig, getModelTimeout } from "../../../config/models.config.js";
 
 export abstract class BaseAgent {
   protected tools: Map<string, BaseTool> = new Map();

@@ -2,11 +2,11 @@
  * Search Module Exports for GROUP 2B WebSearch Enhancement
  */
 
-export * from './types';
-export { BusinessQueryOptimizer } from './BusinessQueryOptimizer';
-export { LocationDatabase } from './data/locationDatabase';
-export { QueryEnhancer } from './QueryEnhancer';
-export type { EnhancedQuery } from './QueryEnhancer';
+export * from './types.js';
+export { BusinessQueryOptimizer } from './BusinessQueryOptimizer.js';
+export { LocationDatabase } from './data/locationDatabase.js';
+export { QueryEnhancer } from './QueryEnhancer.js';
+export type { EnhancedQuery } from './QueryEnhancer.js';
 
 // Re-export commonly used types for convenience
 export type {
@@ -19,4 +19,4 @@ export type {
   SecurityFlag,
   ServiceMapping,
   LocationMapping
-} from './types';
+} from './types.js';

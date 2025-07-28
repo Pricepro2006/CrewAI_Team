@@ -1,8 +1,8 @@
 import { LRUCache } from 'lru-cache';
 import { createHash } from 'crypto';
 import Redis from 'ioredis';
-import { logger } from '../../utils/logger';
-import type { ValidationResult } from '../validators/BusinessResponseValidator';
+import { logger } from '../../utils/logger.js';
+import type { ValidationResult } from '../validators/BusinessResponseValidator.js';
 
 export interface CacheEntry {
   response: string;

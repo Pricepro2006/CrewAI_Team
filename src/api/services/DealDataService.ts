@@ -5,9 +5,9 @@
 
 import { v4 as uuidv4 } from "uuid";
 import Database from "better-sqlite3";
-import { logger } from "../../utils/logger";
-import { wsService } from "./WebSocketService";
-import appConfig from "../../config/app.config";
+import { logger } from "../../utils/logger.js";
+import { wsService } from "./WebSocketService.js";
+import appConfig from "../../config/app.config.js";
 
 export interface Deal {
   id: string;
@@ -471,13 +471,18 @@ export class DealDataService {
    */
   async getRecentDeals(hoursAgo: number = 24): Promise<any[]> {
     try {
+      // Validate input
+      if (!Number.isInteger(hoursAgo) || hoursAgo < 0 || hoursAgo > 8760) { // Max 1 year
+        throw new Error('hoursAgo must be a positive integer between 0 and 8760');
+      }
+      
       const stmt = this.db.prepare(`
         SELECT * FROM deals 
-        WHERE datetime(created_at) >= datetime('now', '-${hoursAgo} hours')
+        WHERE datetime(created_at) >= datetime('now', ? || ' hours')
         ORDER BY created_at DESC
       `);
 
-      const results = stmt.all() as any[];
+      const results = stmt.all(`-${hoursAgo}`) as any[];
 
       return results.map((deal) => ({
         id: deal.deal_id,

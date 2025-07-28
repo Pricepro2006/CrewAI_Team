@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
-import { TaskQueue } from "./TaskQueue";
-import { ExecutionContext } from "./ExecutionContext";
-import type { Task, TaskResult, MaestroConfig } from "./types";
+import { TaskQueue } from "./TaskQueue.js";
+import { ExecutionContext } from "./ExecutionContext.js";
+import type { Task, TaskResult, MaestroConfig } from "./types.js";
 import { v4 as uuidv4 } from "uuid";
 
 export class MaestroFramework extends EventEmitter {

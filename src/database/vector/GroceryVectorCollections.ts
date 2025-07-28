@@ -3,8 +3,8 @@
  * Manages vector storage for products, recipes, and shopping patterns
  */
 
-import type { ChromaDBManager, CollectionConfig } from "./ChromaDBManager";
-import { logger } from "../../utils/logger";
+import type { ChromaDBManager, CollectionConfig } from "./ChromaDBManager.js";
+import { logger } from "../../utils/logger.js";
 
 export interface ProductVector {
   product_id: string;

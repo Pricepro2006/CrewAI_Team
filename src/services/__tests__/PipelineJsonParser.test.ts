@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { PipelineJsonParser } from "../PipelineJsonParser";
+import { PipelineJsonParser } from "../PipelineJsonParser.js";
 
 describe("PipelineJsonParser", () => {
   let parser: PipelineJsonParser;

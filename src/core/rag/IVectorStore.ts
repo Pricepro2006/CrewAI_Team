@@ -1,4 +1,4 @@
-import type { ProcessedDocument, QueryResult, Document } from './types';
+import type { ProcessedDocument, QueryResult, Document } from './types.js';
 
 /**
  * Interface for vector store implementations

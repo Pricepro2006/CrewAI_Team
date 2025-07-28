@@ -2,42 +2,78 @@ import { config } from "dotenv";
 config(); // Load environment variables
 
 import express from "express";
-import cors from "cors";
-import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { createContext } from "./trpc/context";
-import { appRouter } from "./trpc/router";
+import { createContext } from "./trpc/context.js";
+import { appRouter } from "./trpc/router.js";
 import { WebSocketServer } from "ws";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
-import appConfig from "../config/app.config";
-import ollamaConfig from "../config/ollama.config";
+import appConfig from "../config/app.config.js";
+import ollamaConfig from "../config/ollama.config.js";
 import type { Express } from "express";
-import { apiRateLimiter } from "./middleware/rateLimiter";
-import { wsService } from "./services/WebSocketService";
-import { logger } from "../utils/logger";
-import uploadRoutes from "./routes/upload.routes";
-import { webhookRouter } from "./routes/webhook.router";
-import { emailAnalysisRouter } from "./routes/email-analysis.router";
-import emailAssignmentRouter from "./routes/email-assignment.router";
+import {
+  apiRateLimiter,
+  authRateLimiter,
+  uploadRateLimiter,
+  websocketRateLimit,
+  getRateLimitStatus,
+  cleanupRateLimiting,
+} from "./middleware/rateLimiter.js";
+import { optionalAuthenticateJWT as authenticateToken, type AuthenticatedRequest } from "./middleware/auth.js";
+import { wsService } from "./services/WebSocketService.js";
+import { logger } from "../utils/logger.js";
+import uploadRoutes from "./routes/upload.routes.js";
+import { webhookRouter } from "./routes/webhook.router.js";
+import { emailAnalysisRouter } from "./routes/email-analysis.router.js";
+import emailAssignmentRouter from "./routes/email-assignment.router.js";
+import csrfRouter from "./routes/csrf.router.js";
+import websocketMonitorRouter from "./routes/websocket-monitor.router.js";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
-} from "./services/ServiceCleanupManager";
-import { setupWalmartWebSocket } from "./websocket/walmart-updates";
-import { DealDataService } from "./services/DealDataService";
-import { EmailStorageService } from "./services/EmailStorageService";
+} from "./services/ServiceCleanupManager.js";
+import { setupWalmartWebSocket } from "./websocket/walmart-updates.js";
+import { DealDataService } from "./services/DealDataService.js";
+import { EmailStorageService } from "./services/EmailStorageService.js";
+import { applySecurityHeaders } from "./middleware/security/headers.js";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { GracefulShutdown } from "../utils/error-handling/index.js";
+import {
+  requestTracking,
+  errorTracking,
+  requestSizeTracking,
+  rateLimitTracking,
+  authTracking,
+} from "./middleware/monitoring.js";
+import monitoringRouter from "./routes/monitoring.router.js";
 
 const app: Express = express();
+const gracefulShutdown = new GracefulShutdown();
 const PORT = appConfig.api.port;
 
-// Middleware
-app.use(helmet());
-app.use(cors(appConfig.api.cors));
+// Trust proxy for accurate IP addresses in rate limiting
+app.set("trust proxy", 1);
 
-// Handle preflight requests for all routes
-app.options("*", cors(appConfig.api.cors));
+// Apply comprehensive security headers (includes CORS)
+applySecurityHeaders(app, {
+  cors: {
+    origins: appConfig.api.cors.origin as string[],
+    credentials: appConfig.api.cors.credentials,
+  },
+});
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser()); // Enable cookie parsing for CSRF tokens
+
+// Monitoring middleware (must be early in the chain)
+app.use(requestTracking);
+app.use(requestSizeTracking);
+app.use(rateLimitTracking);
+app.use(authTracking);
+
+// Authentication middleware (runs before rate limiting to enable user-aware limits)
+app.use(authenticateToken);
 
 // Apply general rate limiting to all routes
 app.use(apiRateLimiter);
@@ -112,12 +148,43 @@ app.get("/health", async (_req, res) => {
     status: overallStatus,
     timestamp: new Date().toISOString(),
     responseTime: Date.now() - startTime,
-    services,
+    services: {
+      ...services,
+      rateLimit: "active",
+      redis: process.env.REDIS_HOST ? "configured" : "memory_fallback",
+    },
   });
 });
 
-// File upload routes (before tRPC to handle multipart forms)
+// Rate limit status endpoint for debugging (admin only)
+app.get("/api/rate-limit-status", async (req: AuthenticatedRequest, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+
+    // Only allow admins to check rate limit status
+    if (!authReq.user || authReq.user.role !== 'admin') {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    const status = await getRateLimitStatus(req);
+    return res.json(status);
+  } catch (error) {
+    console.error("Rate limit status error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Authentication routes with strict rate limiting
+app.use("/auth", authRateLimiter);
+app.use("/api/auth", authRateLimiter);
+
+// File upload routes with strict rate limiting (before tRPC to handle multipart forms)
+app.use("/upload", uploadRateLimiter);
+app.use("/api/upload", uploadRateLimiter);
 app.use("/api", uploadRoutes);
+
+// CSRF routes (no auth required for token fetching)
+app.use("/api", csrfRouter);
 
 // Webhook routes (needs to be before tRPC)
 app.use("/api/webhooks", webhookRouter);
@@ -127,6 +194,12 @@ app.use("/api/email-analysis", emailAnalysisRouter);
 
 // Email assignment routes
 app.use("/api/email-assignment", emailAssignmentRouter);
+
+// WebSocket monitoring routes (authenticated)
+app.use("/api/websocket", websocketMonitorRouter);
+
+// Monitoring routes
+app.use("/api/monitoring", monitoringRouter);
 
 // tRPC middleware
 app.use(
@@ -153,8 +226,35 @@ if (process.env["NODE_ENV"] === "production") {
   });
 }
 
+// Error handling middleware (must be last)
+app.use(notFoundHandler);
+app.use(errorTracking); // Add monitoring error tracking before the default error handler
+app.use(errorHandler);
+
 // Register default cleanup tasks
 registerDefaultCleanupTasks();
+
+// Register graceful shutdown handlers
+gracefulShutdown.register(async () => {
+  logger.info("Shutting down HTTP server...");
+  await new Promise<void>((resolve) => {
+    server.close(() => resolve());
+  });
+});
+
+gracefulShutdown.register(async () => {
+  logger.info("Shutting down WebSocket server...");
+  wss.close();
+  wsService.shutdown();
+});
+
+gracefulShutdown.register(async () => {
+  logger.info("Running cleanup tasks...");
+  await cleanupManager.cleanup();
+});
+
+// Setup graceful shutdown signal handlers
+gracefulShutdown.setupSignalHandlers();
 
 // Start HTTP server
 const server = app.listen(PORT, () => {
@@ -167,23 +267,95 @@ const server = app.listen(PORT, () => {
   logger.info("WebSocket health monitoring started", "WEBSOCKET");
 });
 
-// WebSocket server for subscriptions
+// WebSocket server for subscriptions with enhanced security
 const wss = new WebSocketServer({
   port: PORT + 1,
   path: "/trpc-ws",
-  // Add origin validation
-  verifyClient: (info: { origin?: string }) => {
+  // Add origin validation and rate limiting
+  verifyClient: (info: { origin?: string; req: any }) => {
     const origin = info.origin;
-    const allowedOrigins = [
-      "http://localhost:3000",
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:5175",
-    ];
+
+    // Get allowed origins from environment or use defaults
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") ||
+      process.env.CORS_ORIGIN?.split(",") || [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+      ];
+
+    // Add production origins if configured
+    if (
+      process.env.NODE_ENV === "production" &&
+      process.env.PRODUCTION_ORIGINS
+    ) {
+      allowedOrigins.push(...process.env.PRODUCTION_ORIGINS.split(","));
+    }
+
     // Allow connections without origin (like direct WebSocket clients)
     if (!origin) return true;
-    return allowedOrigins.includes(origin);
+
+    // Check origin
+    if (!allowedOrigins.includes(origin)) {
+      logger.warn(
+        "WebSocket connection rejected - invalid origin",
+        "SECURITY",
+        {
+          origin,
+          allowedOrigins,
+        },
+      );
+      return false;
+    }
+
+    return true;
   },
+});
+
+// Apply rate limiting to WebSocket connections
+wss.on("connection", async (ws, req) => {
+  try {
+    // Create a mock Express request for rate limiting
+    const mockReq = {
+      ip: req.socket.remoteAddress,
+      path: "/ws",
+      method: "GET",
+      headers: req.headers,
+      connection: req.socket,
+      user: null, // WebSocket connections start anonymous
+    } as any;
+
+    const mockRes = {
+      status: () => mockRes,
+      json: () => {},
+      end: () => {},
+    } as any;
+
+    // Check WebSocket rate limit
+    await new Promise<void>((resolve, reject) => {
+      websocketRateLimit(mockReq, mockRes, (err?: any) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    console.log("WebSocket connection established:", {
+      ip: req.socket.remoteAddress,
+      userAgent: req.headers["user-agent"],
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.warn("WebSocket rate limit exceeded:", {
+      ip: req.socket.remoteAddress,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+
+    ws.close(1008, "Rate limit exceeded");
+    return;
+  }
 });
 
 const wsHandler = applyWSSHandler({
@@ -224,60 +396,7 @@ cleanupManager.register({
 
 console.log(`🛒 Walmart WebSocket handlers initialized`);
 
-// Graceful shutdown
-const gracefulShutdown = async (signal: string) => {
-  console.log(`${signal} received, starting graceful shutdown...`);
-  logger.info("Shutdown initiated", "SHUTDOWN", { signal });
-
-  // Stop accepting new connections
-  server.close(() => {
-    console.log("HTTP server closed");
-    logger.info("HTTP server closed", "SHUTDOWN");
-  });
-
-  // Close WebSocket connections
-  wsHandler.broadcastReconnectNotification();
-  wss.close(() => {
-    console.log("WebSocket server closed");
-    logger.info("WebSocket server closed", "SHUTDOWN");
-  });
-
-  // Cleanup services
-  try {
-    // Stop WebSocket health monitoring
-    wsService.stopHealthMonitoring();
-    logger.info("WebSocket health monitoring stopped", "SHUTDOWN");
-
-    // Execute all registered cleanup tasks
-    await cleanupManager.cleanup();
-
-    // Add a small delay to allow pending operations to complete
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    logger.info("All services cleaned up successfully", "SHUTDOWN");
-
-    // Exit the process
-    process.exit(0);
-  } catch (error) {
-    logger.error("Error during shutdown", "SHUTDOWN", { error });
-    process.exit(1);
-  }
-};
-
-// Handle different termination signals
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-process.on("SIGUSR2", () => gracefulShutdown("SIGUSR2"));
-
-// Handle uncaught errors
-process.on("uncaughtException", (error) => {
-  logger.error("Uncaught exception", "CRITICAL", { error });
-  gracefulShutdown("UNCAUGHT_EXCEPTION");
-});
-
-process.on("unhandledRejection", (reason, promise) => {
-  logger.error("Unhandled rejection", "CRITICAL", { reason, promise });
-  gracefulShutdown("UNHANDLED_REJECTION");
-});
+// Note: Graceful shutdown is now handled by the GracefulShutdown class
+// which prevents duplicate signal handler registration and infinite loops
 
 export { app, server, wss };

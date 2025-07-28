@@ -3,13 +3,13 @@ import type {
   AgentFactory,
   AgentPoolConfig,
   AgentStatus,
-} from "../base/AgentTypes";
-import { ResearchAgent } from "../specialized/ResearchAgent";
-import { CodeAgent } from "../specialized/CodeAgent";
-import { DataAnalysisAgent } from "../specialized/DataAnalysisAgent";
-import { WriterAgent } from "../specialized/WriterAgent";
-import { ToolExecutorAgent } from "../specialized/ToolExecutorAgent";
-import { EmailAnalysisAgent } from "../specialized/EmailAnalysisAgent";
+} from "../base/AgentTypes.js";
+import { ResearchAgent } from "../specialized/ResearchAgent.js";
+import { CodeAgent } from "../specialized/CodeAgent.js";
+import { DataAnalysisAgent } from "../specialized/DataAnalysisAgent.js";
+import { WriterAgent } from "../specialized/WriterAgent.js";
+import { ToolExecutorAgent } from "../specialized/ToolExecutorAgent.js";
+import { EmailAnalysisAgent } from "../specialized/EmailAnalysisAgent.js";
 
 export class AgentRegistry {
   private activeAgents: Map<string, BaseAgent>;

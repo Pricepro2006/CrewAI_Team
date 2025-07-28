@@ -1,10 +1,10 @@
-import { BaseAgent } from "../base/BaseAgent";
+import { BaseAgent } from "../base/BaseAgent.js";
 import type {
   AgentCapability,
   AgentContext,
   AgentResult,
-} from "../base/AgentTypes";
-import type { BaseTool } from "../../tools/base/BaseTool";
+} from "../base/AgentTypes.js";
+import type { BaseTool } from "../../tools/base/BaseTool.js";
 
 export class ToolExecutorAgent extends BaseAgent {
   constructor() {

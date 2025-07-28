@@ -1,25 +1,22 @@
 import type { inferAsyncReturnType } from "@trpc/server";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { Request, Response } from "express";
-import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator";
-import { ConversationService } from "../services/ConversationService";
-import { TaskService } from "../services/TaskService";
-import { MaestroFramework } from "../../core/maestro/MaestroFramework";
-import {
-  UserService,
-  UserRole,
-  type User as DBUser,
-  type JWTPayload,
-} from "../services/UserService";
-import ollamaConfig from "../../config/ollama.config";
-import { logger } from "../../utils/logger";
-import { mcpToolsService } from "../services/MCPToolsService";
-import { DealDataService } from "../services/DealDataService";
-import { EmailStorageService } from "../services/EmailStorageService";
-import { WalmartGroceryService } from "../services/WalmartGroceryService";
+import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator.js";
+import { ConversationService } from "../services/ConversationService.js";
+import { TaskService } from "../services/TaskService.js";
+import { MaestroFramework } from "../../core/maestro/MaestroFramework.js";
+import { UserService } from "../services/UserService.js";
+import type { PublicUser } from "../../database/models/User.js";
+import { jwtManager, JWTError } from "../utils/jwt.js";
+import ollamaConfig from "../../config/ollama.config.js";
+import { logger } from "../../utils/logger.js";
+import { mcpToolsService } from "../services/MCPToolsService.js";
+import { DealDataService } from "../services/DealDataService.js";
+import { EmailStorageService } from "../services/EmailStorageService.js";
+import { WalmartGroceryService } from "../services/WalmartGroceryService.js";
 
-// Context User interface (extends DB user with runtime properties)
-export interface User extends Omit<DBUser, "passwordHash"> {
+// Context User interface (extends PublicUser with runtime properties)
+export interface User extends PublicUser {
   permissions: string[];
   lastActivity: Date;
 }
@@ -117,14 +114,14 @@ async function verifyJWT(
   userService: UserService,
 ): Promise<User | null> {
   try {
-    // Verify token using UserService
-    const payload = await userService.verifyToken(token);
+    // Verify token using JWT manager
+    const payload = jwtManager.verifyAccessToken(token);
 
     // Get full user data from database
-    const dbUser = await userService.getById(payload.userId);
-    if (!dbUser || !dbUser.isActive) {
+    const dbUser = userService.getUserById(payload.sub);
+    if (!dbUser || !dbUser.is_active) {
       logger.warn("User not found or inactive", "AUTH", {
-        userId: payload.userId,
+        userId: payload.sub,
       });
       return null;
     }
@@ -136,11 +133,15 @@ async function verifyJWT(
       id: dbUser.id,
       email: dbUser.email,
       username: dbUser.username,
+      first_name: dbUser.first_name,
+      last_name: dbUser.last_name,
+      avatar_url: dbUser.avatar_url,
       role: dbUser.role,
-      isActive: dbUser.isActive,
-      createdAt: dbUser.createdAt,
-      updatedAt: dbUser.updatedAt,
-      lastLoginAt: dbUser.lastLoginAt,
+      is_active: dbUser.is_active,
+      is_verified: dbUser.is_verified,
+      last_login_at: dbUser.last_login_at,
+      created_at: dbUser.created_at,
+      updated_at: dbUser.updated_at,
       permissions,
       lastActivity: new Date(),
     };
@@ -152,9 +153,16 @@ async function verifyJWT(
 
     return user;
   } catch (error) {
-    logger.warn("JWT verification failed", "AUTH", {
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+    if (error instanceof JWTError) {
+      logger.warn("JWT verification failed", "AUTH", {
+        error: error.message,
+        code: error.code,
+      });
+    } else {
+      logger.warn("JWT verification failed", "AUTH", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
     return null;
   }
 }
@@ -203,6 +211,7 @@ type TRPCContext = {
   timestamp: Date;
   batchId: string | undefined;
   validatedInput: unknown;
+  csrfToken?: string;
   masterOrchestrator: MasterOrchestrator;
   conversationService: ConversationService;
   taskService: TaskService;
@@ -240,10 +249,11 @@ export async function createContext({
       id: `guest-${ip.replace(/\./g, "-")}-${Date.now()}`,
       email: "",
       username: "guest",
-      role: UserRole.USER, // Default to user role from UserRole enum
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      role: "user",
+      is_active: true,
+      is_verified: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       permissions: ["read"],
       lastActivity: new Date(),
     };
@@ -263,6 +273,7 @@ export async function createContext({
     timestamp: new Date(),
     batchId: undefined as string | undefined, // Will be set by batch middleware when needed
     validatedInput: undefined as unknown, // Will be set by input validation middleware when needed
+    csrfToken: undefined as string | undefined, // Will be set by CSRF middleware when needed
     ...services,
   };
 }

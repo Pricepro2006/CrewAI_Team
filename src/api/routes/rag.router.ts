@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc/router";
+import { router, publicProcedure } from "../trpc/router.js";
 import type { Router } from "@trpc/server";
 import multer from "multer";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
@@ -142,7 +142,14 @@ export const ragRouter: Router<any> = router({
 
   // Get RAG statistics
   stats: publicProcedure.query(async ({ ctx }) => {
-    return await ctx.ragSystem.getStats();
+    const stats = await ctx.ragSystem.getStats();
+    
+    // Map the stats to match what the Dashboard expects
+    return {
+      ...stats,
+      documentCount: stats.totalDocuments,
+      chunksCount: stats.totalChunks,
+    };
   }),
 
   // Clear all documents

@@ -3,9 +3,9 @@
  * Uses the iteration script patterns for rapid email classification
  */
 
-import { logger } from "../../utils/logger";
-import { MODEL_CONFIG } from "../../config/models.config";
-import type { Email, TriageResult, TriageResults } from "./types";
+import { logger } from "../../utils/logger.js";
+import { MODEL_CONFIG } from "../../config/models.config.js";
+import type { Email, TriageResult, TriageResults } from "./types.js";
 
 export class Stage1PatternTriage {
   // Entity extraction patterns (90% accuracy from 6 iterations)

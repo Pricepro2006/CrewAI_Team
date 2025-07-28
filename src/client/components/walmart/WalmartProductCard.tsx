@@ -19,21 +19,21 @@ import {
   Clock,
   Truck,
 } from 'lucide-react';
-import { Card, CardContent, CardFooter } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
+import { Card, CardContent, CardFooter } from '../../../components/ui/card.js';
+import { Button } from '../../../components/ui/button.js';
+import { Badge } from '../../../components/ui/badge.js';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../components/ui/tooltip';
-import { Input } from '../../../components/ui/input';
-import { cn } from '../../lib/utils';
-import { formatPrice } from '../../lib/utils';
-import { useCart } from '../../hooks/useCart';
-import { useGroceryStore } from '../../store/groceryStore';
-import type { WalmartProduct, DealMatch } from '../../../types/walmart-grocery';
+} from '../../../components/ui/tooltip.js';
+import { Input } from '../../../components/ui/input.js';
+import { cn } from '../../lib/utils.js';
+import { formatPrice } from '../../lib/utils.js';
+import { useCart } from '../../hooks/useCart.js';
+import { useGroceryStore } from '../../store/groceryStore.js';
+import type { WalmartProduct, DealMatch } from '../../../types/walmart-grocery.js';
 
 interface WalmartProductCardProps {
   product: WalmartProduct;

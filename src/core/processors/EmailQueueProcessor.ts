@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { Queue, Worker } = require("bullmq") as any;
-import { UnifiedEmailService } from "@/api/services/UnifiedEmailService";
-import { logger } from "@/utils/logger";
-import { metrics } from "@/api/monitoring/metrics";
-import { io } from "@/api/websocket";
+import { UnifiedEmailService } from "../../api/services/UnifiedEmailService.js";
+import { logger } from "../../utils/logger.js";
+import { metrics } from "../../api/monitoring/metrics.js";
+import { io } from "../../api/websocket/index.js";
 
 export interface EmailQueueJob {
   emailData: any; // Graph API email data

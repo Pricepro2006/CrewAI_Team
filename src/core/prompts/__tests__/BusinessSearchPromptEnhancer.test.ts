@@ -4,9 +4,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { BusinessSearchPromptEnhancer } from "../BusinessSearchPromptEnhancer";
-import type { BusinessSearchEnhancementOptions } from "../BusinessSearchPromptEnhancer";
-import { logger } from "../../../utils/logger";
+import { BusinessSearchPromptEnhancer } from "../BusinessSearchPromptEnhancer.js";
+import type { BusinessSearchEnhancementOptions } from "../BusinessSearchPromptEnhancer.js";
+import { logger } from "../../../utils/logger.js";
 
 // Mock logger
 vi.mock("../../../utils/logger", () => ({

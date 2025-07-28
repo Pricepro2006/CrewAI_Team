@@ -1,7 +1,7 @@
-import { ValidatedTool } from "../base/ValidatedTool";
-import type { ToolResult } from "../base/ToolTypes";
-import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout";
-import { SearchKnowledgeService } from "../../services/SearchKnowledgeService";
+import { ValidatedTool } from "../base/ValidatedTool.js";
+import type { ToolResult } from "../base/ToolTypes.js";
+import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout.js";
+import { SearchKnowledgeService } from "../../services/SearchKnowledgeService.js";
 
 interface SearXNGResult {
   url: string;

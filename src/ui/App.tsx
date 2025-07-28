@@ -9,25 +9,38 @@ import {
 } from "@trpc/client";
 import superjson from "superjson";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { api } from "@/lib/trpc";
-import { ChatInterface } from "./components/Chat/ChatInterface";
-import { MainLayout } from "./components/Layout/MainLayout";
-import { Dashboard } from "./components/Dashboard/Dashboard";
-import { UnifiedEmailDashboard } from "./components/UnifiedEmail/UnifiedEmailDashboard";
+import { api } from "../lib/trpc.js";
+import { ChatInterface } from "./components/Chat/ChatInterface.js";
+import { MainLayout } from "./components/Layout/MainLayout.js";
+import { Dashboard } from "./components/Dashboard/Dashboard.js";
+import { UnifiedEmailDashboard } from "./components/UnifiedEmail/UnifiedEmailDashboard.js";
 import { Navigate } from "react-router-dom";
-import { Agents } from "./components/Agents/Agents";
-import { WebScraping } from "./components/WebScraping/WebScraping";
-import { KnowledgeBase } from "./components/KnowledgeBase/KnowledgeBase";
-import { VectorSearch } from "./components/VectorSearch/VectorSearch";
-import { Settings } from "./components/Settings/Settings";
-import { WalmartDashboard } from "../client/components/walmart/WalmartDashboard";
+import { Agents } from "./components/Agents/Agents.js";
+import { WebScraping } from "./components/WebScraping/WebScraping.js";
+import { KnowledgeBase } from "./components/KnowledgeBase/KnowledgeBase.js";
+import { VectorSearch } from "./components/VectorSearch/VectorSearch.js";
+import { Settings } from "./components/Settings/Settings.js";
+import { WalmartDashboard } from "../client/components/walmart/WalmartDashboard.js";
+import { CSRFProvider, useCSRF } from "./hooks/useCSRF.js";
+import { CSRFErrorBoundary } from "./components/Security/CSRFMonitor.js";
+import { ErrorBoundary } from "./components/ErrorBoundary/index.js";
+import { setupGlobalErrorHandlers } from "./utils/error-handling.js";
+import { ToastContainer } from "./components/Toast/index.js";
+import { NetworkStatus } from "./components/NetworkStatus/index.js";
 import "./App.css";
 
-function App() {
+// Setup global error handlers
+setupGlobalErrorHandlers();
+
+// Separate component that uses CSRF hook
+function AppWithCSRF() {
+  const { token, getHeaders } = useCSRF();
+  
   // Apply dark mode by default
   React.useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
+  
   // Create query client inside component
   const [queryClient] = React.useState(
     () =>
@@ -41,7 +54,7 @@ function App() {
       }),
   );
 
-  // Create tRPC client inside component
+  // Create tRPC client with CSRF support
   const [trpcClient] = React.useState(() =>
     api.createClient({
       transformer: superjson,
@@ -58,17 +71,24 @@ function App() {
                 return Math.min(1000 * 2 ** 0, 30000);
               },
               WebSocket: window.WebSocket,
+              connectionParams: () => ({
+                headers: {
+                  ...getHeaders(),
+                  authorization: localStorage.getItem("token") 
+                    ? `Bearer ${localStorage.getItem("token")}` 
+                    : undefined,
+                },
+              }),
             }),
           }),
-          false: httpLink({
+          false: httpBatchLink({
             url: "http://localhost:3001/trpc",
             headers() {
-              const token = localStorage.getItem("token");
-              return token
-                ? {
-                    authorization: `Bearer ${token}`,
-                  }
-                : {};
+              const authToken = localStorage.getItem("token");
+              return {
+                ...getHeaders(), // Include CSRF headers
+                ...(authToken && { authorization: `Bearer ${authToken}` }),
+              };
             },
             // Add CORS credentials
             fetch(url, options) {
@@ -86,6 +106,10 @@ function App() {
   return (
     <api.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
+        {/* Global UI Components */}
+        <NetworkStatus position="top" showWhenOnline={true} />
+        <ToastContainer position="top-right" maxToasts={5} />
+        
         <Router>
           <Routes>
             <Route path="/" element={<MainLayout />}>
@@ -132,6 +156,23 @@ function App() {
         </Router>
       </QueryClientProvider>
     </api.Provider>
+  );
+}
+
+// Main App component with CSRF Provider
+function App() {
+  return (
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('App Error Boundary:', error, errorInfo);
+      }}
+    >
+      <CSRFErrorBoundary>
+        <CSRFProvider>
+          <AppWithCSRF />
+        </CSRFProvider>
+      </CSRFErrorBoundary>
+    </ErrorBoundary>
   );
 }
 

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import { api } from "@/lib/trpc";
-import type { TeamMember } from "@/config/team-members.config";
+import { api } from "../../lib/trpc.js";
+import type { TeamMember } from "../../config/team-members.config.js";
 
 export interface UseEmailAssignmentOptions {
   onSuccess?: (data: any) => void;

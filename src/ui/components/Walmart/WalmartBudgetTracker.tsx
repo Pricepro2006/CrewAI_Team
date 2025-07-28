@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ChartBarIcon, CurrencyDollarIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
-import { api } from "@/lib/trpc";
+import { api } from "../../../lib/trpc.js";
 
 interface BudgetCategory {
   category: string;

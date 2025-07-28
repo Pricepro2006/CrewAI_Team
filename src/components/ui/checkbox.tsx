@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { cn } from '@/utils/cn';
+import { cn } from '../../utils/cn.js';
 
 export interface CheckboxProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {

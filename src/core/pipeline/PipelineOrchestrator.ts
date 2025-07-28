@@ -3,11 +3,11 @@
  * Manages the execution of the email analysis pipeline
  */
 
-import { logger } from "../../utils/logger";
-import { Stage1PatternTriage } from "./Stage1PatternTriage";
-import { Stage2LlamaAnalysis } from "./Stage2LlamaAnalysis";
-import { Stage3CriticalAnalysis } from "./Stage3CriticalAnalysis";
-import { getDatabaseConnection } from "../../database/connection";
+import { logger } from "../../utils/logger.js";
+import { Stage1PatternTriage } from "./Stage1PatternTriage.js";
+import { Stage2LlamaAnalysis } from "./Stage2LlamaAnalysis.js";
+import { Stage3CriticalAnalysis } from "./Stage3CriticalAnalysis.js";
+import { getDatabaseConnection } from "../../database/connection.js";
 import type {
   PipelineResults,
   TriageResults,
@@ -18,7 +18,7 @@ import type {
   LlamaAnalysisResult,
   CriticalAnalysisResult,
   PipelineStatus,
-} from "./types";
+} from "./types.js";
 
 export class PipelineOrchestrator {
   private stage1: Stage1PatternTriage;

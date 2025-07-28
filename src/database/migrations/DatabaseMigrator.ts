@@ -6,7 +6,7 @@
 import type Database from 'better-sqlite3';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.js';
 
 export interface Migration {
   version: string;

@@ -3,7 +3,7 @@
  * Comprehensive agent and task orchestration types
  */
 
-import type { BaseEntity, TimestampedEntity, Timestamp, Document, TokenUsage } from './core';
+import type { BaseEntity, TimestampedEntity, Timestamp, Document, TokenUsage } from './core.js';
 
 // =====================================================
 // Agent Types

@@ -4,29 +4,29 @@
  */
 
 // Core Database Manager
-export { DatabaseManager, getDatabaseManager } from './DatabaseManager';
+export { DatabaseManager, getDatabaseManager } from './DatabaseManager.js';
 
 // Repository Pattern Implementation
-export { BaseRepository } from './repositories/BaseRepository';
-export { UserRepository } from './repositories/UserRepository';
-export { EmailRepository } from './repositories/EmailRepository';
+export { BaseRepository } from './repositories/BaseRepository.js';
+export { UserRepository } from './repositories/UserRepository.js';
+export { EmailRepository } from './repositories/EmailRepository.js';
 export { 
   DealRepository, 
   DealItemRepository, 
   ProductFamilyRepository 
-} from './repositories/DealRepository';
+} from './repositories/DealRepository.js';
 
 // Vector Database Management
-export { ChromaDBManager } from './vector/ChromaDBManager';
+export { ChromaDBManager } from './vector/ChromaDBManager.js';
 
 // File Storage System
-export { FileStorageManager } from './storage/FileStorageManager';
+export { FileStorageManager } from './storage/FileStorageManager.js';
 
 // Migration System
-export { DatabaseMigrator } from './migrations/DatabaseMigrator';
+export { DatabaseMigrator } from './migrations/DatabaseMigrator.js';
 
 // Database Initialization
-export { initializeDatabase, resetDatabase } from './scripts/initializeDatabase';
+export { initializeDatabase, resetDatabase } from './scripts/initializeDatabase.js';
 
 // Type definitions
 export type {
@@ -34,13 +34,13 @@ export type {
   BaseEntity,
   QueryOptions,
   PaginatedResult,
-} from './repositories/BaseRepository';
+} from './repositories/BaseRepository.js';
 
-export type { User, CreateUserData } from './repositories/UserRepository';
+export type { User, CreateUserData } from './repositories/UserRepository.js';
 export type { 
   EmailEntity, 
   CreateEmailParams
-} from './repositories/EmailRepository';
+} from './repositories/EmailRepository.js';
 export type { 
   Deal, 
   DealItem, 
@@ -48,21 +48,21 @@ export type {
   CreateDealData, 
   CreateDealItemData, 
   DealQueryResult 
-} from './repositories/DealRepository';
+} from './repositories/DealRepository.js';
 export type { 
   ChromaDocument, 
   ChromaQueryResult, 
   CollectionConfig 
-} from './vector/ChromaDBManager';
+} from './vector/ChromaDBManager.js';
 export type { 
   StoredFile, 
   FileMetadata, 
   StorageConfig 
-} from './storage/FileStorageManager';
+} from './storage/FileStorageManager.js';
 export type { 
   Migration, 
   MigrationResult 
-} from './migrations/DatabaseMigrator';
+} from './migrations/DatabaseMigrator.js';
 
 // Constants and configuration
 export const DATABASE_CONSTANTS = {

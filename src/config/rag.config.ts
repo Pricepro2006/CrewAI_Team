@@ -1,4 +1,4 @@
-import type { RAGConfig } from '../core/rag/types';
+import type { RAGConfig } from '../core/rag/types.js';
 
 export const ragConfig: RAGConfig = {
   vectorStore: {

@@ -6,8 +6,8 @@
 import { promises as fs } from "fs";
 import path from "path";
 import crypto from "crypto";
-import { logger } from "../../utils/logger";
-import appConfig from "../../config/app.config";
+import { logger } from "../../utils/logger.js";
+import appConfig from "../../config/app.config.js";
 
 export interface FileMetadata {
   id: string;

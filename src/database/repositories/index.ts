@@ -1,7 +1,7 @@
-export { EmailRepository } from './EmailRepository';
+export { EmailRepository } from './EmailRepository.js';
 export type { 
   EmailRepositoryConfig,
   CreateEmailParams,
   UpdateEmailParams,
   EmailQueryParams
-} from './EmailRepository';
+} from './EmailRepository.js';

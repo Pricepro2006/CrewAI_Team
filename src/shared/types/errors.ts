@@ -3,7 +3,7 @@
  * Comprehensive error types and handling utilities
  */
 
-import type { Timestamp } from './index';
+import type { Timestamp } from './index.js';
 
 // =====================================================
 // Base Error Types

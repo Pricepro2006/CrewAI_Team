@@ -1,5 +1,5 @@
-import type { AgentRegistry } from "../agents/registry/AgentRegistry";
-import type { RAGSystem } from "../rag/RAGSystem";
+import type { AgentRegistry } from "../agents/registry/AgentRegistry.js";
+import type { RAGSystem } from "../rag/RAGSystem.js";
 import type {
   Plan,
   PlanStep,
@@ -7,9 +7,9 @@ import type {
   PlanExecutionResult,
   StepResult,
   Context,
-} from "./types";
-import { wsService } from "../../api/services/WebSocketService";
-import { withTimeout, DEFAULT_TIMEOUTS, TimeoutError } from "../../utils/timeout";
+} from "./types.js";
+import { wsService } from "../../api/services/WebSocketService.js";
+import { withTimeout, DEFAULT_TIMEOUTS, TimeoutError } from "../../utils/timeout.js";
 
 export class PlanExecutor {
   constructor(

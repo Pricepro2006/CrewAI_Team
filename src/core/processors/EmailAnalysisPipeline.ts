@@ -1,7 +1,7 @@
-import { EmailAnalysisAgent } from "../agents/specialized/EmailAnalysisAgent";
-import { logger } from "@/utils/logger";
-import { metrics } from "@/api/monitoring/metrics";
-import { withTimeout, DEFAULT_TIMEOUTS } from "@/utils/timeout";
+import { EmailAnalysisAgent } from "../agents/specialized/EmailAnalysisAgent.js";
+import { logger } from "../../utils/logger.js";
+import { metrics } from "../../api/monitoring/metrics.js";
+import { withTimeout, DEFAULT_TIMEOUTS } from "../../utils/timeout.js";
 
 // Types
 export interface EmailData {

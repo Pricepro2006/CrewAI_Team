@@ -1,9 +1,9 @@
-import { BaseAgent } from '../base/BaseAgent';
-import type { AgentContext, AgentResult } from '../base/AgentTypes';
-import { OllamaProvider } from '../../llm/OllamaProvider';
-import { logger } from '../../../utils/logger';
-import { EmailAnalysisCache } from '../../cache/EmailAnalysisCache';
-import type { EmailAnalysis } from './EmailAnalysisTypes';
+import { BaseAgent } from '../base/BaseAgent.js';
+import type { AgentContext, AgentResult } from '../base/AgentTypes.js';
+import { OllamaProvider } from '../../llm/OllamaProvider.js';
+import { logger } from '../../../utils/logger.js';
+import { EmailAnalysisCache } from '../../cache/EmailAnalysisCache.js';
+import type { EmailAnalysis } from './EmailAnalysisTypes.js';
 
 // Email interfaces
 interface Email {

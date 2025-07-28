@@ -1,0 +1,36 @@
+# Phase 2: High Priority System Reliability
+# Format: <type>: <description>
+#
+# Types:
+#   reliability: System reliability improvements
+#   performance: Performance optimizations
+#   fix: Bug fixes related to system stability
+#   monitor: Monitoring and alerting improvements
+#   resilience: Fault tolerance and recovery
+#   cache: Caching and optimization
+#   refactor: Code improvements for reliability
+#   test: Testing for reliability features
+#   docs: Documentation updates
+#
+# Examples:
+#   reliability: Add circuit breaker pattern to LLM service
+#   performance: Optimize database query performance
+#   fix: Resolve memory leak in agent processing
+#   monitor: Add health check endpoints
+#   resilience: Implement retry logic for external services
+#
+# Phase 2 Focus Areas:
+# - Database connection stability
+# - Agent execution reliability
+# - Memory optimization
+# - Error recovery mechanisms
+# - Performance monitoring
+# - Service health checks
+#
+# Remember:
+# - Keep the subject line under 50 characters
+# - Provide detailed context in the body
+# - Reference issues when applicable
+# - Include performance metrics if relevant
+#
+

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { TrashIcon, PlusIcon, MinusIcon, ShoppingCartIcon, CreditCardIcon } from "@heroicons/react/24/outline";
-import { api } from "@/lib/trpc";
-import { useCartStore } from "../../../client/store/groceryStore";
+import { api } from "../../../lib/trpc.js";
+import { useCartStore } from "../../../client/store/groceryStore.js";
 
 export const WalmartShoppingCart: React.FC = () => {
   const { items, updateQuantity, removeItem, clearCart, getTotal } = useCartStore();

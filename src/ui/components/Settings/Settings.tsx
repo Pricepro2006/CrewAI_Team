@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Settings.css';
+import { MonitoringDashboard } from '../Monitoring/MonitoringDashboard.js';
 
 interface SettingsState {
   general: {
@@ -36,9 +37,9 @@ export const Settings: React.FC = () => {
     },
     llm: {
       provider: 'ollama',
-      model: 'granite3.3:2b',
-      temperature: 0.7,
-      maxTokens: 4096,
+      model: 'llama3.2:3b',
+      temperature: 0.3,
+      maxTokens: 1000,
       endpoint: 'http://localhost:11434'
     },
     agents: {
@@ -214,9 +215,10 @@ export const Settings: React.FC = () => {
                       value={settings.llm.model}
                       onChange={(e) => updateSetting('llm', 'model', e.target.value)}
                     >
-                      <option value="phi3:mini">Phi-3 Mini</option>
-                      <option value="qwen3:0.6b">Qwen 3 (0.6B)</option>
-                      <option value="llama3.1:8b">Llama 3.1 (8B)</option>
+                      <option value="llama3.2:3b">Llama 3.2 (3B) - Primary</option>
+                      <option value="doomgrave/phi-4:14b-tools-Q3_K_S">Phi-4 14B Tools - Critical</option>
+                      <option value="phi3:mini">[Legacy] Phi-3 Mini</option>
+                      <option value="granite3.3:2b">[Legacy] Granite 3.3 (2B)</option>
                     </select>
                   </div>
 
@@ -362,6 +364,12 @@ export const Settings: React.FC = () => {
                   <option value="qdrant">Qdrant</option>
                 </select>
               </div>
+            </div>
+          )}
+          
+          {activeTab === 'monitoring' && (
+            <div className="settings-section">
+              <MonitoringDashboard />
             </div>
           )}
         </div>

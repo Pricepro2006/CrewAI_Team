@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ChartBase, CHART_COLORS } from './ChartBase';
+import { ChartBase, CHART_COLORS } from './ChartBase.js';
 
 /**
  * Workflow Timeline Chart Component

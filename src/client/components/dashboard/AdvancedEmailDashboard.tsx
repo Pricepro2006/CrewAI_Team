@@ -2,17 +2,17 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { Filter, Download, BarChart3, Settings, Users, Zap } from 'lucide-react';
 
 // Import our advanced components
-import { AdvancedFilterPanel } from '../table/AdvancedFilterPanel';
-import { StatusUpdateManager, type EmailStatus, type EmailWorkflowData } from '../status/StatusUpdateManager';
-import { DataExportManager, type ExportColumn } from '../export/DataExportManager';
-import { StatusDistributionChart } from '../charts/StatusDistributionChart';
-import { WorkflowTimelineChart } from '../charts/WorkflowTimelineChart';
-import { SLATrackingDashboard } from '../charts/SLATrackingDashboard';
+import { AdvancedFilterPanel } from '../table/AdvancedFilterPanel.js';
+import { StatusUpdateManager, type EmailStatus, type EmailWorkflowData } from '../status/StatusUpdateManager.js';
+import { DataExportManager, type ExportColumn } from '../export/DataExportManager.js';
+import { StatusDistributionChart } from '../charts/StatusDistributionChart.js';
+import { WorkflowTimelineChart } from '../charts/WorkflowTimelineChart.js';
+import { SLATrackingDashboard } from '../charts/SLATrackingDashboard.js';
 
 // Import hooks
-import { useAdvancedFiltering, type FilterRule } from '../../hooks/useAdvancedFiltering';
-import { useAuditTrail } from '../../hooks/useAuditTrail';
-import { useReportGeneration } from '../../hooks/useReportGeneration';
+import { useAdvancedFiltering, type FilterRule } from '../../hooks/useAdvancedFiltering.js';
+import { useAuditTrail } from '../../hooks/useAuditTrail.js';
+import { useReportGeneration } from '../../hooks/useReportGeneration.js';
 
 /**
  * Advanced Email Dashboard

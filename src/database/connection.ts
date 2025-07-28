@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { logger } from '@/utils/logger';
+import { logger } from '../utils/logger.js';
 import path from 'path';
 import fs from 'fs';
 
