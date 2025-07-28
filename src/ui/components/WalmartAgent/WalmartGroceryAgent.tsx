@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, ShoppingCart, Package, DollarSign, Clock, TrendingUp, AlertCircle, CheckCircle, List, PieChart, BarChart3, History } from 'lucide-react';
-import { trpc } from '../../App';
+import { api } from '../../../lib/trpc.js';
 import './WalmartGroceryAgent.css';
 
 interface GroceryItem {
@@ -37,7 +37,7 @@ export const WalmartGroceryAgent: React.FC = () => {
   const [priceAlerts, setPriceAlerts] = useState<Map<string, number>>(new Map());
 
   // Use tRPC mutation for searching products
-  const searchProductsMutation = trpc.walmartData.searchProducts.useMutation({
+  const searchProductsMutation = api.walmartGrocery.searchProducts.useMutation({
     onError: (error) => {
       console.error('Search failed:', error);
       // You might want to show a toast notification here
@@ -50,14 +50,14 @@ export const WalmartGroceryAgent: React.FC = () => {
     try {
       const results = await searchProductsMutation.mutateAsync({
         query: searchQuery.trim(),
-        maxResults: 20
+        limit: 20
       });
       
       // Transform the results to match our SearchResult interface
       setSearchResults({
-        query: results.query,
-        totalResults: results.totalFound,
-        items: results.products.map((product: any) => ({
+        query: searchQuery.trim(),
+        totalResults: results.metadata?.totalResults || results.products?.length || 0,
+        items: results.products?.map((product: any) => ({
           id: product.id || product.productId || `item-${Date.now()}-${Math.random()}`,
           name: product.name || product.title,
           price: product.price || 0,
@@ -67,8 +67,8 @@ export const WalmartGroceryAgent: React.FC = () => {
           imageUrl: product.imageUrl || product.image || '/api/placeholder/100/100',
           category: product.category || 'General',
           unit: product.unit || product.size || 'each'
-        })),
-        timestamp: results.timestamp || new Date()
+        })) || [],
+        timestamp: new Date()
       });
     } catch (error) {
       // Error is already logged in the mutation's onError
@@ -77,8 +77,8 @@ export const WalmartGroceryAgent: React.FC = () => {
     }
   };
   
-  // Use the mutation's isLoading state
-  const isSearching = searchProductsMutation.isLoading;
+  // Use the mutation's isPending state for compatibility with newer React Query versions
+  const isSearching = searchProductsMutation.isPending || searchProductsMutation.isLoading;
 
   const toggleItemSelection = (itemId: string) => {
     const newSelection = new Set(selectedItems);

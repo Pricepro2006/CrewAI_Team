@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { PlusIcon, MinusIcon, HeartIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 import { api } from "../../../lib/trpc.js";
-import { useCartStore } from "../../../client/store/groceryStore.js";
+import { useGroceryStore } from "../../../client/store/groceryStore.js";
 import type { WalmartProduct } from "../../../types/walmart-grocery.js";
 
 interface WalmartProductCardProps {
@@ -13,30 +13,18 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({ product 
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const { addItem } = useCartStore();
-
-  const addToCart = api.walmartGrocery.addToCart.useMutation({
-    onSuccess: () => {
-      // Update local cart store
-      addItem({
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        quantity,
-        imageUrl: product.imageUrl,
-        unit: product.unit,
-      });
-      // Reset quantity
-      setQuantity(1);
-    },
-  });
+  const { addToCart: addToCartStore } = useGroceryStore();
 
   const handleAddToCart = () => {
-    addToCart.mutate({
-      productId: product.id,
-      quantity,
-      userId: "default-user", // In production, get from auth context
-    });
+    try {
+      // Add to local cart store
+      addToCartStore(product, quantity);
+      console.log(`Added ${quantity} of ${product.name} to cart`);
+      // Reset quantity
+      setQuantity(1);
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+    }
   };
 
   const toggleFavorite = () => {

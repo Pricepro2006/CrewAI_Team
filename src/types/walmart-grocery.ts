@@ -40,6 +40,21 @@ export interface WalmartProduct extends TimestampedEntity {
   variants?: ProductVariant[];
   bundleComponents?: BundleComponent[];
   metadata: ProductMetadata;
+  
+  // Additional properties for service compatibility
+  unit?: string;
+  size?: string;
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  barcode?: string;
+  inStock?: boolean;
+  stockLevel?: number;
+  stock?: number;
+  originalPrice?: number;
+  averageRating?: number;
+  reviewCount?: number;
+  location?: string;
+  nutritionalInfo?: any;
 }
 
 export interface ProductCategory {

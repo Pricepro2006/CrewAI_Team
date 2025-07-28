@@ -273,7 +273,7 @@ export class EmailStorageService {
     method: "get" | "all" = "all",
   ): Promise<T> {
     const startTime = Date.now();
-    let result: T;
+    let result: T | undefined;
     let error: string | undefined;
     let retryCount = 0;
     const maxRetries = 3;
@@ -351,6 +351,11 @@ export class EmailStorageService {
       }
     }
 
+    if (result === undefined) {
+      throw new Error(
+        `Query failed: ${queryDescription}. No result obtained after ${maxRetries} retries.`,
+      );
+    }
     return result;
   }
 
@@ -1920,7 +1925,17 @@ export class EmailStorageService {
 
       // Execute optimized queries with performance monitoring
       const startTime = Date.now();
-      const [emails, countResult] = await Promise.all([
+
+      logger.debug("Executing table view queries", "EMAIL_STORAGE", {
+        dataQueryCacheKey: `${cacheKey}_data`,
+        countQueryCacheKey: `${cacheKey}_count`,
+        dataQuery: dataQuery.replace(/\s+/g, " ").trim(),
+        countQuery: countQuery.replace(/\s+/g, " ").trim(),
+        dataParamsLength: dataParams.length,
+        countParamsLength: params.length,
+      });
+
+      const [emailsResult, countResult] = await Promise.all([
         this.executeCachedQuery<any[]>(
           `${cacheKey}_data`,
           "email_table_view_data",
@@ -1936,8 +1951,29 @@ export class EmailStorageService {
         ),
       ]);
 
+      logger.debug("Query results received", "EMAIL_STORAGE", {
+        emailsResultType: typeof emailsResult,
+        emailsResultIsArray: Array.isArray(emailsResult),
+        emailsResultLength: Array.isArray(emailsResult)
+          ? emailsResult.length
+          : "N/A",
+        countResultType: typeof countResult,
+        countResultKeys: countResult ? Object.keys(countResult) : "N/A",
+      });
+
       const queryTime = Date.now() - startTime;
-      const totalCount = countResult.total;
+
+      // Defensive programming: ensure emailsResult is an array
+      const emails = Array.isArray(emailsResult) ? emailsResult : [];
+      if (!Array.isArray(emailsResult)) {
+        logger.error(
+          `Expected emails array but received: ${typeof emailsResult}`,
+          "EMAIL_STORAGE",
+          { receivedType: typeof emailsResult, receivedValue: emailsResult },
+        );
+      }
+
+      const totalCount = countResult?.total || 0;
       const totalPages = Math.ceil(totalCount / pageSize);
 
       // Transform emails to include proper status mapping
@@ -2719,7 +2755,7 @@ export class EmailStorageService {
         logger.error(
           "Failed to track processing time anomaly",
           "EMAIL_STORAGE",
-          trackingError,
+          trackingError as Record<string, any>,
         );
       }
     }
@@ -2764,7 +2800,7 @@ export class EmailStorageService {
       logger.error(
         "Failed to track processing time anomaly",
         "EMAIL_STORAGE",
-        error,
+        error as Record<string, any>,
       );
     }
   }

@@ -74,6 +74,7 @@ export interface DataPipelineStats {
 
 export interface BrightDataCredentials {
   apiKey?: string;
+  apiSecret?: string;
   endpoint?: string;
   rateLimitPerMinute?: number;
 }
@@ -96,7 +97,14 @@ export interface WebScrapingParams {
 }
 
 export interface EcommerceScrapingParams {
-  platform: "amazon" | "walmart" | "ebay" | "etsy" | "bestbuy" | "homedepot" | "zara";
+  platform:
+    | "amazon"
+    | "walmart"
+    | "ebay"
+    | "etsy"
+    | "bestbuy"
+    | "homedepot"
+    | "zara";
   productUrl?: string;
   searchKeyword?: string;
   maxProducts?: number;

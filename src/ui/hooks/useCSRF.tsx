@@ -11,7 +11,7 @@ import { logger } from "../utils/logger";
 // CSRF Token configuration matching backend
 const CSRF_TOKEN_HEADER = "x-csrf-token";
 const CSRF_TOKEN_STORAGE_KEY = "csrf-token";
-const CSRF_TOKEN_FETCH_URL = "/api/csrf-token";
+const CSRF_TOKEN_FETCH_URL = "http://localhost:3001/api/csrf-token";
 const CSRF_TOKEN_REFRESH_INTERVAL = 55 * 60 * 1000; // 55 minutes (before 1-hour rotation)
 
 // Types
@@ -167,7 +167,8 @@ export function CSRFProvider({ children }: CSRFProviderProps) {
         clearInterval(timer);
       };
     }
-    // No return needed for else case in useEffect
+    // Return undefined for cases where token is null or error exists
+    return undefined;
   }, [token, error, refreshToken]);
 
   // Handle visibility change - refresh token when tab becomes visible
@@ -269,7 +270,8 @@ export async function handleCSRFError<T>(
     }
   }
 
-  throw lastError;
+  // This should never be reached due to the throw in the catch block, but satisfy TypeScript
+  throw lastError || new Error("Operation failed after maximum retries");
 }
 
 // HOC for components that need CSRF protection

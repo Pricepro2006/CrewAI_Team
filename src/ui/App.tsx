@@ -13,14 +13,14 @@ import { api } from "../lib/trpc.js";
 import { ChatInterface } from "./components/Chat/ChatInterface.js";
 import { MainLayout } from "./components/Layout/MainLayout.js";
 import { Dashboard } from "./components/Dashboard/Dashboard.js";
-import { UnifiedEmailDashboard } from "./components/UnifiedEmail/UnifiedEmailDashboard.js";
+import { EmailDashboard } from "./components/Email/EmailDashboard.js";
 import { Navigate } from "react-router-dom";
 import { Agents } from "./components/Agents/Agents.js";
 import { WebScraping } from "./components/WebScraping/WebScraping.js";
 import { KnowledgeBase } from "./components/KnowledgeBase/KnowledgeBase.js";
 import { VectorSearch } from "./components/VectorSearch/VectorSearch.js";
 import { Settings } from "./components/Settings/Settings.js";
-import { WalmartDashboard } from "../client/components/walmart/WalmartDashboard.js";
+import { WalmartGroceryAgent } from "./components/WalmartAgent/WalmartGroceryAgent.js";
 import { CSRFProvider, useCSRF } from "./hooks/useCSRF.js";
 import { CSRFErrorBoundary } from "./components/Security/CSRFMonitor.js";
 import { ErrorBoundary } from "./components/ErrorBoundary/index.js";
@@ -35,13 +35,13 @@ setupGlobalErrorHandlers();
 // Separate component that uses CSRF hook
 function AppWithCSRF() {
   const { token, getHeaders } = useCSRF();
-  
+
   // Apply dark mode by default
   React.useEffect(() => {
-    document.documentElement.classList.add('dark');
+    document.documentElement.classList.add("dark");
   }, []);
-  
-  // Create query client inside component
+
+  // Create query client inside component with improved retry logic
   const [queryClient] = React.useState(
     () =>
       new QueryClient({
@@ -49,6 +49,30 @@ function AppWithCSRF() {
           queries: {
             staleTime: 5 * 60 * 1000, // 5 minutes
             cacheTime: 10 * 60 * 1000, // 10 minutes
+            retry: (failureCount, error: any) => {
+              // Don't retry on authentication/CSRF errors
+              if (error?.status === 401 || error?.status === 403) {
+                return false;
+              }
+              // Don't retry on 404 errors (missing endpoints)
+              if (error?.status === 404) {
+                return false;
+              }
+              // Don't retry on CSRF token errors
+              if (
+                error?.message?.includes("CSRF") ||
+                error?.message?.includes("csrf")
+              ) {
+                return false;
+              }
+              // Don't retry if we've already tried 3 times
+              if (failureCount >= 3) {
+                return false;
+              }
+              return true;
+            },
+            retryDelay: (attemptIndex) =>
+              Math.min(1000 * 2 ** attemptIndex, 30000),
           },
         },
       }),
@@ -74,8 +98,8 @@ function AppWithCSRF() {
               connectionParams: () => ({
                 headers: {
                   ...getHeaders(),
-                  authorization: localStorage.getItem("token") 
-                    ? `Bearer ${localStorage.getItem("token")}` 
+                  authorization: localStorage.getItem("token")
+                    ? `Bearer ${localStorage.getItem("token")}`
                     : undefined,
                 },
               }),
@@ -109,7 +133,7 @@ function AppWithCSRF() {
         {/* Global UI Components */}
         <NetworkStatus position="top" showWhenOnline={true} />
         <ToastContainer position="top-right" maxToasts={5} />
-        
+
         <Router>
           <Routes>
             <Route path="/" element={<MainLayout />}>
@@ -117,36 +141,14 @@ function AppWithCSRF() {
               <Route path="chat" element={<ChatInterface />} />
               <Route path="chat/:conversationId" element={<ChatInterface />} />
               <Route path="agents" element={<Agents />} />
-              <Route
-                path="email-dashboard"
-                element={<UnifiedEmailDashboard />}
-              />
-              <Route
-                path="email-dashboard/analytics"
-                element={<UnifiedEmailDashboard initialView="analytics" />}
-              />
-              <Route
-                path="email-dashboard/workflows"
-                element={<UnifiedEmailDashboard initialView="workflows" />}
-              />
-              <Route
-                path="email-dashboard/agents"
-                element={<UnifiedEmailDashboard initialView="agents" />}
-              />
-              <Route
-                path="email-dashboard/settings"
-                element={<UnifiedEmailDashboard initialView="settings" />}
-              />
+              <Route path="email-dashboard" element={<EmailDashboard />} />
+              <Route path="email-dashboard/*" element={<EmailDashboard />} />
               <Route
                 path="iems-dashboard"
                 element={<Navigate to="/email-dashboard" replace />}
               />
-              <Route path="walmart" element={<WalmartDashboard />} />
-              <Route path="walmart/search" element={<WalmartDashboard activeTab="search" />} />
-              <Route path="walmart/cart" element={<WalmartDashboard activeTab="cart" />} />
-              <Route path="walmart/lists" element={<WalmartDashboard activeTab="lists" />} />
-              <Route path="walmart/budget" element={<WalmartDashboard activeTab="budget" />} />
-              <Route path="walmart/orders" element={<WalmartDashboard activeTab="orders" />} />
+              <Route path="walmart" element={<WalmartGroceryAgent />} />
+              <Route path="walmart/*" element={<WalmartGroceryAgent />} />
               <Route path="web-scraping" element={<WebScraping />} />
               <Route path="knowledge-base" element={<KnowledgeBase />} />
               <Route path="vector-search" element={<VectorSearch />} />
@@ -164,7 +166,7 @@ function App() {
   return (
     <ErrorBoundary
       onError={(error, errorInfo) => {
-        console.error('App Error Boundary:', error, errorInfo);
+        console.error("App Error Boundary:", error, errorInfo);
       }}
     >
       <CSRFErrorBoundary>

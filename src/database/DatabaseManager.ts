@@ -8,6 +8,10 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { logger } from "../utils/logger.js";
 import appConfig from "../config/app.config.js";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = join(fileURLToPath(import.meta.url), "..");
 
 // Repository imports
 import { UserRepository } from "./repositories/UserRepository.js";

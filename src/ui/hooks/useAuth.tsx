@@ -6,7 +6,7 @@ import {
   useContext,
   type ReactNode,
 } from "react";
-import { trpc } from "../utils/trpc.js";
+import { api } from "../../lib/trpc.js";
 
 /**
  * Authentication Hook and Context
@@ -139,16 +139,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   // TRPC mutations
-  const loginMutation = trpc.auth.login.useMutation();
-  const registerMutation = trpc.auth.register.useMutation();
-  const logoutMutation = trpc.auth.logout.useMutation();
-  const logoutAllMutation = trpc.auth.logoutAll.useMutation();
-  const refreshTokenMutation = trpc.auth.refreshToken.useMutation();
-  const updateProfileMutation = trpc.auth.updateProfile.useMutation();
-  const changePasswordMutation = trpc.auth.changePassword.useMutation();
+  const loginMutation = api.auth.login.useMutation();
+  const registerMutation = api.auth.register.useMutation();
+  const logoutMutation = api.auth.logout.useMutation();
+  const logoutAllMutation = api.auth.logoutAll.useMutation();
+  const refreshTokenMutation = api.auth.refreshToken.useMutation();
+  const updateProfileMutation = api.auth.updateProfile.useMutation();
+  const changePasswordMutation = api.auth.changePassword.useMutation();
 
   // TRPC queries
-  const { data: userData, refetch: refetchUser } = trpc.auth.me.useQuery(
+  const { data: userData, refetch: refetchUser } = api.auth.me.useQuery(
     undefined,
     {
       enabled: !!tokens?.accessToken,
@@ -157,7 +157,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 
   const checkPasswordStrengthMutation =
-    trpc.auth.checkPasswordStrength.useMutation();
+    api.auth.checkPasswordStrength.useMutation();
 
   // Initialize auth state from storage
   useEffect(() => {
