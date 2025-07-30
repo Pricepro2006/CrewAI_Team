@@ -41,7 +41,7 @@ export function useWebSocket(options: WebSocketOptions = {}): {
   const connect = useCallback(() => {
     // Prevent multiple simultaneous connections
     if (isReconnectingRef.current || !isMountedRef.current) {
-      return undefined;
+      return;
     }
 
     setConnectionStatus("connecting");
@@ -92,6 +92,7 @@ export function useWebSocket(options: WebSocketOptions = {}): {
       setConnectionStatus("error");
       onError?.(error as Error);
       isReconnectingRef.current = false;
+      return undefined;
     }
   }, [
     onConnect,

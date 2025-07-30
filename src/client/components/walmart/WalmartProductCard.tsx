@@ -31,9 +31,10 @@ import {
 import { Input } from '../../../components/ui/input.js';
 import { cn } from '../../lib/utils.js';
 import { formatPrice } from '../../lib/utils.js';
+import { getNumericPrice, calculateSavings } from '../../../utils/walmart-helpers.js';
 import { useCart } from '../../hooks/useCart.js';
 import { useGroceryStore } from '../../store/groceryStore.js';
-import type { WalmartProduct, DealMatch } from '../../../types/walmart-grocery.js';
+import type { WalmartProduct, DealMatch, UserPreferences } from '../../../types/walmart-grocery.js';
 
 interface WalmartProductCardProps {
   product: WalmartProduct;
@@ -61,7 +62,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [isFavorite, setIsFavorite] = useState(
-    preferences.favoriteProducts?.includes(product.id) ?? false
+    (preferences as any).favoriteProducts?.includes(product.id) ?? false
   );
   const [showPriceAlert, setShowPriceAlert] = useState(false);
   const [targetPrice, setTargetPrice] = useState('');
@@ -87,24 +88,27 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
   const handleToggleFavorite = () => {
     const { updatePreferences, preferences } = useGroceryStore.getState();
     const newFavorites = isFavorite
-      ? (preferences.favoriteProducts?.filter(id => id !== product.id) ?? [])
-      : [...(preferences.favoriteProducts ?? []), product.id];
+      ? ((preferences as any).favoriteProducts?.filter((id: string) => id !== product.id) ?? [])
+      : [...((preferences as any).favoriteProducts ?? []), product.id];
     
-    updatePreferences({ favoriteProducts: newFavorites });
+    updatePreferences({ favoriteProducts: newFavorites } as Partial<UserPreferences>);
     setIsFavorite(!isFavorite);
   };
 
   const handleCreatePriceAlert = () => {
     const target = parseFloat(targetPrice);
-    if (target > 0 && target < product.price) {
+    const currentPrice = getNumericPrice(product.price);
+    if (target > 0 && target < currentPrice) {
       createPriceAlert(product.id, target);
       setShowPriceAlert(false);
       setTargetPrice('');
     }
   };
 
-  const effectivePrice = deal ? product.price - deal.savings : product.price;
-  const savingsPercentage = deal ? (deal.savings / product.price) * 100 : 0;
+  const numericPrice = getNumericPrice(product.price);
+  const dealSavings = (deal as any)?.savings ?? deal?.potential_savings ?? 0;
+  const effectivePrice = deal ? numericPrice - dealSavings : numericPrice;
+  const savingsPercentage = deal ? (dealSavings / numericPrice) * 100 : 0;
 
   if (compactMode) {
     return (
@@ -144,7 +148,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
                 <span className="text-sm font-bold">{formatPrice(effectivePrice)}</span>
                 {deal && (
                   <span className="text-xs text-muted-foreground line-through">
-                    {formatPrice(product.price)}
+                    {formatPrice(numericPrice)}
                   </span>
                 )}
                 {product.unit && (
@@ -231,10 +235,10 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
             {deal && (
               <Badge variant="destructive" className="shadow-sm">
                 <Tag className="h-3 w-3 mr-1" />
-                Save {formatPrice(deal.savings)}
+                Save {formatPrice(dealSavings)}
               </Badge>
             )}
-            {product.isOrganic && (
+            {(product as any).isOrganic && (
               <Badge variant="secondary" className="shadow-sm">
                 Organic
               </Badge>
@@ -328,7 +332,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
             <span className="text-xl font-bold">{formatPrice(effectivePrice)}</span>
             {deal && (
               <span className="text-sm text-muted-foreground line-through">
-                {formatPrice(product.price)}
+              {formatPrice(numericPrice)}
               </span>
             )}
             {product.unit && (
@@ -483,7 +487,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
               <Button
                 size="sm"
                 onClick={handleCreatePriceAlert}
-                disabled={!targetPrice || parseFloat(targetPrice) >= product.price}
+                disabled={!targetPrice || parseFloat(targetPrice) >= numericPrice}
               >
                 Set Alert
               </Button>
@@ -499,7 +503,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Current price: {formatPrice(product.price)}
+              Current price: {formatPrice(numericPrice)}
             </p>
           </div>
         </CardFooter>

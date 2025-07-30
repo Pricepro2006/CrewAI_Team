@@ -232,7 +232,7 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
   const [selectedTimeRange, setSelectedTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   
   // Mock data
-  const currentPrice = product?.price || 29.99;
+  const currentPrice = typeof product?.price === 'number' ? product.price : product?.price?.regular || 29.99;
   const priceHistory = useMemo(() => generatePriceHistory(currentPrice), [currentPrice]);
   
   const filteredHistory = useMemo(() => {
@@ -454,7 +454,7 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "h-2 w-2 rounded-full",
-                    existingAlert.status === 'active' ? "bg-green-500" : "bg-gray-400"
+                    existingAlert ? "bg-green-500" : "bg-gray-400"
                   )} />
                   <div>
                     <p className="font-medium">
@@ -462,7 +462,7 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Current: {formatPrice(currentPrice)}
-                      {currentPrice <= existingAlert.targetPrice && (
+                      {(typeof currentPrice === 'number' ? currentPrice : currentPrice.regular) <= existingAlert.targetPrice && (
                         <Badge variant="success" className="ml-2 text-xs">
                           Target Reached!
                         </Badge>

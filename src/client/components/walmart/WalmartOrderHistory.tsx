@@ -48,12 +48,19 @@ import {
   DialogFooter,
 } from '../../../components/ui/dialog.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
+import { Progress } from '../../../components/ui/progress.js';
+import { ScrollArea } from '../../../components/ui/scroll-area.js';
+import { Checkbox } from '../../../components/ui/checkbox.js';
+import { Alert, AlertDescription } from '../../../components/ui/alert.js';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../../../components/ui/tooltip.js';
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '../../../components/ui/accordion.js';
+// import { useToast } from '../../../components/ui/use-toast.js';
+// Temporary mock for missing toast hook
+const useToast = () => ({ toast: ({ title, description }: any) => console.log('Toast:', title, description) });
 import {
   Collapsible,
   CollapsibleContent,
@@ -64,10 +71,10 @@ import { cn } from '../../lib/utils.js';
 import { formatPrice } from '../../lib/utils.js';
 import { useGroceryStore } from '../../store/groceryStore.js';
 import { useCart } from '../../hooks/useCart.js';
-import type { Order, OrderItem, WalmartProduct } from '../../../types/walmart-grocery.js';
+import type { UIOrder, UIOrderItem, UIWalmartProduct } from '../../../types/ui/walmart-ui-types.js';
 
 interface WalmartOrderHistoryProps {
-  onReorder?: (order: Order) => void;
+  onReorder?: (order: UIOrder) => void;
   onTrackOrder?: (orderId: string) => void;
   showFilters?: boolean;
   compactMode?: boolean;
@@ -76,7 +83,7 @@ interface WalmartOrderHistoryProps {
 
 interface OrderStatusInfo {
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ElementType;
   color: string;
 }
 
@@ -86,23 +93,13 @@ const orderStatusMap: Record<string, OrderStatusInfo> = {
     icon: Clock,
     color: 'text-yellow-600',
   },
-  confirmed: {
-    label: 'Confirmed',
-    icon: CheckCircle,
+  processing: {
+    label: 'Processing',
+    icon: Package,
     color: 'text-blue-600',
   },
-  preparing: {
-    label: 'Preparing',
-    icon: Package,
-    color: 'text-orange-600',
-  },
-  ready: {
-    label: 'Ready',
-    icon: CheckCircle,
-    color: 'text-indigo-600',
-  },
-  out_for_delivery: {
-    label: 'Out for Delivery',
+  shipped: {
+    label: 'Shipped',
     icon: Truck,
     color: 'text-purple-600',
   },
@@ -119,228 +116,64 @@ const orderStatusMap: Record<string, OrderStatusInfo> = {
 };
 
 // Generate mock order data
-const generateMockOrders = (): Order[] => {
-  const statuses = Object.keys(orderStatusMap);
-  const orders: Order[] = [];
+const generateMockOrders = (): UIOrder[] => {
+  const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'] as const;
+  const orders: UIOrder[] = [];
   
   for (let i = 0; i < 10; i++) {
     const date = new Date();
     date.setDate(date.getDate() - Math.random() * 90);
     
-    const items: OrderItem[] = Array.from({ length: Math.floor(Math.random() * 5) + 2 }, (_, j) => ({
-      productId: `prod-${i}-${j}`,
-      product: {
-        id: `prod-${i}-${j}`,
-        name: ['Bananas', 'Milk', 'Bread', 'Eggs', 'Cheese'][j % 5],
-        price: 2 + Math.random() * 10,
-        category: 'Grocery',
-        unit: ['lb', 'gallon', 'loaf', 'dozen', 'block'][j % 5],
-        inStock: true,
-      } as WalmartProduct,
-      quantity: Math.floor(Math.random() * 3) + 1,
-      price: 2 + Math.random() * 10,
-    }));
+    const items: UIOrderItem[] = Array.from({ length: Math.floor(Math.random() * 5) + 2 }, (_, j) => {
+      const price = 2 + Math.random() * 10;
+      const quantity = Math.floor(Math.random() * 3) + 1;
+      
+      return {
+        id: `item-${i}-${j}`,
+        productId: `prod-${i}-${j}`,
+        name: ['Bananas', 'Milk', 'Bread', 'Eggs', 'Cheese'][j % 5] || 'Unknown Product',
+        quantity,
+        price,
+        total: price * quantity,
+        imageUrl: undefined,
+        status: 'fulfilled',
+        product: {
+          id: `prod-${i}-${j}`,
+          walmartId: `wm-${i}-${j}`,
+          name: ['Bananas', 'Milk', 'Bread', 'Eggs', 'Cheese'][j % 5] || 'Unknown Product',
+          brand: 'Generic',
+          price,
+          currency: 'USD',
+          category: 'Grocery',
+          imageUrl: '',
+          inStock: true,
+          unit: ['lb', 'gallon', 'loaf', 'dozen', 'block'][j % 5],
+        },
+      };
+    });
     
-    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const status = i === 0 ? 'delivered' : statuses[Math.floor(Math.random() * statuses.length)];
+    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+    const tax = subtotal * 0.08;
+    const deliveryFee = i % 3 === 0 ? 0 : 4.95;
+    const total = subtotal + tax + deliveryFee;
     
     orders.push({
       id: `ORDER-${1000 + i}`,
-      userId: 'current-user',
       orderNumber: `WM${1000 + i}`,
-      items,
-      subtotal,
-      tax: subtotal * 0.08,
-      fees: 0,
-      deliveryFee: i % 3 === 0 ? 0 : 4.95,
-      total: subtotal + (subtotal * 0.08) + (i % 3 === 0 ? 0 : 4.95),
-      status: status as Order['status'],
       orderDate: date,
-      createdAt: date,
-      updatedAt: date,
-      deliveryAddress: '123 Main St, Anytown, USA 12345',
-      deliveryDate: new Date(date.getTime() + 24 * 60 * 60 * 1000),
-      deliverySlot: `${9 + (i % 4) * 2}:00 - ${11 + (i % 4) * 2}:00`,
+      status: i === 0 ? 'delivered' : statuses[Math.floor(Math.random() * statuses.length)],
+      total,
+      subtotal,
+      tax,
+      deliveryFee,
+      itemCount: items.length,
+      deliveryAddress: '123 Main St, San Francisco, CA 94105',
+      deliveryDate: new Date(date.getTime() + 86400000 * 2), // 2 days after order
+      items,
     });
   }
   
-  return orders;
-};
-
-const OrderCard: React.FC<{
-  order: Order;
-  onReorder: () => void;
-  onTrack: () => void;
-  onViewDetails: () => void;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
-  compactMode?: boolean;
-}> = ({ order, onReorder, onTrack, onViewDetails, isExpanded, onToggleExpand, compactMode = false }) => {
-  const statusInfo = orderStatusMap[order.status] || orderStatusMap.pending;
-  const StatusIcon = statusInfo!.icon;
-  
-  if (compactMode) {
-    return (
-      <div className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg">
-        <div className="flex items-center gap-3">
-          <StatusIcon className={cn("h-4 w-4", statusInfo!.color)} />
-          <div>
-            <p className="text-sm font-medium">Order #{order.orderNumber}</p>
-            <p className="text-xs text-muted-foreground">
-              {order.createdAt.toLocaleDateString()} • {formatPrice(order.total)}
-            </p>
-          </div>
-        </div>
-        <Button size="sm" variant="ghost" onClick={onReorder}>
-          <RotateCcw className="h-3 w-3" />
-        </Button>
-      </div>
-    );
-  }
-  
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold">Order #{order.orderNumber}</h3>
-              <Badge className={cn("gap-1", statusInfo!.color)} variant="secondary">
-                <StatusIcon className="h-3 w-3" />
-                {statusInfo!.label}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {order.createdAt.toLocaleDateString()}
-              </span>
-              <span className="flex items-center gap-1">
-                <Package className="h-3 w-3" />
-                {order.items.length} items
-              </span>
-              <span className="flex items-center gap-1">
-                <DollarSign className="h-3 w-3" />
-                {formatPrice(order.total)}
-              </span>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {order.status === 'preparing' && (
-              <Button size="sm" variant="outline" onClick={onTrack}>
-                <MapPin className="h-4 w-4 mr-2" />
-                Track
-              </Button>
-            )}
-            <Button size="sm" onClick={onReorder}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Reorder
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      
-      <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
-        <CollapsibleTrigger>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full rounded-none border-t"
-          >
-            <ChevronDown className={cn(
-              "h-4 w-4 mr-2 transition-transform",
-              isExpanded && "rotate-180"
-            )} />
-            {isExpanded ? 'Hide' : 'Show'} Order Details
-          </Button>
-        </CollapsibleTrigger>
-        
-        <CollapsibleContent>
-          <CardContent className="pt-4">
-            {/* Delivery Info */}
-            <div className="mb-4 p-3 bg-muted rounded-lg">
-              <div className="flex items-start gap-3">
-                <Truck className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-medium">Delivery Details</p>
-                  <p className="text-sm text-muted-foreground">
-                    {typeof order.deliveryAddress === 'string' 
-                      ? order.deliveryAddress 
-                      : order.deliveryAddress 
-                        ? `${order.deliveryAddress.street}${order.deliveryAddress.apartment ? `, ${order.deliveryAddress.apartment}` : ''}, ${order.deliveryAddress.city}, ${order.deliveryAddress.state} ${order.deliveryAddress.zipCode}`
-                        : 'No address provided'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {order.deliveryDate?.toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric',
-                    })} • {order.deliverySlot}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Order Items */}
-            <div className="space-y-3">
-              <h4 className="font-medium">Order Items</h4>
-              {order.items.map((item, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded bg-gray-100 flex items-center justify-center">
-                    <Package className="h-6 w-6 text-gray-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{item.product?.name || 'Unknown Item'}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Qty: {item.quantity} • {formatPrice(item.price)} each
-                    </p>
-                  </div>
-                  <span className="font-medium">
-                    {formatPrice(item.price * item.quantity)}
-                  </span>
-                </div>
-              ))}
-            </div>
-            
-            <Separator className="my-4" />
-            
-            {/* Order Summary */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
-                <span>{formatPrice(order.subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Tax</span>
-                <span>{formatPrice(order.tax)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Delivery Fee</span>
-                <span>{order.deliveryFee === 0 ? 'FREE' : formatPrice(order.deliveryFee ?? 0)}</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between font-medium">
-                <span>Total</span>
-                <span>{formatPrice(order.total)}</span>
-              </div>
-            </div>
-          </CardContent>
-          
-          <CardFooter className="pt-0 gap-2">
-            <Button variant="outline" size="sm" className="flex-1">
-              <FileText className="h-4 w-4 mr-2" />
-              View Receipt
-            </Button>
-            <Button variant="outline" size="sm" className="flex-1">
-              <Download className="h-4 w-4 mr-2" />
-              Download Invoice
-            </Button>
-          </CardFooter>
-        </CollapsibleContent>
-      </Collapsible>
-    </Card>
-  );
+  return orders.sort((a, b) => b.orderDate.getTime() - a.orderDate.getTime());
 };
 
 export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
@@ -350,238 +183,173 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
   compactMode = false,
   className,
 }) => {
-  const { orders: storeOrders, addOrder } = useGroceryStore();
+  const { toast } = useToast();
   const { addItem } = useCart();
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<'all' | '7d' | '30d' | '90d'>('all');
-  const [sortBy, setSortBy] = useState<'date' | 'total' | 'status'>('date');
+  const [orders] = useState<UIOrder[]>(generateMockOrders());
+  const [selectedOrder, setSelectedOrder] = useState<UIOrder | null>(null);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
-  const [showTrackingDialog, setShowTrackingDialog] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  
-  // Use mock data if no real orders
-  const orders = storeOrders.length > 0 ? storeOrders : generateMockOrders();
-  
-  // Filter and sort orders
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedDateRange, setSelectedDateRange] = useState<string>('all');
+  const [showReorderDialog, setShowReorderDialog] = useState(false);
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+
   const filteredOrders = useMemo(() => {
-    let filtered = [...orders];
-    
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(order =>
-        (order.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
-        order.items.some(item =>
-          item.product?.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
-    }
-    
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(order => order.status === statusFilter);
-    }
-    
-    // Date range filter
-    if (dateRange !== 'all') {
-      const now = new Date();
-      const cutoff = new Date();
-      
-      switch (dateRange) {
-        case '7d':
-          cutoff.setDate(now.getDate() - 7);
-          break;
-        case '30d':
-          cutoff.setDate(now.getDate() - 30);
-          break;
-        case '90d':
-          cutoff.setDate(now.getDate() - 90);
-          break;
+    return orders.filter(order => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesOrderNumber = order.orderNumber.toLowerCase().includes(query);
+        const matchesItems = order.items.some(item => 
+          item.name.toLowerCase().includes(query)
+        );
+        if (!matchesOrderNumber && !matchesItems) return false;
       }
-      
-      filtered = filtered.filter(order => order.createdAt >= cutoff);
-    }
-    
-    // Sort
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'total':
-          return b.total - a.total;
-        case 'status':
-          return a.status.localeCompare(b.status);
-        case 'date':
-        default:
-          return b.createdAt.getTime() - a.createdAt.getTime();
+
+      // Status filter
+      if (selectedStatus !== 'all' && order.status !== selectedStatus) {
+        return false;
       }
+
+      // Date range filter
+      if (selectedDateRange !== 'all') {
+        const orderDate = order.orderDate;
+        const now = new Date();
+        const daysDiff = Math.floor((now.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        switch (selectedDateRange) {
+          case '7days':
+            if (daysDiff > 7) return false;
+            break;
+          case '30days':
+            if (daysDiff > 30) return false;
+            break;
+          case '90days':
+            if (daysDiff > 90) return false;
+            break;
+        }
+      }
+
+      return true;
     });
-    
-    return filtered;
-  }, [orders, searchQuery, statusFilter, dateRange, sortBy]);
-  
-  const handleReorder = async (order: Order) => {
+  }, [orders, searchQuery, selectedStatus, selectedDateRange]);
+
+  const handleReorder = (order: UIOrder) => {
     if (onReorder) {
       onReorder(order);
     } else {
-      // Add all items to cart
-      for (const item of order.items) {
-        if (item.product) {
-          await addItem(item.product, item.quantity);
-        }
-      }
-    }
-  };
-  
-  const handleTrackOrder = (orderId: string) => {
-    const order = orders.find((o: Order) => o.id === orderId);
-    if (order) {
       setSelectedOrder(order);
-      setShowTrackingDialog(true);
-    }
-    
-    if (onTrackOrder) {
-      onTrackOrder(orderId);
+      setSelectedItems(new Set(order.items.map(item => item.id)));
+      setShowReorderDialog(true);
     }
   };
-  
-  const toggleOrderExpand = (orderId: string) => {
-    setExpandedOrders(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(orderId)) {
-        newSet.delete(orderId);
-      } else {
-        newSet.add(orderId);
+
+  const handleReorderSelected = () => {
+    if (!selectedOrder) return;
+
+    const itemsToReorder = selectedOrder.items.filter(item => 
+      selectedItems.has(item.id)
+    );
+
+    itemsToReorder.forEach(item => {
+      if (item.product) {
+        // Convert UIWalmartProduct to a minimal product for cart
+        const cartProduct = {
+          ...item.product,
+          price: { 
+            currency: item.product.currency, 
+            regular: item.product.price 
+          },
+          availability: { inStock: item.product.inStock },
+          category: item.product.category as any,
+          description: item.product.description || '',
+          images: [],
+          metadata: {},
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        addItem(cartProduct as any);
       }
-      return newSet;
+    });
+
+    toast({
+      title: 'Items added to cart',
+      description: `${itemsToReorder.length} items from order ${selectedOrder.orderNumber} added to your cart`,
+    });
+
+    setShowReorderDialog(false);
+  };
+
+  const handleDownloadInvoice = (order: UIOrder) => {
+    // Mock download functionality
+    toast({
+      title: 'Invoice downloaded',
+      description: `Invoice for order ${order.orderNumber} has been downloaded`,
     });
   };
-  
-  // Calculate stats
-  const totalSpent = orders.reduce((sum: number, order: Order) => sum + order.total, 0);
-  const avgOrderValue = orders.length > 0 ? totalSpent / orders.length : 0;
-  const mostOrdered = orders.flatMap((o: Order) => o.items)
-    .reduce((acc: Record<string, number>, item: OrderItem) => {
-      const name = item.product?.name || 'Unknown';
-      acc[name] = (acc[name] || 0) + item.quantity;
-      return acc;
-    }, {} as Record<string, number>);
-  const topProduct = Object.entries(mostOrdered)
-    .sort(([, a]: [string, number], [, b]: [string, number]) => b - a)[0];
-  
-  if (compactMode) {
-    return (
-      <Card className={cn("w-full", className)}>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <History className="h-5 w-5" />
-            Recent Orders
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pb-3">
-          {filteredOrders.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No orders found
-            </p>
-          ) : (
-            <div className="space-y-1">
-              {filteredOrders.slice(0, 5).map(order => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  onReorder={() => handleReorder(order)}
-                  onTrack={() => handleTrackOrder(order.id)}
-                  onViewDetails={() => {}}
-                  isExpanded={false}
-                  onToggleExpand={() => {}}
-                  compactMode
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="pt-3">
-          <Button variant="outline" className="w-full" size="sm">
-            View All Orders
-          </Button>
-        </CardFooter>
-      </Card>
-    );
-  }
-  
+
+  const toggleOrderExpanded = (orderId: string) => {
+    const newExpanded = new Set(expandedOrders);
+    if (newExpanded.has(orderId)) {
+      newExpanded.delete(orderId);
+    } else {
+      newExpanded.add(orderId);
+    }
+    setExpandedOrders(newExpanded);
+  };
+
+  const getStatusIcon = (status: string) => {
+    const StatusIcon = orderStatusMap[status]?.icon || Clock;
+    return <StatusIcon className="h-4 w-4" />;
+  };
+
+  const getStatusColor = (status: string) => {
+    return orderStatusMap[status]?.color || 'text-gray-600';
+  };
+
   return (
-    <>
-      <div className={cn("space-y-6", className)}>
-        {/* Header and Stats */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Spent</p>
-                  <p className="text-2xl font-bold">{formatPrice(totalSpent)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <ShoppingCart className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Average Order</p>
-                  <p className="text-2xl font-bold">{formatPrice(avgOrderValue)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Star className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Most Ordered</p>
-                  <p className="text-lg font-bold truncate">
-                    {topProduct ? `${topProduct[0]} (${topProduct[1]}x)` : 'N/A'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+    <div className={cn('space-y-6', className)}>
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Order History</h2>
+          <p className="text-sm text-muted-foreground">
+            View and manage your past orders
+          </p>
         </div>
-        
-        {/* Filters */}
-        {showFilters && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Order History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Button variant="outline" size="sm">
+          <Download className="mr-2 h-4 w-4" />
+          Export Orders
+        </Button>
+      </div>
+
+      {/* Filters */}
+      {showFilters && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="search">Search orders</Label>
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search orders..."
+                    id="search"
+                    placeholder="Order number or item name..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
+                    className="pl-8"
                   />
                 </div>
-                
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Status" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger id="status">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
                     {Object.entries(orderStatusMap).map(([value, info]) => (
                       <SelectItem key={value} value={value}>
                         {info.label}
@@ -589,134 +357,348 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
-                
-                <Select value={dateRange} onValueChange={(value: any) => setDateRange(value)}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Date Range" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dateRange">Date Range</Label>
+                <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
+                  <SelectTrigger id="dateRange">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Time</SelectItem>
-                    <SelectItem value="7d">Last 7 days</SelectItem>
-                    <SelectItem value="30d">Last 30 days</SelectItem>
-                    <SelectItem value="90d">Last 90 days</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Sort By" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="date">Date</SelectItem>
-                    <SelectItem value="total">Total</SelectItem>
-                    <SelectItem value="status">Status</SelectItem>
+                    <SelectItem value="7days">Last 7 Days</SelectItem>
+                    <SelectItem value="30days">Last 30 Days</SelectItem>
+                    <SelectItem value="90days">Last 90 Days</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Orders List */}
+      <div className="space-y-4">
+        {filteredOrders.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+              <History className="mb-4 h-12 w-12 text-muted-foreground" />
+              <h3 className="mb-2 font-semibold">No orders found</h3>
+              <p className="text-sm text-muted-foreground">
+                {searchQuery || selectedStatus !== 'all' || selectedDateRange !== 'all'
+                  ? 'Try adjusting your filters'
+                  : 'Your order history will appear here'}
+              </p>
             </CardContent>
           </Card>
-        )}
-        
-        {/* Orders List */}
-        <div className="space-y-4">
-          {filteredOrders.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <History className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-lg font-medium mb-1">No orders found</p>
-                <p className="text-sm text-muted-foreground">
-                  {searchQuery || statusFilter !== 'all' || dateRange !== 'all'
-                    ? 'Try adjusting your filters'
-                    : 'Your order history will appear here'}
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredOrders.map(order => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onReorder={() => handleReorder(order)}
-                onTrack={() => handleTrackOrder(order.id)}
-                onViewDetails={() => toggleOrderExpand(order.id)}
-                isExpanded={expandedOrders.has(order.id)}
-                onToggleExpand={() => toggleOrderExpand(order.id)}
-              />
-            ))
-          )}
-        </div>
-      </div>
-      
-      {/* Tracking Dialog */}
-      <Dialog open={showTrackingDialog} onOpenChange={setShowTrackingDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Track Order #{selectedOrder?.orderNumber}</DialogTitle>
-            <DialogDescription>
-              Real-time tracking for your delivery
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            {/* Mock tracking steps */}
-            <div className="space-y-3">
-              {[
-                { step: 'Order Placed', time: '10:30 AM', completed: true },
-                { step: 'Preparing', time: '11:15 AM', completed: true },
-                { step: 'Out for Delivery', time: '12:45 PM', completed: true },
-                { step: 'Arriving Soon', time: 'Est. 1:30 PM', completed: false },
-              ].map((step, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className={cn(
-                    "h-8 w-8 rounded-full flex items-center justify-center",
-                    step.completed
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {step.completed ? (
-                      <Check className="h-4 w-4" />
+        ) : (
+          filteredOrders.map((order) => (
+            <Card key={order.id} className={cn(compactMode && 'p-3')}>
+              <CardHeader className={cn('cursor-pointer', compactMode && 'p-3')}
+                onClick={() => toggleOrderExpanded(order.id)}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={cn('rounded-full p-2', 
+                      order.status === 'delivered' ? 'bg-green-100' : 'bg-gray-100')}>
+                      {getStatusIcon(order.status)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-base">
+                          Order #{order.orderNumber}
+                        </CardTitle>
+                        <Badge variant="outline" className={getStatusColor(order.status)}>
+                          {orderStatusMap[order.status]?.label || order.status}
+                        </Badge>
+                      </div>
+                      <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {order.orderDate.toLocaleDateString()}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Package className="h-3 w-3" />
+                          {order.itemCount} items
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <DollarSign className="h-3 w-3" />
+                          {formatPrice(order.total)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!compactMode && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReorder(order);
+                          }}
+                        >
+                          <RotateCcw className="mr-2 h-4 w-4" />
+                          Reorder
+                        </Button>
+                        {order.status !== 'cancelled' && onTrackOrder && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onTrackOrder(order.id);
+                            }}
+                          >
+                            <Truck className="mr-2 h-4 w-4" />
+                            Track
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    {expandedOrders.has(order.id) ? (
+                      <ChevronDown className="h-4 w-4" />
                     ) : (
-                      <span className="text-xs">{index + 1}</span>
+                      <ChevronRight className="h-4 w-4" />
                     )}
                   </div>
-                  <div className="flex-1">
-                    <p className={cn(
-                      "font-medium",
-                      !step.completed && "text-muted-foreground"
-                    )}>
-                      {step.step}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{step.time}</p>
-                  </div>
                 </div>
-              ))}
-            </div>
-            
-            <Separator />
-            
-            {/* Driver info */}
-            <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-              <Truck className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Your driver is on the way</p>
-                <p className="text-sm text-muted-foreground">
-                  Driver: John D. • Vehicle: White Toyota Camry
-                </p>
+              </CardHeader>
+              
+              <Collapsible open={expandedOrders.has(order.id)}>
+                <CollapsibleContent>
+                  <CardContent className={cn(compactMode && 'p-3 pt-0')}>
+                    <Separator className="mb-4" />
+                    
+                    {/* Order Details */}
+                    <div className="mb-4 grid gap-4 text-sm md:grid-cols-2">
+                      <div>
+                        <h4 className="mb-2 font-medium">Delivery Information</h4>
+                        <div className="space-y-1 text-muted-foreground">
+                          {order.deliveryAddress && (
+                            <p className="flex items-start gap-2">
+                              <MapPin className="mt-0.5 h-3 w-3" />
+                              <span>{order.deliveryAddress}</span>
+                            </p>
+                          )}
+                          {order.deliveryDate && (
+                            <p className="flex items-center gap-2">
+                              <Truck className="h-3 w-3" />
+                              Delivered on {order.deliveryDate.toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="mb-2 font-medium">Order Summary</h4>
+                        <div className="space-y-1 text-muted-foreground">
+                          <div className="flex justify-between">
+                            <span>Subtotal</span>
+                            <span>{formatPrice(order.subtotal)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Tax</span>
+                            <span>{formatPrice(order.tax)}</span>
+                          </div>
+                          {order.deliveryFee !== undefined && order.deliveryFee > 0 && (
+                            <div className="flex justify-between">
+                              <span>Delivery Fee</span>
+                              <span>{formatPrice(order.deliveryFee)}</span>
+                            </div>
+                          )}
+                          <Separator className="my-1" />
+                          <div className="flex justify-between font-medium">
+                            <span>Total</span>
+                            <span>{formatPrice(order.total)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Items */}
+                    <div>
+                      <h4 className="mb-3 font-medium">Order Items</h4>
+                      <div className="space-y-3">
+                        {order.items.map((item) => (
+                          <div key={item.id} className="flex items-center gap-3 rounded-lg border p-3">
+                            <div className="h-16 w-16 rounded bg-gray-100" />
+                            <div className="flex-1">
+                              <p className="font-medium">{item.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {item.quantity} × {formatPrice(item.price)}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium">{formatPrice(item.total)}</p>
+                              {item.status === 'substituted' && (
+                                <Badge variant="outline" className="text-xs">
+                                  Substituted
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReorder(order)}
+                      >
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Reorder All
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setShowInvoiceDialog(true);
+                        }}
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        View Invoice
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(order.orderNumber);
+                          toast({
+                            title: 'Order number copied',
+                            description: `Order #${order.orderNumber} copied to clipboard`,
+                          });
+                        }}
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy Order #
+                      </Button>
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Reorder Dialog */}
+      <Dialog open={showReorderDialog} onOpenChange={setShowReorderDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Reorder Items</DialogTitle>
+            <DialogDescription>
+              Select the items you want to add to your cart
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[400px] overflow-y-auto py-4">
+            {selectedOrder?.items.map((item) => (
+              <div key={item.id} className="flex items-center space-x-3 py-2">
+                <Checkbox
+                  checked={selectedItems.has(item.id)}
+                  onCheckedChange={(checked) => {
+                    const newSelected = new Set(selectedItems);
+                    if (checked) {
+                      newSelected.add(item.id);
+                    } else {
+                      newSelected.delete(item.id);
+                    }
+                    setSelectedItems(newSelected);
+                  }}
+                />
+                <div className="flex-1">
+                  <p className="font-medium">{item.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {item.quantity} × {formatPrice(item.price)}
+                  </p>
+                </div>
+                <p className="font-medium">{formatPrice(item.total)}</p>
               </div>
-            </div>
+            ))}
           </div>
-          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowTrackingDialog(false)}>
-              Close
+            <Button variant="outline" onClick={() => setShowReorderDialog(false)}>
+              Cancel
             </Button>
-            <Button>
-              <MapPin className="h-4 w-4 mr-2" />
-              View on Map
+            <Button onClick={handleReorderSelected} disabled={selectedItems.size === 0}>
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Add {selectedItems.size} Items to Cart
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+
+      {/* Invoice Dialog */}
+      <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Order Invoice</DialogTitle>
+            <DialogDescription>
+              Order #{selectedOrder?.orderNumber}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedOrder && (
+              <div className="space-y-4">
+                <div className="rounded-lg bg-gray-50 p-4">
+                  <p className="font-medium">Order Date</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedOrder.orderDate.toLocaleDateString()}
+                  </p>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  {selectedOrder.items.map((item) => (
+                    <div key={item.id} className="flex justify-between">
+                      <div>
+                        <p>{item.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {item.quantity} × {formatPrice(item.price)}
+                        </p>
+                      </div>
+                      <p className="font-medium">{formatPrice(item.total)}</p>
+                    </div>
+                  ))}
+                </div>
+                <Separator />
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>{formatPrice(selectedOrder.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Tax</span>
+                    <span>{formatPrice(selectedOrder.tax)}</span>
+                  </div>
+                  {selectedOrder.deliveryFee !== undefined && selectedOrder.deliveryFee > 0 && (
+                    <div className="flex justify-between">
+                      <span>Delivery Fee</span>
+                      <span>{formatPrice(selectedOrder.deliveryFee)}</span>
+                    </div>
+                  )}
+                  <Separator className="my-2" />
+                  <div className="flex justify-between font-bold">
+                    <span>Total</span>
+                    <span>{formatPrice(selectedOrder.total)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowInvoiceDialog(false)}>
+              Close
+            </Button>
+            <Button onClick={() => selectedOrder && handleDownloadInvoice(selectedOrder)}>
+              <Download className="mr-2 h-4 w-4" />
+              Download Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };

@@ -40,7 +40,7 @@ import { DealDataService } from "./services/DealDataService.js";
 import { EmailStorageService } from "./services/EmailStorageService.js";
 import { applySecurityHeaders } from "./middleware/security/headers.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
-import { GracefulShutdown } from "../utils/error-handling/index.js";
+import { GracefulShutdown } from "../utils/error-handling/server.js";
 import {
   requestTracking,
   errorTracking,

@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws';
 import { logger } from '../../utils/logger.js';
-import { AppError, WebSocketError } from "../../utils/error-handling/index.js";
+import { AppError, ErrorCode, WebSocketError } from "../../utils/error-handling/server.js";
 import { getUserFriendlyError } from '../../utils/error-handling/error-messages.js';
 
 export interface WebSocketErrorMessage {
@@ -42,7 +42,7 @@ export function handleWebSocketError(
   ws.lastError = error;
 
   // Log the error
-  logger.error('WebSocket error:', {
+  logger.error('WebSocket error', 'WEBSOCKET', {
     clientId: ws.clientId,
     error: error.message,
     stack: error.stack,
@@ -90,13 +90,15 @@ export function handleWebSocketError(
     try {
       ws.send(JSON.stringify(errorMessage));
     } catch (sendError) {
-      logger.error('Failed to send error message:', sendError);
+      logger.error('Failed to send error message', 'WEBSOCKET', { 
+        error: sendError instanceof Error ? sendError.message : String(sendError) 
+      });
     }
   }
 
   // Close connection if too many errors
   if (ws.errorCount >= 10) {
-    logger.error('Too many errors, closing WebSocket connection', {
+    logger.error('Too many errors, closing WebSocket connection', 'WEBSOCKET', {
       clientId: ws.clientId,
       errorCount: ws.errorCount,
     });
@@ -116,20 +118,16 @@ export function createWebSocketErrorRecovery() {
 
     // Wrap send method with error handling
     const originalSend = ws.send.bind(ws);
-    ws.send = function(data: any, cb?: (err?: Error) => void) {
+    ws.send = function(data: Parameters<typeof originalSend>[0], ...args: any[]) {
       try {
-        originalSend(data, (err) => {
-          if (err) {
-            handleWebSocketError(ws, err, { action: 'send' });
-          }
-          if (cb) cb(err);
-        });
+        const cb = typeof args[args.length - 1] === 'function' ? args[args.length - 1] : undefined;
+        originalSend(data, ...args);
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         handleWebSocketError(ws, err, { action: 'send' });
-        if (cb) cb(err);
+        throw err;
       }
-    };
+    } as typeof ws.send;
 
     // Enhanced error event handling
     ws.on('error', (error) => {
@@ -139,7 +137,7 @@ export function createWebSocketErrorRecovery() {
     // Handle unexpected close
     ws.on('close', (code, reason) => {
       if (code !== 1000 && code !== 1001) { // Not normal closure
-        logger.warn('WebSocket closed unexpectedly', {
+        logger.warn('WebSocket closed unexpectedly', 'WEBSOCKET', {
           clientId: ws.clientId,
           code,
           reason: reason?.toString(),
@@ -166,7 +164,7 @@ export function setupWebSocketHeartbeat(
 
   const heartbeatInterval = setInterval(() => {
     if (!ws.isAlive) {
-      logger.warn('WebSocket heartbeat failed', {
+      logger.warn('WebSocket heartbeat failed', 'WEBSOCKET', {
         clientId: ws.clientId,
       });
       ws.terminate();
@@ -174,7 +172,7 @@ export function setupWebSocketHeartbeat(
     }
 
     ws.isAlive = false;
-    ws.ping((err) => {
+    ws.ping((err: Error | undefined) => {
       if (err) {
         handleWebSocketError(ws, err, { action: 'ping' });
       }
@@ -200,7 +198,7 @@ export async function validateWebSocketMessage(
     const isValid = await validator(message);
     
     if (!isValid) {
-      throw new WebSocketError('Invalid message format', {
+      throw WebSocketError('Invalid message format', {
         message,
         clientId: ws.clientId,
       });
@@ -235,13 +233,15 @@ export class WebSocketRateLimiter {
     
     if (validRequests.length >= this.maxRequests) {
       const error = new AppError(
-        'RATE_LIMIT_EXCEEDED',
+        'RATE_LIMIT_EXCEEDED' as ErrorCode,
         'WebSocket rate limit exceeded',
         429,
         {
           limit: this.maxRequests,
           window: this.windowMs,
-          retryAfter: this.windowMs - (now - validRequests[0]),
+          retryAfter: validRequests.length > 0 && validRequests[0] !== undefined 
+            ? this.windowMs - (now - validRequests[0]) 
+            : this.windowMs,
         }
       );
       

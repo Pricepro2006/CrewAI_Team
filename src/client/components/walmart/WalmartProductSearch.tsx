@@ -29,6 +29,7 @@ import { Checkbox } from '../../../components/ui/checkbox.js';
 import { useWalmartSearch } from '../../hooks/useWalmartSearch.js';
 import { useDebounce } from '../../hooks/useDebounce.js';
 import type { WalmartProduct, SearchOptions } from '../../../types/walmart-grocery.js';
+import type { ExtendedSearchOptions } from '../../../types/walmart-search-extended.js';
 
 interface WalmartProductSearchProps {
   onProductSelect?: (product: WalmartProduct) => void;
@@ -75,14 +76,14 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
   autoFocus = false,
 }) => {
   const [query, setQuery] = useState(initialQuery);
-  const [filters, setFilters] = useState<SearchOptions>({
+  const [filters, setFilters] = useState<ExtendedSearchOptions>({
     query: initialQuery,
     category: undefined,
     minPrice: undefined,
     maxPrice: undefined,
     inStock: true,
     dietary: [],
-    limit: 20,
+    pagination: { limit: 20, offset: 0 },
   });
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100]);
@@ -94,10 +95,17 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
   useEffect(() => {
     if (debouncedQuery || filters.category) {
       const searchOptions: SearchOptions = {
-        ...filters,
         query: debouncedQuery,
-        minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
-        maxPrice: priceRange[1] < 100 ? priceRange[1] : undefined,
+        filters: {
+          categories: filters.category ? [filters.category] : undefined,
+          priceRange: {
+            min: priceRange[0] > 0 ? priceRange[0] : undefined,
+            max: priceRange[1] < 100 ? priceRange[1] : undefined,
+          },
+          availability: filters.inStock ? 'in_stock' : 'all',
+          dietary: filters.dietary,
+        },
+        pagination: filters.pagination,
       };
       
       search(searchOptions);
@@ -135,7 +143,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
       maxPrice: undefined,
       inStock: true,
       dietary: [],
-      limit: 20,
+      pagination: { limit: 20, offset: 0 },
     });
     setPriceRange([0, 100]);
   };

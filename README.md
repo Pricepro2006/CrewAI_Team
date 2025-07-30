@@ -60,6 +60,7 @@ The system has successfully completed Phase 4, transitioning from static data to
 - Redis (for queue management)
 - Ollama (for local LLM inference)
 - ChromaDB (for vector operations)
+- Python 3.x with distutils (for node-gyp compilation)
 
 ### Installation
 
@@ -70,6 +71,13 @@ cd CrewAI_Team
 
 # Install dependencies
 npm install
+
+# Note: If you encounter node-gyp errors, you may need to install Python distutils:
+# Ubuntu/Debian: sudo apt-get install python3-distutils
+# Or use a Python environment with distutils installed
+
+# For WebSocket functionality, socket.io is required but may fail to install
+# due to better-sqlite3 compilation issues. This is optional for basic functionality.
 
 # Initialize the database
 npm run db:init

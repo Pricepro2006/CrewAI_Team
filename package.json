@@ -145,7 +145,13 @@
     "typescript": "^5.3.3",
     "vite": "^5.0.11",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^1.2.0"
+    "vitest": "^1.2.0",
+    "supertest": "^6.3.4",
+    "@types/supertest": "^6.0.2",
+    "socket.io": "^4.7.0",
+    "@types/socket.io": "^3.0.2",
+    "socket.io-client": "^4.7.0",
+    "@types/socket.io-client": "^3.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

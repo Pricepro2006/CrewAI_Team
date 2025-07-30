@@ -4,9 +4,9 @@
  */
 
 import type { Timestamp } from './index.js';
-import type { Task, Message, Document, Conversation } from './core.js';
+import type { Task, Message, Document, Conversation, MessageMetadata, MonitoringConfig } from './core.js';
 import type { EmailRecord } from './email.js';
-import type { AgentResult, AgentStep, TaskLog } from './api.js';
+import type { AgentResult, AgentStep as ApiAgentStep, ApiTaskLog } from './api.js';
 
 // =====================================================
 // Core WebSocket Types
@@ -41,10 +41,10 @@ export interface WebSocketMessage<T = unknown> {
   data: T;
   timestamp: Timestamp;
   userId?: string;
-  metadata?: MessageMetadata;
+  metadata?: WebSocketMessageMetadata;
 }
 
-export interface MessageMetadata {
+export interface WebSocketMessageMetadata {
   requestId?: string;
   correlationId?: string;
   priority?: 'low' | 'medium' | 'high' | 'critical';
@@ -182,15 +182,10 @@ export interface TaskProgressEvent {
     totalSteps: number;
     estimatedCompletion?: Timestamp;
   };
-  logs?: TaskLog[];
+  logs?: ApiTaskLog[];
 }
 
-export interface TaskLog {
-  timestamp: Timestamp;
-  level: 'debug' | 'info' | 'warn' | 'error';
-  message: string;
-  context?: Record<string, unknown>;
-}
+// ApiTaskLog is imported from api.ts
 
 export interface AgentEvent {
   agentId: string;
@@ -200,22 +195,13 @@ export interface AgentEvent {
 }
 
 export interface AgentEventData {
-  step?: AgentStep;
+  step?: ApiAgentStep;
   result?: AgentResult;
   error?: WebSocketError;
   metadata?: Record<string, unknown>;
 }
 
-export interface AgentStep {
-  stepId: string;
-  type: 'thinking' | 'tool_call' | 'response' | 'search' | 'analysis';
-  description: string;
-  input?: unknown;
-  output?: unknown;
-  tool?: string;
-  duration?: number;
-  confidence?: number;
-}
+// AgentStep is imported from api.ts
 
 // AgentResult is imported from './api'
 
@@ -443,13 +429,13 @@ export interface ReconnectPolicy {
 }
 
 export interface WebSocketRateLimits {
-  connectionsPerIp: RateLimit;
-  messagesPerConnection: RateLimit;
-  subscriptionsPerConnection: RateLimit;
-  channelsPerUser: RateLimit;
+  connectionsPerIp: WebSocketRateLimit;
+  messagesPerConnection: WebSocketRateLimit;
+  subscriptionsPerConnection: WebSocketRateLimit;
+  channelsPerUser: WebSocketRateLimit;
 }
 
-export interface RateLimit {
+export interface WebSocketRateLimit {
   windowMs: number;
   maxRequests: number;
   burst?: number;
@@ -599,7 +585,7 @@ export interface CertificateConfig {
   passphrase?: string;
 }
 
-export interface MonitoringConfig {
+export interface WebSocketMonitoringConfig {
   metrics: {
     enabled: boolean;
     interval: number;

@@ -453,14 +453,48 @@ export class OllamaProvider extends EventEmitter {
     }
   }
 
-  async pullModel(modelName: string): Promise<void> {
+  async pullModel(modelName: string, onProgress?: (progress: number) => void): Promise<void> {
     try {
-      await this.client.post('/api/pull', {
-        name: modelName,
-        stream: false
-      }, {
-        timeout: 600000 // 10 minutes for model pulling
-      });
+      // If onProgress is provided, use streaming to report progress
+      if (onProgress) {
+        const response = await this.client.post('/api/pull', {
+          name: modelName,
+          stream: true
+        }, {
+          responseType: 'stream',
+          timeout: 600000 // 10 minutes for model pulling
+        });
+
+        return new Promise((resolve, reject) => {
+          response.data.on('data', (chunk: Buffer) => {
+            try {
+              const lines = chunk.toString().split('\n').filter(line => line.trim());
+              for (const line of lines) {
+                const parsed = JSON.parse(line);
+                if (parsed.status === 'downloading' && parsed.completed && parsed.total) {
+                  const progress = (parsed.completed / parsed.total) * 100;
+                  onProgress(progress);
+                }
+                if (parsed.status === 'success') {
+                  resolve();
+                }
+              }
+            } catch (error) {
+              // Ignore parsing errors
+            }
+          });
+          response.data.on('error', reject);
+          response.data.on('end', resolve);
+        });
+      } else {
+        // Non-streaming pull
+        await this.client.post('/api/pull', {
+          name: modelName,
+          stream: false
+        }, {
+          timeout: 600000 // 10 minutes for model pulling
+        });
+      }
     } catch (error) {
       this.emit('error', error);
       throw error;
@@ -485,6 +519,10 @@ export class OllamaProvider extends EventEmitter {
   setModel(model: string): void {
     this.config.model = model;
     this.clearContext();
+  }
+
+  getModel(): string {
+    return this.config.model;
   }
 
   getConfig(): OllamaConfig {

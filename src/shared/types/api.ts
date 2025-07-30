@@ -5,7 +5,7 @@
 
 import type { z } from 'zod';
 import type { Timestamp, PaginationRequest, PaginationResponse, ApiResponse } from './index.js';
-import type { Message, Conversation, Task, Document } from './core.js';
+import type { Message, Conversation, Task, Document, TokenUsage } from './core.js';
 import type { ApiError } from './errors.js';
 
 // =====================================================
@@ -398,6 +398,15 @@ export interface TaskProgress {
 }
 
 export interface TaskLog {
+  id: string;
+  taskId: string;
+  timestamp: Timestamp;
+  level: 'info' | 'warning' | 'error';
+  message: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ApiTaskLog {
   timestamp: Timestamp;
   level: 'debug' | 'info' | 'warn' | 'error';
   message: string;

@@ -1,5 +1,6 @@
 import { 
   AppError, 
+  ErrorCode,
   OllamaConnectionError, 
   OllamaModelNotFoundError,
   ServiceUnavailableError,
@@ -49,7 +50,7 @@ export class ErrorHandlingOllamaProvider {
         } catch (error) {
           if (error instanceof Error) {
             if (error.message.includes('ECONNREFUSED')) {
-              throw new OllamaConnectionError({ 
+              throw OllamaConnectionError({ 
                 originalError: error.message,
                 suggestion: 'Ensure Ollama is running: ollama serve',
               });
@@ -57,7 +58,7 @@ export class ErrorHandlingOllamaProvider {
             if (error.message.includes('not found')) {
               const modelMatch = error.message.match(/Model (\S+) not found/);
               const model = modelMatch ? modelMatch[1] : 'unknown';
-              throw new OllamaModelNotFoundError(model, {
+              throw OllamaModelNotFoundError(model, {
                 suggestion: `Pull the model first: ollama pull ${model}`,
               });
             }
@@ -188,7 +189,7 @@ export class ErrorHandlingOllamaProvider {
           );
         } catch (error) {
           if (error instanceof Error && error.message.includes('ECONNREFUSED')) {
-            throw new OllamaConnectionError({
+            throw OllamaConnectionError({
               action: 'list models',
               suggestion: 'Check if Ollama is running',
             });
@@ -221,13 +222,13 @@ export class ErrorHandlingOllamaProvider {
         } catch (error) {
           if (error instanceof Error) {
             if (error.message.includes('ECONNREFUSED')) {
-              throw new OllamaConnectionError({
+              throw OllamaConnectionError({
                 action: 'pull model',
                 model: modelName,
               });
             }
             if (error.message.includes('manifest unknown')) {
-              throw new OllamaModelNotFoundError(modelName, {
+              throw OllamaModelNotFoundError(modelName, {
                 suggestion: 'Check the model name and try again',
               });
             }
@@ -303,7 +304,7 @@ export class ErrorHandlingOllamaProvider {
 
     // Connection errors
     if (error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
-      throw new OllamaConnectionError({
+      throw OllamaConnectionError({
         ...errorContext,
         suggestion: 'Check Ollama service status',
       });
@@ -311,12 +312,12 @@ export class ErrorHandlingOllamaProvider {
 
     // Model not loaded
     if (error.message.includes('model not found') || error.message.includes('no such model')) {
-      throw new OllamaModelNotFoundError(this.provider.getModel(), errorContext);
+      throw OllamaModelNotFoundError(this.provider.getModel(), errorContext);
     }
 
     // Out of memory
     if (error.message.includes('out of memory') || error.message.includes('OOM')) {
-      throw new ServiceUnavailableError('Ollama', {
+      throw ServiceUnavailableError('Ollama', {
         ...errorContext,
         reason: 'Out of memory',
         suggestion: 'Try a smaller model or reduce context size',
@@ -326,7 +327,7 @@ export class ErrorHandlingOllamaProvider {
     // Context length exceeded
     if (error.message.includes('context length') || error.message.includes('token limit')) {
       throw new AppError(
-        'VALIDATION_ERROR',
+        'VALIDATION_ERROR' as ErrorCode,
         'Input exceeds model context length',
         422,
         {
@@ -339,7 +340,7 @@ export class ErrorHandlingOllamaProvider {
     // Rate limiting (if implemented by Ollama)
     if (error.message.includes('rate limit') || error.message.includes('too many requests')) {
       throw new AppError(
-        'RATE_LIMIT_EXCEEDED',
+        'RATE_LIMIT_EXCEEDED' as ErrorCode,
         'Ollama rate limit exceeded',
         429,
         errorContext

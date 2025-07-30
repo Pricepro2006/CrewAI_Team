@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { AppError, ErrorCode, isOperationalError, sanitizeError } from "../../utils/error-handling/index.js";
+import { AppError, ErrorCode, isOperationalError, sanitizeError } from "../../utils/error-handling/server.js";
 import { getUserFriendlyError, getErrorSeverity } from '../../utils/error-handling/error-messages.js';
 import { logger } from '../../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';

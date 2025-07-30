@@ -17,6 +17,15 @@ import { passwordManager } from "../utils/password.js";
 import { jwtManager } from "../utils/jwt.js";
 import appConfig from "../../config/app.config.js";
 
+// Re-export types that tests need
+export type { User, PublicUser } from "../../database/models/User.js";
+export type { JWTPayload } from "../utils/jwt.js";
+export enum UserRole {
+  USER = "user",
+  ADMIN = "admin",
+  MODERATOR = "moderator"
+}
+
 /**
  * UserService - Manages user authentication and user data operations
  * Provides comprehensive user management functionality including CRUD operations,

@@ -281,6 +281,9 @@ export const batchProcedure = protectedProcedure.use(
   batchOperationMiddleware,
 );
 
+// Export createRateLimitMiddleware for use in tests
+export { createRateLimitMiddleware };
+
 // Procedure that ensures CSRF token exists and returns it (for client initialization)
 export const csrfTokenProcedure: ReturnType<typeof t.procedure.use> = 
   t.procedure.use(securityAudit).use(csrfTokenProvider);
