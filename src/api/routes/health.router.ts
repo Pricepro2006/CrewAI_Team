@@ -52,14 +52,16 @@ export const healthRouter = router({
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
+
       const ollamaResponse = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
-      
+
       if (ollamaResponse.ok) {
-        const data = await ollamaResponse.json() as { models?: Array<{ name: string }> };
+        const data = (await ollamaResponse.json()) as {
+          models?: Array<{ name: string }>;
+        };
         services.ollama = {
           status: "healthy",
           message: "Ollama is connected",
@@ -93,21 +95,21 @@ export const healthRouter = router({
       const db = new Database(appConfig.database?.path || "./data/app.db", {
         readonly: true,
       });
-      
+
       // Test query
       const result = db.prepare("SELECT 1 as test").get();
-      
+
       // Get some basic stats
       const conversationCount = (
         db.prepare("SELECT COUNT(*) as count FROM conversations").get() as any
       ).count;
-      
+
       const messageCount = (
         db.prepare("SELECT COUNT(*) as count FROM messages").get() as any
       ).count;
-      
+
       db.close();
-      
+
       services.database = {
         status: "healthy",
         message: "Database is connected",
@@ -129,12 +131,12 @@ export const healthRouter = router({
       const chromaUrl = process.env.CHROMA_URL || "http://localhost:8001";
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
+
       const chromaResponse = await fetch(`${chromaUrl}/api/v1/heartbeat`, {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
-      
+
       if (chromaResponse.ok) {
         services.chromadb = {
           status: "healthy",
@@ -184,16 +186,20 @@ export const healthRouter = router({
 
     // Get system metrics
     const memoryUsage = process.memoryUsage();
-    const totalMemory = require("os").totalmem();
+    const os = await import("os");
+    const totalMemory = os.totalmem();
     const usedMemory = memoryUsage.heapUsed + memoryUsage.external;
     const memoryPercentage = (usedMemory / totalMemory) * 100;
 
     // Calculate overall status
     const serviceStatuses = Object.values(services).map((s) => s.status);
     let overallStatus: HealthStatus["status"] = "healthy";
-    
+
     if (serviceStatuses.includes("error")) {
-      if (services.api.status === "error" || services.database.status === "error") {
+      if (
+        services.api.status === "error" ||
+        services.database.status === "error"
+      ) {
         overallStatus = "error";
       } else {
         overallStatus = "degraded";
@@ -234,26 +240,29 @@ export const healthRouter = router({
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
-      
+
       const response = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      
-      const data = await response.json() as { models?: Array<{ name: string }> };
+
+      const data = (await response.json()) as {
+        models?: Array<{ name: string }>;
+      };
       const models = data.models || [];
-      
+
       // Check for required models
       const requiredModels = ["qwen3:14b", "qwen3:8b", "nomic-embed-text"];
       const availableModels = models.map((m) => m.name);
       const missingModels = requiredModels.filter(
-        (m) => !availableModels.some((am) => am.startsWith(m.split(":")[0] || m))
+        (m) =>
+          !availableModels.some((am) => am.startsWith(m.split(":")[0] || m)),
       );
-      
+
       return {
         connected: true,
         baseUrl: ollamaConfig.baseUrl,
@@ -276,29 +285,31 @@ export const healthRouter = router({
       const db = new Database(appConfig.database?.path || "./data/app.db", {
         readonly: true,
       });
-      
+
       // Get table information
       const tables = db
         .prepare(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
         )
         .all() as { name: string }[];
-      
+
       // Get row counts for main tables
       const stats: Record<string, number> = {};
       for (const table of tables) {
         try {
           const count = (
-            db.prepare(`SELECT COUNT(*) as count FROM ${table.name}`).get() as any
+            db
+              .prepare(`SELECT COUNT(*) as count FROM ${table.name}`)
+              .get() as any
           ).count;
           stats[table.name] = count;
         } catch {
           stats[table.name] = -1;
         }
       }
-      
+
       db.close();
-      
+
       return {
         connected: true,
         path: appConfig.database?.path,
@@ -323,14 +334,15 @@ export const healthRouter = router({
           status: "not_initialized",
         };
       }
-      
+
       // Get basic RAG stats
       const documents = await ctx.ragSystem.getAllDocuments(100);
-      
+
       return {
         initialized: true,
         documentCount: documents.length,
-        chromadbConnected: ctx.ragSystem["vectorStore"]?.["isConnected"] || false,
+        chromadbConnected:
+          ctx.ragSystem["vectorStore"]?.["isConnected"] || false,
         embeddingModel: "nomic-embed-text",
         status: "healthy",
       };
@@ -347,7 +359,7 @@ export const healthRouter = router({
   metrics: publicProcedure.query(() => {
     const memoryUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
-    
+
     return {
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
