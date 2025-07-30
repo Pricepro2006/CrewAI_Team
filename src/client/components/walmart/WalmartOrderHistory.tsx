@@ -161,7 +161,7 @@ const generateMockOrders = (): UIOrder[] => {
       id: `ORDER-${1000 + i}`,
       orderNumber: `WM${1000 + i}`,
       orderDate: date,
-      status: i === 0 ? 'delivered' : statuses[Math.floor(Math.random() * statuses.length)],
+      status: i === 0 ? 'delivered' : (statuses[Math.floor(Math.random() * statuses.length)] || 'pending'),
       total,
       subtotal,
       tax,

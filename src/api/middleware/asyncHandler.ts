@@ -4,6 +4,7 @@ import { AppError, ErrorCode } from "../../utils/error-handling/server.js";
 
 /**
  * Wraps async route handlers to properly catch errors with enhanced error handling
+ * Test comment for pre-commit hook verification
  */
 export const asyncHandler = (fn: RequestHandler): RequestHandler => {
   return async (req: Request, res: Response, next: NextFunction) => {
