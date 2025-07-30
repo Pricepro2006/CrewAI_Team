@@ -1,16 +1,16 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { EmailStorageService } from '../EmailStorageService.js';
-import { EmailAnalysisResult, ProcessingMetadata } from '../EmailStorageService.js';
+import type { EmailAnalysisResult, ProcessingMetadata } from '../EmailStorageService.js';
 import { logger } from '../../../utils/logger.js';
 
 // Mock logger to prevent console output during tests
-jest.mock('../../../utils/logger', () => ({
+vi.mock('../../../utils/logger', () => ({
   logger: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    debug: jest.fn()
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn()
   }
 }));
 
@@ -28,7 +28,7 @@ describe('EmailStorageService - Processing Time Validation', () => {
   afterEach(() => {
     // Clean up
     service.close();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('validateProcessingTimes', () => {

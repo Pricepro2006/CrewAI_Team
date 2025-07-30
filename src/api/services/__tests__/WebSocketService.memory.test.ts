@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { WebSocketService } from "../WebSocketService.js";
 import { EventEmitter } from "events";
 import type { AuthenticatedWebSocket } from "../../middleware/websocketAuth.js";
+import type { Event, CloseEvent, ErrorEvent, MessageEvent } from "ws";
 
 // Mock logger
 vi.mock("../../../utils/logger", () => ({
@@ -28,32 +29,82 @@ describe("WebSocketService - Memory Leak Prevention", () => {
   });
 
   // Mock WebSocket implementation
-  class MockWebSocket extends EventEmitter implements Partial<AuthenticatedWebSocket> {
-    readyState = 1; // OPEN
-    OPEN = 1;
-    CLOSED = 3;
+  class MockWebSocket extends EventEmitter implements AuthenticatedWebSocket {
+    readyState: 0 | 1 | 2 | 3 = 1; // OPEN
+    readonly OPEN = 1 as const;
+    readonly CONNECTING = 0 as const;
+    readonly CLOSING = 2 as const;
+    readonly CLOSED = 3 as const;
     isAuthenticated = false;
     clientId?: string;
     userId?: string;
     userRole?: string;
     permissions?: string[];
+    lastActivity?: Date;
+    
+    // Required WebSocket properties
+    binaryType: "nodebuffer" | "arraybuffer" | "fragments" = "nodebuffer";
+    bufferedAmount = 0;
+    extensions = "";
+    protocol = "";
+    url = "";
+    isPaused = false;
+    
+    // Event handler properties - using ws types
+    onopen: ((event: Event) => void) | null = null;
+    onclose: ((event: CloseEvent) => void) | null = null;
+    onerror: ((event: ErrorEvent) => void) | null = null;
+    onmessage: ((event: MessageEvent) => void) | null = null;
 
     constructor() {
       super();
       this.setMaxListeners(0);
     }
 
-    close(code?: number, reason?: string) {
+    close(code?: number, reason?: string | Buffer) {
       this.readyState = this.CLOSED;
       this.emit("close", code, reason);
     }
 
-    ping() {
+    ping(data?: any, mask?: boolean, cb?: (err: Error) => void) {
       this.emit("pong");
+      if (cb) cb(null as any);
     }
 
-    send(data: string) {
+    pong(data?: any, mask?: boolean, cb?: (err: Error) => void) {
+      if (cb) cb(null as any);
+    }
+
+    send(data: any, cb?: (err?: Error) => void): void;
+    send(data: any, options: { mask?: boolean; binary?: boolean; compress?: boolean; fin?: boolean }, cb?: (err?: Error) => void): void;
+    send(data: any, optionsOrCb?: any, cb?: (err?: Error) => void) {
       // Mock send
+      if (typeof optionsOrCb === 'function') {
+        optionsOrCb();
+      } else if (cb) {
+        cb();
+      }
+    }
+
+    terminate() {
+      this.readyState = this.CLOSED;
+      this.emit("close");
+    }
+
+    pause() {
+      this.isPaused = true;
+    }
+
+    resume() {
+      this.isPaused = false;
+    }
+
+    addEventListener(method: string, listener: (...args: any[]) => void, options?: any): void {
+      this.addListener(method, listener);
+    }
+
+    removeEventListener(method: string, listener: (...args: any[]) => void): void {
+      this.removeListener(method, listener);
     }
   }
 

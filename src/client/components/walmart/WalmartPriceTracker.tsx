@@ -231,8 +231,12 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   
-  // Mock data
-  const currentPrice = product?.price || 29.99;
+  // Mock data - handle ProductPrice type properly
+  const currentPrice = typeof product?.price === 'number' 
+    ? product.price 
+    : (typeof product?.price === 'object' && product?.price !== null && 'regular' in product.price)
+      ? (product.price as { regular: number }).regular
+      : 29.99;
   const priceHistory = useMemo(() => generatePriceHistory(currentPrice), [currentPrice]);
   
   const filteredHistory = useMemo(() => {
@@ -454,7 +458,7 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "h-2 w-2 rounded-full",
-                    existingAlert.status === 'active' ? "bg-green-500" : "bg-gray-400"
+                    existingAlert ? "bg-green-500" : "bg-gray-400"
                   )} />
                   <div>
                     <p className="font-medium">

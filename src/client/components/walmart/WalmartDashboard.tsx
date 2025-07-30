@@ -77,6 +77,7 @@ import { useWalmartSearch } from '../../hooks/useWalmartSearch.js';
 import { useWalmartDeals } from '../../hooks/useWalmartDeals.js';
 
 import type { WalmartProduct, CartItem, Order } from '../../../types/walmart-grocery.js';
+import { normalizePrice, getEffectivePrice, isOnSale, calculateSavings } from '../../../utils/walmart-price.js';
 
 interface WalmartDashboardProps {
   className?: string;
@@ -105,7 +106,7 @@ const QuickStats: React.FC = () => {
   const metrics: DashboardMetric[] = [
     {
       label: 'Cart Value',
-      value: formatPrice(cart.items.reduce((sum: number, item: CartItem) => sum + ((item.product?.price || 0) * item.quantity), 0)),
+      value: formatPrice(cart.items.reduce((sum: number, item: CartItem) => sum + (item.price * item.quantity), 0)),
       icon: ShoppingCart,
       color: 'text-blue-600',
     },
@@ -121,10 +122,11 @@ const QuickStats: React.FC = () => {
         orders
           .filter((o: Order) => {
             const now = new Date();
-            return o.orderDate.getMonth() === now.getMonth() && 
-                   o.orderDate.getFullYear() === now.getFullYear();
+            const orderDate = new Date(o.createdAt);
+            return orderDate.getMonth() === now.getMonth() && 
+                   orderDate.getFullYear() === now.getFullYear();
           })
-          .reduce((sum: number, o: Order) => sum + o.total, 0)
+          .reduce((sum: number, o: Order) => sum + o.totals.total, 0)
       ),
       change: -12,
       icon: TrendingUp,
@@ -176,6 +178,46 @@ const QuickStats: React.FC = () => {
   );
 };
 
+// Helper to create mock WalmartProduct
+const createMockProduct = (
+  id: string,
+  name: string,
+  regularPrice: number,
+  salePrice: number,
+  categoryName: string,
+  brand: string = 'Generic'
+): WalmartProduct => ({
+  id,
+  walmartId: id,
+  name,
+  brand,
+  category: {
+    id: `cat-${categoryName.toLowerCase()}`,
+    name: categoryName,
+    path: ['Grocery', categoryName],
+    level: 2,
+  },
+  description: `${name} - ${brand}`,
+  price: {
+    currency: 'USD',
+    regular: regularPrice,
+    sale: salePrice,
+  },
+  images: [],
+  availability: {
+    inStock: true,
+    stockLevel: "in_stock" as const,
+    quantity: 100,
+  },
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  metadata: {
+    source: "manual" as const,
+    dealEligible: salePrice < regularPrice,
+    tags: [categoryName.toLowerCase(), brand.toLowerCase()],
+  },
+});
+
 // Featured deals component
 const FeaturedDeals: React.FC = () => {
   const { search: searchProducts } = useWalmartSearch();
@@ -184,33 +226,9 @@ const FeaturedDeals: React.FC = () => {
   useEffect(() => {
     // Mock featured deals
     setDeals([
-      {
-        id: 'deal-1',
-        name: 'Organic Bananas',
-        price: 0.49,
-        originalPrice: 0.69,
-        category: 'Produce',
-        unit: 'lb',
-        inStock: true,
-      },
-      {
-        id: 'deal-2',
-        name: 'Whole Milk Gallon',
-        price: 2.99,
-        originalPrice: 3.99,
-        category: 'Dairy',
-        unit: 'gallon',
-        inStock: true,
-      },
-      {
-        id: 'deal-3',
-        name: 'Fresh Bread',
-        price: 1.99,
-        originalPrice: 2.99,
-        category: 'Bakery',
-        unit: 'loaf',
-        inStock: true,
-      },
+      createMockProduct('deal-1', 'Organic Bananas', 0.69, 0.49, 'Produce', 'Fresh Farms'),
+      createMockProduct('deal-2', 'Whole Milk Gallon', 3.99, 2.99, 'Dairy', 'Great Value'),
+      createMockProduct('deal-3', 'Fresh Bread', 2.99, 1.99, 'Bakery', 'Wonder'),
     ]);
   }, []);
   
@@ -242,13 +260,17 @@ const FeaturedDeals: React.FC = () => {
                 <div>
                   <p className="font-medium">{deal.name}</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{formatPrice(deal.price)}</span>
-                    <span className="text-xs text-muted-foreground line-through">
-                      {formatPrice(deal.originalPrice || 0)}
-                    </span>
-                    <Badge variant="destructive" className="text-xs">
-                      Save {formatPrice((deal.originalPrice || 0) - deal.price)}
-                    </Badge>
+                    <span className="text-sm font-medium">{formatPrice(getEffectivePrice(deal.price))}</span>
+                    {isOnSale(deal.price) && (
+                      <>
+                        <span className="text-xs text-muted-foreground line-through">
+                          {formatPrice(normalizePrice(deal.price).regular)}
+                        </span>
+                        <Badge variant="destructive" className="text-xs">
+                          Save {formatPrice(calculateSavings(deal.price))}
+                        </Badge>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

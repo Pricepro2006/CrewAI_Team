@@ -19,6 +19,12 @@ export interface AuthContext {
   isAuthenticated: boolean;
 }
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
 /**
  * Express middleware for JWT authentication
  */
@@ -26,7 +32,7 @@ export function authenticateJWT(
   req: AuthenticatedRequest, 
   res: Response, 
   next: NextFunction
-) {
+): Response | void {
   try {
     const token = jwtManager.extractTokenFromHeader(req.headers.authorization);
     
@@ -90,7 +96,7 @@ export function optionalAuthenticateJWT(
   req: AuthenticatedRequest, 
   res: Response, 
   next: NextFunction
-) {
+): void {
   try {
     const token = jwtManager.extractTokenFromHeader(req.headers.authorization);
     
@@ -126,7 +132,7 @@ export function optionalAuthenticateJWT(
  * Role-based authorization middleware
  */
 export function requireRole(...roles: ('user' | 'admin' | 'moderator')[]) {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): Response | void => {
     if (!req.user) {
       return res.status(401).json({ 
         error: 'Authentication required',
@@ -298,4 +304,36 @@ export function createAuthRateLimit() {
     
     return next();
   };
+}
+
+/**
+ * Verify JWT token for testing
+ */
+export function verifyJWT(token: string): AuthUser {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+
+  try {
+    const decoded = jwtManager.verifyAccessToken(token);
+    
+    if (!decoded.sub || !decoded.email) {
+      throw new Error('Invalid token payload');
+    }
+
+    return {
+      id: decoded.sub,
+      email: decoded.email,
+      role: decoded.role || 'user'
+    };
+  } catch (error) {
+    if (error instanceof JWTError) {
+      if (error.code === 'TOKEN_EXPIRED') {
+        throw new Error('Token has expired');
+      } else if (error.code === 'INVALID_SIGNATURE') {
+        throw new Error('Invalid token signature');
+      }
+    }
+    throw error;
+  }
 }

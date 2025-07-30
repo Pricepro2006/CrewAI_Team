@@ -55,6 +55,7 @@ import { useCart } from '../../hooks/useCart.js';
 import { formatPrice } from '../../lib/utils.js';
 import { cn } from '../../lib/utils.js';
 import type { GroceryList, GroceryItem, WalmartProduct } from '../../../types/walmart-grocery.js';
+import { getNumericPrice, getCategoryName, extendGroceryItem } from '../../../utils/walmart-product.js';
 
 interface WalmartGroceryListProps {
   onSelectList?: (list: GroceryList) => void;
@@ -63,8 +64,12 @@ interface WalmartGroceryListProps {
   compactMode?: boolean;
 }
 
+interface ExtendedGroceryItem extends GroceryItem {
+  isPurchased?: boolean;
+}
+
 interface ListItemRowProps {
-  item: GroceryItem;
+  item: ExtendedGroceryItem;
   onTogglePurchased: (itemId: string) => void;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onRemove: (itemId: string) => void;
@@ -82,6 +87,7 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [quantity, setQuantity] = useState(item.quantity);
+  const isPurchased = item.isPurchased || item.status === 'purchased';
 
   const handleQuantitySubmit = () => {
     if (quantity !== item.quantity && quantity > 0) {
@@ -94,16 +100,16 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
     return (
       <div className={cn(
         "flex items-center gap-2 py-2",
-        item.isPurchased && "opacity-50"
+        isPurchased && "opacity-50"
       )}>
         <Checkbox
-          checked={item.isPurchased}
+          checked={isPurchased}
           onCheckedChange={() => onTogglePurchased(item.id)}
         />
         <div className="flex-1 min-w-0">
           <p className={cn(
             "text-sm truncate",
-            item.isPurchased && "line-through"
+            isPurchased && "line-through"
           )}>
             {item.product?.name || item.notes}
           </p>
@@ -126,10 +132,10 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
   return (
     <div className={cn(
       "group flex items-start gap-3 py-3",
-      item.isPurchased && "opacity-60"
+      isPurchased && "opacity-60"
     )}>
       <Checkbox
-        checked={item.isPurchased}
+        checked={isPurchased}
         onCheckedChange={() => onTogglePurchased(item.id)}
         className="mt-1"
       />
@@ -139,7 +145,7 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
           <div className="flex-1">
             <p className={cn(
               "font-medium",
-              item.isPurchased && "line-through"
+              isPurchased && "line-through"
             )}>
               {item.product?.name || item.notes}
             </p>
@@ -148,7 +154,7 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
                 {item.product.brand && <span>{item.product.brand}</span>}
                 {item.product.size && <span>• {item.product.size}</span>}
                 {item.product.price && (
-                  <span>• {formatPrice(item.product.price)}</span>
+                  <span>• {formatPrice(getNumericPrice(item.product.price))}</span>
                 )}
               </div>
             )}
@@ -189,7 +195,7 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
               </Button>
             )}
             
-            {item.product && onAddToCart && !item.isPurchased && (
+            {item.product && onAddToCart && !isPurchased && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -213,7 +219,7 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
         
         {item.product?.category && (
           <Badge variant="outline" className="text-xs">
-            {item.product.category}
+            {getCategoryName(item.product.category)}
           </Badge>
         )}
       </div>
@@ -258,16 +264,18 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
       setNewListName('');
       setNewListDescription('');
       setShowCreateDialog(false);
-      onSelectList?.(list);
+      if (onSelectList && list) {
+        onSelectList(list);
+      }
     }
   };
 
   const handleEditList = () => {
     if (editingList && newListName.trim()) {
       updateList(editingList.id, {
-        name: newListName.trim(),
+        list_name: newListName.trim(),
         description: newListDescription.trim(),
-      });
+      } as Partial<GroceryList>);
       setShowEditDialog(false);
       setEditingList(null);
     }
@@ -282,18 +290,21 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
   };
 
   const handleTogglePurchased = (listId: string, itemId: string) => {
-    const list = lists.find((l: GroceryList) => l.id === listId);
-    if (list) {
-      const updatedItems = list.items.map((item: GroceryItem) =>
-        item.id === itemId ? { ...item, isPurchased: !item.isPurchased } : item
-      );
+  const list = lists.find((l: GroceryList) => l.id === listId);
+  if (list && list.items) {
+  const updatedItems = list.items.map((item: GroceryItem) => {
+  if (item.id === itemId) {
+      return { ...item, status: item.status === 'purchased' ? 'pending' : 'purchased' } as GroceryItem;
+    }
+      return item;
+      });
       updateList(listId, { items: updatedItems });
     }
   };
 
   const handleUpdateQuantity = (listId: string, itemId: string, quantity: number) => {
     const list = lists.find((l: GroceryList) => l.id === listId);
-    if (list) {
+    if (list && list.items) {
       const updatedItems = list.items.map((item: GroceryItem) =>
         item.id === itemId ? { ...item, quantity } : item
       );
@@ -308,7 +319,10 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
   };
 
   const handleAddAllToCart = (list: GroceryList) => {
-    const unpurchasedItems = list.items.filter(item => !item.isPurchased && item.product);
+    const unpurchasedItems = (list.items || []).filter(item => {
+      const extended = extendGroceryItem(item);
+      return !extended.isPurchased && item.product;
+    });
     if (onAddToCart) {
       onAddToCart(unpurchasedItems);
     } else {
@@ -322,15 +336,15 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
 
   const handleDuplicateList = (list: GroceryList) => {
     const newList = createList(
-      `${list.name} (Copy)`,
+      `${list.list_name || 'Untitled'} (Copy)`,
       list.description
     );
     // Copy items to new list
-    const newItems = list.items.map(item => ({
+    const newItems = (list.items || []).map(item => ({
       ...item,
       id: `item-${Date.now()}-${Math.random()}`,
-      listId: newList.id,
-      isPurchased: false,
+      list_id: newList.id,
+      status: 'pending' as const,
     }));
     updateList(newList.id, { items: newItems });
   };
@@ -339,7 +353,8 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
   const filteredLists = lists
     .filter((list: GroceryList) => {
       if (searchQuery) {
-        return list.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        const listName = list.list_name || '';
+        return listName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                (list.description?.toLowerCase().includes(searchQuery.toLowerCase()));
       }
       return true;
@@ -347,9 +362,9 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
     .sort((a: GroceryList, b: GroceryList) => {
       switch (sortBy) {
         case 'name':
-          return a.name.localeCompare(b.name);
+          return (a.list_name || '').localeCompare(b.list_name || '');
         case 'items':
-          return b.items.length - a.items.length;
+          return (b.items?.length || 0) - (a.items?.length || 0);
         case 'date':
         default:
           return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
@@ -363,7 +378,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
               <ListChecks className="h-5 w-5" />
-              {currentList.name}
+              {currentList.list_name || 'Untitled List'}
             </CardTitle>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -394,10 +409,10 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
         </CardHeader>
         <CardContent className="pb-3">
           <div className="space-y-1">
-            {currentList.items.map(item => (
+            {(currentList.items || []).map(item => (
               <ListItemRow
                 key={item.id}
-                item={item}
+                item={extendGroceryItem(item)}
                 onTogglePurchased={(itemId) => handleTogglePurchased(currentList.id, itemId)}
                 onUpdateQuantity={(itemId, qty) => handleUpdateQuantity(currentList.id, itemId, qty)}
                 onRemove={(itemId) => removeFromList(currentList.id, itemId)}
@@ -409,10 +424,10 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
         <CardFooter className="pt-3">
           <div className="w-full flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              {currentList.items.filter(i => i.isPurchased).length}/{currentList.items.length} completed
+              {(currentList.items || []).filter(i => extendGroceryItem(i).isPurchased).length}/{currentList.items?.length || 0} completed
             </span>
             <span className="font-medium">
-              {formatPrice(currentList.totalEstimate)}
+              {formatPrice(currentList.estimated_total || 0)}
             </span>
           </div>
         </CardFooter>
@@ -474,8 +489,8 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredLists.map(list => {
-              const completedCount = list.items.filter(i => i.isPurchased).length;
-              const progress = list.items.length > 0 ? (completedCount / list.items.length) * 100 : 0;
+              const completedCount = (list.items || []).filter(i => extendGroceryItem(i).isPurchased).length;
+              const progress = (list.items?.length || 0) > 0 ? (completedCount / (list.items?.length || 0)) * 100 : 0;
               
               return (
                 <Card
@@ -486,13 +501,15 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
                   )}
                   onClick={() => {
                     setCurrentList(list.id);
-                    onSelectList?.(list);
+                    if (onSelectList) {
+                      onSelectList(list);
+                    }
                   }}
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <CardTitle className="text-lg">{list.name}</CardTitle>
+                        <CardTitle className="text-lg">{list.list_name || 'Untitled List'}</CardTitle>
                         {list.description && (
                           <p className="text-sm text-muted-foreground mt-1">
                             {list.description}
@@ -510,7 +527,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
                             onClick={(e) => {
                               e.stopPropagation();
                               setEditingList(list);
-                              setNewListName(list.name);
+                              setNewListName(list.list_name || '');
                               setNewListDescription(list.description || '');
                               setShowEditDialog(true);
                             }}
@@ -559,20 +576,20 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
                       <div className="flex items-center justify-between text-sm">
                         <span className="flex items-center gap-1 text-muted-foreground">
                           <Package className="h-4 w-4" />
-                          {list.items.length} items
+                          {list.items?.length || 0} items
                         </span>
                         <span className="flex items-center gap-1 font-medium">
                           <DollarSign className="h-4 w-4" />
-                          {formatPrice(list.totalEstimate)}
+                          {formatPrice(list.estimated_total || 0)}
                         </span>
                       </div>
                       
                       {/* Progress */}
-                      {list.items.length > 0 && (
+                      {(list.items?.length || 0) > 0 && (
                         <div className="space-y-1">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">
-                              {completedCount} of {list.items.length} completed
+                              {completedCount} of {list.items?.length || 0} completed
                             </span>
                             <span className="font-medium">{Math.round(progress)}%</span>
                           </div>
@@ -586,32 +603,35 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
                       )}
                       
                       {/* Preview Items */}
-                      {list.items.length > 0 && (
+                      {(list.items?.length || 0) > 0 && (
                         <div className="space-y-1">
-                          {list.items.slice(0, 3).map((item: GroceryItem) => (
-                            <div
-                              key={item.id}
-                              className={cn(
-                                "flex items-center gap-2 text-sm",
-                                item.isPurchased && "opacity-50"
-                              )}
-                            >
-                              {item.isPurchased ? (
-                                <CheckCircle2 className="h-3 w-3 text-green-600" />
-                              ) : (
-                                <Circle className="h-3 w-3" />
-                              )}
-                              <span className={cn(
-                                "truncate",
-                                item.isPurchased && "line-through"
-                              )}>
-                                {item.product?.name || item.notes}
-                              </span>
-                            </div>
-                          ))}
-                          {list.items.length > 3 && (
+                          {(list.items || []).slice(0, 3).map((item: GroceryItem) => {
+                            const extended = extendGroceryItem(item);
+                            return (
+                              <div
+                                key={item.id}
+                                className={cn(
+                                  "flex items-center gap-2 text-sm",
+                                  extended.isPurchased && "opacity-50"
+                                )}
+                              >
+                                {extended.isPurchased ? (
+                                  <CheckCircle2 className="h-3 w-3 text-green-600" />
+                                ) : (
+                                  <Circle className="h-3 w-3" />
+                                )}
+                                <span className={cn(
+                                  "truncate",
+                                  extended.isPurchased && "line-through"
+                                )}>
+                                  {item.item_name || item.product?.name || item.notes}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          {(list.items?.length || 0) > 3 && (
                             <p className="text-xs text-muted-foreground">
-                              +{list.items.length - 3} more items
+                              +{(list.items?.length || 0) - 3} more items
                             </p>
                           )}
                         </div>
@@ -627,7 +647,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
                         e.stopPropagation();
                         handleAddAllToCart(list);
                       }}
-                      disabled={list.items.filter((i: GroceryItem) => !i.isPurchased && i.product).length === 0}
+                      disabled={(list.items || []).filter((i: GroceryItem) => !extendGroceryItem(i).isPurchased && i.product).length === 0}
                     >
                       <ShoppingCart className="h-4 w-4 mr-2" />
                       Add All to Cart
@@ -726,7 +746,7 @@ export const WalmartGroceryList: React.FC<WalmartGroceryListProps> = ({
           <DialogHeader>
             <DialogTitle>Share List</DialogTitle>
             <DialogDescription>
-              Share "{editingList?.name}" with family or friends
+              Share "{editingList?.list_name || 'Untitled List'}" with family or friends
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

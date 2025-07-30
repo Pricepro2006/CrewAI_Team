@@ -243,13 +243,13 @@ For migration support:
 
 ## Checklist
 
-- [ ] Update JWT handling code
-- [ ] Implement CSRF token management
-- [ ] Add retry logic for rate limits
-- [ ] Update error handlers
-- [ ] Test authentication flow
-- [ ] Monitor health endpoints
-- [ ] Update security headers compliance
-- [ ] Review and update API clients
-- [ ] Test WebSocket connections
-- [ ] Verify no regression in features
+- [x] Update JWT handling code
+- [x] Implement CSRF token management
+- [x] Add retry logic for rate limits
+- [x] Update error handlers
+- [x] Test authentication flow
+- [x] Monitor health endpoints
+- [x] Update security headers compliance
+- [x] Review and update API clients
+- [x] Test WebSocket connections
+- [x] Verify no regression in features

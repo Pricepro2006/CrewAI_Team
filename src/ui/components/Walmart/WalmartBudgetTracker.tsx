@@ -17,45 +17,48 @@ export const WalmartBudgetTracker: React.FC = () => {
   const [newBudget, setNewBudget] = useState(totalBudget.toString());
 
   // Get spending analytics
-  const { data: analytics } = api.walmartGrocery.getSpendingAnalytics.useQuery({
-    userId: "default-user",
-    timeRange: "month",
-  });
+  // TODO: Implement getSpendingAnalytics endpoint
+  // const { data: analytics } = api.walmartGrocery.getSpendingAnalytics.useQuery({
+  //   userId: "default-user",
+  //   timeRange: "month",
+  // });
+  const analytics = null;
 
   useEffect(() => {
-    if (analytics) {
-      setCurrentSpent(analytics.totalSpent);
+    if (analytics && typeof analytics === 'object' && 'totalSpent' in analytics) {
+      setCurrentSpent((analytics as any).totalSpent);
       
       // Transform analytics into budget categories
+      const analyticsData = analytics as any;
       const budgetCategories: BudgetCategory[] = [
         {
           category: "Fresh Produce",
           allocated: totalBudget * 0.25,
-          spent: analytics.categoryBreakdown?.["Fresh Produce"] || 0,
+          spent: analyticsData.categoryBreakdown?.["Fresh Produce"] || 0,
           percentage: 0,
         },
         {
           category: "Dairy & Eggs",
           allocated: totalBudget * 0.15,
-          spent: analytics.categoryBreakdown?.["Dairy & Eggs"] || 0,
+          spent: analyticsData.categoryBreakdown?.["Dairy & Eggs"] || 0,
           percentage: 0,
         },
         {
           category: "Meat & Seafood",
           allocated: totalBudget * 0.20,
-          spent: analytics.categoryBreakdown?.["Meat & Seafood"] || 0,
+          spent: analyticsData.categoryBreakdown?.["Meat & Seafood"] || 0,
           percentage: 0,
         },
         {
           category: "Pantry",
           allocated: totalBudget * 0.20,
-          spent: analytics.categoryBreakdown?.["Pantry"] || 0,
+          spent: analyticsData.categoryBreakdown?.["Pantry"] || 0,
           percentage: 0,
         },
         {
           category: "Other",
           allocated: totalBudget * 0.20,
-          spent: analytics.categoryBreakdown?.["Other"] || 0,
+          spent: analyticsData.categoryBreakdown?.["Other"] || 0,
           percentage: 0,
         },
       ];

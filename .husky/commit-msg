@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Run commit message validation
+echo "📝 Validating commit message..."
+
+# Run commit message validation using TypeScript script
 tsx scripts/check-commit-msg.ts "$1"

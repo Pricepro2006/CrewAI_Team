@@ -8,20 +8,20 @@ export const WalmartDealAlert: React.FC = () => {
   const [showAll, setShowAll] = useState(false);
 
   // Subscribe to deal updates
-  api.walmartGrocery.subscribeToDeals.useSubscription(undefined, {
-    onData: (deals) => {
-      setActiveDeals(deals);
-    },
-  });
+  // TODO: Implement subscribeToDeals endpoint
+  // api.walmartGrocery.subscribeToDeals.useSubscription(undefined, {
+  //   onData: (deals: DealMatch[]) => {
+  //     setActiveDeals(deals);
+  //   },
+  // });
 
   // Get initial deals
-  const { data: initialDeals } = api.walmartGrocery.getActiveDeals.useQuery({
-    limit: 10,
-  });
+  // TODO: Implement getActiveDeals endpoint
+  const initialDeals: DealMatch[] = [];
 
   useEffect(() => {
-    if (initialDeals?.deals) {
-      setActiveDeals(initialDeals.deals);
+    if (initialDeals && Array.isArray(initialDeals)) {
+      setActiveDeals(initialDeals);
     }
   }, [initialDeals]);
 
@@ -78,31 +78,31 @@ export const WalmartDealAlert: React.FC = () => {
         <div className="space-y-3">
           {displayedDeals.map((deal) => (
             <div
-              key={deal.dealId}
+              key={deal.deal_id}
               className="border rounded-lg p-3 hover:shadow-sm transition-shadow"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <TagIcon className="h-4 w-4 text-gray-500" />
-                    <span className={`text-xs px-2 py-1 rounded ${getDealTypeColor(deal.dealType)}`}>
-                      {deal.dealType.replace("_", " ")}
+                    <span className={`text-xs px-2 py-1 rounded ${getDealTypeColor(deal.deal?.type || 'UNKNOWN')}`}>
+                      {(deal.deal?.type || 'UNKNOWN').replace("_", " ")}
                     </span>
-                    {deal.matchConfidence >= 0.8 && (
+                    {deal.match_score >= 0.8 && (
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
                         High Match
                       </span>
                     )}
                   </div>
                   
-                  <h3 className="font-medium text-gray-900 mb-1">{deal.productName}</h3>
+                  <h3 className="font-medium text-gray-900 mb-1">{deal.product?.name || 'Unknown Product'}</h3>
                   
                   <div className="flex items-center gap-4 text-sm">
                     <span className="text-gray-600">
-                      Deal: <span className="font-medium text-green-600">${deal.dealPrice.toFixed(2)}</span>
+                      Deal: <span className="font-medium text-green-600">${(deal.deal?.discountedPrice || 0).toFixed(2)}</span>
                     </span>
                     <span className="text-gray-600">
-                      Save: <span className="font-medium">${deal.savings.toFixed(2)}</span>
+                      Save: <span className="font-medium">${deal.potential_savings.toFixed(2)}</span>
                     </span>
                   </div>
                 </div>
@@ -110,14 +110,14 @@ export const WalmartDealAlert: React.FC = () => {
                 <div className="text-right">
                   <div className="flex items-center gap-1 text-sm text-gray-500">
                     <ClockIcon className="h-4 w-4" />
-                    <span>{formatTimeRemaining(deal.dealEndDate)}</span>
+                    <span>{formatTimeRemaining(deal.deal?.endDate || '')}</span>
                   </div>
                 </div>
               </div>
 
-              {deal.conditions && (
+              {deal.matched_criteria && deal.matched_criteria.length > 0 && (
                 <p className="text-xs text-gray-500 mt-2">
-                  Conditions: {deal.conditions}
+                  Matched: {deal.matched_criteria.join(", ")}
                 </p>
               )}
             </div>

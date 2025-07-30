@@ -47,6 +47,12 @@ dist/
 build/
 *.egg-info/
 
+# Temporary error logs
+*-errors.txt
+*_errors.txt
+typecheck-errors.txt
+tsc-output.txt
+
 # IDE
 .vscode/
 .idea/

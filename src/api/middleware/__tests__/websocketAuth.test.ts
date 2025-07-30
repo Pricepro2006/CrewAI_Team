@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
 import { WebSocketAuthManager, type AuthenticatedWebSocket } from "../websocketAuth.js";
-import type { UserService, User, JWTPayload } from "../../services/UserService.js";
-import { UserRole } from "../../services/UserService.js";
+import type { UserService, User } from "../../services/UserService.js";
 import { WebSocket } from "ws";
 
 // Mock dependencies
@@ -20,6 +19,8 @@ describe("WebSocketAuthManager", () => {
     mockUserService = {
       verifyToken: vi.fn(),
       getById: vi.fn(),
+      getUserById: vi.fn(),
+      close: vi.fn(),
     } as any as UserService;
 
     // Create auth manager
@@ -40,27 +41,23 @@ describe("WebSocketAuthManager", () => {
       const userId = "user-123";
       
       (mockUserService.verifyToken as any).mockResolvedValue({
-        userId,
-        email: "user@example.com",
-        username: "testuser",
-        role: UserRole.USER,
-      });
-      
-      (mockUserService.getById as any).mockResolvedValue({
         id: userId,
         email: "user@example.com",
         username: "testuser",
-        role: UserRole.USER,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        role: "user",
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        password_hash: "hash",
       });
+      
+      // Since verifyToken already returns the user, we don't need getById mock here
 
       const result = await authManager.authenticate(mockWs, token);
 
       expect(result.success).toBe(true);
       expect(result.userId).toBe(userId);
-      expect(result.userRole).toBe(UserRole.USER);
+      expect(result.userRole).toBe("user");
       expect(result.permissions).toEqual(["read", "write"]);
       
       expect(mockWs.userId).toBe(userId);
@@ -88,21 +85,17 @@ describe("WebSocketAuthManager", () => {
       const userId = "user-123";
       
       (mockUserService.verifyToken as any).mockResolvedValue({
-        userId,
-        email: "user@example.com",
-        username: "testuser",
-        role: UserRole.USER,
-      });
-      
-      (mockUserService.getById as any).mockResolvedValue({
         id: userId,
         email: "user@example.com",
         username: "testuser",
-        role: UserRole.USER,
-        isActive: false, // Inactive user
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        role: "user",
+        is_active: false, // Inactive user
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        password_hash: "hash",
       });
+      
+      // Since verifyToken already returns the user, we don't need getById mock here
 
       const result = await authManager.authenticate(mockWs, token);
 
@@ -115,21 +108,17 @@ describe("WebSocketAuthManager", () => {
       const userId = "admin-123";
       
       (mockUserService.verifyToken as any).mockResolvedValue({
-        userId,
-        email: "admin@example.com",
-        username: "admin",
-        role: UserRole.ADMIN,
-      });
-      
-      (mockUserService.getById as any).mockResolvedValue({
         id: userId,
         email: "admin@example.com",
         username: "admin",
-        role: UserRole.ADMIN,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        role: "admin",
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        password_hash: "hash",
       });
+      
+      // Since verifyToken already returns the user, we don't need getById mock here
 
       const result = await authManager.authenticate(mockWs, token);
 
@@ -212,7 +201,7 @@ describe("WebSocketAuthManager", () => {
     beforeEach(() => {
       mockWs.isAuthenticated = true;
       mockWs.userId = "user-123";
-      mockWs.userRole = UserRole.USER;
+      mockWs.userRole = "user";
       mockWs.permissions = ["read", "write"];
     });
 
@@ -231,11 +220,11 @@ describe("WebSocketAuthManager", () => {
     });
 
     it("should correctly check roles", () => {
-      expect(authManager.hasRole(mockWs, [UserRole.USER, UserRole.ADMIN])).toBe(true);
-      expect(authManager.hasRole(mockWs, [UserRole.ADMIN, UserRole.MODERATOR])).toBe(false);
+      expect(authManager.hasRole(mockWs, ["user", "admin"])).toBe(true);
+      expect(authManager.hasRole(mockWs, ["admin", "moderator"])).toBe(false);
       
-      mockWs.userRole = UserRole.ADMIN;
-      expect(authManager.hasRole(mockWs, [UserRole.ADMIN])).toBe(true);
+      mockWs.userRole = "admin";
+      expect(authManager.hasRole(mockWs, ["admin"])).toBe(true);
     });
   });
 
@@ -245,21 +234,17 @@ describe("WebSocketAuthManager", () => {
       const userId = "user-123";
       
       (mockUserService.verifyToken as any).mockResolvedValue({
-        userId,
-        email: "user@example.com",
-        username: "testuser",
-        role: UserRole.USER,
-      });
-      
-      (mockUserService.getById as any).mockResolvedValue({
         id: userId,
         email: "user@example.com",
         username: "testuser",
-        role: UserRole.USER,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        role: "user",
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        password_hash: "hash",
       });
+      
+      // Since verifyToken already returns the user, we don't need getById mock here
 
       await authManager.authenticate(mockWs, token);
       
@@ -275,7 +260,7 @@ describe("WebSocketAuthManager", () => {
       // Add to tracking manually (simulating successful auth)
       (authManager as any).authenticatedClients.set(mockWs.clientId, {
         userId: mockWs.userId,
-        userRole: UserRole.USER,
+        userRole: "user",
         permissions: ["read", "write"],
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       });
@@ -289,10 +274,10 @@ describe("WebSocketAuthManager", () => {
     it("should get authentication statistics", async () => {
       // Add some test clients
       const clients = [
-        { clientId: "c1", userId: "u1", userRole: UserRole.ADMIN },
-        { clientId: "c2", userId: "u2", userRole: UserRole.USER },
-        { clientId: "c3", userId: "u1", userRole: UserRole.ADMIN }, // Same user, different client
-        { clientId: "c4", userId: "u3", userRole: UserRole.USER },
+        { clientId: "c1", userId: "u1", userRole: "admin" },
+        { clientId: "c2", userId: "u2", userRole: "user" },
+        { clientId: "c3", userId: "u1", userRole: "admin" }, // Same user, different client
+        { clientId: "c4", userId: "u3", userRole: "user" },
       ];
 
       clients.forEach(client => {
@@ -354,7 +339,7 @@ describe("WebSocketAuthManager", () => {
       ["c1", "c2", "c3"].forEach(clientId => {
         (authManager as any).authenticatedClients.set(clientId, {
           userId,
-          userRole: UserRole.USER,
+          userRole: "user",
           permissions: ["read"],
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         });

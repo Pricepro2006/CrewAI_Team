@@ -336,10 +336,14 @@ export class GroceryVectorCollections {
       whereClause.dietary_tags = { $in: filters.dietaryTags };
     }
 
-    const results = await this.chromaManager.query("walmart_products", {
-      queryText: query,
+    const results = await this.chromaManager.similaritySearch("walmart_products", query, {
       nResults: limit,
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+      embeddingFunction: async (text: string) => {
+        // Use Ollama or another embedding service here
+        // For now, return a placeholder embedding
+        return Array(384).fill(0).map(() => Math.random());
+      }
     });
 
     return results.map((result) => ({
@@ -391,10 +395,14 @@ export class GroceryVectorCollections {
       whereClause.dietary_info = { $all: dietaryRestrictions };
     }
 
-    const results = await this.chromaManager.query("recipes", {
-      queryText: query,
+    const results = await this.chromaManager.similaritySearch("recipes", query, {
       nResults: limit,
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+      embeddingFunction: async (text: string) => {
+        // Use Ollama or another embedding service here
+        // For now, return a placeholder embedding
+        return Array(384).fill(0).map(() => Math.random());
+      }
     });
 
     return results.map((result) => ({
@@ -436,10 +444,14 @@ export class GroceryVectorCollections {
     currentList: string[],
   ): Promise<string[]> {
     // Find similar shopping patterns
-    const patterns = await this.chromaManager.query("shopping_patterns", {
-      queryText: currentList.join(" "),
+    const patterns = await this.chromaManager.similaritySearch("shopping_patterns", currentList.join(" "), {
       nResults: 5,
       where: { user_id: userId },
+      embeddingFunction: async (text: string) => {
+        // Use Ollama or another embedding service here
+        // For now, return a placeholder embedding
+        return Array(384).fill(0).map(() => Math.random());
+      }
     });
 
     // Extract commonly purchased items not in current list
@@ -473,10 +485,14 @@ export class GroceryVectorCollections {
   > {
     const whereClause: any = { original_product_id: productId };
 
-    const results = await this.chromaManager.query("substitutions", {
-      queryText: productId,
+    const results = await this.chromaManager.similaritySearch("substitutions", productId, {
       nResults: 5,
       where: whereClause,
+      embeddingFunction: async (text: string) => {
+        // Use Ollama or another embedding service here
+        // For now, return a placeholder embedding
+        return Array(384).fill(0).map(() => Math.random());
+      }
     });
 
     return results

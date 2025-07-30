@@ -4,12 +4,12 @@
  */
 
 import type Database from "better-sqlite3";
-import { BaseRepository } from "./BaseRepository.js";
+import { BaseRepository, type BaseEntity } from "./BaseRepository.js";
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger.js";
 
 // Types for Walmart product entities
-export interface WalmartProduct {
+export interface WalmartProduct extends BaseEntity {
   product_id: string;
   name: string;
   brand?: string;
@@ -59,8 +59,7 @@ export interface PriceHistory {
   recorded_at?: string;
 }
 
-export interface GrocerySubstitution {
-  id?: string;
+export interface GrocerySubstitution extends BaseEntity {
   original_product_id?: string;
   substitute_product_id?: string;
   reason?: string;
@@ -74,8 +73,7 @@ export interface GrocerySubstitution {
   created_at?: string;
 }
 
-export interface UserPreferences {
-  id?: string;
+export interface UserPreferences extends BaseEntity {
   user_id: string;
   default_store_id?: string;
   preferred_brands?: any;
@@ -101,7 +99,7 @@ export interface UserPreferences {
   updated_at?: string;
 }
 
-export class WalmartProductRepository extends BaseRepository {
+export class WalmartProductRepository extends BaseRepository<WalmartProduct> {
   constructor(db: Database.Database) {
     super(db, "walmart_products");
   }
@@ -349,7 +347,7 @@ export class WalmartProductRepository extends BaseRepository {
     }
   }
 
-  async findById(productId: string): Promise<WalmartProduct | null> {
+  override async findById(productId: string): Promise<WalmartProduct | null> {
     return this.findByProductId(productId);
   }
 
@@ -368,10 +366,10 @@ export class WalmartProductRepository extends BaseRepository {
     return this.mapRowToProduct(entity);
   }
 
-  async transaction<T>(callback: () => Promise<T>): Promise<T> {
+  override async transaction<T>(callback: (repo: this) => Promise<T>): Promise<T> {
     // SQLite doesn't need explicit transaction management in most cases
     // but we can implement it if needed
-    return await callback();
+    return await callback(this);
   }
 
   private mapRowToProduct(row: any): WalmartProduct {
@@ -391,7 +389,7 @@ export class WalmartProductRepository extends BaseRepository {
   }
 }
 
-export class SubstitutionRepository extends BaseRepository {
+export class SubstitutionRepository extends BaseRepository<GrocerySubstitution> {
   constructor(db: Database.Database) {
     super(db, "grocery_substitutions");
   }
@@ -485,7 +483,7 @@ export class SubstitutionRepository extends BaseRepository {
   }
 }
 
-export class UserPreferencesRepository extends BaseRepository {
+export class UserPreferencesRepository extends BaseRepository<UserPreferences> {
   constructor(db: Database.Database) {
     super(db, "grocery_user_preferences");
   }
@@ -562,7 +560,11 @@ export class UserPreferencesRepository extends BaseRepository {
       preferences.last_preference_review,
     );
 
-    return this.getPreferences(preferences.user_id);
+    const result = await this.getPreferences(preferences.user_id);
+    if (!result) {
+      throw new Error(`Failed to retrieve preferences after upsert for user: ${preferences.user_id}`);
+    }
+    return result;
   }
 
   async getPreferences(userId: string): Promise<UserPreferences | null> {

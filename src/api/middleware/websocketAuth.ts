@@ -30,13 +30,16 @@ interface AuthResult {
 
 export class WebSocketAuthManager {
   private userService: UserService;
-  private authenticatedClients: Map<string, {
-    userId: string;
-    userRole: string;
-    permissions: string[];
-    expiresAt: Date;
-  }> = new Map();
-  
+  private authenticatedClients: Map<
+    string,
+    {
+      userId: string;
+      userRole: string;
+      permissions: string[];
+      expiresAt: Date;
+    }
+  > = new Map();
+
   // Cleanup interval for expired sessions
   private cleanupInterval: NodeJS.Timeout | null = null;
 
@@ -48,21 +51,21 @@ export class WebSocketAuthManager {
   /**
    * Authenticate a WebSocket connection
    */
-  async authenticate(ws: AuthenticatedWebSocket, token: string): Promise<AuthResult> {
+  async authenticate(
+    ws: AuthenticatedWebSocket,
+    token: string,
+  ): Promise<AuthResult> {
     try {
-      // Verify JWT token
-      const payload = await this.userService.verifyToken(token);
-      
-      if (!payload) {
+      // Verify JWT token and get user
+      const user = await this.userService.verifyToken(token);
+
+      if (!user) {
         return { success: false, error: "Invalid token" };
       }
-      
-      // Get user details
-      const user = await this.userService.getById(payload.sub);
-      
-      if (!user || !user.is_active) {
-        logger.warn("WebSocket auth failed: User not found or inactive", "WS_AUTH", {
-          userId: payload.sub,
+
+      if (!user.is_active) {
+        logger.warn("WebSocket auth failed: User not active", "WS_AUTH", {
+          userId: user.id,
         });
         return { success: false, error: "Invalid user" };
       }
@@ -73,10 +76,10 @@ export class WebSocketAuthManager {
       ws.isAuthenticated = true;
       ws.permissions = this.getPermissionsForRole(user.role);
       ws.lastActivity = new Date();
-      
+
       // Generate client ID for tracking
       ws.clientId = `${user.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-      
+
       // Store authenticated client info
       this.authenticatedClients.set(ws.clientId, {
         userId: user.id,
@@ -109,33 +112,40 @@ export class WebSocketAuthManager {
   /**
    * Handle authentication message from client
    */
-  async handleAuthMessage(ws: AuthenticatedWebSocket, message: any): Promise<boolean> {
+  async handleAuthMessage(
+    ws: AuthenticatedWebSocket,
+    message: any,
+  ): Promise<boolean> {
     try {
       // Validate message format
       const authMessage = AuthMessageSchema.parse(message);
-      
+
       // Authenticate with token
       const result = await this.authenticate(ws, authMessage.token);
-      
+
       // Send authentication response
-      ws.send(JSON.stringify({
-        type: "auth_response",
-        success: result.success,
-        userId: result.userId,
-        permissions: result.permissions,
-        error: result.error,
-      }));
+      ws.send(
+        JSON.stringify({
+          type: "auth_response",
+          success: result.success,
+          userId: result.userId,
+          permissions: result.permissions,
+          error: result.error,
+        }),
+      );
 
       return result.success;
     } catch (error) {
       logger.error(`Invalid auth message: ${error}`, "WS_AUTH");
-      
-      ws.send(JSON.stringify({
-        type: "auth_response",
-        success: false,
-        error: "Invalid authentication message",
-      }));
-      
+
+      ws.send(
+        JSON.stringify({
+          type: "auth_response",
+          success: false,
+          error: "Invalid authentication message",
+        }),
+      );
+
       return false;
     }
   }
@@ -201,15 +211,18 @@ export class WebSocketAuthManager {
    */
   disconnectUser(userId: string, wsService: any): void {
     const clientIds = this.getClientsByUserId(userId);
-    clientIds.forEach(clientId => {
+    clientIds.forEach((clientId) => {
       // Remove from authenticated clients
       this.authenticatedClients.delete(clientId);
-      
+
       // Notify WebSocket service to disconnect
       wsService.forceDisconnectClient(clientId);
     });
-    
-    logger.info(`Disconnected all WebSocket clients for user: ${userId}`, "WS_AUTH");
+
+    logger.info(
+      `Disconnected all WebSocket clients for user: ${userId}`,
+      "WS_AUTH",
+    );
   }
 
   /**
@@ -232,24 +245,30 @@ export class WebSocketAuthManager {
    * Start cleanup interval for expired sessions
    */
   private startCleanupInterval(): void {
-    this.cleanupInterval = setInterval(() => {
-      const now = new Date();
-      const expired: string[] = [];
+    this.cleanupInterval = setInterval(
+      () => {
+        const now = new Date();
+        const expired: string[] = [];
 
-      this.authenticatedClients.forEach((info, clientId) => {
-        if (info.expiresAt < now) {
-          expired.push(clientId);
+        this.authenticatedClients.forEach((info, clientId) => {
+          if (info.expiresAt < now) {
+            expired.push(clientId);
+          }
+        });
+
+        expired.forEach((clientId) => {
+          this.authenticatedClients.delete(clientId);
+        });
+
+        if (expired.length > 0) {
+          logger.debug(
+            `Cleaned up ${expired.length} expired WebSocket sessions`,
+            "WS_AUTH",
+          );
         }
-      });
-
-      expired.forEach(clientId => {
-        this.authenticatedClients.delete(clientId);
-      });
-
-      if (expired.length > 0) {
-        logger.debug(`Cleaned up ${expired.length} expired WebSocket sessions`, "WS_AUTH");
-      }
-    }, 60 * 60 * 1000); // Run every hour
+      },
+      60 * 60 * 1000,
+    ); // Run every hour
   }
 
   /**
@@ -276,10 +295,10 @@ export class WebSocketAuthManager {
       byUser: {} as Record<string, number>,
     };
 
-    this.authenticatedClients.forEach(info => {
+    this.authenticatedClients.forEach((info) => {
       // Count by role
       stats.byRole[info.userRole] = (stats.byRole[info.userRole] || 0) + 1;
-      
+
       // Count by user
       stats.byUser[info.userId] = (stats.byUser[info.userId] || 0) + 1;
     });
@@ -289,28 +308,32 @@ export class WebSocketAuthManager {
 }
 
 // Middleware function for WebSocket upgrade
-export function createWebSocketAuthMiddleware(authManager: WebSocketAuthManager) {
+export function createWebSocketAuthMiddleware(
+  authManager: WebSocketAuthManager,
+) {
   return async (ws: AuthenticatedWebSocket, req: any) => {
     // Extract token from query params or headers
-    const token = req.url?.includes("token=") 
+    const token = req.url?.includes("token=")
       ? new URLSearchParams(req.url.split("?")[1]).get("token")
       : req.headers.authorization?.replace("Bearer ", "");
 
     if (token) {
       // Attempt immediate authentication
       const result = await authManager.authenticate(ws, token);
-      
+
       if (!result.success) {
         // Send error and close connection
-        ws.send(JSON.stringify({
-          type: "auth_error",
-          error: result.error || "Authentication failed",
-        }));
-        
+        ws.send(
+          JSON.stringify({
+            type: "auth_error",
+            error: result.error || "Authentication failed",
+          }),
+        );
+
         setTimeout(() => {
           ws.close(1008, "Authentication failed");
         }, 1000);
-        
+
         return;
       }
     } else {
@@ -320,24 +343,26 @@ export function createWebSocketAuthMiddleware(authManager: WebSocketAuthManager)
       ws.userRole = "guest";
       ws.permissions = ["read"];
       ws.clientId = `guest-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-      
+
       // Send authentication required message
-      ws.send(JSON.stringify({
-        type: "auth_required",
-        message: "Please authenticate to access all features",
-      }));
+      ws.send(
+        JSON.stringify({
+          type: "auth_required",
+          message: "Please authenticate to access all features",
+        }),
+      );
     }
 
     // Set up message handler for authentication
     ws.on("message", async (data) => {
       try {
         const message = JSON.parse(data.toString());
-        
+
         // Handle authentication messages
         if (message.type === "auth" && !ws.isAuthenticated) {
           await authManager.handleAuthMessage(ws, message);
         }
-        
+
         // Update activity on any message
         if (ws.isAuthenticated) {
           authManager.updateActivity(ws);
@@ -355,21 +380,24 @@ export function createWebSocketAuthMiddleware(authManager: WebSocketAuthManager)
 }
 
 // Default authentication function export
-export async function authenticateWebSocket(ws: AuthenticatedWebSocket, token: string): Promise<boolean> {
+export async function authenticateWebSocket(
+  ws: AuthenticatedWebSocket,
+  token: string,
+): Promise<boolean> {
   // This is a simplified version for compatibility
   // In a real implementation, you'd inject the UserService
   try {
     if (!token || token.length < 10) {
       return false;
     }
-    
+
     // Basic token validation (this should use proper JWT verification)
     ws.isAuthenticated = true;
-    ws.userId = 'default-user';
-    ws.userRole = 'user';
-    ws.permissions = ['read'];
+    ws.userId = "default-user";
+    ws.userRole = "user";
+    ws.permissions = ["read"];
     ws.lastActivity = new Date();
-    
+
     return true;
   } catch (error) {
     return false;

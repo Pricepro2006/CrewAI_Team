@@ -4,6 +4,7 @@
  */
 
 import type { BaseEntity, TimestampedEntity, Timestamp, Document, TokenUsage } from './core.js';
+import type { TaskLog } from './api.js';
 
 // =====================================================
 // Agent Types
@@ -169,12 +170,12 @@ export interface AgentTask extends BaseEntity {
   blocks: string[];
   
   // Progress tracking
-  progress: TaskProgress;
+  progress: AgentTaskProgress;
   steps: TaskStep[];
   currentStep?: number;
   
   // Error handling
-  error?: TaskError;
+  error?: AgentTaskError;
   retryCount: number;
   maxRetries: number;
   
@@ -288,7 +289,7 @@ export interface TaskExpectations {
   includeReasoning?: boolean;
 }
 
-export interface TaskProgress {
+export interface AgentTaskProgress {
   percentage: number; // 0-100
   currentStage: string;
   stagesCompleted: number;
@@ -336,7 +337,7 @@ export interface TaskStep {
   logs?: TaskLog[];
 }
 
-export interface TaskLog {
+export interface AgentTaskLog {
   timestamp: Timestamp;
   level: 'debug' | 'info' | 'warn' | 'error';
   message: string;
@@ -344,7 +345,7 @@ export interface TaskLog {
   stepId?: string;
 }
 
-export interface TaskError {
+export interface AgentTaskError {
   code: string;
   message: string;
   type: 'system' | 'validation' | 'timeout' | 'resource' | 'business' | 'unknown';

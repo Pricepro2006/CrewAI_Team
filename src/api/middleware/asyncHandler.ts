@@ -1,9 +1,10 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import { logger } from "../../utils/logger.js";
-import { AppError, ErrorCode } from "../../utils/error-handling/index.js";
+import { AppError, ErrorCode } from "../../utils/error-handling/server.js";
 
 /**
  * Wraps async route handlers to properly catch errors with enhanced error handling
+ * Test comment for pre-commit hook verification
  */
 export const asyncHandler = (fn: RequestHandler): RequestHandler => {
   return async (req: Request, res: Response, next: NextFunction) => {

@@ -255,8 +255,8 @@ export const WalmartBudgetTracker: React.FC<WalmartBudgetTrackerProps> = ({
   const spendingHistory = useMemo(() => {
     if (orders.length > 0) {
       return orders.map((order: Order) => ({
-        date: order.orderDate,
-        amount: order.total,
+        date: order.createdAt,
+        amount: order.totals.total,
         category: 'Grocery',
       }));
     }

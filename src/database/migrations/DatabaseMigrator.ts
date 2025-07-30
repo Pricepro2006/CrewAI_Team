@@ -3,10 +3,14 @@
  * Handles database schema migrations with version control and rollback support
  */
 
-import type Database from 'better-sqlite3';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { logger } from '../../utils/logger.js';
+import type Database from "better-sqlite3";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { logger } from "../../utils/logger.js";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = join(fileURLToPath(import.meta.url), "..");
 
 export interface Migration {
   version: string;
@@ -31,7 +35,7 @@ export class DatabaseMigrator {
 
   constructor(db: Database.Database, migrationsPath?: string) {
     this.db = db;
-    this.migrationsPath = migrationsPath || join(__dirname, './migrations');
+    this.migrationsPath = migrationsPath || join(__dirname, "./migrations");
     this.initializeMigrationsTable();
   }
 
@@ -54,11 +58,15 @@ export class DatabaseMigrator {
    * Get the current database schema version
    */
   async getCurrentVersion(): Promise<string | null> {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       SELECT version FROM schema_migrations 
       ORDER BY version DESC 
       LIMIT 1
-    `).get() as { version: string } | undefined;
+    `,
+      )
+      .get() as { version: string } | undefined;
 
     return result?.version || null;
   }
@@ -66,17 +74,23 @@ export class DatabaseMigrator {
   /**
    * Get list of applied migrations
    */
-  async getAppliedMigrations(): Promise<Array<{
-    version: string;
-    name: string;
-    applied_at: string;
-    execution_time: number;
-  }>> {
-    return this.db.prepare(`
+  async getAppliedMigrations(): Promise<
+    Array<{
+      version: string;
+      name: string;
+      applied_at: string;
+      execution_time: number;
+    }>
+  > {
+    return this.db
+      .prepare(
+        `
       SELECT version, name, applied_at, execution_time
       FROM schema_migrations
       ORDER BY version ASC
-    `).all() as Array<{
+    `,
+      )
+      .all() as Array<{
       version: string;
       name: string;
       applied_at: string;
@@ -88,9 +102,13 @@ export class DatabaseMigrator {
    * Check if a migration has been applied
    */
   async isMigrationApplied(version: string): Promise<boolean> {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       SELECT 1 FROM schema_migrations WHERE version = ?
-    `).get(version);
+    `,
+      )
+      .get(version);
 
     return !!result;
   }
@@ -108,8 +126,8 @@ export class DatabaseMigrator {
           version: migration.version,
           name: migration.name,
           success: false,
-          error: 'Migration already applied',
-          executionTime: 0
+          error: "Migration already applied",
+          executionTime: 0,
         };
       }
 
@@ -122,7 +140,7 @@ export class DatabaseMigrator {
               name: migration.name,
               success: false,
               error: `Dependency migration ${depVersion} not applied`,
-              executionTime: Date.now() - startTime
+              executionTime: Date.now() - startTime,
             };
           }
         }
@@ -134,41 +152,51 @@ export class DatabaseMigrator {
         this.db.exec(migration.up);
 
         // Record the migration as applied
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           INSERT INTO schema_migrations (version, name, execution_time, checksum)
           VALUES (?, ?, ?, ?)
-        `).run(
-          migration.version,
-          migration.name,
-          Date.now() - startTime,
-          this.calculateChecksum(migration.up)
-        );
+        `,
+          )
+          .run(
+            migration.version,
+            migration.name,
+            Date.now() - startTime,
+            this.calculateChecksum(migration.up),
+          );
       });
 
       transaction();
 
       const executionTime = Date.now() - startTime;
-      logger.info(`Applied migration ${migration.version}: ${migration.name} (${executionTime}ms)`, 'DB_MIGRATION');
+      logger.info(
+        `Applied migration ${migration.version}: ${migration.name} (${executionTime}ms)`,
+        "DB_MIGRATION",
+      );
 
       return {
         version: migration.version,
         name: migration.name,
         success: true,
-        executionTime
+        executionTime,
       };
-
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      
-      logger.error(`Failed to apply migration ${migration.version}: ${errorMessage}`, 'DB_MIGRATION');
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      logger.error(
+        `Failed to apply migration ${migration.version}: ${errorMessage}`,
+        "DB_MIGRATION",
+      );
 
       return {
         version: migration.version,
         name: migration.name,
         success: false,
         error: errorMessage,
-        executionTime
+        executionTime,
       };
     }
   }
@@ -186,8 +214,8 @@ export class DatabaseMigrator {
           version: migration.version,
           name: migration.name,
           success: false,
-          error: 'Migration not applied',
-          executionTime: 0
+          error: "Migration not applied",
+          executionTime: 0,
         };
       }
 
@@ -196,8 +224,8 @@ export class DatabaseMigrator {
           version: migration.version,
           name: migration.name,
           success: false,
-          error: 'No rollback SQL provided',
-          executionTime: 0
+          error: "No rollback SQL provided",
+          executionTime: 0,
         };
       }
 
@@ -207,35 +235,45 @@ export class DatabaseMigrator {
         this.db.exec(migration.down!);
 
         // Remove the migration record
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           DELETE FROM schema_migrations WHERE version = ?
-        `).run(migration.version);
+        `,
+          )
+          .run(migration.version);
       });
 
       transaction();
 
       const executionTime = Date.now() - startTime;
-      logger.info(`Rolled back migration ${migration.version}: ${migration.name} (${executionTime}ms)`, 'DB_MIGRATION');
+      logger.info(
+        `Rolled back migration ${migration.version}: ${migration.name} (${executionTime}ms)`,
+        "DB_MIGRATION",
+      );
 
       return {
         version: migration.version,
         name: migration.name,
         success: true,
-        executionTime
+        executionTime,
       };
-
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      
-      logger.error(`Failed to rollback migration ${migration.version}: ${errorMessage}`, 'DB_MIGRATION');
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      logger.error(
+        `Failed to rollback migration ${migration.version}: ${errorMessage}`,
+        "DB_MIGRATION",
+      );
 
       return {
         version: migration.version,
         name: migration.name,
         success: false,
         error: errorMessage,
-        executionTime
+        executionTime,
       };
     }
   }
@@ -245,9 +283,11 @@ export class DatabaseMigrator {
    */
   async migrate(migrations: Migration[]): Promise<MigrationResult[]> {
     const results: MigrationResult[] = [];
-    
+
     // Sort migrations by version
-    const sortedMigrations = migrations.sort((a, b) => a.version.localeCompare(b.version));
+    const sortedMigrations = migrations.sort((a, b) =>
+      a.version.localeCompare(b.version),
+    );
 
     for (const migration of sortedMigrations) {
       const result = await this.applyMigration(migration);
@@ -255,7 +295,10 @@ export class DatabaseMigrator {
 
       // Stop on first failure
       if (!result.success) {
-        logger.error(`Migration failed at ${migration.version}. Stopping migration process.`, 'DB_MIGRATION');
+        logger.error(
+          `Migration failed at ${migration.version}. Stopping migration process.`,
+          "DB_MIGRATION",
+        );
         break;
       }
     }
@@ -266,20 +309,28 @@ export class DatabaseMigrator {
   /**
    * Rollback to a specific version
    */
-  async rollbackTo(targetVersion: string, migrations: Migration[]): Promise<MigrationResult[]> {
+  async rollbackTo(
+    targetVersion: string,
+    migrations: Migration[],
+  ): Promise<MigrationResult[]> {
     const results: MigrationResult[] = [];
     const appliedMigrations = await this.getAppliedMigrations();
-    
+
     // Find migrations to rollback (all versions after target)
     const migrationsToRollback = appliedMigrations
-      .filter(applied => applied.version > targetVersion)
+      .filter((applied) => applied.version > targetVersion)
       .sort((a, b) => b.version.localeCompare(a.version)); // Reverse order for rollback
 
     for (const appliedMigration of migrationsToRollback) {
-      const migration = migrations.find(m => m.version === appliedMigration.version);
-      
+      const migration = migrations.find(
+        (m) => m.version === appliedMigration.version,
+      );
+
       if (!migration) {
-        logger.warn(`Migration definition not found for version ${appliedMigration.version}`, 'DB_MIGRATION');
+        logger.warn(
+          `Migration definition not found for version ${appliedMigration.version}`,
+          "DB_MIGRATION",
+        );
         continue;
       }
 
@@ -288,7 +339,10 @@ export class DatabaseMigrator {
 
       // Stop on first failure
       if (!result.success) {
-        logger.error(`Rollback failed at ${migration.version}. Stopping rollback process.`, 'DB_MIGRATION');
+        logger.error(
+          `Rollback failed at ${migration.version}. Stopping rollback process.`,
+          "DB_MIGRATION",
+        );
         break;
       }
     }
@@ -307,17 +361,17 @@ export class DatabaseMigrator {
   }> {
     const currentVersion = await getCurrentVersion();
     const appliedMigrations = await this.getAppliedMigrations();
-    const appliedVersions = appliedMigrations.map(m => m.version);
-    
+    const appliedVersions = appliedMigrations.map((m) => m.version);
+
     const pendingMigrations = migrations
-      .filter(m => !appliedVersions.includes(m.version))
-      .map(m => m.version);
+      .filter((m) => !appliedVersions.includes(m.version))
+      .map((m) => m.version);
 
     return {
       currentVersion,
       appliedMigrations: appliedVersions,
       pendingMigrations,
-      totalMigrations: migrations.length
+      totalMigrations: migrations.length,
     };
   }
 
@@ -325,16 +379,19 @@ export class DatabaseMigrator {
    * Create a new migration file template
    */
   createMigrationTemplate(name: string, description: string): string {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
-    const version = `${timestamp}_${name.toLowerCase().replace(/\s+/g, '_')}`;
-    
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .split("T")[0];
+    const version = `${timestamp}_${name.toLowerCase().replace(/\s+/g, "_")}`;
+
     return `/**
  * Migration: ${name}
  * Version: ${version}
  * Description: ${description}
  */
 
-export const migration_${version.replace(/-/g, '_')} = {
+export const migration_${version.replace(/-/g, "_")} = {
   version: '${version}',
   name: '${name}',
   description: '${description}',
@@ -357,16 +414,16 @@ export const migration_${version.replace(/-/g, '_')} = {
    */
   loadMigrationFromFile(filePath: string): Migration {
     try {
-      const content = readFileSync(filePath, 'utf8');
-      
+      const content = readFileSync(filePath, "utf8");
+
       // Parse migration metadata from comments
       const versionMatch = content.match(/-- Version: (.+)/);
       const nameMatch = content.match(/-- Name: (.+)/);
       const descriptionMatch = content.match(/-- Description: (.+)/);
-      
-      const version = versionMatch?.[1]?.trim() || 'unknown';
-      const name = nameMatch?.[1]?.trim() || 'Unknown Migration';
-      const description = descriptionMatch?.[1]?.trim() || 'No description';
+
+      const version = versionMatch?.[1]?.trim() || "unknown";
+      const name = nameMatch?.[1]?.trim() || "Unknown Migration";
+      const description = descriptionMatch?.[1]?.trim() || "No description";
 
       // Extract SQL sections
       const upMatch = content.match(/-- UP\s*\n([\s\S]*?)(?=-- DOWN|$)/);
@@ -380,9 +437,8 @@ export const migration_${version.replace(/-/g, '_')} = {
         name,
         description,
         up,
-        down
+        down,
       };
-
     } catch (error) {
       throw new Error(`Failed to load migration from ${filePath}: ${error}`);
     }
@@ -395,7 +451,7 @@ export const migration_${version.replace(/-/g, '_')} = {
     let hash = 0;
     for (let i = 0; i < content.length; i++) {
       const char = content.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return hash.toString(16);
@@ -407,9 +463,12 @@ export const migration_${version.replace(/-/g, '_')} = {
   async createBackup(backupPath: string): Promise<void> {
     try {
       this.db.backup(backupPath);
-      logger.info(`Database backup created at ${backupPath}`, 'DB_MIGRATION');
+      logger.info(`Database backup created at ${backupPath}`, "DB_MIGRATION");
     } catch (error) {
-      logger.error(`Failed to create database backup: ${error}`, 'DB_MIGRATION');
+      logger.error(
+        `Failed to create database backup: ${error}`,
+        "DB_MIGRATION",
+      );
       throw error;
     }
   }
@@ -425,31 +484,36 @@ export const migration_${version.replace(/-/g, '_')} = {
 
     try {
       // Run PRAGMA integrity_check
-      const integrityResult = this.db.prepare('PRAGMA integrity_check').all() as Array<{ integrity_check: string }>;
-      
+      const integrityResult = this.db
+        .prepare("PRAGMA integrity_check")
+        .all() as Array<{ integrity_check: string }>;
+
       for (const result of integrityResult) {
-        if (result.integrity_check !== 'ok') {
+        if (result.integrity_check !== "ok") {
           errors.push(`Integrity check failed: ${result.integrity_check}`);
         }
       }
 
       // Check foreign key constraints
-      const foreignKeyResult = this.db.prepare('PRAGMA foreign_key_check').all() as Array<any>;
-      
+      const foreignKeyResult = this.db
+        .prepare("PRAGMA foreign_key_check")
+        .all() as Array<any>;
+
       if (foreignKeyResult.length > 0) {
-        errors.push(`Foreign key violations found: ${foreignKeyResult.length} issues`);
+        errors.push(
+          `Foreign key violations found: ${foreignKeyResult.length} issues`,
+        );
       }
 
       return {
         valid: errors.length === 0,
-        errors
+        errors,
       };
-
     } catch (error) {
       errors.push(`Validation failed: ${error}`);
       return {
         valid: false,
-        errors
+        errors,
       };
     }
   }
