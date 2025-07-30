@@ -76,6 +76,12 @@ Services
 ├── ChromaDB (Vector operations)
 ├── Redis (Queue management)
 └── SQLite (crewai.db primary store)
+
+Dependencies (Note: Some optional)
+├── Core: Node.js 20.11+, TypeScript 5.3.3
+├── Database: better-sqlite3 (requires Python distutils)
+├── WebSocket: socket.io (optional, not installed)
+└── Build Tools: Python 3.x with distutils for node-gyp
 ```
 
 ## Key Directories and Files
@@ -159,6 +165,8 @@ Before deploying, ensure:
 3. Ollama service with models loaded
 4. ChromaDB initialized
 5. Database file at `/data/crewai.db`
+6. Python 3.x with distutils (for node-gyp compilation)
+7. Socket.IO dependencies (optional, for WebSocket support)
 
 ### Environment Variables
 
@@ -199,6 +207,29 @@ pm2 start ecosystem.config.js --env production
 1. All Node.js modules should use polyfills in browser
 2. Check Vite configuration for externalization settings
 3. Verify import paths use `.js` extensions
+
+### WebSocket Dependencies
+
+The WebSocketManager (`src/core/websocket/WebSocketManager.ts`) requires socket.io but it's not currently installed due to compilation issues:
+
+1. **Required packages:**
+   - `socket.io`: ^4.7.0
+   - `@types/socket.io`: ^4.0.0
+   - `socket.io-client`: ^4.7.0 (for client)
+   - `@types/socket.io-client`: ^3.0.0
+
+2. **Installation Issue:**
+   ```
+   ModuleNotFoundError: No module named 'distutils'
+   ```
+   This occurs because better-sqlite3 requires node-gyp which needs Python distutils.
+
+3. **Solutions:**
+   - Install Python distutils: `sudo apt-get install python3-distutils` (Ubuntu/Debian)
+   - Or skip WebSocket features temporarily (app works with polling fallback)
+   - Try installing with: `npm install socket.io @types/socket.io --no-optional`
+
+4. **Note:** WebSocket functionality is optional. The application will gracefully fall back to 5-second polling without it.
 
 ## Current Development Priorities
 

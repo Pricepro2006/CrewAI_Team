@@ -42,7 +42,7 @@ export async function setupOllamaForTesting(): Promise<void> {
     logger.info('Ollama test setup completed successfully');
     
   } catch (error) {
-    logger.error('Failed to setup Ollama for testing:', error);
+    logger.error('Failed to setup Ollama for testing:', error instanceof Error ? error.message : String(error));
     throw new Error(`Ollama setup failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -63,7 +63,7 @@ export async function cleanupOllamaTests(): Promise<void> {
       ollamaProcess = null;
       logger.info('Ollama process stopped');
     } catch (error) {
-      logger.warn('Error stopping Ollama process:', error);
+      logger.warn('Error stopping Ollama process:', error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -106,7 +106,7 @@ export function skipIfNoOllama() {
         }
         return !isRunning;
       } catch (error) {
-        logger.error('Error checking Ollama availability:', error);
+        logger.error('Error checking Ollama availability:', error instanceof Error ? error.message : String(error));
         return true;
       }
     },
@@ -212,8 +212,8 @@ async function ensureTestModelsAvailable(): Promise<void> {
   try {
     // Check available models
     const response = await fetch(`${ollamaUrl}/api/tags`);
-    const data = await response.json();
-    const availableModels = data.models?.map((m: any) => m.name) || [];
+    const data = await response.json() as { models?: Array<{ name: string }> };
+    const availableModels = data.models?.map((m) => m.name) || [];
     
     logger.info('Available models:', availableModels);
     
@@ -250,7 +250,7 @@ async function ensureTestModelsAvailable(): Promise<void> {
     }
     
   } catch (error) {
-    logger.warn('Could not check available models:', error);
+    logger.warn('Could not check available models:', error instanceof Error ? error.message : String(error));
     // Continue anyway - tests will handle model availability individually
   }
 }
@@ -264,11 +264,11 @@ export async function ensureModelAvailable(modelName: string): Promise<boolean> 
   try {
     // Check if model is already available
     const response = await fetch(`${ollamaUrl}/api/tags`);
-    const data = await response.json();
-    const availableModels = data.models?.map((m: any) => m.name) || [];
+    const data = await response.json() as { models?: Array<{ name: string }> };
+    const availableModels = data.models?.map((m) => m.name) || [];
     
     const isAvailable = availableModels.some((name: string) => 
-      name === modelName || name.startsWith(modelName.split(':')[0])
+      name === modelName || name.startsWith((modelName || '').split(':')[0])
     );
     
     if (isAvailable) {
@@ -322,7 +322,7 @@ export async function ensureModelAvailable(modelName: string): Promise<boolean> 
     return true;
     
   } catch (error) {
-    logger.error(`Error ensuring model ${modelName} is available:`, error);
+    logger.error(`Error ensuring model ${modelName} is available:`, error instanceof Error ? error.message : String(error));
     return false;
   }
 }

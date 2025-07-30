@@ -378,9 +378,12 @@ export class HealthChecker extends EventEmitter {
                 host: process.env.REDIS_HOST || 'localhost',
                 port: parseInt(process.env.REDIS_PORT || '6379'),
                 password: process.env.REDIS_PASSWORD,
-                retryDelayOnFailover: 100,
                 maxRetriesPerRequest: 3,
-                lazyConnect: true
+                lazyConnect: true,
+                retryStrategy: (times: number) => {
+                  const delay = Math.min(times * 100, 3000);
+                  return delay;
+                }
               });
             }
             

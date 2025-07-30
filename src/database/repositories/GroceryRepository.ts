@@ -5,12 +5,13 @@
 
 import type Database from "better-sqlite3";
 import { BaseRepository } from "./BaseRepository.js";
+import type { BaseEntity } from "./BaseRepository.js";
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger.js";
 
 // Types for grocery entities
-export interface GroceryList {
-  id?: string;
+export interface GroceryList extends BaseEntity {
+  id: string;
   user_id: string;
   list_name: string;
   description?: string;
@@ -37,8 +38,8 @@ export interface GroceryList {
   isShared?: boolean;
 }
 
-export interface GroceryItem {
-  id?: string;
+export interface GroceryItem extends BaseEntity {
+  id: string;
   list_id: string;
   item_name: string;
   brand_preference?: string;
@@ -68,8 +69,8 @@ export interface GroceryItem {
   updated_at?: string;
 }
 
-export interface ShoppingSession {
-  id?: string;
+export interface ShoppingSession extends BaseEntity {
+  id: string;
   user_id: string;
   list_id?: string;
   session_type?: "online" | "in_store" | "pickup" | "delivery";
@@ -96,7 +97,7 @@ export interface ShoppingSession {
   feedback_comment?: string;
 }
 
-export class GroceryListRepository extends BaseRepository {
+export class GroceryListRepository extends BaseRepository<GroceryList> {
   constructor(db: Database.Database) {
     super(db, "grocery_lists");
   }
@@ -258,7 +259,7 @@ export class GroceryListRepository extends BaseRepository {
   }
 }
 
-export class GroceryItemRepository extends BaseRepository {
+export class GroceryItemRepository extends BaseRepository<GroceryItem> {
   constructor(db: Database.Database) {
     super(db, "grocery_items");
   }
@@ -441,7 +442,7 @@ export class GroceryItemRepository extends BaseRepository {
   }
 }
 
-export class ShoppingSessionRepository extends BaseRepository {
+export class ShoppingSessionRepository extends BaseRepository<ShoppingSession> {
   constructor(db: Database.Database) {
     super(db, "shopping_sessions");
   }

@@ -1,9 +1,13 @@
-import jwt from "jsonwebtoken";
+import jwt, { type SignOptions, type Secret } from "jsonwebtoken";
+import type { StringValue } from "ms";
 import crypto from "crypto";
 import {
   type JWTPayload,
   type RefreshTokenPayload,
 } from "../../database/models/User.js";
+
+// Re-export types for convenience
+export type { JWTPayload, RefreshTokenPayload };
 import appConfig from "../../config/app.config.js";
 
 /**
@@ -29,8 +33,8 @@ export interface TokenPair {
 
 export class JWTManager {
   private readonly secret: string | Buffer;
-  private readonly accessTokenExpiry: string;
-  private readonly refreshTokenExpiry: string;
+  private readonly accessTokenExpiry: StringValue;
+  private readonly refreshTokenExpiry: StringValue;
 
   constructor() {
     const jwtSecret = appConfig.security.jwtSecret;
@@ -39,8 +43,8 @@ export class JWTManager {
     }
 
     this.secret = jwtSecret;
-    this.accessTokenExpiry = process.env.JWT_ACCESS_EXPIRY || "15m";
-    this.refreshTokenExpiry = process.env.JWT_REFRESH_EXPIRY || "7d";
+    this.accessTokenExpiry = (process.env.JWT_ACCESS_EXPIRY as StringValue) || "15m";
+    this.refreshTokenExpiry = (process.env.JWT_REFRESH_EXPIRY as StringValue) || "7d";
 
     if (this.secret === "dev-secret-key-change-in-production") {
       if (process.env.NODE_ENV === "production") {
@@ -61,39 +65,43 @@ export class JWTManager {
     username: string;
     role: string;
   }): string {
-    const jwtPayload: JWTPayload = {
+    // Don't include exp field when using expiresIn option
+    const jwtPayload = {
       sub: payload.userId,
       email: payload.email,
       username: payload.username,
       role: payload.role,
       iat: Math.floor(Date.now() / 1000),
-      exp: 0, // Will be set by jwt.sign
       jti: this.generateJTI(),
     };
-
-    return jwt.sign(jwtPayload, this.secret, {
+    
+    const signOptions: SignOptions = {
       expiresIn: this.accessTokenExpiry,
       issuer: "crewai-team",
       audience: "crewai-team-client",
-    });
+    };
+    
+    return jwt.sign(jwtPayload, this.secret, signOptions);
   }
 
   /**
    * Generate a refresh token
    */
   generateRefreshToken(userId: string, tokenId: string): string {
-    const payload: RefreshTokenPayload = {
+    // Don't include exp field when using expiresIn option
+    const payload = {
       sub: userId,
       tokenId,
       iat: Math.floor(Date.now() / 1000),
-      exp: 0, // Will be set by jwt.sign
     };
-
-    return jwt.sign(payload, this.secret, {
+    
+    const signOptions: SignOptions = {
       expiresIn: this.refreshTokenExpiry,
       issuer: "crewai-team",
       audience: "crewai-team-refresh",
-    });
+    };
+    
+    return jwt.sign(payload, this.secret, signOptions);
   }
 
   /**

@@ -10,7 +10,7 @@ interface ServiceStatus {
   details?: Record<string, any>;
 }
 
-interface HealthStatus {
+export interface HealthStatus {
   status: "healthy" | "degraded" | "error";
   timestamp: string;
   version: string;
@@ -59,12 +59,12 @@ export const healthRouter = router({
       clearTimeout(timeoutId);
       
       if (ollamaResponse.ok) {
-        const models = await ollamaResponse.json();
+        const data = await ollamaResponse.json() as { models?: Array<{ name: string }> };
         services.ollama = {
           status: "healthy",
           message: "Ollama is connected",
           details: {
-            models: models.models?.length || 0,
+            models: data.models?.length || 0,
             baseUrl: ollamaConfig.baseUrl,
           },
         };
@@ -244,14 +244,14 @@ export const healthRouter = router({
         throw new Error(`HTTP ${response.status}`);
       }
       
-      const data = await response.json();
+      const data = await response.json() as { models?: Array<{ name: string }> };
       const models = data.models || [];
       
       // Check for required models
       const requiredModels = ["qwen3:14b", "qwen3:8b", "nomic-embed-text"];
-      const availableModels = models.map((m: any) => m.name);
+      const availableModels = models.map((m) => m.name);
       const missingModels = requiredModels.filter(
-        (m) => !availableModels.some((am: string) => am.startsWith(m.split(":")[0] || m))
+        (m) => !availableModels.some((am) => am.startsWith(m.split(":")[0] || m))
       );
       
       return {

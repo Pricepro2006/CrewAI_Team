@@ -323,30 +323,24 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
     if (selectedTimeSlot && onScheduleDelivery) {
       const deliverySlot: DeliverySlot = {
         id: `slot-${Date.now()}`,
-        date: selectedTimeSlot.date,
-        startTime: selectedTimeSlot.slot.startTime,
-        endTime: selectedTimeSlot.slot.endTime,
-        type: deliveryType as 'pickup' | 'delivery',
-        isAvailable: true,
+        date: selectedTimeSlot.date.toISOString().split('T')[0] || '', // Convert Date to string
+        start_time: selectedTimeSlot.slot.startTime,
+        end_time: selectedTimeSlot.slot.endTime,
+        available: true,
         price: finalDeliveryFee,
+        capacity: 100,
+        reserved: false,
       };
       
+      // Use the actual DeliveryOptions interface structure
       const options: DeliveryOptions = {
-        type: deliveryType,
-        address: deliveryType === 'delivery' && selectedAddress ? 
-          (typeof selectedAddress === 'string' ? {
-            street: selectedAddress,
-            city: '',
-            state: '',
-            zipCode: '',
-          } : selectedAddress) : undefined,
-        instructions: specialInstructions || undefined,
-        timeSlot: deliverySlot,
-        recurring: recurringEnabled ? {
-          frequency: recurringFrequency,
-          startDate: selectedTimeSlot.date,
-          active: true,
-        } : undefined,
+        available: true,
+        windows: [deliverySlot],
+        fees: {
+          delivery: finalDeliveryFee,
+          service: 0,
+          tip: 0,
+        },
       };
       
       onScheduleDelivery(deliverySlot, options);
@@ -459,7 +453,7 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
                     <p className="text-sm text-muted-foreground">
                       {typeof selectedAddress === 'string' 
                         ? selectedAddress 
-                        : `${selectedAddress.street}, ${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.zipCode}`}
+                        : `${selectedAddress.street1}, ${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.zipCode}`}
                     </p>
                   </div>
                 </div>
@@ -660,7 +654,7 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
                   <p className="text-sm text-muted-foreground">
                     {typeof defaultAddress === 'string' 
                       ? defaultAddress 
-                      : `${defaultAddress.street}, ${defaultAddress.city}, ${defaultAddress.state} ${defaultAddress.zipCode}`}
+                      : `${defaultAddress.street1}, ${defaultAddress.city}, ${defaultAddress.state} ${defaultAddress.zipCode}`}
                   </p>
                 </Label>
               </div>

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Request, Response } from 'express';
 import { TRPCError } from '@trpc/server';
 import {
@@ -14,12 +14,12 @@ import {
 } from '../csrf.js';
 
 // Mock logger
-jest.mock('../../../../utils/logger', () => ({
+vi.mock('../../../../utils/logger', () => ({
   logger: {
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -39,8 +39,8 @@ describe('CSRF Protection', () => {
     };
 
     mockRes = {
-      cookie: jest.fn(),
-      setHeader: jest.fn(),
+      cookie: vi.fn(),
+      setHeader: vi.fn(),
     };
 
     mockContext = {
@@ -51,7 +51,7 @@ describe('CSRF Protection', () => {
     };
 
     // Clear token metadata between tests
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('generateCSRFToken', () => {
@@ -189,7 +189,7 @@ describe('CSRF Protection', () => {
     const csrfProtection = createEnhancedCSRFProtection();
 
     it('should skip CSRF check for queries', async () => {
-      const next = jest.fn().mockResolvedValue('result');
+      const next = vi.fn().mockResolvedValue('result');
       const result = await csrfProtection({
         ctx: mockContext,
         next,
@@ -201,7 +201,7 @@ describe('CSRF Protection', () => {
     });
 
     it('should skip CSRF check for subscriptions', async () => {
-      const next = jest.fn().mockResolvedValue('result');
+      const next = vi.fn().mockResolvedValue('result');
       const result = await csrfProtection({
         ctx: mockContext,
         next,
@@ -213,7 +213,7 @@ describe('CSRF Protection', () => {
     });
 
     it('should throw error for mutations without CSRF token', async () => {
-      const next = jest.fn();
+      const next = vi.fn();
 
       await expect(
         csrfProtection({
@@ -231,7 +231,7 @@ describe('CSRF Protection', () => {
       mockReq.headers = { 'x-csrf-token': token };
       mockReq.cookies = { '__Host-csrf-token': token };
 
-      const next = jest.fn().mockResolvedValue('result');
+      const next = vi.fn().mockResolvedValue('result');
       const result = await csrfProtection({
         ctx: mockContext,
         next,
@@ -249,9 +249,9 @@ describe('CSRF Protection', () => {
 
       // Force token to be old enough for rotation
       updateTokenMetadata(oldToken, 'test-user');
-      jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 2 * 60 * 60 * 1000); // 2 hours later
+      vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 2 * 60 * 60 * 1000); // 2 hours later
 
-      const next = jest.fn().mockResolvedValue('result');
+      const next = vi.fn().mockResolvedValue('result');
       await csrfProtection({
         ctx: mockContext,
         next,
@@ -270,7 +270,7 @@ describe('CSRF Protection', () => {
     const tokenProvider = ensureCSRFToken();
 
     it('should generate token if none exists', async () => {
-      const next = jest.fn().mockResolvedValue('result');
+      const next = vi.fn().mockResolvedValue('result');
       
       await tokenProvider({
         ctx: mockContext,
@@ -287,7 +287,7 @@ describe('CSRF Protection', () => {
       const existingToken = 'existing-token';
       mockReq.cookies = { '__Host-csrf-token': existingToken };
 
-      const next = jest.fn().mockResolvedValue('result');
+      const next = vi.fn().mockResolvedValue('result');
       
       await tokenProvider({
         ctx: mockContext,
@@ -313,7 +313,7 @@ describe('CSRF Protection', () => {
       };
 
       const csrfProtection = createEnhancedCSRFProtection();
-      const next = jest.fn().mockResolvedValue('result');
+      const next = vi.fn().mockResolvedValue('result');
 
       const result = await csrfProtection({
         ctx: mockContext,
@@ -337,7 +337,7 @@ describe('CSRF Protection', () => {
       };
 
       const csrfProtection = createEnhancedCSRFProtection();
-      const next = jest.fn().mockResolvedValue('result');
+      const next = vi.fn().mockResolvedValue('result');
 
       const result = await csrfProtection({
         ctx: mockContext,

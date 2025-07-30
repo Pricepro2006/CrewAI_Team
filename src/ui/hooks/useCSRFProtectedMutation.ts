@@ -36,7 +36,7 @@ export function useCSRFProtectedMutation<
     retryDelay?: number;
     onCSRFError?: (error: Error) => void;
     onSuccess?: (data: TOutput) => void;
-    onError?: (error: TRPCClientErrorLike<TError>) => void;
+    onError?: (error: TRPCClientErrorLike<any>) => void;
   },
 ) {
   const { refreshToken } = useCSRF();

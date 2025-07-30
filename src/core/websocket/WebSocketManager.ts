@@ -1,8 +1,8 @@
 import { Server as HTTPServer } from "http";
 import { Server as SocketIOServer, Socket } from "socket.io";
-import { logger } from "../../utils/logger";
-import { EmailAnalyticsService } from "../database/EmailAnalyticsService";
-import { redisService, CacheKeys, CacheTTL } from "../cache/RedisService";
+import { logger } from "../../utils/logger.js";
+import { EmailAnalyticsService } from "../../database/EmailAnalyticsService.js";
+import { redisService, CacheKeys, CacheTTL } from "../../services/cache/RedisService.js";
 
 interface WebSocketConfig {
   port?: number;
