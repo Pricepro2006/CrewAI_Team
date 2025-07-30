@@ -26,12 +26,24 @@
     "../../src/api/**/*",
     "../../src/core/**/*",
     "../../src/config/**/*",
-    "../../src/utils/**/*"
+    "../../src/utils/**/*",
+    "../../src/shared/**/*",
+    "../../src/database/**/*",
+    "../../src/monitoring/**/*",
+    "../../src/middleware/**/*",
+    "../../src/types/**/*"
   ],
   "exclude": [
     "src/ui/**/*",
     "node_modules",
-    "dist"
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/test/**/*",
+    "**/tests/**/*",
+    "**/__tests__/**/*"
   ],
   "ts-node": {
     "esm": true,
