@@ -2,6 +2,8 @@
 
 A production-ready enterprise AI agent framework with comprehensive email intelligence, Walmart grocery automation, and advanced workflow orchestration.
 
+<!-- Test change for pre-commit hook verification -->
+
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![React](https://img.shields.io/badge/React-18.2-61dafb)
 ![Node.js](https://img.shields.io/badge/Node.js-20.11-green)
@@ -250,3 +252,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Documentation: [docs/](docs/)
 - Issues: [GitHub Issues](https://github.com/Pricepro2006/CrewAI_Team/issues)
 - Email: support@crewai-team.com
+
+# Test

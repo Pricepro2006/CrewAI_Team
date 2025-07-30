@@ -231,8 +231,12 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   
-  // Mock data
-  const currentPrice = typeof product?.price === 'number' ? product.price : product?.price?.regular || 29.99;
+  // Mock data - handle ProductPrice type properly
+  const currentPrice = typeof product?.price === 'number' 
+    ? product.price 
+    : (typeof product?.price === 'object' && product?.price !== null && 'regular' in product.price)
+      ? (product.price as { regular: number }).regular
+      : 29.99;
   const priceHistory = useMemo(() => generatePriceHistory(currentPrice), [currentPrice]);
   
   const filteredHistory = useMemo(() => {
@@ -462,7 +466,7 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Current: {formatPrice(currentPrice)}
-                      {(typeof currentPrice === 'number' ? currentPrice : currentPrice.regular) <= existingAlert.targetPrice && (
+                      {currentPrice <= existingAlert.targetPrice && (
                         <Badge variant="success" className="ml-2 text-xs">
                           Target Reached!
                         </Badge>

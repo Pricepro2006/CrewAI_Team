@@ -56,7 +56,7 @@ import { cn } from '../../lib/utils.js';
 import { formatPrice } from '../../lib/utils.js';
 import { useGroceryStore } from '../../store/groceryStore.js';
 import { useCart } from '../../hooks/useCart.js';
-import type { WalmartProduct, SubstitutionOptions } from '../../../types/walmart-grocery.js';
+import type { WalmartProduct, SubstitutionOptions, DietaryFilter, AllergenType } from '../../../types/walmart-grocery.js';
 
 interface WalmartSubstitutionManagerProps {
   product?: WalmartProduct;
@@ -95,8 +95,11 @@ const SubstitutionCard: React.FC<{
   onFeedback: (productId: string, positive: boolean) => void;
   isSelected?: boolean;
 }> = ({ original, suggestion, onSelect, onFeedback, isSelected = false }) => {
-  const priceDiff = suggestion.price - original.price;
-  const priceDiffPercent = (priceDiff / original.price) * 100;
+  // Handle ProductPrice type properly for price calculations
+  const originalPrice = typeof original.price === 'number' ? original.price : original.price.regular;
+  const suggestionPrice = typeof suggestion.price === 'number' ? suggestion.price : suggestion.price.regular;
+  const priceDiff = suggestionPrice - originalPrice;
+  const priceDiffPercent = (priceDiff / originalPrice) * 100;
   
   return (
     <div
@@ -127,7 +130,7 @@ const SubstitutionCard: React.FC<{
           ) : (
             <Package className="h-full w-full p-3 text-gray-400" />
           )}
-          {!suggestion.inStock && (
+          {!(suggestion.inStock || suggestion.availability?.inStock) && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <span className="text-xs text-white font-medium">Out of Stock</span>
             </div>
@@ -145,7 +148,7 @@ const SubstitutionCard: React.FC<{
           
           {/* Price comparison */}
           <div className="flex items-center gap-3">
-            <span className="font-medium">{formatPrice(suggestion.price)}</span>
+            <span className="font-medium">{formatPrice(suggestionPrice)}</span>
             {priceDiff !== 0 && (
               <Badge
                 variant={priceDiff < 0 ? "success" : "secondary"}
@@ -285,29 +288,35 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
   const [selectedSubstitute, setSelectedSubstitute] = useState<string | null>(null);
   const [substitutionPrefs, setSubstitutionPrefs] = useState<SubstitutionPreferences>({
     autoSubstitute: true,
-    preferredBrands: preferences.preferredBrands || [],
+    preferredBrands: preferences.preferredBrands || preferences.favorite_brands || [],
     avoidBrands: [],
     priceRange: 'similar',
     priorityFactors: ['price', 'brand'],
-    dietaryRestrictions: preferences.dietaryRestrictions || [],
+    dietaryRestrictions: preferences.dietaryRestrictions || preferences.dietary_preferences || [],
     allergens: preferences.allergens || [],
   });
   const [filterCategory, setFilterCategory] = useState<'all' | 'preferred' | 'cheaper' | 'healthier'>('all');
   
-  // Mock substitution suggestions
+  // Mock substitution suggestions - helper function to get numeric price
+  const getProductPrice = (product: WalmartProduct): number => {
+    return typeof product.price === 'number' ? product.price : product.price.regular;
+  };
+
   const mockSuggestions: SubstitutionSuggestion[] = product ? [
     {
+      ...product, // Inherit all properties from WalmartProduct
       id: 'sub-1',
-      name: `${product.brand || 'Store Brand'} ${product.category} Alternative`,
+      walmartId: 'sub-wm-1',
+      name: `${product.brand || 'Store Brand'} ${typeof product.category === 'string' ? product.category : 'Product'} Alternative`,
       brand: 'Great Value',
-      price: product.price * 0.85,
-      category: product.category,
-      unit: product.unit,
-      inStock: true,
-      thumbnailUrl: product.thumbnailUrl,
+      price: getProductPrice(product) * 0.85,
+      description: 'Alternative product with similar quality',
+      images: product.images || [],
+      availability: product.availability || { inStock: true },
+      metadata: product.metadata || { source: 'manual' as const },
       reason: 'Similar product, lower price',
       matchScore: 92,
-      priceDifference: -product.price * 0.15,
+      priceDifference: -getProductPrice(product) * 0.15,
       isPreferred: true,
       nutritionComparison: {
         calories: { original: 120, substitute: 110 },
@@ -316,18 +325,19 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
       },
     },
     {
+      ...product, // Inherit all properties from WalmartProduct
       id: 'sub-2',
+      walmartId: 'sub-wm-2',
       name: `Organic ${product.name}`,
       brand: 'Nature Valley',
-      price: product.price * 1.2,
-      category: product.category,
-      unit: product.unit,
-      inStock: true,
-      isOrganic: true,
-      thumbnailUrl: product.thumbnailUrl,
+      price: getProductPrice(product) * 1.2,
+      description: 'Organic alternative with better nutritional profile',
+      images: product.images || [],
+      availability: product.availability || { inStock: true },
+      metadata: product.metadata || { source: 'manual' as const },
       reason: 'Organic option available',
       matchScore: 85,
-      priceDifference: product.price * 0.2,
+      priceDifference: getProductPrice(product) * 0.2,
       nutritionComparison: {
         calories: { original: 120, substitute: 115 },
         protein: { original: 3, substitute: 5 },
@@ -335,17 +345,19 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
       },
     },
     {
+      ...product, // Inherit all properties from WalmartProduct
       id: 'sub-3',
-      name: `Premium ${product.category}`,
+      walmartId: 'sub-wm-3',
+      name: `Premium ${typeof product.category === 'string' ? product.category : 'Product'}`,
       brand: product.brand || 'Premium Brand',
-      price: product.price * 1.1,
-      category: product.category,
-      unit: product.unit,
-      inStock: true,
-      thumbnailUrl: product.thumbnailUrl,
+      price: getProductPrice(product) * 1.1,
+      description: 'Premium version with enhanced quality',
+      images: product.images || [],
+      availability: product.availability || { inStock: true },
+      metadata: product.metadata || { source: 'manual' as const },
       reason: 'Same brand, different size',
       matchScore: 88,
-      priceDifference: product.price * 0.1,
+      priceDifference: getProductPrice(product) * 0.1,
     },
   ] : [];
   
@@ -380,8 +392,10 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
   const handleSavePreferences = () => {
     updatePreferences({
       preferredBrands: substitutionPrefs.preferredBrands,
-      dietaryRestrictions: substitutionPrefs.dietaryRestrictions,
-      allergens: substitutionPrefs.allergens,
+      favorite_brands: substitutionPrefs.preferredBrands, // Support both property names
+      dietaryRestrictions: substitutionPrefs.dietaryRestrictions as DietaryFilter[],
+      dietary_preferences: substitutionPrefs.dietaryRestrictions as DietaryFilter[], // Support both property names
+      allergens: substitutionPrefs.allergens as AllergenType[],
     });
     setShowPreferencesDialog(false);
   };
@@ -426,7 +440,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{sub.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatPrice(sub.price)} • {sub.reason}
+                      {formatPrice(typeof sub.price === 'number' ? sub.price : sub.price.regular)} • {sub.reason}
                     </p>
                   </div>
                   {sub.isPreferred && (
@@ -497,11 +511,11 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
                     <div>
                       <p className="font-medium">{product.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {formatPrice(product.price)} • Original selection
+                        {formatPrice(getProductPrice(product))} • Original selection
                       </p>
                     </div>
                   </div>
-                  {!product.inStock && (
+                  {!(product.inStock || product.availability?.inStock) && (
                     <Badge variant="destructive">Out of Stock</Badge>
                   )}
                 </div>

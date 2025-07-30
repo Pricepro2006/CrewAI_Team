@@ -1,35 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-<<<<<<< Updated upstream
-# Run commit message validation
-tsx scripts/check-commit-msg.ts "$1"
-=======
 echo "📝 Validating commit message..."
 
-# Read the commit message
-commit_message=$(cat "$1")
-
-# Conventional commit pattern
-pattern="^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?: .{1,50}$"
-
-if echo "$commit_message" | grep -qE "$pattern"; then
-  echo "✅ Commit message format is valid"
-else
-  echo "❌ Invalid commit message format!"
-  echo ""
-  echo "Commit message must follow conventional commit format:"
-  echo "  type(scope): description"
-  echo ""
-  echo "Valid types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert"
-  echo ""
-  echo "Examples:"
-  echo "  feat(auth): add user authentication"
-  echo "  fix(api): resolve database connection issue"
-  echo "  docs: update README with setup instructions"
-  echo "  refactor(email): simplify email processing logic"
-  echo ""
-  echo "Your commit message: '$commit_message'"
-  exit 1
-fi
->>>>>>> Stashed changes
+# Run commit message validation using TypeScript script
+tsx scripts/check-commit-msg.ts "$1"

@@ -924,6 +924,10 @@ export interface UserPreferences extends TimestampedEntity {
   notification_preferences?: NotificationPreferences;
   substitution_preferences?: SubstitutionPreferences;
   delivery_preferences?: DeliveryPreferences;
+  // Additional properties used by components
+  preferredBrands?: string[];
+  dietaryRestrictions?: DietaryFilter[];
+  allergens?: AllergenType[];
 }
 
 export interface BudgetSettings {
@@ -982,6 +986,7 @@ export interface DealMatch {
   match_score: number;
   matched_criteria: string[];
   potential_savings: number;
+  savings: number; // Adding missing savings property
   deal?: Deal;
   product?: WalmartProduct;
 }

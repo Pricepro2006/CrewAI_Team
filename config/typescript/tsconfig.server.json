@@ -34,16 +34,17 @@
     "../../src/types/**/*"
   ],
   "exclude": [
-    "src/ui/**/*",
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "**/test/**/*",
-    "**/tests/**/*",
-    "**/__tests__/**/*"
+    "../../src/ui/**/*",
+    "../../node_modules",
+    "../../dist",
+    "../../**/*.test.ts",
+    "../../**/*.test.tsx",
+    "../../**/*.spec.ts",
+    "../../**/*.spec.tsx",
+    "../../**/test/**/*",
+    "../../**/tests/**/*",
+    "../../**/__tests__/**/*",
+    "../../src/test/**/*"
   ],
   "ts-node": {
     "esm": true,
