@@ -60,7 +60,7 @@ export function useTRPCWithCSRF(config: TRPCClientConfig = {}) {
               url: mergedConfig.wsUrl!,
               retryDelayMs: () => Math.min(1000 * 2 ** 0, 30000),
               WebSocket: window.WebSocket,
-              // @ts-ignore - connectionParams might not be in the type definition
+              // @ts-expect-error - connectionParams might not be in the type definition
               connectionParams: () => {
                 const authToken = localStorage.getItem("token");
                 return {
