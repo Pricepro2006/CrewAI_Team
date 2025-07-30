@@ -29,7 +29,7 @@ jobs:
       - name: Setup build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-distutils python3-dev build-essential
+          sudo apt-get install -y python3-setuptools python3-pip python3-dev build-essential python-is-python3
 
       - name: Install dependencies
         run: npm ci
@@ -59,7 +59,7 @@ jobs:
       - name: Setup build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-distutils python3-dev build-essential
+          sudo apt-get install -y python3-setuptools python3-pip python3-dev build-essential python-is-python3
 
       - name: Install dependencies
         run: npm ci
@@ -101,7 +101,7 @@ jobs:
       - name: Setup build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-distutils python3-dev build-essential
+          sudo apt-get install -y python3-setuptools python3-pip python3-dev build-essential python-is-python3
 
       - name: Install dependencies
         run: npm ci
@@ -134,7 +134,7 @@ jobs:
       - name: Setup build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-distutils python3-dev build-essential
+          sudo apt-get install -y python3-setuptools python3-pip python3-dev build-essential python-is-python3
 
       - name: Install dependencies
         run: npm ci
@@ -167,7 +167,7 @@ jobs:
       - name: Setup build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-distutils python3-dev build-essential
+          sudo apt-get install -y python3-setuptools python3-pip python3-dev build-essential python-is-python3
 
       - name: Install dependencies
         run: npm ci
@@ -211,7 +211,7 @@ jobs:
       - name: Setup build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-distutils python3-dev build-essential
+          sudo apt-get install -y python3-setuptools python3-pip python3-dev build-essential python-is-python3
 
       - name: Install dependencies
         run: npm ci
