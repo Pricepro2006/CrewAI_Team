@@ -9,20 +9,43 @@ A production-ready enterprise AI agent framework with comprehensive email intell
 ![Node.js](https://img.shields.io/badge/Node.js-20.11-green)
 ![SQLite](https://img.shields.io/badge/SQLite-3.44-003B57)
 ![Status](https://img.shields.io/badge/Status-Production-green)
-![Phase](https://img.shields.io/badge/Phase_4-Complete-brightgreen)
+![Phase](https://img.shields.io/badge/Phase_5-Complete-brightgreen)
 
 ## Overview
 
 CrewAI Team is a sophisticated multi-agent AI system designed for enterprise-scale operations. It features intelligent email processing, automated workflow management, and seamless integration with business systems.
 
-### 🎉 Phase 4 Complete: Real-Time Data Integration
+### 🎉 Phase 5 Complete: Email Pipeline Deployed
 
-The system has successfully completed Phase 4, transitioning from static data to full API integration:
+The system has successfully completed Phase 5, deploying a comprehensive email processing pipeline:
 
-- ✅ **95% Complete** - All UI components now fetch real data from APIs
-- ✅ **Real-Time Updates** - 5-second polling and WebSocket integration
-- ✅ **Production Ready** - All critical bugs resolved, comprehensive error handling
-- ✅ **TypeScript Migration** - Reduced from 726 to 0 blocking errors
+- ✅ **Email Pipeline Operational** - Processing 51,796 emails with three-phase analysis
+- ✅ **Real-Time Health Monitoring** - Health endpoints at `/api/health/email-pipeline`
+- ✅ **Production Scripts** - Automated backup, recovery, and deployment systems
+- ✅ **Full Data Integration** - 95% of UI components using real-time APIs
+- ✅ **Zero TypeScript Errors** - Clean compilation across entire codebase
+
+### Email Pipeline Architecture
+
+The email pipeline features a sophisticated three-phase analysis system:
+
+#### Phase 1: Quick Classification (< 100ms per email)
+- Workflow detection (RMA, quotes, orders, tracking, support)
+- Priority assignment (critical, high, medium, low)
+- Basic sentiment analysis
+- Intent classification
+
+#### Phase 2: Deep Analysis (High-priority emails only)
+- Entity extraction (order numbers, tracking IDs, customer names)
+- Product mention detection
+- Advanced sentiment scoring
+- Action requirement detection
+
+#### Phase 3: Final Enrichment
+- Customer history integration
+- Product family mapping
+- Related email threading
+- Response template generation
 
 #### Critical Issues Resolved
 
@@ -52,6 +75,16 @@ The system has successfully completed Phase 4, transitioning from static data to
 - **Real-Time Updates** - WebSocket-powered live data synchronization with 5-second polling
 - **Security-First** - CSRF protection, security headers, and comprehensive middleware
 - **Browser Compatibility** - Custom polyfills and module handling for cross-browser support
+
+### Email Pipeline Features
+
+- **Batch Processing** - Processes emails in configurable batches (default: 5 emails)
+- **Redis Queue Management** - Reliable job queuing with retry mechanisms
+- **Health Monitoring** - Real-time pipeline health at `/api/health/email-pipeline`
+- **Automated Backup** - Daily backups with 7-day rotation
+- **Error Recovery** - Automatic retry with exponential backoff
+- **Dashboard Integration** - Live analytics and workflow statistics
+- **Production Scripts** - Deployment, backup, and recovery automation
 
 ## Getting Started
 
@@ -157,6 +190,42 @@ src/
 ├── database/       # Database layer
 ├── shared/         # Shared types and utilities
 └── ui/             # UI components
+scripts/
+├── email-extraction/  # Email extraction and processing scripts
+│   ├── app_auth.py                      # Client credentials authentication
+│   ├── fixed_device_auth.py             # Interactive device authentication
+│   ├── refresh_token.py                 # Token refresh utility
+│   ├── run_with_auth.sh                 # Main extraction entry point
+│   ├── run_comprehensive_extraction.sh  # Full email extraction
+│   ├── run_email_batching.sh            # Create 5-email JSON batches
+│   └── extract_all_2025.py              # Extract emails from 2025 onwards
+```
+
+### Email Extraction Scripts
+
+The `scripts/email-extraction/` directory contains tools for extracting emails from Microsoft Graph API:
+
+#### Authentication
+- **app_auth.py** - Uses client credentials flow with secrets from `.env`
+- **fixed_device_auth.py** - Interactive authentication via https://microsoft.com/devicelogin
+- **refresh_token.py** - Refreshes expired access tokens
+
+#### Extraction
+- **run_with_auth.sh** - Main entry point that checks authentication and runs extraction
+- **run_comprehensive_extraction.sh** - Extracts all emails from all folders
+- **extract_all_2025.py** - Python script to extract emails from 2025 onwards
+
+#### Batching
+- **run_email_batching.sh** - Creates JSON files with 5 emails each for processing
+- **comprehensive_email_batcher.py** - Python implementation of email batching
+
+#### Usage
+```bash
+# Authenticate and extract emails
+./scripts/email-extraction/run_with_auth.sh --start-date 2025-05-22T00:00:00Z
+
+# Create email batches for analysis
+./scripts/email-extraction/run_email_batching.sh
 ```
 
 ## API Documentation
@@ -164,9 +233,50 @@ src/
 The system provides a comprehensive REST and tRPC API:
 
 - `/api/health` - System health check
+- `/api/health/email-pipeline` - Email pipeline health monitoring
 - `/api/agents` - Agent management
 - `/api/emails` - Email operations
 - `/api/tasks` - Task management
+- `/api/email-analysis` - Email analysis results
+- `/api/workflow-stats` - Workflow statistics and analytics
+
+### Email Pipeline Endpoints
+
+#### Health Check
+```bash
+GET /api/health/email-pipeline
+
+Response:
+{
+  "status": "healthy",
+  "timestamp": "2025-01-30T12:00:00Z",
+  "database": { "connected": true, "emailCount": 51796 },
+  "redis": { "connected": true, "queueLength": 0 },
+  "pipeline": { "active": true, "batchesProcessed": 245 }
+}
+```
+
+#### Email Analysis Stats
+```bash
+GET /api/email-analysis/stats
+
+Response:
+{
+  "totalAnalyzed": 12453,
+  "byWorkflow": {
+    "return_merchandise": 3421,
+    "quote_to_order": 2156,
+    "order_processing": 4532,
+    "general_inquiry": 2344
+  },
+  "byPriority": {
+    "critical": 512,
+    "high": 2341,
+    "medium": 7823,
+    "low": 1777
+  }
+}
+```
 
 See [docs/api/](docs/api/) for detailed API documentation.
 

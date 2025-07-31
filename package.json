@@ -50,7 +50,18 @@
     "pipeline:test": "tsx src/scripts/test-pipeline-small-batch.ts",
     "pipeline:execute": "tsx src/scripts/run-three-stage-pipeline.ts",
     "pipeline:execute:prod": "tsx src/scripts/execute-pipeline-production.ts",
-    "pipeline:monitor": "tsx src/scripts/monitor-pipeline.ts"
+    "pipeline:monitor": "tsx src/scripts/monitor-pipeline.ts",
+    "test:production:integration": "vitest run --config vitest.production.config.ts tests/production/email-pipeline-integration.test.ts",
+    "test:production:load": "vitest run --config vitest.production.config.ts tests/production/load-test-email-pipeline.ts",
+    "test:production:deployment": "./scripts/test-production-deployment.sh",
+    "test:production:all": "npm run test:production:integration && npm run test:production:load && npm run test:production:deployment",
+    "test:production:coverage": "vitest run --config vitest.production.config.ts --coverage",
+    "test:production:ci": "npm run test:production:deployment && npm run test:production:integration && npm run test:production:load",
+    "db:migrate:production": "NODE_ENV=production tsx src/scripts/runDatabaseMigrations.ts migrate",
+    "db:optimize": "tsx scripts/optimize-database.ts",
+    "install:workaround": "./scripts/install-workaround.sh",
+    "install:patch": "node scripts/patch-install.js",
+    "pipeline:start": "./scripts/start-email-pipeline.sh"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",

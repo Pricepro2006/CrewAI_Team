@@ -138,7 +138,6 @@ export class PipelineOrchestrator {
   private transformEmailForAgent(dbEmail: any): Email {
     return {
       id: dbEmail.id,
-      messageId: dbEmail.message_id,
       subject: dbEmail.subject,
       body: dbEmail.body || "",
       bodyPreview:
@@ -154,13 +153,30 @@ export class PipelineOrchestrator {
       },
       to: this.parseRecipients(dbEmail.recipient_emails),
       receivedDateTime: dbEmail.date_received,
-      hasAttachments: dbEmail.has_attachments || false,
       isRead: dbEmail.is_read || false,
+      categories: dbEmail.folder ? [dbEmail.folder] : [],
       metadata: {
         folder: dbEmail.folder,
         createdAt: dbEmail.created_at,
         updatedAt: dbEmail.updated_at,
+        messageId: dbEmail.message_id,
+        hasAttachments: dbEmail.has_attachments || false,
       },
+      // Legacy fields for backward compatibility
+      sender_email: dbEmail.sender_email || "unknown@email.com",
+      recipient_emails: dbEmail.recipient_emails,
+      date_received: dbEmail.date_received,
+      raw_headers: dbEmail.raw_headers,
+      message_id: dbEmail.message_id,
+      in_reply_to: dbEmail.in_reply_to,
+      thread_id: dbEmail.thread_id,
+      labels: dbEmail.labels,
+      attachments: dbEmail.attachments,
+      is_read: dbEmail.is_read || false,
+      is_starred: dbEmail.is_starred || false,
+      folder: dbEmail.folder,
+      created_at: dbEmail.created_at,
+      updated_at: dbEmail.updated_at,
     };
   }
 
@@ -182,7 +198,7 @@ export class PipelineOrchestrator {
             name:
               typeof r === "string"
                 ? r.split("@")[0]
-                : r.name || r.address?.split("@")[0] || "Unknown",
+                : r.name || (r.address ? r.address.split("@")[0] : "Unknown"),
           },
         }));
       }
@@ -191,7 +207,7 @@ export class PipelineOrchestrator {
       return recipientsStr.split(",").map((email) => ({
         emailAddress: {
           address: email.trim(),
-          name: email.trim().split("@")[0],
+          name: email.trim().split("@")[0] || "Unknown",
         },
       }));
     }

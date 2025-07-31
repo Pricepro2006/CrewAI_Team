@@ -49,6 +49,7 @@ import {
   authTracking,
 } from "./middleware/monitoring.js";
 import monitoringRouter from "./routes/monitoring.router.js";
+import emailPipelineHealthRouter from "./routes/email-pipeline-health.router.js";
 
 import { errorTracker } from "../monitoring/ErrorTracker.js";
 
@@ -210,6 +211,10 @@ app.use("/api/websocket", websocketMonitorRouter);
 
 // Monitoring routes
 app.use("/api/monitoring", monitoringRouter);
+
+// Email pipeline health routes
+app.use("/api/health", emailPipelineHealthRouter);
+app.use("/api/metrics", emailPipelineHealthRouter);
 
 // tRPC middleware
 app.use(

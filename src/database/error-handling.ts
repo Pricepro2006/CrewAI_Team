@@ -23,11 +23,47 @@ export enum DatabaseErrorCode {
 }
 
 /**
+ * Type guard for Error objects
+ */
+function isError(value: unknown): value is Error {
+  return value instanceof Error || 
+    (typeof value === 'object' && 
+     value !== null && 
+     'message' in value && 
+     typeof (value as any).message === 'string');
+}
+
+/**
+ * Safe error message extraction
+ */
+function getErrorMessage(error: unknown): string {
+  if (typeof error === 'string') return error;
+  if (isError(error)) return error.message;
+  return String(error);
+}
+
+/**
+ * Safe error details extraction
+ */
+function getErrorDetails(error: unknown): any {
+  if (isError(error)) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+  }
+  return { rawError: String(error) };
+}
+
+/**
  * Maps SQLite error codes to our error types
  */
-function mapDatabaseError(error: any): AppError {
+function mapDatabaseError(error: unknown): AppError {
   if (!(error instanceof Error)) {
-    return new DatabaseError('Unknown database error', { originalError: error });
+    return DatabaseError('Unknown database error', { 
+      originalError: getErrorDetails(error) 
+    });
   }
 
   const message = error.message.toLowerCase();
@@ -94,7 +130,7 @@ function mapDatabaseError(error: any): AppError {
   }
 
   // Default database error
-  return new DatabaseError(error.message, { originalError: error });
+  return DatabaseError(error.message, { originalError: error.message });
 }
 
 /**
@@ -134,14 +170,17 @@ export function withTransaction<T>(
   
   try {
     if (exclusive) {
-      return db.transaction(operation).exclusive();
+      const transaction = db.transaction(operation).exclusive();
+      return transaction();
     } else if (immediate) {
-      return db.transaction(operation).immediate();
+      const transaction = db.transaction(operation).immediate();
+      return transaction();
     } else {
-      return db.transaction(operation).deferred();
+      const transaction = db.transaction(operation).deferred();
+      return transaction();
     }
   } catch (error) {
-    logger.error('Transaction failed:', error);
+    logger.error('Transaction failed', 'DB_TRANSACTION', { error: getErrorMessage(error) });
     throw mapDatabaseError(error);
   }
 }
@@ -169,10 +208,10 @@ export function safeQuery<T = any>(
     
     return result as T;
   } catch (error) {
-    logger.error('Query execution failed:', {
+    logger.error('Query execution failed', 'DB_QUERY', {
       query,
       params,
-      error: error instanceof Error ? error.message : error,
+      error: getErrorMessage(error),
     });
     
     throw mapDatabaseError(error);
@@ -260,23 +299,23 @@ export class DatabaseConnectionManager {
       this.db.pragma('busy_timeout = 5000');
       
       this.connectionAttempts = 0;
-      logger.info('Database connected successfully');
+      logger.info('Database connected successfully', 'DB_CONNECTION');
       
       return this.db;
     } catch (error) {
       this.connectionAttempts++;
       
       if (this.connectionAttempts >= this.maxConnectionAttempts) {
-        logger.error('Max connection attempts reached', {
+        logger.error('Max connection attempts reached', 'DB_CONNECTION', {
           attempts: this.connectionAttempts,
-          error: error instanceof Error ? error.message : error,
+          error: getErrorMessage(error),
         });
         throw mapDatabaseError(error);
       }
       
-      logger.warn(`Database connection failed, retrying in ${this.reconnectDelay}ms...`, {
+      logger.warn(`Database connection failed, retrying in ${this.reconnectDelay}ms...`, 'DB_CONNECTION', {
         attempt: this.connectionAttempts,
-        error: error instanceof Error ? error.message : error,
+        error: getErrorMessage(error),
       });
       
       // Wait before retrying
@@ -304,9 +343,9 @@ export class DatabaseConnectionManager {
     if (this.db) {
       try {
         this.db.close();
-        logger.info('Database connection closed');
+        logger.info('Database connection closed', 'DB_CONNECTION');
       } catch (error) {
-        logger.error('Error closing database connection:', error);
+        logger.error('Error closing database connection', 'DB_CONNECTION', { error: getErrorMessage(error) });
       } finally {
         this.db = null;
       }
@@ -333,7 +372,7 @@ export class PreparedStatementCache {
   
   constructor(private db: Database.Database) {}
   
-  get<T = any>(query: string): Database.Statement<T> {
+  get<T extends {} | unknown[] = any>(query: string): Database.Statement<T> {
     try {
       let stmt = this.cache.get(query);
       
@@ -344,9 +383,9 @@ export class PreparedStatementCache {
       
       return stmt as Database.Statement<T>;
     } catch (error) {
-      logger.error('Failed to prepare statement:', {
+      logger.error('Failed to prepare statement', 'DB_STATEMENT', {
         query,
-        error: error instanceof Error ? error.message : error,
+        error: getErrorMessage(error),
       });
       throw mapDatabaseError(error);
     }

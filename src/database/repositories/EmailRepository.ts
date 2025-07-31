@@ -785,6 +785,23 @@ export class EmailRepository {
   }
 
   /**
+   * Count total emails in the repository
+   */
+  async count(): Promise<number> {
+    try {
+      const result = this.db
+        .prepare('SELECT COUNT(*) as count FROM emails_enhanced')
+        .get() as { count: number };
+      return result.count;
+    } catch (error) {
+      logger.error('Failed to count emails', 'EMAIL_REPOSITORY', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return 0;
+    }
+  }
+
+  /**
    * Close prepared statements and database connection
    */
   close(): void {

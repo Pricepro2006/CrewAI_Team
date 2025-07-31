@@ -372,4 +372,5 @@ nicholas_*.json
 *extraction_progress.json
 *_spartanburg.json
 *purchase*.json
-*order*.json
+*order*.jsontest_batches/
+test_batches_converted/

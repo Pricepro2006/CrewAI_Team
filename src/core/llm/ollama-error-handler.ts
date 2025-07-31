@@ -58,7 +58,7 @@ export class ErrorHandlingOllamaProvider {
             if (error.message.includes('not found')) {
               const modelMatch = error.message.match(/Model (\S+) not found/);
               const model = modelMatch ? modelMatch[1] : 'unknown';
-              throw OllamaModelNotFoundError(model, {
+              throw OllamaModelNotFoundError(model ?? 'unknown', {
                 suggestion: `Pull the model first: ollama pull ${model}`,
               });
             }
@@ -71,7 +71,7 @@ export class ErrorHandlingOllamaProvider {
         retryDelay: 1000,
         context: 'OllamaProvider.initialize',
         onError: (error) => {
-          logger.error('Failed to initialize Ollama provider:', error);
+          logger.error('Failed to initialize Ollama provider', 'OLLAMA', { error: error instanceof Error ? error.message : String(error) });
         },
       }
     );
@@ -112,8 +112,8 @@ export class ErrorHandlingOllamaProvider {
             context: 'OllamaProvider.generate',
             onError: (error) => {
               this.retryAttempts++;
-              logger.warn(`Ollama generation retry ${this.retryAttempts}/${this.maxRetries}`, {
-                error: error.message,
+              logger.warn(`Ollama generation retry ${this.retryAttempts}/${this.maxRetries}`, 'OLLAMA', {
+                error: error instanceof Error ? error.message : String(error),
                 model: this.provider.getModel(),
               });
             },
@@ -259,7 +259,7 @@ export class ErrorHandlingOllamaProvider {
       );
       return true;
     } catch (error) {
-      logger.warn('Ollama health check failed:', error);
+      logger.warn('Ollama health check failed', 'OLLAMA', { error: error instanceof Error ? error.message : String(error) });
       return false;
     }
   }
