@@ -108,8 +108,10 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
   onEmailSelect,
   selectedEmailId,
 }) => {
-  const [activeTab, setActiveTab] = useState<"alias" | "marketing" | "vmware">("alias");
-  
+  const [activeTab, setActiveTab] = useState<"alias" | "marketing" | "vmware">(
+    "alias",
+  );
+
   // Use mock data if no emails provided
   const displayEmails = emails.length > 0 ? emails : mockEmails;
 
@@ -135,9 +137,15 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
               <td>{email.from}</td>
               <td>{email.to?.[0] || "Unknown"}</td>
               <td>{email.subject}</td>
-              <td>{email.analysis?.summary || email.bodyText?.substring(0, 50) || "No summary"}</td>
               <td>
-                <span className={`status-indicator status-${email.priority === "high" ? "red" : "yellow"}`}>
+                {email.analysis?.summary ||
+                  email.bodyText?.substring(0, 50) ||
+                  "No summary"}
+              </td>
+              <td>
+                <span
+                  className={`status-indicator status-${email.priority === "high" ? "red" : "yellow"}`}
+                >
                   ●
                 </span>
               </td>
@@ -197,7 +205,9 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
               <td>{item.subject}</td>
               <td>{item.status}</td>
               <td>
-                <span className={`status-indicator status-${item.statusColor}`}>●</span>
+                <span className={`status-indicator status-${item.statusColor}`}>
+                  ●
+                </span>
               </td>
             </tr>
           ))}
@@ -210,19 +220,19 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
     <div className="email-list-view">
       <div className="email-list-header">
         <div className="email-tabs">
-          <button 
+          <button
             className={`email-tab ${activeTab === "alias" ? "active" : ""}`}
             onClick={() => setActiveTab("alias")}
           >
             Email Alias ({displayEmails.length})
           </button>
-          <button 
+          <button
             className={`email-tab ${activeTab === "marketing" ? "active" : ""}`}
             onClick={() => setActiveTab("marketing")}
           >
             Marketing-Splunk ({sampleMarketing.length})
           </button>
-          <button 
+          <button
             className={`email-tab ${activeTab === "vmware" ? "active" : ""}`}
             onClick={() => setActiveTab("vmware")}
           >

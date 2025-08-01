@@ -1,21 +1,21 @@
-import { logger } from '../../utils/logger';
+import { logger } from "../../utils/logger";
 
 interface QueryFilter {
   field: string;
-  operator: '=' | '!=' | '>' | '<' | '>=' | '<=' | 'LIKE' | 'IN' | 'NOT IN';
+  operator: "=" | "!=" | ">" | "<" | ">=" | "<=" | "LIKE" | "IN" | "NOT IN";
   value: any;
 }
 
 interface QueryOptions {
   orderBy?: string;
-  orderDirection?: 'ASC' | 'DESC';
+  orderDirection?: "ASC" | "DESC";
   limit?: number;
   offset?: number;
 }
 
 export class EmailQueryBuilder {
   private tableName: string;
-  private selectFields: string[] = ['*'];
+  private selectFields: string[] = ["*"];
   private filters: QueryFilter[] = [];
   private joins: string[] = [];
   private groupByFields: string[] = [];
@@ -39,7 +39,7 @@ export class EmailQueryBuilder {
   /**
    * Add a WHERE condition
    */
-  where(field: string, operator: QueryFilter['operator'], value: any): this {
+  where(field: string, operator: QueryFilter["operator"], value: any): this {
     this.filters.push({ field, operator, value });
     return this;
   }
@@ -79,7 +79,7 @@ export class EmailQueryBuilder {
   /**
    * Set ORDER BY
    */
-  orderBy(field: string, direction: 'ASC' | 'DESC' = 'ASC'): this {
+  orderBy(field: string, direction: "ASC" | "DESC" = "ASC"): this {
     this.options.orderBy = field;
     this.options.orderDirection = direction;
     return this;
@@ -106,20 +106,20 @@ export class EmailQueryBuilder {
    */
   build(): { query: string; params: any[] } {
     const params: any[] = [];
-    let query = `SELECT ${this.selectFields.join(', ')} FROM ${this.tableName}`;
+    let query = `SELECT ${this.selectFields.join(", ")} FROM ${this.tableName}`;
 
     // Add joins
     if (this.joins.length > 0) {
-      query += ' ' + this.joins.join(' ');
+      query += " " + this.joins.join(" ");
     }
 
     // Add WHERE clause
     if (this.filters.length > 0) {
-      const whereConditions = this.filters.map(filter => {
-        if (filter.operator === 'IN' || filter.operator === 'NOT IN') {
-          const placeholders = Array.isArray(filter.value) 
-            ? filter.value.map(() => '?').join(', ')
-            : '?';
+      const whereConditions = this.filters.map((filter) => {
+        if (filter.operator === "IN" || filter.operator === "NOT IN") {
+          const placeholders = Array.isArray(filter.value)
+            ? filter.value.map(() => "?").join(", ")
+            : "?";
           if (Array.isArray(filter.value)) {
             params.push(...filter.value);
           } else {
@@ -131,17 +131,17 @@ export class EmailQueryBuilder {
           return `${filter.field} ${filter.operator} ?`;
         }
       });
-      query += ' WHERE ' + whereConditions.join(' AND ');
+      query += " WHERE " + whereConditions.join(" AND ");
     }
 
     // Add GROUP BY
     if (this.groupByFields.length > 0) {
-      query += ' GROUP BY ' + this.groupByFields.join(', ');
+      query += " GROUP BY " + this.groupByFields.join(", ");
     }
 
     // Add HAVING
     if (this.havingClauses.length > 0) {
-      query += ' HAVING ' + this.havingClauses.join(' AND ');
+      query += " HAVING " + this.havingClauses.join(" AND ");
     }
 
     // Add ORDER BY
@@ -159,7 +159,7 @@ export class EmailQueryBuilder {
       query += ` OFFSET ${this.options.offset}`;
     }
 
-    logger.debug('Built query', 'EMAIL_QUERY', { query, params });
+    logger.debug("Built query", "EMAIL_QUERY", { query, params });
     return { query, params };
   }
 
@@ -167,7 +167,7 @@ export class EmailQueryBuilder {
    * Reset the builder
    */
   reset(): this {
-    this.selectFields = ['*'];
+    this.selectFields = ["*"];
     this.filters = [];
     this.joins = [];
     this.groupByFields = [];
@@ -180,25 +180,29 @@ export class EmailQueryBuilder {
    * Common query patterns
    */
   static emailAnalytics() {
-    return new EmailQueryBuilder('email_analysis')
-      .leftJoin('emails', 'email_analysis.email_id = emails.id');
+    return new EmailQueryBuilder("email_analysis").leftJoin(
+      "emails",
+      "email_analysis.email_id = emails.id",
+    );
   }
 
   static emailsWithAnalysis() {
-    return new EmailQueryBuilder('emails')
-      .leftJoin('email_analysis', 'emails.id = email_analysis.email_id');
+    return new EmailQueryBuilder("emails").leftJoin(
+      "email_analysis",
+      "emails.id = email_analysis.email_id",
+    );
   }
 
   static processingMetrics() {
-    return new EmailQueryBuilder('email_analysis')
+    return new EmailQueryBuilder("email_analysis")
       .select([
-        'primary_workflow',
-        'COUNT(*) as count',
-        'AVG(processing_time_ms) as avg_time',
-        'MIN(processing_time_ms) as min_time',
-        'MAX(processing_time_ms) as max_time'
+        "primary_workflow",
+        "COUNT(*) as count",
+        "AVG(processing_time_ms) as avg_time",
+        "MIN(processing_time_ms) as min_time",
+        "MAX(processing_time_ms) as max_time",
       ])
-      .where('workflow_state', '=', 'COMPLETE')
-      .groupBy('primary_workflow');
+      .where("workflow_state", "=", "COMPLETE")
+      .groupBy("primary_workflow");
   }
 }

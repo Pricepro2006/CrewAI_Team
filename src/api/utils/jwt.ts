@@ -43,8 +43,10 @@ export class JWTManager {
     }
 
     this.secret = jwtSecret;
-    this.accessTokenExpiry = (process.env.JWT_ACCESS_EXPIRY as StringValue) || "15m";
-    this.refreshTokenExpiry = (process.env.JWT_REFRESH_EXPIRY as StringValue) || "7d";
+    this.accessTokenExpiry =
+      (process.env.JWT_ACCESS_EXPIRY as StringValue) || "15m";
+    this.refreshTokenExpiry =
+      (process.env.JWT_REFRESH_EXPIRY as StringValue) || "7d";
 
     if (this.secret === "dev-secret-key-change-in-production") {
       if (process.env.NODE_ENV === "production") {
@@ -74,13 +76,13 @@ export class JWTManager {
       iat: Math.floor(Date.now() / 1000),
       jti: this.generateJTI(),
     };
-    
+
     const signOptions: SignOptions = {
       expiresIn: this.accessTokenExpiry,
       issuer: "crewai-team",
       audience: "crewai-team-client",
     };
-    
+
     return jwt.sign(jwtPayload, this.secret, signOptions);
   }
 
@@ -94,13 +96,13 @@ export class JWTManager {
       tokenId,
       iat: Math.floor(Date.now() / 1000),
     };
-    
+
     const signOptions: SignOptions = {
       expiresIn: this.refreshTokenExpiry,
       issuer: "crewai-team",
       audience: "crewai-team-refresh",
     };
-    
+
     return jwt.sign(payload, this.secret, signOptions);
   }
 

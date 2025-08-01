@@ -320,25 +320,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 
   // Check password strength function
-  const checkPasswordStrength = useCallback(
-    async (password: string) => {
-      const result = await api.auth.checkPasswordStrength.mutate({ password });
-      // Map the result to match the expected interface
-      return {
-        isValid: result.isValid,
-        errors: result.errors,
-        strength: result.strength === 'fair' || result.strength === 'good' || result.strength === 'very-strong' 
-          ? 'medium' as const 
-          : result.strength === 'strong' || result.strength === 'very-strong'
-          ? 'strong' as const
-          : 'weak' as const,
-        entropy: result.entropy,
-        isCompromised: result.isCompromised,
-        recommendations: result.recommendations,
-      };
-    },
-    [],
-  );
+  const checkPasswordStrength = useCallback(async (password: string) => {
+    const result = await api.auth.checkPasswordStrength.mutate({ password });
+    // Map the result to match the expected interface
+    return {
+      isValid: result.isValid,
+      errors: result.errors,
+      strength:
+        result.strength === "fair" ||
+        result.strength === "good" ||
+        result.strength === "very-strong"
+          ? ("medium" as const)
+          : result.strength === "strong" || result.strength === "very-strong"
+            ? ("strong" as const)
+            : ("weak" as const),
+      entropy: result.entropy,
+      isCompromised: result.isCompromised,
+      recommendations: result.recommendations,
+    };
+  }, []);
 
   const isAuthenticated = !!user && !!tokens?.accessToken;
 

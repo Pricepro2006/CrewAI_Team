@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { cn } from '../../utils/cn.js';
+import * as React from "react";
+import { cn } from "../../utils/cn.js";
 
 export interface CalendarProps {
   className?: string;
@@ -19,10 +19,10 @@ export function Calendar({
   disabled,
 }: CalendarProps) {
   return (
-    <div className={cn('p-3', className)}>
+    <div className={cn("p-3", className)}>
       <div className="space-y-4">
         <div className="text-center text-sm font-medium">
-          {selected ? selected.toLocaleDateString() : 'Select a date'}
+          {selected ? selected.toLocaleDateString() : "Select a date"}
         </div>
         <div className="text-xs text-muted-foreground">
           Calendar component placeholder

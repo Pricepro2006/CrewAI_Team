@@ -114,68 +114,75 @@ export const userProcedure: ReturnType<typeof t.procedure.use> = t.procedure
 
 // Rate-limited procedures for different operation types
 // Convert express rate limiters to tRPC middleware
-const createRateLimitMiddleware = (name: string, maxRequests: number, windowMs: number) =>
+const createRateLimitMiddleware = (
+  name: string,
+  maxRequests: number,
+  windowMs: number,
+) =>
   t.middleware(async ({ ctx, next }) => {
-    const identifier = ctx.user?.id || ctx.req.ip || 'anonymous';
+    const identifier = ctx.user?.id || ctx.req.ip || "anonymous";
     const rateLimitKey = `trpc_${name}_${identifier}`;
-    
+
     // Implement simple in-memory rate limiting for tRPC procedures
     // This works alongside the Express-level rate limiting
     const now = Date.now();
     const windowStart = now - windowMs;
-    
+
     // Get existing rate limit data from context or create new
     if (!ctx.rateLimits) {
       (ctx as any).rateLimits = new Map();
     }
-    
-    const rateLimits = (ctx as any).rateLimits as Map<string, { count: number; resetTime: number }>;
-    
+
+    const rateLimits = (ctx as any).rateLimits as Map<
+      string,
+      { count: number; resetTime: number }
+    >;
+
     // Clean old entries
     for (const [key, value] of rateLimits.entries()) {
       if (value.resetTime < now) {
         rateLimits.delete(key);
       }
     }
-    
+
     // Check current rate limit
     const existing = rateLimits.get(rateLimitKey);
     if (!existing) {
       rateLimits.set(rateLimitKey, { count: 1, resetTime: now + windowMs });
     } else {
       existing.count++;
-      
+
       // Determine max requests based on user type
       let limit = maxRequests;
-      if (ctx.user?.isAdmin || ctx.user?.role === 'admin') {
+      if (ctx.user?.isAdmin || ctx.user?.role === "admin") {
         limit = maxRequests * 5; // Admins get 5x more
       } else if (ctx.user?.id) {
         limit = Math.floor(maxRequests * 1.5); // Authenticated users get 50% more
       }
-      
+
       if (existing.count > limit) {
         logger.warn(`tRPC Rate limit exceeded for ${name}`, "TRPC_RATE_LIMIT", {
           procedure: name,
           identifier,
           count: existing.count,
           limit,
-          userId: ctx.user?.id
+          userId: ctx.user?.id,
         });
-        
+
         throw new TRPCError({
-          code: 'TOO_MANY_REQUESTS',
-          message: `Rate limit exceeded for ${name}. Please try again later.`
+          code: "TOO_MANY_REQUESTS",
+          message: `Rate limit exceeded for ${name}. Please try again later.`,
         });
       }
     }
-    
+
     logger.debug(`Rate limit check passed for ${name}`, "TRPC_RATE_LIMIT", {
       procedure: name,
       identifier,
       current: existing?.count || 1,
-      limit: maxRequests
+      limit: maxRequests,
     });
-    
+
     return next();
   });
 
@@ -277,15 +284,13 @@ const batchOperationMiddleware = t.middleware(async ({ next, ctx }) => {
   });
 });
 
-export const batchProcedure = protectedProcedure.use(
-  batchOperationMiddleware,
-);
+export const batchProcedure = protectedProcedure.use(batchOperationMiddleware);
 
 // Export createRateLimitMiddleware for use in tests
 export { createRateLimitMiddleware };
 
 // Procedure that ensures CSRF token exists and returns it (for client initialization)
-export const csrfTokenProcedure: ReturnType<typeof t.procedure.use> = 
+export const csrfTokenProcedure: ReturnType<typeof t.procedure.use> =
   t.procedure.use(securityAudit).use(csrfTokenProvider);
 
 // Custom error handlers for different scenarios

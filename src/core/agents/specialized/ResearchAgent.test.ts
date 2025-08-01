@@ -14,17 +14,17 @@ vi.mock("../../tools/web/WebScraperTool");
 // Mock LLM provider for isolated unit testing
 vi.mock("../../llm/OllamaProvider", () => ({
   OllamaProvider: vi.fn().mockImplementation(() => ({
-    generate: vi.fn().mockResolvedValue('Mock LLM response for unit testing'),
+    generate: vi.fn().mockResolvedValue("Mock LLM response for unit testing"),
     generateCompletion: vi.fn().mockResolvedValue({
-      content: 'Mock completion response',
+      content: "Mock completion response",
       usage: {
         prompt_tokens: 10,
         completion_tokens: 20,
-        total_tokens: 30
-      }
+        total_tokens: 30,
+      },
     }),
     isAvailable: vi.fn().mockResolvedValue(true),
-    initialize: vi.fn().mockResolvedValue(undefined)
+    initialize: vi.fn().mockResolvedValue(undefined),
   })),
 }));
 

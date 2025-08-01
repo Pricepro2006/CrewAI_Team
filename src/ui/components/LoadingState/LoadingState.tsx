@@ -1,10 +1,10 @@
-import React from 'react';
-import { Loader2 } from 'lucide-react';
-import { cn } from '../../../utils/cn.js';
-import './LoadingState.css';
+import React from "react";
+import { Loader2 } from "lucide-react";
+import { cn } from "../../../utils/cn.js";
+import "./LoadingState.css";
 
 interface LoadingStateProps {
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
   text?: string;
   fullScreen?: boolean;
   overlay?: boolean;
@@ -12,48 +12,35 @@ interface LoadingStateProps {
 }
 
 export function LoadingState({
-  size = 'medium',
+  size = "medium",
   text,
   fullScreen = false,
   overlay = false,
   className,
 }: LoadingStateProps) {
   const sizeConfig = {
-    small: { iconSize: 16, textSize: 'text-sm' },
-    medium: { iconSize: 24, textSize: 'text-base' },
-    large: { iconSize: 32, textSize: 'text-lg' },
+    small: { iconSize: 16, textSize: "text-sm" },
+    medium: { iconSize: 24, textSize: "text-base" },
+    large: { iconSize: 32, textSize: "text-lg" },
   };
 
   const config = sizeConfig[size];
 
   const content = (
-    <div className={cn('loading-state-content', className)}>
-      <Loader2 
-        className="loading-state-icon" 
-        size={config.iconSize}
-      />
+    <div className={cn("loading-state-content", className)}>
+      <Loader2 className="loading-state-icon" size={config.iconSize} />
       {text && (
-        <p className={cn('loading-state-text', config.textSize)}>
-          {text}
-        </p>
+        <p className={cn("loading-state-text", config.textSize)}>{text}</p>
       )}
     </div>
   );
 
   if (fullScreen) {
-    return (
-      <div className="loading-state-fullscreen">
-        {content}
-      </div>
-    );
+    return <div className="loading-state-fullscreen">{content}</div>;
   }
 
   if (overlay) {
-    return (
-      <div className="loading-state-overlay">
-        {content}
-      </div>
-    );
+    return <div className="loading-state-overlay">{content}</div>;
   }
 
   return content;
@@ -74,11 +61,7 @@ export function Skeleton({
 }: SkeletonProps) {
   return (
     <div
-      className={cn(
-        'skeleton',
-        circle && 'skeleton-circle',
-        className
-      )}
+      className={cn("skeleton", circle && "skeleton-circle", className)}
       style={{
         width: width,
         height: height,
@@ -99,7 +82,7 @@ export function LoadingCard({
   className,
 }: LoadingCardProps) {
   return (
-    <div className={cn('loading-card', className)}>
+    <div className={cn("loading-card", className)}>
       {showAvatar && (
         <div className="loading-card-header">
           <Skeleton circle width={40} height={40} />
@@ -113,7 +96,7 @@ export function LoadingCard({
         {Array.from({ length: lines }).map((_, i) => (
           <Skeleton
             key={i}
-            width={i === lines - 1 ? '80%' : '100%'}
+            width={i === lines - 1 ? "80%" : "100%"}
             height={16}
             className="loading-card-line"
           />

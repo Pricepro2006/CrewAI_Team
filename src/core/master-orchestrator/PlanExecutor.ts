@@ -9,7 +9,11 @@ import type {
   Context,
 } from "./types.js";
 import { wsService } from "../../api/services/WebSocketService.js";
-import { withTimeout, DEFAULT_TIMEOUTS, TimeoutError } from "../../utils/timeout.js";
+import {
+  withTimeout,
+  DEFAULT_TIMEOUTS,
+  TimeoutError,
+} from "../../utils/timeout.js";
 
 export class PlanExecutor {
   constructor(
@@ -72,13 +76,17 @@ export class PlanExecutor {
           metadata: {
             errorType: error instanceof Error ? error.name : "UnknownError",
             isTimeout: error instanceof TimeoutError,
-            ...(error instanceof TimeoutError && { timeoutDuration: error.duration }),
+            ...(error instanceof TimeoutError && {
+              timeoutDuration: error.duration,
+            }),
           },
         });
-        
+
         // Log timeout errors specifically
         if (error instanceof TimeoutError) {
-          console.error(`Step ${step.id} timed out after ${error.duration}ms: ${error.message}`);
+          console.error(
+            `Step ${step.id} timed out after ${error.duration}ms: ${error.message}`,
+          );
         }
       }
     }
@@ -180,21 +188,24 @@ export class PlanExecutor {
   private async gatherContext(step: PlanStep): Promise<Context> {
     let documents: any[] = [];
     let relevance = 0;
-    
+
     try {
       // Attempt to search RAG system with timeout
       const searchPromise = this.ragSystem.search(step.ragQuery, 5);
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('RAG search timeout')), 5000)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("RAG search timeout")), 5000),
       );
-      
+
       documents = await Promise.race([searchPromise, timeoutPromise]);
       relevance = this.calculateRelevance(documents, step);
     } catch (error) {
       // Log the error but don't fail the step
-      console.warn(`RAG search failed for step ${step.id}:`, error instanceof Error ? error.message : 'Unknown error');
-      console.warn('Continuing without RAG context');
-      
+      console.warn(
+        `RAG search failed for step ${step.id}:`,
+        error instanceof Error ? error.message : "Unknown error",
+      );
+      console.warn("Continuing without RAG context");
+
       // Return empty context rather than throwing
       documents = [];
       relevance = 0;
@@ -241,7 +252,7 @@ export class PlanExecutor {
         parameters: step.parameters || {},
       }),
       DEFAULT_TIMEOUTS.TOOL_EXECUTION,
-      `Tool execution timed out for ${step.toolName}`
+      `Tool execution timed out for ${step.toolName}`,
     );
 
     return {
@@ -270,7 +281,7 @@ export class PlanExecutor {
         ragDocuments: context.documents,
       }),
       DEFAULT_TIMEOUTS.AGENT_EXECUTION,
-      `Agent execution timed out for ${step.agentType}`
+      `Agent execution timed out for ${step.agentType}`,
     );
 
     return {

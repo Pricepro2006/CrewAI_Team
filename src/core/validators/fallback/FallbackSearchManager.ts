@@ -1,11 +1,14 @@
-import type { ValidationResult, ContactInfo } from '../BusinessResponseValidator.js';
+import type {
+  ValidationResult,
+  ContactInfo,
+} from "../BusinessResponseValidator.js";
 
 export interface FallbackSearchOptions {
   query: string;
   missingInfo: string[];
   currentResults?: ContactInfo;
   location?: string;
-  searchDepth?: 'shallow' | 'deep';
+  searchDepth?: "shallow" | "deep";
 }
 
 export interface FallbackSearchResult {
@@ -26,7 +29,8 @@ export interface DataSource {
 export class FallbackSearchManager {
   private dataSources: DataSource[] = [];
   private searchHistory: Map<string, FallbackSearchResult> = new Map();
-  private userFeedback: Map<string, { helpful: boolean; reason?: string }[]> = new Map();
+  private userFeedback: Map<string, { helpful: boolean; reason?: string }[]> =
+    new Map();
 
   constructor() {
     this.initializeDataSources();
@@ -38,45 +42,45 @@ export class FallbackSearchManager {
   private initializeDataSources(): void {
     // Note: These are placeholder implementations
     // In production, these would integrate with actual services
-    
+
     this.dataSources = [
       {
-        name: 'BrightData',
+        name: "BrightData",
         priority: 1,
         searchFunction: async (query: string) => {
           // Placeholder for BrightData integration
           // In production: return await mcp__Bright_Data__scrape_as_markdown({ url: searchUrl });
           return `BrightData results for: ${query}`;
         },
-        isAvailable: async () => true
+        isAvailable: async () => true,
       },
       {
-        name: 'GoogleMaps',
+        name: "GoogleMaps",
         priority: 2,
         searchFunction: async (query: string) => {
           // Placeholder for Google Maps API
           return `Google Maps results for: ${query}`;
         },
-        isAvailable: async () => true
+        isAvailable: async () => true,
       },
       {
-        name: 'YellowPages',
+        name: "YellowPages",
         priority: 3,
         searchFunction: async (query: string) => {
           // Placeholder for Yellow Pages scraping
           return `Yellow Pages results for: ${query}`;
         },
-        isAvailable: async () => true
+        isAvailable: async () => true,
       },
       {
-        name: 'BusinessDirectory',
+        name: "BusinessDirectory",
         priority: 4,
         searchFunction: async (query: string) => {
           // Placeholder for business directory API
           return `Business Directory results for: ${query}`;
         },
-        isAvailable: async () => true
-      }
+        isAvailable: async () => true,
+      },
     ];
 
     // Sort by priority
@@ -87,10 +91,10 @@ export class FallbackSearchManager {
    * Perform fallback search when initial validation fails
    */
   public async performFallbackSearch(
-    options: FallbackSearchOptions
+    options: FallbackSearchOptions,
   ): Promise<FallbackSearchResult> {
     const cacheKey = this.generateCacheKey(options);
-    
+
     // Check cache first
     if (this.searchHistory.has(cacheKey)) {
       return this.searchHistory.get(cacheKey)!;
@@ -98,7 +102,7 @@ export class FallbackSearchManager {
 
     const searchQueries = this.generateSearchQueries(options);
     const sourcesUsed: string[] = [];
-    let combinedResults = '';
+    let combinedResults = "";
 
     try {
       // Try each data source in priority order
@@ -109,7 +113,7 @@ export class FallbackSearchManager {
               const result = await source.searchFunction(query);
               combinedResults += `\n${result}`;
               sourcesUsed.push(source.name);
-              
+
               // If we get good results, we might stop early
               if (this.hasRequiredInfo(combinedResults, options.missingInfo)) {
                 break;
@@ -119,7 +123,7 @@ export class FallbackSearchManager {
             }
           }
         }
-        
+
         // Stop if we have enough information
         if (this.hasRequiredInfo(combinedResults, options.missingInfo)) {
           break;
@@ -128,24 +132,24 @@ export class FallbackSearchManager {
 
       // Parse the combined results
       const enhancedInfo = this.parseSearchResults(combinedResults);
-      
+
       const result: FallbackSearchResult = {
         success: this.hasRequiredInfo(combinedResults, options.missingInfo),
         enhancedInfo,
         searchQueries,
-        sourcesUsed
+        sourcesUsed,
       };
 
       // Cache the result
       this.searchHistory.set(cacheKey, result);
-      
+
       return result;
     } catch (error) {
       return {
         success: false,
         searchQueries,
         sourcesUsed,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -161,22 +165,22 @@ export class FallbackSearchManager {
     queries.push(baseQuery);
 
     // Add specific queries for missing information
-    if (options.missingInfo.includes('phone')) {
+    if (options.missingInfo.includes("phone")) {
       queries.push(`${baseQuery} phone number contact`);
       queries.push(`${baseQuery} call telephone`);
     }
 
-    if (options.missingInfo.includes('address')) {
+    if (options.missingInfo.includes("address")) {
       queries.push(`${baseQuery} address location directions`);
-      queries.push(`${baseQuery} ${options.location || ''} location`);
+      queries.push(`${baseQuery} ${options.location || ""} location`);
     }
 
-    if (options.missingInfo.includes('hours')) {
+    if (options.missingInfo.includes("hours")) {
       queries.push(`${baseQuery} hours open closed schedule`);
       queries.push(`${baseQuery} business hours operation`);
     }
 
-    if (options.missingInfo.includes('business name')) {
+    if (options.missingInfo.includes("business name")) {
       queries.push(`${baseQuery} company business name`);
     }
 
@@ -196,8 +200,10 @@ export class FallbackSearchManager {
     const checks = {
       phone: /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
       address: /\d{1,5}\s+\w+\s+(?:street|st|avenue|ave|road|rd)/i,
-      hours: /\b(?:\d{1,2}(?::\d{2})?(?:\s*(?:am|pm))?)\s*[-–—]\s*(?:\d{1,2}(?::\d{2})?(?:\s*(?:am|pm))?)/i,
-      'business name': /\b[A-Z]\w+(?:\s+[A-Z]\w+)*(?:\s+(?:Inc|LLC|Ltd|Corp|Co))?\b/
+      hours:
+        /\b(?:\d{1,2}(?::\d{2})?(?:\s*(?:am|pm))?)\s*[-–—]\s*(?:\d{1,2}(?::\d{2})?(?:\s*(?:am|pm))?)/i,
+      "business name":
+        /\b[A-Z]\w+(?:\s+[A-Z]\w+)*(?:\s+(?:Inc|LLC|Ltd|Corp|Co))?\b/,
     };
 
     for (const info of missingInfo) {
@@ -223,7 +229,7 @@ export class FallbackSearchManager {
       businessNames: [],
       hours: [],
       emails: [],
-      websites: []
+      websites: [],
     };
   }
 
@@ -231,16 +237,16 @@ export class FallbackSearchManager {
    * Generate cache key for search
    */
   private generateCacheKey(options: FallbackSearchOptions): string {
-    return `${options.query}_${options.missingInfo.join(',')}_${options.location || 'no-location'}`;
+    return `${options.query}_${options.missingInfo.join(",")}_${options.location || "no-location"}`;
   }
 
   /**
    * Record user feedback on search results
    */
   public recordFeedback(
-    query: string, 
-    helpful: boolean, 
-    reason?: string
+    query: string,
+    helpful: boolean,
+    reason?: string,
   ): void {
     if (!this.userFeedback.has(query)) {
       this.userFeedback.set(query, []);
@@ -252,21 +258,24 @@ export class FallbackSearchManager {
   /**
    * Get feedback summary for a query
    */
-  public getFeedbackSummary(query: string): { 
-    totalFeedback: number; 
-    helpfulPercentage: number; 
-    commonIssues: string[] 
+  public getFeedbackSummary(query: string): {
+    totalFeedback: number;
+    helpfulPercentage: number;
+    commonIssues: string[];
   } {
     const feedback = this.userFeedback.get(query) || [];
-    const helpful = feedback.filter(f => f.helpful).length;
-    
+    const helpful = feedback.filter((f) => f.helpful).length;
+
     const issues = feedback
-      .filter(f => !f.helpful && f.reason)
-      .map(f => f.reason!)
-      .reduce((acc, reason) => {
-        acc[reason] = (acc[reason] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      .filter((f) => !f.helpful && f.reason)
+      .map((f) => f.reason!)
+      .reduce(
+        (acc, reason) => {
+          acc[reason] = (acc[reason] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
 
     const commonIssues = Object.entries(issues)
       .sort(([, a], [, b]) => b - a)
@@ -275,8 +284,9 @@ export class FallbackSearchManager {
 
     return {
       totalFeedback: feedback.length,
-      helpfulPercentage: feedback.length > 0 ? (helpful / feedback.length) * 100 : 0,
-      commonIssues
+      helpfulPercentage:
+        feedback.length > 0 ? (helpful / feedback.length) * 100 : 0,
+      commonIssues,
     };
   }
 
@@ -292,7 +302,7 @@ export class FallbackSearchManager {
    * Remove a data source
    */
   public removeDataSource(name: string): void {
-    this.dataSources = this.dataSources.filter(s => s.name !== name);
+    this.dataSources = this.dataSources.filter((s) => s.name !== name);
   }
 
   /**
@@ -300,7 +310,7 @@ export class FallbackSearchManager {
    */
   public async getAvailableDataSources(): Promise<string[]> {
     const available: string[] = [];
-    
+
     for (const source of this.dataSources) {
       if (await source.isAvailable()) {
         available.push(source.name);
@@ -320,16 +330,16 @@ export class FallbackSearchManager {
   /**
    * Get cache statistics
    */
-  public getCacheStats(): { 
-    size: number; 
-    hits: number; 
-    misses: number 
+  public getCacheStats(): {
+    size: number;
+    hits: number;
+    misses: number;
   } {
     // In a real implementation, we would track hits and misses
     return {
       size: this.searchHistory.size,
       hits: 0, // Placeholder
-      misses: 0 // Placeholder
+      misses: 0, // Placeholder
     };
   }
 }

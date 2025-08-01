@@ -9,7 +9,11 @@ import {
   getModelTimeout,
   getModelBatchSize,
 } from "../../config/models.config.js";
-import type { Email, LlamaAnalysisResult, LlamaAnalysisResults } from "./types.js";
+import type {
+  Email,
+  LlamaAnalysisResult,
+  LlamaAnalysisResults,
+} from "./types.js";
 import axios from "axios";
 
 export class Stage2LlamaAnalysis {

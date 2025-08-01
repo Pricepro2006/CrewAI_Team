@@ -6,8 +6,8 @@ let emailQueue: any;
 
 async function initializeBullMQ() {
   try {
-    const bullmq = await import("bullmq") as any;
-    
+    const bullmq = (await import("bullmq")) as any;
+
     // Create a queue for processing email notifications
     emailQueue = new bullmq.Queue("email-notifications", {
       connection: {
@@ -16,7 +16,10 @@ async function initializeBullMQ() {
       },
     });
   } catch (error) {
-    logger.warn("BullMQ not available, webhook functionality limited", "WEBHOOK");
+    logger.warn(
+      "BullMQ not available, webhook functionality limited",
+      "WEBHOOK",
+    );
   }
 }
 
@@ -43,7 +46,6 @@ interface ChangeNotification {
   clientState: string;
   tenantId: string;
 }
-
 
 // Webhook handler for Microsoft Graph notifications
 export const graphWebhookHandler = async (req: Request, res: Response) => {

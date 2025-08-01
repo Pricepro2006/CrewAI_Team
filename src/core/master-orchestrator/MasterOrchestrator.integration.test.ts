@@ -23,13 +23,15 @@ describe("MasterOrchestrator Integration Tests", () => {
     try {
       await setupOllamaForTesting();
       isOllamaAvailable = await isOllamaRunning();
-      
+
       if (isOllamaAvailable) {
         // Ensure the test model is available
         const testModel = getTestModel();
         const modelAvailable = await ensureModelAvailable(testModel);
         if (!modelAvailable) {
-          console.warn(`Test model ${testModel} not available, some tests may fail`);
+          console.warn(
+            `Test model ${testModel} not available, some tests may fail`,
+          );
         }
       }
     } catch (error) {
@@ -51,7 +53,7 @@ describe("MasterOrchestrator Integration Tests", () => {
 
     const testConfig = createTestOllamaConfig();
     testDb = createTestDatabase();
-    
+
     orchestrator = new MasterOrchestrator({
       model: testConfig.model,
       ollamaUrl: testConfig.baseUrl,
@@ -83,10 +85,12 @@ describe("MasterOrchestrator Integration Tests", () => {
     it("should verify Ollama is accessible", async () => {
       if (!isOllamaAvailable) {
         // Fail the test if Ollama is not available
-        throw new Error("Ollama service is not available for integration testing");
+        throw new Error(
+          "Ollama service is not available for integration testing",
+        );
       }
       expect(isOllamaAvailable).toBe(true);
-      
+
       // Verify we can actually communicate with Ollama
       const testConfig = createTestOllamaConfig();
       const response = await fetch(`${testConfig.baseUrl}/api/tags`);
@@ -95,7 +99,9 @@ describe("MasterOrchestrator Integration Tests", () => {
 
     it("should initialize with real Ollama connection", async () => {
       if (!isOllamaAvailable) {
-        throw new Error("Ollama service is not available for integration testing");
+        throw new Error(
+          "Ollama service is not available for integration testing",
+        );
       }
 
       // Test that the LLM provider is properly initialized
@@ -110,11 +116,11 @@ describe("MasterOrchestrator Integration Tests", () => {
 
       expect(response).toBeDefined();
       expect(typeof response).toBe("string");
-      
+
       // Real LLM responses may be more verbose, so check for key content
       const responseText = (response as string).toLowerCase();
       expect(
-        responseText.includes("test") || responseText.includes("successful")
+        responseText.includes("test") || responseText.includes("successful"),
       ).toBe(true);
     });
 

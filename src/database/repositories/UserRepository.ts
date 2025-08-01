@@ -2,17 +2,17 @@
  * User Repository - Handles all user-related database operations
  */
 
-import Database from 'better-sqlite3';
-import { BaseRepository } from './BaseRepository.js';
-import type { BaseEntity } from './BaseRepository.js';
-import { logger } from '../../utils/logger.js';
+import Database from "better-sqlite3";
+import { BaseRepository } from "./BaseRepository.js";
+import type { BaseEntity } from "./BaseRepository.js";
+import { logger } from "../../utils/logger.js";
 
 export interface User extends BaseEntity {
   email: string;
   name: string;
-  role: 'admin' | 'manager' | 'user' | 'viewer';
+  role: "admin" | "manager" | "user" | "viewer";
   department?: string;
-  status: 'active' | 'inactive' | 'suspended';
+  status: "active" | "inactive" | "suspended";
   permissions?: string; // JSON string
   last_login_at?: string;
   password_hash?: string;
@@ -22,9 +22,9 @@ export interface User extends BaseEntity {
 export interface CreateUserData {
   email: string;
   name: string;
-  role?: User['role'];
+  role?: User["role"];
   department?: string;
-  status?: User['status'];
+  status?: User["status"];
   permissions?: string[];
   password_hash?: string;
   salt?: string;
@@ -32,7 +32,7 @@ export interface CreateUserData {
 
 export class UserRepository extends BaseRepository<User> {
   constructor(db: Database.Database) {
-    super(db, 'users');
+    super(db, "users");
   }
 
   /**
@@ -45,7 +45,7 @@ export class UserRepository extends BaseRepository<User> {
   /**
    * Find users by role
    */
-  async findByRole(role: User['role']): Promise<User[]> {
+  async findByRole(role: User["role"]): Promise<User[]> {
     return this.findAll({ where: { role } });
   }
 
@@ -60,7 +60,7 @@ export class UserRepository extends BaseRepository<User> {
    * Find active users
    */
   async findActiveUsers(): Promise<User[]> {
-    return this.findAll({ where: { status: 'active' } });
+    return this.findAll({ where: { status: "active" } });
   }
 
   /**
@@ -76,18 +76,25 @@ export class UserRepository extends BaseRepository<User> {
     // Prepare user data
     const userToCreate = {
       ...userData,
-      role: userData.role || 'user' as User['role'],
-      status: userData.status || 'active' as User['status'],
-      permissions: userData.permissions ? JSON.stringify(userData.permissions) : null
+      role: userData.role || ("user" as User["role"]),
+      status: userData.status || ("active" as User["status"]),
+      permissions: userData.permissions
+        ? JSON.stringify(userData.permissions)
+        : null,
     };
 
-    return this.create(userToCreate as Omit<User, 'id' | 'created_at' | 'updated_at'>);
+    return this.create(
+      userToCreate as Omit<User, "id" | "created_at" | "updated_at">,
+    );
   }
 
   /**
    * Update user with validation
    */
-  async updateUser(id: string, userData: Partial<CreateUserData>): Promise<User | null> {
+  async updateUser(
+    id: string,
+    userData: Partial<CreateUserData>,
+  ): Promise<User | null> {
     // If updating email, check uniqueness
     if (userData.email) {
       const existingUser = await this.findByEmail(userData.email);
@@ -98,7 +105,9 @@ export class UserRepository extends BaseRepository<User> {
 
     const updateData = {
       ...userData,
-      permissions: userData.permissions ? JSON.stringify(userData.permissions) : undefined
+      permissions: userData.permissions
+        ? JSON.stringify(userData.permissions)
+        : undefined,
     };
 
     return this.update(id, updateData);
@@ -115,7 +124,10 @@ export class UserRepository extends BaseRepository<User> {
   /**
    * Change user status
    */
-  async changeUserStatus(id: string, status: User['status']): Promise<User | null> {
+  async changeUserStatus(
+    id: string,
+    status: User["status"],
+  ): Promise<User | null> {
     return this.update(id, { status });
   }
 
@@ -131,7 +143,10 @@ export class UserRepository extends BaseRepository<User> {
     try {
       return JSON.parse(user.permissions);
     } catch (error) {
-      logger.error(`Failed to parse permissions for user ${id}: ${error}`, 'USER_REPO');
+      logger.error(
+        `Failed to parse permissions for user ${id}: ${error}`,
+        "USER_REPO",
+      );
       return [];
     }
   }
@@ -139,15 +154,21 @@ export class UserRepository extends BaseRepository<User> {
   /**
    * Update user permissions
    */
-  async updatePermissions(id: string, permissions: string[]): Promise<User | null> {
+  async updatePermissions(
+    id: string,
+    permissions: string[],
+  ): Promise<User | null> {
     return this.update(id, { permissions: JSON.stringify(permissions) });
   }
 
   /**
    * Search users by name or email
    */
-  async searchUsers(searchTerm: string, options: { limit?: number; offset?: number } = {}): Promise<User[]> {
-    return this.search(searchTerm, ['name', 'email'], options);
+  async searchUsers(
+    searchTerm: string,
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<User[]> {
+    return this.search(searchTerm, ["name", "email"], options);
   }
 
   /**
@@ -161,7 +182,8 @@ export class UserRepository extends BaseRepository<User> {
       GROUP BY role
     `;
 
-    const results = this.executeQuery<Array<{ role: string; count: number }>>(query);
+    const results =
+      this.executeQuery<Array<{ role: string; count: number }>>(query);
     const stats: Record<string, number> = {};
 
     for (const result of results) {
@@ -182,7 +204,8 @@ export class UserRepository extends BaseRepository<User> {
       GROUP BY department
     `;
 
-    const results = this.executeQuery<Array<{ department: string; count: number }>>(query);
+    const results =
+      this.executeQuery<Array<{ department: string; count: number }>>(query);
     const stats: Record<string, number> = {};
 
     for (const result of results) {
@@ -198,9 +221,9 @@ export class UserRepository extends BaseRepository<User> {
   async findInactiveUsers(daysSinceLastLogin: number): Promise<User[]> {
     // Validate input to ensure it's a positive integer
     if (!Number.isInteger(daysSinceLastLogin) || daysSinceLastLogin < 0) {
-      throw new Error('daysSinceLastLogin must be a non-negative integer');
+      throw new Error("daysSinceLastLogin must be a non-negative integer");
     }
-    
+
     const query = `
       SELECT * FROM ${this.tableName}
       WHERE status = 'active'
@@ -214,7 +237,9 @@ export class UserRepository extends BaseRepository<User> {
   /**
    * Get users assigned to emails
    */
-  async getUsersWithEmailAssignments(): Promise<Array<User & { email_count: number }>> {
+  async getUsersWithEmailAssignments(): Promise<
+    Array<User & { email_count: number }>
+  > {
     const query = `
       SELECT u.*, COUNT(e.id) as email_count
       FROM ${this.tableName} u
@@ -231,7 +256,7 @@ export class UserRepository extends BaseRepository<User> {
    * Soft delete user (change status to inactive)
    */
   async softDeleteUser(id: string): Promise<boolean> {
-    const result = await this.update(id, { status: 'inactive' });
+    const result = await this.update(id, { status: "inactive" });
     return result !== null;
   }
 }

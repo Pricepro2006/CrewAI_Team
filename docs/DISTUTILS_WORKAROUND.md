@@ -26,36 +26,45 @@ node -e "require('better-sqlite3'); console.log('✓ Working')"
 We've created three helper scripts:
 
 #### a) `scripts/start-email-pipeline.sh`
+
 A smart startup script that:
+
 - Checks if better-sqlite3 is working
 - Verifies all dependencies
 - Checks required services (Redis, Ollama)
 - Provides a menu to run different pipeline configurations
 
 **Usage:**
+
 ```bash
 ./scripts/start-email-pipeline.sh
 ```
 
 #### b) `scripts/install-workaround.sh`
+
 Installation workaround that:
+
 - Detects if better-sqlite3 is already working
 - Attempts to download prebuilt binaries
 - Creates a mock Python distutils module as fallback
 - Installs other dependencies separately
 
 **Usage:**
+
 ```bash
 ./scripts/install-workaround.sh
 ```
 
 #### c) `scripts/patch-install.js`
+
 Node.js script that:
+
 - Temporarily removes problematic dependencies
 - Installs all other packages
 - Attempts multiple methods to install better-sqlite3
 
 **Usage:**
+
 ```bash
 node scripts/patch-install.js
 ```
@@ -63,6 +72,7 @@ node scripts/patch-install.js
 ## Quick Start
 
 1. **For running the email pipeline immediately:**
+
    ```bash
    ./scripts/start-email-pipeline.sh
    ```
@@ -77,10 +87,12 @@ node scripts/patch-install.js
 ## How It Works
 
 ### Detection Phase
+
 1. Scripts first check if `better-sqlite3` is already functional
 2. If working, no compilation is needed - proceed directly
 
 ### Fallback Methods
+
 If better-sqlite3 needs installation, the scripts try:
 
 1. **Prebuilt Binary Download**
@@ -103,18 +115,20 @@ If better-sqlite3 needs installation, the scripts try:
 If the workarounds don't work:
 
 1. **Install Python distutils (system-wide fix):**
+
    ```bash
    # Ubuntu/Debian
    sudo apt-get install python3-distutils
-   
+
    # Fedora
    sudo dnf install python3-devel
-   
+
    # macOS (usually included)
    brew install python@3
    ```
 
 2. **Use Docker:**
+
    ```dockerfile
    FROM node:20
    RUN apt-get update && apt-get install -y python3-distutils
@@ -146,18 +160,22 @@ node -e "
 ## Troubleshooting
 
 ### Error: "Cannot find module 'better-sqlite3'"
+
 - Run: `./scripts/install-workaround.sh`
 - Check if `node_modules/better-sqlite3` exists
 
 ### Error: "Cannot open database"
+
 - Ensure `./data/crewai.db` exists
 - Run: `npm run init:db`
 
 ### Error: "Redis connection refused"
+
 - Start Redis: `redis-server`
 - Check port 6379 is not in use
 
 ### Error: "Ollama not responding"
+
 - Start Ollama: `ollama serve`
 - Check port 11434 is accessible
 

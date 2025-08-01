@@ -1,12 +1,21 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card.js';
-import { Badge } from '../../../components/ui/badge.js';
-import { Button } from '../../../components/ui/button.js';
-import { EmailTable } from '../email/EmailTable.js';
-import { StatusIndicator } from '../email/StatusIndicator.js';
-import { cn } from '../../../lib/utils.js';
-import { TEAM_MEMBERS } from '../../../config/team-members.config.js';
-import type { EmailRecord, EmailStatus, Priority } from '../../../types/email-dashboard.interfaces.js';
+import React, { useState, useCallback, useMemo } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.js";
+import { Badge } from "../../../components/ui/badge.js";
+import { Button } from "../../../components/ui/button.js";
+import { EmailTable } from "../email/EmailTable.js";
+import { StatusIndicator } from "../email/StatusIndicator.js";
+import { cn } from "../../../lib/utils.js";
+import { TEAM_MEMBERS } from "../../../config/team-members.config.js";
+import type {
+  EmailRecord,
+  EmailStatus,
+  Priority,
+} from "../../../types/email-dashboard.interfaces.js";
 
 interface EmailDashboardMultiPanelProps {
   emails: EmailRecord[];
@@ -40,26 +49,37 @@ export function EmailDashboardMultiPanel({
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
 
   // Filter emails by specific aliases for panels
-  const marketingEmails = useMemo(() => 
-    emails.filter(email => 
-      email.email_alias.toLowerCase().includes('marketing') ||
-      email.email_alias.toLowerCase().includes('splunk')
-    ).slice(0, 5), // Show top 5
-    [emails]
+  const marketingEmails = useMemo(
+    () =>
+      emails
+        .filter(
+          (email) =>
+            email.email_alias.toLowerCase().includes("marketing") ||
+            email.email_alias.toLowerCase().includes("splunk"),
+        )
+        .slice(0, 5), // Show top 5
+    [emails],
   );
 
-  const vmwareEmails = useMemo(() => 
-    emails.filter(email => 
-      email.email_alias.toLowerCase().includes('vmware') ||
-      email.email_alias.toLowerCase().includes('tdsynnex')
-    ).slice(0, 5), // Show top 5
-    [emails]
+  const vmwareEmails = useMemo(
+    () =>
+      emails
+        .filter(
+          (email) =>
+            email.email_alias.toLowerCase().includes("vmware") ||
+            email.email_alias.toLowerCase().includes("tdsynnex"),
+        )
+        .slice(0, 5), // Show top 5
+    [emails],
   );
 
-  const handleEmailClick = useCallback((email: EmailRecord) => {
-    setSelectedEmailId(email.id);
-    onEmailSelect?.(email);
-  }, [onEmailSelect]);
+  const handleEmailClick = useCallback(
+    (email: EmailRecord) => {
+      setSelectedEmailId(email.id);
+      onEmailSelect?.(email);
+    },
+    [onEmailSelect],
+  );
 
   const renderPanelItem = (email: EmailRecord) => (
     <div
@@ -67,7 +87,7 @@ export function EmailDashboardMultiPanel({
       className={cn(
         "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
         "hover:bg-muted/50",
-        selectedEmailId === email.id && "bg-muted"
+        selectedEmailId === email.id && "bg-muted",
       )}
       onClick={() => handleEmailClick(email)}
     >
@@ -75,7 +95,7 @@ export function EmailDashboardMultiPanel({
         status={email.status}
         statusText={email.status_text}
         size="sm"
-        showPulse={email.status === 'red'}
+        showPulse={email.status === "red"}
       />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -90,7 +110,7 @@ export function EmailDashboardMultiPanel({
           {email.subject}
         </p>
       </div>
-      {email.priority === 'Critical' && (
+      {email.priority === "Critical" && (
         <Badge variant="destructive" className="text-xs">
           Critical
         </Badge>

@@ -1,5 +1,15 @@
-import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
-import { WebSocketAuthManager, type AuthenticatedWebSocket } from "../websocketAuth.js";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type MockedFunction,
+} from "vitest";
+import {
+  WebSocketAuthManager,
+  type AuthenticatedWebSocket,
+} from "../websocketAuth.js";
 import type { UserService, User } from "../../services/UserService.js";
 import { WebSocket } from "ws";
 
@@ -14,7 +24,7 @@ describe("WebSocketAuthManager", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Create mock UserService with only the required methods
     mockUserService = {
       verifyToken: vi.fn(),
@@ -39,7 +49,7 @@ describe("WebSocketAuthManager", () => {
     it("should authenticate valid user", async () => {
       const token = "valid-token";
       const userId = "user-123";
-      
+
       (mockUserService.verifyToken as any).mockResolvedValue({
         id: userId,
         email: "user@example.com",
@@ -50,7 +60,7 @@ describe("WebSocketAuthManager", () => {
         updated_at: new Date().toISOString(),
         password_hash: "hash",
       });
-      
+
       // Since verifyToken already returns the user, we don't need getById mock here
 
       const result = await authManager.authenticate(mockWs, token);
@@ -59,7 +69,7 @@ describe("WebSocketAuthManager", () => {
       expect(result.userId).toBe(userId);
       expect(result.userRole).toBe("user");
       expect(result.permissions).toEqual(["read", "write"]);
-      
+
       expect(mockWs.userId).toBe(userId);
       expect(mockWs.userRole).toBe("user");
       expect(mockWs.isAuthenticated).toBe(true);
@@ -68,9 +78,9 @@ describe("WebSocketAuthManager", () => {
 
     it("should reject invalid token", async () => {
       const token = "invalid-token";
-      
+
       (mockUserService.verifyToken as any).mockRejectedValue(
-        new Error("Invalid token")
+        new Error("Invalid token"),
       );
 
       const result = await authManager.authenticate(mockWs, token);
@@ -83,7 +93,7 @@ describe("WebSocketAuthManager", () => {
     it("should reject inactive user", async () => {
       const token = "valid-token";
       const userId = "user-123";
-      
+
       (mockUserService.verifyToken as any).mockResolvedValue({
         id: userId,
         email: "user@example.com",
@@ -94,7 +104,7 @@ describe("WebSocketAuthManager", () => {
         updated_at: new Date().toISOString(),
         password_hash: "hash",
       });
-      
+
       // Since verifyToken already returns the user, we don't need getById mock here
 
       const result = await authManager.authenticate(mockWs, token);
@@ -106,7 +116,7 @@ describe("WebSocketAuthManager", () => {
     it("should set admin permissions for admin role", async () => {
       const token = "admin-token";
       const userId = "admin-123";
-      
+
       (mockUserService.verifyToken as any).mockResolvedValue({
         id: userId,
         email: "admin@example.com",
@@ -117,7 +127,7 @@ describe("WebSocketAuthManager", () => {
         updated_at: new Date().toISOString(),
         password_hash: "hash",
       });
-      
+
       // Since verifyToken already returns the user, we don't need getById mock here
 
       const result = await authManager.authenticate(mockWs, token);
@@ -152,10 +162,10 @@ describe("WebSocketAuthManager", () => {
 
       expect(result).toBe(true);
       expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining('"type":"auth_response"')
+        expect.stringContaining('"type":"auth_response"'),
       );
       expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining('"success":true')
+        expect.stringContaining('"success":true'),
       );
     });
 
@@ -169,10 +179,10 @@ describe("WebSocketAuthManager", () => {
 
       expect(result).toBe(false);
       expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining('"success":false')
+        expect.stringContaining('"success":false'),
       );
       expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining("Invalid authentication message")
+        expect.stringContaining("Invalid authentication message"),
       );
     });
 
@@ -192,7 +202,7 @@ describe("WebSocketAuthManager", () => {
 
       expect(result).toBe(false);
       expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining('"error":"Invalid token"')
+        expect.stringContaining('"error":"Invalid token"'),
       );
     });
   });
@@ -207,7 +217,7 @@ describe("WebSocketAuthManager", () => {
 
     it("should correctly check if authenticated", () => {
       expect(authManager.isAuthenticated(mockWs)).toBe(true);
-      
+
       mockWs.isAuthenticated = false;
       expect(authManager.isAuthenticated(mockWs)).toBe(false);
     });
@@ -222,7 +232,7 @@ describe("WebSocketAuthManager", () => {
     it("should correctly check roles", () => {
       expect(authManager.hasRole(mockWs, ["user", "admin"])).toBe(true);
       expect(authManager.hasRole(mockWs, ["admin", "moderator"])).toBe(false);
-      
+
       mockWs.userRole = "admin";
       expect(authManager.hasRole(mockWs, ["admin"])).toBe(true);
     });
@@ -232,7 +242,7 @@ describe("WebSocketAuthManager", () => {
     it("should track authenticated clients", async () => {
       const token = "valid-token";
       const userId = "user-123";
-      
+
       (mockUserService.verifyToken as any).mockResolvedValue({
         id: userId,
         email: "user@example.com",
@@ -243,11 +253,11 @@ describe("WebSocketAuthManager", () => {
         updated_at: new Date().toISOString(),
         password_hash: "hash",
       });
-      
+
       // Since verifyToken already returns the user, we don't need getById mock here
 
       await authManager.authenticate(mockWs, token);
-      
+
       const clientIds = authManager.getClientsByUserId(userId);
       expect(clientIds).toHaveLength(1);
       expect(clientIds[0]).toBe(mockWs.clientId);
@@ -256,7 +266,7 @@ describe("WebSocketAuthManager", () => {
     it("should remove client on cleanup", async () => {
       mockWs.clientId = "client-123";
       mockWs.userId = "user-123";
-      
+
       // Add to tracking manually (simulating successful auth)
       (authManager as any).authenticatedClients.set(mockWs.clientId, {
         userId: mockWs.userId,
@@ -280,7 +290,7 @@ describe("WebSocketAuthManager", () => {
         { clientId: "c4", userId: "u3", userRole: "user" },
       ];
 
-      clients.forEach(client => {
+      clients.forEach((client) => {
         (authManager as any).authenticatedClients.set(client.clientId, {
           userId: client.userId,
           userRole: client.userRole,
@@ -313,7 +323,7 @@ describe("WebSocketAuthManager", () => {
       authManager.updateActivity(mockWs);
 
       expect(mockWs.lastActivity.getTime()).toBeGreaterThan(
-        initialActivity.getTime()
+        initialActivity.getTime(),
       );
     });
 
@@ -336,7 +346,7 @@ describe("WebSocketAuthManager", () => {
       };
 
       // Add multiple clients for the same user
-      ["c1", "c2", "c3"].forEach(clientId => {
+      ["c1", "c2", "c3"].forEach((clientId) => {
         (authManager as any).authenticatedClients.set(clientId, {
           userId,
           userRole: "user",
@@ -351,7 +361,7 @@ describe("WebSocketAuthManager", () => {
       expect(mockWsService.forceDisconnectClient).toHaveBeenCalledWith("c1");
       expect(mockWsService.forceDisconnectClient).toHaveBeenCalledWith("c2");
       expect(mockWsService.forceDisconnectClient).toHaveBeenCalledWith("c3");
-      
+
       const remainingClients = authManager.getClientsByUserId(userId);
       expect(remainingClients).toHaveLength(0);
     });
@@ -360,12 +370,12 @@ describe("WebSocketAuthManager", () => {
   describe("cleanup", () => {
     it("should stop cleanup interval", () => {
       const clearIntervalSpy = vi.spyOn(global, "clearInterval");
-      
+
       // Force create cleanup interval
       (authManager as any).startCleanupInterval();
-      
+
       authManager.stopCleanup();
-      
+
       expect(clearIntervalSpy).toHaveBeenCalled();
       expect((authManager as any).cleanupInterval).toBeNull();
     });

@@ -212,8 +212,14 @@ export class DatabaseManager {
           this.db.exec(statement + ";");
         } catch (error) {
           // Log warning for statements that might already exist
-          if (!(error instanceof Error) || !error.message.includes("already exists")) {
-            logger.warn(`Migration statement warning: ${error instanceof Error ? error.message : String(error)}`, "DB_MANAGER");
+          if (
+            !(error instanceof Error) ||
+            !error.message.includes("already exists")
+          ) {
+            logger.warn(
+              `Migration statement warning: ${error instanceof Error ? error.message : String(error)}`,
+              "DB_MANAGER",
+            );
           }
         }
       }
@@ -227,8 +233,14 @@ export class DatabaseManager {
           "DB_MANAGER",
         );
       } catch (error) {
-        if (!(error instanceof Error) || !error.message.includes("already exists")) {
-          logger.warn(`Grocery migration warning: ${error instanceof Error ? error.message : String(error)}`, "DB_MANAGER");
+        if (
+          !(error instanceof Error) ||
+          !error.message.includes("already exists")
+        ) {
+          logger.warn(
+            `Grocery migration warning: ${error instanceof Error ? error.message : String(error)}`,
+            "DB_MANAGER",
+          );
         }
       }
 

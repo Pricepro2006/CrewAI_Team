@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { ChartBase, CHART_COLORS, CHART_CONFIGS } from './ChartBase.js';
+import React, { useMemo } from "react";
+import { ChartBase, CHART_COLORS, CHART_CONFIGS } from "./ChartBase.js";
 
 /**
  * Status Distribution Chart Component
@@ -14,31 +14,48 @@ interface StatusDistributionChartProps {
   totalEmails: number;
   title?: string;
   showPercentages?: boolean;
-  chartType?: 'doughnut' | 'pie' | 'bar';
-  onClick?: (status: 'red' | 'yellow' | 'green', count: number) => void;
+  chartType?: "doughnut" | "pie" | "bar";
+  onClick?: (status: "red" | "yellow" | "green", count: number) => void;
   refreshKey?: string | number;
   className?: string;
 }
 
-export const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({
+export const StatusDistributionChart: React.FC<
+  StatusDistributionChartProps
+> = ({
   data,
   totalEmails,
-  title = 'Email Status Distribution',
+  title = "Email Status Distribution",
   showPercentages = true,
-  chartType = 'doughnut',
+  chartType = "doughnut",
   onClick,
   refreshKey,
-  className = ''
+  className = "",
 }) => {
   // Calculate percentages and format labels
   const chartData = useMemo(() => {
     const statusData = [
-      { label: 'Critical (Red)', value: data.red, color: CHART_COLORS.red, key: 'red' as const },
-      { label: 'In Progress (Yellow)', value: data.yellow, color: CHART_COLORS.yellow, key: 'yellow' as const },
-      { label: 'Completed (Green)', value: data.green, color: CHART_COLORS.green, key: 'green' as const }
+      {
+        label: "Critical (Red)",
+        value: data.red,
+        color: CHART_COLORS.red,
+        key: "red" as const,
+      },
+      {
+        label: "In Progress (Yellow)",
+        value: data.yellow,
+        color: CHART_COLORS.yellow,
+        key: "yellow" as const,
+      },
+      {
+        label: "Completed (Green)",
+        value: data.green,
+        color: CHART_COLORS.green,
+        key: "green" as const,
+      },
     ];
 
-    const labels = statusData.map(item => {
+    const labels = statusData.map((item) => {
       if (showPercentages && totalEmails > 0) {
         const percentage = ((item.value / totalEmails) * 100).toFixed(1);
         return `${item.label} (${percentage}%)`;
@@ -48,20 +65,23 @@ export const StatusDistributionChart: React.FC<StatusDistributionChartProps> = (
 
     return {
       labels,
-      datasets: [{
-        label: 'Email Count',
-        data: statusData.map(item => item.value),
-        backgroundColor: chartType === 'bar' 
-          ? statusData.map(item => `${item.color}CC`) // Add transparency for bars
-          : statusData.map(item => item.color),
-        borderColor: statusData.map(item => item.color),
-        borderWidth: chartType === 'doughnut' || chartType === 'pie' ? 2 : 1,
-        hoverBackgroundColor: statusData.map(item => item.color),
-        hoverBorderColor: statusData.map(item => item.color),
-        hoverBorderWidth: 3,
-        // Custom data for click handling
-        statusKeys: statusData.map(item => item.key)
-      }]
+      datasets: [
+        {
+          label: "Email Count",
+          data: statusData.map((item) => item.value),
+          backgroundColor:
+            chartType === "bar"
+              ? statusData.map((item) => `${item.color}CC`) // Add transparency for bars
+              : statusData.map((item) => item.color),
+          borderColor: statusData.map((item) => item.color),
+          borderWidth: chartType === "doughnut" || chartType === "pie" ? 2 : 1,
+          hoverBackgroundColor: statusData.map((item) => item.color),
+          hoverBorderColor: statusData.map((item) => item.color),
+          hoverBorderWidth: 3,
+          // Custom data for click handling
+          statusKeys: statusData.map((item) => item.key),
+        },
+      ],
     };
   }, [data, totalEmails, showPercentages, chartType]);
 
@@ -73,26 +93,26 @@ export const StatusDistributionChart: React.FC<StatusDistributionChartProps> = (
           display: true,
           text: title,
           font: {
-            family: 'Inter, system-ui, sans-serif',
+            family: "Inter, system-ui, sans-serif",
             size: 16,
-            weight: '600'
+            weight: "600",
           },
-          color: '#1F2937',
+          color: "#1F2937",
           padding: {
-            bottom: 20
-          }
+            bottom: 20,
+          },
         },
         legend: {
-          position: chartType === 'bar' ? 'top' : 'right',
-          align: 'center',
+          position: chartType === "bar" ? "top" : "right",
+          align: "center",
           labels: {
             usePointStyle: true,
             padding: 15,
             font: {
-              family: 'Inter, system-ui, sans-serif',
-              size: 12
+              family: "Inter, system-ui, sans-serif",
+              size: 12,
             },
-            generateLabels: function(chart: any) {
+            generateLabels: function (chart: any) {
               const data = chart.data;
               if (data.labels.length && data.datasets.length) {
                 return data.labels.map((label: string, i: number) => {
@@ -103,79 +123,82 @@ export const StatusDistributionChart: React.FC<StatusDistributionChartProps> = (
                     fillStyle: dataset.backgroundColor[i],
                     strokeStyle: dataset.borderColor[i],
                     lineWidth: dataset.borderWidth,
-                    pointStyle: 'circle',
+                    pointStyle: "circle",
                     hidden: false,
-                    index: i
+                    index: i,
                   };
                 });
               }
               return [];
-            }
-          }
+            },
+          },
         },
         tooltip: {
           callbacks: {
-            label: function(context: any) {
-              const label = context.label || '';
+            label: function (context: any) {
+              const label = context.label || "";
               const value = context.parsed || context.raw;
-              const percentage = totalEmails > 0 ? ((value / totalEmails) * 100).toFixed(1) : '0';
+              const percentage =
+                totalEmails > 0
+                  ? ((value / totalEmails) * 100).toFixed(1)
+                  : "0";
               return `${label}: ${value} emails (${percentage}%)`;
-            }
-          }
-        }
-      }
+            },
+          },
+        },
+      },
     };
 
     // Add specific options for different chart types
-    if (chartType === 'doughnut') {
+    if (chartType === "doughnut") {
       return {
         ...baseOptions,
-        cutout: '60%',
+        cutout: "60%",
         plugins: {
           ...baseOptions.plugins,
           doughnutCenterText: {
             display: true,
             text: `${totalEmails}\nTotal Emails`,
-            color: '#1F2937',
+            color: "#1F2937",
             font: {
-              family: 'Inter, system-ui, sans-serif',
+              family: "Inter, system-ui, sans-serif",
               size: 14,
-              weight: '600'
-            }
-          }
-        }
+              weight: "600",
+            },
+          },
+        },
       };
     }
 
-    if (chartType === 'bar') {
+    if (chartType === "bar") {
       return {
         ...baseOptions,
-        indexAxis: 'x' as const,
+        indexAxis: "x" as const,
         scales: {
           x: {
             title: {
               display: true,
-              text: 'Email Status',
+              text: "Email Status",
               font: {
-                family: 'Inter, system-ui, sans-serif',
+                family: "Inter, system-ui, sans-serif",
                 size: 12,
-                weight: '500'
-              }
-            }
+                weight: "500",
+              },
+            },
           },
           y: {
             title: {
               display: true,
-              text: 'Number of Emails',
+              text: "Number of Emails",
               font: {
-                family: 'Inter, system-ui, sans-serif',
+                family: "Inter, system-ui, sans-serif",
                 size: 12,
-                weight: '500'
-              }
+                weight: "500",
+              },
             },
-            beginAtZero: true
-          }
-        }
+            beginAtZero: true,
+          },
+        },
       };
     }
 
@@ -199,7 +222,9 @@ export const StatusDistributionChart: React.FC<StatusDistributionChartProps> = (
   };
 
   return (
-    <div className={`status-distribution-chart bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+    <div
+      className={`status-distribution-chart bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}
+    >
       <div className="mb-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
@@ -207,30 +232,40 @@ export const StatusDistributionChart: React.FC<StatusDistributionChartProps> = (
             Last updated: {new Date().toLocaleTimeString()}
           </div>
         </div>
-        
+
         {/* Summary Stats */}
         <div className="grid grid-cols-3 gap-4 mt-4 mb-6">
           <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
             <div className="text-2xl font-bold text-red-600">{data.red}</div>
             <div className="text-sm text-red-700">Critical</div>
             <div className="text-xs text-red-500">
-              {totalEmails > 0 ? `${((data.red / totalEmails) * 100).toFixed(1)}%` : '0%'}
+              {totalEmails > 0
+                ? `${((data.red / totalEmails) * 100).toFixed(1)}%`
+                : "0%"}
             </div>
           </div>
-          
+
           <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-            <div className="text-2xl font-bold text-yellow-600">{data.yellow}</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              {data.yellow}
+            </div>
             <div className="text-sm text-yellow-700">In Progress</div>
             <div className="text-xs text-yellow-500">
-              {totalEmails > 0 ? `${((data.yellow / totalEmails) * 100).toFixed(1)}%` : '0%'}
+              {totalEmails > 0
+                ? `${((data.yellow / totalEmails) * 100).toFixed(1)}%`
+                : "0%"}
             </div>
           </div>
-          
+
           <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
-            <div className="text-2xl font-bold text-green-600">{data.green}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {data.green}
+            </div>
             <div className="text-sm text-green-700">Completed</div>
             <div className="text-xs text-green-500">
-              {totalEmails > 0 ? `${((data.green / totalEmails) * 100).toFixed(1)}%` : '0%'}
+              {totalEmails > 0
+                ? `${((data.green / totalEmails) * 100).toFixed(1)}%`
+                : "0%"}
             </div>
           </div>
         </div>
@@ -242,40 +277,46 @@ export const StatusDistributionChart: React.FC<StatusDistributionChartProps> = (
         options={chartOptions}
         onChartClick={handleChartClick}
         refreshKey={refreshKey}
-        height={chartType === 'bar' ? 300 : 400}
+        height={chartType === "bar" ? 300 : 400}
         className="chart-responsive"
       />
 
       {/* Chart Type Selector */}
       <div className="flex justify-center mt-4 space-x-2">
         <button
-          onClick={() => {/* Chart type switching would be handled by parent */}}
+          onClick={() => {
+            /* Chart type switching would be handled by parent */
+          }}
           className={`px-3 py-1 text-xs rounded-md transition-colors ${
-            chartType === 'doughnut' 
-              ? 'bg-blue-500 text-white' 
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            chartType === "doughnut"
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
           }`}
           title="Doughnut Chart"
         >
           🍩
         </button>
         <button
-          onClick={() => {/* Chart type switching would be handled by parent */}}
+          onClick={() => {
+            /* Chart type switching would be handled by parent */
+          }}
           className={`px-3 py-1 text-xs rounded-md transition-colors ${
-            chartType === 'pie' 
-              ? 'bg-blue-500 text-white' 
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            chartType === "pie"
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
           }`}
           title="Pie Chart"
         >
           📊
         </button>
         <button
-          onClick={() => {/* Chart type switching would be handled by parent */}}
+          onClick={() => {
+            /* Chart type switching would be handled by parent */
+          }}
           className={`px-3 py-1 text-xs rounded-md transition-colors ${
-            chartType === 'bar' 
-              ? 'bg-blue-500 text-white' 
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            chartType === "bar"
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
           }`}
           title="Bar Chart"
         >

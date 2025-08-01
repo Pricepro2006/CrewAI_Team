@@ -3,14 +3,14 @@
  * Comprehensive database and data persistence types
  */
 
-import type { Timestamp } from './index.js';
+import type { Timestamp } from "./index.js";
 
 // =====================================================
 // Database Configuration Types
 // =====================================================
 
 export interface DatabaseConfig {
-  type: 'sqlite' | 'postgres' | 'mysql' | 'mongodb';
+  type: "sqlite" | "postgres" | "mysql" | "mongodb";
   url?: string;
   host?: string;
   port?: number;
@@ -46,7 +46,7 @@ export interface PoolConfig {
 }
 
 export interface LoggingConfig {
-  level: 'debug' | 'info' | 'warn' | 'error';
+  level: "debug" | "info" | "warn" | "error";
   queries: boolean;
   performance: boolean;
   slowQueries: boolean;
@@ -105,7 +105,7 @@ export interface DatabaseMigration {
 export interface DatabaseConnection {
   id: string;
   type: string;
-  status: 'connected' | 'disconnected' | 'error' | 'connecting';
+  status: "connected" | "disconnected" | "error" | "connecting";
   connectedAt?: Timestamp;
   lastActivity: Timestamp;
   queryCount: number;
@@ -121,31 +121,31 @@ export interface DatabaseQuery {
   id: string;
   sql: string;
   parameters: unknown[];
-  type: 'select' | 'insert' | 'update' | 'delete' | 'ddl' | 'transaction';
-  
+  type: "select" | "insert" | "update" | "delete" | "ddl" | "transaction";
+
   // Execution details
   executedAt: Timestamp;
   executionTime: number; // milliseconds
   rowsAffected?: number;
   rowsReturned?: number;
-  
+
   // Performance
   queryPlan?: QueryPlan;
   indexesUsed?: string[];
   cacheHit?: boolean;
-  
+
   // Context
   connectionId: string;
   userId?: string;
   sessionId?: string;
-  
+
   // Status
-  status: 'pending' | 'executing' | 'completed' | 'error' | 'cancelled';
+  status: "pending" | "executing" | "completed" | "error" | "cancelled";
   error?: QueryError;
-  
+
   // Metadata
   tags?: string[];
-  priority?: 'low' | 'normal' | 'high';
+  priority?: "low" | "normal" | "high";
 }
 
 export interface QueryPlan {
@@ -168,7 +168,7 @@ export interface QueryOperation {
 export interface IndexUsage {
   indexName: string;
   tableName: string;
-  type: 'scan' | 'seek' | 'lookup';
+  type: "scan" | "seek" | "lookup";
   efficiency: number; // 0-1
   rowsExamined: number;
   rowsReturned: number;
@@ -177,7 +177,7 @@ export interface IndexUsage {
 export interface QueryError {
   code: string;
   message: string;
-  severity: 'error' | 'warning' | 'notice';
+  severity: "error" | "warning" | "notice";
   position?: number;
   hint?: string;
   details?: Record<string, unknown>;
@@ -190,30 +190,34 @@ export interface QueryError {
 export interface DatabaseTransaction {
   id: string;
   connectionId: string;
-  
+
   // Status
-  status: 'active' | 'committed' | 'rolled_back' | 'error';
-  isolationLevel: 'read_uncommitted' | 'read_committed' | 'repeatable_read' | 'serializable';
-  
+  status: "active" | "committed" | "rolled_back" | "error";
+  isolationLevel:
+    | "read_uncommitted"
+    | "read_committed"
+    | "repeatable_read"
+    | "serializable";
+
   // Timing
   startedAt: Timestamp;
   committedAt?: Timestamp;
   rolledBackAt?: Timestamp;
   duration?: number; // milliseconds
-  
+
   // Operations
   operations: TransactionOperation[];
   savepoints: Savepoint[];
-  
+
   // Locking
   locksHeld: DatabaseLock[];
   locksWaiting: DatabaseLock[];
   deadlockDetected: boolean;
-  
+
   // Context
   userId?: string;
   sessionId?: string;
-  
+
   // Error handling
   error?: QueryError;
   rollbackReason?: string;
@@ -222,7 +226,7 @@ export interface DatabaseTransaction {
 export interface TransactionOperation {
   id: string;
   queryId: string;
-  type: 'query' | 'savepoint' | 'rollback_to_savepoint';
+  type: "query" | "savepoint" | "rollback_to_savepoint";
   executedAt: Timestamp;
   success: boolean;
   error?: QueryError;
@@ -236,9 +240,14 @@ export interface Savepoint {
 
 export interface DatabaseLock {
   id: string;
-  type: 'shared' | 'exclusive' | 'update' | 'intent_shared' | 'intent_exclusive';
+  type:
+    | "shared"
+    | "exclusive"
+    | "update"
+    | "intent_shared"
+    | "intent_exclusive";
   resource: string; // table, row, page, etc.
-  resourceType: 'table' | 'row' | 'page' | 'database';
+  resourceType: "table" | "row" | "page" | "database";
   acquiredAt?: Timestamp;
   requestedAt: Timestamp;
   holdingTransactionId: string;
@@ -253,19 +262,19 @@ export interface DatabaseIndex {
   name: string;
   tableName: string;
   columns: IndexColumn[];
-  type: 'btree' | 'hash' | 'gin' | 'gist' | 'fulltext' | 'spatial';
+  type: "btree" | "hash" | "gin" | "gist" | "fulltext" | "spatial";
   unique: boolean;
   partial: boolean;
-  
+
   // Performance metrics
   size: number; // bytes
   usage: IndexUsageStats;
-  
+
   // Status
   isValid: boolean;
   isReady: boolean;
   lastRebuilt?: Timestamp;
-  
+
   // Configuration
   fillfactor?: number;
   condition?: string; // for partial indexes
@@ -274,7 +283,7 @@ export interface DatabaseIndex {
 
 export interface IndexColumn {
   name: string;
-  order: 'asc' | 'desc';
+  order: "asc" | "desc";
   nullsFirst?: boolean;
   expression?: string; // for expression indexes
 }
@@ -292,22 +301,22 @@ export interface IndexUsageStats {
 export interface DatabaseStatistics {
   // Table statistics
   tables: TableStatistics[];
-  
+
   // Index statistics
   indexes: IndexStatistics[];
-  
+
   // Query statistics
   queries: QueryStatistics;
-  
+
   // Connection statistics
   connections: ConnectionStatistics;
-  
+
   // Performance metrics
   performance: PerformanceStatistics;
-  
+
   // Storage metrics
   storage: StorageStatistics;
-  
+
   // Generated at
   generatedAt: Timestamp;
   generatedBy: string;
@@ -382,14 +391,14 @@ export interface PerformanceStatistics {
     timeInIO: number;
     timeWaiting: number;
   };
-  
+
   memory: {
     usage: number; // bytes
     bufferHits: number;
     bufferMisses: number;
     cacheHitRatio: number; // 0-1
   };
-  
+
   io: {
     readsPerSecond: number;
     writesPerSecond: number;
@@ -398,7 +407,7 @@ export interface PerformanceStatistics {
     averageReadTime: number;
     averageWriteTime: number;
   };
-  
+
   locks: {
     currentLocks: number;
     lockWaits: number;
@@ -413,11 +422,11 @@ export interface StorageStatistics {
   indexSize: number;
   freeSpace: number;
   fragmentation: number; // percentage
-  
+
   // Growth metrics
   growthRate: number; // bytes per day
   projectedSize: number; // bytes (30 days from now)
-  
+
   // Backup metrics
   lastBackupDate?: Timestamp;
   backupSize?: number;
@@ -432,7 +441,7 @@ export interface DataModel {
   name: string;
   version: string;
   description: string;
-  
+
   // Schema definition
   tables: TableDefinition[];
   relationships: Relationship[];
@@ -441,17 +450,17 @@ export interface DataModel {
   views: ViewDefinition[];
   functions: FunctionDefinition[];
   triggers: TriggerDefinition[];
-  
+
   // Metadata
   createdAt: Timestamp;
   createdBy: string;
   lastModified: Timestamp;
   lastModifiedBy: string;
-  
+
   // Validation
   isValid: boolean;
   validationErrors: string[];
-  
+
   // Documentation
   documentation?: string;
   tags: string[];
@@ -464,15 +473,15 @@ export interface TableDefinition {
   primaryKey?: string[];
   foreignKeys: ForeignKeyDefinition[];
   checks: CheckConstraintDefinition[];
-  
+
   // Properties
   temporary: boolean;
   unlogged: boolean;
-  
+
   // Options
   tablespace?: string;
   options?: Record<string, unknown>;
-  
+
   // Documentation
   comment?: string;
   tags: string[];
@@ -483,19 +492,19 @@ export interface ColumnDefinition {
   type: string;
   nullable: boolean;
   defaultValue?: unknown;
-  
+
   // Constraints
   primaryKey: boolean;
   unique: boolean;
   autoIncrement: boolean;
-  
+
   // Metadata
   comment?: string;
   tags: string[];
-  
+
   // Validation
   checkConstraints: string[];
-  
+
   // Properties specific to type
   length?: number;
   precision?: number;
@@ -508,8 +517,8 @@ export interface ForeignKeyDefinition {
   columns: string[];
   referencedTable: string;
   referencedColumns: string[];
-  onDelete: 'cascade' | 'restrict' | 'set_null' | 'set_default' | 'no_action';
-  onUpdate: 'cascade' | 'restrict' | 'set_null' | 'set_default' | 'no_action';
+  onDelete: "cascade" | "restrict" | "set_null" | "set_default" | "no_action";
+  onUpdate: "cascade" | "restrict" | "set_null" | "set_default" | "no_action";
   deferrable: boolean;
   initiallyDeferred: boolean;
 }
@@ -522,16 +531,16 @@ export interface CheckConstraintDefinition {
 
 export interface Relationship {
   name: string;
-  type: 'one_to_one' | 'one_to_many' | 'many_to_many';
+  type: "one_to_one" | "one_to_many" | "many_to_many";
   fromTable: string;
   toTable: string;
   fromColumns: string[];
   toColumns: string[];
-  
+
   // Properties
   required: boolean;
   cascadeDelete: boolean;
-  
+
   // Metadata
   description?: string;
   tags: string[];
@@ -539,15 +548,15 @@ export interface Relationship {
 
 export interface ConstraintDefinition {
   name: string;
-  type: 'primary_key' | 'foreign_key' | 'unique' | 'check' | 'not_null';
+  type: "primary_key" | "foreign_key" | "unique" | "check" | "not_null";
   table: string;
   columns: string[];
   expression?: string;
-  
+
   // Status
   enforced: boolean;
   validated: boolean;
-  
+
   // Options
   deferrable: boolean;
   initiallyDeferred: boolean;
@@ -557,11 +566,11 @@ export interface IndexDefinition {
   name: string;
   table: string;
   columns: IndexColumn[];
-  type: 'btree' | 'hash' | 'gin' | 'gist' | 'fulltext';
+  type: "btree" | "hash" | "gin" | "gist" | "fulltext";
   unique: boolean;
   partial: boolean;
   condition?: string;
-  
+
   // Options
   method?: string;
   fillfactor?: number;
@@ -574,14 +583,14 @@ export interface ViewDefinition {
   schema: string;
   definition: string;
   columns: ColumnDefinition[];
-  
+
   // Properties
   materialized: boolean;
   updatable: boolean;
-  
+
   // Dependencies
   dependencies: string[]; // tables/views this view depends on
-  
+
   // Metadata
   comment?: string;
   tags: string[];
@@ -594,12 +603,12 @@ export interface FunctionDefinition {
   returnType: string;
   parameters: FunctionParameter[];
   body: string;
-  
+
   // Properties
   immutable: boolean;
   deterministic: boolean;
   securityDefiner: boolean;
-  
+
   // Metadata
   comment?: string;
   tags: string[];
@@ -608,22 +617,22 @@ export interface FunctionDefinition {
 export interface FunctionParameter {
   name: string;
   type: string;
-  mode: 'in' | 'out' | 'inout';
+  mode: "in" | "out" | "inout";
   defaultValue?: unknown;
 }
 
 export interface TriggerDefinition {
   name: string;
   table: string;
-  timing: 'before' | 'after' | 'instead_of';
-  events: ('insert' | 'update' | 'delete')[];
-  level: 'row' | 'statement';
+  timing: "before" | "after" | "instead_of";
+  events: ("insert" | "update" | "delete")[];
+  level: "row" | "statement";
   condition?: string;
   function: string;
-  
+
   // Properties
   enabled: boolean;
-  
+
   // Metadata
   comment?: string;
   tags: string[];
@@ -636,29 +645,29 @@ export interface TriggerDefinition {
 export interface DatabaseMonitoring {
   // Health status
   health: DatabaseHealth;
-  
+
   // Performance metrics
   performance: DatabasePerformance;
-  
+
   // Resource usage
   resources: DatabaseResources;
-  
+
   // Alert conditions
   alerts: DatabaseAlert[];
-  
+
   // Monitoring configuration
   configuration: MonitoringConfiguration;
-  
+
   // Last updated
   lastUpdated: Timestamp;
   updateInterval: number; // seconds
 }
 
 export interface DatabaseHealth {
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: "healthy" | "degraded" | "unhealthy";
   uptime: number; // seconds
   version: string;
-  
+
   // Connection health
   connections: {
     total: number;
@@ -667,18 +676,18 @@ export interface DatabaseHealth {
     maxAllowed: number;
     refused: number;
   };
-  
+
   // Replication health (if applicable)
   replication?: {
-    status: 'running' | 'stopped' | 'error';
+    status: "running" | "stopped" | "error";
     lag: number; // seconds
     lastSyncAt?: Timestamp;
   };
-  
+
   // Backup health
   backup?: {
     lastBackupAt?: Timestamp;
-    lastBackupStatus: 'success' | 'failed' | 'running';
+    lastBackupStatus: "success" | "failed" | "running";
     nextScheduledBackup?: Timestamp;
   };
 }
@@ -691,7 +700,7 @@ export interface DatabasePerformance {
     queriesPerSecond: number;
     longestRunningQuery: number; // seconds
   };
-  
+
   // Transaction performance
   transactions: {
     commitsPerSecond: number;
@@ -699,7 +708,7 @@ export interface DatabasePerformance {
     averageTransactionTime: number;
     longestTransaction: number; // seconds
   };
-  
+
   // I/O performance
   io: {
     readsPerSecond: number;
@@ -707,7 +716,7 @@ export interface DatabasePerformance {
     averageReadTime: number;
     averageWriteTime: number;
   };
-  
+
   // Cache performance
   cache: {
     hitRatio: number; // 0-1
@@ -722,7 +731,7 @@ export interface DatabaseResources {
     usage: number; // percentage
     loadAverage: number[];
   };
-  
+
   // Memory usage
   memory: {
     usage: number; // percentage
@@ -730,7 +739,7 @@ export interface DatabaseResources {
     available: number; // bytes
     bufferCache: number; // bytes
   };
-  
+
   // Storage usage
   storage: {
     usage: number; // percentage
@@ -738,7 +747,7 @@ export interface DatabaseResources {
     available: number; // bytes
     growthRate: number; // bytes per day
   };
-  
+
   // Network usage
   network: {
     bytesIn: number;
@@ -750,27 +759,27 @@ export interface DatabaseResources {
 export interface DatabaseAlert {
   id: string;
   name: string;
-  severity: 'critical' | 'warning' | 'info';
-  status: 'active' | 'resolved' | 'acknowledged';
-  
+  severity: "critical" | "warning" | "info";
+  status: "active" | "resolved" | "acknowledged";
+
   // Alert details
   condition: string;
   threshold: number;
   currentValue: number;
-  
+
   // Timing
   triggeredAt: Timestamp;
   resolvedAt?: Timestamp;
   acknowledgedAt?: Timestamp;
   acknowledgedBy?: string;
-  
+
   // Response
   actions: AlertAction[];
   notifications: AlertNotification[];
 }
 
 export interface AlertAction {
-  type: 'email' | 'webhook' | 'script' | 'restart' | 'backup';
+  type: "email" | "webhook" | "script" | "restart" | "backup";
   configuration: Record<string, unknown>;
   executedAt?: Timestamp;
   success?: boolean;
@@ -791,7 +800,7 @@ export interface MonitoringConfiguration {
     performance: number;
     resources: number;
   };
-  
+
   // Alert thresholds
   thresholds: {
     slowQueryTime: number; // milliseconds
@@ -800,14 +809,14 @@ export interface MonitoringConfiguration {
     memoryUsage: number; // percentage
     storageUsage: number; // percentage
   };
-  
+
   // Retention policies
   retention: {
     performanceData: number; // days
     alertHistory: number; // days
     queryLogs: number; // days
   };
-  
+
   // Notification channels
   notifications: {
     email: string[];
@@ -823,25 +832,25 @@ export interface MonitoringConfiguration {
 export interface DatabaseSecurity {
   // Authentication
   authentication: AuthenticationConfig;
-  
+
   // Authorization
   authorization: AuthorizationConfig;
-  
+
   // Encryption
   encryption: EncryptionConfig;
-  
+
   // Auditing
   auditing: AuditingConfig;
-  
+
   // Network security
   network: NetworkSecurityConfig;
-  
+
   // Compliance
   compliance: ComplianceConfig;
 }
 
 export interface AuthenticationConfig {
-  methods: ('password' | 'certificate' | 'ldap' | 'oauth' | 'kerberos')[];
+  methods: ("password" | "certificate" | "ldap" | "oauth" | "kerberos")[];
   passwordPolicy: PasswordPolicy;
   sessionTimeout: number; // minutes
   maxLoginAttempts: number;
@@ -870,11 +879,11 @@ export interface DatabaseRole {
   description: string;
   permissions: string[];
   inheritsFrom: string[];
-  
+
   // Properties
   canLogin: boolean;
   isSystem: boolean;
-  
+
   // Limits
   connectionLimit?: number;
   validUntil?: Timestamp;
@@ -883,7 +892,7 @@ export interface DatabaseRole {
 export interface DatabasePermission {
   name: string;
   description: string;
-  scope: 'database' | 'schema' | 'table' | 'column' | 'function';
+  scope: "database" | "schema" | "table" | "column" | "function";
   actions: string[];
   conditions?: string[];
 }
@@ -896,7 +905,7 @@ export interface EncryptionConfig {
     keySize: number;
     keyRotationDays: number;
   };
-  
+
   // Data in transit
   dataInTransit: {
     enabled: boolean;
@@ -904,7 +913,7 @@ export interface EncryptionConfig {
     cipherSuites: string[];
     certificatePath?: string;
   };
-  
+
   // Column-level encryption
   columnEncryption: ColumnEncryptionConfig[];
 }
@@ -919,15 +928,15 @@ export interface ColumnEncryptionConfig {
 export interface AuditingConfig {
   enabled: boolean;
   logLocation: string;
-  logFormat: 'json' | 'text' | 'csv';
-  
+  logFormat: "json" | "text" | "csv";
+
   // What to audit
   auditLogin: boolean;
   auditDDL: boolean;
   auditDML: boolean;
   auditSelect: boolean;
   auditFailures: boolean;
-  
+
   // Retention
   retentionDays: number;
   archiveLocation?: string;
@@ -937,18 +946,18 @@ export interface NetworkSecurityConfig {
   // IP restrictions
   allowedIPs: string[];
   deniedIPs: string[];
-  
+
   // Firewall rules
   firewallEnabled: boolean;
   allowedPorts: number[];
-  
+
   // VPN requirements
   requireVPN: boolean;
   vpnNetworks?: string[];
 }
 
 export interface ComplianceConfig {
-  standards: ('SOX' | 'GDPR' | 'HIPAA' | 'PCI_DSS' | 'SOC2')[];
+  standards: ("SOX" | "GDPR" | "HIPAA" | "PCI_DSS" | "SOC2")[];
   dataRetentionPolicies: DataRetentionPolicy[];
   privacySettings: PrivacySettings;
 }
@@ -971,7 +980,7 @@ export interface PrivacySettings {
 export interface DataMaskingRule {
   tableName: string;
   columnName: string;
-  maskingType: 'full' | 'partial' | 'hash' | 'substitute';
+  maskingType: "full" | "partial" | "hash" | "substitute";
   maskingPattern?: string;
   conditions?: string[];
 }

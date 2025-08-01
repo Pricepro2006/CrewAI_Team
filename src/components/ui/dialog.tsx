@@ -19,11 +19,16 @@ interface DialogTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
   children: React.ReactNode;
 }
 
-interface DialogDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
+interface DialogDescriptionProps
+  extends React.HTMLAttributes<HTMLParagraphElement> {
   children: React.ReactNode;
 }
 
-const Dialog: React.FC<DialogProps> = ({ open = false, onOpenChange, children }) => {
+const Dialog: React.FC<DialogProps> = ({
+  open = false,
+  onOpenChange,
+  children,
+}) => {
   const handleBackdropClick = () => {
     onOpenChange?.(false);
   };
@@ -32,13 +37,11 @@ const Dialog: React.FC<DialogProps> = ({ open = false, onOpenChange, children })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div 
-        className="fixed inset-0 bg-black/50" 
+      <div
+        className="fixed inset-0 bg-black/50"
         onClick={handleBackdropClick}
       />
-      <div className="relative z-10">
-        {children}
-      </div>
+      <div className="relative z-10">{children}</div>
     </div>
   );
 };
@@ -49,13 +52,13 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
       ref={ref}
       className={cn(
         "bg-white rounded-lg shadow-lg p-6 w-full max-w-lg mx-4",
-        className
+        className,
       )}
       {...props}
     >
       {children}
     </div>
-  )
+  ),
 );
 DialogContent.displayName = "DialogContent";
 
@@ -63,12 +66,15 @@ const DialogHeader = React.forwardRef<HTMLDivElement, DialogHeaderProps>(
   ({ className, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)}
+      className={cn(
+        "flex flex-col space-y-1.5 text-center sm:text-left",
+        className,
+      )}
       {...props}
     >
       {children}
     </div>
-  )
+  ),
 );
 DialogHeader.displayName = "DialogHeader";
 
@@ -76,42 +82,46 @@ const DialogTitle = React.forwardRef<HTMLHeadingElement, DialogTitleProps>(
   ({ className, children, ...props }, ref) => (
     <h2
       ref={ref}
-      className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+      className={cn(
+        "text-lg font-semibold leading-none tracking-tight",
+        className,
+      )}
       {...props}
     >
       {children}
     </h2>
-  )
+  ),
 );
 DialogTitle.displayName = "DialogTitle";
 
-const DialogDescription = React.forwardRef<HTMLParagraphElement, DialogDescriptionProps>(
-  ({ className, children, ...props }, ref) => (
-    <p
-      ref={ref}
-      className={cn("text-sm text-gray-600", className)}
-      {...props}
-    >
-      {children}
-    </p>
-  )
-);
+const DialogDescription = React.forwardRef<
+  HTMLParagraphElement,
+  DialogDescriptionProps
+>(({ className, children, ...props }, ref) => (
+  <p ref={ref} className={cn("text-sm text-gray-600", className)} {...props}>
+    {children}
+  </p>
+));
 DialogDescription.displayName = "DialogDescription";
 
-const DialogTrigger: React.FC<{ children: React.ReactNode; asChild?: boolean }> = ({ children }) => (
-  <>{children}</>
-);
+const DialogTrigger: React.FC<{
+  children: React.ReactNode;
+  asChild?: boolean;
+}> = ({ children }) => <>{children}</>;
 
 const DialogFooter = React.forwardRef<HTMLDivElement, DialogHeaderProps>(
   ({ className, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)}
+      className={cn(
+        "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+        className,
+      )}
       {...props}
     >
       {children}
     </div>
-  )
+  ),
 );
 DialogFooter.displayName = "DialogFooter";
 

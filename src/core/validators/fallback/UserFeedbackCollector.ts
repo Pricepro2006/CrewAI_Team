@@ -8,7 +8,12 @@ export interface UserFeedback {
     confidence: number;
   };
   userRating: 1 | 2 | 3 | 4 | 5;
-  feedbackType: 'missing_info' | 'incorrect_info' | 'incomplete' | 'perfect' | 'other';
+  feedbackType:
+    | "missing_info"
+    | "incorrect_info"
+    | "incomplete"
+    | "perfect"
+    | "other";
   specificIssues?: {
     incorrectPhone?: boolean;
     incorrectAddress?: boolean;
@@ -39,11 +44,13 @@ export class UserFeedbackCollector {
   /**
    * Collect user feedback for a validation result
    */
-  public collectFeedback(feedback: Omit<UserFeedback, 'id' | 'timestamp'>): UserFeedback {
+  public collectFeedback(
+    feedback: Omit<UserFeedback, "id" | "timestamp">,
+  ): UserFeedback {
     const fullFeedback: UserFeedback = {
       ...feedback,
       id: this.generateId(),
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     // Store feedback by query
@@ -54,7 +61,10 @@ export class UserFeedbackCollector {
 
     // Process suggested corrections
     if (feedback.suggestedCorrection) {
-      this.processSuggestedCorrections(feedback.query, feedback.suggestedCorrection);
+      this.processSuggestedCorrections(
+        feedback.query,
+        feedback.suggestedCorrection,
+      );
     }
 
     // Learn from feedback
@@ -68,25 +78,29 @@ export class UserFeedbackCollector {
    */
   public getStats(timeRange?: { start: Date; end: Date }): FeedbackStats {
     const allFeedback = Array.from(this.feedback.values()).flat();
-    
+
     let relevantFeedback = allFeedback;
     if (timeRange) {
       relevantFeedback = allFeedback.filter(
-        f => f.timestamp >= timeRange.start && f.timestamp <= timeRange.end
+        (f) => f.timestamp >= timeRange.start && f.timestamp <= timeRange.end,
       );
     }
 
     // Calculate average rating
-    const ratings = relevantFeedback.map(f => f.userRating);
-    const averageRating = ratings.length > 0 
-      ? ratings.reduce((a, b) => a + b, 0) / ratings.length 
-      : 0;
+    const ratings = relevantFeedback.map((f) => f.userRating);
+    const averageRating =
+      ratings.length > 0
+        ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+        : 0;
 
     // Count common issues
     const issueCounts = new Map<string, number>();
-    relevantFeedback.forEach(f => {
-      issueCounts.set(f.feedbackType, (issueCounts.get(f.feedbackType) || 0) + 1);
-      
+    relevantFeedback.forEach((f) => {
+      issueCounts.set(
+        f.feedbackType,
+        (issueCounts.get(f.feedbackType) || 0) + 1,
+      );
+
       if (f.specificIssues) {
         Object.entries(f.specificIssues).forEach(([issue, hasIssue]) => {
           if (hasIssue) {
@@ -103,8 +117,8 @@ export class UserFeedbackCollector {
 
     // Calculate improvement trend (daily average)
     const dailyRatings = new Map<string, number[]>();
-    relevantFeedback.forEach(f => {
-      const dateKey = f.timestamp.toISOString().split('T')[0] || '';
+    relevantFeedback.forEach((f) => {
+      const dateKey = f.timestamp.toISOString().split("T")[0] || "";
       if (dateKey && !dailyRatings.has(dateKey)) {
         dailyRatings.set(dateKey, []);
       }
@@ -116,7 +130,7 @@ export class UserFeedbackCollector {
     const improvementTrend = Array.from(dailyRatings.entries())
       .map(([date, ratings]) => ({
         date,
-        rating: ratings.reduce((a, b) => a + b, 0) / ratings.length
+        rating: ratings.reduce((a, b) => a + b, 0) / ratings.length,
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -124,7 +138,7 @@ export class UserFeedbackCollector {
       totalFeedback: relevantFeedback.length,
       averageRating,
       commonIssues,
-      improvementTrend
+      improvementTrend,
     };
   }
 
@@ -147,7 +161,7 @@ export class UserFeedbackCollector {
    */
   public generateFeedbackForm(
     query: string,
-    validationResult: UserFeedback['validationResult']
+    validationResult: UserFeedback["validationResult"],
   ): {
     fields: Array<{
       name: string;
@@ -161,43 +175,54 @@ export class UserFeedbackCollector {
     return {
       fields: [
         {
-          name: 'userRating',
-          type: 'rating',
-          label: 'How helpful was this information?',
+          name: "userRating",
+          type: "rating",
+          label: "How helpful was this information?",
           required: true,
-          options: ['1', '2', '3', '4', '5']
+          options: ["1", "2", "3", "4", "5"],
         },
         {
-          name: 'feedbackType',
-          type: 'select',
-          label: 'What type of issue did you experience?',
+          name: "feedbackType",
+          type: "select",
+          label: "What type of issue did you experience?",
           required: true,
-          options: ['missing_info', 'incorrect_info', 'incomplete', 'perfect', 'other']
+          options: [
+            "missing_info",
+            "incorrect_info",
+            "incomplete",
+            "perfect",
+            "other",
+          ],
         },
         {
-          name: 'specificIssues',
-          type: 'checkboxes',
-          label: 'Select specific issues (if any):',
+          name: "specificIssues",
+          type: "checkboxes",
+          label: "Select specific issues (if any):",
           required: false,
-          options: ['incorrectPhone', 'incorrectAddress', 'missingHours', 'wrongBusiness']
+          options: [
+            "incorrectPhone",
+            "incorrectAddress",
+            "missingHours",
+            "wrongBusiness",
+          ],
         },
         {
-          name: 'suggestedCorrection',
-          type: 'fieldset',
-          label: 'Provide correct information (optional):',
-          required: false
+          name: "suggestedCorrection",
+          type: "fieldset",
+          label: "Provide correct information (optional):",
+          required: false,
         },
         {
-          name: 'additionalComments',
-          type: 'textarea',
-          label: 'Additional comments:',
-          required: false
-        }
+          name: "additionalComments",
+          type: "textarea",
+          label: "Additional comments:",
+          required: false,
+        },
       ],
       prefilled: {
         query,
-        validationResult
-      }
+        validationResult,
+      },
     };
   }
 
@@ -205,8 +230,8 @@ export class UserFeedbackCollector {
    * Process suggested corrections to improve future results
    */
   private processSuggestedCorrections(
-    query: string, 
-    corrections: UserFeedback['suggestedCorrection']
+    query: string,
+    corrections: UserFeedback["suggestedCorrection"],
   ): void {
     if (!corrections) return;
 
@@ -239,13 +264,13 @@ export class UserFeedbackCollector {
     // 2. Add new patterns based on corrections
     // 3. Adjust validation thresholds
     // 4. Update data source priorities
-    
+
     // For now, we'll just log the learning opportunity
     if (feedback.userRating <= 2 && feedback.suggestedCorrection) {
-      console.log('Learning opportunity:', {
+      console.log("Learning opportunity:", {
         query: feedback.query,
         issues: feedback.specificIssues,
-        corrections: feedback.suggestedCorrection
+        corrections: feedback.suggestedCorrection,
       });
     }
   }
@@ -253,19 +278,26 @@ export class UserFeedbackCollector {
   /**
    * Export feedback data for analysis
    */
-  public exportFeedback(format: 'json' | 'csv' = 'json'): string {
+  public exportFeedback(format: "json" | "csv" = "json"): string {
     const allFeedback = Array.from(this.feedback.values()).flat();
 
-    if (format === 'json') {
+    if (format === "json") {
       return JSON.stringify(allFeedback, null, 2);
     } else {
       // CSV export
       const headers = [
-        'id', 'timestamp', 'query', 'rating', 'feedbackType',
-        'isValid', 'hasActionableInfo', 'confidence', 'comments'
+        "id",
+        "timestamp",
+        "query",
+        "rating",
+        "feedbackType",
+        "isValid",
+        "hasActionableInfo",
+        "confidence",
+        "comments",
       ];
-      
-      const rows = allFeedback.map(f => [
+
+      const rows = allFeedback.map((f) => [
         f.id,
         f.timestamp.toISOString(),
         f.query,
@@ -274,13 +306,13 @@ export class UserFeedbackCollector {
         f.validationResult.isValid,
         f.validationResult.hasActionableInfo,
         f.validationResult.confidence,
-        f.additionalComments || ''
+        f.additionalComments || "",
       ]);
 
       return [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-      ].join('\n');
+        headers.join(","),
+        ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+      ].join("\n");
     }
   }
 
@@ -307,15 +339,15 @@ export class UserFeedbackCollector {
   } {
     // Analyze feedback to provide actionable insights
     const allFeedback = Array.from(this.feedback.values()).flat();
-    
+
     // Find patterns that frequently result in low ratings
     const lowRatedQueries = allFeedback
-      .filter(f => f.userRating <= 2)
-      .map(f => f.query);
+      .filter((f) => f.userRating <= 2)
+      .map((f) => f.query);
 
     // Identify frequently incorrect fields
     const fieldIssues = new Map<string, number>();
-    allFeedback.forEach(f => {
+    allFeedback.forEach((f) => {
       if (f.specificIssues) {
         Object.entries(f.specificIssues).forEach(([field, hasIssue]) => {
           if (hasIssue) {
@@ -334,7 +366,7 @@ export class UserFeedbackCollector {
       lowConfidencePatterns: [...new Set(lowRatedQueries)].slice(0, 5),
       frequentlyIncorrectFields,
       reliableDataSources: [], // Would be populated from actual data source feedback
-      suggestedPatternImprovements: [] // Would be generated from pattern analysis
+      suggestedPatternImprovements: [], // Would be generated from pattern analysis
     };
   }
 }

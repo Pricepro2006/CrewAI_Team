@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { BusinessSearchCache, type CacheEntry } from "../BusinessSearchCache.js";
+import {
+  BusinessSearchCache,
+  type CacheEntry,
+} from "../BusinessSearchCache.js";
 import type { ValidationResult } from "../../validators/BusinessResponseValidator.js";
 
 // Mock Redis

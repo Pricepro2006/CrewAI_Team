@@ -1,5 +1,5 @@
-import Redis from 'ioredis';
-import { logger } from '../../utils/logger';
+import Redis from "ioredis";
+import { logger } from "../../utils/logger";
 
 interface RedisConfig {
   host: string;
@@ -15,41 +15,44 @@ export class RedisService {
 
   constructor(config?: Partial<RedisConfig>) {
     const defaultConfig: RedisConfig = {
-      host: process.env.REDIS_HOST || 'localhost',
+      host: process.env.REDIS_HOST || "localhost",
       port: Number(process.env.REDIS_PORT) || 6379,
       password: process.env.REDIS_PASSWORD || undefined,
       db: Number(process.env.REDIS_DB) || 0,
       retryStrategy: (times) => {
         const delay = Math.min(times * 50, 2000);
-        logger.warn(`Redis connection attempt ${times}, retrying in ${delay}ms`, 'REDIS');
+        logger.warn(
+          `Redis connection attempt ${times}, retrying in ${delay}ms`,
+          "REDIS",
+        );
         return delay;
-      }
+      },
     };
 
     const finalConfig = { ...defaultConfig, ...config };
-    
+
     this.client = new Redis(finalConfig);
     this.setupEventHandlers();
   }
 
   private setupEventHandlers(): void {
-    this.client.on('connect', () => {
+    this.client.on("connect", () => {
       this.isConnected = true;
-      logger.info('Redis connected successfully', 'REDIS');
+      logger.info("Redis connected successfully", "REDIS");
     });
 
-    this.client.on('error', (error) => {
+    this.client.on("error", (error) => {
       this.isConnected = false;
-      logger.error('Redis connection error', 'REDIS', { error: error.message });
+      logger.error("Redis connection error", "REDIS", { error: error.message });
     });
 
-    this.client.on('close', () => {
+    this.client.on("close", () => {
       this.isConnected = false;
-      logger.warn('Redis connection closed', 'REDIS');
+      logger.warn("Redis connection closed", "REDIS");
     });
 
-    this.client.on('reconnecting', () => {
-      logger.info('Redis reconnecting...', 'REDIS');
+    this.client.on("reconnecting", () => {
+      logger.info("Redis reconnecting...", "REDIS");
     });
   }
 
@@ -64,9 +67,9 @@ export class RedisService {
       } else {
         await this.client.set(key, serialized);
       }
-      logger.debug(`Set cache key: ${key}`, 'REDIS');
+      logger.debug(`Set cache key: ${key}`, "REDIS");
     } catch (error) {
-      logger.error(`Failed to set cache key: ${key}`, 'REDIS', { error });
+      logger.error(`Failed to set cache key: ${key}`, "REDIS", { error });
       throw error;
     }
   }
@@ -82,7 +85,7 @@ export class RedisService {
       }
       return JSON.parse(value) as T;
     } catch (error) {
-      logger.error(`Failed to get cache key: ${key}`, 'REDIS', { error });
+      logger.error(`Failed to get cache key: ${key}`, "REDIS", { error });
       throw error;
     }
   }
@@ -93,9 +96,9 @@ export class RedisService {
   async delete(key: string): Promise<void> {
     try {
       await this.client.del(key);
-      logger.debug(`Deleted cache key: ${key}`, 'REDIS');
+      logger.debug(`Deleted cache key: ${key}`, "REDIS");
     } catch (error) {
-      logger.error(`Failed to delete cache key: ${key}`, 'REDIS', { error });
+      logger.error(`Failed to delete cache key: ${key}`, "REDIS", { error });
       throw error;
     }
   }
@@ -108,10 +111,15 @@ export class RedisService {
       const keys = await this.client.keys(pattern);
       if (keys.length > 0) {
         await this.client.del(...keys);
-        logger.debug(`Deleted ${keys.length} keys matching pattern: ${pattern}`, 'REDIS');
+        logger.debug(
+          `Deleted ${keys.length} keys matching pattern: ${pattern}`,
+          "REDIS",
+        );
       }
     } catch (error) {
-      logger.error(`Failed to delete keys with pattern: ${pattern}`, 'REDIS', { error });
+      logger.error(`Failed to delete keys with pattern: ${pattern}`, "REDIS", {
+        error,
+      });
       throw error;
     }
   }
@@ -124,7 +132,9 @@ export class RedisService {
       const result = await this.client.exists(key);
       return result === 1;
     } catch (error) {
-      logger.error(`Failed to check existence of key: ${key}`, 'REDIS', { error });
+      logger.error(`Failed to check existence of key: ${key}`, "REDIS", {
+        error,
+      });
       throw error;
     }
   }
@@ -136,7 +146,7 @@ export class RedisService {
     try {
       return await this.client.ttl(key);
     } catch (error) {
-      logger.error(`Failed to get TTL for key: ${key}`, 'REDIS', { error });
+      logger.error(`Failed to get TTL for key: ${key}`, "REDIS", { error });
       throw error;
     }
   }
@@ -147,26 +157,28 @@ export class RedisService {
   async cacheWithFallback<T>(
     key: string,
     loader: () => Promise<T>,
-    ttlSeconds?: number
+    ttlSeconds?: number,
   ): Promise<T> {
     try {
       // Try to get from cache first
       const cached = await this.get<T>(key);
       if (cached !== null) {
-        logger.debug(`Cache hit for key: ${key}`, 'REDIS');
+        logger.debug(`Cache hit for key: ${key}`, "REDIS");
         return cached;
       }
 
       // Cache miss - load data
-      logger.debug(`Cache miss for key: ${key}`, 'REDIS');
+      logger.debug(`Cache miss for key: ${key}`, "REDIS");
       const data = await loader();
-      
+
       // Store in cache
       await this.set(key, data, ttlSeconds);
-      
+
       return data;
     } catch (error) {
-      logger.error(`Cache with fallback failed for key: ${key}`, 'REDIS', { error });
+      logger.error(`Cache with fallback failed for key: ${key}`, "REDIS", {
+        error,
+      });
       // If Redis fails, still return the loaded data
       return await loader();
     }
@@ -179,7 +191,7 @@ export class RedisService {
     try {
       return await this.client.incrby(key, by);
     } catch (error) {
-      logger.error(`Failed to increment key: ${key}`, 'REDIS', { error });
+      logger.error(`Failed to increment key: ${key}`, "REDIS", { error });
       throw error;
     }
   }
@@ -191,7 +203,9 @@ export class RedisService {
     try {
       await this.client.hset(key, field, JSON.stringify(value));
     } catch (error) {
-      logger.error(`Failed to set hash field: ${key}.${field}`, 'REDIS', { error });
+      logger.error(`Failed to set hash field: ${key}.${field}`, "REDIS", {
+        error,
+      });
       throw error;
     }
   }
@@ -207,7 +221,9 @@ export class RedisService {
       }
       return JSON.parse(value) as T;
     } catch (error) {
-      logger.error(`Failed to get hash field: ${key}.${field}`, 'REDIS', { error });
+      logger.error(`Failed to get hash field: ${key}.${field}`, "REDIS", {
+        error,
+      });
       throw error;
     }
   }
@@ -219,14 +235,14 @@ export class RedisService {
     try {
       const hash = await this.client.hgetall(key);
       const result: Record<string, T> = {};
-      
+
       for (const [field, value] of Object.entries(hash)) {
         result[field] = JSON.parse(value) as T;
       }
-      
+
       return result;
     } catch (error) {
-      logger.error(`Failed to get all hash fields: ${key}`, 'REDIS', { error });
+      logger.error(`Failed to get all hash fields: ${key}`, "REDIS", { error });
       throw error;
     }
   }
@@ -235,7 +251,7 @@ export class RedisService {
    * Check if Redis is connected
    */
   isReady(): boolean {
-    return this.isConnected && this.client.status === 'ready';
+    return this.isConnected && this.client.status === "ready";
   }
 
   /**
@@ -244,9 +260,9 @@ export class RedisService {
   async close(): Promise<void> {
     try {
       await this.client.quit();
-      logger.info('Redis connection closed', 'REDIS');
+      logger.info("Redis connection closed", "REDIS");
     } catch (error) {
-      logger.error('Failed to close Redis connection', 'REDIS', { error });
+      logger.error("Failed to close Redis connection", "REDIS", { error });
       throw error;
     }
   }
@@ -257,9 +273,9 @@ export class RedisService {
   async flushAll(): Promise<void> {
     try {
       await this.client.flushall();
-      logger.warn('Flushed all Redis keys', 'REDIS');
+      logger.warn("Flushed all Redis keys", "REDIS");
     } catch (error) {
-      logger.error('Failed to flush Redis', 'REDIS', { error });
+      logger.error("Failed to flush Redis", "REDIS", { error });
       throw error;
     }
   }
@@ -270,23 +286,26 @@ export const redisService = new RedisService();
 
 // Cache key generators for consistency
 export const CacheKeys = {
-  emailStats: () => 'email:stats',
+  emailStats: () => "email:stats",
   emailDailyVolume: (days: number) => `email:daily_volume:${days}`,
-  emailEntityMetrics: () => 'email:entity_metrics',
-  emailWorkflowDistribution: () => 'email:workflow_distribution',
-  emailProcessingPerformance: (days: number) => `email:processing_performance:${days}`,
-  emailUrgencyDistribution: () => 'email:urgency_distribution',
-  walmartSearch: (query: string, maxResults: number) => `walmart:search:${query}:${maxResults}`,
+  emailEntityMetrics: () => "email:entity_metrics",
+  emailWorkflowDistribution: () => "email:workflow_distribution",
+  emailProcessingPerformance: (days: number) =>
+    `email:processing_performance:${days}`,
+  emailUrgencyDistribution: () => "email:urgency_distribution",
+  walmartSearch: (query: string, maxResults: number) =>
+    `walmart:search:${query}:${maxResults}`,
   walmartProduct: (url: string) => `walmart:product:${url}`,
   automationRule: (ruleId: string) => `automation:rule:${ruleId}`,
-  automationRulePerformance: (ruleId: string) => `automation:rule_performance:${ruleId}`,
+  automationRulePerformance: (ruleId: string) =>
+    `automation:rule_performance:${ruleId}`,
   userSettings: (userId: string) => `user:settings:${userId}`,
 };
 
 // Cache TTL constants (in seconds)
 export const CacheTTL = {
-  SHORT: 30,        // 30 seconds
-  MEDIUM: 300,      // 5 minutes
-  LONG: 3600,       // 1 hour
+  SHORT: 30, // 30 seconds
+  MEDIUM: 300, // 5 minutes
+  LONG: 3600, // 1 hour
   VERY_LONG: 86400, // 24 hours
 };

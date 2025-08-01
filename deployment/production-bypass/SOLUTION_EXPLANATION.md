@@ -9,6 +9,7 @@ ModuleNotFoundError: No module named 'distutils'
 ```
 
 This happens because:
+
 1. **Python 3.12+**: Completely removed `distutils` module (PEP 632)
 2. **Python 3.11**: Some distributions ship without `distutils` to prepare for removal
 3. **node-gyp**: Still depends on `distutils` for building native Node.js modules
@@ -16,6 +17,7 @@ This happens because:
 ## Why This Affects better-sqlite3
 
 `better-sqlite3` is a native Node.js module that requires compilation. The compilation process uses:
+
 - `node-gyp`: Node.js native build tool
 - Python: Used by node-gyp for the build process
 - `distutils`: Python module that node-gyp depends on
@@ -79,6 +81,7 @@ I've created a comprehensive fix script that:
 4. **Verifies** the fix worked
 
 Run it with:
+
 ```bash
 ./deployment/production-bypass/fix-distutils-properly.sh
 ```
@@ -86,16 +89,19 @@ Run it with:
 ## For Your Production Deployment
 
 ### Option A: Fix the Environment
+
 1. Run the fix script to resolve distutils
 2. Rebuild better-sqlite3: `npm rebuild better-sqlite3`
 3. Deploy normally
 
 ### Option B: Use Prebuilt Binaries
+
 1. Copy node_modules from a working installation
 2. Use the deployment script that skips compilation
 3. Deploy without npm install
 
 ### Option C: Docker/Container Solution
+
 1. Use a base image with Python 3.10
 2. Pre-install all dependencies
 3. Copy only the built artifacts

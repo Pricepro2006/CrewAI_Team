@@ -55,12 +55,12 @@ router.get("/stats", (req: AuthenticatedRequest, res) => {
 router.get("/clients", (req: AuthenticatedRequest, res) => {
   try {
     // Only allow admins to view detailed client info
-    if (!req.user || req.user.role !== 'admin') {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
     }
 
     const stats = wsService.getConnectionStats();
-    
+
     return res.json({
       timestamp: new Date().toISOString(),
       totalClients: stats.totalClients,
@@ -80,7 +80,7 @@ router.get("/clients", (req: AuthenticatedRequest, res) => {
 router.post("/broadcast", (req: AuthenticatedRequest, res) => {
   try {
     // Only allow admins to broadcast
-    if (!req.user || req.user.role !== 'admin') {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -97,7 +97,7 @@ router.post("/broadcast", (req: AuthenticatedRequest, res) => {
         ...payload,
         timestamp: new Date(),
       } as any,
-      requiredPermission
+      requiredPermission,
     );
 
     return res.json({
@@ -118,7 +118,7 @@ router.post("/broadcast", (req: AuthenticatedRequest, res) => {
 router.delete("/client/:clientId", (req: AuthenticatedRequest, res) => {
   try {
     // Only allow admins to disconnect clients
-    if (!req.user || req.user.role !== 'admin') {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -173,10 +173,10 @@ router.get("/health", (_req, res) => {
     return res.json(health);
   } catch (error) {
     logger.error("Error checking WebSocket health", "WS_MONITOR", { error });
-    return res.status(500).json({ 
+    return res.status(500).json({
       status: "error",
       timestamp: new Date().toISOString(),
-      error: "Failed to check WebSocket health"
+      error: "Failed to check WebSocket health",
     });
   }
 });

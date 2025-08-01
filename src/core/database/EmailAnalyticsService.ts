@@ -1,5 +1,5 @@
-import Database from 'better-sqlite3';
-import { logger } from '../../utils/logger';
+import Database from "better-sqlite3";
+import { logger } from "../../utils/logger";
 
 export interface EmailStats {
   totalEmails: number;
@@ -12,13 +12,15 @@ export interface EmailStats {
 export class EmailAnalyticsService {
   private db: Database.Database;
 
-  constructor(databasePath: string = './data/app.db') {
+  constructor(databasePath: string = "./data/app.db") {
     try {
       this.db = new Database(databasePath);
-      logger.info('Database connection established', 'EMAIL_ANALYTICS');
+      logger.info("Database connection established", "EMAIL_ANALYTICS");
     } catch (error) {
-      logger.error('Failed to connect to database', 'EMAIL_ANALYTICS', { error });
-      throw new Error('Database connection failed');
+      logger.error("Failed to connect to database", "EMAIL_ANALYTICS", {
+        error,
+      });
+      throw new Error("Database connection failed");
     }
   }
 
@@ -27,11 +29,13 @@ export class EmailAnalyticsService {
    */
   getTotalEmailsCount(): number {
     try {
-      const stmt = this.db.prepare('SELECT COUNT(*) as total FROM emails');
+      const stmt = this.db.prepare("SELECT COUNT(*) as total FROM emails");
       const result = stmt.get() as { total: number };
       return result.total;
     } catch (error) {
-      logger.error('Error getting total emails count', 'EMAIL_ANALYTICS', { error });
+      logger.error("Error getting total emails count", "EMAIL_ANALYTICS", {
+        error,
+      });
       return 0;
     }
   }
@@ -49,7 +53,9 @@ export class EmailAnalyticsService {
       const result = stmt.get() as { total: number };
       return result.total;
     } catch (error) {
-      logger.error('Error getting processed emails count', 'EMAIL_ANALYTICS', { error });
+      logger.error("Error getting processed emails count", "EMAIL_ANALYTICS", {
+        error,
+      });
       return 0;
     }
   }
@@ -68,7 +74,9 @@ export class EmailAnalyticsService {
       const result = stmt.get() as { total: number };
       return result.total;
     } catch (error) {
-      logger.error('Error getting pending emails count', 'EMAIL_ANALYTICS', { error });
+      logger.error("Error getting pending emails count", "EMAIL_ANALYTICS", {
+        error,
+      });
       return 0;
     }
   }
@@ -86,7 +94,9 @@ export class EmailAnalyticsService {
       const result = stmt.get() as { avg_time: number | null };
       return result.avg_time || 0;
     } catch (error) {
-      logger.error('Error getting average processing time', 'EMAIL_ANALYTICS', { error });
+      logger.error("Error getting average processing time", "EMAIL_ANALYTICS", {
+        error,
+      });
       return 0;
     }
   }
@@ -106,17 +116,19 @@ export class EmailAnalyticsService {
         processedEmails,
         pendingEmails,
         averageProcessingTime,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     } catch (error) {
-      logger.error('Error getting email statistics', 'EMAIL_ANALYTICS', { error });
+      logger.error("Error getting email statistics", "EMAIL_ANALYTICS", {
+        error,
+      });
       // Return graceful fallback
       return {
         totalEmails: 0,
         processedEmails: 0,
         pendingEmails: 0,
         averageProcessingTime: 0,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
@@ -127,9 +139,11 @@ export class EmailAnalyticsService {
   close(): void {
     try {
       this.db.close();
-      logger.info('Database connection closed', 'EMAIL_ANALYTICS');
+      logger.info("Database connection closed", "EMAIL_ANALYTICS");
     } catch (error) {
-      logger.error('Error closing database connection', 'EMAIL_ANALYTICS', { error });
+      logger.error("Error closing database connection", "EMAIL_ANALYTICS", {
+        error,
+      });
     }
   }
 }

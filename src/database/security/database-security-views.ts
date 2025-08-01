@@ -3,8 +3,8 @@
  * Implements secure views and access patterns for SQLite
  */
 
-import Database from 'better-sqlite3';
-import { logger } from '../../utils/logger.js';
+import Database from "better-sqlite3";
+import { logger } from "../../utils/logger.js";
 
 export class DatabaseSecurityViews {
   private db: Database.Database;
@@ -18,7 +18,7 @@ export class DatabaseSecurityViews {
    */
   createSecurityViews(): void {
     try {
-      logger.info('Creating security views', 'DB_SECURITY');
+      logger.info("Creating security views", "DB_SECURITY");
 
       // View for email summaries (no sensitive content)
       this.db.exec(`
@@ -173,11 +173,10 @@ export class DatabaseSecurityViews {
         GROUP BY content_type;
       `);
 
-      logger.info('Security views created successfully', 'DB_SECURITY');
-
+      logger.info("Security views created successfully", "DB_SECURITY");
     } catch (error) {
-      logger.error('Failed to create security views', 'DB_SECURITY', {
-        error: error instanceof Error ? error.message : String(error)
+      logger.error("Failed to create security views", "DB_SECURITY", {
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -188,7 +187,7 @@ export class DatabaseSecurityViews {
    */
   createAuditTriggers(): void {
     try {
-      logger.info('Creating audit triggers', 'DB_SECURITY');
+      logger.info("Creating audit triggers", "DB_SECURITY");
 
       // Ensure audit_logs table exists
       this.db.exec(`
@@ -275,11 +274,10 @@ export class DatabaseSecurityViews {
         END;
       `);
 
-      logger.info('Audit triggers created successfully', 'DB_SECURITY');
-
+      logger.info("Audit triggers created successfully", "DB_SECURITY");
     } catch (error) {
-      logger.error('Failed to create audit triggers', 'DB_SECURITY', {
-        error: error instanceof Error ? error.message : String(error)
+      logger.error("Failed to create audit triggers", "DB_SECURITY", {
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -290,7 +288,7 @@ export class DatabaseSecurityViews {
    */
   createRBACTables(): void {
     try {
-      logger.info('Creating RBAC tables', 'DB_SECURITY');
+      logger.info("Creating RBAC tables", "DB_SECURITY");
 
       // Permissions table
       this.db.exec(`
@@ -341,15 +339,47 @@ export class DatabaseSecurityViews {
 
       // Insert default permissions
       const defaultPermissions = [
-        { resource: 'email', action: 'read', description: 'View email content' },
-        { resource: 'email', action: 'write', description: 'Create/update emails' },
-        { resource: 'email', action: 'delete', description: 'Delete emails' },
-        { resource: 'email', action: 'assign', description: 'Assign emails to users' },
-        { resource: 'analytics', action: 'view', description: 'View analytics data' },
-        { resource: 'user', action: 'manage', description: 'Manage user accounts' },
-        { resource: 'workflow', action: 'create', description: 'Create workflows' },
-        { resource: 'workflow', action: 'execute', description: 'Execute workflows' },
-        { resource: 'system', action: 'admin', description: 'System administration' }
+        {
+          resource: "email",
+          action: "read",
+          description: "View email content",
+        },
+        {
+          resource: "email",
+          action: "write",
+          description: "Create/update emails",
+        },
+        { resource: "email", action: "delete", description: "Delete emails" },
+        {
+          resource: "email",
+          action: "assign",
+          description: "Assign emails to users",
+        },
+        {
+          resource: "analytics",
+          action: "view",
+          description: "View analytics data",
+        },
+        {
+          resource: "user",
+          action: "manage",
+          description: "Manage user accounts",
+        },
+        {
+          resource: "workflow",
+          action: "create",
+          description: "Create workflows",
+        },
+        {
+          resource: "workflow",
+          action: "execute",
+          description: "Execute workflows",
+        },
+        {
+          resource: "system",
+          action: "admin",
+          description: "System administration",
+        },
       ];
 
       const insertPermission = this.db.prepare(`
@@ -362,11 +392,10 @@ export class DatabaseSecurityViews {
         insertPermission.run(id, perm.resource, perm.action, perm.description);
       }
 
-      logger.info('RBAC tables created successfully', 'DB_SECURITY');
-
+      logger.info("RBAC tables created successfully", "DB_SECURITY");
     } catch (error) {
-      logger.error('Failed to create RBAC tables', 'DB_SECURITY', {
-        error: error instanceof Error ? error.message : String(error)
+      logger.error("Failed to create RBAC tables", "DB_SECURITY", {
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -377,7 +406,7 @@ export class DatabaseSecurityViews {
    */
   createDataMaskingViews(): void {
     try {
-      logger.info('Creating data masking views', 'DB_SECURITY');
+      logger.info("Creating data masking views", "DB_SECURITY");
 
       // Masked email view for non-privileged users
       this.db.exec(`
@@ -420,11 +449,10 @@ export class DatabaseSecurityViews {
         FROM users;
       `);
 
-      logger.info('Data masking views created successfully', 'DB_SECURITY');
-
+      logger.info("Data masking views created successfully", "DB_SECURITY");
     } catch (error) {
-      logger.error('Failed to create data masking views', 'DB_SECURITY', {
-        error: error instanceof Error ? error.message : String(error)
+      logger.error("Failed to create data masking views", "DB_SECURITY", {
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -439,11 +467,11 @@ export class DatabaseSecurityViews {
       this.createAuditTriggers();
       this.createRBACTables();
       this.createDataMaskingViews();
-      
-      logger.info('Database security layer initialized', 'DB_SECURITY');
+
+      logger.info("Database security layer initialized", "DB_SECURITY");
     } catch (error) {
-      logger.error('Failed to initialize security layer', 'DB_SECURITY', {
-        error: error instanceof Error ? error.message : String(error)
+      logger.error("Failed to initialize security layer", "DB_SECURITY", {
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -452,10 +480,16 @@ export class DatabaseSecurityViews {
   /**
    * Check user permissions
    */
-  async checkPermission(userId: string, resource: string, action: string): Promise<boolean> {
+  async checkPermission(
+    userId: string,
+    resource: string,
+    action: string,
+  ): Promise<boolean> {
     try {
       // First check user-specific permissions
-      const userPerm = this.db.prepare(`
+      const userPerm = this.db
+        .prepare(
+          `
         SELECT granted, expires_at 
         FROM user_permissions up
         JOIN permissions p ON up.permission_id = p.id
@@ -463,14 +497,18 @@ export class DatabaseSecurityViews {
           AND p.resource = ? 
           AND p.action = ?
           AND (up.expires_at IS NULL OR up.expires_at > datetime('now'))
-      `).get(userId, resource, action) as any;
+      `,
+        )
+        .get(userId, resource, action) as any;
 
       if (userPerm) {
         return userPerm.granted === 1;
       }
 
       // Check role-based permissions
-      const rolePerm = this.db.prepare(`
+      const rolePerm = this.db
+        .prepare(
+          `
         SELECT 1
         FROM users u
         JOIN role_permissions rp ON u.role = rp.role
@@ -478,16 +516,17 @@ export class DatabaseSecurityViews {
         WHERE u.id = ? 
           AND p.resource = ? 
           AND p.action = ?
-      `).get(userId, resource, action);
+      `,
+        )
+        .get(userId, resource, action);
 
       return !!rolePerm;
-
     } catch (error) {
-      logger.error('Failed to check permission', 'DB_SECURITY', {
+      logger.error("Failed to check permission", "DB_SECURITY", {
         error: error instanceof Error ? error.message : String(error),
         userId,
         resource,
-        action
+        action,
       });
       return false;
     }
@@ -495,6 +534,8 @@ export class DatabaseSecurityViews {
 }
 
 // Export factory function
-export function createDatabaseSecurityViews(db: Database.Database): DatabaseSecurityViews {
+export function createDatabaseSecurityViews(
+  db: Database.Database,
+): DatabaseSecurityViews {
   return new DatabaseSecurityViews(db);
 }

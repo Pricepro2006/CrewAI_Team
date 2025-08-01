@@ -398,16 +398,16 @@ export class ProductLookupService {
 
       // Category filter
       if (filters.categories?.length) {
-        const hasCategory = filters.categories.some(
-          (cat) => {
-            if (!product.category) return false;
-            if (typeof product.category === 'string') {
-              return product.category.includes(cat);
-            }
-            return product.category.name?.includes(cat) ||
-                   product.category.path?.includes(cat);
+        const hasCategory = filters.categories.some((cat) => {
+          if (!product.category) return false;
+          if (typeof product.category === "string") {
+            return product.category.includes(cat);
           }
-        );
+          return (
+            product.category.name?.includes(cat) ||
+            product.category.path?.includes(cat)
+          );
+        });
         if (!hasCategory) return false;
       }
 
@@ -420,9 +420,10 @@ export class ProductLookupService {
 
       // Price filter
       if (filters.priceRange) {
-        const price = typeof product.price === 'object' 
-          ? (product.price.regular || 0)
-          : (product.price || 0);
+        const price =
+          typeof product.price === "object"
+            ? product.price.regular || 0
+            : product.price || 0;
         if (price < filters.priceRange.min || price > filters.priceRange.max) {
           return false;
         }

@@ -1,9 +1,9 @@
 // Socket.IO Type Declarations
 // This file provides type definitions for socket.io until proper installation
 
-declare module 'socket.io' {
-  import { Server as HTTPServer } from 'http';
-  import { EventEmitter } from 'events';
+declare module "socket.io" {
+  import { Server as HTTPServer } from "http";
+  import { EventEmitter } from "events";
 
   export interface ServerOptions {
     path?: string;
@@ -29,7 +29,10 @@ declare module 'socket.io' {
     pingInterval?: number;
     upgradeTimeout?: number;
     maxHttpBufferSize?: number;
-    allowRequest?: (req: any, fn: (err: string | null | undefined, success: boolean) => void) => void;
+    allowRequest?: (
+      req: any,
+      fn: (err: string | null | undefined, success: boolean) => void,
+    ) => void;
     initialPacket?: any;
     allowEIO3?: boolean;
   }

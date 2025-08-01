@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { logger } from '../utils/logger';
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { logger } from "../utils/logger";
 
 export interface ErrorRecoveryOptions {
   maxRetries?: number;
@@ -54,7 +54,7 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
     }
-    
+
     setState({
       error: null,
       isRetrying: false,
@@ -64,80 +64,100 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
 
     // Reset specified query keys
     if (resetKeys.length > 0) {
-      resetKeys.forEach(key => {
+      resetKeys.forEach((key) => {
         queryClient.invalidateQueries({ queryKey: [key] });
       });
     }
   }, [queryClient, resetKeys]);
 
-  const retry = useCallback(async (retryFn: () => Promise<void>) => {
-    if (!state.canRetry || state.retryCount >= maxRetries) {
-      return;
-    }
-
-    setState(prev => ({ ...prev, isRetrying: true }));
-
-    try {
-      await retryFn();
-      reset(); // Success - reset state
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      const newRetryCount = state.retryCount + 1;
-
-      if (onRetry) {
-        onRetry(newRetryCount, err);
+  const retry = useCallback(
+    async (retryFn: () => Promise<void>) => {
+      if (!state.canRetry || state.retryCount >= maxRetries) {
+        return;
       }
 
-      if (newRetryCount >= maxRetries) {
-        setState(prev => ({
-          ...prev,
-          error: err,
-          isRetrying: false,
-          retryCount: newRetryCount,
-          canRetry: false,
-        }));
+      setState((prev) => ({ ...prev, isRetrying: true }));
 
-        if (onMaxRetriesExceeded) {
-          onMaxRetriesExceeded(err);
+      try {
+        await retryFn();
+        reset(); // Success - reset state
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        const newRetryCount = state.retryCount + 1;
+
+        if (onRetry) {
+          onRetry(newRetryCount, err);
         }
-      } else {
-        // Calculate delay
-        const delay = exponentialBackoff
-          ? retryDelay * Math.pow(2, newRetryCount - 1)
-          : retryDelay;
 
-        setState(prev => ({
-          ...prev,
-          error: err,
-          isRetrying: false,
-          retryCount: newRetryCount,
-        }));
+        if (newRetryCount >= maxRetries) {
+          setState((prev) => ({
+            ...prev,
+            error: err,
+            isRetrying: false,
+            retryCount: newRetryCount,
+            canRetry: false,
+          }));
 
-        // Schedule next retry
+          if (onMaxRetriesExceeded) {
+            onMaxRetriesExceeded(err);
+          }
+        } else {
+          // Calculate delay
+          const delay = exponentialBackoff
+            ? retryDelay * Math.pow(2, newRetryCount - 1)
+            : retryDelay;
+
+          setState((prev) => ({
+            ...prev,
+            error: err,
+            isRetrying: false,
+            retryCount: newRetryCount,
+          }));
+
+          // Schedule next retry
+          retryTimeoutRef.current = setTimeout(() => {
+            retry(retryFn);
+          }, delay);
+        }
+      }
+    },
+    [
+      state.canRetry,
+      state.retryCount,
+      maxRetries,
+      reset,
+      onRetry,
+      onMaxRetriesExceeded,
+      retryDelay,
+      exponentialBackoff,
+    ],
+  );
+
+  const handleError = useCallback(
+    (error: Error, retryFn?: () => Promise<void>) => {
+      logger.error(
+        "Error caught by recovery hook",
+        "ERROR_RECOVERY",
+        undefined,
+        error,
+      );
+
+      setState({
+        error,
+        isRetrying: false,
+        retryCount: 0,
+        canRetry: !!retryFn && maxRetries > 0,
+      });
+
+      if (retryFn && maxRetries > 0) {
+        // Start retry sequence
         retryTimeoutRef.current = setTimeout(() => {
           retry(retryFn);
-        }, delay);
+        }, retryDelay);
       }
-    }
-  }, [state.canRetry, state.retryCount, maxRetries, reset, onRetry, onMaxRetriesExceeded, retryDelay, exponentialBackoff]);
-
-  const handleError = useCallback((error: Error, retryFn?: () => Promise<void>) => {
-    logger.error('Error caught by recovery hook', 'ERROR_RECOVERY', undefined, error);
-
-    setState({
-      error,
-      isRetrying: false,
-      retryCount: 0,
-      canRetry: !!retryFn && maxRetries > 0,
-    });
-
-    if (retryFn && maxRetries > 0) {
-      // Start retry sequence
-      retryTimeoutRef.current = setTimeout(() => {
-        retry(retryFn);
-      }, retryDelay);
-    }
-  }, [maxRetries, retryDelay, retry]);
+    },
+    [maxRetries, retryDelay, retry],
+  );
 
   return {
     ...state,
@@ -158,7 +178,7 @@ export function useAutoReconnect(
     delay?: number;
     onReconnect?: () => void;
     onFail?: () => void;
-  } = {}
+  } = {},
 ) {
   const {
     enabled = true,
@@ -179,7 +199,7 @@ export function useAutoReconnect(
     }
 
     setIsReconnecting(true);
-    setAttempts(prev => prev + 1);
+    setAttempts((prev) => prev + 1);
 
     try {
       await connect();
@@ -187,10 +207,14 @@ export function useAutoReconnect(
       setAttempts(0);
       if (onReconnect) onReconnect();
     } catch (error) {
-      logger.warn(`Reconnection attempt ${attempts + 1} failed`, 'RECONNECTION_RECOVERY', { 
-        error: error instanceof Error ? error.message : String(error) 
-      });
-      
+      logger.warn(
+        `Reconnection attempt ${attempts + 1} failed`,
+        "RECONNECTION_RECOVERY",
+        {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      );
+
       if (attempts + 1 < maxAttempts) {
         const nextDelay = delay * Math.min(Math.pow(2, attempts), 10);
         timeoutRef.current = setTimeout(reconnect, nextDelay);
@@ -228,37 +252,37 @@ export function useAutoReconnect(
  */
 export function useNetworkRecovery(
   onOnline?: () => void,
-  onOffline?: () => void
+  onOffline?: () => void,
 ) {
   const [isOnline, setIsOnline] = useState(
-    typeof window !== 'undefined' ? window.navigator.onLine : true
+    typeof window !== "undefined" ? window.navigator.onLine : true,
   );
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      logger.info('Network connection restored');
-      
+      logger.info("Network connection restored");
+
       // Refetch all queries when coming back online
       queryClient.refetchQueries();
-      
+
       if (onOnline) onOnline();
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      logger.warn('Network connection lost');
-      
+      logger.warn("Network connection lost");
+
       if (onOffline) onOffline();
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, [queryClient, onOnline, onOffline]);
 
@@ -270,17 +294,17 @@ export function useNetworkRecovery(
  */
 export function useCircuitBreaker(
   threshold: number = 5,
-  timeout: number = 60000
+  timeout: number = 60000,
 ) {
-  const [state, setState] = useState<'closed' | 'open' | 'half-open'>('closed');
+  const [state, setState] = useState<"closed" | "open" | "half-open">("closed");
   const [failures, setFailures] = useState(0);
   const [lastFailureTime, setLastFailureTime] = useState<number | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
-    if (state === 'open' && lastFailureTime) {
+    if (state === "open" && lastFailureTime) {
       timeoutRef.current = setTimeout(() => {
-        setState('half-open');
+        setState("half-open");
         setFailures(0);
       }, timeout);
     }
@@ -292,49 +316,56 @@ export function useCircuitBreaker(
     };
   }, [state, lastFailureTime, timeout]);
 
-  const execute = useCallback(async <T,>(
-    operation: () => Promise<T>,
-    fallback?: () => T | Promise<T>
-  ): Promise<T> => {
-    if (state === 'open') {
-      if (fallback) {
-        return fallback();
-      }
-      throw new Error('Circuit breaker is open');
-    }
-
-    try {
-      const result = await operation();
-      
-      if (state === 'half-open') {
-        setState('closed');
-        setFailures(0);
-      }
-      
-      return result;
-    } catch (error) {
-      const newFailures = failures + 1;
-      setFailures(newFailures);
-      setLastFailureTime(Date.now());
-
-      if (newFailures >= threshold) {
-        setState('open');
-        logger.error('Circuit breaker opened due to failures', 'CIRCUIT_BREAKER', {
-          threshold,
-          failures: newFailures,
-        });
-        
+  const execute = useCallback(
+    async <T>(
+      operation: () => Promise<T>,
+      fallback?: () => T | Promise<T>,
+    ): Promise<T> => {
+      if (state === "open") {
         if (fallback) {
           return fallback();
         }
+        throw new Error("Circuit breaker is open");
       }
 
-      throw error;
-    }
-  }, [state, failures, threshold]);
+      try {
+        const result = await operation();
+
+        if (state === "half-open") {
+          setState("closed");
+          setFailures(0);
+        }
+
+        return result;
+      } catch (error) {
+        const newFailures = failures + 1;
+        setFailures(newFailures);
+        setLastFailureTime(Date.now());
+
+        if (newFailures >= threshold) {
+          setState("open");
+          logger.error(
+            "Circuit breaker opened due to failures",
+            "CIRCUIT_BREAKER",
+            {
+              threshold,
+              failures: newFailures,
+            },
+          );
+
+          if (fallback) {
+            return fallback();
+          }
+        }
+
+        throw error;
+      }
+    },
+    [state, failures, threshold],
+  );
 
   const reset = useCallback(() => {
-    setState('closed');
+    setState("closed");
     setFailures(0);
     setLastFailureTime(null);
     if (timeoutRef.current) {

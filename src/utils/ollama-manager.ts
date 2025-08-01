@@ -201,7 +201,9 @@ export class OllamaManager {
   static async ensureModels(requiredModels: string[]): Promise<boolean> {
     try {
       const response = await fetch(`${this.OLLAMA_URL}/api/tags`);
-      const data = await response.json() as { models?: Array<{ name: string }> };
+      const data = (await response.json()) as {
+        models?: Array<{ name: string }>;
+      };
       const availableModels = (data.models || []).map((m) => m.name);
 
       for (const model of requiredModels) {

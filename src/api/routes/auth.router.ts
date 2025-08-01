@@ -1,17 +1,17 @@
-import { z } from 'zod';
-import { TRPCError } from '@trpc/server';
-import { 
-  router, 
-  publicProcedure, 
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import {
+  router,
+  publicProcedure,
   protectedProcedure,
   csrfTokenProcedure,
-  createCustomErrorHandler 
-} from '../trpc/enhanced-router.js';
-import { UserService } from '../services/UserService.js';
-import { jwtManager } from '../utils/jwt.js';
-import { passwordManager } from '../utils/password.js';
-import { randomUUID } from 'crypto';
-import { logger } from '../../utils/logger.js';
+  createCustomErrorHandler,
+} from "../trpc/enhanced-router.js";
+import { UserService } from "../services/UserService.js";
+import { jwtManager } from "../utils/jwt.js";
+import { passwordManager } from "../utils/password.js";
+import { randomUUID } from "crypto";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Authentication Router
@@ -20,29 +20,33 @@ import { logger } from '../../utils/logger.js';
 
 // Input validation schemas
 const registerSchema = z.object({
-  email: z.string().email('Invalid email format').max(255),
-  username: z.string()
-    .min(3, 'Username must be at least 3 characters')
-    .max(50, 'Username must be less than 50 characters')
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, hyphens, and underscores'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  email: z.string().email("Invalid email format").max(255),
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .max(50, "Username must be less than 50 characters")
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "Username can only contain letters, numbers, hyphens, and underscores",
+    ),
+  password: z.string().min(8, "Password must be at least 8 characters"),
   first_name: z.string().max(100).optional(),
   last_name: z.string().max(100).optional(),
 });
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(1, "Password is required"),
   rememberMe: z.boolean().optional().default(false),
 });
 
 const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required'),
+  refreshToken: z.string().min(1, "Refresh token is required"),
 });
 
 const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(8, "New password must be at least 8 characters"),
 });
 
 const updateProfileSchema = z.object({
@@ -52,20 +56,18 @@ const updateProfileSchema = z.object({
 });
 
 // Custom error handler for auth operations
-const authErrorHandler = createCustomErrorHandler('auth');
+const authErrorHandler = createCustomErrorHandler("auth");
 
 export const authRouter = router({
   /**
    * Get CSRF token for authentication requests
    */
-  getCsrfToken: csrfTokenProcedure
-    .use(authErrorHandler)
-    .query(({ ctx }) => {
-      return {
-        csrfToken: ctx.csrfToken,
-        message: 'CSRF token generated successfully'
-      };
-    }),
+  getCsrfToken: csrfTokenProcedure.use(authErrorHandler).query(({ ctx }) => {
+    return {
+      csrfToken: ctx.csrfToken,
+      message: "CSRF token generated successfully",
+    };
+  }),
 
   /**
    * Register a new user
@@ -78,36 +80,42 @@ export const authRouter = router({
 
       try {
         // Validate password strength
-        const passwordValidation = passwordManager.validatePasswordStrength(input.password);
+        const passwordValidation = passwordManager.validatePasswordStrength(
+          input.password,
+        );
         if (!passwordValidation.isValid) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Password does not meet security requirements',
+            code: "BAD_REQUEST",
+            message: "Password does not meet security requirements",
             cause: {
               errors: passwordValidation.errors,
-              strength: passwordValidation.strength
-            }
+              strength: passwordValidation.strength,
+            },
           });
         }
 
         // Create user
         const user = await userService.createUser(input);
 
-        logger.info('User registered successfully', 'AUTH', {
+        logger.info("User registered successfully", "AUTH", {
           userId: user.id,
           email: user.email,
-          username: user.username
+          username: user.username,
         });
 
         return {
           user,
-          message: 'User registered successfully. Please check your email to verify your account.'
+          message:
+            "User registered successfully. Please check your email to verify your account.",
         };
       } catch (error) {
-        if (error instanceof Error && error.message.includes('already exists')) {
+        if (
+          error instanceof Error &&
+          error.message.includes("already exists")
+        ) {
           throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'User with this email or username already exists'
+            code: "CONFLICT",
+            message: "User with this email or username already exists",
           });
         }
         throw error;
@@ -127,12 +135,15 @@ export const authRouter = router({
 
       try {
         // Authenticate user
-        const user = await userService.authenticateUser(input.email, input.password);
-        
+        const user = await userService.authenticateUser(
+          input.email,
+          input.password,
+        );
+
         if (!user) {
           throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Invalid email or password'
+            code: "UNAUTHORIZED",
+            message: "Invalid email or password",
           });
         }
 
@@ -142,27 +153,26 @@ export const authRouter = router({
         expiresAt.setDate(expiresAt.getDate() + (input.rememberMe ? 30 : 7)); // 30 days if remember me, 7 days otherwise
 
         // Create token pair
-        const tokens = jwtManager.generateTokenPair({
-          userId: user.id,
-          email: user.email,
-          username: user.username,
-          role: user.role
-        }, refreshTokenId);
+        const tokens = jwtManager.generateTokenPair(
+          {
+            userId: user.id,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+          },
+          refreshTokenId,
+        );
 
         // Store refresh token in database
-        userService.createRefreshToken(
-          user.id, 
-          tokens.refreshToken, 
-          expiresAt
-        );
+        userService.createRefreshToken(user.id, tokens.refreshToken, expiresAt);
 
         // Remove sensitive data from user object
         const { password_hash, ...publicUser } = user;
 
-        logger.info('User logged in successfully', 'AUTH', {
+        logger.info("User logged in successfully", "AUTH", {
           userId: user.id,
           email: user.email,
-          rememberMe: input.rememberMe
+          rememberMe: input.rememberMe,
         });
 
         return {
@@ -171,9 +181,9 @@ export const authRouter = router({
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
             expiresIn: tokens.expiresIn,
-            tokenType: 'Bearer' as const
+            tokenType: "Bearer" as const,
           },
-          message: 'Login successful'
+          message: "Login successful",
         };
       } finally {
         userService.close();
@@ -192,21 +202,21 @@ export const authRouter = router({
       try {
         // Verify refresh token
         const payload = jwtManager.verifyRefreshToken(input.refreshToken);
-        
+
         // Get refresh token from database
         const refreshToken = userService.getRefreshToken(payload.tokenId);
         if (!refreshToken || refreshToken.revoked) {
           throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Invalid or revoked refresh token'
+            code: "UNAUTHORIZED",
+            message: "Invalid or revoked refresh token",
           });
         }
 
         // Check if token is expired
         if (new Date(refreshToken.expires_at) <= new Date()) {
           throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Refresh token has expired'
+            code: "UNAUTHORIZED",
+            message: "Refresh token has expired",
           });
         }
 
@@ -214,19 +224,22 @@ export const authRouter = router({
         const user = userService.getUserById(payload.sub);
         if (!user || !user.is_active) {
           throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'User not found or inactive'
+            code: "UNAUTHORIZED",
+            message: "User not found or inactive",
           });
         }
 
         // Generate new token pair
         const newRefreshTokenId = randomUUID();
-        const newTokens = jwtManager.generateTokenPair({
-          userId: user.id,
-          email: user.email,
-          username: user.username,
-          role: user.role
-        }, newRefreshTokenId);
+        const newTokens = jwtManager.generateTokenPair(
+          {
+            userId: user.id,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+          },
+          newRefreshTokenId,
+        );
 
         // Revoke old refresh token and create new one
         userService.revokeRefreshToken(payload.tokenId);
@@ -236,13 +249,13 @@ export const authRouter = router({
         userService.createRefreshToken(
           user.id,
           newTokens.refreshToken,
-          expiresAt
+          expiresAt,
         );
 
-        logger.info('Token refreshed successfully', 'AUTH', {
+        logger.info("Token refreshed successfully", "AUTH", {
           userId: user.id,
           oldTokenId: payload.tokenId,
-          newTokenId: newRefreshTokenId
+          newTokenId: newRefreshTokenId,
         });
 
         return {
@@ -250,9 +263,9 @@ export const authRouter = router({
             accessToken: newTokens.accessToken,
             refreshToken: newTokens.refreshToken,
             expiresIn: newTokens.expiresIn,
-            tokenType: 'Bearer' as const
+            tokenType: "Bearer" as const,
           },
-          message: 'Token refreshed successfully'
+          message: "Token refreshed successfully",
         };
       } finally {
         userService.close();
@@ -276,22 +289,22 @@ export const authRouter = router({
         // Also revoke all user sessions for security
         userService.revokeAllUserSessions(ctx.user.id);
 
-        logger.info('User logged out successfully', 'AUTH', {
+        logger.info("User logged out successfully", "AUTH", {
           userId: ctx.user.id,
-          tokenId: payload.tokenId
+          tokenId: payload.tokenId,
         });
 
         return {
-          message: 'Logout successful'
+          message: "Logout successful",
         };
       } catch (error) {
         // Even if token verification fails, we should still log the logout attempt
-        logger.info('Logout attempted with invalid token', 'AUTH', {
-          userId: ctx.user.id
+        logger.info("Logout attempted with invalid token", "AUTH", {
+          userId: ctx.user.id,
         });
-        
+
         return {
-          message: 'Logout successful'
+          message: "Logout successful",
         };
       } finally {
         userService.close();
@@ -311,12 +324,12 @@ export const authRouter = router({
         userService.revokeAllUserRefreshTokens(ctx.user.id);
         userService.revokeAllUserSessions(ctx.user.id);
 
-        logger.info('User logged out from all devices', 'AUTH', {
-          userId: ctx.user.id
+        logger.info("User logged out from all devices", "AUTH", {
+          userId: ctx.user.id,
         });
 
         return {
-          message: 'Logged out from all devices successfully'
+          message: "Logged out from all devices successfully",
         };
       } finally {
         userService.close();
@@ -326,14 +339,12 @@ export const authRouter = router({
   /**
    * Get current user profile
    */
-  me: protectedProcedure
-    .use(authErrorHandler)
-    .query(({ ctx }) => {
-      return {
-        user: ctx.user,
-        message: 'User profile retrieved successfully'
-      };
-    }),
+  me: protectedProcedure.use(authErrorHandler).query(({ ctx }) => {
+    return {
+      user: ctx.user,
+      message: "User profile retrieved successfully",
+    };
+  }),
 
   /**
    * Update user profile
@@ -347,14 +358,14 @@ export const authRouter = router({
       try {
         const updatedUser = await userService.updateUser(ctx.user.id, input);
 
-        logger.info('User profile updated', 'AUTH', {
+        logger.info("User profile updated", "AUTH", {
           userId: ctx.user.id,
-          updatedFields: Object.keys(input)
+          updatedFields: Object.keys(input),
         });
 
         return {
           user: updatedUser,
-          message: 'Profile updated successfully'
+          message: "Profile updated successfully",
         };
       } finally {
         userService.close();
@@ -373,12 +384,13 @@ export const authRouter = router({
       try {
         await userService.changePassword(ctx.user.id, input);
 
-        logger.info('Password changed successfully', 'AUTH', {
-          userId: ctx.user.id
+        logger.info("Password changed successfully", "AUTH", {
+          userId: ctx.user.id,
         });
 
         return {
-          message: 'Password changed successfully. Please log in again with your new password.'
+          message:
+            "Password changed successfully. Please log in again with your new password.",
         };
       } finally {
         userService.close();
@@ -392,17 +404,22 @@ export const authRouter = router({
     .use(authErrorHandler)
     .input(z.object({ password: z.string() }))
     .query(({ input }) => {
-      const validation = passwordManager.validatePasswordStrength(input.password);
+      const validation = passwordManager.validatePasswordStrength(
+        input.password,
+      );
       const entropy = passwordManager.calculatePasswordEntropy(input.password);
-      const isCompromised = passwordManager.isPasswordCompromised(input.password);
+      const isCompromised = passwordManager.isPasswordCompromised(
+        input.password,
+      );
 
       return {
         ...validation,
         entropy,
         isCompromised,
-        recommendations: validation.errors.length > 0 ? validation.errors : [
-          'Your password meets all security requirements!'
-        ]
+        recommendations:
+          validation.errors.length > 0
+            ? validation.errors
+            : ["Your password meets all security requirements!"],
       };
     }),
 
@@ -415,12 +432,12 @@ export const authRouter = router({
     .mutation(async ({ input }) => {
       // This would implement email verification logic
       // For now, return a placeholder response
-      logger.info('Email verification attempted', 'AUTH', {
-        token: input.token.substring(0, 10) + '...'
+      logger.info("Email verification attempted", "AUTH", {
+        token: input.token.substring(0, 10) + "...",
       });
 
       return {
-        message: 'Email verification feature coming soon'
+        message: "Email verification feature coming soon",
       };
     }),
 
@@ -432,12 +449,13 @@ export const authRouter = router({
     .input(z.object({ email: z.string().email() }))
     .mutation(async ({ input }) => {
       // This would implement password reset logic
-      logger.info('Password reset requested', 'AUTH', {
-        email: input.email
+      logger.info("Password reset requested", "AUTH", {
+        email: input.email,
       });
 
       return {
-        message: 'If an account with this email exists, you will receive password reset instructions.'
+        message:
+          "If an account with this email exists, you will receive password reset instructions.",
       };
     }),
 
@@ -448,10 +466,10 @@ export const authRouter = router({
     .use(authErrorHandler)
     .mutation(async ({ ctx }) => {
       // Check if user is admin
-      if (ctx.user.role !== 'admin') {
+      if (ctx.user.role !== "admin") {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Admin access required'
+          code: "FORBIDDEN",
+          message: "Admin access required",
         });
       }
 
@@ -460,15 +478,15 @@ export const authRouter = router({
       try {
         userService.cleanupExpiredTokens();
 
-        logger.info('Expired tokens cleaned up', 'AUTH', {
-          adminUserId: ctx.user.id
+        logger.info("Expired tokens cleaned up", "AUTH", {
+          adminUserId: ctx.user.id,
         });
 
         return {
-          message: 'Expired tokens cleaned up successfully'
+          message: "Expired tokens cleaned up successfully",
         };
       } finally {
         userService.close();
       }
-    })
+    }),
 });

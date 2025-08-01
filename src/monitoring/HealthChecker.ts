@@ -375,18 +375,18 @@ export class HealthChecker extends EventEmitter {
               // Fallback: create a basic Redis client directly
               const Redis = (await import("ioredis")).default;
               redisClient = new Redis({
-                host: process.env.REDIS_HOST || 'localhost',
-                port: parseInt(process.env.REDIS_PORT || '6379'),
+                host: process.env.REDIS_HOST || "localhost",
+                port: parseInt(process.env.REDIS_PORT || "6379"),
                 password: process.env.REDIS_PASSWORD,
                 maxRetriesPerRequest: 3,
                 lazyConnect: true,
                 retryStrategy: (times: number) => {
                   const delay = Math.min(times * 100, 3000);
                   return delay;
-                }
+                },
               });
             }
-            
+
             await redisClient.ping();
             return { status: "healthy" };
           } catch (error) {

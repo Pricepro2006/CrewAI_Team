@@ -48,18 +48,21 @@ RATE_LIMIT_MAX_REQUESTS=100  # Default max requests
 ### Rate Limit Tiers
 
 #### Anonymous Users
+
 - **API Endpoints**: 100 requests per 15 minutes
 - **Auth Endpoints**: 5 requests per 15 minutes
 - **Upload Endpoints**: 5 requests per hour
 - **WebSocket**: 10 connections per minute
 
 #### Authenticated Users
+
 - **API Endpoints**: 500 requests per 15 minutes
 - **Auth Endpoints**: 10 requests per 15 minutes
 - **Upload Endpoints**: 20 requests per hour
 - **WebSocket**: 30 connections per minute
 
 #### Admin Users
+
 - **API Endpoints**: 2000 requests per 15 minutes
 - **Auth Endpoints**: 50 requests per 15 minutes
 - **Upload Endpoints**: 100 requests per hour
@@ -78,20 +81,20 @@ RATE_LIMIT_MAX_REQUESTS=100  # Default max requests
 ### Basic Usage
 
 ```typescript
-import { advancedRateLimit } from './middleware/advancedRateLimit';
+import { advancedRateLimit } from "./middleware/advancedRateLimit";
 
 // Apply to Express app
 app.use(advancedRateLimit.getUserTierLimiter());
 
 // Endpoint-specific rate limiting
-app.use('/auth', advancedRateLimit.getAuthLimiter());
-app.use('/upload', advancedRateLimit.getUploadLimiter());
+app.use("/auth", advancedRateLimit.getAuthLimiter());
+app.use("/upload", advancedRateLimit.getUploadLimiter());
 ```
 
 ### TRPC Integration
 
 ```typescript
-import { chatProcedure, agentProcedure } from './api/trpc/enhanced-router';
+import { chatProcedure, agentProcedure } from "./api/trpc/enhanced-router";
 
 // Use rate-limited procedures
 export const chatRouter = router({
@@ -100,20 +103,20 @@ export const chatRouter = router({
     .mutation(async ({ input, ctx }) => {
       // This procedure is automatically rate limited
       return processMessage(input.message);
-    })
+    }),
 });
 ```
 
 ### WebSocket Rate Limiting
 
 ```typescript
-wss.on('connection', async (ws, req) => {
+wss.on("connection", async (ws, req) => {
   try {
     // Apply rate limiting
     await applyWebSocketRateLimit(req);
     // Connection accepted
   } catch (error) {
-    ws.close(1008, 'Rate limit exceeded');
+    ws.close(1008, "Rate limit exceeded");
   }
 });
 ```
@@ -177,6 +180,7 @@ GET /api/rate-limit-status
 ### Alerting
 
 Automatic alerts are triggered when:
+
 - Rate limit violations exceed threshold (default: 10)
 - High traffic patterns detected
 - Redis connection issues
@@ -186,7 +190,7 @@ Automatic alerts are triggered when:
 ### IP Spoofing Protection
 
 ```typescript
-app.set('trust proxy', 1); // Trust first proxy
+app.set("trust proxy", 1); // Trust first proxy
 ```
 
 ### User Authentication Integration
@@ -238,9 +242,9 @@ const config = {
   tiers: {
     anonymous: {
       windowMs: 300000, // 5 minutes instead of 15
-      maxRequests: 50   // Lower limit
-    }
-  }
+      maxRequests: 50, // Lower limit
+    },
+  },
 };
 ```
 
@@ -260,7 +264,7 @@ tail -f logs/app.log | grep "redis"
 // Adjust user detection
 const getUserTier = (req) => {
   // Custom logic for user identification
-  return req.user ? 'authenticated' : 'anonymous';
+  return req.user ? "authenticated" : "anonymous";
 };
 ```
 
@@ -321,7 +325,7 @@ app.use(advancedRateLimit.getUserTierLimiter());
 ```typescript
 // Handle new error format
 if (response.status === 429) {
-  const retryAfter = response.headers['retry-after'];
+  const retryAfter = response.headers["retry-after"];
   // Implement exponential backoff
 }
 ```
@@ -340,7 +344,7 @@ Old configuration format:
 ```typescript
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100
+  max: 100,
 });
 ```
 
@@ -351,9 +355,9 @@ const rateLimiter = new AdvancedRateLimit({
   tiers: {
     anonymous: {
       windowMs: 15 * 60 * 1000,
-      maxRequests: 100
-    }
-  }
+      maxRequests: 100,
+    },
+  },
 });
 ```
 
@@ -454,4 +458,4 @@ For issues with rate limiting:
 
 ---
 
-*Last updated: January 2024*
+_Last updated: January 2024_

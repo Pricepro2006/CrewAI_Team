@@ -1,6 +1,6 @@
-import { EventEmitter } from 'events';
-import { metricsCollector } from './MetricsCollector.js';
-import { performance, PerformanceObserver } from 'perf_hooks';
+import { EventEmitter } from "events";
+import { metricsCollector } from "./MetricsCollector.js";
+import { performance, PerformanceObserver } from "perf_hooks";
 
 export interface PerformanceMetric {
   name: string;
@@ -36,7 +36,10 @@ export class PerformanceMonitor extends EventEmitter {
   }
 
   // Measure the duration between mark and now
-  measure(name: string, metadata?: Record<string, any>): PerformanceMetric | null {
+  measure(
+    name: string,
+    metadata?: Record<string, any>,
+  ): PerformanceMetric | null {
     const startTime = this.marks.get(name);
     if (!startTime) {
       console.warn(`No mark found for: ${name}`);
@@ -51,7 +54,7 @@ export class PerformanceMonitor extends EventEmitter {
       duration,
       startTime,
       endTime,
-      metadata
+      metadata,
     };
 
     // Store measure
@@ -60,7 +63,11 @@ export class PerformanceMonitor extends EventEmitter {
     this.measures.set(name, measures);
 
     // Record in metrics collector
-    metricsCollector.histogram(`performance_${name}_duration_ms`, duration, metadata);
+    metricsCollector.histogram(
+      `performance_${name}_duration_ms`,
+      duration,
+      metadata,
+    );
 
     // Check thresholds
     this.checkThreshold(name, duration);
@@ -69,7 +76,7 @@ export class PerformanceMonitor extends EventEmitter {
     this.marks.delete(name);
 
     // Emit event
-    this.emit('measure', metric);
+    this.emit("measure", metric);
 
     return metric;
   }
@@ -78,32 +85,36 @@ export class PerformanceMonitor extends EventEmitter {
   async trackAsync<T>(
     name: string,
     fn: () => Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<T> {
     this.mark(name);
     try {
       const result = await fn();
-      this.measure(name, { ...metadata, status: 'success' });
+      this.measure(name, { ...metadata, status: "success" });
       return result;
     } catch (error) {
-      this.measure(name, { ...metadata, status: 'error', error: (error as Error).message });
+      this.measure(name, {
+        ...metadata,
+        status: "error",
+        error: (error as Error).message,
+      });
       throw error;
     }
   }
 
   // Sync function wrapper with automatic performance tracking
-  track<T>(
-    name: string,
-    fn: () => T,
-    metadata?: Record<string, any>
-  ): T {
+  track<T>(name: string, fn: () => T, metadata?: Record<string, any>): T {
     this.mark(name);
     try {
       const result = fn();
-      this.measure(name, { ...metadata, status: 'success' });
+      this.measure(name, { ...metadata, status: "success" });
       return result;
     } catch (error) {
-      this.measure(name, { ...metadata, status: 'error', error: (error as Error).message });
+      this.measure(name, {
+        ...metadata,
+        status: "error",
+        error: (error as Error).message,
+      });
       throw error;
     }
   }
@@ -114,19 +125,22 @@ export class PerformanceMonitor extends EventEmitter {
   }
 
   // Get performance statistics
-  getStatistics(name?: string, timeWindowMs: number = 300000): Record<string, any> {
+  getStatistics(
+    name?: string,
+    timeWindowMs: number = 300000,
+  ): Record<string, any> {
     const cutoff = Date.now() - timeWindowMs;
     const stats: Record<string, any> = {};
 
     const measureNames = name ? [name] : Array.from(this.measures.keys());
 
-    measureNames.forEach(measureName => {
+    measureNames.forEach((measureName) => {
       const measures = this.measures.get(measureName) || [];
-      const recent = measures.filter(m => m.startTime > cutoff);
+      const recent = measures.filter((m) => m.startTime > cutoff);
 
       if (recent.length === 0) return;
 
-      const durations = recent.map(m => m.duration);
+      const durations = recent.map((m) => m.duration);
       durations.sort((a, b) => a - b);
 
       stats[measureName] = {
@@ -138,7 +152,7 @@ export class PerformanceMonitor extends EventEmitter {
         p75: this.percentile(durations, 0.75),
         p95: this.percentile(durations, 0.95),
         p99: this.percentile(durations, 0.99),
-        threshold: this.thresholds.get(measureName)
+        threshold: this.thresholds.get(measureName),
       };
     });
 
@@ -148,14 +162,12 @@ export class PerformanceMonitor extends EventEmitter {
   // Get slow operations
   getSlowOperations(limit: number = 10): PerformanceMetric[] {
     const allMeasures: PerformanceMetric[] = [];
-    
-    this.measures.forEach(measures => {
+
+    this.measures.forEach((measures) => {
       allMeasures.push(...measures);
     });
 
-    return allMeasures
-      .sort((a, b) => b.duration - a.duration)
-      .slice(0, limit);
+    return allMeasures.sort((a, b) => b.duration - a.duration).slice(0, limit);
   }
 
   // Get operations exceeding thresholds
@@ -166,7 +178,7 @@ export class PerformanceMonitor extends EventEmitter {
       const threshold = this.thresholds.get(name);
       if (!threshold) return;
 
-      measures.forEach(measure => {
+      measures.forEach((measure) => {
         if (measure.duration > threshold.warningMs) {
           violations.push(measure);
         }
@@ -193,19 +205,19 @@ export class PerformanceMonitor extends EventEmitter {
         heapTotal: Math.round(usage.heapTotal / 1024 / 1024),
         heapUsed: Math.round(usage.heapUsed / 1024 / 1024),
         external: Math.round(usage.external / 1024 / 1024),
-        arrayBuffers: Math.round(usage.arrayBuffers / 1024 / 1024)
+        arrayBuffers: Math.round(usage.arrayBuffers / 1024 / 1024),
       },
       cpu: {
         user: cpuUsage.user / 1000,
-        system: cpuUsage.system / 1000
-      }
+        system: cpuUsage.system / 1000,
+      },
     };
 
     // Record in metrics collector
-    metricsCollector.gauge('memory_heap_used_mb', metrics.memory.heapUsed);
-    metricsCollector.gauge('memory_rss_mb', metrics.memory.rss);
-    metricsCollector.gauge('cpu_user_ms', metrics.cpu.user);
-    metricsCollector.gauge('cpu_system_ms', metrics.cpu.system);
+    metricsCollector.gauge("memory_heap_used_mb", metrics.memory.heapUsed);
+    metricsCollector.gauge("memory_rss_mb", metrics.memory.rss);
+    metricsCollector.gauge("cpu_user_ms", metrics.cpu.user);
+    metricsCollector.gauge("cpu_system_ms", metrics.cpu.system);
 
     return metrics;
   }
@@ -214,38 +226,38 @@ export class PerformanceMonitor extends EventEmitter {
   private setupObserver(): void {
     this.observer = new PerformanceObserver((list) => {
       const entries = list.getEntries();
-      entries.forEach(entry => {
-        if (entry.entryType === 'measure') {
-          this.emit('performance-entry', {
+      entries.forEach((entry) => {
+        if (entry.entryType === "measure") {
+          this.emit("performance-entry", {
             name: entry.name,
             duration: entry.duration,
-            startTime: entry.startTime
+            startTime: entry.startTime,
           });
         }
       });
     });
 
-    this.observer.observe({ entryTypes: ['measure'] });
+    this.observer.observe({ entryTypes: ["measure"] });
   }
 
   private setupDefaultThresholds(): void {
     // API endpoints
-    this.setThreshold('api_request', 100, 500);
-    this.setThreshold('database_query', 50, 200);
-    this.setThreshold('ollama_inference', 1000, 5000);
-    
+    this.setThreshold("api_request", 100, 500);
+    this.setThreshold("database_query", 50, 200);
+    this.setThreshold("ollama_inference", 1000, 5000);
+
     // WebSocket operations
-    this.setThreshold('websocket_broadcast', 10, 50);
-    this.setThreshold('websocket_message', 5, 20);
-    
+    this.setThreshold("websocket_broadcast", 10, 50);
+    this.setThreshold("websocket_message", 5, 20);
+
     // File operations
-    this.setThreshold('file_read', 20, 100);
-    this.setThreshold('file_write', 50, 200);
-    
+    this.setThreshold("file_read", 20, 100);
+    this.setThreshold("file_write", 50, 200);
+
     // Authentication
-    this.setThreshold('password_hash', 100, 500);
-    this.setThreshold('jwt_sign', 5, 20);
-    this.setThreshold('jwt_verify', 5, 20);
+    this.setThreshold("password_hash", 100, 500);
+    this.setThreshold("jwt_sign", 5, 20);
+    this.setThreshold("jwt_verify", 5, 20);
   }
 
   private checkThreshold(name: string, duration: number): void {
@@ -253,21 +265,25 @@ export class PerformanceMonitor extends EventEmitter {
     if (!threshold) return;
 
     if (duration > threshold.criticalMs) {
-      this.emit('threshold-exceeded', {
+      this.emit("threshold-exceeded", {
         name,
         duration,
         threshold: threshold.criticalMs,
-        severity: 'critical'
+        severity: "critical",
       });
-      metricsCollector.increment('performance_threshold_critical', 1, { operation: name });
+      metricsCollector.increment("performance_threshold_critical", 1, {
+        operation: name,
+      });
     } else if (duration > threshold.warningMs) {
-      this.emit('threshold-exceeded', {
+      this.emit("threshold-exceeded", {
         name,
         duration,
         threshold: threshold.warningMs,
-        severity: 'warning'
+        severity: "warning",
       });
-      metricsCollector.increment('performance_threshold_warning', 1, { operation: name });
+      metricsCollector.increment("performance_threshold_warning", 1, {
+        operation: name,
+      });
     }
   }
 
@@ -295,5 +311,5 @@ setInterval(() => {
 }, 30000); // Every 30 seconds
 
 // Graceful shutdown
-process.once('SIGINT', () => performanceMonitor.shutdown());
-process.once('SIGTERM', () => performanceMonitor.shutdown());
+process.once("SIGINT", () => performanceMonitor.shutdown());
+process.once("SIGTERM", () => performanceMonitor.shutdown());

@@ -47,7 +47,7 @@ declare global {
       origin?: string,
       lastEventId?: string,
       source?: MessageEventSource | null,
-      ports?: MessagePort[]
+      ports?: MessagePort[],
     ): void;
   }
 
@@ -78,7 +78,11 @@ declare global {
     readonly top: WindowProxy | null;
     readonly window: WindowProxy;
     focus(): void;
-    postMessage(message: any, targetOrigin: string, transfer?: Transferable[]): void;
+    postMessage(
+      message: any,
+      targetOrigin: string,
+      transfer?: Transferable[],
+    ): void;
   }
 
   interface ServiceWorker extends EventTarget {
@@ -89,7 +93,12 @@ declare global {
     onstatechange: ((this: ServiceWorker, ev: Event) => any) | null;
   }
 
-  type ServiceWorkerState = "installing" | "installed" | "activating" | "activated" | "redundant";
+  type ServiceWorkerState =
+    | "installing"
+    | "installed"
+    | "activating"
+    | "activated"
+    | "redundant";
 
   interface StructuredSerializeOptions {
     transfer?: Transferable[];
@@ -98,9 +107,17 @@ declare global {
   type Transferable = ArrayBuffer | MessagePort | ImageBitmap;
 
   interface EventTarget {
-    addEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions): void;
+    addEventListener(
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | AddEventListenerOptions,
+    ): void;
     dispatchEvent(event: Event): boolean;
-    removeEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | EventListenerOptions): void;
+    removeEventListener(
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | EventListenerOptions,
+    ): void;
   }
 
   type EventListenerOrEventListenerObject = EventListener | EventListenerObject;

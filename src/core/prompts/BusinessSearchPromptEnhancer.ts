@@ -3,10 +3,10 @@
  * Part of GROUP 2B WebSearch Enhancement
  */
 
-import { logger } from '../../utils/logger.js';
+import { logger } from "../../utils/logger.js";
 
 export interface BusinessSearchEnhancementOptions {
-  enhancementLevel?: 'minimal' | 'standard' | 'aggressive';
+  enhancementLevel?: "minimal" | "standard" | "aggressive";
   includeExamples?: boolean;
   preserveOriginalMarkers?: boolean;
   customInstructions?: string;
@@ -19,32 +19,35 @@ export interface BusinessSearchExample {
 }
 
 export class BusinessSearchPromptEnhancer {
-  private static readonly BUSINESS_SEARCH_MARKER = '[BUSINESS_SEARCH_ENHANCED]';
-  private static readonly BUSINESS_SEARCH_INSTRUCTION_MARKER = '[BUSINESS_SEARCH_INSTRUCTIONS]';
-  
+  private static readonly BUSINESS_SEARCH_MARKER = "[BUSINESS_SEARCH_ENHANCED]";
+  private static readonly BUSINESS_SEARCH_INSTRUCTION_MARKER =
+    "[BUSINESS_SEARCH_INSTRUCTIONS]";
+
   private static readonly DEFAULT_BUSINESS_EXAMPLES: BusinessSearchExample[] = [
     {
       good: "Joe's Plumbing - (555) 123-4567, 123 Main St, Open 24/7",
       bad: "Search online for plumbers in your area",
-      explanation: "Provide specific, actionable business information with contact details"
+      explanation:
+        "Provide specific, actionable business information with contact details",
     },
     {
       good: "TechCorp Solutions - support@techcorp.com, Live chat: techcorp.com/chat, Phone: (800) 555-TECH",
       bad: "Look up tech support companies",
-      explanation: "Include multiple contact methods and clear business identification"
+      explanation:
+        "Include multiple contact methods and clear business identification",
     },
     {
       good: "City Auto Repair - 456 Oak Ave, Hours: Mon-Fri 8AM-6PM, Sat 9AM-3PM, Walk-ins welcome",
       bad: "Find auto repair shops nearby",
-      explanation: "Provide location, hours, and service availability details"
-    }
+      explanation: "Provide location, hours, and service availability details",
+    },
   ];
 
   private static readonly ENHANCEMENT_TEMPLATES = {
     minimal: `
 When responding to business-related queries, always use WebSearch to find current, accurate business information.
 ${BusinessSearchPromptEnhancer.BUSINESS_SEARCH_MARKER}`,
-    
+
     standard: `
 ${BusinessSearchPromptEnhancer.BUSINESS_SEARCH_INSTRUCTION_MARKER}
 IMPORTANT: For ANY business-related query, you MUST:
@@ -60,7 +63,7 @@ IMPORTANT: For ANY business-related query, you MUST:
 4. Verify information is current (check last updated dates)
 
 ${BusinessSearchPromptEnhancer.BUSINESS_SEARCH_MARKER}`,
-    
+
     aggressive: `
 ${BusinessSearchPromptEnhancer.BUSINESS_SEARCH_INSTRUCTION_MARKER}
 CRITICAL REQUIREMENT - BUSINESS INFORMATION PROTOCOL:
@@ -97,57 +100,66 @@ QUALITY STANDARDS:
 - Prioritize businesses currently open/available
 - Include distance/directions from user location if known
 
-${BusinessSearchPromptEnhancer.BUSINESS_SEARCH_MARKER}`
+${BusinessSearchPromptEnhancer.BUSINESS_SEARCH_MARKER}`,
   };
 
   /**
    * Enhances a prompt with business search instructions
    */
   public enhance(
-    prompt: string | null | undefined, 
-    options: BusinessSearchEnhancementOptions = {}
+    prompt: string | null | undefined,
+    options: BusinessSearchEnhancementOptions = {},
   ): string {
     try {
       // Input validation and sanitization
       const sanitizedPrompt = this.sanitizeInput(prompt);
-      
+
       const {
-        enhancementLevel = 'standard',
+        enhancementLevel = "standard",
         includeExamples = true,
         preserveOriginalMarkers = true,
-        customInstructions
+        customInstructions,
       } = options;
 
       // Check if already enhanced
       if (this.isAlreadyEnhanced(sanitizedPrompt) && preserveOriginalMarkers) {
-        logger.info('Prompt already contains business search enhancement markers');
+        logger.info(
+          "Prompt already contains business search enhancement markers",
+        );
         return sanitizedPrompt;
       }
 
       // Build enhanced prompt
       let enhancedPrompt = this.getEnhancementTemplate(enhancementLevel);
-      
+
       // Add custom instructions if provided
       if (customInstructions) {
-        enhancedPrompt = this.injectCustomInstructions(enhancedPrompt, customInstructions);
+        enhancedPrompt = this.injectCustomInstructions(
+          enhancedPrompt,
+          customInstructions,
+        );
       }
-      
+
       // Add examples if requested
       if (includeExamples) {
         enhancedPrompt = this.addExamples(enhancedPrompt);
       }
-      
+
       // Combine with original prompt
       enhancedPrompt = this.combinePrompts(enhancedPrompt, sanitizedPrompt);
-      
+
       // Add metadata
       enhancedPrompt = this.addMetadata(enhancedPrompt, enhancementLevel);
-      
-      logger.info(`Prompt enhanced with business search instructions (level: ${enhancementLevel})`);
+
+      logger.info(
+        `Prompt enhanced with business search instructions (level: ${enhancementLevel})`,
+      );
       return enhancedPrompt;
-      
     } catch (error) {
-      logger.error('Error enhancing prompt:', error instanceof Error ? error.message : String(error));
+      logger.error(
+        "Error enhancing prompt:",
+        error instanceof Error ? error.message : String(error),
+      );
       // Return original prompt or default on error
       return prompt || this.getDefaultBusinessPrompt();
     }
@@ -175,53 +187,57 @@ ${BusinessSearchPromptEnhancer.BUSINESS_SEARCH_MARKER}`;
    * Extracts business search instructions from an enhanced prompt
    */
   public extractInstructions(prompt: string): string | null {
-    const startMarker = BusinessSearchPromptEnhancer.BUSINESS_SEARCH_INSTRUCTION_MARKER;
+    const startMarker =
+      BusinessSearchPromptEnhancer.BUSINESS_SEARCH_INSTRUCTION_MARKER;
     const endMarker = BusinessSearchPromptEnhancer.BUSINESS_SEARCH_MARKER;
-    
+
     const startIndex = prompt.indexOf(startMarker);
     const endIndex = prompt.indexOf(endMarker);
-    
+
     if (startIndex === -1 || endIndex === -1 || startIndex >= endIndex) {
       return null;
     }
-    
-    return prompt.substring(
-      startIndex + startMarker.length, 
-      endIndex
-    ).trim();
+
+    return prompt.substring(startIndex + startMarker.length, endIndex).trim();
   }
 
   /**
    * Validates enhancement level
    */
   public isValidEnhancementLevel(level: string): boolean {
-    return ['minimal', 'standard', 'aggressive'].includes(level);
+    return ["minimal", "standard", "aggressive"].includes(level);
   }
 
   // Private helper methods
 
   private sanitizeInput(input: string | null | undefined): string {
-    if (!input || typeof input !== 'string') {
-      logger.warn('Invalid input provided to BusinessSearchPromptEnhancer');
-      return '';
+    if (!input || typeof input !== "string") {
+      logger.warn("Invalid input provided to BusinessSearchPromptEnhancer");
+      return "";
     }
-    
+
     // Remove potential injection attempts
     return input
-      .replace(/\[BUSINESS_SEARCH_.*?\]/g, '') // Remove existing markers
-      .replace(/\{\{.*?\}\}/g, '') // Remove template injections
+      .replace(/\[BUSINESS_SEARCH_.*?\]/g, "") // Remove existing markers
+      .replace(/\{\{.*?\}\}/g, "") // Remove template injections
       .trim();
   }
 
-  private getEnhancementTemplate(level: 'minimal' | 'standard' | 'aggressive'): string {
+  private getEnhancementTemplate(
+    level: "minimal" | "standard" | "aggressive",
+  ): string {
     return BusinessSearchPromptEnhancer.ENHANCEMENT_TEMPLATES[level];
   }
 
-  private injectCustomInstructions(template: string, customInstructions: string): string {
-    const marker = BusinessSearchPromptEnhancer.BUSINESS_SEARCH_INSTRUCTION_MARKER;
+  private injectCustomInstructions(
+    template: string,
+    customInstructions: string,
+  ): string {
+    const marker =
+      BusinessSearchPromptEnhancer.BUSINESS_SEARCH_INSTRUCTION_MARKER;
     return template.replace(
       marker,
-      `${marker}\n\nCUSTOM INSTRUCTIONS:\n${customInstructions}\n`
+      `${marker}\n\nCUSTOM INSTRUCTIONS:\n${customInstructions}\n`,
     );
   }
 
@@ -232,15 +248,17 @@ ${BusinessSearchPromptEnhancer.BUSINESS_SEARCH_MARKER}`;
   }
 
   private generateExamplesSection(): string {
-    let section = 'EXAMPLES OF PROPER BUSINESS INFORMATION RESPONSES:\n\n';
-    
-    BusinessSearchPromptEnhancer.DEFAULT_BUSINESS_EXAMPLES.forEach((example, index) => {
-      section += `Example ${index + 1}:\n`;
-      section += `✓ GOOD: "${example.good}"\n`;
-      section += `✗ BAD: "${example.bad}"\n`;
-      section += `Reason: ${example.explanation}\n\n`;
-    });
-    
+    let section = "EXAMPLES OF PROPER BUSINESS INFORMATION RESPONSES:\n\n";
+
+    BusinessSearchPromptEnhancer.DEFAULT_BUSINESS_EXAMPLES.forEach(
+      (example, index) => {
+        section += `Example ${index + 1}:\n`;
+        section += `✓ GOOD: "${example.good}"\n`;
+        section += `✗ BAD: "${example.bad}"\n`;
+        section += `Reason: ${example.explanation}\n\n`;
+      },
+    );
+
     return section;
   }
 
@@ -248,16 +266,16 @@ ${BusinessSearchPromptEnhancer.BUSINESS_SEARCH_MARKER}`;
     if (!original) {
       return enhanced;
     }
-    
+
     // Check if original has system/user structure
-    if (original.includes('System:') || original.includes('User:')) {
+    if (original.includes("System:") || original.includes("User:")) {
       // Inject enhancement at the beginning of system instructions
       return original.replace(
         /System:\s*/i,
-        `System:\n${enhanced}\n\nOriginal Instructions:\n`
+        `System:\n${enhanced}\n\nOriginal Instructions:\n`,
       );
     }
-    
+
     // Otherwise, prepend enhancement
     return `${enhanced}\n\n--- Original Prompt ---\n${original}`;
   }
@@ -273,30 +291,36 @@ ${BusinessSearchPromptEnhancer.BUSINESS_SEARCH_MARKER}`;
   public removeEnhancement(prompt: string): string {
     // Remove all enhancement markers and content between instruction markers
     let cleaned = prompt;
-    
+
     // Remove content between instruction markers
-    const startMarker = BusinessSearchPromptEnhancer.BUSINESS_SEARCH_INSTRUCTION_MARKER;
+    const startMarker =
+      BusinessSearchPromptEnhancer.BUSINESS_SEARCH_INSTRUCTION_MARKER;
     const endMarker = BusinessSearchPromptEnhancer.BUSINESS_SEARCH_MARKER;
-    
+
     const startIndex = cleaned.indexOf(startMarker);
     const endIndex = cleaned.indexOf(endMarker);
-    
+
     if (startIndex !== -1 && endIndex !== -1 && startIndex < endIndex) {
-      cleaned = cleaned.substring(0, startIndex) + cleaned.substring(endIndex + endMarker.length);
+      cleaned =
+        cleaned.substring(0, startIndex) +
+        cleaned.substring(endIndex + endMarker.length);
     }
-    
+
     // Remove any remaining markers
-    cleaned = cleaned.replace(/\[BUSINESS_SEARCH_.*?\]/g, '');
-    
+    cleaned = cleaned.replace(/\[BUSINESS_SEARCH_.*?\]/g, "");
+
     // Remove metadata
-    cleaned = cleaned.replace(/\[Enhancement Metadata:.*?\]/g, '');
-    
+    cleaned = cleaned.replace(/\[Enhancement Metadata:.*?\]/g, "");
+
     // Remove example sections
-    cleaned = cleaned.replace(/EXAMPLES OF PROPER BUSINESS INFORMATION RESPONSES:[\s\S]*?(?=\n---|\n\n[A-Z]|$)/g, '');
-    
+    cleaned = cleaned.replace(
+      /EXAMPLES OF PROPER BUSINESS INFORMATION RESPONSES:[\s\S]*?(?=\n---|\n\n[A-Z]|$)/g,
+      "",
+    );
+
     // Remove section headers
-    cleaned = cleaned.replace(/--- Original Prompt ---/g, '');
-    
+    cleaned = cleaned.replace(/--- Original Prompt ---/g, "");
+
     return cleaned.trim();
   }
 
@@ -307,17 +331,35 @@ ${BusinessSearchPromptEnhancer.BUSINESS_SEARCH_MARKER}`;
     if (this.isAlreadyEnhanced(prompt)) {
       return false;
     }
-    
+
     const businessKeywords = [
-      'find', 'looking for', 'where', 'locate', 'search',
-      'business', 'store', 'shop', 'restaurant', 'service',
-      'company', 'provider', 'near me', 'nearby', 'local',
-      'hours', 'open', 'closed', 'contact', 'phone',
-      'address', 'location', 'directions'
+      "find",
+      "looking for",
+      "where",
+      "locate",
+      "search",
+      "business",
+      "store",
+      "shop",
+      "restaurant",
+      "service",
+      "company",
+      "provider",
+      "near me",
+      "nearby",
+      "local",
+      "hours",
+      "open",
+      "closed",
+      "contact",
+      "phone",
+      "address",
+      "location",
+      "directions",
     ];
-    
+
     const lowerPrompt = prompt.toLowerCase();
-    return businessKeywords.some(keyword => lowerPrompt.includes(keyword));
+    return businessKeywords.some((keyword) => lowerPrompt.includes(keyword));
   }
 }
 

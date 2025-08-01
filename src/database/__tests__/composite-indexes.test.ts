@@ -1,22 +1,25 @@
-import Database from 'better-sqlite3';
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { up as addCompositeIndexes, down as removeCompositeIndexes } from '../migrations/007_add_composite_indexes.js';
-import { logger } from '../../utils/logger.js';
+import Database from "better-sqlite3";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import {
+  up as addCompositeIndexes,
+  down as removeCompositeIndexes,
+} from "../migrations/007_add_composite_indexes.js";
+import { logger } from "../../utils/logger.js";
 
-describe('Composite Index Performance Tests', () => {
+describe("Composite Index Performance Tests", () => {
   let db: Database.Database;
-  const testDbPath = ':memory:'; // Use in-memory database for tests
+  const testDbPath = ":memory:"; // Use in-memory database for tests
 
   beforeAll(async () => {
     // Create database connection
     db = new Database(testDbPath);
-    
+
     // Enable query execution time tracking
-    db.pragma('journal_mode = WAL');
-    
+    db.pragma("journal_mode = WAL");
+
     // Create base schema
     await createBaseSchema(db);
-    
+
     // Insert test data
     await insertTestData(db);
   });
@@ -25,50 +28,54 @@ describe('Composite Index Performance Tests', () => {
     db.close();
   });
 
-  describe('Index Creation', () => {
-    it('should create all composite indexes successfully', async () => {
+  describe("Index Creation", () => {
+    it("should create all composite indexes successfully", async () => {
       // Run migration
       await addCompositeIndexes(db);
 
       // Verify indexes were created
-      const indexes = db.prepare(`
+      const indexes = db
+        .prepare(
+          `
         SELECT name FROM sqlite_master 
         WHERE type = 'index' AND name LIKE 'idx_%'
         ORDER BY name
-      `).all() as { name: string }[];
+      `,
+        )
+        .all() as { name: string }[];
 
       // Check for key composite indexes
       const expectedIndexes = [
-        'idx_emails_received_sender_subject',
-        'idx_emails_graph_received',
-        'idx_analysis_workflow_priority',
-        'idx_analysis_sla_workflow',
-        'idx_analysis_priority_email',
-        'idx_analysis_deep_workflow',
-        'idx_emails_enhanced_assigned_status',
-        'idx_emails_enhanced_priority_due',
-        'idx_conversations_user_status_created',
-        'idx_messages_conversation_created',
+        "idx_emails_received_sender_subject",
+        "idx_emails_graph_received",
+        "idx_analysis_workflow_priority",
+        "idx_analysis_sla_workflow",
+        "idx_analysis_priority_email",
+        "idx_analysis_deep_workflow",
+        "idx_emails_enhanced_assigned_status",
+        "idx_emails_enhanced_priority_due",
+        "idx_conversations_user_status_created",
+        "idx_messages_conversation_created",
         // New indexes
-        'idx_emails_enhanced_date_range_status',
-        'idx_workflow_chain_emails_email',
-        'idx_workflow_chains_date_status',
-        'idx_refresh_tokens_user_expiry',
-        'idx_emails_priority_received_sla',
-        'idx_email_entities_email_type',
-        'idx_audit_logs_action_date',
-        'idx_messages_conversation_role_count',
-        'idx_analysis_confidence_workflow'
+        "idx_emails_enhanced_date_range_status",
+        "idx_workflow_chain_emails_email",
+        "idx_workflow_chains_date_status",
+        "idx_refresh_tokens_user_expiry",
+        "idx_emails_priority_received_sla",
+        "idx_email_entities_email_type",
+        "idx_audit_logs_action_date",
+        "idx_messages_conversation_role_count",
+        "idx_analysis_confidence_workflow",
       ];
 
-      const indexNames = indexes.map(idx => idx.name);
-      
-      expectedIndexes.forEach(expectedIndex => {
+      const indexNames = indexes.map((idx) => idx.name);
+
+      expectedIndexes.forEach((expectedIndex) => {
         expect(indexNames).toContain(expectedIndex);
       });
     });
 
-    it('should improve query performance for email listing', async () => {
+    it("should improve query performance for email listing", async () => {
       // Test query that should benefit from composite index
       const query = `
         SELECT e.*, ea.quick_priority, ea.workflow_state
@@ -80,35 +87,36 @@ describe('Composite Index Performance Tests', () => {
       `;
 
       // Get query plan before and after indexes
-      const planBefore = getQueryPlan(db, query, ['test@example.com']);
-      
+      const planBefore = getQueryPlan(db, query, ["test@example.com"]);
+
       // The plan should show index usage
-      const usesIndex = planBefore.some(step => 
-        step.detail?.includes('idx_emails_received_sender_subject') ||
-        step.detail?.includes('USING INDEX')
+      const usesIndex = planBefore.some(
+        (step) =>
+          step.detail?.includes("idx_emails_received_sender_subject") ||
+          step.detail?.includes("USING INDEX"),
       );
-      
+
       expect(usesIndex).toBe(true);
     });
 
-    it('should improve query performance for workflow state queries', async () => {
+    it("should improve query performance for workflow state queries", async () => {
       const query = `
         SELECT COUNT(*) as count
         FROM email_analysis
         WHERE workflow_state = ? AND quick_priority = ?
       `;
 
-      const plan = getQueryPlan(db, query, ['IN_PROGRESS', 'High']);
-      
+      const plan = getQueryPlan(db, query, ["IN_PROGRESS", "High"]);
+
       // Should use composite index
-      const usesCompositeIndex = plan.some(step =>
-        step.detail?.includes('idx_analysis_workflow_priority')
+      const usesCompositeIndex = plan.some((step) =>
+        step.detail?.includes("idx_analysis_workflow_priority"),
       );
-      
+
       expect(usesCompositeIndex).toBe(true);
     });
 
-    it('should improve SLA monitoring query performance', async () => {
+    it("should improve SLA monitoring query performance", async () => {
       const query = `
         SELECT e.id, e.subject, ea.action_sla_status
         FROM emails e
@@ -118,18 +126,18 @@ describe('Composite Index Performance Tests', () => {
       `;
 
       const plan = getQueryPlan(db, query, []);
-      
+
       // Should use SLA composite index
-      const usesSLAIndex = plan.some(step =>
-        step.detail?.includes('idx_analysis_sla_workflow')
+      const usesSLAIndex = plan.some((step) =>
+        step.detail?.includes("idx_analysis_sla_workflow"),
       );
-      
+
       expect(usesSLAIndex).toBe(true);
     });
   });
 
-  describe('Query Performance Benchmarks', () => {
-    it('should execute email listing queries efficiently', async () => {
+  describe("Query Performance Benchmarks", () => {
+    it("should execute email listing queries efficiently", async () => {
       const query = `
         SELECT e.*, ea.quick_priority, ea.workflow_state
         FROM emails e
@@ -147,7 +155,7 @@ describe('Composite Index Performance Tests', () => {
       expect(executionTime).toBeLessThan(50); // Should execute in under 50ms
     });
 
-    it('should execute analytics aggregation queries efficiently', async () => {
+    it("should execute analytics aggregation queries efficiently", async () => {
       const query = `
         SELECT 
           deep_workflow_primary as workflow,
@@ -167,7 +175,7 @@ describe('Composite Index Performance Tests', () => {
       expect(executionTime).toBeLessThan(30); // Should execute in under 30ms
     });
 
-    it('should execute user workload queries efficiently', async () => {
+    it("should execute user workload queries efficiently", async () => {
       const query = `
         SELECT 
           assigned_to,
@@ -187,7 +195,7 @@ describe('Composite Index Performance Tests', () => {
       expect(executionTime).toBeLessThan(40); // Should execute in under 40ms
     });
 
-    it('should optimize date range queries with status filtering', async () => {
+    it("should optimize date range queries with status filtering", async () => {
       const query = `
         SELECT * FROM emails_enhanced
         WHERE received_at BETWEEN ? AND ?
@@ -195,17 +203,21 @@ describe('Composite Index Performance Tests', () => {
         ORDER BY received_at DESC
       `;
 
-      const plan = getQueryPlan(db, query, ['2024-01-01', '2024-12-31', 'in_progress']);
-      
+      const plan = getQueryPlan(db, query, [
+        "2024-01-01",
+        "2024-12-31",
+        "in_progress",
+      ]);
+
       // Should use the date range status index
-      const usesIndex = plan.some(step =>
-        step.detail?.includes('idx_emails_enhanced_date_range_status')
+      const usesIndex = plan.some((step) =>
+        step.detail?.includes("idx_emails_enhanced_date_range_status"),
       );
-      
+
       expect(usesIndex).toBe(true);
     });
 
-    it('should optimize refresh token validation queries', async () => {
+    it("should optimize refresh token validation queries", async () => {
       const query = `
         SELECT * FROM refresh_tokens
         WHERE user_id = ?
@@ -213,67 +225,75 @@ describe('Composite Index Performance Tests', () => {
         AND revoked_at IS NULL
       `;
 
-      const plan = getQueryPlan(db, query, ['user123']);
-      
+      const plan = getQueryPlan(db, query, ["user123"]);
+
       // Should use the user expiry index
-      const usesIndex = plan.some(step =>
-        step.detail?.includes('idx_refresh_tokens_user_expiry')
+      const usesIndex = plan.some((step) =>
+        step.detail?.includes("idx_refresh_tokens_user_expiry"),
       );
-      
+
       expect(usesIndex).toBe(true);
     });
 
-    it('should optimize email entity queries by email', async () => {
+    it("should optimize email entity queries by email", async () => {
       const query = `
         SELECT * FROM email_entities
         WHERE email_id = ? AND entity_type = ?
         ORDER BY confidence DESC
       `;
 
-      const plan = getQueryPlan(db, query, ['email123', 'PO_NUMBER']);
-      
+      const plan = getQueryPlan(db, query, ["email123", "PO_NUMBER"]);
+
       // Should use the email type index
-      const usesIndex = plan.some(step =>
-        step.detail?.includes('idx_email_entities_email_type')
+      const usesIndex = plan.some((step) =>
+        step.detail?.includes("idx_email_entities_email_type"),
       );
-      
+
       expect(usesIndex).toBe(true);
     });
 
-    it('should optimize workflow chain email joins', async () => {
+    it("should optimize workflow chain email joins", async () => {
       const query = `
         SELECT wc.* FROM workflow_chains wc
         JOIN workflow_chain_emails wce ON wc.id = wce.chain_id
         WHERE wce.email_id = ?
       `;
 
-      const plan = getQueryPlan(db, query, ['email123']);
-      
+      const plan = getQueryPlan(db, query, ["email123"]);
+
       // Should use the workflow chain email index
-      const usesIndex = plan.some(step =>
-        step.detail?.includes('idx_workflow_chain_emails_email')
+      const usesIndex = plan.some((step) =>
+        step.detail?.includes("idx_workflow_chain_emails_email"),
       );
-      
+
       expect(usesIndex).toBe(true);
     });
   });
 
-  describe('Index Rollback', () => {
-    it('should remove all composite indexes on rollback', async () => {
+  describe("Index Rollback", () => {
+    it("should remove all composite indexes on rollback", async () => {
       // Get index count before rollback
-      const indexesBefore = db.prepare(`
+      const indexesBefore = db
+        .prepare(
+          `
         SELECT COUNT(*) as count FROM sqlite_master 
         WHERE type = 'index' AND name LIKE 'idx_%'
-      `).get() as { count: number };
+      `,
+        )
+        .get() as { count: number };
 
       // Rollback migration
       await removeCompositeIndexes(db);
 
       // Get index count after rollback
-      const indexesAfter = db.prepare(`
+      const indexesAfter = db
+        .prepare(
+          `
         SELECT COUNT(*) as count FROM sqlite_master 
         WHERE type = 'index' AND name LIKE 'idx_%'
-      `).get() as { count: number };
+      `,
+        )
+        .get() as { count: number };
 
       // Should have fewer indexes after rollback
       expect(indexesAfter.count).toBeLessThan(indexesBefore.count);
@@ -536,7 +556,7 @@ async function insertTestData(db: Database.Database): Promise<void> {
       `Test Email ${i}`,
       `sender${i % 10}@example.com`,
       `Sender ${i % 10}`,
-      receivedAt.toISOString()
+      receivedAt.toISOString(),
     );
   }
 
@@ -549,10 +569,15 @@ async function insertTestData(db: Database.Database): Promise<void> {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  const workflows = ['Order Management', 'Customer Support', 'Quote Processing', 'Shipping/Logistics'];
-  const priorities = ['Critical', 'High', 'Medium', 'Low'];
-  const states = ['New', 'IN_PROGRESS', 'Completed'];
-  const slaStatuses = ['on-track', 'at-risk', 'overdue'];
+  const workflows = [
+    "Order Management",
+    "Customer Support",
+    "Quote Processing",
+    "Shipping/Logistics",
+  ];
+  const priorities = ["Critical", "High", "Medium", "Low"];
+  const states = ["New", "IN_PROGRESS", "Completed"];
+  const slaStatuses = ["on-track", "at-risk", "overdue"];
 
   for (let i = 0; i < analysisCount; i++) {
     analysisStmt.run(
@@ -563,7 +588,7 @@ async function insertTestData(db: Database.Database): Promise<void> {
       states[i % states.length],
       workflows[i % workflows.length],
       slaStatuses[i % slaStatuses.length],
-      Math.floor(Math.random() * 5000) // Random processing time
+      Math.floor(Math.random() * 5000), // Random processing time
     );
   }
 
@@ -576,8 +601,8 @@ async function insertTestData(db: Database.Database): Promise<void> {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  const statuses = ['new', 'in_progress', 'completed', 'archived'];
-  const users = ['user1', 'user2', 'user3', 'user4', null];
+  const statuses = ["new", "in_progress", "completed", "archived"];
+  const users = ["user1", "user2", "user3", "user4", null];
 
   for (let i = 0; i < 500; i++) {
     const receivedAt = new Date(now.getTime() - i * 120000); // 2 minutes apart
@@ -591,13 +616,17 @@ async function insertTestData(db: Database.Database): Promise<void> {
       receivedAt.toISOString(),
       statuses[i % statuses.length],
       priorities[i % priorities.length].toLowerCase(),
-      users[i % users.length]
+      users[i % users.length],
     );
   }
 }
 
 // Helper function to get query execution plan
-function getQueryPlan(db: Database.Database, query: string, params: any[]): any[] {
+function getQueryPlan(
+  db: Database.Database,
+  query: string,
+  params: any[],
+): any[] {
   const explainQuery = `EXPLAIN QUERY PLAN ${query}`;
   const stmt = db.prepare(explainQuery);
   return stmt.all(...params);

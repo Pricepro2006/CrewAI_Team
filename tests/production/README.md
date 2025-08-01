@@ -16,6 +16,7 @@ Comprehensive end-to-end testing covering:
 - **Workflow Management**: Chain creation and updates
 
 **Key Features:**
+
 - Real database operations with cleanup
 - Transaction integrity validation
 - Concurrent operation testing
@@ -23,6 +24,7 @@ Comprehensive end-to-end testing covering:
 - Memory constraint validation
 
 **Usage:**
+
 ```bash
 npm run test:production:integration
 # or
@@ -40,12 +42,14 @@ Performance testing for production-scale email processing:
 - **Concurrent Operations**: Multiple pipeline instances
 
 **Performance Targets:**
+
 - Process 1000 emails in under 10 seconds (100+ emails/sec)
 - Memory usage under 500MB during processing
 - Database queries under 100ms average
 - 90%+ success rate under concurrent load
 
 **Usage:**
+
 ```bash
 npm run test:production:load
 # or
@@ -66,6 +70,7 @@ Automated deployment testing including:
 - **Performance Validation**: Response times and concurrent handling
 
 **Usage:**
+
 ```bash
 ./scripts/test-production-deployment.sh
 ```
@@ -75,6 +80,7 @@ Automated deployment testing including:
 ### Prerequisites
 
 1. **Environment Setup**:
+
    ```bash
    # Ensure all services are running
    sudo systemctl start redis
@@ -84,6 +90,7 @@ Automated deployment testing including:
    ```
 
 2. **Database Setup**:
+
    ```bash
    npm run db:migrate:production
    ```
@@ -102,7 +109,7 @@ Automated deployment testing including:
 # Integration tests only
 npm run test:production:integration
 
-# Load tests only  
+# Load tests only
 npm run test:production:load
 
 # Deployment validation only
@@ -155,13 +162,13 @@ export default defineConfig({
   test: {
     timeout: 300000, // 5 minutes for load tests
     maxConcurrency: 1, // Sequential execution for stability
-    setupFiles: ['./tests/production/setup.ts'],
+    setupFiles: ["./tests/production/setup.ts"],
     teardownTimeout: 60000,
     env: {
-      NODE_ENV: 'test',
-      DATABASE_PATH: './data/test-crewai.db'
-    }
-  }
+      NODE_ENV: "test",
+      DATABASE_PATH: "./data/test-crewai.db",
+    },
+  },
 });
 ```
 
@@ -181,11 +188,11 @@ The load testing suite includes comprehensive performance monitoring:
 ```typescript
 // Performance metrics collected
 interface PerformanceMetrics {
-  processingRate: number;        // emails/second
-  avgResponseTime: number;       // milliseconds
-  memoryUsage: MemoryUsage;     // heap, RSS, external
-  databaseQueryTime: number;     // milliseconds
-  concurrentCapacity: number;   // simultaneous operations
+  processingRate: number; // emails/second
+  avgResponseTime: number; // milliseconds
+  memoryUsage: MemoryUsage; // heap, RSS, external
+  databaseQueryTime: number; // milliseconds
+  concurrentCapacity: number; // simultaneous operations
 }
 ```
 
@@ -194,15 +201,17 @@ interface PerformanceMetrics {
 ### Common Issues
 
 1. **Database Connection Failures**:
+
    ```bash
    # Check database file exists and permissions
    ls -la ./data/crewai.db
-   
+
    # Run database migrations
    npm run db:migrate:production
    ```
 
 2. **Service Dependencies Not Available**:
+
    ```bash
    # Check service status
    sudo systemctl status redis
@@ -211,6 +220,7 @@ interface PerformanceMetrics {
    ```
 
 3. **Memory Issues During Load Tests**:
+
    ```bash
    # Run with garbage collection enabled
    node --expose-gc node_modules/.bin/vitest run tests/production/load-test-email-pipeline.ts
@@ -259,20 +269,20 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '20.11'
-      
+          node-version: "20.11"
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Setup test services
         run: |
           sudo systemctl start redis
           docker run -d -p 8000:8000 chromadb/chroma
-      
+
       - name: Run production tests
         run: npm run test:production:ci
         timeout-minutes: 30
-      
+
       - name: Upload test results
         uses: actions/upload-artifact@v3
         if: always()

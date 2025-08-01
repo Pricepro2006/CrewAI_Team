@@ -3,16 +3,16 @@
  * Used across the email dashboard and components
  */
 
-export type EmailStatus = 
-  | 'pending'
-  | 'in_progress'
-  | 'under_review'
-  | 'approved'
-  | 'rejected'
-  | 'completed'
-  | 'archived';
+export type EmailStatus =
+  | "pending"
+  | "in_progress"
+  | "under_review"
+  | "approved"
+  | "rejected"
+  | "completed"
+  | "archived";
 
-export type EmailPriority = 'low' | 'medium' | 'high' | 'critical';
+export type EmailPriority = "low" | "medium" | "high" | "critical";
 
 export interface EmailRecord {
   id: string;

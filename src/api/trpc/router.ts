@@ -33,6 +33,7 @@ import { emailAssignmentRouter } from "./routers/emailAssignment.router.js";
 import { iemsEmailRouter } from "../routes/iems-email.router.js";
 import { dealsRouter } from "../routes/deals.router.js";
 import { walmartGroceryRouter } from "../routes/walmart-grocery.router.js";
+import { workflowRouter } from "../routes/workflow.router.js";
 import { securityRouter } from "./routers/security.router.js";
 import { monitoringRouter } from "./routers/monitoring.router.js";
 
@@ -56,6 +57,7 @@ export const appRouter = createRouter({
   iemsEmails: iemsEmailRouter, // IEMS email dashboard endpoints
   deals: dealsRouter, // Deal data management
   walmartGrocery: walmartGroceryRouter, // Walmart grocery agent endpoints
+  workflow: workflowRouter, // Workflow intelligence task management
   security: securityRouter, // Security endpoints (CSRF token management)
   monitoring: monitoringRouter, // System monitoring and observability
 });

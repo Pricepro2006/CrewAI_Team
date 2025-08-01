@@ -1,5 +1,5 @@
 // Main exports from validators module
-export { BusinessResponseValidator } from './BusinessResponseValidator.js';
+export { BusinessResponseValidator } from "./BusinessResponseValidator.js";
 export type {
   ContactInfo,
   PhoneInfo,
@@ -8,28 +8,32 @@ export type {
   HoursInfo,
   EmailInfo,
   WebsiteInfo,
-  ValidationResult
-} from './BusinessResponseValidator.js';
+  ValidationResult,
+} from "./BusinessResponseValidator.js";
 
 // Pattern exports
-export { ContactPatterns, PatternHelpers, ValidationRules } from './patterns/contactPatterns.js';
+export {
+  ContactPatterns,
+  PatternHelpers,
+  ValidationRules,
+} from "./patterns/contactPatterns.js";
 
 // Fallback system exports
-export { FallbackSearchManager } from './fallback/FallbackSearchManager.js';
-export type { 
-  FallbackSearchOptions, 
-  FallbackSearchResult, 
-  DataSource 
-} from './fallback/FallbackSearchManager.js';
+export { FallbackSearchManager } from "./fallback/FallbackSearchManager.js";
+export type {
+  FallbackSearchOptions,
+  FallbackSearchResult,
+  DataSource,
+} from "./fallback/FallbackSearchManager.js";
 
-export { UserFeedbackCollector } from './fallback/UserFeedbackCollector.js';
-export type { 
-  UserFeedback, 
-  FeedbackStats 
-} from './fallback/UserFeedbackCollector.js';
+export { UserFeedbackCollector } from "./fallback/UserFeedbackCollector.js";
+export type {
+  UserFeedback,
+  FeedbackStats,
+} from "./fallback/UserFeedbackCollector.js";
 
-export { IntegratedValidationService } from './fallback/IntegratedValidationService.js';
-export type { 
-  IntegratedValidationOptions, 
-  IntegratedValidationResult 
-} from './fallback/IntegratedValidationService.js';
+export { IntegratedValidationService } from "./fallback/IntegratedValidationService.js";
+export type {
+  IntegratedValidationOptions,
+  IntegratedValidationResult,
+} from "./fallback/IntegratedValidationService.js";

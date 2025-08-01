@@ -5,7 +5,12 @@
 
 import { logger } from "../../utils/logger.js";
 
-export type AgentRole = 'analyst' | 'coordinator' | 'executor' | 'researcher' | 'validator';
+export type AgentRole =
+  | "analyst"
+  | "coordinator"
+  | "executor"
+  | "researcher"
+  | "validator";
 
 export interface Query {
   text: string;
@@ -40,7 +45,7 @@ export class MasterOrchestrator {
     this.config = {
       maxConcurrentQueries: config?.maxConcurrentQueries || 5,
       defaultTimeout: config?.defaultTimeout || 30000,
-      enableCaching: config?.enableCaching !== false
+      enableCaching: config?.enableCaching !== false,
     };
   }
 
@@ -56,14 +61,14 @@ export class MasterOrchestrator {
    */
   async processQuery(query: Query): Promise<QueryResult> {
     const startTime = Date.now();
-    
+
     // Check cache first
     if (this.config.enableCaching) {
       const cacheKey = this.getCacheKey(query);
       const cached = this.cache.get(cacheKey);
       if (cached) {
-        logger.info("Returning cached result", "ORCHESTRATOR", { 
-          query: query.text.substring(0, 50) 
+        logger.info("Returning cached result", "ORCHESTRATOR", {
+          query: query.text.substring(0, 50),
         });
         return cached;
       }
@@ -72,7 +77,7 @@ export class MasterOrchestrator {
     logger.info("Processing query", "ORCHESTRATOR", {
       text: query.text.substring(0, 100),
       metadata: query.metadata,
-      priority: query.priority
+      priority: query.priority,
     });
 
     try {
@@ -85,12 +90,12 @@ export class MasterOrchestrator {
 
       // Process the query
       const result = await this.executeQuery(query);
-      
+
       // Cache the result
       if (this.config.enableCaching) {
         const cacheKey = this.getCacheKey(query);
         this.cache.set(cacheKey, result);
-        
+
         // Limit cache size
         if (this.cache.size > 1000) {
           const firstKey = this.cache.keys().next().value;
@@ -105,7 +110,7 @@ export class MasterOrchestrator {
 
       logger.info("Query processed successfully", "ORCHESTRATOR", {
         processingTime,
-        confidence: result.confidence
+        confidence: result.confidence,
       });
 
       return result;
@@ -121,7 +126,7 @@ export class MasterOrchestrator {
   private async executeQuery(query: Query): Promise<QueryResult> {
     // Simulate processing based on query type
     const taskType = query.metadata?.task || "general";
-    
+
     switch (taskType) {
       case "embedding":
         return this.generateEmbedding(query);
@@ -139,16 +144,19 @@ export class MasterOrchestrator {
    */
   private async generateEmbedding(query: Query): Promise<QueryResult> {
     // Simulate embedding generation
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const dimension = query.metadata?.dimension || 384;
-    const embedding = Array.from({ length: dimension }, () => Math.random() * 2 - 1);
-    
+    const embedding = Array.from(
+      { length: dimension },
+      () => Math.random() * 2 - 1,
+    );
+
     return {
       response: JSON.stringify(embedding),
       confidence: 0.95,
       processingTime: 0,
-      metadata: { dimension, type: "embedding" }
+      metadata: { dimension, type: "embedding" },
     };
   }
 
@@ -157,24 +165,24 @@ export class MasterOrchestrator {
    */
   private async generateRecommendation(query: Query): Promise<QueryResult> {
     // Simulate recommendation generation
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
     const context = query.metadata?.context || {};
     const recommendations = [
       "product_id: MOCK-001",
       "product_id: MOCK-002",
-      "product_id: MOCK-003"
+      "product_id: MOCK-003",
     ];
-    
+
     return {
       response: recommendations.join("\n"),
       summary: "Generated 3 product recommendations based on user context",
       confidence: 0.85,
       processingTime: 0,
-      metadata: { 
+      metadata: {
         recommendationCount: recommendations.length,
-        context 
-      }
+        context,
+      },
     };
   }
 
@@ -183,22 +191,22 @@ export class MasterOrchestrator {
    */
   private async performAnalysis(query: Query): Promise<QueryResult> {
     // Simulate analysis
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
     const searchResults = query.metadata?.searchResults || [];
     const analysis = {
       totalProducts: searchResults.length,
       priceRange: this.analyzePriceRange(searchResults),
       topBrands: this.analyzeTopBrands(searchResults),
-      recommendations: "Consider filtering by price range for better results"
+      recommendations: "Consider filtering by price range for better results",
     };
-    
+
     return {
       response: JSON.stringify(analysis),
       summary: `Analyzed ${searchResults.length} products with price range ${analysis.priceRange}`,
       confidence: 0.9,
       processingTime: 0,
-      metadata: analysis
+      metadata: analysis,
     };
   }
 
@@ -207,14 +215,14 @@ export class MasterOrchestrator {
    */
   private async generalProcessing(query: Query): Promise<QueryResult> {
     // Simulate general processing
-    await new Promise(resolve => setTimeout(resolve, 150));
-    
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
     return {
       response: `Processed query: ${query.text}`,
       summary: "General query processed successfully",
       confidence: 0.8,
       processingTime: 0,
-      metadata: query.metadata
+      metadata: query.metadata,
     };
   }
 
@@ -223,16 +231,16 @@ export class MasterOrchestrator {
    */
   private analyzePriceRange(products: any[]): string {
     if (!products.length) return "N/A";
-    
+
     const prices = products
-      .map(p => p.price || p.current_price || 0)
-      .filter(price => price > 0);
-    
+      .map((p) => p.price || p.current_price || 0)
+      .filter((price) => price > 0);
+
     if (!prices.length) return "N/A";
-    
+
     const min = Math.min(...prices);
     const max = Math.max(...prices);
-    
+
     return `$${min.toFixed(2)} - $${max.toFixed(2)}`;
   }
 
@@ -241,12 +249,12 @@ export class MasterOrchestrator {
    */
   private analyzeTopBrands(products: any[]): string[] {
     const brandCounts = new Map<string, number>();
-    
-    products.forEach(product => {
+
+    products.forEach((product) => {
       const brand = product.brand || "Unknown";
       brandCounts.set(brand, (brandCounts.get(brand) || 0) + 1);
     });
-    
+
     return Array.from(brandCounts.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
@@ -274,7 +282,7 @@ export class MasterOrchestrator {
   getQueueStatus(): { size: number; processing: boolean } {
     return {
       size: this.queryQueue.length,
-      processing: this.processing
+      processing: this.processing,
     };
   }
 }

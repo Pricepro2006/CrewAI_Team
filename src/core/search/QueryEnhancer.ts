@@ -3,13 +3,13 @@
  * Integrates location correction, service expansion, and operator application
  */
 
-import { 
-  type QueryComponents, 
+import {
+  type QueryComponents,
   type QueryOptimizationResult,
-  UrgencyLevel 
-} from './types.js';
-import { BusinessQueryOptimizer } from './BusinessQueryOptimizer.js';
-import { LocationDatabase } from './data/locationDatabase.js';
+  UrgencyLevel,
+} from "./types.js";
+import { BusinessQueryOptimizer } from "./BusinessQueryOptimizer.js";
+import { LocationDatabase } from "./data/locationDatabase.js";
 
 export interface EnhancedQuery {
   primary: string;
@@ -30,38 +30,45 @@ export class QueryEnhancer {
   public static enhance(query: string): EnhancedQuery {
     // Get optimized components
     const optimization = BusinessQueryOptimizer.optimize(query);
-    
+
     // Return empty result if security issues detected
-    if (optimization.confidence === 0 && optimization.securityFlags.length > 0) {
+    if (
+      optimization.confidence === 0 &&
+      optimization.securityFlags.length > 0
+    ) {
       return this.createEmptyEnhancement();
     }
-    
+
     // Enhance location
-    const enhancedLocation = this.enhanceLocation(optimization.components.location);
-    
+    const enhancedLocation = this.enhanceLocation(
+      optimization.components.location,
+    );
+
     // Enhance service terms
     const enhancedService = this.enhanceService(
       optimization.components.serviceType,
-      enhancedLocation.region
+      enhancedLocation.region,
     );
-    
+
     // Build enhanced queries
     const enhancedQueries = this.buildEnhancedQueries(
       optimization.components,
       enhancedLocation,
-      enhancedService
+      enhancedService,
     );
-    
+
     return {
-      primary: enhancedQueries[0] || '',
+      primary: enhancedQueries[0] || "",
       alternatives: enhancedQueries.slice(1),
       metadata: {
         hasLocation: !!enhancedLocation.corrected,
         hasTimeConstraint: optimization.components.timeConstraints.length > 0,
         serviceCategory: optimization.components.serviceType,
         urgencyLevel: optimization.components.urgency,
-        searchOperators: optimization.components.searchOperators.map(op => op.type)
-      }
+        searchOperators: optimization.components.searchOperators.map(
+          (op) => op.type,
+        ),
+      },
     };
   }
 
@@ -70,35 +77,39 @@ export class QueryEnhancer {
    */
   private static enhanceLocation(location: any): any {
     if (!location.rawLocation) {
-      return { ...location, corrected: '', region: 'National' };
+      return { ...location, corrected: "", region: "National" };
     }
-    
+
     // Handle "near me" specially
-    if (location.rawLocation.toLowerCase() === 'near me') {
-      return { 
-        ...location, 
-        corrected: 'near me',
-        region: 'National',
-        requiresGeolocation: true
+    if (location.rawLocation.toLowerCase() === "near me") {
+      return {
+        ...location,
+        corrected: "near me",
+        region: "National",
+        requiresGeolocation: true,
       };
     }
-    
+
     // Correct city names
-    const cityCorrection = LocationDatabase.correctLocation(location.city || location.rawLocation);
-    
+    const cityCorrection = LocationDatabase.correctLocation(
+      location.city || location.rawLocation,
+    );
+
     // Get state info
     const state = location.state;
     let stateAbbr = location.stateAbbr;
-    
+
     if (!stateAbbr && state) {
       stateAbbr = LocationDatabase.getStateAbbreviation(state);
     }
-    
+
     // Determine region
-    const region = state ? LocationDatabase.getRegionFromState(state) : 'National';
-    
+    const region = state
+      ? LocationDatabase.getRegionFromState(state)
+      : "National";
+
     // Build corrected location string
-    let corrected = '';
+    let corrected = "";
     if (location.address) {
       corrected = location.address;
     } else if (location.zipCode) {
@@ -111,16 +122,16 @@ export class QueryEnhancer {
     } else {
       corrected = location.rawLocation;
     }
-    
+
     // Get city metadata if available
     const metadata = LocationDatabase.getCityMetadata(cityCorrection.corrected);
-    
+
     return {
       ...location,
       corrected,
       region,
       cityMetadata: metadata,
-      correctionConfidence: cityCorrection.confidence
+      correctionConfidence: cityCorrection.confidence,
     };
   }
 
@@ -128,22 +139,31 @@ export class QueryEnhancer {
    * Enhance service terms with regional variations
    */
   private static enhanceService(serviceType: string, region: string): string[] {
-    const regionalTerms = LocationDatabase.getRegionalTerms(region, serviceType);
-    
+    const regionalTerms = LocationDatabase.getRegionalTerms(
+      region,
+      serviceType,
+    );
+
     // Add common business qualifiers
-    const qualifiers = ['professional', 'licensed', 'certified', 'local', 'best'];
+    const qualifiers = [
+      "professional",
+      "licensed",
+      "certified",
+      "local",
+      "best",
+    ];
     const enhanced: string[] = [];
-    
+
     // Base terms
     enhanced.push(...regionalTerms);
-    
+
     // Add qualified versions
     for (const term of regionalTerms.slice(0, 2)) {
       for (const qualifier of qualifiers.slice(0, 2)) {
         enhanced.push(`${qualifier} ${term}`);
       }
     }
-    
+
     return [...new Set(enhanced)];
   }
 
@@ -153,69 +173,75 @@ export class QueryEnhancer {
   private static buildEnhancedQueries(
     components: QueryComponents,
     enhancedLocation: any,
-    enhancedService: string[]
+    enhancedService: string[],
   ): string[] {
     const queries: string[] = [];
-    
+
     // Primary query - most specific
     const primaryParts: string[] = [];
-    
+
     // Add service (use first enhanced term)
     if (enhancedService.length > 0 && enhancedService[0]) {
       primaryParts.push(enhancedService[0]);
     }
-    
+
     // Add location
     if (enhancedLocation.corrected) {
       primaryParts.push(enhancedLocation.corrected);
     }
-    
+
     // Add urgency modifiers
     if (components.urgency === UrgencyLevel.EMERGENCY) {
-      primaryParts.unshift('emergency');
+      primaryParts.unshift("emergency");
     }
-    
+
     // Add time constraints
     for (const constraint of components.timeConstraints) {
-      if (constraint.type === 'availability' && constraint.parsed?.isNow) {
-        primaryParts.push('open now');
-      } else if (constraint.value.includes('24/7')) {
-        primaryParts.push('24/7 available');
+      if (constraint.type === "availability" && constraint.parsed?.isNow) {
+        primaryParts.push("open now");
+      } else if (constraint.value.includes("24/7")) {
+        primaryParts.push("24/7 available");
       }
     }
-    
+
     // Add business indicators
     primaryParts.push(...components.businessIndicators);
-    
-    queries.push(primaryParts.join(' '));
-    
+
+    queries.push(primaryParts.join(" "));
+
     // Alternative queries
     // Version with expanded location
     if (enhancedLocation.cityMetadata?.state && enhancedService[0]) {
-      const altQuery = `${enhancedService[0]} ${enhancedLocation.corrected}, ${enhancedLocation.cityMetadata.state} ${components.businessIndicators.join(' ')}`;
+      const altQuery = `${enhancedService[0]} ${enhancedLocation.corrected}, ${enhancedLocation.cityMetadata.state} ${components.businessIndicators.join(" ")}`;
       queries.push(altQuery.trim());
     }
-    
+
     // Version with different service terms
     for (let i = 1; i < Math.min(enhancedService.length, 3); i++) {
-      const altQuery = `${enhancedService[i]} ${enhancedLocation.corrected} ${components.businessIndicators.join(' ')}`;
+      const altQuery = `${enhancedService[i]} ${enhancedLocation.corrected} ${components.businessIndicators.join(" ")}`;
       queries.push(altQuery.trim());
     }
-    
+
     // Version focused on reviews
-    queries.push(`best rated ${components.serviceType} ${enhancedLocation.corrected} reviews ratings`);
-    
+    queries.push(
+      `best rated ${components.serviceType} ${enhancedLocation.corrected} reviews ratings`,
+    );
+
     // Version with search operators
     for (const operator of components.searchOperators) {
-      if (operator.type === 'near' && enhancedLocation.corrected) {
-        queries.push(`${components.serviceType} near ${enhancedLocation.corrected}`);
-      } else if (operator.type === 'rated' && operator.value) {
-        queries.push(`${operator.value} star ${components.serviceType} ${enhancedLocation.corrected}`);
+      if (operator.type === "near" && enhancedLocation.corrected) {
+        queries.push(
+          `${components.serviceType} near ${enhancedLocation.corrected}`,
+        );
+      } else if (operator.type === "rated" && operator.value) {
+        queries.push(
+          `${operator.value} star ${components.serviceType} ${enhancedLocation.corrected}`,
+        );
       }
     }
-    
+
     // Remove duplicates and empty strings
-    return [...new Set(queries.filter(q => q.trim().length > 0))];
+    return [...new Set(queries.filter((q) => q.trim().length > 0))];
   }
 
   /**
@@ -223,55 +249,58 @@ export class QueryEnhancer {
    */
   private static createEmptyEnhancement(): EnhancedQuery {
     return {
-      primary: '',
+      primary: "",
       alternatives: [],
       metadata: {
         hasLocation: false,
         hasTimeConstraint: false,
-        serviceCategory: '',
+        serviceCategory: "",
         urgencyLevel: UrgencyLevel.NORMAL,
-        searchOperators: []
-      }
+        searchOperators: [],
+      },
     };
   }
 
   /**
    * Format query for specific search engines
    */
-  public static formatForSearchEngine(query: string, engine: 'google' | 'bing' | 'ddg'): string {
+  public static formatForSearchEngine(
+    query: string,
+    engine: "google" | "bing" | "ddg",
+  ): string {
     // Common formatting
     let formatted = query.trim();
-    
+
     switch (engine) {
-      case 'google':
+      case "google":
         // Google-specific operators
-        if (formatted.includes('near me')) {
-          formatted = formatted.replace('near me', '');
-          formatted += ' near me';
+        if (formatted.includes("near me")) {
+          formatted = formatted.replace("near me", "");
+          formatted += " near me";
         }
         // Add quotes for exact phrases
-        if (formatted.includes('phone number')) {
-          formatted = formatted.replace('phone number', '"phone number"');
+        if (formatted.includes("phone number")) {
+          formatted = formatted.replace("phone number", '"phone number"');
         }
         break;
-        
-      case 'bing':
+
+      case "bing":
         // Bing-specific formatting
-        if (formatted.includes('open now')) {
-          formatted = formatted.replace('open now', '');
+        if (formatted.includes("open now")) {
+          formatted = formatted.replace("open now", "");
           formatted += ' +hours:"open now"';
         }
         break;
-        
-      case 'ddg':
+
+      case "ddg":
         // DuckDuckGo formatting
         // DDG uses ! for exact match
-        if (formatted.includes('reviews')) {
-          formatted = formatted.replace('reviews', '!reviews');
+        if (formatted.includes("reviews")) {
+          formatted = formatted.replace("reviews", "!reviews");
         }
         break;
     }
-    
+
     return formatted;
   }
 
@@ -285,18 +314,18 @@ export class QueryEnhancer {
         city: components.location.city,
         state: components.location.state,
         zipCode: components.location.zipCode,
-        coordinates: components.location.coordinates
+        coordinates: components.location.coordinates,
       },
-      when: components.timeConstraints.map(tc => ({
+      when: components.timeConstraints.map((tc) => ({
         type: tc.type,
         value: tc.value,
-        parsed: tc.parsed
+        parsed: tc.parsed,
       })),
       filters: {
         urgency: components.urgency,
         operators: components.searchOperators,
-        businessInfo: components.businessIndicators
-      }
+        businessInfo: components.businessIndicators,
+      },
     };
   }
 }

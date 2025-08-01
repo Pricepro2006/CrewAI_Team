@@ -38,7 +38,7 @@ import { ErrorBoundary } from '@/ui/components/ErrorBoundary';
 </ErrorBoundary>
 
 // With custom fallback
-<ErrorBoundary 
+<ErrorBoundary
   fallback={<CustomErrorUI />}
   onError={(error, errorInfo) => logError(error)}
 >
@@ -56,30 +56,30 @@ import { ErrorBoundary } from '@/ui/components/ErrorBoundary';
 For non-critical user feedback:
 
 ```tsx
-import { useToast } from '@/ui/components/Toast';
+import { useToast } from "@/ui/components/Toast";
 
 function MyComponent() {
   const toast = useToast();
 
   // Success toast
-  toast.success('Operation completed!');
+  toast.success("Operation completed!");
 
   // Error toast with action
-  toast.error('Failed to save', {
-    message: 'Check your connection and try again',
+  toast.error("Failed to save", {
+    message: "Check your connection and try again",
     action: {
-      label: 'Retry',
-      onClick: () => saveData()
-    }
+      label: "Retry",
+      onClick: () => saveData(),
+    },
   });
 
   // Warning toast (doesn't auto-dismiss)
-  toast.warning('Session expiring', {
-    duration: 0
+  toast.warning("Session expiring", {
+    duration: 0,
   });
 
   // Info toast
-  toast.info('New update available');
+  toast.info("New update available");
 }
 ```
 
@@ -88,7 +88,7 @@ function MyComponent() {
 For critical errors requiring immediate attention:
 
 ```tsx
-import { ErrorModal } from '@/ui/components/ErrorModal';
+import { ErrorModal } from "@/ui/components/ErrorModal";
 
 <ErrorModal
   isOpen={showModal}
@@ -99,11 +99,11 @@ import { ErrorModal } from '@/ui/components/ErrorModal';
   onRetry={handleRetry}
   actions={[
     {
-      label: 'Contact Support',
-      onClick: () => window.location.href = 'mailto:support@example.com'
-    }
+      label: "Contact Support",
+      onClick: () => (window.location.href = "mailto:support@example.com"),
+    },
   ]}
-/>
+/>;
 ```
 
 ### 4. Network Status
@@ -111,15 +111,15 @@ import { ErrorModal } from '@/ui/components/ErrorModal';
 Automatic network connectivity monitoring:
 
 ```tsx
-import { NetworkStatus } from '@/ui/components/NetworkStatus';
+import { NetworkStatus } from "@/ui/components/NetworkStatus";
 
 // Add to your app root
-<NetworkStatus 
+<NetworkStatus
   position="top"
   showWhenOnline={true}
   autoHide={true}
   autoHideDelay={3000}
-/>
+/>;
 ```
 
 ### 5. Loading States
@@ -151,7 +151,7 @@ import { LoadingState, Skeleton, LoadingCard } from '@/ui/components/LoadingStat
 ### 1. Automatic Retry with Exponential Backoff
 
 ```tsx
-import { useErrorRecovery } from '@/ui/hooks/useErrorRecovery';
+import { useErrorRecovery } from "@/ui/hooks/useErrorRecovery";
 
 function DataFetcher() {
   const errorRecovery = useErrorRecovery({
@@ -160,7 +160,7 @@ function DataFetcher() {
     exponentialBackoff: true,
     onMaxRetriesExceeded: (error) => {
       // Show error modal or fallback UI
-    }
+    },
   });
 
   const fetchData = async () => {
@@ -177,7 +177,7 @@ function DataFetcher() {
 ### 2. Circuit Breaker Pattern
 
 ```tsx
-import { useCircuitBreaker } from '@/ui/hooks/useErrorRecovery';
+import { useCircuitBreaker } from "@/ui/hooks/useErrorRecovery";
 
 function ApiService() {
   const circuitBreaker = useCircuitBreaker(5, 60000); // 5 failures, 1 minute timeout
@@ -191,7 +191,7 @@ function ApiService() {
       () => {
         // Fallback when circuit is open
         return getCachedData();
-      }
+      },
     );
   };
 }
@@ -200,7 +200,7 @@ function ApiService() {
 ### 3. Error Recovery Boundary
 
 ```tsx
-import { ErrorRecoveryBoundary } from '@/ui/components/ErrorRecovery';
+import { ErrorRecoveryBoundary } from "@/ui/components/ErrorRecovery";
 
 <ErrorRecoveryBoundary
   maxRetries={3}
@@ -208,7 +208,7 @@ import { ErrorRecoveryBoundary } from '@/ui/components/ErrorRecovery';
   onError={(error) => logError(error)}
 >
   <YourComponent />
-</ErrorRecoveryBoundary>
+</ErrorRecoveryBoundary>;
 ```
 
 ## Implementation Examples
@@ -223,16 +223,16 @@ function UserForm() {
 
   const handleSubmit = async (data: FormData) => {
     setIsSubmitting(true);
-    
+
     try {
       await api.saveUser(data);
-      toast.success('User saved successfully!');
+      toast.success("User saved successfully!");
     } catch (error) {
-      if (error.code === 'NETWORK_ERROR') {
+      if (error.code === "NETWORK_ERROR") {
         errorRecovery.handleError(error, () => handleSubmit(data));
-      } else if (error.code === 'VALIDATION_ERROR') {
-        toast.error('Validation failed', {
-          message: error.message
+      } else if (error.code === "VALIDATION_ERROR") {
+        toast.error("Validation failed", {
+          message: error.message,
         });
       } else {
         // Show error modal for unexpected errors
@@ -247,7 +247,7 @@ function UserForm() {
     <form onSubmit={handleSubmit}>
       {/* Form fields */}
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? <LoadingState size="small" /> : 'Save'}
+        {isSubmitting ? <LoadingState size="small" /> : "Save"}
       </Button>
     </form>
   );
@@ -258,27 +258,22 @@ function UserForm() {
 
 ```tsx
 function DataTable() {
-  const { data, error, isLoading, refetch } = useQuery(['tableData'], fetchData);
+  const { data, error, isLoading, refetch } = useQuery(
+    ["tableData"],
+    fetchData,
+  );
 
   if (isLoading) {
     return <LoadingCard lines={5} />;
   }
 
   if (error) {
-    return (
-      <ErrorFallback
-        error={error}
-        onReset={refetch}
-        isIsolated
-      />
-    );
+    return <ErrorFallback error={error} onReset={refetch} isIsolated />;
   }
 
   return (
     <ErrorBoundary isolate>
-      <table>
-        {/* Table content */}
-      </table>
+      <table>{/* Table content */}</table>
     </ErrorBoundary>
   );
 }
@@ -296,27 +291,27 @@ function FileUploader() {
     try {
       await circuitBreaker.execute(async () => {
         const result = await api.uploadFile(file, {
-          onProgress: (percent) => setProgress(percent)
+          onProgress: (percent) => setProgress(percent),
         });
-        
-        toast.success('File uploaded!', {
-          message: `${file.name} uploaded successfully`
+
+        toast.success("File uploaded!", {
+          message: `${file.name} uploaded successfully`,
         });
-        
+
         return result;
       });
     } catch (error) {
-      if (circuitBreaker.state === 'open') {
-        toast.error('Upload service unavailable', {
-          message: 'Too many failures. Please try again later.'
+      if (circuitBreaker.state === "open") {
+        toast.error("Upload service unavailable", {
+          message: "Too many failures. Please try again later.",
         });
       } else {
-        toast.error('Upload failed', {
+        toast.error("Upload failed", {
           message: error.message,
           action: {
-            label: 'Retry',
-            onClick: () => uploadFile(file)
-          }
+            label: "Retry",
+            onClick: () => uploadFile(file),
+          },
         });
       }
     }
@@ -342,12 +337,14 @@ function FileUploader() {
 ### 3. Toast vs Modal Decision
 
 Use **Toasts** for:
+
 - Success confirmations
 - Non-critical warnings
 - Temporary network issues
 - Background operation updates
 
 Use **Modals** for:
+
 - Critical errors requiring action
 - Data loss warnings
 - Authentication errors
@@ -364,10 +361,10 @@ Use **Modals** for:
 
 ```tsx
 // Good: Specific network error handling
-if (error.code === 'NETWORK_ERROR') {
+if (error.code === "NETWORK_ERROR") {
   if (!isOnline) {
-    toast.warning('You are offline', {
-      message: 'Changes will sync when connection is restored'
+    toast.warning("You are offline", {
+      message: "Changes will sync when connection is restored",
     });
   } else {
     errorRecovery.handleError(error, retryOperation);
@@ -377,7 +374,7 @@ if (error.code === 'NETWORK_ERROR') {
 // Good: Graceful degradation
 const data = await circuitBreaker.execute(
   () => fetchFromAPI(),
-  () => getFromCache() // Fallback to cache
+  () => getFromCache(), // Fallback to cache
 );
 ```
 
@@ -386,44 +383,44 @@ const data = await circuitBreaker.execute(
 ### Unit Testing Error Boundaries
 
 ```tsx
-import { render, screen } from '@testing-library/react';
-import { ErrorBoundary } from '@/ui/components/ErrorBoundary';
+import { render, screen } from "@testing-library/react";
+import { ErrorBoundary } from "@/ui/components/ErrorBoundary";
 
-test('catches and displays errors', () => {
+test("catches and displays errors", () => {
   const ThrowError = () => {
-    throw new Error('Test error');
+    throw new Error("Test error");
   };
 
   render(
     <ErrorBoundary>
       <ThrowError />
-    </ErrorBoundary>
+    </ErrorBoundary>,
   );
 
-  expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+  expect(screen.getByText("Something went wrong")).toBeInTheDocument();
 });
 ```
 
 ### Integration Testing Error Flows
 
 ```tsx
-test('handles network error with retry', async () => {
+test("handles network error with retry", async () => {
   // Mock API to fail first, then succeed
   api.getData
-    .mockRejectedValueOnce(new Error('Network error'))
-    .mockResolvedValueOnce({ data: 'success' });
+    .mockRejectedValueOnce(new Error("Network error"))
+    .mockResolvedValueOnce({ data: "success" });
 
   const { rerender } = render(<DataComponent />);
 
   // Should show error state
-  expect(screen.getByText('Network error')).toBeInTheDocument();
+  expect(screen.getByText("Network error")).toBeInTheDocument();
 
   // Click retry
-  fireEvent.click(screen.getByText('Try Again'));
+  fireEvent.click(screen.getByText("Try Again"));
 
   // Should show success
   await waitFor(() => {
-    expect(screen.getByText('success')).toBeInTheDocument();
+    expect(screen.getByText("success")).toBeInTheDocument();
   });
 });
 ```
@@ -432,17 +429,17 @@ test('handles network error with retry', async () => {
 
 ```tsx
 // Cypress example
-describe('Error Handling', () => {
-  it('shows offline banner when network is disconnected', () => {
-    cy.visit('/');
-    
+describe("Error Handling", () => {
+  it("shows offline banner when network is disconnected", () => {
+    cy.visit("/");
+
     // Simulate offline
     cy.window().then((win) => {
-      cy.stub(win.navigator, 'onLine').value(false);
-      win.dispatchEvent(new Event('offline'));
+      cy.stub(win.navigator, "onLine").value(false);
+      win.dispatchEvent(new Event("offline"));
     });
 
-    cy.contains('You are offline').should('be.visible');
+    cy.contains("You are offline").should("be.visible");
   });
 });
 ```

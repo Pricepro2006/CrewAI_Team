@@ -1,10 +1,18 @@
-import { z } from 'zod';
-import { TRPCError } from '@trpc/server';
-import { router, publicProcedure, protectedProcedure } from '../enhanced-router.js';
-import type { Context } from '../context.js';
-import { EmailStorageService } from '../../services/EmailStorageService.js';
-import { WebSocketService } from '../../services/WebSocketService.js';
-import { getTeamMemberById, TEAM_MEMBERS, getSuggestedAssignees } from '../../../config/team-members.config.js';
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import {
+  router,
+  publicProcedure,
+  protectedProcedure,
+} from "../enhanced-router.js";
+import type { Context } from "../context.js";
+import { EmailStorageService } from "../../services/EmailStorageService.js";
+import { WebSocketService } from "../../services/WebSocketService.js";
+import {
+  getTeamMemberById,
+  TEAM_MEMBERS,
+  getSuggestedAssignees,
+} from "../../../config/team-members.config.js";
 
 const emailStorage = new EmailStorageService();
 const wsService = new WebSocketService();
@@ -14,7 +22,7 @@ export const emailAssignmentRouter = router({
    * Get all team members
    */
   getTeamMembers: publicProcedure.query(async () => {
-    return TEAM_MEMBERS.map(member => ({
+    return TEAM_MEMBERS.map((member) => ({
       id: member.id,
       name: member.name,
       email: member.email,
@@ -31,58 +39,68 @@ export const emailAssignmentRouter = router({
       z.object({
         emailId: z.string().min(1),
         assignedTo: z.string().nullable(),
-      })
+      }),
     )
-    .mutation(async ({ input, ctx }: { input: { emailId: string; assignedTo: string | null }, ctx: Context }) => {
-      const { emailId, assignedTo } = input;
+    .mutation(
+      async ({
+        input,
+        ctx,
+      }: {
+        input: { emailId: string; assignedTo: string | null };
+        ctx: Context;
+      }) => {
+        const { emailId, assignedTo } = input;
 
-      // Validate team member if provided
-      if (assignedTo && !getTeamMemberById(assignedTo)) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Invalid team member ID',
+        // Validate team member if provided
+        if (assignedTo && !getTeamMemberById(assignedTo)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid team member ID",
+          });
+        }
+
+        // Get the email
+        const email = await emailStorage.getEmail(emailId);
+        if (!email) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Email not found",
+          });
+        }
+
+        // Update assignment
+        const updatedEmail = {
+          ...email,
+          assignedTo: assignedTo || undefined,
+          lastUpdated: new Date().toISOString(),
+        };
+
+        await emailStorage.updateEmail(emailId, updatedEmail);
+
+        // Emit WebSocket event
+        wsService.emitEmailUpdate({
+          type: "update",
+          email: updatedEmail,
         });
-      }
 
-      // Get the email
-      const email = await emailStorage.getEmail(emailId);
-      if (!email) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Email not found',
+        // Log assignment activity
+        const assigneeName = assignedTo
+          ? getTeamMemberById(assignedTo)?.name
+          : "Unassigned";
+        await emailStorage.logActivity({
+          emailId,
+          action: "assigned",
+          userId: ctx.user?.id || "system",
+          details: {
+            assignedTo: assignedTo || null,
+            assigneeName,
+          },
+          timestamp: new Date().toISOString(),
         });
-      }
 
-      // Update assignment
-      const updatedEmail = {
-        ...email,
-        assignedTo: assignedTo || undefined,
-        lastUpdated: new Date().toISOString(),
-      };
-
-      await emailStorage.updateEmail(emailId, updatedEmail);
-
-      // Emit WebSocket event
-      wsService.emitEmailUpdate({
-        type: 'update',
-        email: updatedEmail,
-      });
-
-      // Log assignment activity
-      const assigneeName = assignedTo ? getTeamMemberById(assignedTo)?.name : 'Unassigned';
-      await emailStorage.logActivity({
-        emailId,
-        action: 'assigned',
-        userId: ctx.user?.id || 'system',
-        details: {
-          assignedTo: assignedTo || null,
-          assigneeName,
-        },
-        timestamp: new Date().toISOString(),
-      });
-
-      return updatedEmail;
-    }),
+        return updatedEmail;
+      },
+    ),
 
   /**
    * Bulk assign emails
@@ -92,71 +110,81 @@ export const emailAssignmentRouter = router({
       z.object({
         emailIds: z.array(z.string()).min(1),
         assignedTo: z.string().nullable(),
-      })
+      }),
     )
-    .mutation(async ({ input, ctx }: { input: { emailIds: string[]; assignedTo: string | null }, ctx: Context }) => {
-      const { emailIds, assignedTo } = input;
+    .mutation(
+      async ({
+        input,
+        ctx,
+      }: {
+        input: { emailIds: string[]; assignedTo: string | null };
+        ctx: Context;
+      }) => {
+        const { emailIds, assignedTo } = input;
 
-      // Validate team member if provided
-      if (assignedTo && !getTeamMemberById(assignedTo)) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Invalid team member ID',
-        });
-      }
-
-      const updatedEmails = [];
-      const errors = [];
-
-      for (const emailId of emailIds) {
-        try {
-          const email = await emailStorage.getEmail(emailId);
-          if (!email) {
-            errors.push({ emailId, error: 'Email not found' });
-            continue;
-          }
-
-          const updatedEmail = {
-            ...email,
-            assignedTo: assignedTo || undefined,
-            lastUpdated: new Date().toISOString(),
-          };
-
-          await emailStorage.updateEmail(emailId, updatedEmail);
-          updatedEmails.push(updatedEmail);
-
-          // Emit WebSocket event
-          wsService.emitEmailUpdate({
-            type: 'update',
-            email: updatedEmail,
-          });
-        } catch (error) {
-          errors.push({ 
-            emailId, 
-            error: error instanceof Error ? error.message : 'Unknown error' 
+        // Validate team member if provided
+        if (assignedTo && !getTeamMemberById(assignedTo)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid team member ID",
           });
         }
-      }
 
-      // Log bulk assignment activity
-      const assigneeName = assignedTo ? getTeamMemberById(assignedTo)?.name : 'Unassigned';
-      await emailStorage.logActivity({
-        action: 'bulk_assigned',
-        userId: ctx.user?.id || 'system',
-        details: {
-          emailCount: updatedEmails.length,
-          assignedTo: assignedTo || null,
-          assigneeName,
-          errors: errors.length > 0 ? errors : undefined,
-        },
-        timestamp: new Date().toISOString(),
-      });
+        const updatedEmails = [];
+        const errors = [];
 
-      return {
-        updated: updatedEmails,
-        errors,
-      };
-    }),
+        for (const emailId of emailIds) {
+          try {
+            const email = await emailStorage.getEmail(emailId);
+            if (!email) {
+              errors.push({ emailId, error: "Email not found" });
+              continue;
+            }
+
+            const updatedEmail = {
+              ...email,
+              assignedTo: assignedTo || undefined,
+              lastUpdated: new Date().toISOString(),
+            };
+
+            await emailStorage.updateEmail(emailId, updatedEmail);
+            updatedEmails.push(updatedEmail);
+
+            // Emit WebSocket event
+            wsService.emitEmailUpdate({
+              type: "update",
+              email: updatedEmail,
+            });
+          } catch (error) {
+            errors.push({
+              emailId,
+              error: error instanceof Error ? error.message : "Unknown error",
+            });
+          }
+        }
+
+        // Log bulk assignment activity
+        const assigneeName = assignedTo
+          ? getTeamMemberById(assignedTo)?.name
+          : "Unassigned";
+        await emailStorage.logActivity({
+          action: "bulk_assigned",
+          userId: ctx.user?.id || "system",
+          details: {
+            emailCount: updatedEmails.length,
+            assignedTo: assignedTo || null,
+            assigneeName,
+            errors: errors.length > 0 ? errors : undefined,
+          },
+          timestamp: new Date().toISOString(),
+        });
+
+        return {
+          updated: updatedEmails,
+          errors,
+        };
+      },
+    ),
 
   /**
    * Get assignment suggestions for an email
@@ -167,8 +195,8 @@ export const emailAssignmentRouter = router({
       const email = await emailStorage.getEmail(emailId);
       if (!email) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Email not found',
+          code: "NOT_FOUND",
+          message: "Email not found",
         });
       }
 
@@ -178,7 +206,7 @@ export const emailAssignmentRouter = router({
       return {
         emailId,
         emailAlias: email.email_alias,
-        suggestions: suggestions.map(member => ({
+        suggestions: suggestions.map((member) => ({
           id: member.id,
           name: member.name,
           email: member.email,
@@ -194,21 +222,23 @@ export const emailAssignmentRouter = router({
   getWorkloadDistribution: publicProcedure.query(async () => {
     const workload = await emailStorage.getAssignmentWorkload();
 
-    const workloadWithNames = Object.entries(workload).map(([memberId, count]) => {
-      const member = getTeamMemberById(memberId);
-      return {
-        memberId,
-        memberName: member?.name || 'Unknown',
-        memberEmail: member?.email,
-        emailCount: count as number,
-      };
-    });
+    const workloadWithNames = Object.entries(workload).map(
+      ([memberId, count]) => {
+        const member = getTeamMemberById(memberId);
+        return {
+          memberId,
+          memberName: member?.name || "Unknown",
+          memberEmail: member?.email,
+          emailCount: count as number,
+        };
+      },
+    );
 
     // Add unassigned count
     const unassignedCount = await emailStorage.getUnassignedCount();
     workloadWithNames.push({
       memberId: null as any,
-      memberName: 'Unassigned',
+      memberName: "Unassigned",
       memberEmail: null as any,
       emailCount: unassignedCount,
     });
@@ -225,7 +255,7 @@ export const emailAssignmentRouter = router({
         // This would be connected to the WebSocket service
         // For now, return a placeholder
         yield {
-          type: 'connected',
+          type: "connected",
           timestamp: new Date().toISOString(),
         };
       },
