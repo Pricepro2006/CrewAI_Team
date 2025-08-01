@@ -12,7 +12,7 @@ vi.mock("ioredis", () => {
 
 // Mock express-rate-limit
 vi.mock("express-rate-limit", () => {
-  return vi.fn().mockImplementation((config: any) => {
+  return vi.fn().mockImplementation((config: unknown) => {
     return (req: Request, res: Response, next: NextFunction) => {
       // Simple mock implementation
       const key = config.keyGenerator ? config.keyGenerator(req) : req.ip;

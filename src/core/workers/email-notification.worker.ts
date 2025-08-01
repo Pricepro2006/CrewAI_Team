@@ -103,7 +103,7 @@ async function processEmailNotification(job: any) {
 }
 
 // Create the worker only if Redis is available
-let emailNotificationWorker: any;
+let emailNotificationWorker: unknown;
 
 try {
   emailNotificationWorker = new Worker(

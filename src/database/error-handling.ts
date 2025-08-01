@@ -145,7 +145,7 @@ function mapDatabaseError(error: unknown): AppError {
 /**
  * Wraps a database operation with error handling and retry logic
  */
-export function withDatabaseErrorHandling<T extends (...args: any[]) => any>(
+export function withDatabaseErrorHandling<T extends (...args: unknown[]) => unknown>(
   operation: T,
   options: {
     retries?: number;

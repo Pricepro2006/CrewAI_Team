@@ -173,7 +173,7 @@ vi.mock("../enhanced-router", () => {
 });
 
 describe("TRPC Rate Limiting", () => {
-  let mockContext: any;
+  let mockContext: unknown;
 
   beforeEach(() => {
     mockContext = {

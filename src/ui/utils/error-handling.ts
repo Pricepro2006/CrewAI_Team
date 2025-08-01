@@ -195,7 +195,7 @@ export function asyncErrorWrapper<T extends (...args: any[]) => Promise<any>>(
 /**
  * Wraps a function to catch synchronous errors
  */
-export function tryCatch<T extends (...args: any[]) => any>(
+export function tryCatch<T extends (...args: unknown[]) => unknown>(
   fn: T,
   errorHandler?: (error: Error) => void,
 ): T {
@@ -339,7 +339,7 @@ export const performance = {
   /**
    * Measure function execution time
    */
-  measure<T extends (...args: any[]) => any>(fn: T, name?: string): T {
+  measure<T extends (...args: unknown[]) => unknown>(fn: T, name?: string): T {
     return ((...args: Parameters<T>) => {
       const start = Date.now();
       const result = fn(...args);

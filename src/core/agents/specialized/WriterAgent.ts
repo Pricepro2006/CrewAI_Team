@@ -20,7 +20,7 @@ export class WriterAgent extends BaseAgent {
       const taskAnalysis = await this.analyzeWritingTask(task, context);
 
       // Execute based on content type
-      let result: any;
+      let result: unknown;
       switch (taskAnalysis.contentType) {
         case "article":
           result = await this.writeArticle(taskAnalysis, context);

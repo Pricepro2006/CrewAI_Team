@@ -19,7 +19,7 @@ export class CodeAgent extends BaseAgent {
       const taskAnalysis = await this.analyzeTask(task, context);
 
       // Execute based on task type
-      let result: any;
+      let result: unknown;
       switch (taskAnalysis.type) {
         case "generation":
           result = await this.generateCode(taskAnalysis, context);

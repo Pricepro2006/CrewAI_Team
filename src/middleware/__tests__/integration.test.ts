@@ -49,7 +49,7 @@ vi.mock("../../api/trpc/context", () => ({
 describe.skip("Rate Limiting Integration Tests", () => {
   let app: express.Application;
   let rateLimiter: AdvancedRateLimit;
-  let server: any;
+  let server: unknown;
 
   beforeAll(() => {
     // Mock console methods

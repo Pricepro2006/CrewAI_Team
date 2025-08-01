@@ -6,7 +6,7 @@ import { AppError, ErrorCode } from "./error-types.js";
 import { getUserFriendlyError } from "./error-messages.js";
 
 // Use browser-compatible logger for client-side code
-let logger: any;
+let logger: unknown;
 if (typeof window !== "undefined") {
   // Browser environment - use console as logger
   logger = {
@@ -133,7 +133,7 @@ export function sanitizeError(error: Error): any {
 /**
  * Wraps a function to catch synchronous errors
  */
-export function tryCatch<T extends (...args: any[]) => any>(
+export function tryCatch<T extends (...args: unknown[]) => unknown>(
   fn: T,
   errorHandler?: (error: Error) => void,
 ): T {

@@ -28,8 +28,8 @@ vi.mock("../../utils/logger", () => ({
 }));
 
 describe("Email Router", () => {
-  let mockEmailStorage: any;
-  let mockContext: any;
+  let mockEmailStorage: unknown;
+  let mockContext: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();

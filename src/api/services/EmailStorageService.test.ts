@@ -34,8 +34,8 @@ vi.mock("../../config/app.config", () => ({
 
 describe("EmailStorageService", () => {
   let emailStorageService: EmailStorageService;
-  let mockDb: any;
-  let mockStmt: any;
+  let mockDb: unknown;
+  let mockStmt: unknown;
 
   beforeEach(() => {
     // Reset mocks

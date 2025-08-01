@@ -287,7 +287,7 @@ export class BrightDataScraper {
    * Helper: Execute with retry logic
    */
   private async executeWithRetry<T>(operation: () => Promise<T>): Promise<T> {
-    let lastError: any;
+    let lastError: unknown;
 
     for (let attempt = 1; attempt <= this.config.retries!; attempt++) {
       try {
