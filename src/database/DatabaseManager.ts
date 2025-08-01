@@ -9,6 +9,14 @@ import { join } from "path";
 import { logger } from "../utils/logger.js";
 import appConfig from "../config/app.config.js";
 import { fileURLToPath } from "url";
+import {
+  DatabaseConnectionPool,
+  getDatabaseConnection,
+  executeQuery,
+  executeTransaction,
+  shutdownConnectionPool,
+  type ConnectionPoolConfig,
+} from "./ConnectionPool.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = join(fileURLToPath(import.meta.url), "..");
@@ -47,6 +55,10 @@ export interface DatabaseConfig {
     enableForeignKeys?: boolean;
     cacheSize?: number;
     memoryMap?: number;
+    maxConnections?: number;
+    connectionTimeout?: number;
+    idleTimeout?: number;
+    busyTimeout?: number;
   };
   chromadb: {
     host?: string;
@@ -58,7 +70,7 @@ export interface DatabaseConfig {
 }
 
 export class DatabaseManager {
-  private db: Database.Database;
+  private connectionPool: DatabaseConnectionPool;
   private chromaManager: ChromaDBManager;
   private migrator: DatabaseMigrator;
   private isInitialized: boolean = false;
@@ -86,6 +98,10 @@ export class DatabaseManager {
         enableForeignKeys: config?.sqlite?.enableForeignKeys !== false,
         cacheSize: config?.sqlite?.cacheSize || 10000,
         memoryMap: config?.sqlite?.memoryMap || 268435456, // 256MB
+        maxConnections: config?.sqlite?.maxConnections || 10,
+        connectionTimeout: config?.sqlite?.connectionTimeout || 30000,
+        idleTimeout: config?.sqlite?.idleTimeout || 300000, // 5 minutes
+        busyTimeout: config?.sqlite?.busyTimeout || 30000,
       },
       chromadb: {
         host: config?.chromadb?.host || "localhost",
@@ -96,66 +112,48 @@ export class DatabaseManager {
       },
     };
 
-    // Initialize SQLite database
-    this.db = new Database(dbConfig.sqlite.path);
-    this.configureSQLite(dbConfig.sqlite);
+    // Initialize connection pool
+    this.connectionPool = DatabaseConnectionPool.getInstance({
+      databasePath: dbConfig.sqlite.path,
+      maxConnections: dbConfig.sqlite.maxConnections,
+      connectionTimeout: dbConfig.sqlite.connectionTimeout,
+      idleTimeout: dbConfig.sqlite.idleTimeout,
+      enableWAL: dbConfig.sqlite.enableWAL,
+      enableForeignKeys: dbConfig.sqlite.enableForeignKeys,
+      cacheSize: dbConfig.sqlite.cacheSize,
+      memoryMap: dbConfig.sqlite.memoryMap,
+      busyTimeout: dbConfig.sqlite.busyTimeout,
+    });
 
     // Initialize ChromaDB manager
     this.chromaManager = new ChromaDBManager(dbConfig.chromadb);
 
-    // Initialize migration system
-    this.migrator = new DatabaseMigrator(this.db);
+    // Initialize migration system with pooled connection
+    const migrationConnection = this.connectionPool.getConnection();
+    this.migrator = new DatabaseMigrator(migrationConnection.getDatabase());
 
-    // Initialize repositories
-    this.users = new UserRepository(this.db);
-    this.emails = new EmailRepository({ db: this.db });
-    this.deals = new DealRepository(this.db);
-    this.dealItems = new DealItemRepository(this.db);
-    this.productFamilies = new ProductFamilyRepository(this.db);
+    // Initialize repositories with connection pool
+    const repoConnection = this.connectionPool.getConnection();
+    const db = repoConnection.getDatabase();
+
+    this.users = new UserRepository(db);
+    this.emails = new EmailRepository({ db });
+    this.deals = new DealRepository(db);
+    this.dealItems = new DealItemRepository(db);
+    this.productFamilies = new ProductFamilyRepository(db);
 
     // Initialize grocery repositories
-    this.groceryLists = new GroceryListRepository(this.db);
-    this.groceryItems = new GroceryItemRepository(this.db);
-    this.shoppingSessions = new ShoppingSessionRepository(this.db);
-    this.walmartProducts = new WalmartProductRepository(this.db);
-    this.substitutions = new SubstitutionRepository(this.db);
-    this.userPreferences = new UserPreferencesRepository(this.db);
+    this.groceryLists = new GroceryListRepository(db);
+    this.groceryItems = new GroceryItemRepository(db);
+    this.shoppingSessions = new ShoppingSessionRepository(db);
+    this.walmartProducts = new WalmartProductRepository(db);
+    this.substitutions = new SubstitutionRepository(db);
+    this.userPreferences = new UserPreferencesRepository(db);
 
-    logger.info("DatabaseManager initialized", "DB_MANAGER");
-  }
-
-  /**
-   * Configure SQLite database with performance optimizations
-   */
-  private configureSQLite(config: DatabaseConfig["sqlite"]): void {
-    try {
-      // Enable WAL mode for better concurrency
-      if (config.enableWAL) {
-        this.db.pragma("journal_mode = WAL");
-      }
-
-      // Performance optimizations
-      this.db.pragma("synchronous = NORMAL");
-      this.db.pragma(`cache_size = ${config.cacheSize}`);
-      this.db.pragma("temp_store = MEMORY");
-      this.db.pragma(`mmap_size = ${config.memoryMap}`);
-
-      // Enable foreign keys
-      if (config.enableForeignKeys) {
-        this.db.pragma("foreign_keys = ON");
-      }
-
-      // Set busy timeout
-      this.db.pragma("busy_timeout = 30000"); // 30 seconds
-
-      logger.info(
-        "SQLite database configured with performance optimizations",
-        "DB_MANAGER",
-      );
-    } catch (error) {
-      logger.error(`Failed to configure SQLite: ${error}`, "DB_MANAGER");
-      throw error;
-    }
+    logger.info(
+      "DatabaseManager initialized with connection pool",
+      "DB_MANAGER",
+    );
   }
 
   /**
@@ -361,40 +359,49 @@ export class DatabaseManager {
     };
   }> {
     try {
-      // SQLite statistics
-      const tableCountResult = this.db
-        .prepare(
-          `
-        SELECT COUNT(*) as count 
-        FROM sqlite_master 
-        WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
-      `,
-        )
-        .get() as { count: number };
+      // SQLite statistics using connection pool
+      const { tableCount, indexCount, size } =
+        await this.connectionPool.executeQuery((db) => {
+          const tableCountResult = db
+            .prepare(
+              `
+          SELECT COUNT(*) as count 
+          FROM sqlite_master 
+          WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+        `,
+            )
+            .get() as { count: number };
 
-      const indexCountResult = this.db
-        .prepare(
-          `
-        SELECT COUNT(*) as count 
-        FROM sqlite_master 
-        WHERE type = 'index' AND name NOT LIKE 'sqlite_%'
-      `,
-        )
-        .get() as { count: number };
+          const indexCountResult = db
+            .prepare(
+              `
+          SELECT COUNT(*) as count 
+          FROM sqlite_master 
+          WHERE type = 'index' AND name NOT LIKE 'sqlite_%'
+        `,
+            )
+            .get() as { count: number };
 
-      // Get page count and page size to calculate database size
-      const pageCountResult = this.db.pragma("page_count", {
-        simple: true,
-      }) as number;
-      const pageSizeResult = this.db.pragma("page_size", {
-        simple: true,
-      }) as number;
-      const size = pageCountResult * pageSizeResult;
+          // Get page count and page size to calculate database size
+          const pageCountResult = db.pragma("page_count", {
+            simple: true,
+          }) as number;
+          const pageSizeResult = db.pragma("page_size", {
+            simple: true,
+          }) as number;
+          const size = pageCountResult * pageSizeResult;
+
+          return {
+            tableCount: tableCountResult.count,
+            indexCount: indexCountResult.count,
+            size,
+          };
+        });
 
       const sqliteStats = {
         size,
-        tables: tableCountResult.count,
-        indexes: indexCountResult.count,
+        tables: tableCount,
+        indexes: indexCount,
         users: await this.users.count(),
         emails: this.emails.count ? await this.emails.count() : 0,
         deals: await this.deals.count(),
@@ -447,16 +454,14 @@ export class DatabaseManager {
   }
 
   /**
-   * Execute a database transaction
+   * Execute a database transaction using connection pool
    */
   async transaction<T>(
     callback: (db: Database.Database) => Promise<T>,
   ): Promise<T> {
-    const transaction = this.db.transaction(() => {
-      return callback(this.db);
+    return this.connectionPool.executeTransaction(async (db) => {
+      return await callback(db);
     });
-
-    return await transaction();
   }
 
   /**
@@ -467,10 +472,25 @@ export class DatabaseManager {
   }
 
   /**
-   * Get direct access to SQLite database
+   * Get direct access to SQLite database (via connection pool)
    */
   getSQLiteDatabase(): Database.Database {
-    return this.db;
+    const connection = this.connectionPool.getConnection();
+    return connection.getDatabase();
+  }
+
+  /**
+   * Get connection pool instance
+   */
+  getConnectionPool(): DatabaseConnectionPool {
+    return this.connectionPool;
+  }
+
+  /**
+   * Execute query using connection pool
+   */
+  async executeQuery<T>(queryFn: (db: Database.Database) => T): Promise<T> {
+    return this.connectionPool.executeQuery(queryFn);
   }
 
   /**
@@ -498,8 +518,11 @@ export class DatabaseManager {
       };
 
       try {
-        // Test write operation
-        this.db.prepare("SELECT 1").get();
+        // Test write operation using connection pool
+        await this.connectionPool.executeQuery((db) => {
+          db.prepare("SELECT 1").get();
+          return true;
+        });
         sqliteHealth.writable = true;
 
         // Test integrity
@@ -545,8 +568,8 @@ export class DatabaseManager {
       // Close ChromaDB connections
       await this.chromaManager.close();
 
-      // Close SQLite database
-      this.db.close();
+      // Shutdown connection pool
+      await this.connectionPool.shutdown();
 
       this.isInitialized = false;
       logger.info("Database connections closed", "DB_MANAGER");

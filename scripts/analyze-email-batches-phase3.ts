@@ -100,7 +100,9 @@ async function processEmailBatches() {
 
       // Phase 2: Deep Analysis (FOR ALL EMAILS as requested)
       // Running ALL 20 emails through doomgrave/phi-4 model
-      console.log(`    🔍 Running deep analysis with doomgrave/phi-4:14b-tools-Q3_K_S...`);
+      console.log(
+        `    🔍 Running deep analysis with doomgrave/phi-4:14b-tools-Q3_K_S...`,
+      );
 
       const deepAnalysis = {
         deep_workflow_primary: quickAnalysis.quick_workflow,

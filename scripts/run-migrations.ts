@@ -22,8 +22,7 @@ class MigrationRunner {
   private db: Database.Database;
 
   constructor(databasePath: string) {
-    this.db = new Database(databasePath);
-    this.createMigrationsTable();
+    this.db = this.createMigrationsTable(); // Use connection pool instead: getDatabaseConnection().getDatabase() or executeQuery((db) => ...)databasePath);
   }
 
   private createMigrationsTable(): void {

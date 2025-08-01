@@ -4,9 +4,11 @@
  */
 
 // Environment detection
-const isNode = typeof process !== 'undefined' && process.versions && process.versions.node;
-const isBrowser = typeof window !== 'undefined';
-const isTest = process.env?.NODE_ENV === 'test' || process.env?.VITEST === 'true';
+const isNode =
+  typeof process !== "undefined" && process.versions && process.versions.node;
+const isBrowser = typeof window !== "undefined";
+const isTest =
+  process.env?.NODE_ENV === "test" || process.env?.VITEST === "true";
 
 // Dynamic module loading with fallbacks
 let fs: any = null;
@@ -53,7 +55,7 @@ export class Logger {
 
   private constructor() {
     // Handle different environments gracefully
-    if (isNode && path && typeof process?.cwd === 'function') {
+    if (isNode && path && typeof process?.cwd === "function") {
       try {
         this.logDir = path.join(process.cwd(), "data", "logs");
       } catch (error) {
@@ -62,7 +64,7 @@ export class Logger {
     } else {
       this.logDir = "/tmp/logs"; // Fallback for non-Node environments
     }
-    
+
     this.logLevel =
       process.env?.["LOG_LEVEL"] === "debug" ? LogLevel.DEBUG : LogLevel.INFO;
     this.enableConsole = process.env?.["NODE_ENV"] !== "production";
@@ -82,7 +84,7 @@ export class Logger {
 
   private async ensureLogDirectory(): Promise<void> {
     if (!fs || !this.enableFile) return;
-    
+
     try {
       await fs.mkdir(this.logDir, { recursive: true });
     } catch (error) {

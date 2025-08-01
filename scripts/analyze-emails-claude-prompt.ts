@@ -11,8 +11,7 @@ import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 
 // Initialize database
-const db = new Database("./data/crewai.db");
-db.pragma("foreign_keys = ON");
+const db = db.pragma("foreign_keys = ON"); // Use connection pool instead: getDatabaseConnection().getDatabase() or executeQuery((db) => ...)"./data/crewai.db");
 
 // Ollama configuration
 const OLLAMA_HOST = process.env.OLLAMA_HOST || "http://localhost:11434";
@@ -143,7 +142,7 @@ Focus on TD SYNNEX distribution workflows (quotes, orders, support, approvals) w
 async function callOllamaLLM(prompt: string): Promise<string> {
   console.log(`    🤖 Calling ${MODEL} with comprehensive prompt...`);
   const startTime = Date.now();
-  
+
   try {
     const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
       method: "POST",
@@ -153,21 +152,25 @@ async function callOllamaLLM(prompt: string): Promise<string> {
         prompt: prompt,
         stream: false,
         options: {
-          temperature: 0.3,  // Lower temperature for more consistent output
+          temperature: 0.3, // Lower temperature for more consistent output
           top_p: 0.9,
-          max_tokens: 4096,  // Increased for comprehensive analysis
+          max_tokens: 4096, // Increased for comprehensive analysis
           repeat_penalty: 1.1,
         },
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Ollama API error: ${response.status} ${response.statusText}`,
+      );
     }
 
     const data = await response.json();
     const processingTime = Date.now() - startTime;
-    console.log(`    ✅ LLM response received (${data.response.length} chars) in ${processingTime}ms`);
+    console.log(
+      `    ✅ LLM response received (${data.response.length} chars) in ${processingTime}ms`,
+    );
     return data.response;
   } catch (error) {
     console.error(`    ❌ LLM call failed:`, error);
@@ -181,17 +184,19 @@ async function callOllamaLLM(prompt: string): Promise<string> {
 async function saveAnalysisToDatabase(
   email: Email,
   analysis: string,
-  processingTime: number
+  processingTime: number,
 ): Promise<void> {
   const analysisId = uuidv4();
   const emailId = email.MessageID || email.id;
-  
+
   if (!emailId) {
     throw new Error("Email has no ID");
   }
 
   // Extract workflow state from analysis
-  const workflowMatch = analysis.match(/workflow.{0,20}state[:\s]+([🔴🟡🟢]?\s*\w+)/i);
+  const workflowMatch = analysis.match(
+    /workflow.{0,20}state[:\s]+([🔴🟡🟢]?\s*\w+)/i,
+  );
   const workflow = workflowMatch ? workflowMatch[1].trim() : "Unknown";
 
   // Extract priority from analysis
@@ -231,7 +236,7 @@ async function saveAnalysisToDatabase(
     processingTime,
     processingTime,
     new Date().toISOString(),
-    new Date().toISOString()
+    new Date().toISOString(),
   );
 }
 
@@ -247,14 +252,17 @@ async function main() {
     const response = await fetch(`${OLLAMA_HOST}/api/tags`);
     const data = await response.json();
     const hasModel = data.models?.some((m: any) => m.name === MODEL);
-    
+
     if (!hasModel) {
       console.error(`❌ Model ${MODEL} not found in Ollama`);
-      console.log("Available models:", data.models?.map((m: any) => m.name).join(", "));
+      console.log(
+        "Available models:",
+        data.models?.map((m: any) => m.name).join(", "),
+      );
       console.log(`\nPull the model with: ollama pull ${MODEL}`);
       process.exit(1);
     }
-    
+
     console.log(`✅ Ollama is running with ${MODEL}\n`);
   } catch (error) {
     console.error("❌ Cannot connect to Ollama. Is it running?");
@@ -265,57 +273,70 @@ async function main() {
   // Load test batch files
   const batchDir = "./test_batches_converted";
   const batchFiles = await readdir(batchDir);
-  const emailBatches = batchFiles.filter(f => f.endsWith(".json") && f.startsWith("emails_batch"));
+  const emailBatches = batchFiles.filter(
+    (f) => f.endsWith(".json") && f.startsWith("emails_batch"),
+  );
 
   console.log(`📁 Found ${emailBatches.length} email batch files\n`);
 
   let totalAnalyzed = 0;
   let totalFailed = 0;
-  const results: Array<{email: string, workflow: string, priority: string, time: number}> = [];
+  const results: Array<{
+    email: string;
+    workflow: string;
+    priority: string;
+    time: number;
+  }> = [];
 
   // Process each batch
   for (const [batchIndex, batchFile] of emailBatches.entries()) {
-    console.log(`\n[${batchIndex + 1}/${emailBatches.length}] Processing ${batchFile}...`);
-    
+    console.log(
+      `\n[${batchIndex + 1}/${emailBatches.length}] Processing ${batchFile}...`,
+    );
+
     const content = await readFile(join(batchDir, batchFile), "utf-8");
     const batch = JSON.parse(content);
     const emails = batch.emails || [batch];
-    
+
     console.log(`  📧 ${emails.length} emails in batch\n`);
 
     for (const email of emails) {
       try {
-        console.log(`  📅 ${email.Subject?.substring(0, 50) || email.subject?.substring(0, 50)}...`);
-        
+        console.log(
+          `  📅 ${email.Subject?.substring(0, 50) || email.subject?.substring(0, 50)}...`,
+        );
+
         // Build comprehensive prompt
         const prompt = buildComprehensivePrompt(email);
-        
+
         // Get analysis from LLM
         const startTime = Date.now();
         const analysis = await callOllamaLLM(prompt);
         const processingTime = Date.now() - startTime;
-        
+
         // Save to database
         await saveAnalysisToDatabase(email, analysis, processingTime);
-        
+
         // Extract key results
-        const workflowMatch = analysis.match(/workflow.{0,20}state[:\s]+([🔴🟡🟢]?\s*\w+)/i);
+        const workflowMatch = analysis.match(
+          /workflow.{0,20}state[:\s]+([🔴🟡🟢]?\s*\w+)/i,
+        );
         const priorityMatch = analysis.match(/priority[:\s]+(\w+)/i);
-        
+
         const workflow = workflowMatch ? workflowMatch[1].trim() : "Unknown";
         const priority = priorityMatch ? priorityMatch[1].trim() : "Unknown";
-        
+
         console.log(`    ✅ Analysis complete`);
         console.log(`    📊 Workflow: ${workflow}, Priority: ${priority}`);
         console.log(`    ⏱️  Time: ${(processingTime / 1000).toFixed(1)}s`);
-        
+
         results.push({
           email: email.Subject || email.subject || "No subject",
           workflow,
           priority,
-          time: processingTime
+          time: processingTime,
         });
-        
+
         totalAnalyzed++;
       } catch (error) {
         console.error(`    ❌ Failed:`, error.message);
@@ -328,36 +349,48 @@ async function main() {
   console.log(`\n📊 Final Results:`);
   console.log(`  ✅ Successfully analyzed: ${totalAnalyzed}`);
   console.log(`  ❌ Failed: ${totalFailed}`);
-  console.log(`  📈 Success rate: ${((totalAnalyzed / (totalAnalyzed + totalFailed)) * 100).toFixed(1)}%`);
-  
+  console.log(
+    `  📈 Success rate: ${((totalAnalyzed / (totalAnalyzed + totalFailed)) * 100).toFixed(1)}%`,
+  );
+
   // Workflow distribution
-  const workflowCounts = results.reduce((acc, r) => {
-    acc[r.workflow] = (acc[r.workflow] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-  
+  const workflowCounts = results.reduce(
+    (acc, r) => {
+      acc[r.workflow] = (acc[r.workflow] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
   console.log(`\n📊 Workflow Distribution:`);
   Object.entries(workflowCounts).forEach(([workflow, count]) => {
     console.log(`  ${workflow}: ${count}`);
   });
-  
+
   // Priority distribution
-  const priorityCounts = results.reduce((acc, r) => {
-    acc[r.priority] = (acc[r.priority] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-  
+  const priorityCounts = results.reduce(
+    (acc, r) => {
+      acc[r.priority] = (acc[r.priority] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
   console.log(`\n📊 Priority Distribution:`);
   Object.entries(priorityCounts).forEach(([priority, count]) => {
     console.log(`  ${priority}: ${count}`);
   });
-  
+
   // Average processing time
   const avgTime = results.reduce((sum, r) => sum + r.time, 0) / results.length;
-  console.log(`\n⏱️  Average processing time: ${(avgTime / 1000).toFixed(1)}s per email`);
-  
-  console.log(`\n✨ Analysis complete with Claude's comprehensive 8-point prompt!\n`);
-  
+  console.log(
+    `\n⏱️  Average processing time: ${(avgTime / 1000).toFixed(1)}s per email`,
+  );
+
+  console.log(
+    `\n✨ Analysis complete with Claude's comprehensive 8-point prompt!\n`,
+  );
+
   db.close();
 }
 
