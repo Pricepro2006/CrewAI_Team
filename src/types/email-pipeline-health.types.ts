@@ -4,7 +4,12 @@
  */
 
 export type HealthStatus = "healthy" | "degraded" | "unhealthy";
-export type ServiceName = "database" | "redis" | "ollama" | "pipeline" | "processingQueue";
+export type ServiceName =
+  | "database"
+  | "redis"
+  | "ollama"
+  | "pipeline"
+  | "processingQueue";
 export type TimeWindow = "1h" | "24h" | "7d" | "30d";
 
 /**
@@ -72,6 +77,7 @@ export interface EmailPipelineMetrics extends EmailPipelineBasicMetrics {
   processingRates: ProcessingRateMetrics;
   queueMetrics: QueueMetrics;
   stageMetrics: StageMetrics;
+  systemResources?: SystemResourceMetrics;
 }
 
 /**
@@ -88,7 +94,8 @@ export interface EmailPipelineHealthStatus {
 /**
  * Detailed health status with extended metrics
  */
-export interface DetailedEmailPipelineHealthStatus extends EmailPipelineHealthStatus {
+export interface DetailedEmailPipelineHealthStatus
+  extends EmailPipelineHealthStatus {
   detailedMetrics: EmailPipelineMetrics;
   responseTime: number;
   cacheInfo: {
@@ -175,7 +182,8 @@ export interface ServiceHealthApiResponse extends BaseApiResponse {
   checkedAt: string;
 }
 
-export interface ForcedHealthCheckApiResponse extends DetailedHealthCheckApiResponse {
+export interface ForcedHealthCheckApiResponse
+  extends DetailedHealthCheckApiResponse {
   message: string;
   forced: true;
 }
@@ -277,10 +285,10 @@ export interface QueueHealthDetails {
  */
 export interface TypedServiceHealth extends ServiceHealth {
   details?: string;
-  typedDetails?: 
-    | DatabaseHealthDetails 
-    | OllamaHealthDetails 
-    | PipelineHealthDetails 
+  typedDetails?:
+    | DatabaseHealthDetails
+    | OllamaHealthDetails
+    | PipelineHealthDetails
     | QueueHealthDetails;
 }
 
@@ -334,7 +342,13 @@ export function isHealthStatus(value: string): value is HealthStatus {
 }
 
 export function isServiceName(value: string): value is ServiceName {
-  return ["database", "redis", "ollama", "pipeline", "processingQueue"].includes(value);
+  return [
+    "database",
+    "redis",
+    "ollama",
+    "pipeline",
+    "processingQueue",
+  ].includes(value);
 }
 
 export function isTimeWindow(value: string): value is TimeWindow {
@@ -351,31 +365,31 @@ export const DEFAULT_HEALTH_CHECK_CONFIG: HealthCheckConfig = {
     redis: 2000,
     ollama: 5000,
     pipeline: 3000,
-    queue: 2000
+    queue: 2000,
   },
   thresholds: {
     responseTime: {
       healthy: 1000,
-      degraded: 3000
+      degraded: 3000,
     },
     successRate: {
       healthy: 95,
-      degraded: 80
+      degraded: 80,
     },
     queueDepth: {
       healthy: 1000,
-      degraded: 5000
+      degraded: 5000,
     },
     memoryUsage: {
       healthy: 512, // MB
-      degraded: 1024 // MB
-    }
-  }
+      degraded: 1024, // MB
+    },
+  },
 };
 
 export const TIME_WINDOW_MS = {
   "1h": 3600000,
   "24h": 86400000,
   "7d": 604800000,
-  "30d": 2592000000
+  "30d": 2592000000,
 } as const;

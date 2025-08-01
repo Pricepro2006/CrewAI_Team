@@ -11,6 +11,7 @@ import appConfig from "../config/app.config";
 import type { Express } from "express";
 import { apiRateLimiter } from "./middleware/rateLimiter";
 import uploadRoutes from "./routes/upload.routes";
+import emailPipelineHealthRouter from "./routes/email-pipeline-health.router";
 
 /**
  * Create Express app with all middleware configured
@@ -86,9 +87,14 @@ export async function createApp(): Promise<Express> {
     try {
       // Check database connection
       const Database = (await import("better-sqlite3")).default;
-      const db = new Database(process.env.DATABASE_PATH || appConfig.database?.path || "./data/app.db", {
-        readonly: true,
-      });
+      const db = new Database(
+        process.env.DATABASE_PATH ||
+          appConfig.database?.path ||
+          "./data/app.db",
+        {
+          readonly: true,
+        },
+      );
       db.prepare("SELECT 1").get();
       db.close();
       services.database = "connected";
@@ -112,6 +118,9 @@ export async function createApp(): Promise<Express> {
 
   // File upload routes (before tRPC to handle multipart forms)
   app.use("/api", uploadRoutes);
+  
+  // Email pipeline health routes
+  app.use("/api/health", emailPipelineHealthRouter);
 
   // tRPC middleware
   app.use(
@@ -122,7 +131,7 @@ export async function createApp(): Promise<Express> {
       onError({ error, type, path, input }) {
         console.error("tRPC Error:", {
           type,
-          path: path || 'unknown',
+          path: path || "unknown",
           error: error.message,
           input,
         });

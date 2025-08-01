@@ -1,50 +1,50 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth.js';
-import './UserProfile.css';
+import React, { useState } from "react";
+import { useAuth } from "../../hooks/useAuth.js";
+import "./UserProfile.css";
 
 interface UserProfileProps {
   showSettings?: boolean;
   onSettingsToggle?: () => void;
 }
 
-export const UserProfile: React.FC<UserProfileProps> = ({ 
-  showSettings = false, 
-  onSettingsToggle 
+export const UserProfile: React.FC<UserProfileProps> = ({
+  showSettings = false,
+  onSettingsToggle,
 }) => {
   const { user, logout, logoutAll, updateProfile, changePassword } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [profileData, setProfileData] = useState({
-    first_name: user?.first_name || '',
-    last_name: user?.last_name || '',
-    avatar_url: user?.avatar_url || '',
+    first_name: user?.first_name || "",
+    last_name: user?.last_name || "",
+    avatar_url: user?.avatar_url || "",
   });
   const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
 
   if (!user) return null;
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setProfileData(prev => ({ ...prev, [name]: value }));
-    
+    setProfileData((prev) => ({ ...prev, [name]: value }));
+
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setPasswordData(prev => ({ ...prev, [name]: value }));
-    
+    setPasswordData((prev) => ({ ...prev, [name]: value }));
+
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -56,10 +56,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     try {
       await updateProfile(profileData);
       setIsEditing(false);
-      setSuccessMessage('Profile updated successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      setSuccessMessage("Profile updated successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error: any) {
-      setErrors({ general: error?.message || 'Failed to update profile' });
+      setErrors({ general: error?.message || "Failed to update profile" });
     } finally {
       setIsLoading(false);
     }
@@ -67,21 +67,21 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const newErrors: Record<string, string> = {};
-    
+
     if (!passwordData.currentPassword) {
-      newErrors.currentPassword = 'Current password is required';
+      newErrors.currentPassword = "Current password is required";
     }
-    
+
     if (!passwordData.newPassword) {
-      newErrors.newPassword = 'New password is required';
+      newErrors.newPassword = "New password is required";
     } else if (passwordData.newPassword.length < 8) {
-      newErrors.newPassword = 'Password must be at least 8 characters';
+      newErrors.newPassword = "Password must be at least 8 characters";
     }
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -99,8 +99,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       });
       // User will be logged out automatically after password change
     } catch (error: any) {
-      setErrors({ 
-        password: error?.message || 'Failed to change password' 
+      setErrors({
+        password: error?.message || "Failed to change password",
       });
       setIsLoading(false);
     }
@@ -110,32 +110,36 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     try {
       await logout();
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     }
   };
 
   const handleLogoutAll = async () => {
-    if (confirm('This will log you out from all devices. Continue?')) {
+    if (confirm("This will log you out from all devices. Continue?")) {
       try {
         await logoutAll();
       } catch (error) {
-        console.error('Logout all failed:', error);
+        console.error("Logout all failed:", error);
       }
     }
   };
 
   const getInitials = (firstName?: string, lastName?: string) => {
-    const first = firstName?.charAt(0).toUpperCase() || '';
-    const last = lastName?.charAt(0).toUpperCase() || '';
+    const first = firstName?.charAt(0).toUpperCase() || "";
+    const last = lastName?.charAt(0).toUpperCase() || "";
     return first + last || user.username.charAt(0).toUpperCase();
   };
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin': return '#dc2626';
-      case 'moderator': return '#d97706';
-      case 'user': return '#059669';
-      default: return '#6b7280';
+      case "admin":
+        return "#dc2626";
+      case "moderator":
+        return "#d97706";
+      case "user":
+        return "#059669";
+      default:
+        return "#6b7280";
     }
   };
 
@@ -151,16 +155,15 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             </div>
           )}
         </div>
-        
+
         <div className="profile-info">
           <h3 className="profile-name">
-            {user.first_name && user.last_name 
+            {user.first_name && user.last_name
               ? `${user.first_name} ${user.last_name}`
-              : user.username
-            }
+              : user.username}
           </h3>
           <p className="profile-email">{user.email}</p>
-          <span 
+          <span
             className="profile-role"
             style={{ color: getRoleColor(user.role) }}
           >
@@ -169,12 +172,19 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         </div>
 
         {onSettingsToggle && (
-          <button 
+          <button
             className="settings-toggle"
             onClick={onSettingsToggle}
             title="Settings"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
@@ -183,9 +193,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       </div>
 
       {successMessage && (
-        <div className="success-message">
-          {successMessage}
-        </div>
+        <div className="success-message">{successMessage}</div>
       )}
 
       {showSettings && (
@@ -194,7 +202,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             <div className="section-header">
               <h4>Profile Information</h4>
               {!isEditing && (
-                <button 
+                <button
                   className="edit-button"
                   onClick={() => setIsEditing(true)}
                 >
@@ -208,7 +216,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 {errors.general && (
                   <div className="error-message">{errors.general}</div>
                 )}
-                
+
                 <div className="form-group">
                   <label>First Name</label>
                   <input
@@ -244,20 +252,20 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 </div>
 
                 <div className="form-actions">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="cancel-button"
                     onClick={() => setIsEditing(false)}
                     disabled={isLoading}
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="save-button"
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Saving...' : 'Save Changes'}
+                    {isLoading ? "Saving..." : "Save Changes"}
                   </button>
                 </div>
               </form>
@@ -280,10 +288,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 <div className="info-item">
                   <span className="label">Last login:</span>
                   <span className="value">
-                    {user.last_login_at 
+                    {user.last_login_at
                       ? new Date(user.last_login_at).toLocaleString()
-                      : 'Never'
-                    }
+                      : "Never"}
                   </span>
                 </div>
               </div>
@@ -294,7 +301,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             <div className="section-header">
               <h4>Change Password</h4>
               {!isChangingPassword && (
-                <button 
+                <button
                   className="edit-button"
                   onClick={() => setIsChangingPassword(true)}
                 >
@@ -308,7 +315,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 {errors.password && (
                   <div className="error-message">{errors.password}</div>
                 )}
-                
+
                 <div className="form-group">
                   <label>Current Password</label>
                   <input
@@ -320,7 +327,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     required
                   />
                   {errors.currentPassword && (
-                    <span className="field-error">{errors.currentPassword}</span>
+                    <span className="field-error">
+                      {errors.currentPassword}
+                    </span>
                   )}
                 </div>
 
@@ -350,20 +359,22 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     required
                   />
                   {errors.confirmPassword && (
-                    <span className="field-error">{errors.confirmPassword}</span>
+                    <span className="field-error">
+                      {errors.confirmPassword}
+                    </span>
                   )}
                 </div>
 
                 <div className="form-actions">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="cancel-button"
                     onClick={() => {
                       setIsChangingPassword(false);
                       setPasswordData({
-                        currentPassword: '',
-                        newPassword: '',
-                        confirmPassword: '',
+                        currentPassword: "",
+                        newPassword: "",
+                        confirmPassword: "",
                       });
                       setErrors({});
                     }}
@@ -371,12 +382,12 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="save-button"
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Changing...' : 'Change Password'}
+                    {isLoading ? "Changing..." : "Change Password"}
                   </button>
                 </div>
               </form>
@@ -386,16 +397,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           <div className="settings-section danger-zone">
             <h4>Account Actions</h4>
             <div className="action-buttons">
-              <button 
-                className="logout-button"
-                onClick={handleLogout}
-              >
+              <button className="logout-button" onClick={handleLogout}>
                 Sign Out
               </button>
-              <button 
-                className="logout-all-button"
-                onClick={handleLogoutAll}
-              >
+              <button className="logout-all-button" onClick={handleLogoutAll}>
                 Sign Out All Devices
               </button>
             </div>

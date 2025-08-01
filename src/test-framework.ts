@@ -3,19 +3,19 @@
  * Demonstrates testing strategies using SuperClaude commands
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from "vitest";
 // import { EnhancedMasterOrchestrator, SuperClaudeResearchAgent } from './implementation-examples.js';
 
 // Mock implementation for missing module
 class EnhancedMasterOrchestrator {
   async processQuery(query: string): Promise<any> {
-    return { success: true, result: 'mock result' };
+    return { success: true, result: "mock result" };
   }
 }
 
 class SuperClaudeResearchAgent {
   async execute(params: any): Promise<any> {
-    return { success: true, data: 'mock data' };
+    return { success: true, data: "mock data" };
   }
 }
 
@@ -24,11 +24,11 @@ class SuperClaudeResearchAgent {
  */
 export class SuperClaudeTestFramework {
   private testCommands = {
-    unit: '/test --unit --coverage --detailed',
-    integration: '/test --integration --flow --mock-external',
-    e2e: '/test --e2e --scenario --real-data',
-    performance: '/test --performance --load --metrics',
-    security: '/scan --security --vulnerabilities --owasp'
+    unit: "/test --unit --coverage --detailed",
+    integration: "/test --integration --flow --mock-external",
+    e2e: "/test --e2e --scenario --real-data",
+    performance: "/test --performance --load --metrics",
+    security: "/scan --security --vulnerabilities --owasp",
   };
 
   /**
@@ -305,15 +305,15 @@ describe('Output Validation Tests', () => {
 // Helper functions for test data generation
 function createComplexTask() {
   return {
-    id: 'complex-1',
-    description: 'Research AI agent architectures and best practices',
-    requiredCapabilities: ['research', 'synthesis'],
+    id: "complex-1",
+    description: "Research AI agent architectures and best practices",
+    requiredCapabilities: ["research", "synthesis"],
     context: {
-      topics: ['multi-agent systems', 'RAG', 'prompt engineering'],
-      depth: 'comprehensive'
+      topics: ["multi-agent systems", "RAG", "prompt engineering"],
+      depth: "comprehensive",
     },
     dependencies: [],
-    status: 'pending'
+    status: "pending",
   };
 }
 
@@ -321,10 +321,10 @@ function generateBatchTasks(count: number) {
   return Array.from({ length: count }, (_, i) => ({
     id: `batch-${i}`,
     description: `Task ${i}: Simple research query`,
-    requiredCapabilities: ['research'],
+    requiredCapabilities: ["research"],
     context: { query: `Query ${i}` },
     dependencies: [],
-    status: 'pending'
+    status: "pending",
   }));
 }
 
@@ -332,6 +332,6 @@ function generateBatchTasks(count: number) {
 export const testFramework = new SuperClaudeTestFramework();
 
 // Example usage in test files
-console.log(testFramework.generateAgentTestSuite('SuperClaudeResearchAgent'));
+console.log(testFramework.generateAgentTestSuite("SuperClaudeResearchAgent"));
 console.log(testFramework.generateE2EScenarios());
 console.log(testFramework.generateValidationTests());

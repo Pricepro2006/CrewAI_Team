@@ -5,9 +5,11 @@ This document describes the comprehensive backup and recovery system for the Cre
 ## Scripts Overview
 
 ### 1. `backup-email-pipeline.sh` - Database Backup with Versioning
+
 **Purpose**: Create versioned backups of databases, configurations, and system state with automatic cleanup.
 
 **Features**:
+
 - Automated database backup with SQLite integrity verification
 - Configuration file backup and compression
 - System state snapshots for troubleshooting
@@ -17,9 +19,11 @@ This document describes the comprehensive backup and recovery system for the Cre
 - Comprehensive logging and verification
 
 ### 2. `rollback-email-pipeline.sh` - Service Restoration
+
 **Purpose**: Rollback the email pipeline to a previous backup state for service restoration.
 
 **Features**:
+
 - Interactive rollback with safety confirmations
 - Pre-rollback backup creation
 - Database and configuration restoration
@@ -29,9 +33,11 @@ This document describes the comprehensive backup and recovery system for the Cre
 - Rollback history tracking
 
 ### 3. `recover-email-pipeline.sh` - Emergency Recovery
+
 **Purpose**: Emergency recovery for critical failures and data corruption scenarios.
 
 **Features**:
+
 - Automatic failure detection and classification
 - Database corruption repair
 - Redis queue cleanup and rebuilding
@@ -119,6 +125,7 @@ backups/
 ## Safety Features
 
 ### Backup Script Safety
+
 - Disk space verification before backup
 - Service temporary shutdown for consistency
 - Database integrity verification
@@ -126,6 +133,7 @@ backups/
 - Multiple validation layers
 
 ### Rollback Script Safety
+
 - Pre-rollback backup creation
 - Interactive confirmation prompts
 - Service graceful shutdown
@@ -133,6 +141,7 @@ backups/
 - Automatic rollback on failure
 
 ### Recovery Script Safety
+
 - Failure detection and classification
 - Emergency backup before changes
 - Staged recovery process
@@ -142,6 +151,7 @@ backups/
 ## Configuration
 
 ### Environment Variables
+
 ```bash
 # Database paths
 DATABASE_PATH=./data/crewai.db
@@ -157,14 +167,17 @@ COMPRESSION_LEVEL=6
 ```
 
 ### Script Configuration
+
 Edit the configuration section in each script:
 
 **Backup Script**:
+
 - `MAX_BACKUPS=10` - Number of backup sets to retain
 - `BACKUP_RETENTION_DAYS=30` - Days to keep backups
 - `COMPRESSION_LEVEL=6` - gzip compression level (1-9)
 
 **Recovery Script**:
+
 - `RECOVERY_TIMEOUT=300` - Recovery operation timeout (seconds)
 - `SERVICE_START_TIMEOUT=60` - Service start timeout (seconds)
 - `HEALTH_CHECK_TIMEOUT=120` - Health check timeout (seconds)
@@ -183,6 +196,7 @@ Each script maintains detailed logs:
 ### Common Issues and Solutions
 
 #### Insufficient Disk Space
+
 ```bash
 # Check available space
 df -h /home/pricepro2006/CrewAI_Team
@@ -195,6 +209,7 @@ df -h /home/pricepro2006/CrewAI_Team
 ```
 
 #### Database Corruption
+
 ```bash
 # Repair databases
 ./scripts/recover-email-pipeline.sh repair-db
@@ -205,6 +220,7 @@ df -h /home/pricepro2006/CrewAI_Team
 ```
 
 #### Service Won't Start
+
 ```bash
 # Check system health
 ./scripts/recover-email-pipeline.sh health
@@ -214,6 +230,7 @@ df -h /home/pricepro2006/CrewAI_Team
 ```
 
 #### Redis Issues
+
 ```bash
 # Clean and rebuild queues
 ./scripts/recover-email-pipeline.sh clean-system
@@ -225,18 +242,21 @@ sudo systemctl restart redis-server
 ## Best Practices
 
 ### Regular Operations
+
 1. **Daily Backups**: Schedule `backup-email-pipeline.sh backup` via cron
 2. **Weekly Verification**: Test backup integrity regularly
 3. **Monthly Cleanup**: Review and clean old backups
 4. **Health Checks**: Monitor system health regularly
 
 ### Emergency Procedures
+
 1. **Assess First**: Use `recover-email-pipeline.sh health` to assess issues
 2. **Backup Before Action**: Always create emergency backup
 3. **Gradual Recovery**: Start with least invasive recovery options
 4. **Document Issues**: Log all recovery actions and outcomes
 
 ### Disaster Recovery
+
 1. **Create Packages**: Generate disaster recovery packages monthly
 2. **Test Procedures**: Practice recovery procedures in test environment
 3. **Update Documentation**: Keep recovery procedures current
@@ -245,6 +265,7 @@ sudo systemctl restart redis-server
 ## Monitoring Integration
 
 ### Cron Jobs Example
+
 ```bash
 # Daily backup at 2 AM
 0 2 * * * /home/pricepro2006/CrewAI_Team/scripts/backup-email-pipeline.sh backup
@@ -257,7 +278,9 @@ sudo systemctl restart redis-server
 ```
 
 ### Alerting
+
 Monitor log files for error conditions:
+
 - Backup failures
 - Database corruption
 - Service failures
@@ -276,6 +299,7 @@ These scripts integrate with the existing CrewAI Team infrastructure:
 ## Support and Troubleshooting
 
 ### Diagnostic Commands
+
 ```bash
 # Check all logs
 tail -f /home/pricepro2006/CrewAI_Team/logs/*.log
@@ -291,11 +315,13 @@ sqlite3 /home/pricepro2006/CrewAI_Team/data/crewai.db "PRAGMA integrity_check;"
 ```
 
 ### Common Exit Codes
+
 - `0`: Success
 - `1`: General error or failure
 - `130`: Script interrupted (Ctrl+C)
 
 ### Getting Help
+
 ```bash
 # Script usage information
 ./scripts/backup-email-pipeline.sh help
@@ -314,6 +340,7 @@ sqlite3 /home/pricepro2006/CrewAI_Team/data/crewai.db "PRAGMA integrity_check;"
 ## Version Compatibility
 
 These scripts are designed for:
+
 - CrewAI Team v2.0.0+
 - Node.js 20.11+
 - SQLite 3.x

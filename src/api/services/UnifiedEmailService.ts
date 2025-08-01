@@ -727,10 +727,14 @@ export class UnifiedEmailService {
         completed: completedResult.total || 0,
       };
     } catch (error) {
-      logger.warn("Failed to get status counts, using defaults", "UNIFIED_EMAIL", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      
+      logger.warn(
+        "Failed to get status counts, using defaults",
+        "UNIFIED_EMAIL",
+        {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      );
+
       // Return default values if query fails
       return {
         critical: 0,

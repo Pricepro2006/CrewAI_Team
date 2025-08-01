@@ -1,12 +1,12 @@
-import React, { useState, useCallback } from 'react';
-import { X, Filter, Search, Calendar, Tag, User, Mail } from 'lucide-react';
-import { Button } from '../../../components/ui/button.js';
-import { Input } from '../../../components/ui/input.js';
-import { Label } from '../../../components/ui/label.js';
-import { Badge } from '../../../components/ui/badge.js';
-import { Checkbox } from '../../../components/ui/checkbox.js';
-import { ScrollArea } from '../../../components/ui/scroll-area.js';
-import { Separator } from '../../../components/ui/separator.js';
+import React, { useState, useCallback } from "react";
+import { X, Filter, Search, Calendar, Tag, User, Mail } from "lucide-react";
+import { Button } from "../../../components/ui/button.js";
+import { Input } from "../../../components/ui/input.js";
+import { Label } from "../../../components/ui/label.js";
+import { Badge } from "../../../components/ui/badge.js";
+import { Checkbox } from "../../../components/ui/checkbox.js";
+import { ScrollArea } from "../../../components/ui/scroll-area.js";
+import { Separator } from "../../../components/ui/separator.js";
 import {
   Sheet,
   SheetContent,
@@ -15,16 +15,19 @@ import {
   SheetTitle,
   SheetTrigger,
   SheetFooter,
-} from '../../../components/ui/sheet.js';
+} from "../../../components/ui/sheet.js";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select.js';
-import { DateRangePicker, type DateRange } from '../../../components/ui/date-range-picker.js';
-import { StatusIndicator } from './StatusIndicator.js';
+} from "../../../components/ui/select.js";
+import {
+  DateRangePicker,
+  type DateRange,
+} from "../../../components/ui/date-range-picker.js";
+import { StatusIndicator } from "./StatusIndicator.js";
 import type {
   EmailStatus,
   WorkflowState,
@@ -32,7 +35,7 @@ import type {
   FilterConfig,
   FilterOptions,
   StatusOption,
-} from '../../../types/email-dashboard.interfaces.js';
+} from "../../../types/email-dashboard.interfaces.js";
 
 interface FilterPanelProps {
   filters: FilterConfig;
@@ -43,16 +46,16 @@ interface FilterPanelProps {
 }
 
 const workflowStateLabels: Record<WorkflowState, string> = {
-  START_POINT: 'Start Point',
-  IN_PROGRESS: 'In Progress',
-  COMPLETION: 'Completion',
+  START_POINT: "Start Point",
+  IN_PROGRESS: "In Progress",
+  COMPLETION: "Completion",
 };
 
 const priorityLabels: Record<Priority, string> = {
-  Critical: 'Critical',
-  High: 'High',
-  Medium: 'Medium',
-  Low: 'Low',
+  Critical: "Critical",
+  High: "High",
+  Medium: "Medium",
+  Low: "Low",
 };
 
 export function FilterPanel({
@@ -65,12 +68,15 @@ export function FilterPanel({
   const [isOpen, setIsOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState<FilterConfig>(filters);
 
-  const handleFilterChange = useCallback((key: keyof FilterConfig, value: any) => {
-    setLocalFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  }, []);
+  const handleFilterChange = useCallback(
+    (key: keyof FilterConfig, value: any) => {
+      setLocalFilters((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+    },
+    [],
+  );
 
   const handleApplyFilters = useCallback(() => {
     onFiltersChange(localFilters);
@@ -79,7 +85,7 @@ export function FilterPanel({
 
   const handleReset = useCallback(() => {
     const resetFilters: FilterConfig = {
-      search: '',
+      search: "",
       emailAliases: [],
       requesters: [],
       statuses: [],
@@ -88,7 +94,7 @@ export function FilterPanel({
       priorities: [],
       dateRange: {
         start: null,
-        end: null
+        end: null,
       },
       hasAttachments: undefined,
       isRead: undefined,
@@ -106,7 +112,7 @@ export function FilterPanel({
         : [...currentValues, value];
       handleFilterChange(key, newValues);
     },
-    [localFilters, handleFilterChange]
+    [localFilters, handleFilterChange],
   );
 
   return (
@@ -132,7 +138,7 @@ export function FilterPanel({
             Refine your email list using multiple filter criteria
           </SheetDescription>
         </SheetHeader>
-        
+
         <ScrollArea className="h-[calc(100vh-200px)] pr-4">
           <div className="space-y-6 py-4">
             {/* Search */}
@@ -144,8 +150,10 @@ export function FilterPanel({
               <Input
                 id="search"
                 placeholder="Search emails..."
-                value={localFilters.search || ''}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange('search', e.target.value)}
+                value={localFilters.search || ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleFilterChange("search", e.target.value)
+                }
               />
             </div>
 
@@ -159,19 +167,32 @@ export function FilterPanel({
               </Label>
               <div className="space-y-2">
                 {filterOptions.statuses.map((status) => (
-                  <div key={status.value} className="flex items-center space-x-2">
+                  <div
+                    key={status.value}
+                    className="flex items-center space-x-2"
+                  >
                     <Checkbox
                       id={`status-${status.value}`}
-                      checked={localFilters.statuses?.includes(status.value) || false}
-                      onCheckedChange={() => toggleArrayFilter('statuses', status.value)}
+                      checked={
+                        localFilters.statuses?.includes(status.value) || false
+                      }
+                      onCheckedChange={() =>
+                        toggleArrayFilter("statuses", status.value)
+                      }
                     />
                     <label
                       htmlFor={`status-${status.value}`}
                       className="flex items-center justify-between w-full cursor-pointer"
                     >
                       <div className="flex items-center gap-2">
-                        <StatusIndicator status={status.value} size="sm" showTooltip={false} />
-                        <span className="text-sm font-medium">{status.label}</span>
+                        <StatusIndicator
+                          status={status.value}
+                          size="sm"
+                          showTooltip={false}
+                        />
+                        <span className="text-sm font-medium">
+                          {status.label}
+                        </span>
                       </div>
                     </label>
                   </div>
@@ -189,14 +210,20 @@ export function FilterPanel({
                   <div key={state} className="flex items-center space-x-2">
                     <Checkbox
                       id={`workflow-${state}`}
-                      checked={localFilters.workflowStates?.includes(state) || false}
-                      onCheckedChange={() => toggleArrayFilter('workflowStates', state)}
+                      checked={
+                        localFilters.workflowStates?.includes(state) || false
+                      }
+                      onCheckedChange={() =>
+                        toggleArrayFilter("workflowStates", state)
+                      }
                     />
                     <label
                       htmlFor={`workflow-${state}`}
                       className="flex items-center justify-between w-full cursor-pointer"
                     >
-                      <span className="text-sm font-medium">{workflowStateLabels[state]}</span>
+                      <span className="text-sm font-medium">
+                        {workflowStateLabels[state]}
+                      </span>
                     </label>
                   </div>
                 ))}
@@ -213,14 +240,20 @@ export function FilterPanel({
                   <div key={priority} className="flex items-center space-x-2">
                     <Checkbox
                       id={`priority-${priority}`}
-                      checked={localFilters.priorities?.includes(priority) || false}
-                      onCheckedChange={() => toggleArrayFilter('priorities', priority)}
+                      checked={
+                        localFilters.priorities?.includes(priority) || false
+                      }
+                      onCheckedChange={() =>
+                        toggleArrayFilter("priorities", priority)
+                      }
                     />
                     <label
                       htmlFor={`priority-${priority}`}
                       className="flex items-center justify-between w-full cursor-pointer"
                     >
-                      <span className="text-sm font-medium">{priorityLabels[priority]}</span>
+                      <span className="text-sm font-medium">
+                        {priorityLabels[priority]}
+                      </span>
                     </label>
                   </div>
                 ))}
@@ -236,8 +269,10 @@ export function FilterPanel({
                 Email Aliases
               </Label>
               <Select
-                value={localFilters.emailAliases?.[0] || ''}
-                onValueChange={(value: string) => handleFilterChange('emailAliases', value ? [value] : [])}
+                value={localFilters.emailAliases?.[0] || ""}
+                onValueChange={(value: string) =>
+                  handleFilterChange("emailAliases", value ? [value] : [])
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All email aliases" />
@@ -260,8 +295,10 @@ export function FilterPanel({
                 Requested By
               </Label>
               <Select
-                value={localFilters.requesters?.[0] || ''}
-                onValueChange={(value: string) => handleFilterChange('requesters', value ? [value] : [])}
+                value={localFilters.requesters?.[0] || ""}
+                onValueChange={(value: string) =>
+                  handleFilterChange("requesters", value ? [value] : [])
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All requesters" />
@@ -295,7 +332,7 @@ export function FilterPanel({
                     : undefined
                 }
                 onChange={(dateRange) => {
-                  handleFilterChange('dateRange', {
+                  handleFilterChange("dateRange", {
                     start: dateRange?.from || null,
                     end: dateRange?.to || null,
                   });
@@ -312,10 +349,16 @@ export function FilterPanel({
                   id="has-attachments"
                   checked={localFilters.hasAttachments === true}
                   onCheckedChange={(checked: boolean) =>
-                    handleFilterChange('hasAttachments', checked === true ? true : undefined)
+                    handleFilterChange(
+                      "hasAttachments",
+                      checked === true ? true : undefined,
+                    )
                   }
                 />
-                <label htmlFor="has-attachments" className="text-sm font-medium cursor-pointer">
+                <label
+                  htmlFor="has-attachments"
+                  className="text-sm font-medium cursor-pointer"
+                >
                   Has attachments
                 </label>
               </div>
@@ -325,10 +368,16 @@ export function FilterPanel({
                   id="unread-only"
                   checked={localFilters.isRead === false}
                   onCheckedChange={(checked: boolean) =>
-                    handleFilterChange('isRead', checked === true ? false : undefined)
+                    handleFilterChange(
+                      "isRead",
+                      checked === true ? false : undefined,
+                    )
                   }
                 />
-                <label htmlFor="unread-only" className="text-sm font-medium cursor-pointer">
+                <label
+                  htmlFor="unread-only"
+                  className="text-sm font-medium cursor-pointer"
+                >
                   Unread only
                 </label>
               </div>
@@ -347,9 +396,13 @@ export function FilterPanel({
                     {filterOptions.tags.map((tag) => (
                       <Badge
                         key={tag}
-                        variant={localFilters.tags?.includes(tag) ? 'default' : 'outline'}
+                        variant={
+                          localFilters.tags?.includes(tag)
+                            ? "default"
+                            : "outline"
+                        }
                         className="cursor-pointer"
-                        onClick={() => toggleArrayFilter('tags', tag)}
+                        onClick={() => toggleArrayFilter("tags", tag)}
                       >
                         {tag}
                       </Badge>
@@ -383,7 +436,7 @@ export function QuickFilters({
       <Button
         variant="outline"
         size="sm"
-        onClick={() => onFilterChange({ statuses: ['red'] })}
+        onClick={() => onFilterChange({ statuses: ["red"] })}
       >
         <StatusIndicator status="red" size="sm" showTooltip={false} />
         <span className="ml-2">Critical</span>
@@ -391,7 +444,7 @@ export function QuickFilters({
       <Button
         variant="outline"
         size="sm"
-        onClick={() => onFilterChange({ workflowStates: ['START_POINT'] })}
+        onClick={() => onFilterChange({ workflowStates: ["START_POINT"] })}
       >
         New Requests
       </Button>

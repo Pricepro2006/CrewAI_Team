@@ -1,18 +1,28 @@
 // Unified Email Dashboard Types
 
-export type ViewMode = 'list' | 'analytics' | 'agents' | 'workflows' | 'settings';
+export type ViewMode =
+  | "list"
+  | "analytics"
+  | "agents"
+  | "workflows"
+  | "settings";
 
-export type WorkflowState = 'START_POINT' | 'IN_PROGRESS' | 'COMPLETION';
+export type WorkflowState = "START_POINT" | "IN_PROGRESS" | "COMPLETION";
 
-export type EmailPriority = 'low' | 'medium' | 'high' | 'critical';
+export type EmailPriority = "low" | "medium" | "high" | "critical";
 
-export type EmailStatus = 'unread' | 'read' | 'processing' | 'resolved' | 'escalated';
+export type EmailStatus =
+  | "unread"
+  | "read"
+  | "processing"
+  | "resolved"
+  | "escalated";
 
 export interface UnifiedEmailData {
   id: string;
   messageId: string;
   graphResourceId?: string;
-  
+
   // Basic email fields
   subject: string;
   bodyText: string;
@@ -21,7 +31,7 @@ export interface UnifiedEmailData {
   to: string[];
   cc?: string[];
   receivedAt: string;
-  
+
   // Analysis results
   analysis?: {
     summary: string;
@@ -29,14 +39,14 @@ export interface UnifiedEmailData {
     intent: string;
     topics: string[];
   };
-  
+
   // Workflow information
   workflowState: WorkflowState;
   workflowType?: string;
   workflowChainId?: string;
   isWorkflowComplete: boolean;
   workflowConfidence?: number;
-  
+
   // Entity extraction
   entities?: {
     people: string[];
@@ -47,23 +57,23 @@ export interface UnifiedEmailData {
     dates: string[];
     amounts: string[];
   };
-  
+
   // Categorization
   priority: EmailPriority;
   status: EmailStatus;
   category?: string;
   tags?: string[];
-  
+
   // Agent assignment
   agentAssignment?: {
     agentId: string;
     agentName: string;
     assignedAt: string;
-    status: 'assigned' | 'processing' | 'completed';
+    status: "assigned" | "processing" | "completed";
     progress?: number;
     actions?: AgentAction[];
   };
-  
+
   // Metadata
   hasAttachments: boolean;
   isRead: boolean;
@@ -111,7 +121,7 @@ export interface DashboardMetrics {
 
 export interface Alert {
   id: string;
-  type: 'critical' | 'warning' | 'info';
+  type: "critical" | "warning" | "info";
   message: string;
   timestamp: string;
 }
@@ -141,7 +151,7 @@ export interface BottleneckInfo {
 }
 
 export interface Recommendation {
-  priority: 'critical' | 'high' | 'medium' | 'low';
+  priority: "critical" | "high" | "medium" | "low";
   title: string;
   description: string;
   impact: string;
@@ -152,8 +162,8 @@ export interface Recommendation {
 export interface AgentInfo {
   id: string;
   name: string;
-  type: 'sales' | 'support' | 'order' | 'general';
-  status: 'available' | 'busy' | 'offline';
+  type: "sales" | "support" | "order" | "general";
+  status: "available" | "busy" | "offline";
   currentLoad: number;
   maxCapacity: number;
   specialties: string[];
@@ -169,7 +179,11 @@ export interface AgentPerformance {
 }
 
 export interface EmailUpdate {
-  type: 'email.processed' | 'email.updated' | 'email.assigned' | 'workflow.completed';
+  type:
+    | "email.processed"
+    | "email.updated"
+    | "email.assigned"
+    | "workflow.completed";
   emailId: string;
   data: any;
   timestamp: string;

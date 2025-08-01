@@ -1,10 +1,10 @@
-import Database from 'better-sqlite3';
-import { logger } from '../../utils/logger';
+import Database from "better-sqlite3";
+import { logger } from "../../utils/logger";
 
 interface AutomationRule {
   id: number;
   rule_name: string;
-  rule_type: 'categorization' | 'routing' | 'notification' | 'escalation';
+  rule_type: "categorization" | "routing" | "notification" | "escalation";
   conditions: any;
   actions: any;
   priority: number;
@@ -37,13 +37,15 @@ interface RuleActivity {
 export class AutomationRuleService {
   private db: Database.Database;
 
-  constructor(databasePath: string = './data/app.db') {
+  constructor(databasePath: string = "./data/app.db") {
     try {
       this.db = new Database(databasePath);
-      logger.info('Database connection established', 'AUTOMATION_RULES');
+      logger.info("Database connection established", "AUTOMATION_RULES");
     } catch (error) {
-      logger.error('Failed to connect to database', 'AUTOMATION_RULES', { error });
-      throw new Error('Database connection failed');
+      logger.error("Failed to connect to database", "AUTOMATION_RULES", {
+        error,
+      });
+      throw new Error("Database connection failed");
     }
   }
 
@@ -58,7 +60,9 @@ export class AutomationRuleService {
       `);
       return stmt.all() as AutomationRule[];
     } catch (error) {
-      logger.error('Error getting automation rules', 'AUTOMATION_RULES', { error });
+      logger.error("Error getting automation rules", "AUTOMATION_RULES", {
+        error,
+      });
       return [];
     }
   }
@@ -75,7 +79,7 @@ export class AutomationRuleService {
       `);
       return stmt.all() as AutomationRule[];
     } catch (error) {
-      logger.error('Error getting active rules', 'AUTOMATION_RULES', { error });
+      logger.error("Error getting active rules", "AUTOMATION_RULES", { error });
       return [];
     }
   }
@@ -101,15 +105,17 @@ export class AutomationRuleService {
         GROUP BY ar.id, ar.rule_name, ar.success_count, ar.executed_count
         ORDER BY ar.priority DESC
       `);
-      
+
       const results = stmt.all() as any[];
-      return results.map(r => ({
+      return results.map((r) => ({
         ...r,
         success_rate: r.success_rate || 0,
-        avg_execution_time: r.avg_execution_time || 0
+        avg_execution_time: r.avg_execution_time || 0,
       }));
     } catch (error) {
-      logger.error('Error getting rule performance', 'AUTOMATION_RULES', { error });
+      logger.error("Error getting rule performance", "AUTOMATION_RULES", {
+        error,
+      });
       return [];
     }
   }
@@ -133,10 +139,12 @@ export class AutomationRuleService {
         GROUP BY DATE(re.executed_at), ar.id, ar.rule_name
         ORDER BY date DESC, ar.priority DESC
       `);
-      
+
       return stmt.all(days) as RuleActivity[];
     } catch (error) {
-      logger.error('Error getting rule activity', 'AUTOMATION_RULES', { error });
+      logger.error("Error getting rule activity", "AUTOMATION_RULES", {
+        error,
+      });
       return [];
     }
   }
@@ -151,16 +159,22 @@ export class AutomationRuleService {
         SET is_active = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `);
-      
+
       const result = stmt.run(isActive ? 1 : 0, ruleId);
-      
+
       if (result.changes > 0) {
-        logger.info('Rule status updated', 'AUTOMATION_RULES', { ruleId, isActive });
+        logger.info("Rule status updated", "AUTOMATION_RULES", {
+          ruleId,
+          isActive,
+        });
         return true;
       }
       return false;
     } catch (error) {
-      logger.error('Error updating rule status', 'AUTOMATION_RULES', { error, ruleId });
+      logger.error("Error updating rule status", "AUTOMATION_RULES", {
+        error,
+        ruleId,
+      });
       return false;
     }
   }
@@ -168,27 +182,39 @@ export class AutomationRuleService {
   /**
    * Create a new automation rule
    */
-  createRule(rule: Omit<AutomationRule, 'id' | 'created_at' | 'updated_at' | 'executed_count' | 'success_count' | 'last_executed'>): number | null {
+  createRule(
+    rule: Omit<
+      AutomationRule,
+      | "id"
+      | "created_at"
+      | "updated_at"
+      | "executed_count"
+      | "success_count"
+      | "last_executed"
+    >,
+  ): number | null {
     try {
       const stmt = this.db.prepare(`
         INSERT INTO automation_rules (
           rule_name, rule_type, conditions, actions, priority, is_active
         ) VALUES (?, ?, ?, ?, ?, ?)
       `);
-      
+
       const result = stmt.run(
         rule.rule_name,
         rule.rule_type,
         JSON.stringify(rule.conditions),
         JSON.stringify(rule.actions),
         rule.priority,
-        rule.is_active ? 1 : 0
+        rule.is_active ? 1 : 0,
       );
-      
-      logger.info('Rule created', 'AUTOMATION_RULES', { ruleId: result.lastInsertRowid });
+
+      logger.info("Rule created", "AUTOMATION_RULES", {
+        ruleId: result.lastInsertRowid,
+      });
       return result.lastInsertRowid as number;
     } catch (error) {
-      logger.error('Error creating rule', 'AUTOMATION_RULES', { error, rule });
+      logger.error("Error creating rule", "AUTOMATION_RULES", { error, rule });
       return null;
     }
   }
@@ -196,56 +222,71 @@ export class AutomationRuleService {
   /**
    * Update an existing rule
    */
-  updateRule(ruleId: number, updates: Partial<Omit<AutomationRule, 'id' | 'created_at' | 'executed_count' | 'success_count' | 'last_executed'>>): boolean {
+  updateRule(
+    ruleId: number,
+    updates: Partial<
+      Omit<
+        AutomationRule,
+        | "id"
+        | "created_at"
+        | "executed_count"
+        | "success_count"
+        | "last_executed"
+      >
+    >,
+  ): boolean {
     try {
       const fields: string[] = [];
       const values: any[] = [];
 
       if (updates.rule_name !== undefined) {
-        fields.push('rule_name = ?');
+        fields.push("rule_name = ?");
         values.push(updates.rule_name);
       }
       if (updates.rule_type !== undefined) {
-        fields.push('rule_type = ?');
+        fields.push("rule_type = ?");
         values.push(updates.rule_type);
       }
       if (updates.conditions !== undefined) {
-        fields.push('conditions = ?');
+        fields.push("conditions = ?");
         values.push(JSON.stringify(updates.conditions));
       }
       if (updates.actions !== undefined) {
-        fields.push('actions = ?');
+        fields.push("actions = ?");
         values.push(JSON.stringify(updates.actions));
       }
       if (updates.priority !== undefined) {
-        fields.push('priority = ?');
+        fields.push("priority = ?");
         values.push(updates.priority);
       }
       if (updates.is_active !== undefined) {
-        fields.push('is_active = ?');
+        fields.push("is_active = ?");
         values.push(updates.is_active ? 1 : 0);
       }
 
       if (fields.length === 0) return false;
 
-      fields.push('updated_at = CURRENT_TIMESTAMP');
+      fields.push("updated_at = CURRENT_TIMESTAMP");
       values.push(ruleId);
 
       const stmt = this.db.prepare(`
         UPDATE automation_rules 
-        SET ${fields.join(', ')}
+        SET ${fields.join(", ")}
         WHERE id = ?
       `);
-      
+
       const result = stmt.run(...values);
-      
+
       if (result.changes > 0) {
-        logger.info('Rule updated', 'AUTOMATION_RULES', { ruleId });
+        logger.info("Rule updated", "AUTOMATION_RULES", { ruleId });
         return true;
       }
       return false;
     } catch (error) {
-      logger.error('Error updating rule', 'AUTOMATION_RULES', { error, ruleId });
+      logger.error("Error updating rule", "AUTOMATION_RULES", {
+        error,
+        ruleId,
+      });
       return false;
     }
   }
@@ -255,16 +296,19 @@ export class AutomationRuleService {
    */
   deleteRule(ruleId: number): boolean {
     try {
-      const stmt = this.db.prepare('DELETE FROM automation_rules WHERE id = ?');
+      const stmt = this.db.prepare("DELETE FROM automation_rules WHERE id = ?");
       const result = stmt.run(ruleId);
-      
+
       if (result.changes > 0) {
-        logger.info('Rule deleted', 'AUTOMATION_RULES', { ruleId });
+        logger.info("Rule deleted", "AUTOMATION_RULES", { ruleId });
         return true;
       }
       return false;
     } catch (error) {
-      logger.error('Error deleting rule', 'AUTOMATION_RULES', { error, ruleId });
+      logger.error("Error deleting rule", "AUTOMATION_RULES", {
+        error,
+        ruleId,
+      });
       return false;
     }
   }
@@ -285,10 +329,13 @@ export class AutomationRuleService {
         ORDER BY re.executed_at DESC
         LIMIT ?
       `);
-      
+
       return stmt.all(ruleId, limit);
     } catch (error) {
-      logger.error('Error getting execution history', 'AUTOMATION_RULES', { error, ruleId });
+      logger.error("Error getting execution history", "AUTOMATION_RULES", {
+        error,
+        ruleId,
+      });
       return [];
     }
   }
@@ -299,9 +346,11 @@ export class AutomationRuleService {
   close(): void {
     try {
       this.db.close();
-      logger.info('Database connection closed', 'AUTOMATION_RULES');
+      logger.info("Database connection closed", "AUTOMATION_RULES");
     } catch (error) {
-      logger.error('Error closing database connection', 'AUTOMATION_RULES', { error });
+      logger.error("Error closing database connection", "AUTOMATION_RULES", {
+        error,
+      });
     }
   }
 }

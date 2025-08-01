@@ -1,8 +1,7 @@
-import * as React from 'react';
-import { cn } from '../../utils/cn.js';
+import * as React from "react";
+import { cn } from "../../utils/cn.js";
 
-export interface ProgressProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   value?: number;
 }
 
@@ -11,8 +10,8 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
     <div
       ref={ref}
       className={cn(
-        'relative h-4 w-full overflow-hidden rounded-full bg-secondary',
-        className
+        "relative h-4 w-full overflow-hidden rounded-full bg-secondary",
+        className,
       )}
       {...props}
     >
@@ -21,8 +20,8 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
         style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
       />
     </div>
-  )
+  ),
 );
-Progress.displayName = 'Progress';
+Progress.displayName = "Progress";
 
 export { Progress };

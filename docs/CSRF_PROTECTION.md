@@ -47,24 +47,28 @@ The frontend CSRF protection system provides seamless security integration with 
 ## Key Features
 
 ### Automatic Token Management
+
 - Tokens are fetched on app initialization
 - Automatic rotation every 55 minutes (before 1-hour backend rotation)
 - Background refresh when tab becomes visible
 - Fallback to localStorage for offline scenarios
 
 ### Seamless Integration
+
 - All tRPC mutations automatically include CSRF headers
 - WebSocket connections include CSRF tokens in connection params
 - Form submissions automatically protected
 - No manual token management required
 
 ### Error Handling & Recovery
+
 - Automatic retry with fresh tokens on CSRF failures
 - User-friendly error modals with retry options
 - Graceful degradation when tokens unavailable
 - Comprehensive logging for debugging
 
 ### Security Features
+
 - Secure `__Host-` prefixed cookies
 - HttpOnly cookies to prevent XSS
 - SameSite=Strict for additional protection
@@ -93,29 +97,26 @@ function App() {
 ### Using Protected Mutations
 
 ```tsx
-import { useCSRFProtectedMutation } from '@/ui/hooks/useCSRFProtectedMutation';
+import { useCSRFProtectedMutation } from "@/ui/hooks/useCSRFProtectedMutation";
 
 function MyComponent() {
-  const createUser = useCSRFProtectedMutation(
-    api.user.create,
-    {
-      onSuccess: (data) => {
-        console.log('User created:', data);
-      },
-      onCSRFError: (error) => {
-        // Handle CSRF-specific errors
-        showErrorModal(error);
-      },
-    }
-  );
+  const createUser = useCSRFProtectedMutation(api.user.create, {
+    onSuccess: (data) => {
+      console.log("User created:", data);
+    },
+    onCSRFError: (error) => {
+      // Handle CSRF-specific errors
+      showErrorModal(error);
+    },
+  });
 
   const handleCreateUser = () => {
-    createUser.mutate({ name: 'John', email: 'john@example.com' });
+    createUser.mutate({ name: "John", email: "john@example.com" });
   };
 
   return (
     <button onClick={handleCreateUser} disabled={createUser.isLoading}>
-      {createUser.isRetrying ? 'Retrying...' : 'Create User'}
+      {createUser.isRetrying ? "Retrying..." : "Create User"}
     </button>
   );
 }
@@ -124,25 +125,25 @@ function MyComponent() {
 ### Using Protected Form Submissions
 
 ```tsx
-import { useCSRFFormSubmit } from '@/ui/hooks/useCSRFProtectedMutation';
+import { useCSRFFormSubmit } from "@/ui/hooks/useCSRFProtectedMutation";
 
 function ContactForm() {
   const formSubmit = useCSRFFormSubmit({
-    onSuccess: () => alert('Message sent!'),
-    onError: (error) => alert('Error: ' + error.message),
+    onSuccess: () => alert("Message sent!"),
+    onError: (error) => alert("Error: " + error.message),
   });
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    await formSubmit.submit('/api/contact', formData);
+    await formSubmit.submit("/api/contact", formData);
   };
 
   return (
     <form onSubmit={handleSubmit}>
       {/* form fields */}
       <button type="submit" disabled={formSubmit.isSubmitting}>
-        {formSubmit.isSubmitting ? 'Sending...' : 'Send Message'}
+        {formSubmit.isSubmitting ? "Sending..." : "Send Message"}
       </button>
     </form>
   );
@@ -152,7 +153,7 @@ function ContactForm() {
 ### Manual Token Management
 
 ```tsx
-import { useCSRF } from '@/ui/hooks/useCSRF';
+import { useCSRF } from "@/ui/hooks/useCSRF";
 
 function TokenManager() {
   const { token, refreshToken, getHeaders, error } = useCSRF();
@@ -160,15 +161,15 @@ function TokenManager() {
   const handleRefresh = async () => {
     try {
       await refreshToken();
-      console.log('Token refreshed successfully');
+      console.log("Token refreshed successfully");
     } catch (error) {
-      console.error('Failed to refresh token:', error);
+      console.error("Failed to refresh token:", error);
     }
   };
 
   return (
     <div>
-      <p>Token Status: {token ? 'Active' : 'Inactive'}</p>
+      <p>Token Status: {token ? "Active" : "Inactive"}</p>
       <button onClick={handleRefresh}>Refresh Token</button>
       {error && <p>Error: {error.message}</p>}
     </div>
@@ -195,18 +196,21 @@ function TokenManager() {
 ## Security Considerations
 
 ### Token Security
+
 - Tokens never logged in plaintext
 - SHA-256 hashed for logging purposes
 - Automatic cleanup of expired tokens
 - Rotation prevents long-term exposure
 
 ### Attack Mitigation
+
 - Protects against CSRF attacks on all mutations
 - Double-submit cookie pattern
 - Origin validation on WebSocket connections
 - Rate limiting on token endpoints
 
 ### Best Practices
+
 - Always use provided hooks for mutations
 - Never bypass CSRF protection
 - Monitor CSRF error rates
@@ -237,7 +241,7 @@ Enable detailed CSRF logging by setting `NODE_ENV=development`:
 
 ```javascript
 // Additional logging in development
-localStorage.setItem('csrf-debug', 'true');
+localStorage.setItem("csrf-debug", "true");
 ```
 
 ## Migration Guide

@@ -3,6 +3,7 @@
 ## Core Dependencies
 
 ### Runtime Dependencies
+
 - **Node.js**: v20.11 or higher
 - **SQLite**: v3.44 or higher
 - **Redis**: v7.0 or higher (for queue management and caching)
@@ -10,6 +11,7 @@
 - **ChromaDB**: v0.4.0 or higher (for vector operations)
 
 ### Development Dependencies
+
 - **TypeScript**: v5.3.3
 - **React**: v18.2.0
 - **Vite**: v5.0.11
@@ -18,14 +20,17 @@
 ## Known Installation Issues
 
 ### 1. Socket.IO Dependency
+
 The WebSocketManager component (`src/core/websocket/WebSocketManager.ts`) requires `socket.io` and `@types/socket.io`. However, installation may fail due to node-gyp compilation issues with better-sqlite3.
 
-**Issue**: 
+**Issue**:
+
 ```
 ModuleNotFoundError: No module named 'distutils'
 ```
 
 **Solution**:
+
 ```bash
 # Ubuntu/Debian
 sudo apt-get install python3-distutils
@@ -42,15 +47,19 @@ source venv/bin/activate
 ```
 
 ### 2. Better-SQLite3 Compilation
+
 Better-SQLite3 requires node-gyp to compile native bindings, which can fail on some systems.
 
 **Alternative Solutions**:
+
 1. Use pre-built binaries:
+
    ```bash
    npm install better-sqlite3 --build-from-source=false
    ```
 
 2. Install build tools:
+
    ```bash
    # Ubuntu/Debian
    sudo apt-get install build-essential
@@ -65,7 +74,9 @@ Better-SQLite3 requires node-gyp to compile native bindings, which can fail on s
 ## Optional Dependencies
 
 ### WebSocket Support
+
 For real-time features, the following packages are required:
+
 - `socket.io`: ^4.7.0
 - `@types/socket.io`: ^4.0.0
 - `socket.io-client`: ^4.7.0 (for client-side)
@@ -76,6 +87,7 @@ For real-time features, the following packages are required:
 ## Environment-Specific Dependencies
 
 ### Production
+
 ```json
 {
   "pm2": "^5.3.0",
@@ -85,6 +97,7 @@ For real-time features, the following packages are required:
 ```
 
 ### Development Only
+
 ```json
 {
   "eslint": "^8.56.0",
@@ -101,17 +114,20 @@ For real-time features, the following packages are required:
 For best results, install dependencies in this order:
 
 1. **System Dependencies**:
+
    ```bash
    # Install Python with distutils
    # Install build tools for your OS
    ```
 
 2. **Core Node Dependencies**:
+
    ```bash
    npm install --ignore-scripts
    ```
 
 3. **Native Dependencies**:
+
    ```bash
    npm rebuild better-sqlite3
    ```
@@ -125,6 +141,7 @@ For best results, install dependencies in this order:
 ## Troubleshooting
 
 ### Error: Cannot find module 'socket.io'
+
 The WebSocketManager is designed to work with socket.io, but due to compilation issues, it may not install correctly. You can:
 
 1. Skip WebSocket features temporarily
@@ -137,7 +154,9 @@ The WebSocketManager is designed to work with socket.io, but due to compilation 
    ```
 
 ### Error: Python executable not found
+
 Ensure Python is in your PATH:
+
 ```bash
 which python3
 # or
@@ -145,7 +164,9 @@ where python
 ```
 
 ### Error: No matching version found for package
+
 Clear npm cache and try again:
+
 ```bash
 npm cache clean --force
 rm -rf node_modules package-lock.json
@@ -154,13 +175,13 @@ npm install
 
 ## Version Compatibility Matrix
 
-| Package | Min Version | Max Version | Notes |
-|---------|-------------|-------------|-------|
-| Node.js | 20.11.0 | 22.x | v22.15.0 may have node-gyp issues |
-| TypeScript | 5.0.0 | 5.5.x | Strict mode enabled |
-| React | 18.2.0 | 18.3.x | No React 19 support yet |
-| Vite | 5.0.0 | 5.x | Using ESM modules |
-| SQLite | 3.44.0 | Latest | JSON support required |
+| Package    | Min Version | Max Version | Notes                             |
+| ---------- | ----------- | ----------- | --------------------------------- |
+| Node.js    | 20.11.0     | 22.x        | v22.15.0 may have node-gyp issues |
+| TypeScript | 5.0.0       | 5.5.x       | Strict mode enabled               |
+| React      | 18.2.0      | 18.3.x      | No React 19 support yet           |
+| Vite       | 5.0.0       | 5.x         | Using ESM modules                 |
+| SQLite     | 3.44.0      | Latest      | JSON support required             |
 
 ## Future Dependencies
 
@@ -181,12 +202,14 @@ The following dependencies are planned for future releases:
 ## Maintaining Dependencies
 
 1. **Regular Updates**:
+
    ```bash
    npm outdated
    npm update --save
    ```
 
 2. **Security Audits**:
+
    ```bash
    npm audit
    npm audit fix

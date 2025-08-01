@@ -12,7 +12,7 @@ All database queries use parameterized statements with placeholders:
 
 ```typescript
 // ✅ SECURE: Using parameterized queries
-const stmt = db.prepare('SELECT * FROM users WHERE email = ? AND status = ?');
+const stmt = db.prepare("SELECT * FROM users WHERE email = ? AND status = ?");
 const result = stmt.get(email, status);
 
 // ❌ VULNERABLE: String concatenation
@@ -35,6 +35,7 @@ const EmailQueryParamsSchema = z.object({
 ### 3. **SqlInjectionProtection Class**
 
 A dedicated security class that provides:
+
 - Pattern-based detection of SQL injection attempts
 - Parameter sanitization and validation
 - Column and table name validation
@@ -48,6 +49,7 @@ const validatedParams = sqlSecurity.validateQueryParameters(params);
 ### 4. **BaseRepository Pattern**
 
 All repositories extend `BaseRepository` which includes built-in SQL injection protection:
+
 - Automatic parameter validation
 - Secure WHERE clause construction
 - Safe ORDER BY handling
@@ -58,6 +60,7 @@ All repositories extend `BaseRepository` which includes built-in SQL injection p
 ### Pattern Detection
 
 The system detects and blocks common SQL injection patterns:
+
 - Classic injection: `' OR '1'='1`
 - Union-based: `' UNION SELECT * FROM users`
 - Comment injection: `--`, `/**/`
@@ -70,7 +73,7 @@ The system detects and blocks common SQL injection patterns:
 // Building WHERE clauses safely
 const { clause, params } = sqlSecurity.createSecureWhereClause({
   email: userInput.email,
-  status: 'active'
+  status: "active",
 });
 // Result: WHERE email = ? AND status = ?
 ```
@@ -88,17 +91,20 @@ const safeColumn = sqlSecurity.sanitizeColumnName(columnName);
 ### DO's ✅
 
 1. **Always use prepared statements**
+
    ```typescript
-   const stmt = db.prepare('INSERT INTO logs (message, user_id) VALUES (?, ?)');
+   const stmt = db.prepare("INSERT INTO logs (message, user_id) VALUES (?, ?)");
    stmt.run(message, userId);
    ```
 
 2. **Validate all inputs with Zod schemas**
+
    ```typescript
    const validated = UserInputSchema.parse(userInput);
    ```
 
 3. **Use the BaseRepository pattern**
+
    ```typescript
    class UserRepository extends BaseRepository<User> {
      // Inherits all security features
@@ -107,25 +113,28 @@ const safeColumn = sqlSecurity.sanitizeColumnName(columnName);
 
 4. **Parameterize dynamic queries**
    ```typescript
-   const placeholders = ids.map(() => '?').join(',');
+   const placeholders = ids.map(() => "?").join(",");
    const query = `SELECT * FROM items WHERE id IN (${placeholders})`;
    ```
 
 ### DON'TS ❌
 
 1. **Never concatenate user input into queries**
+
    ```typescript
    // NEVER DO THIS
    const query = `SELECT * FROM users WHERE name = '${userName}'`;
    ```
 
 2. **Never use template literals for SQL**
+
    ```typescript
    // VULNERABLE
    db.exec(`DELETE FROM logs WHERE date < '${userDate}'`);
    ```
 
 3. **Never trust client-side validation alone**
+
    ```typescript
    // Always validate server-side even if client validates
    ```
@@ -141,6 +150,7 @@ const safeColumn = sqlSecurity.sanitizeColumnName(columnName);
 ### SQL Injection Test Suite
 
 Run the comprehensive test suite:
+
 ```bash
 npm test src/database/security/__tests__/sql-injection-protection.test.ts
 ```
@@ -148,6 +158,7 @@ npm test src/database/security/__tests__/sql-injection-protection.test.ts
 ### Security Validation Script
 
 Validate all SQL queries in the codebase:
+
 ```bash
 npm run validate:sql-security
 ```
@@ -155,16 +166,17 @@ npm run validate:sql-security
 ## Monitoring and Logging
 
 All SQL injection attempts are logged:
+
 - Pattern matched
 - Source of attempt
 - Timestamp
 - User context (if available)
 
 ```typescript
-logger.error('SQL injection attempt blocked', 'SQL_SECURITY', {
-  pattern: 'UNION SELECT',
+logger.error("SQL injection attempt blocked", "SQL_SECURITY", {
+  pattern: "UNION SELECT",
   input: sanitizedInput,
-  source: 'email-query'
+  source: "email-query",
 });
 ```
 

@@ -173,9 +173,10 @@ export class DealMatchingService {
             totalProducts++;
 
             // Update category breakdown
-            const category = typeof bestDeal.product?.category === 'object' 
-              ? bestDeal.product.category.name 
-              : bestDeal.product?.category || "Other";
+            const category =
+              typeof bestDeal.product?.category === "object"
+                ? bestDeal.product.category.name
+                : bestDeal.product?.category || "Other";
             if (!categoryBreakdown[category]) {
               categoryBreakdown[category] = { count: 0, totalSavings: 0 };
             }
@@ -273,14 +274,13 @@ export class DealMatchingService {
             deal,
             dealItem: bestItem,
             savings:
-              (typeof product.price === 'object' 
-                ? (product.price.wasPrice || product.price.regular || 0)
-                : product.price || 0) -
-              bestItem.dealer_net_price,
+              (typeof product.price === "object"
+                ? product.price.wasPrice || product.price.regular || 0
+                : product.price || 0) - bestItem.dealer_net_price,
             savingsPercent: this.calculateDiscount(
               bestItem.dealer_net_price,
-              typeof product.price === 'object'
-                ? (product.price.wasPrice || product.price.regular || 0)
+              typeof product.price === "object"
+                ? product.price.wasPrice || product.price.regular || 0
                 : product.price || 0,
             ),
             matchConfidence: 0.8,
@@ -407,9 +407,10 @@ export class DealMatchingService {
     try {
       if (!product.category) return matches;
 
-      const category = typeof product.category === 'string' 
-        ? product.category 
-        : product.category.name;
+      const category =
+        typeof product.category === "string"
+          ? product.category
+          : product.category.name;
 
       // Map Walmart categories to deal product families
       const familyMapping: Record<string, string[]> = {
@@ -465,9 +466,10 @@ export class DealMatchingService {
     dealItem: DealItem,
     matchType: "exact" | "similar" | "category",
   ): DealMatch {
-    const walmartPrice = typeof product.price === 'object' 
-      ? (product.price.regular || 0)
-      : (product.price || 0);
+    const walmartPrice =
+      typeof product.price === "object"
+        ? product.price.regular || 0
+        : product.price || 0;
     const dealPrice = dealItem.dealer_net_price;
     const savings = Math.max(0, walmartPrice - dealPrice);
     const savingsPercent =
@@ -515,9 +517,10 @@ export class DealMatchingService {
 
     // Category/family match
     if (product.category && item.product_family) {
-      const categoryName = typeof product.category === 'string'
-        ? product.category
-        : product.category.name;
+      const categoryName =
+        typeof product.category === "string"
+          ? product.category
+          : product.category.name;
       const categoryMatch = categoryName
         .toLowerCase()
         .includes(item.product_family.toLowerCase());

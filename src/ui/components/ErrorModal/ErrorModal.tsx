@@ -1,9 +1,15 @@
-import React from 'react';
-import { AlertTriangle, X, Copy, Check } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../../components/ui/dialog.js';
-import { Button } from '../../../components/ui/button.js';
-import { cn } from '../../../utils/cn.js';
-import './ErrorModal.css';
+import React from "react";
+import { AlertTriangle, X, Copy, Check } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../../../components/ui/dialog.js";
+import { Button } from "../../../components/ui/button.js";
+import { cn } from "../../../utils/cn.js";
+import "./ErrorModal.css";
 
 interface ErrorModalProps {
   isOpen: boolean;
@@ -11,31 +17,31 @@ interface ErrorModalProps {
   title?: string;
   error: Error | string;
   onRetry?: () => void;
-  severity?: 'warning' | 'error' | 'critical';
+  severity?: "warning" | "error" | "critical";
   showErrorDetails?: boolean;
   actions?: Array<{
     label: string;
     onClick: () => void;
-    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost';
+    variant?: "default" | "destructive" | "outline" | "secondary" | "ghost";
   }>;
 }
 
 export function ErrorModal({
   isOpen,
   onClose,
-  title = 'An error occurred',
+  title = "An error occurred",
   error,
   onRetry,
-  severity = 'error',
-  showErrorDetails = process.env.NODE_ENV === 'development',
+  severity = "error",
+  showErrorDetails = process.env.NODE_ENV === "development",
   actions,
 }: ErrorModalProps) {
   const [copied, setCopied] = React.useState(false);
-  const errorMessage = typeof error === 'string' ? error : error.message;
-  const errorStack = typeof error === 'string' ? null : error.stack;
+  const errorMessage = typeof error === "string" ? error : error.message;
+  const errorStack = typeof error === "string" ? null : error.stack;
 
   const copyErrorDetails = async () => {
-    const details = `Error: ${errorMessage}\n\nStack Trace:\n${errorStack || 'Not available'}`;
+    const details = `Error: ${errorMessage}\n\nStack Trace:\n${errorStack || "Not available"}`;
     await navigator.clipboard.writeText(details);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -43,19 +49,19 @@ export function ErrorModal({
 
   const severityConfig = {
     warning: {
-      icon: '⚠️',
-      color: 'error-modal-warning',
-      title: 'Warning',
+      icon: "⚠️",
+      color: "error-modal-warning",
+      title: "Warning",
     },
     error: {
-      icon: '❌',
-      color: 'error-modal-error',
-      title: 'Error',
+      icon: "❌",
+      color: "error-modal-error",
+      title: "Error",
     },
     critical: {
-      icon: '🚨',
-      color: 'error-modal-critical',
-      title: 'Critical Error',
+      icon: "🚨",
+      color: "error-modal-critical",
+      title: "Critical Error",
     },
   };
 
@@ -63,11 +69,15 @@ export function ErrorModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={cn('error-modal-content', config.color)}>
+      <DialogContent className={cn("error-modal-content", config.color)}>
         <DialogHeader>
           <div className="error-modal-header">
             <div className="error-modal-icon-wrapper">
-              <span className="error-modal-icon" role="img" aria-label={config.title}>
+              <span
+                className="error-modal-icon"
+                role="img"
+                aria-label={config.title}
+              >
                 {config.icon}
               </span>
             </div>
@@ -79,11 +89,11 @@ export function ErrorModal({
               <X size={20} />
             </button>
           </div>
-          
+
           <DialogTitle className="error-modal-title">
             {title || config.title}
           </DialogTitle>
-          
+
           <DialogDescription className="error-modal-description">
             {errorMessage}
           </DialogDescription>
@@ -122,17 +132,17 @@ export function ErrorModal({
               Try Again
             </Button>
           )}
-          
+
           {actions?.map((action, index) => (
             <Button
               key={index}
               onClick={action.onClick}
-              variant={action.variant || 'outline'}
+              variant={action.variant || "outline"}
             >
               {action.label}
             </Button>
           ))}
-          
+
           {!onRetry && !actions && (
             <Button onClick={onClose} variant="outline">
               Close
@@ -140,11 +150,11 @@ export function ErrorModal({
           )}
         </div>
 
-        {severity === 'critical' && (
+        {severity === "critical" && (
           <div className="error-modal-footer">
             <p className="error-modal-footer-text">
-              This error has been logged and our team has been notified.
-              If the problem persists, please contact support.
+              This error has been logged and our team has been notified. If the
+              problem persists, please contact support.
             </p>
           </div>
         )}

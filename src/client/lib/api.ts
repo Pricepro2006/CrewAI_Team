@@ -3,8 +3,8 @@
  * Re-exports tRPC hooks for consistent usage
  */
 
-import { trpc } from '../../utils/trpc.js';
-import type { WalmartProduct } from '../../types/walmart-grocery.js';
+import { trpc } from "../../utils/trpc.js";
+import type { WalmartProduct } from "../../types/walmart-grocery.js";
 
 // Direct export of tRPC hooks for use in components
 export const api = {

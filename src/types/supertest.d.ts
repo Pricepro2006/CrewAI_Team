@@ -1,8 +1,8 @@
 // Minimal supertest type declaration for test compilation
-declare module 'supertest' {
-  import { Server } from 'http';
-  import { Express } from 'express';
-  
+declare module "supertest" {
+  import { Server } from "http";
+  import { Express } from "express";
+
   export interface Response {
     status: number;
     body: any;
@@ -14,13 +14,17 @@ declare module 'supertest' {
     error: any;
     ok: boolean;
   }
-  
+
   export interface Test extends Promise<Response> {
     expect(status: number): this;
     expect(status: number, callback: (err: Error) => void): this;
     expect(checker: (res: Response) => any): this;
     expect(field: string, value: string | RegExp): this;
-    expect(field: string, value: string | RegExp, callback: (err: Error) => void): this;
+    expect(
+      field: string,
+      value: string | RegExp,
+      callback: (err: Error) => void,
+    ): this;
     send(data: any): this;
     set(field: string, value: string): this;
     set(fields: Record<string, string>): this;
@@ -35,7 +39,7 @@ declare module 'supertest' {
     accept(type: string): this;
     unset(field: string): this;
   }
-  
+
   export interface Agent {
     get(url: string): Test;
     post(url: string): Test;
@@ -47,8 +51,8 @@ declare module 'supertest' {
     trace(url: string): Test;
     patch(url: string): Test;
   }
-  
+
   function supertest(app: Express | Server | string): Agent;
-  
+
   export default supertest;
 }

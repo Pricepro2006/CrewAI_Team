@@ -30,7 +30,7 @@ interface PooledConnection {
 
 /**
  * Connection pool for better-sqlite3 with WAL mode support
- * 
+ *
  * Implements best practices for SQLite connection pooling:
  * - WAL mode for concurrent readers
  * - Automatic checkpointing to prevent WAL file growth
@@ -53,7 +53,7 @@ export class ConnectionPool extends EventEmitter {
 
   constructor(config: PoolConfig) {
     super();
-    
+
     this.config = {
       filename: config.filename,
       poolSize: config.poolSize || 5,
@@ -77,20 +77,23 @@ export class ConnectionPool extends EventEmitter {
 
     // Create initial connection to set up pragmas
     const setupDb = this.createConnection("setup");
-    
+
     if (this.config.enableWAL && !this.config.readonly) {
       // Enable WAL mode for better concurrency
       setupDb.db.pragma("journal_mode = WAL");
-      
+
       // Performance optimizations
       setupDb.db.pragma("synchronous = NORMAL");
       setupDb.db.pragma("cache_size = 10000"); // 10MB cache
       setupDb.db.pragma("temp_store = MEMORY");
       setupDb.db.pragma("mmap_size = 268435456"); // 256MB memory map
-      
-      logger.info("WAL mode enabled with performance optimizations", "CONNECTION_POOL");
+
+      logger.info(
+        "WAL mode enabled with performance optimizations",
+        "CONNECTION_POOL",
+      );
     }
-    
+
     // Return setup connection to pool
     this.releaseConnection(setupDb);
 
@@ -107,21 +110,24 @@ export class ConnectionPool extends EventEmitter {
    * Create a new database connection
    */
   private createConnection(id?: string): PooledConnection {
-    const connectionId = id || `conn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+    const connectionId =
+      id || `conn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     const db = new Database(this.config.filename, {
       readonly: this.config.readonly,
-      verbose: this.config.verbose ? (message) => {
-        logger.debug(`SQLite: ${message}`, "CONNECTION_POOL");
-      } : undefined,
+      verbose: this.config.verbose
+        ? (message) => {
+            logger.debug(`SQLite: ${message}`, "CONNECTION_POOL");
+          }
+        : undefined,
     });
 
     // Set connection-specific pragmas
     db.pragma("foreign_keys = ON");
-    
+
     // Set busy timeout to handle concurrent access
     db.pragma("busy_timeout = 30000"); // 30 seconds
-    
+
     const connection: PooledConnection = {
       db,
       id: connectionId,
@@ -133,9 +139,9 @@ export class ConnectionPool extends EventEmitter {
 
     this.connections.set(connectionId, connection);
     this.stats.totalConnections++;
-    
+
     logger.debug(`Created new connection: ${connectionId}`, "CONNECTION_POOL");
-    
+
     return connection;
   }
 
@@ -147,14 +153,14 @@ export class ConnectionPool extends EventEmitter {
     while (this.availableConnections.length > 0) {
       const connectionId = this.availableConnections.shift()!;
       const connection = this.connections.get(connectionId);
-      
+
       if (connection && !connection.inUse) {
         connection.inUse = true;
         connection.lastUsed = Date.now();
         this.stats.activeConnections++;
-        
+
         this.emit("acquire", { connectionId, poolSize: this.connections.size });
-        
+
         return connection.db;
       }
     }
@@ -164,9 +170,12 @@ export class ConnectionPool extends EventEmitter {
       const connection = this.createConnection();
       connection.inUse = true;
       this.stats.activeConnections++;
-      
-      this.emit("acquire", { connectionId: connection.id, poolSize: this.connections.size });
-      
+
+      this.emit("acquire", {
+        connectionId: connection.id,
+        poolSize: this.connections.size,
+      });
+
       return connection.db;
     }
 
@@ -178,18 +187,21 @@ export class ConnectionPool extends EventEmitter {
             conn.inUse = true;
             conn.lastUsed = Date.now();
             this.stats.activeConnections++;
-            
-            this.emit("acquire", { connectionId: id, poolSize: this.connections.size });
-            
+
+            this.emit("acquire", {
+              connectionId: id,
+              poolSize: this.connections.size,
+            });
+
             resolve(conn.db);
             return;
           }
         }
-        
+
         // Check again in 10ms
         setTimeout(checkAvailable, 10);
       };
-      
+
       checkAvailable();
     });
   }
@@ -204,23 +216,26 @@ export class ConnectionPool extends EventEmitter {
         return;
       }
     }
-    
+
     logger.warn("Attempted to release unknown connection", "CONNECTION_POOL");
   }
 
   private releaseConnection(connection: PooledConnection): void {
     connection.inUse = false;
     connection.lastUsed = Date.now();
-    
+
     if (!this.availableConnections.includes(connection.id)) {
       this.availableConnections.push(connection.id);
     }
-    
+
     if (this.stats.activeConnections > 0) {
       this.stats.activeConnections--;
     }
-    
-    this.emit("release", { connectionId: connection.id, poolSize: this.connections.size });
+
+    this.emit("release", {
+      connectionId: connection.id,
+      poolSize: this.connections.size,
+    });
   }
 
   /**
@@ -228,18 +243,18 @@ export class ConnectionPool extends EventEmitter {
    */
   async execute<T>(
     fn: (db: Database.Database) => T,
-    options?: { retries?: number }
+    options?: { retries?: number },
   ): Promise<T> {
     const maxRetries = options?.retries ?? 3;
     let lastError: Error | null = null;
-    
+
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       const db = await this.acquire();
-      
+
       try {
         const result = fn(db);
         this.stats.totalQueries++;
-        
+
         // Update connection query count
         for (const conn of this.connections.values()) {
           if (conn.db === db) {
@@ -247,26 +262,34 @@ export class ConnectionPool extends EventEmitter {
             break;
           }
         }
-        
+
         return result;
       } catch (error) {
         lastError = error as Error;
-        
+
         // Check if error is due to database lock
-        if (lastError.message.includes("database is locked") && attempt < maxRetries - 1) {
-          logger.debug(`Retrying query due to lock (attempt ${attempt + 1})`, "CONNECTION_POOL");
-          
+        if (
+          lastError.message.includes("database is locked") &&
+          attempt < maxRetries - 1
+        ) {
+          logger.debug(
+            `Retrying query due to lock (attempt ${attempt + 1})`,
+            "CONNECTION_POOL",
+          );
+
           // Exponential backoff
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.pow(2, attempt) * 100),
+          );
           continue;
         }
-        
+
         throw error;
       } finally {
         this.release(db);
       }
     }
-    
+
     throw lastError || new Error("Failed to execute query after retries");
   }
 
@@ -277,26 +300,34 @@ export class ConnectionPool extends EventEmitter {
     this.checkpointInterval = setInterval(async () => {
       try {
         const db = await this.acquire();
-        
+
         try {
           // Check WAL file size
-          const walInfo = db.prepare("PRAGMA wal_checkpoint(PASSIVE)").get() as any;
+          const walInfo = db
+            .prepare("PRAGMA wal_checkpoint(PASSIVE)")
+            .get() as any;
           const walSize = walInfo[1] * 4096; // Pages to bytes
-          
+
           if (walSize > this.config.walSizeLimit) {
-            logger.info(`WAL file size (${walSize} bytes) exceeds limit, performing checkpoint`, "CONNECTION_POOL");
-            
+            logger.info(
+              `WAL file size (${walSize} bytes) exceeds limit, performing checkpoint`,
+              "CONNECTION_POOL",
+            );
+
             // Perform full checkpoint
             db.prepare("PRAGMA wal_checkpoint(RESTART)").run();
             this.stats.checkpoints++;
-            
+
             this.emit("checkpoint", { walSize, timestamp: Date.now() });
           }
         } finally {
           this.release(db);
         }
       } catch (error) {
-        logger.error(`Checkpoint monitoring error: ${error}`, "CONNECTION_POOL");
+        logger.error(
+          `Checkpoint monitoring error: ${error}`,
+          "CONNECTION_POOL",
+        );
       }
     }, this.config.checkpointInterval);
   }
@@ -308,25 +339,30 @@ export class ConnectionPool extends EventEmitter {
     this.maintenanceInterval = setInterval(() => {
       const now = Date.now();
       const toRecycle: string[] = [];
-      
+
       for (const [id, conn] of this.connections) {
-        if (!conn.inUse && (now - conn.lastUsed) > this.config.maxIdleTime) {
+        if (!conn.inUse && now - conn.lastUsed > this.config.maxIdleTime) {
           toRecycle.push(id);
         }
       }
-      
+
       // Recycle idle connections
       for (const id of toRecycle) {
         const conn = this.connections.get(id);
         if (conn && !conn.inUse && this.connections.size > 1) {
           conn.db.close();
           this.connections.delete(id);
-          this.availableConnections = this.availableConnections.filter(availId => availId !== id);
+          this.availableConnections = this.availableConnections.filter(
+            (availId) => availId !== id,
+          );
           this.stats.recycledConnections++;
-          
+
           logger.debug(`Recycled idle connection: ${id}`, "CONNECTION_POOL");
-          
-          this.emit("recycle", { connectionId: id, idleTime: now - conn.lastUsed });
+
+          this.emit("recycle", {
+            connectionId: id,
+            idleTime: now - conn.lastUsed,
+          });
         }
       }
     }, 30000); // Every 30 seconds
@@ -351,7 +387,7 @@ export class ConnectionPool extends EventEmitter {
     }>;
   } {
     const now = Date.now();
-    
+
     return {
       poolSize: this.connections.size,
       activeConnections: this.stats.activeConnections,
@@ -359,7 +395,7 @@ export class ConnectionPool extends EventEmitter {
       totalQueries: this.stats.totalQueries,
       checkpoints: this.stats.checkpoints,
       recycledConnections: this.stats.recycledConnections,
-      connectionDetails: Array.from(this.connections.values()).map(conn => ({
+      connectionDetails: Array.from(this.connections.values()).map((conn) => ({
         id: conn.id,
         inUse: conn.inUse,
         queryCount: conn.queryCount,
@@ -376,28 +412,31 @@ export class ConnectionPool extends EventEmitter {
     logger.info("Closing connection pool", "CONNECTION_POOL", {
       stats: this.getStats(),
     });
-    
+
     // Clear intervals
     if (this.checkpointInterval) {
       clearInterval(this.checkpointInterval);
     }
-    
+
     if (this.maintenanceInterval) {
       clearInterval(this.maintenanceInterval);
     }
-    
+
     // Close all connections
     for (const conn of this.connections.values()) {
       try {
         conn.db.close();
       } catch (error) {
-        logger.error(`Error closing connection ${conn.id}: ${error}`, "CONNECTION_POOL");
+        logger.error(
+          `Error closing connection ${conn.id}: ${error}`,
+          "CONNECTION_POOL",
+        );
       }
     }
-    
+
     this.connections.clear();
     this.availableConnections = [];
-    
+
     this.emit("close");
   }
 }

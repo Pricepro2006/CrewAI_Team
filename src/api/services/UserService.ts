@@ -23,7 +23,7 @@ export type { JWTPayload } from "../utils/jwt.js";
 export enum UserRole {
   USER = "user",
   ADMIN = "admin",
-  MODERATOR = "moderator"
+  MODERATOR = "moderator",
 }
 
 /**

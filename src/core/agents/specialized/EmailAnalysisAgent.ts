@@ -1,35 +1,40 @@
-import { BaseAgent } from '../base/BaseAgent.js';
-import type { AgentContext, AgentResult } from '../base/AgentTypes.js';
-import { OllamaProvider } from '../../llm/OllamaProvider.js';
-import { logger } from '../../../utils/logger.js';
+import { BaseAgent } from "../base/BaseAgent.js";
+import type { AgentContext, AgentResult } from "../base/AgentTypes.js";
+import { OllamaProvider } from "../../llm/OllamaProvider.js";
+import { logger } from "../../../utils/logger.js";
 // Re-export types for backward compatibility
-export * from './EmailAnalysisTypes.js';
-import type { Email, EmailAnalysis, EmailEntities, EmailProcessingResult } from './EmailAnalysisTypes.js';
-import { 
-  PRODUCTION_EMAIL_CONFIG, 
+export * from "./EmailAnalysisTypes.js";
+import type {
+  Email,
+  EmailAnalysis,
+  EmailEntities,
+  EmailProcessingResult,
+} from "./EmailAnalysisTypes.js";
+import {
+  PRODUCTION_EMAIL_CONFIG,
   enhancePriorityDetection,
-  ANALYSIS_SCENARIOS 
-} from './EmailAnalysisConfig.js';
+  ANALYSIS_SCENARIOS,
+} from "./EmailAnalysisConfig.js";
 
 export class EmailAnalysisAgent extends BaseAgent {
   private ollamaProvider: OllamaProvider;
   private cache: any; // Will be initialized later to avoid circular import
-  
+
   // TD SYNNEX specific categories
   private readonly categories = {
     workflow: [
-      'Order Management',
-      'Shipping/Logistics', 
-      'Quote Processing',
-      'Customer Support',
-      'Deal Registration',
-      'Approval Workflows',
-      'Renewal Processing',
-      'Vendor Management'
+      "Order Management",
+      "Shipping/Logistics",
+      "Quote Processing",
+      "Customer Support",
+      "Deal Registration",
+      "Approval Workflows",
+      "Renewal Processing",
+      "Vendor Management",
     ],
-    priority: ['Critical', 'High', 'Medium', 'Low'],
-    intent: ['Action Required', 'FYI', 'Request', 'Update'],
-    urgency: ['Immediate', '24 Hours', '72 Hours', 'No Rush']
+    priority: ["Critical", "High", "Medium", "Low"],
+    intent: ["Action Required", "FYI", "Request", "Update"],
+    urgency: ["Immediate", "24 Hours", "72 Hours", "No Rush"],
   };
 
   // Entity extraction patterns
@@ -39,62 +44,65 @@ export class EmailAnalysisAgent extends BaseAgent {
     orderNumber: /\b(?:Order|ORD)[\s#:-]*([A-Z]{2,3}\d{6,10})\b/gi,
     trackingNumber: /\b(?:1Z|FEDEX|UPS)[\w\d]{10,35}\b/gi,
     caseNumber: /\b(?:Case|Ticket|INC)[\s#:-]*(\d{6,10})\b/gi,
-    amount: /\$[\d,]+\.?\d{0,2}|\b\d+(?:,\d{3})*(?:\.\d{2})?\s*(?:USD|EUR|GBP)\b/gi,
-    date: /\b(?:\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{1,2},? \d{2,4})\b/gi
+    amount:
+      /\$[\d,]+\.?\d{0,2}|\b\d+(?:,\d{3})*(?:\.\d{2})?\s*(?:USD|EUR|GBP)\b/gi,
+    date: /\b(?:\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{1,2},? \d{2,4})\b/gi,
   };
 
   // Workflow state machine
   private readonly workflowStates = {
-    'New': {
-      transitions: ['In Review', 'In Progress'],
-      conditions: ['email.isRead', 'email.hasReply']
+    New: {
+      transitions: ["In Review", "In Progress"],
+      conditions: ["email.isRead", "email.hasReply"],
     },
-    'In Review': {
-      transitions: ['In Progress', 'Pending External'],
-      conditions: ['categorization.complete', 'action.assigned']
+    "In Review": {
+      transitions: ["In Progress", "Pending External"],
+      conditions: ["categorization.complete", "action.assigned"],
     },
-    'In Progress': {
-      transitions: ['Pending External', 'Completed'],
-      conditions: ['task.created', 'response.sent']
+    "In Progress": {
+      transitions: ["Pending External", "Completed"],
+      conditions: ["task.created", "response.sent"],
     },
-    'Pending External': {
-      transitions: ['In Progress', 'Completed'],
-      conditions: ['external.response', 'timeout.reached']
+    "Pending External": {
+      transitions: ["In Progress", "Completed"],
+      conditions: ["external.response", "timeout.reached"],
     },
-    'Completed': {
+    Completed: {
       transitions: [],
-      conditions: []
-    }
+      conditions: [],
+    },
   };
 
   constructor() {
     super(
-      'EmailAnalysisAgent',
-      'Specializes in analyzing and categorizing TD SYNNEX email communications',
-      PRODUCTION_EMAIL_CONFIG.primaryModel // Use production-tested model
+      "EmailAnalysisAgent",
+      "Specializes in analyzing and categorizing TD SYNNEX email communications",
+      PRODUCTION_EMAIL_CONFIG.primaryModel, // Use production-tested model
     );
-    
+
     this.ollamaProvider = new OllamaProvider({
       model: this.model,
-      baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+      baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
     });
-    
+
     // Cache will be initialized lazily to avoid circular import
     this.cache = null;
-    
+
     // Add capabilities
-    this.addCapability('email-analysis');
-    this.addCapability('entity-extraction');
-    this.addCapability('workflow-management');
-    this.addCapability('priority-assessment');
+    this.addCapability("email-analysis");
+    this.addCapability("entity-extraction");
+    this.addCapability("workflow-management");
+    this.addCapability("priority-assessment");
   }
 
   private async initializeCache(): Promise<void> {
     if (!this.cache) {
-      const { EmailAnalysisCache } = await import('../../cache/EmailAnalysisCache.js');
+      const { EmailAnalysisCache } = await import(
+        "../../cache/EmailAnalysisCache.js"
+      );
       this.cache = new EmailAnalysisCache({
         maxSize: 500,
-        ttl: 1000 * 60 * 30 // 30 minutes
+        ttl: 1000 * 60 * 30, // 30 minutes
       });
     }
   }
@@ -103,16 +111,16 @@ export class EmailAnalysisAgent extends BaseAgent {
     try {
       // Parse email data from task
       const email = context.metadata?.email as Email;
-      
+
       if (!email) {
         return {
           success: false,
-          error: 'No email data provided in context',
+          error: "No email data provided in context",
         };
       }
 
       const analysis = await this.analyzeEmail(email);
-      
+
       return {
         success: true,
         data: analysis,
@@ -121,8 +129,8 @@ export class EmailAnalysisAgent extends BaseAgent {
           agent: this.name,
           timestamp: new Date().toISOString(),
           confidence: analysis.confidence,
-          emailId: email.id
-        }
+          emailId: email.id,
+        },
       };
     } catch (error) {
       return this.handleError(error as Error);
@@ -130,56 +138,74 @@ export class EmailAnalysisAgent extends BaseAgent {
   }
 
   async analyzeEmail(email: Email): Promise<EmailAnalysis> {
-    logger.info(`Analyzing email: ${email.subject}`, 'EMAIL_AGENT');
-    
+    logger.info(`Analyzing email: ${email.subject}`, "EMAIL_AGENT");
+
     // Check cache first
     await this.initializeCache();
     const cached = this.cache.get(email.id);
     if (cached) {
-      logger.debug(`Using cached analysis for email: ${email.id}`, 'EMAIL_AGENT');
+      logger.debug(
+        `Using cached analysis for email: ${email.id}`,
+        "EMAIL_AGENT",
+      );
       return cached;
     }
-    
+
     // Stage 1: Quick categorization with lightweight model
     const quickAnalysis = await this.quickCategorize(email);
-    
+
     // Stage 2: Deep analysis if confidence is low
     if (quickAnalysis.confidence && quickAnalysis.confidence < 0.8) {
       const deepAnalysis = await this.deepAnalyze(email);
       return this.mergeAnalyses(quickAnalysis, deepAnalysis);
     }
-    
+
     // Stage 3: Entity extraction
     const entities = await this.extractEntities(email);
-    
+
     // Stage 4: Workflow state determination
     const workflowState = await this.determineWorkflowState(email, entities);
-    
+
     // Stage 5: Generate suggested actions
     const suggestedActions = await this.generateActions(email, workflowState);
-    
+
     // Stage 6: Generate summary
     const summary = await this.generateSummary(email);
-    
+
     // Apply TD SYNNEX-specific priority rules
-    const modelPriority = quickAnalysis.priority || 'Medium';
+    const modelPriority = quickAnalysis.priority || "Medium";
     const enhancedPriority = enhancePriorityDetection(email, modelPriority);
-    
+
     const analysis: EmailAnalysis = {
-      categories: quickAnalysis.categories || { workflow: [], priority: enhancedPriority.priority, intent: 'FYI', urgency: 'No Rush' },
-      priority: enhancedPriority.priority as 'Critical' | 'High' | 'Medium' | 'Low',
+      categories: quickAnalysis.categories || {
+        workflow: [],
+        priority: enhancedPriority.priority,
+        intent: "FYI",
+        urgency: "No Rush",
+      },
+      priority: enhancedPriority.priority as
+        | "Critical"
+        | "High"
+        | "Medium"
+        | "Low",
       entities,
       workflowState,
       suggestedActions,
-      confidence: Math.max(quickAnalysis.confidence || 0.5, enhancedPriority.confidence),
+      confidence: Math.max(
+        quickAnalysis.confidence || 0.5,
+        enhancedPriority.confidence,
+      ),
       summary,
-      prioritySource: enhancedPriority.source as 'pattern-rule' | 'workflow-rule' | 'model' // Track how priority was determined
+      prioritySource: enhancedPriority.source as
+        | "pattern-rule"
+        | "workflow-rule"
+        | "model", // Track how priority was determined
     };
-    
+
     // Cache the result
     await this.initializeCache();
     this.cache.set(email.id, analysis);
-    
+
     return analysis;
   }
 
@@ -191,10 +217,10 @@ From: ${email.from.emailAddress.address}
 Preview: ${email.bodyPreview || email.body?.substring(0, 500)}
 
 Categories to assign:
-- workflow: ${this.categories.workflow.join(', ')}
-- priority: ${this.categories.priority.join(', ')}
-- intent: ${this.categories.intent.join(', ')}
-- urgency: ${this.categories.urgency.join(', ')}
+- workflow: ${this.categories.workflow.join(", ")}
+- priority: ${this.categories.priority.join(", ")}
+- intent: ${this.categories.intent.join(", ")}
+- urgency: ${this.categories.urgency.join(", ")}
 
 Response format:
 {
@@ -211,13 +237,13 @@ Response format:
     try {
       const response = await this.ollamaProvider.generate(prompt, {
         temperature: 0.1,
-        format: 'json'
+        format: "json",
       });
 
       return JSON.parse(response);
     } catch (error) {
-      logger.error('Quick categorization failed', 'EMAIL_AGENT', { error });
-      
+      logger.error("Quick categorization failed", "EMAIL_AGENT", { error });
+
       // Fallback to rule-based categorization
       return this.fallbackCategorization(email);
     }
@@ -244,17 +270,17 @@ Provide detailed categorization with high confidence.`;
       // Create a new provider instance with quality-focused model
       const deepProvider = new OllamaProvider({
         model: ANALYSIS_SCENARIOS.qualityFocus.primaryModel,
-        baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+        baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
       });
-      
+
       const response = await deepProvider.generate(prompt, {
-        temperature: 0.2
+        temperature: 0.2,
       });
 
       // Parse and structure the response
       return this.parseDeepAnalysis(response);
     } catch (error) {
-      logger.error('Deep analysis failed', 'EMAIL_AGENT', { error });
+      logger.error("Deep analysis failed", "EMAIL_AGENT", { error });
       return {};
     }
   }
@@ -270,29 +296,40 @@ Provide detailed categorization with high confidence.`;
       customers: [],
       products: [],
       amounts: [],
-      dates: []
+      dates: [],
     };
 
     // Extract using regex patterns
     entities.poNumbers = this.extractMatches(text, this.patterns.poNumber);
-    entities.quoteNumbers = this.extractMatches(text, this.patterns.quoteNumber);
-    entities.orderNumbers = this.extractMatches(text, this.patterns.orderNumber);
-    entities.trackingNumbers = this.extractMatches(text, this.patterns.trackingNumber);
+    entities.quoteNumbers = this.extractMatches(
+      text,
+      this.patterns.quoteNumber,
+    );
+    entities.orderNumbers = this.extractMatches(
+      text,
+      this.patterns.orderNumber,
+    );
+    entities.trackingNumbers = this.extractMatches(
+      text,
+      this.patterns.trackingNumber,
+    );
     entities.caseNumbers = this.extractMatches(text, this.patterns.caseNumber);
-    
+
     // Extract amounts
     const amountMatches = text.match(this.patterns.amount) || [];
-    entities.amounts = amountMatches.map(match => {
-      const value = parseFloat(match.replace(/[$,]/g, '').replace(/\s*[A-Z]{3}$/, ''));
-      const currency = match.match(/[A-Z]{3}$/)?.[0] || 'USD';
+    entities.amounts = amountMatches.map((match) => {
+      const value = parseFloat(
+        match.replace(/[$,]/g, "").replace(/\s*[A-Z]{3}$/, ""),
+      );
+      const currency = match.match(/[A-Z]{3}$/)?.[0] || "USD";
       return { value, currency };
     });
-    
+
     // Extract dates
     const dateMatches = text.match(this.patterns.date) || [];
-    entities.dates = dateMatches.map(date => ({
+    entities.dates = dateMatches.map((date) => ({
       date,
-      context: this.getDateContext(date, text)
+      context: this.getDateContext(date, text),
     }));
 
     // Extract customers and products using NER
@@ -306,7 +343,7 @@ Provide detailed categorization with high confidence.`;
   private extractMatches(text: string, pattern: RegExp): string[] {
     const matches: string[] = [];
     let match;
-    
+
     while ((match = pattern.exec(text)) !== null) {
       if (match[1]) {
         matches.push(match[1]);
@@ -314,7 +351,7 @@ Provide detailed categorization with high confidence.`;
         matches.push(match[0]);
       }
     }
-    
+
     return [...new Set(matches)]; // Remove duplicates
   }
 
@@ -325,101 +362,115 @@ Provide detailed categorization with high confidence.`;
     return text.substring(contextStart, contextEnd).trim();
   }
 
-  private async extractNEREntities(text: string): Promise<{ customers: string[]; products: string[] }> {
+  private async extractNEREntities(
+    text: string,
+  ): Promise<{ customers: string[]; products: string[] }> {
     // This would typically use a more sophisticated NER model
     // For now, using pattern matching for TD SYNNEX specific entities
-    
+
     const customers: string[] = [];
     const products: string[] = [];
-    
+
     // Common customer patterns
     const customerPatterns = [
       /(?:customer|client|partner|reseller):\s*([A-Z][A-Za-z\s&,.-]+)/gi,
-      /(?:for|to|from)\s+([A-Z][A-Za-z\s&,.-]+(?:Inc|LLC|Corp|Ltd|Company))/gi
+      /(?:for|to|from)\s+([A-Z][A-Za-z\s&,.-]+(?:Inc|LLC|Corp|Ltd|Company))/gi,
     ];
-    
+
     // Product patterns (HP products, etc.)
     const productPatterns = [
       /\b([A-Z0-9]{5,12}(?:#[A-Z]{3})?)\b/g, // SKU patterns
-      /\b(?:HP|HPE|Dell|Lenovo|Microsoft)\s+([A-Za-z0-9\s-]+)/gi
+      /\b(?:HP|HPE|Dell|Lenovo|Microsoft)\s+([A-Za-z0-9\s-]+)/gi,
     ];
-    
-    customerPatterns.forEach(pattern => {
+
+    customerPatterns.forEach((pattern) => {
       const matches = text.match(pattern) || [];
-      customers.push(...matches.map(m => m.replace(/^(customer|client|partner|reseller|for|to|from):\s*/i, '').trim()));
+      customers.push(
+        ...matches.map((m) =>
+          m
+            .replace(/^(customer|client|partner|reseller|for|to|from):\s*/i, "")
+            .trim(),
+        ),
+      );
     });
-    
-    productPatterns.forEach(pattern => {
+
+    productPatterns.forEach((pattern) => {
       const matches = text.match(pattern) || [];
       products.push(...matches);
     });
-    
+
     return {
       customers: [...new Set(customers)],
-      products: [...new Set(products)]
+      products: [...new Set(products)],
     };
   }
 
-  private async determineWorkflowState(email: Email, entities: EmailEntities): Promise<string> {
+  private async determineWorkflowState(
+    email: Email,
+    entities: EmailEntities,
+  ): Promise<string> {
     // Determine initial state based on email properties
     if (!email.isRead) {
-      return 'New';
+      return "New";
     }
-    
+
     // Check for specific entity patterns that indicate state
     if (entities.trackingNumbers.length > 0) {
-      return 'Pending External'; // Waiting for delivery
+      return "Pending External"; // Waiting for delivery
     }
-    
+
     if (entities.poNumbers.length > 0 || entities.orderNumbers.length > 0) {
-      return 'In Progress'; // Active order processing
+      return "In Progress"; // Active order processing
     }
-    
+
     if (entities.quoteNumbers.length > 0) {
-      return 'In Review'; // Quote needs review
+      return "In Review"; // Quote needs review
     }
-    
+
     // Default to In Review for read emails
-    return 'In Review';
+    return "In Review";
   }
 
-  private async generateActions(email: Email, workflowState: string): Promise<string[]> {
+  private async generateActions(
+    email: Email,
+    workflowState: string,
+  ): Promise<string[]> {
     const actions: string[] = [];
-    
+
     // State-based actions
     switch (workflowState) {
-      case 'New':
-        actions.push('Mark as read and categorize');
-        actions.push('Assign to appropriate team member');
+      case "New":
+        actions.push("Mark as read and categorize");
+        actions.push("Assign to appropriate team member");
         break;
-        
-      case 'In Review':
-        actions.push('Review content and determine next steps');
-        actions.push('Check for related emails or cases');
+
+      case "In Review":
+        actions.push("Review content and determine next steps");
+        actions.push("Check for related emails or cases");
         break;
-        
-      case 'In Progress':
-        actions.push('Update case/order status');
-        actions.push('Send progress update to customer');
+
+      case "In Progress":
+        actions.push("Update case/order status");
+        actions.push("Send progress update to customer");
         break;
-        
-      case 'Pending External':
-        actions.push('Set follow-up reminder');
-        actions.push('Monitor for external response');
+
+      case "Pending External":
+        actions.push("Set follow-up reminder");
+        actions.push("Monitor for external response");
         break;
     }
-    
+
     // Entity-based actions
-    if (email.categories.includes('Order Management')) {
-      actions.push('Verify order details in system');
-      actions.push('Check inventory availability');
+    if (email.categories.includes("Order Management")) {
+      actions.push("Verify order details in system");
+      actions.push("Check inventory availability");
     }
-    
-    if (email.categories.includes('Customer Support')) {
-      actions.push('Create or update support ticket');
-      actions.push('Check customer history');
+
+    if (email.categories.includes("Customer Support")) {
+      actions.push("Create or update support ticket");
+      actions.push("Check customer history");
     }
-    
+
     return actions;
   }
 
@@ -434,9 +485,9 @@ Summary:`;
     try {
       const summary = await this.ollamaProvider.generate(prompt, {
         temperature: 0.3,
-        maxTokens: 100
+        maxTokens: 100,
       });
-      
+
       return summary.trim();
     } catch (error) {
       // Fallback to subject-based summary
@@ -444,63 +495,86 @@ Summary:`;
     }
   }
 
-  private mergeAnalyses(quick: Partial<EmailAnalysis>, deep: Partial<EmailAnalysis>): EmailAnalysis {
+  private mergeAnalyses(
+    quick: Partial<EmailAnalysis>,
+    deep: Partial<EmailAnalysis>,
+  ): EmailAnalysis {
     // Merge analyses, preferring deep analysis when available
     return {
-      categories: deep.categories || quick.categories || { workflow: [], priority: 'Medium', intent: 'FYI', urgency: 'No Rush' },
-      priority: deep.priority || quick.priority || 'Medium',
+      categories: deep.categories ||
+        quick.categories || {
+          workflow: [],
+          priority: "Medium",
+          intent: "FYI",
+          urgency: "No Rush",
+        },
+      priority: deep.priority || quick.priority || "Medium",
       entities: deep.entities || quick.entities || this.emptyEntities(),
-      workflowState: deep.workflowState || quick.workflowState || 'New',
-      suggestedActions: [...(deep.suggestedActions || []), ...(quick.suggestedActions || [])],
+      workflowState: deep.workflowState || quick.workflowState || "New",
+      suggestedActions: [
+        ...(deep.suggestedActions || []),
+        ...(quick.suggestedActions || []),
+      ],
       confidence: Math.max(quick.confidence || 0, deep.confidence || 0),
-      summary: deep.summary || quick.summary || ''
+      summary: deep.summary || quick.summary || "",
     };
   }
 
   private fallbackCategorization(email: Email): Partial<EmailAnalysis> {
     // Simple rule-based fallback
     const subject = email.subject.toLowerCase();
-    const preview = (email.bodyPreview || '').toLowerCase();
-    const content = subject + ' ' + preview;
-    
+    const preview = (email.bodyPreview || "").toLowerCase();
+    const content = subject + " " + preview;
+
     const categories = {
       workflow: [] as string[],
-      priority: 'Medium' as 'Critical' | 'High' | 'Medium' | 'Low',
-      intent: 'FYI' as 'Action Required' | 'FYI' | 'Request' | 'Update',
-      urgency: 'No Rush' as 'Immediate' | '24 Hours' | '72 Hours' | 'No Rush'
+      priority: "Medium" as "Critical" | "High" | "Medium" | "Low",
+      intent: "FYI" as "Action Required" | "FYI" | "Request" | "Update",
+      urgency: "No Rush" as "Immediate" | "24 Hours" | "72 Hours" | "No Rush",
     };
-    
+
     // Workflow detection
-    if (content.includes('order') || content.includes('po ')) {
-      categories.workflow.push('Order Management');
+    if (content.includes("order") || content.includes("po ")) {
+      categories.workflow.push("Order Management");
     }
-    if (content.includes('ship') || content.includes('tracking')) {
-      categories.workflow.push('Shipping/Logistics');
+    if (content.includes("ship") || content.includes("tracking")) {
+      categories.workflow.push("Shipping/Logistics");
     }
-    if (content.includes('quote') || content.includes('pricing')) {
-      categories.workflow.push('Quote Processing');
+    if (content.includes("quote") || content.includes("pricing")) {
+      categories.workflow.push("Quote Processing");
     }
-    
+
     // Priority detection
-    if (content.includes('urgent') || content.includes('critical') || content.includes('asap')) {
-      categories.priority = 'Critical';
-      categories.urgency = 'Immediate';
-    } else if (content.includes('important') || content.includes('priority')) {
-      categories.priority = 'High';
-      categories.urgency = '24 Hours';
+    if (
+      content.includes("urgent") ||
+      content.includes("critical") ||
+      content.includes("asap")
+    ) {
+      categories.priority = "Critical";
+      categories.urgency = "Immediate";
+    } else if (content.includes("important") || content.includes("priority")) {
+      categories.priority = "High";
+      categories.urgency = "24 Hours";
     }
-    
+
     // Intent detection
-    if (content.includes('please') || content.includes('request') || content.includes('need')) {
-      categories.intent = 'Request';
-    } else if (content.includes('action required') || content.includes('response needed')) {
-      categories.intent = 'Action Required';
+    if (
+      content.includes("please") ||
+      content.includes("request") ||
+      content.includes("need")
+    ) {
+      categories.intent = "Request";
+    } else if (
+      content.includes("action required") ||
+      content.includes("response needed")
+    ) {
+      categories.intent = "Action Required";
     }
-    
+
     return {
       categories,
       priority: categories.priority,
-      confidence: 0.6
+      confidence: 0.6,
     };
   }
 
@@ -512,22 +586,22 @@ Summary:`;
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
       }
-      
+
       // Otherwise parse text response
       const analysis: Partial<EmailAnalysis> = {
-        confidence: 0.85
+        confidence: 0.85,
       };
-      
+
       // Extract priority mentions
       if (/critical|urgent|immediate/i.test(response)) {
-        analysis.priority = 'Critical';
+        analysis.priority = "Critical";
       } else if (/high.*priority/i.test(response)) {
-        analysis.priority = 'High';
+        analysis.priority = "High";
       }
-      
+
       return analysis;
     } catch (error) {
-      logger.error('Failed to parse deep analysis', 'EMAIL_AGENT', { error });
+      logger.error("Failed to parse deep analysis", "EMAIL_AGENT", { error });
       return { confidence: 0.5 };
     }
   }
@@ -542,14 +616,14 @@ Summary:`;
       customers: [],
       products: [],
       amounts: [],
-      dates: []
+      dates: [],
     };
   }
 
   private formatAnalysisOutput(analysis: EmailAnalysis): string {
     return `Email Analysis Complete:
 Priority: ${analysis.priority}
-Workflow: ${analysis.categories.workflow.join(', ')}
+Workflow: ${analysis.categories.workflow.join(", ")}
 Intent: ${analysis.categories.intent}
 Urgency: ${analysis.categories.urgency}
 State: ${analysis.workflowState}
@@ -558,12 +632,12 @@ Confidence: ${(analysis.confidence * 100).toFixed(1)}%
 Summary: ${analysis.summary}
 
 Suggested Actions:
-${analysis.suggestedActions.map(action => `- ${action}`).join('\n')}
+${analysis.suggestedActions.map((action) => `- ${action}`).join("\n")}
 
 Extracted Entities:
-- PO Numbers: ${analysis.entities.poNumbers.join(', ') || 'None'}
-- Quote Numbers: ${analysis.entities.quoteNumbers.join(', ') || 'None'}
-- Order Numbers: ${analysis.entities.orderNumbers.join(', ') || 'None'}
-- Customers: ${analysis.entities.customers.join(', ') || 'None'}`;
+- PO Numbers: ${analysis.entities.poNumbers.join(", ") || "None"}
+- Quote Numbers: ${analysis.entities.quoteNumbers.join(", ") || "None"}
+- Order Numbers: ${analysis.entities.orderNumbers.join(", ") || "None"}
+- Customers: ${analysis.entities.customers.join(", ") || "None"}`;
   }
 }

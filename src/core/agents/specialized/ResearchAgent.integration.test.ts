@@ -22,7 +22,7 @@ describe("ResearchAgent Integration Tests", () => {
     try {
       await setupOllamaForTesting();
       isOllamaAvailable = await isOllamaRunning();
-      
+
       if (isOllamaAvailable) {
         const testModel = getTestModel();
         await ensureModelAvailable(testModel);
@@ -45,15 +45,15 @@ describe("ResearchAgent Integration Tests", () => {
 
     const testConfig = createTestOllamaConfig();
     agent = new ResearchAgent();
-    
+
     // Configure agent to use test Ollama instance
-    if (agent['llm']) {
-      agent['llm'].config = {
-        ...agent['llm'].config,
+    if (agent["llm"]) {
+      agent["llm"].config = {
+        ...agent["llm"].config,
         ...testConfig,
       };
     }
-    
+
     await agent.initialize();
   });
 
@@ -61,7 +61,7 @@ describe("ResearchAgent Integration Tests", () => {
     it("should perform actual web search", async () => {
       await withOllama(async () => {
         const testConfig = getTestConfiguration();
-        
+
         const result = await agent.execute("TypeScript programming language", {
           task: "TypeScript programming language",
           ragDocuments: [],
@@ -69,19 +69,21 @@ describe("ResearchAgent Integration Tests", () => {
 
         assertSuccessResponse(result);
         expect(result.data?.synthesis).toBeDefined();
-        expect(result.data.synthesis.length).toBeGreaterThan(testConfig.expectations.minResponseLength);
+        expect(result.data.synthesis.length).toBeGreaterThan(
+          testConfig.expectations.minResponseLength,
+        );
         expect(result.data?.sources).toBeInstanceOf(Array);
 
         // Real LLM should provide relevant information about TypeScript
         const summaryLower = result.data.synthesis.toLowerCase();
         const hasRelevantContent = [
           "typescript",
-          "javascript", 
+          "javascript",
           "programming",
           "language",
-          "microsoft"
-        ].some(term => summaryLower.includes(term));
-        
+          "microsoft",
+        ].some((term) => summaryLower.includes(term));
+
         expect(hasRelevantContent).toBe(true);
       });
     });

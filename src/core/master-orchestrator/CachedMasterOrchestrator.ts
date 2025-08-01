@@ -8,7 +8,11 @@
 import { MasterOrchestrator } from "./MasterOrchestrator.js";
 import { getQueryCache } from "../cache/QueryCache.js";
 import { getAgentPool, type AgentPoolStats } from "../cache/AgentPool.js";
-import type { Query, ExecutionResult, MasterOrchestratorConfig } from "./types.js";
+import type {
+  Query,
+  ExecutionResult,
+  MasterOrchestratorConfig,
+} from "./types.js";
 import { logger, createPerformanceMonitor } from "../../utils/logger.js";
 
 export class CachedMasterOrchestrator extends MasterOrchestrator {

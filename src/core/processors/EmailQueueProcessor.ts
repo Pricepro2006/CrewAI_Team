@@ -70,14 +70,22 @@ export class EmailQueueProcessor {
       // Setup queue processing
       this.setupQueueHandlers();
 
-      logger.info("Email queue processor initialized with Redis", "EMAIL_QUEUE", {
-        concurrency: this.config.concurrency,
-        maxRetries: this.config.maxRetries,
-      });
+      logger.info(
+        "Email queue processor initialized with Redis",
+        "EMAIL_QUEUE",
+        {
+          concurrency: this.config.concurrency,
+          maxRetries: this.config.maxRetries,
+        },
+      );
     } catch (error) {
-      logger.warn("Redis connection failed, running without queue support", "EMAIL_QUEUE", {
-        error: error instanceof Error ? error.message : String(error),
-      });
+      logger.warn(
+        "Redis connection failed, running without queue support",
+        "EMAIL_QUEUE",
+        {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      );
       // Queue will be undefined, methods will handle this gracefully
     }
   }
@@ -92,9 +100,10 @@ export class EmailQueueProcessor {
         logger.info("Processing email directly (no queue)", "EMAIL_QUEUE", {
           subject: emailData.subject?.substring(0, 50),
         });
-        
-        const processedEmail = await this.emailService.processIncomingEmail(emailData);
-        
+
+        const processedEmail =
+          await this.emailService.processIncomingEmail(emailData);
+
         // Broadcast to connected clients
         if (io) {
           io.emit("email:processed", {
@@ -105,7 +114,7 @@ export class EmailQueueProcessor {
             workflowState: processedEmail.workflowState,
           });
         }
-        
+
         return processedEmail.id;
       }
 
@@ -322,10 +331,14 @@ export class EmailQueueProcessor {
     error: Error,
   ): Promise<void> {
     if (!this.queue) {
-      logger.error("Failed to add to dead letter queue - no queue available", "EMAIL_QUEUE", {
-        jobData,
-        error: error.message,
-      });
+      logger.error(
+        "Failed to add to dead letter queue - no queue available",
+        "EMAIL_QUEUE",
+        {
+          jobData,
+          error: error.message,
+        },
+      );
       return;
     }
 
@@ -402,7 +415,7 @@ export class EmailQueueProcessor {
         delayed: 0,
         paused: false,
         healthy: true,
-        message: "Queue not available (Redis not connected)"
+        message: "Queue not available (Redis not connected)",
       };
     }
 

@@ -1,4 +1,5 @@
 # BusinessSearchPromptEnhancer Documentation
+
 ## GROUP 2B WebSearch Enhancement - Agent 23 Implementation
 
 ### Overview
@@ -29,16 +30,19 @@ BusinessSearchPromptEnhancer
 #### 1. Enhancement Levels
 
 **Minimal**
+
 - Light-touch enhancement
 - Basic WebSearch instruction
 - Suitable for general queries
 
 **Standard** (Default)
+
 - Comprehensive instructions
 - Detailed requirements list
 - Balanced approach for most use cases
 
 **Aggressive**
+
 - Critical requirement language
 - Extensive mandatory actions
 - Comprehensive quality standards
@@ -64,16 +68,16 @@ The enhancer includes curated examples showing proper business information forma
 #### Basic Integration
 
 ```typescript
-import { businessSearchPromptEnhancer } from '@core/prompts';
+import { businessSearchPromptEnhancer } from "@core/prompts";
 
 // Simple enhancement
 const enhanced = businessSearchPromptEnhancer.enhance(userQuery);
 
 // With options
 const enhanced = businessSearchPromptEnhancer.enhance(userQuery, {
-  enhancementLevel: 'aggressive',
+  enhancementLevel: "aggressive",
   includeExamples: true,
-  customInstructions: 'Focus on 5-mile radius'
+  customInstructions: "Focus on 5-mile radius",
 });
 ```
 
@@ -97,10 +101,10 @@ class YourAgent extends BaseAgent {
 ```typescript
 // In OllamaProvider or similar
 async generateResponse(prompt: string, options?: RequestOptions) {
-  const finalPrompt = this.shouldEnhanceForBusiness(prompt) 
+  const finalPrompt = this.shouldEnhanceForBusiness(prompt)
     ? businessSearchPromptEnhancer.enhance(prompt, this.enhancementConfig)
     : prompt;
-    
+
   return await this.callModel(finalPrompt, options);
 }
 ```
@@ -108,6 +112,7 @@ async generateResponse(prompt: string, options?: RequestOptions) {
 ### Business Query Detection
 
 The enhancer automatically detects business-related queries using keywords:
+
 - Location: "find", "where", "locate", "near me", "nearby"
 - Business types: "store", "shop", "restaurant", "service", "company"
 - Information needs: "hours", "open", "contact", "phone", "address"
@@ -138,6 +143,7 @@ The enhancer automatically detects business-related queries using keywords:
 ### Testing
 
 Comprehensive test suite covers:
+
 - All enhancement levels
 - Edge cases and error conditions
 - Security vulnerabilities
@@ -145,6 +151,7 @@ Comprehensive test suite covers:
 - Input sanitization
 
 Run tests:
+
 ```bash
 npm test src/core/prompts/__tests__/BusinessSearchPromptEnhancer.test.ts
 ```
@@ -152,6 +159,7 @@ npm test src/core/prompts/__tests__/BusinessSearchPromptEnhancer.test.ts
 ### Usage Examples
 
 See `example-usage.ts` for comprehensive examples including:
+
 - Basic enhancement
 - LLM integration
 - Agent patterns
@@ -184,16 +192,19 @@ See `example-usage.ts` for comprehensive examples including:
 ### Troubleshooting
 
 **Issue: Model not using WebSearch**
+
 - Solution: Upgrade to 'aggressive' enhancement level
 - Add explicit examples
 - Check model capabilities
 
 **Issue: Over-enhancement**
+
 - Solution: Use 'minimal' level
 - Disable examples
 - Remove custom instructions
 
 **Issue: Prompt too long**
+
 - Solution: Use 'minimal' level without examples
 - Extract and store instructions separately
 - Consider prompt compression
@@ -218,6 +229,7 @@ See `example-usage.ts` for comprehensive examples including:
 ### Compliance and Standards
 
 The BusinessSearchPromptEnhancer adheres to:
+
 - GDPR requirements (no PII storage)
 - Accessibility standards (clear formatting)
 - Security best practices (input validation)
@@ -226,6 +238,7 @@ The BusinessSearchPromptEnhancer adheres to:
 ### Support
 
 For issues or questions regarding the BusinessSearchPromptEnhancer:
+
 1. Check this documentation
 2. Review example-usage.ts
 3. Run the test suite
@@ -233,7 +246,7 @@ For issues or questions regarding the BusinessSearchPromptEnhancer:
 
 ---
 
-*Last Updated: [Current Date]*
-*Version: 1.0.0*
-*Agent: 23 - Prompt Engineering Specialist*
-*Group: 2B - WebSearch Enhancement*
+_Last Updated: [Current Date]_
+_Version: 1.0.0_
+_Agent: 23 - Prompt Engineering Specialist_
+_Group: 2B - WebSearch Enhancement_

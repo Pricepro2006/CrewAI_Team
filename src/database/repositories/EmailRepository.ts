@@ -70,15 +70,17 @@ const EmailQueryParamsSchema = z.object({
   priorities: z.array(DatabaseInputSchemas.emailPriority).optional(),
   workflowStates: z.array(z.string()).optional(),
   workflowTypes: z.array(z.string()).optional(),
-  dateRange: z.object({
-    start: z.date(),
-    end: z.date()
-  }).optional(),
+  dateRange: z
+    .object({
+      start: z.date(),
+      end: z.date(),
+    })
+    .optional(),
   assignedTo: z.string().optional(),
   hasAttachments: z.boolean().optional(),
   isRead: z.boolean().optional(),
   threadId: z.string().optional(),
-  conversationId: z.string().optional()
+  conversationId: z.string().optional(),
 });
 
 export interface EmailQueryParams {
@@ -532,38 +534,47 @@ export class EmailRepository {
     try {
       // Validate input parameters
       const validatedParams = EmailQueryParamsSchema.parse(params);
-      
+
       const whereClauses: string[] = [];
       const queryParams: any[] = [];
 
       // Build WHERE clauses with proper parameterization using validated params
       if (validatedParams.search) {
-        whereClauses.push(`(subject LIKE ? OR body_text LIKE ? OR sender_email LIKE ?)`);
+        whereClauses.push(
+          `(subject LIKE ? OR body_text LIKE ? OR sender_email LIKE ?)`,
+        );
         const searchPattern = `%${validatedParams.search}%`;
         queryParams.push(searchPattern, searchPattern, searchPattern);
       }
 
       if (validatedParams.senderEmails?.length) {
-        const placeholders = validatedParams.senderEmails.map(() => '?').join(',');
+        const placeholders = validatedParams.senderEmails
+          .map(() => "?")
+          .join(",");
         whereClauses.push(`sender_email IN (${placeholders})`);
         queryParams.push(...validatedParams.senderEmails);
       }
 
       if (validatedParams.statuses?.length) {
-        const placeholders = validatedParams.statuses.map(() => '?').join(',');
+        const placeholders = validatedParams.statuses.map(() => "?").join(",");
         whereClauses.push(`status IN (${placeholders})`);
         queryParams.push(...validatedParams.statuses);
       }
 
       if (validatedParams.priorities?.length) {
-        const placeholders = validatedParams.priorities.map(() => '?').join(',');
+        const placeholders = validatedParams.priorities
+          .map(() => "?")
+          .join(",");
         whereClauses.push(`priority IN (${placeholders})`);
         queryParams.push(...validatedParams.priorities);
       }
 
       if (validatedParams.dateRange) {
         whereClauses.push(`received_at >= ? AND received_at <= ?`);
-        queryParams.push(validatedParams.dateRange.start.toISOString(), validatedParams.dateRange.end.toISOString());
+        queryParams.push(
+          validatedParams.dateRange.start.toISOString(),
+          validatedParams.dateRange.end.toISOString(),
+        );
       }
 
       if (validatedParams.assignedTo !== undefined) {
@@ -596,9 +607,10 @@ export class EmailRepository {
       }
 
       // Build final queries
-      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+      const whereClause =
+        whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
       const baseQuery = `FROM emails_enhanced ${whereClause}`;
-      
+
       // Count query
       const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
       const { total } = this.db.prepare(countQuery).get(...queryParams) as any;
@@ -606,11 +618,11 @@ export class EmailRepository {
       // Data query with ordering and pagination
       let dataQuery = `SELECT * ${baseQuery} ORDER BY received_at DESC`;
       const dataParams = [...queryParams];
-      
+
       if (validatedParams.limit) {
         dataQuery += ` LIMIT ?`;
         dataParams.push(validatedParams.limit);
-        
+
         if (validatedParams.offset) {
           dataQuery += ` OFFSET ?`;
           dataParams.push(validatedParams.offset);
@@ -790,11 +802,11 @@ export class EmailRepository {
   async count(): Promise<number> {
     try {
       const result = this.db
-        .prepare('SELECT COUNT(*) as count FROM emails_enhanced')
+        .prepare("SELECT COUNT(*) as count FROM emails_enhanced")
         .get() as { count: number };
       return result.count;
     } catch (error) {
-      logger.error('Failed to count emails', 'EMAIL_REPOSITORY', {
+      logger.error("Failed to count emails", "EMAIL_REPOSITORY", {
         error: error instanceof Error ? error.message : String(error),
       });
       return 0;

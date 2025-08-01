@@ -137,9 +137,13 @@ try {
 
   logger.info("Email notification worker started successfully", "EMAIL_WORKER");
 } catch (error) {
-  logger.warn("Email notification worker not started - Redis unavailable", "EMAIL_WORKER", {
-    error: error instanceof Error ? error.message : String(error),
-  });
+  logger.warn(
+    "Email notification worker not started - Redis unavailable",
+    "EMAIL_WORKER",
+    {
+      error: error instanceof Error ? error.message : String(error),
+    },
+  );
 }
 
 // Graceful shutdown

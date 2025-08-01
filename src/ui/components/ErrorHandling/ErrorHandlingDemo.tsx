@@ -1,26 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { useToast } from "../Toast/index.js";
 import { ErrorModal } from "../ErrorModal/index.js";
 import { ErrorBoundary, withErrorBoundary } from "../ErrorBoundary/index.js";
 import { ErrorRecoveryBoundary } from "../ErrorRecovery/index.js";
 import { LoadingState, Skeleton, LoadingCard } from "../LoadingState/index.js";
-import { Button } from '../../../components/ui/button.js';
-import { Card } from '../../../components/ui/card.js';
-import { Alert, AlertDescription } from '../../../components/ui/alert.js';
-import { useErrorRecovery, useCircuitBreaker } from '../../hooks/useErrorRecovery.js';
-import './ErrorHandlingDemo.css';
+import { Button } from "../../../components/ui/button.js";
+import { Card } from "../../../components/ui/card.js";
+import { Alert, AlertDescription } from "../../../components/ui/alert.js";
+import {
+  useErrorRecovery,
+  useCircuitBreaker,
+} from "../../hooks/useErrorRecovery.js";
+import "./ErrorHandlingDemo.css";
 
 // Component that throws errors for testing
 function ErrorProneComponent({ shouldError }: { shouldError: boolean }) {
   if (shouldError) {
-    throw new Error('This is a test error from ErrorProneComponent');
+    throw new Error("This is a test error from ErrorProneComponent");
   }
   return <div>Component rendered successfully!</div>;
 }
 
 // Wrapped with error boundary HOC
 const SafeErrorProneComponent = withErrorBoundary(ErrorProneComponent, {
-  onError: (error) => console.log('HOC Error caught:', error),
+  onError: (error) => console.log("HOC Error caught:", error),
 });
 
 export function ErrorHandlingDemo() {
@@ -30,7 +33,7 @@ export function ErrorHandlingDemo() {
   const [modalError, setModalError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSkeleton, setShowSkeleton] = useState(false);
-  
+
   const errorRecovery = useErrorRecovery({
     maxRetries: 3,
     onRetry: (attempt, error) => {
@@ -46,13 +49,13 @@ export function ErrorHandlingDemo() {
   const simulateNetworkError = async () => {
     try {
       await circuitBreaker.execute(async () => {
-        throw new Error('Network request failed');
+        throw new Error("Network request failed");
       });
     } catch (error) {
-      toast.error('Network Error', {
-        message: 'Failed to connect to server',
+      toast.error("Network Error", {
+        message: "Failed to connect to server",
         action: {
-          label: 'Retry',
+          label: "Retry",
           onClick: simulateNetworkError,
         },
       });
@@ -60,29 +63,31 @@ export function ErrorHandlingDemo() {
   };
 
   const simulateCriticalError = () => {
-    const error = new Error('Critical system failure - Database connection lost');
+    const error = new Error(
+      "Critical system failure - Database connection lost",
+    );
     setModalError(error);
     setShowModal(true);
   };
 
   const simulateSuccessAction = () => {
-    toast.success('Action completed successfully!', {
-      message: 'Your changes have been saved',
+    toast.success("Action completed successfully!", {
+      message: "Your changes have been saved",
     });
   };
 
   const simulateWarning = () => {
-    toast.warning('Warning', {
-      message: 'Your session will expire in 5 minutes',
+    toast.warning("Warning", {
+      message: "Your session will expire in 5 minutes",
       duration: 0, // Don't auto-dismiss
     });
   };
 
   const simulateInfo = () => {
-    toast.info('New update available', {
-      message: 'Click to refresh and get the latest features',
+    toast.info("New update available", {
+      message: "Click to refresh and get the latest features",
       action: {
-        label: 'Refresh',
+        label: "Refresh",
         onClick: () => window.location.reload(),
       },
     });
@@ -94,13 +99,13 @@ export function ErrorHandlingDemo() {
       await new Promise((resolve, reject) => {
         setTimeout(() => {
           if (Math.random() > 0.5) {
-            resolve('Success');
+            resolve("Success");
           } else {
-            reject(new Error('Async operation failed'));
+            reject(new Error("Async operation failed"));
           }
         }, 2000);
       });
-      toast.success('Async operation completed!');
+      toast.success("Async operation completed!");
     } catch (error) {
       errorRecovery.handleError(error as Error, simulateAsyncOperation);
     } finally {
@@ -111,7 +116,10 @@ export function ErrorHandlingDemo() {
   return (
     <div className="error-handling-demo">
       <h1>Error Handling Demo</h1>
-      <p>This page demonstrates various error handling UI components and patterns.</p>
+      <p>
+        This page demonstrates various error handling UI components and
+        patterns.
+      </p>
 
       {/* Toast Notifications */}
       <Card className="demo-section">
@@ -138,15 +146,15 @@ export function ErrorHandlingDemo() {
         <div className="demo-content">
           <ErrorBoundary
             isolate
-            onError={(error) => console.log('Isolated error:', error)}
+            onError={(error) => console.log("Isolated error:", error)}
           >
             <div className="error-boundary-demo">
               <p>This component is wrapped in an error boundary</p>
               <Button
                 onClick={() => setShowError(!showError)}
-                variant={showError ? 'destructive' : 'default'}
+                variant={showError ? "destructive" : "default"}
               >
-                {showError ? 'Fix Component' : 'Break Component'}
+                {showError ? "Fix Component" : "Break Component"}
               </Button>
               <div className="component-container">
                 <ErrorProneComponent shouldError={showError} />
@@ -166,7 +174,9 @@ export function ErrorHandlingDemo() {
               onClick={simulateAsyncOperation}
               disabled={isLoading || errorRecovery.isRetrying}
             >
-              {isLoading ? 'Processing...' : 'Simulate Async Operation (50% fail rate)'}
+              {isLoading
+                ? "Processing..."
+                : "Simulate Async Operation (50% fail rate)"}
             </Button>
             {errorRecovery.error && (
               <Alert variant="destructive" className="mt-4">
@@ -185,17 +195,14 @@ export function ErrorHandlingDemo() {
         <div className="demo-buttons">
           <Button
             onClick={() => {
-              setModalError(new Error('This is a warning message'));
+              setModalError(new Error("This is a warning message"));
               setShowModal(true);
             }}
             variant="outline"
           >
             Show Warning Modal
           </Button>
-          <Button
-            onClick={simulateCriticalError}
-            variant="destructive"
-          >
+          <Button onClick={simulateCriticalError} variant="destructive">
             Show Critical Error Modal
           </Button>
         </div>
@@ -245,12 +252,16 @@ export function ErrorHandlingDemo() {
       <Card className="demo-section">
         <h2>Circuit Breaker Status</h2>
         <div className="circuit-breaker-status">
-          <p>State: <strong>{circuitBreaker.state}</strong></p>
-          <p>Failures: <strong>{circuitBreaker.failures}/3</strong></p>
+          <p>
+            State: <strong>{circuitBreaker.state}</strong>
+          </p>
+          <p>
+            Failures: <strong>{circuitBreaker.failures}/3</strong>
+          </p>
           <Button
             onClick={() => circuitBreaker.reset()}
             variant="outline"
-            disabled={circuitBreaker.state === 'closed'}
+            disabled={circuitBreaker.state === "closed"}
           >
             Reset Circuit Breaker
           </Button>
@@ -261,19 +272,21 @@ export function ErrorHandlingDemo() {
       <ErrorModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        error={modalError || 'Unknown error'}
-        severity={modalError?.message.includes('Critical') ? 'critical' : 'warning'}
+        error={modalError || "Unknown error"}
+        severity={
+          modalError?.message.includes("Critical") ? "critical" : "warning"
+        }
         onRetry={() => {
           setShowModal(false);
-          toast.info('Retrying operation...');
+          toast.info("Retrying operation...");
         }}
         actions={[
           {
-            label: 'Contact Support',
+            label: "Contact Support",
             onClick: () => {
-              window.location.href = 'mailto:support@example.com';
+              window.location.href = "mailto:support@example.com";
             },
-            variant: 'outline',
+            variant: "outline",
           },
         ]}
       />

@@ -3,12 +3,12 @@
  * Handles email attachments, documents, and other file assets with proper organization
  */
 
-import { promises as fs } from 'fs';
-import { createReadStream, createWriteStream } from 'fs';
-import { join, dirname, extname, basename } from 'path';
-import { createHash } from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../../utils/logger.js';
+import { promises as fs } from "fs";
+import { createReadStream, createWriteStream } from "fs";
+import { join, dirname, extname, basename } from "path";
+import { createHash } from "crypto";
+import { v4 as uuidv4 } from "uuid";
+import { logger } from "../../utils/logger.js";
 
 export interface StoredFile {
   id: string;
@@ -30,7 +30,7 @@ export interface FileMetadata {
   category?: string;
   tags?: string[];
   description?: string;
-  accessLevel?: 'public' | 'private' | 'restricted';
+  accessLevel?: "public" | "private" | "restricted";
   owner?: string;
   customFields?: Record<string, any>;
 }
@@ -54,7 +54,8 @@ export class FileStorageManager {
 
   constructor(config: StorageConfig) {
     this.basePath = config.basePath;
-    this.quarantinePath = config.quarantinePath || join(config.basePath, 'quarantine');
+    this.quarantinePath =
+      config.quarantinePath || join(config.basePath, "quarantine");
     this.maxFileSize = config.maxFileSize || 100 * 1024 * 1024; // 100MB default
     this.allowedExtensions = new Set(config.allowedExtensions || []);
     this.versioning = config.versioning !== false;
@@ -70,16 +71,28 @@ export class FileStorageManager {
     try {
       await fs.mkdir(this.basePath, { recursive: true });
       await fs.mkdir(this.quarantinePath, { recursive: true });
-      
+
       // Create category subdirectories
-      const categories = ['documents', 'attachments', 'images', 'exports', 'backups'];
+      const categories = [
+        "documents",
+        "attachments",
+        "images",
+        "exports",
+        "backups",
+      ];
       for (const category of categories) {
         await fs.mkdir(join(this.basePath, category), { recursive: true });
       }
 
-      logger.info(`File storage directories initialized at ${this.basePath}`, 'FILE_STORAGE');
+      logger.info(
+        `File storage directories initialized at ${this.basePath}`,
+        "FILE_STORAGE",
+      );
     } catch (error) {
-      logger.error(`Failed to create storage directories: ${error}`, 'FILE_STORAGE');
+      logger.error(
+        `Failed to create storage directories: ${error}`,
+        "FILE_STORAGE",
+      );
       throw error;
     }
   }
@@ -89,7 +102,7 @@ export class FileStorageManager {
    */
   async storeFile(
     fileBuffer: Buffer,
-    metadata: FileMetadata
+    metadata: FileMetadata,
   ): Promise<StoredFile> {
     try {
       // Validate file
@@ -98,7 +111,7 @@ export class FileStorageManager {
       // Generate file ID and paths
       const fileId = uuidv4();
       const extension = this.getFileExtension(metadata.originalName);
-      const category = metadata.category || 'documents';
+      const category = metadata.category || "documents";
       const fileName = `${fileId}${extension}`;
       const storagePath = join(category, this.getDatePath(), fileName);
       const fullPath = join(this.basePath, storagePath);
@@ -112,7 +125,10 @@ export class FileStorageManager {
       // Check for existing file with same checksum (deduplication)
       const existingFile = await this.findFileByChecksum(checksum);
       if (existingFile && !this.versioning) {
-        logger.info(`File with checksum ${checksum} already exists, reusing`, 'FILE_STORAGE');
+        logger.info(
+          `File with checksum ${checksum} already exists, reusing`,
+          "FILE_STORAGE",
+        );
         return existingFile;
       }
 
@@ -125,20 +141,23 @@ export class FileStorageManager {
         original_name: metadata.originalName,
         storage_path: storagePath,
         size: fileBuffer.length,
-        content_type: metadata.contentType || this.detectContentType(metadata.originalName),
+        content_type:
+          metadata.contentType || this.detectContentType(metadata.originalName),
         checksum,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         metadata: this.sanitizeMetadata(metadata),
         version: 1,
-        parent_file_id: existingFile?.id
+        parent_file_id: existingFile?.id,
       };
 
-      logger.info(`File stored: ${fileId} (${storedFile.size} bytes)`, 'FILE_STORAGE');
+      logger.info(
+        `File stored: ${fileId} (${storedFile.size} bytes)`,
+        "FILE_STORAGE",
+      );
       return storedFile;
-
     } catch (error) {
-      logger.error(`Failed to store file: ${error}`, 'FILE_STORAGE');
+      logger.error(`Failed to store file: ${error}`, "FILE_STORAGE");
       throw error;
     }
   }
@@ -159,25 +178,30 @@ export class FileStorageManager {
       }
 
       const fullPath = join(this.basePath, fileRecord.storage_path);
-      
+
       try {
         const buffer = await fs.readFile(fullPath);
-        
+
         // Verify integrity
         const currentChecksum = this.calculateChecksum(buffer);
         if (currentChecksum !== fileRecord.checksum) {
-          logger.error(`File integrity check failed for ${fileId}`, 'FILE_STORAGE');
-          throw new Error('File integrity compromised');
+          logger.error(
+            `File integrity check failed for ${fileId}`,
+            "FILE_STORAGE",
+          );
+          throw new Error("File integrity compromised");
         }
 
         return { file: fileRecord, buffer };
       } catch (readError) {
-        logger.error(`Failed to read file ${fileId}: ${readError}`, 'FILE_STORAGE');
+        logger.error(
+          `Failed to read file ${fileId}: ${readError}`,
+          "FILE_STORAGE",
+        );
         return { file: fileRecord, buffer: null };
       }
-
     } catch (error) {
-      logger.error(`Failed to get file ${fileId}: ${error}`, 'FILE_STORAGE');
+      logger.error(`Failed to get file ${fileId}: ${error}`, "FILE_STORAGE");
       throw error;
     }
   }
@@ -188,7 +212,7 @@ export class FileStorageManager {
   async createVersion(
     originalFileId: string,
     fileBuffer: Buffer,
-    metadata: Partial<FileMetadata>
+    metadata: Partial<FileMetadata>,
   ): Promise<StoredFile> {
     try {
       const originalFile = await this.findFileById(originalFileId);
@@ -200,7 +224,7 @@ export class FileStorageManager {
       const versionMetadata: FileMetadata = {
         ...originalFile.metadata,
         ...metadata,
-        originalName: metadata.originalName || originalFile.original_name
+        originalName: metadata.originalName || originalFile.original_name,
       };
 
       // Create new version
@@ -208,11 +232,13 @@ export class FileStorageManager {
       newVersion.version = originalFile.version + 1;
       newVersion.parent_file_id = originalFileId;
 
-      logger.info(`Created version ${newVersion.version} of file ${originalFileId}`, 'FILE_STORAGE');
+      logger.info(
+        `Created version ${newVersion.version} of file ${originalFileId}`,
+        "FILE_STORAGE",
+      );
       return newVersion;
-
     } catch (error) {
-      logger.error(`Failed to create version: ${error}`, 'FILE_STORAGE');
+      logger.error(`Failed to create version: ${error}`, "FILE_STORAGE");
       throw error;
     }
   }
@@ -220,11 +246,14 @@ export class FileStorageManager {
   /**
    * Delete a file (move to quarantine for safety)
    */
-  async deleteFile(fileId: string, permanent: boolean = false): Promise<boolean> {
+  async deleteFile(
+    fileId: string,
+    permanent: boolean = false,
+  ): Promise<boolean> {
     try {
       const fileRecord = await this.findFileById(fileId);
       if (!fileRecord) {
-        logger.warn(`File ${fileId} not found for deletion`, 'FILE_STORAGE');
+        logger.warn(`File ${fileId} not found for deletion`, "FILE_STORAGE");
         return false;
       }
 
@@ -233,19 +262,21 @@ export class FileStorageManager {
       if (permanent) {
         // Permanent deletion
         await fs.unlink(sourcePath);
-        logger.info(`Permanently deleted file ${fileId}`, 'FILE_STORAGE');
+        logger.info(`Permanently deleted file ${fileId}`, "FILE_STORAGE");
       } else {
         // Move to quarantine
-        const quarantinePath = join(this.quarantinePath, `${fileId}_${Date.now()}`);
+        const quarantinePath = join(
+          this.quarantinePath,
+          `${fileId}_${Date.now()}`,
+        );
         await fs.rename(sourcePath, quarantinePath);
-        logger.info(`Moved file ${fileId} to quarantine`, 'FILE_STORAGE');
+        logger.info(`Moved file ${fileId} to quarantine`, "FILE_STORAGE");
       }
 
       // In a real implementation, update database record
       return true;
-
     } catch (error) {
-      logger.error(`Failed to delete file ${fileId}: ${error}`, 'FILE_STORAGE');
+      logger.error(`Failed to delete file ${fileId}: ${error}`, "FILE_STORAGE");
       throw error;
     }
   }
@@ -263,9 +294,11 @@ export class FileStorageManager {
       }
 
       return [baseFile]; // Would include all versions in real implementation
-
     } catch (error) {
-      logger.error(`Failed to get file versions for ${fileId}: ${error}`, 'FILE_STORAGE');
+      logger.error(
+        `Failed to get file versions for ${fileId}: ${error}`,
+        "FILE_STORAGE",
+      );
       throw error;
     }
   }
@@ -284,11 +317,13 @@ export class FileStorageManager {
     try {
       // In a real implementation, this would use database queries
       // For now, return empty array
-      logger.info(`Searching files with criteria: ${JSON.stringify(criteria)}`, 'FILE_STORAGE');
+      logger.info(
+        `Searching files with criteria: ${JSON.stringify(criteria)}`,
+        "FILE_STORAGE",
+      );
       return [];
-
     } catch (error) {
-      logger.error(`File search failed: ${error}`, 'FILE_STORAGE');
+      logger.error(`File search failed: ${error}`, "FILE_STORAGE");
       throw error;
     }
   }
@@ -306,7 +341,13 @@ export class FileStorageManager {
   }> {
     try {
       // Calculate directory sizes
-      const categories = ['documents', 'attachments', 'images', 'exports', 'backups'];
+      const categories = [
+        "documents",
+        "attachments",
+        "images",
+        "exports",
+        "backups",
+      ];
       const categorySizes: Record<string, number> = {};
       let totalSize = 0;
       let totalFiles = 0;
@@ -330,7 +371,7 @@ export class FileStorageManager {
         // This is a simplified calculation - in production, use statvfs or similar
         availableSpace = 1024 * 1024 * 1024 * 10; // 10GB placeholder
       } catch (error) {
-        logger.warn(`Failed to get disk space info: ${error}`, 'FILE_STORAGE');
+        logger.warn(`Failed to get disk space info: ${error}`, "FILE_STORAGE");
       }
 
       return {
@@ -339,11 +380,10 @@ export class FileStorageManager {
         usedSpace: totalSize,
         availableSpace,
         categorySizes,
-        largestFiles: [] // Would be populated from database in real implementation
+        largestFiles: [], // Would be populated from database in real implementation
       };
-
     } catch (error) {
-      logger.error(`Failed to get storage stats: ${error}`, 'FILE_STORAGE');
+      logger.error(`Failed to get storage stats: ${error}`, "FILE_STORAGE");
       throw error;
     }
   }
@@ -351,11 +391,13 @@ export class FileStorageManager {
   /**
    * Clean up old files and empty directories
    */
-  async cleanup(options: {
-    olderThanDays?: number;
-    emptyDirectories?: boolean;
-    quarantine?: boolean;
-  } = {}): Promise<{
+  async cleanup(
+    options: {
+      olderThanDays?: number;
+      emptyDirectories?: boolean;
+      quarantine?: boolean;
+    } = {},
+  ): Promise<{
     filesDeleted: number;
     directoriesDeleted: number;
     spaceFreed: number;
@@ -365,7 +407,11 @@ export class FileStorageManager {
       let directoriesDeleted = 0;
       let spaceFreed = 0;
 
-      const { olderThanDays = 30, emptyDirectories = true, quarantine = true } = options;
+      const {
+        olderThanDays = 30,
+        emptyDirectories = true,
+        quarantine = true,
+      } = options;
 
       // Clean quarantine directory
       if (quarantine) {
@@ -373,7 +419,7 @@ export class FileStorageManager {
         for (const file of quarantineFiles) {
           const filePath = join(this.quarantinePath, file);
           const stats = await fs.stat(filePath);
-          
+
           if (this.isOlderThan(stats.mtime, olderThanDays)) {
             spaceFreed += stats.size;
             await fs.unlink(filePath);
@@ -387,12 +433,14 @@ export class FileStorageManager {
         directoriesDeleted = await this.removeEmptyDirectories(this.basePath);
       }
 
-      logger.info(`Cleanup completed: ${filesDeleted} files, ${directoriesDeleted} directories, ${spaceFreed} bytes freed`, 'FILE_STORAGE');
+      logger.info(
+        `Cleanup completed: ${filesDeleted} files, ${directoriesDeleted} directories, ${spaceFreed} bytes freed`,
+        "FILE_STORAGE",
+      );
 
       return { filesDeleted, directoriesDeleted, spaceFreed };
-
     } catch (error) {
-      logger.error(`Cleanup failed: ${error}`, 'FILE_STORAGE');
+      logger.error(`Cleanup failed: ${error}`, "FILE_STORAGE");
       throw error;
     }
   }
@@ -404,17 +452,16 @@ export class FileStorageManager {
     try {
       const backupId = uuidv4();
       const backupDir = join(backupPath, `backup_${backupId}_${Date.now()}`);
-      
+
       await fs.mkdir(backupDir, { recursive: true });
-      
+
       // Copy files (simplified - in production, use streaming and compression)
       await this.copyDirectory(this.basePath, backupDir);
-      
-      logger.info(`Storage backup created at ${backupDir}`, 'FILE_STORAGE');
-      return backupDir;
 
+      logger.info(`Storage backup created at ${backupDir}`, "FILE_STORAGE");
+      return backupDir;
     } catch (error) {
-      logger.error(`Backup creation failed: ${error}`, 'FILE_STORAGE');
+      logger.error(`Backup creation failed: ${error}`, "FILE_STORAGE");
       throw error;
     }
   }
@@ -422,15 +469,22 @@ export class FileStorageManager {
   /**
    * Validate file before storage
    */
-  private async validateFile(fileBuffer: Buffer, metadata: FileMetadata): Promise<void> {
+  private async validateFile(
+    fileBuffer: Buffer,
+    metadata: FileMetadata,
+  ): Promise<void> {
     // Size validation
     if (fileBuffer.length > this.maxFileSize) {
-      throw new Error(`File size ${fileBuffer.length} exceeds maximum ${this.maxFileSize}`);
+      throw new Error(
+        `File size ${fileBuffer.length} exceeds maximum ${this.maxFileSize}`,
+      );
     }
 
     // Extension validation
     if (this.allowedExtensions.size > 0) {
-      const extension = this.getFileExtension(metadata.originalName).toLowerCase();
+      const extension = this.getFileExtension(
+        metadata.originalName,
+      ).toLowerCase();
       if (!this.allowedExtensions.has(extension)) {
         throw new Error(`File extension ${extension} is not allowed`);
       }
@@ -438,7 +492,7 @@ export class FileStorageManager {
 
     // Basic virus scanning placeholder
     if (await this.isFileSuspicious(fileBuffer)) {
-      throw new Error('File appears to be malicious');
+      throw new Error("File appears to be malicious");
     }
   }
 
@@ -449,19 +503,19 @@ export class FileStorageManager {
     // Placeholder for actual virus scanning
     // In production, integrate with ClamAV or similar
     const suspicious = [
-      Buffer.from('virus'),
-      Buffer.from('malware'),
-      Buffer.from('trojan')
+      Buffer.from("virus"),
+      Buffer.from("malware"),
+      Buffer.from("trojan"),
     ];
 
-    return suspicious.some(pattern => fileBuffer.includes(pattern));
+    return suspicious.some((pattern) => fileBuffer.includes(pattern));
   }
 
   /**
    * Calculate file checksum
    */
   private calculateChecksum(buffer: Buffer): string {
-    return createHash('sha256').update(buffer).digest('hex');
+    return createHash("sha256").update(buffer).digest("hex");
   }
 
   /**
@@ -477,20 +531,22 @@ export class FileStorageManager {
   private detectContentType(filename: string): string {
     const extension = this.getFileExtension(filename);
     const mimeTypes: Record<string, string> = {
-      '.pdf': 'application/pdf',
-      '.doc': 'application/msword',
-      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      '.txt': 'text/plain',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.gif': 'image/gif',
-      '.zip': 'application/zip',
-      '.json': 'application/json'
+      ".pdf": "application/pdf",
+      ".doc": "application/msword",
+      ".docx":
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ".xlsx":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ".txt": "text/plain",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".gif": "image/gif",
+      ".zip": "application/zip",
+      ".json": "application/json",
     };
 
-    return mimeTypes[extension] || 'application/octet-stream';
+    return mimeTypes[extension] || "application/octet-stream";
   }
 
   /**
@@ -499,8 +555,8 @@ export class FileStorageManager {
   private getDatePath(): string {
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
     return join(year.toString(), month, day);
   }
 
@@ -511,12 +567,12 @@ export class FileStorageManager {
     return {
       originalName: metadata.originalName,
       contentType: metadata.contentType,
-      category: metadata.category || 'documents',
+      category: metadata.category || "documents",
       tags: metadata.tags || [],
       description: metadata.description,
-      accessLevel: metadata.accessLevel || 'private',
+      accessLevel: metadata.accessLevel || "private",
       owner: metadata.owner,
-      customFields: metadata.customFields || {}
+      customFields: metadata.customFields || {},
     };
   }
 
@@ -528,7 +584,9 @@ export class FileStorageManager {
     return null;
   }
 
-  private async findFileByChecksum(checksum: string): Promise<StoredFile | null> {
+  private async findFileByChecksum(
+    checksum: string,
+  ): Promise<StoredFile | null> {
     // This would be a database query in real implementation
     return null;
   }
@@ -536,16 +594,18 @@ export class FileStorageManager {
   /**
    * Get directory statistics
    */
-  private async getDirectoryStats(dirPath: string): Promise<{ size: number; files: number }> {
+  private async getDirectoryStats(
+    dirPath: string,
+  ): Promise<{ size: number; files: number }> {
     let totalSize = 0;
     let totalFiles = 0;
 
     try {
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = join(dirPath, entry.name);
-        
+
         if (entry.isDirectory()) {
           const subStats = await this.getDirectoryStats(fullPath);
           totalSize += subStats.size;
@@ -580,7 +640,7 @@ export class FileStorageManager {
 
     try {
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         if (entry.isDirectory()) {
           const subPath = join(dirPath, entry.name);
@@ -604,15 +664,18 @@ export class FileStorageManager {
   /**
    * Copy directory recursively
    */
-  private async copyDirectory(source: string, destination: string): Promise<void> {
+  private async copyDirectory(
+    source: string,
+    destination: string,
+  ): Promise<void> {
     await fs.mkdir(destination, { recursive: true });
-    
+
     const entries = await fs.readdir(source, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       const sourcePath = join(source, entry.name);
       const destPath = join(destination, entry.name);
-      
+
       if (entry.isDirectory()) {
         await this.copyDirectory(sourcePath, destPath);
       } else {

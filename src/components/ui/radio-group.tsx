@@ -1,5 +1,5 @@
-import React from 'react';
-import { cn } from '../../lib/utils.js';
+import React from "react";
+import { cn } from "../../lib/utils.js";
 
 interface RadioGroupProps {
   value?: string;
@@ -13,7 +13,7 @@ const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
     return (
       <div
         ref={ref}
-        className={cn('grid gap-2', className)}
+        className={cn("grid gap-2", className)}
         role="radiogroup"
         {...props}
       >
@@ -28,9 +28,9 @@ const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
         })}
       </div>
     );
-  }
+  },
 );
-RadioGroup.displayName = 'RadioGroup';
+RadioGroup.displayName = "RadioGroup";
 
 interface RadioGroupItemProps {
   value: string;
@@ -43,9 +43,18 @@ interface RadioGroupItemProps {
 }
 
 const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
-  ({ className, value, checked, onChange, children, disabled, ...props }, ref) => {
+  (
+    { className, value, checked, onChange, children, disabled, ...props },
+    ref,
+  ) => {
     return (
-      <label className={cn('flex items-center space-x-2 cursor-pointer', disabled && 'opacity-50 cursor-not-allowed', className)}>
+      <label
+        className={cn(
+          "flex items-center space-x-2 cursor-pointer",
+          disabled && "opacity-50 cursor-not-allowed",
+          className,
+        )}
+      >
         <input
           ref={ref}
           type="radio"
@@ -59,8 +68,8 @@ const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
         {children && <span className="text-sm">{children}</span>}
       </label>
     );
-  }
+  },
 );
-RadioGroupItem.displayName = 'RadioGroupItem';
+RadioGroupItem.displayName = "RadioGroupItem";
 
 export { RadioGroup, RadioGroupItem };
