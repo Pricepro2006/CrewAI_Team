@@ -19,7 +19,7 @@ export class DataAnalysisAgent extends BaseAgent {
       const taskAnalysis = await this.analyzeDataTask(task, context);
 
       // Execute based on task type
-      let result: any;
+      let result: unknown;
       switch (taskAnalysis.type) {
         case "statistical":
           result = await this.performStatisticalAnalysis(taskAnalysis, context);

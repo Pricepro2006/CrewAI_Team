@@ -171,7 +171,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
    */
   private wrapGenerate(
     provider: OllamaProvider,
-    originalMethod: (...args: any[]) => any,
+    originalMethod: (...args: unknown[]) => unknown,
   ) {
     return async (
       prompt: string,
@@ -292,7 +292,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
    */
   private wrapGenerateWithLogProbs(
     provider: OllamaProvider,
-    originalMethod: (...args: any[]) => any,
+    originalMethod: (...args: unknown[]) => unknown,
   ) {
     return async (
       prompt: string,
@@ -358,7 +358,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
    */
   private wrapGenerateStream(
     provider: OllamaProvider,
-    originalMethod: (...args: any[]) => any,
+    originalMethod: (...args: unknown[]) => unknown,
   ) {
     return async (
       prompt: string,
@@ -645,7 +645,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
   /**
    * Handle errors and update circuit breaker
    */
-  private handleError(error: any): void {
+  private handleError(error: unknown): void {
     this.metrics.errors++;
     this.circuitBreakerFailures++;
     this.circuitBreakerLastFailure = Date.now();

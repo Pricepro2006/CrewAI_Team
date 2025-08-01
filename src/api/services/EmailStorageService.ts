@@ -1220,7 +1220,7 @@ export class EmailStorageService {
       )
     `);
 
-    const slaViolations = stmt.all() as any[];
+    const slaViolations = stmt.all() as EmailRecord[];
 
     // Process SLA violations in batches to avoid N+1 updates
     const updates: Array<{ status: "at-risk" | "overdue"; emailId: string }> =

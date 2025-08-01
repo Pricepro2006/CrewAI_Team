@@ -11,6 +11,7 @@ import {
   executeTransaction,
   type DatabaseConnection,
 } from "../../database/ConnectionPool.js";
+import { EmailRecord } from "../../types/EmailTypes.js";
 
 const logger = new Logger("EmailChainAnalyzer");
 
@@ -130,7 +131,7 @@ export class EmailChainAnalyzer {
         WHERE id = ?
       `);
 
-      const email = stmt.get(emailId) as any;
+      const email = stmt.get(emailId) as EmailChainNode;
       if (!email) return null;
 
       // Detect workflow state from content
@@ -158,7 +159,7 @@ export class EmailChainAnalyzer {
           ORDER BY received_at ASC
         `);
 
-        const threads = stmt.all(email.thread_id) as any[];
+        const threads = stmt.all(email.thread_id) as EmailChainNode[];
         threads.forEach((e) => {
           e.workflow_state = this.detectWorkflowState(
             e.subject + " " + (e.body || ""),
@@ -198,7 +199,7 @@ export class EmailChainAnalyzer {
           JSON.stringify(participants),
           `%${email.sender_email}%`,
           `%${email.recipient_emails.split(",")[0]}%`,
-        ) as any[];
+        ) as EmailChainNode[];
 
         results.forEach((e) => {
           if (!processedIds.has(e.id)) {
@@ -619,7 +620,7 @@ export class EmailChainAnalyzer {
         LIMIT 10000
       `);
 
-      const emails = stmt.all() as any[];
+      const emails = stmt.all() as EmailChainNode[];
       return emails.map((e) => e.id);
     });
 

@@ -18,7 +18,7 @@ vi.mock("ioredis", () => ({
 
 describe("Rate Limiting Middleware Security Tests", () => {
   let mockNext: MockedFunction<() => Promise<any>>;
-  let mockCtx: any;
+  let mockCtx: unknown;
 
   beforeEach(() => {
     mockNext = vi.fn().mockResolvedValue("success");

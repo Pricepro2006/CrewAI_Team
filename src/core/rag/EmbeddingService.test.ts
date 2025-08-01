@@ -8,7 +8,7 @@ const mockedAxios = vi.mocked(axios);
 
 describe("EmbeddingService", () => {
   let service: EmbeddingService;
-  let mockAxiosInstance: any;
+  let mockAxiosInstance: unknown;
 
   beforeEach(() => {
     // Create mock axios instance

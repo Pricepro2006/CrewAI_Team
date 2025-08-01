@@ -35,7 +35,7 @@ const mockEmail = {
 
 describe('EmailThreePhaseAnalysisService', () => {
   let service: EmailThreePhaseAnalysisService;
-  let mockDb: any;
+  let mockDb: unknown;
   
   beforeEach(() => {
     // Mock database

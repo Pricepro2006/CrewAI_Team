@@ -22,11 +22,11 @@ vi.mock("../../../utils/logger", () => ({
 
 describe("BusinessSearchMiddleware", () => {
   let middleware: BusinessSearchMiddleware;
-  let mockProvider: any;
-  let mockFeatureFlags: any;
-  let originalGenerate: any;
-  let originalGenerateWithLogProbs: any;
-  let originalGenerateStream: any;
+  let mockProvider: unknown;
+  let mockFeatureFlags: unknown;
+  let originalGenerate: unknown;
+  let originalGenerateWithLogProbs: unknown;
+  let originalGenerateStream: unknown;
 
   beforeEach(() => {
     // Reset all mocks

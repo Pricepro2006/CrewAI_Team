@@ -30,8 +30,8 @@ vi.mock("../../llm/OllamaProvider", () => ({
 
 describe("ResearchAgent", () => {
   let agent: ResearchAgent;
-  let mockWebSearch: any;
-  let mockWebScraper: any;
+  let mockWebSearch: unknown;
+  let mockWebScraper: unknown;
 
   beforeEach(async () => {
     // Create mock tools

@@ -7,8 +7,8 @@ vi.mock("better-sqlite3");
 
 describe("EmailAnalyticsService", () => {
   let service: EmailAnalyticsService;
-  let mockDb: any;
-  let mockStmt: any;
+  let mockDb: unknown;
+  let mockStmt: unknown;
 
   beforeEach(() => {
     // Setup mock statement

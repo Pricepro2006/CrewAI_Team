@@ -406,7 +406,7 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
     return this;
   }
 
-  toBeInstanceOf(constructor: new (...args: any[]) => any): TestAssertions<T> {
+  toBeInstanceOf(constructor: new (...args: unknown[]) => unknown): TestAssertions<T> {
     const passed = this.isNegated
       ? !(this.actual instanceof constructor)
       : this.actual instanceof constructor;

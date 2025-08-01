@@ -106,7 +106,7 @@ export class AutomationRuleService {
         ORDER BY ar.priority DESC
       `);
 
-      const results = stmt.all() as any[];
+      const results = stmt.all() as EmailRecord[];
       return results.map((r) => ({
         ...r,
         success_rate: r.success_rate || 0,

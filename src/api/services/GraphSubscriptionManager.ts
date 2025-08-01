@@ -3,10 +3,10 @@ import { logger } from "../../utils/logger.js";
 import { metrics } from "../monitoring/metrics.js";
 
 // Optional imports for Microsoft Graph dependencies
-let Client: any;
-let TokenCredentialAuthenticationProvider: any;
-let ClientSecretCredential: any;
-let CronJob: any;
+let Client: unknown;
+let TokenCredentialAuthenticationProvider: unknown;
+let ClientSecretCredential: unknown;
+let CronJob: unknown;
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires

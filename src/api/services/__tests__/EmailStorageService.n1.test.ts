@@ -14,7 +14,7 @@ describe("EmailStorageService N+1 Query Tests", () => {
   let service: EmailStorageService;
   let testDbPath: string;
   let queryCount: number;
-  let originalPrepare: any;
+  let originalPrepare: unknown;
 
   beforeEach(() => {
     // Create a test database

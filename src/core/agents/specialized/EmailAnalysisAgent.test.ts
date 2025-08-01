@@ -11,7 +11,7 @@ vi.mock("../../llm/OllamaProvider", () => ({
 
 describe("EmailAnalysisAgent", () => {
   let agent: EmailAnalysisAgent;
-  let mockOllamaProvider: any;
+  let mockOllamaProvider: unknown;
 
   beforeEach(() => {
     agent = new EmailAnalysisAgent();

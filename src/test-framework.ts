@@ -37,7 +37,7 @@ export class SuperClaudeTestFramework {
   generateAgentTestSuite(agentName: string) {
     return `
 describe('${agentName} - SuperClaude Enhanced Tests', () => {
-  let agent: any;
+  let agent: unknown;
   
   beforeEach(() => {
     console.log('Executing: ${this.testCommands.unit}');
