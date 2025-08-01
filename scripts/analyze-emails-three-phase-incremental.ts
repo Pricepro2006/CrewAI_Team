@@ -8,7 +8,7 @@ import Database from "better-sqlite3";
 import axios from "axios";
 import * as fs from "fs";
 import * as path from "path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,10 +37,10 @@ interface Phase1Results {
 
 function phase1Analysis(email: any): Phase1Results {
   const startTime = Date.now();
-  const subject = (email.subject || '').toLowerCase();
-  const body = (email.body || email.body_preview || '').toLowerCase();
-  const content = subject + ' ' + body;
-  
+  const subject = (email.subject || "").toLowerCase();
+  const body = (email.body || email.body_preview || "").toLowerCase();
+  const content = subject + " " + body;
+
   // Extract entities with regex
   const entities = {
     po_numbers: extractPONumbers(content),
@@ -48,52 +48,72 @@ function phase1Analysis(email: any): Phase1Results {
     case_numbers: extractCaseNumbers(content),
     part_numbers: extractPartNumbers(content),
     dollar_amounts: extractDollarAmounts(content),
-    dates: extractDates(content)
+    dates: extractDates(content),
   };
-  
+
   // Detect workflow state
-  let workflow_state = 'START_POINT';
-  if (content.includes('resolved') || content.includes('completed') || content.includes('closed')) {
-    workflow_state = 'COMPLETION';
-  } else if (content.includes('update') || content.includes('status') || content.includes('working on')) {
-    workflow_state = 'IN_PROGRESS';
+  let workflow_state = "START_POINT";
+  if (
+    content.includes("resolved") ||
+    content.includes("completed") ||
+    content.includes("closed")
+  ) {
+    workflow_state = "COMPLETION";
+  } else if (
+    content.includes("update") ||
+    content.includes("status") ||
+    content.includes("working on")
+  ) {
+    workflow_state = "IN_PROGRESS";
   }
-  
+
   // Calculate priority and urgency
-  const urgencyKeywords = ['urgent', 'critical', 'asap', 'immediate', 'emergency', 'escalat'];
-  const urgency_score = urgencyKeywords.filter(kw => content.includes(kw)).length;
-  
-  let priority = 'medium';
-  if (urgency_score >= 2 || email.importance === 'high') priority = 'critical';
-  else if (urgency_score === 1) priority = 'high';
-  else if (content.includes('fyi') || content.includes('info')) priority = 'low';
-  
+  const urgencyKeywords = [
+    "urgent",
+    "critical",
+    "asap",
+    "immediate",
+    "emergency",
+    "escalat",
+  ];
+  const urgency_score = urgencyKeywords.filter((kw) =>
+    content.includes(kw),
+  ).length;
+
+  let priority = "medium";
+  if (urgency_score >= 2 || email.importance === "high") priority = "critical";
+  else if (urgency_score === 1) priority = "high";
+  else if (content.includes("fyi") || content.includes("info"))
+    priority = "low";
+
   // Extract key phrases
   const key_phrases = [];
   const importantPhrases = [
     /urgent\s+\w+\s+\w+/g,
     /need\s+\w+\s+by\s+\w+/g,
     /\$[\d,]+\s+\w+/g,
-    /deadline\s+\w+\s+\w+/g
+    /deadline\s+\w+\s+\w+/g,
   ];
-  
-  importantPhrases.forEach(pattern => {
+
+  importantPhrases.forEach((pattern) => {
     const matches = content.match(pattern);
     if (matches) key_phrases.push(...matches);
   });
-  
+
   // Categorize sender
-  const keySenders = ['insightordersupport', 'team4401', 'insighthpi'];
-  const sender_category = keySenders.some(s => email.sender_email?.includes(s)) 
-    ? 'key_customer' 
-    : 'standard';
-  
+  const keySenders = ["insightordersupport", "team4401", "insighthpi"];
+  const sender_category = keySenders.some((s) =>
+    email.sender_email?.includes(s),
+  )
+    ? "key_customer"
+    : "standard";
+
   // Calculate financial impact
   const financial_impact = entities.dollar_amounts
-    .map(amt => parseFloat(amt.replace(/[$,]/g, '')))
-    .filter(amt => !isNaN(amt))
+    .map((amt) => parseFloat(amt.replace(/[$,]/g, "")))
+    .filter((amt) => !isNaN(amt))
     .reduce((sum, amt) => sum + amt, 0);
-  
+
   return {
     workflow_state,
     priority,
@@ -102,7 +122,7 @@ function phase1Analysis(email: any): Phase1Results {
     sender_category,
     urgency_score,
     financial_impact,
-    processing_time: Date.now() - startTime
+    processing_time: Date.now() - startTime,
   };
 }
 
@@ -161,42 +181,49 @@ Respond with JSON only:
 Email content:
 {EMAIL_CONTENT}`;
 
-async function phase2Analysis(email: any, phase1Results: Phase1Results): Promise<Phase2Results> {
+async function phase2Analysis(
+  email: any,
+  phase1Results: Phase1Results,
+): Promise<Phase2Results> {
   const startTime = Date.now();
-  
+
   try {
     // Build context-aware prompt
-    const prompt = PHASE2_INCREMENTAL_PROMPT
-      .replace('{PHASE1_RESULTS}', JSON.stringify(phase1Results, null, 2))
-      .replace('{EMAIL_CONTENT}', `Subject: ${email.subject}\n\nBody: ${email.body || email.body_preview}`);
-    
+    const prompt = PHASE2_INCREMENTAL_PROMPT.replace(
+      "{PHASE1_RESULTS}",
+      JSON.stringify(phase1Results, null, 2),
+    ).replace(
+      "{EMAIL_CONTENT}",
+      `Subject: ${email.subject}\n\nBody: ${email.body || email.body_preview}`,
+    );
+
     // Call Llama with Phase 1 context
     const response = await axios.post(
-      'http://localhost:11434/api/generate',
+      "http://localhost:11434/api/generate",
       {
-        model: 'llama3.2:3b',
+        model: "llama3.2:3b",
         prompt,
         stream: false,
         options: {
           temperature: 0.1,
           num_predict: 800,
           timeout: 60000,
-          stop: ["\n\n", "```", "**"]
-        }
+          stop: ["\n\n", "```", "**"],
+        },
       },
-      { timeout: 60000 }
+      { timeout: 60000 },
     );
-    
+
     // Parse response
     let result = response.data.response;
-    if (result.includes('{')) {
-      const start = result.indexOf('{');
-      const end = result.lastIndexOf('}') + 1;
+    if (result.includes("{")) {
+      const start = result.indexOf("{");
+      const end = result.lastIndexOf("}") + 1;
       result = result.substring(start, end);
     }
-    
+
     const phase2Data = JSON.parse(result);
-    
+
     // Merge with Phase 1 results
     return {
       ...phase1Results,
@@ -206,23 +233,24 @@ async function phase2Analysis(email: any, phase1Results: Phase1Results): Promise
       risk_assessment: phase2Data.risk_assessment,
       initial_response: phase2Data.initial_response,
       confidence: phase2Data.confidence || 0.75,
-      business_process: phase2Data.business_process || phase1Results.workflow_state,
-      phase2_processing_time: Date.now() - startTime
+      business_process:
+        phase2Data.business_process || phase1Results.workflow_state,
+      phase2_processing_time: Date.now() - startTime,
     };
-    
   } catch (error) {
-    console.error('Phase 2 error:', error);
+    console.error("Phase 2 error:", error);
     // Return Phase 1 results with defaults
     return {
       ...phase1Results,
       workflow_validation: `Confirmed: ${phase1Results.workflow_state}`,
       missed_entities: {},
       action_items: [],
-      risk_assessment: 'Unable to assess',
-      initial_response: 'Thank you for your email. We will process your request.',
+      risk_assessment: "Unable to assess",
+      initial_response:
+        "Thank you for your email. We will process your request.",
       confidence: 0.5,
       business_process: phase1Results.workflow_state,
-      phase2_processing_time: Date.now() - startTime
+      phase2_processing_time: Date.now() - startTime,
     };
   }
 }
@@ -279,45 +307,50 @@ Provide strategic insights in this JSON format:
 }`;
 
 async function phase3Analysis(
-  email: any, 
+  email: any,
   phase1Results: Phase1Results,
-  phase2Results: Phase2Results
+  phase2Results: Phase2Results,
 ): Promise<Phase3Results> {
   const startTime = Date.now();
-  
+
   try {
     // Build prompt with both previous phases
-    const prompt = PHASE3_INCREMENTAL_PROMPT
-      .replace('{PHASE1_RESULTS}', JSON.stringify(phase1Results, null, 2))
-      .replace('{PHASE2_RESULTS}', JSON.stringify(phase2Results, null, 2))
-      .replace('{EMAIL_CONTENT}', `Subject: ${email.subject}\n\nBody: ${email.body || email.body_preview}`);
-    
+    const prompt = PHASE3_INCREMENTAL_PROMPT.replace(
+      "{PHASE1_RESULTS}",
+      JSON.stringify(phase1Results, null, 2),
+    )
+      .replace("{PHASE2_RESULTS}", JSON.stringify(phase2Results, null, 2))
+      .replace(
+        "{EMAIL_CONTENT}",
+        `Subject: ${email.subject}\n\nBody: ${email.body || email.body_preview}`,
+      );
+
     // Call Phi-4 for strategic insights
     const response = await axios.post(
-      'http://localhost:11434/api/generate',
+      "http://localhost:11434/api/generate",
       {
-        model: 'doomgrave/phi-4:14b-tools-Q3_K_S',
+        model: "doomgrave/phi-4:14b-tools-Q3_K_S",
         prompt,
         stream: false,
         options: {
           temperature: 0.3,
           num_predict: 1500,
-          timeout: 180000
-        }
+          timeout: 180000,
+        },
       },
-      { timeout: 180000 }
+      { timeout: 180000 },
     );
-    
+
     // Parse response
     let result = response.data.response;
-    if (result.includes('{')) {
-      const start = result.indexOf('{');
-      const end = result.lastIndexOf('}') + 1;
+    if (result.includes("{")) {
+      const start = result.indexOf("{");
+      const end = result.lastIndexOf("}") + 1;
       result = result.substring(start, end);
     }
-    
+
     const phase3Data = JSON.parse(result);
-    
+
     // Merge all phases
     return {
       ...phase2Results,
@@ -326,23 +359,23 @@ async function phase3Analysis(
       escalation_needed: phase3Data.escalation_needed,
       revenue_impact: phase3Data.revenue_impact,
       cross_email_patterns: phase3Data.cross_email_patterns,
-      phase3_processing_time: Date.now() - startTime
+      phase3_processing_time: Date.now() - startTime,
     };
-    
   } catch (error) {
-    console.error('Phase 3 error:', error);
+    console.error("Phase 3 error:", error);
     // Return Phase 2 results with defaults
     return {
       ...phase2Results,
       strategic_insights: {
-        opportunity: 'Standard processing',
-        risk: 'Low',
-        relationship: 'Stable'
+        opportunity: "Standard processing",
+        risk: "Low",
+        relationship: "Stable",
       },
-      executive_summary: phase2Results.risk_assessment || 'Standard email requiring processing',
+      executive_summary:
+        phase2Results.risk_assessment || "Standard email requiring processing",
       escalation_needed: false,
       revenue_impact: `$${phase1Results.financial_impact}`,
-      phase3_processing_time: Date.now() - startTime
+      phase3_processing_time: Date.now() - startTime,
     };
   }
 }
@@ -351,36 +384,42 @@ async function phase3Analysis(
 // PHASE SELECTION LOGIC
 // ============================================
 
-function determinePhases(email: any, phase1Results: Phase1Results): {
+function determinePhases(
+  email: any,
+  phase1Results: Phase1Results,
+): {
   phases: number[];
   reason: string;
 } {
   // All emails get Phase 1 (instant)
-  
+
   // Skip Phase 2 & 3 for low-value emails
-  if (phase1Results.priority === 'low' && 
-      phase1Results.financial_impact === 0 &&
-      phase1Results.urgency_score === 0) {
-    return { phases: [1], reason: 'Low value informational email' };
+  if (
+    phase1Results.priority === "low" &&
+    phase1Results.financial_impact === 0 &&
+    phase1Results.urgency_score === 0
+  ) {
+    return { phases: [1], reason: "Low value informational email" };
   }
-  
+
   // Most emails get Phase 1 + 2
   let phases = [1, 2];
-  let reason = 'Standard processing';
-  
+  let reason = "Standard processing";
+
   // Add Phase 3 for high-value emails
-  const needsPhase3 = 
-    phase1Results.priority === 'critical' ||
+  const needsPhase3 =
+    phase1Results.priority === "critical" ||
     phase1Results.financial_impact > 10000 ||
-    (phase1Results.sender_category === 'key_customer' && phase1Results.urgency_score > 0) ||
+    (phase1Results.sender_category === "key_customer" &&
+      phase1Results.urgency_score > 0) ||
     phase1Results.entities.po_numbers.length > 0 ||
-    email.importance === 'high';
-  
+    email.importance === "high";
+
   if (needsPhase3) {
     phases.push(3);
-    reason = 'High value/critical email requiring strategic analysis';
+    reason = "High value/critical email requiring strategic analysis";
   }
-  
+
   return { phases, reason };
 }
 
@@ -390,45 +429,54 @@ function determinePhases(email: any, phase1Results: Phase1Results): {
 
 async function processEmailIncremental(email: any, db: Database.Database) {
   console.log(`\n📧 Processing: ${email.subject?.substring(0, 50)}...`);
-  
+
   // Phase 1: Always run (instant)
-  console.log('   Phase 1: Rule-based triage...');
+  console.log("   Phase 1: Rule-based triage...");
   const phase1Results = phase1Analysis(email);
   console.log(`   ✓ Phase 1 complete (${phase1Results.processing_time}ms)`);
-  
+
   // Determine which phases to run
   const phaseDecision = determinePhases(email, phase1Results);
   console.log(`   📊 Decision: ${phaseDecision.reason}`);
-  console.log(`   🔄 Running phases: ${phaseDecision.phases.join(', ')}`);
-  
+  console.log(`   🔄 Running phases: ${phaseDecision.phases.join(", ")}`);
+
   let finalResults: any = phase1Results;
-  
+
   // Phase 2: If needed
   if (phaseDecision.phases.includes(2)) {
-    console.log('   Phase 2: Llama enhancement...');
+    console.log("   Phase 2: Llama enhancement...");
     const phase2Results = await phase2Analysis(email, phase1Results);
     finalResults = phase2Results;
-    console.log(`   ✓ Phase 2 complete (${phase2Results.phase2_processing_time}ms)`);
+    console.log(
+      `   ✓ Phase 2 complete (${phase2Results.phase2_processing_time}ms)`,
+    );
   }
-  
+
   // Phase 3: If needed
   if (phaseDecision.phases.includes(3)) {
-    console.log('   Phase 3: Phi-4 strategic analysis...');
-    const phase3Results = await phase3Analysis(email, phase1Results, finalResults);
+    console.log("   Phase 3: Phi-4 strategic analysis...");
+    const phase3Results = await phase3Analysis(
+      email,
+      phase1Results,
+      finalResults,
+    );
     finalResults = phase3Results;
-    console.log(`   ✓ Phase 3 complete (${phase3Results.phase3_processing_time}ms)`);
+    console.log(
+      `   ✓ Phase 3 complete (${phase3Results.phase3_processing_time}ms)`,
+    );
   }
-  
+
   // Calculate total time
-  const totalTime = finalResults.processing_time + 
-    (finalResults.phase2_processing_time || 0) + 
+  const totalTime =
+    finalResults.processing_time +
+    (finalResults.phase2_processing_time || 0) +
     (finalResults.phase3_processing_time || 0);
-  
-  console.log(`   ⏱️  Total time: ${(totalTime/1000).toFixed(1)}s`);
-  
+
+  console.log(`   ⏱️  Total time: ${(totalTime / 1000).toFixed(1)}s`);
+
   // Save to database
   saveAnalysis(email, finalResults, phaseDecision.phases, db);
-  
+
   return finalResults;
 }
 
@@ -440,15 +488,15 @@ function extractPONumbers(text: string): string[] {
   const patterns = [
     /\bPO\s*#?\s*(\d{7,12})\b/gi,
     /\bP\.O\.\s*(\d{7,12})\b/gi,
-    /\bPurchase\s+Order\s*#?\s*(\d{7,12})\b/gi
+    /\bPurchase\s+Order\s*#?\s*(\d{7,12})\b/gi,
   ];
-  
+
   const results = new Set<string>();
-  patterns.forEach(pattern => {
+  patterns.forEach((pattern) => {
     const matches = [...text.matchAll(pattern)];
-    matches.forEach(m => results.add(m[1]));
+    matches.forEach((m) => results.add(m[1]));
   });
-  
+
   return Array.from(results);
 }
 
@@ -456,15 +504,15 @@ function extractQuoteNumbers(text: string): string[] {
   const patterns = [
     /\bQuote\s*#?\s*(\d{6,10})\b/gi,
     /\bQ#?\s*(\d{6,10})\b/gi,
-    /\bQuotation\s*#?\s*(\d{6,10})\b/gi
+    /\bQuotation\s*#?\s*(\d{6,10})\b/gi,
   ];
-  
+
   const results = new Set<string>();
-  patterns.forEach(pattern => {
+  patterns.forEach((pattern) => {
     const matches = [...text.matchAll(pattern)];
-    matches.forEach(m => results.add(m[1]));
+    matches.forEach((m) => results.add(m[1]));
   });
-  
+
   return Array.from(results);
 }
 
@@ -472,15 +520,15 @@ function extractCaseNumbers(text: string): string[] {
   const patterns = [
     /\bCase\s*#?\s*(\d{6,10})\b/gi,
     /\bTicket\s*#?\s*(\d{6,10})\b/gi,
-    /\bSR\s*#?\s*(\d{6,10})\b/gi
+    /\bSR\s*#?\s*(\d{6,10})\b/gi,
   ];
-  
+
   const results = new Set<string>();
-  patterns.forEach(pattern => {
+  patterns.forEach((pattern) => {
     const matches = [...text.matchAll(pattern)];
-    matches.forEach(m => results.add(m[1]));
+    matches.forEach((m) => results.add(m[1]));
   });
-  
+
   return Array.from(results);
 }
 
@@ -488,11 +536,13 @@ function extractPartNumbers(text: string): string[] {
   // HP part number pattern
   const pattern = /\b[A-Z0-9]{5,15}(?:[#\-\s]?[A-Z0-9]{1,5})?\b/g;
   const matches = text.toUpperCase().match(pattern) || [];
-  
+
   // Filter out common false positives
-  return matches.filter(m => 
-    !m.match(/^(THE|AND|FOR|WITH|FROM|THIS|THAT|HAVE|WILL|BEEN)$/)
-  ).slice(0, 10);
+  return matches
+    .filter(
+      (m) => !m.match(/^(THE|AND|FOR|WITH|FROM|THIS|THAT|HAVE|WILL|BEEN)$/),
+    )
+    .slice(0, 10);
 }
 
 function extractDollarAmounts(text: string): string[] {
@@ -504,22 +554,27 @@ function extractDates(text: string): string[] {
   const patterns = [
     /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/g,
     /\b\d{1,2}-\d{1,2}-\d{2,4}\b/g,
-    /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s+\d{4}\b/gi
+    /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s+\d{4}\b/gi,
   ];
-  
+
   const results = new Set<string>();
-  patterns.forEach(pattern => {
+  patterns.forEach((pattern) => {
     const matches = text.match(pattern) || [];
-    matches.forEach(m => results.add(m));
+    matches.forEach((m) => results.add(m));
   });
-  
+
   return Array.from(results);
 }
 
-function saveAnalysis(email: any, results: any, phases: number[], db: Database.Database) {
+function saveAnalysis(
+  email: any,
+  results: any,
+  phases: number[],
+  db: Database.Database,
+) {
   const id = `incremental_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date().toISOString();
-  
+
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO email_analysis (
       id, email_id,
@@ -535,42 +590,49 @@ function saveAnalysis(email: any, results: any, phases: number[], db: Database.D
       created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  
-  const totalTime = results.processing_time + 
-    (results.phase2_processing_time || 0) + 
+
+  const totalTime =
+    results.processing_time +
+    (results.phase2_processing_time || 0) +
     (results.phase3_processing_time || 0);
-  
+
   stmt.run(
     id,
     email.id || email.message_id,
     results.workflow_state,
     results.priority.toUpperCase(),
-    'REQUEST',
-    results.urgency_score > 0 ? 'HIGH' : 'MEDIUM',
+    "REQUEST",
+    results.urgency_score > 0 ? "HIGH" : "MEDIUM",
     results.confidence || 0.75,
-    'NEW',
-    `incremental-${phases.join('-')}`,
+    "NEW",
+    `incremental-${phases.join("-")}`,
     results.processing_time,
     results.business_process || results.workflow_state,
     results.confidence || 0.75,
-    results.entities.po_numbers.join(',') || null,
-    results.entities.quote_numbers.join(',') || null,
-    results.entities.case_numbers.join(',') || null,
-    results.entities.part_numbers.join(',') || null,
-    results.entities.dollar_amounts.join(',') || null,
+    results.entities.po_numbers.join(",") || null,
+    results.entities.quote_numbers.join(",") || null,
+    results.entities.case_numbers.join(",") || null,
+    results.entities.part_numbers.join(",") || null,
+    results.entities.dollar_amounts.join(",") || null,
     JSON.stringify(results.entities.contacts || []),
-    results.action_items?.map((a: any) => a.task).join('; ') || null,
+    results.action_items?.map((a: any) => a.task).join("; ") || null,
     JSON.stringify(results.action_items || []),
-    'ON_TRACK',
+    "ON_TRACK",
     results.revenue_impact || results.financial_impact || null,
-    results.strategic_insights?.relationship || 'Medium',
-    results.executive_summary || results.risk_assessment || `${results.workflow_state} - ${results.priority} priority`,
+    results.strategic_insights?.relationship || "Medium",
+    results.executive_summary ||
+      results.risk_assessment ||
+      `${results.workflow_state} - ${results.priority} priority`,
     results.initial_response || null,
-    phases.includes(3) ? 'doomgrave/phi-4:14b-tools-Q3_K_S' : phases.includes(2) ? 'llama3.2:3b' : 'rule-based',
+    phases.includes(3)
+      ? "doomgrave/phi-4:14b-tools-Q3_K_S"
+      : phases.includes(2)
+        ? "llama3.2:3b"
+        : "rule-based",
     results.phase3_processing_time || results.phase2_processing_time || 0,
     totalTime,
     now,
-    now
+    now,
   );
 }
 
@@ -579,23 +641,27 @@ function saveAnalysis(email: any, results: any, phases: number[], db: Database.D
 // ============================================
 
 async function runIncrementalAnalysis() {
-  console.log('🚀 Three-Phase Incremental Email Analysis');
-  console.log('📊 Each phase builds on previous results\n');
-  
-  const db = new Database('./data/crewai.db');
-  
+  console.log("🚀 Three-Phase Incremental Email Analysis");
+  console.log("📊 Each phase builds on previous results\n");
+
+  const db = new Database("./data/crewai.db");
+
   // Get sample of emails to test
-  const emails = db.prepare(`
+  const emails = db
+    .prepare(
+      `
     SELECT * FROM emails 
     WHERE received_at >= '2025-05-09'
     AND (recipient_emails LIKE '%nick.paul@tdsynnex.com%' 
          OR recipient_emails LIKE '%t119889c@tdsynnex.com%')
     ORDER BY received_at DESC
     LIMIT 100
-  `).all();
-  
+  `,
+    )
+    .all();
+
   console.log(`📧 Found ${emails.length} emails to analyze\n`);
-  
+
   // Track statistics
   const stats = {
     phase1Only: 0,
@@ -603,41 +669,49 @@ async function runIncrementalAnalysis() {
     phase3: 0,
     totalTime: 0,
     criticalFound: 0,
-    revenueIdentified: 0
+    revenueIdentified: 0,
   };
-  
+
   // Process first 20 emails as demonstration
   for (const email of emails.slice(0, 20)) {
     const results = await processEmailIncremental(email, db);
-    
+
     // Update stats
     if (results.phase3_processing_time) stats.phase3++;
     else if (results.phase2_processing_time) stats.phase2++;
     else stats.phase1Only++;
-    
-    const totalTime = results.processing_time + 
-      (results.phase2_processing_time || 0) + 
+
+    const totalTime =
+      results.processing_time +
+      (results.phase2_processing_time || 0) +
       (results.phase3_processing_time || 0);
     stats.totalTime += totalTime;
-    
-    if (results.priority === 'critical') stats.criticalFound++;
-    if (results.financial_impact > 0) stats.revenueIdentified += results.financial_impact;
+
+    if (results.priority === "critical") stats.criticalFound++;
+    if (results.financial_impact > 0)
+      stats.revenueIdentified += results.financial_impact;
   }
-  
+
   // Summary
-  console.log('\n' + '='.repeat(60));
-  console.log('INCREMENTAL ANALYSIS SUMMARY');
-  console.log('='.repeat(60));
+  console.log("\n" + "=".repeat(60));
+  console.log("INCREMENTAL ANALYSIS SUMMARY");
+  console.log("=".repeat(60));
   console.log(`Emails processed: 20`);
   console.log(`Phase distribution:`);
   console.log(`  - Phase 1 only: ${stats.phase1Only}`);
   console.log(`  - Phase 1+2: ${stats.phase2}`);
   console.log(`  - Phase 1+2+3: ${stats.phase3}`);
   console.log(`Critical issues found: ${stats.criticalFound}`);
-  console.log(`Revenue identified: $${stats.revenueIdentified.toLocaleString()}`);
-  console.log(`Average time per email: ${(stats.totalTime / 20 / 1000).toFixed(1)}s`);
-  console.log(`\nIncremental approach provides better quality with intelligent resource allocation!`);
-  
+  console.log(
+    `Revenue identified: $${stats.revenueIdentified.toLocaleString()}`,
+  );
+  console.log(
+    `Average time per email: ${(stats.totalTime / 20 / 1000).toFixed(1)}s`,
+  );
+  console.log(
+    `\nIncremental approach provides better quality with intelligent resource allocation!`,
+  );
+
   db.close();
 }
 

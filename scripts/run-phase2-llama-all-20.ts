@@ -8,116 +8,124 @@ import Database from "better-sqlite3";
 import axios from "axios";
 import * as fs from "fs";
 import * as path from "path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Use Claude's comprehensive prompt for fair comparison
 const CLAUDE_PROMPT = fs.readFileSync(
-  path.join(__dirname, '../../iems_project/claude_final_analyzer.py'), 'utf-8'
+  path.join(__dirname, "../../iems_project/claude_final_analyzer.py"),
+  "utf-8",
 );
 
 // Extract the prompt from the Python file
 const promptMatch = CLAUDE_PROMPT.match(/prompt\s*=\s*f?"""([\s\S]*?)"""/);
-const LLAMA_PROMPT = promptMatch ? promptMatch[1] : '';
+const LLAMA_PROMPT = promptMatch ? promptMatch[1] : "";
 
 async function callLlamaForReal(prompt: string): Promise<any> {
   const startTime = Date.now();
-  
+
   try {
     const response = await axios.post(
-      'http://localhost:11434/api/generate',
+      "http://localhost:11434/api/generate",
       {
-        model: 'llama3.2:3b',
+        model: "llama3.2:3b",
         prompt,
         stream: false,
         options: {
           temperature: 0.3,
           num_predict: 1000,
-          timeout: 180000 // 3 minutes
-        }
+          timeout: 180000, // 3 minutes
+        },
       },
-      { 
+      {
         timeout: 180000,
         maxContentLength: Infinity,
-        maxBodyLength: Infinity
-      }
+        maxBodyLength: Infinity,
+      },
     );
 
     const elapsed = (Date.now() - startTime) / 1000;
     console.log(`      ✅ LLM responded in ${elapsed.toFixed(1)}s`);
 
-    let responseText = response.data.response || '';
-    
+    let responseText = response.data.response || "";
+
     // Extract JSON from response
-    if (responseText.includes('```json')) {
-      responseText = responseText.split('```json')[1].split('```')[0];
-    } else if (responseText.includes('{')) {
-      const jsonStart = responseText.indexOf('{');
-      const jsonEnd = responseText.lastIndexOf('}') + 1;
+    if (responseText.includes("```json")) {
+      responseText = responseText.split("```json")[1].split("```")[0];
+    } else if (responseText.includes("{")) {
+      const jsonStart = responseText.indexOf("{");
+      const jsonEnd = responseText.lastIndexOf("}") + 1;
       responseText = responseText.substring(jsonStart, jsonEnd);
     }
 
     return JSON.parse(responseText.trim());
-    
   } catch (error: any) {
     const elapsed = (Date.now() - startTime) / 1000;
-    console.error(`      ❌ LLM call failed after ${elapsed.toFixed(1)}s: ${error.message}`);
+    console.error(
+      `      ❌ LLM call failed after ${elapsed.toFixed(1)}s: ${error.message}`,
+    );
     throw error;
   }
 }
 
 async function processAll20TestEmails() {
-  console.log('🚀 Phase 2 Analysis on ALL 20 Test Emails\n');
-  console.log('🦙 Using llama3.2:3b model\n');
-  console.log('⏰ This will take approximately 10-30 minutes\n');
-  
-  const db = new Database('./data/crewai.db');
-  
+  console.log("🚀 Phase 2 Analysis on ALL 20 Test Emails\n");
+  console.log("🦙 Using llama3.2:3b model\n");
+  console.log("⏰ This will take approximately 10-30 minutes\n");
+
+  const db = new Database("./data/crewai.db");
+
   // Load all test emails
   const allEmails: any[] = [];
   for (let i = 1; i <= 4; i++) {
-    const batchFile = path.join(__dirname, `../data/email-batches/test_emails_batch_${i}.json`);
+    const batchFile = path.join(
+      __dirname,
+      `../data/email-batches/test_emails_batch_${i}.json`,
+    );
     if (fs.existsSync(batchFile)) {
-      const emails = JSON.parse(fs.readFileSync(batchFile, 'utf-8'));
+      const emails = JSON.parse(fs.readFileSync(batchFile, "utf-8"));
       allEmails.push(...emails);
     }
   }
-  
+
   console.log(`📧 Loaded ${allEmails.length} test emails\n`);
-  
+
   const startTime = Date.now();
   let successCount = 0;
   let failureCount = 0;
-  
+
   for (const [index, email] of allEmails.entries()) {
     const emailId = email.MessageID || email.id;
     console.log(`\n[${index + 1}/${allEmails.length}] Processing ${emailId}`);
     console.log(`   📧 ${email.Subject?.substring(0, 60)}...`);
-    
+
     try {
       // Build the prompt with email content
-      const emailContent = `\n\nSubject: ${email.Subject}\n\nBody: ${email.BodyText || email.Body || 'No body content'}`;
-      const fullPrompt = LLAMA_PROMPT.replace('Email to analyze:', `Email to analyze:${emailContent}`);
-      
-      console.log('   🦙 Calling llama3.2:3b...');
+      const emailContent = `\n\nSubject: ${email.Subject}\n\nBody: ${email.BodyText || email.Body || "No body content"}`;
+      const fullPrompt = LLAMA_PROMPT.replace(
+        "Email to analyze:",
+        `Email to analyze:${emailContent}`,
+      );
+
+      console.log("   🦙 Calling llama3.2:3b...");
       const analysisStartTime = Date.now();
-      
+
       // ACTUALLY call the LLM
       const analysis = await callLlamaForReal(fullPrompt);
-      
+
       const processingTime = Date.now() - analysisStartTime;
-      
-      console.log(`   📊 Key results:`)
-      console.log(`      - Workflow: ${analysis.workflow_state || 'N/A'}`);
-      console.log(`      - Priority: ${analysis.priority || 'N/A'}`);
-      console.log(`      - Confidence: ${analysis.confidence || 'N/A'}`);
-      
+
+      console.log(`   📊 Key results:`);
+      console.log(`      - Workflow: ${analysis.workflow_state || "N/A"}`);
+      console.log(`      - Priority: ${analysis.priority || "N/A"}`);
+      console.log(`      - Confidence: ${analysis.confidence || "N/A"}`);
+
       // Save to database with INSERT OR REPLACE
       const analysisId = `phase2_llama_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date().toISOString();
-      
+
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO email_analysis (
           id, email_id, 
@@ -135,79 +143,85 @@ async function processAll20TestEmails() {
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
       `);
-      
+
       stmt.run(
         analysisId,
         emailId,
         // Quick analysis (basic)
-        analysis.workflow_state || 'START_POINT',
-        analysis.priority || 'MEDIUM',
-        'REQUEST',
-        analysis.urgency_level || 'MEDIUM',
+        analysis.workflow_state || "START_POINT",
+        analysis.priority || "MEDIUM",
+        "REQUEST",
+        analysis.urgency_level || "MEDIUM",
         0.85,
-        'NEW',
-        'rule-based',
+        "NEW",
+        "rule-based",
         50,
         // Deep analysis (from LLM) - Phase 2
         analysis.workflow_state || analysis.business_process || null,
         null,
         analysis.confidence || 0.75,
         // Entities
-        analysis.entities?.po_numbers?.join(',') || null,
-        analysis.entities?.quote_numbers?.join(',') || null,
-        analysis.entities?.case_numbers?.join(',') || null,
-        analysis.entities?.part_numbers?.join(',') || null,
+        analysis.entities?.po_numbers?.join(",") || null,
+        analysis.entities?.quote_numbers?.join(",") || null,
+        analysis.entities?.case_numbers?.join(",") || null,
+        analysis.entities?.part_numbers?.join(",") || null,
         null,
-        analysis.entities?.contacts?.join(',') || null,
+        analysis.entities?.contacts?.join(",") || null,
         // Actions
-        analysis.action_items?.map((a: any) => a.task).join('; ') || null,
+        analysis.action_items?.map((a: any) => a.task).join("; ") || null,
         JSON.stringify(analysis.action_items || []),
         analysis.sla_status || null,
         // Business impact
         null,
-        analysis.urgency_level === 'CRITICAL' ? 'High' : 'Medium',
-        analysis.urgency_indicators?.join(', ') || null,
+        analysis.urgency_level === "CRITICAL" ? "High" : "Medium",
+        analysis.urgency_indicators?.join(", ") || null,
         // Summary and response
         analysis.contextual_summary || analysis.executive_summary || null,
         analysis.suggested_response || null,
         // Metadata
-        'llama3.2:3b',
+        "llama3.2:3b",
         processingTime,
         now,
-        now
+        now,
       );
-      
-      console.log('   💾 Saved to database');
+
+      console.log("   💾 Saved to database");
       successCount++;
-      
     } catch (error) {
       console.error(`   ❌ Failed: ${error}`);
       failureCount++;
     }
   }
-  
+
   const totalTime = (Date.now() - startTime) / 1000;
-  
+
   // Summary
-  console.log('\n' + '='.repeat(60));
-  console.log('PHASE 2 ANALYSIS COMPLETE');
-  console.log('='.repeat(60));
+  console.log("\n" + "=".repeat(60));
+  console.log("PHASE 2 ANALYSIS COMPLETE");
+  console.log("=".repeat(60));
   console.log(`Model: llama3.2:3b`);
   console.log(`Target Score: 6.56/10`);
-  console.log(`Emails processed successfully: ${successCount}/${allEmails.length}`);
+  console.log(
+    `Emails processed successfully: ${successCount}/${allEmails.length}`,
+  );
   console.log(`Failures: ${failureCount}`);
-  console.log(`Average time per email: ${(totalTime / successCount).toFixed(1)}s`);
+  console.log(
+    `Average time per email: ${(totalTime / successCount).toFixed(1)}s`,
+  );
   console.log(`Total processing time: ${(totalTime / 60).toFixed(1)} minutes`);
-  
+
   // Log completion
-  fs.writeFileSync('/tmp/phase2_llama_complete.txt', `
+  fs.writeFileSync(
+    "/tmp/phase2_llama_complete.txt",
+    `
 Completed: ${new Date().toISOString()}
 Model: llama3.2:3b
 Success: ${successCount}/${allEmails.length}
 Total time: ${(totalTime / 60).toFixed(1)} minutes
 Average per email: ${(totalTime / successCount).toFixed(1)}s
-`);
-  
+`,
+  );
+
   db.close();
 }
 

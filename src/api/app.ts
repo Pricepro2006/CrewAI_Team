@@ -118,7 +118,7 @@ export async function createApp(): Promise<Express> {
 
   // File upload routes (before tRPC to handle multipart forms)
   app.use("/api", uploadRoutes);
-  
+
   // Email pipeline health routes
   app.use("/api/health", emailPipelineHealthRouter);
 

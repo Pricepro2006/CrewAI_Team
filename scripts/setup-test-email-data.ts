@@ -2,11 +2,13 @@ import Database from "better-sqlite3";
 import { v4 as uuidv4 } from "uuid";
 
 async function setupTestEmailData() {
-  console.log("🚀 Setting up test email data for email-pipeline-health integration\n");
+  console.log(
+    "🚀 Setting up test email data for email-pipeline-health integration\n",
+  );
 
   // Connect to database
   const db = new Database("./data/crewai.db");
-  
+
   try {
     // Enable foreign keys
     db.exec("PRAGMA foreign_keys = ON");
@@ -23,16 +25,17 @@ async function setupTestEmailData() {
         received_at: new Date().toISOString(),
         is_read: 0,
         has_attachments: 0,
-        body_preview: "Dear Sales Team, We urgently need a quote for 500 enterprise licenses...",
+        body_preview:
+          "Dear Sales Team, We urgently need a quote for 500 enterprise licenses...",
         body: "Dear Sales Team,\n\nWe urgently need a quote for 500 enterprise licenses.\n\nProduct codes: ABC123, DEF456\nDeadline: End of week\n\nPlease expedite.\n\nBest regards,\nJohn Smith",
         importance: "high",
         categories: JSON.stringify(["urgent", "quote"]),
         raw_content: null,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       },
       {
-        id: "d4b8g6c9-2345-6789-0123-456789012345", 
+        id: "d4b8g6c9-2345-6789-0123-456789012345",
         graph_id: null,
         subject: "Support Request: Product Issue #ISS456",
         sender_email: "sarah.johnson@customersupport.com",
@@ -41,13 +44,14 @@ async function setupTestEmailData() {
         received_at: new Date().toISOString(),
         is_read: 0,
         has_attachments: 0,
-        body_preview: "Hello Support, Customer reporting issues with product P789...",
+        body_preview:
+          "Hello Support, Customer reporting issues with product P789...",
         body: "Hello Support,\n\nCustomer reporting issues with product P789.\n\nIssue: Device not powering on\nCase #: ISS456\nCustomer: ABC Corp\n\nPlease investigate.\n\nThanks,\nSarah",
         importance: "normal",
         categories: JSON.stringify(["support", "technical"]),
         raw_content: null,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       },
       {
         id: "e5c9h7da-3456-7890-1234-567890123456",
@@ -65,7 +69,7 @@ async function setupTestEmailData() {
         categories: JSON.stringify(["order", "shipping"]),
         raw_content: null,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       },
       {
         id: "f6da18eb-4567-8901-2345-678901234567",
@@ -77,14 +81,15 @@ async function setupTestEmailData() {
         received_at: new Date().toISOString(),
         is_read: 0,
         has_attachments: 0,
-        body_preview: "Hi Team, Following up on our discussion about the new contract terms...",
+        body_preview:
+          "Hi Team, Following up on our discussion about the new contract terms...",
         body: "Hi Team,\n\nFollowing up on our discussion about the new contract terms.\n\nPlease send the updated proposal.\n\nRegards,\nManager",
         importance: "normal",
         categories: JSON.stringify(["followup"]),
         raw_content: null,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+        updated_at: new Date().toISOString(),
+      },
     ];
 
     // Insert emails
@@ -115,7 +120,7 @@ async function setupTestEmailData() {
           email.categories,
           email.raw_content,
           email.created_at,
-          email.updated_at
+          email.updated_at,
         );
       }
     });
@@ -170,30 +175,39 @@ async function setupTestEmailData() {
         entities_part_numbers: JSON.stringify(["ABC123", "DEF456"]),
         entities_order_references: JSON.stringify([]),
         entities_contacts: JSON.stringify([
-          {type: "from", name: "John Smith", email: "john.smith@techvendor.com"},
-          {type: "to", name: "Sales Team", email: "sales@company.com"}
+          {
+            type: "from",
+            name: "John Smith",
+            email: "john.smith@techvendor.com",
+          },
+          { type: "to", name: "Sales Team", email: "sales@company.com" },
         ]),
         // Actions
         action_summary: "Review and respond to urgent quote request",
         action_details: JSON.stringify({
           actions: ["Review pricing", "Check inventory", "Send quote"],
           priority: "high",
-          deadline: new Date(Date.now() + 86400000).toISOString()
+          deadline: new Date(Date.now() + 86400000).toISOString(),
         }),
         action_sla_status: "ON_TRACK",
         // Workflow
         workflow_state: "IN_PROGRESS",
         workflow_state_updated_at: new Date().toISOString(),
         workflow_suggested_next: "SEND_QUOTE",
-        workflow_estimated_completion: new Date(Date.now() + 86400000).toISOString(),
+        workflow_estimated_completion: new Date(
+          Date.now() + 86400000,
+        ).toISOString(),
         workflow_blockers: JSON.stringify([]),
         // Business impact
-        business_impact_revenue: 50000.00,
+        business_impact_revenue: 50000.0,
         business_impact_satisfaction: "HIGH",
-        business_impact_urgency_reason: "Large enterprise customer with urgent deadline",
+        business_impact_urgency_reason:
+          "Large enterprise customer with urgent deadline",
         // Context
-        contextual_summary: "Urgent quote request for 500 enterprise licenses. High-value opportunity.",
-        suggested_response: "Thank you for your inquiry. We are reviewing your requirements and will provide a detailed quote within 24 hours.",
+        contextual_summary:
+          "Urgent quote request for 500 enterprise licenses. High-value opportunity.",
+        suggested_response:
+          "Thank you for your inquiry. We are reviewing your requirements and will provide a detailed quote within 24 hours.",
         related_emails: JSON.stringify([]),
         thread_position: 1,
         // Metadata
@@ -201,7 +215,7 @@ async function setupTestEmailData() {
         deep_processing_time: 300,
         total_processing_time: 450,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       },
       {
         id: uuidv4(),
@@ -219,7 +233,7 @@ async function setupTestEmailData() {
         deep_workflow_primary: "Customer Support",
         deep_workflow_secondary: "Technical Support",
         deep_workflow_related: JSON.stringify(["Product Issues"]),
-        deep_confidence: 0.90,
+        deep_confidence: 0.9,
         // Entities
         entities_po_numbers: JSON.stringify([]),
         entities_quote_numbers: JSON.stringify([]),
@@ -227,30 +241,38 @@ async function setupTestEmailData() {
         entities_part_numbers: JSON.stringify(["P789"]),
         entities_order_references: JSON.stringify([]),
         entities_contacts: JSON.stringify([
-          {type: "from", name: "Sarah Johnson", email: "sarah.johnson@customersupport.com"},
-          {type: "to", name: "Support Team", email: "support@company.com"}
+          {
+            type: "from",
+            name: "Sarah Johnson",
+            email: "sarah.johnson@customersupport.com",
+          },
+          { type: "to", name: "Support Team", email: "support@company.com" },
         ]),
         // Actions
         action_summary: "Investigate technical issue with product",
         action_details: JSON.stringify({
           actions: ["Diagnose issue", "Contact tech team", "Update customer"],
           priority: "medium",
-          deadline: new Date(Date.now() + 172800000).toISOString()
+          deadline: new Date(Date.now() + 172800000).toISOString(),
         }),
         action_sla_status: "ON_TRACK",
         // Workflow
         workflow_state: "ASSIGNED",
         workflow_state_updated_at: new Date().toISOString(),
         workflow_suggested_next: "INVESTIGATE",
-        workflow_estimated_completion: new Date(Date.now() + 172800000).toISOString(),
+        workflow_estimated_completion: new Date(
+          Date.now() + 172800000,
+        ).toISOString(),
         workflow_blockers: JSON.stringify([]),
         // Business impact
         business_impact_revenue: 0,
         business_impact_satisfaction: "MEDIUM",
         business_impact_urgency_reason: "Customer experiencing product issues",
         // Context
-        contextual_summary: "Technical support request for product P789 not powering on.",
-        suggested_response: "Thank you for reporting this issue. Our technical team will investigate and provide a solution within 48 hours.",
+        contextual_summary:
+          "Technical support request for product P789 not powering on.",
+        suggested_response:
+          "Thank you for reporting this issue. Our technical team will investigate and provide a solution within 48 hours.",
         related_emails: JSON.stringify([]),
         thread_position: 1,
         // Metadata
@@ -258,7 +280,7 @@ async function setupTestEmailData() {
         deep_processing_time: 250,
         total_processing_time: 370,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       },
       {
         id: uuidv4(),
@@ -284,15 +306,15 @@ async function setupTestEmailData() {
         entities_part_numbers: JSON.stringify([]),
         entities_order_references: JSON.stringify(["789456123"]),
         entities_contacts: JSON.stringify([
-          {type: "from", name: "Shipping", email: "shipping@logistics.com"},
-          {type: "to", name: "Orders", email: "orders@company.com"}
+          { type: "from", name: "Shipping", email: "shipping@logistics.com" },
+          { type: "to", name: "Orders", email: "orders@company.com" },
         ]),
         // Actions
         action_summary: "Order shipped - no action required",
         action_details: JSON.stringify({
           actions: ["Track shipment"],
           priority: "low",
-          deadline: null
+          deadline: null,
         }),
         action_sla_status: "COMPLETED",
         // Workflow
@@ -306,7 +328,8 @@ async function setupTestEmailData() {
         business_impact_satisfaction: "NEUTRAL",
         business_impact_urgency_reason: null,
         // Context
-        contextual_summary: "Order has been shipped with tracking number provided.",
+        contextual_summary:
+          "Order has been shipped with tracking number provided.",
         suggested_response: null,
         related_emails: JSON.stringify([]),
         thread_position: 1,
@@ -315,7 +338,7 @@ async function setupTestEmailData() {
         deep_processing_time: 200,
         total_processing_time: 300,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       },
       {
         id: uuidv4(),
@@ -341,30 +364,35 @@ async function setupTestEmailData() {
         entities_part_numbers: JSON.stringify([]),
         entities_order_references: JSON.stringify([]),
         entities_contacts: JSON.stringify([
-          {type: "from", name: "Manager", email: "manager@customer.com"},
-          {type: "to", name: "Account Team", email: "account@company.com"}
+          { type: "from", name: "Manager", email: "manager@customer.com" },
+          { type: "to", name: "Account Team", email: "account@company.com" },
         ]),
         // Actions
         action_summary: "Send updated proposal as requested",
         action_details: JSON.stringify({
           actions: ["Prepare updated proposal", "Send to customer"],
           priority: "medium",
-          deadline: new Date(Date.now() + 86400000).toISOString()
+          deadline: new Date(Date.now() + 86400000).toISOString(),
         }),
         action_sla_status: "ON_TRACK",
         // Workflow
         workflow_state: "NEW",
         workflow_state_updated_at: new Date().toISOString(),
         workflow_suggested_next: "PREPARE_RESPONSE",
-        workflow_estimated_completion: new Date(Date.now() + 86400000).toISOString(),
+        workflow_estimated_completion: new Date(
+          Date.now() + 86400000,
+        ).toISOString(),
         workflow_blockers: JSON.stringify([]),
         // Business impact
         business_impact_revenue: 0,
         business_impact_satisfaction: "MEDIUM",
-        business_impact_urgency_reason: "Customer follow-up on contract discussion",
+        business_impact_urgency_reason:
+          "Customer follow-up on contract discussion",
         // Context
-        contextual_summary: "Customer following up on contract discussion, requesting updated proposal.",
-        suggested_response: "Thank you for following up. We'll send the updated proposal by end of day tomorrow.",
+        contextual_summary:
+          "Customer following up on contract discussion, requesting updated proposal.",
+        suggested_response:
+          "Thank you for following up. We'll send the updated proposal by end of day tomorrow.",
         related_emails: JSON.stringify([]),
         thread_position: 1,
         // Metadata
@@ -372,8 +400,8 @@ async function setupTestEmailData() {
         deep_processing_time: 220,
         total_processing_time: 330,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+        updated_at: new Date().toISOString(),
+      },
     ];
 
     const analysisTransaction = db.transaction(() => {
@@ -418,7 +446,7 @@ async function setupTestEmailData() {
           analysis.deep_processing_time,
           analysis.total_processing_time,
           analysis.created_at,
-          analysis.updated_at
+          analysis.updated_at,
         );
       }
     });
@@ -428,17 +456,23 @@ async function setupTestEmailData() {
 
     // Verify data
     console.log("3️⃣ Verifying test data...");
-    
-    const emailCount = db.prepare("SELECT COUNT(*) as count FROM emails WHERE id IN (?, ?, ?, ?)")
-      .get(...testEmails.map(e => e.id)) as { count: number };
+
+    const emailCount = db
+      .prepare("SELECT COUNT(*) as count FROM emails WHERE id IN (?, ?, ?, ?)")
+      .get(...testEmails.map((e) => e.id)) as { count: number };
     console.log(`   Emails in database: ${emailCount.count}`);
 
-    const analysisCount = db.prepare("SELECT COUNT(*) as count FROM email_analysis WHERE email_id IN (?, ?, ?, ?)")
-      .get(...testEmails.map(e => e.id)) as { count: number };
+    const analysisCount = db
+      .prepare(
+        "SELECT COUNT(*) as count FROM email_analysis WHERE email_id IN (?, ?, ?, ?)",
+      )
+      .get(...testEmails.map((e) => e.id)) as { count: number };
     console.log(`   Analysis records: ${analysisCount.count}`);
 
     // Show sample analysis
-    const sampleAnalysis = db.prepare(`
+    const sampleAnalysis = db
+      .prepare(
+        `
       SELECT 
         ea.quick_workflow,
         ea.quick_priority,
@@ -448,18 +482,25 @@ async function setupTestEmailData() {
       FROM email_analysis ea
       JOIN emails e ON ea.email_id = e.id
       LIMIT 3
-    `).all();
+    `,
+      )
+      .all();
 
     console.log("\n📊 Sample Analysis Data:");
     sampleAnalysis.forEach((row: any) => {
       console.log(`   - "${row.subject}"`);
-      console.log(`     Workflow: ${row.quick_workflow}, Priority: ${row.quick_priority}`);
-      console.log(`     State: ${row.workflow_state}, SLA: ${row.action_sla_status}`);
+      console.log(
+        `     Workflow: ${row.quick_workflow}, Priority: ${row.quick_priority}`,
+      );
+      console.log(
+        `     State: ${row.workflow_state}, SLA: ${row.action_sla_status}`,
+      );
     });
 
     console.log("\n✅ Test data setup complete!");
-    console.log("🎉 The email-pipeline-health endpoints should now return data!");
-
+    console.log(
+      "🎉 The email-pipeline-health endpoints should now return data!",
+    );
   } catch (error) {
     console.error("❌ Error setting up test data:", error);
   } finally {

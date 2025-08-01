@@ -11,8 +11,7 @@ import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 
 // Initialize database
-const db = new Database("./data/crewai.db");
-db.pragma("foreign_keys = ON");
+const db = db.pragma("foreign_keys = ON"); // Use connection pool instead: getDatabaseConnection().getDatabase() or executeQuery((db) => ...)"./data/crewai.db");
 
 // Ollama configuration
 const OLLAMA_HOST = process.env.OLLAMA_HOST || "http://localhost:11434";
@@ -57,7 +56,7 @@ interface AnalysisResult {
  */
 async function callOllamaLLM(prompt: string): Promise<string> {
   console.log(`    🤖 Calling ${MODEL}...`);
-  
+
   try {
     const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
       method: "POST",
@@ -75,7 +74,9 @@ async function callOllamaLLM(prompt: string): Promise<string> {
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Ollama API error: ${response.status} ${response.statusText}`,
+      );
     }
 
     const data = await response.json();
@@ -134,7 +135,7 @@ Provide your analysis in the following JSON format (no markdown, just JSON):
     if (!jsonMatch) {
       throw new Error("No JSON found in LLM response");
     }
-    
+
     const analysis = JSON.parse(jsonMatch[0]) as AnalysisResult;
     console.log(`    ⏱️  Processing time: ${processingTime}ms`);
     return analysis;
@@ -150,11 +151,11 @@ Provide your analysis in the following JSON format (no markdown, just JSON):
 async function saveAnalysisToDatabase(
   email: Email,
   analysis: AnalysisResult,
-  processingTime: number
+  processingTime: number,
 ): Promise<void> {
   const analysisId = uuidv4();
   const emailId = email.MessageID || email.id;
-  
+
   if (!emailId) {
     throw new Error("Email has no ID");
   }
@@ -205,7 +206,7 @@ async function saveAnalysisToDatabase(
     processingTime,
     processingTime,
     new Date().toISOString(),
-    new Date().toISOString()
+    new Date().toISOString(),
   );
 }
 
@@ -220,14 +221,17 @@ async function main() {
     const response = await fetch(`${OLLAMA_HOST}/api/tags`);
     const data = await response.json();
     const hasModel = data.models?.some((m: any) => m.name === MODEL);
-    
+
     if (!hasModel) {
       console.error(`❌ Model ${MODEL} not found in Ollama`);
-      console.log("Available models:", data.models?.map((m: any) => m.name).join(", "));
+      console.log(
+        "Available models:",
+        data.models?.map((m: any) => m.name).join(", "),
+      );
       console.log(`\nPull the model with: ollama pull ${MODEL}`);
       process.exit(1);
     }
-    
+
     console.log(`✅ Ollama is running with ${MODEL}\n`);
   } catch (error) {
     console.error("❌ Cannot connect to Ollama. Is it running?");
@@ -238,7 +242,9 @@ async function main() {
   // Load test batch files
   const batchDir = "./test_batches_converted";
   const batchFiles = await readdir(batchDir);
-  const emailBatches = batchFiles.filter(f => f.endsWith(".json") && f.startsWith("emails_batch"));
+  const emailBatches = batchFiles.filter(
+    (f) => f.endsWith(".json") && f.startsWith("emails_batch"),
+  );
 
   console.log(`📁 Found ${emailBatches.length} email batch files\n`);
 
@@ -247,28 +253,32 @@ async function main() {
 
   // Process each batch
   for (const [batchIndex, batchFile] of emailBatches.entries()) {
-    console.log(`\n[${batchIndex + 1}/${emailBatches.length}] Processing ${batchFile}...`);
-    
+    console.log(
+      `\n[${batchIndex + 1}/${emailBatches.length}] Processing ${batchFile}...`,
+    );
+
     const content = await readFile(join(batchDir, batchFile), "utf-8");
     const batch = JSON.parse(content);
     const emails = batch.emails || [batch];
-    
+
     console.log(`  📧 ${emails.length} emails in batch\n`);
 
     for (const email of emails) {
       try {
         console.log(`  📅 ${email.Subject?.substring(0, 50)}...`);
-        
+
         // REAL LLM ANALYSIS
         const analysis = await analyzeEmailWithLLM(email);
-        
+
         // Save to database
         const processingTime = Math.floor(Math.random() * 2000) + 1000; // Simulated for now
         await saveAnalysisToDatabase(email, analysis, processingTime);
-        
+
         console.log(`    ✅ Analysis saved to database`);
-        console.log(`    📊 Workflow: ${analysis.workflow}, Priority: ${analysis.priority}`);
-        
+        console.log(
+          `    📊 Workflow: ${analysis.workflow}, Priority: ${analysis.priority}`,
+        );
+
         totalAnalyzed++;
       } catch (error) {
         console.error(`    ❌ Failed:`, error.message);
@@ -280,10 +290,12 @@ async function main() {
   console.log(`\n📊 Final Results:`);
   console.log(`  ✅ Successfully analyzed: ${totalAnalyzed}`);
   console.log(`  ❌ Failed: ${totalFailed}`);
-  console.log(`  📈 Success rate: ${((totalAnalyzed / (totalAnalyzed + totalFailed)) * 100).toFixed(1)}%`);
-  
+  console.log(
+    `  📈 Success rate: ${((totalAnalyzed / (totalAnalyzed + totalFailed)) * 100).toFixed(1)}%`,
+  );
+
   console.log(`\n✨ REAL LLM analysis complete!\n`);
-  
+
   db.close();
 }
 

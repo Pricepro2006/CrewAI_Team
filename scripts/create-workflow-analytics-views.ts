@@ -8,13 +8,13 @@ import Database from "better-sqlite3";
 import chalk from "chalk";
 
 function createAnalyticsViews() {
-  console.log(chalk.blue('📊 Creating Workflow Analytics Views...\n'));
-  
-  const db = new Database('./data/crewai.db');
-  
+  console.log(chalk.blue("📊 Creating Workflow Analytics Views...\n"));
+
+  const db = new Database("./data/crewai.db");
+
   try {
     // Drop existing views to recreate with optimizations
-    console.log(chalk.yellow('Dropping existing views...'));
+    console.log(chalk.yellow("Dropping existing views..."));
     db.exec(`
       DROP VIEW IF EXISTS executive_metrics_v2;
       DROP VIEW IF EXISTS category_performance_v2;
@@ -23,9 +23,9 @@ function createAnalyticsViews() {
       DROP VIEW IF EXISTS workflow_trends_v2;
       DROP VIEW IF EXISTS real_time_metrics;
     `);
-    
+
     // 1. Executive Metrics View (Optimized for dashboard)
-    console.log(chalk.cyan('Creating executive_metrics_v2...'));
+    console.log(chalk.cyan("Creating executive_metrics_v2..."));
     db.exec(`
       CREATE VIEW executive_metrics_v2 AS
       WITH recent_tasks AS (
@@ -76,10 +76,10 @@ function createAnalyticsViews() {
         datetime('now') as calculated_at
       FROM recent_tasks;
     `);
-    console.log(chalk.green('✓ executive_metrics_v2 created'));
-    
+    console.log(chalk.green("✓ executive_metrics_v2 created"));
+
     // 2. Category Performance View
-    console.log(chalk.cyan('Creating category_performance_v2...'));
+    console.log(chalk.cyan("Creating category_performance_v2..."));
     db.exec(`
       CREATE VIEW category_performance_v2 AS
       SELECT 
@@ -122,10 +122,10 @@ function createAnalyticsViews() {
       GROUP BY workflow_category
       ORDER BY total_value DESC;
     `);
-    console.log(chalk.green('✓ category_performance_v2 created'));
-    
+    console.log(chalk.green("✓ category_performance_v2 created"));
+
     // 3. Owner Workload View
-    console.log(chalk.cyan('Creating owner_workload_v2...'));
+    console.log(chalk.cyan("Creating owner_workload_v2..."));
     db.exec(`
       CREATE VIEW owner_workload_v2 AS
       SELECT 
@@ -169,10 +169,10 @@ function createAnalyticsViews() {
       ORDER BY workload_score DESC
       LIMIT 50;
     `);
-    console.log(chalk.green('✓ owner_workload_v2 created'));
-    
+    console.log(chalk.green("✓ owner_workload_v2 created"));
+
     // 4. SLA Performance View
-    console.log(chalk.cyan('Creating sla_performance_v2...'));
+    console.log(chalk.cyan("Creating sla_performance_v2..."));
     db.exec(`
       CREATE VIEW sla_performance_v2 AS
       WITH sla_data AS (
@@ -219,10 +219,10 @@ function createAnalyticsViews() {
       GROUP BY sla_date
       ORDER BY sla_date DESC;
     `);
-    console.log(chalk.green('✓ sla_performance_v2 created'));
-    
+    console.log(chalk.green("✓ sla_performance_v2 created"));
+
     // 5. Workflow Trends View (Time Series)
-    console.log(chalk.cyan('Creating workflow_trends_v2...'));
+    console.log(chalk.cyan("Creating workflow_trends_v2..."));
     db.exec(`
       CREATE VIEW workflow_trends_v2 AS
       WITH daily_data AS (
@@ -270,10 +270,10 @@ function createAnalyticsViews() {
       GROUP BY task_date
       ORDER BY task_date DESC;
     `);
-    console.log(chalk.green('✓ workflow_trends_v2 created'));
-    
+    console.log(chalk.green("✓ workflow_trends_v2 created"));
+
     // 6. Real-time Metrics View (For WebSocket updates)
-    console.log(chalk.cyan('Creating real_time_metrics...'));
+    console.log(chalk.cyan("Creating real_time_metrics..."));
     db.exec(`
       CREATE VIEW real_time_metrics AS
       SELECT 
@@ -303,11 +303,11 @@ function createAnalyticsViews() {
         
       FROM workflow_tasks;
     `);
-    console.log(chalk.green('✓ real_time_metrics created'));
-    
+    console.log(chalk.green("✓ real_time_metrics created"));
+
     // Create indexes for better query performance
-    console.log(chalk.yellow('\nCreating performance indexes...'));
-    
+    console.log(chalk.yellow("\nCreating performance indexes..."));
+
     db.exec(`
       -- Composite indexes for common query patterns
       CREATE INDEX IF NOT EXISTS idx_workflow_status_created 
@@ -322,35 +322,44 @@ function createAnalyticsViews() {
       CREATE INDEX IF NOT EXISTS idx_workflow_category_value 
         ON workflow_tasks(workflow_category, dollar_value);
     `);
-    
-    console.log(chalk.green('✓ Performance indexes created'));
-    
+
+    console.log(chalk.green("✓ Performance indexes created"));
+
     // Verify all views
-    console.log(chalk.blue('\n📋 Verifying created views:'));
-    
-    const views = db.prepare(`
+    console.log(chalk.blue("\n📋 Verifying created views:"));
+
+    const views = db
+      .prepare(
+        `
       SELECT name FROM sqlite_master 
       WHERE type='view' 
         AND name LIKE '%workflow%' OR name LIKE '%metrics%'
       ORDER BY name
-    `).all();
-    
-    views.forEach(view => {
+    `,
+      )
+      .all();
+
+    views.forEach((view) => {
       console.log(chalk.gray(`   - ${view.name}`));
     });
-    
+
     // Sample query to test performance
-    console.log(chalk.blue('\n📊 Testing executive metrics view:'));
-    const metrics = db.prepare('SELECT * FROM executive_metrics_v2').get();
+    console.log(chalk.blue("\n📊 Testing executive metrics view:"));
+    const metrics = db.prepare("SELECT * FROM executive_metrics_v2").get();
     console.log(chalk.gray(`   Total tasks: ${metrics.total_tasks}`));
-    console.log(chalk.gray(`   Revenue at risk: $${metrics.revenue_at_risk?.toLocaleString() || 0}`));
+    console.log(
+      chalk.gray(
+        `   Revenue at risk: $${metrics.revenue_at_risk?.toLocaleString() || 0}`,
+      ),
+    );
     console.log(chalk.gray(`   SLA violations: ${metrics.sla_violations}`));
     console.log(chalk.gray(`   Tasks last 24h: ${metrics.tasks_last_24h}`));
-    
-    console.log(chalk.green('\n✅ All workflow analytics views created successfully!'));
-    
+
+    console.log(
+      chalk.green("\n✅ All workflow analytics views created successfully!"),
+    );
   } catch (error) {
-    console.error(chalk.red('❌ Error creating views:'), error);
+    console.error(chalk.red("❌ Error creating views:"), error);
     process.exit(1);
   } finally {
     db.close();
