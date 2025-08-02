@@ -120,6 +120,9 @@ interface AnalysisOptions {
   priority?: "low" | "medium" | "high" | "critical";
   timeout?: number;
   forceAllPhases?: boolean; // Force Phase 3 even for incomplete chains
+  qualityThreshold?: number; // Minimum quality score (0-10)
+  useHybridApproach?: boolean; // Enable hybrid LLM+fallback approach
+  enableQualityLogging?: boolean; // Log quality decisions
 }
 
 interface AnalysisStats {
@@ -146,6 +149,24 @@ interface LlamaOptions {
   num_predict: number;
   timeout?: number;
   stop?: string[];
+}
+
+interface QualityMetrics {
+  totalResponses: number;
+  highQualityResponses: number;
+  lowQualityResponses: number;
+  fallbackUsed: number;
+  hybridUsed: number;
+  averageQualityScore: number;
+  qualityThresholdMisses: number;
+}
+
+interface QualityAssessment {
+  score: number; // 0-10 quality score
+  reasons: string[]; // Detailed reasons for the score
+  confidence: number; // How confident we are in this assessment
+  useFallback: boolean; // Whether to use fallback instead
+  useHybrid: boolean; // Whether to use hybrid approach
 }
 
 interface DatabaseAnalysisStats {
@@ -180,6 +201,27 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     retrySuccesses: 0,
     fallbackUses: 0,
     averageAttempts: 1,
+  };
+
+  private qualityMetrics: QualityMetrics = {
+    totalResponses: 0,
+    highQualityResponses: 0,
+    lowQualityResponses: 0,
+    fallbackUsed: 0,
+    hybridUsed: 0,
+    averageQualityScore: 5.0,
+    qualityThresholdMisses: 0,
+  };
+
+  // Configurable quality thresholds
+  private qualityConfig = {
+    minimumQualityThreshold: 6.0, // Default minimum quality score
+    confidenceThreshold: 0.7, // Confidence threshold for quality assessment
+    workflowValidationMinLength: 20, // Minimum characters for workflow validation
+    entityExtractionMinCount: 1, // Minimum entities for good extraction
+    suspiciousConfidenceThreshold: 0.95, // Confidence levels above this are suspicious
+    enableHybridByDefault: true, // Enable hybrid approach by default
+    enableQualityLogging: true, // Enable quality decision logging
   };
 
   constructor(databasePath: string = "./data/crewai.db", redisUrl?: string) {
@@ -489,18 +531,67 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           );
         }
 
-        // Track successful parsing
-        this.trackParsingMetric(true, attempt + 1);
-        logger.info(`Phase 2 successful on attempt ${attempt + 1}`);
-
-        // Merge with Phase 1 results
-        const results: Phase2Results = this.mergePhase2Results(
+        // Create provisional merged results for quality assessment
+        const provisionalResults: Phase2Results = this.mergePhase2Results(
           phase1Results,
           phase2Data,
           Date.now() - startTime,
         );
 
-        return results;
+        // Assess response quality
+        const qualityAssessment = this.validateResponseQuality(
+          provisionalResults,
+          phase1Results,
+          options,
+        );
+
+        // Log quality decision if enabled
+        if (
+          options.enableQualityLogging ??
+          this.qualityConfig.enableQualityLogging
+        ) {
+          logger.info(
+            `Quality assessment: Score=${qualityAssessment.score}/10, UseFallback=${qualityAssessment.useFallback}, UseHybrid=${qualityAssessment.useHybrid}`,
+          );
+          logger.debug(
+            `Quality reasons: ${qualityAssessment.reasons.join(", ")}`,
+          );
+        }
+
+        // Update quality metrics
+        this.updateQualityMetrics(qualityAssessment, options);
+
+        // Decide on final response based on quality assessment
+        let finalResults: Phase2Results;
+
+        if (qualityAssessment.useFallback) {
+          logger.warn(
+            `Using fallback due to low quality (score: ${qualityAssessment.score})`,
+          );
+          finalResults = this.getPhase2Fallback(
+            phase1Results,
+            Date.now() - startTime,
+          );
+        } else if (qualityAssessment.useHybrid) {
+          logger.info(
+            `Using hybrid approach to enhance response quality (score: ${qualityAssessment.score})`,
+          );
+          finalResults = this.createHybridResponse(
+            provisionalResults,
+            phase1Results,
+            Date.now() - startTime,
+          );
+        } else {
+          finalResults = provisionalResults;
+        }
+
+        // Track successful parsing
+        this.trackParsingMetric(true, attempt + 1);
+        logger.info(
+          `Phase 2 successful on attempt ${attempt + 1} with quality score: ${qualityAssessment.score}`,
+        );
+
+        return finalResults;
       } catch (error) {
         lastError = error as Error;
         logger.warn(`Phase 2 attempt ${attempt + 1} failed:`, error);
@@ -564,6 +655,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         model: "llama3.2:3b",
         prompt,
         stream: false,
+        format: "json", // Force JSON output
         options: llamaOptions,
       },
       {
@@ -709,6 +801,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           model: "doomgrave/phi-4:14b-tools-Q3_K_S",
           prompt,
           stream: false,
+          format: "json", // Force JSON output
           options: {
             temperature: 0.3,
             num_predict: 2000,
@@ -1684,10 +1777,364 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
   }
 
   /**
+   * Validate response quality to prevent poor LLM responses from replacing good fallbacks
+   * Returns quality assessment with recommendation for fallback or hybrid approach
+   */
+  private validateResponseQuality(
+    llmResponse: Phase2Results,
+    phase1Results: Phase1Results,
+    options: AnalysisOptions,
+  ): QualityAssessment {
+    const qualityThreshold =
+      options.qualityThreshold ?? this.qualityConfig.minimumQualityThreshold;
+    const useHybrid =
+      options.useHybridApproach ?? this.qualityConfig.enableHybridByDefault;
+
+    let score = 10; // Start with perfect score and deduct
+    const reasons: string[] = [];
+    let confidence = 0.8; // Confidence in our quality assessment
+
+    // 1. Workflow validation quality check (0-3 points)
+    if (
+      !llmResponse.workflow_validation ||
+      llmResponse.workflow_validation.length <
+        this.qualityConfig.workflowValidationMinLength
+    ) {
+      score -= 2;
+      reasons.push("Workflow validation too short or missing");
+    } else if (
+      llmResponse.workflow_validation.includes("unable to") ||
+      llmResponse.workflow_validation.includes("cannot assess") ||
+      llmResponse.workflow_validation.includes("parsing failed") ||
+      llmResponse.workflow_validation.includes("JSON parsing failed")
+    ) {
+      score -= 3;
+      reasons.push("Workflow validation indicates LLM failure");
+    } else if (
+      llmResponse.workflow_validation === phase1Results.workflow_state
+    ) {
+      // LLM just repeated Phase 1 result without enhancement
+      score -= 1;
+      reasons.push("No workflow enhancement over Phase 1");
+    } else if (
+      llmResponse.workflow_validation === "Standard" ||
+      llmResponse.workflow_validation === "Standard processing"
+    ) {
+      score -= 2;
+      reasons.push("Generic workflow validation");
+    }
+
+    // 2. Entity extraction completeness (0-2 points)
+    const totalMissedEntities = Object.values(
+      llmResponse.missed_entities,
+    ).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+    const totalPhase1Entities = Object.values(phase1Results.entities).reduce(
+      (sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0),
+      0,
+    );
+
+    if (totalMissedEntities === 0 && totalPhase1Entities > 0) {
+      score -= 1;
+      reasons.push(
+        "No additional entities found despite Phase 1 entities present",
+      );
+    } else if (
+      totalMissedEntities < this.qualityConfig.entityExtractionMinCount &&
+      totalPhase1Entities === 0
+    ) {
+      score -= 0.5;
+      reasons.push("Minimal entity extraction in simple email");
+    }
+
+    // 3. Confidence level assessment (0-2 points)
+    if (
+      llmResponse.confidence > this.qualityConfig.suspiciousConfidenceThreshold
+    ) {
+      score -= 2;
+      reasons.push(`Suspiciously high confidence: ${llmResponse.confidence}`);
+      confidence -= 0.2;
+    } else if (llmResponse.confidence < 0.3) {
+      score -= 1;
+      reasons.push(`Very low confidence: ${llmResponse.confidence}`);
+    } else if (llmResponse.confidence >= 0.3 && llmResponse.confidence <= 0.7) {
+      // Good confidence range
+      reasons.push(`Appropriate confidence level: ${llmResponse.confidence}`);
+    }
+
+    // 4. Risk assessment quality (0-1.5 points)
+    if (
+      !llmResponse.risk_assessment ||
+      llmResponse.risk_assessment.includes("Unable to assess") ||
+      llmResponse.risk_assessment === "Standard risk level"
+    ) {
+      score -= 1.5;
+      reasons.push("Generic or missing risk assessment");
+    } else if (llmResponse.risk_assessment.length < 10) {
+      score -= 0.5;
+      reasons.push("Risk assessment too brief");
+    }
+
+    // 5. Action items quality (0-1 point)
+    if (llmResponse.action_items.length === 0) {
+      if (phase1Results.urgency_score > 3 || phase1Results.priority !== "low") {
+        score -= 1;
+        reasons.push("No action items for high-priority email");
+      }
+    } else {
+      // Check action item quality
+      const hasValidActionItems = llmResponse.action_items.some(
+        (item) =>
+          item.task && item.task.length > 10 && item.owner && item.deadline,
+      );
+      if (!hasValidActionItems) {
+        score -= 0.5;
+        reasons.push("Poor quality action items");
+      }
+    }
+
+    // 6. Business process identification (0-0.5 points)
+    if (
+      llmResponse.business_process === "PARSING_ERROR" ||
+      llmResponse.business_process === "STANDARD_PROCESSING"
+    ) {
+      score -= 0.5;
+      reasons.push("Generic business process classification");
+    }
+
+    // Ensure score is within bounds
+    score = Math.max(0, Math.min(10, score));
+
+    // Decision logic - more nuanced approach
+    let useFallback = false;
+    let useHybridApproach = false;
+
+    if (score >= qualityThreshold) {
+      // High quality - use LLM response
+      reasons.push("Quality threshold met - using LLM response");
+    } else if (useHybrid && score >= qualityThreshold - 2 && score >= 4) {
+      // Moderate quality with hybrid enabled - use hybrid
+      useHybridApproach = true;
+      reasons.push(
+        "Quality below threshold but within hybrid range - using hybrid approach",
+      );
+    } else {
+      // Low quality - use fallback
+      useFallback = true;
+      reasons.push("Quality too low - using fallback response");
+    }
+
+    return {
+      score,
+      reasons,
+      confidence,
+      useFallback,
+      useHybrid: useHybridApproach,
+    };
+  }
+
+  /**
+   * Create hybrid response combining best of LLM insights and fallback structure
+   */
+  private createHybridResponse(
+    llmResponse: Phase2Results,
+    phase1Results: Phase1Results,
+    processingTime: number,
+  ): Phase2Results {
+    const fallback = this.getPhase2Fallback(phase1Results, processingTime);
+
+    // Combine best elements from both approaches
+    return {
+      ...fallback, // Start with reliable fallback structure
+
+      // Use LLM insights where they add value
+      workflow_validation: this.selectBestField(
+        llmResponse.workflow_validation,
+        fallback.workflow_validation,
+        (field) => field.length > 20 && !field.includes("unable to"),
+      ),
+
+      missed_entities: {
+        ...fallback.missed_entities,
+        // Add LLM-discovered entities if they seem valid
+        ...Object.fromEntries(
+          Object.entries(llmResponse.missed_entities).filter(
+            ([_, entities]) =>
+              Array.isArray(entities) &&
+              entities.length > 0 &&
+              entities.length < 10,
+          ),
+        ),
+      },
+
+      action_items:
+        llmResponse.action_items.length > 0 &&
+        llmResponse.action_items.every((item) => item.task && item.owner)
+          ? llmResponse.action_items
+          : fallback.action_items,
+
+      risk_assessment: this.selectBestField(
+        llmResponse.risk_assessment,
+        fallback.risk_assessment,
+        (field) => field.length > 15 && !field.includes("Unable to assess"),
+      ),
+
+      initial_response: this.selectBestField(
+        llmResponse.initial_response,
+        fallback.initial_response,
+        (field) =>
+          field.length > 30 && !field.includes("reviewing your request"),
+      ),
+
+      // Use conservative confidence - average of LLM and fallback
+      confidence: (llmResponse.confidence + fallback.confidence) / 2,
+
+      business_process:
+        llmResponse.business_process !== "PARSING_ERROR" &&
+        llmResponse.business_process !== "STANDARD_PROCESSING"
+          ? llmResponse.business_process
+          : fallback.business_process,
+
+      extracted_requirements: [
+        ...fallback.extracted_requirements,
+        ...llmResponse.extracted_requirements.filter(
+          (req) =>
+            req.length > 5 && !fallback.extracted_requirements.includes(req),
+        ),
+      ],
+    };
+  }
+
+  /**
+   * Select the better field value based on quality criteria
+   */
+  private selectBestField(
+    llmValue: string,
+    fallbackValue: string,
+    qualityCheck: (value: string) => boolean,
+  ): string {
+    if (qualityCheck(llmValue)) {
+      return llmValue;
+    }
+    return fallbackValue;
+  }
+
+  /**
+   * Update quality metrics for monitoring
+   */
+  private updateQualityMetrics(
+    assessment: QualityAssessment,
+    options: AnalysisOptions,
+  ): void {
+    this.qualityMetrics.totalResponses++;
+
+    const qualityThreshold =
+      options.qualityThreshold ?? this.qualityConfig.minimumQualityThreshold;
+
+    if (assessment.score >= qualityThreshold) {
+      this.qualityMetrics.highQualityResponses++;
+    } else {
+      this.qualityMetrics.lowQualityResponses++;
+    }
+
+    if (assessment.useFallback) {
+      this.qualityMetrics.fallbackUsed++;
+    }
+
+    if (assessment.useHybrid) {
+      this.qualityMetrics.hybridUsed++;
+    }
+
+    if (assessment.score < qualityThreshold) {
+      this.qualityMetrics.qualityThresholdMisses++;
+    }
+
+    // Update rolling average
+    this.qualityMetrics.averageQualityScore =
+      (this.qualityMetrics.averageQualityScore *
+        (this.qualityMetrics.totalResponses - 1) +
+        assessment.score) /
+      this.qualityMetrics.totalResponses;
+
+    // Log quality metrics periodically
+    if (this.qualityMetrics.totalResponses % 20 === 0) {
+      this.logQualityMetrics();
+    }
+  }
+
+  /**
+   * Log quality metrics for monitoring
+   */
+  private logQualityMetrics(): void {
+    const metrics = this.qualityMetrics;
+    const highQualityRate =
+      (metrics.highQualityResponses / metrics.totalResponses) * 100;
+    const fallbackRate = (metrics.fallbackUsed / metrics.totalResponses) * 100;
+    const hybridRate = (metrics.hybridUsed / metrics.totalResponses) * 100;
+
+    logger.info(`Quality Metrics Summary:`);
+    logger.info(`  Total Responses: ${metrics.totalResponses}`);
+    logger.info(`  High Quality Rate: ${highQualityRate.toFixed(1)}%`);
+    logger.info(
+      `  Average Quality Score: ${metrics.averageQualityScore.toFixed(2)}/10`,
+    );
+    logger.info(`  Fallback Usage: ${fallbackRate.toFixed(1)}%`);
+    logger.info(`  Hybrid Usage: ${hybridRate.toFixed(1)}%`);
+    logger.info(
+      `  Quality Threshold Misses: ${metrics.qualityThresholdMisses}`,
+    );
+  }
+
+  /**
+   * Get quality metrics for external monitoring
+   */
+  getQualityMetrics(): QualityMetrics & {
+    highQualityRate: number;
+    fallbackRate: number;
+    hybridRate: number;
+  } {
+    const highQualityRate =
+      this.qualityMetrics.totalResponses > 0
+        ? (this.qualityMetrics.highQualityResponses /
+            this.qualityMetrics.totalResponses) *
+          100
+        : 0;
+    const fallbackRate =
+      this.qualityMetrics.totalResponses > 0
+        ? (this.qualityMetrics.fallbackUsed /
+            this.qualityMetrics.totalResponses) *
+          100
+        : 0;
+    const hybridRate =
+      this.qualityMetrics.totalResponses > 0
+        ? (this.qualityMetrics.hybridUsed /
+            this.qualityMetrics.totalResponses) *
+          100
+        : 0;
+
+    return {
+      ...this.qualityMetrics,
+      highQualityRate,
+      fallbackRate,
+      hybridRate,
+    };
+  }
+
+  /**
+   * Update quality configuration for A/B testing
+   */
+  updateQualityConfig(newConfig: Partial<typeof this.qualityConfig>): void {
+    this.qualityConfig = { ...this.qualityConfig, ...newConfig };
+    logger.info("Quality configuration updated:", newConfig);
+  }
+
+  /**
    * Cleanup and shutdown
    */
   async shutdown(): Promise<void> {
     logger.info("Shutting down EmailThreePhaseAnalysisService");
+
+    // Log final quality metrics
+    this.logQualityMetrics();
 
     // Clear caches
     this.phase1Cache.clear();

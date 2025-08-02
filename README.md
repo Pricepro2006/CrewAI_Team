@@ -27,14 +27,21 @@ The system has successfully completed Phase 5, deploying a comprehensive email p
 
 ### Email Pipeline Architecture
 
-The email pipeline features an **adaptive three-phase analysis system** that intelligently applies processing based on email chain completeness:
+The email pipeline features an **adaptive three-phase analysis system** with production-ready architecture supporting multiple operational modes:
 
-#### Adaptive Strategy (NEW - January 2025)
+#### Operational Modes (NEW - August 2025)
+
+1. **Manual Load Mode** - Batch import from JSON files or existing databases
+2. **Auto-Pull Mode** - Scheduled pulling every 1-60 minutes from email providers
+3. **Hybrid Mode** - Concurrent manual and auto operations with priority management
+
+#### Adaptive Strategy
 
 - **Complete Email Chains (70%+ completeness)**: Full three-phase analysis for maximum workflow intelligence
 - **Incomplete Chains (<70% completeness)**: Two-phase analysis for efficiency
 - **Time Savings**: 62% reduction in processing time while maintaining quality
 - **Workflow Learning**: Extracts reusable templates from complete customer journeys
+- **Performance**: 60+ emails/minute with parallel processing (target)
 
 #### Phase 1: Rule-Based Triage + Chain Analysis (< 1 second)
 
