@@ -5,13 +5,21 @@
 
 import Database from "better-sqlite3";
 import { Logger } from "../../utils/logger.js";
-import {
-  getDatabaseConnection,
-  executeQuery,
-  executeTransaction,
-  type DatabaseConnection,
-} from "../../database/ConnectionPool.js";
-import { EmailRecord } from "../../types/EmailTypes.js";
+// Using local interface instead of EmailTypes due to conflict
+interface EmailRecord {
+  id: string;
+  message_id: string;
+  subject: string;
+  body_text: string;
+  body_html?: string;
+  from_address: string;
+  to_addresses: string;
+  received_time: Date | string;
+  conversation_id?: string;
+  thread_id?: string;
+  workflow_state?: string;
+  thread_emails?: EmailRecord[];
+}
 
 const logger = new Logger("EmailChainAnalyzer");
 
@@ -58,6 +66,28 @@ export class EmailChainAnalyzer {
 
   constructor(databasePath: string = "./data/crewai.db") {
     this.databasePath = databasePath;
+  }
+
+  /**
+   * Map database row to EmailChainNode format (for enhanced schema)
+   */
+  private mapDbRowToChainNode(row: any): EmailChainNode {
+    return {
+      id: row.id,
+      message_id: row.internet_message_id || row.message_id || "",
+      subject: row.subject || "",
+      sender_email: row.sender_email || "",
+      recipient_emails: row.recipient_emails || "",
+      received_at: row.received_date_time || row.received_at || "",
+      workflow_state:
+        row.workflow_state ||
+        this.detectWorkflowState(
+          (row.subject || "") + " " + (row.body_content || row.body || ""),
+        ),
+      in_reply_to: row.in_reply_to || "",
+      references: row.references || "",
+      thread_id: row.conversation_id || row.thread_id || "",
+    };
   }
 
   /**
@@ -114,102 +144,157 @@ export class EmailChainAnalyzer {
    * Get email by ID
    */
   private getEmail(emailId: string): EmailChainNode | null {
-    return executeQuery((db) => {
+    // Use direct database connection for the enhanced schema
+    const db = new Database(this.databasePath);
+    try {
       const stmt = db.prepare(`
         SELECT 
           id,
-          message_id,
+          internet_message_id as message_id,
           subject,
           sender_email,
-          recipient_emails,
-          received_at,
-          in_reply_to,
-          references,
-          thread_id,
-          body
-        FROM emails 
+          '' as recipient_emails,
+          received_date_time as received_at,
+          '' as in_reply_to,
+          '' as "references",
+          conversation_id as thread_id,
+          body_content as body
+        FROM emails_enhanced 
         WHERE id = ?
       `);
 
-      const email = stmt.get(emailId) as EmailChainNode;
+      const email = stmt.get(emailId) as any;
       if (!email) return null;
 
-      // Detect workflow state from content
-      email.workflow_state = this.detectWorkflowState(
-        email.subject + " " + (email.body || ""),
-      );
+      // Map to expected format
+      const chainNode: EmailChainNode = {
+        id: email.id,
+        message_id: email.message_id || "",
+        subject: email.subject || "",
+        sender_email: email.sender_email || "",
+        recipient_emails: email.recipient_emails || "",
+        received_at: email.received_at || "",
+        workflow_state: this.detectWorkflowState(
+          (email.subject || "") + " " + (email.body || ""),
+        ),
+        in_reply_to: email.in_reply_to || "",
+        references: email.references || "",
+        thread_id: email.thread_id || "",
+      };
 
-      return email;
-    });
+      return chainNode;
+    } finally {
+      db.close();
+    }
   }
 
   /**
    * Get all emails in a chain
    */
   private getEmailChain(email: EmailChainNode): EmailChainNode[] {
-    return executeQuery((db) => {
+    const db = new Database(this.databasePath);
+    try {
       const chainEmails: EmailChainNode[] = [];
       const processedIds = new Set<string>();
 
-      // Use thread_id if available
+      // Use conversation_id if available (Microsoft's thread ID)
       if (email.thread_id) {
         const stmt = db.prepare(`
-          SELECT * FROM emails 
-          WHERE thread_id = ? 
-          ORDER BY received_at ASC
+          SELECT 
+            id,
+            internet_message_id as message_id,
+            subject,
+            sender_email,
+            '' as recipient_emails,
+            received_date_time as received_at,
+            conversation_id as thread_id,
+            body_content as body
+          FROM emails_enhanced 
+          WHERE conversation_id = ? 
+          ORDER BY received_date_time ASC
         `);
 
-        const threads = stmt.all(email.thread_id) as EmailChainNode[];
-        threads.forEach((e) => {
-          e.workflow_state = this.detectWorkflowState(
-            e.subject + " " + (e.body || ""),
-          );
+        const threads = stmt.all(email.thread_id) as any[];
+        threads.forEach((row) => {
+          const e: EmailChainNode = {
+            id: row.id,
+            message_id: row.message_id || "",
+            subject: row.subject || "",
+            sender_email: row.sender_email || "",
+            recipient_emails: row.recipient_emails || "",
+            received_at: row.received_at || "",
+            workflow_state: this.detectWorkflowState(
+              (row.subject || "") + " " + (row.body || ""),
+            ),
+            in_reply_to: "",
+            references: "",
+            thread_id: row.thread_id || "",
+          };
           chainEmails.push(e);
           processedIds.add(e.id);
         });
       }
 
-      // Use subject matching for chains without thread_id
+      // Use subject matching for chains without conversation_id
       if (chainEmails.length <= 1) {
         // Clean subject for matching
         const baseSubject = this.cleanSubject(email.subject);
 
-        const stmt = db.prepare(`
-          SELECT * FROM emails 
-          WHERE (
-            subject LIKE ? OR 
-            subject LIKE ? OR 
-            subject LIKE ? OR
-            subject LIKE ?
-          )
-          AND (
-            sender_email IN (SELECT value FROM json_each(?)) OR
-            recipient_emails LIKE ? OR
-            recipient_emails LIKE ?
-          )
-          ORDER BY received_at ASC
-        `);
+        if (baseSubject) {
+          const stmt = db.prepare(`
+            SELECT 
+              id,
+              internet_message_id as message_id,
+              subject,
+              sender_email,
+              '' as recipient_emails,
+              received_date_time as received_at,
+              conversation_id as thread_id,
+              body_content as body
+            FROM emails_enhanced 
+            WHERE (
+              subject LIKE ? OR 
+              subject LIKE ? OR 
+              subject LIKE ? OR
+              subject LIKE ?
+            )
+            AND (
+              sender_email = ? OR
+              sender_email LIKE ?
+            )
+            ORDER BY received_date_time ASC
+          `);
 
-        const participants = this.extractParticipants([email]);
-        const results = stmt.all(
-          `%${baseSubject}%`,
-          `RE: %${baseSubject}%`,
-          `Re: %${baseSubject}%`,
-          `FW: %${baseSubject}%`,
-          JSON.stringify(participants),
-          `%${email.sender_email}%`,
-          `%${email.recipient_emails.split(",")[0]}%`,
-        ) as EmailChainNode[];
+          const results = stmt.all(
+            `%${baseSubject}%`,
+            `RE: %${baseSubject}%`,
+            `Re: %${baseSubject}%`,
+            `FW: %${baseSubject}%`,
+            email.sender_email || "",
+            `%${email.sender_email || ""}%`,
+          ) as any[];
 
-        results.forEach((e) => {
-          if (!processedIds.has(e.id)) {
-            e.workflow_state = this.detectWorkflowState(
-              e.subject + " " + (e.body || ""),
-            );
-            chainEmails.push(e);
-            processedIds.add(e.id);
-          }
-        });
+          results.forEach((row) => {
+            if (!processedIds.has(row.id)) {
+              const e: EmailChainNode = {
+                id: row.id,
+                message_id: row.message_id || "",
+                subject: row.subject || "",
+                sender_email: row.sender_email || "",
+                recipient_emails: row.recipient_emails || "",
+                received_at: row.received_at || "",
+                workflow_state: this.detectWorkflowState(
+                  (row.subject || "") + " " + (row.body || ""),
+                ),
+                in_reply_to: "",
+                references: "",
+                thread_id: row.thread_id || "",
+              };
+              chainEmails.push(e);
+              processedIds.add(e.id);
+            }
+          });
+        }
       }
 
       // Sort by date
@@ -219,7 +304,9 @@ export class EmailChainAnalyzer {
       );
 
       return chainEmails;
-    });
+    } finally {
+      db.close();
+    }
   }
 
   /**
@@ -331,6 +418,9 @@ export class EmailChainAnalyzer {
    * Clean subject line for matching
    */
   private cleanSubject(subject: string): string {
+    if (!subject || typeof subject !== "string") {
+      return "";
+    }
     return subject
       .replace(/^(RE:|Re:|FW:|Fw:|Fwd:)\s*/gi, "")
       .replace(/^\[.*?\]\s*/, "") // Remove [tags]
@@ -344,13 +434,17 @@ export class EmailChainAnalyzer {
     const participants = new Set<string>();
 
     emails.forEach((email) => {
-      participants.add(email.sender_email.toLowerCase());
+      if (email.sender_email) {
+        participants.add(email.sender_email.toLowerCase());
+      }
 
-      const recipients = email.recipient_emails.split(/[,;]/);
-      recipients.forEach((r) => {
-        const cleaned = r.trim().toLowerCase();
-        if (cleaned) participants.add(cleaned);
-      });
+      if (email.recipient_emails) {
+        const recipients = email.recipient_emails.split(/[,;]/);
+        recipients.forEach((r) => {
+          const cleaned = r.trim().toLowerCase();
+          if (cleaned) participants.add(cleaned);
+        });
+      }
     });
 
     return Array.from(participants);
@@ -369,9 +463,7 @@ export class EmailChainAnalyzer {
     };
 
     emails.forEach((email) => {
-      const content = (
-        email.subject + " " + (email as any).body || ""
-      ).toLowerCase();
+      const content = (email.subject + " " + (email.body || "")).toLowerCase();
 
       // Extract quote numbers
       const quoteMatches =
@@ -447,7 +539,9 @@ export class EmailChainAnalyzer {
   private detectCompletionSignals(emails: EmailChainNode[]): boolean {
     const lastEmail = emails[emails.length - 1];
     const lastContent = (
-      lastEmail.subject + " " + (lastEmail as any).body || ""
+      lastEmail.subject +
+      " " +
+      (lastEmail.body || "")
     ).toLowerCase();
 
     const completionPhrases = [
@@ -517,9 +611,7 @@ export class EmailChainAnalyzer {
     switch (params.chainType) {
       case "quote_request":
         const hasQuoteNumber = params.emails.some((e) =>
-          (e.subject + " " + (e as any).body || "").match(
-            /quote\s*#?\s*\d{6,10}/i,
-          ),
+          (e.subject + " " + (e.body || "")).match(/quote\s*#?\s*\d{6,10}/i),
         );
         if (!hasQuoteNumber) {
           score -= 10;
@@ -529,9 +621,7 @@ export class EmailChainAnalyzer {
 
       case "order_processing":
         const hasPONumber = params.emails.some((e) =>
-          (e.subject + " " + (e as any).body || "").match(
-            /po\s*#?\s*\d{7,12}/i,
-          ),
+          (e.subject + " " + (e.body || "")).match(/po\s*#?\s*\d{7,12}/i),
         );
         if (!hasPONumber) {
           score -= 10;
@@ -612,17 +702,22 @@ export class EmailChainAnalyzer {
     average_chain_length: number;
     chain_type_distribution: Record<string, number>;
   }> {
-    // Get all emails
-    const emailIds = await executeQuery((db) => {
+    // Get all emails from enhanced schema
+    const db = new Database(this.databasePath);
+    let emailIds: string[] = [];
+
+    try {
       const stmt = db.prepare(`
-        SELECT id FROM emails 
-        ORDER BY received_at DESC 
+        SELECT id FROM emails_enhanced 
+        ORDER BY received_date_time DESC 
         LIMIT 10000
       `);
 
-      const emails = stmt.all() as EmailChainNode[];
-      return emails.map((e) => e.id);
-    });
+      const emails = stmt.all() as any[];
+      emailIds = emails.map((e) => e.id);
+    } finally {
+      db.close();
+    }
 
     // Analyze chains
     const chains = await this.analyzeMultipleChains(emailIds);
