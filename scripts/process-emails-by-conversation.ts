@@ -298,10 +298,13 @@ class ConversationProcessor {
 
       // Map to expected format
       const mappedEmail = {
-        ...primaryEmail,
+        id: primaryEmail.id,
+        subject: (primaryEmail as any).subject || "No Subject",
+        body: primaryEmail.body_content,
         sender_email: primaryEmail.sender_email,
         recipient_emails: this.getRecipientEmails(primaryEmail.id),
-        body: primaryEmail.body_content,
+        received_at: primaryEmail.received_date_time,
+        has_attachments: (primaryEmail as any).has_attachments || false,
         chainAnalysis: {
           chain_id: conversation.conversation_id,
           is_complete: conversation.completeness_score >= 70,
@@ -352,10 +355,10 @@ class ConversationProcessor {
 
       updatePrimaryStmt.run(
         result.priority || "normal",
-        result.confidence_score || conversation.completeness_score / 100,
+        result.confidence || conversation.completeness_score / 100,
         JSON.stringify(result.entities || {}),
         JSON.stringify(result.key_phrases || []),
-        result.sentiment_score || 0,
+        0, // sentiment_score placeholder
         primaryEmail.id,
       );
     } catch (error) {

@@ -1,209 +1,291 @@
-import { EmailStorageService } from "../src/api/services/EmailStorageService.js";
-import { readdir, readFile } from "fs/promises";
+#!/usr/bin/env tsx
+
+/**
+ * Import IEMS Email Batches
+ * Handles the IEMS email format with ThreadID-based conversation grouping
+ */
+
+import Database from "better-sqlite3";
 import path from "path";
+import chalk from "chalk";
+import * as fs from "fs/promises";
+import { createHash } from "crypto";
+
+const DB_PATH = path.join(process.cwd(), "data/crewai_enhanced.db");
+const IEMS_BATCH_DIR =
+  "/home/pricepro2006/iems_project/db_backups/email_batches";
 
 interface IEMSEmail {
-  id: string;
-  subject: string;
-  from: {
-    emailAddress: {
-      name: string;
-      address: string;
-    };
-  };
-  toRecipients: Array<{
-    emailAddress: {
-      name: string;
-      address: string;
-    };
-  }>;
-  receivedDateTime: string;
-  bodyPreview: string;
-  importance: string;
-  hasAttachments: boolean;
-  parentFolderId?: string;
-  analysis?: {
-    analyzed_at?: string;
-    workflow_state?: string;
-    quick_priority?: string;
-    action_sla_status?: string;
-    entities?: any[];
-    contextual_summary?: string;
-  };
+  MessageID: string;
+  Subject: string;
+  SenderEmail: string;
+  SenderName?: string;
+  Recipients: string; // JSON string with to/cc
+  ReceivedTime: string;
+  FolderPath?: string;
+  BodyText?: string;
+  BodyHTML?: string;
+  HasAttachments: number;
+  Importance: string;
+  MailboxSource?: string;
+  ThreadID?: string;
+  ConversationID?: string;
+  IsRead?: number;
+  ExtractedAt?: string;
+  AnalyzedAt?: string;
+  workflow_state?: string;
 }
 
-async function importIEMSEmails() {
-  console.log("Starting IEMS email import...");
+class IEMSEmailImporter {
+  private db: Database.Database;
+  private stats = {
+    total: 0,
+    imported: 0,
+    errors: 0,
+    conversationIds: new Set<string>(),
+    threadIds: new Set<string>(),
+  };
 
-  const emailService = new EmailStorageService();
-  const emailsDir = "/home/pricepro2006/iems_project/received_emails";
+  constructor() {
+    this.db = new Database(DB_PATH);
+    this.prepareStatements();
+  }
 
-  try {
-    // Read all JSON files
-    const files = await readdir(emailsDir);
-    const jsonFiles = files.filter((f) => f.endsWith(".json"));
+  private insertEmailStmt!: Database.Statement;
+  private insertRecipientStmt!: Database.Statement;
 
-    console.log(`Found ${jsonFiles.length} email files to import`);
+  private prepareStatements() {
+    this.insertEmailStmt = this.db.prepare(`
+      INSERT OR REPLACE INTO emails_enhanced (
+        id, internet_message_id, conversation_id, subject, body_content,
+        body_content_type, body_preview, sender_email, sender_name,
+        created_date_time, last_modified_date_time, received_date_time,
+        sent_date_time, importance, has_attachments, is_read, is_draft,
+        in_reply_to, \`references\`, web_link, parent_folder_id, categories,
+        flag_status, status, workflow_state, priority, confidence_score,
+        analyzed_at, chain_id, chain_completeness_score, chain_type,
+        is_chain_complete, extracted_entities, key_phrases, sentiment_score,
+        created_at, updated_at, import_batch, source_file
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      )
+    `);
 
-    let successCount = 0;
-    let errorCount = 0;
+    this.insertRecipientStmt = this.db.prepare(`
+      INSERT INTO email_recipients (email_id, recipient_type, email_address, name)
+      VALUES (?, ?, ?, ?)
+    `);
+  }
 
-    for (const file of jsonFiles) {
-      try {
-        const filePath = path.join(emailsDir, file);
-        const content = await readFile(filePath, "utf-8");
-        const emailsData = JSON.parse(content);
+  async importAllBatches(): Promise<void> {
+    console.log(chalk.cyan("📥 Importing IEMS Email Batches\n"));
 
-        // Handle both single email and array of emails
-        const emails = Array.isArray(emailsData) ? emailsData : [emailsData];
+    const files = await fs.readdir(IEMS_BATCH_DIR);
+    const jsonFiles = files.filter(
+      (f) => f.startsWith("emails_batch_") && f.endsWith(".json"),
+    );
 
-        for (const iemsEmail of emails) {
-          try {
-            // Transform IEMS email to our format
-            const transformedEmail = transformIEMSEmail(iemsEmail, file);
-            await emailService.createEmail(transformedEmail);
-            successCount++;
+    console.log(
+      chalk.yellow(
+        `Found ${jsonFiles.length} IEMS batch files to process...\n`,
+      ),
+    );
+
+    // Process in chunks to avoid memory issues
+    const chunkSize = 100;
+    for (let i = 0; i < jsonFiles.length; i += chunkSize) {
+      const chunk = jsonFiles.slice(i, i + chunkSize);
+      console.log(
+        chalk.gray(
+          `Processing batch ${i + 1} to ${Math.min(i + chunkSize, jsonFiles.length)}...`,
+        ),
+      );
+
+      for (const file of chunk) {
+        try {
+          const filePath = path.join(IEMS_BATCH_DIR, file);
+          const content = await fs.readFile(filePath, "utf-8");
+          const emails = JSON.parse(content) as IEMSEmail[];
+
+          this.importBatch(emails, file);
+
+          if ((i + chunk.indexOf(file) + 1) % 100 === 0) {
             console.log(
-              `✓ Imported: ${transformedEmail.subject.substring(0, 50)}...`,
+              chalk.gray(
+                `Progress: ${i + chunk.indexOf(file) + 1}/${jsonFiles.length} files`,
+              ),
             );
-          } catch (error) {
-            errorCount++;
-            console.error(`✗ Failed to import email from ${file}:`, error);
           }
+        } catch (error: any) {
+          console.error(chalk.red(`Failed to process ${file}:`), error.message);
+          this.stats.errors++;
         }
-      } catch (error) {
-        errorCount++;
-        console.error(`✗ Failed to process file ${file}:`, error);
       }
     }
 
+    this.displayStats();
+    this.db.close();
+  }
+
+  private importBatch(emails: IEMSEmail[], filename: string) {
+    const transaction = this.db.transaction((emails: IEMSEmail[]) => {
+      for (const email of emails) {
+        try {
+          // Generate conversation ID from ThreadID or create one
+          const conversationId = email.ThreadID
+            ? `thread_${createHash("md5").update(email.ThreadID).digest("hex").substring(0, 16)}`
+            : `iems_${createHash("md5")
+                .update(email.Subject + email.SenderEmail)
+                .digest("hex")
+                .substring(0, 16)}`;
+
+          // Parse recipients
+          let toRecipients: string[] = [];
+          let ccRecipients: string[] = [];
+
+          try {
+            const recipientData = JSON.parse(email.Recipients);
+            toRecipients = recipientData.to || [];
+            ccRecipients = recipientData.cc || [];
+          } catch {
+            // Fallback for non-JSON format
+            toRecipients = [email.Recipients];
+          }
+
+          // Extract body preview
+          const bodyPreview = email.BodyText
+            ? email.BodyText.replace(/<[^>]*>/g, "").substring(0, 255)
+            : "";
+
+          // Determine content type
+          const contentType = email.BodyHTML ? "HTML" : "TEXT";
+
+          // Insert email
+          this.insertEmailStmt.run(
+            email.MessageID,
+            email.MessageID,
+            conversationId,
+            email.Subject,
+            email.BodyText || email.BodyHTML || "",
+            contentType,
+            bodyPreview,
+            email.SenderEmail,
+            email.SenderName || null,
+            email.ReceivedTime,
+            null,
+            email.ReceivedTime,
+            null,
+            email.Importance || "normal",
+            email.HasAttachments,
+            email.IsRead || 0,
+            0,
+            null,
+            null,
+            null,
+            email.FolderPath || "inbox",
+            null,
+            null,
+            "imported",
+            email.workflow_state || null,
+            null,
+            null,
+            email.AnalyzedAt || null,
+            conversationId,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            new Date().toISOString(),
+            null,
+            "iems_import",
+            filename,
+          );
+
+          // Insert recipients
+          for (const recipient of toRecipients) {
+            this.insertRecipientStmt.run(
+              email.MessageID,
+              "to",
+              recipient,
+              null,
+            );
+          }
+
+          for (const recipient of ccRecipients) {
+            this.insertRecipientStmt.run(
+              email.MessageID,
+              "cc",
+              recipient,
+              null,
+            );
+          }
+
+          this.stats.imported++;
+          this.stats.conversationIds.add(conversationId);
+          if (email.ThreadID) {
+            this.stats.threadIds.add(email.ThreadID);
+          }
+        } catch (error: any) {
+          console.error(
+            chalk.red(`Error importing ${email.MessageID}:`),
+            error.message,
+          );
+          this.stats.errors++;
+        }
+
+        this.stats.total++;
+      }
+    });
+
+    transaction(emails);
+  }
+
+  private displayStats() {
+    console.log(chalk.green("\n✅ IEMS Import Complete!\n"));
+    console.log(chalk.cyan("📊 Results:"));
     console.log(
-      `\nImport complete: ${successCount} emails imported, ${errorCount} errors`,
+      `   • Total emails processed: ${chalk.bold(this.stats.total.toLocaleString())}`,
+    );
+    console.log(
+      `   • Successfully imported: ${chalk.bold(this.stats.imported.toLocaleString())}`,
+    );
+    console.log(
+      `   • Errors: ${chalk.red(this.stats.errors.toLocaleString())}`,
+    );
+    console.log(
+      `   • Unique conversations: ${chalk.bold(this.stats.conversationIds.size.toLocaleString())}`,
+    );
+    console.log(
+      `   • Unique threads: ${chalk.bold(this.stats.threadIds.size.toLocaleString())}`,
     );
 
-    // Verify data
-    const stats = await emailService.getDashboardStats();
-    console.log("\nDashboard Statistics:");
-    console.log(`- Total Emails: ${stats.totalEmails}`);
-    console.log(`- Critical: ${stats.criticalCount}`);
-    console.log(`- In Progress: ${stats.inProgressCount}`);
-    console.log(`- Completed: ${stats.completedCount}`);
-  } catch (error) {
-    console.error("Error during import:", error);
-  }
+    // Show total counts in database
+    const totalEmails = this.db
+      .prepare("SELECT COUNT(*) as count FROM emails_enhanced")
+      .get() as any;
+    const totalConversations = this.db
+      .prepare(
+        "SELECT COUNT(DISTINCT conversation_id) as count FROM emails_enhanced",
+      )
+      .get() as any;
 
-  process.exit(0);
+    console.log(chalk.cyan("\n📊 Database Totals:"));
+    console.log(
+      `   • Total emails in database: ${chalk.bold(totalEmails.count.toLocaleString())}`,
+    );
+    console.log(
+      `   • Total conversations: ${chalk.bold(totalConversations.count.toLocaleString())}`,
+    );
+  }
 }
 
-function transformIEMSEmail(iemsEmail: IEMSEmail, fileName: string): any {
-  // Extract email alias from filename
-  let emailAlias = "Team4401@tdsynnex.com";
-  if (fileName.includes("InsightHPI")) {
-    emailAlias = "InsightHPI@tdsynnex.com";
-  } else if (fileName.includes("US_Insightsurface")) {
-    emailAlias = "US.InsightSurface@tdsynnex.com";
-  } else if (fileName.includes("InsightOrderSupport")) {
-    emailAlias = "InsightOrderSupport@tdsynnex.com";
-  }
-
-  // Determine status based on analysis
-  let status: "red" | "yellow" | "green" = "yellow";
-  let statusText = "In Progress";
-  let workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION" =
-    "IN_PROGRESS";
-
-  if (iemsEmail.analysis?.workflow_state) {
-    const state = iemsEmail.analysis.workflow_state.toLowerCase();
-    if (state.includes("start") || state.includes("new")) {
-      status = "red";
-      statusText = "New - Needs Attention";
-      workflowState = "START_POINT";
-    } else if (state.includes("complet") || state.includes("resolv")) {
-      status = "green";
-      statusText = "Completed";
-      workflowState = "COMPLETION";
-    }
-  }
-
-  // Map priority
-  let priority: "Critical" | "High" | "Medium" | "Low" = "Medium";
-  if (iemsEmail.analysis?.quick_priority) {
-    const p = iemsEmail.analysis.quick_priority.toLowerCase();
-    if (p.includes("critical") || p.includes("urgent")) {
-      priority = "Critical";
-      status = "red";
-    } else if (p.includes("high")) {
-      priority = "High";
-    } else if (p.includes("low")) {
-      priority = "Low";
-    }
-  }
-
-  // Determine workflow type from subject
-  let workflowType = "General Support";
-  const subject = iemsEmail.subject.toLowerCase();
-  if (subject.includes("quote")) {
-    workflowType = "Quote Processing";
-  } else if (subject.includes("order")) {
-    workflowType = "Order Management";
-  } else if (subject.includes("invoice")) {
-    workflowType = "Billing Support";
-  } else if (subject.includes("rma") || subject.includes("return")) {
-    workflowType = "RMA Processing";
-  } else if (subject.includes("ship")) {
-    workflowType = "Shipping Management";
-  }
-
-  // Extract entities
-  const entities = [];
-  if (iemsEmail.analysis?.entities) {
-    for (const entity of iemsEmail.analysis.entities) {
-      entities.push({
-        type: entity.type || "unknown",
-        value: entity.value || "",
-        context: entity.context || "",
-      });
-    }
-  }
-
-  // Extract recipients
-  const recipients = [];
-  if (iemsEmail.toRecipients) {
-    for (const recipient of iemsEmail.toRecipients) {
-      recipients.push({
-        type: "to",
-        name: recipient.emailAddress.name || "",
-        email: recipient.emailAddress.address,
-      });
-    }
-  }
-
-  return {
-    messageId:
-      iemsEmail.id ||
-      `MSG_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    emailAlias,
-    requestedBy:
-      iemsEmail.from.emailAddress.name || iemsEmail.from.emailAddress.address,
-    subject: iemsEmail.subject,
-    summary:
-      iemsEmail.analysis?.contextual_summary ||
-      iemsEmail.bodyPreview.substring(0, 500),
-    status,
-    statusText,
-    workflowState,
-    workflowType,
-    priority,
-    receivedDate: new Date(iemsEmail.receivedDateTime),
-    hasAttachments: iemsEmail.hasAttachments,
-    isRead: true,
-    body: iemsEmail.bodyPreview || "",
-    entities,
-    recipients,
-  };
+// Run the importer
+async function main() {
+  const importer = new IEMSEmailImporter();
+  await importer.importAllBatches();
 }
 
-importIEMSEmails().catch((error) => {
-  console.error("Fatal error:", error);
-  process.exit(1);
-});
+main().catch(console.error);
