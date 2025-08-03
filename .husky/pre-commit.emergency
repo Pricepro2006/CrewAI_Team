@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🚀 Emergency pre-commit (lightweight)"
+
+# Only run on staged TypeScript files
+STAGED_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)
+
+if [ -n "$STAGED_TS" ]; then
+    echo "🔍 Quick TypeScript check on staged files..."
+    # Run TypeScript check only on staged files with timeout
+    timeout 60 npx tsc --noEmit --skipLibCheck $STAGED_TS || {
+        echo "⚠️ TypeScript check failed or timed out"
+        echo "💡 Fix errors or use 'git commit --no-verify' for emergency commits"
+        exit 1
+    }
+else
+    echo "✅ No TypeScript files changed"
+fi
+
+echo "✅ Emergency pre-commit passed"
