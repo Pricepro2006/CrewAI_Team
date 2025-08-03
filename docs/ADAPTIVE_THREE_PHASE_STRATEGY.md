@@ -46,6 +46,7 @@ Full Workflow Intelligence (9.2/10 quality)
 ### 1. **Maximum Learning from Complete Workflows**
 
 Complete chains provide:
+
 - Full customer journey visibility
 - Pattern detection across workflow stages
 - Bottleneck identification
@@ -53,10 +54,11 @@ Complete chains provide:
 - Success/failure pattern analysis
 
 Example insights from complete chains:
+
 ```
-"Quote request → 3 follow-ups → competitor mention → 
+"Quote request → 3 follow-ups → competitor mention →
  expedited pricing → order placement → delivery confirmation"
- 
+
 Learned: Competitor mentions trigger 85% faster response times
 Action: Auto-escalate quotes with competitor keywords
 ```
@@ -64,6 +66,7 @@ Action: Auto-escalate quotes with competitor keywords
 ### 2. **Efficient Processing of Partial Data**
 
 Incomplete chains still get:
+
 - Entity extraction (Phase 1)
 - Business context understanding (Phase 2)
 - Basic risk assessment
@@ -74,22 +77,24 @@ But skip expensive Phase 3 analysis that would provide limited value without ful
 ### 3. **Time and Resource Optimization**
 
 Based on typical email distribution:
+
 - ~30% of emails are part of complete chains → Full 3-phase (90s)
 - ~70% of emails are incomplete chains → 2-phase only (10s)
 
 **Time calculation for 10,000 emails:**
+
 - All 3 phases: 10,000 × 90s = 250 hours
 - Adaptive approach: (3,000 × 90s) + (7,000 × 10s) = 94 hours
 - **Time saved: 156 hours (62% reduction)**
 
 ### 4. **Quality Where It Matters**
 
-| Email Type | Phases | Quality | Time | Value |
-|------------|--------|---------|------|-------|
-| Complete quote workflow | 1+2+3 | 9.2/10 | 90s | Full workflow template |
-| Status update | 1+2 | 7.5/10 | 10s | Standard processing |
-| Initial inquiry | 1+2 | 7.5/10 | 10s | Await completion |
-| Full support ticket | 1+2+3 | 9.2/10 | 90s | Resolution patterns |
+| Email Type              | Phases | Quality | Time | Value                  |
+| ----------------------- | ------ | ------- | ---- | ---------------------- |
+| Complete quote workflow | 1+2+3  | 9.2/10  | 90s  | Full workflow template |
+| Status update           | 1+2    | 7.5/10  | 10s  | Standard processing    |
+| Initial inquiry         | 1+2    | 7.5/10  | 10s  | Await completion       |
+| Full support ticket     | 1+2+3  | 9.2/10  | 90s  | Resolution patterns    |
 
 ## Implementation Details
 
@@ -105,7 +110,6 @@ A chain is considered complete when it has:
 2. **Entity Continuity** (20 points):
    - Consistent reference numbers (quotes, POs, cases)
    - Same participants throughout
-   
 3. **Resolution Indicators** (40 points):
    - "Resolved", "completed", "shipped"
    - "Thank you for your business"
@@ -119,6 +123,7 @@ A chain is considered complete when it has:
 ### Example Chain Analysis
 
 **Complete Chain Example:**
+
 ```
 Email 1: "Need quote for 15 servers" (START_POINT)
 Email 2: "Quote #Q789456 attached" (IN_PROGRESS)
@@ -131,6 +136,7 @@ Result: Full workflow template for "Competitive Quote to Order"
 ```
 
 **Incomplete Chain Example:**
+
 ```
 Email 1: "Following up on our discussion"
 Email 2: "Any updates on this?"
@@ -167,13 +173,13 @@ const result = await service.analyzeEmail(email);
 
 // Force all phases
 const fullResult = await service.analyzeEmail(email, {
-  forceAllPhases: true
+  forceAllPhases: true,
 });
 
 // Check if email was fully analyzed
 if (result.phase3_processing_time > 0) {
   // This email got full 3-phase analysis
-  console.log('Workflow intelligence:', result.workflow_intelligence);
+  console.log("Workflow intelligence:", result.workflow_intelligence);
 }
 ```
 

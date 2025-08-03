@@ -51,6 +51,7 @@
 ## Data Flow Architecture
 
 ### 1. Email Ingestion Flow
+
 ```
 Email Arrives → Graph API → Email Queue → Phase 1 Analysis
                                               ↓
@@ -64,6 +65,7 @@ Email Arrives → Graph API → Email Queue → Phase 1 Analysis
 ```
 
 ### 2. Real-time Update Flow
+
 ```
 Task Update → Database → Change Detection → WebSocket Event
                                                    ↓
@@ -74,6 +76,7 @@ Task Update → Database → Change Detection → WebSocket Event
 ```
 
 ### 3. Analytics Processing Flow
+
 ```
 Raw Tasks → SQL Views → Aggregation Jobs → Cached Metrics
                               ↓
@@ -85,53 +88,58 @@ Raw Tasks → SQL Views → Aggregation Jobs → Cached Metrics
 ## Component Interactions
 
 ### Backend Systems Architecture
+
 ```typescript
 // API Layer
 class WorkflowAPIService {
   // Task Management
-  async getTasks(filters: TaskFilters): Promise<WorkflowTask[]>
-  async updateTask(id: string, updates: Partial<WorkflowTask>): Promise<WorkflowTask>
-  async escalateTask(id: string): Promise<void>
-  
+  async getTasks(filters: TaskFilters): Promise<WorkflowTask[]>;
+  async updateTask(
+    id: string,
+    updates: Partial<WorkflowTask>,
+  ): Promise<WorkflowTask>;
+  async escalateTask(id: string): Promise<void>;
+
   // Metrics & Analytics
-  async getExecutiveMetrics(): Promise<ExecutiveMetrics>
-  async getCategoryBreakdown(): Promise<CategoryMetrics[]>
-  async getOwnerWorkload(): Promise<OwnerWorkload[]>
+  async getExecutiveMetrics(): Promise<ExecutiveMetrics>;
+  async getCategoryBreakdown(): Promise<CategoryMetrics[]>;
+  async getOwnerWorkload(): Promise<OwnerWorkload[]>;
 }
 
 // WebSocket Layer
 class WorkflowWebSocketService {
   // Real-time Events
-  emitTaskCreated(task: WorkflowTask): void
-  emitStatusChanged(taskId: string, oldStatus: string, newStatus: string): void
-  emitSLAWarning(taskId: string, hoursRemaining: number): void
-  emitMetricsUpdated(metrics: DashboardMetrics): void
+  emitTaskCreated(task: WorkflowTask): void;
+  emitStatusChanged(taskId: string, oldStatus: string, newStatus: string): void;
+  emitSLAWarning(taskId: string, hoursRemaining: number): void;
+  emitMetricsUpdated(metrics: DashboardMetrics): void;
 }
 
 // Analytics Engine
 class WorkflowAnalyticsEngine {
   // Trend Analysis
-  async detectBottlenecks(): Promise<Bottleneck[]>
-  async predictSLAViolations(): Promise<SLAPrediction[]>
-  async calculateROI(): Promise<ROIMetrics>
+  async detectBottlenecks(): Promise<Bottleneck[]>;
+  async predictSLAViolations(): Promise<SLAPrediction[]>;
+  async calculateROI(): Promise<ROIMetrics>;
 }
 ```
 
 ### Frontend Architecture
+
 ```typescript
 // State Management
 interface WorkflowStore {
   // Task State
   tasks: TaskState
-  
+
   // UI State
   filters: FilterState
   sorting: SortState
   selection: SelectionState
-  
+
   // Real-time State
   websocket: WebSocketState
-  
+
   // Actions
   actions: {
     loadTasks(): Promise<void>
@@ -182,6 +190,7 @@ interface WorkflowStore {
 ```
 
 ## Database Schema Relationships
+
 ```sql
 -- Core Tables
 workflow_tasks
@@ -207,6 +216,7 @@ idx_dollar_value (dollar_value DESC)
 ```
 
 ## Security Architecture
+
 ```
 User Request → Azure AD Auth → JWT Token → API Gateway
                                               ↓
@@ -220,27 +230,32 @@ User Request → Azure AD Auth → JWT Token → API Gateway
 ## Performance Optimization Strategy
 
 ### 1. **Caching Layers**
+
 - Redis: Session data, user preferences
 - In-Memory: Frequently accessed metrics
 - CDN: Static assets, UI components
 
 ### 2. **Query Optimization**
+
 - Materialized views for complex aggregations
 - Query result caching (5-minute TTL)
 - Pagination for large datasets
 
 ### 3. **Real-time Optimization**
+
 - WebSocket connection pooling
 - Event batching (100ms window)
 - Selective updates (only changed fields)
 
 ### 4. **UI Performance**
+
 - Virtual scrolling for large lists
 - Lazy loading for charts
 - Progressive enhancement
 - Service worker for offline capability
 
 ## Deployment Architecture
+
 ```
                     Load Balancer
                          ↓
@@ -257,6 +272,7 @@ User Request → Azure AD Auth → JWT Token → API Gateway
 ```
 
 ## Monitoring & Observability
+
 ```
 Application → Metrics Collection → Time Series DB → Grafana
      ↓              ↓                    ↓              ↓
@@ -266,6 +282,7 @@ Application → Metrics Collection → Time Series DB → Grafana
 ```
 
 ## Success Metrics
+
 - **Performance**: < 2s dashboard load, < 500ms updates
 - **Reliability**: 99.9% uptime SLA
 - **Scalability**: Support 100K+ tasks, 1000+ concurrent users

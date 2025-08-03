@@ -6,11 +6,11 @@ Based on comprehensive testing and implementation, here's the scoring breakdown 
 
 ### Quality Scores (Out of 10)
 
-| Phase | Score | Processing Time | Incremental Value |
-|-------|-------|----------------|-------------------|
-| **Phase 1 Only** | 5.6/10 | < 1 second | Baseline extraction |
-| **Phase 1 + 2** | 7.5/10 | ~10 seconds | +1.9 points |
-| **Phase 1 + 2 + 3** | 9.2/10 | ~90 seconds | +1.7 points |
+| Phase               | Score  | Processing Time | Incremental Value   |
+| ------------------- | ------ | --------------- | ------------------- |
+| **Phase 1 Only**    | 5.6/10 | < 1 second      | Baseline extraction |
+| **Phase 1 + 2**     | 7.5/10 | ~10 seconds     | +1.9 points         |
+| **Phase 1 + 2 + 3** | 9.2/10 | ~90 seconds     | +1.7 points         |
 
 ## Is the Extra 80 Seconds Worth It?
 
@@ -37,6 +37,7 @@ Phase 3 Output:
 ### 2. **Hidden Pattern Detection**
 
 Phase 3's strategic analysis uncovers:
+
 - **Cross-email patterns**: "Server shortage affecting multiple accounts"
 - **Competitive intelligence**: "3 customers mentioned Dell this week"
 - **Relationship risks**: "Decision maker frustration increasing"
@@ -48,18 +49,19 @@ Phase 3 enables automatic workflow creation:
 
 ```yaml
 Workflow Generated from Phase 3:
-- Trigger: High-value quote + competitor mention
-- Actions:
-  1. Immediate: Reserve inventory (auto)
-  2. Within 2h: Sales manager review
-  3. Within 4h: Competitive pricing approval
-  4. Within 24h: Executive follow-up
-- Escalation: VP Sales if no response in 4h
+  - Trigger: High-value quote + competitor mention
+  - Actions:
+    1. Immediate: Reserve inventory (auto)
+    2. Within 2h: Sales manager review
+    3. Within 4h: Competitive pricing approval
+    4. Within 24h: Executive follow-up
+  - Escalation: VP Sales if no response in 4h
 ```
 
 ### 4. **Financial Impact**
 
 Testing shows Phase 3 identifies:
+
 - **30% more revenue opportunities** ($200k expansion vs $75k order)
 - **Risk prevention**: $1M lifetime value protected
 - **Upsell opportunities**: Installation, training, support contracts
@@ -67,6 +69,7 @@ Testing shows Phase 3 identifies:
 ### 5. **Learning and Habit Formation**
 
 Phase 3's insights enable:
+
 - **Pattern libraries**: Build reusable workflow templates
 - **Best practices**: Learn from successful interactions
 - **Predictive actions**: "Customer will need X next"
@@ -77,6 +80,7 @@ Phase 3's insights enable:
 ### Email Example: "Need quote for 15 servers ASAP"
 
 **Phase 2 Analysis (7.5/10):**
+
 ```json
 {
   "action_items": ["Generate quote", "Check stock"],
@@ -87,6 +91,7 @@ Phase 3's insights enable:
 ```
 
 **Phase 3 Analysis (9.2/10):**
+
 ```json
 {
   "strategic_insights": {
@@ -95,9 +100,17 @@ Phase 3's insights enable:
     "relationship": "3rd urgent request - satisfaction declining"
   },
   "workflow_intelligence": {
-    "predicted_next": ["Financing request", "Installation services", "Training needs"],
+    "predicted_next": [
+      "Financing request",
+      "Installation services",
+      "Training needs"
+    ],
     "bottlenecks": ["Inventory shortage 70%", "Credit approval 30%"],
-    "optimizations": ["Pre-approve credit", "Reserve stock now", "Schedule tech resources"]
+    "optimizations": [
+      "Pre-approve credit",
+      "Reserve stock now",
+      "Schedule tech resources"
+    ]
   },
   "cross_patterns": ["5 similar requests this week - market surge"],
   "executive_action": "CEO attention needed - strategic account at risk"
@@ -109,12 +122,14 @@ Phase 3's insights enable:
 ### Processing 100 High-Value Emails:
 
 **Phase 2 Only:**
+
 - Time: 16.7 minutes
 - Quality: 75%
 - Missed opportunities: $2M in expansions
 - Lost deals: 2-3 to competitors
 
 **All Three Phases:**
+
 - Time: 150 minutes (2.5 hours)
 - Quality: 92%
 - Captured opportunities: $2M identified
@@ -149,6 +164,7 @@ else:
 ## Conclusion
 
 The extra 80 seconds for Phase 3 provides:
+
 - **+1.7 quality points** (7.5 → 9.2)
 - **Strategic insights** impossible to get otherwise
 - **Workflow building blocks** for automation
