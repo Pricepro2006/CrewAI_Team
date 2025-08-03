@@ -4,12 +4,12 @@ config(); // Load environment variables
 import express from "express";
 import cookieParser from "cookie-parser";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { createContext } from "./trpc/context.js";
-import { appRouter } from "./trpc/router.js";
+import { createContext } from "./trpc/context";
+import { appRouter } from "./trpc/router";
 import { WebSocketServer } from "ws";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
-import appConfig from "../config/app.config.js";
-import ollamaConfig from "../config/ollama.config.js";
+import appConfig from "../config/app.config";
+import ollamaConfig from "../config/ollama.config";
 import type { Express } from "express";
 import {
   apiRateLimiter,
@@ -18,40 +18,40 @@ import {
   websocketRateLimit,
   getRateLimitStatus,
   cleanupRateLimiting,
-} from "./middleware/rateLimiter.js";
+} from "./middleware/rateLimiter";
 import {
   optionalAuthenticateJWT as authenticateToken,
   type AuthenticatedRequest,
-} from "./middleware/auth.js";
-import { wsService } from "./services/WebSocketService.js";
-import { logger } from "../utils/logger.js";
-import uploadRoutes from "./routes/upload.routes.js";
-import { webhookRouter } from "./routes/webhook.router.js";
-import { emailAnalysisRouter } from "./routes/email-analysis.router.js";
-import emailAssignmentRouter from "./routes/email-assignment.router.js";
-import csrfRouter from "./routes/csrf.router.js";
-import websocketMonitorRouter from "./routes/websocket-monitor.router.js";
+} from "./middleware/auth";
+import { wsService } from "./services/WebSocketService";
+import { logger } from "../utils/logger";
+import uploadRoutes from "./routes/upload.routes";
+import { webhookRouter } from "./routes/webhook.router";
+import { emailAnalysisRouter } from "./routes/email-analysis.router";
+import emailAssignmentRouter from "./routes/email-assignment.router";
+import csrfRouter from "./routes/csrf.router";
+import websocketMonitorRouter from "./routes/websocket-monitor.router";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
-} from "./services/ServiceCleanupManager.js";
-import { setupWalmartWebSocket } from "./websocket/walmart-updates.js";
-import { DealDataService } from "./services/DealDataService.js";
-import { EmailStorageService } from "./services/EmailStorageService.js";
-import { applySecurityHeaders } from "./middleware/security/headers.js";
-import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
-import { GracefulShutdown } from "../utils/error-handling/server.js";
+} from "./services/ServiceCleanupManager";
+import { setupWalmartWebSocket } from "./websocket/walmart-updates";
+import { DealDataService } from "./services/DealDataService";
+import { EmailStorageService } from "./services/EmailStorageService";
+import { applySecurityHeaders } from "./middleware/security/headers";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { GracefulShutdown } from "../utils/error-handling/server";
 import {
   requestTracking,
   errorTracking,
   requestSizeTracking,
   rateLimitTracking,
   authTracking,
-} from "./middleware/monitoring.js";
-import monitoringRouter from "./routes/monitoring.router.js";
-import emailPipelineHealthRouter from "./routes/email-pipeline-health.router.js";
+} from "./middleware/monitoring";
+import monitoringRouter from "./routes/monitoring.router";
+import emailPipelineHealthRouter from "./routes/email-pipeline-health.router";
 
-import { errorTracker } from "../monitoring/ErrorTracker.js";
+import { errorTracker } from "../monitoring/ErrorTracker";
 
 const app: Express = express();
 const gracefulShutdown = new GracefulShutdown();
@@ -393,7 +393,8 @@ console.log(
 
 // Setup Walmart-specific WebSocket handlers
 const dealDataService = DealDataService.getInstance();
-const emailStorageService = new EmailStorageService();
+// const emailStorageService = new EmailStorageService(); // TODO: Fix database schema issues
+const emailStorageService = null as any; // Temporary fix
 const walmartRealtimeManager = setupWalmartWebSocket(
   wss,
   dealDataService,

@@ -1,6 +1,6 @@
 /**
  * Transaction Manager for SQLite Database Operations
- * 
+ *
  * Provides ACID-compliant transaction management with:
  * - Automatic rollback on errors
  * - Nested transaction support via savepoints
@@ -11,7 +11,10 @@
 
 import Database from "better-sqlite3";
 import { Logger } from "../utils/logger.js";
-import { getDatabaseConnection, type DatabaseConnection } from "./ConnectionPool.js";
+import {
+  getDatabaseConnection,
+  type DatabaseConnection,
+} from "./ConnectionPool.js";
 import { EventEmitter } from "events";
 
 const logger = new Logger("TransactionManager");
@@ -19,7 +22,7 @@ const logger = new Logger("TransactionManager");
 export interface TransactionOptions {
   timeout?: number; // Transaction timeout in milliseconds
   retries?: number; // Number of retries for deadlock/busy errors
-  isolationLevel?: 'DEFERRED' | 'IMMEDIATE' | 'EXCLUSIVE';
+  isolationLevel?: "DEFERRED" | "IMMEDIATE" | "EXCLUSIVE";
   readOnly?: boolean;
 }
 
@@ -51,7 +54,7 @@ export class TransactionManager extends EventEmitter {
     deadlockRetries: 0,
     timeouts: 0,
   };
-  
+
   private activeTransactions: Map<string, TransactionContext> = new Map();
   private readonly DEFAULT_TIMEOUT = 30000; // 30 seconds
   private readonly MAX_RETRIES = 3;
@@ -72,13 +75,13 @@ export class TransactionManager extends EventEmitter {
    */
   async executeTransaction<T>(
     operation: (tx: TransactionContext) => Promise<T>,
-    options: TransactionOptions = {}
+    options: TransactionOptions = {},
   ): Promise<T> {
     const {
       timeout = this.DEFAULT_TIMEOUT,
       retries = this.MAX_RETRIES,
-      isolationLevel = 'DEFERRED',
-      readOnly = false
+      isolationLevel = "DEFERRED",
+      readOnly = false,
     } = options;
 
     let attempts = 0;
@@ -89,29 +92,31 @@ export class TransactionManager extends EventEmitter {
         return await this.attemptTransaction(operation, {
           timeout,
           isolationLevel,
-          readOnly
+          readOnly,
         });
       } catch (error) {
         lastError = error as Error;
-        
+
         // Check if error is retryable (SQLITE_BUSY or SQLITE_LOCKED)
         if (this.isRetryableError(error) && attempts < retries) {
           attempts++;
           this.metrics.deadlockRetries++;
-          
+
           const backoffTime = Math.min(1000 * Math.pow(2, attempts), 5000);
-          logger.warn(`Transaction failed with retryable error, attempt ${attempts}/${retries}. Retrying in ${backoffTime}ms...`);
-          
+          logger.warn(
+            `Transaction failed with retryable error, attempt ${attempts}/${retries}. Retrying in ${backoffTime}ms...`,
+          );
+
           await this.delay(backoffTime);
           continue;
         }
-        
+
         // Non-retryable error or max retries reached
         throw error;
       }
     }
 
-    throw lastError || new Error('Transaction failed after max retries');
+    throw lastError || new Error("Transaction failed after max retries");
   }
 
   /**
@@ -121,19 +126,19 @@ export class TransactionManager extends EventEmitter {
     operation: (tx: TransactionContext) => Promise<T>,
     options: {
       timeout: number;
-      isolationLevel: 'DEFERRED' | 'IMMEDIATE' | 'EXCLUSIVE';
+      isolationLevel: "DEFERRED" | "IMMEDIATE" | "EXCLUSIVE";
       readOnly: boolean;
-    }
+    },
   ): Promise<T> {
     const transactionId = this.generateTransactionId();
     const connection = getDatabaseConnection();
     const db = connection.getDatabase();
-    
+
     const context: TransactionContext = {
       db,
       transactionId,
       startTime: Date.now(),
-      savepoints: []
+      savepoints: [],
     };
 
     this.activeTransactions.set(transactionId, context);
@@ -145,29 +150,30 @@ export class TransactionManager extends EventEmitter {
 
     try {
       // Start transaction with specified isolation level
-      const beginCommand = options.readOnly 
-        ? 'BEGIN DEFERRED' 
+      const beginCommand = options.readOnly
+        ? "BEGIN DEFERRED"
         : `BEGIN ${options.isolationLevel}`;
-      
+
       db.prepare(beginCommand).run();
-      
+
       // Set up timeout
       const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutHandle = setTimeout(() => {
           if (!completed) {
-            reject(new Error(`Transaction ${transactionId} timed out after ${options.timeout}ms`));
+            reject(
+              new Error(
+                `Transaction ${transactionId} timed out after ${options.timeout}ms`,
+              ),
+            );
           }
         }, options.timeout);
       });
 
       // Execute operation with timeout
-      const result = await Promise.race([
-        operation(context),
-        timeoutPromise
-      ]);
+      const result = await Promise.race([operation(context), timeoutPromise]);
 
       // Commit transaction
-      db.prepare('COMMIT').run();
+      db.prepare("COMMIT").run();
       completed = true;
 
       // Update metrics
@@ -175,38 +181,36 @@ export class TransactionManager extends EventEmitter {
       const duration = Date.now() - context.startTime;
       this.updateAverageDuration(duration);
 
-      this.emit('transaction:success', {
+      this.emit("transaction:success", {
         transactionId,
         duration,
-        savepoints: context.savepoints.length
+        savepoints: context.savepoints.length,
       });
 
       return result;
-
     } catch (error) {
       if (!completed) {
         try {
           // Rollback transaction
-          db.prepare('ROLLBACK').run();
+          db.prepare("ROLLBACK").run();
         } catch (rollbackError) {
-          logger.error('Failed to rollback transaction:', rollbackError);
+          logger.error("Failed to rollback transaction:", rollbackError);
         }
       }
 
       this.metrics.failedTransactions++;
-      
-      if (error instanceof Error && error.message.includes('timed out')) {
+
+      if (error instanceof Error && error.message.includes("timed out")) {
         this.metrics.timeouts++;
       }
 
-      this.emit('transaction:failure', {
+      this.emit("transaction:failure", {
         transactionId,
         error,
-        duration: Date.now() - context.startTime
+        duration: Date.now() - context.startTime,
       });
 
       throw error;
-
     } finally {
       // Clear timeout
       if (timeoutHandle) {
@@ -222,13 +226,17 @@ export class TransactionManager extends EventEmitter {
   /**
    * Create a savepoint within a transaction
    */
-  async createSavepoint(context: TransactionContext, name?: string): Promise<string> {
-    const savepointName = name || `sp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+  async createSavepoint(
+    context: TransactionContext,
+    name?: string,
+  ): Promise<string> {
+    const savepointName =
+      name || `sp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     try {
       context.db.prepare(`SAVEPOINT ${savepointName}`).run();
       context.savepoints.push(savepointName);
-      
+
       logger.debug(`Created savepoint: ${savepointName}`);
       return savepointName;
     } catch (error) {
@@ -240,11 +248,16 @@ export class TransactionManager extends EventEmitter {
   /**
    * Release a savepoint
    */
-  async releaseSavepoint(context: TransactionContext, savepointName: string): Promise<void> {
+  async releaseSavepoint(
+    context: TransactionContext,
+    savepointName: string,
+  ): Promise<void> {
     try {
       context.db.prepare(`RELEASE SAVEPOINT ${savepointName}`).run();
-      context.savepoints = context.savepoints.filter(sp => sp !== savepointName);
-      
+      context.savepoints = context.savepoints.filter(
+        (sp) => sp !== savepointName,
+      );
+
       logger.debug(`Released savepoint: ${savepointName}`);
     } catch (error) {
       logger.error(`Failed to release savepoint: ${savepointName}`, error);
@@ -255,16 +268,19 @@ export class TransactionManager extends EventEmitter {
   /**
    * Rollback to a savepoint
    */
-  async rollbackToSavepoint(context: TransactionContext, savepointName: string): Promise<void> {
+  async rollbackToSavepoint(
+    context: TransactionContext,
+    savepointName: string,
+  ): Promise<void> {
     try {
       context.db.prepare(`ROLLBACK TO SAVEPOINT ${savepointName}`).run();
-      
+
       // Remove all savepoints after this one
       const index = context.savepoints.indexOf(savepointName);
       if (index !== -1) {
         context.savepoints = context.savepoints.slice(0, index + 1);
       }
-      
+
       logger.debug(`Rolled back to savepoint: ${savepointName}`);
     } catch (error) {
       logger.error(`Failed to rollback to savepoint: ${savepointName}`, error);
@@ -277,14 +293,14 @@ export class TransactionManager extends EventEmitter {
    */
   async executeBatch<T>(
     operations: Array<(tx: TransactionContext) => Promise<unknown>>,
-    options: TransactionOptions = {}
+    options: TransactionOptions = {},
   ): Promise<T[]> {
     return this.executeTransaction(async (tx) => {
       const results: T[] = [];
-      
+
       for (let i = 0; i < operations.length; i++) {
         const savepoint = await this.createSavepoint(tx, `batch_op_${i}`);
-        
+
         try {
           const result = await operations[i](tx);
           results.push(result as T);
@@ -294,7 +310,7 @@ export class TransactionManager extends EventEmitter {
           throw new Error(`Batch operation ${i} failed: ${error}`);
         }
       }
-      
+
       return results;
     }, options);
   }
@@ -340,19 +356,22 @@ export class TransactionManager extends EventEmitter {
    */
   async rollbackAllTransactions(): Promise<void> {
     const transactionIds = this.getActiveTransactionIds();
-    
+
     for (const transactionId of transactionIds) {
       const context = this.activeTransactions.get(transactionId);
       if (context) {
         try {
-          context.db.prepare('ROLLBACK').run();
+          context.db.prepare("ROLLBACK").run();
           logger.warn(`Force rolled back transaction: ${transactionId}`);
         } catch (error) {
-          logger.error(`Failed to force rollback transaction ${transactionId}:`, error);
+          logger.error(
+            `Failed to force rollback transaction ${transactionId}:`,
+            error,
+          );
         }
       }
     }
-    
+
     this.activeTransactions.clear();
     this.metrics.activeTransactions = 0;
   }
@@ -363,9 +382,11 @@ export class TransactionManager extends EventEmitter {
   private isRetryableError(error: unknown): boolean {
     if (error instanceof Error) {
       const message = error.message.toLowerCase();
-      return message.includes('sqlite_busy') || 
-             message.includes('database is locked') ||
-             message.includes('sqlite_locked');
+      return (
+        message.includes("sqlite_busy") ||
+        message.includes("database is locked") ||
+        message.includes("sqlite_locked")
+      );
     }
     return false;
   }
@@ -381,15 +402,18 @@ export class TransactionManager extends EventEmitter {
    * Update average duration metric
    */
   private updateAverageDuration(duration: number): void {
-    const totalDuration = this.metrics.averageDuration * (this.metrics.successfulTransactions - 1) + duration;
-    this.metrics.averageDuration = totalDuration / this.metrics.successfulTransactions;
+    const totalDuration =
+      this.metrics.averageDuration * (this.metrics.successfulTransactions - 1) +
+      duration;
+    this.metrics.averageDuration =
+      totalDuration / this.metrics.successfulTransactions;
   }
 
   /**
    * Delay helper for retry backoff
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

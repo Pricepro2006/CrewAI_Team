@@ -205,14 +205,14 @@
   .table-header {
     display: none;
   }
-  
+
   .table-row {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     padding: 1rem;
   }
-  
+
   .table-cell::before {
     content: attr(data-label);
     font-weight: 600;

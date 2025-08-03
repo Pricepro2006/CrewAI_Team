@@ -83,11 +83,11 @@
   .auth-modal-overlay {
     padding: 16px;
   }
-  
+
   .auth-modal-content .auth-form {
     padding: 60px 24px 24px;
   }
-  
+
   .auth-modal-close {
     top: 16px;
     right: 16px;
@@ -99,11 +99,11 @@
   .auth-modal-content {
     background: #1f2937;
   }
-  
+
   .auth-modal-close {
     color: #9ca3af;
   }
-  
+
   .auth-modal-close:hover {
     color: #e5e7eb;
     background: #374151;

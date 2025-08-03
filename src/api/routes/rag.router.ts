@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc/router.js";
+import { router, publicProcedure } from "../trpc/router";
 import type { Router } from "@trpc/server";
 import multer from "multer";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../utils/logger";
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();

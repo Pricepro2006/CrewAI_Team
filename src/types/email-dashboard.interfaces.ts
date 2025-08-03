@@ -40,7 +40,7 @@ export interface StatusOption {
 export type WorkflowState = "START_POINT" | "IN_PROGRESS" | "COMPLETION";
 
 // Priority levels
-export type Priority = "Critical" | "High" | "Medium" | "Low";
+export type Priority = "critical" | "high" | "medium" | "low";
 
 // Email entities
 export interface EmailEntities {
@@ -350,10 +350,10 @@ export const PRIORITY_CONFIG: Record<
   Priority,
   { label: string; color: string; order: number }
 > = {
-  Critical: { label: "Critical", color: "#DC2626", order: 1 },
-  High: { label: "High", color: "#F59E0B", order: 2 },
-  Medium: { label: "Medium", color: "#3B82F6", order: 3 },
-  Low: { label: "Low", color: "#6B7280", order: 4 },
+  critical: { label: "Critical", color: "#DC2626", order: 1 },
+  high: { label: "High", color: "#F59E0B", order: 2 },
+  medium: { label: "Medium", color: "#3B82F6", order: 3 },
+  low: { label: "Low", color: "#6B7280", order: 4 },
 };
 
 export const DEFAULT_PAGINATION: PaginationConfig = {

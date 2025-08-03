@@ -10,7 +10,7 @@ import {
   createSecurityHeadersMiddleware,
   createOriginValidationMiddleware,
   testSecurityHeaders,
-} from "../headers.js";
+} from "../headers";
 
 // Mock Express response
 function createMockResponse(): Response & { headers: Record<string, string> } {

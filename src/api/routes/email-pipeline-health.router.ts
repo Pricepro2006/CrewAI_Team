@@ -7,21 +7,21 @@ import express from "express";
 import {
   authenticateJWT as requireAuth,
   optionalAuthenticateJWT,
-} from "../middleware/auth.js";
-import { EmailPipelineHealthChecker } from "../../core/monitoring/EmailPipelineHealthChecker.js";
-import { logger } from "../../utils/logger.js";
-import { metrics } from "../monitoring/metrics.js";
+} from "../middleware/auth";
+import { EmailPipelineHealthChecker } from "../../core/monitoring/EmailPipelineHealthChecker";
+import { logger } from "../../utils/logger";
+import { metrics } from "../monitoring/metrics";
 import { z } from "zod";
 import type {
   HealthCheckQuery,
   MetricsQuery,
   ServiceName,
   TimeWindow,
-} from "../../types/email-pipeline-health.types.js";
+} from "../../types/email-pipeline-health.types";
 import {
   isServiceName,
   isTimeWindow,
-} from "../../types/email-pipeline-health.types.js";
+} from "../../types/email-pipeline-health.types";
 
 const router = express.Router();
 const healthChecker = EmailPipelineHealthChecker.getInstance();
@@ -378,7 +378,7 @@ router.get(
         },
       );
 
-      res.status(statusCode).json(response);
+      return res.status(statusCode).json(response);
     } catch (error) {
       logger.error(
         "Individual service health check failed",

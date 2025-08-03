@@ -4,11 +4,11 @@ import crypto from "crypto";
 import {
   type JWTPayload,
   type RefreshTokenPayload,
-} from "../../database/models/User.js";
+} from "../../database/models/User";
 
 // Re-export types for convenience
 export type { JWTPayload, RefreshTokenPayload };
-import appConfig from "../../config/app.config.js";
+import appConfig from "../../config/app.config";
 
 /**
  * JWT Utilities for Authentication

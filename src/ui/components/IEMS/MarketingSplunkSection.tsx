@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { UserIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
-import type { IEMSEmail } from "../../../types/iems-email.types.js";
+import type { IEMSEmail } from "../../../types/iems-email.types";
 import "./MarketingSplunkSection.css";
 
 interface TeamMember {

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { PlusIcon, MinusIcon, HeartIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
-import { api } from "../../../lib/trpc.js";
-import { useGroceryStore } from "../../../client/store/groceryStore.js";
-import type { WalmartProduct } from "../../../types/walmart-grocery.js";
+import { api } from "../../../lib/trpc";
+import { useGroceryStore } from "../../../client/store/groceryStore";
+import type { WalmartProduct } from "../../../types/walmart-grocery";
 
 interface WalmartProductCardProps {
   product: WalmartProduct;

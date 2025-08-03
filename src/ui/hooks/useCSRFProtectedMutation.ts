@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import type { TRPCClientErrorLike } from "@trpc/client";
-import { useCSRF, handleCSRFError } from "./useCSRF.js";
+import { useCSRF, handleCSRFError } from "./useCSRF";
 import { logger } from "../utils/logger";
 
 /**

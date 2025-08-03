@@ -15,7 +15,9 @@ import type {
   QuickAnalysis,
   DeepWorkflowAnalysis,
   ProcessingMetadata,
+  ActionItem,
 } from "../types/analysis-results.js";
+import { EmailPriority } from "../types/EmailTypes.js";
 
 /**
  * Database adapter interface for type-safe transformations
@@ -55,7 +57,7 @@ export class PipelineAnalysisAdapter
     const result: EmailAnalysisResult = {
       emailId: row.email_id,
       quick: this.mapQuickAnalysis(row, llamaData),
-      deep: this.mapDeepAnalysis(llamaData, phi4Data),
+      deep: this.mapDeepAnalysis(llamaData, phi4Data, row.email_id),
       metadata: this.mapProcessingMetadata(row),
     };
 
@@ -133,6 +135,7 @@ export class PipelineAnalysisAdapter
   private mapDeepAnalysis(
     llama?: Partial<LlamaAnalysisData>,
     phi4?: Partial<Phi4AnalysisData>,
+    emailId?: string,
   ): DeepWorkflowAnalysis {
     // Combine insights from both models
     const summary =
@@ -331,5 +334,19 @@ export class PipelineAnalysisAdapter
     }
 
     return results;
+  }
+
+  /**
+   * Map analysis priority to email priority
+   */
+  private mapEmailPriority(priority: string): EmailPriority {
+    const priorityMap: Record<string, EmailPriority> = {
+      Critical: EmailPriority.CRITICAL,
+      High: EmailPriority.HIGH,
+      Medium: EmailPriority.MEDIUM,
+      Low: EmailPriority.LOW,
+    };
+
+    return priorityMap[priority] || EmailPriority.MEDIUM;
   }
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { WifiOff, Wifi, RefreshCw } from "lucide-react";
-import { useNetworkRecovery } from "../../hooks/useErrorRecovery.js";
-import { cn } from "../../../utils/cn.js";
+import { useNetworkRecovery } from "../../hooks/useErrorRecovery";
+import { cn } from "../../../utils/cn";
 import "./NetworkStatus.css";
 
 interface NetworkStatusProps {

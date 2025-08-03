@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { api } from "../../../lib/trpc.js";
+import { api } from "../../../lib/trpc";
 import "./WebScraping.css";
 
 export const WebScraping: React.FC = () => {

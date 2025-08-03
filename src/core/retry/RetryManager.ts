@@ -1,6 +1,6 @@
 /**
  * Retry Manager with Exponential Backoff
- * 
+ *
  * Provides intelligent retry logic for operations that may fail transiently:
  * - Exponential backoff with jitter
  * - Circuit breaker pattern
@@ -46,9 +46,9 @@ export interface CircuitBreakerOptions {
 }
 
 enum CircuitState {
-  CLOSED = 'CLOSED',
-  OPEN = 'OPEN',
-  HALF_OPEN = 'HALF_OPEN'
+  CLOSED = "CLOSED",
+  OPEN = "OPEN",
+  HALF_OPEN = "HALF_OPEN",
 }
 
 interface CircuitBreaker {
@@ -63,7 +63,7 @@ export class RetryManager extends EventEmitter {
   private policies: Map<string, RetryPolicy> = new Map();
   private circuitBreakers: Map<string, CircuitBreaker> = new Map();
   private metrics: Map<string, RetryMetrics> = new Map();
-  
+
   private readonly DEFAULT_OPTIONS: Required<RetryOptions> = {
     maxAttempts: 3,
     initialDelay: 1000,
@@ -73,13 +73,13 @@ export class RetryManager extends EventEmitter {
     timeout: 60000,
     retryableErrors: [],
     retryIf: () => true,
-    onRetry: () => {}
+    onRetry: () => {},
   };
 
   private readonly DEFAULT_CIRCUIT_OPTIONS: CircuitBreakerOptions = {
     failureThreshold: 5,
     resetTimeout: 60000,
-    monitoringPeriod: 300000 // 5 minutes
+    monitoringPeriod: 300000, // 5 minutes
   };
 
   private constructor() {
@@ -99,36 +99,36 @@ export class RetryManager extends EventEmitter {
    */
   private initializeDefaultPolicies(): void {
     // Database operations
-    this.registerPolicy('database', {
+    this.registerPolicy("database", {
       maxAttempts: 5,
       initialDelay: 100,
       maxDelay: 5000,
-      retryIf: (error) => this.isDatabaseRetryable(error)
+      retryIf: (error) => this.isDatabaseRetryable(error),
     });
 
     // LLM API calls
-    this.registerPolicy('llm', {
+    this.registerPolicy("llm", {
       maxAttempts: 3,
       initialDelay: 2000,
       maxDelay: 20000,
       timeout: 120000,
-      retryIf: (error) => this.isLLMRetryable(error)
+      retryIf: (error) => this.isLLMRetryable(error),
     });
 
     // External API calls
-    this.registerPolicy('api', {
+    this.registerPolicy("api", {
       maxAttempts: 4,
       initialDelay: 1000,
       maxDelay: 15000,
-      retryIf: (error) => this.isNetworkRetryable(error)
+      retryIf: (error) => this.isNetworkRetryable(error),
     });
 
     // File operations
-    this.registerPolicy('file', {
+    this.registerPolicy("file", {
       maxAttempts: 3,
       initialDelay: 500,
       maxDelay: 5000,
-      retryIf: (error) => this.isFileRetryable(error)
+      retryIf: (error) => this.isFileRetryable(error),
     });
   }
 
@@ -138,9 +138,9 @@ export class RetryManager extends EventEmitter {
   registerPolicy(name: string, options: RetryOptions): void {
     this.policies.set(name, {
       name,
-      options: { ...this.DEFAULT_OPTIONS, ...options }
+      options: { ...this.DEFAULT_OPTIONS, ...options },
     });
-    
+
     // Initialize metrics for this policy
     this.metrics.set(name, {
       totalAttempts: 0,
@@ -148,7 +148,7 @@ export class RetryManager extends EventEmitter {
       failedOperations: 0,
       retriedOperations: 0,
       averageAttempts: 0,
-      circuitBreakerTrips: 0
+      circuitBreakerTrips: 0,
     });
   }
 
@@ -157,11 +157,11 @@ export class RetryManager extends EventEmitter {
    */
   async retry<T>(
     operation: () => Promise<T>,
-    options: RetryOptions | string = {}
+    options: RetryOptions | string = {},
   ): Promise<T> {
     const retryOptions = this.resolveOptions(options);
-    const policyName = typeof options === 'string' ? options : 'default';
-    
+    const policyName = typeof options === "string" ? options : "default";
+
     // Check circuit breaker
     if (!this.checkCircuitBreaker(policyName)) {
       throw new Error(`Circuit breaker is OPEN for policy: ${policyName}`);
@@ -173,22 +173,21 @@ export class RetryManager extends EventEmitter {
 
     while (attempts < retryOptions.maxAttempts) {
       attempts++;
-      this.updateMetrics(policyName, 'attempt');
+      this.updateMetrics(policyName, "attempt");
 
       try {
         // Execute with timeout
         const result = await this.executeWithTimeout(
           operation,
-          retryOptions.timeout
+          retryOptions.timeout,
         );
 
         // Success
         this.handleSuccess(policyName, attempts);
         return result;
-
       } catch (error) {
         lastError = error;
-        
+
         // Check if we should retry
         if (!this.shouldRetry(error, attempts, retryOptions)) {
           this.handleFailure(policyName, attempts, error);
@@ -197,11 +196,11 @@ export class RetryManager extends EventEmitter {
 
         // Calculate delay
         const delay = this.calculateDelay(attempts, retryOptions);
-        
+
         logger.warn(
           `Operation failed (attempt ${attempts}/${retryOptions.maxAttempts}), ` +
-          `retrying in ${delay}ms...`,
-          { error: error instanceof Error ? error.message : String(error) }
+            `retrying in ${delay}ms...`,
+          { error: error instanceof Error ? error.message : String(error) },
         );
 
         // Call retry callback
@@ -217,7 +216,7 @@ export class RetryManager extends EventEmitter {
     throw new Error(
       `Operation failed after ${attempts} attempts. Last error: ${
         lastError instanceof Error ? lastError.message : String(lastError)
-      }`
+      }`,
     );
   }
 
@@ -226,29 +225,29 @@ export class RetryManager extends EventEmitter {
    */
   async retryBatch<T>(
     operations: Array<() => Promise<T>>,
-    options: RetryOptions | string = {}
+    options: RetryOptions | string = {},
   ): Promise<T[]> {
     const results = await Promise.allSettled(
-      operations.map(op => this.retry(op, options))
+      operations.map((op) => this.retry(op, options)),
     );
 
     const values: T[] = [];
     const errors: unknown[] = [];
 
     results.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
+      if (result.status === "fulfilled") {
         values.push(result.value);
       } else {
         errors.push({
           index,
-          error: result.reason
+          error: result.reason,
         });
       }
     });
 
     if (errors.length > 0) {
       throw new Error(
-        `Batch operation failed: ${errors.length} out of ${operations.length} operations failed`
+        `Batch operation failed: ${errors.length} out of ${operations.length} operations failed`,
       );
     }
 
@@ -260,18 +259,21 @@ export class RetryManager extends EventEmitter {
    */
   enableCircuitBreaker(
     policyName: string,
-    options: Partial<CircuitBreakerOptions> = {}
+    options: Partial<CircuitBreakerOptions> = {},
   ): void {
     const circuitOptions = { ...this.DEFAULT_CIRCUIT_OPTIONS, ...options };
-    
+
     this.circuitBreakers.set(policyName, {
       state: CircuitState.CLOSED,
       failures: 0,
       lastFailureTime: 0,
-      nextAttemptTime: 0
+      nextAttemptTime: 0,
     });
 
-    logger.info(`Circuit breaker enabled for policy: ${policyName}`, circuitOptions);
+    logger.info(
+      `Circuit breaker enabled for policy: ${policyName}`,
+      circuitOptions,
+    );
   }
 
   /**
@@ -314,7 +316,9 @@ export class RetryManager extends EventEmitter {
       case CircuitState.OPEN:
         if (now >= breaker.nextAttemptTime) {
           breaker.state = CircuitState.HALF_OPEN;
-          logger.info(`Circuit breaker transitioned to HALF_OPEN for: ${policyName}`);
+          logger.info(
+            `Circuit breaker transitioned to HALF_OPEN for: ${policyName}`,
+          );
           return true;
         }
         return false;
@@ -348,13 +352,17 @@ export class RetryManager extends EventEmitter {
       logger.info(`Circuit breaker closed for: ${policyName}`);
     }
 
-    this.emit('retry:success', { policyName, attempts });
+    this.emit("retry:success", { policyName, attempts });
   }
 
   /**
    * Handle failed operation
    */
-  private handleFailure(policyName: string, attempts: number, error: unknown): void {
+  private handleFailure(
+    policyName: string,
+    attempts: number,
+    error: unknown,
+  ): void {
     const metrics = this.metrics.get(policyName);
     if (metrics) {
       metrics.failedOperations++;
@@ -370,12 +378,13 @@ export class RetryManager extends EventEmitter {
       if (breaker.state === CircuitState.HALF_OPEN) {
         // Failed in HALF_OPEN state, go back to OPEN
         breaker.state = CircuitState.OPEN;
-        breaker.nextAttemptTime = Date.now() + this.DEFAULT_CIRCUIT_OPTIONS.resetTimeout;
-        
+        breaker.nextAttemptTime =
+          Date.now() + this.DEFAULT_CIRCUIT_OPTIONS.resetTimeout;
+
         if (metrics) {
           metrics.circuitBreakerTrips++;
         }
-        
+
         logger.warn(`Circuit breaker opened for: ${policyName}`);
       } else if (
         breaker.state === CircuitState.CLOSED &&
@@ -383,28 +392,33 @@ export class RetryManager extends EventEmitter {
       ) {
         // Too many failures, open the circuit
         breaker.state = CircuitState.OPEN;
-        breaker.nextAttemptTime = Date.now() + this.DEFAULT_CIRCUIT_OPTIONS.resetTimeout;
-        
+        breaker.nextAttemptTime =
+          Date.now() + this.DEFAULT_CIRCUIT_OPTIONS.resetTimeout;
+
         if (metrics) {
           metrics.circuitBreakerTrips++;
         }
-        
-        logger.warn(`Circuit breaker opened for: ${policyName} (threshold reached)`);
+
+        logger.warn(
+          `Circuit breaker opened for: ${policyName} (threshold reached)`,
+        );
       }
     }
 
-    this.emit('retry:failure', { policyName, attempts, error });
+    this.emit("retry:failure", { policyName, attempts, error });
   }
 
   /**
    * Resolve retry options
    */
-  private resolveOptions(options: RetryOptions | string): Required<RetryOptions> {
-    if (typeof options === 'string') {
+  private resolveOptions(
+    options: RetryOptions | string,
+  ): Required<RetryOptions> {
+    if (typeof options === "string") {
       const policy = this.policies.get(options);
       return policy ? policy.options : this.DEFAULT_OPTIONS;
     }
-    
+
     return { ...this.DEFAULT_OPTIONS, ...options };
   }
 
@@ -414,7 +428,7 @@ export class RetryManager extends EventEmitter {
   private shouldRetry(
     error: unknown,
     attempts: number,
-    options: Required<RetryOptions>
+    options: Required<RetryOptions>,
   ): boolean {
     if (attempts >= options.maxAttempts) {
       return false;
@@ -423,7 +437,7 @@ export class RetryManager extends EventEmitter {
     // Check retryable errors
     if (options.retryableErrors.length > 0) {
       const isRetryableError = options.retryableErrors.some(
-        ErrorClass => error instanceof ErrorClass
+        (ErrorClass) => error instanceof ErrorClass,
       );
       if (!isRetryableError) return false;
     }
@@ -435,18 +449,22 @@ export class RetryManager extends EventEmitter {
   /**
    * Calculate delay with exponential backoff and jitter
    */
-  private calculateDelay(attempt: number, options: Required<RetryOptions>): number {
-    let delay = options.initialDelay * Math.pow(options.backoffMultiplier, attempt - 1);
-    
+  private calculateDelay(
+    attempt: number,
+    options: Required<RetryOptions>,
+  ): number {
+    let delay =
+      options.initialDelay * Math.pow(options.backoffMultiplier, attempt - 1);
+
     // Apply max delay cap
     delay = Math.min(delay, options.maxDelay);
-    
+
     // Apply jitter
     if (options.jitter) {
       const jitterRange = delay * 0.3; // 30% jitter
       delay = delay + (Math.random() * jitterRange * 2 - jitterRange);
     }
-    
+
     return Math.round(delay);
   }
 
@@ -455,13 +473,13 @@ export class RetryManager extends EventEmitter {
    */
   private async executeWithTimeout<T>(
     operation: () => Promise<T>,
-    timeout: number
+    timeout: number,
   ): Promise<T> {
     return Promise.race([
       operation(),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Operation timed out')), timeout)
-      )
+        setTimeout(() => reject(new Error("Operation timed out")), timeout),
+      ),
     ]);
   }
 
@@ -471,10 +489,12 @@ export class RetryManager extends EventEmitter {
   private isDatabaseRetryable(error: unknown): boolean {
     if (error instanceof Error) {
       const message = error.message.toLowerCase();
-      return message.includes('sqlite_busy') ||
-             message.includes('database is locked') ||
-             message.includes('sqlite_locked') ||
-             message.includes('deadlock');
+      return (
+        message.includes("sqlite_busy") ||
+        message.includes("database is locked") ||
+        message.includes("sqlite_locked") ||
+        message.includes("deadlock")
+      );
     }
     return false;
   }
@@ -482,11 +502,13 @@ export class RetryManager extends EventEmitter {
   private isLLMRetryable(error: unknown): boolean {
     if (error instanceof Error) {
       const message = error.message.toLowerCase();
-      return message.includes('rate limit') ||
-             message.includes('timeout') ||
-             message.includes('503') ||
-             message.includes('429') ||
-             message.includes('connection refused');
+      return (
+        message.includes("rate limit") ||
+        message.includes("timeout") ||
+        message.includes("503") ||
+        message.includes("429") ||
+        message.includes("connection refused")
+      );
     }
     return false;
   }
@@ -494,11 +516,13 @@ export class RetryManager extends EventEmitter {
   private isNetworkRetryable(error: unknown): boolean {
     if (error instanceof Error) {
       const message = error.message.toLowerCase();
-      return message.includes('econnrefused') ||
-             message.includes('etimedout') ||
-             message.includes('enotfound') ||
-             message.includes('network') ||
-             message.includes('fetch failed');
+      return (
+        message.includes("econnrefused") ||
+        message.includes("etimedout") ||
+        message.includes("enotfound") ||
+        message.includes("network") ||
+        message.includes("fetch failed")
+      );
     }
     return false;
   }
@@ -506,10 +530,12 @@ export class RetryManager extends EventEmitter {
   private isFileRetryable(error: unknown): boolean {
     if (error instanceof Error) {
       const message = error.message.toLowerCase();
-      return message.includes('eacces') ||
-             message.includes('ebusy') ||
-             message.includes('emfile') ||
-             message.includes('enfile');
+      return (
+        message.includes("eacces") ||
+        message.includes("ebusy") ||
+        message.includes("emfile") ||
+        message.includes("enfile")
+      );
     }
     return false;
   }
@@ -517,16 +543,18 @@ export class RetryManager extends EventEmitter {
   /**
    * Update metrics
    */
-  private updateMetrics(policyName: string, type: 'attempt'): void {
+  private updateMetrics(policyName: string, type: "attempt"): void {
     const metrics = this.metrics.get(policyName);
-    if (metrics && type === 'attempt') {
+    if (metrics && type === "attempt") {
       metrics.totalAttempts++;
     }
   }
 
   private updateAverageAttempts(metrics: RetryMetrics, attempts: number): void {
-    const totalOperations = metrics.successfulOperations + metrics.failedOperations;
-    const totalAttempts = metrics.averageAttempts * (totalOperations - 1) + attempts;
+    const totalOperations =
+      metrics.successfulOperations + metrics.failedOperations;
+    const totalAttempts =
+      metrics.averageAttempts * (totalOperations - 1) + attempts;
     metrics.averageAttempts = totalAttempts / totalOperations;
   }
 
@@ -540,7 +568,7 @@ export class RetryManager extends EventEmitter {
       failedOperations: 0,
       retriedOperations: 0,
       averageAttempts: 0,
-      circuitBreakerTrips: 0
+      circuitBreakerTrips: 0,
     };
   }
 
@@ -548,7 +576,7 @@ export class RetryManager extends EventEmitter {
    * Delay helper
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

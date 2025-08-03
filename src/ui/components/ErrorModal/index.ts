@@ -1,1 +1,1 @@
-export { ErrorModal } from "./ErrorModal.js";
+export { ErrorModal } from "./ErrorModal";

@@ -16,7 +16,7 @@ You are an advanced TD SYNNEX email analysis system. Analyze the following email
 
 1. Workflow State: Identify where this email sits in the business process
    - START_POINT: New request, initial inquiry, or beginning of a process
-   - IN_PROGRESS: Ongoing discussion, follow-up, or mid-process activity  
+   - IN_PROGRESS: Ongoing discussion, follow-up, or mid-process activity
    - COMPLETION: Resolution, final answer, or process conclusion
 
 2. Priority Assessment: Evaluate urgency based on:
@@ -171,26 +171,28 @@ Email to analyze:`;
 **Method**: Iteratively developed using Claude as baseline
 
 The Phase 1 approach used a rule-based system that was iteratively refined by:
+
 1. Running Claude analysis on sample emails
 2. Extracting patterns from Claude's responses
 3. Building rules to match Claude's analysis
 4. Testing and refining until 5.6/10 score achieved
 
 Key patterns identified:
+
 - "RE:" or "FW:" in subject → IN_PROGRESS workflow
 - "completed", "resolved", "closed" in body → COMPLETION workflow
 - "urgent", "ASAP", "critical" → HIGH/CRITICAL priority
 - PO pattern: /\b(?:PO|P\.O\.|Purchase Order)?\s*#?\s*(\d{6,})/gi
-- Quote pattern: /\b(?:Quote|Q|FTQ|F5Q)[-#]?\s*(\w+)/gi
+- Quote pattern: /\b(?:Quote|Q|FTQ|F5Q)[-#]?\s\*(\w+)/gi
 
 ## Model Performance Summary
 
-| Model | Prompt Type | Target Score | Achieved Score | Avg Time/Email |
-|-------|-------------|--------------|----------------|----------------|
-| Claude Opus-4 | 8-point comprehensive | 8.5/10 | 8.5/10 | ~2-3 min |
-| doomgrave/phi-4 | Optimized with tags | 7.75/10 | 7.6/10 | ~80s |
-| llama3.2:3b | JSON-enforced | 6.56/10 | TBD | ~50s |
-| Rule-based script | Iterative patterns | 5.6/10 | 5.6/10 | <1s |
+| Model             | Prompt Type           | Target Score | Achieved Score | Avg Time/Email |
+| ----------------- | --------------------- | ------------ | -------------- | -------------- |
+| Claude Opus-4     | 8-point comprehensive | 8.5/10       | 8.5/10         | ~2-3 min       |
+| doomgrave/phi-4   | Optimized with tags   | 7.75/10      | 7.6/10         | ~80s           |
+| llama3.2:3b       | JSON-enforced         | 6.56/10      | TBD            | ~50s           |
+| Rule-based script | Iterative patterns    | 5.6/10       | 5.6/10         | <1s            |
 
 ## Important Notes
 

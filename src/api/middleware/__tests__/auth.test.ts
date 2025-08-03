@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import jwt from "jsonwebtoken";
-import { verifyJWT, type AuthUser } from "../auth.js";
+import { verifyJWT, type AuthUser } from "../auth";
 
 const TEST_JWT_SECRET = "test-secret-key-for-unit-tests-only";
 

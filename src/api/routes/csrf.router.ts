@@ -3,8 +3,8 @@ import {
   ensureCSRFToken,
   generateCSRFToken,
   setCSRFCookie,
-} from "../middleware/security/csrf.js";
-import { logger } from "../../utils/logger.js";
+} from "../middleware/security/csrf";
+import { logger } from "../../utils/logger";
 
 const router = Router();
 

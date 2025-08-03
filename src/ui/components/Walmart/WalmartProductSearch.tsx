@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon } from "@heroicons/react/24/outline";
-import { api } from "../../../lib/trpc.js";
-import { WalmartProductCard } from "./WalmartProductCard.js";
-import type { WalmartProduct } from "../../../types/walmart-grocery.js";
+import { api } from "../../../lib/trpc";
+import { WalmartProductCard } from "./WalmartProductCard";
+import type { WalmartProduct } from "../../../types/walmart-grocery";
 
 export const WalmartProductSearch: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");

@@ -1,6 +1,6 @@
 // Value exports
-export { Toast } from "./Toast.js";
-export { ToastContainer, toast, useToast } from "./ToastContainer.js";
+export { Toast } from "./Toast";
+export { ToastContainer, toast, useToast } from "./ToastContainer";
 
 // Type exports
-export type { ToastProps, ToastType } from "./Toast.js";
+export type { ToastProps, ToastType } from "./Toast";

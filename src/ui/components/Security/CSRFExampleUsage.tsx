@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { useCSRF } from "../../hooks/useCSRF.js";
+import { useCSRF } from "../../hooks/useCSRF";
 import {
   useCSRFProtectedMutation,
   useCSRFFormSubmit,
-} from "../../hooks/useCSRFProtectedMutation.js";
-import { CSRFErrorModal, useCSRFErrorModal } from "./CSRFErrorModal.js";
-import { CSRFMonitor } from "./CSRFMonitor.js";
+} from "../../hooks/useCSRFProtectedMutation";
+import { CSRFErrorModal, useCSRFErrorModal } from "./CSRFErrorModal";
+import { CSRFMonitor } from "./CSRFMonitor";
 
 /**
  * Example component demonstrating CSRF protection usage

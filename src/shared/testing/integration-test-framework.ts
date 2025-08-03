@@ -289,7 +289,9 @@ export interface TestAssertions<T = unknown> {
   toBeFalsy(): TestAssertions<T>;
 
   // Type assertions
-  toBeInstanceOf(constructor: new (...args: unknown[]) => unknown): TestAssertions<T>;
+  toBeInstanceOf(
+    constructor: new (...args: unknown[]) => unknown,
+  ): TestAssertions<T>;
   toBeTypeOf(type: string): TestAssertions<T>;
 
   // Number assertions

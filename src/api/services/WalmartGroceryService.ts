@@ -3,26 +3,26 @@
  * Handles product search, cart management, list operations, and substitutions
  */
 
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../utils/logger";
 import { v4 as uuidv4 } from "uuid";
-import type { WalmartProductRepository, SubstitutionRepository, UserPreferencesRepository } from "../../database/repositories/WalmartProductRepository.js";
-import type { GroceryListRepository, GroceryItemRepository, ShoppingSessionRepository } from "../../database/repositories/GroceryRepository.js";
-import { getDatabaseManager } from "../../database/DatabaseManager.js";
-import { BrightDataScraper } from "./BrightDataScraper.js";
-import { ProductLookupService } from "./ProductLookupService.js";
-import { DealMatchingService } from "./DealMatchingService.js";
-import { ChromaDBManager } from "../../database/vector/ChromaDBManager.js";
+import type { WalmartProductRepository, SubstitutionRepository, UserPreferencesRepository } from "../../database/repositories/WalmartProductRepository";
+import type { GroceryListRepository, GroceryItemRepository, ShoppingSessionRepository } from "../../database/repositories/GroceryRepository";
+import { getDatabaseManager } from "../../database/DatabaseManager";
+import { BrightDataScraper } from "./BrightDataScraper";
+import { ProductLookupService } from "./ProductLookupService";
+import { DealMatchingService } from "./DealMatchingService";
+import { ChromaDBManager } from "../../database/vector/ChromaDBManager";
 import type { 
   WalmartProduct
-} from "../../types/walmart-grocery.js";
+} from "../../types/walmart-grocery";
 import type { 
   GroceryList as RepoGroceryList,
   GroceryItem as RepoGroceryItem,
   ShoppingSession as RepoShoppingSession
-} from "../../database/repositories/GroceryRepository.js";
-import type { UserPreferences } from "../../database/repositories/WalmartProductRepository.js";
+} from "../../database/repositories/GroceryRepository";
+import type { UserPreferences } from "../../database/repositories/WalmartProductRepository";
 
-export interface SearchOptions {
+export interface ServiceSearchOptions {
   query: string;
   category?: string;
   priceRange?: { min: number; max: number };
@@ -93,7 +93,7 @@ export class WalmartGroceryService {
   /**
    * Search for products with advanced filtering
    */
-  async searchProducts(options: SearchOptions): Promise<WalmartProduct[]> {
+  async searchProducts(options: ServiceSearchOptions): Promise<WalmartProduct[]> {
     try {
       logger.info("Searching products", "WALMART_SERVICE", { options });
 

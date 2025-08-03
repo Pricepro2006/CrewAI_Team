@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "../../hooks/useAuth.js";
+import { useAuth } from "../../hooks/useAuth";
 import "./AuthForms.css";
 
 interface LoginFormProps {

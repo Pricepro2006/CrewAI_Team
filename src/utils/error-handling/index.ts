@@ -6,7 +6,7 @@ import { AppError, ErrorCode } from "./error-types.js";
 import { getUserFriendlyError } from "./error-messages.js";
 
 // Use browser-compatible logger for client-side code
-let logger: unknown;
+let logger: any;
 if (typeof window !== "undefined") {
   // Browser environment - use console as logger
   logger = {
@@ -144,6 +144,7 @@ export function tryCatch<T extends (...args: unknown[]) => unknown>(
       const err = error instanceof Error ? error : new Error(String(error));
       if (errorHandler) {
         errorHandler(err);
+        throw err;
       } else {
         logger.error(
           `Error in ${fn.name || "anonymous function"}`,

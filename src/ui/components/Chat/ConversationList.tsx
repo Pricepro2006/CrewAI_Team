@@ -1,5 +1,5 @@
 import React from "react";
-import { api } from "../../../lib/trpc.js";
+import { api } from "../../../lib/trpc";
 
 interface ConversationListProps {
   currentId: string | null;

@@ -1,12 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
 import Database from "better-sqlite3";
-import appConfig from "../../config/app.config.js";
-import { logger } from "../../utils/logger.js";
-import { wsService } from "./WebSocketService.js";
-import { performanceOptimizer } from "./PerformanceOptimizer.js";
-import { queryPerformanceMonitor } from "./QueryPerformanceMonitor.js";
-import { LazyLoader } from "../../utils/LazyLoader.js";
-import { ConnectionPool } from "../../core/database/ConnectionPool.js";
+import appConfig from "../../config/app.config";
+import { logger } from "../../utils/logger";
+import { wsService } from "./WebSocketService";
+import { performanceOptimizer } from "./PerformanceOptimizer";
+import { queryPerformanceMonitor } from "./QueryPerformanceMonitor";
+import { LazyLoader } from "../../utils/LazyLoader";
+import { ConnectionPool } from "../../core/database/ConnectionPool";
+import type { EmailRecord } from "../../shared/types/email";
 
 // Enhanced email analysis interfaces
 export interface EmailAnalysisResult {
@@ -808,6 +809,85 @@ export class EmailStorageService {
     }
   }
 
+  /**
+   * Store email analysis results separately from email data
+   */
+  async storeEmailAnalysis(messageId: string, analysis: EmailAnalysisResult): Promise<void> {
+    try {
+      logger.info(
+        `Storing email analysis for message ID: ${messageId}`,
+        "EMAIL_STORAGE",
+      );
+
+      // Validate and sanitize processing times before storage
+      const validatedProcessingTimes = this.validateProcessingTimes(
+        analysis.processingMetadata,
+      );
+
+      const transaction = this.db.transaction(() => {
+        // Store enhanced analysis
+        const analysisStmt = this.db.prepare(`
+          INSERT OR REPLACE INTO email_analysis (
+            id, email_id, 
+            quick_workflow, quick_priority, quick_intent, quick_urgency,
+            quick_confidence, quick_suggested_state, quick_model, quick_processing_time,
+            deep_workflow_primary, deep_workflow_secondary, deep_workflow_related,
+            deep_workflow_confidence, deep_entities, deep_action_items,
+            deep_workflow_state, deep_business_impact, deep_contextual_summary,
+            action_summary, stage1_time, stage2_time, total_time, models_used,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        const analysisId = uuidv4();
+        
+        analysisStmt.run(
+          analysisId,
+          messageId, // Use messageId as email_id reference
+          analysis.quick.workflow.primary,
+          analysis.quick.priority,
+          analysis.quick.intent,
+          analysis.quick.urgency,
+          analysis.quick.confidence,
+          analysis.quick.suggestedState,
+          validatedProcessingTimes.models.stage1,
+          validatedProcessingTimes.stage1Time,
+          analysis.deep.detailedWorkflow.primary,
+          JSON.stringify(analysis.deep.detailedWorkflow.secondary || []),
+          JSON.stringify(analysis.deep.detailedWorkflow.relatedCategories || []),
+          analysis.deep.detailedWorkflow.confidence,
+          JSON.stringify(analysis.deep.entities),
+          JSON.stringify(analysis.deep.actionItems),
+          JSON.stringify(analysis.deep.workflowState),
+          JSON.stringify(analysis.deep.businessImpact),
+          analysis.deep.contextualSummary || '',
+          analysis.actionSummary,
+          validatedProcessingTimes.stage1Time,
+          validatedProcessingTimes.stage2Time,
+          validatedProcessingTimes.totalTime,
+          JSON.stringify(validatedProcessingTimes.models),
+          new Date().toISOString(),
+          new Date().toISOString(),
+        );
+      });
+
+      transaction();
+
+      logger.info(
+        `Email analysis stored successfully for message ID: ${messageId}`,
+        "EMAIL_STORAGE",
+      );
+
+    } catch (error: any) {
+      logger.error(
+        `Failed to store email analysis for message ID: ${messageId}`,
+        "EMAIL_STORAGE",
+        { error: error.message }
+      );
+      throw error;
+    }
+  }
+
   async getEmailWithAnalysis(
     emailId: string,
   ): Promise<EmailWithAnalysis | null> {
@@ -1220,7 +1300,17 @@ export class EmailStorageService {
       )
     `);
 
-    const slaViolations = stmt.all() as EmailRecord[];
+    interface SLAViolationRecord {
+      id: string;
+      subject: string;
+      received_at: string;
+      deep_workflow_primary: string;
+      quick_priority: 'Critical' | 'High' | 'Medium' | 'Low';
+      action_sla_status: string;
+      workflow_state: string;
+    }
+    
+    const slaViolations = stmt.all() as SLAViolationRecord[];
 
     // Process SLA violations in batches to avoid N+1 updates
     const updates: Array<{ status: "at-risk" | "overdue"; emailId: string }> =

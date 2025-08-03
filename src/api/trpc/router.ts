@@ -16,29 +16,29 @@ export {
   commonSchemas,
   createFeatureRouter,
   createSecureRouter,
-} from "./enhanced-router.js";
+} from "./enhanced-router";
 
 // Import routers
-import { agentRouter } from "../routes/agent.router.js";
-import { taskRouter } from "../routes/task.router.js";
-import { ragRouter } from "../routes/rag.router.js";
-import { chatRouter } from "../routes/chat.router.js";
-import { websocketRouter } from "../routes/websocket.router.js";
-import { healthRouter } from "../routes/health.router.js";
-import { dataCollectionRouter } from "../routes/data-collection.router.js";
-import { authRouter } from "../routes/auth.router.js";
-import { emailRouter } from "../routes/email.router.js";
-import { metricsRouter } from "../routes/metrics.router.js";
-import { emailAssignmentRouter } from "./routers/emailAssignment.router.js";
-import { iemsEmailRouter } from "../routes/iems-email.router.js";
-import { dealsRouter } from "../routes/deals.router.js";
-import { walmartGroceryRouter } from "../routes/walmart-grocery.router.js";
-import { workflowRouter } from "../routes/workflow.router.js";
-import { securityRouter } from "./routers/security.router.js";
-import { monitoringRouter } from "./routers/monitoring.router.js";
+import { agentRouter } from "../routes/agent.router";
+import { taskRouter } from "../routes/task.router";
+import { ragRouter } from "../routes/rag.router";
+import { chatRouter } from "../routes/chat.router";
+import { websocketRouter } from "../routes/websocket.router";
+import { healthRouter } from "../routes/health.router";
+import { dataCollectionRouter } from "../routes/data-collection.router";
+import { authRouter } from "../routes/auth.router";
+import { emailRouter } from "../routes/email.router";
+import { metricsRouter } from "../routes/metrics.router";
+import { emailAssignmentRouter } from "./routers/emailAssignment.router";
+import { iemsEmailRouter } from "../routes/iems-email.router";
+import { dealsRouter } from "../routes/deals.router";
+import { walmartGroceryRouter } from "../routes/walmart-grocery.router";
+import { workflowRouter } from "../routes/workflow.router";
+import { securityRouter } from "./routers/security.router";
+import { monitoringRouter } from "./routers/monitoring.router";
 
 // Import the router function from enhanced-router
-import { router as createRouter } from "./enhanced-router.js";
+import { router as createRouter } from "./enhanced-router";
 import type { AnyRouter } from "@trpc/server";
 
 // Create the main app router with enhanced security

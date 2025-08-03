@@ -8,8 +8,8 @@ import {
   Lock,
   Key,
 } from "lucide-react";
-import { useCSRFStatus } from "../../../hooks/useCSRF.js";
-import { api } from "../../../lib/trpc.js";
+import { useCSRFStatus } from "../../../hooks/useCSRF";
+import { api } from "../../../lib/trpc";
 
 interface SecurityStatus {
   cors: boolean;

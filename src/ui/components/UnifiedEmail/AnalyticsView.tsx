@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
-import type { GetAnalyticsResponse } from "../../../types/unified-email.types.js";
-import { StatusDistributionChart } from "../../../client/components/charts/StatusDistributionChart.js";
-import { WorkflowTimelineChart } from "../../../client/components/charts/WorkflowTimelineChart.js";
+import type { GetAnalyticsResponse } from "../../../types/unified-email.types";
+import { StatusDistributionChart } from "../../../client/components/charts/StatusDistributionChart";
+import { WorkflowTimelineChart } from "../../../client/components/charts/WorkflowTimelineChart";
 import {
   ChartBarIcon,
   ClockIcon,

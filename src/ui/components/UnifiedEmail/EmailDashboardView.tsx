@@ -9,25 +9,17 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
 } from "@heroicons/react/24/outline";
+import type { DashboardMetrics } from "../../../types/unified-email.types";
 import "./EmailDashboardView.css";
 
 interface EmailDashboardViewProps {
-  metrics?: {
-    totalEmails: number;
-    todaysEmails: number;
-    workflowCompletion: number;
-    avgResponseTime: number;
-    urgentCount: number;
-    pendingAssignment: number;
-    agentUtilization: number;
-    processedToday: number;
-  };
+  metrics?: DashboardMetrics;
 }
 
 export const EmailDashboardView: React.FC<EmailDashboardViewProps> = ({
   metrics,
 }) => {
-  const defaultMetrics = {
+  const defaultMetrics: DashboardMetrics = {
     totalEmails: 2847,
     todaysEmails: 156,
     workflowCompletion: 87.5,
@@ -35,6 +27,7 @@ export const EmailDashboardView: React.FC<EmailDashboardViewProps> = ({
     urgentCount: 12,
     pendingAssignment: 24,
     agentUtilization: 78,
+    criticalAlerts: [],
     processedToday: 132,
   };
 

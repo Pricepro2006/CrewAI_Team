@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { logger } from "../../utils/logger.js";
-import { metrics } from "../monitoring/metrics.js";
+import { logger } from "../../utils/logger";
+import { metrics } from "../monitoring/metrics";
 
 // Optional imports for Microsoft Graph dependencies
-let Client: unknown;
-let TokenCredentialAuthenticationProvider: unknown;
-let ClientSecretCredential: unknown;
-let CronJob: unknown;
+let Client: any;
+let TokenCredentialAuthenticationProvider: any;
+let ClientSecretCredential: any;
+let CronJob: any;
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires

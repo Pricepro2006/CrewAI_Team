@@ -2,13 +2,13 @@ name: Static to Dynamic Data Migration Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
     types: [opened, synchronize, reopened, ready_for_review]
 
 env:
-  NODE_VERSION: '18.x'
+  NODE_VERSION: "18.x"
   REDIS_URL: redis://localhost:6379
   DATABASE_URL: ./test.db
 
@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Setup build dependencies
         run: |
@@ -54,7 +54,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Setup build dependencies
         run: |
@@ -96,7 +96,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Setup build dependencies
         run: |
@@ -129,7 +129,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Setup build dependencies
         run: |
@@ -162,7 +162,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Setup build dependencies
         run: |
@@ -206,7 +206,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Setup build dependencies
         run: |

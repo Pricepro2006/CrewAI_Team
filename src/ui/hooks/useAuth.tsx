@@ -6,7 +6,7 @@ import {
   useContext,
   type ReactNode,
 } from "react";
-import { api } from "../../lib/trpc.js";
+import { api } from "../../lib/trpc";
 
 /**
  * Authentication Hook and Context

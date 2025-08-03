@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { api } from "../../../lib/trpc.js";
-import { MessageList } from "./MessageList.js";
-import { InputBox } from "./InputBox.js";
-import { AgentMonitor } from "../AgentStatus/AgentMonitor.js";
-import type { Message } from "./types.js";
+import { api } from "../../../lib/trpc";
+import { MessageList } from "./MessageList";
+import { InputBox } from "./InputBox";
+import { AgentMonitor } from "../AgentStatus/AgentMonitor";
+import type { Message } from "./types";
 import "./ChatInterface.css";
 
 export const ChatInterface: React.FC = () => {

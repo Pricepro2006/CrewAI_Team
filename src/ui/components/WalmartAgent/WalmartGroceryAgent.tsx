@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, ShoppingCart, Package, DollarSign, Clock, TrendingUp, AlertCircle, CheckCircle, List, PieChart, BarChart3, History } from 'lucide-react';
-import { api } from '../../../lib/trpc.js';
+import { api } from '../../../lib/trpc';
 import './WalmartGroceryAgent.css';
 
 interface GroceryItem {

@@ -28,7 +28,7 @@ import { Slider } from '../../../components/ui/slider.js';
 import { Checkbox } from '../../../components/ui/checkbox.js';
 import { useWalmartSearch } from '../../hooks/useWalmartSearch.js';
 import { useDebounce } from '../../hooks/useDebounce.js';
-import type { WalmartProduct, SearchOptions } from '../../../types/walmart-grocery.js';
+import type { WalmartProduct, SearchOptions, DietaryFilter } from '../../../types/walmart-grocery.js';
 import type { ExtendedSearchOptions } from '../../../types/walmart-search-extended.js';
 
 interface WalmartProductSearchProps {
@@ -127,11 +127,12 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
   };
 
   const handleDietaryToggle = (dietary: string) => {
+    const dietaryFilter = dietary as DietaryFilter;
     setFilters(prev => ({
       ...prev,
-      dietary: prev.dietary?.includes(dietary)
-        ? prev.dietary.filter(d => d !== dietary)
-        : [...(prev.dietary || []), dietary],
+      dietary: prev.dietary?.includes(dietaryFilter)
+        ? prev.dietary.filter(d => d !== dietaryFilter)
+        : [...(prev.dietary || []), dietaryFilter],
     }));
   };
 

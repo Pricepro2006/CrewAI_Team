@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { api } from "../../../lib/trpc.js";
+import { api } from "../../../lib/trpc";
 import "./VectorSearch.css";
 
 interface SearchResult {

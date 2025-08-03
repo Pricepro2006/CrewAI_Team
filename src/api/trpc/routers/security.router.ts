@@ -3,10 +3,10 @@ import {
   router,
   publicProcedure,
   csrfTokenProcedure,
-} from "../enhanced-router.js";
-import type { Context } from "../context.js";
-import { logger } from "../../../utils/logger.js";
-import { getCSRFStats } from "../../middleware/security/index.js";
+} from "../enhanced-router";
+import type { Context } from "../context";
+import { logger } from "../../../utils/logger";
+import { getCSRFStats } from "../../middleware/security/index";
 
 /**
  * Security router for CSRF token management and security-related operations

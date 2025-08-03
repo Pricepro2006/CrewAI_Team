@@ -6,10 +6,11 @@
 import { useState, useCallback, useRef } from 'react';
 // TODO: Replace with proper tRPC hooks
 // import { api } from '../lib/api.js';
-import type { WalmartProduct, SearchOptions } from '../../types/walmart-grocery.js';
+import type { WalmartProduct } from '../../types/walmart-grocery.js';
+import type { ExtendedSearchOptions } from '../../types/walmart-search-extended.js';
 
 interface UseWalmartSearchResult {
-  search: (options: SearchOptions) => Promise<void>;
+  search: (options: ExtendedSearchOptions) => Promise<void>;
   results: WalmartProduct[];
   loading: boolean;
   error: string | null;
@@ -35,10 +36,10 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
   const [hasMore, setHasMore] = useState(false);
   
   const searchCache = useRef<SearchCache>({});
-  const currentSearchOptions = useRef<SearchOptions | null>(null);
+  const currentSearchOptions = useRef<ExtendedSearchOptions | null>(null);
   const currentPage = useRef(0);
 
-  const getCacheKey = (options: SearchOptions): string => {
+  const getCacheKey = (options: ExtendedSearchOptions): string => {
     return JSON.stringify({
       query: options.query,
       category: options.category,

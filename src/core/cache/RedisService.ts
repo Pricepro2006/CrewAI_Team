@@ -197,6 +197,19 @@ export class RedisService {
   }
 
   /**
+   * Set key expiration time
+   */
+  async expire(key: string, seconds: number): Promise<boolean> {
+    try {
+      const result = await this.client.expire(key, seconds);
+      return result === 1;
+    } catch (error) {
+      logger.error(`Failed to set expiration for key: ${key}`, "REDIS", { error });
+      throw error;
+    }
+  }
+
+  /**
    * Set hash field
    */
   async hset(key: string, field: string, value: any): Promise<void> {

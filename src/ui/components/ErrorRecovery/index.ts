@@ -1,5 +1,5 @@
 export {
   ErrorRecoveryBoundary,
   AsyncBoundary,
-} from "./ErrorRecoveryBoundary.js";
+} from "./ErrorRecoveryBoundary";
 import "./ErrorRecovery.css";

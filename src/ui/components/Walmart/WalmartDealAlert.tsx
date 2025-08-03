@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { BellIcon, TagIcon, ClockIcon } from "@heroicons/react/24/outline";
-import { api } from "../../../lib/trpc.js";
-import type { DealMatch } from "../../../types/walmart-grocery.js";
+import { api } from "../../../lib/trpc";
+import type { DealMatch } from "../../../types/walmart-grocery";
 
 export const WalmartDealAlert: React.FC = () => {
   const [activeDeals, setActiveDeals] = useState<DealMatch[]>([]);
@@ -99,7 +99,7 @@ export const WalmartDealAlert: React.FC = () => {
                   
                   <div className="flex items-center gap-4 text-sm">
                     <span className="text-gray-600">
-                      Deal: <span className="font-medium text-green-600">${(deal.deal?.discountedPrice || 0).toFixed(2)}</span>
+                      Deal: <span className="font-medium text-green-600">${(deal.deal?.products?.[0]?.dealPrice || 0).toFixed(2)}</span>
                     </span>
                     <span className="text-gray-600">
                       Save: <span className="font-medium">${deal.potential_savings.toFixed(2)}</span>
@@ -110,7 +110,7 @@ export const WalmartDealAlert: React.FC = () => {
                 <div className="text-right">
                   <div className="flex items-center gap-1 text-sm text-gray-500">
                     <ClockIcon className="h-4 w-4" />
-                    <span>{formatTimeRemaining(deal.deal?.endDate || '')}</span>
+                    <span>{formatTimeRemaining(deal.deal?.validity?.endDate || '')}</span>
                   </div>
                 </div>
               </div>

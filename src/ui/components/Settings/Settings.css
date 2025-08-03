@@ -180,7 +180,7 @@
 }
 
 .toggle-slider::before {
-  content: '';
+  content: "";
   position: absolute;
   width: 18px;
   height: 18px;

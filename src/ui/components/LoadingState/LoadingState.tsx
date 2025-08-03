@@ -1,6 +1,6 @@
 import React from "react";
 import { Loader2 } from "lucide-react";
-import { cn } from "../../../utils/cn.js";
+import { cn } from "../../../utils/cn";
 import "./LoadingState.css";
 
 interface LoadingStateProps {

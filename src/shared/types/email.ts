@@ -12,6 +12,7 @@ import type { BaseEntity, TimestampedEntity, Timestamp } from "./core.js";
 export type EmailStatus = "red" | "yellow" | "green";
 export type EmailWorkflowState = "START_POINT" | "IN_PROGRESS" | "COMPLETION";
 export type EmailPriority = "critical" | "high" | "medium" | "low";
+export type EmailSLAStatus = "on-track" | "at-risk" | "overdue";
 export type EmailCategory =
   | "email-alias"
   | "marketing-splunk"

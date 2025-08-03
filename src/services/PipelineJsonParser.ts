@@ -5,7 +5,6 @@
 
 import { logger } from "../utils/logger.js";
 import { BusinessImpact } from "../types/AnalysisTypes.js";
-import { ActionItem } from "../types/EmailTypes.js";
 import type {
   LlamaAnalysisData,
   Phi4AnalysisData,
@@ -17,7 +16,7 @@ import type {
 import type {
   ExtractedEntities,
   ActionItem,
-  BusinessImpact,
+  BusinessImpact as AnalysisBusinessImpact,
 } from "../types/analysis-results.js";
 
 export class PipelineJsonParser {
@@ -171,7 +170,10 @@ export class PipelineJsonParser {
   /**
    * Parse business impact data
    */
-  parseBusinessImpact(llamaImpact: unknown, phi4Impact: unknown): BusinessImpact {
+  parseBusinessImpact(
+    llamaImpact: unknown,
+    phi4Impact: unknown,
+  ): AnalysisBusinessImpact {
     const revenue =
       phi4Impact?.revenue_impact || llamaImpact?.revenue || undefined;
     const satisfaction = this.parseCustomerSatisfaction(
@@ -298,7 +300,9 @@ export class PipelineJsonParser {
     };
   }
 
-  private normalizeActionItems(items: unknown): LlamaAnalysisData["action_items"] {
+  private normalizeActionItems(
+    items: unknown,
+  ): LlamaAnalysisData["action_items"] {
     if (!Array.isArray(items)) return [];
 
     return items
@@ -380,10 +384,10 @@ export class PipelineJsonParser {
 
   private parseCustomerSatisfaction(
     satisfaction: any,
-  ): BusinessImpact["customerSatisfaction"] {
+  ): AnalysisBusinessImpact["customerSatisfaction"] {
     const satisfactionMap: Record<
       string,
-      BusinessImpact["customerSatisfaction"]
+      AnalysisBusinessImpact["customerSatisfaction"]
     > = {
       positive: "Positive",
       neutral: "Neutral",

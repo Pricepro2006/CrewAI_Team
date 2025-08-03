@@ -10,19 +10,20 @@ import {
   FunnelIcon,
   ArrowTrendingUpIcon,
 } from "@heroicons/react/24/outline";
-import { api } from "../../../lib/trpc.js";
-import { useWebSocket } from "../../hooks/useWebSocket.js";
-import { MetricsBar } from "./MetricsBar.js";
-import { EmailListView } from "./EmailListView.js";
-import { EmailDashboardView } from "./EmailDashboardView.js";
-import { AnalyticsView } from "./AnalyticsView.js";
-import { AgentView } from "./AgentView.js";
-import { StatusLegend } from "./StatusLegend.js";
+import { api } from "../../../lib/trpc";
+import { useWebSocket } from "../../hooks/useWebSocket";
+import { MetricsBar } from "./MetricsBar";
+import { EmailListView } from "./EmailListView";
+import { EmailDashboardView } from "./EmailDashboardView";
+import { AnalyticsView } from "./AnalyticsView";
+import { AgentView } from "./AgentView";
+import { StatusLegend } from "./StatusLegend";
 import type {
   UnifiedEmailData,
   ViewMode,
   FilterConfig,
-} from "../../../types/unified-email.types.js";
+  DashboardMetrics,
+} from "../../../types/unified-email.types";
 import "./UnifiedEmailDashboard.css";
 
 interface UnifiedEmailDashboardProps {
@@ -59,22 +60,27 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
   const [showSettings, setShowSettings] = useState(false);
 
   // Fetch unified email data with all enrichments
-  const { data: emailData, refetch: refetchEmails } = (
-    api.emails as any
-  ).getTableData.useQuery({
-    ...filters,
-    includeAnalysis: true,
-    includeWorkflowState: true,
-    includeAgentInfo: true,
+  const { data: emailData, refetch: refetchEmails } = api.emails.getTableData.useQuery({
+    page: 1,
+    pageSize: 50,
+    sortBy: "received_date",
+    sortOrder: "desc",
+    filters: {
+      status: filters.statuses as any[],
+      emailAlias: filters.emailAliases,
+      workflowState: filters.workflowStates as any[],
+      priority: filters.priorities as any[],
+      dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
+        start: filters.dateRange.start.toISOString(),
+        end: filters.dateRange.end.toISOString(),
+      } : undefined,
+    },
+    search: filters.search,
   });
 
   // Analytics data with workflow metrics
-  const { data: analytics, refetch: refetchAnalytics } = (
-    api.emails as any
-  ).getAnalytics.useQuery({
-    includeWorkflowMetrics: true,
-    includeAgentMetrics: true,
-    includeTrends: true,
+  const { data: analytics, refetch: refetchAnalytics } = api.emails.getAnalytics.useQuery({
+    refreshKey: Date.now(),
   });
 
   // Real-time updates via WebSocket
@@ -100,21 +106,23 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
     }
   };
 
-  // Calculate critical metrics
-  const metrics = useMemo(
-    () => ({
-      totalEmails: emailData?.data?.total || emailData?.total || 0,
-      todaysEmails: emailData?.data?.todaysCount || emailData?.todaysCount || 0,
-      workflowCompletion: analytics?.workflowCompletion || 3.5,
-      avgResponseTime: analytics?.avgResponseTime || 4.3,
-      criticalAlerts: analytics?.criticalAlerts || [],
-      agentUtilization: analytics?.agentUtilization || 0,
-      pendingAssignment:
-        emailData?.data?.pendingAssignmentCount ||
-        emailData?.pendingAssignmentCount ||
-        0,
-      urgentCount: emailData?.data?.urgentCount || emailData?.urgentCount || 0,
-    }),
+  // Calculate critical metrics with robust null checking
+  const metrics = useMemo<DashboardMetrics>(
+    () => {
+      const emailDataResult = emailData?.data;
+      const analyticsResult = analytics?.data;
+      
+      return {
+        totalEmails: emailDataResult?.total ?? 0,
+        todaysEmails: emailDataResult?.todaysCount ?? 0,
+        workflowCompletion: analyticsResult?.workflowCompletion ?? 3.5,
+        avgResponseTime: analyticsResult?.avgResponseTime ?? 4.3,
+        criticalAlerts: Array.isArray(analyticsResult?.criticalAlerts) ? analyticsResult.criticalAlerts : [],
+        agentUtilization: analyticsResult?.agentUtilization ?? 0,
+        pendingAssignment: emailDataResult?.pendingAssignmentCount ?? 0,
+        urgentCount: emailDataResult?.urgentCount ?? 0,
+      };
+    },
     [emailData, analytics],
   );
 
@@ -223,25 +231,21 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
 
         {viewMode === "list" && (
           <EmailListView
-            emails={emailData?.data?.emails || emailData?.emails || []}
+            emails={Array.isArray(emailData?.data?.emails) ? emailData.data.emails : []}
             onEmailSelect={(email) => setSelectedEmails([email.id])}
             selectedEmailId={selectedEmails[0]}
           />
         )}
 
         {viewMode === "analytics" && (
-          <AnalyticsView analytics={analytics || null} />
+          <AnalyticsView analytics={analytics?.data || null} />
         )}
 
         {viewMode === "workflows" && (
           <div className="workflow-view">
             <h2>Workflow Tracking</h2>
             <EmailListView
-              emails={(
-                emailData?.data?.emails ||
-                emailData?.emails ||
-                []
-              ).filter(
+              emails={(Array.isArray(emailData?.data?.emails) ? emailData.data.emails : []).filter(
                 (email: UnifiedEmailData) =>
                   email.workflowState === "IN_PROGRESS",
               )}
@@ -255,8 +259,8 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
 
         {viewMode === "agents" && (
           <AgentView
-            agents={analytics?.agents || []}
-            agentPerformance={analytics?.agentPerformance}
+            agents={Array.isArray(analytics?.data?.agents) ? analytics.data.agents : []}
+            agentPerformance={analytics?.data?.agentPerformance || {}}
           />
         )}
 

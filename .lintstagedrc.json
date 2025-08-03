@@ -9,7 +9,5 @@
   "*.{ts,tsx,js,jsx}": [
     "eslint --cache --cache-location .eslintcache --max-warnings 0"
   ],
-  "*": [
-    "tsx scripts/check-secrets.ts"
-  ]
+  "*": ["tsx scripts/check-secrets.ts"]
 }

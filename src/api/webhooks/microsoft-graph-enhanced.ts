@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
 // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-explicit-any
 const { Queue } = require("bullmq") as any;
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../utils/logger";
 import * as crypto from "crypto";
-import { metrics } from "../monitoring/metrics.js";
+import { metrics } from "../monitoring/metrics";
 
 // Types for Microsoft Graph notifications
 interface ChangeNotificationCollection {

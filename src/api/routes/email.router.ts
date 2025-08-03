@@ -3,14 +3,21 @@ import {
   router,
   publicProcedure,
   protectedProcedure,
-} from "../trpc/enhanced-router.js";
-import { EmailStorageService } from "../services/EmailStorageService.js";
-import { logger } from "../../utils/logger.js";
+} from "../trpc/enhanced-router";
+import { EmailStorageService } from "../services/EmailStorageService";
+import { mockEmailStorageService } from "../services/MockEmailStorageService";
+import { realEmailStorageService } from "../services/RealEmailStorageService";
+import { UnifiedEmailService } from "../services/UnifiedEmailService";
+import { emailIntegrationService } from "../services/EmailIntegrationService";
+import { logger } from "../../utils/logger";
 
-// Initialize email storage service
-const emailStorage = new EmailStorageService();
+// Initialize email services
+// const emailStorage = new EmailStorageService(); // TODO: Fix database schema issues
+// const emailStorage = mockEmailStorageService; // Temporary mock service
+const emailStorage = realEmailStorageService; // Real database connection
+const unifiedEmailService = new UnifiedEmailService();
 // Start SLA monitoring
-emailStorage.startSLAMonitoring();
+emailStorage.startSLAMonitoring(); // Using real service
 
 // Input validation schemas - Enhanced for table view (Agent 10)
 const GetEmailsTableInputSchema = z.object({
@@ -29,7 +36,7 @@ const GetEmailsTableInputSchema = z.object({
         .array(z.enum(["START_POINT", "IN_PROGRESS", "COMPLETION"]))
         .optional(),
       priority: z
-        .array(z.enum(["Critical", "High", "Medium", "Low"]))
+        .array(z.enum(["critical", "high", "medium", "low"]))
         .optional(),
       dateRange: z
         .object({
@@ -47,7 +54,7 @@ const GetEmailsInputSchema = z.object({
   limit: z.number().min(1).max(100).optional().default(50),
   offset: z.number().min(0).optional().default(0),
   workflow: z.string().optional(),
-  priority: z.enum(["Critical", "High", "Medium", "Low"]).optional(),
+  priority: z.enum(["critical", "high", "medium", "low"]).optional(),
   status: z.string().optional(),
   slaStatus: z.enum(["on-track", "at-risk", "overdue"]).optional(),
   search: z.string().optional(),
@@ -95,7 +102,7 @@ const BatchCreateEmailsInputSchema = z.object({
       statusText: z.string(),
       workflowState: z.enum(["START_POINT", "IN_PROGRESS", "COMPLETION"]),
       workflowType: z.string().optional(),
-      priority: z.enum(["Critical", "High", "Medium", "Low"]).optional(),
+      priority: z.enum(["critical", "high", "medium", "low"]).optional(),
       receivedDate: z.date().optional(),
       entities: z
         .array(
@@ -163,7 +170,41 @@ export const emailRouter = router({
           search: input.search,
         });
 
-        const result = await emailStorage.getEmailsForTableView(input);
+        // Convert input to unified service format
+        const filters = {
+          search: input.search,
+          emailAliases: input.filters?.emailAlias || [],
+          statuses: (input.filters?.status || []).map(status => {
+            // Map old status values to new EmailStatus values
+            switch (status) {
+              case "red": return "escalated" as const;
+              case "yellow": return "processing" as const;
+              case "green": return "resolved" as const;
+              default: return "unread" as const;
+            }
+          }),
+          workflowStates: input.filters?.workflowState || [],
+          priorities: input.filters?.priority || [],
+          dateRange: input.filters?.dateRange ? {
+            start: new Date(input.filters.dateRange.start),
+            end: new Date(input.filters.dateRange.end),
+          } : { start: null, end: null },
+          requesters: [],
+          workflowTypes: [],
+          hasAttachments: undefined,
+          isRead: undefined,
+          tags: [],
+          assignedAgents: [],
+        };
+
+        const result = await unifiedEmailService.getEmails({
+          page: input.page,
+          limit: input.pageSize,
+          filters,
+          includeAnalysis: true,
+          includeWorkflowState: true,
+          includeAgentInfo: true,
+        });
 
         // Broadcast table data update for real-time synchronization
         // Temporarily disabled due to import issues
@@ -234,7 +275,11 @@ export const emailRouter = router({
       try {
         logger.info("Fetching email analytics", "EMAIL_ROUTER");
 
-        const analytics = await emailStorage.getWorkflowAnalytics();
+        const analytics = await unifiedEmailService.getAnalytics({
+          includeWorkflowMetrics: true,
+          includeAgentMetrics: true,
+          includeTrends: true,
+        });
 
         // Broadcast analytics update for real-time dashboard updates
         // Temporarily disabled due to import issues
@@ -667,7 +712,7 @@ export const emailRouter = router({
               .array(z.enum(["START_POINT", "IN_PROGRESS", "COMPLETION"]))
               .optional(),
             priority: z
-              .array(z.enum(["Critical", "High", "Medium", "Low"]))
+              .array(z.enum(["critical", "high", "medium", "low"]))
               .optional(),
             workflowType: z.array(z.string()).optional(),
             dateRange: z
@@ -742,7 +787,7 @@ export const emailRouter = router({
         filters: z
           .object({
             workflow: z.string().optional(),
-            priority: z.enum(["Critical", "High", "Medium", "Low"]).optional(),
+            priority: z.enum(["critical", "high", "medium", "low"]).optional(),
             status: z.string().optional(),
             slaStatus: z.enum(["on-track", "at-risk", "overdue"]).optional(),
             dateRange: z
@@ -1096,10 +1141,10 @@ export const emailRouter = router({
             { value: "green", label: "Success", color: "#10B981" },
           ],
           priority: [
-            { value: "Critical", label: "Critical", color: "#DC2626" },
-            { value: "High", label: "High", color: "#EA580C" },
-            { value: "Medium", label: "Medium", color: "#D97706" },
-            { value: "Low", label: "Low", color: "#65A30D" },
+            { value: "critical", label: "Critical", color: "#DC2626" },
+            { value: "high", label: "High", color: "#EA580C" },
+            { value: "medium", label: "Medium", color: "#D97706" },
+            { value: "low", label: "Low", color: "#65A30D" },
           ],
           workflowState: [
             { value: "START_POINT", label: "Start Point", color: "#6366F1" },
@@ -1132,6 +1177,50 @@ export const emailRouter = router({
     } catch (error) {
       logger.error("Failed to fetch table metadata", "EMAIL_ROUTER", { error });
       throw new Error("Failed to fetch table metadata");
+    }
+  }),
+
+  // Ingest emails from various sources
+  ingestEmails: protectedProcedure
+    .input(
+      z.object({
+        source: z.enum(["json", "database", "api"]),
+        data: z.any(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      try {
+        logger.info("Ingesting emails", "EMAIL_ROUTER", {
+          source: input.source,
+        });
+
+        const progress = await emailIntegrationService.ingestEmails(
+          input.source,
+          input.data,
+        );
+
+        return {
+          success: true,
+          data: progress,
+        };
+      } catch (error) {
+        logger.error("Failed to ingest emails", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to ingest emails");
+      }
+    }),
+
+  // Get email processing status
+  getProcessingStatus: publicProcedure.query(async () => {
+    try {
+      const status = emailIntegrationService.getProcessingStatus();
+
+      return {
+        success: true,
+        data: status,
+      };
+    } catch (error) {
+      logger.error("Failed to get processing status", "EMAIL_ROUTER", { error });
+      throw new Error("Failed to get processing status");
     }
   }),
 

@@ -1,7 +1,10 @@
 /**
  * Comprehensive logging system for CrewAI Team
  * Environment-aware implementation that works in Node.js, browser, and test environments
+ * Now includes PII redaction for security compliance
  */
+
+import { piiRedactor, PIIRedactor } from "./PIIRedactor.js";
 
 // Environment detection
 const isNode =
@@ -52,6 +55,8 @@ export class Logger {
   private enableFile: boolean;
   private logQueue: LogEntry[] = [];
   private isWriting: boolean = false;
+  private piiRedactor: PIIRedactor;
+  private enablePIIRedaction: boolean;
 
   private constructor() {
     // Handle different environments gracefully
@@ -69,6 +74,8 @@ export class Logger {
       process.env?.["LOG_LEVEL"] === "debug" ? LogLevel.DEBUG : LogLevel.INFO;
     this.enableConsole = process.env?.["NODE_ENV"] !== "production";
     this.enableFile = !isBrowser && !isTest && fs !== null; // Only enable in Node.js with fs available
+    this.enablePIIRedaction = process.env?.["ENABLE_PII_REDACTION"] !== "false"; // Enabled by default
+    this.piiRedactor = piiRedactor;
 
     if (this.enableFile) {
       this.ensureLogDirectory();
@@ -195,13 +202,26 @@ export class Logger {
   ): void {
     if (level < this.logLevel) return;
 
+    // Apply PII redaction if enabled
+    const redactedMessage = this.enablePIIRedaction 
+      ? this.piiRedactor.redact(message)
+      : message;
+    
+    const redactedMetadata = this.enablePIIRedaction && metadata
+      ? this.piiRedactor.redactObject(metadata)
+      : metadata;
+    
+    const redactedStack = this.enablePIIRedaction && error?.stack
+      ? this.piiRedactor.redact(error.stack)
+      : error?.stack;
+
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
-      message,
+      message: redactedMessage,
       ...(component && { component }),
-      ...(metadata && { metadata }),
-      ...(error?.stack && { stack: error.stack }),
+      ...(redactedMetadata && { metadata: redactedMetadata }),
+      ...(redactedStack && { stack: redactedStack }),
     };
 
     this.writeToConsole(entry);
@@ -323,6 +343,27 @@ export class Logger {
     while (this.logQueue.length > 0 || this.isWriting) {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
+  }
+
+  /**
+   * Enable or disable PII redaction
+   */
+  setPIIRedaction(enabled: boolean): void {
+    this.enablePIIRedaction = enabled;
+  }
+
+  /**
+   * Check if a message contains PII
+   */
+  containsPII(message: string): boolean {
+    return this.piiRedactor.containsPII(message);
+  }
+
+  /**
+   * Get PII redactor instance for custom use
+   */
+  getPIIRedactor(): PIIRedactor {
+    return this.piiRedactor;
   }
 }
 

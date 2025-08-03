@@ -928,6 +928,10 @@ export interface UserPreferences extends TimestampedEntity {
   preferredBrands?: string[];
   dietaryRestrictions?: DietaryFilter[];
   allergens?: AllergenType[];
+  avoidProducts?: string[];
+  favoriteProducts?: string[];
+  preferOrganic?: boolean;
+  preferGeneric?: boolean;
 }
 
 export interface BudgetSettings {

@@ -4,16 +4,16 @@ import {
   publicProcedure,
   commonSchemas,
   createFeatureRouter,
-} from "../trpc/enhanced-router.js";
-import { logger } from "../../utils/logger.js";
-import { BrightDataService } from "../../core/data-collection/BrightDataService.js";
+} from "../trpc/enhanced-router";
+import { logger } from "../../utils/logger";
+import { BrightDataService } from "../../core/data-collection/BrightDataService";
 import type {
   SearchEngineParams,
   WebScrapingParams,
   EcommerceScrapingParams,
   SocialMediaParams,
   BrightDataCredentials,
-} from "../../core/data-collection/types.js";
+} from "../../core/data-collection/types";
 
 // Input validation schemas
 const dataCollectionSchemas = {
