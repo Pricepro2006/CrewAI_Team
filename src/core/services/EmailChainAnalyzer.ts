@@ -609,7 +609,7 @@ export class EmailChainAnalyzer {
 
     // Type-specific requirements
     switch (params.chainType) {
-      case "quote_request":
+      case "quote_request": {
         const hasQuoteNumber = params.emails.some((e) =>
           (e.subject + " " + (e.body || "")).match(/quote\s*#?\s*\d{6,10}/i),
         );
@@ -618,8 +618,9 @@ export class EmailChainAnalyzer {
           missingElements.push("Quote number reference");
         }
         break;
+      }
 
-      case "order_processing":
+      case "order_processing": {
         const hasPONumber = params.emails.some((e) =>
           (e.subject + " " + (e.body || "")).match(/po\s*#?\s*\d{7,12}/i),
         );
@@ -628,6 +629,7 @@ export class EmailChainAnalyzer {
           missingElements.push("PO number reference");
         }
         break;
+      }
     }
 
     // Cap score at 100

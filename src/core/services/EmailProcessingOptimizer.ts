@@ -6,6 +6,7 @@
 
 import axios from "axios";
 import type { AxiosInstance } from "axios";
+import { Agent } from "http";
 import pLimit from "p-limit";
 import { Logger } from "../../utils/logger.js";
 import { RedisService } from "../cache/RedisService.js";
@@ -94,7 +95,7 @@ export class EmailProcessingOptimizer {
     this.ollamaPool = axios.create({
       baseURL: this.config.ollamaUrl,
       timeout: this.config.ollamaTimeout,
-      httpAgent: new (require('http').Agent)({
+      httpAgent: new Agent({
         keepAlive: true,
         keepAliveMsecs: 1000,
         maxSockets: this.config.maxConnections,

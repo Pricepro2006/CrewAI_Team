@@ -111,7 +111,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
 
         // Check for existing chain in repository
         const conversationId = threadEmails[0].conversation_id || email.id;
-        let existingChain = await uow.chains.findOne({
+        const existingChain = await uow.chains.findOne({
           conversation_id: conversationId,
         });
 

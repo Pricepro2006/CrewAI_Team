@@ -202,7 +202,8 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
           true,
         );
 
-        const phasesCompleted = finalResults.hasOwnProperty(
+        const phasesCompleted = Object.prototype.hasOwnProperty.call(
+          finalResults,
           "strategic_analysis",
         )
           ? 3
