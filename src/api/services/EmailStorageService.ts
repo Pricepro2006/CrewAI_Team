@@ -22,7 +22,7 @@ export interface QuickAnalysis {
     primary: string;
     secondary?: string[];
   };
-  priority: "Critical" | "High" | "Medium" | "Low";
+  priority: "critical" | "high" | "medium" | "low";
   intent: string;
   urgency: string;
   confidence: number;
@@ -111,7 +111,103 @@ export interface EmailWithAnalysis extends Email {
   analysis: EmailAnalysisResult;
 }
 
-export class EmailStorageService {
+// Email Storage Service Interface
+export interface EmailStorageServiceInterface {
+  getEmailsByWorkflow(
+    workflow: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<EmailWithAnalysis[]>;
+  getEmailWithAnalysis(emailId: string): Promise<EmailWithAnalysis | null>;
+  updateWorkflowState(
+    emailId: string,
+    newState: string,
+    changedBy?: string,
+  ): Promise<void>;
+  getWorkflowAnalytics(): Promise<{
+    totalEmails: number;
+    workflowDistribution: Record<string, number>;
+    slaCompliance: Record<string, number>;
+    averageProcessingTime: number;
+  }>;
+  getWorkflowPatterns(): Promise<any[]>;
+  startSLAMonitoring(intervalMs?: number): void;
+  stopSLAMonitoring(): void;
+  getDashboardStats(): Promise<{
+    totalEmails: number;
+    criticalCount: number;
+    inProgressCount: number;
+    completedCount: number;
+    statusDistribution: Record<string, number>;
+  }>;
+  getEmailsForTableView(options: {
+    page?: number;
+    pageSize?: number;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    filters?: {
+      status?: string[];
+      emailAlias?: string[];
+      workflowState?: string[];
+      priority?: string[];
+      dateRange?: { start: string; end: string };
+    };
+    search?: string;
+    refreshKey?: number;
+  }): Promise<{
+    emails: Array<{
+      id: string;
+      email_alias: string;
+      requested_by: string;
+      subject: string;
+      summary: string;
+      status: string;
+      status_text: string;
+      workflow_state: string;
+      priority: string;
+      received_date: string;
+      is_read: boolean;
+      has_attachments: boolean;
+    }>;
+    totalCount: number;
+    totalPages: number;
+    fromCache?: boolean;
+    performanceMetrics?: {
+      queryTime: number;
+      cacheHit: boolean;
+      optimizationGain: number;
+    };
+  }>;
+  createEmail(emailData: {
+    messageId: string;
+    emailAlias: string;
+    requestedBy: string;
+    subject: string;
+    summary: string;
+    status: "red" | "yellow" | "green";
+    statusText: string;
+    workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
+    workflowType?: string;
+    priority?: "critical" | "high" | "medium" | "low";
+    receivedDate: Date;
+    hasAttachments?: boolean;
+    isRead?: boolean;
+    body?: string;
+    entities?: any[];
+    recipients?: any[];
+  }): Promise<string>;
+  updateEmailStatus(
+    emailId: string,
+    newStatus: "red" | "yellow" | "green",
+    newStatusText?: string,
+    performedBy?: string,
+  ): Promise<void>;
+  getEmail(emailId: string): Promise<any | null>;
+  updateEmail(emailId: string, updates: Partial<any>): Promise<void>;
+  close(): Promise<void>;
+}
+
+export class EmailStorageService implements EmailStorageServiceInterface {
   private db: Database.Database;
   private connectionPool?: ConnectionPool;
   private slaMonitoringInterval: NodeJS.Timeout | null = null;
@@ -812,7 +908,10 @@ export class EmailStorageService {
   /**
    * Store email analysis results separately from email data
    */
-  async storeEmailAnalysis(messageId: string, analysis: EmailAnalysisResult): Promise<void> {
+  async storeEmailAnalysis(
+    messageId: string,
+    analysis: EmailAnalysisResult,
+  ): Promise<void> {
     try {
       logger.info(
         `Storing email analysis for message ID: ${messageId}`,
@@ -840,7 +939,7 @@ export class EmailStorageService {
         `);
 
         const analysisId = uuidv4();
-        
+
         analysisStmt.run(
           analysisId,
           messageId, // Use messageId as email_id reference
@@ -854,13 +953,15 @@ export class EmailStorageService {
           validatedProcessingTimes.stage1Time,
           analysis.deep.detailedWorkflow.primary,
           JSON.stringify(analysis.deep.detailedWorkflow.secondary || []),
-          JSON.stringify(analysis.deep.detailedWorkflow.relatedCategories || []),
+          JSON.stringify(
+            analysis.deep.detailedWorkflow.relatedCategories || [],
+          ),
           analysis.deep.detailedWorkflow.confidence,
           JSON.stringify(analysis.deep.entities),
           JSON.stringify(analysis.deep.actionItems),
           JSON.stringify(analysis.deep.workflowState),
           JSON.stringify(analysis.deep.businessImpact),
-          analysis.deep.contextualSummary || '',
+          analysis.deep.contextualSummary || "",
           analysis.actionSummary,
           validatedProcessingTimes.stage1Time,
           validatedProcessingTimes.stage2Time,
@@ -877,12 +978,11 @@ export class EmailStorageService {
         `Email analysis stored successfully for message ID: ${messageId}`,
         "EMAIL_STORAGE",
       );
-
     } catch (error: any) {
       logger.error(
         `Failed to store email analysis for message ID: ${messageId}`,
         "EMAIL_STORAGE",
-        { error: error.message }
+        { error: error.message },
       );
       throw error;
     }
@@ -1305,11 +1405,11 @@ export class EmailStorageService {
       subject: string;
       received_at: string;
       deep_workflow_primary: string;
-      quick_priority: 'Critical' | 'High' | 'Medium' | 'Low';
+      quick_priority: "critical" | "high" | "medium" | "low";
       action_sla_status: string;
       workflow_state: string;
     }
-    
+
     const slaViolations = stmt.all() as SLAViolationRecord[];
 
     // Process SLA violations in batches to avoid N+1 updates
@@ -1391,7 +1491,7 @@ export class EmailStorageService {
           wsService.broadcastEmailSLAAlert(
             broadcast.emailId,
             broadcast.workflow,
-            broadcast.priority as "Critical" | "High" | "Medium" | "Low",
+            broadcast.priority as "critical" | "high" | "medium" | "low",
             broadcast.status,
             broadcast.timeRemaining,
             broadcast.overdueDuration,
@@ -1450,7 +1550,7 @@ export class EmailStorageService {
     statusText: string;
     workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
     workflowType?: string;
-    priority?: "Critical" | "High" | "Medium" | "Low";
+    priority?: "critical" | "high" | "medium" | "low";
     receivedDate: Date;
     hasAttachments?: boolean;
     isRead?: boolean;
