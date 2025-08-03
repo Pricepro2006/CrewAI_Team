@@ -10,20 +10,21 @@ After extensive testing and comparison of single-phase vs three-phase email anal
 
 ### Comparison Metrics
 
-| Metric | Single-Phase | Three-Phase | Phase-3-Only |
-|--------|--------------|-------------|--------------|
-| **Entity Extraction Rate** | 60-70% | 90-95% | 40-50% |
-| **Categorization Accuracy** | 75% | 92% | 70% |
-| **Action Item Quality** | Generic | Specific & Contextual | Basic |
-| **Processing Time** | ~3 seconds | ~5 seconds | ~2.5 seconds |
-| **LLM Calls** | 1 | 2-3 | 1 |
-| **Confidence Score** | 0.75 | 0.92 | 0.65 |
+| Metric                      | Single-Phase | Three-Phase           | Phase-3-Only |
+| --------------------------- | ------------ | --------------------- | ------------ |
+| **Entity Extraction Rate**  | 60-70%       | 90-95%                | 40-50%       |
+| **Categorization Accuracy** | 75%          | 92%                   | 70%          |
+| **Action Item Quality**     | Generic      | Specific & Contextual | Basic        |
+| **Processing Time**         | ~3 seconds   | ~5 seconds            | ~2.5 seconds |
+| **LLM Calls**               | 1            | 2-3                   | 1            |
+| **Confidence Score**        | 0.75         | 0.92                  | 0.65         |
 
 ### Phase-by-Phase Analysis
 
 #### Phase 1: Rule-Based Extraction (500ms)
+
 - **Purpose**: Fast entity extraction using regex patterns
-- **Strengths**: 
+- **Strengths**:
   - Near-instant processing
   - Catches structured data (PO#, tracking numbers)
   - Can be cached for email threads
@@ -31,6 +32,7 @@ After extensive testing and comparison of single-phase vs three-phase email anal
 - **Output**: Raw entities and patterns
 
 #### Phase 2: AI Enhancement (2 seconds)
+
 - **Purpose**: Contextual understanding and entity expansion
 - **Strengths**:
   - Finds entities missed by regex
@@ -41,6 +43,7 @@ After extensive testing and comparison of single-phase vs three-phase email anal
 - **Output**: Enhanced entities + business context
 
 #### Phase 3: Action Intelligence (2.5 seconds)
+
 - **Purpose**: Generate specific actions and workflow assignments
 - **Strengths**:
   - Creates detailed action items
@@ -65,6 +68,7 @@ This approach actually **increases** information availability at each phase rath
 ### 1. When to Use Three-Phase Analysis
 
 **Use Three-Phase for:**
+
 - High-value transactions (>$50K)
 - Premium customer communications
 - Complex multi-party threads
@@ -73,6 +77,7 @@ This approach actually **increases** information availability at each phase rath
 - First contact from new customers
 
 **Use Single-Phase for:**
+
 - Simple status updates
 - Automated notifications
 - Low-value transactions
@@ -107,12 +112,14 @@ Enhanced Workflow Task
 ## Performance Considerations
 
 ### Resource Usage
+
 - **Single-Phase**: 1 LLM call, ~3000 tokens
 - **Three-Phase**: 2 LLM calls, ~4000 tokens total
 - **Cost Increase**: ~33% more tokens
 - **Quality Increase**: ~50% better extraction
 
 ### Throughput Optimization
+
 - Phase 1 can process 1000+ emails/minute
 - LLM phases can process 12-20 emails/minute
 - Use priority queuing for high-value emails
@@ -121,6 +128,7 @@ Enhanced Workflow Task
 ## Business Impact
 
 ### Quantifiable Benefits
+
 1. **Entity Extraction**: 30% more entities found
 2. **Action Specificity**: 5 specific actions vs 3 generic
 3. **Risk Detection**: Identifies critical issues earlier
@@ -129,6 +137,7 @@ Enhanced Workflow Task
 ### Example Comparison
 
 **Single-Phase Output**:
+
 ```
 Actions:
 - Process order
@@ -137,6 +146,7 @@ Actions:
 ```
 
 **Three-Phase Output**:
+
 ```
 Actions:
 - IMMEDIATE: Verify inventory for PO#789456123 (2,500 units)
@@ -163,6 +173,6 @@ The three-phase approach should become the standard for processing critical busi
 
 ---
 
-*Document Version: 1.0*  
-*Last Updated: January 31, 2025*  
-*Status: Ready for Implementation*
+_Document Version: 1.0_  
+_Last Updated: January 31, 2025_  
+_Status: Ready for Implementation_

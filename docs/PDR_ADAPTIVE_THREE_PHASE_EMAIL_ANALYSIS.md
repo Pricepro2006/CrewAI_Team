@@ -1,6 +1,7 @@
 # Production Design Review: Adaptive Three-Phase Email Analysis
 
 ## Document Information
+
 - **Version**: 1.0
 - **Date**: January 30, 2025
 - **Author**: backend-systems-architect agent
@@ -30,6 +31,7 @@ if (emailChainCompleteness >= 70%) {
 ```
 
 ### Key Metrics
+
 - **Entity Extraction Accuracy**: 90-95% (vs 60-70% single-phase)
 - **Processing Time Reduction**: 62% average
 - **Quality Scores**:
@@ -108,11 +110,11 @@ The system identifies complete email chains by detecting:
 
 ### Processing Time Breakdown
 
-| Email Type | Phase 1 | Phase 2 | Phase 3 | Total | Time Saved |
-|------------|---------|---------|---------|-------|------------|
-| Complete Chain | <1s | 10s | 80s | 91s | 0s |
-| Incomplete Chain | <1s | 10s | Skip | 11s | 80s |
-| **Weighted Average** | | | | **35s** | **56s (62%)** |
+| Email Type           | Phase 1 | Phase 2 | Phase 3 | Total   | Time Saved    |
+| -------------------- | ------- | ------- | ------- | ------- | ------------- |
+| Complete Chain       | <1s     | 10s     | 80s     | 91s     | 0s            |
+| Incomplete Chain     | <1s     | 10s     | Skip    | 11s     | 80s           |
+| **Weighted Average** |         |         |         | **35s** | **56s (62%)** |
 
 ### Quality Impact
 
@@ -143,18 +145,21 @@ The system identifies complete email chains by detecting:
 ## Testing Strategy
 
 ### Unit Tests
+
 - EmailChainAnalyzer scoring accuracy
 - Phase selection logic
 - Cache behavior
 - Event emission
 
 ### Integration Tests
+
 - End-to-end adaptive processing
 - Batch processing with mixed chain types
 - Database persistence
 - Error recovery
 
 ### Performance Tests
+
 - 1000+ email processing benchmark
 - Memory usage under load
 - Concurrent batch processing
@@ -214,18 +219,19 @@ This design has been reviewed and approved by:
 ### A. Code Examples
 
 #### Chain Analysis Implementation
+
 ```typescript
 async analyzeChain(email: Email): Promise<ChainAnalysis> {
   const markers = this.detectProgressionMarkers(email);
   const references = this.extractThreadReferences(email);
   const transitions = this.identifyStatusTransitions(email);
-  
+
   const score = this.calculateCompleteness(
     markers,
     references,
     transitions
   );
-  
+
   return {
     chain_id: this.generateChainId(email),
     is_complete: score >= 0.7,

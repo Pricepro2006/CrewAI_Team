@@ -64,11 +64,12 @@ The email pipeline runs independently of the UI, continuously processing emails 
 ## Backend Services Detail
 
 ### 1. Email Ingestion Service
+
 ```typescript
 class EmailIngestionService {
   private graphClient: GraphAPIClient;
   private lastSyncTokens: Map<string, string>;
-  
+
   async run() {
     // Runs every 5 minutes via cron/scheduler
     while (true) {
@@ -79,7 +80,7 @@ class EmailIngestionService {
       await sleep(5 * 60 * 1000); // 5 minutes
     }
   }
-  
+
   private async fetchNewEmails(mailbox: string): Promise<Email[]> {
     // Use delta queries for efficiency
     const deltaToken = this.lastSyncTokens.get(mailbox);
@@ -91,42 +92,46 @@ class EmailIngestionService {
 ```
 
 ### 2. Analysis Pipeline Processor
+
 ```typescript
 class AnalysisPipelineProcessor {
   private phase1Analyzer: Phase1Analyzer;
   private phase2Analyzer: Phase2Analyzer;
   private phase3Analyzer: Phase3Analyzer;
-  
+
   async processEmailBatch(emails: Email[]) {
     const tasks = [];
-    
+
     for (const email of emails) {
       // Phase 1 - Always run
       const phase1Results = await this.phase1Analyzer.analyze(email);
-      
+
       // Determine which phases to run
       const phases = this.determinePhases(email, phase1Results);
-      
+
       let finalResults = phase1Results;
-      
+
       // Phase 2 - If needed
       if (phases.includes(2)) {
         finalResults = await this.phase2Analyzer.enhance(email, phase1Results);
       }
-      
+
       // Phase 3 - For critical emails
       if (phases.includes(3)) {
-        finalResults = await this.phase3Analyzer.strategize(email, finalResults);
+        finalResults = await this.phase3Analyzer.strategize(
+          email,
+          finalResults,
+        );
       }
-      
+
       // Generate task
       const task = this.createWorkflowTask(email, finalResults);
       tasks.push(task);
     }
-    
+
     // Bulk save to database
     await this.saveTasksBatch(tasks);
-    
+
     // Emit events for UI updates
     this.emitTaskCreatedEvents(tasks);
   }
@@ -134,67 +139,69 @@ class AnalysisPipelineProcessor {
 ```
 
 ### 3. Background Job Scheduler
+
 ```typescript
 class BackgroundJobScheduler {
   jobs = [
     {
-      name: 'Email Ingestion',
-      schedule: '*/5 * * * *', // Every 5 minutes
-      handler: EmailIngestionService.run
+      name: "Email Ingestion",
+      schedule: "*/5 * * * *", // Every 5 minutes
+      handler: EmailIngestionService.run,
     },
     {
-      name: 'Metric Aggregation',
-      schedule: '*/15 * * * *', // Every 15 minutes
-      handler: MetricAggregationService.run
+      name: "Metric Aggregation",
+      schedule: "*/15 * * * *", // Every 15 minutes
+      handler: MetricAggregationService.run,
     },
     {
-      name: 'SLA Monitor',
-      schedule: '*/10 * * * *', // Every 10 minutes
-      handler: SLAMonitoringService.checkDeadlines
+      name: "SLA Monitor",
+      schedule: "*/10 * * * *", // Every 10 minutes
+      handler: SLAMonitoringService.checkDeadlines,
     },
     {
-      name: 'Status Transition Detector',
-      schedule: '*/5 * * * *', // Every 5 minutes
-      handler: StatusTransitionService.detectChanges
+      name: "Status Transition Detector",
+      schedule: "*/5 * * * *", // Every 5 minutes
+      handler: StatusTransitionService.detectChanges,
     },
     {
-      name: 'Daily Summary Generator',
-      schedule: '0 6 * * *', // 6 AM daily
-      handler: DailySummaryService.generate
-    }
+      name: "Daily Summary Generator",
+      schedule: "0 6 * * *", // 6 AM daily
+      handler: DailySummaryService.generate,
+    },
   ];
 }
 ```
 
 ### 4. Metric Aggregation Service
+
 ```typescript
 class MetricAggregationService {
   async run() {
     // Calculate executive metrics
     const executiveMetrics = await this.calculateExecutiveMetrics();
-    
+
     // Calculate category breakdowns
     const categoryMetrics = await this.calculateCategoryMetrics();
-    
+
     // Calculate owner workloads
     const ownerMetrics = await this.calculateOwnerMetrics();
-    
+
     // Calculate trend data
     const trendData = await this.calculateTrends();
-    
+
     // Store in cache for fast UI access
     await this.cacheMetrics({
       executive: executiveMetrics,
       categories: categoryMetrics,
       owners: ownerMetrics,
       trends: trendData,
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     });
-    
+
     // Emit metric update event
     this.emitMetricUpdate();
   }
-  
+
   private async calculateExecutiveMetrics() {
     return db.query(`
       SELECT 
@@ -211,43 +218,44 @@ class MetricAggregationService {
 ```
 
 ### 5. Real-time Event System
+
 ```typescript
 class WorkflowEventEmitter {
   private wsServer: WebSocketServer;
-  
+
   // Task Events
   emitTaskCreated(task: WorkflowTask) {
-    this.broadcast('workflow:task:created', {
+    this.broadcast("workflow:task:created", {
       task,
       timestamp: new Date(),
-      impact: this.calculateImpact(task)
+      impact: this.calculateImpact(task),
     });
   }
-  
+
   emitStatusChanged(taskId: string, oldStatus: string, newStatus: string) {
-    this.broadcast('workflow:status:changed', {
+    this.broadcast("workflow:status:changed", {
       taskId,
       oldStatus,
       newStatus,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
-    
+
     // Special handling for critical status changes
-    if (newStatus === 'RED') {
+    if (newStatus === "RED") {
       this.emitCriticalAlert(taskId);
     }
   }
-  
+
   emitSLAWarning(taskId: string, hoursRemaining: number) {
-    this.broadcast('workflow:sla:warning', {
+    this.broadcast("workflow:sla:warning", {
       taskId,
       hoursRemaining,
-      severity: hoursRemaining < 4 ? 'CRITICAL' : 'WARNING'
+      severity: hoursRemaining < 4 ? "CRITICAL" : "WARNING",
     });
   }
-  
+
   emitMetricsUpdated(metrics: DashboardMetrics) {
-    this.broadcast('workflow:metrics:updated', metrics);
+    this.broadcast("workflow:metrics:updated", metrics);
   }
 }
 ```
@@ -255,6 +263,7 @@ class WorkflowEventEmitter {
 ## Data Flow Examples
 
 ### Example 1: New Email Arrives
+
 ```
 1. Email arrives in InsightOrderSupport@tdsynnex.com
 2. Graph API delta query picks it up (within 5 minutes)
@@ -268,6 +277,7 @@ class WorkflowEventEmitter {
 ```
 
 ### Example 2: SLA Monitoring
+
 ```
 1. SLA Monitor runs every 10 minutes
 2. Queries tasks with upcoming deadlines
@@ -279,6 +289,7 @@ class WorkflowEventEmitter {
 ```
 
 ### Example 3: Metric Aggregation
+
 ```
 1. Every 15 minutes, aggregation job runs
 2. Calculates revenue at risk: $1.2M
@@ -294,6 +305,7 @@ class WorkflowEventEmitter {
 The UI's responsibilities are limited to:
 
 1. **Display Pre-Calculated Data**
+
    ```typescript
    // UI simply fetches and displays
    const metrics = await api.getExecutiveMetrics();
@@ -301,14 +313,16 @@ The UI's responsibilities are limited to:
    ```
 
 2. **Listen for Real-time Updates**
+
    ```typescript
-   websocket.on('workflow:task:created', (event) => {
+   websocket.on("workflow:task:created", (event) => {
      addTaskToList(event.task);
      showNotification(`New ${event.task.priority} task created`);
    });
    ```
 
 3. **Trigger Backend Actions**
+
    ```typescript
    // UI sends command, backend does the work
    async function reassignTask(taskId: string, newOwner: string) {
@@ -336,26 +350,31 @@ The UI's responsibilities are limited to:
 ## Implementation Timeline
 
 ### Week 1: Core Pipeline
+
 - Email ingestion service
 - Three-phase analysis engine
 - Task generation logic
 
 ### Week 2: Data Layer
+
 - Database schema
 - Aggregation queries
 - Caching layer
 
 ### Week 3: Event System
+
 - WebSocket infrastructure
 - Event emitters
 - Real-time notifications
 
 ### Week 4: Job Scheduling
+
 - Background job framework
 - Scheduled tasks
 - Monitoring setup
 
 ### Week 5-6: Integration
+
 - API endpoints
 - UI integration
 - End-to-end testing
