@@ -4,72 +4,16 @@
  */
 
 export const PHASE2_ENHANCED_PROMPT = `<|system|>
-You are a TD SYNNEX email analyzer. You MUST respond with ONLY valid JSON - no explanatory text, no markdown, no commentary.
+You are a JSON-only email analyzer. Output ONLY valid JSON with no other text.
 <|user|>
+Analyze email and output ONLY this JSON structure:
 
-JSON OUTPUT REQUIRED - NO OTHER TEXT ALLOWED
-
-Analyze this email and return ONLY the JSON response specified below.
-
-Initial Analysis from Phase 1:
-{PHASE1_RESULTS}
-
-Email Content:
+Phase1: {PHASE1_RESULTS}
 Subject: {EMAIL_SUBJECT}
 Body: {EMAIL_BODY}
 
-Extract ALL valuable information and return ONLY this JSON structure:
-
 {
-  "workflow_validation": "Detailed validation with specific business process",
-  "missed_entities": {
-    "project_names": ["all projects mentioned"],
-    "company_names": ["every company, competitor, partner"],
-    "people": ["names and roles"],
-    "products": ["detailed product descriptions"],
-    "technical_specs": ["all specifications"],
-    "locations": ["any addresses or locations"],
-    "other_references": ["any other identifiers"]
-  },
-  "action_items": [
-    {
-      "task": "Specific action description",
-      "owner": "Team or person responsible",
-      "deadline": "Specific date/time or urgency",
-      "revenue_impact": "Dollar amount at risk",
-      "priority": "critical/high/medium/low"
-    }
-  ],
-  "extracted_requirements": [
-    "Every requirement explicitly or implicitly stated",
-    "Technical specifications needed",
-    "Service level expectations"
-  ],
-  "risk_assessment": "Comprehensive risk analysis with specific concerns",
-  "initial_response": "Complete professional response addressing all points",
-  "confidence": 0.85,
-  "business_process": "Specific TD SYNNEX process name"
-}
-
-RESPOND WITH ONLY THE JSON ABOVE - NO OTHER TEXT`;
-
-export const PHASE2_RETRY_PROMPT = `<|system|>
-You are a TD SYNNEX email analyzer. The previous response was not valid JSON. You MUST return ONLY valid JSON with no additional text whatsoever.
-<|user|>
-
-***CRITICAL: JSON ONLY - NO EXPLANATORY TEXT***
-
-Previous attempt failed JSON parsing. Return ONLY valid JSON.
-
-Email Analysis Data:
-Phase 1: {PHASE1_RESULTS}
-Subject: {EMAIL_SUBJECT}
-Body: {EMAIL_BODY}
-
-Return EXACTLY this JSON structure with your analysis:
-
-{
-  "workflow_validation": "your workflow analysis here",
+  "workflow_validation": "string - workflow analysis",
   "missed_entities": {
     "project_names": [],
     "company_names": [],
@@ -81,105 +25,60 @@ Return EXACTLY this JSON structure with your analysis:
   },
   "action_items": [],
   "extracted_requirements": [],
-  "risk_assessment": "your risk analysis here",
-  "initial_response": "your response here",
+  "risk_assessment": "string - risk analysis",
+  "initial_response": "string - response",
   "confidence": 0.8,
-  "business_process": "your process identification here"
-}
+  "business_process": "string - process name"
+}`;
 
-***RESPOND WITH ONLY JSON - START WITH { END WITH }***`;
+export const PHASE2_RETRY_PROMPT = `{
+  "workflow_validation": "analyze workflow from email",
+  "missed_entities": {
+    "project_names": ["extract project names"],
+    "company_names": ["extract company names"],
+    "people": ["extract people names"],
+    "products": ["extract product names"],
+    "technical_specs": ["extract tech specs"],
+    "locations": ["extract locations"],
+    "other_references": ["other entities"]
+  },
+  "action_items": [{
+    "task": "action required",
+    "owner": "responsible party",
+    "deadline": "when due",
+    "priority": "high/medium/low"
+  }],
+  "extracted_requirements": ["list requirements"],
+  "risk_assessment": "assess risks",
+  "initial_response": "draft response",
+  "confidence": 0.8,
+  "business_process": "identify process"
+}`;
 
 export const PHASE3_STRATEGIC_PROMPT = `<|system|>
-You are a senior TD SYNNEX executive performing final strategic analysis of a critical business email.
-Your analysis must be COMPREHENSIVE, ensuring absolutely nothing of business value is missed.
-
-You have access to:
-1. Phase 1 Analysis (rule-based extraction)
-2. Phase 2 Analysis (AI-enhanced extraction)
-3. The original email content
-
-Your mandate: Provide COMPLETE strategic insights that capture EVERY business implication.
+You are a TD SYNNEX executive. Output ONLY JSON for strategic analysis.
 <|user|>
+Phase 1: {PHASE1_RESULTS}
+Phase 2: {PHASE2_RESULTS}
+Email: {EMAIL_SUBJECT} - {EMAIL_BODY}
 
-Phase 1 Analysis:
-{PHASE1_RESULTS}
-
-Phase 2 Analysis:
-{PHASE2_RESULTS}
-
-Original Email:
-Subject: {EMAIL_SUBJECT}
-Body: {EMAIL_BODY}
-
-Provide COMPREHENSIVE strategic analysis covering:
-
-1. STRATEGIC BUSINESS INSIGHTS
-   - Revenue implications (immediate and long-term)
-   - Market positioning impacts
-   - Competitive dynamics
-   - Partnership opportunities
-   - Risk mitigation strategies
-
-2. RELATIONSHIP INTELLIGENCE
-   - Customer health score analysis
-   - Stakeholder sentiment trends
-   - Loyalty indicators
-   - Churn risk assessment
-   - Relationship expansion opportunities
-
-3. OPERATIONAL INTELLIGENCE
-   - Process optimization opportunities
-   - Resource allocation recommendations
-   - Bottleneck predictions
-   - Efficiency improvements
-   - Cost reduction possibilities
-
-4. CROSS-FUNCTIONAL IMPACTS
-   - Sales team implications
-   - Supply chain considerations
-   - Finance/credit requirements
-   - Technical support needs
-   - Marketing opportunities
-
-5. PATTERN RECOGNITION
-   - Similar patterns in other accounts
-   - Industry trend indicators
-   - Seasonal considerations
-   - Predictive insights
-
-6. EXECUTIVE ACTIONS
-   - Specific escalation requirements
-   - Executive intervention points
-   - Strategic decisions needed
-   - Board-level implications
-
-7. WORKFLOW OPTIMIZATION
-   - Process improvement recommendations
-   - Automation opportunities
-   - System integration needs
-   - Training requirements
-
-Return comprehensive JSON analysis:
+Return this JSON structure:
 {
   "strategic_insights": {
-    "opportunity": "Detailed opportunity analysis with specific revenue projections",
-    "risk": "Comprehensive risk assessment with mitigation strategies",
-    "relationship": "Deep relationship analysis with health metrics",
-    "competitive": "Competitive landscape and positioning",
-    "market": "Market dynamics and trends"
+    "opportunity": "revenue/partnership opportunity",
+    "risk": "primary risk identified",
+    "relationship": "customer relationship status"
   },
-  "executive_summary": "Concise but complete summary for C-level review",
+  "executive_summary": "2-sentence strategic summary",
   "escalation_needed": true/false,
-  "escalation_details": {
-    "to_whom": "Specific executive or team",
-    "urgency": "within X hours",
-    "talking_points": ["Key points for executive discussion"]
-  },
-  "revenue_impact": {
-    "immediate": "$X within 30 days",
-    "annual": "$Y recurring",
-    "lifetime": "$Z total opportunity",
-    "at_risk": "$A if not addressed"
+  "revenue_impact": "$amount or range",
+  "cross_email_patterns": ["pattern1", "pattern2"],
+  "workflow_intelligence": {
+    "predicted_next_steps": ["step1", "step2"],
+    "bottleneck_risks": ["risk1", "risk2"],
+    "optimization_opportunities": ["opportunity1"]
+  }
+}`;
   },
   "cross_email_patterns": [
     "Pattern 1: Similar urgency across enterprise accounts",

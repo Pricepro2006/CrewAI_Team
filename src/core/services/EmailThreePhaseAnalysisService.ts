@@ -15,6 +15,8 @@ import { Logger } from "../../utils/logger.js";
 import { RedisService } from "../../core/cache/RedisService.js";
 import { EmailAnalysisCache } from "../../core/cache/EmailAnalysisCache.js";
 import { QueryPerformanceMonitor } from "../../api/services/QueryPerformanceMonitor.js";
+import { PromptSanitizer } from "../../utils/PromptSanitizer.js";
+import { llmRateLimiters } from "./LLMRateLimiter.js";
 import {
   PHASE2_ENHANCED_PROMPT,
   PHASE2_RETRY_PROMPT,
@@ -30,7 +32,7 @@ const logger = new Logger("EmailThreePhaseAnalysisService");
 // TYPE DEFINITIONS
 // ============================================
 
-interface EmailInput {
+export interface EmailInput {
   id: string;
   message_id?: string;
   subject: string;
@@ -44,7 +46,7 @@ interface EmailInput {
   has_attachments?: boolean;
 }
 
-interface Phase1Results {
+export interface Phase1Results {
   workflow_state: string;
   priority: string;
   entities: {
@@ -72,7 +74,7 @@ interface Phase1Results {
   };
 }
 
-interface Phase2Results extends Phase1Results {
+export interface Phase2Results extends Phase1Results {
   workflow_validation: string;
   missed_entities: {
     project_names: string[];
@@ -97,7 +99,7 @@ interface Phase2Results extends Phase1Results {
   extracted_requirements: string[];
 }
 
-interface Phase3Results extends Phase2Results {
+export interface Phase3Results extends Phase2Results {
   strategic_insights: {
     opportunity: string;
     risk: string;
@@ -438,21 +440,29 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // Detect patterns
     const detected_patterns = this.detectPatterns(content, entities);
 
-    // Analyze email chain
+    // Analyze email chain - use provided analysis if available
     let chainAnalysis;
-    try {
-      const chain = await this.chainAnalyzer.analyzeChain(email.id);
-      chainAnalysis = {
-        chain_id: chain.chain_id,
-        is_complete_chain: chain.is_complete,
-        chain_length: chain.chain_length,
-        completeness_score: chain.completeness_score,
-        chain_type: chain.chain_type,
-        missing_elements: chain.missing_elements,
-      };
-    } catch (error) {
-      logger.debug(`Chain analysis failed for ${email.id}:`, error);
-      // Continue without chain analysis
+    
+    // Check if email already has chain analysis (from fixed script)
+    if ((email as any).chainAnalysis) {
+      chainAnalysis = (email as any).chainAnalysis;
+      logger.debug(`Using provided chain analysis for ${email.id}`);
+    } else {
+      // Fall back to analyzing chain if not provided
+      try {
+        const chain = await this.chainAnalyzer.analyzeChain(email.id);
+        chainAnalysis = {
+          chain_id: chain.chain_id,
+          is_complete_chain: chain.is_complete,
+          chain_length: chain.chain_length,
+          completeness_score: chain.completeness_score,
+          chain_type: chain.chain_type,
+          missing_elements: chain.missing_elements,
+        };
+      } catch (error) {
+        logger.debug(`Chain analysis failed for ${email.id}:`, error);
+        // Continue without chain analysis
+      }
     }
 
     const results: Phase1Results = {
@@ -624,6 +634,22 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     email: EmailInput,
     attempt: number,
   ): string {
+    // Sanitize email content before building prompt
+    const sanitizedEmail = PromptSanitizer.sanitizeEmailContent({
+      subject: email.subject,
+      body: email.body || email.body_preview,
+      sender: email.sender_email,
+    });
+
+    // Check for injection attempts
+    if (PromptSanitizer.detectInjectionAttempt(sanitizedEmail.subject) ||
+        PromptSanitizer.detectInjectionAttempt(sanitizedEmail.body)) {
+      logger.warn("Potential prompt injection detected in email", {
+        emailId: email.id,
+        sender: email.sender_email,
+      });
+    }
+
     // Use enhanced prompt for retries
     const basePrompt =
       attempt === 0 ? PHASE2_ENHANCED_PROMPT : PHASE2_RETRY_PROMPT;
@@ -635,20 +661,44 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       prompt += `\n\nIMPORTANT: Previous attempt failed to produce valid JSON. This is retry attempt ${attempt + 1}. You MUST respond with ONLY valid JSON, no explanatory text whatsoever.`;
     }
 
+    // Use sanitized content in prompt
     return prompt
       .replace("{PHASE1_RESULTS}", JSON.stringify(phase1Results, null, 2))
-      .replace("{EMAIL_SUBJECT}", email.subject || "")
-      .replace("{EMAIL_BODY}", email.body || email.body_preview || "");
+      .replace("{EMAIL_SUBJECT}", sanitizedEmail.subject)
+      .replace("{EMAIL_BODY}", sanitizedEmail.body);
   }
 
   /**
-   * Call Llama 3.2 with enhanced error handling
+   * Call Llama 3.2 with enhanced error handling and rate limiting
    */
   private async callLlama3(
     prompt: string,
     llamaOptions: LlamaOptions,
     timeout: number,
   ): Promise<string> {
+    // Check rate limit before making the call
+    const rateLimitResult = await llmRateLimiters.modelSpecific.checkAndConsume(
+      'email-analysis', // identifier
+      'llama3.2:3b',    // model
+      0.001             // estimated cost (very low for local model)
+    );
+
+    if (!rateLimitResult.allowed) {
+      logger.warn("LLM rate limit exceeded for Llama 3.2", {
+        remainingRequests: rateLimitResult.remainingRequests,
+        resetTime: rateLimitResult.resetTime,
+      });
+      
+      // If queueing is enabled and we're queued
+      if (rateLimitResult.queuePosition) {
+        logger.info(`Request queued at position ${rateLimitResult.queuePosition}`);
+        // For now, throw an error. In production, you might want to wait
+        throw new Error(`Rate limit exceeded. Queue position: ${rateLimitResult.queuePosition}`);
+      }
+      
+      throw new Error("LLM rate limit exceeded for Phase 2 analysis");
+    }
+
     const response = await axios.post(
       "http://localhost:11434/api/generate",
       {
@@ -656,7 +706,12 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         prompt,
         stream: false,
         format: "json", // Force JSON output
-        options: llamaOptions,
+        system: "You are a JSON-only assistant. Output only valid JSON with no explanatory text.",
+        options: {
+          ...llamaOptions,
+          num_ctx: 4096, // Ensure enough context
+          stop: ["\n\n", "```", "</", "Note:", "Response:", "Based on"] // Stop generation at common prefixes
+        },
       },
       {
         timeout,
@@ -785,16 +840,48 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     const startTime = Date.now();
 
     try {
-      // Build comprehensive prompt with all context
+      // Sanitize email content before building prompt
+      const sanitizedEmail = PromptSanitizer.sanitizeEmailContent({
+        subject: email.subject,
+        body: email.body || email.body_preview,
+        sender: email.sender_email,
+      });
+
+      // Check for injection attempts
+      if (PromptSanitizer.detectInjectionAttempt(sanitizedEmail.subject) ||
+          PromptSanitizer.detectInjectionAttempt(sanitizedEmail.body)) {
+        logger.warn("Potential prompt injection detected in Phase 3", {
+          emailId: email.id,
+          sender: email.sender_email,
+        });
+      }
+
+      // Build comprehensive prompt with all context using sanitized content
       const prompt = PHASE3_STRATEGIC_PROMPT.replace(
         "{PHASE1_RESULTS}",
         JSON.stringify(phase1Results, null, 2),
       )
         .replace("{PHASE2_RESULTS}", JSON.stringify(phase2Results, null, 2))
-        .replace("{EMAIL_SUBJECT}", email.subject)
-        .replace("{EMAIL_BODY}", email.body || email.body_preview);
+        .replace("{EMAIL_SUBJECT}", sanitizedEmail.subject)
+        .replace("{EMAIL_BODY}", sanitizedEmail.body);
 
-      // Call Phi-4 for maximum quality
+      // Check rate limit for Phi-4
+      const rateLimitResult = await llmRateLimiters.modelSpecific.checkAndConsume(
+        'email-analysis', // identifier
+        'doomgrave/phi-4:14b-tools-Q3_K_S', // model
+        0.005 // estimated cost (higher for larger model)
+      );
+
+      if (!rateLimitResult.allowed) {
+        logger.warn("LLM rate limit exceeded for Phi-4", {
+          remainingRequests: rateLimitResult.remainingRequests,
+          resetTime: rateLimitResult.resetTime,
+        });
+        
+        throw new Error("LLM rate limit exceeded for Phase 3 strategic analysis");
+      }
+
+      // Call Phi-4 for maximum quality with optimized settings
       const response = await axios.post(
         "http://localhost:11434/api/generate",
         {
@@ -802,14 +889,18 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           prompt,
           stream: false,
           format: "json", // Force JSON output
+          system: "You are a strategic analyzer. Provide concise JSON analysis only.",
           options: {
             temperature: 0.3,
-            num_predict: 2000,
-            timeout: options.timeout || 180000,
+            num_predict: 1000, // Reduced from 2000 for faster response
+            num_ctx: 4096, // Ensure enough context
+            top_k: 10, // Limit sampling for more focused output
+            repeat_penalty: 1.1, // Reduce repetition
+            stop: ["\n\n\n", "```", "</json>", "Note:", "This analysis"] // Stop early on common suffixes
           },
         },
         {
-          timeout: options.timeout || 180000,
+          timeout: options.timeout || 60000, // Reduced from 180000 (3 min to 1 min)
           validateStatus: (status) => status < 500,
         },
       );
@@ -1287,52 +1378,90 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
    */
   private extractJsonFromResponse(response: string): string | null {
     let cleaned = response.trim();
+    
+    // First, check if response is already valid JSON
+    try {
+      JSON.parse(cleaned);
+      return cleaned;
+    } catch {
+      // Continue with extraction
+    }
 
-    // Step 1: Remove common LLM prefixes and suffixes
-    const prefixesToRemove = [
-      /^Here's the JSON response:/i,
-      /^Based on the analysis:/i,
-      /^The analysis results:/i,
-      /^JSON output:/i,
-      /^Response:/i,
-      /^Analysis:/i,
-      /^.*?(?=\{)/s,
+    // Step 1: Remove common LLM prefixes and suffixes more aggressively
+    const prefixPatterns = [
+      /^.*?(?=\{)/s, // Remove everything before first {
+      /^Here's the JSON response:?\s*/i,
+      /^Based on the analysis:?\s*/i,
+      /^The analysis results:?\s*/i,
+      /^JSON output:?\s*/i,
+      /^Response:?\s*/i,
+      /^Analysis:?\s*/i,
+      /^Output:?\s*/i,
+      /^Result:?\s*/i,
     ];
-
-    prefixesToRemove.forEach((pattern) => {
+    
+    for (const pattern of prefixPatterns) {
       cleaned = cleaned.replace(pattern, "");
-    });
+    }
 
     // Step 2: Remove markdown code blocks
     cleaned = cleaned
       .replace(/```json\s*/gi, "")
+      .replace(/```javascript\s*/gi, "")
+      .replace(/```js\s*/gi, "")
       .replace(/```\s*/g, "")
       .replace(/^```/gm, "")
       .replace(/```$/gm, "");
+    
+    // Step 3: Remove trailing text after JSON
+    cleaned = cleaned.replace(/\}[^}]*$/s, "}");
 
-    // Step 3: Extract JSON object using multiple strategies
+    // Step 4: Extract JSON object using multiple strategies
 
-    // Strategy 1: Find complete JSON object
-    const jsonMatch = cleaned.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/s);
+    // Strategy 1: Try to parse cleaned response directly
+    try {
+      JSON.parse(cleaned);
+      return cleaned;
+    } catch {
+      // Continue to next strategy
+    }
+
+    // Strategy 2: Find complete JSON object with balanced braces
+    const jsonMatch = cleaned.match(/\{(?:[^{}]|(?:\{[^{}]*\}))*\}/);
     if (jsonMatch) {
-      let jsonStr = jsonMatch[0];
-
-      // Clean up common formatting issues
-      jsonStr = jsonStr
-        .replace(/([a-zA-Z_]+):/g, '"$1":') // Add quotes to keys
-        .replace(/:\s*([a-zA-Z_][^,}\]]*?)(?=[,}\]])/g, ': "$1"') // Quote unquoted string values
-        .replace(/"(true|false|null|\d+(?:\.\d+)?)"(?=[,}\]])/g, "$1"); // Unquote boolean/number values
-
-      return jsonStr;
+      try {
+        JSON.parse(jsonMatch[0]);
+        return jsonMatch[0];
+      } catch {
+        // Try to fix common issues
+        let fixed = jsonMatch[0];
+        // Fix unquoted keys
+        fixed = fixed.replace(/(\w+):/g, '"$1":');
+        // Fix single quotes
+        fixed = fixed.replace(/'/g, '"');
+        try {
+          JSON.parse(fixed);
+          return fixed;
+        } catch {
+          // Continue to next strategy
+        }
+      }
     }
 
-    // Strategy 2: Find JSON in curly braces (greedy)
-    const greedyMatch = cleaned.match(/\{[\s\S]*\}/);
-    if (greedyMatch) {
-      return greedyMatch[0].replace(/\}[^}]*$/s, "}"); // Remove text after last }
+    // Strategy 3: Extract from first { to last }
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      const extracted = cleaned.substring(firstBrace, lastBrace + 1);
+      try {
+        JSON.parse(extracted);
+        return extracted;
+      } catch {
+        // Continue to fallback
+      }
     }
 
-    // Strategy 3: Build JSON from key-value pairs if structured text found
+    // Strategy 4: Build JSON from key-value pairs if structured text found
     const kvPairs = this.extractKeyValuePairs(cleaned);
     if (kvPairs && Object.keys(kvPairs).length > 0) {
       return JSON.stringify(kvPairs);
