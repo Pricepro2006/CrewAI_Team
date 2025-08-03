@@ -84,7 +84,13 @@
     "validate:fixes": "npm run test:critical-fixes",
     "optimize-ollama": "tsx scripts/optimize-ollama-setup.ts",
     "process-emails-optimized": "tsx scripts/process-emails-optimized.ts",
-    "benchmark-ollama": "tsx scripts/benchmark-ollama.ts"
+    "benchmark-ollama": "tsx scripts/benchmark-ollama.ts",
+    "process-emails-phase2": "tsx scripts/process-emails-phase2-optimized.ts",
+    "process-emails-phase2-simple": "tsx scripts/process-emails-phase2-simple.ts",
+    "process-emails-phase2-direct": "tsx scripts/process-emails-phase2-direct.ts",
+    "process-emails-phase2-batch": "tsx scripts/process-emails-phase2-batch.ts",
+    "process-emails-phase2-production": "tsx scripts/process-emails-phase2-production.ts",
+    "process-emails-phase2-fast": "tsx scripts/process-emails-phase2-fast.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
