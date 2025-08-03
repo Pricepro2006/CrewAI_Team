@@ -152,7 +152,9 @@ export function useEnhancedWebSocket(
               const latency = Date.now() - pingStart;
               updateState({ latency });
             }
-          } catch {}
+          } catch {
+            // Ignore parsing errors for non-JSON messages
+          }
         };
 
         wsRef.current.addEventListener('message', pongHandler, { once: true });

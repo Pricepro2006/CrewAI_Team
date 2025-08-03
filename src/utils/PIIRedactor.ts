@@ -34,8 +34,8 @@ export class PIIRedactor {
     bankAccount: /\b\d{8,17}\b/g,
     
     // API keys and tokens (common patterns)
-    apiKey: /\b[A-Za-z0-9_\-]{32,}\b/g,
-    bearerToken: /Bearer\s+[A-Za-z0-9_\-\.]+/gi,
+    apiKey: /\b[A-Za-z0-9_-]{32,}\b/g,
+    bearerToken: /Bearer\s+[A-Za-z0-9_\-.]+/gi,
     
     // Addresses (street address pattern)
     streetAddress: /\b\d{1,5}\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Court|Ct|Place|Pl)\b/gi,
