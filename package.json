@@ -48,6 +48,10 @@
     "monitor:cache": "tsx scripts/monitor-cache.ts",
     "process-emails": "tsx src/scripts/email-batch-processor.ts --",
     "pipeline:test": "tsx src/scripts/test-pipeline-small-batch.ts",
+    "process:optimized": "tsx scripts/process-emails-optimized.ts",
+    "monitor:performance": "tsx scripts/monitor-email-performance.ts",
+    "benchmark:phase2": "tsx scripts/benchmark-phase2.ts",
+    "stress:test": "tsx scripts/stress-test-pipeline.ts",
     "quality:test": "tsx src/core/services/QualityValidationFramework.test.ts",
     "quality:config": "tsx scripts/configure-quality-framework.ts",
     "quality:monitor": "tsx scripts/configure-quality-framework.ts monitor",
@@ -77,7 +81,10 @@
     "test:json-parsing": "vitest run src/core/services/EmailThreePhaseAnalysisService.enhanced.test.ts",
     "test:chain-scoring": "vitest run src/core/services/EmailChainAnalyzer.regression.test.ts",
     "test:integration-fixes": "vitest run src/core/services/EmailPipeline.integration.test.ts",
-    "validate:fixes": "npm run test:critical-fixes"
+    "validate:fixes": "npm run test:critical-fixes",
+    "optimize-ollama": "tsx scripts/optimize-ollama-setup.ts",
+    "process-emails-optimized": "tsx scripts/process-emails-optimized.ts",
+    "benchmark-ollama": "tsx scripts/benchmark-ollama.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
@@ -157,6 +164,8 @@
     "autoprefixer": "^10.4.16",
     "axios": "^1.6.5",
     "chalk": "^5.3.0",
+    "cli-progress": "^3.12.0",
+    "p-limit": "^5.0.0",
     "class-variance-authority": "^0.7.1",
     "cli-table3": "^0.6.3",
     "concurrently": "^8.2.2",
