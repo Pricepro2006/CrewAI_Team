@@ -50,7 +50,7 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
     });
   };
 
-  const search = useCallback(async (options: SearchOptions) => {
+  const search = useCallback(async (options: ExtendedSearchOptions) => {
     try {
       setError(null);
       setLoading(true);
@@ -112,7 +112,7 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
 
       const newProducts = response.products || [];
       setResults(prev => [...prev, ...newProducts]);
-      setHasMore(newProducts.length === (currentSearchOptions.current?.limit || 20));
+      setHasMore(newProducts.length === (currentSearchOptions.current?.pagination?.limit || 20));
     } catch (err) {
       
       setError(err instanceof Error ? err.message : 'Failed to load more results');

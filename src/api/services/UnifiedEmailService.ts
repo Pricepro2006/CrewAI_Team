@@ -488,7 +488,7 @@ export class UnifiedEmailService {
           primary: "general",
           secondary: [],
         },
-        priority: "Medium",
+        priority: "medium",
         intent: "informational",
         urgency: "medium",
         confidence: 0.5,

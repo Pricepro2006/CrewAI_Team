@@ -176,3 +176,68 @@ export interface AppError extends Error {
   retryable: boolean;
   severity: "low" | "medium" | "high" | "critical";
 }
+
+/**
+ * Additional core types to satisfy imports
+ */
+export type Timestamp = string; // ISO 8601 string
+
+export interface TimestampedEntity {
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface Document {
+  id: string;
+  title: string;
+  content: string;
+  metadata?: Record<string, unknown>;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+export interface Message {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  timestamp: Timestamp;
+  metadata?: MessageMetadata;
+}
+
+export interface MessageMetadata {
+  tokens?: TokenUsage;
+  model?: string;
+  temperature?: number;
+  source?: string;
+}
+
+export interface Task extends TimestampedEntity {
+  id: string;
+  title: string;
+  description: string;
+  status: "pending" | "in_progress" | "completed" | "failed";
+  priority: "low" | "medium" | "high" | "critical";
+  assignedTo?: string;
+  tags?: string[];
+}
+
+export interface Conversation extends TimestampedEntity {
+  id: ConversationId;
+  title: string;
+  participants: UserId[];
+  messages: Message[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface MonitoringConfig {
+  enabled: boolean;
+  interval: number;
+  retries: number;
+  timeout: number;
+}

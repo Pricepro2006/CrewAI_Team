@@ -57,14 +57,13 @@ const CATEGORIES = [
 ];
 
 const DIETARY_PREFERENCES = [
-  { value: 'organic', label: 'Organic' },
-  { value: 'gluten-free', label: 'Gluten Free' },
-  { value: 'vegan', label: 'Vegan' },
-  { value: 'vegetarian', label: 'Vegetarian' },
-  { value: 'dairy-free', label: 'Dairy Free' },
-  { value: 'sugar-free', label: 'Sugar Free' },
-  { value: 'keto', label: 'Keto Friendly' },
-  { value: 'paleo', label: 'Paleo' },
+  { value: 'organic' as DietaryFilter, label: 'Organic' },
+  { value: 'gluten_free' as DietaryFilter, label: 'Gluten Free' },
+  { value: 'vegan' as DietaryFilter, label: 'Vegan' },
+  { value: 'vegetarian' as DietaryFilter, label: 'Vegetarian' },
+  { value: 'kosher' as DietaryFilter, label: 'Kosher' },
+  { value: 'halal' as DietaryFilter, label: 'Halal' },
+  { value: 'non_gmo' as DietaryFilter, label: 'Non-GMO' },
 ];
 
 export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
@@ -83,7 +82,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
     maxPrice: undefined,
     inStock: true,
     dietary: [],
-    pagination: { limit: 20, offset: 0 },
+    pagination: { page: 1, pageSize: 20, limit: 20, offset: 0 },
   });
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100]);
@@ -144,7 +143,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
       maxPrice: undefined,
       inStock: true,
       dietary: [],
-      pagination: { limit: 20, offset: 0 },
+      pagination: { page: 1, pageSize: 20, limit: 20, offset: 0 },
     });
     setPriceRange([0, 100]);
   };

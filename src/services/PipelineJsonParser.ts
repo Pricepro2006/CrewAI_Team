@@ -122,10 +122,10 @@ export class PipelineJsonParser {
    * Map priority score to priority level
    */
   mapPriorityScore(score: number): PriorityLevel {
-    if (score >= 8) return "Critical";
-    if (score >= 6) return "High";
-    if (score >= 4) return "Medium";
-    return "Low";
+    if (score >= 8) return "critical";
+    if (score >= 6) return "high";
+    if (score >= 4) return "medium";
+    return "low";
   }
 
   /**
@@ -358,14 +358,14 @@ export class PipelineJsonParser {
 
   private mapPriorityLevel(priority: unknown): PriorityLevel {
     const priorityMap: Record<string, PriorityLevel> = {
-      critical: "Critical",
-      high: "High",
-      medium: "Medium",
-      low: "Low",
+      critical: "critical",
+      high: "high",
+      medium: "medium",
+      low: "low",
     };
 
     const normalized = String(priority || "medium").toLowerCase();
-    return priorityMap[normalized] || "Medium";
+    return priorityMap[normalized] || "medium";
   }
 
   private parseDeadline(deadline: unknown): string | undefined {

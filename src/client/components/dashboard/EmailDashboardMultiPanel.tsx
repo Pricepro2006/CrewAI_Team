@@ -110,7 +110,7 @@ export function EmailDashboardMultiPanel({
           {email.subject}
         </p>
       </div>
-      {email.priority === "Critical" && (
+      {email.priority === "critical" && (
         <Badge variant="destructive" className="text-xs">
           Critical
         </Badge>

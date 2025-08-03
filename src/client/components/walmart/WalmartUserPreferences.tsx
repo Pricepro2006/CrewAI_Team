@@ -75,7 +75,7 @@ interface WalmartUserPreferencesProps {
 }
 
 interface DietaryOption {
-  id: string;
+  id: DietaryFilter;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   description?: string;
@@ -91,12 +91,11 @@ interface NotificationSetting {
 const dietaryOptions: DietaryOption[] = [
   { id: 'vegetarian', label: 'Vegetarian', icon: Leaf, description: 'No meat or fish' },
   { id: 'vegan', label: 'Vegan', icon: Leaf, description: 'No animal products' },
-  { id: 'gluten-free', label: 'Gluten-Free', icon: Wheat, description: 'No gluten' },
-  { id: 'dairy-free', label: 'Dairy-Free', icon: Milk, description: 'No dairy products' },
-  { id: 'nut-free', label: 'Nut-Free', icon: Ban, description: 'No tree nuts or peanuts' },
+  { id: 'gluten_free', label: 'Gluten-Free', icon: Wheat, description: 'No gluten' },
+  { id: 'organic', label: 'Organic', icon: Milk, description: 'Certified organic products' },
   { id: 'kosher', label: 'Kosher', icon: Star, description: 'Kosher certified' },
   { id: 'halal', label: 'Halal', icon: Star, description: 'Halal certified' },
-  { id: 'pescatarian', label: 'Pescatarian', icon: Fish, description: 'Vegetarian + fish' },
+  { id: 'non_gmo', label: 'Non-GMO', icon: Ban, description: 'Non-GMO verified' },
 ];
 
 const allergenOptions = [

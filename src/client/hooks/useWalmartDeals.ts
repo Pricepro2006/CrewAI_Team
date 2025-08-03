@@ -72,7 +72,7 @@ export const useWalmartDeals = (productIds: string[]): UseWalmartDealsResult => 
         // Process deal analysis into our format  
         uncachedIds.forEach(id => {
           const productDeals = response.applicableDeals?.filter(
-            (deal: DealMatch) => deal.productId === id
+            (deal: DealMatch) => deal.product_id === id
           ) || [];
           
           newDeals[id] = productDeals;

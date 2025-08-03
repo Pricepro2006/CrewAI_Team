@@ -26,7 +26,7 @@ const generateSampleEmails = (): EmailRecord[] => {
       status_text: "Critical - Awaiting Response",
       workflow_state: "START_POINT",
       timestamp: new Date(now.getTime() - 1000 * 60 * 30).toISOString(), // 30 min ago
-      priority: "Critical",
+      priority: "critical",
       assignedTo: undefined,
       hasAttachments: false,
       isRead: false,
@@ -41,7 +41,7 @@ const generateSampleEmails = (): EmailRecord[] => {
       status_text: "Critical - Quote Pending",
       workflow_state: "START_POINT",
       timestamp: new Date(now.getTime() - 1000 * 60 * 45).toISOString(), // 45 min ago
-      priority: "High",
+      priority: "high",
       assignedTo: "john-smith",
       hasAttachments: true,
       isRead: true,
@@ -56,7 +56,7 @@ const generateSampleEmails = (): EmailRecord[] => {
       status_text: "In Progress",
       workflow_state: "IN_PROGRESS",
       timestamp: new Date(now.getTime() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-      priority: "Medium",
+      priority: "medium",
       assignedTo: "sarah-wilson",
       hasAttachments: false,
       isRead: true,
@@ -71,7 +71,7 @@ const generateSampleEmails = (): EmailRecord[] => {
       status_text: "In Progress",
       workflow_state: "IN_PROGRESS",
       timestamp: new Date(now.getTime() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
-      priority: "Medium",
+      priority: "medium",
       assignedTo: "richard-lee",
       hasAttachments: true,
       isRead: true,
@@ -86,7 +86,7 @@ const generateSampleEmails = (): EmailRecord[] => {
       status_text: "Completed",
       workflow_state: "COMPLETION",
       timestamp: new Date(now.getTime() - 1000 * 60 * 60 * 4).toISOString(), // 4 hours ago
-      priority: "Low",
+      priority: "low",
       assignedTo: "daniel-martinez",
       hasAttachments: false,
       isRead: true,
@@ -101,7 +101,7 @@ const generateSampleEmails = (): EmailRecord[] => {
       status_text: "Completed",
       workflow_state: "COMPLETION",
       timestamp: new Date(now.getTime() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-      priority: "Low",
+      priority: "low",
       assignedTo: "jessica-taylor",
       hasAttachments: true,
       isRead: true,
@@ -166,7 +166,7 @@ export function EmailDashboardDemo() {
       status_text: email.status_text || "Pending",
       workflow_state: (email.workflow_state || "START_POINT") as WorkflowState,
       timestamp: email.received_date,
-      priority: email.priority || "Medium",
+      priority: email.priority || "medium",
       assignedTo: undefined as string | undefined, // This field doesn't exist in the API response
       hasAttachments: email.has_attachments || false,
       isRead: email.is_read || false,
@@ -227,7 +227,7 @@ export function EmailDashboardDemo() {
           status: newStatus,
           status_text:
             newStatus === "red"
-              ? "Critical"
+              ? "critical"
               : newStatus === "yellow"
                 ? "In Progress"
                 : "Completed",
