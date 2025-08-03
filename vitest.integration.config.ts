@@ -76,10 +76,23 @@ export default defineConfig({
       "@ui": path.resolve(__dirname, "./src/ui"),
       "@utils": path.resolve(__dirname, "./src/utils"),
       "@config": path.resolve(__dirname, "./src/config"),
+      "@components": path.resolve(__dirname, "./src/components"),
+      "@client": path.resolve(__dirname, "./src/client"),
+      "@lib": path.resolve(__dirname, "./src/lib"),
+    },
+    // Handle TypeScript files with .js extensions in imports
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+    // Map .js imports to .ts files for TypeScript compatibility
+    extensionAlias: {
+      '.js': ['.ts', '.tsx', '.js'],
+      '.jsx': ['.tsx', '.jsx'],
     },
   },
 
   esbuild: {
-    target: "esnext",
+    target: "node18",
+    // Handle TypeScript compilation for .js imports
+    sourcemap: true,
+    format: "esm",
   },
 });

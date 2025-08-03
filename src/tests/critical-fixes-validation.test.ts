@@ -37,10 +37,33 @@ import { RedisService } from "../core/cache/RedisService.js";
 // Mock dependencies
 vi.mock("axios");
 vi.mock("../core/cache/RedisService.js");
+
+// Mock database connection with inline factory function
 vi.mock("../database/ConnectionPool.js", () => ({
-  getDatabaseConnection: vi.fn(),
-  executeQuery: vi.fn((callback) => callback(mockDb)),
-  executeTransaction: vi.fn((callback) => callback(mockDb)),
+  getDatabaseConnection: vi.fn(() => ({
+    prepare: vi.fn().mockReturnValue({
+      run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
+      get: vi.fn().mockReturnValue(null),
+      all: vi.fn().mockReturnValue([]),
+    }),
+    exec: vi.fn(),
+  })),
+  executeQuery: vi.fn((callback) => callback({
+    prepare: vi.fn().mockReturnValue({
+      run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
+      get: vi.fn().mockReturnValue(null),
+      all: vi.fn().mockReturnValue([]),
+    }),
+    exec: vi.fn(),
+  })),
+  executeTransaction: vi.fn((callback) => callback({
+    prepare: vi.fn().mockReturnValue({
+      run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
+      get: vi.fn().mockReturnValue(null),
+      all: vi.fn().mockReturnValue([]),
+    }),
+    exec: vi.fn(),
+  })),
 }));
 
 const mockedAxios = axios as any;

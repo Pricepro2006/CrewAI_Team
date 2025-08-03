@@ -41,6 +41,11 @@ export class SimplePlanGenerator {
           parameters: {},
         },
       ],
+      metadata: {
+        goal: query.text,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      },
     };
   }
 

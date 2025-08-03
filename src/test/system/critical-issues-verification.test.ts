@@ -4,8 +4,8 @@ import axios from 'axios';
 import { MasterOrchestrator } from '../../core/master-orchestrator/MasterOrchestrator.js';
 import { OllamaProvider } from '../../core/llm/OllamaProvider.js';
 import { AgentRegistry } from '../../core/agents/registry/AgentRegistry.js';
-import { ChromaDBService } from '../../core/rag/ChromaDBService.js';
-import { InMemoryVectorDB } from '../../core/rag/InMemoryVectorDB.js';
+import { VectorStore } from '../../core/rag/VectorStore.js';
+import { RAGSystem } from '../../core/rag/RAGSystem.js';
 import path from 'path';
 import fs from 'fs/promises';
 
