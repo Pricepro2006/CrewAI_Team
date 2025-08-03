@@ -4,8 +4,8 @@ import {
   ErrorBoundary,
   withErrorBoundary,
   useErrorHandler,
-} from "../ErrorBoundary.js";
-import { ErrorFallback } from "../ErrorFallback.js";
+} from "../ErrorBoundary";
+import { ErrorFallback } from "../ErrorFallback";
 import "@testing-library/jest-dom";
 
 // Mock logger

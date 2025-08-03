@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { Context } from "../../trpc/context.js";
-import { logger } from "../../../utils/logger.js";
+import type { Context } from "../../trpc/context";
+import { logger } from "../../../utils/logger";
 
 /**
  * Security middleware implementations for tRPC
@@ -266,7 +266,7 @@ export {
   getStoredCSRFToken,
   getRequestCSRFToken,
   getCSRFStats,
-} from "./csrf.js";
+} from "./csrf";
 
 /**
  * Create IP allowlist/blocklist middleware

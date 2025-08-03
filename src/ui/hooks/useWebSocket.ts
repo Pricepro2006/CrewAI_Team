@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { createTRPCProxyClient, createWSClient, wsLink } from "@trpc/client";
 import superjson from "superjson";
-import type { AppRouter } from "../../api/trpc/router.js";
+import type { AppRouter } from "../../api/trpc/router";
+import { webSocketConfig } from "../../config/websocket.config";
 
 interface WebSocketOptions {
   onConnect?: () => void;
@@ -48,7 +49,7 @@ export function useWebSocket(options: WebSocketOptions = {}): {
 
     try {
       const wsClient = createWSClient({
-        url: `ws://localhost:${parseInt(import.meta.env.VITE_API_PORT || "3000") + 1}/trpc-ws`,
+        url: webSocketConfig.url,
         onOpen: () => {
           if (!isMountedRef.current) return;
 

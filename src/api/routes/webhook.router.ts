@@ -1,5 +1,5 @@
 import { Router, type Router as ExpressRouter } from "express";
-import { graphWebhookHandler } from "../webhooks/microsoft-graph.js";
+import { graphWebhookHandler } from "../webhooks/microsoft-graph";
 
 const webhookRouter: ExpressRouter = Router();
 

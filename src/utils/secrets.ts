@@ -176,10 +176,16 @@ export async function generateSecureSecret(length = 32): Promise<string> {
   
   // Use crypto.randomBytes for secure random generation
   const crypto = await import('crypto');
-  const bytes = crypto.randomBytes(length);
+  const randomBytes = crypto.randomBytes || crypto.default?.randomBytes;
+  
+  if (!randomBytes) {
+    throw new Error('crypto.randomBytes not available');
+  }
+  
+  const bytes = randomBytes(length);
   
   for (let i = 0; i < length; i++) {
-    result += chars[bytes[i] % chars.length];
+    result += chars[(bytes[i] ?? 0) % chars.length];
   }
   
   return result;
@@ -239,7 +245,7 @@ export async function checkForSecretsInGit(): Promise<{
     }
     
   } catch (error) {
-    logger.warn('Could not check git repository for secrets', {
+    logger.warn('Could not check git repository for secrets', 'SECRETS', {
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
@@ -251,13 +257,13 @@ export async function checkForSecretsInGit(): Promise<{
  * Initialize secure configuration with validation
  */
 export function initializeSecureConfig(): void {
-  logger.info('Initializing secure configuration...');
+  logger.info('Initializing secure configuration...', 'SECRETS');
   
   // Validate all secrets
   const validation = validateSecrets();
   
   if (!validation.isValid) {
-    logger.error('Secret validation failed', {
+    logger.error('Secret validation failed', 'SECRETS', {
       missingSecrets: validation.missingSecrets,
       weakSecrets: validation.weakSecrets,
       errors: validation.errors
@@ -271,7 +277,7 @@ export function initializeSecureConfig(): void {
   // Log warnings for weak secrets
   if (validation.warnings.length > 0) {
     validation.warnings.forEach(warning => {
-      logger.warn('Security warning', { warning });
+      logger.warn('Security warning', 'SECRETS', { warning });
     });
   }
   
@@ -284,23 +290,23 @@ export function initializeSecureConfig(): void {
     required: config.required
   }));
   
-  logger.info('Secret configuration status', { secrets: secretStatus });
+  logger.info('Secret configuration status', 'SECRETS', { secrets: secretStatus });
   
   // Check git repository for secrets (async)
   checkForSecretsInGit().then(gitCheck => {
     if (gitCheck.hasSecrets) {
-      logger.error('Secrets detected in git repository', {
+      logger.error('Secrets detected in git repository', 'SECRETS', {
         suspiciousFiles: gitCheck.suspiciousFiles,
         recommendations: gitCheck.recommendations
       });
     }
   }).catch(error => {
-    logger.debug('Git secrets check failed', {
+    logger.debug('Git secrets check failed', 'SECRETS', {
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   });
   
-  logger.info('Secure configuration initialized successfully');
+  logger.info('Secure configuration initialized successfully', 'SECRETS');
 }
 
 /**

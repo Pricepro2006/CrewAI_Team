@@ -6,8 +6,8 @@ import {
   DocumentMagnifyingGlassIcon,
   LightBulbIcon,
 } from "@heroicons/react/24/outline";
-import { Card } from "../../../components/ui/card.js";
-import { api } from "../../../lib/trpc.js";
+import { Card } from "../../../components/ui/card";
+import { api } from "../../../lib/trpc";
 
 interface WorkflowAnalyticsProps {
   className?: string;

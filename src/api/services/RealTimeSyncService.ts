@@ -1,9 +1,9 @@
 import { EventEmitter } from "events";
 import type * as WebSocket from "ws";
-import type { WebSocketService } from "./WebSocketService.js";
-import type { EmailStorageService } from "./EmailStorageService.js";
-import type { IEMSDataFlowService } from "./IEMSDataFlowService.js";
-import { logger } from "../../utils/logger.js";
+import type { WebSocketService } from "./WebSocketService";
+import type { EmailStorageService } from "./EmailStorageService";
+import type { IEMSDataFlowService } from "./IEMSDataFlowService";
+import { logger } from "../../utils/logger";
 import { z } from "zod";
 
 // Real-time sync event types

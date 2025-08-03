@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { api } from "../../../lib/trpc.js";
+import { api } from "../../../lib/trpc";
 import {
   useAgentStatus,
   useTaskQueue,
   useSystemHealth,
-} from "../../hooks/useWebSocket.js";
+} from "../../hooks/useWebSocket";
 import "./AgentMonitor.css";
 
 interface AgentStatus {

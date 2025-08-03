@@ -3,12 +3,12 @@ import {
   router,
   publicProcedure,
   protectedProcedure,
-} from "../enhanced-router.js";
+} from "../enhanced-router";
 import { TRPCError } from "@trpc/server";
-import { metricsCollector } from "../../../monitoring/MetricsCollector.js";
-import { errorTracker } from "../../../monitoring/ErrorTracker.js";
-import { performanceMonitor } from "../../../monitoring/PerformanceMonitor.js";
-import { healthChecker } from "../../../monitoring/HealthChecker.js";
+import { metricsCollector } from "../../../monitoring/MetricsCollector";
+import { errorTracker } from "../../../monitoring/ErrorTracker";
+import { performanceMonitor } from "../../../monitoring/PerformanceMonitor";
+import { healthChecker } from "../../../monitoring/HealthChecker";
 
 export const monitoringRouter = router({
   // Public health check endpoint

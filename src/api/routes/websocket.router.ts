@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc/router.js";
+import { router, publicProcedure } from "../trpc/router";
 import { observable } from "@trpc/server/observable";
-import { wsService } from "../services/WebSocketService.js";
+import { wsService } from "../services/WebSocketService";
 import type { Router } from "@trpc/server";
 
 export const websocketRouter: Router<any> = router({

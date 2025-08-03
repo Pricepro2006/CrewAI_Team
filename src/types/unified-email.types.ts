@@ -1,6 +1,7 @@
 // Unified Email Dashboard Types
 
 export type ViewMode =
+  | "dashboard"
   | "list"
   | "analytics"
   | "agents"

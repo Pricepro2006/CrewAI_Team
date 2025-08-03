@@ -1,9 +1,9 @@
 import type { WebSocketServer } from "ws";
-import type { AuthenticatedWebSocket } from "../middleware/websocketAuth.js";
-import { wsService, type WebSocketMessage } from "../services/WebSocketService.js";
-import { logger } from "../../utils/logger.js";
-import type { DealDataService } from "../services/DealDataService.js";
-import type { EmailStorageService } from "../services/EmailStorageService.js";
+import type { AuthenticatedWebSocket } from "../middleware/websocketAuth";
+import { wsService, type WebSocketMessage } from "../services/WebSocketService";
+import { logger } from "../../utils/logger";
+import type { DealDataService } from "../services/DealDataService";
+import type { EmailStorageService } from "../services/EmailStorageService";
 
 // Walmart-specific WebSocket message types that extend the base WebSocketMessage
 interface WalmartPriceUpdateMessage extends Omit<WebSocketMessage, 'type'> {

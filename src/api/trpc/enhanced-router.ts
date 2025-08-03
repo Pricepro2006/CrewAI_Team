@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError, type AnyRouter } from "@trpc/server";
 import superjson from "superjson";
-import type { Context } from "./context.js";
+import type { Context } from "./context";
 import type { Request, Response } from "express";
 import {
   createSecurityAuditMiddleware,
@@ -10,7 +10,7 @@ import {
   sanitizationSchemas,
   createCSRFProtection,
   ensureCSRFToken,
-} from "../middleware/security/index.js";
+} from "../middleware/security/index";
 // Import rate limiters from centralized middleware index (avoids circular dependency)
 import {
   chatProcedureRateLimiter,
@@ -18,8 +18,8 @@ import {
   taskProcedureRateLimiter,
   ragProcedureRateLimiter,
   strictProcedureRateLimiter,
-} from "../middleware/index.js";
-import { logger } from "../../utils/logger.js";
+} from "../middleware/index";
+import { logger } from "../../utils/logger";
 import { z } from "zod";
 
 /**

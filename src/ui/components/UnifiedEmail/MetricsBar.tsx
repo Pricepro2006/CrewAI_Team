@@ -9,7 +9,7 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
 } from "@heroicons/react/24/outline";
-import type { DashboardMetrics } from "../../../types/unified-email.types.js";
+import type { DashboardMetrics } from "../../../types/unified-email.types";
 
 interface MetricsBarProps {
   metrics: DashboardMetrics;

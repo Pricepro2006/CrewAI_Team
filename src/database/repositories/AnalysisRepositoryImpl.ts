@@ -1,17 +1,26 @@
-import { BaseRepository } from './BaseRepository.js';
-import { IAnalysisRepository } from './interfaces/IAnalysisRepository.js';
-import { EmailAnalysis, AnalysisPhase, Phase1Results, Phase2Results, Phase3Results } from '../../types/AnalysisTypes.js';
-import { executeQuery, executeTransaction } from '../ConnectionPool.js';
-import { logger } from '../../utils/logger.js';
+import { BaseRepository } from "./BaseRepository.js";
+import { IAnalysisRepository } from "./interfaces/IAnalysisRepository.js";
+import {
+  EmailAnalysis,
+  AnalysisPhase,
+  Phase1Results,
+  Phase2Results,
+  Phase3Results,
+} from "../../types/AnalysisTypes.js";
+import { executeQuery, executeTransaction } from "../ConnectionPool.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Email analysis repository implementation
  */
-export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implements IAnalysisRepository {
+export class AnalysisRepositoryImpl
+  extends BaseRepository<EmailAnalysis>
+  implements IAnalysisRepository
+{
   constructor() {
-    super(null as any, 'email_analysis');
-    this.tableName = 'email_analysis';
-    this.primaryKey = 'id';
+    super(null as any, "email_analysis");
+    this.tableName = "email_analysis";
+    this.primaryKey = "id";
   }
 
   /**
@@ -27,9 +36,15 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
       id: row.id,
       email_id: row.email_id,
       analysis_version: row.analysis_version,
-      phase1_results: row.phase1_results ? JSON.parse(row.phase1_results) : undefined,
-      phase2_results: row.phase2_results ? JSON.parse(row.phase2_results) : undefined,
-      phase3_results: row.phase3_results ? JSON.parse(row.phase3_results) : undefined,
+      phase1_results: row.phase1_results
+        ? JSON.parse(row.phase1_results)
+        : undefined,
+      phase2_results: row.phase2_results
+        ? JSON.parse(row.phase2_results)
+        : undefined,
+      phase3_results: row.phase3_results
+        ? JSON.parse(row.phase3_results)
+        : undefined,
       final_summary: JSON.parse(row.final_summary),
       confidence_score: row.confidence_score,
       workflow_type: row.workflow_type,
@@ -38,7 +53,7 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
       total_processing_time_ms: row.total_processing_time_ms || 0,
       phases_completed,
       created_at: new Date(row.created_at),
-      updated_at: row.updated_at ? new Date(row.updated_at) : undefined
+      updated_at: row.updated_at ? new Date(row.updated_at) : undefined,
     };
   }
 
@@ -47,19 +62,28 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
    */
   protected mapEntityToRow(entity: Partial<EmailAnalysis>): any {
     const row: any = {};
-    
+
     if (entity.email_id !== undefined) row.email_id = entity.email_id;
-    if (entity.analysis_version !== undefined) row.analysis_version = entity.analysis_version;
-    if (entity.phase1_results !== undefined) row.phase1_results = JSON.stringify(entity.phase1_results);
-    if (entity.phase2_results !== undefined) row.phase2_results = JSON.stringify(entity.phase2_results);
-    if (entity.phase3_results !== undefined) row.phase3_results = JSON.stringify(entity.phase3_results);
-    if (entity.final_summary !== undefined) row.final_summary = JSON.stringify(entity.final_summary);
-    if (entity.confidence_score !== undefined) row.confidence_score = entity.confidence_score;
-    if (entity.workflow_type !== undefined) row.workflow_type = entity.workflow_type;
+    if (entity.analysis_version !== undefined)
+      row.analysis_version = entity.analysis_version;
+    if (entity.phase1_results !== undefined)
+      row.phase1_results = JSON.stringify(entity.phase1_results);
+    if (entity.phase2_results !== undefined)
+      row.phase2_results = JSON.stringify(entity.phase2_results);
+    if (entity.phase3_results !== undefined)
+      row.phase3_results = JSON.stringify(entity.phase3_results);
+    if (entity.final_summary !== undefined)
+      row.final_summary = JSON.stringify(entity.final_summary);
+    if (entity.confidence_score !== undefined)
+      row.confidence_score = entity.confidence_score;
+    if (entity.workflow_type !== undefined)
+      row.workflow_type = entity.workflow_type;
     if (entity.chain_id !== undefined) row.chain_id = entity.chain_id;
-    if (entity.is_complete_chain !== undefined) row.is_complete_chain = entity.is_complete_chain ? 1 : 0;
-    if (entity.total_processing_time_ms !== undefined) row.total_processing_time_ms = entity.total_processing_time_ms;
-    
+    if (entity.is_complete_chain !== undefined)
+      row.is_complete_chain = entity.is_complete_chain ? 1 : 0;
+    if (entity.total_processing_time_ms !== undefined)
+      row.total_processing_time_ms = entity.total_processing_time_ms;
+
     return row;
   }
 
@@ -90,7 +114,7 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
         ORDER BY created_at DESC
       `);
       const rows = stmt.all(version);
-      return rows.map(row => this.mapRowToEntity(row));
+      return rows.map((row) => this.mapRowToEntity(row));
     });
   }
 
@@ -105,14 +129,17 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
         ORDER BY created_at DESC
       `);
       const rows = stmt.all(workflowType);
-      return rows.map(row => this.mapRowToEntity(row));
+      return rows.map((row) => this.mapRowToEntity(row));
     });
   }
 
   /**
    * Find analyses by confidence range
    */
-  async findByConfidenceRange(minConfidence: number, maxConfidence: number): Promise<EmailAnalysis[]> {
+  async findByConfidenceRange(
+    minConfidence: number,
+    maxConfidence: number,
+  ): Promise<EmailAnalysis[]> {
     return executeQuery((db) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
@@ -120,49 +147,55 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
         ORDER BY confidence_score DESC
       `);
       const rows = stmt.all(minConfidence, maxConfidence);
-      return rows.map(row => this.mapRowToEntity(row));
+      return rows.map((row) => this.mapRowToEntity(row));
     });
   }
 
   /**
    * Find analyses with specific phase results
    */
-  async findByPhaseCompletion(phases: AnalysisPhase[]): Promise<EmailAnalysis[]> {
+  async findByPhaseCompletion(
+    phases: AnalysisPhase[],
+  ): Promise<EmailAnalysis[]> {
     return executeQuery((db) => {
-      const conditions = phases.map(phase => {
+      const conditions = phases.map((phase) => {
         switch (phase) {
           case AnalysisPhase.PHASE_1:
-            return 'phase1_results IS NOT NULL';
+            return "phase1_results IS NOT NULL";
           case AnalysisPhase.PHASE_2:
-            return 'phase2_results IS NOT NULL';
+            return "phase2_results IS NOT NULL";
           case AnalysisPhase.PHASE_3:
-            return 'phase3_results IS NOT NULL';
+            return "phase3_results IS NOT NULL";
         }
       });
-      
+
       const query = `
         SELECT * FROM ${this.tableName}
-        WHERE ${conditions.join(' AND ')}
+        WHERE ${conditions.join(" AND ")}
         ORDER BY created_at DESC
       `;
-      
+
       const stmt = db.prepare(query);
       const rows = stmt.all();
-      return rows.map(row => this.mapRowToEntity(row));
+      return rows.map((row) => this.mapRowToEntity(row));
     });
   }
 
   /**
    * Update phase results
    */
-  async updatePhaseResults(analysisId: string, phase: AnalysisPhase, results: any): Promise<void> {
+  async updatePhaseResults(
+    analysisId: string,
+    phase: AnalysisPhase,
+    results: any,
+  ): Promise<void> {
     await executeQuery((db) => {
       const columnMap = {
-        [AnalysisPhase.PHASE_1]: 'phase1_results',
-        [AnalysisPhase.PHASE_2]: 'phase2_results',
-        [AnalysisPhase.PHASE_3]: 'phase3_results'
+        [AnalysisPhase.PHASE_1]: "phase1_results",
+        [AnalysisPhase.PHASE_2]: "phase2_results",
+        [AnalysisPhase.PHASE_3]: "phase3_results",
       };
-      
+
       const column = columnMap[phase];
       const stmt = db.prepare(`
         UPDATE ${this.tableName}
@@ -170,7 +203,7 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
         WHERE id = ?
       `);
       stmt.run(JSON.stringify(results), analysisId);
-      
+
       // Update total processing time if results include processing_time_ms
       if (results.processing_time_ms) {
         const updateTimeStmt = db.prepare(`
@@ -221,7 +254,7 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
         FROM ${this.tableName}
       `);
       const stats = statsStmt.get() as any;
-      
+
       // By version
       const versionStmt = db.prepare(`
         SELECT analysis_version, COUNT(*) as count
@@ -230,10 +263,10 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
       `);
       const versionCounts = versionStmt.all() as any[];
       const byVersion: Record<string, number> = {};
-      versionCounts.forEach(v => {
+      versionCounts.forEach((v) => {
         byVersion[v.analysis_version] = v.count;
       });
-      
+
       // By workflow type
       const workflowStmt = db.prepare(`
         SELECT workflow_type, COUNT(*) as count
@@ -242,10 +275,10 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
       `);
       const workflowCounts = workflowStmt.all() as any[];
       const byWorkflowType: Record<string, number> = {};
-      workflowCounts.forEach(w => {
+      workflowCounts.forEach((w) => {
         byWorkflowType[w.workflow_type] = w.count;
       });
-      
+
       return {
         total: stats.total || 0,
         byVersion,
@@ -253,7 +286,7 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
         avgConfidence: stats.avg_confidence || 0,
         phase1Only: stats.phase1_only || 0,
         phase2Completed: stats.phase2_completed || 0,
-        phase3Completed: stats.phase3_completed || 0
+        phase3Completed: stats.phase3_completed || 0,
       };
     });
   }
@@ -269,14 +302,16 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
         ORDER BY created_at DESC
       `);
       const rows = stmt.all();
-      return rows.map(row => this.mapRowToEntity(row));
+      return rows.map((row) => this.mapRowToEntity(row));
     });
   }
 
   /**
    * Batch create analyses
    */
-  async batchCreate(analyses: Omit<EmailAnalysis, 'id'>[]): Promise<EmailAnalysis[]> {
+  async batchCreate(
+    analyses: Omit<EmailAnalysis, "id">[],
+  ): Promise<EmailAnalysis[]> {
     return executeTransaction((db) => {
       const insertStmt = db.prepare(`
         INSERT INTO ${this.tableName} (
@@ -287,13 +322,13 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now')
         )
       `);
-      
+
       const createdAnalyses: EmailAnalysis[] = [];
-      
+
       for (const analysis of analyses) {
         const id = this.generateId();
         const row = this.mapEntityToRow(analysis);
-        
+
         insertStmt.run(
           id,
           row.email_id,
@@ -306,18 +341,21 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
           row.workflow_type,
           row.chain_id,
           row.is_complete_chain,
-          row.total_processing_time_ms || 0
+          row.total_processing_time_ms || 0,
         );
-        
+
         createdAnalyses.push({
           ...analysis,
           id,
           created_at: new Date(),
-          phases_completed: this.determinePhases(analysis)
+          phases_completed: this.determinePhases(analysis),
         } as EmailAnalysis);
       }
-      
-      logger.info(`Batch created ${createdAnalyses.length} analyses`, 'ANALYSIS_REPOSITORY');
+
+      logger.info(
+        `Batch created ${createdAnalyses.length} analyses`,
+        "ANALYSIS_REPOSITORY",
+      );
       return createdAnalyses;
     });
   }
@@ -333,7 +371,7 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
         LIMIT ?
       `);
       const rows = stmt.all(limit);
-      return rows.map(row => this.mapRowToEntity(row));
+      return rows.map((row) => this.mapRowToEntity(row));
     });
   }
 
@@ -347,11 +385,14 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
         WHERE created_at < ?
       `);
       const result = stmt.run(date.toISOString());
-      
+
       if (result.changes > 0) {
-        logger.info(`Deleted ${result.changes} old analyses`, 'ANALYSIS_REPOSITORY');
+        logger.info(
+          `Deleted ${result.changes} old analyses`,
+          "ANALYSIS_REPOSITORY",
+        );
       }
-      
+
       return result.changes;
     });
   }
@@ -359,54 +400,59 @@ export class AnalysisRepositoryImpl extends BaseRepository<EmailAnalysis> implem
   /**
    * Find analyses needing phase upgrade
    */
-  async findNeedingPhaseUpgrade(currentPhase: AnalysisPhase): Promise<EmailAnalysis[]> {
+  async findNeedingPhaseUpgrade(
+    currentPhase: AnalysisPhase,
+  ): Promise<EmailAnalysis[]> {
     return executeQuery((db) => {
       let condition: string;
-      
+
       switch (currentPhase) {
         case AnalysisPhase.PHASE_1:
-          condition = 'phase1_results IS NOT NULL AND phase2_results IS NULL';
+          condition = "phase1_results IS NOT NULL AND phase2_results IS NULL";
           break;
         case AnalysisPhase.PHASE_2:
-          condition = 'phase2_results IS NOT NULL AND phase3_results IS NULL';
+          condition = "phase2_results IS NOT NULL AND phase3_results IS NULL";
           break;
         default:
           return [];
       }
-      
+
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE ${condition}
         ORDER BY confidence_score ASC, created_at ASC
       `);
       const rows = stmt.all();
-      return rows.map(row => this.mapRowToEntity(row));
+      return rows.map((row) => this.mapRowToEntity(row));
     });
   }
 
   /**
    * Override methods to use connection pool
    */
-  async create(data: Omit<EmailAnalysis, 'id'>): Promise<EmailAnalysis> {
+  async create(data: Omit<EmailAnalysis, "id">): Promise<EmailAnalysis> {
     return executeQuery((db) => {
       const id = this.generateId();
       const analysisData: EmailAnalysis = {
         ...data,
         id,
         created_at: new Date(),
-        phases_completed: this.determinePhases(data)
+        phases_completed: this.determinePhases(data),
       };
 
       const row = this.mapEntityToRow(analysisData);
       const columns = Object.keys(row);
-      const values = columns.map(col => row[col]);
-      const placeholders = columns.map(() => '?').join(', ');
+      const values = columns.map((col) => row[col]);
+      const placeholders = columns.map(() => "?").join(", ");
 
-      const query = `INSERT INTO ${this.tableName} (id, ${columns.join(', ')}, created_at) VALUES (?, ${placeholders}, datetime('now'))`;
+      const query = `INSERT INTO ${this.tableName} (id, ${columns.join(", ")}, created_at) VALUES (?, ${placeholders}, datetime('now'))`;
       const stmt = db.prepare(query);
       stmt.run(id, ...values);
 
-      logger.info('Analysis created', 'ANALYSIS_REPOSITORY', { analysisId: id, emailId: data.email_id });
+      logger.info("Analysis created", "ANALYSIS_REPOSITORY", {
+        analysisId: id,
+        emailId: data.email_id,
+      });
       return analysisData;
     });
   }

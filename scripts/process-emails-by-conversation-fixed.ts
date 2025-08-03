@@ -32,7 +32,7 @@ interface ConversationStats {
 class ConversationProcessor {
   private db: Database.Database;
   private analysisService = new EmailThreePhaseAnalysisService();
-  private chainAnalyzer = new EmailChainAnalyzer();
+  private chainAnalyzer = new EmailChainAnalyzer(DB_PATH);
   private stats = {
     total_conversations: 0,
     complete_conversations: 0,
@@ -122,6 +122,7 @@ class ConversationProcessor {
       WHERE conversation_id IS NOT NULL
       GROUP BY conversation_id
       ORDER BY email_count DESC
+      LIMIT 5  -- Small test to validate the fix works
     `,
       )
       .all() as any[];

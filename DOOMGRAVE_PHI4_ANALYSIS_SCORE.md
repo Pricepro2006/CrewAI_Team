@@ -10,38 +10,46 @@ After running 20 test emails through the doomgrave/phi-4:14b-tools-Q3_K_S model 
 ## Detailed Scoring Breakdown
 
 ### 1. Workflow State Identification (0.5/2.0)
+
 - **Issue**: Model failed to properly identify workflow states
 - **Result**: All emails classified as "Identification" instead of START_POINT, IN_PROGRESS, or COMPLETION
 - **Evidence**: 19/20 emails marked as "Identification", 1 as "IDENTIFICATION"
 
 ### 2. Priority Assessment (0.3/1.5)
+
 - **Issue**: Priority extraction completely broken
 - **Result**: Most emails marked as "Signals" (14), "signals" (3), "Unknown" (2), or "and" (1)
 - **Evidence**: No proper priority levels (Critical/High/Medium/Low) extracted
 
 ### 3. Entity Extraction (0.5/1.5)
+
 - **Issue**: Model generates framework responses instead of extracting actual entities
 - **Result**: No PO numbers, quote numbers, or other entities properly extracted from emails
 
 ### 4. Analysis Quality (0.8/2.0)
+
 - **Issue**: Model produces generic template responses
 - **Result**: All summaries start with "Given the provided email data lacks specific content..."
 - **Evidence**: Contextual summaries are ~1000 chars but contain no actual email-specific analysis
 
 ### 5. Response Time (0.4/1.0)
+
 - **Average**: 202.9 seconds per email (3.4 minutes)
 - **Range**: 153-252 seconds
 - **Impact**: Extremely slow for production use
 
 ### 6. Consistency (0.5/1.0)
+
 - **Issue**: Inconsistent casing ("Identification" vs "IDENTIFICATION")
 - **Result**: Same prompt produces varying output formats
 
 ### 7. Actionable Insights (0.0/0.5)
+
 - **Issue**: No actual action items or insights extracted
 - **Result**: Model fails to provide any business value from analysis
 
 ### 8. JSON Compliance (0.0/0.5)
+
 - **Issue**: Model likely not returning proper JSON despite explicit instructions
 - **Result**: Parser falling back to regex extraction for workflow/priority
 
@@ -59,14 +67,14 @@ After running 20 test emails through the doomgrave/phi-4:14b-tools-Q3_K_S model 
 
 ## Comparison to Claude Opus-4
 
-| Aspect | Claude Opus-4 | Doomgrave/Phi-4 |
-|--------|--------------|-----------------|
+| Aspect                   | Claude Opus-4                         | Doomgrave/Phi-4           |
+| ------------------------ | ------------------------------------- | ------------------------- |
 | Workflow State Detection | Accurate (START/IN_PROGRESS/COMPLETE) | Broken ("Identification") |
-| Priority Classification | Correct (Critical/High/Medium/Low) | Broken ("Signals") |
-| Entity Extraction | Comprehensive | Non-functional |
-| Processing Time | ~30-60 seconds | ~200+ seconds |
-| Business Value | High | None |
-| Production Ready | Yes | No |
+| Priority Classification  | Correct (Critical/High/Medium/Low)    | Broken ("Signals")        |
+| Entity Extraction        | Comprehensive                         | Non-functional            |
+| Processing Time          | ~30-60 seconds                        | ~200+ seconds             |
+| Business Value           | High                                  | None                      |
+| Production Ready         | Yes                                   | No                        |
 
 ## Recommendations
 

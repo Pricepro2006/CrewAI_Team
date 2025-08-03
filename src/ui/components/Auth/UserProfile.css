@@ -314,24 +314,24 @@
     text-align: center;
     padding: 20px 16px;
   }
-  
+
   .profile-avatar {
     margin-right: 0;
     margin-bottom: 12px;
   }
-  
+
   .settings-section {
     padding: 16px;
   }
-  
+
   .form-actions {
     flex-direction: column;
   }
-  
+
   .action-buttons {
     flex-direction: column;
   }
-  
+
   .section-header {
     flex-direction: column;
     align-items: flex-start;
@@ -345,69 +345,69 @@
     background: #1f2937;
     color: #f9fafb;
   }
-  
+
   .settings-section {
     border-color: #374151;
   }
-  
+
   .section-header h4 {
     color: #f9fafb;
   }
-  
+
   .edit-button {
     background: #374151;
     border-color: #4b5563;
     color: #e5e7eb;
   }
-  
+
   .edit-button:hover {
     background: #4b5563;
     border-color: #6b7280;
   }
-  
+
   .profile-display .label {
     color: #9ca3af;
   }
-  
+
   .profile-display .value {
     color: #f9fafb;
   }
-  
+
   .profile-display .info-item {
     border-color: #374151;
   }
-  
+
   .form-group label {
     color: #e5e7eb;
   }
-  
+
   .form-group input {
     background: #374151;
     border-color: #4b5563;
     color: #f9fafb;
   }
-  
+
   .form-group input:focus {
     border-color: #60a5fa;
     box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
   }
-  
+
   .form-group input:disabled {
     background: #4b5563;
     color: #6b7280;
   }
-  
+
   .cancel-button {
     background: #374151;
     border-color: #4b5563;
     color: #e5e7eb;
   }
-  
+
   .cancel-button:hover:not(:disabled) {
     background: #4b5563;
     border-color: #6b7280;
   }
-  
+
   .danger-zone {
     background: #1f2937;
     border-color: #dc2626;

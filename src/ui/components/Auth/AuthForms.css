@@ -12,7 +12,9 @@
 .auth-form {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   padding: 40px;
   width: 100%;
   max-width: 500px;
@@ -251,8 +253,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .auth-links {
@@ -294,16 +300,16 @@
   .auth-form-container {
     padding: 16px;
   }
-  
+
   .auth-form {
     padding: 24px;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
     gap: 0;
   }
-  
+
   .form-input {
     font-size: 16px; /* Prevents zoom on iOS */
   }
@@ -315,44 +321,44 @@
     background: #1f2937;
     color: #f9fafb;
   }
-  
+
   .auth-form-header h2 {
     color: #f9fafb;
   }
-  
+
   .auth-form-header p {
     color: #9ca3af;
   }
-  
+
   .form-label {
     color: #e5e7eb;
   }
-  
+
   .form-input {
     background: #374151;
     border-color: #4b5563;
     color: #f9fafb;
   }
-  
+
   .form-input:focus {
     border-color: #60a5fa;
     box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
   }
-  
+
   .form-input:disabled {
     background: #4b5563;
     color: #6b7280;
   }
-  
+
   .password-strength {
     background: #374151;
     border-color: #4b5563;
   }
-  
+
   .checkbox-label {
     color: #e5e7eb;
   }
-  
+
   .auth-switch {
     color: #9ca3af;
   }

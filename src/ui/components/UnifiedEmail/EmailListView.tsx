@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { UnifiedEmailData } from "../../../types/unified-email.types.js";
+import type { UnifiedEmailData } from "../../../types/unified-email.types";
 import "./EmailListView.css";
 
 interface EmailListViewProps {

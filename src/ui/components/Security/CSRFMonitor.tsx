@@ -1,5 +1,5 @@
 import React from "react";
-import { useCSRFStatus } from "../../hooks/useTRPCWithCSRF.js";
+import { useCSRFStatus } from "../../hooks/useTRPCWithCSRF";
 import {
   Shield,
   AlertCircle,

@@ -2,7 +2,7 @@ export {
   ErrorBoundary,
   withErrorBoundary,
   useErrorHandler,
-} from "./ErrorBoundary.js";
-export { ErrorFallback } from "./ErrorFallback.js";
+} from "./ErrorBoundary";
+export { ErrorFallback } from "./ErrorFallback";
 import "./ErrorBoundary.css";
 import "./ErrorFallback.css";

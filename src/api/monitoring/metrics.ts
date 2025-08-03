@@ -51,10 +51,7 @@ class MetricsCollector {
   /**
    * Start a timer and return a function to end it
    */
-  startTimer(
-    name: string,
-    labels?: Record<string, string>,
-  ): () => void {
+  startTimer(name: string, labels?: Record<string, string>): () => void {
     const start = Date.now();
     return () => {
       const duration = Date.now() - start;

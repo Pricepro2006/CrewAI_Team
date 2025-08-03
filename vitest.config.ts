@@ -7,10 +7,7 @@ export default defineConfig({
     environment: "node",
 
     // Include unit tests
-    include: [
-      "src/**/*.test.{ts,tsx}",
-      "src/**/*.spec.{ts,tsx}",
-    ],
+    include: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
 
     // Exclude integration tests (handled by separate config)
     exclude: [
@@ -26,7 +23,7 @@ export default defineConfig({
 
     // Reasonable timeout for unit tests
     testTimeout: 10000, // 10 seconds for unit tests
-    hookTimeout: 5000,  // 5 seconds for setup/teardown
+    hookTimeout: 5000, // 5 seconds for setup/teardown
 
     // Global test configuration
     globals: true,

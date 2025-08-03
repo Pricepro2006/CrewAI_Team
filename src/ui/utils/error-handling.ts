@@ -214,6 +214,7 @@ export function tryCatch<T extends (...args: unknown[]) => unknown>(
 
       if (errorHandler) {
         errorHandler(err);
+        return undefined as any; // Return undefined when error is handled
       } else {
         throw err;
       }

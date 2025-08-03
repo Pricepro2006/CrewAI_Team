@@ -65,7 +65,7 @@ import {
 } from '../../../components/ui/accordion.js';
 import { cn } from '../../lib/utils.js';
 import { useGroceryStore } from '../../store/groceryStore.js';
-import type { UserPreferences } from '../../../types/walmart-grocery.js';
+import type { UserPreferences, DietaryFilter, AllergenType } from '../../../types/walmart-grocery.js';
 
 interface WalmartUserPreferencesProps {
   onSavePreferences?: (preferences: UserPreferences) => void;
@@ -144,18 +144,20 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
   };
   
   const handleDietaryToggle = (dietId: string) => {
+    const dietaryFilter = dietId as DietaryFilter;
     const current = editedPreferences.dietaryRestrictions || [];
-    const updated = current.includes(dietId)
-      ? current.filter(d => d !== dietId)
-      : [...current, dietId];
+    const updated = current.includes(dietaryFilter)
+      ? current.filter(d => d !== dietaryFilter)
+      : [...current, dietaryFilter];
     handlePreferenceChange('dietaryRestrictions', updated);
   };
   
   const handleAllergenToggle = (allergen: string) => {
+    const allergenType = allergen.toLowerCase().replace(' ', '_') as AllergenType;
     const current = editedPreferences.allergens || [];
-    const updated = current.includes(allergen)
-      ? current.filter(a => a !== allergen)
-      : [...current, allergen];
+    const updated = current.includes(allergenType)
+      ? current.filter(a => a !== allergenType)
+      : [...current, allergenType];
     handlePreferenceChange('allergens', updated);
   };
   
@@ -343,7 +345,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
                       <div key={allergen} className="flex items-center space-x-2">
                         <Checkbox
                           id={allergen}
-                          checked={editedPreferences.allergens?.includes(allergen) || false}
+                          checked={editedPreferences.allergens?.includes(allergen.toLowerCase().replace(' ', '_') as AllergenType) || false}
                           onCheckedChange={() => handleAllergenToggle(allergen)}
                         />
                         <Label

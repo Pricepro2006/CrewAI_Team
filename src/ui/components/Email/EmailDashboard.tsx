@@ -24,7 +24,8 @@ import {
   AlertTriangle,
   ChevronUp,
 } from "lucide-react";
-import { api } from "../../../lib/trpc.js";
+import { api } from "../../../lib/trpc";
+import { EmailIngestionPanel } from "./EmailIngestionPanel";
 import "./EmailDashboard.css";
 
 // Register ChartJS components
@@ -200,13 +201,33 @@ export const EmailDashboard: React.FC = () => {
     averageProcessingTime:
       (analyticsData?.data?.averageProcessingTime || 0) / 1000, // Convert ms to seconds
     categorization: analyticsData?.data?.workflowDistribution || {},
-    dailyVolume:
-      tableData?.data?.emails?.slice(0, 7).map((email: any, index: number) => ({
-        date: new Date(
-          Date.now() - (6 - index) * 24 * 60 * 60 * 1000,
-        ).toISOString(),
-        count: Math.floor(Math.random() * 200) + 100, // Mock data for now
-      })) || [],
+    dailyVolume: (() => {
+      // Group emails by date for the last 7 days
+      const volumeByDate = new Map<string, number>();
+      const today = new Date();
+      
+      // Initialize last 7 days with 0 counts
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        volumeByDate.set(dateStr, 0);
+      }
+      
+      // Count emails by date
+      tableData?.data?.emails?.forEach((email: any) => {
+        const emailDate = new Date(email.receivedDate).toISOString().split('T')[0];
+        if (volumeByDate.has(emailDate)) {
+          volumeByDate.set(emailDate, (volumeByDate.get(emailDate) || 0) + 1);
+        }
+      });
+      
+      // Convert to array format
+      return Array.from(volumeByDate.entries()).map(([date, count]) => ({
+        date,
+        count
+      }));
+    })(),
     urgencyDistribution: {
       critical: dashboardStats?.data?.criticalCount || 0,
       high: Math.floor((dashboardStats?.data?.inProgressCount || 0) * 0.4),
@@ -401,6 +422,9 @@ export const EmailDashboard: React.FC = () => {
 
     return (
       <>
+        {/* Email Ingestion Panel */}
+        <EmailIngestionPanel />
+        
         {/* Key Metrics Cards */}
         <div
           className="metrics-grid section-anchor section-animate"
@@ -659,13 +683,28 @@ export const EmailDashboard: React.FC = () => {
     // Extract workflow data from analytics
     const workflowData = analyticsData?.data;
 
-    // Mock entity counts for now
-    const entityCounts = {
-      PO_NUMBER: Math.floor(Math.random() * 1000) + 500,
-      QUOTE_NUMBER: Math.floor(Math.random() * 800) + 400,
-      PART_NUMBER: Math.floor(Math.random() * 1200) + 600,
-      ORDER_REF: Math.floor(Math.random() * 600) + 300,
-    };
+    // Extract entity counts from actual email data
+    const entityCounts = (() => {
+      const counts: Record<string, number> = {
+        PO_NUMBER: 0,
+        QUOTE_NUMBER: 0,
+        PART_NUMBER: 0,
+        ORDER_REF: 0,
+      };
+      
+      tableData?.data?.emails?.forEach((email: any) => {
+        if (email.entities && Array.isArray(email.entities)) {
+          email.entities.forEach((entity: any) => {
+            const type = entity.type?.toUpperCase() || '';
+            if (type in counts) {
+              counts[type]++;
+            }
+          });
+        }
+      });
+      
+      return counts;
+    })();
 
     return (
       <div className="analytics-section">
@@ -767,7 +806,7 @@ export const EmailDashboard: React.FC = () => {
                   datasets: [
                     {
                       label: "Avg Processing Time (s)",
-                      data: stats.dailyVolume.map(() => Math.random() * 5 + 1), // Mock data
+                      data: stats.dailyVolume.map(() => stats.averageProcessingTime), // Use actual average
                       backgroundColor: "rgba(75, 192, 192, 0.6)",
                       borderColor: "rgba(75, 192, 192, 1)",
                       borderWidth: 1,

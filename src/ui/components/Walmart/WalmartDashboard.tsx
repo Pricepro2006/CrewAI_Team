@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { ShoppingCartIcon, ClipboardIcon, TruckIcon, ChartBarIcon } from "@heroicons/react/24/outline";
-import { WalmartProductSearch } from "./WalmartProductSearch.js";
-import { WalmartShoppingCart } from "./WalmartShoppingCart.js";
-import { WalmartDealAlert } from "./WalmartDealAlert.js";
-import { WalmartBudgetTracker } from "./WalmartBudgetTracker.js";
+import { WalmartProductSearch } from "./WalmartProductSearch";
+import { WalmartShoppingCart } from "./WalmartShoppingCart";
+import { WalmartDealAlert } from "./WalmartDealAlert";
+import { WalmartBudgetTracker } from "./WalmartBudgetTracker";
 
 type ViewType = "dashboard" | "search" | "cart" | "deals" | "budget" | "orders";
 

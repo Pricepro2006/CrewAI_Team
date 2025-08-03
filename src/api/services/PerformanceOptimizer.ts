@@ -1,4 +1,4 @@
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../utils/logger";
 import crypto from "crypto";
 
 // Performance optimization service implementing 2025 best practices

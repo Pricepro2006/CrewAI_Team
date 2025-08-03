@@ -70,6 +70,8 @@ export interface TimestampedEntity {
 export interface PaginationRequest {
   page: number;
   pageSize: number;
+  limit?: number;
+  offset?: number;
   sortBy?: string;
   sortDirection?: "asc" | "desc";
 }

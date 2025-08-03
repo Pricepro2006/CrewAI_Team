@@ -7,7 +7,7 @@ import {
 import type {
   IEMSEmail,
   EmailStatus,
-} from "../../../types/iems-email.types.js";
+} from "../../../types/iems-email.types";
 import "./EmailAliasSection.css";
 
 interface EmailAliasSectionProps {

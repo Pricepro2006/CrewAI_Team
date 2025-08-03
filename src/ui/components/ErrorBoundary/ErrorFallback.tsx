@@ -7,10 +7,10 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { Button } from "../../../components/ui/button.js";
-import { Card } from "../../../components/ui/card.js";
-import { Alert, AlertDescription } from "../../../components/ui/alert.js";
-import { cn } from "../../../utils/cn.js";
+import { Button } from "../../../components/ui/button";
+import { Card } from "../../../components/ui/card";
+import { Alert, AlertDescription } from "../../../components/ui/alert";
+import { cn } from "../../../utils/cn";
 import "./ErrorFallback.css";
 
 interface ErrorFallbackProps {

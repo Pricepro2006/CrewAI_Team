@@ -5,7 +5,7 @@
 
 import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import { logger } from "../../../utils/logger.js";
+import { logger } from "../../../utils/logger";
 
 /**
  * Security headers configuration interface

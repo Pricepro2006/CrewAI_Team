@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
-import { cn } from "../../../utils/cn.js";
+import { cn } from "../../../utils/cn";
 import "./Toast.css";
 
 export type ToastType = "success" | "error" | "warning" | "info";

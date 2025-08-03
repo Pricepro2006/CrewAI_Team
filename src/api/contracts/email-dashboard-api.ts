@@ -20,7 +20,7 @@ export const WorkflowStateEnum = z.enum([
 ]);
 export type WorkflowState = z.infer<typeof WorkflowStateEnum>;
 
-export const PriorityEnum = z.enum(["Critical", "High", "Medium", "Low"]);
+export const PriorityEnum = z.enum(["critical", "high", "medium", "low"]);
 export type Priority = z.infer<typeof PriorityEnum>;
 
 export const SortDirectionEnum = z.enum(["asc", "desc"]);

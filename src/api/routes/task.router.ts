@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc/router.js";
+import { router, publicProcedure } from "../trpc/router";
 import type { Router } from "@trpc/server";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../utils/logger";
 
 export const taskRouter: Router<any> = router({
   // Submit a new task
