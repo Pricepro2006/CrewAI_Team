@@ -1,0 +1,536 @@
+/* =====================================================
+   Email Ingestion Monitoring Dashboard Styles
+   ===================================================== */
+
+.email-ingestion-monitoring {
+  --primary-blue: #3b82f6;
+  --success-green: #22c55e;
+  --warning-yellow: #f59e0b;
+  --danger-red: #ef4444;
+  --info-purple: #8b5cf6;
+  --neutral-gray: #6b7280;
+  
+  /* Animation durations */
+  --animation-fast: 0.15s;
+  --animation-normal: 0.25s;
+  --animation-slow: 0.35s;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* =====================================================
+   Main Container
+   ===================================================== */
+
+.email-ingestion-monitoring {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+/* =====================================================
+   Header Styles
+   ===================================================== */
+
+.monitoring-header {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.monitoring-title {
+  background: linear-gradient(135deg, var(--primary-blue), var(--info-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+}
+
+/* =====================================================
+   Status Indicators
+   ===================================================== */
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all var(--animation-normal) ease;
+}
+
+.status-indicator.healthy {
+  background-color: rgb(220 252 231);
+  color: rgb(22 163 74);
+  border: 1px solid rgb(187 247 208);
+}
+
+.status-indicator.degraded {
+  background-color: rgb(254 243 199);
+  color: rgb(180 83 9);
+  border: 1px solid rgb(253 230 138);
+}
+
+.status-indicator.failing {
+  background-color: rgb(254 226 226);
+  color: rgb(185 28 28);
+  border: 1px solid rgb(252 165 165);
+}
+
+.status-indicator.unknown {
+  background-color: rgb(243 244 246);
+  color: rgb(75 85 99);
+  border: 1px solid rgb(209 213 219);
+}
+
+/* =====================================================
+   Connection Status
+   ===================================================== */
+
+.connection-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.connection-indicator::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.connection-indicator.connected::before {
+  background-color: var(--success-green);
+}
+
+.connection-indicator.disconnected::before {
+  background-color: var(--danger-red);
+}
+
+/* =====================================================
+   Metric Cards
+   ===================================================== */
+
+.metric-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--animation-normal) ease;
+  overflow: hidden;
+}
+
+.metric-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.metric-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.metric-card-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.metric-card-icon.blue {
+  background-color: rgb(219 234 254);
+  color: var(--primary-blue);
+}
+
+.metric-card-icon.green {
+  background-color: rgb(220 252 231);
+  color: var(--success-green);
+}
+
+.metric-card-icon.yellow {
+  background-color: rgb(254 243 199);
+  color: var(--warning-yellow);
+}
+
+.metric-card-icon.red {
+  background-color: rgb(254 226 226);
+  color: var(--danger-red);
+}
+
+.metric-card-icon.purple {
+  background-color: rgb(237 233 254);
+  color: var(--info-purple);
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: rgb(107 114 128);
+  font-weight: 500;
+}
+
+/* =====================================================
+   Progress Bars
+   ===================================================== */
+
+.progress-bar {
+  width: 100%;
+  height: 0.5rem;
+  background-color: rgb(243 244 246);
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-blue), var(--success-green));
+  border-radius: 9999px;
+  transition: width var(--animation-slow) ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+/* =====================================================
+   Charts
+   ===================================================== */
+
+.chart-container {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #e2e8f0;
+}
+
+.chart-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: rgb(31 41 55);
+}
+
+.chart-wrapper {
+  width: 100%;
+  height: 300px;
+  position: relative;
+}
+
+/* =====================================================
+   Queue Actions
+   ===================================================== */
+
+.queue-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.queue-action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: white;
+  color: rgb(55 65 81);
+  font-weight: 500;
+  transition: all var(--animation-normal) ease;
+  cursor: pointer;
+}
+
+.queue-action-button:hover {
+  background-color: rgb(249 250 251);
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+}
+
+.queue-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.queue-action-button.danger:hover {
+  border-color: var(--danger-red);
+  color: var(--danger-red);
+}
+
+.queue-action-button.success:hover {
+  border-color: var(--success-green);
+  color: var(--success-green);
+}
+
+/* =====================================================
+   Error List
+   ===================================================== */
+
+.error-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.error-item {
+  background: white;
+  border: 1px solid #fed7d7;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.error-item-header {
+  display: flex;
+  justify-content: between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.error-message {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  color: var(--danger-red);
+  font-weight: 500;
+}
+
+.error-source {
+  font-size: 0.75rem;
+  color: rgb(107 114 128);
+  text-transform: capitalize;
+}
+
+.error-metadata {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.error-count {
+  background-color: rgb(254 226 226);
+  color: var(--danger-red);
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.error-timestamp {
+  font-size: 0.75rem;
+  color: rgb(107 114 128);
+}
+
+/* =====================================================
+   Responsive Design
+   ===================================================== */
+
+@media (max-width: 768px) {
+  .monitoring-header {
+    padding: 1rem;
+  }
+  
+  .monitoring-header > div {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .metric-card-header {
+    padding: 0.75rem 1rem 0.5rem;
+  }
+  
+  .metric-value {
+    font-size: 1.5rem;
+  }
+  
+  .chart-wrapper {
+    height: 250px;
+  }
+  
+  .error-item-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .error-metadata {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .monitoring-title {
+    font-size: 1.5rem;
+  }
+  
+  .queue-actions {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-wrapper {
+    height: 200px;
+  }
+}
+
+/* =====================================================
+   Animations
+   ===================================================== */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn var(--animation-normal) ease-out;
+}
+
+.slide-in-right {
+  animation: slideInRight var(--animation-normal) ease-out;
+}
+
+/* =====================================================
+   Loading States
+   ===================================================== */
+
+.skeleton {
+  background: linear-gradient(-90deg, #f0f0f0 0%, #e0e0e0 50%, #f0f0f0 100%);
+  background-size: 400% 400%;
+  animation: loading 1.5s ease-in-out infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: -200% 0%;
+  }
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid #e2e8f0;
+  border-top-color: var(--primary-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =====================================================
+   Dark Mode Support (Optional)
+   ===================================================== */
+
+@media (prefers-color-scheme: dark) {
+  .email-ingestion-monitoring {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  }
+  
+  .metric-card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  
+  .chart-container {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  
+  .monitoring-header {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  
+  .queue-action-button {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+  
+  .queue-action-button:hover {
+    background: #334155;
+  }
+  
+  .error-item {
+    background: #1e293b;
+    border-color: #ef4444;
+  }
+}
