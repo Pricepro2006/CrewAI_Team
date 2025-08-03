@@ -63,10 +63,12 @@ export default defineConfig({
       LOG_LEVEL: "error", // Reduce log noise in tests
     },
 
-    // Mock external dependencies - moved to server.deps.inline
-    server: {
-      deps: {
-        inline: ["@testing-library/jest-dom"],
+    // Dependencies configuration for vitest v3
+    deps: {
+      optimizer: {
+        ssr: {
+          include: ["@testing-library/jest-dom"],
+        },
       },
     },
   },
@@ -83,10 +85,20 @@ export default defineConfig({
       "@client": path.resolve(__dirname, "./src/client"),
       "@lib": path.resolve(__dirname, "./src/lib"),
     },
+    // Handle TypeScript files with .js extensions in imports
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+    // Map .js imports to .ts files for TypeScript compatibility
+    extensionAlias: {
+      '.js': ['.ts', '.tsx', '.js'],
+      '.jsx': ['.tsx', '.jsx'],
+    },
   },
 
   esbuild: {
     target: "node18",
+    // Handle TypeScript compilation for .js imports
+    sourcemap: true,
+    format: "esm",
   },
 
   // Define globals for Node.js environment
