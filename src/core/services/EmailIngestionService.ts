@@ -190,7 +190,7 @@ export interface IEmailIngestionService {
   
   // Metrics and monitoring
   getMetrics(): Promise<IngestionMetrics>;
-  getRecentErrors(limit?: number): Promise<IngestionError[]>;
+  getRecentErrors(limit?: number): Promise<IngestionErrorInfo[]>;
   healthCheck(): Promise<HealthStatus>;
   
   // Lifecycle
@@ -207,7 +207,7 @@ interface QueueStatus {
   paused: boolean;
 }
 
-interface IngestionError {
+interface IngestionErrorInfo {
   id: string;
   timestamp: Date;
   source: IngestionSource;

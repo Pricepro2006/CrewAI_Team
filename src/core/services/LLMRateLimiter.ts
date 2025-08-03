@@ -260,7 +260,7 @@ export class LLMRateLimiter {
     }
 
     const queueKey = `${identifier}:${model}`;
-    let queue = this.requestQueue.get(queueKey) || [];
+    const queue = this.requestQueue.get(queueKey) || [];
 
     // Check queue size
     if (queue.length >= (this.config.maxQueueSize || 100)) {

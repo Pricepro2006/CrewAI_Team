@@ -6,6 +6,7 @@
  */
 
 import { parentPort, workerData } from "worker_threads";
+import { Agent } from "http";
 import { Ollama } from "ollama";
 import Database from "better-sqlite3";
 import { z } from "zod";
@@ -170,8 +171,8 @@ class EmailProcessingWorker {
             fetch(url, {
               ...options,
               keepalive: true,
-              // @ts-ignore - Node.js specific option
-              agent: new (require("http").Agent)({
+              // @ts-expect-error - Node.js specific option
+              agent: new Agent({
                 keepAlive: true,
                 keepAliveMsecs: 30000,
                 maxSockets: 10,
