@@ -24,7 +24,67 @@ import type {
   SubstitutionOptions,
   DeliverySlot,
   UserPreferences,
+  OrderStatus,
+  PaymentMethod,
 } from '../../types/walmart-grocery.js';
+
+// Helper function to create a full Order object from partial data
+function createOrderFromPartial(partialOrder: any): Order {
+  const now = new Date().toISOString();
+  return {
+    id: partialOrder.id || `order-${Date.now()}`,
+    orderId: partialOrder.orderNumber || partialOrder.orderId || partialOrder.id || `ORD-${Date.now()}`,
+    userId: partialOrder.userId || '',
+    status: (partialOrder.status as OrderStatus) || 'pending',
+    items: partialOrder.items || [],
+    payment: {
+      method: 'credit_card' as PaymentMethod,
+      status: 'pending',
+      amount: partialOrder.total || 0,
+    },
+    fulfillment: {
+      type: 'delivery',
+      status: 'pending',
+      estimatedTime: partialOrder.deliveryDate || now,
+      address: {
+        id: 'addr-1',
+        type: 'home',
+        street1: partialOrder.deliveryAddress || '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: 'US',
+      },
+      slot: {
+        id: 'slot-1',
+        date: partialOrder.deliveryDate || now,
+        startTime: partialOrder.deliverySlot || '10:00',
+        endTime: partialOrder.deliverySlot || '12:00',
+        price: 0,
+        available: true,
+      },
+    },
+    totals: {
+      subtotal: partialOrder.subtotal || 0,
+      tax: partialOrder.tax || 0,
+      fees: partialOrder.fees || {},
+      discounts: 0,
+      total: partialOrder.total || 0,
+      savings: 0,
+    },
+    timeline: [],
+    customer: {
+      id: partialOrder.userId || '',
+      name: '',
+      email: '',
+    },
+    metadata: {
+      source: 'api',
+    },
+    createdAt: partialOrder.createdAt?.toISOString ? partialOrder.createdAt.toISOString() : partialOrder.createdAt || now,
+    updatedAt: partialOrder.updatedAt?.toISOString ? partialOrder.updatedAt.toISOString() : partialOrder.updatedAt || now,
+  };
+}
 
 // Product Search API
 export const walmartProductAPI = {
@@ -235,9 +295,9 @@ export const walmartListAPI = {
         status: "active" as const,
         items: [],
         estimated_total: 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      } as GroceryList;
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
     } catch (error) {
       console.error('Create list failed:', error);
       throw error;
@@ -267,9 +327,9 @@ export const walmartListAPI = {
           status: "active" as const,
           items: [],
           estimated_total: 0,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        } as GroceryList;
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
       }
       throw new Error('Failed to update list');
     } catch (error) {
@@ -337,7 +397,7 @@ export const walmartOrderAPI = {
       const result = await client.walmartGrocery.getOrders.query(params);
       // Transform result to expected format
       return {
-        orders: result.orders || [],
+        orders: (result.orders || []).map(createOrderFromPartial),
         total: result.totalCount || 0
       };
     } catch (error) {
@@ -350,7 +410,7 @@ export const walmartOrderAPI = {
   getOrder: async (orderId: string): Promise<Order | null> => {
     try {
       const result = await client.walmartGrocery.getOrder.query({ orderId });
-      return result?.order || null;
+      return result?.order ? createOrderFromPartial(result.order) : null;
     } catch (error) {
       console.error('Get order failed:', error);
       throw error;
@@ -376,13 +436,7 @@ export const walmartOrderAPI = {
       });
       // Transform the response to match Order type
       if (result.success && result.order) {
-        // Ensure all required fields are present
-        const order = result.order;
-        return {
-          ...order,
-          orderDate: order.orderDate || new Date(),
-          createdAt: order.createdAt || new Date()
-        } as Order;
+        return createOrderFromPartial(result.order);
       }
       // Fallback if structure is different
       throw new Error('Failed to create order');
@@ -402,19 +456,11 @@ export const walmartOrderAPI = {
         orderId: params.orderId,
         status: params.status as any
       });
-      // Return a mock Order object since the actual response doesn't match
-      return {
+      // TODO: Backend should return full Order object. Using partial data for now.
+      return createOrderFromPartial({
         id: params.orderId,
-        userId: '',
-        items: [],
-        subtotal: 0,
-        tax: 0,
-        fees: 0,
-        total: 0,
-        status: result.status || params.status,
-        orderDate: new Date(),
-        createdAt: new Date()
-      } as Order;
+        status: result.status || params.status
+      });
     } catch (error) {
       console.error('Update order status failed:', error);
       throw error;

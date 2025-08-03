@@ -5,9 +5,7 @@
  */
 
 // Type declarations for environment compatibility
-declare global {
-  var window: any;
-}
+// Window is already defined in DOM lib types
 
 import { piiRedactor, PIIRedactor } from "./PIIRedactor.js";
 
@@ -25,9 +23,9 @@ let path: any = null;
 // Try to load Node.js modules if available
 if (isNode && !isBrowser) {
   try {
-    // Use require for synchronous loading in Node.js environments
-    fs = require("fs").promises;
-    path = require("path");
+    // Use dynamic import for compatibility
+    import("fs").then(fsModule => fs = fsModule.promises).catch(() => fs = null);
+    import("path").then(pathModule => path = pathModule).catch(() => path = null);
   } catch (error) {
     // Modules not available, will use console-only logging
     fs = null;

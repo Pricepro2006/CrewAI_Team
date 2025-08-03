@@ -3,10 +3,7 @@ export * from "./error-messages.js";
 export * from "./async-error-wrapper.js";
 
 // Type declarations for browser globals when in server context
-declare global {
-  var window: any;
-  var PromiseRejectionEvent: any;
-}
+// These are already declared in logger.ts, so we don't redeclare them here
 
 import { AppError, ErrorCode } from "./error-types.js";
 import { getUserFriendlyError } from "./error-messages.js";
@@ -36,8 +33,9 @@ if (typeof window !== "undefined") {
   };
 } else {
   // Server environment - use the full logger
-  const loggerModule = await import("../logger.js");
-  logger = loggerModule.logger;
+  import("../logger.js").then(loggerModule => {
+    logger = loggerModule.logger;
+  });
 }
 
 /**
