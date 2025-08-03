@@ -79,7 +79,17 @@ Return this JSON structure:
     "optimization_opportunities": ["opportunity1"]
   }
 }`;
+
+// Additional prompt templates for enhanced analysis
+export const PHASE3_DETAILED_TEMPLATE = `{
+  "strategic_insights": {
+    "opportunity": "Comprehensive revenue and partnership opportunity analysis",
+    "risk": "Detailed risk assessment with mitigation strategies",
+    "relationship": "Customer relationship health and growth potential"
   },
+  "executive_summary": "Strategic overview in 2-3 sentences",
+  "escalation_needed": false,
+  "revenue_impact": "$0 - detailed financial analysis",
   "cross_email_patterns": [
     "Pattern 1: Similar urgency across enterprise accounts",
     "Pattern 2: Product shortage indicators",
@@ -298,8 +308,8 @@ export const PHASE3_OUTPUT_SCHEMA = {
 // Common JSON parsing error patterns and fixes
 export const JSON_ERROR_PATTERNS = {
   MARKDOWN_WRAPPER: /```json\s*([\s\S]*?)\s*```/gi,
-  RESPONSE_PREFIX: /^.*?(?=\{)/s,
-  RESPONSE_SUFFIX: /\}[^}]*$/s,
+  RESPONSE_PREFIX: /^[\s\S]*?(?=\{)/,
+  RESPONSE_SUFFIX: /\}[^}]*$/,
   UNQUOTED_KEYS: /([a-zA-Z_][a-zA-Z0-9_]*):(?=\\s*[^"\\d[{true|false|null])/g,
   TRAILING_COMMAS: /,(?=\s*[}\]])/g,
   SINGLE_QUOTES: /'/g,
