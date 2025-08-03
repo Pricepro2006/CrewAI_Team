@@ -2,6 +2,12 @@ export * from "./error-types.js";
 export * from "./error-messages.js";
 export * from "./async-error-wrapper.js";
 
+// Type declarations for browser globals when in server context
+declare global {
+  var window: any;
+  var PromiseRejectionEvent: any;
+}
+
 import { AppError, ErrorCode } from "./error-types.js";
 import { getUserFriendlyError } from "./error-messages.js";
 

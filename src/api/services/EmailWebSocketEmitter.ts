@@ -156,7 +156,7 @@ export class EmailWebSocketEmitter {
       wsService.broadcastEmailAnalyzed(
         emailId,
         analysis.workflow,
-        this.mapPriorityToCapitalized(analysis.priority),
+        analysis.priority,
         analysis.actionSummary,
         analysis.confidence,
         analysis.slaStatus,
@@ -301,7 +301,7 @@ export class EmailWebSocketEmitter {
       wsService.broadcastEmailSLAAlert(
         emailId,
         alert.workflow,
-        this.mapPriorityToCapitalized(alert.priority),
+        alert.priority,
         alert.slaStatus,
         alert.timeRemaining,
         alert.overdueDuration

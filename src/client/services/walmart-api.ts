@@ -228,11 +228,13 @@ export const walmartListAPI = {
       // Return a default list structure if transformation fails
       return {
         id: `list-${Date.now()}`,
-        userId: params.userId,
-        name: params.name,
+        user_id: params.userId,
+        list_name: params.name,
         description: params.description,
+        list_type: "shopping" as const,
+        status: "active" as const,
         items: [],
-        totalEstimate: 0,
+        estimated_total: 0,
         createdAt: new Date(),
         updatedAt: new Date()
       } as GroceryList;
@@ -250,7 +252,7 @@ export const walmartListAPI = {
     try {
       const result = await client.walmartGrocery.updateList.mutate({
         listId: params.listId,
-        name: params.updates.name,
+        name: params.updates.list_name,
         description: params.updates.description
       });
       // Transform the response to match GroceryList type
@@ -258,11 +260,13 @@ export const walmartListAPI = {
         // Return the updated list structure
         return {
           id: params.listId,
-          userId: '',
-          name: params.updates.name || '',
+          user_id: '',
+          list_name: params.updates.list_name || '',
           description: params.updates.description,
+          list_type: "shopping" as const,
+          status: "active" as const,
           items: [],
-          totalEstimate: 0,
+          estimated_total: 0,
           createdAt: new Date(),
           updatedAt: new Date()
         } as GroceryList;

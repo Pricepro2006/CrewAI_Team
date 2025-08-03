@@ -298,17 +298,17 @@ export class EmailIntegrationService {
   /**
    * Map priority string to enum
    */
-  private mapPriority(priority: string): 'Critical' | 'High' | 'Medium' | 'Low' {
+  private mapPriority(priority: string): 'critical' | 'high' | 'medium' | 'low' {
     switch (priority.toLowerCase()) {
       case 'critical':
       case 'urgent':
-        return 'Critical';
+        return 'critical';
       case 'high':
-        return 'High';
+        return 'high';
       case 'medium':
-        return 'Medium';
+        return 'medium';
       default:
-        return 'Low';
+        return 'low';
     }
   }
 

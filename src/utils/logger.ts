@@ -4,6 +4,11 @@
  * Now includes PII redaction for security compliance
  */
 
+// Type declarations for environment compatibility
+declare global {
+  var window: any;
+}
+
 import { piiRedactor, PIIRedactor } from "./PIIRedactor.js";
 
 // Environment detection

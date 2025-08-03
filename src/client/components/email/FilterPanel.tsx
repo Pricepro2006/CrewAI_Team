@@ -52,10 +52,10 @@ const workflowStateLabels: Record<WorkflowState, string> = {
 };
 
 const priorityLabels: Record<Priority, string> = {
-  Critical: "Critical",
-  High: "High",
-  Medium: "Medium",
-  Low: "Low",
+  critical: "Critical",
+  high: "High",
+  medium: "Medium",
+  low: "Low",
 };
 
 export function FilterPanel({
