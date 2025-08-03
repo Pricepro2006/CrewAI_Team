@@ -97,8 +97,29 @@ class EmailProcessingWorker {
 
   constructor() {
     this.workerId = workerData.workerId;
-    this.db = new Database("./data/crewai_enhanced.db", { readonly: false });
-    this.initialize();
+
+    try {
+      // Initialize database with error handling
+      this.db = new Database("./data/crewai_enhanced.db", { readonly: false });
+      this.initialize();
+    } catch (error) {
+      logger.error("Failed to initialize worker:", error);
+
+      // Send error to parent
+      if (parentPort) {
+        parentPort.postMessage({
+          type: "error",
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+          },
+          workerId: this.workerId,
+        });
+      }
+
+      // Exit with error code
+      process.exit(1);
+    }
   }
 
   /**
@@ -124,6 +145,15 @@ class EmailProcessingWorker {
     this.setupMessageHandlers();
 
     logger.info("Worker initialized successfully");
+
+    // Send initialization complete message
+    if (parentPort) {
+      parentPort.postMessage({
+        type: "initialized",
+        workerId: this.workerId,
+        timestamp: Date.now(),
+      });
+    }
   }
 
   /**
@@ -183,6 +213,21 @@ class EmailProcessingWorker {
 
         case "shutdown":
           await this.shutdown();
+          break;
+
+        case "health":
+          parentPort.postMessage({
+            type: "health-response",
+            status: "healthy",
+            workerId: this.workerId,
+            uptime: process.uptime(),
+            memoryUsage: process.memoryUsage(),
+            stats: {
+              processed: this.processedCount,
+              failed: this.failedCount,
+              uptime: Date.now() - this.startTime,
+            },
+          });
           break;
 
         default:

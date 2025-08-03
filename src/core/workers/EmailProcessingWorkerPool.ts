@@ -11,6 +11,7 @@ import { Queue, Worker as BullWorker } from "bullmq";
 import { Logger } from "../../utils/logger.js";
 import { performance } from "perf_hooks";
 import type { Redis } from "ioredis";
+import { WorkerLoader } from "./WorkerLoader.js";
 
 const logger = new Logger("EmailProcessingWorkerPool");
 
@@ -180,11 +181,12 @@ export class EmailProcessingWorkerPool extends EventEmitter {
   private async createWorker(): Promise<string> {
     const workerId = `worker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    const worker = new Worker(this.config.workerScriptPath, {
+    const worker = WorkerLoader.createWorker(this.config.workerScriptPath, {
       workerData: {
         workerId,
         maxMemory: this.config.maxMemoryPerWorker,
       },
+      maxMemory: this.config.maxMemoryPerWorker,
       resourceLimits: {
         maxOldGenerationSizeMb: this.config.maxMemoryPerWorker,
       },
