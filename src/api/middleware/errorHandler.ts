@@ -17,7 +17,7 @@ export interface ErrorResponse {
     id: string;
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
     timestamp: string;
     path?: string;
     method?: string;
@@ -167,7 +167,7 @@ export function notFoundHandler(req: Request, res: Response): void {
  * Async error wrapper for route handlers
  */
 export function asyncErrorWrapper(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>,
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>,
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
