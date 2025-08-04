@@ -43,7 +43,7 @@ export interface UseWebSocketResult {
     eventType: T['type'],
     handler: (event: T) => void
   ) => () => void;
-  off: (eventType: string, handler?: Function) => void;
+  off: (eventType: string, handler?: (event: WebSocketEvent) => void) => void;
 }
 
 const initialState: WebSocketState = {
@@ -75,7 +75,7 @@ export function useEnhancedWebSocket(
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const eventHandlersRef = useRef<Map<string, Set<Function>>>(new Map());
+  const eventHandlersRef = useRef<Map<string, Set<(event: WebSocketEvent) => void>>>(new Map());
   const isUnmountedRef = useRef(false);
 
   // Message queue for offline messages
@@ -407,7 +407,7 @@ export function useEnhancedWebSocket(
   }, []);
 
   // Unregister event handler
-  const off = useCallback((eventType: string, handler?: Function) => {
+  const off = useCallback((eventType: string, handler?: (event: WebSocketEvent) => void) => {
     if (!handler) {
       eventHandlersRef.current.delete(eventType);
     } else {

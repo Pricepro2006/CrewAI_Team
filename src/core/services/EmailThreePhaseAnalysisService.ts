@@ -1530,7 +1530,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     logger.info(`Original response length: ${response.length}`);
     
     // First, try a quick comment removal in case it's just comments blocking parsing
-    let quickCleaned = cleaned.replace(/\s*\/\/[^\n\r]*/g, "");
+    const quickCleaned = cleaned.replace(/\s*\/\/[^\n\r]*/g, "");
     logger.info(`After quick comment removal: ${quickCleaned.substring(0, 100)}...`);
     try {
       JSON.parse(quickCleaned);
@@ -1809,7 +1809,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
       // Extract workflow validation
       const workflowMatch = response.match(
-        /["']?workflow[_\s]*validation["']?\s*:\s*["']([^"'\n,\/]+)["']?/i,
+        /["']?workflow[_\s]*validation["']?\s*:\s*["']([^"'\n,/]+)["']?/i,
       );
       if (workflowMatch) {
         sections.workflow_validation = workflowMatch[1].trim();
@@ -1829,7 +1829,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
       // Extract business process
       const processMatch = response.match(
-        /["']?business[_\s]*process["']?\s*:\s*["']([^"'\n,\/]+)["']?/i,
+        /["']?business[_\s]*process["']?\s*:\s*["']([^"'\n,/]+)["']?/i,
       );
       if (processMatch) {
         sections.business_process = processMatch[1].trim();
