@@ -4,8 +4,8 @@ import {
   useErrorRecovery,
   useNetworkRecovery,
 } from "../../hooks/useErrorRecovery.js";
-import { Alert } from "../UI/Alert";
-import { Button } from "../UI/Button";
+import { Alert } from "../Alert";
+import { Button } from "../Button";
 import { WifiOff, RefreshCw } from "lucide-react";
 
 interface ErrorRecoveryBoundaryProps {
