@@ -172,7 +172,7 @@ export function errorTracking(
       method: req.method,
       userAgent: req.get("user-agent"),
       ip: req.ip,
-      userId: (req as any).user?.id,
+      userId: req.user?.id,
     },
     "high",
     false,
@@ -201,7 +201,7 @@ export function errorTracking(
 // Performance monitoring for specific operations
 export function monitorOperation(operationName: string) {
   return function (
-    target: any,
+    target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor,
   ) {
