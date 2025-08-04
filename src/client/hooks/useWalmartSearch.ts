@@ -6,8 +6,8 @@
 import { useState, useCallback, useRef } from 'react';
 // TODO: Replace with proper tRPC hooks
 // import { api } from '../lib/api.js';
-import type { WalmartProduct } from '../../types/walmart-grocery.js';
-import type { ExtendedSearchOptions } from '../../types/walmart-search-extended.js';
+import type { WalmartProduct } from '../../types/walmart-grocery';
+import type { ExtendedSearchOptions } from '../../types/walmart-search-extended';
 
 interface UseWalmartSearchResult {
   search: (options: ExtendedSearchOptions) => Promise<void>;

@@ -7,9 +7,9 @@ echo "🚀 Emergency pre-commit (lightweight)"
 STAGED_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)
 
 if [ -n "$STAGED_TS" ]; then
-    echo "🔍 Quick TypeScript check on staged files..."
-    # Run TypeScript check only on staged files with timeout
-    timeout 60 npx tsc --noEmit --skipLibCheck $STAGED_TS || {
+    echo "🔍 Quick TypeScript check on project..."
+    # Run TypeScript check on entire project with proper config
+    timeout 60 pnpm run typecheck || {
         echo "⚠️ TypeScript check failed or timed out"
         echo "💡 Fix errors or use 'git commit --no-verify' for emergency commits"
         exit 1

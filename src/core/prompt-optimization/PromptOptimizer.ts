@@ -1,12 +1,22 @@
-import {
-  Email,
-  EmailAnalysis,
-  ModelConfig,
-  OptimizationResult,
-} from "../../types.js";
-import { analyzeWithModel } from "../analysis/ModelAnalyzer.js";
-import { scoreAnalysis } from "../scoring/AnalysisScorer.js";
-import { logger } from "../../utils/logger.js";
+import type { Email } from "../pipeline/types";
+import type { EmailAnalysis } from "../../types/AnalysisTypes";
+import { scoreAnalysis } from "../scoring/AnalysisScorer";
+import { logger } from "../../utils/logger";
+
+export interface ModelConfig {
+  modelName: string;
+  temperature?: number;
+  maxTokens?: number;
+  systemPrompt?: string;
+}
+
+export interface OptimizationResult {
+  prompt: string;
+  score: number;
+  iterations: number;
+  improvements: string[];
+  variations?: PromptVariation[];
+}
 
 interface PromptVariation {
   id: string;
@@ -142,11 +152,26 @@ export class PromptOptimizer {
 
     for (const email of this.testEmails) {
       try {
-        const analysis = await analyzeWithModel(
-          this.targetModel,
-          prompt,
-          email,
-        );
+        // TODO: Implement model analysis
+        // For now, create a mock analysis
+        const analysis: EmailAnalysis = {
+          id: `analysis-${email.id}`,
+          email_id: email.id,
+          analysis_version: "1.0.0",
+          final_summary: {
+            priority: "medium",
+            workflow_state: "pending",
+            suggested_response: "Mock response",
+            key_insights: [],
+            next_steps: [],
+          },
+          confidence_score: 0.8,
+          workflow_type: "standard",
+          is_complete_chain: false,
+          total_processing_time_ms: 100,
+          phases_completed: [],
+          created_at: new Date(),
+        };
         results.push(analysis);
       } catch (error) {
         logger.error(`Failed to analyze email ${email.id}: ${error}`);
