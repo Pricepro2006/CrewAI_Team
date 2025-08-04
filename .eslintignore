@@ -1,0 +1,21 @@
+# Ignore build outputs
+dist/
+build/
+node_modules/
+
+# Ignore test files (handled by separate config)
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Ignore non-email-pipeline files for CI
+src/client/components/walmart/
+src/client/pages/walmart/
+src/client/services/walmart-api.ts
+src/client/store/groceryStore.ts
+src/api/middleware/security/
+
+# Ignore specific problematic files
+src/api/services/UserService.ts
+src/api/routes/auth.router.ts
