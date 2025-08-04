@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    // Exclude Walmart components temporarily
+    "src/client/components/walmart/**/*",
+    "src/client/pages/walmart/**/*",
+    "src/shared/types/walmart/**/*",
+    "src/utils/walmart-*"
+  ]
+}
