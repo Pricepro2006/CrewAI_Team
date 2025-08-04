@@ -519,7 +519,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
                     <div>
                       <h4 className="mb-3 font-medium">Order Items</h4>
                       <div className="space-y-3">
-                        {order.items.map((item) => (
+                        {order.items.map((item: UIOrderItem) => (
                           <div key={item.id} className="flex items-center gap-3 rounded-lg border p-3">
                             <div className="h-16 w-16 rounded bg-gray-100" />
                             <div className="flex-1">
@@ -595,7 +595,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[400px] overflow-y-auto py-4">
-            {selectedOrder?.items.map((item) => (
+            {selectedOrder?.items.map((item: UIOrderItem) => (
               <div key={item.id} className="flex items-center space-x-3 py-2">
                 <Checkbox
                   checked={selectedItems.has(item.id)}
@@ -651,7 +651,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
                 </div>
                 <Separator />
                 <div className="space-y-2">
-                  {selectedOrder.items.map((item) => (
+                  {selectedOrder.items.map((item: UIOrderItem) => (
                     <div key={item.id} className="flex justify-between">
                       <div>
                         <p>{item.name}</p>
