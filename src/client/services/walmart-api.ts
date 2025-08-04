@@ -44,11 +44,10 @@ function createOrderFromPartial(partialOrder: any): Order {
     },
     fulfillment: {
       type: 'delivery',
-      status: 'pending',
+      status: 'scheduled',
       estimatedTime: partialOrder.deliveryDate || now,
       address: {
-        id: 'addr-1',
-        type: 'home',
+        type: 'residential',
         street1: partialOrder.deliveryAddress || '',
         city: '',
         state: '',
@@ -283,7 +282,11 @@ export const walmartListAPI = {
       const result = await client.walmartGrocery.createList.mutate(params);
       // Transform the response to match GroceryList type
       if (result.success && result.list) {
-        return result.list;
+        return {
+          ...result.list,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
       }
       // Return a default list structure if transformation fails
       return {
@@ -671,9 +674,12 @@ export const walmartPreferencesAPI = {
   getPreferences: async (userId: string): Promise<UserPreferences> => {
     try {
       const result = await client.walmartGrocery.getPreferences.query({ userId });
-      // Transform the response to include userId
+      // Transform the response to include required properties
       return {
-        userId,
+        id: `pref-${userId}`,
+        user_id: userId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         ...result.preferences
       } as UserPreferences;
     } catch (error) {
@@ -689,9 +695,12 @@ export const walmartPreferencesAPI = {
   }): Promise<UserPreferences> => {
     try {
       const result = await client.walmartGrocery.updatePreferences.mutate(params);
-      // Transform the response to include userId
+      // Transform the response to include required properties
       return {
-        userId: params.userId,
+        id: `pref-${params.userId}`,
+        user_id: params.userId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         ...result.preferences
       } as UserPreferences;
     } catch (error) {
