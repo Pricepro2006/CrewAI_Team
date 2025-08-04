@@ -45,7 +45,7 @@ const EmailList: React.FC<EmailListProps> = ({
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const filteredAndSortedEmails = React.useMemo(() => {
-    let filtered = emails.filter((email) => {
+    const filtered = emails.filter((email) => {
       const matchesSearch = 
         email.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
         email.sender.toLowerCase().includes(searchTerm.toLowerCase());
@@ -57,9 +57,10 @@ const EmailList: React.FC<EmailListProps> = ({
       switch (sortBy) {
         case "timestamp":
           return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-        case "priority":
+        case "priority": {
           const priorityOrder = { "High": 3, "Medium": 2, "Low": 1 };
           return priorityOrder[b.priority] - priorityOrder[a.priority];
+        }
         case "subject":
           return a.subject.localeCompare(b.subject);
         default:

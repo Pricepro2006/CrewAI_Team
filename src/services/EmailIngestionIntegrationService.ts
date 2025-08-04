@@ -346,7 +346,7 @@ export class EmailIngestionIntegrationService {
       try {
         logger.info(`Starting auto-pull from ${source.description}`);
         
-        const method = this.ingestionService[source.method as keyof EmailIngestionServiceImpl] as Function;
+        const method = this.ingestionService[source.method as keyof EmailIngestionServiceImpl] as () => Promise<Result<IngestionBatchResult>>;
         const result = await method.call(this.ingestionService);
         
         if (result.success) {
