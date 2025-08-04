@@ -14,7 +14,7 @@ import type {
 } from "../workers/EmailProcessingWorkerPool.js";
 import type { QueueMetrics } from "../services/EmailProcessingQueueService.js";
 
-const logger = new Logger("EmailProcessingMonitor");
+const logger = Logger.getInstance("EmailProcessingMonitor");
 
 // ============================================
 // TYPE DEFINITIONS
@@ -351,7 +351,7 @@ export class EmailProcessingMonitor extends EventEmitter {
       report += chalk.bold("Worker Status:\n");
       report += `  Active: ${currentMetrics.workers.pool.activeWorkers}\n`;
       report += `  Idle: ${currentMetrics.workers.pool.idleWorkers}\n`;
-      report += `  Total: ${currentMetrics.workers.pool.totalConnections}\n\n`;
+      report += `  Total: ${currentMetrics.workers.pool.activeWorkers + currentMetrics.workers.pool.idleWorkers}\n\n`;
 
       // System Resources
       report += chalk.bold("System Resources:\n");
@@ -764,7 +764,7 @@ export class EmailProcessingMonitor extends EventEmitter {
   ): number {
     if (sortedSamples.length === 0) return 0;
     const index = Math.ceil((percentile / 100) * sortedSamples.length) - 1;
-    return sortedSamples[Math.max(0, index)];
+    return sortedSamples[Math.max(0, index)] || 0;
   }
 
   private formatUptime(ms: number): string {

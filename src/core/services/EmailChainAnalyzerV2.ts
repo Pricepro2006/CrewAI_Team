@@ -7,20 +7,20 @@
 
 import { EventEmitter } from "events";
 import { Logger } from "../../utils/logger.js";
-import { withUnitOfWork, IUnitOfWork } from "../../database/UnitOfWork.js";
-import {
+import { withUnitOfWork, UnitOfWork } from "../../database/UnitOfWork.js";
+import type {
   EmailRecord,
   EmailPriority,
   AnalysisStatus,
 } from "../../types/EmailTypes.js";
-import {
+import type {
   EmailChain,
   ChainType,
   ChainStage,
   ChainCompleteness,
 } from "../../types/ChainTypes.js";
 
-const logger = new Logger("EmailChainAnalyzerV2");
+const logger = Logger.getInstance("EmailChainAnalyzerV2");
 
 // ============================================
 // TYPE DEFINITIONS
@@ -66,7 +66,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
    * Analyze an email chain for completeness and patterns
    */
   async analyzeChain(email: EmailWithThread): Promise<ChainAnalysisResult> {
-    return withUnitOfWork(async (uow: IUnitOfWork) => {
+    return withUnitOfWork(async (uow: UnitOfWork) => {
       try {
         const startTime = Date.now();
 
@@ -110,7 +110,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
         const workflowState = this.determineWorkflowState(stages, completeness);
 
         // Check for existing chain in repository
-        const conversationId = threadEmails[0].conversation_id || email.id;
+        const conversationId = threadEmails[0]?.conversation_id || email.id;
         const existingChain = await uow.chains.findOne({
           conversation_id: conversationId,
         });
@@ -127,6 +127,9 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
         };
 
         // Update or create chain in repository
+        const firstEmail = threadEmails[0];
+        const lastEmail = threadEmails[threadEmails.length - 1];
+        
         const chainData: EmailChain = {
           id: existingChain?.id || "",
           chain_id: result.chain_id,
@@ -137,10 +140,8 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
           completeness_score: completeness.score,
           is_complete: completeness.is_complete,
           missing_stages: completeness.missing_stages,
-          start_time: new Date(threadEmails[0].received_time),
-          end_time: new Date(
-            threadEmails[threadEmails.length - 1].received_time,
-          ),
+          start_time: firstEmail ? new Date(firstEmail.received_time) : new Date(),
+          end_time: lastEmail ? new Date(lastEmail.received_time) : new Date(),
           duration_hours: 0,
           participants: this.extractParticipants(threadEmails),
           key_entities: keyEntities,
@@ -394,7 +395,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
     // Convert map to array
     return Array.from(entityMap.entries()).map(([value, data]) => ({
       type: data.type,
-      value: value.split(":")[1],
+      value: value.split(":")[1] || "",
       count: data.count,
       first_seen: data.first_seen,
       last_seen: data.last_seen,
@@ -481,7 +482,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
    * Get chain statistics from repository
    */
   async getChainStatistics(): Promise<any> {
-    return withUnitOfWork(async (uow: IUnitOfWork) => {
+    return withUnitOfWork(async (uow: UnitOfWork) => {
       return await uow.chains.getChainStatistics();
     });
   }
@@ -492,7 +493,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
   async findChainsNeedingReanalysis(
     hoursOld: number = 24,
   ): Promise<EmailChain[]> {
-    return withUnitOfWork(async (uow: IUnitOfWork) => {
+    return withUnitOfWork(async (uow: UnitOfWork) => {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursOld);
 

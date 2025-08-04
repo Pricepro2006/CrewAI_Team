@@ -230,7 +230,7 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
       // Calculate phases completed
       let phasesCompleted = 1;
       if (analysis.phase2_processing_time) phasesCompleted = 2;
-      if (analysis.phase3_processing_time) phasesCompleted = 3;
+      if ('phase3_processing_time' in analysis && analysis.phase3_processing_time) phasesCompleted = 3;
 
       // Cache the complete analysis
       if (this.options.useCaching && phasesCompleted === 3) {
