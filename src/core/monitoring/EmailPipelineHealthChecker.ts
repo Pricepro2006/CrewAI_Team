@@ -330,7 +330,7 @@ export class EmailPipelineHealthChecker {
       const missingModels = requiredModels.filter(
         (model) =>
           !availableModels.some((available: string) =>
-            available.includes(model.split(":")[0]),
+            available?.includes(model.split(":")[0]),
           ),
       );
 

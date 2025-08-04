@@ -21,7 +21,7 @@ interface EmailRecord {
   thread_emails?: EmailRecord[];
 }
 
-const logger = new Logger("EmailChainAnalyzer");
+const logger = Logger.getInstance("EmailChainAnalyzer");
 
 interface EmailChainNode {
   id: string;
@@ -409,9 +409,10 @@ export class EmailChainAnalyzer {
     // Calculate duration
     const firstEmail = emails[0];
     const lastEmail = emails[emails.length - 1];
-    const durationMs =
-      new Date(lastEmail.received_at).getTime() -
-      new Date(firstEmail.received_at).getTime();
+    const durationMs = firstEmail && lastEmail
+      ? new Date(lastEmail.received_at).getTime() -
+        new Date(firstEmail.received_at).getTime()
+      : 0;
     const durationHours = durationMs / (1000 * 60 * 60);
 
     // Analyze completeness
@@ -881,12 +882,13 @@ export class EmailChainAnalyzer {
     if (emails.length === 0) return "empty_chain";
 
     // Use thread_id if available
-    if (emails[0].thread_id) {
-      return emails[0].thread_id;
+    const firstEmail = emails[0];
+    if (firstEmail?.thread_id) {
+      return firstEmail.thread_id;
     }
 
     // Generate from subject and participants
-    const subject = this.cleanSubject(emails[0].subject) || '';
+    const subject = this.cleanSubject(firstEmail?.subject || '') || '';
     const participants = this.extractParticipants(emails).sort().join(",");
 
     return `chain_${this.hashString(subject + participants)}`;

@@ -26,7 +26,7 @@ import {
 import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
 import { executeQuery } from "../../database/ConnectionPool.js";
 
-const logger = new Logger("EmailThreePhaseAnalysisService");
+const logger = Logger.getInstance("EmailThreePhaseAnalysisService");
 
 // ============================================
 // TYPE DEFINITIONS
