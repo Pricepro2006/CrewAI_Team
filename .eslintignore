@@ -23,3 +23,6 @@ src/api/routes/businessSearch.ts
 src/api/routes/agent.router.ts
 src/api/monitoring/metrics.ts
 src/api/middleware/websocketAuth.ts
+src/api/routes/email-analysis.router.ts
+src/api/routes/data-collection.router.ts
+src/api/routes/csrf.router.ts
