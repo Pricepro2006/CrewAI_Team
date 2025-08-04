@@ -4,7 +4,7 @@
  * with proper typing and async handling
  */
 
-import { wsService } from './WebSocketService';
+import { wsService } from './WebSocketService.js';
 import type {
   EmailCreatedEvent,
   EmailUpdatedEvent,
@@ -18,14 +18,14 @@ import type {
   EmailBatchCreatedEvent,
   EmailBatchStatusUpdatedEvent,
   EmailBatchDeletedEvent,
-} from '../../shared/types/websocket-events';
+} from '../../shared/types/websocket-events.js';
 import type {
   EmailRecord,
   EmailPriority,
   EmailWorkflowState,
   EmailSLAStatus,
-} from '../../shared/types/email';
-import { logger } from '../../utils/logger';
+} from '../../shared/types/email.js';
+import { logger } from '../../utils/logger.js';
 
 export class EmailWebSocketEmitter {
   private static instance: EmailWebSocketEmitter;

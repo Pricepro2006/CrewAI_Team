@@ -6,12 +6,12 @@ import {
   protectedProcedure,
   csrfTokenProcedure,
   createCustomErrorHandler,
-} from "../trpc/enhanced-router";
-import { UserService } from "../services/UserService";
-import { jwtManager } from "../utils/jwt";
-import { passwordManager } from "../utils/password";
+} from "../trpc/enhanced-router.js";
+import { UserService } from "../services/UserService.js";
+import { jwtManager } from "../utils/jwt.js";
+import { passwordManager } from "../utils/password.js";
 import { randomUUID } from "crypto";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Authentication Router

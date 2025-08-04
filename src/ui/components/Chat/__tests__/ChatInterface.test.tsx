@@ -140,7 +140,7 @@ vi.mock("react-router-dom", async () => {
 });
 
 // Import the component after mocks are set up
-import { ChatInterface } from "../ChatInterface";
+import { ChatInterface } from "../ChatInterface.js";
 
 describe("ChatInterface Component", () => {
   beforeEach(() => {

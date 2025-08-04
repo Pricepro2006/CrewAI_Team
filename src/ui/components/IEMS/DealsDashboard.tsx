@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { trpc } from "../../utils/trpc";
+import { trpc } from "../../utils/trpc.js";
 import "./DealsDashboard.css";
 
 interface DealsDashboardProps {

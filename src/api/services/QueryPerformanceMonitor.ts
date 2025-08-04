@@ -1,5 +1,5 @@
-import { logger } from "../../utils/logger";
-import { wsService } from "./WebSocketService";
+import { logger } from "../../utils/logger.js";
+import { wsService } from "./WebSocketService.js";
 
 // Forward declarations - actual interfaces are at the bottom
 declare interface QueryPerformanceEntry extends QueryExecutionInfo {

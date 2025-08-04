@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { EmailStorageService } from "./EmailStorageService";
-import { wsService } from "./WebSocketService";
-import { logger } from "../../utils/logger";
+import { EmailStorageService } from "./EmailStorageService.js";
+import { wsService } from "./WebSocketService.js";
+import { logger } from "../../utils/logger.js";
 import Database from "better-sqlite3";
 
 // Mock dependencies

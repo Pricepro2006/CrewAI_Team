@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc/router";
+import { router, publicProcedure } from "../trpc/router.js";
 import type { Router } from "@trpc/server";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 import Database from "better-sqlite3";
 import { TRPCError } from "@trpc/server";
-import { WorkflowWebSocketHandler } from "../../core/websocket/WorkflowWebSocketHandler";
+import { WorkflowWebSocketHandler } from "../../core/websocket/WorkflowWebSocketHandler.js";
 
 // Zod schemas for workflow data
 const WorkflowCategory = z.enum([

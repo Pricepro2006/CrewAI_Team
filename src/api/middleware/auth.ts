@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import { TRPCError } from "@trpc/server";
-import { jwtManager, JWTError } from "../utils/jwt";
-import { UserService } from "../services/UserService";
-import type { PublicUser } from "../../database/models/User";
+import { jwtManager, JWTError } from "../utils/jwt.js";
+import { UserService } from "../services/UserService.js";
+import type { PublicUser } from "../../database/models/User.js";
 
 /**
  * Authentication Middleware

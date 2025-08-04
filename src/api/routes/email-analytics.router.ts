@@ -3,9 +3,9 @@ import {
   router,
   publicProcedure,
   protectedProcedure,
-} from "../trpc/enhanced-router";
-import { EmailAnalyticsService } from "../../core/database/EmailAnalyticsService";
-import { EmailQueryBuilder } from "../../core/database/EmailQueryBuilder";
+} from "../trpc/enhanced-router.js";
+import { EmailAnalyticsService } from "../../core/database/EmailAnalyticsService.js";
+import { EmailQueryBuilder } from "../../core/database/EmailQueryBuilder.js";
 import Database from "better-sqlite3";
 
 // Input validation schemas

@@ -3,7 +3,7 @@
  * Provides access to various MCP tools for enhanced functionality
  */
 
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 
 export interface MCPTool {
   name: string;

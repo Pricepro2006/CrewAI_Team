@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { router, publicProcedure, protectedProcedure } from '../trpc/enhanced-router';
-import { BrightDataService } from '../../core/data-collection/BrightDataService';
-import { logger } from '../../utils/logger';
-import { CircuitBreakerFactory } from '../../core/resilience/CircuitBreaker';
+import { router, publicProcedure, protectedProcedure } from '../trpc/enhanced-router.js';
+import { BrightDataService } from '../../core/data-collection/BrightDataService.js';
+import { logger } from '../../utils/logger.js';
+import { CircuitBreakerFactory } from '../../core/resilience/CircuitBreaker.js';
 
 // Input validation schemas
 const searchProductsSchema = z.object({

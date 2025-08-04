@@ -4,13 +4,13 @@ import {
   publicProcedure,
   commonSchemas,
   createFeatureRouter,
-} from "../trpc/enhanced-router";
+} from "../trpc/enhanced-router.js";
 import { observable } from "@trpc/server/observable";
 import { EventEmitter } from "events";
 // Router type available via enhanced-router
 // Security schemas available via enhanced-router
-import { logger } from "../../utils/logger";
-import { withTimeout, DEFAULT_TIMEOUTS } from "../../utils/timeout";
+import { logger } from "../../utils/logger.js";
+import { withTimeout, DEFAULT_TIMEOUTS } from "../../utils/timeout.js";
 
 // Event emitter for real-time updates
 const chatEvents = new EventEmitter();

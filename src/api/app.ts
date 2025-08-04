@@ -5,13 +5,13 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { createContext } from "./trpc/context";
-import { appRouter } from "./trpc/router";
-import appConfig from "../config/app.config";
+import { createContext } from "./trpc/context.js";
+import { appRouter } from "./trpc/router.js";
+import appConfig from "../config/app.config.js";
 import type { Express } from "express";
-import { apiRateLimiter } from "./middleware/rateLimiter";
-import uploadRoutes from "./routes/upload.routes";
-import emailPipelineHealthRouter from "./routes/email-pipeline-health.router";
+import { apiRateLimiter } from "./middleware/rateLimiter.js";
+import uploadRoutes from "./routes/upload.routes.js";
+import emailPipelineHealthRouter from "./routes/email-pipeline-health.router.js";
 
 /**
  * Create Express app with all middleware configured

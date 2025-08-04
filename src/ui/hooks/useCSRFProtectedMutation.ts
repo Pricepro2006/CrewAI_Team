@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import type { TRPCClientErrorLike } from "@trpc/client";
-import { useCSRF, handleCSRFError } from "./useCSRF";
-import { logger } from "../utils/logger";
+import { useCSRF, handleCSRFError } from "./useCSRF.js";
+import { logger } from "../utils/logger.js";
 
 /**
  * Enhanced mutation hook with automatic CSRF protection and retry logic

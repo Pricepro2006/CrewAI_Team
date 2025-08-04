@@ -4,9 +4,9 @@
  */
 
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc/router";
-import { DealDataService } from "../services/DealDataService";
-import { logger } from "../../utils/logger";
+import { router, publicProcedure } from "../trpc/router.js";
+import { DealDataService } from "../services/DealDataService.js";
+import { logger } from "../../utils/logger.js";
 
 // Get singleton instance
 const dealDataService = DealDataService.getInstance();

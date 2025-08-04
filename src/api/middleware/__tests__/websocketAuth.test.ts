@@ -9,8 +9,8 @@ import {
 import {
   WebSocketAuthManager,
   type AuthenticatedWebSocket,
-} from "../websocketAuth";
-import type { UserService, User } from "../../services/UserService";
+} from "../websocketAuth.js";
+import type { UserService, User } from "../../services/UserService.js";
 import { WebSocket } from "ws";
 
 // Mock dependencies

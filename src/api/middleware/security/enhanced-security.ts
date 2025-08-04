@@ -5,14 +5,14 @@
 
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { Context } from "../../trpc/context";
-import { logger } from "../../../utils/logger";
+import type { Context } from "../../trpc/context.js";
+import { logger } from "../../../utils/logger.js";
 import {
   SqlInjectionProtection,
   SqlInjectionError,
   DatabaseInputSchemas,
   createSqlInjectionProtection,
-} from "../../../database/security/SqlInjectionProtection";
+} from "../../../database/security/SqlInjectionProtection.js";
 
 // Create SQL injection protection instance for middleware
 const sqlSecurity = createSqlInjectionProtection({
@@ -532,4 +532,4 @@ export {
   SqlInjectionError,
   DatabaseInputSchemas,
   createSqlInjectionProtection,
-} from "../../../database/security/SqlInjectionProtection";
+} from "../../../database/security/SqlInjectionProtection.js";

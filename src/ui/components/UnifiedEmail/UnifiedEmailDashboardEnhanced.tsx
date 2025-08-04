@@ -17,20 +17,20 @@ import {
   WifiIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
-import { api } from "../../../lib/trpc";
-import { useEmailWebSocket } from "../../hooks/useEnhancedWebSocket";
-import { MetricsBar } from "./MetricsBar";
-import { EmailListView } from "./EmailListView";
-import { EmailDashboardView } from "./EmailDashboardView";
-import { AnalyticsView } from "./AnalyticsView";
-import { AgentView } from "./AgentView";
-import { StatusLegend } from "./StatusLegend";
+import { api } from "../../../lib/trpc.js";
+import { useEmailWebSocket } from "../../hooks/useEnhancedWebSocket.js";
+import { MetricsBar } from "./MetricsBar.js";
+import { EmailListView } from "./EmailListView.js";
+import { EmailDashboardView } from "./EmailDashboardView.js";
+import { AnalyticsView } from "./AnalyticsView.js";
+import { AgentView } from "./AgentView.js";
+import { StatusLegend } from "./StatusLegend.js";
 import type {
   UnifiedEmailData,
   ViewMode,
   FilterConfig,
   DashboardMetrics,
-} from "../../../types/unified-email.types";
+} from "../../../types/unified-email.types.js";
 import type {
   EmailStatsUpdatedEvent,
   EmailAnalyticsUpdatedEvent,
@@ -39,7 +39,7 @@ import type {
   EmailStateChangedEvent,
   EmailSLAAlertEvent,
   WebSocketEventHandlers,
-} from "../../../shared/types/websocket-events";
+} from "../../../shared/types/websocket-events.js";
 import "./UnifiedEmailDashboard.css";
 
 interface UnifiedEmailDashboardProps {

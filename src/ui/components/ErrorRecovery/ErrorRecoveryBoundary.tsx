@@ -1,11 +1,11 @@
 import React, { ReactNode } from "react";
-import { ErrorBoundary } from "../ErrorBoundary/index";
+import { ErrorBoundary } from "../ErrorBoundary/index.js";
 import {
   useErrorRecovery,
   useNetworkRecovery,
-} from "../../hooks/useErrorRecovery";
-import { Alert } from "../UI/Alert";
-import { Button } from "../UI/Button";
+} from "../../hooks/useErrorRecovery.js";
+import { Alert } from "../UI/Alert.js";
+import { Button } from "../UI/Button.js";
 import { WifiOff, RefreshCw } from "lucide-react";
 
 interface ErrorRecoveryBoundaryProps {

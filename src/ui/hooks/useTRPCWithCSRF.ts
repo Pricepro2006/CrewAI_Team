@@ -7,9 +7,9 @@ import {
   createWSClient,
 } from "@trpc/client";
 import superjson from "superjson";
-import { api } from "../../lib/trpc";
-import { useCSRF, handleCSRFError } from "./useCSRF";
-import { logger } from "../utils/logger";
+import { api } from "../../lib/trpc.js";
+import { useCSRF, handleCSRFError } from "./useCSRF.js";
+import { logger } from "../utils/logger.js";
 
 interface TRPCClientConfig {
   apiUrl?: string;

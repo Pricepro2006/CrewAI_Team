@@ -3,7 +3,7 @@
  * This module provides error handling without Node.js dependencies
  */
 
-import { logger } from "./logger";
+import { logger } from "./logger.js";
 
 export interface AppError extends Error {
   code?: string;

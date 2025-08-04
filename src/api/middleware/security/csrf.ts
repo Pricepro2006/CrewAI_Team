@@ -1,7 +1,7 @@
 import { randomBytes, createHash } from "crypto";
 import { TRPCError } from "@trpc/server";
 import type { Request, Response } from "express";
-import { logger } from "../../../utils/logger";
+import { logger } from "../../../utils/logger.js";
 
 /**
  * CSRF Token configuration

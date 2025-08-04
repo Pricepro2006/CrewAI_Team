@@ -12,14 +12,14 @@ import type {
   UserListQuery,
   UserListResponse,
   ChangePasswordInput,
-} from "../../database/models/User";
-import { passwordManager } from "../utils/password";
-import { jwtManager } from "../utils/jwt";
-import appConfig from "../../config/app.config";
+} from "../../database/models/User.js";
+import { passwordManager } from "../utils/password.js";
+import { jwtManager } from "../utils/jwt.js";
+import appConfig from "../../config/app.config.js";
 
 // Re-export types that tests need
-export type { User, PublicUser } from "../../database/models/User";
-export type { JWTPayload } from "../utils/jwt";
+export type { User, PublicUser } from "../../database/models/User.js";
+export type { JWTPayload } from "../utils/jwt.js";
 export enum UserRole {
   USER = "user",
   ADMIN = "admin",

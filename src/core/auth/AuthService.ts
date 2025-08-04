@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import Database from "better-sqlite3";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 import { TRPCError } from "@trpc/server";
 
 interface User {

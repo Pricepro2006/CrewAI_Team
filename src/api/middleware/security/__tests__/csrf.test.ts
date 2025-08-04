@@ -11,7 +11,7 @@ import {
   ensureCSRFToken,
   shouldRotateToken,
   updateTokenMetadata,
-} from "../csrf";
+} from "../csrf.js";
 
 // Mock logger
 vi.mock("../../../../utils/logger", () => ({

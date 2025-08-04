@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Database, Cloud, AlertCircle, CheckCircle, Loader } from 'lucide-react';
-import { api } from '../../../lib/trpc';
+import { api } from '../../../lib/trpc.js';
 import './EmailIngestionPanel.css';
 
 interface IngestionProgress {

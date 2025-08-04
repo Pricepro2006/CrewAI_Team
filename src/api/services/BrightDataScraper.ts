@@ -3,8 +3,8 @@
  * Uses BrightData SDK for reliable product data extraction
  */
 
-import { logger } from "../../utils/logger";
-import type { WalmartProduct } from "../../types/walmart-grocery";
+import { logger } from "../../utils/logger.js";
+import type { WalmartProduct } from "../../types/walmart-grocery.js";
 
 interface ScraperConfig {
   apiKey: string;

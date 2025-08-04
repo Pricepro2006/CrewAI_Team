@@ -1,4 +1,4 @@
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 import { EventEmitter } from "events";
 
 export enum CircuitState {

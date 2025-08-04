@@ -1,8 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { createTRPCProxyClient, createWSClient, wsLink } from "@trpc/client";
 import superjson from "superjson";
-import type { AppRouter } from "../../api/trpc/router";
-import { webSocketConfig } from "../../config/websocket.config";
+import type { AppRouter } from "../../api/trpc/router.js";
+import { webSocketConfig } from "../../config/websocket.config.js";
 
 interface WebSocketOptions {
   onConnect?: () => void;

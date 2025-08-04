@@ -8,7 +8,7 @@ import {
 import type {
   IEMSEmail,
   EmailStatus,
-} from "../../../types/iems-email.types";
+} from "../../../types/iems-email.types.js";
 import "./VMwareTDSynnexSection.css";
 
 interface VMwareTDSynnexSectionProps {

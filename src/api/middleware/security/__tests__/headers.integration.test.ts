@@ -5,7 +5,7 @@
 import { describe, test, expect, beforeAll, afterAll } from "vitest";
 // Commented out due to missing supertest dependency
 // import request from 'supertest';
-// import { app, server } from '../../../server';
+// import { app, server } from '../../../server.js';
 
 describe.skip("Security Headers Integration", () => {
   beforeAll(() => {

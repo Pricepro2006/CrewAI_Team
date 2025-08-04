@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { Request, Response } from "express";
-import { graphWebhookHandler } from "./microsoft-graph";
+import { graphWebhookHandler } from "./microsoft-graph.js";
 
 // Mock bullmq
 vi.mock("bullmq", () => ({
