@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// @ts-ignore - BullMQ type definitions issue
+// @ts-expect-error - BullMQ type definitions issue with v5
 import { Queue, Worker } from "bullmq";
 import { UnifiedEmailService } from "../../api/services/UnifiedEmailService.js";
 import { logger } from "../../utils/logger.js";
