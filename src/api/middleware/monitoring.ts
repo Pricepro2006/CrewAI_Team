@@ -6,6 +6,7 @@ import { logger } from "../../utils/logger.js";
 
 interface MonitoredRequest extends Request {
   id?: string;
+  user?: { id?: string };
 }
 
 // Generate request ID
@@ -45,7 +46,7 @@ export function requestTracking(
 
   // Override res.json to capture response
   const originalJson = res.json;
-  res.json = function (body: any) {
+  res.json = function (body: unknown) {
     res.locals['responseBody'] = body;
     return originalJson.call(this, body);
   };
@@ -121,7 +122,7 @@ export function requestTracking(
         method: req.method,
         userAgent: req.get("user-agent"),
         ip: req.ip,
-        userId: (req as any).user?.id,
+        userId: req.user?.id,
       };
 
       let severity: "low" | "medium" | "high" | "critical" = "low";
@@ -206,7 +207,7 @@ export function monitorOperation(operationName: string) {
   ) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const fullOperationName = `${operationName}_${propertyKey}`;
       return performanceMonitor.trackAsync(
         fullOperationName,
@@ -240,7 +241,7 @@ export function requestSizeTracking(
 
   // Track response size
   const originalSend = res.send;
-  res.send = function (data: any) {
+  res.send = function (data: unknown) {
     if (data) {
       const size = Buffer.byteLength(JSON.stringify(data));
       metricsCollector.histogram("http_response_size_bytes", size, {
@@ -276,7 +277,7 @@ export function rateLimitTracking(
           method: req.method,
           ip: req.ip || "unknown",
           userAgent: req.get("user-agent"),
-          userId: (req as any).user?.id,
+          userId: req.user?.id,
         },
         "low",
         true,
