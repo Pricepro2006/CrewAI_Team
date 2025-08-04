@@ -15,7 +15,7 @@ import type {
   QuickAnalysis,
   DeepWorkflowAnalysis,
   ProcessingMetadata,
-  ActionItem,
+  // ActionItem, // Unused import
 } from "../types/analysis-results.js";
 import { EmailPriority } from "../types/EmailTypes.js";
 
@@ -75,7 +75,7 @@ export class PipelineAnalysisAdapter
   /**
    * Transform domain model back to database format (not typically needed for read-only adapter)
    */
-  toDatabase(domain: EmailAnalysisResult): PipelineEmailAnalysis {
+  toDatabase(_domain: EmailAnalysisResult): PipelineEmailAnalysis {
     throw new Error("toDatabase not implemented - pipeline data is read-only");
   }
 
@@ -135,7 +135,7 @@ export class PipelineAnalysisAdapter
   private mapDeepAnalysis(
     llama?: Partial<LlamaAnalysisData>,
     phi4?: Partial<Phi4AnalysisData>,
-    emailId?: string,
+    _emailId?: string,
   ): DeepWorkflowAnalysis {
     // Combine insights from both models
     const summary =
