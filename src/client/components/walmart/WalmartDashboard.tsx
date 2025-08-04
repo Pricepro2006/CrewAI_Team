@@ -77,7 +77,7 @@ import { useWalmartSearch } from '../../hooks/useWalmartSearch';
 import { useWalmartDeals } from '../../hooks/useWalmartDeals';
 
 import type { WalmartProduct, CartItem, Order } from '../../../types/walmart-grocery';
-import { normalizePrice, getEffectivePrice, isOnSale, calculateSavings } from '../../../../utils/walmart-price';
+import { normalizePrice, getEffectivePrice, isOnSale, calculateSavings } from '../../../utils/walmart-price';
 
 interface WalmartDashboardProps {
   className?: string;

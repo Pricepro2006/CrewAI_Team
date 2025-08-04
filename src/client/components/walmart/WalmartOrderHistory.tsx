@@ -252,7 +252,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
       selectedItems.has(item.id)
     );
 
-    itemsToReorder.forEach(item => {
+    itemsToReorder.forEach((item: UIOrderItem) => {
       if (item.product) {
         // Convert UIWalmartProduct to a minimal product for cart
         const cartProduct = {
