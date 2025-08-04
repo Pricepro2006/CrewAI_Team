@@ -1,18 +1,18 @@
 import React, { Suspense } from 'react';
-import { EmailIngestionMonitoringErrorBoundary } from './EmailIngestionMonitoringErrorBoundary';
-import { EmailIngestionMonitoringDashboard } from './EmailIngestionMonitoringDashboard';
-import { LoadingState } from '../LoadingState/LoadingState';
+import { EmailIngestionMonitoringErrorBoundary } from './EmailIngestionMonitoringErrorBoundary.js';
+import { EmailIngestionMonitoringDashboard } from './EmailIngestionMonitoringDashboard.js';
+import { LoadingState } from '../LoadingState/LoadingState.js';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '../../../components/ui/card';
+} from '../../../components/ui/card.js';
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from '../../../components/ui/alert';
+} from '../../../components/ui/alert.js';
 import { 
   Activity,
   AlertCircle,

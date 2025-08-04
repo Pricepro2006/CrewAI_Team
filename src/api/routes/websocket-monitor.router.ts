@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { wsService } from "../services/WebSocketService";
-import type { AuthenticatedRequest } from "../middleware/auth";
-import { logger } from "../../utils/logger";
+import { wsService } from "../services/WebSocketService.js";
+import type { AuthenticatedRequest } from "../middleware/auth.js";
+import { logger } from "../../utils/logger.js";
 
 const router = Router();
 

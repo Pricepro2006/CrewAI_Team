@@ -1,8 +1,8 @@
-import { router, publicProcedure } from "../trpc/enhanced-router";
-import { logger } from "../../utils/logger";
-import ollamaConfig from "../../config/ollama.config";
-import appConfig from "../../config/app.config";
-import { MODEL_CONFIG } from "../../config/models.config";
+import { router, publicProcedure } from "../trpc/enhanced-router.js";
+import { logger } from "../../utils/logger.js";
+import ollamaConfig from "../../config/ollama.config.js";
+import appConfig from "../../config/app.config.js";
+import { MODEL_CONFIG } from "../../config/models.config.js";
 import Database from "better-sqlite3";
 
 interface ServiceStatus {

@@ -1,4 +1,4 @@
-export { IEMSDashboard } from "./IEMSDashboard";
-export { EmailAliasSection } from "./EmailAliasSection";
-export { MarketingSplunkSection } from "./MarketingSplunkSection";
-export { VMwareTDSynnexSection } from "./VMwareTDSynnexSection";
+export { IEMSDashboard } from "./IEMSDashboard.js";
+export { EmailAliasSection } from "./EmailAliasSection.js";
+export { MarketingSplunkSection } from "./MarketingSplunkSection.js";
+export { VMwareTDSynnexSection } from "./VMwareTDSynnexSection.js";

@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
-import { logger } from '../../utils/logger';
-import { EmailAnalyticsService } from '../database/EmailAnalyticsService';
+import { logger } from '../../utils/logger.js';
+import { EmailAnalyticsService } from '../database/EmailAnalyticsService.js';
 import fs from 'fs';
 import path from 'path';
 

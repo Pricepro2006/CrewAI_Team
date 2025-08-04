@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
-import { logger } from "../../utils/logger";
-import { AppError, ErrorCode } from "../../utils/error-handling/server";
-import { getUserFriendlyError } from "../../utils/error-handling/error-messages";
+import { logger } from "../../utils/logger.js";
+import { AppError, ErrorCode } from "../../utils/error-handling/server.js";
+import { getUserFriendlyError } from "../../utils/error-handling/error-messages.js";
 
 /**
  * Maps AppError codes to TRPC error codes

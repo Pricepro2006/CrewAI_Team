@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { BellIcon, TagIcon, ClockIcon } from "@heroicons/react/24/outline";
-import { api } from "../../../lib/trpc";
-import type { DealMatch } from "../../../types/walmart-grocery";
+import { api } from "../../../lib/trpc.js";
+import type { DealMatch } from "../../../types/walmart-grocery.js";
 
 export const WalmartDealAlert: React.FC = () => {
   const [activeDeals, setActiveDeals] = useState<DealMatch[]>([]);

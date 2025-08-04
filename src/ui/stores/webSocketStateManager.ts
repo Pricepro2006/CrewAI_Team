@@ -13,7 +13,7 @@ import type {
   WorkflowWebSocketEvent,
   SystemWebSocketEvent,
   WebSocketError,
-} from '../../shared/types/websocket-events';
+} from '../../shared/types/websocket-events.js';
 
 interface PendingUpdate {
   id: string;

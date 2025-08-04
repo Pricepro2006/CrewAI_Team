@@ -1,10 +1,10 @@
 import express from "express";
-import { authenticateJWT as requireAuth } from "../middleware/auth";
-import { metricsCollector } from "../../monitoring/MetricsCollector";
-import { errorTracker } from "../../monitoring/ErrorTracker";
-import { performanceMonitor } from "../../monitoring/PerformanceMonitor";
-import { healthChecker } from "../../monitoring/HealthChecker";
-import { logger } from "../../utils/logger";
+import { authenticateJWT as requireAuth } from "../middleware/auth.js";
+import { metricsCollector } from "../../monitoring/MetricsCollector.js";
+import { errorTracker } from "../../monitoring/ErrorTracker.js";
+import { performanceMonitor } from "../../monitoring/PerformanceMonitor.js";
+import { healthChecker } from "../../monitoring/HealthChecker.js";
+import { logger } from "../../utils/logger.js";
 
 const router = express.Router();
 

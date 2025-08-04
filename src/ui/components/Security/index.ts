@@ -4,26 +4,26 @@ export {
   useCSRF,
   withCSRFProtection,
   handleCSRFError,
-} from "../../hooks/useCSRF";
+} from "../../hooks/useCSRF.js";
 export {
   useTRPCWithCSRF,
   useCSRFStatus,
   useCSRFForm,
-} from "../../hooks/useTRPCWithCSRF";
+} from "../../hooks/useTRPCWithCSRF.js";
 export {
   useCSRFProtectedMutation,
   useCSRFBatchOperation,
   useCSRFFormSubmit,
-} from "../../hooks/useCSRFProtectedMutation";
+} from "../../hooks/useCSRFProtectedMutation.js";
 
 // CSRF UI Components
 export {
   CSRFMonitor,
   CSRFStatusBadge,
   CSRFErrorBoundary,
-} from "./CSRFMonitor";
-export { CSRFErrorModal, useCSRFErrorModal } from "./CSRFErrorModal";
-export { default as CSRFExampleUsage } from "./CSRFExampleUsage";
+} from "./CSRFMonitor.js";
+export { CSRFErrorModal, useCSRFErrorModal } from "./CSRFErrorModal.js";
+export { default as CSRFExampleUsage } from "./CSRFExampleUsage.js";
 
 // Security Monitoring Components
-export { SecurityStatusMonitor } from "./SecurityStatusMonitor";
+export { SecurityStatusMonitor } from "./SecurityStatusMonitor.js";

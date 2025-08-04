@@ -4,9 +4,9 @@ import { promisify } from "util";
 import * as path from "path";
 import * as fs from "fs/promises";
 import { fileURLToPath } from "url";
-import type { EmailStorageService } from "./EmailStorageService";
-import type { WebSocketService } from "./WebSocketService";
-import { logger } from "../../utils/logger";
+import type { EmailStorageService } from "./EmailStorageService.js";
+import type { WebSocketService } from "./WebSocketService.js";
+import { logger } from "../../utils/logger.js";
 import { z } from "zod";
 
 const __filename = fileURLToPath(import.meta.url);

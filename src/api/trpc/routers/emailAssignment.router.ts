@@ -4,15 +4,15 @@ import {
   router,
   publicProcedure,
   protectedProcedure,
-} from "../enhanced-router";
-import type { Context } from "../context";
-import { EmailStorageService } from "../../services/EmailStorageService";
-import { WebSocketService } from "../../services/WebSocketService";
+} from "../enhanced-router.js";
+import type { Context } from "../context.js";
+import { EmailStorageService } from "../../services/EmailStorageService.js";
+import { WebSocketService } from "../../services/WebSocketService.js";
 import {
   getTeamMemberById,
   TEAM_MEMBERS,
   getSuggestedAssignees,
-} from "../../../config/team-members.config";
+} from "../../../config/team-members.config.js";
 
 // const emailStorage = new EmailStorageService(); // TODO: Fix database schema issues
 const emailStorage = null as any; // Temporary fix

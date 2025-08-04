@@ -3,10 +3,10 @@ import {
   EmailAnalysis,
   ModelConfig,
   OptimizationResult,
-} from "../../types";
-import { analyzeWithModel } from "../analysis/ModelAnalyzer";
-import { scoreAnalysis } from "../scoring/AnalysisScorer";
-import { logger } from "../../utils/logger";
+} from "../../types.js";
+import { analyzeWithModel } from "../analysis/ModelAnalyzer.js";
+import { scoreAnalysis } from "../scoring/AnalysisScorer.js";
+import { logger } from "../../utils/logger.js";
 
 interface PromptVariation {
   id: string;

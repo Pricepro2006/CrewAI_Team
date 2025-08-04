@@ -4,13 +4,13 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '../../../components/ui/card';
+} from '../../../components/ui/card.js';
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from '../../../components/ui/alert';
-import { Button } from '../../../components/ui/button';
+} from '../../../components/ui/alert.js';
+import { Button } from '../../../components/ui/button.js';
 import {
   AlertTriangle,
   RefreshCw,

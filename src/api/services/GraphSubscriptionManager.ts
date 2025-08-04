@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { logger } from "../../utils/logger";
-import { metrics } from "../monitoring/metrics";
+import { logger } from "../../utils/logger.js";
+import { metrics } from "../monitoring/metrics.js";
 
 // Optional imports for Microsoft Graph dependencies
 let Client: any;

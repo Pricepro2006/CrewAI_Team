@@ -6,9 +6,9 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import WS from 'jest-websocket-mock';
-import { useEnhancedWebSocket, useEmailWebSocket } from '../../hooks/useEnhancedWebSocket';
-import { useWebSocketStateManager } from '../../stores/webSocketStateManager';
-import type { EmailStatsUpdatedEvent } from '../../../shared/types/websocket-events';
+import { useEnhancedWebSocket, useEmailWebSocket } from '../../hooks/useEnhancedWebSocket.js';
+import { useWebSocketStateManager } from '../../stores/webSocketStateManager.js';
+import type { EmailStatsUpdatedEvent } from '../../../shared/types/websocket-events.js';
 
 describe('WebSocket Integration Tests', () => {
   let server: WS;

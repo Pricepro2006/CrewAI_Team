@@ -5,9 +5,9 @@
 
 import { v4 as uuidv4 } from "uuid";
 import Database from "better-sqlite3";
-import { logger } from "../../utils/logger";
-import { wsService } from "./WebSocketService";
-import appConfig from "../../config/app.config";
+import { logger } from "../../utils/logger.js";
+import { wsService } from "./WebSocketService.js";
+import appConfig from "../../config/app.config.js";
 
 export interface Deal {
   id: string;

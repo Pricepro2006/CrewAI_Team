@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
 import Database from "better-sqlite3";
-import appConfig from "../../config/app.config";
-import { logger } from "../../utils/logger";
-import { wsService } from "./WebSocketService";
-import { performanceOptimizer } from "./PerformanceOptimizer";
-import { queryPerformanceMonitor } from "./QueryPerformanceMonitor";
-import { LazyLoader } from "../../utils/LazyLoader";
-import { ConnectionPool } from "../../core/database/ConnectionPool";
-import type { EmailRecord } from "../../shared/types/email";
+import appConfig from "../../config/app.config.js";
+import { logger } from "../../utils/logger.js";
+import { wsService } from "./WebSocketService.js";
+import { performanceOptimizer } from "./PerformanceOptimizer.js";
+import { queryPerformanceMonitor } from "./QueryPerformanceMonitor.js";
+import { LazyLoader } from "../../utils/LazyLoader.js";
+import { ConnectionPool } from "../../core/database/ConnectionPool.js";
+import type { EmailRecord } from "../../shared/types/email.js";
 
 // Enhanced email analysis interfaces
 export interface EmailAnalysisResult {

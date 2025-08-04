@@ -1,15 +1,15 @@
 import { z } from 'zod';
-import { router, publicProcedure, protectedProcedure } from '../trpc/router';
+import { router, publicProcedure, protectedProcedure } from '../trpc/router.js';
 import { TRPCError } from '@trpc/server';
-// import { EmailIngestionServiceImpl } from '../../core/services/EmailIngestionServiceImpl';
-import { logger } from '../../utils/logger';
+// import { EmailIngestionServiceImpl } from '../../core/services/EmailIngestionServiceImpl.js';
+import { logger } from '../../utils/logger.js';
 import type {
   IngestionMetrics,
   QueueStatus,
   HealthStatus,
   IngestionBatchResult,
   IngestionSource,
-} from '../../core/services/EmailIngestionService';
+} from '../../core/services/EmailIngestionService.js';
 
 // =====================================================
 // Input Validation Schemas

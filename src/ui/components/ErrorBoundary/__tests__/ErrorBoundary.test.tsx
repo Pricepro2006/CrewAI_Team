@@ -4,8 +4,8 @@ import {
   ErrorBoundary,
   withErrorBoundary,
   useErrorHandler,
-} from "../ErrorBoundary";
-import { ErrorFallback } from "../ErrorFallback";
+} from "../ErrorBoundary.js";
+import { ErrorFallback } from "../ErrorFallback.js";
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
 

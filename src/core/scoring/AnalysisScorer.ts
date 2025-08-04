@@ -1,5 +1,5 @@
-import { EmailAnalysis } from "../../types";
-import { logger } from "../../utils/logger";
+import { EmailAnalysis } from "../../types.js";
+import { logger } from "../../utils/logger.js";
 
 interface ScoringDimensions {
   contextUnderstanding: number;

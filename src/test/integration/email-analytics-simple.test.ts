@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { EmailAnalyticsService } from '../../core/database/EmailAnalyticsService';
+import { EmailAnalyticsService } from '../../core/database/EmailAnalyticsService.js';
 import Database from 'better-sqlite3';
 import fs from 'fs';
 

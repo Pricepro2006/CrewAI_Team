@@ -1,6 +1,6 @@
 import React from "react";
-import { Toast } from "./Toast";
-import type { ToastProps, ToastType } from "./Toast";
+import { Toast } from "./Toast.js";
+import type { ToastProps, ToastType } from "./Toast.js";
 import "./ToastContainer.css";
 
 interface ToastData extends Omit<ToastProps, "onClose"> {

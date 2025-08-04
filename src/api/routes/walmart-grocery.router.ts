@@ -4,17 +4,17 @@ import {
   publicProcedure,
   commonSchemas,
   createFeatureRouter,
-} from "../trpc/enhanced-router";
+} from "../trpc/enhanced-router.js";
 import { observable } from "@trpc/server/observable";
 import { EventEmitter } from "events";
-import { logger } from "../../utils/logger";
-import { withTimeout, DEFAULT_TIMEOUTS } from "../../utils/timeout";
-import { BrightDataService } from "../../core/data-collection/BrightDataService";
-import type { CollectedData } from "../../core/data-collection/types";
-import { WalmartGroceryService } from "../services/WalmartGroceryService";
-import { GroceryListRepository, GroceryItemRepository } from "../../database/repositories/GroceryRepository";
-import { getDatabaseManager } from "../../database/DatabaseManager";
-import type { WalmartProduct } from "../../types/walmart-grocery";
+import { logger } from "../../utils/logger.js";
+import { withTimeout, DEFAULT_TIMEOUTS } from "../../utils/timeout.js";
+import { BrightDataService } from "../../core/data-collection/BrightDataService.js";
+import type { CollectedData } from "../../core/data-collection/types.js";
+import { WalmartGroceryService } from "../services/WalmartGroceryService.js";
+import { GroceryListRepository, GroceryItemRepository } from "../../database/repositories/GroceryRepository.js";
+import { getDatabaseManager } from "../../database/DatabaseManager.js";
+import type { WalmartProduct } from "../../types/walmart-grocery.js";
 
 // Event emitter for real-time updates
 const walmartEvents = new EventEmitter();

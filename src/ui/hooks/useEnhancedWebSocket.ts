@@ -6,13 +6,13 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import type { WebSocket as WSType } from 'ws';
-import { websocketConfig, getWebSocketUrl, getReconnectionDelay } from '../../shared/config/websocket.config';
+import { websocketConfig, getWebSocketUrl, getReconnectionDelay } from '../../shared/config/websocket.config.js';
 import type {
   WebSocketEvent,
   WebSocketEventHandlers,
   ConnectionEvent,
   WebSocketError,
-} from '../../shared/types/websocket-events';
+} from '../../shared/types/websocket-events.js';
 
 export interface UseWebSocketOptions {
   endpoint?: 'trpc' | 'socketio' | 'email';

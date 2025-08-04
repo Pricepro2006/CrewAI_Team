@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
-import { logger } from "../../utils/logger";
-import { ErrorFallback } from "./ErrorFallback";
+import { logger } from "../../utils/logger.js";
+import { ErrorFallback } from "./ErrorFallback.js";
 
 interface Props {
   children: ReactNode;

@@ -1,11 +1,11 @@
 import { WebSocket } from "ws";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils/logger.js";
 import {
   AppError,
   ErrorCode,
   WebSocketError,
-} from "../../utils/error-handling/server";
-import { getUserFriendlyError } from "../../utils/error-handling/error-messages";
+} from "../../utils/error-handling/server.js";
+import { getUserFriendlyError } from "../../utils/error-handling/error-messages.js";
 
 export interface WebSocketErrorMessage {
   type: "error";

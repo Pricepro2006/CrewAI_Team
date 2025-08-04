@@ -1,6 +1,6 @@
 import type { WebSocket } from "ws";
-import type { UserService } from "../services/UserService";
-import { logger } from "../../utils/logger";
+import type { UserService } from "../services/UserService.js";
+import { logger } from "../../utils/logger.js";
 import { z } from "zod";
 
 // WebSocket authentication message schema

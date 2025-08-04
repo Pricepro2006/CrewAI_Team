@@ -24,8 +24,8 @@ import {
   AlertTriangle,
   ChevronUp,
 } from "lucide-react";
-import { api } from "../../../lib/trpc";
-import { EmailIngestionPanel } from "./EmailIngestionPanel";
+import { api } from "../../../lib/trpc.js";
+import { EmailIngestionPanel } from "./EmailIngestionPanel.js";
 import "./EmailDashboard.css";
 
 // Register ChartJS components

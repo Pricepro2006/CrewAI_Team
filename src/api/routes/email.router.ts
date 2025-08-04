@@ -3,13 +3,13 @@ import {
   router,
   publicProcedure,
   protectedProcedure,
-} from "../trpc/enhanced-router";
-import { EmailStorageService } from "../services/EmailStorageService";
-import { mockEmailStorageService } from "../services/MockEmailStorageService";
-import { realEmailStorageService } from "../services/RealEmailStorageService";
-import { UnifiedEmailService } from "../services/UnifiedEmailService";
-import { emailIntegrationService } from "../services/EmailIntegrationService";
-import { logger } from "../../utils/logger";
+} from "../trpc/enhanced-router.js";
+import { EmailStorageService } from "../services/EmailStorageService.js";
+import { mockEmailStorageService } from "../services/MockEmailStorageService.js";
+import { realEmailStorageService } from "../services/RealEmailStorageService.js";
+import { UnifiedEmailService } from "../services/UnifiedEmailService.js";
+import { emailIntegrationService } from "../services/EmailIntegrationService.js";
+import { logger } from "../../utils/logger.js";
 
 // Initialize email services
 // const emailStorage = new EmailStorageService(); // TODO: Fix database schema issues

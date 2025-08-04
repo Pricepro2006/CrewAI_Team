@@ -8,11 +8,11 @@ import {
   publicProcedure,
   commonSchemas,
   createFeatureRouter,
-} from "../trpc/enhanced-router";
+} from "../trpc/enhanced-router.js";
 import { observable } from "@trpc/server/observable";
 import { EventEmitter } from "events";
-import { logger } from "../../utils/logger";
-import type { ConfidenceMasterOrchestrator } from "../../core/master-orchestrator/ConfidenceMasterOrchestrator";
+import { logger } from "../../utils/logger.js";
+import type { ConfidenceMasterOrchestrator } from "../../core/master-orchestrator/ConfidenceMasterOrchestrator.js";
 
 // Event emitter for real-time updates
 const confidenceChatEvents = new EventEmitter();

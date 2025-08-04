@@ -1,6 +1,6 @@
-import { router, publicProcedure } from "../trpc/router";
+import { router, publicProcedure } from "../trpc/router.js";
 import { z } from "zod";
-import { RateLimiter } from "../../core/middleware/RateLimiter";
+import { RateLimiter } from "../../core/middleware/RateLimiter.js";
 
 // Get the rate limiter instance
 const rateLimiter = RateLimiter.getInstance();

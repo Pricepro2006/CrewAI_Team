@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { LoginForm } from "./LoginForm";
-import { RegisterForm } from "./RegisterForm";
+import { LoginForm } from "./LoginForm.js";
+import { RegisterForm } from "./RegisterForm.js";
 import "./AuthModal.css";
 
 interface AuthModalProps {

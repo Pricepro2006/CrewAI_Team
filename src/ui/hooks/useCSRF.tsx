@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { logger } from "../utils/logger";
+import { logger } from "../utils/logger.js";
 
 // CSRF Token configuration matching backend
 const CSRF_TOKEN_HEADER = "x-csrf-token";

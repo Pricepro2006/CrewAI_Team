@@ -4,22 +4,22 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../../components/ui/card";
+} from "../../../components/ui/card.js";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "../../../components/ui/tabs";
+} from "../../../components/ui/tabs.js";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "../../../components/ui/alert";
-import { Badge } from "../../../components/ui/badge";
-import { Progress } from "../../../components/ui/progress";
-import { Button } from "../../../components/ui/button";
-import { trpc } from "../../utils/trpc";
+} from "../../../components/ui/alert.js";
+import { Badge } from "../../../components/ui/badge.js";
+import { Progress } from "../../../components/ui/progress.js";
+import { Button } from "../../../components/ui/button.js";
+import { trpc } from "../../utils/trpc.js";
 import {
   AlertCircle,
   Activity,
