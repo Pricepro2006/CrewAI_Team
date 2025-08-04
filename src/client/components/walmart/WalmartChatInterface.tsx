@@ -54,7 +54,7 @@ import { formatPrice } from '../../lib/utils';
 import { useCart } from '../../hooks/useCart';
 import { useGroceryStore } from '../../store/groceryStore';
 import type { WalmartProduct } from '../../../types/walmart-grocery';
-import { normalizePrice, getEffectivePrice, isOnSale, calculateSavings } from '../../../utils/walmart-price';
+import { normalizePrice, getEffectivePrice, isOnSale, calculateSavings } from '../../../../utils/walmart-price';
 
 interface WalmartChatInterfaceProps {
   onProductSelect?: (product: WalmartProduct) => void;
