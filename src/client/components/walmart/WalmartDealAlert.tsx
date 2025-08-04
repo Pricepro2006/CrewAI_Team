@@ -59,7 +59,7 @@ import { cn } from '../../lib/utils';
 import { formatPrice } from '../../lib/utils';
 import { useCart } from '../../hooks/useCart';
 import type { DealMatch, WalmartProduct } from '../../../types/walmart-grocery';
-import { createMinimalProduct, getNumericPrice } from '../../../utils/walmart-product';
+import { createMinimalProduct, getNumericPrice } from '../../../../utils/walmart-product';
 
 interface WalmartDealAlertProps {
   deals?: DealMatch[];

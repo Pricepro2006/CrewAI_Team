@@ -60,7 +60,7 @@ import {
 } from '../../../components/ui/accordion';
 // import { useToast } from '../../../components/ui/use-toast';
 // Temporary mock for missing toast hook
-const useToast = () => ({ toast: ({ title, description }: any) => console.log('Toast:', title, description) });
+const useToast = () => ({ toast: ({ title, description }: { title: string; description: string }) => console.log('Toast:', title, description) });
 import {
   Collapsible,
   CollapsibleContent,
@@ -201,7 +201,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesOrderNumber = order.orderNumber.toLowerCase().includes(query);
-        const matchesItems = order.items.some(item => 
+        const matchesItems = order.items.some((item: UIOrderItem) => 
           item.name.toLowerCase().includes(query)
         );
         if (!matchesOrderNumber && !matchesItems) return false;
@@ -240,7 +240,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
       onReorder(order);
     } else {
       setSelectedOrder(order);
-      setSelectedItems(new Set(order.items.map(item => item.id)));
+      setSelectedItems(new Set(order.items.map((item: UIOrderItem) => item.id)));
       setShowReorderDialog(true);
     }
   };
@@ -248,7 +248,7 @@ export const WalmartOrderHistory: React.FC<WalmartOrderHistoryProps> = ({
   const handleReorderSelected = () => {
     if (!selectedOrder) return;
 
-    const itemsToReorder = selectedOrder.items.filter(item => 
+    const itemsToReorder = selectedOrder.items.filter((item: UIOrderItem) => 
       selectedItems.has(item.id)
     );
 
