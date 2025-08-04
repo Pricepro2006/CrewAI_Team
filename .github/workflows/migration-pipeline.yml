@@ -43,7 +43,7 @@ jobs:
         run: pnpm run lint
 
       - name: Run TypeScript type check
-        run: pnpm run typecheck
+        run: npx tsc --noEmit --project tsconfig.ci.json
 
       - name: Check code formatting
         run: pnpm run format:check
