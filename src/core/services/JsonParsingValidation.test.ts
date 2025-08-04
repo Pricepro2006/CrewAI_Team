@@ -18,21 +18,30 @@ import { EmailThreePhaseAnalysisService } from "./EmailThreePhaseAnalysisService
 vi.mock("axios");
 vi.mock("../cache/RedisService.js");
 vi.mock("./EmailChainAnalyzer.js");
-vi.mock("../../database/ConnectionPool.js", () => ({
-  getDatabaseConnection: vi.fn(),
-  executeQuery: vi.fn((callback) => callback(mockDb)),
-  executeTransaction: vi.fn((callback) => callback(mockDb)),
-}));
+
+// Mock database connection pool with proper mock structure
+vi.mock("../../database/ConnectionPool.js", () => {
+  const createMockDbImplementation = () => ({
+    prepare: vi.fn().mockReturnValue({
+      run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
+      get: vi.fn().mockReturnValue(null),
+      all: vi.fn().mockReturnValue([]),
+    }),
+    exec: vi.fn(),
+    close: vi.fn(),
+    pragma: vi.fn(),
+    transaction: vi.fn((fn: any) => fn()),
+    inTransaction: false,
+  });
+  
+  return {
+    getDatabaseConnection: vi.fn().mockReturnValue(createMockDbImplementation()),
+    executeQuery: vi.fn((callback: any) => callback(createMockDbImplementation())),
+    executeTransaction: vi.fn((callback: any) => callback(createMockDbImplementation())),
+  };
+});
 
 const mockedAxios = axios as any;
-const mockDb = {
-  prepare: vi.fn().mockReturnValue({
-    run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
-    get: vi.fn().mockReturnValue(null),
-    all: vi.fn().mockReturnValue([]),
-  }),
-  exec: vi.fn(),
-};
 
 // Test data for various problematic LLM response formats
 const PROBLEMATIC_RESPONSES = {

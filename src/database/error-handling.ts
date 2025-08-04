@@ -31,7 +31,7 @@ function isError(value: unknown): value is Error {
     (typeof value === "object" &&
       value !== null &&
       "message" in value &&
-      typeof (value as any).message === "string")
+      typeof (value as Record<string, unknown>).message === "string")
   );
 }
 
@@ -47,7 +47,7 @@ function getErrorMessage(error: unknown): string {
 /**
  * Safe error details extraction
  */
-function getErrorDetails(error: unknown): any {
+function getErrorDetails(error: unknown): Record<string, unknown> {
   if (isError(error)) {
     return {
       name: error.name,
@@ -201,10 +201,10 @@ export function withTransaction<T>(
 /**
  * Safe query execution with timeout and error handling
  */
-export function safeQuery<T = any>(
+export function safeQuery<T = unknown>(
   db: Database.Database,
   query: string,
-  params: any[] = [],
+  params: unknown[] = [],
   options: {
     timeout?: number;
     single?: boolean;
@@ -255,7 +255,7 @@ export class DatabaseHealthChecker {
       async () => {
         try {
           // Simple health check query
-          const result = this.db.prepare("SELECT 1 as health").get() as any;
+          const result = this.db.prepare("SELECT 1 as health").get() as Record<string, unknown>;
           return result?.health === 1;
         } catch (error) {
           throw mapDatabaseError(error);
@@ -391,7 +391,7 @@ export class PreparedStatementCache {
 
   constructor(private db: Database.Database) {}
 
-  get<T extends {} | unknown[] = any>(query: string): Database.Statement<T> {
+  get<T extends Record<string, unknown> | unknown[] = Record<string, unknown>>(query: string): Database.Statement<T> {
     try {
       let stmt = this.cache.get(query);
 

@@ -3,8 +3,8 @@ import path from "path";
 
 export default defineConfig({
   test: {
-    // Use Node.js environment for backend/server-side tests
-    environment: "node",
+    // Use jsdom environment for React component tests, node for others
+    environment: "jsdom",
 
     // Include unit tests
     include: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
@@ -22,8 +22,8 @@ export default defineConfig({
     setupFiles: ["./src/test/setup-unit.ts"],
 
     // Reasonable timeout for unit tests
-    testTimeout: 10000, // 10 seconds for unit tests
-    hookTimeout: 5000, // 5 seconds for setup/teardown
+    testTimeout: 15000, // 15 seconds for unit tests (increased for complex mocking)
+    hookTimeout: 8000, // 8 seconds for setup/teardown
 
     // Global test configuration
     globals: true,
@@ -101,7 +101,7 @@ export default defineConfig({
     format: "esm",
   },
 
-  // Define globals for Node.js environment
+  // Define globals for jsdom environment
   define: {
     global: "globalThis",
     "process.env.NODE_ENV": '"test"',

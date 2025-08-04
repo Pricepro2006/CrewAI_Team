@@ -57,7 +57,7 @@ if (emailChainCompleteness >= 70%) {
 
 3. **Phase Implementations**
    - **Phase 1**: Rule-based extraction (<1 second)
-   - **Phase 2**: Llama 3.2 enhancement (10 seconds)
+   - **Phase 2**: Llama 3.2 enhancement (10 seconds) - uses llama3.2:3b for embeddings
    - **Phase 3**: Phi-4 strategic analysis (80 seconds)
 
 ### Data Flow

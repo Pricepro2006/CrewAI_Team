@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { Queue, Worker } = require("bullmq") as any;
+import { Queue, Worker } from "bullmq";
 import { UnifiedEmailService } from "../../api/services/UnifiedEmailService.js";
 import { logger } from "../../utils/logger.js";
 import { metrics } from "../../api/monitoring/metrics.js";

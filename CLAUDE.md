@@ -26,6 +26,7 @@ The email processing pipeline supports three operational modes:
 - Real-time UI updates via WebSocket
 - Priority queue management
 - 60+ emails/minute processing capability
+- Unified model approach: Llama 3.2:3b for both LLM and embeddings
 
 See `/docs/EMAIL_PIPELINE_PRODUCTION_ARCHITECTURE.md` for full details.
 

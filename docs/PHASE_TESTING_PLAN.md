@@ -14,7 +14,7 @@ This document provides a comprehensive testing plan for PR #7, which merges all 
 - [x] Ollama running with required models
   - [x] qwen3:14b (orchestrator) - **Now using Phi-2 and production models**
   - [x] qwen3:8b (agents) - **Now using Phi-2 and production models**
-  - [x] nomic-embed-text (embeddings)
+  - [x] llama3.2:3b (embeddings)
 - [x] ChromaDB running (optional, for RAG features)
 - [x] Redis running (optional, for enhanced rate limiting)
 - [x] SQLite database initialized

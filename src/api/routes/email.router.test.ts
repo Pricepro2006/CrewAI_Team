@@ -18,14 +18,7 @@ vi.mock("../services/WebSocketService", () => ({
   },
 }));
 
-vi.mock("../../utils/logger", () => ({
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-  },
-}));
+// Logger is mocked globally in setup-unit.ts - no need for local mock
 
 describe("Email Router", () => {
   let mockEmailStorage: unknown;

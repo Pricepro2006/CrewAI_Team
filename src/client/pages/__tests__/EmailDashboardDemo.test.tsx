@@ -10,9 +10,10 @@ import { httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
 import { EmailDashboardDemo } from "../EmailDashboardDemo.js";
 import type { AppRouter } from "../../../api/trpc/router.js";
+import { vi } from "vitest";
 
 // Mock the EmailDashboardMultiPanel component
-jest.mock("../../components/dashboard/EmailDashboardMultiPanel", () => ({
+vi.mock("../../components/dashboard/EmailDashboardMultiPanel", () => ({
   EmailDashboardMultiPanel: ({
     emails,
     loading,
@@ -368,7 +369,7 @@ describe("EmailDashboardDemo Component", () => {
 
   describe("Email Interactions", () => {
     it("should handle email selection", async () => {
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation();
 
       render(<EmailDashboardDemo />, { wrapper: Wrapper });
 

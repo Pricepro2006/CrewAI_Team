@@ -1,5 +1,6 @@
 import { ChromaClient, type Collection } from "chromadb";
 import { EmbeddingService } from "./EmbeddingService.js";
+import { MODEL_CONFIG } from "../../config/models.config.js";
 import type {
   Document,
   QueryResult,
@@ -35,7 +36,7 @@ export class VectorStore {
     this.client = new ChromaClient(clientConfig);
 
     this.embeddingService = new EmbeddingService({
-      model: "nomic-embed-text",
+      model: MODEL_CONFIG.models.embedding,
       baseUrl: config.baseUrl || "http://localhost:11434",
     });
   }

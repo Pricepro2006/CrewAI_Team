@@ -20,7 +20,7 @@ describe("EmbeddingService", () => {
     (mockedAxios.create as any).mockReturnValue(mockAxiosInstance);
 
     service = new EmbeddingService({
-      model: "nomic-embed-text",
+      model: "llama3.2:3b",
       baseUrl: "http://localhost:11434",
       dimensions: 768,
     });
@@ -34,7 +34,7 @@ describe("EmbeddingService", () => {
     it("should initialize successfully when Ollama is available", async () => {
       mockAxiosInstance.get.mockResolvedValue({
         data: {
-          models: [{ name: "nomic-embed-text" }],
+          models: [{ name: "llama3.2:3b" }],
         },
       });
 
@@ -53,7 +53,7 @@ describe("EmbeddingService", () => {
 
       await service.initialize();
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Embedding model nomic-embed-text not found"),
+        expect.stringContaining("Embedding model llama3.2:3b not found"),
       );
 
       consoleSpy.mockRestore();
@@ -72,7 +72,7 @@ describe("EmbeddingService", () => {
     beforeEach(() => {
       // Mock successful initialization
       mockAxiosInstance.get.mockResolvedValue({
-        data: { models: [{ name: "nomic-embed-text" }] },
+        data: { models: [{ name: "llama3.2:3b" }] },
       });
     });
 
@@ -85,7 +85,7 @@ describe("EmbeddingService", () => {
       const result = await service.embed("Hello world");
 
       expect(mockAxiosInstance.post).toHaveBeenCalledWith("/api/embeddings", {
-        model: "nomic-embed-text",
+        model: "llama3.2:3b",
         prompt: "Hello world",
       });
       expect(result).toEqual(mockEmbedding);
@@ -122,7 +122,7 @@ describe("EmbeddingService", () => {
     beforeEach(() => {
       // Mock successful initialization
       mockAxiosInstance.get.mockResolvedValue({
-        data: { models: [{ name: "nomic-embed-text" }] },
+        data: { models: [{ name: "llama3.2:3b" }] },
       });
     });
 
@@ -246,7 +246,7 @@ describe("EmbeddingService", () => {
     });
 
     it("should return correct model name", () => {
-      expect(service.getModel()).toBe("nomic-embed-text");
+      expect(service.getModel()).toBe("llama3.2:3b");
     });
   });
 
@@ -256,7 +256,7 @@ describe("EmbeddingService", () => {
 
       // Mock initialization response
       mockAxiosInstance.get.mockResolvedValue({
-        data: { models: [{ name: "nomic-embed-text" }] },
+        data: { models: [{ name: "llama3.2:3b" }] },
       });
 
       // Mock embed response

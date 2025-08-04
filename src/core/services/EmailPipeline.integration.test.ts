@@ -639,7 +639,7 @@ This is clearly a critical emergency that requires our highest priority response
       expect(Math.min(...confidences)).toBeGreaterThanOrEqual(0);
       expect(Math.max(...confidences)).toBeLessThanOrEqual(1);
 
-      console.log(`Stress Test Results (100 scenarios):
+      console.log(`Stress Test Results (${testScenarios} scenarios):
         Chain Scoring:
         - Unique scores: ${uniqueScores.size}
         - Intermediate (1-99%): ${intermediateScores}

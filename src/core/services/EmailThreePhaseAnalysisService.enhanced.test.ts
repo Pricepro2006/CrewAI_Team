@@ -28,30 +28,124 @@ import { EmailThreePhaseAnalysisService } from "./EmailThreePhaseAnalysisService
 import { RedisService } from "../cache/RedisService.js";
 import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
 
-// Mock dependencies
+// Mock dependencies first
 vi.mock("axios");
-vi.mock("../cache/RedisService.js");
-vi.mock("./EmailChainAnalyzer.js");
-vi.mock("../../database/ConnectionPool.js", () => ({
-  getDatabaseConnection: vi.fn(),
-  executeQuery: vi.fn((callback) => callback(mockDb)),
-  executeTransaction: vi.fn((callback) => callback(mockDb)),
-}));
+
+// Mock RedisService with proper structure
+vi.mock("../cache/RedisService.js", () => {
+  return {
+    RedisService: vi.fn().mockImplementation(() => ({
+      set: vi.fn().mockResolvedValue("OK"),
+      get: vi.fn().mockResolvedValue(null),
+      close: vi.fn().mockResolvedValue(undefined),
+      client: {
+        on: vi.fn(),
+        set: vi.fn().mockResolvedValue("OK"),
+        get: vi.fn().mockResolvedValue(null),
+      },
+    })),
+  };
+});
+
+// Mock EmailChainAnalyzer with proper structure
+vi.mock("./EmailChainAnalyzer.js", () => {
+  return {
+    EmailChainAnalyzer: vi.fn().mockImplementation(() => ({
+      analyzeChain: vi.fn().mockResolvedValue({
+        chain_id: "test-chain",
+        is_complete: false,
+        chain_length: 2,
+        completeness_score: 45,
+        chain_type: "general_inquiry",
+        missing_elements: ["completion"],
+      }),
+    })),
+  };
+});
+
+// Mock database connection pool with proper mock structure
+vi.mock("../../database/ConnectionPool.js", () => {
+  const createMockDbImplementation = () => ({
+    prepare: vi.fn().mockReturnValue({
+      run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
+      get: vi.fn().mockReturnValue(null),
+      all: vi.fn().mockReturnValue([]),
+    }),
+    exec: vi.fn(),
+    close: vi.fn(),
+    pragma: vi.fn(),
+    transaction: vi.fn((fn: any) => fn()),
+    inTransaction: false,
+  });
+  
+  return {
+    getDatabaseConnection: vi.fn().mockReturnValue(createMockDbImplementation()),
+    executeQuery: vi.fn((callback: any) => callback(createMockDbImplementation())),
+    executeTransaction: vi.fn((callback: any) => callback(createMockDbImplementation())),
+  };
+});
+
+// Mock other services
+vi.mock("../../api/services/QueryPerformanceMonitor.js", () => {
+  return {
+    QueryPerformanceMonitor: vi.fn().mockImplementation(() => ({
+      trackOperation: vi.fn(),
+    })),
+  };
+});
+
+vi.mock("../../core/cache/EmailAnalysisCache.js", () => {
+  return {
+    EmailAnalysisCache: vi.fn().mockImplementation(() => ({
+      get: vi.fn().mockReturnValue(null),
+      set: vi.fn(),
+      clear: vi.fn(),
+    })),
+  };
+});
+
+vi.mock("./LLMRateLimiter.js", () => {
+  return {
+    llmRateLimiters: {
+      modelSpecific: {
+        checkAndConsume: vi.fn().mockResolvedValue({
+          allowed: true,
+          remainingRequests: 100,
+          resetTime: Date.now() + 3600000,
+        }),
+      },
+    },
+  };
+});
+
+// Mock PromptSanitizer
+vi.mock("../../utils/PromptSanitizer.js", () => {
+  return {
+    PromptSanitizer: {
+      sanitizeEmailContent: vi.fn().mockReturnValue({
+        subject: "Test Subject",
+        body: "Test Body",
+        sender: "test@example.com",
+      }),
+      detectInjectionAttempt: vi.fn().mockReturnValue(false),
+    },
+  };
+});
+
+// Mock ThreePhasePrompts
+vi.mock("../prompts/ThreePhasePrompts.js", () => {
+  return {
+    PHASE2_ENHANCED_PROMPT: "Enhanced Phase 2 prompt template with {PHASE1_RESULTS}, {EMAIL_SUBJECT}, {EMAIL_BODY}",
+    PHASE2_RETRY_PROMPT: "Retry Phase 2 prompt template with {PHASE1_RESULTS}, {EMAIL_SUBJECT}, {EMAIL_BODY}",
+    PHASE3_STRATEGIC_PROMPT: "Phase 3 strategic prompt template with {PHASE1_RESULTS}, {PHASE2_RESULTS}, {EMAIL_SUBJECT}, {EMAIL_BODY}",
+    enhancePromptForEmailType: vi.fn().mockImplementation((prompt, characteristics) => prompt),
+  };
+});
 
 const mockedAxios = axios as any;
-const mockDb = {
-  prepare: vi.fn().mockReturnValue({
-    run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
-    get: vi.fn().mockReturnValue(null),
-    all: vi.fn().mockReturnValue([]),
-  }),
-  exec: vi.fn(),
-};
 
 describe("EmailThreePhaseAnalysisService - Enhanced JSON Parsing Validation", () => {
   let service: EmailThreePhaseAnalysisService;
-  let mockRedisService: any;
-  let mockChainAnalyzer: any;
 
   const sampleEmail = {
     id: "test-email-1",
@@ -64,28 +158,6 @@ describe("EmailThreePhaseAnalysisService - Enhanced JSON Parsing Validation", ()
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // Mock RedisService
-    mockRedisService = {
-      set: vi.fn().mockResolvedValue("OK"),
-      get: vi.fn().mockResolvedValue(null),
-      close: vi.fn().mockResolvedValue(undefined),
-    };
-    (RedisService as any).mockImplementation(() => mockRedisService);
-
-    // Mock EmailChainAnalyzer - default to incomplete chain
-    mockChainAnalyzer = {
-      analyzeChain: vi.fn().mockResolvedValue({
-        chain_id: "test-chain",
-        is_complete: false,
-        chain_length: 2,
-        completeness_score: 45,
-        chain_type: "general_inquiry",
-        missing_elements: ["completion"],
-      }),
-    };
-    (EmailChainAnalyzer as any).mockImplementation(() => mockChainAnalyzer);
-
     service = new EmailThreePhaseAnalysisService();
   });
 
@@ -825,15 +897,18 @@ business_process: RETURNS_MANAGEMENT
 
   describe("CRITICAL: Integration with Adaptive Phase Selection", () => {
     it("should handle incomplete chains with Phase 2 fallback when parsing fails", async () => {
-      // Mock incomplete chain (should not trigger Phase 3)
-      mockChainAnalyzer.analyzeChain.mockResolvedValue({
-        chain_id: "incomplete-chain",
-        is_complete: false,
-        chain_length: 2,
-        completeness_score: 35,
-        chain_type: "general_inquiry",
-        missing_elements: ["completion", "middle_correspondence"],
-      });
+      // Mock incomplete chain (should not trigger Phase 3) - provide chain analysis with email
+      const emailWithChainAnalysis = {
+        ...sampleEmail,
+        chainAnalysis: {
+          chain_id: "incomplete-chain",
+          is_complete_chain: false,
+          chain_length: 2,
+          completeness_score: 35,
+          chain_type: "general_inquiry",
+          missing_elements: ["completion", "middle_correspondence"],
+        },
+      };
 
       // Mock Phase 2 parsing failure with fallback
       mockedAxios.post
@@ -850,7 +925,7 @@ business_process: RETURNS_MANAGEMENT
           data: { response: "Final invalid JSON" },
         });
 
-      const analysis = await service.analyzeEmail(sampleEmail);
+      const analysis = await service.analyzeEmail(emailWithChainAnalysis);
 
       // Should complete with Phase 2 results using fallback parsing
       expect(mockedAxios.post).toHaveBeenCalledTimes(3); // No Phase 3 calls
@@ -864,14 +939,17 @@ business_process: RETURNS_MANAGEMENT
 
     it("should handle complete chains with Phase 3 parsing enhancement", async () => {
       // Mock complete chain (should trigger Phase 3)
-      mockChainAnalyzer.analyzeChain.mockResolvedValue({
-        chain_id: "complete-chain",
-        is_complete: true,
-        chain_length: 6,
-        completeness_score: 88,
-        chain_type: "quote_request",
-        missing_elements: [],
-      });
+      const emailWithCompleteChain = {
+        ...sampleEmail,
+        chainAnalysis: {
+          chain_id: "complete-chain",
+          is_complete_chain: true,
+          chain_length: 6,
+          completeness_score: 88,
+          chain_type: "quote_request",
+          missing_elements: [],
+        },
+      };
 
       const phase2Response = {
         workflow_validation: "COMPLETE_CHAIN_PHASE2",
@@ -920,7 +998,7 @@ business_process: RETURNS_MANAGEMENT
         data: { response: JSON.stringify(phase3Response) },
       });
 
-      const analysis = await service.analyzeEmail(sampleEmail);
+      const analysis = await service.analyzeEmail(emailWithCompleteChain);
 
       expect(mockedAxios.post).toHaveBeenCalledTimes(2); // Phase 2 + Phase 3
       expect(analysis.strategic_insights.opportunity).toBe(

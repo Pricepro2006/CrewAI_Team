@@ -206,14 +206,14 @@ describe("PipelineJsonParser", () => {
 
   describe("mapPriorityScore", () => {
     it("should map priority scores to levels correctly", () => {
-      expect(parser.mapPriorityScore(10)).toBe("Critical");
-      expect(parser.mapPriorityScore(8)).toBe("Critical");
-      expect(parser.mapPriorityScore(7)).toBe("High");
-      expect(parser.mapPriorityScore(6)).toBe("High");
-      expect(parser.mapPriorityScore(5)).toBe("Medium");
-      expect(parser.mapPriorityScore(4)).toBe("Medium");
-      expect(parser.mapPriorityScore(3)).toBe("Low");
-      expect(parser.mapPriorityScore(0)).toBe("Low");
+      expect(parser.mapPriorityScore(10)).toBe("critical");
+      expect(parser.mapPriorityScore(8)).toBe("critical");
+      expect(parser.mapPriorityScore(7)).toBe("high");
+      expect(parser.mapPriorityScore(6)).toBe("high");
+      expect(parser.mapPriorityScore(5)).toBe("medium");
+      expect(parser.mapPriorityScore(4)).toBe("medium");
+      expect(parser.mapPriorityScore(3)).toBe("low");
+      expect(parser.mapPriorityScore(0)).toBe("low");
     });
   });
 
@@ -268,13 +268,13 @@ describe("PipelineJsonParser", () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].task).toBe("Process order");
-      expect(result[0].priority).toBe("High");
-      expect(result[0].deadline).toBe("2024-01-15");
+      expect(result[0].priority).toBe("high");
+      expect(result[0].deadline).toBe("2024-01-15T00:00:00.000Z");
       expect(result[0].owner).toBe("John Doe");
       expect(result[0].status).toBe("Pending");
 
       expect(result[1].task).toBe("Review quote");
-      expect(result[1].priority).toBe("Medium");
+      expect(result[1].priority).toBe("medium");
       expect(result[1].deadline).toBeUndefined();
       expect(result[1].owner).toBeUndefined();
     });

@@ -549,6 +549,42 @@ export async function runQualityValidationTests(): Promise<void> {
   }
 }
 
+// Function already exported above
+
+// Jest test suite wrapper
+describe('Quality Validation Framework', () => {
+  it('should run comprehensive quality validation tests', async () => {
+    await runQualityValidationTests();
+  }, 60000); // 60 second timeout for comprehensive tests
+
+  it('should validate quality metrics tracking', async () => {
+    const tester = new QualityValidationTester();
+    try {
+      await tester.testQualityMetrics();
+    } finally {
+      await tester.cleanup();
+    }
+  });
+
+  it('should handle configuration updates', async () => {
+    const tester = new QualityValidationTester();
+    try {
+      await tester.testConfigurationUpdates();
+    } finally {
+      await tester.cleanup();
+    }
+  });
+
+  it('should handle errors gracefully', async () => {
+    const tester = new QualityValidationTester();
+    try {
+      await tester.testErrorHandling();
+    } finally {
+      await tester.cleanup();
+    }
+  });
+});
+
 // Run tests if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   runQualityValidationTests().catch((error) => {

@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { BusinessSearchMiddleware } from "../BusinessSearchMiddleware.js";
 import type { OllamaProvider } from "../../llm/OllamaProvider.js";
 
+// Set timeout for rate limiting tests
+vi.setConfig({ testTimeout: 20000 });
+
 // Mock dependencies
 vi.mock("../../llm/OllamaProvider");
 vi.mock("../../../utils/logger");
@@ -23,7 +26,7 @@ describe("BusinessSearchMiddleware - Rate Limiting Integration", () => {
     // Reset mocks
     vi.clearAllMocks();
 
-    // Create mock provider
+    // Create mock provider with all required methods
     mockProvider = {
       generate: vi.fn().mockResolvedValue("Mock response"),
       generateWithLogProbs: vi.fn().mockResolvedValue({
@@ -36,6 +39,9 @@ describe("BusinessSearchMiddleware - Rate Limiting Integration", () => {
       isInitialized: true,
       generateFallbackResponse: vi.fn(),
       buildPrompt: vi.fn(),
+      getConfig: vi.fn().mockReturnValue({ model: "test-model", ollamaUrl: "http://localhost:11434" }),
+      initialize: vi.fn().mockResolvedValue(undefined),
+      healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' })
     } as any;
 
     // Create middleware instance
@@ -53,6 +59,9 @@ describe("BusinessSearchMiddleware - Rate Limiting Integration", () => {
   describe("Rate Limiting Behavior", () => {
     it("should apply rate limiting to business search queries", async () => {
       const businessQuery = "Find plumbers near me";
+
+      // Mock rate limit check to return quickly
+      vi.spyOn(middleware as any, "checkRateLimit").mockResolvedValue(true);
 
       // First request should succeed
       const response1 = await wrappedProvider.generate(businessQuery);

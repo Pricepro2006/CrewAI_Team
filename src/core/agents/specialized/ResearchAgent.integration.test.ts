@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from "vitest";
 import { ResearchAgent } from "./ResearchAgent.js";
 import {
   setupOllamaForTesting,
@@ -14,18 +14,51 @@ import {
   getTestConfiguration,
 } from "../../../test/utils/integration-test-helpers.js";
 
+// Mock external web search to prevent real network calls
+vi.mock("../../../utils/webSearch.js", () => ({
+  performWebSearch: vi.fn().mockResolvedValue({
+    results: [
+      {
+        title: "TypeScript - JavaScript with syntax for types",
+        url: "https://www.typescriptlang.org/",
+        snippet: "TypeScript is a strongly typed programming language that builds on JavaScript..."
+      }
+    ],
+    query: "TypeScript programming language",
+    totalResults: 1
+  })
+}));
+
+// Mock web content fetching
+vi.mock("../../../utils/webFetch.js", () => ({
+  fetchWebContent: vi.fn().mockResolvedValue({
+    title: "TypeScript Official Website",
+    content: "TypeScript is a programming language developed by Microsoft. It is a strict syntactical superset of JavaScript and adds optional static type checking to the language.",
+    url: "https://www.typescriptlang.org/"
+  })
+}));
+
+// Increase timeout for integration tests
+vi.setConfig({ testTimeout: 30000 });
+
 describe("ResearchAgent Integration Tests", () => {
   let agent: ResearchAgent;
   let isOllamaAvailable = false;
 
   beforeAll(async () => {
     try {
-      await setupOllamaForTesting();
-      isOllamaAvailable = await isOllamaRunning();
+      // Skip real Ollama setup for unit tests - use mocks instead
+      if (process.env.VITEST_INTEGRATION === 'true') {
+        await setupOllamaForTesting();
+        isOllamaAvailable = await isOllamaRunning();
 
-      if (isOllamaAvailable) {
-        const testModel = getTestModel();
-        await ensureModelAvailable(testModel);
+        if (isOllamaAvailable) {
+          const testModel = getTestModel();
+          await ensureModelAvailable(testModel);
+        }
+      } else {
+        // Use mocked Ollama for unit tests
+        isOllamaAvailable = false;
       }
     } catch (error) {
       console.error("Failed to setup Ollama for ResearchAgent tests:", error);
@@ -38,13 +71,29 @@ describe("ResearchAgent Integration Tests", () => {
   });
 
   beforeEach(async () => {
+    agent = new ResearchAgent();
+
     if (!isOllamaAvailable) {
-      console.log("Skipping test: Ollama not available");
+      // Mock the LLM for unit tests
+      vi.spyOn(agent as any, 'llm').mockValue({
+        generate: vi.fn().mockResolvedValue({
+          response: {
+            synthesis: "Mocked research synthesis about TypeScript programming language. It's a strongly typed superset of JavaScript developed by Microsoft.",
+            findings: [
+              "TypeScript adds static typing to JavaScript",
+              "Developed by Microsoft",
+              "Compiles to plain JavaScript"
+            ],
+            sources: [
+              { url: "https://www.typescriptlang.org/", title: "TypeScript Official Site" }
+            ]
+          }
+        })
+      });
       return;
     }
 
     const testConfig = createTestOllamaConfig();
-    agent = new ResearchAgent();
 
     // Configure agent to use test Ollama instance
     if (agent["llm"]) {

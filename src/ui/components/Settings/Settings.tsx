@@ -50,7 +50,7 @@ export const Settings: React.FC = () => {
     rag: {
       chunkSize: 1000,
       chunkOverlap: 200,
-      embeddingModel: "nomic-embed-text",
+      embeddingModel: "llama3.2:3b",
       vectorStore: "chromadb",
     },
   });
@@ -454,7 +454,7 @@ export const Settings: React.FC = () => {
                     updateSetting("rag", "embeddingModel", e.target.value)
                   }
                 >
-                  <option value="nomic-embed-text">Nomic Embed Text</option>
+                  <option value="llama3.2:3b">Llama 3.2 (3B) - Embedding</option>
                   <option value="all-minilm-l6-v2">All-MiniLM-L6-v2</option>
                   <option value="bge-large-en-v1.5">BGE Large EN v1.5</option>
                 </select>

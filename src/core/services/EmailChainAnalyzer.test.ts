@@ -16,16 +16,104 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
+import Database from "better-sqlite3";
 
-// Mock database connection
-vi.mock("../../database/ConnectionPool.js", () => ({
-  getDatabaseConnection: vi.fn(),
-  executeQuery: vi.fn((callback) => callback(mockDb)),
-  executeTransaction: vi.fn((callback) => callback(mockDb)),
+// Create a shared mock db instance that can be accessed in mocks
+const mockDbData: any[] = [];
+
+// Global shared mock database instance
+const sharedMockDb = {
+  prepare: vi.fn().mockImplementation((query: string) => {
+    // Create fresh mock implementations for each prepare call
+    return {
+      run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
+      get: vi.fn().mockImplementation((id?: string) => {
+        if (!mockDbData || mockDbData.length === 0) return null;
+        if (id) {
+          const found = mockDbData.find((item: any) => item.id === id);
+          if (found) {
+            return {
+              id: found.id,
+              internet_message_id: found.message_id || found.internet_message_id,
+              subject: found.subject,
+              sender_email: found.from_address || found.sender_email,
+              recipient_emails: found.to_addresses || found.recipient_emails || '',
+              received_date_time: found.received_time || found.received_date_time,
+              conversation_id: found.conversation_id || found.thread_id,
+              thread_id: found.conversation_id || found.thread_id, // SQL alias maps conversation_id as thread_id
+              body_content: found.body_text || found.body_content,
+              body: found.body_text || found.body_content // Support both field names
+            };
+          }
+        }
+        return null;
+      }),
+      all: vi.fn().mockImplementation((...params: any[]) => {
+        if (!mockDbData) return [];
+        
+        let filteredData = mockDbData;
+        
+        if (params.length === 1 && typeof params[0] === "string") {
+          // Handle single param queries like conversation_id
+          const conversationId = params[0];
+          filteredData = mockDbData.filter(
+            (email: any) =>
+              email.thread_id === conversationId || email.conversation_id === conversationId,
+          );
+        } else if (params.length === 6) {
+          // Handle complex subject + sender matching queries
+          // params: [subjectPattern1, subjectPattern2, subjectPattern3, subjectPattern4, senderEmail, senderPattern]
+          const [pattern1, pattern2, pattern3, pattern4, senderEmail, senderPattern] = params;
+          
+          filteredData = mockDbData.filter((email: any) => {
+            const subject = email.subject || '';
+            const sender = email.from_address || email.sender_email || '';
+            
+            // Check subject patterns (remove % wildcards for simple matching)
+            const subjectMatches = [
+              pattern1?.replace(/%/g, ''),
+              pattern2?.replace(/%/g, ''),
+              pattern3?.replace(/%/g, ''),
+              pattern4?.replace(/%/g, '')
+            ].some(pattern => {
+              if (!pattern) return false;
+              return subject.toLowerCase().includes(pattern.toLowerCase());
+            });
+            
+            // Check sender patterns
+            const senderMatches = (
+              sender === senderEmail ||
+              sender.toLowerCase().includes((senderPattern || senderEmail || '').toLowerCase())
+            );
+            
+            return subjectMatches && senderMatches;
+          });
+        }
+        
+        // Map results to expected database schema
+        return filteredData.map((item: any) => ({
+          id: item.id,
+          internet_message_id: item.message_id || item.internet_message_id,
+          subject: item.subject,
+          sender_email: item.from_address || item.sender_email,
+          recipient_emails: item.to_addresses || item.recipient_emails || '',
+          received_date_time: item.received_time || item.received_date_time,
+          conversation_id: item.conversation_id || item.thread_id,
+          body_content: item.body_text || item.body_content,
+          body: item.body_text || item.body_content // Support both field names
+        }));
+      }),
+    };
+  }),
+  exec: vi.fn(),
+  pragma: vi.fn(),
+  close: vi.fn().mockReturnValue(undefined),
+};
+
+// Mock the Database constructor from better-sqlite3
+vi.mock("better-sqlite3", () => ({
+  default: vi.fn().mockImplementation(() => sharedMockDb),
 }));
-
-let mockDb: any;
-let mockDbData: any[] = [];
 
 // Test data factory for creating email chains with various completeness levels
 const createEmailChain = (scenario: string) => {
@@ -36,14 +124,19 @@ const createEmailChain = (scenario: string) => {
       return [
         {
           id: "single-1",
+          internet_message_id: "msg-single-1",
           message_id: "msg-single-1",
           subject: "Quote Request for Server Hardware",
+          sender_email: "customer@company.com",
           from_address: "customer@company.com",
           to_addresses: "sales@supplier.com",
+          recipient_emails: "sales@supplier.com",
+          received_date_time: baseTime.toISOString(),
           received_time: baseTime.toISOString(),
-          body_text:
-            "We need a quote for 10 server units. Please provide pricing.",
+          body_content: "We need a quote for 10 server units. Please provide pricing.",
+          body_text: "We need a quote for 10 server units. Please provide pricing.",
           conversation_id: "chain-single",
+          thread_id: "chain-single",
         },
       ];
 
@@ -346,42 +439,103 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
   let analyzer: EmailChainAnalyzer;
 
   beforeEach(() => {
+    // Clear the mockDbData array
+    mockDbData.length = 0;
+    
+    // Reset all mock functions to ensure clean state
     vi.clearAllMocks();
-    mockDbData = [];
-
-    mockDb = {
-      prepare: vi.fn().mockImplementation((query: string) => {
-        return {
-          run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
-          get: vi.fn().mockImplementation((id: string) => {
-            return mockDbData.find((email) => email.id === id) || null;
-          }),
-          all: vi.fn().mockImplementation((param?: string) => {
-            if (typeof param === "string") {
-              // Handle thread_id or conversation_id queries
-              return mockDbData.filter(
-                (email) =>
-                  email.thread_id === param || email.conversation_id === param,
-              );
+    
+    // Ensure prepare mock is properly set up
+    sharedMockDb.prepare = vi.fn().mockImplementation((query: string) => {
+      return {
+        run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
+        get: vi.fn().mockImplementation((id?: string) => {
+          if (!mockDbData || mockDbData.length === 0) return null;
+          if (id) {
+            const found = mockDbData.find((item: any) => item.id === id);
+            if (found) {
+              return {
+                id: found.id,
+                internet_message_id: found.message_id || found.internet_message_id,
+                subject: found.subject,
+                sender_email: found.from_address || found.sender_email,
+                recipient_emails: found.to_addresses || found.recipient_emails || '',
+                received_date_time: found.received_time || found.received_date_time,
+                conversation_id: found.conversation_id || found.thread_id,
+                thread_id: found.conversation_id || found.thread_id,
+                body_content: found.body_text || found.body_content,
+                body: found.body_text || found.body_content
+              };
             }
-            return mockDbData;
-          }),
-        };
-      }),
-      exec: vi.fn(),
-    };
-
-    analyzer = new EmailChainAnalyzer(":memory:");
+          }
+          return null;
+        }),
+        all: vi.fn().mockImplementation((...params: any[]) => {
+          if (!mockDbData) return [];
+          
+          let filteredData = mockDbData;
+          
+          if (params.length === 1 && typeof params[0] === "string") {
+            const conversationId = params[0];
+            filteredData = mockDbData.filter(
+              (email: any) =>
+                email.thread_id === conversationId || email.conversation_id === conversationId,
+            );
+          } else if (params.length === 6) {
+            const [pattern1, pattern2, pattern3, pattern4, senderEmail, senderPattern] = params;
+            
+            filteredData = mockDbData.filter((email: any) => {
+              const subject = email.subject || '';
+              const sender = email.from_address || email.sender_email || '';
+              
+              const subjectMatches = [
+                pattern1?.replace(/%/g, ''),
+                pattern2?.replace(/%/g, ''),
+                pattern3?.replace(/%/g, ''),
+                pattern4?.replace(/%/g, '')
+              ].some(pattern => {
+                if (!pattern) return false;
+                return subject.toLowerCase().includes(pattern.toLowerCase());
+              });
+              
+              const senderMatches = sender === senderEmail || 
+                (senderPattern && sender.toLowerCase().includes(senderPattern.replace(/%/g, '').toLowerCase()));
+              
+              return subjectMatches && senderMatches;
+            });
+          }
+          
+          return filteredData.map((item: any) => ({
+            id: item.id,
+            message_id: item.message_id || item.internet_message_id,
+            subject: item.subject,
+            sender_email: item.from_address || item.sender_email,
+            to_addresses: item.to_addresses || item.recipient_emails || '',
+            received_at: item.received_time || item.received_date_time,
+            conversation_id: item.conversation_id || item.thread_id,
+            thread_id: item.conversation_id || item.thread_id,
+            body_text: item.body_text || item.body_content,
+            body: item.body_text || item.body_content,
+            workflow_state: item.workflow_state || 'pending'
+          }));
+        })
+      };
+    });
+    
+    // Create new analyzer instance with mock database
+    analyzer = new EmailChainAnalyzer(":memory:", sharedMockDb);
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    // Clean up after each test
+    mockDbData.length = 0;
   });
 
   describe("Gradual Scoring System (0-100%)", () => {
     it("should assign low scores (0-30%) to single emails", async () => {
       const singleEmailChain = createEmailChain("single_email");
-      mockDbData = singleEmailChain;
+      mockDbData.length = 0;
+      mockDbData.push(...singleEmailChain);
 
       const analysis = await analyzer.analyzeChain("single-1");
 
@@ -398,7 +552,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       const incompleteChain = createEmailChain(
         "incomplete_chain_no_resolution",
       );
-      mockDbData = incompleteChain;
+      mockDbData.length = 0;
+      mockDbData.push(...incompleteChain);
 
       const analysis = await analyzer.analyzeChain("incomplete-1");
 
@@ -413,21 +568,24 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should assign good scores (60-80%) to chains with progress but no resolution", async () => {
       const moderateChain = createEmailChain("moderate_chain_with_progress");
-      mockDbData = moderateChain;
+      mockDbData.length = 0;
+      mockDbData.push(...moderateChain);
 
       const analysis = await analyzer.analyzeChain("moderate-1");
 
       expect(analysis.completeness_score).toBeGreaterThanOrEqual(60);
       expect(analysis.completeness_score).toBeLessThanOrEqual(80);
       expect(analysis.chain_length).toBe(4);
-      expect(analysis.is_complete).toBe(false);
+      expect(analysis.is_complete).toBe(false); // No completion signal despite good score
       expect(analysis.has_start_point).toBe(true);
       expect(analysis.has_middle_correspondence).toBe(true);
+      expect(analysis.has_completion).toBe(false); // No resolution in the chain
     });
 
     it("should assign high scores (80-100%) to complete workflow chains", async () => {
       const completeChain = createEmailChain("complete_chain_full_workflow");
-      mockDbData = completeChain;
+      mockDbData.length = 0;
+      mockDbData.push(...completeChain);
 
       const analysis = await analyzer.analyzeChain("complete-1");
 
@@ -443,7 +601,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should handle long chains without resolution (medium-high scores)", async () => {
       const longChain = createEmailChain("long_chain_no_resolution");
-      mockDbData = longChain;
+      mockDbData.length = 0;
+      mockDbData.push(...longChain);
 
       const analysis = await analyzer.analyzeChain("long-1");
 
@@ -466,7 +625,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       ];
 
       for (const chain of chains) {
-        mockDbData = chain;
+        mockDbData.length = 0;
+        mockDbData.push(...chain);
         const analysis = await analyzer.analyzeChain(chain[0].id);
 
         expect(analysis.has_start_point).toBe(true);
@@ -476,7 +636,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should award points for middle correspondence", async () => {
       const moderateChain = createEmailChain("moderate_chain_with_progress");
-      mockDbData = moderateChain;
+      mockDbData.length = 0;
+      mockDbData.push(...moderateChain);
 
       const analysis = await analyzer.analyzeChain("moderate-1");
 
@@ -486,7 +647,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should award maximum points for completion detection", async () => {
       const completeChain = createEmailChain("complete_chain_full_workflow");
-      mockDbData = completeChain;
+      mockDbData.length = 0;
+      mockDbData.push(...completeChain);
 
       const analysis = await analyzer.analyzeChain("complete-1");
 
@@ -499,11 +661,13 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       const shortChain = createEmailChain("incomplete_chain_no_resolution");
 
       // Test long chain
-      mockDbData = longChain;
+      mockDbData.length = 0;
+      mockDbData.push(...longChain);
       const longAnalysis = await analyzer.analyzeChain("long-1");
 
       // Test short chain
-      mockDbData = shortChain;
+      mockDbData.length = 0;
+      mockDbData.push(...shortChain);
       const shortAnalysis = await analyzer.analyzeChain("incomplete-1");
 
       expect(longAnalysis.completeness_score).toBeGreaterThan(
@@ -516,7 +680,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should penalize single emails appropriately", async () => {
       const singleChain = createEmailChain("single_email");
-      mockDbData = singleChain;
+      mockDbData.length = 0;
+      mockDbData.push(...singleChain);
 
       const analysis = await analyzer.analyzeChain("single-1");
 
@@ -554,7 +719,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
         },
       ];
 
-      mockDbData = quoteChain;
+      mockDbData.length = 0;
+      mockDbData.push(...quoteChain);
       const analysis = await analyzer.analyzeChain("quote-1");
 
       expect(analysis.chain_type).toBe("quote_request");
@@ -587,7 +753,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
         },
       ];
 
-      mockDbData = orderChain;
+      mockDbData.length = 0;
+      mockDbData.push(...orderChain);
       const analysis = await analyzer.analyzeChain("order-1");
 
       expect(analysis.chain_type).toBe("order_processing");
@@ -623,7 +790,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
         },
       ];
 
-      mockDbData = completionChain;
+      mockDbData.length = 0;
+      mockDbData.push(...completionChain);
       const analysis = await analyzer.analyzeChain("comp-1");
 
       expect(analysis.has_completion).toBe(true);
@@ -656,7 +824,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
         },
       ];
 
-      mockDbData = progressChain;
+      mockDbData.length = 0;
+      mockDbData.push(...progressChain);
       const analysis = await analyzer.analyzeChain("prog-1");
 
       expect(analysis.has_middle_correspondence).toBe(true);
@@ -680,7 +849,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       for (const scenario of testScenarios) {
         const chain = createEmailChain(scenario);
         if (chain.length > 0) {
-          mockDbData = chain;
+          mockDbData.length = 0;
+          mockDbData.push(...chain);
           const analysis = await analyzer.analyzeChain(chain[0].id);
           scores.push(analysis.completeness_score);
         }
@@ -718,7 +888,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
           body_text: email.body_text + ` Variation ${i + 1}.`,
         }));
 
-        mockDbData = modifiedChain;
+        mockDbData.length = 0;
+        mockDbData.push(...modifiedChain);
         const analysis = await analyzer.analyzeChain(`test-${i}-0`);
         scores.push(analysis.completeness_score);
       }
@@ -778,7 +949,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
           },
         ];
 
-        mockDbData = singleChain;
+        mockDbData.length = 0;
+        mockDbData.push(...singleChain);
         const analysis = await analyzer.analyzeChain(variation.id);
 
         expect(analysis.completeness_score).toBeLessThan(100);
@@ -790,7 +962,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should ensure long chains can achieve high scores without being 100%", async () => {
       const completeChain = createEmailChain("complete_chain_full_workflow");
-      mockDbData = completeChain;
+      mockDbData.length = 0;
+      mockDbData.push(...completeChain);
 
       const analysis = await analyzer.analyzeChain("complete-1");
 
@@ -809,7 +982,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
   describe("Edge Cases and Validation", () => {
     it("should handle empty chains gracefully", async () => {
-      mockDbData = [];
+      mockDbData.length = 0;
 
       const analysis = await analyzer.analyzeChain("nonexistent");
 
@@ -833,7 +1006,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
         },
       ];
 
-      mockDbData = incompleteDataChain;
+      mockDbData.length = 0;
+      mockDbData.push(...incompleteDataChain);
       const analysis = await analyzer.analyzeChain("incomplete-data-1");
 
       expect(analysis.completeness_score).toBeGreaterThanOrEqual(0);
@@ -856,7 +1030,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
         conversation_id: "very-long-chain",
       }));
 
-      mockDbData = veryLongChain;
+      mockDbData.length = 0;
+      mockDbData.push(...veryLongChain);
       const analysis = await analyzer.analyzeChain("long-1");
 
       expect(analysis.chain_length).toBe(15);
@@ -875,7 +1050,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
       // Run same analysis multiple times
       for (let i = 0; i < 5; i++) {
-        mockDbData = testChain;
+        mockDbData.length = 0;
+        mockDbData.push(...testChain);
         const analysis = await analyzer.analyzeChain("moderate-1");
         scores.push(analysis.completeness_score);
       }
@@ -887,7 +1063,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should complete analysis within reasonable time", async () => {
       const largeChain = createEmailChain("complete_chain_full_workflow");
-      mockDbData = largeChain;
+      mockDbData.length = 0;
+      mockDbData.push(...largeChain);
 
       const startTime = Date.now();
       const analysis = await analyzer.analyzeChain("complete-1");
@@ -924,7 +1101,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
               conversation_id: `${email.conversation_id}-var-${variation}`,
             }));
 
-            mockDbData = variedChain;
+            mockDbData.length = 0;
+            mockDbData.push(...variedChain);
             const analysis = await analyzer.analyzeChain(variedChain[0].id);
             allScores.push(analysis.completeness_score);
           }

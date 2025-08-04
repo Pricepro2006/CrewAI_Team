@@ -1,0 +1,5 @@
+
+> ai-agent-team@1.0.0 lint /home/pricepro2006/CrewAI_Team
+> eslint src --ext .ts,.tsx 2
+
+ ELIFECYCLE  Command failed with exit code 2.
