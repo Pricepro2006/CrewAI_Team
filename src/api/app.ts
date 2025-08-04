@@ -88,7 +88,7 @@ export async function createApp(): Promise<Express> {
       // Check database connection
       const Database = (await import("better-sqlite3")).default;
       const db = new Database(
-        process.env.DATABASE_PATH ||
+        process.env['DATABASE_PATH'] ||
           appConfig.database?.path ||
           "./data/app.db",
         {

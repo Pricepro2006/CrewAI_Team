@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import {
   AppError,
   ErrorCode,
-  isOperationalError,
+  // isOperationalError, // Unused import
   sanitizeError,
 } from "../../utils/error-handling/server.js";
 import {
@@ -97,7 +97,7 @@ export function errorHandler(
         code: err.code,
         message: err.message,
         details:
-          process.env.NODE_ENV === "development" ? err.details : undefined,
+          process.env['NODE_ENV'] === "development" ? err.details : undefined,
         timestamp,
         path: req.path,
         method: req.method,
@@ -110,7 +110,7 @@ export function errorHandler(
     };
   } else {
     // Handle non-AppError errors
-    const isProduction = process.env.NODE_ENV === "production";
+    const isProduction = process.env['NODE_ENV'] === "production";
 
     errorResponse = {
       error: {
@@ -177,8 +177,13 @@ export function asyncErrorWrapper(
 /**
  * Validation error formatter for express-validator
  */
-export function validationErrorFormatter(errors: any[]): AppError {
-  const formattedErrors = errors.reduce((acc, error) => {
+interface ValidationError {
+  param: string;
+  msg: string;
+}
+
+export function validationErrorFormatter(errors: ValidationError[]): AppError {
+  const formattedErrors = errors.reduce<Record<string, string[]>>((acc, error) => {
     if (!acc[error.param]) {
       acc[error.param] = [];
     }
@@ -194,8 +199,8 @@ export function validationErrorFormatter(errors: any[]): AppError {
 /**
  * Sanitize request body to remove sensitive fields
  */
-function sanitizeRequestBody(body: any): any {
-  if (!body || typeof body !== "object") {
+function sanitizeRequestBody(body: unknown): unknown {
+  if (!body || typeof body !== "object" || body === null) {
     return body;
   }
 
@@ -207,7 +212,7 @@ function sanitizeRequestBody(body: any): any {
     "creditCard",
     "ssn",
   ];
-  const sanitized = { ...body };
+  const sanitized = { ...(body as Record<string, unknown>) };
 
   for (const field of sensitiveFields) {
     if (field in sanitized) {
@@ -221,14 +226,18 @@ function sanitizeRequestBody(body: any): any {
 /**
  * Sanitize headers to remove sensitive information
  */
-function sanitizeHeaders(headers: any): any {
+function sanitizeHeaders(headers: unknown): unknown {
+  if (!headers || typeof headers !== "object" || headers === null) {
+    return headers;
+  }
+  
   const sensitiveHeaders = [
     "authorization",
     "cookie",
     "x-api-key",
     "x-auth-token",
   ];
-  const sanitized = { ...headers };
+  const sanitized = { ...(headers as Record<string, unknown>) };
 
   for (const header of sensitiveHeaders) {
     if (header in sanitized) {

@@ -62,7 +62,7 @@ export class PipelineAnalysisAdapter
     };
 
     // Include raw data for debugging if available
-    if (process.env.NODE_ENV === "development") {
+    if (process.env['NODE_ENV'] === "development") {
       result.rawData = {
         llamaAnalysis: llamaData,
         phi4Analysis: phi4Data,
@@ -339,7 +339,7 @@ export class PipelineAnalysisAdapter
   /**
    * Map analysis priority to email priority
    */
-  private mapEmailPriority(priority: string): EmailPriority {
+  // private mapEmailPriority(priority: string): EmailPriority { // Unused method
     const priorityMap: Record<string, EmailPriority> = {
       Critical: EmailPriority.CRITICAL,
       High: EmailPriority.HIGH,

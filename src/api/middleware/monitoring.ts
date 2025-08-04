@@ -158,7 +158,7 @@ export function errorTracking(
   err: Error,
   req: MonitoredRequest,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): void {
   const requestId = req.id || generateRequestId();
 
@@ -363,7 +363,7 @@ export function trackDatabaseQuery(queryName: string, operation: string) {
 // WebSocket tracking
 export function trackWebSocketConnection(
   connected: boolean,
-  clientId?: string,
+  _clientId?: string,
 ): void {
   if (connected) {
     metricsCollector.increment("websocket_connections_total");
