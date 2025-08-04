@@ -127,7 +127,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
 
   const handleDietaryToggle = (dietary: string) => {
     const dietaryFilter = dietary as DietaryFilter;
-    setFilters(prev => ({
+    setFilters((prev: ExtendedSearchOptions) => ({
       ...prev,
       dietary: prev.dietary?.includes(dietaryFilter)
         ? prev.dietary.filter(d => d !== dietaryFilter)
