@@ -23,11 +23,11 @@ import {
   Ban,
   Zap,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
-import { Button } from '../../../components/ui/button.js';
-import { Badge } from '../../../components/ui/badge.js';
-import { Label } from '../../../components/ui/label.js';
-import { Switch } from '../../../components/ui/switch.js';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Label } from '../../../components/ui/label';
+import { Switch } from '../../../components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -35,28 +35,28 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog.js';
+} from '../../../components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select.js';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
-import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group.js';
-import { Checkbox } from '../../../components/ui/checkbox.js';
+} from '../../../components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
+import { Checkbox } from '../../../components/ui/checkbox';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../components/ui/tooltip.js';
-import { cn } from '../../lib/utils.js';
-import { formatPrice } from '../../lib/utils.js';
-import { useGroceryStore } from '../../store/groceryStore.js';
-import { useCart } from '../../hooks/useCart.js';
-import type { WalmartProduct, SubstitutionOptions, DietaryFilter, AllergenType } from '../../../types/walmart-grocery.js';
+} from '../../../components/ui/tooltip';
+import { cn } from '../../lib/utils';
+import { formatPrice } from '../../lib/utils';
+import { useGroceryStore } from '../../store/groceryStore';
+import { useCart } from '../../hooks/useCart';
+import type { WalmartProduct, SubstitutionOptions, DietaryFilter, AllergenType } from '../../../types/walmart-grocery';
 
 interface WalmartSubstitutionManagerProps {
   product?: WalmartProduct;

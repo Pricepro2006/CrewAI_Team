@@ -5,16 +5,16 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { Search, Filter, X, Loader2 } from 'lucide-react';
-import { Input } from '../../../components/ui/input.js';
-import { Button } from '../../../components/ui/button.js';
-import { Card, CardContent } from '../../../components/ui/card.js';
+import { Input } from '../../../components/ui/input';
+import { Button } from '../../../components/ui/button';
+import { Card, CardContent } from '../../../components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select.js';
+} from '../../../components/ui/select';
 import {
   Sheet,
   SheetContent,
@@ -22,14 +22,14 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '../../../components/ui/sheet.js';
-import { Badge } from '../../../components/ui/badge.js';
-import { Slider } from '../../../components/ui/slider.js';
-import { Checkbox } from '../../../components/ui/checkbox.js';
-import { useWalmartSearch } from '../../hooks/useWalmartSearch.js';
-import { useDebounce } from '../../hooks/useDebounce.js';
-import type { WalmartProduct, SearchOptions, DietaryFilter } from '../../../types/walmart-grocery.js';
-import type { ExtendedSearchOptions } from '../../../types/walmart-search-extended.js';
+} from '../../../components/ui/sheet';
+import { Badge } from '../../../components/ui/badge';
+import { Slider } from '../../../components/ui/slider';
+import { Checkbox } from '../../../components/ui/checkbox';
+import { useWalmartSearch } from '../../hooks/useWalmartSearch';
+import { useDebounce } from '../../hooks/useDebounce';
+import type { WalmartProduct, SearchOptions, DietaryFilter } from '../../../types/walmart-grocery';
+import type { ExtendedSearchOptions } from '../../../types/walmart-search-extended';
 
 interface WalmartProductSearchProps {
   onProductSelect?: (product: WalmartProduct) => void;
@@ -119,7 +119,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
   }, [results, onSearchResults]);
 
   const handleCategoryChange = (category: string) => {
-    setFilters(prev => ({
+    setFilters((prev: ExtendedSearchOptions) => ({
       ...prev,
       category: category === 'all' ? undefined : category,
     }));
