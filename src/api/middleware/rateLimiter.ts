@@ -4,6 +4,14 @@ import Redis from "ioredis";
 import type { Request, Response } from "express";
 import { TRPCError } from "@trpc/server";
 
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id?: string;
+    role?: string;
+    isAdmin?: boolean;
+  };
+}
+
 // Enhanced Redis-based rate limiting with user awareness
 let redisClient: Redis | null = null;
 let redisConnected = false;
@@ -50,7 +58,7 @@ if (
 // Enhanced key generator that considers user authentication status
 function createKeyGenerator(prefix: string) {
   return (req: Request): string => {
-    const user = (req as any).user;
+    const user = (req as AuthenticatedRequest).user;
 
     // Use user ID if authenticated, otherwise return undefined to use default IP handling
     if (user?.id) {
@@ -58,7 +66,7 @@ function createKeyGenerator(prefix: string) {
     }
 
     // Return undefined to let express-rate-limit handle IP extraction properly
-    return undefined as any;
+    return undefined as unknown as string;
   };
 }
 
@@ -77,12 +85,12 @@ function createRateLimiter(options: {
     redisClient && redisConnected
       ? new RedisStore({
           sendCommand: async (command: string, ...args: string[]) => {
-            const cmd = new (redisClient!.constructor as any).Command(
+            const cmd = new (redisClient!.constructor as typeof Redis).Command(
               command,
               args,
             );
             const result = await redisClient!.sendCommand(cmd);
-            return result as any; // Type assertion to match RedisReply interface
+            return result as unknown; // Type assertion to match RedisReply interface
           },
           prefix: `rl:${options.keyPrefix}:`,
         })
@@ -92,7 +100,7 @@ function createRateLimiter(options: {
     store,
     windowMs: options.windowMs,
     max: (req: Request) => {
-      const user = (req as any).user;
+      const user = (req as AuthenticatedRequest).user;
 
       // Admin users get higher limits
       if (user?.isAdmin || user?.role === "admin") {
@@ -114,7 +122,7 @@ function createRateLimiter(options: {
     skipSuccessfulRequests: options.skipSuccessfulRequests || false,
     skipFailedRequests: options.skipFailedRequests || false,
     handler: (req: Request, res: Response) => {
-      const user = (req as any).user;
+      const user = (req as AuthenticatedRequest).user;
 
       // Log rate limit violations
       console.warn("Rate limit exceeded:", {
@@ -149,7 +157,7 @@ export function rateLimitMiddleware(
 ) {
   const store = new Map<string, { count: number; resetTime: number }>();
 
-  return async ({ ctx, next }: { ctx: any; next: () => Promise<any> }) => {
+  return async ({ ctx, next }: { ctx: { user?: { id?: string; role?: string; isAdmin?: boolean }; req?: Request }; next: () => Promise<unknown> }) => {
     const user = ctx.user;
     const ip = ctx.req?.ip || "unknown";
     const identifier = user?.id ? `user:${user.id}` : `ip:${ip}`;
