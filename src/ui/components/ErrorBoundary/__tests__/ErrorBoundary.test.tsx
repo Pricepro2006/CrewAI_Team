@@ -7,11 +7,12 @@ import {
 } from "../ErrorBoundary";
 import { ErrorFallback } from "../ErrorFallback";
 import "@testing-library/jest-dom";
+import { vi } from "vitest";
 
 // Mock logger
-jest.mock("../../../utils/logger", () => ({
+vi.mock("../../../utils/logger", () => ({
   logger: {
-    error: jest.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -46,13 +47,13 @@ const ComponentWithErrorHandler: React.FC = () => {
 
 describe("ErrorBoundary", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Suppress console.error for these tests
-    jest.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
-    (console.error as jest.Mock).mockRestore();
+    (console.error as any).mockRestore();
   });
 
   it("renders children when there is no error", () => {
@@ -88,7 +89,7 @@ describe("ErrorBoundary", () => {
   });
 
   it("calls onError callback when error occurs", () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
 
     render(
       <ErrorBoundary onError={onError}>
@@ -148,7 +149,7 @@ describe("ErrorBoundary", () => {
   });
 
   it("auto-resets after 3 errors", async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
     const { rerender } = render(
       <ErrorBoundary>
@@ -171,7 +172,7 @@ describe("ErrorBoundary", () => {
     ).toBeInTheDocument();
 
     // Fast-forward 10 seconds for auto-reset
-    jest.advanceTimersByTime(10000);
+    vi.advanceTimersByTime(10000);
 
     // Rerender with non-throwing component
     rerender(
@@ -184,7 +185,7 @@ describe("ErrorBoundary", () => {
       expect(screen.getByText("No error")).toBeInTheDocument();
     });
 
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it("resets on resetKeys change when resetOnKeysChange is true", () => {
@@ -245,7 +246,7 @@ describe("withErrorBoundary HOC", () => {
   });
 
   it("uses custom error boundary props", () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     const WrappedComponent = withErrorBoundary(ThrowError, { onError });
 
     render(<WrappedComponent />);
@@ -271,7 +272,7 @@ describe("useErrorHandler hook", () => {
 describe("ErrorFallback component", () => {
   it("renders error message and icon", () => {
     const error = new Error("Test error message");
-    const onReset = jest.fn();
+    const onReset = vi.fn();
 
     render(<ErrorFallback error={error} onReset={onReset} />);
 
@@ -282,7 +283,7 @@ describe("ErrorFallback component", () => {
 
   it("shows appropriate message for network errors", () => {
     const error = new Error("Network request failed");
-    const onReset = jest.fn();
+    const onReset = vi.fn();
 
     render(<ErrorFallback error={error} onReset={onReset} />);
 
@@ -294,7 +295,7 @@ describe("ErrorFallback component", () => {
 
   it("shows appropriate message for permission errors", () => {
     const error = new Error("Unauthorized access");
-    const onReset = jest.fn();
+    const onReset = vi.fn();
 
     render(<ErrorFallback error={error} onReset={onReset} />);
 
@@ -304,7 +305,7 @@ describe("ErrorFallback component", () => {
 
   it("handles retry action", () => {
     const error = new Error("Test error");
-    const onReset = jest.fn();
+    const onReset = vi.fn();
 
     render(<ErrorFallback error={error} onReset={onReset} canRetry={true} />);
 
@@ -318,7 +319,7 @@ describe("ErrorFallback component", () => {
 
   it("disables retry when canRetry is false", () => {
     const error = new Error("Test error");
-    const onReset = jest.fn();
+    const onReset = vi.fn();
 
     render(<ErrorFallback error={error} onReset={onReset} canRetry={false} />);
 
@@ -331,7 +332,7 @@ describe("ErrorFallback component", () => {
 
     const error = new Error("Test error");
     error.stack = "Error stack trace";
-    const onReset = jest.fn();
+    const onReset = vi.fn();
 
     render(
       <ErrorFallback

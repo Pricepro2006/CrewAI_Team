@@ -2,6 +2,7 @@ import { VectorStore } from "./VectorStore.js";
 import { DocumentProcessor } from "./DocumentProcessor.js";
 import { EmbeddingService } from "./EmbeddingService.js";
 import { RetrievalService } from "./RetrievalService.js";
+import { MODEL_CONFIG } from "../../config/models.config.js";
 import type {
   Document,
   QueryResult,
@@ -20,7 +21,7 @@ export class RAGSystem {
     this.vectorStore = new VectorStore(config.vectorStore);
     this.documentProcessor = new DocumentProcessor(config.chunking);
     this.embeddingService = new EmbeddingService({
-      model: "nomic-embed-text",
+      model: MODEL_CONFIG.models.embedding,
       baseUrl: config.vectorStore.baseUrl || "http://localhost:11434",
     });
     this.retrievalService = new RetrievalService(config.retrieval);
@@ -189,7 +190,7 @@ export class RAGSystem {
       averageChunksPerDocument:
         totalDocuments > 0 ? Math.round(totalChunks / totalDocuments) : 0,
       vectorStoreType: this.config.vectorStore.type,
-      embeddingModel: "nomic-embed-text",
+      embeddingModel: MODEL_CONFIG.models.embedding,
     };
   }
 

@@ -2,6 +2,7 @@ import { router, publicProcedure } from "../trpc/enhanced-router";
 import { logger } from "../../utils/logger";
 import ollamaConfig from "../../config/ollama.config";
 import appConfig from "../../config/app.config";
+import { MODEL_CONFIG } from "../../config/models.config";
 import Database from "better-sqlite3";
 
 interface ServiceStatus {
@@ -256,7 +257,7 @@ export const healthRouter = router({
       const models = data.models || [];
 
       // Check for required models
-      const requiredModels = ["qwen3:14b", "qwen3:8b", "nomic-embed-text"];
+      const requiredModels = [MODEL_CONFIG.models.primary, MODEL_CONFIG.models.critical, MODEL_CONFIG.models.embedding];
       const availableModels = models.map((m) => m.name);
       const missingModels = requiredModels.filter(
         (m) =>
@@ -343,7 +344,7 @@ export const healthRouter = router({
         documentCount: documents.length,
         chromadbConnected:
           ctx.ragSystem["vectorStore"]?.["isConnected"] || false,
-        embeddingModel: "nomic-embed-text",
+        embeddingModel: MODEL_CONFIG.models.embedding,
         status: "healthy",
       };
     } catch (error) {

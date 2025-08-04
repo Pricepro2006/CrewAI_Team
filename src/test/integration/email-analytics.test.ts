@@ -62,11 +62,11 @@ describe.skip('Email Analytics API Integration Tests', () => {
     app = await createApp();
   });
   
-  afterAll(() => {
+  afterAll(async () => {
     // Clean up
     db.close();
     // Remove test database
-    const fs = require('fs');
+    const fs = await import('fs');
     if (fs.existsSync('./data/test.db')) {
       fs.unlinkSync('./data/test.db');
     }
@@ -225,11 +225,11 @@ describe('EmailAnalyticsService Unit Tests', () => {
     service = new EmailAnalyticsService('./data/test-unit.db');
   });
   
-  afterAll(() => {
+  afterAll(async () => {
     service.close();
     db.close();
     
-    const fs = require('fs');
+    const fs = await import('fs');
     if (fs.existsSync('./data/test-unit.db')) {
       fs.unlinkSync('./data/test-unit.db');
     }

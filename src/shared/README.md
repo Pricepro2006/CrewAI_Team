@@ -815,9 +815,9 @@ DATABASE_POOL_MAX=10
 
 # LLM Configuration
 OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=llama2:7b
+OLLAMA_MODEL=llama3.2:3b
 
-# Vector Store Configuration
+# Vector Store Configuration (using llama3.2:3b for embeddings)
 CHROMA_URL=http://localhost:8000
 CHROMA_COLLECTION=crewai-knowledge
 
@@ -879,7 +879,7 @@ export const integrationConfig: SystemConfig = {
     llm: {
       provider: "ollama",
       baseUrl: process.env.OLLAMA_URL || "http://localhost:11434",
-      model: process.env.OLLAMA_MODEL || "llama2:7b",
+      model: process.env.OLLAMA_MODEL || "llama3.2:3b",
     },
 
     vectorStore: {

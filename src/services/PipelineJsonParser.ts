@@ -157,6 +157,7 @@ export class PipelineJsonParser {
     if (!Array.isArray(items)) return [];
 
     return items
+      .filter((item) => item !== null && item !== undefined && typeof item === "object")
       .map((item) => ({
         task: String(item.task || item.description || ""),
         priority: this.mapPriorityLevel(item.priority),

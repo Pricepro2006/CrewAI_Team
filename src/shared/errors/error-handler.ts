@@ -155,7 +155,7 @@ export class CrewAISystemError extends CrewAIError implements SystemError {
   public component: string;
   public severity: "low" | "medium" | "high" | "critical";
   public impact: "none" | "limited" | "significant" | "severe";
-  public resolution?: any;
+  public resolution?: Record<string, unknown>;
 
   constructor(
     code: string,

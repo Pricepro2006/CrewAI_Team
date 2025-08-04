@@ -6,9 +6,10 @@ import type {
   EmailRecord,
   EmailStatus,
 } from "../../../../types/email-dashboard.interfaces.js";
+import { vi } from "vitest";
 
 // Mock the UI components
-jest.mock("@/components/ui/card", () => ({
+vi.mock("@/components/ui/card", () => ({
   Card: ({ children, className }: any) => (
     <div className={className}>{children}</div>
   ),
@@ -17,13 +18,13 @@ jest.mock("@/components/ui/card", () => ({
   CardTitle: ({ children }: any) => <h3>{children}</h3>,
 }));
 
-jest.mock("@/components/ui/badge", () => ({
+vi.mock("@/components/ui/badge", () => ({
   Badge: ({ children, variant }: any) => (
     <span data-variant={variant}>{children}</span>
   ),
 }));
 
-jest.mock("@/components/ui/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: ({ children, onClick, disabled, variant, size }: any) => (
     <button
       onClick={onClick}
@@ -37,7 +38,7 @@ jest.mock("@/components/ui/button", () => ({
 }));
 
 // Mock the email table component
-jest.mock("../../email/EmailTable", () => ({
+vi.mock("../../email/EmailTable", () => ({
   EmailTable: ({
     emails,
     onEmailSelect,
@@ -135,13 +136,13 @@ describe("EmailDashboardMultiPanel Component", () => {
     emails: mockEmails,
     loading: false,
     error: null,
-    onEmailSelect: jest.fn(),
-    onAssignEmail: jest.fn(),
-    onStatusChange: jest.fn(),
+    onEmailSelect: vi.fn(),
+    onAssignEmail: vi.fn(),
+    onStatusChange: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("Rendering", () => {
@@ -279,7 +280,7 @@ describe("EmailDashboardMultiPanel Component", () => {
 
   describe("Email Interactions", () => {
     it("should call onEmailSelect when email is selected", async () => {
-      const mockOnEmailSelect = jest.fn();
+      const mockOnEmailSelect = vi.fn();
       render(
         <EmailDashboardMultiPanel
           {...defaultProps}
@@ -294,7 +295,7 @@ describe("EmailDashboardMultiPanel Component", () => {
     });
 
     it("should call onAssignEmail when email is assigned", async () => {
-      const mockOnAssignEmail = jest.fn();
+      const mockOnAssignEmail = vi.fn();
       render(
         <EmailDashboardMultiPanel
           {...defaultProps}
@@ -312,7 +313,7 @@ describe("EmailDashboardMultiPanel Component", () => {
     });
 
     it("should call onStatusChange when status is updated", async () => {
-      const mockOnStatusChange = jest.fn();
+      const mockOnStatusChange = vi.fn();
       render(
         <EmailDashboardMultiPanel
           {...defaultProps}

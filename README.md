@@ -95,7 +95,7 @@ The email pipeline features an **adaptive three-phase analysis system** with pro
 - **Multi-Agent Architecture** - Specialized agents for research, analysis, code generation, and task execution
 - **Email Intelligence** - Advanced email analysis with 90% entity extraction accuracy
 - **Walmart Integration** - Complete grocery shopping automation with 13 UI components (all using real data)
-- **Local-First Design** - Direct integration with Ollama for privacy and performance
+- **Local-First Design** - Direct integration with Ollama (llama3.2:3b) for privacy and performance
 - **TypeScript Architecture** - End-to-end type safety with tRPC
 - **Real-Time Updates** - WebSocket-powered live data synchronization with 5-second polling
 - **Security-First** - CSRF protection, security headers, and comprehensive middleware
@@ -120,8 +120,8 @@ The email pipeline features an **adaptive three-phase analysis system** with pro
 - Node.js 20.11 or higher
 - SQLite 3.44 or higher
 - Redis (for queue management)
-- Ollama (for local LLM inference)
-- ChromaDB (for vector operations)
+- Ollama (for local LLM inference with llama3.2:3b model)
+- ChromaDB (for vector operations using llama3.2:3b embeddings)
 - Python 3.x with distutils (for node-gyp compilation)
 
 ### Installation
@@ -181,8 +181,8 @@ Backend (Node.js + Express)
     └── Database Layer (optimized queries)
 
 Services
-    ├── Ollama (LLM - local inference)
-    ├── ChromaDB (Vector operations)
+    ├── Ollama (LLM - local inference with llama3.2:3b)
+    ├── ChromaDB (Vector operations - using llama3.2:3b embeddings)
     ├── Redis (Queue management)
     └── SQLite (Primary data store)
 ```
