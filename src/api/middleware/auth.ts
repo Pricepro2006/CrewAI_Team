@@ -94,7 +94,7 @@ export function authenticateJWT(
  */
 export function optionalAuthenticateJWT(
   req: AuthenticatedRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ): void {
   try {
@@ -198,8 +198,13 @@ export async function createAuthContext(token?: string): Promise<AuthContext> {
 /**
  * TRPC middleware for protected procedures
  */
+interface TRPCMiddlewareOptions {
+  ctx: AuthContext & Record<string, unknown>;
+  next: (opts: { ctx: AuthContext & Record<string, unknown> }) => unknown;
+}
+
 export function createTRPCAuthMiddleware() {
-  return async function isAuthenticated(opts: { ctx: any; next: any }) {
+  return async function isAuthenticated(opts: TRPCMiddlewareOptions) {
     const { ctx, next } = opts;
 
     if (!ctx.user) {
@@ -224,7 +229,7 @@ export function createTRPCAuthMiddleware() {
 export function createTRPCRoleMiddleware(
   ...roles: ("user" | "admin" | "moderator")[]
 ) {
-  return async function requireRole(opts: { ctx: any; next: any }) {
+  return async function requireRole(opts: TRPCMiddlewareOptions) {
     const { ctx, next } = opts;
 
     if (!ctx.user) {
@@ -316,7 +321,7 @@ export function createAuthRateLimit() {
  * Verify JWT token for testing
  */
 export function verifyJWT(token: string): AuthUser {
-  if (!process.env.JWT_SECRET) {
+  if (!process.env['JWT_SECRET']) {
     throw new Error("JWT_SECRET environment variable is required");
   }
 
