@@ -55,7 +55,7 @@ import { useCart } from '../../hooks/useCart';
 import { formatPrice } from '../../lib/utils';
 import { cn } from '../../lib/utils';
 import type { GroceryList, GroceryItem, WalmartProduct } from '../../../types/walmart-grocery';
-import { getNumericPrice, getCategoryName, extendGroceryItem } from '../../../../utils/walmart-product';
+import { getNumericPrice, getCategoryName, extendGroceryItem } from '../../../utils/walmart-product';
 
 interface WalmartGroceryListProps {
   onSelectList?: (list: GroceryList) => void;
