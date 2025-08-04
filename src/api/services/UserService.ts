@@ -13,7 +13,7 @@ import type {
   UserListResponse,
   ChangePasswordInput,
 } from "../../database/models/User.js";
-import { passwordManager } from "../utils/password.js";
+import { passwordManager } from "../utils/password";
 import { jwtManager } from "../utils/jwt.js";
 import appConfig from "../../config/app.config.js";
 
