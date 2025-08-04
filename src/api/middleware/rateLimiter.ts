@@ -340,7 +340,7 @@ export async function getRateLimitStatus(req: Request): Promise<{
   remaining: number;
   resetTime: Date;
 }> {
-  const user = (req as any).user;
+  const user = (req as AuthenticatedRequest).user;
   const ip = req.ip || "unknown";
   const identifier = user?.id ? `user:${user.id}` : `ip:${ip}`;
 

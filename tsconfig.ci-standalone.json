@@ -55,6 +55,8 @@
     "src/api/routes/auth.router.ts",
     "src/api/middleware/errorHandler.ts",
     // Exclude client-side files with issues
-    "src/client/**/*"
+    "src/client/**/*",
+    // Exclude security middleware not needed for email pipeline
+    "src/api/middleware/security/**/*"
   ]
 }
