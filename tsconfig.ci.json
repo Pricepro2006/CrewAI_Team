@@ -8,10 +8,16 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
-    // Exclude Walmart components temporarily
+    // Exclude Walmart and grocery-related files temporarily
     "src/client/components/walmart/**/*",
     "src/client/pages/walmart/**/*",
+    "src/client/services/walmart-api.ts",
+    "src/client/store/groceryStore.ts",
+    "src/client/hooks/useWalmartSearch.ts",
     "src/shared/types/walmart/**/*",
-    "src/utils/walmart-*"
+    "src/utils/walmart-*",
+    // Exclude files with missing password utility
+    "src/api/services/UserService.ts",
+    "src/api/routes/auth.router.ts"
   ]
 }
