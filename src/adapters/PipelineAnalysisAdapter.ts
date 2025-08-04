@@ -340,13 +340,13 @@ export class PipelineAnalysisAdapter
    * Map analysis priority to email priority
    */
   // private mapEmailPriority(priority: string): EmailPriority { // Unused method
-    const priorityMap: Record<string, EmailPriority> = {
-      Critical: EmailPriority.CRITICAL,
-      High: EmailPriority.HIGH,
-      Medium: EmailPriority.MEDIUM,
-      Low: EmailPriority.LOW,
-    };
-
-    return priorityMap[priority] || EmailPriority.MEDIUM;
-  }
+  //   const priorityMap: Record<string, EmailPriority> = {
+  //     Critical: EmailPriority.CRITICAL,
+  //     High: EmailPriority.HIGH,
+  //     Medium: EmailPriority.MEDIUM,
+  //     Low: EmailPriority.LOW,
+  //   };
+  //
+  //   return priorityMap[priority] || EmailPriority.MEDIUM;
+  // }
 }
