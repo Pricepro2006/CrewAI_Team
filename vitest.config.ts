@@ -9,13 +9,17 @@ export default defineConfig({
     // Include unit tests
     include: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
 
-    // Exclude integration tests (handled by separate config)
+    // Exclude integration tests and UI tests (handled by separate configs)
     exclude: [
       "**/node_modules/**",
       "**/dist/**",
       "**/build/**",
       "**/*.integration.test.{ts,tsx}",
       "tests/production/**",
+      // Exclude UI component tests (use test:ui instead)
+      "src/ui/components/**/*.test.{ts,tsx}",
+      "src/client/components/**/*.test.{ts,tsx}",
+      "src/client/pages/**/*.test.{ts,tsx}",
     ],
 
     // Setup files for unit tests
@@ -24,6 +28,11 @@ export default defineConfig({
     // Reasonable timeout for unit tests
     testTimeout: 15000, // 15 seconds for unit tests (increased for complex mocking)
     hookTimeout: 8000, // 8 seconds for setup/teardown
+    
+    // Force garbage collection between tests
+    teardownTimeout: 5000,
+    // Reduce memory pressure by limiting retries
+    retry: process.env.CI ? 0 : 1,
 
     // Global test configuration
     globals: true,
@@ -44,13 +53,26 @@ export default defineConfig({
       ],
     },
 
-    // Parallel execution for faster tests
+    // Memory-optimized parallel execution
     pool: "threads",
     poolOptions: {
       threads: {
         minThreads: 1,
-        maxThreads: 4,
+        // Reduced max threads for memory optimization in CI
+        maxThreads: process.env.CI ? 2 : 3,
+        // Enable proper cleanup between tests
+        singleThread: false,
+        // Isolate tests to prevent memory leaks
+        isolate: true,
       },
+    },
+
+    // Memory optimization settings
+    maxConcurrency: process.env.CI ? 3 : 5,
+    // Run tests serially within files to reduce memory pressure
+    sequence: {
+      concurrent: false,
+      shuffle: false,
     },
 
     // Environment variables for unit tests
@@ -61,6 +83,8 @@ export default defineConfig({
       // Disable external services for unit tests
       DISABLE_EXTERNAL_APIS: "true",
       LOG_LEVEL: "error", // Reduce log noise in tests
+      // Memory optimization flags
+      NODE_OPTIONS: "--max-old-space-size=4096 --optimize-for-size",
     },
 
     // Dependencies configuration for vitest v3
