@@ -71,15 +71,20 @@ const defaultCart: ShoppingCart = {
   items: [],
   subtotal: 0,
   tax: 0,
-  fees: 0,
-  discounts: 0,
+  fees: {},
+  discounts: [],
   total: 0,
-  createdAt: new Date(),
-  updatedAt: new Date(),
+  savedForLater: [],
+  metadata: {},
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 };
 
 const defaultPreferences: UserPreferences = {
-  userId: "current-user",
+  id: "pref-current-user",
+  user_id: "current-user",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
   preferredBrands: [],
   dietaryRestrictions: [],
   allergens: [],
@@ -129,18 +134,20 @@ export const useGroceryStore = create<GroceryState>()(
             } else {
               // Add new item
               const newItem: CartItem = {
+                id: `item-${product.id}-${Date.now()}`,
                 productId: product.id,
                 product,
                 quantity,
-                price: product.price,
-                addedAt: new Date(),
+                price: typeof product.price === 'number' ? product.price : product.price.regular,
+                addedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
               };
 
               return {
                 cart: {
                   ...state.cart,
                   items: [...state.cart.items, newItem],
-                  updatedAt: new Date(),
+                  updatedAt: new Date().toISOString(),
                 },
               };
             }
