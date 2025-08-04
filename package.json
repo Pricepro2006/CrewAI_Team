@@ -38,6 +38,7 @@
     "test:all": "npm run test:full && npm run test:integration && npm run test:e2e",
     "test:ci": "npm run test:unit && npm run test:ui",
     "test:ci:memory-safe": "npm run test:unit && sleep 10 && npm run test:ui",
+    "test:ci:memory-safe:coverage": "NODE_OPTIONS='--max-old-space-size=4096 --optimize-for-size' vitest run --coverage && sleep 10 && npm run test:ui",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\"",
