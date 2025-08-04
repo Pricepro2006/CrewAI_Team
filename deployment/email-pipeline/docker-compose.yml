@@ -1,0 +1,144 @@
+# Email Pipeline Production Deployment
+version: '3.8'
+
+services:
+  # Redis for BullMQ queue management
+  redis:
+    image: redis:7-alpine
+    container_name: email-pipeline-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    networks:
+      - email-pipeline-network
+
+  # Ollama for LLM processing
+  ollama:
+    image: ollama/ollama:latest
+    container_name: email-pipeline-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_ORIGINS=*
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_MODELS=llama3.2:3b
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - email-pipeline-network
+    deploy:
+      resources:
+        reservations:
+          memory: 4G
+        limits:
+          memory: 8G
+
+  # Email Pipeline Service
+  email-pipeline:
+    build:
+      context: ../..
+      dockerfile: deployment/email-pipeline/Dockerfile
+    container_name: email-pipeline-service
+    restart: unless-stopped
+    ports:
+      - "3456:3456"
+    volumes:
+      - email_data:/app/data
+      - email_logs:/app/logs
+      - ./config:/app/config:ro
+    environment:
+      # Database
+      - DATABASE_URL=sqlite:///app/data/crewai_enhanced.db
+      
+      # Redis Configuration
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - ENABLE_REDIS=true
+      
+      # Ollama Configuration  
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=llama3.2:3b
+      - OLLAMA_TIMEOUT=60000
+      
+      # Email Pipeline Configuration
+      - EMAIL_PIPELINE_MODE=production
+      - EMAIL_PROCESSING_BATCH_SIZE=50
+      - EMAIL_PROCESSING_CONCURRENT_LIMIT=10
+      - EMAIL_PHASE2_LIMIT=1000
+      - EMAIL_PHASE3_LIMIT=500
+      
+      # Performance Configuration
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=4096
+      - WORKER_CONCURRENCY=5
+      - QUEUE_RETRY_ATTEMPTS=3
+      - QUEUE_RETRY_DELAY=5000
+      
+      # Logging
+      - LOG_LEVEL=info
+      - LOG_FILE=/app/logs/email-pipeline.log
+      - LOG_ROTATION=daily
+      
+      # Monitoring
+      - METRICS_ENABLED=true
+      - HEALTH_CHECK_INTERVAL=30
+      - PERFORMANCE_MONITORING=true
+      
+      # Security
+      - CORS_ORIGINS=http://localhost:3000,https://your-frontend-domain.com
+      - API_RATE_LIMIT=1000
+      - AUTH_REQUIRED=false
+      
+    depends_on:
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3456/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - email-pipeline-network
+    deploy:
+      resources:
+        reservations:
+          memory: 2G
+        limits:
+          memory: 4G
+
+volumes:
+  redis_data:
+    driver: local
+  ollama_data:
+    driver: local
+  email_data:
+    driver: local
+  email_logs:
+    driver: local
+
+networks:
+  email-pipeline-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

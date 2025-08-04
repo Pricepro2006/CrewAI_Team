@@ -609,8 +609,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     // Create indexes for performance
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_emails_graph_id ON emails(graph_id);
-      CREATE INDEX IF NOT EXISTS idx_emails_received_at ON emails(received_at);
-      CREATE INDEX IF NOT EXISTS idx_emails_sender ON emails(sender_email);
+      CREATE INDEX IF NOT EXISTS idx_emails_received_time ON emails(received_time);
+      CREATE INDEX IF NOT EXISTS idx_emails_from_address ON emails(from_address);
       CREATE INDEX IF NOT EXISTS idx_email_analysis_email_id ON email_analysis(email_id);
       CREATE INDEX IF NOT EXISTS idx_workflow_primary ON email_analysis(deep_workflow_primary);
       CREATE INDEX IF NOT EXISTS idx_workflow_state ON email_analysis(workflow_state);

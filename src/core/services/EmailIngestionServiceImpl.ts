@@ -11,22 +11,31 @@ import { readFile } from 'fs/promises';
 import { createHash, randomUUID } from 'crypto';
 import { EventEmitter } from 'events';
 import {
-  IEmailIngestionService,
   IngestionMode,
   IngestionSource,
+  IngestionError,
+  IngestionErrorCodes
+} from './EmailIngestionService.js';
+import type {
+  IEmailIngestionService,
   EmailIngestionConfig,
   IngestionJob,
   RawEmailData,
   IngestionResult,
   IngestionBatchResult,
   IngestionMetrics,
-  IngestionError,
-  IngestionErrorCodes,
   QueueStatus,
   HealthStatus,
-  ComponentHealth,
   QueueIntegration
 } from './EmailIngestionService.js';
+
+// Temporary ComponentHealth interface until import is resolved
+interface ComponentHealth {
+  healthy: boolean;
+  message?: string;
+  lastError?: string;
+  metrics?: Record<string, number>;
+}
 import { EmailRepository } from '../../database/repositories/EmailRepository.js';
 import { UnifiedEmailService } from '../../api/services/UnifiedEmailService.js';
 import { logger } from '../../utils/logger.js';

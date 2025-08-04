@@ -198,7 +198,7 @@ export interface IEmailIngestionService {
   shutdown(): Promise<void>;
 }
 
-interface QueueStatus {
+export interface QueueStatus {
   waiting: number;
   active: number;
   completed: number;
@@ -207,7 +207,7 @@ interface QueueStatus {
   paused: boolean;
 }
 
-interface IngestionErrorInfo {
+export interface IngestionErrorInfo {
   id: string;
   timestamp: Date;
   source: IngestionSource;
@@ -217,7 +217,7 @@ interface IngestionErrorInfo {
   retryable: boolean;
 }
 
-interface HealthStatus {
+export interface HealthStatus {
   healthy: boolean;
   status: 'operational' | 'degraded' | 'failing';
   components: {
@@ -230,7 +230,7 @@ interface HealthStatus {
   lastCheck: Date;
 }
 
-interface ComponentHealth {
+export interface ComponentHealth {
   healthy: boolean;
   message?: string;
   lastError?: string;
@@ -292,7 +292,7 @@ export interface QueueIntegration {
   boostPriority(jobId: string, boost: number): Promise<void>;
 }
 
-interface QueueMetrics {
+export interface QueueMetrics {
   throughput: number;
   averageWaitTime: number;
   averageProcessingTime: number;
@@ -337,13 +337,6 @@ interface QueueMetrics {
  *    - Alert thresholds for queue health
  */
 
-// Export types for external use
-export type {
-  IEmailIngestionService,
-  QueueStatus,
-  IngestionError as IIngestionError,
-  HealthStatus,
-  ComponentHealth,
-  QueueIntegration,
-  QueueMetrics
-};
+// Additional exports for external use (types and interfaces already declared with export keyword)
+// The enums IngestionMode, IngestionSource, class IngestionError, and const IngestionErrorCodes 
+// are already exported via their export keywords above
