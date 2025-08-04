@@ -84,7 +84,7 @@ export default defineConfig({
       DISABLE_EXTERNAL_APIS: "true",
       LOG_LEVEL: "error", // Reduce log noise in tests
       // Memory optimization flags
-      NODE_OPTIONS: "--max-old-space-size=4096 --optimize-for-size",
+      NODE_OPTIONS: "--max-old-space-size=4096",
     },
 
     // Dependencies configuration for vitest v3

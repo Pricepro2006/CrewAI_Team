@@ -54,7 +54,7 @@ export default defineConfig({
         singleThread: process.env.CI === "true",
         isolate: true,
         // Force memory cleanup between tests
-        execArgv: ["--max-old-space-size=2048", "--optimize-for-size"],
+        execArgv: ["--max-old-space-size=2048"],
       },
     },
 
@@ -72,7 +72,7 @@ export default defineConfig({
       DISABLE_EXTERNAL_APIS: "true",
       LOG_LEVEL: "error",
       // Aggressive memory optimization
-      NODE_OPTIONS: "--max-old-space-size=2048 --optimize-for-size --gc-interval=100",
+      NODE_OPTIONS: "--max-old-space-size=2048 --gc-interval=100",
     },
 
     // Dependencies configuration for vitest v3
