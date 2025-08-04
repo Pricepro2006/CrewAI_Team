@@ -46,7 +46,7 @@ export function requestTracking(
   // Override res.json to capture response
   const originalJson = res.json;
   res.json = function (body: any) {
-    res.locals.responseBody = body;
+    res.locals['responseBody'] = body;
     return originalJson.call(this, body);
   };
 
@@ -130,8 +130,8 @@ export function requestTracking(
         severity = "medium";
 
       const errorMessage =
-        res.locals.responseBody?.error ||
-        res.locals.responseBody?.message ||
+        res.locals['responseBody']?.error ||
+        res.locals['responseBody']?.message ||
         "Unknown error";
 
       // Ensure errorMessage is a string
