@@ -64,7 +64,7 @@ export function authenticateJWT(
       }
 
       // Remove sensitive data
-      const { password_hash, ...publicUser } = user;
+      const { password_hash: _, ...publicUser } = user;
       req.user = publicUser;
       req.token = token;
 
@@ -112,7 +112,7 @@ export function optionalAuthenticateJWT(
       const user = userService.getUserById(decoded.sub);
 
       if (user && user.is_active) {
-        const { password_hash, ...publicUser } = user;
+        const { password_hash: _, ...publicUser } = user;
         req.user = publicUser;
         req.token = token;
       }
@@ -176,7 +176,7 @@ export async function createAuthContext(token?: string): Promise<AuthContext> {
         return { user: null, isAuthenticated: false };
       }
 
-      const { password_hash, ...publicUser } = user;
+      const { password_hash: _, ...publicUser } = user;
       return { user: publicUser, isAuthenticated: true };
     } finally {
       userService.close();
@@ -199,7 +199,7 @@ export async function createAuthContext(token?: string): Promise<AuthContext> {
  * TRPC middleware for protected procedures
  */
 export function createTRPCAuthMiddleware() {
-  return async function isAuthenticated(opts: any) {
+  return async function isAuthenticated(opts: { ctx: any; next: any }) {
     const { ctx, next } = opts;
 
     if (!ctx.user) {
@@ -224,7 +224,7 @@ export function createTRPCAuthMiddleware() {
 export function createTRPCRoleMiddleware(
   ...roles: ("user" | "admin" | "moderator")[]
 ) {
-  return async function requireRole(opts: any) {
+  return async function requireRole(opts: { ctx: any; next: any }) {
     const { ctx, next } = opts;
 
     if (!ctx.user) {
@@ -257,7 +257,7 @@ export function createTRPCRoleMiddleware(
 /**
  * Utility function to extract user ID from context
  */
-export function getUserIdFromContext(ctx: any): string {
+export function getUserIdFromContext(ctx: { user?: { id?: string } }): string {
   if (!ctx.user?.id) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
