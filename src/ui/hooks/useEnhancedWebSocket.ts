@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import type { WebSocket as WSType } from 'ws';
-import { websocketConfig, getWebSocketUrl, getReconnectionDelay } from '../../shared/config/websocket.config.js';
+import { websocketConfig, getWebSocketUrl, getReconnectionDelay } from '../../shared/config/websocket.config';
 import type {
   WebSocketEvent,
   WebSocketEventHandlers,

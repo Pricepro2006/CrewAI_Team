@@ -27,7 +27,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary/index.js";
 import { setupGlobalErrorHandlers } from "./utils/error-handling.js";
 import { ToastContainer } from "./components/Toast/index.js";
 import { NetworkStatus } from "./components/NetworkStatus/index.js";
-import { webSocketConfig, getApiBaseUrl } from "../config/websocket.config.js";
+import { webSocketConfig, getApiBaseUrl } from "../config/websocket.config";
 import "./App.css";
 
 // Setup global error handlers
