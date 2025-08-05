@@ -270,7 +270,7 @@ Return comprehensive JSON with business intelligence insights and strategic reco
             response = requests.post(
                 f"{self.ollama_url}/api/generate",
                 json=payload,
-                timeout=90  # Increased for complex business analysis
+                timeout=300  # 5 minutes for complex analysis - no timeouts
             )
             
             if response.status_code == 200:

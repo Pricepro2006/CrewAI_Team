@@ -9,6 +9,7 @@ import {
   Cog6ToothIcon,
   FunnelIcon,
   ArrowTrendingUpIcon,
+  CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
 import { api } from "../../../lib/trpc.js";
 import { useWebSocket } from "../../hooks/useWebSocket.js";
@@ -18,6 +19,7 @@ import { EmailDashboardView } from "./EmailDashboardView.js";
 import { AnalyticsView } from "./AnalyticsView.js";
 import { AgentView } from "./AgentView.js";
 import { StatusLegend } from "./StatusLegend.js";
+import { BusinessIntelligenceDashboard } from "./BusinessIntelligenceDashboard.js";
 import type {
   UnifiedEmailData,
   ViewMode,
@@ -166,6 +168,14 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
             Analytics
           </button>
           <button
+            className={`unified-dashboard__nav-btn ${viewMode === "business-intelligence" ? "active" : ""}`}
+            onClick={() => setViewMode("business-intelligence")}
+            title="Business Intelligence"
+          >
+            <CurrencyDollarIcon className="unified-dashboard__nav-icon" />
+            BI Insights
+          </button>
+          <button
             className={`unified-dashboard__nav-btn ${viewMode === "workflows" ? "active" : ""}`}
             onClick={() => setViewMode("workflows")}
             title="Workflow Tracking"
@@ -239,6 +249,10 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
 
         {viewMode === "analytics" && (
           <AnalyticsView analytics={analytics?.data || null} />
+        )}
+
+        {viewMode === "business-intelligence" && (
+          <BusinessIntelligenceDashboard />
         )}
 
         {viewMode === "workflows" && (

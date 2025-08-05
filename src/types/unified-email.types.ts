@@ -6,7 +6,8 @@ export type ViewMode =
   | "analytics"
   | "agents"
   | "workflows"
-  | "settings";
+  | "settings"
+  | "business-intelligence";
 
 export type WorkflowState = "START_POINT" | "IN_PROGRESS" | "COMPLETION";
 
