@@ -7,17 +7,19 @@ import {
 import { EmailStorageService } from "../services/EmailStorageService.js";
 import { mockEmailStorageService } from "../services/MockEmailStorageService.js";
 import { realEmailStorageService } from "../services/RealEmailStorageService.js";
+// import { emailStorageAdapter } from "../services/EmailStorageServiceAdapter.js"; // Disabled - conflicts with enhanced DB
 import { UnifiedEmailService } from "../services/UnifiedEmailService.js";
 import { emailIntegrationService } from "../services/EmailIntegrationService.js";
+import { simpleAPIProxy } from "../services/SimpleAPIProxy.js";
 import { logger } from "../../utils/logger.js";
 
 // Initialize email services
-// const emailStorage = new EmailStorageService(); // TODO: Fix database schema issues
-// const emailStorage = mockEmailStorageService; // Temporary mock service
-const emailStorage = realEmailStorageService; // Real database connection
-const unifiedEmailService = new UnifiedEmailService();
+// Use RealEmailStorageService that connects to crewai_enhanced.db
+const emailStorage = realEmailStorageService; // Real database connection with enhanced schema
+// const unifiedEmailService = new UnifiedEmailService(); // Can't use - wrong database schema
+const unifiedEmailService = null as any; // Temporary disable until database fixed
 // Start SLA monitoring
-emailStorage.startSLAMonitoring(); // Using real service
+// emailStorage.startSLAMonitoring(); // Not implemented in RealEmailStorageService yet
 
 // Input validation schemas - Enhanced for table view (Agent 10)
 const GetEmailsTableInputSchema = z.object({
@@ -197,14 +199,8 @@ export const emailRouter = router({
           assignedAgents: [],
         };
 
-        const result = await unifiedEmailService.getEmails({
-          page: input.page,
-          limit: input.pageSize,
-          filters,
-          includeAnalysis: true,
-          includeWorkflowState: true,
-          includeAgentInfo: true,
-        });
+        // Use real email storage service to get analyzed emails
+        const result = await emailStorage.getEmailsForTableView(input);
 
         // Broadcast table data update for real-time synchronization
         // Temporarily disabled due to import issues
@@ -236,6 +232,7 @@ export const emailRouter = router({
       try {
         logger.info("Fetching dashboard statistics", "EMAIL_ROUTER");
 
+        // Use real email storage service to get stats
         const stats = await emailStorage.getDashboardStats();
 
         // Broadcast stats update for real-time dashboard sync
@@ -275,11 +272,8 @@ export const emailRouter = router({
       try {
         logger.info("Fetching email analytics", "EMAIL_ROUTER");
 
-        const analytics = await unifiedEmailService.getAnalytics({
-          includeWorkflowMetrics: true,
-          includeAgentMetrics: true,
-          includeTrends: true,
-        });
+        // Use real email storage service to get analytics
+        const analytics = await emailStorage.getWorkflowAnalytics();
 
         // Broadcast analytics update for real-time dashboard updates
         // Temporarily disabled due to import issues

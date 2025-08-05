@@ -123,7 +123,7 @@ app.get("/health", async (_req, res) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const chromaResponse = await fetch(`${chromaUrl}/api/v1/heartbeat`, {
+    const chromaResponse = await fetch(`${chromaUrl}/api/v2/version`, {
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -205,6 +205,10 @@ app.use("/api/email-analysis", emailAnalysisRouter);
 
 // Email assignment routes
 app.use("/api/email-assignment", emailAssignmentRouter);
+
+// Analyzed emails routes (simple direct database access)
+import analyzedEmailsRouter from "./routes/analyzed-emails.router.js";
+app.use("/", analyzedEmailsRouter);
 
 // WebSocket monitoring routes (authenticated)
 app.use("/api/websocket", websocketMonitorRouter);
@@ -393,8 +397,9 @@ console.log(
 
 // Setup Walmart-specific WebSocket handlers
 const dealDataService = DealDataService.getInstance();
-// const emailStorageService = new EmailStorageService(); // TODO: Fix database schema issues
-const emailStorageService = null as any; // Temporary fix
+// Use the RealEmailStorageService for Walmart WebSocket
+import { realEmailStorageService } from "./services/RealEmailStorageService.js";
+const emailStorageService = realEmailStorageService as any;
 const walmartRealtimeManager = setupWalmartWebSocket(
   wss,
   dealDataService,

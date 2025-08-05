@@ -19,7 +19,7 @@ export class VectorStore {
     this.config = config;
 
     // Check if path is a URL or file path and configure accordingly
-    const chromaPath = config.path || "http://localhost:8000";
+    const chromaPath = config.path || "http://localhost:8001";
     const clientConfig: any = {};
 
     if (chromaPath.startsWith("http")) {
@@ -30,7 +30,7 @@ export class VectorStore {
       console.warn(
         "ChromaDB file path configuration is deprecated. Falling back to HTTP.",
       );
-      clientConfig.path = "http://localhost:8000";
+      clientConfig.path = "http://localhost:8001";
     }
 
     this.client = new ChromaClient(clientConfig);
