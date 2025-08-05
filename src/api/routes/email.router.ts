@@ -679,6 +679,247 @@ export const emailRouter = router({
     }
   }),
 
+  // Get comprehensive business intelligence data
+  getBusinessIntelligence: publicProcedure
+    .input(
+      z.object({
+        timeRange: z
+          .object({
+            start: z.string().datetime(),
+            end: z.string().datetime(),
+          })
+          .optional(),
+        customerFilter: z.array(z.string()).optional(),
+        workflowFilter: z.array(z.string()).optional(),
+        limit: z.number().min(1).max(100).optional().default(20),
+        useCache: z.boolean().optional().default(true),
+      }),
+    )
+    .query(async ({ input }) => {
+      try {
+        logger.info("Fetching business intelligence data", "EMAIL_ROUTER", {
+          timeRange: input.timeRange,
+          filters: { customers: input.customerFilter, workflows: input.workflowFilter },
+        });
+
+        // Import the new BusinessIntelligenceService
+        const { getBusinessIntelligenceService } = await import(
+          "../services/BusinessIntelligenceService.js"
+        );
+        const biService = getBusinessIntelligenceService();
+
+        // Convert string dates to Date objects
+        const options = {
+          timeRange: input.timeRange
+            ? {
+                start: new Date(input.timeRange.start),
+                end: new Date(input.timeRange.end),
+              }
+            : undefined,
+          customerFilter: input.customerFilter,
+          workflowFilter: input.workflowFilter,
+          limit: input.limit,
+          useCache: input.useCache,
+        };
+
+        const biData = await biService.getBusinessIntelligence(options);
+
+        return {
+          success: true,
+          data: biData,
+        };
+      } catch (error) {
+        logger.error("Failed to fetch business intelligence", "EMAIL_ROUTER", {
+          error,
+        });
+        throw new Error("Failed to fetch business intelligence data");
+      }
+    }),
+
+  // Get business intelligence summary (lightweight endpoint)
+  getBISummary: publicProcedure
+    .input(
+      z.object({
+        refreshKey: z.number().optional(),
+      }),
+    )
+    .query(async ({ input: _input }) => {
+      try {
+        logger.info("Fetching BI summary", "EMAIL_ROUTER");
+
+        const { getBusinessIntelligenceService } = await import(
+          "../services/BusinessIntelligenceService.js"
+        );
+        const biService = getBusinessIntelligenceService();
+
+        // Get summary data only
+        const biData = await biService.getBusinessIntelligence({
+          useCache: true,
+        });
+
+        // Return condensed summary
+        return {
+          success: true,
+          data: {
+            summary: biData.summary,
+            topMetrics: {
+              totalValue: biData.summary.totalBusinessValue,
+              emailsAnalyzed: biData.summary.totalEmailsAnalyzed,
+              uniqueCustomers: biData.summary.uniqueCustomerCount,
+              highPriorityRate: biData.summary.highPriorityRate,
+            },
+            recentHighValueItems: biData.entityExtracts.recentHighValueItems.slice(0, 5),
+            topWorkflows: biData.workflowDistribution.slice(0, 3),
+            generatedAt: biData.generatedAt,
+          },
+        };
+      } catch (error) {
+        logger.error("Failed to fetch BI summary", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to fetch business intelligence summary");
+      }
+    }),
+
+  // Get customer insights
+  getCustomerInsights: publicProcedure
+    .input(
+      z.object({
+        customerName: z.string().optional(),
+        limit: z.number().min(1).max(50).optional().default(10),
+        sortBy: z
+          .enum(["emailCount", "totalValue", "lastInteraction"])
+          .optional()
+          .default("emailCount"),
+      }),
+    )
+    .query(async ({ input }) => {
+      try {
+        logger.info("Fetching customer insights", "EMAIL_ROUTER", {
+          customer: input.customerName,
+          limit: input.limit,
+        });
+
+        const { getBusinessIntelligenceService } = await import(
+          "../services/BusinessIntelligenceService.js"
+        );
+        const biService = getBusinessIntelligenceService();
+
+        const biData = await biService.getBusinessIntelligence({
+          customerFilter: input.customerName ? [input.customerName] : undefined,
+          useCache: true,
+        });
+
+        // Sort customers based on input
+        const sortedCustomers = [...biData.topCustomers].sort((a, b) => {
+          switch (input.sortBy) {
+            case "totalValue":
+              return b.totalValue - a.totalValue;
+            case "lastInteraction":
+              return new Date(b.lastInteraction).getTime() - new Date(a.lastInteraction).getTime();
+            default:
+              return b.emailCount - a.emailCount;
+          }
+        });
+
+        return {
+          success: true,
+          data: {
+            customers: sortedCustomers.slice(0, input.limit),
+            totalCustomers: biData.summary.uniqueCustomerCount,
+            metrics: {
+              avgEmailsPerCustomer:
+                biData.summary.totalEmailsAnalyzed / biData.summary.uniqueCustomerCount,
+              avgValuePerCustomer:
+                biData.summary.totalBusinessValue / biData.summary.uniqueCustomerCount,
+            },
+          },
+        };
+      } catch (error) {
+        logger.error("Failed to fetch customer insights", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to fetch customer insights");
+      }
+    }),
+
+  // Get value metrics and financial insights
+  getValueMetrics: publicProcedure
+    .input(
+      z.object({
+        groupBy: z.enum(["workflow", "priority", "customer", "time"]).optional().default("workflow"),
+        timeGranularity: z.enum(["hour", "day", "week", "month"]).optional().default("day"),
+        limit: z.number().min(1).max(100).optional().default(20),
+      }),
+    )
+    .query(async ({ input }) => {
+      try {
+        logger.info("Fetching value metrics", "EMAIL_ROUTER", {
+          groupBy: input.groupBy,
+          granularity: input.timeGranularity,
+        });
+
+        const { getBusinessIntelligenceService } = await import(
+          "../services/BusinessIntelligenceService.js"
+        );
+        const biService = getBusinessIntelligenceService();
+
+        const biData = await biService.getBusinessIntelligence({ useCache: true });
+
+        // Group data based on input
+        let groupedData: any[] = [];
+
+        switch (input.groupBy) {
+          case "workflow":
+            groupedData = biData.workflowDistribution.map((w) => ({
+              label: w.type,
+              value: w.totalValue,
+              count: w.count,
+              avgValue: w.avgValue,
+            }));
+            break;
+
+          case "priority":
+            groupedData = biData.priorityDistribution.map((p) => ({
+              label: p.level,
+              value: 0, // Would need to enhance BI service to include value by priority
+              count: p.count,
+              percentage: p.percentage,
+            }));
+            break;
+
+          case "customer":
+            groupedData = biData.topCustomers.map((c) => ({
+              label: c.name,
+              value: c.totalValue,
+              count: c.emailCount,
+              avgResponseTime: c.avgResponseTime,
+            }));
+            break;
+
+          default:
+            // Time-based grouping would require additional implementation
+            groupedData = [];
+        }
+
+        return {
+          success: true,
+          data: {
+            metrics: groupedData.slice(0, input.limit),
+            summary: {
+              totalValue: biData.summary.totalBusinessValue,
+              totalItems: biData.summary.totalEmailsAnalyzed,
+              uniqueEntities: {
+                poNumbers: biData.summary.uniquePOCount,
+                quoteNumbers: biData.summary.uniqueQuoteCount,
+                customers: biData.summary.uniqueCustomerCount,
+              },
+            },
+            timeRange: biData.processingMetrics.timeRange,
+          },
+        };
+      } catch (error) {
+        logger.error("Failed to fetch value metrics", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to fetch value metrics");
+      }
+    }),
+
   // Enhanced search with advanced filtering (Agent 10)
   searchAdvanced: publicProcedure
     .input(
