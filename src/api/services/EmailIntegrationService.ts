@@ -79,8 +79,10 @@ export class EmailIntegrationService {
   private isProcessing: boolean = false;
 
   private constructor() {
-    // this.emailStorage = new EmailStorageService(); // TODO: Fix database schema mismatch
-    this.emailStorage = null as any; // Temporary fix
+    // TODO: Fix TypeScript compilation issues before enabling real service
+    // const { realEmailStorageService } = require('./RealEmailStorageService.js');
+    // this.emailStorage = realEmailStorageService;
+    this.emailStorage = new EmailStorageService(); // Temporary mock until TypeScript fixed
     // this.emailRepository = new EmailRepository(); // TODO: Fix repository configuration
     this.emailRepository = null as any; // Temporary fix
     // this.unifiedEmailService = new UnifiedEmailService(this.emailRepository); // TODO: Fix service dependency
@@ -511,4 +513,6 @@ export class EmailIntegrationService {
 }
 
 // Export singleton instance
-export const emailIntegrationService = EmailIntegrationService.getInstance();
+// TODO: Fix database schema issues before enabling
+// export const emailIntegrationService = EmailIntegrationService.getInstance();
+export const emailIntegrationService = null as any; // Temporary disable until fixed

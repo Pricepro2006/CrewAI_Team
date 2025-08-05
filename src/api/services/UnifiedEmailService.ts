@@ -51,6 +51,7 @@ export class UnifiedEmailService {
   private emailRepository: EmailRepository;
 
   constructor() {
+    // Use the real email storage service
     this.emailStorage = new EmailStorageService();
     this.iemsData = IEMSDataService.getInstance();
     this.analysisPipeline = new EmailAnalysisPipeline();
