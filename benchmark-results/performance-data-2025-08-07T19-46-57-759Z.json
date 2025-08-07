@@ -1,0 +1,123 @@
+{
+  "metrics": {
+    "timestamp": "2025-08-07T19:46:57.756Z",
+    "environment": {
+      "nodeVersion": "v22.15.0",
+      "platform": "linux",
+      "memory": {
+        "total": 56242,
+        "used": 25802,
+        "percentage": 45.87674691511682
+      },
+      "processes": {
+        "node": 54,
+        "ollama": 2
+      }
+    },
+    "services": [
+      {
+        "name": "Main API",
+        "url": "http://localhost:3000",
+        "port": 3000,
+        "healthy": false,
+        "error": "connect ECONNREFUSED 127.0.0.1:3000"
+      },
+      {
+        "name": "Frontend",
+        "url": "http://localhost:5178",
+        "port": 5178,
+        "healthy": false,
+        "error": "connect ECONNREFUSED 127.0.0.1:5178"
+      },
+      {
+        "name": "NLP Service",
+        "url": "http://localhost:3008",
+        "port": 3008,
+        "healthy": false,
+        "error": "connect ECONNREFUSED 127.0.0.1:3008"
+      },
+      {
+        "name": "Pricing Service",
+        "url": "http://localhost:3007",
+        "port": 3007,
+        "healthy": false,
+        "error": "connect ECONNREFUSED 127.0.0.1:3007"
+      },
+      {
+        "name": "Cache Service",
+        "url": "http://localhost:3006",
+        "port": 3006,
+        "healthy": false,
+        "error": "connect ECONNREFUSED 127.0.0.1:3006"
+      },
+      {
+        "name": "WebSocket Server",
+        "url": "http://localhost:8080",
+        "port": 8080,
+        "healthy": false,
+        "error": "connect ECONNREFUSED 127.0.0.1:8080"
+      }
+    ],
+    "database": {
+      "mainDb": {
+        "size": "36.57 MB",
+        "tables": 11,
+        "indexes": 23
+      },
+      "walmartDb": {
+        "size": "0.13 MB",
+        "tables": 10,
+        "indexes": 12
+      },
+      "crewaiDb": {
+        "size": "629.17 MB",
+        "tables": 21,
+        "indexes": 49
+      }
+    },
+    "frontend": {
+      "bundleSize": "25.69 MB",
+      "totalFiles": 2199,
+      "jsFiles": 1127,
+      "components": 95
+    }
+  },
+  "recommendations": [
+    {
+      "category": "Critical",
+      "area": "Service Availability",
+      "issue": "6 services are down: Main API, Frontend, NLP Service, Pricing Service, Cache Service, WebSocket Server",
+      "impact": "System functionality severely impacted, user experience degraded",
+      "solution": "Start missing services using the service startup script. Check logs for startup errors. Implement health checks and auto-restart mechanisms.",
+      "effort": "Low",
+      "priority": 10
+    },
+    {
+      "category": "High",
+      "area": "Database Performance",
+      "issue": "CrewAI Enhanced database is very large: 629.17 MB",
+      "impact": "Slower query performance, increased memory usage, longer backup times",
+      "solution": "Archive old email analysis data, implement data retention policies, consider database partitioning, run VACUUM to reclaim space.",
+      "effort": "Medium",
+      "priority": 8
+    },
+    {
+      "category": "Medium",
+      "area": "Frontend Performance",
+      "issue": "Large number of build artifacts: 2199 files",
+      "impact": "Slower build times, larger deployment packages, increased CDN costs",
+      "solution": "Implement more aggressive tree shaking, remove unused dependencies, enable gzip compression, exclude source maps from production builds.",
+      "effort": "Low",
+      "priority": 6
+    },
+    {
+      "category": "Medium",
+      "area": "Process Management",
+      "issue": "High number of Node.js processes: 54",
+      "impact": "Increased memory usage, potential resource conflicts, harder debugging",
+      "solution": "Audit running processes, consolidate microservices where appropriate, implement proper process monitoring and cleanup.",
+      "effort": "Medium",
+      "priority": 5
+    }
+  ]
+}

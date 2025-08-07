@@ -1,0 +1,910 @@
+{
+  "timestamp": "2025-08-07T19:43:41.276Z",
+  "results": [
+    {
+      "name": "Main Database",
+      "metrics": {
+        "file": "data/app.db",
+        "size": 38342656,
+        "sizeHuman": "36.57 MB",
+        "tableCount": 11,
+        "indexCount": 23,
+        "pageSize": 4096,
+        "pageCount": 9361,
+        "freePages": 0,
+        "unusedSpace": 0
+      },
+      "benchmarks": [
+        {
+          "query": "SELECT COUNT(*) FROM sqlite_master",
+          "description": "Schema metadata query",
+          "avgExecutionTime": 0.01466072549020086,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.07142400000009275,
+          "p95ExecutionTime": 0.04186800000002222,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT name FROM sqlite_master WHERE type = 'table'",
+          "description": "Table enumeration",
+          "avgExecutionTime": 0.018953019607842375,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.07551099999989219,
+          "p95ExecutionTime": 0.04146800000000894,
+          "iterations": 50,
+          "rowsAffected": 12,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM emails",
+          "description": "Count rows in emails",
+          "avgExecutionTime": 0.024548764705886527,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.09490800000003219,
+          "p95ExecutionTime": 0.05307000000004791,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM emails LIMIT 100",
+          "description": "Select first 100 rows from emails",
+          "avgExecutionTime": 0.5687652745098148,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 2.4907329999999774,
+          "p95ExecutionTime": 1.1551430000000664,
+          "iterations": 50,
+          "rowsAffected": 100,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM emails ORDER BY rowid DESC LIMIT 10",
+          "description": "Select latest 10 rows from emails",
+          "avgExecutionTime": 0.052092803921571465,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.14831700000002002,
+          "p95ExecutionTime": 0.12977300000000014,
+          "iterations": 50,
+          "rowsAffected": 10,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM emails WHERE graph_id IS NOT NULL",
+          "description": "Indexed query on emails.graph_id",
+          "avgExecutionTime": 0.009952333333317524,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.03170000000000073,
+          "p95ExecutionTime": 0.023022999999966487,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM emails_enhanced",
+          "description": "Count rows in emails_enhanced",
+          "avgExecutionTime": 0.024241607843136722,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.09856400000001031,
+          "p95ExecutionTime": 0.05896000000007007,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM emails_enhanced LIMIT 100",
+          "description": "Select first 100 rows from emails_enhanced",
+          "avgExecutionTime": 2.2032231176470565,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 7.066777000000002,
+          "p95ExecutionTime": 5.730004999999892,
+          "iterations": 50,
+          "rowsAffected": 100,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM emails_enhanced ORDER BY rowid DESC LIMIT 10",
+          "description": "Select latest 10 rows from emails_enhanced",
+          "avgExecutionTime": 0.10657078431373235,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.2514300000000276,
+          "p95ExecutionTime": 0.20488399999999274,
+          "iterations": 50,
+          "rowsAffected": 10,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM email_analysis",
+          "description": "Count rows in email_analysis",
+          "avgExecutionTime": 0.010307078431377277,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.04277999999999338,
+          "p95ExecutionTime": 0.022621999999955733,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM email_analysis LIMIT 100",
+          "description": "Select first 100 rows from email_analysis",
+          "avgExecutionTime": 0.3295518039215575,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 1.793015999999966,
+          "p95ExecutionTime": 0.5371149999999716,
+          "iterations": 50,
+          "rowsAffected": 100,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM email_analysis ORDER BY rowid DESC LIMIT 10",
+          "description": "Select latest 10 rows from email_analysis",
+          "avgExecutionTime": 0.05738003921569722,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.1634559999999965,
+          "p95ExecutionTime": 0.1225689999999986,
+          "iterations": 50,
+          "rowsAffected": 10,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM email_analysis WHERE processing_time_ms IS NOT NULL",
+          "description": "Indexed query on email_analysis.processing_time_ms",
+          "avgExecutionTime": 0.4251690588235141,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.60588400000006,
+          "p95ExecutionTime": 0.57220099999995,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        }
+      ],
+      "tableAnalyses": [
+        {
+          "tableName": "emails",
+          "rowCount": 33797,
+          "indexCount": 4,
+          "avgRowSize": 464.33,
+          "totalSize": 15692961.01,
+          "indexes": [
+            {
+              "indexName": "idx_emails_graph_id",
+              "tableName": "emails",
+              "columns": [
+                "graph_id"
+              ],
+              "unique": true,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_emails_priority",
+              "tableName": "emails",
+              "columns": [
+                "priority"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_emails_sender",
+              "tableName": "emails",
+              "columns": [
+                "sender"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_emails_created_at",
+              "tableName": "emails",
+              "columns": [
+                "created_at"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            }
+          ]
+        },
+        {
+          "tableName": "emails_enhanced",
+          "rowCount": 33797,
+          "indexCount": 0,
+          "avgRowSize": 890.37,
+          "totalSize": 30091834.89,
+          "indexes": []
+        },
+        {
+          "tableName": "email_analysis",
+          "rowCount": 24990,
+          "indexCount": 6,
+          "avgRowSize": 272.29,
+          "totalSize": 6804527.100000001,
+          "indexes": [
+            {
+              "indexName": "idx_email_analysis_processing_time",
+              "tableName": "email_analysis",
+              "columns": [
+                "processing_time_ms"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_email_analysis_workflow_timestamp",
+              "tableName": "email_analysis",
+              "columns": [
+                "primary_workflow",
+                "analysis_timestamp"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_email_analysis_confidence",
+              "tableName": "email_analysis",
+              "columns": [
+                "confidence_score"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_email_analysis_workflow_state",
+              "tableName": "email_analysis",
+              "columns": [
+                "workflow_state"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_email_analysis_workflow",
+              "tableName": "email_analysis",
+              "columns": [
+                "primary_workflow"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_email_analysis_timestamp",
+              "tableName": "email_analysis",
+              "columns": [
+                "analysis_timestamp"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            }
+          ]
+        },
+        {
+          "tableName": "entity_extractions",
+          "rowCount": 23855,
+          "indexCount": 3,
+          "avgRowSize": 183.96,
+          "totalSize": 4388365.8,
+          "indexes": [
+            {
+              "indexName": "idx_entity_extractions_value",
+              "tableName": "entity_extractions",
+              "columns": [
+                "entity_value"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_entity_extractions_type",
+              "tableName": "entity_extractions",
+              "columns": [
+                "entity_type"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_entity_extractions_email_id",
+              "tableName": "entity_extractions",
+              "columns": [
+                "email_id"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            }
+          ]
+        },
+        {
+          "tableName": "email_analysis_backup_neg_times",
+          "rowCount": 7462,
+          "indexCount": 0,
+          "avgRowSize": 145.69,
+          "totalSize": 1087138.78,
+          "indexes": []
+        },
+        {
+          "tableName": "rule_executions",
+          "rowCount": 5000,
+          "indexCount": 3,
+          "avgRowSize": 136.23,
+          "totalSize": 681150,
+          "indexes": [
+            {
+              "indexName": "idx_rule_executions_executed_at",
+              "tableName": "rule_executions",
+              "columns": [
+                "executed_at"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_rule_executions_email_id",
+              "tableName": "rule_executions",
+              "columns": [
+                "email_id"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_rule_executions_rule_id",
+              "tableName": "rule_executions",
+              "columns": [
+                "rule_id"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            }
+          ]
+        },
+        {
+          "tableName": "automation_rules",
+          "rowCount": 5,
+          "indexCount": 1,
+          "avgRowSize": 411,
+          "totalSize": 2055,
+          "indexes": [
+            {
+              "indexName": "idx_automation_rules_active",
+              "tableName": "automation_rules",
+              "columns": [
+                "is_active"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            }
+          ]
+        },
+        {
+          "tableName": "migrations",
+          "rowCount": 4,
+          "indexCount": 0,
+          "avgRowSize": 82.75,
+          "totalSize": 331,
+          "indexes": []
+        }
+      ]
+    },
+    {
+      "name": "Walmart Grocery",
+      "metrics": {
+        "file": "data/walmart_grocery.db",
+        "size": 139264,
+        "sizeHuman": "136 KB",
+        "tableCount": 10,
+        "indexCount": 12,
+        "pageSize": 4096,
+        "pageCount": 39,
+        "freePages": 0,
+        "unusedSpace": 0
+      },
+      "benchmarks": [
+        {
+          "query": "SELECT COUNT(*) FROM sqlite_master",
+          "description": "Schema metadata query",
+          "avgExecutionTime": 0.005354450980393285,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.021400999999968917,
+          "p95ExecutionTime": 0.009427999999957137,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT name FROM sqlite_master WHERE type = 'table'",
+          "description": "Table enumeration",
+          "avgExecutionTime": 0.02184868627450981,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.18250100000000202,
+          "p95ExecutionTime": 0.04822999999998956,
+          "iterations": 50,
+          "rowsAffected": 10,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM walmart_products",
+          "description": "Count rows in walmart_products",
+          "avgExecutionTime": 0.005520137254892706,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.01991699999996399,
+          "p95ExecutionTime": 0.015047999999978856,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM walmart_products LIMIT 100",
+          "description": "Select first 100 rows from walmart_products",
+          "avgExecutionTime": 0.08743409803922113,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.2208939999999302,
+          "p95ExecutionTime": 0.1628050000000485,
+          "iterations": 50,
+          "rowsAffected": 5,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM walmart_products ORDER BY rowid DESC LIMIT 10",
+          "description": "Select latest 10 rows from walmart_products",
+          "avgExecutionTime": 0.08054413725489319,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.16134200000010424,
+          "p95ExecutionTime": 0.143387999999959,
+          "iterations": 50,
+          "rowsAffected": 5,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM walmart_products WHERE search_keywords IS NOT NULL",
+          "description": "Indexed query on walmart_products.search_keywords",
+          "avgExecutionTime": 0.005374235294117866,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.015859999999975116,
+          "p95ExecutionTime": 0.01391599999999471,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM schema_migrations",
+          "description": "Count rows in schema_migrations",
+          "avgExecutionTime": 0.004231803921561996,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.019215999999914857,
+          "p95ExecutionTime": 0.005369999999970787,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM schema_migrations LIMIT 100",
+          "description": "Select first 100 rows from schema_migrations",
+          "avgExecutionTime": 0.009498000000014465,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.0483600000000024,
+          "p95ExecutionTime": 0.035657000000014705,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM schema_migrations ORDER BY rowid DESC LIMIT 10",
+          "description": "Select latest 10 rows from schema_migrations",
+          "avgExecutionTime": 0.007466117647062871,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.04202900000007048,
+          "p95ExecutionTime": 0.015317999999979293,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        }
+      ],
+      "tableAnalyses": [
+        {
+          "tableName": "walmart_products",
+          "rowCount": 5,
+          "indexCount": 4,
+          "avgRowSize": 890.8,
+          "totalSize": 4454,
+          "indexes": [
+            {
+              "indexName": "idx_walmart_products_search",
+              "tableName": "walmart_products",
+              "columns": [
+                "search_keywords"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_walmart_products_category",
+              "tableName": "walmart_products",
+              "columns": [
+                "category_path"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_walmart_products_brand",
+              "tableName": "walmart_products",
+              "columns": [
+                "brand"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_walmart_products_name",
+              "tableName": "walmart_products",
+              "columns": [
+                "name"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            }
+          ]
+        },
+        {
+          "tableName": "schema_migrations",
+          "rowCount": 1,
+          "indexCount": 0,
+          "avgRowSize": 132,
+          "totalSize": 132,
+          "indexes": []
+        }
+      ]
+    },
+    {
+      "name": "CrewAI Enhanced",
+      "metrics": {
+        "file": "data/crewai_enhanced.db",
+        "size": 659730432,
+        "sizeHuman": "629.17 MB",
+        "tableCount": 21,
+        "indexCount": 49,
+        "pageSize": 4096,
+        "pageCount": 161157,
+        "freePages": 0,
+        "unusedSpace": 0
+      },
+      "benchmarks": [
+        {
+          "query": "SELECT COUNT(*) FROM sqlite_master",
+          "description": "Schema metadata query",
+          "avgExecutionTime": 0.0043892352941192455,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.020678999999972802,
+          "p95ExecutionTime": 0.010860999999977139,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT name FROM sqlite_master WHERE type = 'table'",
+          "description": "Table enumeration",
+          "avgExecutionTime": 0.02985296078431439,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.10355400000003101,
+          "p95ExecutionTime": 0.09654000000000451,
+          "iterations": 50,
+          "rowsAffected": 23,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM email_analysis_phase1",
+          "description": "Count rows in email_analysis_phase1",
+          "avgExecutionTime": 0.046841058823534856,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.18595800000002782,
+          "p95ExecutionTime": 0.16157299999997576,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM email_analysis_phase1 LIMIT 100",
+          "description": "Select first 100 rows from email_analysis_phase1",
+          "avgExecutionTime": 0.4774155098039246,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 1.7404180000000906,
+          "p95ExecutionTime": 0.7248070000000553,
+          "iterations": 50,
+          "rowsAffected": 100,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM email_analysis_phase1 ORDER BY rowid DESC LIMIT 10",
+          "description": "Select latest 10 rows from email_analysis_phase1",
+          "avgExecutionTime": 0.06955500000001884,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.21920000000000073,
+          "p95ExecutionTime": 0.19247100000006867,
+          "iterations": 50,
+          "rowsAffected": 10,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM email_analysis_phase1 WHERE created_at IS NOT NULL",
+          "description": "Indexed query on email_analysis_phase1.created_at",
+          "avgExecutionTime": 1.6598457450980089,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 2.2937729999998737,
+          "p95ExecutionTime": 2.112473999999793,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM deal_items",
+          "description": "Count rows in deal_items",
+          "avgExecutionTime": 0.0033103137254784087,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.007192999999915628,
+          "p95ExecutionTime": 0.004719000000022788,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM deal_items LIMIT 100",
+          "description": "Select first 100 rows from deal_items",
+          "avgExecutionTime": 0.0260037647058599,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.09383499999989908,
+          "p95ExecutionTime": 0.04199900000003254,
+          "iterations": 50,
+          "rowsAffected": 7,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM deal_items ORDER BY rowid DESC LIMIT 10",
+          "description": "Select latest 10 rows from deal_items",
+          "avgExecutionTime": 0.03762982352939206,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.1765210000000934,
+          "p95ExecutionTime": 0.07186499999988882,
+          "iterations": 50,
+          "rowsAffected": 7,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM deal_items WHERE product_family IS NOT NULL",
+          "description": "Indexed query on deal_items.product_family",
+          "avgExecutionTime": 0.003275549019610266,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.011642000000165353,
+          "p95ExecutionTime": 0.005740999999943597,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM deals",
+          "description": "Count rows in deals",
+          "avgExecutionTime": 0.00461301960784594,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.0193570000001273,
+          "p95ExecutionTime": 0.01093100000002778,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM deals LIMIT 100",
+          "description": "Select first 100 rows from deals",
+          "avgExecutionTime": 0.018202941176459896,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.05926099999987855,
+          "p95ExecutionTime": 0.04535499999997228,
+          "iterations": 50,
+          "rowsAffected": 3,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT * FROM deals ORDER BY rowid DESC LIMIT 10",
+          "description": "Select latest 10 rows from deals",
+          "avgExecutionTime": 0.01286747058823797,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.03270100000008824,
+          "p95ExecutionTime": 0.02518699999995988,
+          "iterations": 50,
+          "rowsAffected": 3,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        },
+        {
+          "query": "SELECT COUNT(*) FROM deals WHERE status IS NOT NULL",
+          "description": "Indexed query on deals.status",
+          "avgExecutionTime": 0.004124039215697599,
+          "minExecutionTime": 0,
+          "maxExecutionTime": 0.016722000000072512,
+          "p95ExecutionTime": 0.006002000000080443,
+          "iterations": 50,
+          "rowsAffected": 1,
+          "success": false,
+          "error": "stmt.finalize is not a function"
+        }
+      ],
+      "tableAnalyses": [
+        {
+          "tableName": "email_analysis_phase1",
+          "rowCount": 106893,
+          "indexCount": 1,
+          "avgRowSize": 342,
+          "totalSize": 36557406,
+          "indexes": [
+            {
+              "indexName": "idx_phase1_created",
+              "tableName": "email_analysis_phase1",
+              "columns": [
+                "created_at"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            }
+          ]
+        },
+        {
+          "tableName": "deal_items",
+          "rowCount": 7,
+          "indexCount": 3,
+          "avgRowSize": 287.7142857142857,
+          "totalSize": 2014,
+          "indexes": [
+            {
+              "indexName": "idx_deal_items_product_family",
+              "tableName": "deal_items",
+              "columns": [
+                "product_family"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_deal_items_product_number",
+              "tableName": "deal_items",
+              "columns": [
+                "product_number"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_deal_items_deal_id",
+              "tableName": "deal_items",
+              "columns": [
+                "deal_id"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            }
+          ]
+        },
+        {
+          "tableName": "deals",
+          "rowCount": 3,
+          "indexCount": 4,
+          "avgRowSize": 259,
+          "totalSize": 777,
+          "indexes": [
+            {
+              "indexName": "idx_deals_status",
+              "tableName": "deals",
+              "columns": [
+                "status"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_deals_end_date",
+              "tableName": "deals",
+              "columns": [
+                "end_date"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_deals_customer",
+              "tableName": "deals",
+              "columns": [
+                "customer"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            },
+            {
+              "indexName": "idx_deals_deal_id",
+              "tableName": "deals",
+              "columns": [
+                "deal_id"
+              ],
+              "unique": false,
+              "size": 0,
+              "usage": "medium"
+            }
+          ]
+        },
+        {
+          "tableName": "dashboard_stats",
+          "rowCount": 1,
+          "indexCount": 0,
+          "avgRowSize": 420,
+          "totalSize": 420,
+          "indexes": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalDatabases": 3,
+    "totalSize": 698212352,
+    "totalTables": 42,
+    "totalIndexes": 84,
+    "avgQueryTime": 0
+  }
+}
