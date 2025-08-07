@@ -1,0 +1,149 @@
+# Prometheus alerting rules for Walmart Grocery Agent
+
+groups:
+  - name: walmart-grocery-services
+    rules:
+      # Service availability
+      - alert: ServiceDown
+        expr: up{job="walmart-services"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.instance }} is down"
+          description: "Service {{ $labels.instance }} has been down for more than 30 seconds."
+
+      # High CPU usage
+      - alert: HighCpuUsage
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for more than 2 minutes."
+
+      - alert: CriticalCpuUsage
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical CPU usage detected"
+          description: "CPU usage is above 95% for more than 1 minute."
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 85% for more than 2 minutes."
+
+      - alert: CriticalMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical memory usage detected"
+          description: "Memory usage is above 95% for more than 1 minute."
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: (rate(http_requests_total{job="walmart-services",status_code=~"5.."}[5m]) / rate(http_requests_total{job="walmart-services"}[5m])) * 100 > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on {{ $labels.instance }}"
+          description: "Service {{ $labels.instance }} has error rate above 5% for more than 2 minutes."
+
+      - alert: CriticalErrorRate
+        expr: (rate(http_requests_total{job="walmart-services",status_code=~"5.."}[5m]) / rate(http_requests_total{job="walmart-services"}[5m])) * 100 > 15
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical error rate on {{ $labels.instance }}"
+          description: "Service {{ $labels.instance }} has error rate above 15% for more than 1 minute."
+
+      # High response time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="walmart-services"}[5m])) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time on {{ $labels.instance }}"
+          description: "95th percentile response time is above 2 seconds for more than 2 minutes."
+
+      # Redis connectivity
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis server is not responding."
+
+      - alert: RedisHighMemoryUsage
+        expr: (redis_memory_used_bytes / redis_memory_max_bytes) * 100 > 90
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory usage is above 90%."
+
+      # Queue alerts
+      - alert: HighQueueDepth
+        expr: queue_jobs_waiting{service="walmart-nlp-queue"} > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High queue depth in NLP service"
+          description: "NLP queue has more than 1000 waiting jobs for more than 5 minutes."
+
+      - alert: QueueProcessingStalled
+        expr: rate(queue_jobs_completed{service="walmart-nlp-queue"}[5m]) == 0 and queue_jobs_waiting{service="walmart-nlp-queue"} > 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Queue processing has stalled"
+          description: "No jobs have been completed in the last 5 minutes despite having waiting jobs."
+
+      # WebSocket alerts
+      - alert: WebSocketConnectionLimit
+        expr: websocket_connections_active{service="walmart-websocket"} > 1000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High WebSocket connection count"
+          description: "WebSocket service has more than 1000 active connections."
+
+      # Disk space
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Root filesystem has less than 10% free space remaining."
+
+      # File descriptor usage
+      - alert: HighFileDescriptorUsage
+        expr: (process_open_fds / process_max_fds) * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High file descriptor usage on {{ $labels.instance }}"
+          description: "Process is using more than 80% of available file descriptors."
