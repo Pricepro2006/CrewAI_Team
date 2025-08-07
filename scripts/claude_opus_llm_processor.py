@@ -711,7 +711,10 @@ This email appears to be part of an incomplete conversation. Please reconstruct 
                         llm_calls += 1
                     if result.get('business_intelligence'):
                         business_insights += 1
-                        total_value += result.get('business_intelligence', {}).get('estimated_value', 0)
+                        # Handle potential None values
+                        value = result.get('business_intelligence', {}).get('estimated_value', 0)
+                        if value is not None:
+                            total_value += value
             
             logger.info(f"✅ Batch {batch_count + 1} complete: {updated} emails processed")
             logger.info(f"📊 Phase distribution: {phase_dist}")
