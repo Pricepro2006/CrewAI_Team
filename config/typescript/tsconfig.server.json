@@ -1,17 +1,17 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "module": "ESNext",
+    "module": "NodeNext",
     "target": "ES2022",
     "outDir": "../../dist",
     "rootDir": "../../src",
     "noEmit": false,
-    "moduleResolution": "node",
+    "moduleResolution": "NodeNext",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "allowImportingTsExtensions": false,
-    "types": ["node", "./browser-globals"],
+    "types": ["node"],
     "lib": ["ES2022"],
     "baseUrl": "../../src",
     "paths": {
@@ -20,7 +20,9 @@
       "@api/*": ["api/*"],
       "@config/*": ["config/*"],
       "@utils/*": ["utils/*"]
-    }
+    },
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": false
   },
   "include": [
     "../../src/api/**/*",

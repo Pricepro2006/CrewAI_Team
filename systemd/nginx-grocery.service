@@ -1,0 +1,45 @@
+[Unit]
+Description=Nginx HTTP and reverse proxy server for Grocery.local
+Documentation=man:nginx(8)
+After=network.target remote-fs.target nss-lookup.target
+Wants=network-online.target
+# Ensure all Walmart microservices are running before starting nginx
+After=walmart-api-server.service walmart-websocket.service walmart-pricing.service
+After=walmart-nlp-queue.service walmart-cache-warmer.service walmart-memory-monitor.service
+Requires=walmart-api-server.service
+
+[Service]
+Type=forking
+PIDFile=/run/nginx-grocery.pid
+ExecStartPre=/usr/sbin/nginx -t -c /home/pricepro2006/CrewAI_Team/nginx/nginx.conf
+ExecStart=/usr/sbin/nginx -c /home/pricepro2006/CrewAI_Team/nginx/nginx.conf
+ExecReload=/bin/sh -c "/bin/kill -s HUP $(/bin/cat /run/nginx-grocery.pid)"
+KillMode=mixed
+KillSignal=SIGQUIT
+TimeoutStopSec=5
+Restart=on-failure
+RestartSec=5
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/pricepro2006/CrewAI_Team/nginx/logs
+ReadWritePaths=/var/log/nginx
+ReadWritePaths=/var/cache/nginx
+ReadWritePaths=/run
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+LimitCORE=0
+
+# User and group
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target
