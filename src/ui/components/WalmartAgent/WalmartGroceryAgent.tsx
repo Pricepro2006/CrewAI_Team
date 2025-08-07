@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Search, ShoppingCart, Package, DollarSign, Clock, TrendingUp, AlertCircle, CheckCircle, List, PieChart, BarChart3, History } from 'lucide-react';
+import { Search, ShoppingCart, Package, DollarSign, Clock, TrendingUp, AlertCircle, CheckCircle, List, PieChart, BarChart3, History, Zap } from 'lucide-react';
 import { api } from '../../../lib/trpc.js';
+import { WalmartLivePricing } from './WalmartLivePricing.js';
+import { GroceryListEnhanced } from './GroceryListEnhanced.js';
 import './WalmartGroceryAgent.css';
 
 interface GroceryItem {
@@ -27,7 +29,7 @@ interface PriceHistory {
   price: number;
 }
 
-type TabType = 'shopping' | 'grocery-list' | 'budget-tracker' | 'price-history';
+type TabType = 'shopping' | 'grocery-list' | 'budget-tracker' | 'price-history' | 'live-pricing';
 
 export const WalmartGroceryAgent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('shopping');
@@ -115,6 +117,7 @@ export const WalmartGroceryAgent: React.FC = () => {
     { id: 'grocery-list' as TabType, label: 'Grocery List', icon: List },
     { id: 'budget-tracker' as TabType, label: 'Budget Tracker', icon: PieChart },
     { id: 'price-history' as TabType, label: 'Price History', icon: BarChart3 },
+    { id: 'live-pricing' as TabType, label: 'Live Pricing', icon: Zap },
   ];
 
   return (
@@ -346,101 +349,7 @@ export const WalmartGroceryAgent: React.FC = () => {
         )}
 
         {activeTab === 'grocery-list' && (
-          <div className="grocery-list-section">
-            <h2 className="section-title">My Grocery List</h2>
-            
-            <div className="list-stats">
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <List />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-value">{selectedItems.size}</p>
-                  <p className="stat-label">Items</p>
-                </div>
-              </div>
-              
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <DollarSign />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-value">${calculateTotalPrice().toFixed(2)}</p>
-                  <p className="stat-label">Total Cost</p>
-                </div>
-              </div>
-              
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <TrendingUp />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-value">${calculateTotalSavings().toFixed(2)}</p>
-                  <p className="stat-label">Total Savings</p>
-                </div>
-              </div>
-            </div>
-
-            {selectedItems.size === 0 ? (
-              <div className="empty-list">
-                <div className="empty-icon">
-                  <ShoppingCart size={48} />
-                </div>
-                <h3>Your grocery list is empty</h3>
-                <p>Start shopping to add items to your list</p>
-                <button className="btn-primary" onClick={() => setActiveTab('shopping')}>
-                  Start Shopping
-                </button>
-              </div>
-            ) : (
-              <div className="list-management">
-                <div className="list-controls">
-                  <button className="btn-primary">
-                    <CheckCircle size={16} />
-                    Mark All Purchased
-                  </button>
-                  <button className="btn-secondary">
-                    <Package size={16} />
-                    Export List
-                  </button>
-                  <button className="btn-secondary">
-                    <AlertCircle size={16} />
-                    Clear List
-                  </button>
-                </div>
-                
-                <div className="list-items">
-                  {searchResults?.items
-                    .filter(item => selectedItems.has(item.id))
-                    .map((item) => (
-                      <div key={item.id} className="list-item">
-                        <div className="item-info">
-                          <img src={item.imageUrl} alt={item.name} className="item-thumbnail" />
-                          <div className="item-details">
-                            <h4>{item.name}</h4>
-                            <p>{item.category} • {item.unit}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="item-price">${item.price.toFixed(2)}</div>
-                        
-                        <div className="item-controls">
-                          <button className="quantity-btn">-</button>
-                          <span className="quantity">1</span>
-                          <button className="quantity-btn">+</button>
-                          <button 
-                            className="remove-btn"
-                            onClick={() => toggleItemSelection(item.id)}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <GroceryListEnhanced />
         )}
 
         {activeTab === 'budget-tracker' && (
@@ -665,6 +574,10 @@ export const WalmartGroceryAgent: React.FC = () => {
               )}
             </div>
           </div>
+        )}
+
+        {activeTab === 'live-pricing' && (
+          <WalmartLivePricing />
         )}
       </div>
     </div>

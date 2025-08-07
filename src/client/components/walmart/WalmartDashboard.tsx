@@ -69,6 +69,7 @@ import { WalmartOrderHistory } from './WalmartOrderHistory';
 import { WalmartBudgetTracker } from './WalmartBudgetTracker';
 import { WalmartUserPreferences } from './WalmartUserPreferences';
 import { WalmartChatInterface } from './WalmartChatInterface';
+import { WalmartLivePricing } from './WalmartLivePricing';
 
 // Hooks and store
 import { useGroceryStore } from '../../store/groceryStore';
@@ -363,7 +364,7 @@ const RecentActivity: React.FC = () => {
 export const WalmartDashboard: React.FC<WalmartDashboardProps> = ({
   className,
 }) => {
-  const [activeView, setActiveView] = useState<'dashboard' | 'search' | 'lists' | 'orders' | 'budget' | 'settings'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'search' | 'lists' | 'orders' | 'budget' | 'settings' | 'live-pricing'>('dashboard');
   const [showCart, setShowCart] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<WalmartProduct | null>(null);
@@ -444,6 +445,13 @@ export const WalmartDashboard: React.FC<WalmartDashboardProps> = ({
                 onClick={() => setActiveView('budget')}
               >
                 Budget
+              </Button>
+              <Button
+                variant={activeView === 'live-pricing' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveView('live-pricing')}
+              >
+                Live Pricing
               </Button>
             </nav>
           </div>
@@ -674,6 +682,13 @@ export const WalmartDashboard: React.FC<WalmartDashboardProps> = ({
                 </Card>
               </div>
             </div>
+          </div>
+        )}
+        
+        {activeView === 'live-pricing' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Live Walmart Pricing</h2>
+            <WalmartLivePricing />
           </div>
         )}
       </main>
