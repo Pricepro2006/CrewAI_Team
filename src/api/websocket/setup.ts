@@ -7,6 +7,7 @@ import {
 import { wsService } from "../services/WebSocketService.js";
 import type { UserService } from "../services/UserService.js";
 import { logger } from "../../utils/logger.js";
+import { getGroceryNLPQueueWebSocketManager } from "./grocery-nlp-queue.js";
 
 /**
  * Setup authenticated WebSocket server
@@ -30,6 +31,13 @@ export function setupAuthenticatedWebSocketServer(
 
     // Apply authentication middleware
     await authMiddleware(ws, req);
+
+    // Check if this is a grocery NLP queue connection
+    if (req.url?.includes('/grocery-nlp-queue')) {
+      const groceryNLPManager = getGroceryNLPQueueWebSocketManager();
+      groceryNLPManager.handleConnection(ws, req);
+      return; // Let the grocery NLP manager handle this connection
+    }
 
     // Register with WebSocket service
     if (ws.clientId) {
@@ -199,6 +207,11 @@ function filterAllowedSubscriptions(
     } else if (
       channel.startsWith("task.") &&
       ws.permissions.includes("write")
+    ) {
+      allowed.push(channel);
+    } else if (
+      channel.startsWith("grocery-nlp.") &&
+      ws.permissions.includes("read")
     ) {
       allowed.push(channel);
     }
