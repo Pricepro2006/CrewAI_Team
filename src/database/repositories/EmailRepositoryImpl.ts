@@ -29,7 +29,7 @@ export class EmailRepositoryImpl
   protected mapRowToEntity(row: any): EmailRecord {
     return {
       id: row.id,
-      message_id: row.message_id,
+      message_id: row.internet_message_id,  // Map from DB column name
       subject: row.subject,
       body_text: row.body_text,
       body_html: row.body_html,
@@ -37,8 +37,8 @@ export class EmailRepositoryImpl
       to_addresses: row.to_addresses,
       cc_addresses: row.cc_addresses,
       bcc_addresses: row.bcc_addresses,
-      received_time: new Date(row.received_time),
-      sent_time: row.sent_time ? new Date(row.sent_time) : undefined,
+      received_time: new Date(row.received_date_time),
+      sent_time: row.sent_date_time ? new Date(row.sent_date_time) : undefined,
       conversation_id: row.conversation_id,
       thread_id: row.thread_id,
       in_reply_to: row.in_reply_to,
@@ -63,7 +63,7 @@ export class EmailRepositoryImpl
   protected mapEntityToRow(entity: Partial<EmailRecord>): any {
     const row: any = {};
 
-    if (entity.message_id !== undefined) row.message_id = entity.message_id;
+    if (entity.message_id !== undefined) row.internet_message_id = entity.message_id;  // Map to DB column name
     if (entity.subject !== undefined) row.subject = entity.subject;
     if (entity.body_text !== undefined) row.body_text = entity.body_text;
     if (entity.body_html !== undefined) row.body_html = entity.body_html;
@@ -76,9 +76,9 @@ export class EmailRepositoryImpl
     if (entity.bcc_addresses !== undefined)
       row.bcc_addresses = entity.bcc_addresses;
     if (entity.received_time !== undefined)
-      row.received_time = entity.received_time.toISOString();
+      row.received_date_time = entity.received_time.toISOString();
     if (entity.sent_time !== undefined)
-      row.sent_time = entity.sent_time?.toISOString();
+      row.sent_date_time = entity.sent_time?.toISOString();
     if (entity.conversation_id !== undefined)
       row.conversation_id = entity.conversation_id;
     if (entity.thread_id !== undefined) row.thread_id = entity.thread_id;
@@ -110,7 +110,7 @@ export class EmailRepositoryImpl
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName} 
         WHERE conversation_id = ? 
-        ORDER BY received_time ASC
+        ORDER BY received_date_time ASC
       `);
       const rows = stmt.all(conversationId);
       return rows.map((row) => this.mapRowToEntity(row));
@@ -156,7 +156,7 @@ export class EmailRepositoryImpl
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE status IN (?, ?)
-        ORDER BY received_time DESC
+        ORDER BY received_date_time DESC
         LIMIT ? OFFSET ?
       `);
       const rows = stmt.all(
@@ -175,7 +175,7 @@ export class EmailRepositoryImpl
   async findByMessageId(messageId: string): Promise<EmailRecord | null> {
     return executeQuery((db) => {
       const stmt = db.prepare(
-        `SELECT * FROM ${this.tableName} WHERE message_id = ?`,
+        `SELECT * FROM ${this.tableName} WHERE internet_message_id = ?`,  // Use correct DB column name
       );
       const row = stmt.get(messageId);
       return row ? this.mapRowToEntity(row) : null;
@@ -190,7 +190,7 @@ export class EmailRepositoryImpl
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName} 
         WHERE thread_id = ? 
-        ORDER BY received_time ASC
+        ORDER BY received_date_time ASC
       `);
       const rows = stmt.all(threadId);
       return rows.map((row) => this.mapRowToEntity(row));
@@ -208,8 +208,8 @@ export class EmailRepositoryImpl
     return executeQuery((db) => {
       let query = `
         SELECT * FROM ${this.tableName}
-        WHERE received_time BETWEEN ? AND ?
-        ORDER BY received_time DESC
+        WHERE received_date_time BETWEEN ? AND ?
+        ORDER BY received_date_time DESC
       `;
       const params: any[] = [startDate.toISOString(), endDate.toISOString()];
 
@@ -376,9 +376,9 @@ export class EmailRepositoryImpl
     return executeTransaction((db) => {
       const insertStmt = db.prepare(`
         INSERT INTO ${this.tableName} (
-          id, message_id, subject, body_text, body_html,
+          id, internet_message_id, subject, body_text, body_html,
           from_address, to_addresses, cc_addresses, bcc_addresses,
-          received_time, sent_time, conversation_id, thread_id,
+          received_date_time, sent_date_time, conversation_id, thread_id,
           in_reply_to, references, has_attachments, importance,
           folder, status, created_at
         ) VALUES (
@@ -394,7 +394,7 @@ export class EmailRepositoryImpl
 
         insertStmt.run(
           id,
-          row.message_id,
+          row.internet_message_id,  // Use correct column name
           row.subject,
           row.body_text,
           row.body_html,
@@ -402,8 +402,8 @@ export class EmailRepositoryImpl
           row.to_addresses,
           row.cc_addresses,
           row.bcc_addresses,
-          row.received_time,
-          row.sent_time,
+          row.received_date_time,
+          row.sent_date_time,
           row.conversation_id,
           row.thread_id,
           row.in_reply_to,
@@ -437,7 +437,7 @@ export class EmailRepositoryImpl
       let query = `
         SELECT * FROM ${this.tableName}
         WHERE has_attachments = 1
-        ORDER BY received_time DESC
+        ORDER BY received_date_time DESC
       `;
       const params: any[] = [];
 
@@ -483,7 +483,7 @@ export class EmailRepositoryImpl
       let query = `
         SELECT * FROM ${this.tableName}
         WHERE ${conditions}
-        ORDER BY received_time DESC
+        ORDER BY received_date_time DESC
       `;
 
       if (limit !== undefined) {
@@ -527,7 +527,7 @@ export class EmailRepositoryImpl
         query += ` WHERE ${conditions.join(" AND ")}`;
       }
 
-      query += " ORDER BY received_time DESC";
+      query += " ORDER BY received_date_time DESC";
 
       const stmt = db.prepare(query);
       const rows = stmt.all(...params);

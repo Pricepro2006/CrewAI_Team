@@ -96,12 +96,12 @@ export class DatabaseManager {
         path: config?.sqlite?.path || appConfig.database.path,
         enableWAL: config?.sqlite?.enableWAL !== false,
         enableForeignKeys: config?.sqlite?.enableForeignKeys !== false,
-        cacheSize: config?.sqlite?.cacheSize || 10000,
-        memoryMap: config?.sqlite?.memoryMap || 268435456, // 256MB
-        maxConnections: config?.sqlite?.maxConnections || 10,
-        connectionTimeout: config?.sqlite?.connectionTimeout || 30000,
-        idleTimeout: config?.sqlite?.idleTimeout || 300000, // 5 minutes
-        busyTimeout: config?.sqlite?.busyTimeout || 30000,
+        cacheSize: config?.sqlite?.cacheSize || 20000, // Increased for better performance
+        memoryMap: config?.sqlite?.memoryMap || 536870912, // 512MB for better memory mapping
+        maxConnections: config?.sqlite?.maxConnections || 20, // Increased pool size
+        connectionTimeout: config?.sqlite?.connectionTimeout || 10000, // Reduced timeout
+        idleTimeout: config?.sqlite?.idleTimeout || 60000, // 1 minute - more aggressive cleanup
+        busyTimeout: config?.sqlite?.busyTimeout || 5000, // Reduced busy timeout for faster failover
       },
       chromadb: {
         host: config?.chromadb?.host || "localhost",
