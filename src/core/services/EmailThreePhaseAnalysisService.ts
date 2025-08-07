@@ -17,6 +17,7 @@ import { EmailAnalysisCache } from "../../core/cache/EmailAnalysisCache.js";
 import { QueryPerformanceMonitor } from "../../api/services/QueryPerformanceMonitor.js";
 import { PromptSanitizer } from "../../utils/PromptSanitizer.js";
 import { llmRateLimiters } from "./LLMRateLimiter.js";
+import { GroceryNLPQueue } from "../../api/services/GroceryNLPQueue.js";
 import {
   PHASE2_ENHANCED_PROMPT,
   PHASE2_RETRY_PROMPT,
@@ -191,6 +192,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
   private phase1Cache: Map<string, Phase1Results> = new Map();
   private analysisCache: EmailAnalysisCache;
   private chainAnalyzer: EmailChainAnalyzer;
+  private nlpQueue = GroceryNLPQueue.getInstance();
   private parsingMetrics: {
     totalAttempts: number;
     successfulParses: number;
@@ -791,37 +793,48 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       throw new Error("LLM rate limit exceeded for Phase 2 analysis");
     }
 
-    const response = await axios.post(
-      "http://localhost:11434/api/generate",
-      {
-        model: "llama3.2:3b",
-        prompt,
-        stream: false,
-        format: "json", // Force JSON output
-        system: "You are a JSON-only assistant. Output only valid JSON with no explanatory text.",
-        options: {
-          ...llamaOptions,
-          num_ctx: 4096, // Ensure enough context
-          stop: llamaOptions.stop || ["\n\n", "```", "</", "Note:", "Response:", "Based on"] // Use provided stop tokens or defaults
-        },
+    // Use NLP queue to prevent bottlenecks from concurrent requests
+    const responseData = await this.nlpQueue.enqueue(
+      async () => {
+        const response = await axios.post(
+          "http://localhost:11434/api/generate",
+          {
+            model: "llama3.2:3b",
+            prompt,
+            stream: false,
+            format: "json", // Force JSON output
+            system: "You are a JSON-only assistant. Output only valid JSON with no explanatory text.",
+            options: {
+              ...llamaOptions,
+              num_ctx: 4096, // Ensure enough context
+              stop: llamaOptions.stop || ["\n\n", "```", "</", "Note:", "Response:", "Based on"] // Use provided stop tokens or defaults
+            },
+          },
+          {
+            timeout,
+            validateStatus: (status) => status < 500,
+          },
+        );
+
+        if (response.status !== 200) {
+          throw new Error(
+            `LLM request failed with status ${response.status}: ${response.data}`,
+          );
+        }
+
+        if (!response.data?.response) {
+          throw new Error("Empty response from LLM");
+        }
+
+        return response.data.response;
       },
-      {
-        timeout,
-        validateStatus: (status) => status < 500,
-      },
+      "normal", // priority
+      timeout,
+      `llama3-phase2-${prompt.substring(0, 50)}`, // query for deduplication
+      { model: "llama3.2:3b", phase: 2 } // metadata
     );
 
-    if (response.status !== 200) {
-      throw new Error(
-        `LLM request failed with status ${response.status}: ${response.data}`,
-      );
-    }
-
-    if (!response.data?.response) {
-      throw new Error("Empty response from LLM");
-    }
-
-    return response.data.response;
+    return responseData;
   }
 
   /**
@@ -1001,36 +1014,46 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         throw new Error("LLM rate limit exceeded for Phase 3 strategic analysis");
       }
 
-      // Call Phi-4 for maximum quality with optimized settings
-      const response = await axios.post(
-        "http://localhost:11434/api/generate",
-        {
-          model: "doomgrave/phi-4:14b-tools-Q3_K_S",
-          prompt,
-          stream: false,
-          format: "json", // Force JSON output
-          system: "You are a strategic analyzer. Provide concise JSON analysis only.",
-          options: {
-            temperature: 0.3,
-            num_predict: 1000, // Reduced from 2000 for faster response
-            num_ctx: 4096, // Ensure enough context
-            top_k: 10, // Limit sampling for more focused output
-            repeat_penalty: 1.1, // Reduce repetition
-            stop: ["\n\n\n", "```", "</json>", "Note:", "This analysis"] // Stop early on common suffixes
-          },
+      // Call Phi-4 through NLP queue to prevent bottlenecks
+      const responseData = await this.nlpQueue.enqueue(
+        async () => {
+          const response = await axios.post(
+            "http://localhost:11434/api/generate",
+            {
+              model: "doomgrave/phi-4:14b-tools-Q3_K_S",
+              prompt,
+              stream: false,
+              format: "json", // Force JSON output
+              system: "You are a strategic analyzer. Provide concise JSON analysis only.",
+              options: {
+                temperature: 0.3,
+                num_predict: 1000, // Reduced from 2000 for faster response
+                num_ctx: 4096, // Ensure enough context
+                top_k: 10, // Limit sampling for more focused output
+                repeat_penalty: 1.1, // Reduce repetition
+                stop: ["\n\n\n", "```", "</json>", "Note:", "This analysis"] // Stop early on common suffixes
+              },
+            },
+            {
+              timeout: options.timeout || 60000, // Reduced from 180000 (3 min to 1 min)
+              validateStatus: (status) => status < 500,
+            },
+          );
+
+          if (response.status !== 200) {
+            throw new Error(`LLM request failed with status ${response.status}`);
+          }
+
+          return response.data.response;
         },
-        {
-          timeout: options.timeout || 60000, // Reduced from 180000 (3 min to 1 min)
-          validateStatus: (status) => status < 500,
-        },
+        "high", // priority - phase 3 is highest quality so high priority
+        options.timeout || 60000,
+        `phi4-phase3-${email.id}`, // query for deduplication
+        { model: "doomgrave/phi-4:14b-tools-Q3_K_S", phase: 3, emailId: email.id } // metadata
       );
 
-      if (response.status !== 200) {
-        throw new Error(`LLM request failed with status ${response.status}`);
-      }
-
       // Parse response (Phase 3 is not a retry context)
-      const phase3Data = this.parseJsonResponse(response.data.response, 0, 0);
+      const phase3Data = this.parseJsonResponse(responseData, 0, 0);
 
       // Merge all phases for comprehensive results
       const strategicInsights = phase3Data.strategic_insights as

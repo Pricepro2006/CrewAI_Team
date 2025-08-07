@@ -10,8 +10,11 @@ import { appRouter } from "./trpc/router.js";
 import appConfig from "../config/app.config.js";
 import type { Express } from "express";
 import { apiRateLimiter } from "./middleware/rateLimiter.js";
+import { metricsMiddleware } from "./middleware/metricsMiddleware.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import emailPipelineHealthRouter from "./routes/email-pipeline-health.router.js";
+import { groceryNLPQueueRouter } from "./routes/grocery-nlp-queue.router.js";
+import metricsRouter from "./routes/metrics.router.js";
 
 /**
  * Create Express app with all middleware configured
@@ -24,6 +27,9 @@ export async function createApp(): Promise<Express> {
   app.use(helmet());
   app.use(cors(appConfig.api.cors));
   app.use(express.json());
+
+  // Apply metrics middleware to track all requests
+  app.use(metricsMiddleware);
 
   // Apply general rate limiting to all routes
   app.use(apiRateLimiter);
@@ -121,6 +127,12 @@ export async function createApp(): Promise<Express> {
 
   // Email pipeline health routes
   app.use("/api/health", emailPipelineHealthRouter);
+  
+  // Grocery NLP Queue routes
+  app.use("/api/grocery/nlp", groceryNLPQueueRouter);
+  
+  // Metrics routes (Prometheus format)
+  app.use("/", metricsRouter);
 
   // tRPC middleware
   app.use(

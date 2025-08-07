@@ -7,6 +7,7 @@ import { EventEmitter } from "events";
 import axios from "axios";
 import Database from "better-sqlite3";
 import { Logger } from "../../utils/logger.js";
+import { GroceryNLPQueue } from "../../api/services/GroceryNLPQueue.js";
 
 const logger = new Logger("EmailThreePhaseFixed");
 
@@ -61,6 +62,7 @@ interface AnalysisResult {
 
 export class EmailThreePhaseAnalysisServiceFixed extends EventEmitter {
   private db: Database.Database;
+  private nlpQueue = GroceryNLPQueue.getInstance();
   private stats = {
     totalProcessed: 0,
     phase1Count: 0,
@@ -224,24 +226,33 @@ Enhance this analysis by providing:
 Respond ONLY with valid JSON.`;
 
     try {
-      const response = await axios.post(
-        "http://localhost:11434/api/generate",
-        {
-          model: "llama3.2:3b",
-          prompt,
-          stream: false,
-          format: "json", // Force JSON output
-          options: {
-            temperature: 0.2,
-            num_predict: 500,
-          },
+      const responseData = await this.nlpQueue.enqueue(
+        async () => {
+          const response = await axios.post(
+            "http://localhost:11434/api/generate",
+            {
+              model: "llama3.2:3b",
+              prompt,
+              stream: false,
+              format: "json", // Force JSON output
+              options: {
+                temperature: 0.2,
+                num_predict: 500,
+              },
+            },
+            {
+              timeout: 30000,
+            },
+          );
+          return response.data.response;
         },
-        {
-          timeout: 30000,
-        },
+        "normal", // priority
+        30000, // timeout
+        `phase2-llama-${email.id}`, // query for deduplication
+        { emailId: email.id, phase: 2, model: "llama3.2:3b" } // metadata
       );
 
-      const enhancement = JSON.parse(response.data.response);
+      const enhancement = JSON.parse(responseData);
       this.stats.jsonSuccessCount++;
 
       // Merge with phase 1 results
@@ -305,24 +316,33 @@ Provide strategic insights for this COMPLETE workflow chain:
 Respond ONLY with valid JSON.`;
 
     try {
-      const response = await axios.post(
-        "http://localhost:11434/api/generate",
-        {
-          model: "llama3.2:3b",
-          prompt,
-          stream: false,
-          format: "json", // Force JSON output
-          options: {
-            temperature: 0.3,
-            num_predict: 600,
-          },
+      const responseData = await this.nlpQueue.enqueue(
+        async () => {
+          const response = await axios.post(
+            "http://localhost:11434/api/generate",
+            {
+              model: "llama3.2:3b",
+              prompt,
+              stream: false,
+              format: "json", // Force JSON output
+              options: {
+                temperature: 0.3,
+                num_predict: 600,
+              },
+            },
+            {
+              timeout: 60000,
+            },
+          );
+          return response.data.response;
         },
-        {
-          timeout: 60000,
-        },
+        "high", // priority - phase 3 strategic analysis is high priority
+        60000, // timeout
+        `phase3-strategic-${email.id}`, // query for deduplication
+        { emailId: email.id, phase: 3, model: "llama3.2:3b", chainId: chainContext.conversationId } // metadata
       );
 
-      const strategic = JSON.parse(response.data.response);
+      const strategic = JSON.parse(responseData);
       this.stats.jsonSuccessCount++;
 
       return {

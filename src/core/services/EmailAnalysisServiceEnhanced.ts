@@ -8,6 +8,7 @@ import Database from "better-sqlite3";
 import axios from "axios";
 import { Logger } from "../../utils/logger.js";
 import { LLMRateLimiter } from "./LLMRateLimiter.js";
+import { GroceryNLPQueue } from "../../api/services/GroceryNLPQueue.js";
 
 const logger = new Logger("EmailAnalysisServiceEnhanced");
 
@@ -45,6 +46,7 @@ export class EmailAnalysisServiceEnhanced {
     maxRequests: 60,
     windowMs: 60 * 1000,
   });
+  private nlpQueue = GroceryNLPQueue.getInstance();
 
   constructor(dbPath: string = "./data/crewai_enhanced.db") {
     this.db = new Database(dbPath);
@@ -164,32 +166,38 @@ export class EmailAnalysisServiceEnhanced {
       // Build prompt
       const prompt = this.buildPhase2Prompt(email, phase1Result);
 
-      // Call Ollama
-      const response = await axios.post(
-        "http://localhost:11434/api/generate",
-        {
-          model: "llama3.2:3b",
-          prompt,
-          stream: false,
-          options: {
-            temperature: 0.3,
-            num_predict: 500,
-            stop: ["\n\n", "```"],
-          },
+      // Call Ollama through NLP queue to prevent bottlenecks
+      const llmResponse = await this.nlpQueue.enqueue(
+        async () => {
+          const response = await axios.post(
+            "http://localhost:11434/api/generate",
+            {
+              model: "llama3.2:3b",
+              prompt,
+              stream: false,
+              options: {
+                temperature: 0.3,
+                num_predict: 500,
+                stop: ["\n\n", "```"],
+              },
+            },
+            {
+              timeout: 30000,
+              validateStatus: (status) => status < 500,
+            }
+          );
+
+          if (response.status !== 200) {
+            throw new Error(`LLM request failed with status ${response.status}`);
+          }
+
+          return response.data.response;
         },
-        {
-          timeout: 30000,
-          validateStatus: (status) => status < 500,
-        }
+        "normal", // priority
+        30000, // timeout
+        `email-analysis-phase2-${email.id}`, // query for deduplication
+        { emailId: email.id, phase: 2 } // metadata
       );
-
-      if (response.status !== 200) {
-        logger.error(`LLM request failed with status ${response.status}`);
-        return phase1Result;
-      }
-
-      // Parse response
-      const llmResponse = response.data.response;
       const enhancedResult = this.parsePhase2Response(llmResponse, phase1Result);
 
       return {
