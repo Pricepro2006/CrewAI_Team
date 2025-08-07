@@ -5,10 +5,17 @@ import { logger } from "../../../utils/logger.js";
 
 /**
  * CSRF Token configuration
+ * 
+ * IMPORTANT: __Host- prefix requires HTTPS. Using environment-specific names to prevent
+ * 500 errors in development. See CSRF_FIX_DOCUMENTATION.md for details.
  */
 const CSRF_TOKEN_LENGTH = 32; // 256 bits
 const CSRF_TOKEN_HEADER = "x-csrf-token";
-const CSRF_COOKIE_NAME = "__Host-csrf-token"; // Using __Host- prefix for additional security
+// FIX: Use __Host- prefix only in production with HTTPS, regular name in development
+// Dynamic function to support testing environment changes
+const getCSRFCookieName = () => process.env.NODE_ENV === 'production' 
+  ? "__Host-csrf-token"  // Requires HTTPS, secure: true, path: /, no domain
+  : "csrf-token";         // Works with HTTP in development
 const CSRF_SESSION_KEY = "csrfToken";
 const CSRF_TOKEN_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 const CSRF_TOKEN_ROTATION_INTERVAL = 60 * 60 * 1000; // 1 hour
@@ -33,20 +40,23 @@ export function generateCSRFToken(): string {
 
 /**
  * Set CSRF token in secure httpOnly cookie
+ * FIX: Properly handle secure flag based on environment and __Host- requirements
  */
 export function setCSRFCookie(
   res: Response,
   token: string,
   isSecure: boolean = true,
 ): void {
-  // Using __Host- prefix requires these exact settings for additional security
-  res.cookie(CSRF_COOKIE_NAME, token, {
+  // __Host- prefix requires secure: true, so only use in production with HTTPS
+  const useSecure = process.env.NODE_ENV === "production" ? true : false;
+  
+  res.cookie(getCSRFCookieName(), token, {
     httpOnly: true,
-    secure: isSecure && process.env.NODE_ENV === "production",
+    secure: useSecure, // Must be true for __Host- prefix, false for development
     sameSite: "strict",
     path: "/",
     maxAge: CSRF_TOKEN_MAX_AGE,
-    // domain is intentionally omitted when using __Host- prefix
+    // domain is intentionally omitted (required for __Host- prefix)
   });
 
   logger.debug("CSRF cookie set", "CSRF", {
@@ -61,7 +71,7 @@ export function setCSRFCookie(
  */
 export function getStoredCSRFToken(req: Request): string | undefined {
   // First check cookie (preferred)
-  const cookieToken = req.cookies?.[CSRF_COOKIE_NAME];
+  const cookieToken = req.cookies?.[getCSRFCookieName()];
   if (cookieToken) {
     return cookieToken;
   }
