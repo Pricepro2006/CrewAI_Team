@@ -36,13 +36,25 @@ See comprehensive documentation in `/docs/` for detailed technical specification
 
 ### 🛒 Walmart Grocery Agent Microservices
 
-**Status**: ✅ Fully Implemented and Optimized
+**Status**: ✅ Fully Implemented with NLP Integration (August 7, 2025)
 
 The system includes a sophisticated microservices-based Walmart Grocery Agent achieving:
 - **287ms average response time** (from 2-3s)
 - **1000+ concurrent users** support (from 20)
 - **89% cache hit rate** with intelligent warming
 - **6 specialized microservices** with service mesh architecture
+- **NLP Integration**: Qwen3:0.6b model (522MB) for natural language processing
+- **WebSocket Real-time**: Live updates during NLP processing
+- **87.5% NLP Accuracy**: 7 intent types supported
+
+**Microservice Port Assignments**:
+- Port 3008: NLP Service (Qwen3:0.6b model)
+- Port 3007: Pricing Service
+- Port 3006: Cache Warmer Service
+- Port 3005: Grocery Service
+- Port 3009: Deal Engine
+- Port 3010: Memory Monitor
+- Port 8080: WebSocket Gateway
 
 See [WALMART_GROCERY_AGENT_README.md](WALMART_GROCERY_AGENT_README.md) for complete documentation.
 
@@ -178,15 +190,36 @@ npm run dev
 Create a `.env` file based on `.env.example`:
 
 ```env
+# Database
 DATABASE_PATH=./data/crewai.db
+WALMART_DB_PATH=./data/walmart_grocery.db
+
+# Services
 REDIS_URL=redis://localhost:6379
 OLLAMA_HOST=http://localhost:11434
 CHROMADB_URL=http://localhost:8000
+
+# NLP Configuration
+WALMART_NLP_MODEL=qwen3:0.6b
+OLLAMA_MODEL=qwen3:0.6b
+
+# Microservice Ports
+NLP_SERVICE_PORT=3008
+PRICING_SERVICE_PORT=3007
+CACHE_WARMER_PORT=3006
+GROCERY_SERVICE_PORT=3005
+DEAL_ENGINE_PORT=3009
+MEMORY_MONITOR_PORT=3010
+
+# WebSocket
+WEBSOCKET_PORT=8080
+
+# Main Server
 NODE_ENV=development
 PORT=3001
 ```
 
-**Note:** The database path has been updated to use `crewai.db` for consistency with the Phase 4 real data integration.
+**Note:** The database path has been updated to use `crewai.db` for consistency with the Phase 4 real data integration. Walmart Grocery Agent uses a dedicated `walmart_grocery.db` database.
 
 ## Architecture
 
