@@ -72,20 +72,29 @@ export class MasterOrchestrator {
   }
 
   async initialize(): Promise<void> {
-    // Initialize RAG system (gracefully handle test scenarios)
+    // Initialize RAG system (gracefully handle ChromaDB failures)
     if (this.ragSystem) {
       try {
         await this.ragSystem.initialize();
-        logger.info("RAG system initialized successfully", "ORCHESTRATOR");
+        
+        // Check if we're using fallback mode
+        const ragHealth = await this.ragSystem.getHealthStatus();
+        if (ragHealth.vectorStore.fallbackUsed) {
+          logger.info(
+            "RAG system initialized with in-memory fallback - ChromaDB unavailable but system operational", 
+            "ORCHESTRATOR"
+          );
+        } else {
+          logger.info("RAG system initialized successfully with ChromaDB", "ORCHESTRATOR");
+        }
       } catch (error) {
         logger.warn(
-          "RAG system initialization failed, continuing without RAG",
-          "ORCHESTRATOR",
-          {
-            error: (error as Error).message,
-          },
+          `RAG system initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}. Continuing without RAG capabilities.`,
+          "ORCHESTRATOR"
         );
-        // Don't fail initialization if RAG isn't available (useful for tests)
+        // Don't fail initialization - the system can work without RAG
+        // Set ragSystem to null to prevent usage attempts
+        this.ragSystem = null as any;
       }
     }
 

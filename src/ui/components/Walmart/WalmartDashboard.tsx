@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { ShoppingCartIcon, ClipboardIcon, TruckIcon, ChartBarIcon } from "@heroicons/react/24/outline";
+import { ShoppingCartIcon, ClipboardIcon, TruckIcon, ChartBarIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { WalmartProductSearch } from "./WalmartProductSearch.js";
+import { WalmartNLPSearch } from "./WalmartNLPSearch.js";
 import { WalmartShoppingCart } from "./WalmartShoppingCart.js";
 import { WalmartDealAlert } from "./WalmartDealAlert.js";
 import { WalmartBudgetTracker } from "./WalmartBudgetTracker.js";
 
-type ViewType = "dashboard" | "search" | "cart" | "deals" | "budget" | "orders";
+type ViewType = "dashboard" | "search" | "nlp-search" | "cart" | "deals" | "budget" | "orders";
 
 export const WalmartDashboard: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>("dashboard");
@@ -14,6 +15,8 @@ export const WalmartDashboard: React.FC = () => {
     switch (activeView) {
       case "search":
         return <WalmartProductSearch />;
+      case "nlp-search":
+        return <WalmartNLPSearch />;
       case "cart":
         return <WalmartShoppingCart />;
       case "deals":
@@ -41,10 +44,17 @@ export const WalmartDashboard: React.FC = () => {
               Dashboard
             </button>
             <button
+              onClick={() => setActiveView("nlp-search")}
+              className={`px-4 py-2 rounded flex items-center gap-2 ${activeView === "nlp-search" ? "bg-blue-700" : "hover:bg-blue-700"}`}
+            >
+              <SparklesIcon className="h-4 w-4" />
+              Smart Search
+            </button>
+            <button
               onClick={() => setActiveView("search")}
               className={`px-4 py-2 rounded ${activeView === "search" ? "bg-blue-700" : "hover:bg-blue-700"}`}
             >
-              Search
+              Classic Search
             </button>
             <button
               onClick={() => setActiveView("deals")}
@@ -86,6 +96,18 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
         <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
         <div className="space-y-3">
           <button
+            onClick={() => onNavigate("nlp-search")}
+            className="w-full text-left flex items-center gap-3 p-3 hover:bg-gray-50 rounded border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50"
+          >
+            <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-2 rounded">
+              <SparklesIcon className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h3 className="font-medium">Smart Search (AI-Powered)</h3>
+              <p className="text-sm text-gray-600">Use natural language to find products</p>
+            </div>
+          </button>
+          <button
             onClick={() => onNavigate("search")}
             className="w-full text-left flex items-center gap-3 p-3 hover:bg-gray-50 rounded"
           >
@@ -93,8 +115,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
               <ShoppingCartIcon className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-medium">Search Products</h3>
-              <p className="text-sm text-gray-600">Find groceries and household items</p>
+              <h3 className="font-medium">Classic Search</h3>
+              <p className="text-sm text-gray-600">Traditional product search</p>
             </div>
           </button>
           <button
