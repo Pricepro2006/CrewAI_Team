@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  nlp-service:
+    build:
+      context: ../../../
+      dockerfile: src/microservices/nlp-service/Dockerfile
+    container_name: crewai-nlp-service
+    ports:
+      - "3001:3001"
+      - "50051:50051"  # gRPC port
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - GRPC_PORT=50051
+      - OLLAMA_NUM_PARALLEL=2
+      - NLP_QUEUE_PERSISTENCE_PATH=/app/data/nlp-queue
+      - LOG_LEVEL=info
+      - METRICS_ENABLED=true
+      - HEALTH_CHECK_INTERVAL=30000
+      - GRACEFUL_SHUTDOWN_TIMEOUT=10000
+    volumes:
+      - nlp-data:/app/data
+      - nlp-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - crewai-network
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: crewai-nlp-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - crewai-network
+
+  # Ollama service (external dependency)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: crewai-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_NUM_PARALLEL=2
+      - OLLAMA_MAX_LOADED_MODELS=4
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - crewai-network
+
+volumes:
+  nlp-data:
+    driver: local
+  nlp-logs:
+    driver: local
+  redis-data:
+    driver: local
+  ollama-data:
+    driver: local
+
+networks:
+  crewai-network:
+    driver: bridge
