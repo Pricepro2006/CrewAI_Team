@@ -28,6 +28,13 @@ import { setupGlobalErrorHandlers } from "./utils/error-handling.js";
 import { ToastContainer } from "./components/Toast/index.js";
 import { NetworkStatus } from "./components/NetworkStatus/index.js";
 import { webSocketConfig, getApiBaseUrl } from "../config/websocket.config";
+import { ErrorProvider } from "./contexts/ErrorContext.js";
+import {
+  DashboardErrorBoundary,
+  WalmartErrorBoundary,
+  ChatErrorBoundary,
+  EmailErrorBoundary,
+} from "./components/ErrorBoundary/SectionErrorBoundary.js";
 import "./App.css";
 
 // Setup global error handlers
@@ -138,18 +145,46 @@ function AppWithCSRF() {
         <Router>
           <Routes>
             <Route path="/" element={<MainLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="chat" element={<ChatInterface />} />
-              <Route path="chat/:conversationId" element={<ChatInterface />} />
+              <Route index element={
+                <DashboardErrorBoundary>
+                  <Dashboard />
+                </DashboardErrorBoundary>
+              } />
+              <Route path="chat" element={
+                <ChatErrorBoundary>
+                  <ChatInterface />
+                </ChatErrorBoundary>
+              } />
+              <Route path="chat/:conversationId" element={
+                <ChatErrorBoundary>
+                  <ChatInterface />
+                </ChatErrorBoundary>
+              } />
               <Route path="agents" element={<Agents />} />
-              <Route path="email-dashboard" element={<EmailDashboard />} />
-              <Route path="email-dashboard/*" element={<EmailDashboard />} />
+              <Route path="email-dashboard" element={
+                <EmailErrorBoundary>
+                  <EmailDashboard />
+                </EmailErrorBoundary>
+              } />
+              <Route path="email-dashboard/*" element={
+                <EmailErrorBoundary>
+                  <EmailDashboard />
+                </EmailErrorBoundary>
+              } />
               <Route
                 path="iems-dashboard"
                 element={<Navigate to="/email-dashboard" replace />}
               />
-              <Route path="walmart" element={<WalmartGroceryAgent />} />
-              <Route path="walmart/*" element={<WalmartGroceryAgent />} />
+              <Route path="walmart" element={
+                <WalmartErrorBoundary>
+                  <WalmartGroceryAgent />
+                </WalmartErrorBoundary>
+              } />
+              <Route path="walmart/*" element={
+                <WalmartErrorBoundary>
+                  <WalmartGroceryAgent />
+                </WalmartErrorBoundary>
+              } />
               <Route path="web-scraping" element={<WebScraping />} />
               <Route path="knowledge-base" element={<KnowledgeBase />} />
               <Route path="vector-search" element={<VectorSearch />} />
@@ -162,7 +197,7 @@ function AppWithCSRF() {
   );
 }
 
-// Main App component with CSRF Provider
+// Main App component with CSRF Provider and Error Context
 function App() {
   return (
     <ErrorBoundary
@@ -170,11 +205,13 @@ function App() {
         console.error("App Error Boundary:", error, errorInfo);
       }}
     >
-      <CSRFErrorBoundary>
-        <CSRFProvider>
-          <AppWithCSRF />
-        </CSRFProvider>
-      </CSRFErrorBoundary>
+      <ErrorProvider maxErrors={100} autoCleanup={true}>
+        <CSRFErrorBoundary>
+          <CSRFProvider>
+            <AppWithCSRF />
+          </CSRFProvider>
+        </CSRFErrorBoundary>
+      </ErrorProvider>
     </ErrorBoundary>
   );
 }
