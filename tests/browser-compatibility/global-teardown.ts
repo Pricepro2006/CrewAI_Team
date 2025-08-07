@@ -1,0 +1,189 @@
+import { FullConfig } from '@playwright/test';
+import * as fs from 'fs';
+import * as path from 'path';
+
+/**
+ * Global teardown for browser compatibility tests
+ * Generates compatibility report and cleanup
+ */
+async function globalTeardown(config: FullConfig) {
+  console.log('🏁 Starting Browser Compatibility Test Teardown');
+
+  try {
+    // Generate compatibility report
+    await generateCompatibilityReport();
+    
+    // Cleanup temporary files
+    await cleanupTempFiles();
+    
+    console.log('✅ Browser compatibility tests completed successfully');
+    console.log('📊 Check browser-compatibility-report/ for detailed results');
+    
+  } catch (error) {
+    console.error('❌ Error during teardown:', error);
+  }
+}
+
+async function generateCompatibilityReport() {
+  const resultsPath = path.join(process.cwd(), 'browser-compatibility-results.json');
+  
+  if (!fs.existsSync(resultsPath)) {
+    console.log('ℹ️ No test results found to process');
+    return;
+  }
+
+  try {
+    const results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+    
+    const summary = {
+      timestamp: new Date().toISOString(),
+      totalTests: results.suites?.reduce((sum: number, suite: any) => 
+        sum + (suite.specs?.length || 0), 0) || 0,
+      browserResults: {} as Record<string, any>,
+      overallCompatibility: 0
+    };
+
+    // Process results by browser
+    const browsers = ['chrome-desktop', 'firefox-desktop', 'safari-desktop', 'edge-desktop'];
+    
+    browsers.forEach(browserName => {
+      const browserTests = results.suites?.filter((suite: any) => 
+        suite.title.includes(browserName) || 
+        suite.specs?.some((spec: any) => 
+          spec.tests?.some((test: any) => test.projectName === browserName)
+        )
+      ) || [];
+
+      const passed = browserTests.filter((test: any) => test.outcome === 'passed').length;
+      const total = browserTests.length;
+      const compatibility = total > 0 ? (passed / total) * 100 : 0;
+
+      summary.browserResults[browserName] = {
+        passed,
+        total,
+        compatibility: Math.round(compatibility * 100) / 100,
+        failed: total - passed
+      };
+    });
+
+    // Calculate overall compatibility
+    const totalPassed = Object.values(summary.browserResults)
+      .reduce((sum: number, browser: any) => sum + browser.passed, 0);
+    const totalAll = Object.values(summary.browserResults)
+      .reduce((sum: number, browser: any) => sum + browser.total, 0);
+    
+    summary.overallCompatibility = totalAll > 0 ? 
+      Math.round((totalPassed / totalAll) * 100 * 100) / 100 : 0;
+
+    // Write summary report
+    const summaryPath = path.join(process.cwd(), 'browser-compatibility-summary.json');
+    fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
+
+    // Generate markdown report
+    await generateMarkdownReport(summary);
+    
+    console.log('📊 Compatibility report generated');
+    console.log(`📈 Overall compatibility: ${summary.overallCompatibility}%`);
+
+  } catch (error) {
+    console.error('❌ Error generating compatibility report:', error);
+  }
+}
+
+async function generateMarkdownReport(summary: any) {
+  const reportPath = path.join(process.cwd(), 'BROWSER_COMPATIBILITY_REPORT.md');
+  
+  let report = `# Browser Compatibility Test Report
+
+Generated: ${new Date(summary.timestamp).toLocaleString()}
+
+## Overall Results
+
+- **Total Tests**: ${summary.totalTests}
+- **Overall Compatibility**: ${summary.overallCompatibility}%
+
+## Browser-Specific Results
+
+`;
+
+  Object.entries(summary.browserResults).forEach(([browser, results]: [string, any]) => {
+    const browserName = browser.replace('-desktop', '').toUpperCase();
+    report += `### ${browserName}
+
+- **Passed**: ${results.passed}/${results.total} tests
+- **Compatibility**: ${results.compatibility}%
+- **Failed**: ${results.failed} tests
+
+`;
+  });
+
+  report += `## Compatibility Matrix
+
+| Browser | Compatibility | Status |
+|---------|---------------|---------|
+`;
+
+  Object.entries(summary.browserResults).forEach(([browser, results]: [string, any]) => {
+    const browserName = browser.replace('-desktop', '').toUpperCase();
+    const status = results.compatibility >= 95 ? '✅' : 
+                   results.compatibility >= 80 ? '⚠️' : '❌';
+    report += `| ${browserName} | ${results.compatibility}% | ${status} |\n`;
+  });
+
+  report += `
+## Recommendations
+
+${summary.overallCompatibility >= 95 
+  ? '🎉 Excellent browser compatibility! All major browsers are well supported.'
+  : summary.overallCompatibility >= 80
+  ? '⚠️ Good compatibility with some issues. Review failed tests for improvements.'
+  : '❌ Poor compatibility detected. Significant issues need attention across browsers.'
+}
+
+## Next Steps
+
+1. Review detailed test results in \`browser-compatibility-report/\`
+2. Address any failing tests, especially for widely-used browsers
+3. Consider implementing polyfills for unsupported features
+4. Test on actual devices when possible
+
+---
+*Report generated by Browser Compatibility Test Suite*
+`;
+
+  fs.writeFileSync(reportPath, report);
+  console.log('📝 Markdown report generated: BROWSER_COMPATIBILITY_REPORT.md');
+}
+
+async function cleanupTempFiles() {
+  // Clean up any temporary test files
+  const tempDirs = [
+    'test-results',
+    'browser-compatibility-results'
+  ];
+
+  tempDirs.forEach(dir => {
+    const dirPath = path.join(process.cwd(), dir);
+    if (fs.existsSync(dirPath)) {
+      // Keep the directory but clean up old files older than 7 days
+      try {
+        const files = fs.readdirSync(dirPath);
+        const weekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+        
+        files.forEach(file => {
+          const filePath = path.join(dirPath, file);
+          const stats = fs.statSync(filePath);
+          if (stats.mtime.getTime() < weekAgo) {
+            fs.unlinkSync(filePath);
+          }
+        });
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
+  });
+  
+  console.log('🧹 Cleanup completed');
+}
+
+export default globalTeardown;
