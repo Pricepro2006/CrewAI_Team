@@ -15,6 +15,7 @@ import { Logger } from "../../utils/logger.js";
 import { RedisService } from "../../core/cache/RedisService.js";
 import { EmailAnalysisCache } from "../../core/cache/EmailAnalysisCache.js";
 import { QueryPerformanceMonitor } from "../../api/services/QueryPerformanceMonitor.js";
+import { GroceryNLPQueue } from "../../api/services/GroceryNLPQueue.js";
 import {
   PHASE2_ENHANCED_PROMPT,
   PHASE3_STRATEGIC_PROMPT,
@@ -80,6 +81,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
   private phase1Cache: Map<string, Phase1Results> = new Map();
   private analysisCache: EmailAnalysisCache;
   private chainAnalyzer: EmailChainAnalyzer;
+  private nlpQueue = GroceryNLPQueue.getInstance();
 
   constructor(redisUrl?: string) {
     super();
@@ -761,14 +763,24 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
     options: any,
   ): Promise<string> {
     try {
-      const response = await axios.post("http://localhost:11434/api/generate", {
-        model,
-        prompt,
-        stream: false,
-        options,
-      });
+      // Use NLP queue to prevent bottlenecks from concurrent Ollama requests
+      const responseData = await this.nlpQueue.enqueue(
+        async () => {
+          const response = await axios.post("http://localhost:11434/api/generate", {
+            model,
+            prompt,
+            stream: false,
+            options,
+          });
+          return response.data.response;
+        },
+        "normal", // default priority
+        30000, // default timeout
+        `llm-call-${model}-${prompt.substring(0, 50)}`, // query for deduplication
+        { model, promptLength: prompt.length } // metadata
+      );
 
-      return response.data.response;
+      return responseData;
     } catch (error) {
       logger.error(`LLM call failed for model ${model}`, error);
       throw error;

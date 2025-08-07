@@ -13,6 +13,7 @@ import { promptOptimizer } from "../prompts/PromptOptimizer.js";
 import { EmailAnalysisCache } from "../cache/EmailAnalysisCache.js";
 import { EventEmitter } from "events";
 import axios from "axios";
+import { GroceryNLPQueue } from "../../api/services/GroceryNLPQueue.js";
 
 import type { EmailRecord, AnalysisStatus } from "../../types/EmailTypes.js";
 import type { EmailChain } from "../../types/ChainTypes.js";
@@ -65,6 +66,7 @@ export interface BusinessAnalysisResult {
 export class OptimizedBusinessAnalysisService extends EventEmitter {
   private analysisCache: EmailAnalysisCache;
   private performanceMetrics: PerformanceMetrics;
+  private nlpQueue = GroceryNLPQueue.getInstance();
   private isProcessing: boolean = false;
 
   constructor() {
@@ -562,29 +564,40 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const response = await axios.post("http://localhost:11434/api/generate", {
-        model,
-        prompt,
-        stream: false,
-        options: {
-          ...options,
-          num_predict: options.max_tokens,
-          repeat_penalty: 1.1,
-          top_k: 40
-        }
-      }, {
-        timeout: 60000, // 60 second timeout
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      // Use NLP queue to prevent bottlenecks from concurrent Ollama requests
+      const responseData = await this.nlpQueue.enqueue(
+        async () => {
+          const response = await axios.post("http://localhost:11434/api/generate", {
+            model,
+            prompt,
+            stream: false,
+            options: {
+              ...options,
+              num_predict: options.max_tokens,
+              repeat_penalty: 1.1,
+              top_k: 40
+            }
+          }, {
+            timeout: 60000, // 60 second timeout
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+
+          return response.data.response;
+        },
+        "normal", // priority
+        60000, // timeout
+        `business-analysis-${model}-${prompt.substring(0, 50)}`, // query for deduplication
+        { model, service: "OptimizedBusinessAnalysisService" } // metadata
+      );
 
       const processingTime = Date.now() - startTime;
       
       // Log performance
       logger.debug(`LLM call to ${model} completed in ${processingTime}ms`);
       
-      return response.data.response;
+      return responseData;
     } catch (error) {
       logger.error(`LLM call to ${model} failed:`, error);
       throw error;
