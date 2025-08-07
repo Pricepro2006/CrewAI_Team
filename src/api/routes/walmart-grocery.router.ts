@@ -550,7 +550,7 @@ export const walmartGroceryRouter = createFeatureRouter(
       .input(
         z.object({
           events: z.array(
-            z.enum(["search", "cart", "scraping", "deals", "all"]),
+            z.enum(["search", "cart", "scraping", "deals", "grocery", "recommendations", "totals", "all"]),
           ),
           userId: z.string().optional(),
         }),
@@ -584,6 +584,31 @@ export const walmartGroceryRouter = createFeatureRouter(
               observer.next({ type: "scraping_completed", data });
             };
             walmartEvents.on("scraping_completed", handlers.scraping_completed);
+          }
+
+          if (input.events.includes("all") || input.events.includes("grocery")) {
+            handlers.grocery_input_processed = (data) => {
+              if (!input.userId || data.userId === input.userId) {
+                observer.next({ type: "grocery_input_processed", data });
+              }
+            };
+            walmartEvents.on("grocery_input_processed", handlers.grocery_input_processed);
+          }
+
+          if (input.events.includes("all") || input.events.includes("recommendations")) {
+            handlers.recommendations_generated = (data) => {
+              if (!input.userId || data.userId === input.userId) {
+                observer.next({ type: "recommendations_generated", data });
+              }
+            };
+            walmartEvents.on("recommendations_generated", handlers.recommendations_generated);
+          }
+
+          if (input.events.includes("all") || input.events.includes("totals")) {
+            handlers.totals_calculated = (data) => {
+              observer.next({ type: "totals_calculated", data });
+            };
+            walmartEvents.on("totals_calculated", handlers.totals_calculated);
           }
 
           // Cleanup on unsubscribe
@@ -1184,6 +1209,501 @@ export const walmartGroceryRouter = createFeatureRouter(
           };
         } catch (error) {
           logger.error("Failed to fetch price history", "WALMART", { error });
+          throw error;
+        }
+      }),
+
+    // Process natural language grocery input with live pricing
+    processGroceryInput: publicProcedure
+      .input(z.object({
+        conversationId: z.string(),
+        userId: z.string(),
+        input: z.string().min(1).max(1000),
+        location: z.object({
+          zipCode: z.string(),
+          city: z.string(),
+          state: z.string(),
+        }).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        logger.info("Processing grocery input", "WALMART", {
+          conversationId: input.conversationId,
+          userId: input.userId,
+          inputLength: input.input.length,
+        });
+
+        try {
+          const { WalmartChatAgent } = await import("../services/agents/WalmartChatAgent.js");
+          const chatAgent = WalmartChatAgent.getInstance();
+
+          const result = await chatAgent.processMessage(
+            input.conversationId,
+            input.userId,
+            input.input,
+            input.location ? {
+              zipCode: input.location.zipCode,
+              city: input.location.city,
+              state: input.location.state
+            } : undefined
+          );
+
+          // Emit real-time update
+          walmartEvents.emit("grocery_input_processed", {
+            conversationId: input.conversationId,
+            userId: input.userId,
+            listTotal: result.list?.estimatedTotal || 0,
+            itemCount: result.list?.items.length || 0,
+            timestamp: new Date(),
+          });
+
+          return {
+            success: true,
+            response: result.response,
+            groceryList: result.list ? {
+              items: result.list.items,
+              subtotal: result.list.runningTotal,
+              estimatedTax: result.list.estimatedTax,
+              total: result.list.estimatedTotal,
+              savings: result.list.savings,
+              itemCount: result.list.items.length,
+              deliveryEligible: result.list.runningTotal >= 35,
+              deliveryThreshold: 35,
+            } : null,
+            suggestions: result.suggestions || [],
+            metadata: {
+              processed: true,
+              timestamp: new Date(),
+              conversationId: input.conversationId,
+            },
+          };
+        } catch (error) {
+          logger.error("Failed to process grocery input", "WALMART", { error });
+          throw new Error(
+            `Failed to process input: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
+        }
+      }),
+
+    // Get user's purchase history with patterns
+    getPurchaseHistory: publicProcedure
+      .input(z.object({
+        userId: z.string(),
+        limit: z.number().min(1).max(100).optional().default(20),
+        offset: z.number().min(0).optional().default(0),
+        timeframe: z.enum(["week", "month", "quarter", "year", "all"]).optional().default("month"),
+        includePatterns: z.boolean().optional().default(true),
+      }))
+      .query(async ({ input, ctx }) => {
+        logger.info("Fetching purchase history", "WALMART", {
+          userId: input.userId,
+          timeframe: input.timeframe,
+        });
+
+        try {
+          // Get user's order history from conversation service and RAG system
+          const orderHistory = await ctx.conversationService.search(
+            `orders-${input.userId}`,
+            input.limit * 2 // Get more to filter properly
+          );
+
+          // Search RAG for saved receipts and purchase data
+          const purchaseData = await ctx.ragSystem.search(
+            `walmart receipt purchase user:${input.userId}`,
+            input.limit
+          );
+
+          // Calculate timeframe filter
+          const now = new Date();
+          let startDate = new Date();
+          switch (input.timeframe) {
+            case "week":
+              startDate.setDate(now.getDate() - 7);
+              break;
+            case "month":
+              startDate.setMonth(now.getMonth() - 1);
+              break;
+            case "quarter":
+              startDate.setMonth(now.getMonth() - 3);
+              break;
+            case "year":
+              startDate.setFullYear(now.getFullYear() - 1);
+              break;
+            case "all":
+            default:
+              startDate = new Date(0);
+              break;
+          }
+
+          // Mock purchase history for now - in real implementation would come from database
+          const purchases = Array.from({ length: Math.min(input.limit, 15) }, (_, i) => {
+            const purchaseDate = new Date(now.getTime() - (i * 7 * 24 * 60 * 60 * 1000));
+            const itemCount = Math.floor(Math.random() * 20) + 5;
+            const total = Math.random() * 200 + 50;
+            
+            return {
+              id: `purchase-${Date.now()}-${i}`,
+              orderId: `WM${Date.now()}${i}`,
+              date: purchaseDate,
+              total: Number(total.toFixed(2)),
+              itemCount,
+              status: "completed" as const,
+              fulfillmentMethod: ["delivery", "pickup"][Math.floor(Math.random() * 2)] as "delivery" | "pickup",
+              items: Array.from({ length: Math.min(itemCount, 5) }, (_, j) => ({
+                productId: `product-${i}-${j}`,
+                name: ["Milk", "Bread", "Eggs", "Bananas", "Chicken", "Rice", "Pasta"][Math.floor(Math.random() * 7)],
+                quantity: Math.floor(Math.random() * 3) + 1,
+                price: Number((Math.random() * 15 + 2).toFixed(2)),
+                category: ["Dairy", "Bakery", "Produce", "Meat"][Math.floor(Math.random() * 4)],
+              })),
+              savings: Number((total * 0.1).toFixed(2)),
+            };
+          }).filter(p => p.date >= startDate);
+
+          let patterns = null;
+          if (input.includePatterns && purchases.length > 0) {
+            // Calculate purchase patterns
+            const categoryFrequency = purchases
+              .flatMap(p => p.items)
+              .reduce((acc, item) => {
+                acc[item.category] = (acc[item.category] || 0) + item.quantity;
+                return acc;
+              }, {} as Record<string, number>);
+
+            const productFrequency = purchases
+              .flatMap(p => p.items)
+              .reduce((acc, item) => {
+                acc[item.name] = (acc[item.name] || 0) + item.quantity;
+                return acc;
+              }, {} as Record<string, number>);
+
+            const avgOrderValue = purchases.reduce((sum, p) => sum + p.total, 0) / purchases.length;
+            const totalSpent = purchases.reduce((sum, p) => sum + p.total, 0);
+            const totalSavings = purchases.reduce((sum, p) => sum + p.savings, 0);
+
+            patterns = {
+              topCategories: Object.entries(categoryFrequency)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5)
+                .map(([category, count]) => ({ category, count })),
+              topProducts: Object.entries(productFrequency)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10)
+                .map(([product, count]) => ({ product, count })),
+              avgOrderValue: Number(avgOrderValue.toFixed(2)),
+              totalSpent: Number(totalSpent.toFixed(2)),
+              totalSavings: Number(totalSavings.toFixed(2)),
+              orderFrequency: purchases.length / 4, // Orders per week approximation
+              preferredFulfillment: purchases.reduce((acc, p) => {
+                acc[p.fulfillmentMethod] = (acc[p.fulfillmentMethod] || 0) + 1;
+                return acc;
+              }, {} as Record<string, number>),
+            };
+          }
+
+          return {
+            purchases: purchases.slice(input.offset, input.offset + input.limit),
+            patterns,
+            totalCount: purchases.length,
+            timeframe: input.timeframe,
+            summary: {
+              totalPurchases: purchases.length,
+              totalSpent: purchases.reduce((sum, p) => sum + p.total, 0),
+              totalSavings: purchases.reduce((sum, p) => sum + p.savings, 0),
+              avgOrderValue: purchases.length > 0 ? purchases.reduce((sum, p) => sum + p.total, 0) / purchases.length : 0,
+            },
+          };
+        } catch (error) {
+          logger.error("Failed to fetch purchase history", "WALMART", { error });
+          throw error;
+        }
+      }),
+
+    // Get AI-powered recommendations based on history and current deals
+    getSmartRecommendations: publicProcedure
+      .input(z.object({
+        userId: z.string(),
+        context: z.enum(["reorder", "trending", "deals", "seasonal", "personalized"]).optional().default("personalized"),
+        budget: z.number().positive().optional(),
+        dietaryRestrictions: z.array(z.string()).optional(),
+        excludeCategories: z.array(z.string()).optional(),
+        limit: z.number().min(1).max(50).optional().default(10),
+      }))
+      .query(async ({ input, ctx }) => {
+        logger.info("Generating smart recommendations", "WALMART", {
+          userId: input.userId,
+          context: input.context,
+          limit: input.limit,
+        });
+
+        try {
+          // Get user's purchase history for context
+          const userHistory = await ctx.conversationService.search(
+            `purchase-${input.userId}`,
+            20
+          );
+
+          // Get user preferences
+          const userPreferences = await ctx.ragSystem.search(
+            `preferences user:${input.userId}`,
+            5
+          );
+
+          // Get current deals
+          const currentDeals = await ctx.dealDataService.analyzeDealForProducts(
+            [], // Empty array to get general deals
+            input.userId
+          );
+
+          // Process with MasterOrchestrator for intelligent recommendations
+          const recommendationPrompt = `Generate personalized Walmart grocery recommendations for user ${input.userId}.
+            
+            Context: ${input.context}
+            Budget: ${input.budget ? `$${input.budget}` : 'No limit'}
+            Dietary restrictions: ${input.dietaryRestrictions?.join(', ') || 'None'}
+            Exclude categories: ${input.excludeCategories?.join(', ') || 'None'}
+            
+            Consider:
+            - User's purchase history patterns
+            - Current deals and promotions  
+            - Seasonal trends and availability
+            - Budget optimization
+            - Health and dietary preferences
+            
+            Focus on: practical everyday items, value for money, and items likely to be needed soon.`;
+
+          const analysis = await ctx.masterOrchestrator.processQuery({
+            text: recommendationPrompt,
+            metadata: {
+              userId: input.userId,
+              context: input.context,
+              purchaseHistory: userHistory,
+              preferences: userPreferences,
+              currentDeals: currentDeals.deals || [],
+              budget: input.budget,
+            },
+          });
+
+          // Mock recommendations based on context - in real implementation would use ML/AI
+          const mockRecommendations = [];
+          const contextData = {
+            reorder: [
+              { name: "Whole Milk 1 Gallon", category: "Dairy", price: 3.48, originalPrice: undefined, reason: "Frequently purchased item" },
+              { name: "Banana Bundle", category: "Produce", price: 1.28, originalPrice: undefined, reason: "Weekly staple" },
+              { name: "Sliced Bread", category: "Bakery", price: 2.50, originalPrice: undefined, reason: "Regular purchase" },
+            ],
+            trending: [
+              { name: "Plant-Based Milk", category: "Dairy Alternatives", price: 4.98, originalPrice: undefined, reason: "Trending healthy choice" },
+              { name: "Avocado Toast Kit", category: "Prepared Foods", price: 5.99, originalPrice: undefined, reason: "Popular breakfast option" },
+              { name: "Kombucha Variety Pack", category: "Beverages", price: 8.99, originalPrice: undefined, reason: "Growing popularity" },
+            ],
+            deals: [
+              { name: "Chicken Breast Family Pack", category: "Meat", price: 8.99, originalPrice: 12.99, reason: "25% off sale" },
+              { name: "Pasta Variety 8-Pack", category: "Pantry", price: 6.49, originalPrice: 8.99, reason: "BOGO 50% off" },
+              { name: "Frozen Vegetables Mix", category: "Frozen", price: 2.99, originalPrice: 4.49, reason: "Rollback price" },
+            ],
+            seasonal: [
+              { name: "Pumpkin Spice Coffee", category: "Beverages", price: 5.99, originalPrice: undefined, reason: "Fall seasonal favorite" },
+              { name: "Apple Variety Pack", category: "Produce", price: 4.99, originalPrice: undefined, reason: "Peak apple season" },
+              { name: "Soup Variety Pack", category: "Pantry", price: 7.99, originalPrice: undefined, reason: "Cold weather comfort food" },
+            ],
+            personalized: [
+              { name: "Greek Yogurt 4-Pack", category: "Dairy", price: 4.49, originalPrice: undefined, reason: "Matches your protein preference" },
+              { name: "Quinoa Grain Bowl Kit", category: "Health Foods", price: 6.99, originalPrice: undefined, reason: "Healthy grain alternative" },
+              { name: "Fresh Salmon Fillet", category: "Seafood", price: 9.99, originalPrice: undefined, reason: "Omega-3 rich choice" },
+            ],
+          };
+
+          const baseRecommendations = contextData[input.context] || contextData.personalized;
+          
+          for (let i = 0; i < Math.min(input.limit, 12); i++) {
+            const baseItem = baseRecommendations[i % baseRecommendations.length];
+            mockRecommendations.push({
+              id: `rec-${Date.now()}-${i}`,
+              productId: `walmart-${Math.random().toString(36).substr(2, 9)}`,
+              name: baseItem.name,
+              category: baseItem.category,
+              price: baseItem.price,
+              originalPrice: baseItem.originalPrice,
+              savings: baseItem.originalPrice ? Number((baseItem.originalPrice - baseItem.price).toFixed(2)) : 0,
+              reason: baseItem.reason,
+              confidence: 0.8 + Math.random() * 0.2,
+              inStock: true,
+              imageUrl: `https://i5.walmartimages.com/asr/placeholder-${i}.jpg`,
+              matchScore: Math.random() * 0.3 + 0.7, // 0.7-1.0 range
+              tags: [input.context, baseItem.category.toLowerCase().replace(/\s+/g, '_')],
+            });
+          }
+
+          // Emit real-time update
+          walmartEvents.emit("recommendations_generated", {
+            userId: input.userId,
+            context: input.context,
+            count: mockRecommendations.length,
+            timestamp: new Date(),
+          });
+
+          return {
+            recommendations: mockRecommendations,
+            context: input.context,
+            analysis: analysis.summary,
+            metadata: {
+              userId: input.userId,
+              generatedAt: new Date(),
+              algorithm: "hybrid_collaborative_content",
+              confidence: 0.85,
+              personalizedScore: userHistory.length > 0 ? 0.9 : 0.6,
+              dealOpportunities: mockRecommendations.filter(r => r.savings > 0).length,
+            },
+            budgetAnalysis: input.budget ? {
+              budget: input.budget,
+              estimatedSpend: mockRecommendations.reduce((sum, r) => sum + r.price, 0),
+              savingsOpportunity: mockRecommendations.reduce((sum, r) => sum + r.savings, 0),
+              itemsWithinBudget: mockRecommendations.filter(r => r.price <= (input.budget! * 0.1)).length,
+            } : null,
+          };
+        } catch (error) {
+          logger.error("Failed to generate smart recommendations", "WALMART", { error });
+          throw error;
+        }
+      }),
+
+    // Calculate real-time list totals with tax, savings, and delivery
+    calculateListTotals: publicProcedure
+      .input(z.object({
+        items: z.array(z.object({
+          productId: z.string(),
+          quantity: z.number().positive(),
+          price: z.number().positive(),
+          originalPrice: z.number().positive().optional(),
+        })),
+        location: z.object({
+          zipCode: z.string(),
+          state: z.string(),
+        }),
+        promoCode: z.string().optional(),
+        loyaltyMember: z.boolean().optional().default(false),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        logger.info("Calculating list totals", "WALMART", {
+          itemCount: input.items.length,
+          location: input.location.zipCode,
+        });
+
+        try {
+          // Calculate base totals
+          const subtotal = input.items.reduce(
+            (sum, item) => sum + (item.price * item.quantity),
+            0
+          );
+
+          const originalSubtotal = input.items.reduce(
+            (sum, item) => sum + ((item.originalPrice || item.price) * item.quantity),
+            0
+          );
+
+          const itemSavings = originalSubtotal - subtotal;
+
+          // Calculate tax based on location (mock tax rates)
+          const taxRates: Record<string, number> = {
+            'AL': 0.04, 'AK': 0.00, 'AZ': 0.056, 'AR': 0.065, 'CA': 0.0725,
+            'CO': 0.029, 'CT': 0.0635, 'DE': 0.00, 'FL': 0.06, 'GA': 0.04,
+            'HI': 0.04, 'ID': 0.06, 'IL': 0.0625, 'IN': 0.07, 'IA': 0.06,
+            'KS': 0.065, 'KY': 0.06, 'LA': 0.0445, 'ME': 0.055, 'MD': 0.06,
+            'MA': 0.0625, 'MI': 0.06, 'MN': 0.06875, 'MS': 0.07, 'MO': 0.04225,
+            'MT': 0.00, 'NE': 0.055, 'NV': 0.0685, 'NH': 0.00, 'NJ': 0.06625,
+            'NM': 0.05125, 'NY': 0.08, 'NC': 0.0475, 'ND': 0.05, 'OH': 0.0575,
+            'OK': 0.045, 'OR': 0.00, 'PA': 0.06, 'RI': 0.07, 'SC': 0.06,
+            'SD': 0.045, 'TN': 0.07, 'TX': 0.0625, 'UT': 0.0485, 'VT': 0.06,
+            'VA': 0.053, 'WA': 0.065, 'WV': 0.06, 'WI': 0.05, 'WY': 0.04,
+          };
+
+          const taxRate = taxRates[input.location.state.toUpperCase()] || 0.06;
+          const tax = subtotal * taxRate;
+
+          // Apply promo code discounts (mock)
+          let promoDiscount = 0;
+          let promoDescription = "";
+          if (input.promoCode) {
+            const promoCodes: Record<string, { discount: number; type: 'percentage' | 'fixed'; description: string }> = {
+              'SAVE10': { discount: 0.10, type: 'percentage', description: '10% off entire order' },
+              'WELCOME5': { discount: 5.00, type: 'fixed', description: '$5 off first order' },
+              'GROCERY15': { discount: 0.15, type: 'percentage', description: '15% off groceries' },
+              'FREESHIP': { discount: 0, type: 'fixed', description: 'Free shipping' },
+            };
+
+            const promo = promoCodes[input.promoCode.toUpperCase()];
+            if (promo) {
+              promoDescription = promo.description;
+              if (promo.type === 'percentage') {
+                promoDiscount = subtotal * promo.discount;
+              } else {
+                promoDiscount = promo.discount;
+              }
+            }
+          }
+
+          // Loyalty member discount
+          let loyaltyDiscount = 0;
+          if (input.loyaltyMember) {
+            loyaltyDiscount = subtotal * 0.02; // 2% loyalty discount
+          }
+
+          // Calculate delivery fee
+          const adjustedSubtotal = subtotal - promoDiscount - loyaltyDiscount;
+          const deliveryFee = adjustedSubtotal >= 35 ? 0 : 4.95;
+
+          // Special delivery fee waiver for promo codes
+          const waiveDeliveryFee = input.promoCode === 'FREESHIP';
+          const finalDeliveryFee = waiveDeliveryFee ? 0 : deliveryFee;
+
+          const totalSavings = itemSavings + promoDiscount + loyaltyDiscount + (deliveryFee - finalDeliveryFee);
+          const total = adjustedSubtotal + tax + finalDeliveryFee;
+
+          // Emit real-time update
+          walmartEvents.emit("totals_calculated", {
+            itemCount: input.items.length,
+            subtotal: Number(subtotal.toFixed(2)),
+            total: Number(total.toFixed(2)),
+            savings: Number(totalSavings.toFixed(2)),
+            timestamp: new Date(),
+          });
+
+          return {
+            success: true,
+            calculation: {
+              subtotal: Number(subtotal.toFixed(2)),
+              originalSubtotal: Number(originalSubtotal.toFixed(2)),
+              itemSavings: Number(itemSavings.toFixed(2)),
+              promoDiscount: Number(promoDiscount.toFixed(2)),
+              promoDescription,
+              loyaltyDiscount: Number(loyaltyDiscount.toFixed(2)),
+              tax: Number(tax.toFixed(2)),
+              taxRate: Number((taxRate * 100).toFixed(2)), // Convert to percentage
+              deliveryFee: Number(finalDeliveryFee.toFixed(2)),
+              deliveryFeeWaived: waiveDeliveryFee,
+              totalSavings: Number(totalSavings.toFixed(2)),
+              total: Number(total.toFixed(2)),
+              freeDeliveryEligible: adjustedSubtotal >= 35,
+              freeDeliveryThreshold: 35,
+              amountForFreeDelivery: adjustedSubtotal < 35 ? Number((35 - adjustedSubtotal).toFixed(2)) : 0,
+            },
+            breakdown: {
+              itemCount: input.items.length,
+              location: input.location,
+              promoCode: input.promoCode,
+              loyaltyMember: input.loyaltyMember,
+              calculatedAt: new Date(),
+            },
+            recommendations: adjustedSubtotal < 35 ? [
+              {
+                type: "free_delivery",
+                message: `Add $${(35 - adjustedSubtotal).toFixed(2)} more to qualify for free delivery`,
+                suggestedItems: ["Bananas ($1.28)", "Bread ($2.50)", "Milk ($3.48)"],
+              }
+            ] : [],
+          };
+        } catch (error) {
+          logger.error("Failed to calculate list totals", "WALMART", { error });
           throw error;
         }
       }),

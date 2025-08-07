@@ -110,7 +110,7 @@ export class PerformanceOptimizer {
     if (query.includes("SELECT *") && query.includes("emails")) {
       return query.replace(
         "SELECT *",
-        "SELECT id, message_id, email_alias, requested_by, subject, summary, status, priority, workflow_state, received_date",
+        "SELECT id, internet_message_id, email_alias, requested_by, subject, summary, status, priority, workflow_state, received_date",
       );
     }
     return query;
