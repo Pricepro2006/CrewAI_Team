@@ -93,13 +93,26 @@ export class DatabaseConnection {
       // Enable WAL mode for better concurrency
       if (this.config.enableWAL) {
         this.db.pragma("journal_mode = WAL");
+        // Optimize WAL checkpoint behavior
+        this.db.pragma("wal_checkpoint = TRUNCATE");
+        this.db.pragma("wal_autocheckpoint = 1000"); // Pages before auto-checkpoint
       }
 
       // Performance optimizations
       this.db.pragma("synchronous = NORMAL");
-      this.db.pragma(`cache_size = ${this.config.cacheSize}`);
+      this.db.pragma(`cache_size = -${this.config.cacheSize * 1024}`); // Negative = KB instead of pages
       this.db.pragma("temp_store = MEMORY");
       this.db.pragma(`mmap_size = ${this.config.memoryMap}`);
+      
+      // Additional performance optimizations
+      this.db.pragma("page_size = 4096"); // Optimal page size for most systems
+      this.db.pragma("cache_spill = 10000"); // Pages before spilling to disk
+      this.db.pragma("optimize"); // Run ANALYZE on tables
+      
+      // Query planner optimizations
+      this.db.pragma("query_only = 0");
+      this.db.pragma("automatic_index = 1"); // Allow automatic index creation
+      this.db.pragma("case_sensitive_like = 0"); // Case-insensitive LIKE by default
 
       // Enable foreign keys
       if (this.config.enableForeignKeys) {
