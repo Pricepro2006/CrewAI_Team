@@ -14,6 +14,7 @@ import { mcpToolsService } from "../services/MCPToolsService.js";
 import { DealDataService } from "../services/DealDataService.js";
 import { EmailStorageService } from "../services/EmailStorageService.js";
 import { WalmartGroceryService } from "../services/WalmartGroceryService.js";
+import { getStoredCSRFToken } from "../middleware/security/csrf.js";
 // import { EmailIngestionServiceImpl } from "../../core/services/EmailIngestionServiceImpl.js";
 import { EventEmitter } from "events";
 
@@ -275,6 +276,19 @@ export async function createContext({
     };
   }
 
+  // Extract CSRF token from cookies/session for tRPC context
+  // This is crucial for CSRF validation in tRPC procedures
+  const csrfToken = getStoredCSRFToken(req);
+  
+  if (!csrfToken && req.method !== "GET") {
+    logger.debug("No CSRF token found in request context", "TRPC_CONTEXT", {
+      method: req.method,
+      path: req.path,
+      hasCookies: !!req.cookies,
+      cookieNames: req.cookies ? Object.keys(req.cookies) : [],
+    });
+  }
+
   // Set security headers
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -289,7 +303,7 @@ export async function createContext({
     timestamp: new Date(),
     batchId: undefined as string | undefined, // Will be set by batch middleware when needed
     validatedInput: undefined as unknown, // Will be set by input validation middleware when needed
-    csrfToken: undefined as string | undefined, // Will be set by CSRF middleware when needed
+    csrfToken, // Properly extracted CSRF token from cookies
     ...services,
   };
 }

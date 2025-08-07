@@ -38,6 +38,7 @@ import { workflowRouter } from "../routes/workflow.router.ts";
 import { securityRouter } from "./routers/security.router.ts";
 import { monitoringRouter } from "./routers/monitoring.router.ts";
 import { groceryNLPQueueRouter } from "./routers/grocery-nlp-queue.router.ts";
+import { pollingRouter } from "./routers/polling.router.ts";
 
 // Import the router function from enhanced-router
 import { router as createRouter } from "./enhanced-router.ts";
@@ -64,6 +65,7 @@ export const appRouter = createRouter({
   security: securityRouter, // Security endpoints (CSRF token management)
   monitoring: monitoringRouter, // System monitoring and observability
   groceryNLPQueue: groceryNLPQueueRouter, // Grocery NLP Queue management
+  polling: pollingRouter, // HTTP polling fallback endpoints
 });
 
 export type AppRouter = typeof appRouter;
