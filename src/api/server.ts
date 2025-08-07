@@ -1,7 +1,9 @@
 import { config } from "dotenv";
 config(); // Load environment variables
 
+import CredentialManager from "../config/CredentialManager.js";
 import express from "express";
+import compression from "compression";
 import cookieParser from "cookie-parser";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { createContext } from "./trpc/context.js";
@@ -31,6 +33,7 @@ import { emailAnalysisRouter } from "./routes/email-analysis.router.js";
 import emailAssignmentRouter from "./routes/email-assignment.router.js";
 import csrfRouter from "./routes/csrf.router.js";
 import websocketMonitorRouter from "./routes/websocket-monitor.router.js";
+import metricsRouter from "./routes/metrics.router.js";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
@@ -40,6 +43,11 @@ import { DealDataService } from "./services/DealDataService.js";
 import { EmailStorageService } from "./services/EmailStorageService.js";
 import { applySecurityHeaders } from "./middleware/security/headers.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { 
+  initializeCredentials, 
+  ensureCredentialsInitialized,
+  credentialHealthCheck 
+} from "./middleware/security/credential-validation.js";
 import { GracefulShutdown } from "../utils/error-handling/server.js";
 import {
   requestTracking,
@@ -50,6 +58,7 @@ import {
 } from "./middleware/monitoring.js";
 import monitoringRouter from "./routes/monitoring.router.js";
 import emailPipelineHealthRouter from "./routes/email-pipeline-health.router.js";
+import circuitBreakerRouter from "./routes/circuit-breaker.router.js";
 
 import { errorTracker } from "../monitoring/ErrorTracker.js";
 
@@ -72,6 +81,20 @@ applySecurityHeaders(app, {
     credentials: appConfig.api.cors.credentials,
   },
 });
+
+// Add response compression (Performance Optimization - 60-70% bandwidth reduction)
+app.use(compression({
+  filter: (req, res) => {
+    // Don't compress if client explicitly requests no compression
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    // Compress all responses by default for JSON/text content
+    return compression.filter(req, res);
+  },
+  threshold: 1024, // Only compress responses larger than 1KB
+  level: 6 // Balanced compression level (1=fast, 9=best compression)
+}));
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -216,9 +239,15 @@ app.use("/api/websocket", websocketMonitorRouter);
 // Monitoring routes
 app.use("/api/monitoring", monitoringRouter);
 
+// Circuit Breaker monitoring and control
+app.use("/api/circuit-breaker", circuitBreakerRouter);
+
 // Email pipeline health routes
 app.use("/api/health", emailPipelineHealthRouter);
-app.use("/api/metrics", emailPipelineHealthRouter);
+
+// Add credential health endpoint
+app.get("/api/health/credentials", credentialHealthCheck);
+app.use("/api/metrics", metricsRouter);
 
 // tRPC middleware
 app.use(
@@ -275,15 +304,25 @@ gracefulShutdown.register(async () => {
 // Setup graceful shutdown signal handlers
 gracefulShutdown.setupSignalHandlers();
 
-// Start HTTP server
-const server = app.listen(PORT, () => {
-  console.log(`🚀 API Server running on http://localhost:${PORT}`);
-  console.log(`📡 tRPC endpoint: http://localhost:${PORT}/trpc`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+// Initialize credentials and start HTTP server
+const server = app.listen(PORT, async () => {
+  try {
+    // Initialize credentials on server start
+    await initializeCredentials();
+    
+    console.log(`🚀 API Server running on http://localhost:${PORT}`);
+    console.log(`📡 tRPC endpoint: http://localhost:${PORT}/trpc`);
+    console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+    console.log(`🔐 Credential health: http://localhost:${PORT}/api/health/credentials`);
 
-  // Start WebSocket health monitoring
-  wsService.startHealthMonitoring(30000); // Every 30 seconds
-  logger.info("WebSocket health monitoring started", "WEBSOCKET");
+    // Start WebSocket health monitoring
+    wsService.startHealthMonitoring(30000); // Every 30 seconds
+    logger.info("WebSocket health monitoring started", "WEBSOCKET");
+  } catch (error) {
+    console.error('❌ Failed to initialize credentials:', error);
+    console.error('🔧 Run: node scripts/setup-security.js for help');
+    process.exit(1);
+  }
 });
 
 // WebSocket server for subscriptions with enhanced security
