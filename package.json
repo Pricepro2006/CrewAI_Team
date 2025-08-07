@@ -57,6 +57,10 @@
     "test:browser-compat:edge": "tsx scripts/run-browser-compatibility-tests.ts --edge-only",
     "test:browser-compat:sequential": "tsx scripts/run-browser-compatibility-tests.ts --sequential",
     "test:walmart-browsers": "playwright test --config playwright.config.ts --grep walmart",
+    "test:walmart-comprehensive": "tsx tests/walmart-ui-comprehensive/run-all-tests.ts",
+    "test:walmart-comprehensive:headed": "tsx tests/walmart-ui-comprehensive/run-all-tests.ts --headed",
+    "test:walmart-comprehensive:high": "tsx tests/walmart-ui-comprehensive/run-all-tests.ts --priority high",
+    "test:walmart-comprehensive:cleanup": "tsx tests/walmart-ui-comprehensive/run-all-tests.ts --cleanup",
     "test:all": "npm run test:full && npm run test:integration && npm run test:e2e && npm run test:browser-compat",
     "test:ci": "npm run test:unit && npm run test:ui",
     "test:ci:memory-safe": "npm run test:unit && sleep 10 && npm run test:ui",
@@ -108,7 +112,7 @@
     "test:microservices:report": "tsx tests/integration/run-integration-tests.ts --parallel --report",
     "test:microservices:ci": "./tests/integration/run-all-integration-tests.sh --critical-only --no-report",
     "db:migrate:production": "NODE_ENV=production tsx src/scripts/runDatabaseMigrations.ts migrate",
-    "db:optimize": "tsx scripts/optimize-database.ts",
+    "db:optimize": "./scripts/optimize-databases.sh",
     "import:iems-emails": "tsx scripts/import-iems-email-batches.ts",
     "import:iems-emails:test": "tsx scripts/import-iems-email-batches.ts --test",
     "create-enhanced-schema": "tsx scripts/create-enhanced-email-schema.ts",
@@ -140,7 +144,11 @@
     "local:health": "./local-services.sh health",
     "start:pricing-service": "NODE_OPTIONS='--loader tsx --experimental-specifier-resolution=node' tsx src/microservices/pricing-service/server.ts",
     "dev:pricing-service": "NODE_OPTIONS='--loader tsx --experimental-specifier-resolution=node' tsx src/microservices/pricing-service/server.ts",
-    "test:pricing-service": "vitest run src/microservices/pricing-service/__tests__/"
+    "test:pricing-service": "vitest run src/microservices/pricing-service/__tests__/",
+    "build:prod": "./scripts/build-optimized.sh",
+    "perf:report": "tsx src/scripts/performance-report-generator.ts",
+    "perf:analyze": "tsx src/scripts/simple-frontend-analysis.ts",
+    "monitor": "tsx src/scripts/performance-dashboard.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",

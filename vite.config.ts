@@ -4,6 +4,20 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  build: {
+    sourcemap: false,
+    chunkSizeWarningLimit: 1000,
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['react', 'react-dom'],
+          'ui': ['@headlessui/react', '@heroicons/react'],
+          'charts': ['chart.js', 'react-chartjs-2']
+        }
+      }
+    }
+  },
   plugins: [
     react({
       // Enable React Fast Refresh
