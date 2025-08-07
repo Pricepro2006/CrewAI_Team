@@ -1,9 +1,11 @@
 /**
  * Grocery Store - Zustand store for Walmart grocery state management
+ * Optimized for performance with selective updates and computed values
  */
 
 import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
+import { devtools, persist, subscribeWithSelector } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
 import type {
   WalmartProduct,
   CartItem,
@@ -61,6 +63,14 @@ interface GroceryState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 
+  // Computed values (memoized)
+  cartItemCount: number;
+  cartTotal: number;
+  favoriteProductIds: Set<string>;
+  
+  // Performance optimized actions
+  batchUpdateCart: (updates: Array<{ productId: string; quantity: number }>) => void;
+  
   // Utility functions
   reset: () => void;
 }
@@ -95,9 +105,10 @@ const defaultPreferences: UserPreferences = {
 };
 
 export const useGroceryStore = create<GroceryState>()(
-  devtools(
-    persist(
-      (set, get) => ({
+  subscribeWithSelector(
+    devtools(
+      persist(
+        immer((set, get) => ({
         // Initial State
         cart: defaultCart,
         lists: [],
@@ -109,28 +120,49 @@ export const useGroceryStore = create<GroceryState>()(
         loading: false,
         error: null,
 
-        // Cart Actions
+        // Computed values
+        get cartItemCount() {
+          return get().cart.items.reduce((sum, item) => sum + item.quantity, 0);
+        },
+        
+        get cartTotal() {
+          const state = get();
+          return state.cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        },
+        
+        get favoriteProductIds() {
+          return new Set(get().preferences.favoriteProducts);
+        },
+
+        // Performance optimized batch update
+        batchUpdateCart: (updates) => {
+          set((state) => {
+            updates.forEach(({ productId, quantity }) => {
+              const existingItem = state.cart.items.find(item => item.productId === productId);
+              if (existingItem) {
+                if (quantity <= 0) {
+                  state.cart.items = state.cart.items.filter(item => item.productId !== productId);
+                } else {
+                  existingItem.quantity = quantity;
+                  existingItem.updatedAt = new Date().toISOString();
+                }
+              }
+            });
+            state.cart.updatedAt = new Date().toISOString();
+          });
+        },
+
+        // Cart Actions (optimized with Immer)
         addToCart: (product: WalmartProduct, quantity: number) => {
-          set((state: GroceryState) => {
+          set((state) => {
             const existingItem = state.cart.items.find(
               (item) => item.productId === product.id,
             );
 
             if (existingItem) {
               // Update quantity if item already exists
-              const updatedItems = state.cart.items.map((item) =>
-                item.productId === product.id
-                  ? { ...item, quantity: item.quantity + quantity }
-                  : item,
-              );
-
-              return {
-                cart: {
-                  ...state.cart,
-                  items: updatedItems,
-                  updatedAt: new Date(),
-                },
-              };
+              existingItem.quantity += quantity;
+              existingItem.updatedAt = new Date().toISOString();
             } else {
               // Add new item
               const newItem: CartItem = {
@@ -142,49 +174,44 @@ export const useGroceryStore = create<GroceryState>()(
                 addedAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
               };
-
-              return {
-                cart: {
-                  ...state.cart,
-                  items: [...state.cart.items, newItem],
-                  updatedAt: new Date().toISOString(),
-                },
-              };
+              state.cart.items.push(newItem);
             }
+            
+            state.cart.updatedAt = new Date().toISOString();
           });
         },
 
         updateCartItemQuantity: (productId: string, quantity: number) => {
-          set((state: GroceryState) => ({
-            cart: {
-              ...state.cart,
-              items: state.cart.items.map((item: CartItem) =>
-                item.productId === productId ? { ...item, quantity } : item,
-              ),
-              updatedAt: new Date(),
-            },
-          }));
+          set((state) => {
+            const item = state.cart.items.find(item => item.productId === productId);
+            if (item) {
+              if (quantity <= 0) {
+                state.cart.items = state.cart.items.filter(item => item.productId !== productId);
+              } else {
+                item.quantity = quantity;
+                item.updatedAt = new Date().toISOString();
+              }
+              state.cart.updatedAt = new Date().toISOString();
+            }
+          });
         },
 
         removeFromCart: (productId: string) => {
-          set((state: GroceryState) => ({
-            cart: {
-              ...state.cart,
-              items: state.cart.items.filter(
-                (item) => item.productId !== productId,
-              ),
-              updatedAt: new Date(),
-            },
-          }));
+          set((state) => {
+            state.cart.items = state.cart.items.filter(
+              (item) => item.productId !== productId,
+            );
+            state.cart.updatedAt = new Date().toISOString();
+          });
         },
 
         clearCart: () => {
-          set({
-            cart: {
+          set((state) => {
+            state.cart = {
               ...defaultCart,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
           });
         },
 
