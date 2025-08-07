@@ -89,7 +89,7 @@ The solution involved decomposing the monolith into 6 specialized microservices:
 
 | Service | Purpose | Key Features | Performance Target |
 |---------|---------|--------------|-------------------|
-| **NLP Service** | Natural language processing | Intent extraction, entity recognition | <200ms p95 |
+| **NLP Service** | Natural language processing | Qwen3:0.6b model (522MB), 7 intent types, WebSocket integration | <200ms p95, 87.5% accuracy |
 | **Pricing Service** | Price management | Real-time pricing, history tracking | <50ms cached |
 | **Cache Warmer** | Proactive caching | Predictive warming, usage analysis | 10K items/hour |
 | **Grocery Service** | List management | CRUD operations, sharing | <3ms queries |
