@@ -7,7 +7,7 @@ import { logger } from "../../utils/logger.js";
 import { v4 as uuidv4 } from "uuid";
 import type { WalmartProductRepository, SubstitutionRepository, UserPreferencesRepository } from "../../database/repositories/WalmartProductRepository.js";
 import type { GroceryListRepository, GroceryItemRepository, ShoppingSessionRepository } from "../../database/repositories/GroceryRepository.js";
-import { getDatabaseManager } from "../../database/DatabaseManager.js";
+import { getWalmartDatabaseManager } from "../../database/WalmartDatabaseManager.js";
 import { BrightDataScraper } from "./BrightDataScraper.js";
 import { ProductLookupService } from "./ProductLookupService.js";
 import { DealMatchingService } from "./DealMatchingService.js";
@@ -66,15 +66,16 @@ export class WalmartGroceryService {
   private chromadb: ChromaDBManager;
 
   private constructor() {
-    const dbManager = getDatabaseManager();
+    // Use dedicated Walmart database manager
+    const walmartDbManager = getWalmartDatabaseManager();
     
-    // Initialize repositories
-    this.productRepo = dbManager.walmartProducts;
-    this.substitutionRepo = dbManager.substitutions;
-    this.preferencesRepo = dbManager.userPreferences;
-    this.listRepo = dbManager.groceryLists;
-    this.itemRepo = dbManager.groceryItems;
-    this.sessionRepo = dbManager.shoppingSessions;
+    // Initialize repositories from Walmart-specific database
+    this.productRepo = walmartDbManager.walmartProducts;
+    this.substitutionRepo = walmartDbManager.substitutions;
+    this.preferencesRepo = walmartDbManager.userPreferences;
+    this.listRepo = walmartDbManager.groceryLists;
+    this.itemRepo = walmartDbManager.groceryItems;
+    this.sessionRepo = walmartDbManager.shoppingSessions;
     
     // Initialize services
     this.scraper = BrightDataScraper.getInstance();

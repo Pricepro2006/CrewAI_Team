@@ -5,6 +5,14 @@ import {
   commonSchemas,
   createFeatureRouter,
 } from "../trpc/enhanced-router.js";
+import {
+  databaseMiddleware,
+  walmartDatabaseMiddleware,
+  safeColumnAccess,
+  withDatabaseContext,
+  type DatabaseContext,
+  type SafeQueryResult
+} from "../trpc/database-middleware.js";
 import { observable } from "@trpc/server/observable";
 import { EventEmitter } from "events";
 import { logger } from "../../utils/logger.js";
@@ -725,105 +733,160 @@ export const walmartGroceryRouter = createFeatureRouter(
 
     // Get grocery lists for a user
     getLists: publicProcedure
+      .use(walmartDatabaseMiddleware)
       .input(z.object({ userId: z.string() }))
-      .query(async ({ input, ctx }) => {
+      .query(withDatabaseContext(async (ctx: DatabaseContext, input) => {
         logger.info("Fetching grocery lists", "WALMART", {
           userId: input.userId,
         });
 
-        try {
-          const dbManager = await getDatabaseManager();
-          const lists = await dbManager.groceryLists.getUserLists(input.userId);
+        const listsResult = await ctx.safeDb.select(
+          'grocery_lists',
+          ['id', 'user_id', 'name', 'description', 'estimated_total', 'created_at', 'updated_at'],
+          'user_id = ?',
+          [input.userId]
+        );
 
-          return {
-            lists: lists.map(list => ({
-              id: list.id,
-              userId: list.user_id,
-              name: list.list_name,
-              description: list.description,
-              items: [],
-              totalEstimate: list.estimated_total || 0,
-              createdAt: new Date(list.created_at || Date.now()),
-              updatedAt: new Date(list.updated_at || Date.now()),
-              tags: [],
-              isShared: false,
-            })),
-          };
-        } catch (error) {
-          logger.error("Failed to fetch lists", "WALMART", { error });
-          throw error;
+        if (listsResult.warnings.length > 0) {
+          logger.warn("Schema warnings in getLists", "WALMART", {
+            warnings: listsResult.warnings,
+            missingColumns: listsResult.missingColumns
+          });
         }
-      }),
+
+        return {
+          lists: listsResult.data.map(list => ({
+            id: safeColumnAccess(list, 'id', ''),
+            userId: safeColumnAccess(list, 'user_id', input.userId),
+            name: safeColumnAccess(list, 'name', 'Unnamed List'),
+            description: safeColumnAccess(list, 'description', ''),
+            items: [],
+            totalEstimate: safeColumnAccess(list, 'estimated_total', 0),
+            createdAt: new Date(safeColumnAccess(list, 'created_at', Date.now())),
+            updatedAt: new Date(safeColumnAccess(list, 'updated_at', Date.now())),
+            tags: [],
+            isShared: false,
+          })),
+        };
+      })),
 
     // Create a new grocery list
     createList: publicProcedure
+      .use(walmartDatabaseMiddleware)
       .input(walmartSchemas.createList)
-      .mutation(async ({ input, ctx }) => {
+      .mutation(withDatabaseContext(async (ctx: DatabaseContext, input) => {
         logger.info("Creating grocery list", "WALMART", input);
 
-        try {
-          const walmartService = WalmartGroceryService.getInstance();
-          const list = await walmartService.createGroceryList(
-            input.userId,
-            input.name,
-            input.description,
-          );
+        const listData = {
+          user_id: input.userId,
+          name: input.name,
+          description: input.description || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
 
-          return {
-            success: true,
-            list,
-          };
-        } catch (error) {
-          logger.error("Failed to create list", "WALMART", { error });
-          throw error;
+        const result = await ctx.safeDb.insert('grocery_lists', listData);
+
+        if (result.warnings.length > 0) {
+          logger.warn("Schema warnings in createList", "WALMART", {
+            warnings: result.warnings,
+            skippedColumns: result.skippedColumns
+          });
         }
-      }),
+
+        // Get the created list to return full data
+        const createdLists = await ctx.safeDb.select(
+          'grocery_lists',
+          ['id', 'user_id', 'name', 'description', 'created_at', 'updated_at'],
+          'user_id = ? AND name = ?',
+          [input.userId, input.name]
+        );
+
+        const list = createdLists.data[0];
+
+        return {
+          success: true,
+          list: {
+            id: safeColumnAccess(list, 'id', ''),
+            userId: safeColumnAccess(list, 'user_id', input.userId),
+            name: safeColumnAccess(list, 'name', input.name),
+            description: safeColumnAccess(list, 'description', input.description || ''),
+            items: [],
+            totalEstimate: 0,
+            createdAt: new Date(safeColumnAccess(list, 'created_at', Date.now())),
+            updatedAt: new Date(safeColumnAccess(list, 'updated_at', Date.now())),
+            tags: [],
+            isShared: false,
+          },
+        };
+      })),
 
     // Update a grocery list
     updateList: publicProcedure
+      .use(walmartDatabaseMiddleware)
       .input(walmartSchemas.updateList)
-      .mutation(async ({ input, ctx }) => {
+      .mutation(withDatabaseContext(async (ctx: DatabaseContext, input) => {
         logger.info("Updating grocery list", "WALMART", input);
 
-        try {
-          const dbManager = await getDatabaseManager();
-          
-          await dbManager.groceryLists.updateList(input.listId, {
-            list_name: input.name,
-            description: input.description,
-            updated_at: new Date().toISOString(),
-          });
+        const updateData: Record<string, any> = {
+          updated_at: new Date().toISOString()
+        };
 
-          return {
-            success: true,
-            listId: input.listId,
-          };
-        } catch (error) {
-          logger.error("Failed to update list", "WALMART", { error });
-          throw error;
+        if (input.name) {
+          updateData.name = input.name;
         }
-      }),
+        if (input.description !== undefined) {
+          updateData.description = input.description;
+        }
+
+        const result = await ctx.safeDb.update(
+          'grocery_lists',
+          updateData,
+          'id = ?',
+          [input.listId]
+        );
+
+        if (result.warnings.length > 0) {
+          logger.warn("Schema warnings in updateList", "WALMART", {
+            warnings: result.warnings,
+            skippedColumns: result.skippedColumns
+          });
+        }
+
+        if (result.affectedRows === 0) {
+          throw new Error(`List with ID ${input.listId} not found`);
+        }
+
+        return {
+          success: true,
+          listId: input.listId,
+          affectedRows: result.affectedRows,
+        };
+      })),
 
     // Delete a grocery list
     deleteList: publicProcedure
+      .use(walmartDatabaseMiddleware)
       .input(z.object({ listId: z.string() }))
-      .mutation(async ({ input, ctx }) => {
+      .mutation(withDatabaseContext(async (ctx: DatabaseContext, input) => {
         logger.info("Deleting grocery list", "WALMART", input);
 
-        try {
-          const dbManager = await getDatabaseManager();
-          
-          await dbManager.groceryLists.deleteList(input.listId);
+        const result = await ctx.safeDb.delete(
+          'grocery_lists',
+          'id = ?',
+          [input.listId]
+        );
 
-          return {
-            success: true,
-            listId: input.listId,
-          };
-        } catch (error) {
-          logger.error("Failed to delete list", "WALMART", { error });
-          throw error;
+        if (result.affectedRows === 0) {
+          throw new Error(`List with ID ${input.listId} not found`);
         }
-      }),
+
+        return {
+          success: true,
+          listId: input.listId,
+          affectedRows: result.affectedRows,
+        };
+      })),
 
     // Add items to a list
     addItemToList: publicProcedure
@@ -861,25 +924,28 @@ export const walmartGroceryRouter = createFeatureRouter(
 
     // Remove item from list
     removeItemFromList: publicProcedure
+      .use(walmartDatabaseMiddleware)
       .input(walmartSchemas.removeItemFromList)
-      .mutation(async ({ input, ctx }) => {
+      .mutation(withDatabaseContext(async (ctx: DatabaseContext, input) => {
         logger.info("Removing item from list", "WALMART", input);
 
-        try {
-          const dbManager = await getDatabaseManager();
-          
-          await dbManager.groceryItems.deleteItem(input.itemId);
+        const result = await ctx.safeDb.delete(
+          'grocery_items',
+          'id = ? AND list_id = ?',
+          [input.itemId, input.listId]
+        );
 
-          return {
-            success: true,
-            listId: input.listId,
-            itemId: input.itemId,
-          };
-        } catch (error) {
-          logger.error("Failed to remove item", "WALMART", { error });
-          throw error;
+        if (result.affectedRows === 0) {
+          throw new Error(`Item with ID ${input.itemId} not found in list ${input.listId}`);
         }
-      }),
+
+        return {
+          success: true,
+          listId: input.listId,
+          itemId: input.itemId,
+          affectedRows: result.affectedRows,
+        };
+      })),
 
     // Get user orders
     getOrders: publicProcedure

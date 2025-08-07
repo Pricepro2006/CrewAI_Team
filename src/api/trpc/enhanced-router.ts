@@ -376,6 +376,10 @@ export type EnhancedContext = Context & {
   csrfToken?: string;
 };
 
+// Database-enhanced procedures
+export const databaseProcedure = t.procedure.use(securityAudit).use(authRequired).use(csrfProtection);
+export const safeDatabaseProcedure = t.procedure.use(securityAudit);
+
 // Utility function for creating feature-specific routers
 export function createFeatureRouter<T extends Record<string, any>>(
   name: string,
