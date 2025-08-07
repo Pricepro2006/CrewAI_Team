@@ -37,7 +37,7 @@ interface PanelEmailItem {
   timestamp: string;
 }
 
-export function EmailDashboardMultiPanel({
+export const EmailDashboardMultiPanel = React.memo(({
   emails,
   loading = false,
   error = null,
@@ -45,7 +45,7 @@ export function EmailDashboardMultiPanel({
   onAssignEmail,
   onStatusChange,
   className,
-}: EmailDashboardMultiPanelProps) {
+}: EmailDashboardMultiPanelProps) => {
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
 
   // Filter emails by specific aliases for panels
@@ -81,7 +81,7 @@ export function EmailDashboardMultiPanel({
     [onEmailSelect],
   );
 
-  const renderPanelItem = (email: EmailRecord) => (
+  const renderPanelItem = useCallback((email: EmailRecord) => (
     <div
       key={email.id}
       className={cn(
@@ -116,7 +116,7 @@ export function EmailDashboardMultiPanel({
         </Badge>
       )}
     </div>
-  );
+  ), [selectedEmailId, handleEmailClick]);
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -181,4 +181,6 @@ export function EmailDashboardMultiPanel({
       </div>
     </div>
   );
-}
+});
+
+EmailDashboardMultiPanel.displayName = "EmailDashboardMultiPanel";
