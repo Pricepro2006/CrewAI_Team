@@ -1,8 +1,9 @@
-import { VectorStore } from "./VectorStore.js";
+import { AdaptiveVectorStore } from "./AdaptiveVectorStore.js";
 import { DocumentProcessor } from "./DocumentProcessor.js";
 import { EmbeddingService } from "./EmbeddingService.js";
 import { RetrievalService } from "./RetrievalService.js";
 import { MODEL_CONFIG } from "../../config/models.config.js";
+import { logger } from "../../utils/logger.js";
 import type {
   Document,
   QueryResult,
@@ -11,14 +12,14 @@ import type {
 } from "./types.js";
 
 export class RAGSystem {
-  private vectorStore: VectorStore;
+  private vectorStore: AdaptiveVectorStore;
   private documentProcessor: DocumentProcessor;
   private embeddingService: EmbeddingService;
   private retrievalService: RetrievalService;
   private isInitialized: boolean = false;
 
   constructor(private config: RAGConfig) {
-    this.vectorStore = new VectorStore(config.vectorStore);
+    this.vectorStore = new AdaptiveVectorStore(config.vectorStore);
     this.documentProcessor = new DocumentProcessor(config.chunking);
     this.embeddingService = new EmbeddingService({
       model: MODEL_CONFIG.models.embedding,
@@ -31,34 +32,45 @@ export class RAGSystem {
     if (this.isInitialized) return;
 
     try {
-      // Initialize vector store and embedding service with individual error handling
-      const vectorStorePromise = this.vectorStore
-        .initialize()
-        .catch((error) => {
-          console.warn("Vector store initialization failed:", error.message);
-          return null; // Continue without vector store
-        });
+      // Initialize vector store (will automatically fallback to in-memory if ChromaDB fails)
+      await this.vectorStore.initialize();
+      
+      const storeInfo = this.vectorStore.getStoreInfo();
+      if (storeInfo.fallbackUsed) {
+        logger.warn(
+          "RAG system initialized with in-memory fallback - advanced RAG features may be limited",
+          "RAG_SYSTEM"
+        );
+      } else {
+        logger.info(
+          "RAG system initialized successfully with ChromaDB",
+          "RAG_SYSTEM"
+        );
+      }
 
-      const embeddingPromise = this.embeddingService
-        .initialize()
-        .catch((error) => {
-          console.warn(
-            "Embedding service initialization failed:",
-            error.message,
-          );
-          return null; // Continue without embeddings
-        });
+      // Initialize embedding service (gracefully handle failure)
+      try {
+        await this.embeddingService.initialize();
+        logger.info("Embedding service initialized successfully", "RAG_SYSTEM");
+      } catch (error) {
+        logger.warn(
+          `Embedding service initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}. Some RAG features may be limited.`,
+          "RAG_SYSTEM"
+        );
+        // Continue without embeddings - the system will still work with basic text search
+      }
 
-      await Promise.all([vectorStorePromise, embeddingPromise]);
       this.isInitialized = true;
+      logger.info("RAG system initialization completed", "RAG_SYSTEM");
+      
     } catch (error) {
-      console.warn(
-        "RAG system initialization failed:",
-        (error as Error).message,
+      logger.error(
+        `RAG system initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        "RAG_SYSTEM"
       );
-      // Mark as initialized even if vector store fails (graceful degradation)
+      // Mark as initialized anyway to prevent repeated failures
       this.isInitialized = true;
-      throw error; // Re-throw so orchestrator can handle gracefully
+      throw error;
     }
   }
 
@@ -182,15 +194,77 @@ export class RAGSystem {
     const totalDocuments = await this.vectorStore.getDocumentCount();
     const totalChunks = await this.vectorStore.getChunkCount();
     const collections = await this.vectorStore.getCollections();
+    const storeInfo = this.vectorStore.getStoreInfo();
 
     return {
       totalDocuments,
       totalChunks,
       collections,
       averageChunksPerDocument:
-        totalDocuments > 0 ? Math.round(totalChunks / totalDocuments) : 0,
-      vectorStoreType: this.config.vectorStore.type,
+        totalDocuments > 0 ? Math.round(totalChunks / totalChunks) : 0,
+      vectorStoreType: storeInfo.type,
       embeddingModel: MODEL_CONFIG.models.embedding,
+      fallbackMode: storeInfo.fallbackUsed,
+    };
+  }
+
+  /**
+   * Get health status of the RAG system
+   */
+  async getHealthStatus(): Promise<{
+    status: "healthy" | "degraded" | "error";
+    vectorStore: {
+      status: "healthy" | "degraded" | "error";
+      type: string;
+      fallbackUsed: boolean;
+      message: string;
+    };
+    embeddingService: {
+      status: "healthy" | "error";
+      message: string;
+    };
+  }> {
+    let vectorStoreHealth;
+    let embeddingHealth;
+
+    try {
+      vectorStoreHealth = await this.vectorStore.healthCheck();
+    } catch (error) {
+      vectorStoreHealth = {
+        status: "error" as const,
+        type: "unknown",
+        fallbackUsed: false,
+        message: `Vector store health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
+
+    // Check embedding service
+    try {
+      // Try a simple embedding operation
+      await this.embeddingService.embed("test");
+      embeddingHealth = {
+        status: "healthy" as const,
+        message: "Embedding service operational",
+      };
+    } catch (error) {
+      embeddingHealth = {
+        status: "error" as const,
+        message: `Embedding service error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
+
+    // Determine overall status
+    let overallStatus: "healthy" | "degraded" | "error" = "healthy";
+    if (vectorStoreHealth.status === "error" || embeddingHealth.status === "error") {
+      overallStatus = "error";
+    } else if (vectorStoreHealth.status === "degraded") {
+      overallStatus = "degraded";
+    }
+
+    return {
+      status: overallStatus,
+      vectorStore: vectorStoreHealth,
+      embeddingService: embeddingHealth,
     };
   }
 
@@ -280,4 +354,5 @@ interface RAGStats {
   averageChunksPerDocument: number;
   vectorStoreType: string;
   embeddingModel: string;
+  fallbackMode?: boolean;
 }
