@@ -1,9 +1,5 @@
-import {
-  Router,
-  type Request,
-  type Response,
-  type Router as ExpressRouter,
-} from "express";
+import express, { Router, type Request, type Response, type Router as ExpressRouter,  } from 'express';
+
 import { z } from "zod";
 import { EmailStorageService } from "../services/EmailStorageService.js";
 import { WebSocketService } from "../services/WebSocketService.js";

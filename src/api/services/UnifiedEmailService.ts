@@ -580,7 +580,7 @@ export class UnifiedEmailService {
 
     return {
       id: email.id,
-      messageId: email.message_id || email.messageId,
+      messageId: email.internet_message_id || email.message_id || email.messageId,  // Check correct DB column first
       graphResourceId: email.graph_id || email.graphId,
       subject: email.subject,
       bodyText: email.body_text || email.bodyText,

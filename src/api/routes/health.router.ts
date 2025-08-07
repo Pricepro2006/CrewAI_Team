@@ -4,6 +4,9 @@ import ollamaConfig from "../../config/ollama.config.js";
 import appConfig from "../../config/app.config.js";
 import { MODEL_CONFIG } from "../../config/models.config.js";
 import Database from "better-sqlite3";
+import { GroceryNLPQueue } from "../services/GroceryNLPQueue.js";
+import { healthCheckService } from "../../monitoring/HealthCheckService.js";
+import { z } from "zod";
 
 interface ServiceStatus {
   status: "healthy" | "degraded" | "error" | "unknown";
@@ -22,6 +25,7 @@ export interface HealthStatus {
     database: ServiceStatus;
     chromadb: ServiceStatus;
     rag: ServiceStatus;
+    nlpQueue?: ServiceStatus;
   };
   system: {
     memory: {
@@ -38,8 +42,19 @@ export interface HealthStatus {
 // Track API start time for uptime calculation
 const apiStartTime = Date.now();
 
+// Validation schemas for enhanced endpoints
+const serviceHealthCheckSchema = z.object({
+  serviceId: z.string().optional(),
+  detailed: z.boolean().default(false),
+});
+
+const triggerHealthCheckSchema = z.object({
+  serviceId: z.string().optional(),
+  serviceIds: z.array(z.string()).optional(),
+});
+
 export const healthRouter = router({
-  // Main health status endpoint
+  // Main health status endpoint (enhanced with comprehensive health service)
   status: publicProcedure.query(async ({ ctx }): Promise<HealthStatus> => {
     const services: HealthStatus["services"] = {
       api: { status: "healthy", message: "API is running" },
@@ -182,6 +197,30 @@ export const healthRouter = router({
       services.rag = {
         status: "error",
         message: `RAG system error: ${(error as Error).message}`,
+      };
+    }
+
+    // Check NLP Queue status (for grocery processing)
+    try {
+      const nlpQueue = GroceryNLPQueue.getInstance();
+      const queueStatus = nlpQueue.getStatus();
+      
+      services.nlpQueue = {
+        status: queueStatus.healthy ? "healthy" : "degraded",
+        message: queueStatus.healthy 
+          ? "NLP queue is healthy" 
+          : "NLP queue experiencing issues",
+        details: {
+          queueSize: queueStatus.queueSize,
+          activeRequests: queueStatus.activeRequests,
+          maxConcurrent: queueStatus.maxConcurrent,
+          metrics: queueStatus.metrics
+        }
+      };
+    } catch (error) {
+      services.nlpQueue = {
+        status: "error",
+        message: `NLP queue error: ${(error as Error).message}`,
       };
     }
 
@@ -381,5 +420,273 @@ export const healthRouter = router({
         app: process.env.npm_package_version || "1.0.0",
       },
     };
+  }),
+
+  // =============================================================================
+  // COMPREHENSIVE HEALTH CHECK ENDPOINTS (New Implementation)
+  // =============================================================================
+
+  // Aggregated health status for all microservices
+  aggregated: publicProcedure.query(async () => {
+    try {
+      const aggregatedHealth = healthCheckService.getAggregatedHealth();
+      
+      return {
+        status: aggregatedHealth.overall,
+        timestamp: aggregatedHealth.lastCheck.toISOString(),
+        uptime: Math.floor(aggregatedHealth.uptime / 1000),
+        version: aggregatedHealth.version,
+        environment: aggregatedHealth.environment,
+        summary: aggregatedHealth.summary,
+        services: aggregatedHealth.services.map(service => ({
+          id: service.serviceId,
+          name: service.serviceName,
+          status: service.status,
+          responseTime: service.responseTime,
+          lastCheck: service.timestamp.toISOString(),
+          type: service.metadata?.type,
+          critical: service.metadata?.critical,
+          uptime: service.uptime,
+          version: service.version,
+          error: service.error
+        })),
+        criticalServicesDown: aggregatedHealth.summary.critical_down
+      };
+    } catch (error) {
+      logger.error('Aggregated health check failed', 'HEALTH_ROUTER', { error });
+      throw new Error(`Aggregated health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }),
+
+  // Individual service health check
+  service: publicProcedure
+    .input(serviceHealthCheckSchema)
+    .query(async ({ input }) => {
+      try {
+        if (!input.serviceId) {
+          // Return all service configurations
+          const configs = healthCheckService.getServiceConfigurations();
+          return {
+            services: configs.map(config => ({
+              id: config.id,
+              name: config.name,
+              type: config.type,
+              endpoint: `${config.protocol}://${config.host}:${config.port}${config.healthEndpoint || '/health'}`,
+              critical: config.critical,
+              interval: config.interval,
+              timeout: config.timeout,
+              dependencies: config.dependencies,
+              tags: config.tags,
+              health: healthCheckService.getServiceHealth(config.id)
+            }))
+          };
+        }
+
+        let healthResult = healthCheckService.getServiceHealth(input.serviceId);
+        
+        if (!healthResult && input.detailed) {
+          // Trigger fresh health check if detailed info requested
+          healthResult = await healthCheckService.checkServiceNow(input.serviceId);
+        }
+
+        if (!healthResult) {
+          throw new Error(`Health data not available for service: ${input.serviceId}`);
+        }
+
+        const response = {
+          serviceId: healthResult.serviceId,
+          serviceName: healthResult.serviceName,
+          status: healthResult.status,
+          responseTime: healthResult.responseTime,
+          timestamp: healthResult.timestamp.toISOString(),
+          uptime: healthResult.uptime,
+          version: healthResult.version,
+          error: healthResult.error,
+          metadata: healthResult.metadata
+        };
+
+        if (input.detailed) {
+          return {
+            ...response,
+            checks: {
+              liveness: {
+                status: healthResult.checks.liveness.status,
+                message: healthResult.checks.liveness.message,
+                responseTime: healthResult.checks.liveness.responseTime,
+                details: healthResult.checks.liveness.details
+              },
+              readiness: {
+                status: healthResult.checks.readiness.status,
+                message: healthResult.checks.readiness.message,
+                responseTime: healthResult.checks.readiness.responseTime,
+                details: healthResult.checks.readiness.details
+              },
+              dependencies: healthResult.checks.dependencies.map(dep => ({
+                name: dep.name,
+                status: dep.status,
+                message: dep.message,
+                responseTime: dep.responseTime,
+                details: dep.details
+              })),
+              resources: {
+                cpu: healthResult.checks.resources.cpu,
+                memory: {
+                  usage: Math.round((healthResult.checks.resources.memory.usage || 0) / 1024 / 1024),
+                  total: Math.round((healthResult.checks.resources.memory.total || 0) / 1024 / 1024),
+                  percentage: healthResult.checks.resources.memory.percentage,
+                  status: healthResult.checks.resources.memory.status
+                },
+                connections: healthResult.checks.resources.connections
+              }
+            }
+          };
+        }
+
+        return response;
+      } catch (error) {
+        logger.error('Service health check failed', 'HEALTH_ROUTER', { 
+          serviceId: input.serviceId,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        throw error;
+      }
+    }),
+
+  // Trigger manual health checks
+  triggerCheck: publicProcedure
+    .input(triggerHealthCheckSchema)
+    .mutation(async ({ input }) => {
+      try {
+        let results;
+        
+        if (input.serviceId) {
+          // Single service check
+          const result = await healthCheckService.checkServiceNow(input.serviceId);
+          results = result ? [result] : [];
+        } else if (input.serviceIds && input.serviceIds.length > 0) {
+          // Multiple service check
+          results = await healthCheckService.checkServicesNow(input.serviceIds);
+        } else {
+          // Check all services
+          const configs = healthCheckService.getServiceConfigurations();
+          const allServiceIds = configs.map(c => c.id);
+          results = await healthCheckService.checkServicesNow(allServiceIds);
+        }
+
+        return {
+          timestamp: new Date().toISOString(),
+          message: 'Health checks completed',
+          results: results.map(result => ({
+            serviceId: result.serviceId,
+            serviceName: result.serviceName,
+            status: result.status,
+            responseTime: result.responseTime,
+            timestamp: result.timestamp.toISOString(),
+            error: result.error
+          }))
+        };
+      } catch (error) {
+        logger.error('Manual health check trigger failed', 'HEALTH_ROUTER', { 
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        throw new Error(`Health check trigger failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }),
+
+  // Circuit breaker states
+  circuitBreakers: publicProcedure.query(() => {
+    try {
+      const circuitBreakers = healthCheckService.getCircuitBreakerStates();
+      
+      return {
+        timestamp: new Date().toISOString(),
+        circuitBreakers: Array.from(circuitBreakers.entries()).map(([serviceId, state]) => ({
+          serviceId,
+          state: state.state,
+          failures: state.failures,
+          lastFailure: state.lastFailure?.toISOString(),
+          nextRetry: state.nextRetry?.toISOString()
+        }))
+      };
+    } catch (error) {
+      logger.error('Circuit breaker status failed', 'HEALTH_ROUTER', { error });
+      throw new Error(`Circuit breaker status failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }),
+
+  // Prometheus metrics
+  prometheusMetrics: publicProcedure.query(() => {
+    try {
+      const metrics = healthCheckService.getPrometheusMetrics();
+      
+      return {
+        timestamp: new Date().toISOString(),
+        metrics: Object.entries(metrics).map(([name, metric]) => ({
+          name,
+          value: metric.value,
+          labels: metric.labels,
+          help: metric.help,
+          type: metric.type
+        }))
+      };
+    } catch (error) {
+      logger.error('Prometheus metrics collection failed', 'HEALTH_ROUTER', { error });
+      throw new Error(`Metrics collection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }),
+
+  // Service dependencies graph
+  dependencies: publicProcedure.query(() => {
+    try {
+      const services = healthCheckService.getServiceConfigurations();
+      
+      const dependencyGraph = services.map(service => ({
+        id: service.id,
+        name: service.name,
+        type: service.type,
+        dependencies: service.dependencies || [],
+        dependents: services
+          .filter(s => s.dependencies?.includes(service.id))
+          .map(s => ({ id: s.id, name: s.name })),
+        health: healthCheckService.getServiceHealth(service.id)?.status || 'unknown'
+      }));
+
+      return {
+        timestamp: new Date().toISOString(),
+        services: dependencyGraph
+      };
+    } catch (error) {
+      logger.error('Dependencies graph generation failed', 'HEALTH_ROUTER', { error });
+      throw new Error(`Dependencies check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }),
+
+  // Service configuration
+  configurations: publicProcedure.query(() => {
+    try {
+      const configs = healthCheckService.getServiceConfigurations();
+      
+      return {
+        timestamp: new Date().toISOString(),
+        services: configs.map(config => ({
+          id: config.id,
+          name: config.name,
+          type: config.type,
+          host: config.host,
+          port: config.port,
+          healthEndpoint: config.healthEndpoint,
+          protocol: config.protocol,
+          critical: config.critical,
+          timeout: config.timeout,
+          retries: config.retries,
+          interval: config.interval,
+          dependencies: config.dependencies,
+          tags: config.tags
+        }))
+      };
+    } catch (error) {
+      logger.error('Configuration retrieval failed', 'HEALTH_ROUTER', { error });
+      throw new Error(`Configuration retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }),
 });
