@@ -291,7 +291,9 @@ agent.executeTask.mutate({
 
 ### 4. Walmart Grocery Router (`/api/trpc/walmartGrocery`)
 
-**Product Search**
+*Enhanced with Order History Data (August 9, 2025)*
+
+**Product Search (with Historical Pricing)**
 ```typescript
 walmartGrocery.searchProducts.query({
   query: "organic bananas",
@@ -301,7 +303,8 @@ walmartGrocery.searchProducts.query({
     brand: ["Great Value", "Marketside"]
   },
   sort: "price-asc",
-  limit: 20
+  limit: 20,
+  includeHistory: true  // NEW: Include price history
 })
 
 // Response
@@ -554,3 +557,197 @@ const { data, error, isLoading } = api.emails.getEmailsTable.useQuery({
 ```
 
 This API provides comprehensive functionality for enterprise email processing with type safety, real-time updates, and robust error handling.
+## New Walmart Data Endpoints (August 9, 2025)
+
+### Order History Analysis
+
+**Get Order History**
+```typescript
+walmartGrocery.getOrderHistory.query({
+  customerId?: string,  // Optional: filter by customer (hashed)
+  dateRange?: {
+    start: string;  // ISO date
+    end: string;    // ISO date
+  },
+  limit?: number
+})
+
+// Response
+{
+  orders: Array<{
+    orderId: string;
+    orderDate: string;
+    total: number;
+    itemCount: number;
+    store: string;
+    fulfillmentType: string;
+  }>;
+  totalOrders: number;
+  totalSpent: number;
+}
+```
+
+**Get Pricing History**
+```typescript
+walmartGrocery.getPricingHistory.query({
+  productId: string,
+  storeId?: string,
+  dateRange?: {
+    start: string;
+    end: string;
+  }
+})
+
+// Response
+{
+  product: {
+    id: string;
+    name: string;
+    currentPrice: number;
+  },
+  priceHistory: Array<{
+    date: string;
+    price: number;
+    store?: string;
+    priceChange?: number;
+    percentChange?: number;
+  }>;
+  averagePrice: number;
+  lowestPrice: number;
+  highestPrice: number;
+}
+```
+
+**Get Store Locations**
+```typescript
+walmartGrocery.getStoreLocations.query({
+  city?: string,
+  state?: string,
+  capabilities?: Array<'pickup' | 'delivery' | 'curbside'>
+})
+
+// Response
+{
+  stores: Array<{
+    id: string;
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    capabilities: {
+      pickup: boolean;
+      delivery: boolean;
+      curbside: boolean;
+    };
+    totalOrders: number;
+  }>;
+  totalStores: number;
+}
+```
+
+**Get Product Categories**
+```typescript
+walmartGrocery.getProductCategories.query()
+
+// Response
+{
+  categories: Array<{
+    path: string;  // e.g., "Food/Produce"
+    productCount: number;
+    percentage: number;
+    topProducts: Array<{
+      id: string;
+      name: string;
+      orderCount: number;
+    }>;
+  }>;
+  totalCategories: number;
+}
+```
+
+**Get Top Products**
+```typescript
+walmartGrocery.getTopProducts.query({
+  limit?: number,
+  metric: 'orders' | 'revenue' | 'frequency',
+  category?: string
+})
+
+// Response
+{
+  products: Array<{
+    id: string;
+    name: string;
+    brand: string;
+    category: string;
+    orderCount: number;
+    totalRevenue: number;
+    averagePrice: number;
+    priceRange: {
+      min: number;
+      max: number;
+    };
+  }>;
+}
+```
+
+### Analytics Endpoints
+
+**Get Customer Analytics** (Anonymized)
+```typescript
+walmartGrocery.getCustomerAnalytics.query()
+
+// Response
+{
+  totalCustomers: number;
+  averageOrderValue: number;
+  averageOrdersPerCustomer: number;
+  topCategories: string[];
+  orderDistribution: {
+    pickup: number;
+    delivery: number;
+    curbside: number;
+  };
+}
+```
+
+**Get Price Trends**
+```typescript
+walmartGrocery.getPriceTrends.query({
+  category?: string,
+  dateRange: {
+    start: string;
+    end: string;
+  }
+})
+
+// Response
+{
+  trends: Array<{
+    date: string;
+    averagePrice: number;
+    priceIndex: number;  // 100 = baseline
+    productCount: number;
+  }>;
+  summary: {
+    overallChange: number;
+    percentChange: number;
+    inflationRate: number;
+  };
+}
+```
+
+## Database Statistics
+
+As of August 9, 2025:
+- **Total Orders:** 25
+- **Unique Products:** 161
+- **Order Line Items:** 229
+- **Store Locations:** 6
+- **Date Range:** March 19 - August 5, 2025
+- **Average Order Value:** $53.22
+
+---
+
+*API Documentation Updated: August 9, 2025*
+EOF < /dev/null

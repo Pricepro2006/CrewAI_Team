@@ -38,6 +38,23 @@ export const WalmartGroceryAgent: React.FC = () => {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [priceAlerts, setPriceAlerts] = useState<Map<string, number>>(new Map());
 
+  // Fetch real dashboard stats instead of hardcoded values
+  const { data: statsData } = api.walmartGrocery.getStats.useQuery(undefined, {
+    refetchInterval: 60000, // Refresh every minute
+  });
+
+  // Fetch trending products for price history
+  const { data: trendingData } = api.walmartGrocery.getTrending.useQuery(
+    { limit: 6, days: 30 },
+    { enabled: activeTab === 'price-history' }
+  );
+
+  // Fetch budget data
+  const { data: budgetData } = api.walmartGrocery.getBudget.useQuery(
+    { userId: 'default_user' },
+    { enabled: activeTab === 'budget-tracker' }
+  );
+
   // Use tRPC mutation for searching products
   const searchProductsMutation = api.walmartGrocery.searchProducts.useMutation({
     onError: (error) => {
@@ -138,21 +155,27 @@ export const WalmartGroceryAgent: React.FC = () => {
           <div className="stat-card">
             <Package className="stat-icon" />
             <div className="stat-content">
-              <span className="stat-value">2,847</span>
+              <span className="stat-value">
+                {statsData?.stats?.productsTracked?.toLocaleString() || '0'}
+              </span>
               <span className="stat-label">Products Tracked</span>
             </div>
           </div>
           <div className="stat-card">
             <TrendingUp className="stat-icon" />
             <div className="stat-content">
-              <span className="stat-value">$142.50</span>
+              <span className="stat-value">
+                ${statsData?.stats?.savedThisMonth?.toFixed(2) || '0.00'}
+              </span>
               <span className="stat-label">Saved This Month</span>
             </div>
           </div>
           <div className="stat-card">
             <AlertCircle className="stat-icon" />
             <div className="stat-content">
-              <span className="stat-value">12</span>
+              <span className="stat-value">
+                {statsData?.stats?.activeAlerts || '0'}
+              </span>
               <span className="stat-label">Active Price Alerts</span>
             </div>
           </div>
@@ -359,55 +382,52 @@ export const WalmartGroceryAgent: React.FC = () => {
             <div className="budget-overview">
               <div className="budget-card primary">
                 <h3>Monthly Budget</h3>
-                <div className="budget-amount">$400.00</div>
+                <div className="budget-amount">
+                  ${budgetData?.budget?.monthlyBudget?.toFixed(2) || '400.00'}
+                </div>
                 <div className="budget-progress">
                   <div className="progress-bar">
-                    <div className="progress-fill" style={{width: '65%'}}></div>
+                    <div className="progress-fill" style={{
+                      width: `${budgetData?.budget?.percentUsed || 0}%`
+                    }}></div>
                   </div>
-                  <span>$260.00 spent • $140.00 remaining</span>
+                  <span>
+                    ${budgetData?.budget?.totalSpent?.toFixed(2) || '0.00'} spent • 
+                    ${budgetData?.budget?.remaining?.toFixed(2) || '400.00'} remaining
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="budget-categories">
-              <div className="category-card">
-                <div className="category-header">
-                  <h4>Produce</h4>
-                  <span className="category-amount">$85.50</span>
-                </div>
-                <div className="category-progress">
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{width: '75%'}}></div>
+              {budgetData?.budget?.categories && Object.entries(budgetData.budget.categories).map(([category, data]: [string, any]) => {
+                const percentUsed = data.budget > 0 ? (data.spent / data.budget * 100) : 0;
+                const isWarning = percentUsed >= 90;
+                
+                return (
+                  <div key={category} className="category-card">
+                    <div className="category-header">
+                      <h4>{category}</h4>
+                      <span className="category-amount">${data.spent.toFixed(2)}</span>
+                    </div>
+                    <div className="category-progress">
+                      <div className={`progress-bar ${isWarning ? 'warning' : ''}`}>
+                        <div className="progress-fill" style={{width: `${percentUsed}%`}}></div>
+                      </div>
+                      <span>
+                        {percentUsed.toFixed(0)}% of ${data.budget} budget
+                        {isWarning && ' • Near limit!'}
+                      </span>
+                    </div>
                   </div>
-                  <span>75% of $114 budget</span>
+                );
+              })}
+              
+              {(!budgetData?.budget?.categories || Object.keys(budgetData.budget.categories).length === 0) && (
+                <div className="no-data-message">
+                  <p>No spending data available yet. Start shopping to track your budget!</p>
                 </div>
-              </div>
-
-              <div className="category-card">
-                <div className="category-header">
-                  <h4>Dairy & Eggs</h4>
-                  <span className="category-amount">$42.30</span>
-                </div>
-                <div className="category-progress">
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{width: '60%'}}></div>
-                  </div>
-                  <span>60% of $70 budget</span>
-                </div>
-              </div>
-
-              <div className="category-card">
-                <div className="category-header">
-                  <h4>Meat & Seafood</h4>
-                  <span className="category-amount">$132.20</span>
-                </div>
-                <div className="category-progress">
-                  <div className="progress-bar warning">
-                    <div className="progress-fill" style={{width: '95%'}}></div>
-                  </div>
-                  <span>95% of $140 budget • Near limit!</span>
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="budget-insights">
@@ -461,77 +481,45 @@ export const WalmartGroceryAgent: React.FC = () => {
             <div className="trending-items">
               <h3>Trending Price Changes</h3>
               <div className="trend-list">
-                <div className="trend-item">
-                  <div className="trend-info">
-                    <img src="/api/placeholder/60/60" alt="Organic Bananas" className="trend-thumbnail" />
-                    <div>
-                      <h4>Organic Bananas</h4>
-                      <p>Produce • Per lb</p>
-                    </div>
-                  </div>
-                  <div className="trend-data">
-                    <div className="price-change positive">
-                      <span className="current-price">$0.59</span>
-                      <span className="change">↓ $0.20</span>
-                    </div>
-                    <div className="trend-indicator">
-                      <div className="mini-chart positive">
-                        <div className="chart-bar" style={{height: '60%'}}></div>
-                        <div className="chart-bar" style={{height: '45%'}}></div>
-                        <div className="chart-bar" style={{height: '30%'}}></div>
-                        <div className="chart-bar" style={{height: '25%'}}></div>
+                {trendingData?.trending && trendingData.trending.length > 0 ? (
+                  trendingData.trending.map((product) => (
+                    <div key={product.id} className="trend-item">
+                      <div className="trend-info">
+                        <img 
+                          src={product.imageUrl || "/api/placeholder/60/60"} 
+                          alt={product.name} 
+                          className="trend-thumbnail" 
+                        />
+                        <div>
+                          <h4>{product.name}</h4>
+                          <p>{product.category} • {product.inStock ? 'In Stock' : 'Out of Stock'}</p>
+                        </div>
+                      </div>
+                      <div className="trend-data">
+                        <div className={`price-change ${product.trend === 'down' ? 'positive' : product.trend === 'up' ? 'negative' : 'neutral'}`}>
+                          <span className="current-price">${product.currentPrice.toFixed(2)}</span>
+                          <span className="change">
+                            {product.trend === 'down' ? '↓' : product.trend === 'up' ? '↑' : '→'} 
+                            {' '}
+                            {Math.abs(product.priceChange).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="trend-indicator">
+                          <div className={`mini-chart ${product.trend === 'down' ? 'positive' : product.trend === 'up' ? 'negative' : 'neutral'}`}>
+                            <div className="chart-bar" style={{height: '60%'}}></div>
+                            <div className="chart-bar" style={{height: '45%'}}></div>
+                            <div className="chart-bar" style={{height: '30%'}}></div>
+                            <div className="chart-bar" style={{height: '25%'}}></div>
+                          </div>
+                        </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="no-data-message">
+                    <p>Loading trending products...</p>
                   </div>
-                </div>
-
-                <div className="trend-item">
-                  <div className="trend-info">
-                    <img src="/api/placeholder/60/60" alt="Chicken Breast" className="trend-thumbnail" />
-                    <div>
-                      <h4>Chicken Breast</h4>
-                      <p>Meat & Seafood • Per lb</p>
-                    </div>
-                  </div>
-                  <div className="trend-data">
-                    <div className="price-change negative">
-                      <span className="current-price">$2.98</span>
-                      <span className="change">↑ $0.50</span>
-                    </div>
-                    <div className="trend-indicator">
-                      <div className="mini-chart negative">
-                        <div className="chart-bar" style={{height: '25%'}}></div>
-                        <div className="chart-bar" style={{height: '40%'}}></div>
-                        <div className="chart-bar" style={{height: '55%'}}></div>
-                        <div className="chart-bar" style={{height: '70%'}}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="trend-item">
-                  <div className="trend-info">
-                    <img src="/api/placeholder/60/60" alt="Whole Milk" className="trend-thumbnail" />
-                    <div>
-                      <h4>Whole Milk</h4>
-                      <p>Dairy • Per gallon</p>
-                    </div>
-                  </div>
-                  <div className="trend-data">
-                    <div className="price-change neutral">
-                      <span className="current-price">$3.49</span>
-                      <span className="change">→ $0.00</span>
-                    </div>
-                    <div className="trend-indicator">
-                      <div className="mini-chart neutral">
-                        <div className="chart-bar" style={{height: '45%'}}></div>
-                        <div className="chart-bar" style={{height: '50%'}}></div>
-                        <div className="chart-bar" style={{height: '48%'}}></div>
-                        <div className="chart-bar" style={{height: '47%'}}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 

@@ -9,7 +9,7 @@ import type {
   WalmartProductRepository,
   ProductEntity,
 } from "../../database/repositories/WalmartProductRepository.js";
-import { getDatabaseManager } from "../../database/DatabaseManager.js";
+import { getWalmartDatabaseManager } from "../../database/WalmartDatabaseManager.js";
 import type { WalmartProduct } from "../../types/walmart-grocery.js";
 import { MasterOrchestrator } from "../../core/orchestration/MasterOrchestrator.js";
 
@@ -45,7 +45,7 @@ export class ProductLookupService {
 
   private constructor() {
     this.chromadb = new ChromaDBManager();
-    this.productRepo = getDatabaseManager().walmartProducts;
+    this.productRepo = getWalmartDatabaseManager().walmartProducts;
     this.orchestrator = MasterOrchestrator.getInstance();
     this.embeddingCache = new Map();
   }

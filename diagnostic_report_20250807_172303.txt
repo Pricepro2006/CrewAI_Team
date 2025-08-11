@@ -1,0 +1,18 @@
+🔍 Walmart Grocery Agent - Comprehensive Diagnostic Tool
+=================================================
+Timestamp: Thu Aug  7 17:23:03 EDT 2025
+Project Root: /home/pricepro2006/CrewAI_Team
+
+[1m[0;36m=== System Information ===[0m
+[0;34mℹ️  Hostname: NPAMD[0m
+[0;34mℹ️  OS: Linux 5.15.167.4-microsoft-standard-WSL2[0m
+[0;34mℹ️  Uptime: up 19 hours, 12 minutes[0m
+[1m[0;36m=== Node.js Environment ===[0m
+[0;32m✅ Node.js version: v22.15.0[0m
+[0;32m✅ npm version: 11.3.0[0m
+[0;32m✅ node_modules: 806 packages installed[0m
+[1m[0;36m=== Service Status ===[0m
+[0;32m✅ Port 3001 (API Server): Running [PID: 644895, Process: node][0m
+[0;31m❌ Port 8080 (WebSocket Server): Not running[0m
+[0;31m❌ Port 3005 (Grocery Service): Not running[0m
+[0;31m❌ Port 3006 (Cache Warmer): Not running[0m

@@ -1773,5 +1773,210 @@ export const walmartGroceryRouter = createFeatureRouter(
           throw error;
         }
       }),
+
+    // Get dashboard statistics - REAL DATA instead of hardcoded
+    getStats: publicProcedure
+      .use(walmartDatabaseMiddleware)
+      .query(withDatabaseContext(async (ctx: DatabaseContext) => {
+        logger.info("Fetching dashboard statistics", "WALMART");
+        
+        try {
+          // Get real product count from database
+          const productCount = await ctx.safeDb.query(
+            'walmart_products',
+            ['COUNT(*) as count'],
+            undefined,
+            []
+          );
+          
+          // Get user's saved amount this month from orders
+          const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+          const savedResult = await ctx.safeDb.query(
+            'grocery_orders',
+            ['COALESCE(SUM(total_savings), 0) as totalSaved'],
+            "strftime('%Y-%m', created_at) = ?",
+            [currentMonth]
+          );
+          
+          // Get active price alerts count
+          const alertsResult = await ctx.safeDb.query(
+            'price_alerts',
+            ['COUNT(*) as count'],
+            'is_active = 1',
+            []
+          );
+          
+          const productsTracked = safeColumnAccess(productCount.data[0], 'count', 0);
+          const savedThisMonth = safeColumnAccess(savedResult.data[0], 'totalSaved', 0);
+          const activeAlerts = safeColumnAccess(alertsResult.data[0], 'count', 0);
+          
+          return {
+            success: true,
+            stats: {
+              productsTracked: Number(productsTracked),
+              savedThisMonth: Number(savedThisMonth),
+              activeAlerts: Number(activeAlerts),
+              lastUpdated: new Date().toISOString()
+            }
+          };
+        } catch (error) {
+          logger.error("Failed to fetch stats", "WALMART", { error });
+          // Return default values on error to prevent UI crashes
+          return {
+            success: false,
+            stats: {
+              productsTracked: 0,
+              savedThisMonth: 0,
+              activeAlerts: 0,
+              lastUpdated: new Date().toISOString()
+            }
+          };
+        }
+      })),
+
+    // Get trending products for Price History tab - REAL DATA
+    getTrending: publicProcedure
+      .use(walmartDatabaseMiddleware)
+      .input(z.object({
+        limit: z.number().min(1).max(20).default(6),
+        days: z.number().min(1).max(90).default(30)
+      }))
+      .query(withDatabaseContext(async (ctx: DatabaseContext, input) => {
+        logger.info("Fetching trending products", "WALMART", input);
+        
+        try {
+          // Get products with recent price changes
+          const trendingProducts = await ctx.safeDb.query(
+            'walmart_products',
+            ['id', 'name', 'category', 'current_price', 'original_price', 'image_url', 'stock_status'],
+            'current_price IS NOT NULL',
+            [],
+            `ORDER BY (CASE 
+              WHEN original_price > 0 THEN (original_price - current_price) / original_price 
+              ELSE 0 
+            END) DESC LIMIT ${input.limit}`
+          );
+          
+          const trending = trendingProducts.data.map(product => {
+            const currentPrice = safeColumnAccess(product, 'current_price', 0);
+            const originalPrice = safeColumnAccess(product, 'original_price', currentPrice);
+            const priceChange = originalPrice > 0 ? ((currentPrice - originalPrice) / originalPrice * 100) : 0;
+            
+            return {
+              id: safeColumnAccess(product, 'id', ''),
+              name: safeColumnAccess(product, 'name', 'Unknown Product'),
+              category: safeColumnAccess(product, 'category', 'Uncategorized'),
+              currentPrice: Number(currentPrice),
+              originalPrice: Number(originalPrice),
+              priceChange: Number(priceChange.toFixed(2)),
+              trend: priceChange < 0 ? 'down' : priceChange > 0 ? 'up' : 'stable',
+              imageUrl: safeColumnAccess(product, 'image_url', '/api/placeholder/80/80'),
+              inStock: safeColumnAccess(product, 'stock_status', 'unknown') === 'in_stock'
+            };
+          });
+          
+          return {
+            success: true,
+            trending,
+            period: `Last ${input.days} days`
+          };
+        } catch (error) {
+          logger.error("Failed to fetch trending products", "WALMART", { error });
+          return {
+            success: false,
+            trending: [],
+            period: `Last ${input.days} days`
+          };
+        }
+      })),
+
+    // Get budget data - REAL spending data
+    getBudget: publicProcedure
+      .use(walmartDatabaseMiddleware)
+      .input(z.object({
+        userId: z.string().default('default_user'),
+        month: z.string().optional() // YYYY-MM format
+      }))
+      .query(withDatabaseContext(async (ctx: DatabaseContext, input) => {
+        logger.info("Fetching budget data", "WALMART", input);
+        
+        const currentMonth = input.month || new Date().toISOString().slice(0, 7);
+        
+        try {
+          // Get user's budget settings
+          const budgetSettings = await ctx.safeDb.query(
+            'grocery_user_preferences',
+            ['monthly_budget', 'budget_categories'],
+            'user_id = ?',
+            [input.userId]
+          );
+          
+          const monthlyBudget = budgetSettings.data.length > 0 
+            ? safeColumnAccess(budgetSettings.data[0], 'monthly_budget', 400)
+            : 400; // Default budget
+          
+          // Get actual spending for this month by category
+          const spendingQuery = `
+            SELECT 
+              wp.category,
+              SUM(oi.quantity * oi.price) as spent
+            FROM grocery_order_items oi
+            JOIN walmart_products wp ON oi.product_id = wp.id
+            JOIN grocery_orders o ON oi.order_id = o.id
+            WHERE o.user_id = ? 
+              AND strftime('%Y-%m', o.created_at) = ?
+            GROUP BY wp.category
+          `;
+          
+          const categorySpending = await ctx.db.prepare(spendingQuery).all(input.userId, currentMonth) as any[];
+          
+          // Calculate totals
+          let totalSpent = 0;
+          const categories: Record<string, number> = {};
+          
+          for (const cat of categorySpending) {
+            const amount = Number(cat.spent || 0);
+            categories[cat.category] = amount;
+            totalSpent += amount;
+          }
+          
+          // Set default category budgets if not spent
+          const categoryBudgets = {
+            'Produce': { spent: categories['Produce'] || 0, budget: 114 },
+            'Dairy & Eggs': { spent: categories['Dairy'] || 0, budget: 70 },
+            'Meat & Seafood': { spent: categories['Meat'] || 0, budget: 140 },
+            'Bakery': { spent: categories['Bakery'] || 0, budget: 40 },
+            'Beverages': { spent: categories['Beverages'] || 0, budget: 36 }
+          };
+          
+          return {
+            success: true,
+            budget: {
+              monthlyBudget: Number(monthlyBudget),
+              totalSpent: Number(totalSpent.toFixed(2)),
+              remaining: Number((monthlyBudget - totalSpent).toFixed(2)),
+              percentUsed: Number(((totalSpent / monthlyBudget) * 100).toFixed(1)),
+              categories: categoryBudgets,
+              month: currentMonth,
+              daysRemaining: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate()
+            }
+          };
+        } catch (error) {
+          logger.error("Failed to fetch budget data", "WALMART", { error });
+          // Return default budget data on error
+          return {
+            success: false,
+            budget: {
+              monthlyBudget: 400,
+              totalSpent: 0,
+              remaining: 400,
+              percentUsed: 0,
+              categories: {},
+              month: currentMonth,
+              daysRemaining: 30
+            }
+          };
+        }
+      })),
   }),
 );

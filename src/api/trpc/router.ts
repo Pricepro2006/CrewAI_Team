@@ -32,7 +32,7 @@ import { metricsRouter } from "../routes/metrics.router.trpc.ts";
 import { emailAssignmentRouter } from "./routers/emailAssignment.router.ts";
 import { iemsEmailRouter } from "../routes/iems-email.router.ts";
 import { dealsRouter } from "../routes/deals.router.ts";
-import { walmartGroceryRouter } from "../routes/walmart-grocery.router.ts";
+import { walmartGrocerySimpleRouter as walmartGroceryRouter } from "../routes/walmart-grocery-simple.router.ts";
 import { walmartPriceRouter } from "../routes/walmart-price.router.ts";
 import { workflowRouter } from "../routes/workflow.router.ts";
 import { securityRouter } from "./routers/security.router.ts";

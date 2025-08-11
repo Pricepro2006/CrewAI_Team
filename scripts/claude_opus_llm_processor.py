@@ -532,7 +532,7 @@ This email appears to be part of an incomplete conversation. Please reconstruct 
 
         # Call REAL Phi-4
         start_time = datetime.now()
-        llm_response = self.call_ollama("doomgrave/phi-4:14b-tools-Q3_K_S", phi4_prompt, phi4_system)
+        llm_response = self.call_ollama("llama3.2:3b", phi4_prompt, phi4_system)
         end_time = datetime.now()
         
         processing_time = (end_time - start_time).total_seconds()
@@ -549,7 +549,7 @@ This email appears to be part of an incomplete conversation. Please reconstruct 
                     'phase': 3,
                     'method': 'phi_4_claude_opus',
                     'confidence': parsed_data.get('confidence', 0.9),
-                    'llm_used': 'doomgrave/phi-4:14b-tools-Q3_K_S',
+                    'llm_used': 'llama3.2:3b',
                     'processing_time': processing_time,
                     'complex_analysis': {
                         'missing_context': parsed_data.get('missing_context', []),
@@ -566,7 +566,7 @@ This email appears to be part of an incomplete conversation. Please reconstruct 
                     'phase': 3,
                     'method': 'phi_4_fallback',
                     'confidence': 0.6,
-                    'llm_used': 'doomgrave/phi-4:14b-tools-Q3_K_S',
+                    'llm_used': 'llama3.2:3b',
                     'processing_time': processing_time
                 }
         else:
