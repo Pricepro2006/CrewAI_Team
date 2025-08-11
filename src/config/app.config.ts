@@ -63,7 +63,10 @@ function createAppConfig(): AppConfig {
           'http://localhost:3000', 
           'http://localhost:5173',
           'http://localhost:5174',
-          'http://localhost:5175'
+          'http://localhost:5175',
+          'http://localhost:5178',
+          'http://localhost:5179',
+          'http://localhost:5180'
         ],
         credentials: true,
         optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
@@ -103,7 +106,10 @@ const appConfig: AppConfig = {
         'http://localhost:3000', 
         'http://localhost:5173',
         'http://localhost:5174',
-        'http://localhost:5175'
+        'http://localhost:5175',
+        'http://localhost:5178',
+        'http://localhost:5179',
+        'http://localhost:5180'
       ],
       credentials: true,
       optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204

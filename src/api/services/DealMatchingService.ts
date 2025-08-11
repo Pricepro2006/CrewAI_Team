@@ -6,7 +6,7 @@
 import { logger } from "../../utils/logger.js";
 import { DealDataService } from "./DealDataService.js";
 import type { WalmartProductRepository } from "../../database/repositories/WalmartProductRepository.js";
-import { getDatabaseManager } from "../../database/DatabaseManager.js";
+import { getWalmartDatabaseManager } from "../../database/WalmartDatabaseManager.js";
 import type { WalmartProduct } from "../../types/walmart-grocery.js";
 import type { Deal, DealItem } from "../types/deal.types.js";
 
@@ -43,7 +43,7 @@ export class DealMatchingService {
 
   private constructor() {
     this.dealService = DealDataService.getInstance();
-    this.productRepo = getDatabaseManager().walmartProducts;
+    this.productRepo = getWalmartDatabaseManager().walmartProducts;
     this.matchCache = new Map();
   }
 

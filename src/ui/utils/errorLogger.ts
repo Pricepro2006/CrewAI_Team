@@ -1,4 +1,4 @@
-import { ErrorInfo } from "../contexts/ErrorContext";
+import type { ErrorInfo } from "../contexts/ErrorContext";
 
 interface ErrorLogEntry {
   timestamp: string;

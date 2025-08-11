@@ -21,8 +21,8 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   
   // Global setup and teardown
-  globalSetup: require.resolve('./tests/browser-compatibility/global-setup.ts'),
-  globalTeardown: require.resolve('./tests/browser-compatibility/global-teardown.ts'),
+  globalSetup: './tests/browser-compatibility/global-setup.ts',
+  globalTeardown: './tests/browser-compatibility/global-teardown.ts',
   
   // Reporter configuration
   reporter: [

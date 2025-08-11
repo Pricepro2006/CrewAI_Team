@@ -1,0 +1,241 @@
+{
+  "quotes": [
+    {
+      "pattern": "FTQ\\d{7,8}",
+      "prefix": "FTQ",
+      "confidence": 0.93,
+      "examples": [
+        "FTQ-3661265",
+        "FTQ-3630472",
+        "FTQ-3619694",
+        "FTQ-3826143",
+        "FTQ-3716195"
+      ]
+    },
+    {
+      "pattern": "WQ\\d{6,10}",
+      "prefix": "WQ",
+      "confidence": 0.85,
+      "examples": [
+        "WQ148073238",
+        "WQ146036391",
+        "WQ149149683",
+        "WQ149728886",
+        "WQ149133181"
+      ]
+    },
+    {
+      "pattern": "CPQ\\d{7,8}",
+      "prefix": "CPQ",
+      "confidence": 0.77,
+      "examples": [
+        "CPQ-2360749",
+        "CPQ-3030284",
+        "CPQ-2889440",
+        "CPQ-2778110",
+        "CPQ-2705656"
+      ]
+    },
+    {
+      "pattern": "OPP\\d{8,9}",
+      "prefix": "OPP",
+      "confidence": 0.74,
+      "examples": [
+        "OPP-1591375",
+        "OPP 4292529",
+        "OPP 4317543",
+        "OPP-1574269",
+        "OPP-1479753"
+      ]
+    },
+    {
+      "pattern": "BD\\d{8,9}",
+      "prefix": "BD",
+      "confidence": 0.53,
+      "examples": [
+        "BD 4260862",
+        "BD#46467496",
+        "BD 46577322",
+        "BD 45504390",
+        "BD 46670178"
+      ]
+    },
+    {
+      "pattern": "Q\\d{7,12}",
+      "prefix": "Q",
+      "confidence": 0.38,
+      "examples": [
+        "Q00233609",
+        "Q-530486",
+        "Q-533757",
+        "Q-972225",
+        "Q-01022410464"
+      ]
+    },
+    {
+      "pattern": "TS\\d{8,8}",
+      "prefix": "TS",
+      "confidence": 0.31,
+      "examples": [
+        "TS-1818562",
+        "TS-1784667",
+        "TS-1778236",
+        "TS-1827954",
+        "TS-1808663"
+      ]
+    },
+    {
+      "pattern": "NUMERIC_QUOTE\\d{-5,-3}",
+      "prefix": "NUMERIC_QUOTE",
+      "confidence": 0.0,
+      "examples": [
+        "149778178",
+        "0228135704",
+        "45623292",
+        "146846124",
+        "148835571"
+      ]
+    }
+  ],
+  "orders": [
+    {
+      "pattern": "PO\\d{7,11}",
+      "prefix": "PO",
+      "confidence": 1.0,
+      "examples": [
+        "PO 505671969",
+        "PO 505652239",
+        "PO 505725220",
+        "PO 505244314",
+        "PO 68785760"
+      ]
+    },
+    {
+      "pattern": "VPO\\d{9,9}",
+      "prefix": "VPO",
+      "confidence": 1.0,
+      "examples": [
+        "VPO 35255668",
+        "VPO#35829467",
+        "VPO 35626980",
+        "VPO#35468718",
+        "VPO 36502191"
+      ]
+    },
+    {
+      "pattern": "P\\d{7,11}",
+      "prefix": "P",
+      "confidence": 0.87,
+      "examples": [
+        "P000079560",
+        "P000079486",
+        "P60000466852",
+        "P5207080",
+        "P60000507578"
+      ]
+    },
+    {
+      "pattern": "RQ\\d{8,9}",
+      "prefix": "RQ",
+      "confidence": 0.85,
+      "examples": [
+        "RQ-0148542",
+        "RQ 56477951",
+        "RQ 56486803",
+        "RQ 56474720",
+        "RQ 56481480"
+      ]
+    },
+    {
+      "pattern": "SO\\d{8,11}",
+      "prefix": "SO",
+      "confidence": 0.8,
+      "examples": [
+        "SO 157370165",
+        "SO 0337258532",
+        "SO 162086784",
+        "SO 337688993",
+        "SO#160581697"
+      ]
+    },
+    {
+      "pattern": "ID\\d{7,10}",
+      "prefix": "ID",
+      "confidence": 0.56,
+      "examples": [
+        "ID 79276239",
+        "ID 364622",
+        "ID 149948316",
+        "ID 148079745",
+        "ID 53230024"
+      ]
+    },
+    {
+      "pattern": "BO\\d{9,10}",
+      "prefix": "BO",
+      "confidence": 0.35,
+      "examples": [
+        "BO 159351641",
+        "BO#159451044",
+        "BO 153243708",
+        "BO#159421960",
+        "BO#162616086"
+      ]
+    },
+    {
+      "pattern": "PA\\d{6,6}",
+      "prefix": "PA",
+      "confidence": 0.33,
+      "examples": [
+        "PA254590",
+        "PA251468",
+        "PA253150",
+        "PA252825",
+        "PA251426"
+      ]
+    }
+  ],
+  "tickets": [
+    {
+      "pattern": "CAS\\d{7,7}",
+      "prefix": "CAS",
+      "confidence": 0.31,
+      "examples": [
+        "CAS-107073",
+        "CAS-082190",
+        "CAS-090889",
+        "CAS-075603",
+        "CAS-113340"
+      ]
+    }
+  ],
+  "spas": [
+    {
+      "pattern": "SPA\\d{7,8}",
+      "prefix": "SPA",
+      "confidence": 1.0,
+      "examples": [
+        "SPA#6605041",
+        "SPA#6661819",
+        "SPA#6736151",
+        "SPA#6427734",
+        "SPA 6423990"
+      ]
+    }
+  ],
+  "bids": [],
+  "deals": [
+    {
+      "pattern": "DR\\d{6,10}",
+      "prefix": "DR",
+      "confidence": 0.24,
+      "examples": [
+        "DR9140302",
+        "DR9139454",
+        "DR-051513",
+        "DR0295235",
+        "DR1334508"
+      ]
+    }
+  ]
+}

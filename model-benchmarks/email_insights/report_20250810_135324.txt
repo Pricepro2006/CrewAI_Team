@@ -1,0 +1,103 @@
+EMAIL PATTERN ANALYSIS REPORT
+======================================================================
+
+Generated: 2025-08-10T13:53:24.610645
+
+EMAIL CLASSIFICATION:
+----------------------------------------
+  personal_communication: 24380 emails
+  system_generated: 30205 emails
+  general: 45354 emails
+  order_processing: 1136 emails
+  scheduling: 19428 emails
+  agreement: 20213 emails
+
+WORKFLOW DETECTION:
+----------------------------------------
+  spa_order: 1093 instances
+  order_processing: 5315 instances
+  support_ticket: 2013 instances
+  quote_request: 9841 instances
+  quote_to_order: 24 instances
+
+TOP 10 PATTERNS:
+----------------------------------------
+  font-family (@-@): 223465 times
+  font-face (@-@): 161038 times
+  0in (#A): 92937 times
+  0pt (#A): 80999 times
+  font-size (@-@): 73673 times
+  sans-serif (@-@): 64299 times
+  WordSection1 (@#): 43398 times
+  synnex.com (@.@): 42798 times
+  tdsynnex.co (@.@): 42679 times
+  tdsynnex.com (A@.A@): 42325 times
+
+ACTIONABLE INSIGHTS:
+----------------------------------------
+
+AUTOMATION_OPPORTUNITY:
+  Pattern 'font-family' appears 223465 times - consider automating processing
+
+AUTOMATION_OPPORTUNITY:
+  Pattern 'font-face' appears 161038 times - consider automating processing
+
+AUTOMATION_OPPORTUNITY:
+  Pattern '0in' appears 92937 times - consider automating processing
+
+AUTOMATION_OPPORTUNITY:
+  Pattern '0pt' appears 80999 times - consider automating processing
+
+AUTOMATION_OPPORTUNITY:
+  Pattern 'font-size' appears 73673 times - consider automating processing
+
+AUTOMATION_OPPORTUNITY:
+  Pattern 'sans-serif' appears 64299 times - consider automating processing
+
+AUTOMATION_OPPORTUNITY:
+  Pattern 'WordSection1' appears 43398 times - consider automating processing
+
+AUTOMATION_OPPORTUNITY:
+  Pattern 'synnex.com' appears 42798 times - consider automating processing
+
+AUTOMATION_OPPORTUNITY:
+  Pattern 'tdsynnex.co' appears 42679 times - consider automating processing
+
+AUTOMATION_OPPORTUNITY:
+  Pattern 'tdsynnex.com' appears 42325 times - consider automating processing
+
+WORKFLOW_AUTOMATION:
+  Workflow 'spa_order' detected 1093 times - automate this flow
+
+WORKFLOW_AUTOMATION:
+  Workflow 'order_processing' detected 5315 times - automate this flow
+
+WORKFLOW_AUTOMATION:
+  Workflow 'support_ticket' detected 2013 times - automate this flow
+
+WORKFLOW_AUTOMATION:
+  Workflow 'quote_request' detected 9841 times - automate this flow
+
+WORKFLOW_AUTOMATION:
+  Workflow 'quote_to_order' detected 24 times - automate this flow
+
+EMAIL_ROUTING:
+  Route 'personal_communication' emails (24380) to specialized team
+
+EMAIL_ROUTING:
+  Route 'system_generated' emails (30205) to specialized team
+
+EMAIL_ROUTING:
+  Route 'general' emails (45354) to specialized team
+
+EMAIL_ROUTING:
+  Route 'order_processing' emails (1136) to specialized team
+
+EMAIL_ROUTING:
+  Route 'scheduling' emails (19428) to specialized team
+
+EMAIL_ROUTING:
+  Route 'agreement' emails (20213) to specialized team
+
+PATTERN_DIVERSITY:
+  High pattern diversity detected - review for new business processes
