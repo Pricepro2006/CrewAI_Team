@@ -208,6 +208,26 @@ jobs:
         with:
           args: --severity-threshold=high
 
+      - name: Run security test suite
+        run: |
+          echo "🔒 Running comprehensive security tests..."
+          pnpm run test:security:ci || SECURITY_FAILED=true
+          
+          if [ "$SECURITY_FAILED" = "true" ]; then
+            echo "⚠️ Security tests failed - see reports for details"
+            exit 1
+          fi
+
+      - name: Upload security test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-test-results
+          path: |
+            tests/security/reports/*.json
+            tests/security/reports/*.xml
+          retention-days: 30
+
   e2e-tests:
     name: End-to-End Tests
     runs-on: ubuntu-latest
