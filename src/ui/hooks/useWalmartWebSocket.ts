@@ -34,8 +34,11 @@ enum ConnectionState {
 }
 
 export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) => {
+  // Import auth hook (you'll need to add the import at the top)
+  // const { user, token } = useAuth();
+  
   const {
-    userId = "user123", // TODO: Get from auth context
+    userId = options.userId, // Use provided userId or null for unauthenticated
     autoConnect = true,
     maxReconnectAttempts = 10,
     initialReconnectDelay = 1000,
@@ -113,13 +116,11 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
       wsRef.current?.readyState === WebSocket.CONNECTING ||
       connectionState === ConnectionState.CONNECTING
     ) {
-      console.log("WebSocket: Already connected or connecting");
       return;
     }
 
     // Check if we've exceeded max reconnection attempts
     if (reconnectCountRef.current >= maxReconnectAttempts) {
-      console.error(`WebSocket: Max reconnection attempts (${maxReconnectAttempts}) exceeded`);
       setConnectionState(ConnectionState.FAILED);
       setError(`Failed to connect after ${maxReconnectAttempts} attempts`);
       return;
@@ -136,9 +137,7 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.hostname;
     const port = process.env.NODE_ENV === "production" ? "" : ":3001";
-    const wsUrl = `${protocol}//${host}${port}/ws/walmart`;
-
-    console.log(`WebSocket: ${reconnectCountRef.current > 0 ? 'Reconnecting' : 'Connecting'} to ${wsUrl} (attempt ${reconnectCountRef.current + 1}/${maxReconnectAttempts})`);
+    const wsUrl = `${protocol}//${host}${port}/ws/walmart/secure`; // Use secure endpoint
 
     try {
       const ws = new WebSocket(wsUrl);
@@ -147,7 +146,6 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
       // Set connection timeout
       const connectionTimeout = setTimeout(() => {
         if (ws.readyState === WebSocket.CONNECTING) {
-          console.error("WebSocket: Connection timeout");
           ws.close();
           handleReconnection();
         }
@@ -155,16 +153,21 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
 
       ws.onopen = () => {
         clearTimeout(connectionTimeout);
-        console.log("WebSocket: Connected successfully");
         setConnectionState(ConnectionState.CONNECTED);
         resetReconnectionState();
         
-        // Send authentication
-        ws.send(JSON.stringify({
-          type: "auth",
-          userId,
-          sessionId: sessionIdRef.current
-        }));
+        // Send authentication with token (get from localStorage or auth context)
+        const token = localStorage.getItem('walmart_auth_token');
+        if (token) {
+          ws.send(JSON.stringify({
+            type: "auth",
+            token: token
+          }));
+        } else {
+          setError('Authentication required');
+          ws.close();
+          return;
+        }
 
         // Subscribe to events
         ws.send(JSON.stringify({
@@ -188,19 +191,17 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
           
           handleMessage(message);
         } catch (err) {
-          console.error("WebSocket: Failed to parse message:", err);
+          setError("Failed to parse message");
         }
       };
 
       ws.onerror = (event) => {
         clearTimeout(connectionTimeout);
-        console.error("WebSocket: Error occurred:", event);
         setError("WebSocket connection error");
       };
 
       ws.onclose = (event) => {
         clearTimeout(connectionTimeout);
-        console.log(`WebSocket: Closed (code: ${event.code}, reason: ${event.reason || 'No reason'})`);
         
         wsRef.current = null;
         cleanupTimers();
@@ -214,7 +215,6 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
         }
       };
     } catch (err) {
-      console.error("WebSocket: Failed to create connection:", err);
       setError("Failed to create WebSocket connection");
       setConnectionState(ConnectionState.DISCONNECTED);
       handleReconnection();
@@ -232,14 +232,12 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
     reconnectCountRef.current++;
     
     if (reconnectCountRef.current >= maxReconnectAttempts) {
-      console.error(`WebSocket: Max reconnection attempts reached`);
       setConnectionState(ConnectionState.FAILED);
       setError(`Failed to reconnect after ${maxReconnectAttempts} attempts`);
       return;
     }
 
     const delay = calculateNextDelay();
-    console.log(`WebSocket: Reconnecting in ${delay}ms (attempt ${reconnectCountRef.current}/${maxReconnectAttempts})`);
     
     reconnectTimeoutRef.current = setTimeout(() => {
       connect();
@@ -259,7 +257,6 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
       if (ws.readyState === WebSocket.OPEN) {
         // Check if we've missed too many pongs
         if (missedPongsRef.current >= 3) {
-          console.error("WebSocket: Heartbeat timeout - closing connection");
           ws.close();
           return;
         }
@@ -275,7 +272,6 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
    * Disconnect from WebSocket server
    */
   const disconnect = useCallback(() => {
-    console.log("WebSocket: Disconnecting");
     isIntentionalDisconnectRef.current = true;
     cleanupTimers();
 
@@ -298,7 +294,7 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
       wsRef.current.send(JSON.stringify(message));
       return true;
     } else {
-      console.warn("WebSocket: Cannot send message - not connected");
+      setError("Cannot send message - not connected");
       return false;
     }
   }, []);
@@ -327,11 +323,11 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
         break;
 
       case "cart_update":
-        console.log("Cart updated:", message.data);
+        // Cart update handled silently
         break;
 
       case "price_update":
-        console.log("Price updated:", message.data);
+        // Price update handled silently
         break;
 
       case "error":
@@ -340,7 +336,7 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
         break;
 
       default:
-        console.log("Unknown message type:", message.type);
+        // Unknown message types ignored
     }
   }, []);
 
@@ -365,7 +361,6 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
    * Manually retry connection
    */
   const retry = useCallback(() => {
-    console.log("WebSocket: Manual retry requested");
     resetReconnectionState();
     disconnect();
     setTimeout(() => {
