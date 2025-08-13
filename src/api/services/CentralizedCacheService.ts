@@ -61,7 +61,7 @@ export enum CacheOperation {
   INVALIDATE = 'invalidate'
 }
 
-interface CacheStats {
+export interface CacheStats {
   hits: Record<CacheTier, number>;
   misses: Record<CacheTier, number>;
   sets: Record<CacheTier, number>;

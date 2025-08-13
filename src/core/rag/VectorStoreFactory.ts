@@ -38,6 +38,7 @@ export class VectorStoreFactory {
       default:
         logger.warn(`Unknown vector store type: ${config.type}. Using resilient ChromaDB with advanced fallback.`, "VECTOR_STORE_FACTORY");
         return new ResilientVectorStore(config);
+    }
   }
 
   static async createMultiple(

@@ -35,7 +35,7 @@ export const ReplayConfigSchema = z.object({
     enableRecovery: z.boolean().default(true),
     maxRetries: z.number().default(3),
     retryDelay: z.number().default(1000),
-    backoffMultiplier: z.number().default(2,
+    backoffMultiplier: z.number().default(2),
     onError: z.enum(['stop', 'skip', 'retry', 'dlq']).default('retry')
   }),
   filters: z.object({

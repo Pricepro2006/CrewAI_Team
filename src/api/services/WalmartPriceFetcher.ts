@@ -10,7 +10,7 @@ import { circuitBreakerService } from "../../core/resilience/CircuitBreakerServi
 import { cacheManager } from "../../core/cache/RedisCacheManager.js";
 import type { WalmartProduct } from "../../types/walmart-grocery.js";
 
-interface PriceResult {
+export interface PriceResult {
   productId: string;
   price: number;
   salePrice?: number;
@@ -21,7 +21,7 @@ interface PriceResult {
   source: 'searxng' | 'scraper' | 'api' | 'cache';
 }
 
-interface StoreLocation {
+export interface StoreLocation {
   storeId?: string;
   zipCode: string;
   city?: string;
