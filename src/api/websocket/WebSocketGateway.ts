@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { EventBus, BaseEvent } from '../../core/events/EventBus.js';
 import { EventMonitor } from '../../core/events/EventMonitor.js';
 import { CircuitBreakerManager } from '../../core/events/CircuitBreaker.js';
+import { logger } from '../../utils/logger.js';
 
 // WebSocket message schemas
 export const WebSocketMessageSchema = z.object({
@@ -209,7 +210,7 @@ export class WebSocketGateway extends EventEmitter {
         });
 
         this.server.on('listening', () => {
-          console.log(`WebSocket Gateway listening on port ${this.config.port}${this.config.path}`);
+          logger.info(`WebSocket Gateway listening on port ${this.config.port}${this.config.path}`, "WEBSOCKET_GATEWAY");
           this.emit('server_started', {
             port: this.config.port,
             path: this.config.path

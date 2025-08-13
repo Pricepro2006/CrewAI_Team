@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import appConfig from "../config/app.config.js";
+import { logger } from "../utils/logger.js";
 
 export interface User {
   id: string;
@@ -46,13 +47,13 @@ export const authenticateToken = (
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      console.warn("Invalid JWT token:", error.message);
+      logger.warn("Invalid JWT token", "AUTH", { error: error.message });
       // Continue without user but log the attempt
     } else if (error instanceof jwt.TokenExpiredError) {
-      console.warn("Expired JWT token");
+      logger.warn("Expired JWT token", "AUTH");
       // Continue without user
     } else {
-      console.error("JWT verification error:", error);
+      logger.error("JWT verification error", "AUTH", {}, error as Error);
     }
 
     // Don't fail the request, just continue without authentication
@@ -169,7 +170,7 @@ export const refreshToken = (token: string): string | null => {
       algorithm: "HS256",
     });
   } catch (error) {
-    console.error("Token refresh error:", error);
+    logger.error("Token refresh error", "AUTH", {}, error as Error);
     return null;
   }
 };

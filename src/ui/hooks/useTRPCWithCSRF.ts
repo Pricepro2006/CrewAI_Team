@@ -20,7 +20,7 @@ interface TRPCClientConfig {
 
 const DEFAULT_CONFIG: TRPCClientConfig = {
   apiUrl: "http://localhost:3001/trpc",
-  wsUrl: "ws://localhost:3002/trpc-ws",
+  wsUrl: "ws://localhost:8080/ws/walmart",
   enableBatching: true,
   credentials: "include",
 };
