@@ -201,7 +201,10 @@ export const chatRouter = createFeatureRouter(
       )
       .subscription(({ input }) => {
         return observable((observer) => {
-          const handler = (data: { conversationId: string; message: unknown }) => {
+          const handler = (data: {
+            conversationId: string;
+            message: unknown;
+          }) => {
             if (data.conversationId === input.conversationId) {
               observer.next(data.message);
             }
@@ -234,7 +237,9 @@ export const chatRouter = createFeatureRouter(
         // Use first few messages to generate title
         const messages = conversation.messages.slice(0, 4);
         const context = messages
-          .map((m: { role: string; content: string }) => `${m.role}: ${m.content}`)
+          .map(
+            (m: { role: string; content: string }) => `${m.role}: ${m.content}`,
+          )
           .join("\n");
 
         const prompt = `
@@ -248,7 +253,7 @@ export const chatRouter = createFeatureRouter(
         const title = await withTimeout(
           ctx.masterOrchestrator["llm"].generate(prompt),
           DEFAULT_TIMEOUTS.LLM_GENERATION,
-          "Title generation timed out"
+          "Title generation timed out",
         );
 
         await ctx.conversationService.updateTitle(

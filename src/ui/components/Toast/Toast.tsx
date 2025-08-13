@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
-import { cn } from '../../../utils/cn.js';
-import './Toast.css';
+import React, { useEffect, useState } from "react";
+import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
+import { cn } from "../../../utils/cn.js";
+import "./Toast.css";
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
+export type ToastType = "success" | "error" | "warning" | "info";
 
 export interface ToastProps {
   id: string;
@@ -26,10 +26,10 @@ const icons = {
 };
 
 const colors = {
-  success: 'toast-success',
-  error: 'toast-error',
-  warning: 'toast-warning',
-  info: 'toast-info',
+  success: "toast-success",
+  error: "toast-error",
+  warning: "toast-warning",
+  info: "toast-info",
 };
 
 export function Toast({
@@ -51,7 +51,7 @@ export function Toast({
       const decrement = (interval / duration) * 100;
 
       const timer = setInterval(() => {
-        setProgress(prev => {
+        setProgress((prev) => {
           const newProgress = prev - decrement;
           if (newProgress <= 0) {
             clearInterval(timer);
@@ -75,11 +75,7 @@ export function Toast({
 
   return (
     <div
-      className={cn(
-        'toast',
-        colors[type],
-        isExiting && 'toast-exit'
-      )}
+      className={cn("toast", colors[type], isExiting && "toast-exit")}
       role="alert"
       aria-live="polite"
     >
@@ -87,7 +83,7 @@ export function Toast({
         <div className="toast-icon">
           <Icon size={20} />
         </div>
-        
+
         <div className="toast-text">
           <h4 className="toast-title">{title}</h4>
           {message && <p className="toast-message">{message}</p>}

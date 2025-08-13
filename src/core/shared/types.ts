@@ -20,14 +20,14 @@ export interface DocumentMetadata {
 }
 
 export interface Message {
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   timestamp?: string;
 }
 
-export type AgentType = 
-  | 'ResearchAgent' 
-  | 'CodeAgent' 
-  | 'DataAnalysisAgent' 
-  | 'WriterAgent' 
-  | 'ToolExecutorAgent';
+export type AgentType =
+  | "ResearchAgent"
+  | "CodeAgent"
+  | "DataAnalysisAgent"
+  | "WriterAgent"
+  | "ToolExecutorAgent";

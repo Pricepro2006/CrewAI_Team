@@ -9,10 +9,10 @@ export interface QueryComponents {
   location: LocationInfo;
   urgency: UrgencyLevel;
   timeConstraints: TimeConstraint[];
-  
+
   // Original query for reference
   originalQuery: string;
-  
+
   // Enhanced components
   expandedTerms: string[];
   businessIndicators: string[];
@@ -34,13 +34,13 @@ export interface LocationInfo {
 }
 
 export enum UrgencyLevel {
-  NORMAL = 'normal',
-  URGENT = 'urgent',
-  EMERGENCY = 'emergency'
+  NORMAL = "normal",
+  URGENT = "urgent",
+  EMERGENCY = "emergency",
 }
 
 export interface TimeConstraint {
-  type: 'availability' | 'schedule' | 'immediate';
+  type: "availability" | "schedule" | "immediate";
   value: string;
   parsed?: {
     days?: string[];
@@ -50,7 +50,7 @@ export interface TimeConstraint {
 }
 
 export interface SearchOperator {
-  type: 'near' | 'open_now' | 'rated' | 'licensed';
+  type: "near" | "open_now" | "rated" | "licensed";
   value?: string;
 }
 
@@ -63,8 +63,8 @@ export interface QueryOptimizationResult {
 }
 
 export interface SecurityFlag {
-  type: 'sql_injection' | 'xss' | 'suspicious_pattern';
-  severity: 'low' | 'medium' | 'high';
+  type: "sql_injection" | "xss" | "suspicious_pattern";
+  severity: "low" | "medium" | "high";
   detail: string;
 }
 
@@ -78,5 +78,5 @@ export interface ServiceMapping {
 export interface LocationMapping {
   correct: string;
   variations: string[];
-  type: 'city' | 'state' | 'region';
+  type: "city" | "state" | "region";
 }

@@ -1,10 +1,14 @@
-import { WebSocket } from 'ws';
-import { logger } from '../../utils/logger.js';
-import { AppError, WebSocketError } from "../../utils/error-handling/index.js";
-import { getUserFriendlyError } from '../../utils/error-handling/error-messages.js';
+import { WebSocket } from "ws";
+import { logger } from "../../utils/logger.js";
+import {
+  AppError,
+  ErrorCode,
+  WebSocketError,
+} from "../../utils/error-handling/server.js";
+import { getUserFriendlyError } from "../../utils/error-handling/error-messages.js";
 
 export interface WebSocketErrorMessage {
-  type: 'error';
+  type: "error";
   error: {
     code: string;
     message: string;
@@ -35,14 +39,14 @@ export interface ErrorHandlingWebSocket extends WebSocket {
 export function handleWebSocketError(
   ws: ErrorHandlingWebSocket,
   error: Error | AppError,
-  context?: any
+  context?: any,
 ): void {
   // Increment error count
   ws.errorCount = (ws.errorCount || 0) + 1;
   ws.lastError = error;
 
   // Log the error
-  logger.error('WebSocket error:', {
+  logger.error("WebSocket error", "WEBSOCKET", {
     clientId: ws.clientId,
     error: error.message,
     stack: error.stack,
@@ -55,9 +59,9 @@ export function handleWebSocketError(
 
   if (error instanceof AppError) {
     const userFriendly = getUserFriendlyError(error.code, error.details);
-    
+
     errorMessage = {
-      type: 'error',
+      type: "error",
       error: {
         code: error.code,
         message: error.message,
@@ -68,16 +72,17 @@ export function handleWebSocketError(
     };
   } else {
     errorMessage = {
-      type: 'error',
+      type: "error",
       error: {
-        code: 'WEBSOCKET_ERROR',
-        message: process.env.NODE_ENV === 'production' 
-          ? 'An error occurred' 
-          : error.message,
+        code: "WEBSOCKET_ERROR",
+        message:
+          process.env.NODE_ENV === "production"
+            ? "An error occurred"
+            : error.message,
         userMessage: {
-          title: 'Connection Error',
-          message: 'An error occurred with the real-time connection.',
-          action: 'The connection will attempt to reconnect automatically.',
+          title: "Connection Error",
+          message: "An error occurred with the real-time connection.",
+          action: "The connection will attempt to reconnect automatically.",
         },
         timestamp: new Date().toISOString(),
         reconnect: true,
@@ -90,17 +95,20 @@ export function handleWebSocketError(
     try {
       ws.send(JSON.stringify(errorMessage));
     } catch (sendError) {
-      logger.error('Failed to send error message:', sendError);
+      logger.error("Failed to send error message", "WEBSOCKET", {
+        error:
+          sendError instanceof Error ? sendError.message : String(sendError),
+      });
     }
   }
 
   // Close connection if too many errors
   if (ws.errorCount >= 10) {
-    logger.error('Too many errors, closing WebSocket connection', {
+    logger.error("Too many errors, closing WebSocket connection", "WEBSOCKET", {
       clientId: ws.clientId,
       errorCount: ws.errorCount,
     });
-    ws.close(1011, 'Too many errors');
+    ws.close(1011, "Too many errors");
   }
 }
 
@@ -116,30 +124,33 @@ export function createWebSocketErrorRecovery() {
 
     // Wrap send method with error handling
     const originalSend = ws.send.bind(ws);
-    ws.send = function(data: any, cb?: (err?: Error) => void) {
+    ws.send = function (
+      data: Parameters<typeof originalSend>[0],
+      ...args: any[]
+    ) {
       try {
-        originalSend(data, (err) => {
-          if (err) {
-            handleWebSocketError(ws, err, { action: 'send' });
-          }
-          if (cb) cb(err);
-        });
+        const cb =
+          typeof args[args.length - 1] === "function"
+            ? args[args.length - 1]
+            : undefined;
+        originalSend(data, ...args);
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
-        handleWebSocketError(ws, err, { action: 'send' });
-        if (cb) cb(err);
+        handleWebSocketError(ws, err, { action: "send" });
+        throw err;
       }
-    };
+    } as typeof ws.send;
 
     // Enhanced error event handling
-    ws.on('error', (error) => {
-      handleWebSocketError(ws, error, { event: 'error' });
+    ws.on("error", (error) => {
+      handleWebSocketError(ws, error, { event: "error" });
     });
 
     // Handle unexpected close
-    ws.on('close', (code, reason) => {
-      if (code !== 1000 && code !== 1001) { // Not normal closure
-        logger.warn('WebSocket closed unexpectedly', {
+    ws.on("close", (code, reason) => {
+      if (code !== 1000 && code !== 1001) {
+        // Not normal closure
+        logger.warn("WebSocket closed unexpectedly", "WEBSOCKET", {
           clientId: ws.clientId,
           code,
           reason: reason?.toString(),
@@ -155,18 +166,18 @@ export function createWebSocketErrorRecovery() {
  */
 export function setupWebSocketHeartbeat(
   ws: ErrorHandlingWebSocket,
-  interval: number = 30000
+  interval: number = 30000,
 ): NodeJS.Timeout {
   ws.isAlive = true;
 
-  ws.on('pong', () => {
+  ws.on("pong", () => {
     ws.isAlive = true;
     ws.errorCount = 0; // Reset error count on successful pong
   });
 
   const heartbeatInterval = setInterval(() => {
     if (!ws.isAlive) {
-      logger.warn('WebSocket heartbeat failed', {
+      logger.warn("WebSocket heartbeat failed", "WEBSOCKET", {
         clientId: ws.clientId,
       });
       ws.terminate();
@@ -174,14 +185,14 @@ export function setupWebSocketHeartbeat(
     }
 
     ws.isAlive = false;
-    ws.ping((err) => {
+    ws.ping((err: Error | undefined) => {
       if (err) {
-        handleWebSocketError(ws, err, { action: 'ping' });
+        handleWebSocketError(ws, err, { action: "ping" });
       }
     });
   }, interval);
 
-  ws.on('close', () => {
+  ws.on("close", () => {
     clearInterval(heartbeatInterval);
   });
 
@@ -194,22 +205,22 @@ export function setupWebSocketHeartbeat(
 export async function validateWebSocketMessage(
   ws: ErrorHandlingWebSocket,
   message: any,
-  validator: (msg: any) => boolean | Promise<boolean>
+  validator: (msg: any) => boolean | Promise<boolean>,
 ): Promise<boolean> {
   try {
     const isValid = await validator(message);
-    
+
     if (!isValid) {
-      throw new WebSocketError('Invalid message format', {
+      throw WebSocketError("Invalid message format", {
         message,
         clientId: ws.clientId,
       });
     }
-    
+
     return true;
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
-    handleWebSocketError(ws, err, { action: 'validate', message });
+    handleWebSocketError(ws, err, { action: "validate", message });
     return false;
   }
 }
@@ -222,33 +233,36 @@ export class WebSocketRateLimiter {
 
   constructor(
     private maxRequests: number = 100,
-    private windowMs: number = 60000
+    private windowMs: number = 60000,
   ) {}
 
   check(ws: ErrorHandlingWebSocket): boolean {
-    const clientId = ws.clientId || 'anonymous';
+    const clientId = ws.clientId || "anonymous";
     const now = Date.now();
     const requests = this.requests.get(clientId) || [];
-    
+
     // Remove old requests
-    const validRequests = requests.filter(time => now - time < this.windowMs);
-    
+    const validRequests = requests.filter((time) => now - time < this.windowMs);
+
     if (validRequests.length >= this.maxRequests) {
       const error = new AppError(
-        'RATE_LIMIT_EXCEEDED',
-        'WebSocket rate limit exceeded',
+        "RATE_LIMIT_EXCEEDED" as ErrorCode,
+        "WebSocket rate limit exceeded",
         429,
         {
           limit: this.maxRequests,
           window: this.windowMs,
-          retryAfter: this.windowMs - (now - validRequests[0]),
-        }
+          retryAfter:
+            validRequests.length > 0 && validRequests[0] !== undefined
+              ? this.windowMs - (now - validRequests[0])
+              : this.windowMs,
+        },
       );
-      
+
       handleWebSocketError(ws, error);
       return false;
     }
-    
+
     validRequests.push(now);
     this.requests.set(clientId, validRequests);
     return true;
@@ -268,12 +282,12 @@ export class WebSocketRateLimiter {
  */
 function shouldReconnect(errorCode: string): boolean {
   const noReconnectCodes = [
-    'UNAUTHORIZED',
-    'FORBIDDEN',
-    'RATE_LIMIT_EXCEEDED',
-    'INVALID_OPERATION',
+    "UNAUTHORIZED",
+    "FORBIDDEN",
+    "RATE_LIMIT_EXCEEDED",
+    "INVALID_OPERATION",
   ];
-  
+
   return !noReconnectCodes.includes(errorCode);
 }
 
@@ -287,8 +301,8 @@ export class WebSocketConnectionManager {
   add(clientId: string, ws: ErrorHandlingWebSocket): void {
     this.connections.set(clientId, ws);
     this.reconnectAttempts.set(clientId, 0);
-    
-    ws.on('close', () => {
+
+    ws.on("close", () => {
       this.connections.delete(clientId);
     });
   }
@@ -296,22 +310,25 @@ export class WebSocketConnectionManager {
   remove(clientId: string): void {
     const ws = this.connections.get(clientId);
     if (ws) {
-      ws.close(1000, 'Connection closed by server');
+      ws.close(1000, "Connection closed by server");
       this.connections.delete(clientId);
       this.reconnectAttempts.delete(clientId);
     }
   }
 
-  broadcast(message: any, filter?: (ws: ErrorHandlingWebSocket) => boolean): void {
+  broadcast(
+    message: any,
+    filter?: (ws: ErrorHandlingWebSocket) => boolean,
+  ): void {
     const data = JSON.stringify(message);
-    
+
     this.connections.forEach((ws, clientId) => {
       if (ws.readyState === WebSocket.OPEN && (!filter || filter(ws))) {
         try {
           ws.send(data);
         } catch (error) {
           const err = error instanceof Error ? error : new Error(String(error));
-          handleWebSocketError(ws, err, { action: 'broadcast' });
+          handleWebSocketError(ws, err, { action: "broadcast" });
         }
       }
     });

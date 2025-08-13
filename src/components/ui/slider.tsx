@@ -1,7 +1,8 @@
 import * as React from "react";
 import { cn } from "../../lib/utils.js";
 
-interface SliderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+interface SliderProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
   value?: number[];
   defaultValue?: number[];
   min?: number;
@@ -12,18 +13,22 @@ interface SliderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChan
 }
 
 const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
-  ({ 
-    className, 
-    value = [0], 
-    defaultValue = [0], 
-    min = 0, 
-    max = 100, 
-    step = 1, 
-    onValueChange,
-    disabled = false,
-    ...props 
-  }, ref) => {
-    const [internalValue, setInternalValue] = React.useState<number[]>(defaultValue);
+  (
+    {
+      className,
+      value = [0],
+      defaultValue = [0],
+      min = 0,
+      max = 100,
+      step = 1,
+      onValueChange,
+      disabled = false,
+      ...props
+    },
+    ref,
+  ) => {
+    const [internalValue, setInternalValue] =
+      React.useState<number[]>(defaultValue);
     const currentValue = value || internalValue;
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +42,7 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
         ref={ref}
         className={cn(
           "relative flex w-full touch-none select-none items-center",
-          className
+          className,
         )}
         {...props}
       >
@@ -53,7 +58,7 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
         />
       </div>
     );
-  }
+  },
 );
 Slider.displayName = "Slider";
 

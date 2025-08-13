@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { PlusIcon, MinusIcon, HeartIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 import { api } from "../../../lib/trpc.js";
-import { useCartStore } from "../../../client/store/groceryStore.js";
+import { useGroceryStore } from "../../../client/store/groceryStore.js";
 import type { WalmartProduct } from "../../../types/walmart-grocery.js";
 
 interface WalmartProductCardProps {
@@ -13,30 +13,19 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({ product 
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const { addItem } = useCartStore();
-
-  const addToCart = api.walmartGrocery.addToCart.useMutation({
-    onSuccess: () => {
-      // Update local cart store
-      addItem({
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        quantity,
-        imageUrl: product.imageUrl,
-        unit: product.unit,
-      });
-      // Reset quantity
-      setQuantity(1);
-    },
-  });
+  const { addToCart: addToCartStore } = useGroceryStore();
+  const addToCart = { isLoading: false }; // Placeholder for mutation
 
   const handleAddToCart = () => {
-    addToCart.mutate({
-      productId: product.id,
-      quantity,
-      userId: "default-user", // In production, get from auth context
-    });
+    try {
+      // Add to local cart store
+      addToCartStore(product, quantity);
+      console.log(`Added ${quantity} of ${product.name} to cart`);
+      // Reset quantity
+      setQuantity(1);
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+    }
   };
 
   const toggleFavorite = () => {
@@ -95,14 +84,14 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({ product 
         {/* Price */}
         <div className="flex items-baseline gap-2 mb-3">
           <span className="text-xl font-bold text-blue-600">
-            ${product.price.toFixed(2)}
+            ${(typeof product.price === 'number' ? product.price : (product.price.sale || product.price.regular || 0)).toFixed(2)}
           </span>
           {product.unit && (
             <span className="text-sm text-gray-500">/ {product.unit}</span>
           )}
-          {product.originalPrice && product.originalPrice > product.price && (
+          {typeof product.price === 'object' && product.price.wasPrice && product.price.wasPrice > (product.price.sale || product.price.regular) && (
             <span className="text-sm text-gray-400 line-through">
-              ${product.originalPrice.toFixed(2)}
+              ${(typeof product.price === 'object' ? product.price.wasPrice : 0)?.toFixed(2)}
             </span>
           )}
         </div>
@@ -149,12 +138,12 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({ product 
               <p className="mb-2">{product.description}</p>
             )}
             {product.category && (
-              <p><span className="font-medium">Category:</span> {product.category}</p>
+              <p><span className="font-medium">Category:</span> {typeof product.category === 'string' ? product.category : product.category.name}</p>
             )}
-            {product.nutritionInfo && (
+            {product.nutritionalInfo && (
               <div>
                 <p className="font-medium">Nutrition Info:</p>
-                <p className="text-xs">{product.nutritionInfo}</p>
+                <p className="text-xs">{JSON.stringify(product.nutritionalInfo)}</p>
               </div>
             )}
             {product.averageRating && (

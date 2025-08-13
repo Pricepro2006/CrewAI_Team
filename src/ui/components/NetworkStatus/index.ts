@@ -1,1 +1,1 @@
-export { NetworkStatus } from './NetworkStatus.js';
+export { NetworkStatus } from "./NetworkStatus.js";

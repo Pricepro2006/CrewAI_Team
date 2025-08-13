@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc/router.js";
+import { router, publicProcedure } from "../trpc/enhanced-router.ts";
 import type { Router } from "@trpc/server";
-import { getAgentModel } from "../../config/model-selection.config.js";
+import { getAgentModel } from "../../config/model-selection.config.ts";
 
 export const agentRouter: Router<any> = router({
   // List all registered agents
@@ -10,27 +10,27 @@ export const agentRouter: Router<any> = router({
     const activeAgents = ctx.agentRegistry.getActiveAgents();
 
     const agents = types.map((type: string) => {
-      const modelConfig = getAgentModel(type, 'general');
-      const toolSelectionModel = getAgentModel(type, 'tool_selection');
+      const modelConfig = getAgentModel(type, "general");
+      const toolSelectionModel = getAgentModel(type, "tool_selection");
       const isActive = activeAgents.some((agent: any) => agent.type === type);
-      
+
       return {
         type,
         name: type,
         available: true,
-        status: isActive ? 'active' as const : 'idle' as const,
+        status: isActive ? ("active" as const) : ("idle" as const),
         specialty: getAgentDescription(type),
         description: getAgentDescription(type),
         capabilities: getAgentCapabilities(type),
         tools: getAgentTools(type),
         models: {
           general: modelConfig.model,
-          toolSelection: toolSelectionModel.model
+          toolSelection: toolSelectionModel.model,
         },
         modelConfig: {
           general: modelConfig,
-          toolSelection: toolSelectionModel
-        }
+          toolSelection: toolSelectionModel,
+        },
       };
     });
 
@@ -38,9 +38,9 @@ export const agentRouter: Router<any> = router({
     return {
       agents,
       totalAgents: agents.length,
-      activeAgents: agents.filter((a: any) => a.status === 'active').length,
+      activeAgents: agents.filter((a: any) => a.status === "active").length,
       // Backward compatibility - also return the array directly
-      ...agents
+      ...agents,
     };
   }),
 
@@ -109,7 +109,7 @@ export const agentRouter: Router<any> = router({
       const types = ctx.agentRegistry.getRegisteredTypes();
 
       for (const type of types) {
-        const modelConfig = getAgentModel(type, 'general');
+        const modelConfig = getAgentModel(type, "general");
         agentConfigs[type] = {
           model: modelConfig.model,
           modelDescription: modelConfig.description,

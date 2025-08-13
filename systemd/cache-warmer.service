@@ -1,0 +1,59 @@
+[Unit]
+Description=Intelligent Cache Warmer Service for Walmart Grocery Agent
+Documentation=https://github.com/pricepro2006/CrewAI_Team
+After=network.target redis.service
+Wants=redis.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/home/pricepro2006/CrewAI_Team
+
+# Environment variables
+Environment="NODE_ENV=production"
+Environment="CACHE_WARMER_PORT=3006"
+Environment="REDIS_HOST=localhost"
+Environment="REDIS_PORT=6379"
+Environment="REDIS_DB=0"
+Environment="REDIS_ANALYTICS_DB=2"
+Environment="CACHE_WARMING_ENABLED=true"
+Environment="CACHE_WARMING_INTERVAL=300000"
+Environment="CACHE_WARMING_MEMORY_LIMIT=104857600"
+Environment="CACHE_WARMING_BATCH_SIZE=10"
+Environment="CACHE_WARMING_CONCURRENCY=3"
+Environment="NODE_OPTIONS=--max-old-space-size=256"
+
+# Execute the service
+ExecStart=/usr/bin/node --experimental-specifier-resolution=node dist/microservices/cache-warmer-service/index.js
+
+# Restart policy
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Resource limits
+MemoryLimit=256M
+MemoryAccounting=true
+CPUQuota=25%
+TasksMax=20
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/pricepro2006/CrewAI_Team/data
+ReadWritePaths=/var/log
+
+# File descriptor limits
+LimitNOFILE=4096
+LimitNPROC=64
+
+# Timeouts
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

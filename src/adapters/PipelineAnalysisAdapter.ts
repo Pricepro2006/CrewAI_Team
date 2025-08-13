@@ -15,7 +15,9 @@ import type {
   QuickAnalysis,
   DeepWorkflowAnalysis,
   ProcessingMetadata,
+  // ActionItem, // Unused import
 } from "../types/analysis-results.js";
+import { EmailPriority } from "../types/EmailTypes.js";
 
 /**
  * Database adapter interface for type-safe transformations
@@ -55,12 +57,12 @@ export class PipelineAnalysisAdapter
     const result: EmailAnalysisResult = {
       emailId: row.email_id,
       quick: this.mapQuickAnalysis(row, llamaData),
-      deep: this.mapDeepAnalysis(llamaData, phi4Data),
+      deep: this.mapDeepAnalysis(llamaData, phi4Data, row.email_id),
       metadata: this.mapProcessingMetadata(row),
     };
 
     // Include raw data for debugging if available
-    if (process.env.NODE_ENV === "development") {
+    if (process.env['NODE_ENV'] === "development") {
       result.rawData = {
         llamaAnalysis: llamaData,
         phi4Analysis: phi4Data,
@@ -73,7 +75,7 @@ export class PipelineAnalysisAdapter
   /**
    * Transform domain model back to database format (not typically needed for read-only adapter)
    */
-  toDatabase(domain: EmailAnalysisResult): PipelineEmailAnalysis {
+  toDatabase(_domain: EmailAnalysisResult): PipelineEmailAnalysis {
     throw new Error("toDatabase not implemented - pipeline data is read-only");
   }
 
@@ -133,6 +135,7 @@ export class PipelineAnalysisAdapter
   private mapDeepAnalysis(
     llama?: Partial<LlamaAnalysisData>,
     phi4?: Partial<Phi4AnalysisData>,
+    _emailId?: string,
   ): DeepWorkflowAnalysis {
     // Combine insights from both models
     const summary =
@@ -332,4 +335,18 @@ export class PipelineAnalysisAdapter
 
     return results;
   }
+
+  /**
+   * Map analysis priority to email priority
+   */
+  // private mapEmailPriority(priority: string): EmailPriority { // Unused method
+  //   const priorityMap: Record<string, EmailPriority> = {
+  //     Critical: EmailPriority.CRITICAL,
+  //     High: EmailPriority.HIGH,
+  //     Medium: EmailPriority.MEDIUM,
+  //     Low: EmailPriority.LOW,
+  //   };
+  //
+  //   return priorityMap[priority] || EmailPriority.MEDIUM;
+  // }
 }

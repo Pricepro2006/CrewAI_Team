@@ -26,14 +26,14 @@ import {
   ShoppingBag,
   Plus,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
-import { Button } from '../../../components/ui/button.js';
-import { Badge } from '../../../components/ui/badge.js';
-import { Label } from '../../../components/ui/label.js';
-import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group.js';
-import { Switch } from '../../../components/ui/switch.js';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.js';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Label } from '../../../components/ui/label';
+import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
+import { Switch } from '../../../components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -41,17 +41,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog.js';
+} from '../../../components/ui/dialog';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../components/ui/tooltip.js';
-import { Calendar } from '../../../components/ui/calendar.js';
-import { cn } from '../../lib/utils.js';
-import { formatPrice } from '../../lib/utils.js';
-import type { DeliverySlot, DeliveryOptions, RecurringSchedule, Address } from '../../../types/walmart-grocery.js';
+} from '../../../components/ui/tooltip';
+import { Calendar } from '../../../components/ui/calendar';
+import { cn } from '../../lib/utils';
+import { formatPrice } from '../../lib/utils';
+import type { DeliverySlot, DeliveryOptions, RecurringSchedule, Address } from '../../../types/walmart-grocery';
 
 interface WalmartDeliverySchedulerProps {
   onScheduleDelivery?: (slot: DeliverySlot, options: DeliveryOptions) => void;
@@ -323,30 +323,24 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
     if (selectedTimeSlot && onScheduleDelivery) {
       const deliverySlot: DeliverySlot = {
         id: `slot-${Date.now()}`,
-        date: selectedTimeSlot.date,
-        startTime: selectedTimeSlot.slot.startTime,
-        endTime: selectedTimeSlot.slot.endTime,
-        type: deliveryType as 'pickup' | 'delivery',
-        isAvailable: true,
+        date: selectedTimeSlot.date.toISOString().split('T')[0] || '', // Convert Date to string
+        start_time: selectedTimeSlot.slot.startTime,
+        end_time: selectedTimeSlot.slot.endTime,
+        available: true,
         price: finalDeliveryFee,
+        capacity: 100,
+        reserved: false,
       };
       
+      // Use the actual DeliveryOptions interface structure
       const options: DeliveryOptions = {
-        type: deliveryType,
-        address: deliveryType === 'delivery' && selectedAddress ? 
-          (typeof selectedAddress === 'string' ? {
-            street: selectedAddress,
-            city: '',
-            state: '',
-            zipCode: '',
-          } : selectedAddress) : undefined,
-        instructions: specialInstructions || undefined,
-        timeSlot: deliverySlot,
-        recurring: recurringEnabled ? {
-          frequency: recurringFrequency,
-          startDate: selectedTimeSlot.date,
-          active: true,
-        } : undefined,
+        available: true,
+        windows: [deliverySlot],
+        fees: {
+          delivery: finalDeliveryFee,
+          service: 0,
+          tip: 0,
+        },
       };
       
       onScheduleDelivery(deliverySlot, options);
@@ -459,7 +453,7 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
                     <p className="text-sm text-muted-foreground">
                       {typeof selectedAddress === 'string' 
                         ? selectedAddress 
-                        : `${selectedAddress.street}, ${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.zipCode}`}
+                        : `${selectedAddress.street1}, ${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.zipCode}`}
                     </p>
                   </div>
                 </div>
@@ -660,7 +654,7 @@ export const WalmartDeliveryScheduler: React.FC<WalmartDeliverySchedulerProps> =
                   <p className="text-sm text-muted-foreground">
                     {typeof defaultAddress === 'string' 
                       ? defaultAddress 
-                      : `${defaultAddress.street}, ${defaultAddress.city}, ${defaultAddress.state} ${defaultAddress.zipCode}`}
+                      : `${defaultAddress.street1}, ${defaultAddress.city}, ${defaultAddress.state} ${defaultAddress.zipCode}`}
                   </p>
                 </Label>
               </div>

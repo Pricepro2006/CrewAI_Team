@@ -30,11 +30,11 @@ import {
   ArrowRight,
   Plus,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
-import { Button } from '../../../components/ui/button.js';
-import { Badge } from '../../../components/ui/badge.js';
-import { Input } from '../../../components/ui/input.js';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Input } from '../../../components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import {
   Sheet,
   SheetContent,
@@ -42,7 +42,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '../../../components/ui/sheet.js';
+} from '../../../components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,33 +50,35 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../components/ui/dropdown-menu.js';
-import { ScrollArea } from '../../../components/ui/scroll-area.js';
-import { Separator } from '../../../components/ui/separator.js';
-import { cn } from '../../lib/utils.js';
-import { formatPrice } from '../../lib/utils.js';
+} from '../../../components/ui/dropdown-menu';
+import { ScrollArea } from '../../../components/ui/scroll-area';
+import { Separator } from '../../../components/ui/separator';
+import { cn } from '../../lib/utils';
+import { formatPrice } from '../../lib/utils';
 
 // Import all Walmart components
-import { WalmartProductSearch } from './WalmartProductSearch.js';
-import { WalmartShoppingCart } from './WalmartShoppingCart.js';
-import { WalmartProductCard } from './WalmartProductCard.js';
-import { WalmartGroceryList } from './WalmartGroceryList.js';
-import { WalmartPriceTracker } from './WalmartPriceTracker.js';
-import { WalmartDeliveryScheduler } from './WalmartDeliveryScheduler.js';
-import { WalmartDealAlert } from './WalmartDealAlert.js';
-import { WalmartSubstitutionManager } from './WalmartSubstitutionManager.js';
-import { WalmartOrderHistory } from './WalmartOrderHistory.js';
-import { WalmartBudgetTracker } from './WalmartBudgetTracker.js';
-import { WalmartUserPreferences } from './WalmartUserPreferences.js';
-import { WalmartChatInterface } from './WalmartChatInterface.js';
+import { WalmartProductSearch } from './WalmartProductSearch';
+import { WalmartShoppingCart } from './WalmartShoppingCart';
+import { WalmartProductCard } from './WalmartProductCard';
+import { WalmartGroceryList } from './WalmartGroceryList';
+import { WalmartPriceTracker } from './WalmartPriceTracker';
+import { WalmartDeliveryScheduler } from './WalmartDeliveryScheduler';
+import { WalmartDealAlert } from './WalmartDealAlert';
+import { WalmartSubstitutionManager } from './WalmartSubstitutionManager';
+import { WalmartOrderHistory } from './WalmartOrderHistory';
+import { WalmartBudgetTracker } from './WalmartBudgetTracker';
+import { WalmartUserPreferences } from './WalmartUserPreferences';
+import { WalmartChatInterface } from './WalmartChatInterface';
+import { WalmartLivePricing } from './WalmartLivePricing';
 
 // Hooks and store
-import { useGroceryStore } from '../../store/groceryStore.js';
-import { useCart } from '../../hooks/useCart.js';
-import { useWalmartSearch } from '../../hooks/useWalmartSearch.js';
-import { useWalmartDeals } from '../../hooks/useWalmartDeals.js';
+import { useGroceryStore } from '../../store/groceryStore';
+import { useCart } from '../../hooks/useCart';
+import { useWalmartSearch } from '../../hooks/useWalmartSearch';
+import { useWalmartDeals } from '../../hooks/useWalmartDeals';
 
-import type { WalmartProduct, CartItem, Order } from '../../../types/walmart-grocery.js';
+import type { WalmartProduct, CartItem, Order } from '../../../types/walmart-grocery';
+import { normalizePrice, getEffectivePrice, isOnSale, calculateSavings } from '../../../utils/walmart-price';
 
 interface WalmartDashboardProps {
   className?: string;
@@ -105,7 +107,7 @@ const QuickStats: React.FC = () => {
   const metrics: DashboardMetric[] = [
     {
       label: 'Cart Value',
-      value: formatPrice(cart.items.reduce((sum: number, item: CartItem) => sum + ((item.product?.price || 0) * item.quantity), 0)),
+      value: formatPrice(cart.items.reduce((sum: number, item: CartItem) => sum + (item.price * item.quantity), 0)),
       icon: ShoppingCart,
       color: 'text-blue-600',
     },
@@ -121,10 +123,11 @@ const QuickStats: React.FC = () => {
         orders
           .filter((o: Order) => {
             const now = new Date();
-            return o.orderDate.getMonth() === now.getMonth() && 
-                   o.orderDate.getFullYear() === now.getFullYear();
+            const orderDate = new Date(o.createdAt);
+            return orderDate.getMonth() === now.getMonth() && 
+                   orderDate.getFullYear() === now.getFullYear();
           })
-          .reduce((sum: number, o: Order) => sum + o.total, 0)
+          .reduce((sum: number, o: Order) => sum + o.totals.total, 0)
       ),
       change: -12,
       icon: TrendingUp,
@@ -176,6 +179,46 @@ const QuickStats: React.FC = () => {
   );
 };
 
+// Helper to create mock WalmartProduct
+const createMockProduct = (
+  id: string,
+  name: string,
+  regularPrice: number,
+  salePrice: number,
+  categoryName: string,
+  brand: string = 'Generic'
+): WalmartProduct => ({
+  id,
+  walmartId: id,
+  name,
+  brand,
+  category: {
+    id: `cat-${categoryName.toLowerCase()}`,
+    name: categoryName,
+    path: ['Grocery', categoryName],
+    level: 2,
+  },
+  description: `${name} - ${brand}`,
+  price: {
+    currency: 'USD',
+    regular: regularPrice,
+    sale: salePrice,
+  },
+  images: [],
+  availability: {
+    inStock: true,
+    stockLevel: "in_stock" as const,
+    quantity: 100,
+  },
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  metadata: {
+    source: "manual" as const,
+    dealEligible: salePrice < regularPrice,
+    tags: [categoryName.toLowerCase(), brand.toLowerCase()],
+  },
+});
+
 // Featured deals component
 const FeaturedDeals: React.FC = () => {
   const { search: searchProducts } = useWalmartSearch();
@@ -184,33 +227,9 @@ const FeaturedDeals: React.FC = () => {
   useEffect(() => {
     // Mock featured deals
     setDeals([
-      {
-        id: 'deal-1',
-        name: 'Organic Bananas',
-        price: 0.49,
-        originalPrice: 0.69,
-        category: 'Produce',
-        unit: 'lb',
-        inStock: true,
-      },
-      {
-        id: 'deal-2',
-        name: 'Whole Milk Gallon',
-        price: 2.99,
-        originalPrice: 3.99,
-        category: 'Dairy',
-        unit: 'gallon',
-        inStock: true,
-      },
-      {
-        id: 'deal-3',
-        name: 'Fresh Bread',
-        price: 1.99,
-        originalPrice: 2.99,
-        category: 'Bakery',
-        unit: 'loaf',
-        inStock: true,
-      },
+      createMockProduct('deal-1', 'Organic Bananas', 0.69, 0.49, 'Produce', 'Fresh Farms'),
+      createMockProduct('deal-2', 'Whole Milk Gallon', 3.99, 2.99, 'Dairy', 'Great Value'),
+      createMockProduct('deal-3', 'Fresh Bread', 2.99, 1.99, 'Bakery', 'Wonder'),
     ]);
   }, []);
   
@@ -242,13 +261,17 @@ const FeaturedDeals: React.FC = () => {
                 <div>
                   <p className="font-medium">{deal.name}</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{formatPrice(deal.price)}</span>
-                    <span className="text-xs text-muted-foreground line-through">
-                      {formatPrice(deal.originalPrice || 0)}
-                    </span>
-                    <Badge variant="destructive" className="text-xs">
-                      Save {formatPrice((deal.originalPrice || 0) - deal.price)}
-                    </Badge>
+                    <span className="text-sm font-medium">{formatPrice(getEffectivePrice(deal.price))}</span>
+                    {isOnSale(deal.price) && (
+                      <>
+                        <span className="text-xs text-muted-foreground line-through">
+                          {formatPrice(normalizePrice(deal.price).regular)}
+                        </span>
+                        <Badge variant="destructive" className="text-xs">
+                          Save {formatPrice(calculateSavings(deal.price))}
+                        </Badge>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -341,7 +364,7 @@ const RecentActivity: React.FC = () => {
 export const WalmartDashboard: React.FC<WalmartDashboardProps> = ({
   className,
 }) => {
-  const [activeView, setActiveView] = useState<'dashboard' | 'search' | 'lists' | 'orders' | 'budget' | 'settings'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'search' | 'lists' | 'orders' | 'budget' | 'settings' | 'live-pricing'>('dashboard');
   const [showCart, setShowCart] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<WalmartProduct | null>(null);
@@ -422,6 +445,13 @@ export const WalmartDashboard: React.FC<WalmartDashboardProps> = ({
                 onClick={() => setActiveView('budget')}
               >
                 Budget
+              </Button>
+              <Button
+                variant={activeView === 'live-pricing' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveView('live-pricing')}
+              >
+                Live Pricing
               </Button>
             </nav>
           </div>
@@ -652,6 +682,13 @@ export const WalmartDashboard: React.FC<WalmartDashboardProps> = ({
                 </Card>
               </div>
             </div>
+          </div>
+        )}
+        
+        {activeView === 'live-pricing' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Live Walmart Pricing</h2>
+            <WalmartLivePricing />
           </div>
         )}
       </main>

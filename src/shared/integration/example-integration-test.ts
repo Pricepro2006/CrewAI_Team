@@ -41,7 +41,7 @@ const authenticateUser = vi
 // =====================================================
 
 describe("CrewAI Team Integration Tests", () => {
-  let testContext: any;
+  let testContext: unknown;
   let authToken: string;
 
   beforeEach(async () => {

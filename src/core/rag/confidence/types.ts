@@ -29,7 +29,7 @@ export interface QueryComplexity {
     multiIntent: boolean;
     ambiguity: number;
   };
-  classification: 'simple' | 'medium' | 'complex';
+  classification: "simple" | "medium" | "complex";
   reasoning: string;
 }
 
@@ -51,7 +51,7 @@ export interface RetrievalResult {
 
 // Context building types
 export interface ContextOptions {
-  mode: 'unified' | 'sectioned' | 'hierarchical';
+  mode: "unified" | "sectioned" | "hierarchical";
   includeConfidence: boolean;
   maxTokens?: number;
   prioritizeRecent?: boolean;
@@ -78,7 +78,7 @@ export interface GenerationOptions {
   temperature?: number;
   maxTokens?: number;
   includeUncertainty?: boolean;
-  format?: 'text' | 'json' | 'markdown';
+  format?: "text" | "json" | "markdown";
 }
 
 export interface TokenConfidence {
@@ -128,16 +128,16 @@ export interface ResponseEvaluationResult {
 }
 
 export enum ActionType {
-  ACCEPT = 'accept',
-  REVIEW = 'review',
-  REJECT = 'reject',
-  FALLBACK = 'fallback',
-  REGENERATE = 'regenerate'
+  ACCEPT = "accept",
+  REVIEW = "review",
+  REJECT = "reject",
+  FALLBACK = "fallback",
+  REGENERATE = "regenerate",
 }
 
 // Calibration types
 export interface CalibrationOptions {
-  method: 'temperature_scaling' | 'platt_scaling' | 'isotonic_regression';
+  method: "temperature_scaling" | "platt_scaling" | "isotonic_regression";
   validationData?: CalibrationDataPoint[];
   crossValidation?: boolean;
 }
@@ -162,13 +162,13 @@ export interface DeliveryOptions {
   includeSourceAttribution?: boolean;
   includeUncertaintyWarnings?: boolean;
   includeEvidence?: boolean;
-  confidenceFormat: 'percentage' | 'detailed' | 'categorical';
+  confidenceFormat: "percentage" | "detailed" | "categorical";
   maxLength?: number;
 }
 
 export interface ConfidenceDisplay {
   score: number;
-  category: 'very_high' | 'high' | 'medium' | 'low' | 'very_low';
+  category: "very_high" | "high" | "medium" | "low" | "very_low";
   display: string;
   explanation?: string;
 }
@@ -243,37 +243,43 @@ export class ConfidenceRAGError extends Error {
   constructor(
     message: string,
     public code: string,
-    public details?: Record<string, any>
+    public details?: Record<string, any>,
   ) {
     super(message);
-    this.name = 'ConfidenceRAGError';
+    this.name = "ConfidenceRAGError";
   }
 }
 
 export class RetrievalError extends ConfidenceRAGError {
   constructor(message: string, details?: Record<string, any>) {
-    super(message, 'RETRIEVAL_ERROR', details);
-    this.name = 'RetrievalError';
+    super(message, "RETRIEVAL_ERROR", details);
+    this.name = "RetrievalError";
   }
 }
 
 export class GenerationError extends ConfidenceRAGError {
   constructor(message: string, details?: Record<string, any>) {
-    super(message, 'GENERATION_ERROR', details);
-    this.name = 'GenerationError';
+    super(message, "GENERATION_ERROR", details);
+    this.name = "GenerationError";
   }
 }
 
 export class EvaluationError extends ConfidenceRAGError {
   constructor(message: string, details?: Record<string, any>) {
-    super(message, 'EVALUATION_ERROR', details);
-    this.name = 'EvaluationError';
+    super(message, "EVALUATION_ERROR", details);
+    this.name = "EvaluationError";
   }
 }
 
 // Event types for real-time updates
 export interface ConfidenceUpdateEvent {
-  stage: 'query-analysis' | 'retrieval' | 'generation' | 'evaluation' | 'calibration' | 'delivery';
+  stage:
+    | "query-analysis"
+    | "retrieval"
+    | "generation"
+    | "evaluation"
+    | "calibration"
+    | "delivery";
   confidence: number;
   details: Record<string, any>;
   timestamp: Date;
@@ -288,7 +294,12 @@ export interface ProcessingCompleteEvent {
 }
 
 // Utility types
-export type ConfidenceLevel = 'very_high' | 'high' | 'medium' | 'low' | 'very_low';
+export type ConfidenceLevel =
+  | "very_high"
+  | "high"
+  | "medium"
+  | "low"
+  | "very_low";
 
 export interface TimestampedEntry<T> {
   data: T;
@@ -306,30 +317,39 @@ export interface CacheEntry<T> {
 
 // Export utility functions
 export function getConfidenceLevel(score: number): ConfidenceLevel {
-  if (score >= 0.9) return 'very_high';
-  if (score >= 0.8) return 'high';
-  if (score >= 0.6) return 'medium';
-  if (score >= 0.4) return 'low';
-  return 'very_low';
+  if (score >= 0.9) return "very_high";
+  if (score >= 0.8) return "high";
+  if (score >= 0.6) return "medium";
+  if (score >= 0.4) return "low";
+  return "very_low";
 }
 
-export function formatConfidenceScore(score: number, format: 'percentage' | 'decimal' | 'categorical'): string {
+export function formatConfidenceScore(
+  score: number,
+  format: "percentage" | "decimal" | "categorical",
+): string {
   switch (format) {
-    case 'percentage':
+    case "percentage":
       return `${Math.round(score * 100)}%`;
-    case 'decimal':
+    case "decimal":
       return score.toFixed(2);
-    case 'categorical':
-      return getConfidenceLevel(score).replace('_', ' ').toUpperCase();
+    case "categorical":
+      return getConfidenceLevel(score).replace("_", " ").toUpperCase();
     default:
       return score.toString();
   }
 }
 
-export function isHighConfidence(score: number, threshold: number = 0.8): boolean {
+export function isHighConfidence(
+  score: number,
+  threshold: number = 0.8,
+): boolean {
   return score >= threshold;
 }
 
-export function requiresHumanReview(score: number, threshold: number = 0.4): boolean {
+export function requiresHumanReview(
+  score: number,
+  threshold: number = 0.4,
+): boolean {
   return score < threshold;
 }

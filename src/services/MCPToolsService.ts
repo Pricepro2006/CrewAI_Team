@@ -150,7 +150,7 @@ export class MCPToolsService {
         params,
       });
 
-      let tool: any;
+      let tool: unknown;
       switch (toolCategory) {
         case "brightData":
           tool = this.brightDataTools;

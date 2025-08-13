@@ -26,12 +26,12 @@ import {
   Timer,
   ArrowRight,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
-import { Button } from '../../../components/ui/button.js';
-import { Badge } from '../../../components/ui/badge.js';
-import { Switch } from '../../../components/ui/switch.js';
-import { Label } from '../../../components/ui/label.js';
-import { Slider } from '../../../components/ui/slider.js';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Switch } from '../../../components/ui/switch';
+import { Label } from '../../../components/ui/label';
+import { Slider } from '../../../components/ui/slider';
 import {
   Dialog,
   DialogContent,
@@ -39,26 +39,27 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog.js';
+} from '../../../components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select.js';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
-import type { DealNotification, DealType, AlertSettings } from '../../../types/walmart-grocery.js';
+} from '../../../components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import type { DealType, DealNotification, AlertSettings } from '../../../types/walmart-grocery';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../components/ui/tooltip.js';
-import { cn } from '../../lib/utils.js';
-import { formatPrice } from '../../lib/utils.js';
-import { useCart } from '../../hooks/useCart.js';
-import type { DealMatch, WalmartProduct } from '../../../types/walmart-grocery.js';
+} from '../../../components/ui/tooltip';
+import { cn } from '../../lib/utils';
+import { formatPrice } from '../../lib/utils';
+import { useCart } from '../../hooks/useCart';
+import type { DealMatch, WalmartProduct } from '../../../types/walmart-grocery';
+import { createMinimalProduct, getNumericPrice } from '../../../utils/walmart-product';
 
 interface WalmartDealAlertProps {
   deals?: DealMatch[];
@@ -69,13 +70,49 @@ interface WalmartDealAlertProps {
   className?: string;
 }
 
-// Remove duplicate interfaces - they're now imported from types
+// Extended interfaces for local use
+interface ExtendedDealNotification {
+  id: string;
+  dealId: string;
+  userId: string;
+  sent?: boolean;
+  sentAt?: Date;
+  opened?: boolean;
+  clicked?: boolean;
+  // Additional local properties
+  productName?: string;
+  currentPrice?: number;
+  expiresAt?: Date;
+  isNew?: boolean;
+  dealType?: DealType | string;
+  savings: number;
+  originalPrice?: number;
+  product?: WalmartProduct;
+  productId?: string;
+  dealName?: string;
+  price?: number;
+  category?: string;
+  discount?: number;
+  validUntil?: Date;
+  title?: string;
+  message?: string;
+  timestamp?: Date;
+  isRead?: boolean;
+  priority?: 'low' | 'medium' | 'high';
+}
+
+interface ExtendedAlertSettings extends AlertSettings {
+  // Additional local properties
+  minSavings: number;
+  minPercentage: number;
+  alertTypes: string[];
+}
 
 // Animated notification component
 const DealNotificationCard: React.FC<{
-  notification: DealNotification;
+  notification: ExtendedDealNotification;
   onDismiss: (id: string) => void;
-  onAction: (notification: DealNotification) => void;
+  onAction: (notification: ExtendedDealNotification) => void;
   isAnimating?: boolean;
 }> = ({ notification, onDismiss, onAction, isAnimating = false }) => {
   const timeLeft = notification.expiresAt
@@ -142,7 +179,7 @@ const DealNotificationCard: React.FC<{
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary" className="text-xs">
-                    {notification.dealType.replace('_', ' ')}
+                    {notification.dealType ? notification.dealType.replace('_', ' ') : 'Deal'}
                   </Badge>
                   <span className="text-sm font-medium text-green-600">
                     Save {formatPrice(notification.savings)}
@@ -166,7 +203,7 @@ const DealNotificationCard: React.FC<{
             {/* Price comparison */}
             <div className="flex items-center gap-3">
               <span className="text-lg font-bold">
-                {formatPrice(notification.currentPrice || notification.product?.price || 0)}
+                {formatPrice(notification.currentPrice || getNumericPrice(notification.product?.price) || 0)}
               </span>
               <span className="text-sm text-muted-foreground line-through">
                 {formatPrice(notification.originalPrice || 0)}
@@ -239,10 +276,11 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
   className,
 }) => {
   const { addItem } = useCart();
-  const [notifications, setNotifications] = useState<DealNotification[]>([]);
+  const [notifications, setNotifications] = useState<ExtendedDealNotification[]>([]);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [settings, setSettings] = useState<AlertSettings>({
+  const [settings, setSettings] = useState<ExtendedAlertSettings>({
     enabled: true,
+    threshold: 10,
     minSavings: 5,
     minPercentage: 20,
     categories: ['grocery', 'produce'],
@@ -261,7 +299,7 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
       const currentPrice = 5 + Math.random() * 10;
       const savings = originalPrice - currentPrice;
       
-      const mockDeals: DealNotification[] = [
+      const mockDeals: ExtendedDealNotification[] = [
         {
           id: `deal-${Date.now()}`,
           dealId: `DEAL-${Math.random().toString(36).substr(2, 9)}`,
@@ -289,12 +327,12 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
         newDeal.originalPrice &&
         ((newDeal.savings / newDeal.originalPrice) * 100) >= settings.minPercentage
       ) {
-        setNotifications(prev => [newDeal, ...prev].slice(0, 10));
+        setNotifications((prev: ExtendedDealNotification[]) => [newDeal, ...prev].slice(0, 10));
         
         // Mark as not new after animation
         setTimeout(() => {
-          setNotifications(prev =>
-            prev.map(n => n.id === newDeal.id ? { ...n, isNew: false } : n)
+          setNotifications((prev: ExtendedDealNotification[]) =>
+            prev.map((n: ExtendedDealNotification) => n.id === newDeal.id ? { ...n, isNew: false } : n)
           );
         }, 3000);
       }
@@ -304,44 +342,44 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
   }, [settings]);
   
   const handleDismiss = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications((prev: ExtendedDealNotification[]) => prev.filter((n: ExtendedDealNotification) => n.id !== id));
   };
   
-  const handleAction = async (notification: DealNotification) => {
+  const handleAction = async (notification: ExtendedDealNotification) => {
     if (onAddToCart && notification.product) {
       onAddToCart(notification.product);
     } else if (onAddToCart) {
       // Convert notification to product if no product attached
-      const product: WalmartProduct = {
+      const product = createMinimalProduct({
         id: notification.productId || notification.dealId,
         name: notification.dealName || 'Unknown Product',
-        price: notification.product?.price || 0,
+        price: notification.price || notification.product?.price || 0,
         originalPrice: notification.originalPrice,
         category: notification.category,
         unit: 'each',
         inStock: true,
-      };
+      });
       onAddToCart(product);
     } else {
       // Use built-in cart
-      const product: WalmartProduct = {
+      const product = createMinimalProduct({
         id: notification.productId || notification.dealId,
         name: notification.dealName || 'Unknown Product',
-        price: notification.product?.price || 0,
+        price: notification.price || notification.product?.price || 0,
         originalPrice: notification.originalPrice,
         category: notification.category,
         unit: 'each',
         inStock: true,
-      };
+      });
       await addItem(product);
     }
     
     if (onDealClick) {
-      onDealClick(notification);
+      onDealClick(notification as any);
     }
   };
   
-  const filteredNotifications = notifications.filter(n => {
+  const filteredNotifications = notifications.filter((n: ExtendedDealNotification) => {
     if (filter === 'active') {
       return !n.expiresAt || n.expiresAt > new Date();
     } else if (filter === 'expired') {
@@ -351,7 +389,7 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
   });
   
   const activeDealsCount = notifications.filter(
-    n => !n.expiresAt || n.expiresAt > new Date()
+    (n: ExtendedDealNotification) => !n.expiresAt || n.expiresAt > new Date()
   ).length;
   
   if (compactMode) {
@@ -370,8 +408,8 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
             </CardTitle>
             <Switch
               checked={settings.enabled}
-              onCheckedChange={(checked) =>
-                setSettings(prev => ({ ...prev, enabled: checked }))
+              onCheckedChange={(checked: boolean) =>
+                setSettings((prev: ExtendedAlertSettings) => ({ ...prev, enabled: checked }))
               }
             />
           </div>
@@ -440,8 +478,8 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
                       <Switch
                         id="alerts-toggle"
                         checked={settings.enabled}
-                        onCheckedChange={(checked) =>
-                          setSettings(prev => ({ ...prev, enabled: checked }))
+                        onCheckedChange={(checked: boolean) =>
+                          setSettings((prev: ExtendedAlertSettings) => ({ ...prev, enabled: checked }))
                         }
                       />
                     </div>
@@ -478,7 +516,7 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
               </div>
               <Button
                 size="sm"
-                onClick={() => setSettings(prev => ({ ...prev, enabled: true }))}
+                onClick={() => setSettings((prev: ExtendedAlertSettings) => ({ ...prev, enabled: true }))}
               >
                 Enable
               </Button>
@@ -486,10 +524,10 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
           )}
           
           {/* Filter Tabs */}
-          <Tabs value={filter} onValueChange={(value: any) => setFilter(value)}>
+          <Tabs value={filter} onValueChange={(value: string) => setFilter(value as 'all' | 'active' | 'expired')}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="all" className="text-xs">
-                All ({notifications.length})
+                All ({filteredNotifications.length})
               </TabsTrigger>
               <TabsTrigger value="active" className="text-xs">
                 Active ({activeDealsCount})
@@ -569,8 +607,8 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
               <div className="flex items-center gap-3">
                 <Slider
                   value={[settings.minSavings]}
-                  onValueChange={([value]) =>
-                    setSettings(prev => ({ ...prev, minSavings: value || 1 }))
+                  onValueChange={([value]: number[]) =>
+                    setSettings((prev: ExtendedAlertSettings) => ({ ...prev, minSavings: value || 1 }))
                   }
                   min={1}
                   max={50}
@@ -589,8 +627,8 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
               <div className="flex items-center gap-3">
                 <Slider
                   value={[settings.minPercentage]}
-                  onValueChange={([value]) =>
-                    setSettings(prev => ({ ...prev, minPercentage: value || 1 }))
+                  onValueChange={(value: number[]) =>
+                    setSettings((prev: ExtendedAlertSettings) => ({ ...prev, minPercentage: value[0] || 1 }))
                   }
                   min={5}
                   max={75}
@@ -617,12 +655,12 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
                     <Switch
                       id={id}
                       checked={settings.alertTypes.includes(id as any)}
-                      onCheckedChange={(checked) => {
-                        setSettings(prev => ({
+                      onCheckedChange={(checked: boolean) => {
+                        setSettings((prev: ExtendedAlertSettings) => ({
                           ...prev,
                           alertTypes: checked
-                            ? [...prev.alertTypes, id as any]
-                            : prev.alertTypes.filter(t => t !== id),
+                            ? [...prev.alertTypes, id]
+                            : prev.alertTypes.filter((t: string) => t !== id),
                         }));
                       }}
                     />
@@ -643,8 +681,8 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
               <Label>Notification Frequency</Label>
               <Select
                 value={settings.frequency}
-                onValueChange={(value: any) =>
-                  setSettings(prev => ({ ...prev, frequency: value }))
+                onValueChange={(value: string) =>
+                  setSettings((prev: ExtendedAlertSettings) => ({ ...prev, frequency: value as 'instant' | 'daily' | 'weekly' }))
                 }
               >
                 <SelectTrigger>
@@ -652,8 +690,8 @@ export const WalmartDealAlert: React.FC<WalmartDealAlertProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="instant">Instant</SelectItem>
-                  <SelectItem value="hourly">Hourly Summary</SelectItem>
                   <SelectItem value="daily">Daily Digest</SelectItem>
+                  <SelectItem value="weekly">Weekly Summary</SelectItem>
                 </SelectContent>
               </Select>
             </div>

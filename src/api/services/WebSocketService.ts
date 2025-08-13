@@ -4,7 +4,10 @@ import { z } from "zod";
 // import _ from "lodash"; // Commented out - types not available
 import type { AuthenticatedWebSocket } from "../middleware/websocketAuth.js";
 import { logger } from "../../utils/logger.js";
-import { trackWebSocketConnection, trackWebSocketMessage } from "../middleware/monitoring.js";
+import {
+  trackWebSocketConnection,
+  trackWebSocketMessage,
+} from "../middleware/monitoring.js";
 import { metricsCollector } from "../../monitoring/MetricsCollector.js";
 import { performanceMonitor } from "../../monitoring/PerformanceMonitor.js";
 
@@ -132,7 +135,7 @@ export const WebSocketMessageSchema = z.discriminatedUnion("type", [
     type: z.literal("email.analyzed"),
     emailId: z.string(),
     workflow: z.string(),
-    priority: z.enum(["Critical", "High", "Medium", "Low"]),
+    priority: z.enum(["critical", "high", "medium", "low"]),
     actionSummary: z.string(),
     confidence: z.number(),
     slaStatus: z.enum(["on-track", "at-risk", "overdue"]),
@@ -162,7 +165,7 @@ export const WebSocketMessageSchema = z.discriminatedUnion("type", [
     type: z.literal("email.sla_alert"),
     emailId: z.string(),
     workflow: z.string(),
-    priority: z.enum(["Critical", "High", "Medium", "Low"]),
+    priority: z.enum(["critical", "high", "medium", "low"]),
     slaStatus: z.enum(["at-risk", "overdue"]),
     timeRemaining: z.number().optional(),
     overdueDuration: z.number().optional(),
@@ -272,14 +275,17 @@ export class WebSocketService extends EventEmitter {
   private healthInterval: NodeJS.Timeout | null = null;
   private memoryCleanupInterval: NodeJS.Timeout | null = null;
   private performanceMonitorInterval: NodeJS.Timeout | null = null;
-  
+
   // Authentication tracking
   private authenticatedClients: Map<string, AuthenticatedWebSocket> = new Map();
   private clientPermissions: Map<string, Set<string>> = new Map();
-  
+
   // Enhanced performance features (Agent 11 - 2025 Best Practices)
   private messageQueue: Map<string, WebSocketMessage[]> = new Map();
-  private throttledBroadcasts: Map<string, (message: WebSocketMessage) => void> = new Map();
+  private throttledBroadcasts: Map<
+    string,
+    (message: WebSocketMessage) => void
+  > = new Map();
   private throttleTimers: Map<string, NodeJS.Timeout> = new Map();
   private performanceMetrics = {
     messagesSent: 0,
@@ -299,13 +305,13 @@ export class WebSocketService extends EventEmitter {
   constructor() {
     super();
     this.setMaxListeners(0); // No limit on listeners
-    
+
     // Initialize throttled broadcast functions (Agent 11 - 2025 Performance)
     this.setupThrottledBroadcasts();
-    
+
     // Start memory cleanup routine
     this.startMemoryCleanup();
-    
+
     // Initialize performance monitoring
     this.startPerformanceMonitoring();
   }
@@ -328,12 +334,12 @@ export class WebSocketService extends EventEmitter {
     // Track authenticated clients
     if (ws.isAuthenticated) {
       this.authenticatedClients.set(clientId, ws);
-      
+
       // Store client permissions
       if (ws.permissions) {
         this.clientPermissions.set(clientId, new Set(ws.permissions));
       }
-      
+
       logger.info("Authenticated WebSocket client registered", "WS_SERVICE", {
         clientId,
         userId: ws.userId,
@@ -345,16 +351,19 @@ export class WebSocketService extends EventEmitter {
     const cleanupHandler = () => {
       this.unregisterClient(clientId, ws);
     };
-    
+
     // Store cleanup handler for later removal
     this.clientCleanupHandlers.set(clientId, cleanupHandler);
-    
+
     // Clean up on disconnect
     ws.once("close", cleanupHandler);
-    
+
     // Handle errors to prevent uncaught exceptions
     ws.on("error", (error) => {
-      logger.error(`WebSocket error for client ${clientId}: ${error.message}`, "WS_SERVICE");
+      logger.error(
+        `WebSocket error for client ${clientId}: ${error.message}`,
+        "WS_SERVICE",
+      );
       this.performanceMetrics.connectionErrors++;
     });
   }
@@ -369,19 +378,23 @@ export class WebSocketService extends EventEmitter {
       if (clientSockets.size === 0) {
         // Complete cleanup to prevent memory leaks
         this.cleanupClient(clientId);
-        
+
         if (ws.isAuthenticated) {
-          logger.info("Authenticated WebSocket client unregistered", "WS_SERVICE", {
-            clientId,
-            userId: ws.userId,
-          });
+          logger.info(
+            "Authenticated WebSocket client unregistered",
+            "WS_SERVICE",
+            {
+              clientId,
+              userId: ws.userId,
+            },
+          );
         }
       }
     }
-    
+
     // Remove all event listeners to prevent memory leaks
     ws.removeAllListeners();
-    
+
     // Remove cleanup handler reference
     this.clientCleanupHandlers.delete(clientId);
   }
@@ -394,13 +407,16 @@ export class WebSocketService extends EventEmitter {
       this.subscriptions.set(clientId, new Set());
     }
     const clientSubs = this.subscriptions.get(clientId)!;
-    
+
     // Limit subscriptions per client to prevent memory issues
     types.forEach((type) => {
       if (clientSubs.size < this.MAX_SUBSCRIPTIONS_PER_CLIENT) {
         clientSubs.add(type);
       } else {
-        logger.warn(`Client ${clientId} reached subscription limit`, "WS_SERVICE");
+        logger.warn(
+          `Client ${clientId} reached subscription limit`,
+          "WS_SERVICE",
+        );
       }
     });
   }
@@ -433,7 +449,7 @@ export class WebSocketService extends EventEmitter {
             return; // Skip this client if they don't have required permission
           }
         }
-        
+
         sockets.forEach((ws) => {
           if (ws.readyState === ws.OPEN) {
             ws.send(messageStr);
@@ -513,27 +529,30 @@ export class WebSocketService extends EventEmitter {
   forceDisconnectClient(clientId: string): void {
     const sockets = this.clients.get(clientId);
     if (sockets) {
-      sockets.forEach(ws => {
+      sockets.forEach((ws) => {
         ws.close(1008, "Forced disconnect");
       });
     }
-    
+
     // Cleanup will happen in unregisterClient
     logger.info(`Force disconnected client: ${clientId}`, "WS_SERVICE");
   }
 
   // Enhanced Performance Methods (Agent 11 - 2025 Best Practices)
-  
+
   /**
    * Custom throttle implementation to replace lodash
    */
-  private createThrottle(fn: (message: WebSocketMessage) => void, delay: number): (message: WebSocketMessage) => void {
+  private createThrottle(
+    fn: (message: WebSocketMessage) => void,
+    delay: number,
+  ): (message: WebSocketMessage) => void {
     let timeoutId: NodeJS.Timeout | null = null;
     let lastMessage: WebSocketMessage | null = null;
-    
+
     return (message: WebSocketMessage) => {
       lastMessage = message;
-      
+
       if (!timeoutId) {
         timeoutId = setTimeout(() => {
           if (lastMessage) {
@@ -551,25 +570,37 @@ export class WebSocketService extends EventEmitter {
    */
   private setupThrottledBroadcasts(): void {
     // Table data updates - throttled to 200ms (researched best practice)
-    this.throttledBroadcasts.set('table_data', this.createThrottle((message: WebSocketMessage) => {
-      this.broadcast(message);
-    }, 200));
-    
+    this.throttledBroadcasts.set(
+      "table_data",
+      this.createThrottle((message: WebSocketMessage) => {
+        this.broadcast(message);
+      }, 200),
+    );
+
     // Stats updates - throttled to 500ms for dashboard widgets
-    this.throttledBroadcasts.set('stats', this.createThrottle((message: WebSocketMessage) => {
-      this.broadcast(message);
-    }, 500));
-    
+    this.throttledBroadcasts.set(
+      "stats",
+      this.createThrottle((message: WebSocketMessage) => {
+        this.broadcast(message);
+      }, 500),
+    );
+
     // Performance metrics - throttled to 1000ms
-    this.throttledBroadcasts.set('performance', this.createThrottle((message: WebSocketMessage) => {
-      this.broadcast(message);
-    }, 1000));
+    this.throttledBroadcasts.set(
+      "performance",
+      this.createThrottle((message: WebSocketMessage) => {
+        this.broadcast(message);
+      }, 1000),
+    );
   }
-  
+
   /**
    * Enhanced broadcast with throttling support for high-frequency updates
    */
-  private broadcastThrottled(messageType: string, message: WebSocketMessage): void {
+  private broadcastThrottled(
+    messageType: string,
+    message: WebSocketMessage,
+  ): void {
     const throttledFunc = this.throttledBroadcasts.get(messageType);
     if (throttledFunc) {
       throttledFunc(message);
@@ -577,7 +608,7 @@ export class WebSocketService extends EventEmitter {
       this.broadcast(message);
     }
   }
-  
+
   /**
    * Memory cleanup routine to prevent memory leaks
    */
@@ -587,13 +618,18 @@ export class WebSocketService extends EventEmitter {
         // Clean up message queues that exceed max size
         this.messageQueue.forEach((queue, clientId) => {
           if (queue.length > this.MAX_MESSAGE_HISTORY) {
-            this.messageQueue.set(clientId, queue.slice(-this.MAX_MESSAGE_HISTORY));
+            this.messageQueue.set(
+              clientId,
+              queue.slice(-this.MAX_MESSAGE_HISTORY),
+            );
           }
         });
-        
+
         // Clean up disconnected clients
         this.clients.forEach((sockets, clientId) => {
-          const activeSockets = Array.from(sockets).filter(ws => ws.readyState === ws.OPEN);
+          const activeSockets = Array.from(sockets).filter(
+            (ws) => ws.readyState === ws.OPEN,
+          );
           if (activeSockets.length === 0) {
             this.cleanupClient(clientId);
           } else if (activeSockets.length !== sockets.size) {
@@ -601,19 +637,19 @@ export class WebSocketService extends EventEmitter {
             this.clients.set(clientId, new Set(activeSockets));
           }
         });
-        
+
         // Clean up orphaned data structures
         this.cleanupOrphanedData();
-        
+
         this.performanceMetrics.lastCleanup = Date.now();
-        
+
         // Log memory usage for monitoring
         const memUsage = process.memoryUsage();
         if (memUsage.heapUsed > memUsage.heapTotal * 0.9) {
           logger.warn("High memory usage detected", "WS_SERVICE", {
             heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024) + "MB",
             heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024) + "MB",
-            clients: this.clients.size
+            clients: this.clients.size,
           });
         }
       } catch (error) {
@@ -621,7 +657,7 @@ export class WebSocketService extends EventEmitter {
       }
     }, 30000); // Clean up every 30 seconds
   }
-  
+
   /**
    * Start performance monitoring with alerts
    */
@@ -629,20 +665,33 @@ export class WebSocketService extends EventEmitter {
     this.performanceMonitorInterval = setInterval(() => {
       try {
         const stats = this.getConnectionStats();
-        
+
         // Check for performance issues
         if (stats.totalConnections > 1000) {
-          this.broadcastPerformanceWarning('websocket', 'connections', stats.totalConnections, 1000, 'warning');
+          this.broadcastPerformanceWarning(
+            "websocket",
+            "connections",
+            stats.totalConnections,
+            1000,
+            "warning",
+          );
         }
-        
+
         if (this.performanceMetrics.connectionErrors > 10) {
-          this.broadcastPerformanceWarning('websocket', 'connection_errors', this.performanceMetrics.connectionErrors, 10, 'critical');
+          this.broadcastPerformanceWarning(
+            "websocket",
+            "connection_errors",
+            this.performanceMetrics.connectionErrors,
+            10,
+            "critical",
+          );
           this.performanceMetrics.connectionErrors = 0; // Reset after alert
         }
-        
+
         // Update response time metrics
-        this.performanceMetrics.averageResponseTime = this.calculateAverageResponseTime();
-        
+        this.performanceMetrics.averageResponseTime =
+          this.calculateAverageResponseTime();
+
         // Force garbage collection if available (requires --expose-gc flag)
         if (global.gc && this.clients.size === 0) {
           global.gc();
@@ -652,7 +701,7 @@ export class WebSocketService extends EventEmitter {
       }
     }, 60000); // Monitor every minute
   }
-  
+
   /**
    * Clean up client data completely
    */
@@ -665,14 +714,14 @@ export class WebSocketService extends EventEmitter {
     this.messageQueue.delete(clientId);
     this.retryAttempts.delete(clientId);
     this.clientCleanupHandlers.delete(clientId);
-    
+
     // Clear health check timeout
     const healthCheck = this.connectionHealthChecks.get(clientId);
     if (healthCheck) {
       clearTimeout(healthCheck);
       this.connectionHealthChecks.delete(clientId);
     }
-    
+
     // Clear any throttle timers associated with this client
     const throttleTimer = this.throttleTimers.get(clientId);
     if (throttleTimer) {
@@ -680,45 +729,45 @@ export class WebSocketService extends EventEmitter {
       this.throttleTimers.delete(clientId);
     }
   }
-  
+
   /**
    * Clean up orphaned data structures
    */
   private cleanupOrphanedData(): void {
     // Clean up authenticated clients that don't have active connections
     const clientIds = new Set(this.clients.keys());
-    
+
     this.authenticatedClients.forEach((_, clientId) => {
       if (!clientIds.has(clientId)) {
         this.authenticatedClients.delete(clientId);
       }
     });
-    
+
     this.clientPermissions.forEach((_, clientId) => {
       if (!clientIds.has(clientId)) {
         this.clientPermissions.delete(clientId);
       }
     });
-    
+
     this.subscriptions.forEach((_, clientId) => {
       if (!clientIds.has(clientId)) {
         this.subscriptions.delete(clientId);
       }
     });
-    
+
     this.messageQueue.forEach((_, clientId) => {
       if (!clientIds.has(clientId)) {
         this.messageQueue.delete(clientId);
       }
     });
-    
+
     this.retryAttempts.forEach((_, clientId) => {
       if (!clientIds.has(clientId)) {
         this.retryAttempts.delete(clientId);
       }
     });
   }
-  
+
   /**
    * Calculate average response time across connections
    */
@@ -728,13 +777,13 @@ export class WebSocketService extends EventEmitter {
     const connectionPenalty = Math.max(0, (this.getClientCount() - 100) * 0.1);
     return Math.round(baseTime + connectionPenalty);
   }
-  
+
   /**
    * Enhanced client registration with health monitoring
    */
   registerClientEnhanced(clientId: string, ws: AuthenticatedWebSocket): void {
     this.registerClient(clientId, ws);
-    
+
     // Setup health monitoring for this client
     const healthCheck = setInterval(() => {
       if (ws.readyState === ws.OPEN) {
@@ -750,44 +799,55 @@ export class WebSocketService extends EventEmitter {
         this.connectionHealthChecks.delete(clientId);
       }
     }, 30000); // Ping every 30 seconds
-    
+
     this.connectionHealthChecks.set(clientId, healthCheck);
-    
+
     // Setup pong handler with proper cleanup
     const pongHandler = () => {
       // Reset retry attempts on successful pong
       this.retryAttempts.delete(clientId);
     };
-    
-    ws.on('pong', pongHandler);
-    
+
+    ws.on("pong", pongHandler);
+
     // Store reference to remove listener later
-    ws.once('close', () => {
-      ws.removeListener('pong', pongHandler);
+    ws.once("close", () => {
+      ws.removeListener("pong", pongHandler);
     });
   }
-  
+
   /**
    * Handle connection errors with retry logic
    */
-  private handleConnectionError(clientId: string, ws: AuthenticatedWebSocket): void {
+  private handleConnectionError(
+    clientId: string,
+    ws: AuthenticatedWebSocket,
+  ): void {
     const attempts = this.retryAttempts.get(clientId) || 0;
-    
+
     if (attempts < 3) {
       this.retryAttempts.set(clientId, attempts + 1);
-      logger.warn(`WebSocket connection error for client ${clientId}, attempt ${attempts + 1}/3`, "WS_SERVICE");
+      logger.warn(
+        `WebSocket connection error for client ${clientId}, attempt ${attempts + 1}/3`,
+        "WS_SERVICE",
+      );
     } else {
       // Max retries reached, force disconnect and clean up
-      logger.error(`Max connection errors reached for client ${clientId}, disconnecting`, "WS_SERVICE");
+      logger.error(
+        `Max connection errors reached for client ${clientId}, disconnecting`,
+        "WS_SERVICE",
+      );
       ws.close(1006, "Connection unstable");
       this.cleanupClient(clientId);
     }
   }
-  
+
   /**
    * Get enhanced performance metrics
    */
-  getPerformanceMetrics(): typeof this.performanceMetrics & { connectionStats: ReturnType<WebSocketService['getConnectionStats']> } {
+  getPerformanceMetrics(): typeof this.performanceMetrics & {
+    connectionStats: ReturnType<WebSocketService["getConnectionStats"]>;
+  } {
     return {
       ...this.performanceMetrics,
       connectionStats: this.getConnectionStats(),
@@ -797,32 +857,38 @@ export class WebSocketService extends EventEmitter {
   /**
    * Get health status of the WebSocket service
    */
-  getHealth(): { status: string; connections: number; uptime: number; metrics: any } {
+  getHealth(): {
+    status: string;
+    connections: number;
+    uptime: number;
+    metrics: any;
+  } {
     const stats = this.getConnectionStats();
-    const uptime = Date.now() - (this.performanceMetrics.lastCleanup || Date.now());
-    
+    const uptime =
+      Date.now() - (this.performanceMetrics.lastCleanup || Date.now());
+
     return {
-      status: stats.totalConnections > 0 ? 'healthy' : 'idle',
+      status: stats.totalConnections > 0 ? "healthy" : "idle",
       connections: stats.totalConnections,
       uptime: uptime,
-      metrics: this.getPerformanceMetrics()
+      metrics: this.getPerformanceMetrics(),
     };
   }
 
   // Enhanced broadcast methods for table data (Agent 11)
-  
+
   /**
    * Broadcast table data updates with throttling
    */
   broadcastEmailTableDataUpdated(rowCount: number, filters?: any): void {
-    this.broadcastThrottled('table_data', {
+    this.broadcastThrottled("table_data", {
       type: "email.table_data_updated",
       rowCount,
       filters,
       timestamp: new Date(),
     });
   }
-  
+
   /**
    * Broadcast dashboard stats updates with throttling
    */
@@ -832,17 +898,21 @@ export class WebSocketService extends EventEmitter {
     inProgress: number;
     completed: number;
   }): void {
-    this.broadcastThrottled('stats', {
+    this.broadcastThrottled("stats", {
       type: "email.stats_updated",
       stats,
       timestamp: new Date(),
     });
   }
-  
+
   /**
    * Broadcast batch creation events
    */
-  broadcastEmailBatchCreated(batchId: string, successCount: number, errorCount: number): void {
+  broadcastEmailBatchCreated(
+    batchId: string,
+    successCount: number,
+    errorCount: number,
+  ): void {
     this.broadcast({
       type: "email.batch_created",
       batchId,
@@ -851,7 +921,7 @@ export class WebSocketService extends EventEmitter {
       timestamp: new Date(),
     });
   }
-  
+
   /**
    * Broadcast batch status updates
    */
@@ -859,7 +929,7 @@ export class WebSocketService extends EventEmitter {
     emailIds: string[],
     successCount: number,
     errorCount: number,
-    changedBy: string
+    changedBy: string,
   ): void {
     this.broadcast({
       type: "email.batch_status_updated",
@@ -870,7 +940,7 @@ export class WebSocketService extends EventEmitter {
       timestamp: new Date(),
     });
   }
-  
+
   /**
    * Broadcast batch deletion events
    */
@@ -878,7 +948,7 @@ export class WebSocketService extends EventEmitter {
     emailIds: string[],
     successCount: number,
     errorCount: number,
-    softDelete: boolean
+    softDelete: boolean,
   ): void {
     this.broadcast({
       type: "email.batch_deleted",
@@ -889,7 +959,7 @@ export class WebSocketService extends EventEmitter {
       timestamp: new Date(),
     });
   }
-  
+
   /**
    * Broadcast performance warnings
    */
@@ -898,7 +968,7 @@ export class WebSocketService extends EventEmitter {
     metric: string,
     value: number,
     threshold: number,
-    severity: "warning" | "critical"
+    severity: "warning" | "critical",
   ): void {
     this.broadcast({
       type: "system.performance_warning",
@@ -1106,7 +1176,8 @@ export class WebSocketService extends EventEmitter {
     // Collect authentication statistics
     this.authenticatedClients.forEach((ws) => {
       if (ws.userRole) {
-        authStats.byRole[ws.userRole] = (authStats.byRole[ws.userRole] || 0) + 1;
+        authStats.byRole[ws.userRole] =
+          (authStats.byRole[ws.userRole] || 0) + 1;
       }
     });
 
@@ -1126,12 +1197,12 @@ export class WebSocketService extends EventEmitter {
   }
 
   // Email-specific broadcast methods
-  
+
   /**
    * Emit email update event for assignment changes
    */
   emitEmailUpdate(event: {
-    type: 'update' | 'delete' | 'create';
+    type: "update" | "delete" | "create";
     email?: any;
     emailId?: string;
   }): void {
@@ -1143,27 +1214,30 @@ export class WebSocketService extends EventEmitter {
       timestamp: new Date(),
     } as any);
   }
-  
+
   broadcastEmailAnalyzed(
     emailId: string,
     workflow: string,
-    priority: "Critical" | "High" | "Medium" | "Low",
+    priority: "critical" | "high" | "medium" | "low",
     actionSummary: string,
     confidence: number,
     slaStatus: "on-track" | "at-risk" | "overdue",
     state: string,
   ): void {
-    this.broadcast({
-      type: "email.analyzed",
-      emailId,
-      workflow,
-      priority,
-      actionSummary,
-      confidence,
-      slaStatus,
-      state,
-      timestamp: new Date(),
-    }, "read"); // Require read permission
+    this.broadcast(
+      {
+        type: "email.analyzed",
+        emailId,
+        workflow,
+        priority,
+        actionSummary,
+        confidence,
+        slaStatus,
+        state,
+        timestamp: new Date(),
+      },
+      "read",
+    ); // Require read permission
   }
 
   broadcastEmailStateChanged(
@@ -1172,14 +1246,17 @@ export class WebSocketService extends EventEmitter {
     newState: string,
     changedBy?: string,
   ): void {
-    this.broadcast({
-      type: "email.state_changed",
-      emailId,
-      oldState,
-      newState,
-      changedBy,
-      timestamp: new Date(),
-    }, "read"); // Require read permission
+    this.broadcast(
+      {
+        type: "email.state_changed",
+        emailId,
+        oldState,
+        newState,
+        changedBy,
+        timestamp: new Date(),
+      },
+      "read",
+    ); // Require read permission
   }
 
   broadcastEmailBulkUpdate(
@@ -1203,7 +1280,7 @@ export class WebSocketService extends EventEmitter {
   broadcastEmailSLAAlert(
     emailId: string,
     workflow: string,
-    priority: "Critical" | "High" | "Medium" | "Low",
+    priority: "critical" | "high" | "medium" | "low",
     slaStatus: "at-risk" | "overdue",
     timeRemaining?: number,
     overdueDuration?: number,
@@ -1273,41 +1350,41 @@ export class WebSocketService extends EventEmitter {
       this.healthInterval = null;
     }
   }
-  
+
   /**
    * Gracefully shutdown the WebSocket service
    */
   shutdown(): void {
     logger.info("Shutting down WebSocket service", "WS_SERVICE");
-    
+
     // Stop all intervals
     if (this.healthInterval) {
       clearInterval(this.healthInterval);
       this.healthInterval = null;
     }
-    
+
     if (this.memoryCleanupInterval) {
       clearInterval(this.memoryCleanupInterval);
       this.memoryCleanupInterval = null;
     }
-    
+
     if (this.performanceMonitorInterval) {
       clearInterval(this.performanceMonitorInterval);
       this.performanceMonitorInterval = null;
     }
-    
+
     // Clear all throttle timers
     this.throttleTimers.forEach((timer) => {
       clearTimeout(timer);
     });
     this.throttleTimers.clear();
-    
+
     // Clear all health check timers
     this.connectionHealthChecks.forEach((timer) => {
       clearTimeout(timer);
     });
     this.connectionHealthChecks.clear();
-    
+
     // Close all active connections
     this.clients.forEach((sockets, clientId) => {
       sockets.forEach((ws) => {
@@ -1316,7 +1393,7 @@ export class WebSocketService extends EventEmitter {
         }
       });
     });
-    
+
     // Clear all data structures
     this.clients.clear();
     this.subscriptions.clear();
@@ -1326,10 +1403,10 @@ export class WebSocketService extends EventEmitter {
     this.throttledBroadcasts.clear();
     this.retryAttempts.clear();
     this.clientCleanupHandlers.clear();
-    
+
     // Remove all event listeners
     this.removeAllListeners();
-    
+
     logger.info("WebSocket service shutdown complete", "WS_SERVICE");
   }
 }
@@ -1338,5 +1415,5 @@ export class WebSocketService extends EventEmitter {
 export const wsService = new WebSocketService();
 
 // Clean up on process exit
-process.once('SIGINT', () => wsService.shutdown());
-process.once('SIGTERM', () => wsService.shutdown());
+process.once("SIGINT", () => wsService.shutdown());
+process.once("SIGTERM", () => wsService.shutdown());

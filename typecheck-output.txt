@@ -1,0 +1,973 @@
+
+> ai-agent-team@1.0.0 typecheck
+> tsc --noEmit
+
+src/client/hooks/useWalmartSearch.ts(82,47): error TS2339: Property 'limit' does not exist on type 'ExtendedSearchOptions'.
+src/client/hooks/useWalmartSearch.ts(88,47): error TS2339: Property 'limit' does not exist on type 'ExtendedSearchOptions'.
+src/client/services/walmart-api.ts(226,9): error TS2739: Type 'GroceryList' is missing the following properties from type 'GroceryList': createdAt, updatedAt
+src/client/services/walmart-api.ts(229,14): error TS2352: Conversion of type '{ id: string; user_id: string; list_name: string; description: string | undefined; list_type: "shopping"; status: "active"; items: never[]; estimated_total: number; createdAt: Date; updatedAt: Date; }' to type 'GroceryList' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'createdAt' are incompatible.
+    Type 'Date' is not comparable to type 'string'.
+src/client/services/walmart-api.ts(261,16): error TS2352: Conversion of type '{ id: string; user_id: string; list_name: string; description: string | undefined; list_type: "shopping"; status: "active"; items: never[]; estimated_total: number; createdAt: Date; updatedAt: Date; }' to type 'GroceryList' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'createdAt' are incompatible.
+    Type 'Date' is not comparable to type 'string'.
+src/client/services/walmart-api.ts(340,9): error TS2322: Type '{ id: string; userId: string; orderNumber: string; items: never[]; subtotal: number; tax: number; fees: number; deliveryFee: number; total: number; status: "pending"; orderDate: Date; createdAt: Date; updatedAt: Date; deliveryAddress: string; deliveryDate: Date; deliverySlot: string; }[]' is not assignable to type 'Order[]'.
+  Type '{ id: string; userId: string; orderNumber: string; items: never[]; subtotal: number; tax: number; fees: number; deliveryFee: number; total: number; status: "pending"; orderDate: Date; createdAt: Date; updatedAt: Date; deliveryAddress: string; deliveryDate: Date; deliverySlot: string; }' is missing the following properties from type 'Order': orderId, payment, fulfillment, totals, and 3 more.
+src/client/services/walmart-api.ts(353,7): error TS2740: Type '{ id: string; userId: string; orderNumber: string; items: never[]; subtotal: number; tax: number; fees: number; deliveryFee: number; total: number; status: "pending"; orderDate: Date; createdAt: Date; updatedAt: Date; deliveryAddress: string; deliveryDate: Date; deliverySlot: string; }' is missing the following properties from type 'Order': orderId, payment, fulfillment, totals, and 3 more.
+src/client/services/walmart-api.ts(381,16): error TS2352: Conversion of type '{ orderDate: Date; createdAt: Date; id: string; userId: string; orderNumber: string; items: { productId: string; quantity: number; price: number; }[]; subtotal: number; tax: number; fees: number; ... 6 more ...; deliverySlot: string; }' to type 'Order' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ orderDate: Date; createdAt: Date; id: string; userId: string; orderNumber: string; items: { productId: string; quantity: number; price: number; }[]; subtotal: number; tax: number; fees: number; ... 6 more ...; deliverySlot: string; }' is missing the following properties from type 'Order': orderId, payment, fulfillment, totals, and 3 more.
+src/client/services/walmart-api.ts(406,14): error TS2352: Conversion of type '{ id: string; userId: string; items: never[]; subtotal: number; tax: number; fees: number; total: number; status: "pending" | "cancelled" | "delivered" | "confirmed" | "preparing" | "out_for_delivery"; orderDate: Date; createdAt: Date; }' to type 'Order' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ id: string; userId: string; items: never[]; subtotal: number; tax: number; fees: number; total: number; status: "pending" | "cancelled" | "delivered" | "confirmed" | "preparing" | "out_for_delivery"; orderDate: Date; createdAt: Date; }' is missing the following properties from type 'Order': orderId, payment, fulfillment, totals, and 4 more.
+src/client/services/walmart-api.ts(629,14): error TS2352: Conversion of type '{ dietaryRestrictions: never[]; allergies: never[]; favoriteCategories: never[]; preferredBrands: never[]; avoidBrands: never[]; deliveryPreferences: { preferredDays: never[]; preferredTimeSlots: never[]; }; userId: string; }' to type 'UserPreferences' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ dietaryRestrictions: never[]; allergies: never[]; favoriteCategories: never[]; preferredBrands: never[]; avoidBrands: never[]; deliveryPreferences: { preferredDays: never[]; preferredTimeSlots: never[]; }; userId: string; }' is missing the following properties from type 'UserPreferences': id, user_id, createdAt, updatedAt
+src/client/services/walmart-api.ts(647,14): error TS2352: Conversion of type '{ dietaryRestrictions?: string[] | undefined; allergies?: string[] | undefined; favoriteCategories?: string[] | undefined; preferredBrands?: string[] | undefined; avoidBrands?: string[] | undefined; deliveryPreferences?: { ...; } | undefined; userId: string; }' to type 'UserPreferences' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ dietaryRestrictions?: string[] | undefined; allergies?: string[] | undefined; favoriteCategories?: string[] | undefined; preferredBrands?: string[] | undefined; avoidBrands?: string[] | undefined; deliveryPreferences?: { ...; } | undefined; userId: string; }' is missing the following properties from type 'UserPreferences': id, user_id, createdAt, updatedAt
+src/client/store/groceryStore.ts(74,3): error TS2559: Type 'number' has no properties in common with type 'CartFees'.
+src/client/store/groceryStore.ts(75,3): error TS2322: Type 'number' is not assignable to type 'Discount[]'.
+src/client/store/groceryStore.ts(77,3): error TS2322: Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(78,3): error TS2322: Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(82,3): error TS2561: Object literal may only specify known properties, but 'userId' does not exist in type 'UserPreferences'. Did you mean to write 'user_id'?
+src/client/store/groceryStore.ts(109,15): error TS2345: Argument of type '(state: GroceryState) => { cart: { items: CartItem[]; updatedAt: Date; id: string; userId: string; subtotal: number; tax: number; fees: CartFees; discounts: Discount[]; total: number; savedForLater: CartItem[]; metadata: CartMetadata; createdAt: Timestamp; }; }' is not assignable to parameter of type 'GroceryState | Partial<GroceryState> | ((state: GroceryState) => GroceryState | Partial<GroceryState>)'.
+  Type '(state: GroceryState) => { cart: { items: CartItem[]; updatedAt: Date; id: string; userId: string; subtotal: number; tax: number; fees: CartFees; discounts: Discount[]; total: number; savedForLater: CartItem[]; metadata: CartMetadata; createdAt: Timestamp; }; }' is not assignable to type '(state: GroceryState) => GroceryState | Partial<GroceryState>'.
+    Type '{ cart: { items: CartItem[]; updatedAt: Date; id: string; userId: string; subtotal: number; tax: number; fees: CartFees; discounts: Discount[]; total: number; savedForLater: CartItem[]; metadata: CartMetadata; createdAt: Timestamp; }; }' is not assignable to type 'GroceryState | Partial<GroceryState>'.
+      Type '{ cart: { items: CartItem[]; updatedAt: Date; id: string; userId: string; subtotal: number; tax: number; fees: CartFees; discounts: Discount[]; total: number; savedForLater: CartItem[]; metadata: CartMetadata; createdAt: Timestamp; }; }' is not assignable to type 'Partial<GroceryState>'.
+        The types of 'cart.updatedAt' are incompatible between these types.
+          Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(135,17): error TS2322: Type 'ProductPrice' is not assignable to type 'number'.
+  Type '{ currency: string; regular: number; sale?: number | undefined; unit?: number | undefined; unitOfMeasure?: string | undefined; pricePerUnit?: string | undefined; wasPrice?: number | undefined; rollback?: boolean | undefined; clearance?: boolean | undefined; priceRange?: { ...; } | undefined; }' is not assignable to type 'number'.
+src/client/store/groceryStore.ts(136,17): error TS2322: Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(151,15): error TS2345: Argument of type '(state: GroceryState) => { cart: { items: CartItem[]; updatedAt: Date; id: string; userId: string; subtotal: number; tax: number; fees: CartFees; discounts: Discount[]; total: number; savedForLater: CartItem[]; metadata: CartMetadata; createdAt: Timestamp; }; }' is not assignable to parameter of type 'GroceryState | Partial<GroceryState> | ((state: GroceryState) => GroceryState | Partial<GroceryState>)'.
+  Type '(state: GroceryState) => { cart: { items: CartItem[]; updatedAt: Date; id: string; userId: string; subtotal: number; tax: number; fees: CartFees; discounts: Discount[]; total: number; savedForLater: CartItem[]; metadata: CartMetadata; createdAt: Timestamp; }; }' is not assignable to type '(state: GroceryState) => GroceryState | Partial<GroceryState>'.
+    Type '{ cart: { items: CartItem[]; updatedAt: Date; id: string; userId: string; subtotal: number; tax: number; fees: CartFees; discounts: Discount[]; total: number; savedForLater: CartItem[]; metadata: CartMetadata; createdAt: Timestamp; }; }' is not assignable to type 'GroceryState | Partial<GroceryState>'.
+      Type '{ cart: { items: CartItem[]; updatedAt: Date; id: string; userId: string; subtotal: number; tax: number; fees: CartFees; discounts: Discount[]; total: number; savedForLater: CartItem[]; metadata: CartMetadata; createdAt: Timestamp; }; }' is not assignable to type 'Partial<GroceryState>'.
+        The types of 'cart.updatedAt' are incompatible between these types.
+          Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(163,15): error TS2345: Argument of type '(state: GroceryState) => { cart: { items: CartItem[]; updatedAt: Date; id: string; userId: string; subtotal: number; tax: number; fees: CartFees; discounts: Discount[]; total: number; savedForLater: CartItem[]; metadata: CartMetadata; createdAt: Timestamp; }; }' is not assignable to parameter of type 'GroceryState | Partial<GroceryState> | ((state: GroceryState) => GroceryState | Partial<GroceryState>)'.
+  Type '(state: GroceryState) => { cart: { items: CartItem[]; updatedAt: Date; id: string; userId: string; subtotal: number; tax: number; fees: CartFees; discounts: Discount[]; total: number; savedForLater: CartItem[]; metadata: CartMetadata; createdAt: Timestamp; }; }' is not assignable to type '(state: GroceryState) => GroceryState | Partial<GroceryState>'.
+    Type '{ cart: { items: CartItem[]; updatedAt: Date; id: string; userId: string; subtotal: number; tax: number; fees: CartFees; discounts: Discount[]; total: number; savedForLater: CartItem[]; metadata: CartMetadata; createdAt: Timestamp; }; }' is not assignable to type 'GroceryState | Partial<GroceryState>'.
+      Type '{ cart: { items: CartItem[]; updatedAt: Date; id: string; userId: string; subtotal: number; tax: number; fees: CartFees; discounts: Discount[]; total: number; savedForLater: CartItem[]; metadata: CartMetadata; createdAt: Timestamp; }; }' is not assignable to type 'Partial<GroceryState>'.
+        The types of 'cart.updatedAt' are incompatible between these types.
+          Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(178,15): error TS2322: Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(179,15): error TS2322: Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(193,13): error TS2322: Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(194,13): error TS2322: Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(205,15): error TS2345: Argument of type '(state: GroceryState) => { lists: (GroceryList | { updatedAt: Date; id: string; user_id: string; list_name: string; description?: string | undefined; ... 6 more ...; createdAt: string; })[]; }' is not assignable to parameter of type 'GroceryState | Partial<GroceryState> | ((state: GroceryState) => GroceryState | Partial<GroceryState>)'.
+  Type '(state: GroceryState) => { lists: (GroceryList | { updatedAt: Date; id: string; user_id: string; list_name: string; description?: string | undefined; ... 6 more ...; createdAt: string; })[]; }' is not assignable to type '(state: GroceryState) => GroceryState | Partial<GroceryState>'.
+    Type '{ lists: (GroceryList | { updatedAt: Date; id: string; user_id: string; list_name: string; description?: string; list_type: "shopping" | "wishlist" | "recurring"; ... 5 more ...; createdAt: Timestamp; })[]; }' is not assignable to type 'GroceryState | Partial<GroceryState>'.
+      Type '{ lists: (GroceryList | { updatedAt: Date; id: string; user_id: string; list_name: string; description?: string; list_type: "shopping" | "wishlist" | "recurring"; ... 5 more ...; createdAt: Timestamp; })[]; }' is not assignable to type 'Partial<GroceryState>'.
+        Types of property 'lists' are incompatible.
+          Type '(GroceryList | { updatedAt: Date; id: string; user_id: string; list_name: string; description?: string | undefined; list_type: "shopping" | "recurring" | "wishlist"; ... 5 more ...; createdAt: string; })[]' is not assignable to type 'GroceryList[]'.
+            Type 'GroceryList | { updatedAt: Date; id: string; user_id: string; list_name: string; description?: string | undefined; list_type: "shopping" | "recurring" | "wishlist"; ... 5 more ...; createdAt: string; }' is not assignable to type 'GroceryList'.
+              Type '{ updatedAt: Date; id: string; user_id: string; list_name: string; description?: string; list_type: "shopping" | "wishlist" | "recurring"; status: "active" | "completed" | "archived"; ... 4 more ...; createdAt: Timestamp; }' is not assignable to type 'GroceryList'.
+                Types of property 'updatedAt' are incompatible.
+                  Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(227,15): error TS2345: Argument of type '(state: GroceryState) => { lists: (GroceryList | { items: any[]; totalEstimate: any; updatedAt: Date; id: string; user_id: string; list_name: string; description?: string | undefined; ... 5 more ...; createdAt: string; })[]; }' is not assignable to parameter of type 'GroceryState | Partial<GroceryState> | ((state: GroceryState) => GroceryState | Partial<GroceryState>)'.
+  Type '(state: GroceryState) => { lists: (GroceryList | { items: any[]; totalEstimate: any; updatedAt: Date; id: string; user_id: string; list_name: string; description?: string | undefined; ... 5 more ...; createdAt: string; })[]; }' is not assignable to type '(state: GroceryState) => GroceryState | Partial<GroceryState>'.
+    Type '{ lists: (GroceryList | { items: any[]; totalEstimate: any; updatedAt: Date; id: string; user_id: string; list_name: string; description?: string; list_type: "shopping" | "wishlist" | "recurring"; ... 4 more ...; createdAt: Timestamp; })[]; }' is not assignable to type 'GroceryState | Partial<GroceryState>'.
+      Type '{ lists: (GroceryList | { items: any[]; totalEstimate: any; updatedAt: Date; id: string; user_id: string; list_name: string; description?: string; list_type: "shopping" | "wishlist" | "recurring"; ... 4 more ...; createdAt: Timestamp; })[]; }' is not assignable to type 'Partial<GroceryState>'.
+        Types of property 'lists' are incompatible.
+          Type '(GroceryList | { items: any[]; totalEstimate: any; updatedAt: Date; id: string; user_id: string; list_name: string; description?: string | undefined; list_type: "shopping" | "recurring" | "wishlist"; ... 4 more ...; createdAt: string; })[]' is not assignable to type 'GroceryList[]'.
+            Type 'GroceryList | { items: any[]; totalEstimate: any; updatedAt: Date; id: string; user_id: string; list_name: string; description?: string | undefined; list_type: "shopping" | "recurring" | "wishlist"; ... 4 more ...; createdAt: string; }' is not assignable to type 'GroceryList'.
+              Type '{ items: any[]; totalEstimate: any; updatedAt: Date; id: string; user_id: string; list_name: string; description?: string; list_type: "shopping" | "wishlist" | "recurring"; status: "active" | "completed" | "archived"; shared_with?: string[]; is_shared?: boolean; estimated_total?: number; createdAt: Timestamp; }' is not assignable to type 'GroceryList'.
+                Types of property 'updatedAt' are incompatible.
+                  Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(233,17): error TS2561: Object literal may only specify known properties, but 'listId' does not exist in type 'GroceryItem'. Did you mean to write 'list_id'?
+src/client/store/groceryStore.ts(243,28): error TS2488: Type 'GroceryItem[] | undefined' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/client/store/groceryStore.ts(244,37): error TS2339: Property 'totalEstimate' does not exist on type 'GroceryList'.
+src/client/store/groceryStore.ts(244,53): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/client/store/groceryStore.ts(252,15): error TS2345: Argument of type '(state: GroceryState) => { lists: (GroceryList | { items: GroceryItem[]; totalEstimate: number; updatedAt: Date; id: string; user_id: string; ... 7 more ...; createdAt: string; })[]; }' is not assignable to parameter of type 'GroceryState | Partial<GroceryState> | ((state: GroceryState) => GroceryState | Partial<GroceryState>)'.
+  Type '(state: GroceryState) => { lists: (GroceryList | { items: GroceryItem[]; totalEstimate: number; updatedAt: Date; id: string; user_id: string; ... 7 more ...; createdAt: string; })[]; }' is not assignable to type '(state: GroceryState) => GroceryState | Partial<GroceryState>'.
+    Type '{ lists: (GroceryList | { items: GroceryItem[]; totalEstimate: number; updatedAt: Date; id: string; user_id: string; list_name: string; description?: string; ... 5 more ...; createdAt: Timestamp; })[]; }' is not assignable to type 'GroceryState | Partial<GroceryState>'.
+      Type '{ lists: (GroceryList | { items: GroceryItem[]; totalEstimate: number; updatedAt: Date; id: string; user_id: string; list_name: string; description?: string; ... 5 more ...; createdAt: Timestamp; })[]; }' is not assignable to type 'Partial<GroceryState>'.
+        Types of property 'lists' are incompatible.
+          Type '(GroceryList | { items: GroceryItem[]; totalEstimate: number; updatedAt: Date; id: string; user_id: string; list_name: string; description?: string | undefined; ... 5 more ...; createdAt: string; })[]' is not assignable to type 'GroceryList[]'.
+            Type 'GroceryList | { items: GroceryItem[]; totalEstimate: number; updatedAt: Date; id: string; user_id: string; list_name: string; description?: string | undefined; ... 5 more ...; createdAt: string; }' is not assignable to type 'GroceryList'.
+              Type '{ items: GroceryItem[]; totalEstimate: number; updatedAt: Date; id: string; user_id: string; list_name: string; description?: string; list_type: "shopping" | "wishlist" | "recurring"; ... 4 more ...; createdAt: Timestamp; }' is not assignable to type 'GroceryList'.
+                Types of property 'updatedAt' are incompatible.
+                  Type 'Date' is not assignable to type 'string'.
+src/client/store/groceryStore.ts(256,28): error TS18048: 'list.items' is possibly 'undefined'.
+src/client/store/groceryStore.ts(261,24): error TS18048: 'list.items' is possibly 'undefined'.
+src/client/store/groceryStore.ts(263,24): error TS2339: Property 'totalEstimate' does not exist on type 'GroceryList'.
+src/client/store/groceryStore.ts(264,19): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/client/store/groceryStore.ts(286,13): error TS2561: Object literal may only specify known properties, but 'created' does not exist in type 'PriceAlert'. Did you mean to write 'createdAt'?
+src/components/ui/accordion.tsx(39,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and 'isOpen' does not exist in type 'Partial<unknown> & Attributes'.
+src/components/ui/accordion.tsx(67,50): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and 'isOpen' does not exist in type 'Partial<unknown> & Attributes'.
+src/components/ui/accordion.tsx(70,50): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and 'isOpen' does not exist in type 'Partial<unknown> & Attributes'.
+src/components/ui/collapsible.tsx(26,17): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and 'onClick' does not exist in type 'Partial<unknown> & Attributes'.
+src/components/ui/collapsible.tsx(31,50): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and 'open' does not exist in type 'Partial<unknown> & Attributes'.
+src/components/ui/radio-group.tsx(23,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and 'checked' does not exist in type 'Partial<unknown> & Attributes'.
+src/components/ui/slider.tsx(4,11): error TS2430: Interface 'SliderProps' incorrectly extends interface 'Omit<HTMLAttributes<HTMLDivElement>, "onChange">'.
+  Types of property 'defaultValue' are incompatible.
+    Type 'number[] | undefined' is not assignable to type 'string | number | readonly string[] | undefined'.
+      Type 'number[]' is not assignable to type 'string | number | readonly string[] | undefined'.
+        Type 'number[]' is not assignable to type 'readonly string[]'.
+          Type 'number' is not assignable to type 'string'.
+src/config/ollama-optimization.config.ts(287,5): error TS2322: Type 'OptimizationProfile | undefined' is not assignable to type 'OptimizationProfile'.
+  Type 'undefined' is not assignable to type 'OptimizationProfile'.
+src/config/ollama-optimization.config.ts(289,5): error TS2322: Type 'OptimizationProfile | undefined' is not assignable to type 'OptimizationProfile'.
+  Type 'undefined' is not assignable to type 'OptimizationProfile'.
+src/config/ollama-optimization.config.ts(291,5): error TS2322: Type 'OptimizationProfile | undefined' is not assignable to type 'OptimizationProfile'.
+  Type 'undefined' is not assignable to type 'OptimizationProfile'.
+src/config/redis.config.ts(22,29): error TS7006: Parameter '_hostname' implicitly has an 'any' type.
+src/config/redis.config.ts(22,40): error TS7006: Parameter '_cert' implicitly has an 'any' type.
+src/config/redis.config.ts(45,41): error TS2345: Argument of type '{ host: string; port: number; db: number; tls: boolean; }' is not assignable to parameter of type 'string'.
+src/config/redis.config.ts(58,38): error TS2345: Argument of type '{ error: string; stack: string | undefined; host: string; port: number; }' is not assignable to parameter of type 'string'.
+src/config/redis.config.ts(70,33): error TS7006: Parameter 'timeToReconnect' implicitly has an 'any' type.
+src/config/redis.config.ts(71,44): error TS2345: Argument of type '{ timeToReconnect: string; }' is not assignable to parameter of type 'string'.
+src/core/agents/specialized/CodeAgent.ts(43,39): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'CodeResult'.
+src/core/agents/specialized/DataAnalysisAgent.ts(43,43): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'AnalysisResult'.
+src/core/agents/specialized/WriterAgent.ts(47,35): error TS18046: 'result' is of type 'unknown'.
+src/core/agents/specialized/WriterAgent.ts(51,38): error TS18046: 'result' is of type 'unknown'.
+src/core/database/AutomationRuleService.ts(109,37): error TS2304: Cannot find name 'EmailRecord'.
+src/core/middleware/BusinessSearchMiddleware.ts(148,44): error TS2345: Argument of type '(prompt: string, options?: OllamaGenerateOptions | undefined) => Promise<string>' is not assignable to parameter of type '(...args: unknown[]) => unknown'.
+  Types of parameters 'prompt' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(153,13): error TS2345: Argument of type '(prompt: string, options?: OllamaGenerateOptions | undefined) => Promise<OllamaGenerateWithLogProbsResponse>' is not assignable to parameter of type '(...args: unknown[]) => unknown'.
+  Types of parameters 'prompt' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(159,13): error TS2345: Argument of type '(prompt: string, options?: OllamaGenerateOptions | undefined, onChunk?: ((chunk: string) => void) | undefined) => Promise<string>' is not assignable to parameter of type '(...args: unknown[]) => unknown'.
+  Types of parameters 'prompt' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(186,11): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(196,11): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(248,52): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(253,62): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(262,13): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(282,9): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(307,11): error TS2322: Type 'unknown' is not assignable to type 'OllamaGenerateWithLogProbsResponse'.
+src/core/middleware/BusinessSearchMiddleware.ts(317,11): error TS2322: Type 'unknown' is not assignable to type 'OllamaGenerateWithLogProbsResponse'.
+src/core/middleware/BusinessSearchMiddleware.ts(328,46): error TS18046: 'response' is of type 'unknown'.
+src/core/middleware/BusinessSearchMiddleware.ts(329,58): error TS18046: 'response' is of type 'unknown'.
+src/core/middleware/BusinessSearchMiddleware.ts(334,62): error TS18046: 'response' is of type 'unknown'.
+src/core/middleware/BusinessSearchMiddleware.ts(348,9): error TS2322: Type 'unknown' is not assignable to type 'OllamaGenerateWithLogProbsResponse'.
+src/core/middleware/BusinessSearchMiddleware.ts(374,11): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(384,11): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(410,13): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(419,15): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/core/middleware/BusinessSearchMiddleware.ts(434,9): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/core/monitoring/EmailPipelineHealthChecker.ts(333,32): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/core/monitoring/EmailProcessingMonitor.ts(17,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/monitoring/EmailProcessingMonitor.ts(354,57): error TS2339: Property 'totalConnections' does not exist on type 'PoolMetrics'.
+src/core/monitoring/EmailProcessingMonitor.ts(767,5): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/core/processors/EmailThreePhaseBatchProcessor.ts(233,20): error TS2551: Property 'phase3_processing_time' does not exist on type 'Phase2Results | Phase3Results'. Did you mean 'phase2_processing_time'?
+  Property 'phase3_processing_time' does not exist on type 'Phase2Results'.
+src/core/processors/EmailThreePhaseBatchProcessor.ts(237,34): error TS2345: Argument of type 'Phase2Results | Phase3Results' is not assignable to parameter of type 'EmailAnalysis'.
+  Type 'Phase2Results' is missing the following properties from type 'EmailAnalysis': categories, workflowState, suggestedActions, summary
+src/core/processors/MemorySafeBatchProcessor.ts(11,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/prompt-optimization/PromptOptimizer.ts(6,8): error TS2307: Cannot find module '../../types' or its corresponding type declarations.
+src/core/prompt-optimization/PromptOptimizer.ts(7,34): error TS2307: Cannot find module '../analysis/ModelAnalyzer' or its corresponding type declarations.
+src/core/prompt-optimization/PromptOptimizer.ts(199,52): error TS2345: Argument of type '(string | undefined)[]' is not assignable to parameter of type 'string[]'.
+  Type 'string | undefined' is not assignable to type 'string'.
+    Type 'undefined' is not assignable to type 'string'.
+src/core/prompt-optimization/PromptOptimizer.ts(213,13): error TS2322: Type '(string | undefined)[]' is not assignable to type 'string[]'.
+  Type 'string | undefined' is not assignable to type 'string'.
+    Type 'undefined' is not assignable to type 'string'.
+src/core/prompts/PromptOptimizer.ts(9,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/recovery/CheckpointManager.ts(28,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/recovery/CheckpointManager.ts(411,29): error TS2345: Argument of type 'T | undefined' is not assignable to parameter of type 'T'.
+  'T' could be instantiated with an arbitrary type which could be unrelated to 'T | undefined'.
+src/core/recovery/CheckpointManager.ts(443,22): error TS2339: Property 'completeCheckpoint' does not exist on type '{ process(items: T[], processor: (item: T, index: number, checkpoint?: CheckpointData | undefined) => Promise<void>, initialState?: Record<string, unknown>): Promise<...>; updateState(updates: Record<...>): Promise<...>; }'.
+src/core/recovery/CheckpointManager.ts(451,40): error TS2339: Property 'getCheckpoints' does not exist on type '{ process(items: T[], processor: (item: T, index: number, checkpoint?: CheckpointData | undefined) => Promise<void>, initialState?: Record<string, unknown>): Promise<...>; updateState(updates: Record<...>): Promise<...>; }'.
+src/core/recovery/CheckpointManager.ts(457,22): error TS2339: Property 'updateCheckpoint' does not exist on type '{ process(items: T[], processor: (item: T, index: number, checkpoint?: CheckpointData | undefined) => Promise<void>, initialState?: Record<string, unknown>): Promise<...>; updateState(updates: Record<...>): Promise<...>; }'.
+src/core/recovery/CheckpointManager.ts(607,59): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/core/retry/RetryManager.ts(14,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/retry/RetryManager.ts(419,23): error TS2322: Type 'RetryOptions' is not assignable to type 'Required<RetryOptions>'.
+  Types of property 'maxAttempts' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/core/scoring/AnalysisScorer.ts(1,31): error TS2307: Cannot find module '../../types' or its corresponding type declarations.
+src/core/services/EmailAnalysisServiceEnhanced.ts(12,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/services/EmailChainAnalyzer.ts(24,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/services/EmailChainAnalyzer.ts(330,16): error TS18048: 'lastEmail' is possibly 'undefined'.
+src/core/services/EmailChainAnalyzer.ts(331,16): error TS18048: 'firstEmail' is possibly 'undefined'.
+src/core/services/EmailChainAnalyzer.ts(466,53): error TS2339: Property 'body' does not exist on type 'EmailChainNode'.
+src/core/services/EmailChainAnalyzer.ts(542,7): error TS18048: 'lastEmail' is possibly 'undefined'.
+src/core/services/EmailChainAnalyzer.ts(544,8): error TS18048: 'lastEmail' is possibly 'undefined'.
+src/core/services/EmailChainAnalyzer.ts(544,18): error TS2339: Property 'body' does not exist on type 'EmailChainNode'.
+src/core/services/EmailChainAnalyzer.ts(614,33): error TS2339: Property 'body' does not exist on type 'EmailChainNode'.
+src/core/services/EmailChainAnalyzer.ts(624,33): error TS2339: Property 'body' does not exist on type 'EmailChainNode'.
+src/core/services/EmailChainAnalyzer.ts(646,9): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailChainAnalyzer.ts(647,14): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailChainAnalyzer.ts(651,39): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailChainAnalyzerV2.ts(10,26): error TS2724: '"../../database/UnitOfWork.js"' has no exported member named 'IUnitOfWork'. Did you mean 'UnitOfWork'?
+src/core/services/EmailChainAnalyzerV2.ts(12,3): error TS1484: 'EmailRecord' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailChainAnalyzerV2.ts(17,3): error TS1484: 'EmailChain' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailChainAnalyzerV2.ts(20,3): error TS1484: 'ChainCompleteness' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailChainAnalyzerV2.ts(23,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/services/EmailChainAnalyzerV2.ts(113,32): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailChainAnalyzerV2.ts(140,32): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailChainAnalyzerV2.ts(142,13): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailChainAnalyzerV2.ts(395,5): error TS2322: Type '{ type: string; value: string | undefined; count: number; first_seen: Date; last_seen: Date; }[]' is not assignable to type '{ type: string; value: string; count: number; first_seen: Date; last_seen: Date; }[]'.
+  Type '{ type: string; value: string | undefined; count: number; first_seen: Date; last_seen: Date; }' is not assignable to type '{ type: string; value: string; count: number; first_seen: Date; last_seen: Date; }'.
+    Types of property 'value' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/core/services/EmailIngestionService.ts(17,10): error TS2614: Module '"bullmq"' has no exported member 'Queue'. Did you mean to use 'import Queue from "bullmq"' instead?
+src/core/services/EmailIngestionService.ts(17,17): error TS2614: Module '"bullmq"' has no exported member 'Worker'. Did you mean to use 'import Worker from "bullmq"' instead?
+src/core/services/EmailIngestionService.ts(17,25): error TS1484: 'Job' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionService.ts(17,30): error TS2614: Module '"bullmq"' has no exported member 'QueueEvents'. Did you mean to use 'import QueueEvents from "bullmq"' instead?
+src/core/services/EmailIngestionService.ts(210,11): error TS2395: Individual declarations in merged declaration 'IngestionError' must be all exported or all local.
+src/core/services/EmailIngestionService.ts(244,14): error TS2395: Individual declarations in merged declaration 'IngestionError' must be all exported or all local.
+src/core/services/EmailIngestionService.ts(342,3): error TS2484: Export declaration conflicts with exported declaration of 'IEmailIngestionService'.
+src/core/services/EmailIngestionService.ts(347,3): error TS2484: Export declaration conflicts with exported declaration of 'QueueIntegration'.
+src/core/services/EmailIngestionServiceFactory.ts(11,3): error TS1484: 'EmailIngestionConfig' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceFactory.ts(14,3): error TS1484: 'IEmailIngestionService' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceFactory.ts(50,5): error TS2322: Type 'EmailIngestionServiceImpl' is not assignable to type 'IEmailIngestionService'.
+  The types returned by 'getRecentErrors(...)' are incompatible between these types.
+    Type 'Promise<import("/home/pricepro2006/CrewAI_Team/src/core/services/EmailIngestionService").IngestionError[]>' is not assignable to type 'Promise<import("/home/pricepro2006/CrewAI_Team/src/core/services/EmailIngestionService").IIngestionError[]>'.
+      Type 'import("/home/pricepro2006/CrewAI_Team/src/core/services/EmailIngestionService").IngestionError[]' is not assignable to type 'import("/home/pricepro2006/CrewAI_Team/src/core/services/EmailIngestionService").IIngestionError[]'.
+        Type 'IngestionError' is missing the following properties from type 'IngestionError': id, timestamp, messageId, error
+src/core/services/EmailIngestionServiceFactory.ts(200,53): error TS2345: Argument of type 'Partial<T>[Extract<keyof T, string>] & Record<string, any>' is not assignable to parameter of type 'Partial<T[Extract<keyof T, string>] & Record<string, any>>'.
+src/core/services/EmailIngestionServiceFactory.ts(202,11): error TS2322: Type '(Partial<T>[Extract<keyof T, string>] & Record<string, any>) | (Partial<T>[Extract<keyof T, string>] & ({} | null))' is not assignable to type 'T[Extract<keyof T, string>]'.
+  '(Partial<T>[Extract<keyof T, string>] & Record<string, any>) | (Partial<T>[Extract<keyof T, string>] & ({} | null))' is assignable to the constraint of type 'T[Extract<keyof T, string>]', but 'T[Extract<keyof T, string>]' could be instantiated with a different subtype of constraint 'any'.
+    Type 'Partial<T>[Extract<keyof T, string>] & Record<string, any>' is not assignable to type 'T[Extract<keyof T, string>]'.
+      'Partial<T>[Extract<keyof T, string>] & Record<string, any>' is assignable to the constraint of type 'T[Extract<keyof T, string>]', but 'T[Extract<keyof T, string>]' could be instantiated with a different subtype of constraint 'any'.
+src/core/services/EmailIngestionServiceImpl.ts(8,10): error TS2614: Module '"bullmq"' has no exported member 'Queue'. Did you mean to use 'import Queue from "bullmq"' instead?
+src/core/services/EmailIngestionServiceImpl.ts(8,17): error TS2614: Module '"bullmq"' has no exported member 'Worker'. Did you mean to use 'import Worker from "bullmq"' instead?
+src/core/services/EmailIngestionServiceImpl.ts(8,25): error TS1484: 'Job' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceImpl.ts(8,30): error TS2614: Module '"bullmq"' has no exported member 'QueueEvents'. Did you mean to use 'import QueueEvents from "bullmq"' instead?
+src/core/services/EmailIngestionServiceImpl.ts(14,3): error TS1484: 'IEmailIngestionService' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceImpl.ts(17,3): error TS1484: 'EmailIngestionConfig' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceImpl.ts(18,3): error TS1484: 'IngestionJob' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceImpl.ts(19,3): error TS1484: 'RawEmailData' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceImpl.ts(20,3): error TS1484: 'IngestionResult' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceImpl.ts(21,3): error TS1484: 'IngestionBatchResult' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceImpl.ts(22,3): error TS1484: 'IngestionMetrics' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceImpl.ts(25,3): error TS1484: 'QueueStatus' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceImpl.ts(26,3): error TS1484: 'HealthStatus' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceImpl.ts(27,3): error TS1484: 'ComponentHealth' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceImpl.ts(28,3): error TS1484: 'QueueIntegration' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailIngestionServiceImpl.ts(86,22): error TS2769: No overload matches this call.
+  Overload 1 of 8, '(options: RedisOptions): Redis', gave the following error.
+    Object literal may only specify known properties, and 'retryDelayOnFailover' does not exist in type 'RedisOptions'.
+  Overload 2 of 8, '(port: number): Redis', gave the following error.
+    Argument of type '{ host: string; port: number; password: string | undefined; maxRetriesPerRequest: number; retryDelayOnFailover: number; enableReadyCheck: boolean; lazyConnect: boolean; }' is not assignable to parameter of type 'number'.
+  Overload 3 of 8, '(path: string): Redis', gave the following error.
+    Argument of type '{ host: string; port: number; password: string | undefined; maxRetriesPerRequest: number; retryDelayOnFailover: number; enableReadyCheck: boolean; lazyConnect: boolean; }' is not assignable to parameter of type 'string'.
+src/core/services/EmailIngestionServiceImpl.ts(308,9): error TS2322: Type 'string' is not assignable to type 'Error'.
+src/core/services/EmailIngestionServiceImpl.ts(348,15): error TS2322: Type 'Error' is not assignable to type 'string'.
+src/core/services/EmailIngestionServiceImpl.ts(402,9): error TS2322: Type 'string' is not assignable to type 'Error'.
+src/core/services/EmailIngestionServiceImpl.ts(429,9): error TS2322: Type 'string' is not assignable to type 'Error'.
+src/core/services/EmailIngestionServiceImpl.ts(442,9): error TS2322: Type 'string' is not assignable to type 'Error'.
+src/core/services/EmailIngestionServiceImpl.ts(455,9): error TS2322: Type 'string' is not assignable to type 'Error'.
+src/core/services/EmailIngestionServiceImpl.ts(468,9): error TS2322: Type 'string' is not assignable to type 'Error'.
+src/core/services/EmailIngestionServiceImpl.ts(695,17): error TS2339: Property 'updateProgress' does not exist on type 'Job<IngestionJob>'.
+src/core/services/EmailIngestionServiceImpl.ts(708,17): error TS2339: Property 'updateProgress' does not exist on type 'Job<IngestionJob>'.
+src/core/services/EmailIngestionServiceImpl.ts(711,82): error TS2345: Argument of type 'RawEmailData' is not assignable to parameter of type 'GraphEmailData'.
+  Property 'toRecipients' is missing in type 'RawEmailData' but required in type 'GraphEmailData'.
+src/core/services/EmailIngestionServiceImpl.ts(713,17): error TS2339: Property 'updateProgress' does not exist on type 'Job<IngestionJob>'.
+src/core/services/EmailIngestionServiceImpl.ts(718,17): error TS2339: Property 'updateProgress' does not exist on type 'Job<IngestionJob>'.
+src/core/services/EmailIngestionServiceImpl.ts(841,9): error TS2416: Property 'getRecentErrors' in type 'EmailIngestionServiceImpl' is not assignable to the same property in base type 'IEmailIngestionService'.
+  Type '(limit?: number) => Promise<IngestionError[]>' is not assignable to type '(limit?: number | undefined) => Promise<IngestionError[]>'.
+    Type 'Promise<import("/home/pricepro2006/CrewAI_Team/src/core/services/EmailIngestionService").IngestionError[]>' is not assignable to type 'Promise<import("/home/pricepro2006/CrewAI_Team/src/core/services/EmailIngestionService").IIngestionError[]>'.
+      Type 'import("/home/pricepro2006/CrewAI_Team/src/core/services/EmailIngestionService").IngestionError[]' is not assignable to type 'import("/home/pricepro2006/CrewAI_Team/src/core/services/EmailIngestionService").IIngestionError[]'.
+        Type 'IngestionError' is missing the following properties from type 'IngestionError': id, timestamp, messageId, error
+src/core/services/EmailIngestionServiceImpl.ts(842,5): error TS2322: Type '{ timestamp: Date; source: IngestionSource; error: string; count: number; }[]' is not assignable to type 'IngestionError[]'.
+  Type '{ timestamp: Date; source: IngestionSource; error: string; count: number; }' is missing the following properties from type 'IngestionError': code, retryable, name, message
+src/core/services/EmailIngestionServiceImpl.ts(908,34): error TS2339: Property 'getStatistics' does not exist on type 'EmailRepository'.
+src/core/services/EmailProcessingOptimizer.ts(15,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/services/EmailProcessingOptimizer.ts(156,53): error TS2345: Argument of type 'EmailInput | undefined' is not assignable to parameter of type 'EmailInput'.
+  Type 'undefined' is not assignable to type 'EmailInput'.
+src/core/services/EmailProcessingOptimizer.ts(181,57): error TS2345: Argument of type 'EmailInput | undefined' is not assignable to parameter of type 'EmailInput'.
+  Type 'undefined' is not assignable to type 'EmailInput'.
+src/core/services/EmailProcessingOptimizer.ts(186,36): error TS2345: Argument of type 'EmailInput | undefined' is not assignable to parameter of type 'EmailInput'.
+  Type 'undefined' is not assignable to type 'EmailInput'.
+src/core/services/EmailProcessingOptimizer.ts(191,63): error TS18048: 'email' is possibly 'undefined'.
+src/core/services/EmailProcessingOptimizer.ts(402,5): error TS2322: Type 'string | boolean' is not assignable to type 'boolean'.
+  Type 'string' is not assignable to type 'boolean'.
+src/core/services/EmailProcessingQueueService.ts(8,10): error TS2614: Module '"bullmq"' has no exported member 'Queue'. Did you mean to use 'import Queue from "bullmq"' instead?
+src/core/services/EmailProcessingQueueService.ts(8,17): error TS2614: Module '"bullmq"' has no exported member 'QueueScheduler'. Did you mean to use 'import QueueScheduler from "bullmq"' instead?
+src/core/services/EmailProcessingQueueService.ts(8,33): error TS2614: Module '"bullmq"' has no exported member 'Worker'. Did you mean to use 'import Worker from "bullmq"' instead?
+src/core/services/EmailProcessingQueueService.ts(8,41): error TS2614: Module '"bullmq"' has no exported member 'QueueEvents'. Did you mean to use 'import QueueEvents from "bullmq"' instead?
+src/core/services/EmailProcessingQueueService.ts(8,54): error TS1484: 'Job' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailProcessingQueueService.ts(14,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/services/EmailProcessingQueueService.ts(219,31): error TS7031: Binding element 'jobId' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(219,38): error TS7031: Binding element 'returnvalue' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(219,51): error TS7031: Binding element 'prev' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(228,28): error TS7031: Binding element 'jobId' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(228,35): error TS7031: Binding element 'failedReason' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(228,49): error TS7031: Binding element 'prev' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(237,30): error TS7031: Binding element 'jobId' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(237,37): error TS7031: Binding element 'data' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(245,29): error TS7031: Binding element 'jobId' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(245,36): error TS7031: Binding element 'delay' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(253,29): error TS7031: Binding element 'jobId' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(353,14): error TS7006: Parameter 'job' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(395,29): error TS7006: Parameter 'job' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(395,34): error TS7006: Parameter 'result' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(399,26): error TS7006: Parameter 'job' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(399,31): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(403,25): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/core/services/EmailProcessingQueueService.ts(408,27): error TS7006: Parameter 'jobId' implicitly has an 'any' type.
+src/core/services/EmailThreePhaseAnalysisService.ts(29,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/services/EmailThreePhaseAnalysisService.ts(1018,42): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/core/services/EmailThreePhaseAnalysisService.ts(1034,42): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/core/services/EmailThreePhaseAnalysisService.ts(1051,42): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/core/services/EmailThreePhaseAnalysisService.ts(1485,19): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailThreePhaseAnalysisService.ts(1486,19): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailThreePhaseAnalysisService.ts(1581,40): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailThreePhaseAnalysisService.ts(1587,42): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/core/services/EmailThreePhaseAnalysisService.ts(1593,36): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailThreePhaseAnalysisService.ts(1601,37): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailThreePhaseAnalysisService.ts(1813,55): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+src/core/services/EmailThreePhaseAnalysisServiceFixed.ts(11,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/services/EmailThreePhaseAnalysisServiceFixed.ts(406,42): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/core/services/EmailThreePhaseAnalysisServiceFixed.ts(421,42): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(24,26): error TS2724: '"../../database/UnitOfWork.js"' has no exported member named 'IUnitOfWork'. Did you mean 'UnitOfWork'?
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(25,10): error TS1484: 'EmailRecord' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(27,3): error TS1484: 'EmailAnalysis' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(28,3): error TS1484: 'Phase1Results' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(29,3): error TS1484: 'Phase2Results' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(30,3): error TS1484: 'Phase3Results' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(33,10): error TS1484: 'EmailChain' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(35,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(263,67): error TS2345: Argument of type '{ thread_emails: EmailRecord[]; id: string; message_id?: string; subject: string; body?: string; body_preview?: string; sender_email: string; sender_name?: string; recipient_emails: string; received_at: string; importance?: string; has_attachments?: boolean; }' is not assignable to parameter of type 'string'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(271,40): error TS2339: Property 'conversation_id' does not exist on type 'ChainAnalysis'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(274,9): error TS2322: Type '"unknown" | "quote_request" | "order_processing" | "general_inquiry" | "support_ticket"' is not assignable to type 'ChainType'.
+  Type '"unknown"' is not assignable to type 'ChainType'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(277,39): error TS2339: Property 'missing_stages' does not exist on type 'ChainAnalysis'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(278,30): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(280,11): error TS2532: Object is possibly 'undefined'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(286,9): error TS2740: Type '{ quote_numbers: string[]; po_numbers: string[]; case_numbers: string[]; }' is missing the following properties from type 'ChainEntity[]': length, pop, push, concat, and 29 more.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(287,39): error TS2551: Property 'workflow_state' does not exist on type 'ChainAnalysis'. Did you mean 'workflow_states'?
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(336,35): error TS2339: Property 'enhanced_classification' does not exist on type 'Phase2Results | Phase3Results'.
+  Property 'enhanced_classification' does not exist on type 'Phase3Results'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(337,38): error TS2339: Property 'action_items' does not exist on type 'Phase2Results | Phase3Results'.
+  Property 'action_items' does not exist on type 'Phase3Results'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(337,56): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(338,31): error TS2339: Property 'contextual_insights' does not exist on type 'Phase2Results | Phase3Results'.
+  Property 'contextual_insights' does not exist on type 'Phase3Results'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(341,42): error TS2339: Property 'workflow_intelligence' does not exist on type 'Phase3Results'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(344,35): error TS2339: Property 'enhanced_classification' does not exist on type 'Phase2Results | Phase3Results'.
+  Property 'enhanced_classification' does not exist on type 'Phase3Results'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(346,33): error TS2339: Property 'enhanced_classification' does not exist on type 'Phase2Results | Phase3Results'.
+  Property 'enhanced_classification' does not exist on type 'Phase3Results'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(360,15): error TS2339: Property 'enhanced_classification' does not exist on type 'Phase2Results | Phase3Results'.
+  Property 'enhanced_classification' does not exist on type 'Phase3Results'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(361,15): error TS2339: Property 'enhanced_classification' does not exist on type 'Phase2Results | Phase3Results'.
+  Property 'enhanced_classification' does not exist on type 'Phase3Results'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(439,35): error TS2339: Property 'phase3_processing_time' does not exist on type 'Phase3Results'.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(560,9): error TS2554: Expected 2 arguments, but got 4.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(597,9): error TS2739: Type '{}' is missing the following properties from type '{ company_names: string[]; people: string[]; technical_terms: string[]; deadlines: string[]; }': company_names, people, technical_terms, deadlines
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(625,9): error TS2554: Expected 2 arguments, but got 4.
+src/core/services/EmailThreePhaseAnalysisServiceV2.ts(801,29): error TS2339: Property 'disconnect' does not exist on type 'RedisService'.
+src/core/services/OllamaOptimizer.ts(218,5): error TS2322: Type 'string | void' is not assignable to type 'string'.
+  Type 'void' is not assignable to type 'string'.
+src/core/services/OllamaOptimizer.ts(571,21): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(timeout: string | number | Timeout | undefined): void', gave the following error.
+    Argument of type 'Timer' is not assignable to parameter of type 'string | number | Timeout | undefined'.
+      Type 'Timer' is missing the following properties from type 'Timeout': close, _onTimeout, [Symbol.dispose]
+  Overload 2 of 2, '(id: number | undefined): void', gave the following error.
+    Argument of type 'Timer' is not assignable to parameter of type 'number'.
+src/core/services/OptimizedEmailProcessor.ts(192,29): error TS18048: 'batch' is possibly 'undefined'.
+src/core/services/WorkflowSLAMonitor.ts(405,9): error TS2698: Spread types may only be created from object types.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(10,3): error TS1484: 'RawEmailData' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(12,3): error TS1484: 'EmailIngestionConfig' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(22,14): error TS2323: Cannot redeclare exported variable 'EmailTestDataFactory'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(142,14): error TS2323: Cannot redeclare exported variable 'ConfigTestFactory'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(215,14): error TS2323: Cannot redeclare exported variable 'MockFactory'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(220,20): error TS2339: Property 'getStatistics' does not exist on type 'EmailRepository'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(233,20): error TS2339: Property 'findOne' does not exist on type 'EmailRepository'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(234,20): error TS2339: Property 'create' does not exist on type 'EmailRepository'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(248,30): error TS2339: Property 'messageId' does not exist on type 'GraphEmailData'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(250,24): error TS2339: Property 'address' does not exist on type '{ emailAddress: { address: string; name?: string | undefined; }; }'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(268,32): error TS2339: Property 'messageId' does not exist on type 'GraphEmailData'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(270,26): error TS2339: Property 'address' does not exist on type '{ emailAddress: { address: string; name?: string | undefined; }; }'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(284,32): error TS2339: Property 'messageId' does not exist on type 'GraphEmailData'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(286,26): error TS2339: Property 'address' does not exist on type '{ emailAddress: { address: string; name?: string | undefined; }; }'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(306,14): error TS2323: Cannot redeclare exported variable 'PerformanceTestUtils'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(369,14): error TS2323: Cannot redeclare exported variable 'TestAssertions'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(417,14): error TS2323: Cannot redeclare exported variable 'TestEnvironmentUtils'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(458,3): error TS2323: Cannot redeclare exported variable 'EmailTestDataFactory'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(458,3): error TS2484: Export declaration conflicts with exported declaration of 'EmailTestDataFactory'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(459,3): error TS2323: Cannot redeclare exported variable 'ConfigTestFactory'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(459,3): error TS2484: Export declaration conflicts with exported declaration of 'ConfigTestFactory'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(460,3): error TS2323: Cannot redeclare exported variable 'MockFactory'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(460,3): error TS2484: Export declaration conflicts with exported declaration of 'MockFactory'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(461,3): error TS2323: Cannot redeclare exported variable 'PerformanceTestUtils'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(461,3): error TS2484: Export declaration conflicts with exported declaration of 'PerformanceTestUtils'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(462,3): error TS2323: Cannot redeclare exported variable 'TestAssertions'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(462,3): error TS2484: Export declaration conflicts with exported declaration of 'TestAssertions'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(463,3): error TS2323: Cannot redeclare exported variable 'TestEnvironmentUtils'.
+src/core/services/__tests__/test-utils/EmailIngestionTestUtils.ts(463,3): error TS2484: Export declaration conflicts with exported declaration of 'TestEnvironmentUtils'.
+src/core/services/examples/EmailIngestionServiceExample.ts(15,3): error TS1484: 'RawEmailData' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/core/services/examples/EmailIngestionServiceExample.ts(22,23): error TS2323: Cannot redeclare exported variable 'basicManualIngestionExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(90,23): error TS2323: Cannot redeclare exported variable 'batchProcessingExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(158,23): error TS2323: Cannot redeclare exported variable 'autoPullExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(193,23): error TS2323: Cannot redeclare exported variable 'errorHandlingExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(250,17): error TS2323: Cannot redeclare exported variable 'environmentValidationExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(276,23): error TS2323: Cannot redeclare exported variable 'performanceMonitoringExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(332,23): error TS2323: Cannot redeclare exported variable 'completeIntegrationExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(432,3): error TS2323: Cannot redeclare exported variable 'basicManualIngestionExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(432,3): error TS2484: Export declaration conflicts with exported declaration of 'basicManualIngestionExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(433,3): error TS2323: Cannot redeclare exported variable 'batchProcessingExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(433,3): error TS2484: Export declaration conflicts with exported declaration of 'batchProcessingExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(434,3): error TS2323: Cannot redeclare exported variable 'autoPullExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(434,3): error TS2484: Export declaration conflicts with exported declaration of 'autoPullExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(435,3): error TS2323: Cannot redeclare exported variable 'errorHandlingExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(435,3): error TS2484: Export declaration conflicts with exported declaration of 'errorHandlingExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(436,3): error TS2323: Cannot redeclare exported variable 'environmentValidationExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(436,3): error TS2484: Export declaration conflicts with exported declaration of 'environmentValidationExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(437,3): error TS2323: Cannot redeclare exported variable 'performanceMonitoringExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(437,3): error TS2484: Export declaration conflicts with exported declaration of 'performanceMonitoringExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(438,3): error TS2323: Cannot redeclare exported variable 'completeIntegrationExample'.
+src/core/services/examples/EmailIngestionServiceExample.ts(438,3): error TS2484: Export declaration conflicts with exported declaration of 'completeIntegrationExample'.
+src/core/shutdown/GracefulShutdownHandler.ts(19,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/websocket/WorkflowWebSocketHandler.ts(220,26): error TS2339: Property 'BATCH_STARTED' does not exist on type 'typeof WorkflowEvents'.
+src/core/workers/EmailProcessingWorker.ts(18,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/workers/EmailProcessingWorker.ts(219,11): error TS18047: 'parentPort' is possibly 'null'.
+src/core/workers/EmailProcessingWorker.ts(342,55): error TS2345: Argument of type 'EmailJobData | undefined' is not assignable to parameter of type 'EmailJobData'.
+  Type 'undefined' is not assignable to type 'EmailJobData'.
+src/core/workers/EmailProcessingWorker.ts(355,18): error TS18048: 'email' is possibly 'undefined'.
+src/core/workers/EmailProcessingWorker.ts(452,37): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/core/workers/EmailProcessingWorker.ts(462,49): error TS2532: Object is possibly 'undefined'.
+src/core/workers/EmailProcessingWorker.ts(514,37): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/core/workers/EmailProcessingWorker.ts(523,49): error TS2532: Object is possibly 'undefined'.
+src/core/workers/EmailProcessingWorkerPool.ts(10,10): error TS2614: Module '"bullmq"' has no exported member 'Queue'. Did you mean to use 'import Queue from "bullmq"' instead?
+src/core/workers/EmailProcessingWorkerPool.ts(10,17): error TS2614: Module '"bullmq"' has no exported member 'Worker'. Did you mean to use 'import Worker from "bullmq"' instead?
+src/core/workers/EmailProcessingWorkerPool.ts(16,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/workers/EmailProcessingWorkerPool.ts(352,14): error TS7006: Parameter 'job' implicitly has an 'any' type.
+src/core/workers/EmailProcessingWorkerPool.ts(420,38): error TS7006: Parameter 'job' implicitly has an 'any' type.
+src/core/workers/EmailProcessingWorkerPool.ts(424,35): error TS7006: Parameter 'job' implicitly has an 'any' type.
+src/core/workers/EmailProcessingWorkerPool.ts(424,40): error TS7006: Parameter 'err' implicitly has an 'any' type.
+src/core/workers/TestWorker.ts(34,9): error TS7027: Unreachable code detected.
+src/core/workers/WorkerLoader.ts(14,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/core/workers/email-notification.worker.ts(124,3): error TS18046: 'emailNotificationWorker' is of type 'unknown'.
+src/core/workers/email-notification.worker.ts(131,3): error TS18046: 'emailNotificationWorker' is of type 'unknown'.
+src/core/workers/email-notification.worker.ts(156,35): error TS2339: Property 'close' does not exist on type '{}'.
+src/database/ConnectionPool.ts(23,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/database/DatabaseManager.ts(210,16): error TS2339: Property 'db' does not exist on type 'DatabaseManager'.
+src/database/DatabaseManager.ts(226,70): error TS2339: Property 'db' does not exist on type 'DatabaseManager'.
+src/database/TransactionIntegration.ts(14,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/database/TransactionIntegration.ts(73,21): error TS18046: 'email' is of type 'unknown'.
+src/database/TransactionIntegration.ts(73,31): error TS18046: 'email' is of type 'unknown'.
+src/database/TransactionIntegration.ts(73,49): error TS18046: 'email' is of type 'unknown'.
+src/database/TransactionIntegration.ts(73,64): error TS18046: 'email' is of type 'unknown'.
+src/database/TransactionIntegration.ts(82,21): error TS18046: 'email' is of type 'unknown'.
+src/database/TransactionManager.ts(20,16): error TS2673: Constructor of class 'Logger' is private and only accessible within the class declaration.
+src/database/TransactionManager.ts(305,32): error TS2532: Object is possibly 'undefined'.
+src/database/TransactionManager.ts(305,32): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+src/database/UnitOfWork.ts(1,10): error TS1484: 'IUnitOfWork' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/UnitOfWork.ts(2,10): error TS1484: 'IEmailRepository' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/UnitOfWork.ts(3,10): error TS1484: 'IEmailChainRepository' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/UnitOfWork.ts(4,10): error TS1484: 'IAnalysisRepository' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/UnitOfWork.ts(23,5): error TS2322: Type 'EmailRepositoryImpl' is not assignable to type 'IEmailRepository'.
+  Types of property 'findPaginated' are incompatible.
+    Type '(page?: number, pageSize?: number, options?: Omit<QueryOptions, "limit" | "offset">) => Promise<PaginatedResult<EmailRecord>>' is not assignable to type '(options: PaginationOptions) => Promise<PaginatedResult<EmailRecord>>'.
+      Types of parameters 'page' and 'options' are incompatible.
+        Type 'PaginationOptions' is not assignable to type 'number'.
+src/database/UnitOfWork.ts(24,5): error TS2322: Type 'EmailChainRepositoryImpl' is not assignable to type 'IEmailChainRepository'.
+  Types of property 'findAll' are incompatible.
+    Type '(options?: QueryOptions) => Promise<EmailChain[]>' is not assignable to type '(filter?: Partial<EmailChain> | undefined) => Promise<EmailChain[]>'.
+      Types of parameters 'options' and 'filter' are incompatible.
+        Type 'Partial<EmailChain> | undefined' is not assignable to type 'QueryOptions | undefined'.
+          Type 'Partial<EmailChain>' has no properties in common with type 'QueryOptions'.
+src/database/UnitOfWork.ts(25,5): error TS2322: Type 'AnalysisRepositoryImpl' is not assignable to type 'IAnalysisRepository'.
+  Types of property 'findAll' are incompatible.
+    Type '(options?: QueryOptions) => Promise<EmailAnalysis[]>' is not assignable to type '(filter?: Partial<EmailAnalysis> | undefined) => Promise<EmailAnalysis[]>'.
+      Types of parameters 'options' and 'filter' are incompatible.
+        Type 'Partial<EmailAnalysis> | undefined' is not assignable to type 'QueryOptions | undefined'.
+          Type 'Partial<EmailAnalysis>' has no properties in common with type 'QueryOptions'.
+src/database/UnitOfWork.ts(59,7): error TS2740: Type 'DatabaseConnection' is missing the following properties from type 'Database': memory, readonly, name, open, and 14 more.
+src/database/UnitOfWork.ts(60,7): error TS2531: Object is possibly 'null'.
+src/database/error-handling.ts(158,3): error TS2322: Type '(...args: any[]) => Promise<any>' is not assignable to type 'T'.
+  '(...args: any[]) => Promise<any>' is assignable to the constraint of type 'T', but 'T' could be instantiated with a different subtype of constraint '(...args: unknown[]) => unknown'.
+src/database/error-handling.ts(158,32): error TS2345: Argument of type 'T' is not assignable to parameter of type '(...args: any[]) => Promise<any>'.
+  Type '(...args: unknown[]) => unknown' is not assignable to type '(...args: any[]) => Promise<any>'.
+    Type 'unknown' is not assignable to type 'Promise<any>'.
+src/database/error-handling.ts(184,53): error TS2554: Expected 1 arguments, but got 0.
+src/database/error-handling.ts(185,14): error TS2349: This expression is not callable.
+  Type 'unknown' has no call signatures.
+src/database/error-handling.ts(187,53): error TS2554: Expected 1 arguments, but got 0.
+src/database/error-handling.ts(188,14): error TS2349: This expression is not callable.
+  Type 'unknown' has no call signatures.
+src/database/error-handling.ts(190,53): error TS2554: Expected 1 arguments, but got 0.
+src/database/error-handling.ts(191,14): error TS2349: This expression is not callable.
+  Type 'unknown' has no call signatures.
+src/database/migrations/006_fix_negative_processing_times.ts(144,61): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+src/database/migrations/006_fix_negative_processing_times.ts(186,70): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+src/database/migrations/008_create_users_table.ts(9,24): error TS2709: Cannot use namespace 'Database' as a type.
+src/database/migrations/008_create_users_table.ts(127,26): error TS2709: Cannot use namespace 'Database' as a type.
+src/database/migrations/migrate.ts(21,15): error TS2709: Cannot use namespace 'Database' as a type.
+src/database/repositories/AnalysisRepositoryImpl.ts(2,10): error TS1484: 'IAnalysisRepository' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/AnalysisRepositoryImpl.ts(4,3): error TS1484: 'EmailAnalysis' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/AnalysisRepositoryImpl.ts(6,3): error TS1484: 'Phase1Results' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/AnalysisRepositoryImpl.ts(7,3): error TS1484: 'Phase2Results' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/AnalysisRepositoryImpl.ts(8,3): error TS1484: 'Phase3Results' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/AnalysisRepositoryImpl.ts(16,14): error TS2420: Class 'AnalysisRepositoryImpl' incorrectly implements interface 'IAnalysisRepository'.
+  Types of property 'findAll' are incompatible.
+    Type '(options?: QueryOptions) => Promise<EmailAnalysis[]>' is not assignable to type '(filter?: Partial<EmailAnalysis> | undefined) => Promise<EmailAnalysis[]>'.
+      Types of parameters 'options' and 'filter' are incompatible.
+        Type 'Partial<EmailAnalysis> | undefined' is not assignable to type 'QueryOptions | undefined'.
+          Type 'Partial<EmailAnalysis>' has no properties in common with type 'QueryOptions'.
+src/database/repositories/AnalysisRepositoryImpl.ts(17,26): error TS2344: Type 'EmailAnalysis' does not satisfy the constraint 'BaseEntity'.
+  Types of property 'created_at' are incompatible.
+    Type 'Date' is not assignable to type 'string'.
+src/database/repositories/AnalysisRepositoryImpl.ts(433,9): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'BaseRepository<EmailAnalysis>'.
+src/database/repositories/BaseRepository.ts(276,11): error TS2353: Object literal may only specify known properties, and 'queryPreview' does not exist in type '{ operation?: string | undefined; table?: string | undefined; userId?: string | undefined; requestId?: string | undefined; }'.
+src/database/repositories/EmailChainRepositoryImpl.ts(2,10): error TS1484: 'IEmailChainRepository' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/EmailChainRepositoryImpl.ts(4,3): error TS1484: 'EmailChain' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/EmailChainRepositoryImpl.ts(6,3): error TS1484: 'ChainCompleteness' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/EmailChainRepositoryImpl.ts(14,14): error TS2420: Class 'EmailChainRepositoryImpl' incorrectly implements interface 'IEmailChainRepository'.
+  Types of property 'findAll' are incompatible.
+    Type '(options?: QueryOptions) => Promise<EmailChain[]>' is not assignable to type '(filter?: Partial<EmailChain> | undefined) => Promise<EmailChain[]>'.
+      Types of parameters 'options' and 'filter' are incompatible.
+        Type 'Partial<EmailChain> | undefined' is not assignable to type 'QueryOptions | undefined'.
+          Type 'Partial<EmailChain>' has no properties in common with type 'QueryOptions'.
+src/database/repositories/EmailChainRepositoryImpl.ts(15,26): error TS2344: Type 'EmailChain' does not satisfy the constraint 'BaseEntity'.
+  Types of property 'created_at' are incompatible.
+    Type 'Date' is not assignable to type 'string'.
+src/database/repositories/EmailChainRepositoryImpl.ts(209,30): error TS2339: Property 'email_ids' does not exist on type '{}'.
+src/database/repositories/EmailChainRepositoryImpl.ts(209,59): error TS2339: Property 'email_ids' does not exist on type '{}'.
+src/database/repositories/EmailChainRepositoryImpl.ts(241,40): error TS2339: Property 'email_ids' does not exist on type '{}'.
+src/database/repositories/EmailChainRepositoryImpl.ts(242,28): error TS2339: Property 'email_ids' does not exist on type '{}'.
+src/database/repositories/EmailChainRepositoryImpl.ts(461,9): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'BaseRepository<EmailChain>'.
+src/database/repositories/EmailChainRepositoryImpl.ts(471,9): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'BaseRepository<EmailChain>'.
+src/database/repositories/EmailChainRepositoryImpl.ts(496,9): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'BaseRepository<EmailChain>'.
+src/database/repositories/EmailRepositoryImpl.ts(2,10): error TS1484: 'IEmailRepository' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/EmailRepositoryImpl.ts(4,3): error TS1484: 'EmailRecord' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/EmailRepositoryImpl.ts(16,14): error TS2420: Class 'EmailRepositoryImpl' incorrectly implements interface 'IEmailRepository'.
+  Types of property 'findPaginated' are incompatible.
+    Type '(page?: number, pageSize?: number, options?: Omit<QueryOptions, "limit" | "offset">) => Promise<PaginatedResult<EmailRecord>>' is not assignable to type '(options: PaginationOptions) => Promise<PaginatedResult<EmailRecord>>'.
+      Types of parameters 'page' and 'options' are incompatible.
+        Type 'PaginationOptions' is not assignable to type 'number'.
+src/database/repositories/EmailRepositoryImpl.ts(17,26): error TS2344: Type 'EmailRecord' does not satisfy the constraint 'BaseEntity'.
+  Types of property 'created_at' are incompatible.
+    Type 'Date' is not assignable to type 'string'.
+src/database/repositories/EmailRepositoryImpl.ts(503,9): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'BaseRepository<EmailRecord>'.
+src/database/repositories/EmailRepositoryImpl.ts(516,9): error TS2416: Property 'findAll' in type 'EmailRepositoryImpl' is not assignable to the same property in base type 'BaseRepository<EmailRecord>'.
+  Type '(filter?: Partial<EmailRecord> | undefined) => Promise<EmailRecord[]>' is not assignable to type '(options?: QueryOptions) => Promise<EmailRecord[]>'.
+    Types of parameters 'filter' and 'options' are incompatible.
+      Type 'QueryOptions | undefined' is not assignable to type 'Partial<EmailRecord> | undefined'.
+        Type 'QueryOptions' has no properties in common with type 'Partial<EmailRecord>'.
+src/database/repositories/EmailRepositoryImpl.ts(516,9): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'BaseRepository<EmailRecord>'.
+src/database/repositories/EmailRepositoryImpl.ts(523,35): error TS2339: Property 'toSnakeCase' does not exist on type 'EmailRepositoryImpl'.
+src/database/repositories/EmailRepositoryImpl.ts(541,9): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'BaseRepository<EmailRecord>'.
+src/database/repositories/EmailRepositoryImpl.ts(569,9): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'BaseRepository<EmailRecord>'.
+src/database/repositories/EmailRepositoryImpl.ts(602,9): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'BaseRepository<EmailRecord>'.
+src/database/repositories/EmailRepositoryImpl.ts(621,9): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'BaseRepository<EmailRecord>'.
+src/database/repositories/EmailRepositoryImpl.ts(628,35): error TS2339: Property 'toSnakeCase' does not exist on type 'EmailRepositoryImpl'.
+src/database/repositories/EmailRepositoryImpl.ts(644,9): error TS2416: Property 'exists' in type 'EmailRepositoryImpl' is not assignable to the same property in base type 'BaseRepository<EmailRecord>'.
+  Type '(id: string) => Promise<boolean>' is not assignable to type '(conditions: Record<string, any>) => Promise<boolean>'.
+    Types of parameters 'id' and 'conditions' are incompatible.
+      Type 'Record<string, any>' is not assignable to type 'string'.
+src/database/repositories/EmailRepositoryImpl.ts(644,9): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'BaseRepository<EmailRecord>'.
+src/database/repositories/interfaces/IAnalysisRepository.ts(1,10): error TS1484: 'IRepository' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/interfaces/IAnalysisRepository.ts(3,3): error TS1484: 'EmailAnalysis' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/interfaces/IEmailChainRepository.ts(1,10): error TS1484: 'IRepository' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/interfaces/IEmailChainRepository.ts(3,3): error TS1484: 'EmailChain' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/interfaces/IEmailChainRepository.ts(5,3): error TS1484: 'ChainCompleteness' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/interfaces/IEmailRepository.ts(1,10): error TS1484: 'IPaginatedRepository' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/interfaces/IEmailRepository.ts(3,3): error TS1484: 'EmailRecord' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/interfaces/IUnitOfWork.ts(1,10): error TS1484: 'IEmailRepository' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/interfaces/IUnitOfWork.ts(2,10): error TS1484: 'IEmailChainRepository' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/repositories/interfaces/IUnitOfWork.ts(3,10): error TS1484: 'IAnalysisRepository' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/database/security/DatabaseErrorHandler.ts(153,14): error TS2532: Object is possibly 'undefined'.
+src/database/security/SecureQueryExecutor.ts(108,5): error TS2322: Type '(sql: string) => { run: (...params: any[]) => Database.RunResult; get: (...params: any[]) => unknown; all: (...params: any[]) => unknown[]; database: BetterSqlite3.Database; ... 10 more ...; safeIntegers(toggleState?: boolean): BetterSqlite3.Statement<...>; }' is not assignable to type '<BindParameters extends unknown[] | {} = unknown[], Result = unknown>(source: string) => BindParameters extends unknown[] ? Statement<BindParameters, Result> : Statement<[BindParameters], Result>'.
+  Type '{ run: (...params: any[]) => Database.RunResult; get: (...params: any[]) => unknown; all: (...params: any[]) => unknown[]; database: BetterSqlite3.Database; source: string; ... 9 more ...; safeIntegers(toggleState?: boolean): BetterSqlite3.Statement<...>; }' is not assignable to type 'BindParameters extends unknown[] ? Statement<BindParameters, Result> : Statement<[BindParameters], Result>'.
+src/database/security/database-performance-optimizer.ts(184,9): error TS2322: Type '(string | undefined)[]' is not assignable to type 'string[]'.
+  Type 'string | undefined' is not assignable to type 'string'.
+    Type 'undefined' is not assignable to type 'string'.
+src/database/security/database-performance-optimizer.ts(271,31): error TS18048: 'whereClause' is possibly 'undefined'.
+src/database/security/database-performance-optimizer.ts(351,11): error TS18046: 'autoVacuum' is of type 'unknown'.
+src/database/security/index.ts(131,24): error TS2304: Cannot find name 'SqlInjectionProtection'.
+src/database/security/index.ts(136,24): error TS2304: Cannot find name 'createSqlInjectionProtection'.
+src/database/security/index.ts(164,28): error TS2304: Cannot find name 'SqlInjectionError'.
+src/database/security/index.ts(199,28): error TS2304: Cannot find name 'SqlInjectionError'.
+src/database/security/index.ts(210,49): error TS2304: Cannot find name 'DatabaseError'.
+src/database/security/index.ts(211,12): error TS2304: Cannot find name 'DatabaseErrorHandler'.
+src/database/security/index.ts(241,24): error TS2304: Cannot find name 'createSqlInjectionProtection'.
+src/database/services/GroceryDataService.ts(126,49): error TS2345: Argument of type '{ user_id: string; list_name: string; description: string | undefined; budget_limit: number | undefined; is_recurring: boolean | undefined; recurrence_pattern: any; }' is not assignable to parameter of type 'GroceryList'.
+  Property 'id' is missing in type '{ user_id: string; list_name: string; description: string | undefined; budget_limit: number | undefined; is_recurring: boolean | undefined; recurrence_pattern: any; }' but required in type 'GroceryList'.
+src/database/services/GroceryDataService.ts(139,50): error TS2345: Argument of type '{ list_id: string; item_name: string; quantity: number | undefined; brand_preference: string | undefined; notes: string | undefined; }' is not assignable to parameter of type 'GroceryItem'.
+  Property 'id' is missing in type '{ list_id: string; item_name: string; quantity: number | undefined; brand_preference: string | undefined; notes: string | undefined; }' but required in type 'GroceryItem'.
+src/database/services/GroceryDataService.ts(167,46): error TS2345: Argument of type '{ list_id: string; item_name: string; quantity: number | undefined; unit: string | undefined; brand_preference: string | undefined; priority: "high" | "low" | "essential" | "normal" | undefined; notes: string | undefined; }' is not assignable to parameter of type 'GroceryItem'.
+  Property 'id' is missing in type '{ list_id: string; item_name: string; quantity: number | undefined; unit: string | undefined; brand_preference: string | undefined; priority: "high" | "low" | "essential" | "normal" | undefined; notes: string | undefined; }' but required in type 'GroceryItem'.
+src/database/services/GroceryDataService.ts(203,23): error TS18048: 'bestMatch' is possibly 'undefined'.
+src/database/services/GroceryDataService.ts(204,21): error TS18048: 'bestMatch' is possibly 'undefined'.
+src/database/services/GroceryDataService.ts(205,28): error TS18048: 'bestMatch' is possibly 'undefined'.
+src/database/services/GroceryDataService.ts(209,56): error TS18048: 'bestMatch' is possibly 'undefined'.
+src/database/services/GroceryDataService.ts(297,58): error TS2345: Argument of type '{ user_id: string; list_id: string | undefined; session_type: "online" | "in_store" | "pickup" | "delivery" | undefined; items_total: number; fulfillment_type: string | undefined; delivery_address: string | undefined; }' is not assignable to parameter of type 'ShoppingSession'.
+  Property 'id' is missing in type '{ user_id: string; list_id: string | undefined; session_type: "online" | "in_store" | "pickup" | "delivery" | undefined; items_total: number; fulfillment_type: string | undefined; delivery_address: string | undefined; }' but required in type 'ShoppingSession'.
+src/database/services/GroceryDataService.ts(374,7): error TS18048: 'bestSub' is possibly 'undefined'.
+src/database/services/GroceryDataService.ts(378,49): error TS2345: Argument of type '{ list_id: string; item_name: string; brand_preference: string | undefined; product_id: string; quantity: number | undefined; unit: string | undefined; estimated_price: number | undefined; priority: "high" | ... 3 more ... | undefined; notes: string; }' is not assignable to parameter of type 'GroceryItem'.
+  Property 'id' is missing in type '{ list_id: string; item_name: string; brand_preference: string | undefined; product_id: string; quantity: number | undefined; unit: string | undefined; estimated_price: number | undefined; priority: "high" | ... 3 more ... | undefined; notes: string; }' but required in type 'GroceryItem'.
+src/database/services/GroceryDataService.ts(394,73): error TS2345: Argument of type '{ original_product_id: string; substitute_product_id: string; reason: string; similarity_score: number; price_difference: number; user_id: string; }' is not assignable to parameter of type 'GrocerySubstitution'.
+  Property 'id' is missing in type '{ original_product_id: string; substitute_product_id: string; reason: string; similarity_score: number; price_difference: number; user_id: string; }' but required in type 'GrocerySubstitution'.
+src/database/services/GroceryDataService.ts(397,15): error TS18048: 'bestSub' is possibly 'undefined'.
+src/database/services/GroceryDataService.ts(398,25): error TS18048: 'bestSub' is possibly 'undefined'.
+src/database/services/GroceryDataService.ts(399,25): error TS18048: 'bestSub' is possibly 'undefined'.
+src/database/services/GroceryDataService.ts(519,59): error TS2345: Argument of type '{ user_id: string; default_store_id?: string | undefined; preferred_brands?: any; avoided_brands?: string[] | undefined; dietary_restrictions?: string[] | undefined; allergens?: string[] | undefined; preferred_organic?: boolean | undefined; preferred_local?: boolean | undefined; ... 15 more ...; id?: string | undefi...' is not assignable to parameter of type 'UserPreferences'.
+  Types of property 'id' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/database/storage/GroceryFileStorage.ts(55,27): error TS2339: Property 'storage' does not exist on type 'AppConfig'.
+src/middleware/advancedRateLimit.ts(130,22): error TS2769: No overload matches this call.
+  Overload 1 of 8, '(options: RedisOptions): Redis', gave the following error.
+    Object literal may only specify known properties, and 'retryDelayOnFailover' does not exist in type 'RedisOptions'.
+  Overload 2 of 8, '(port: number): Redis', gave the following error.
+    Argument of type '{ host: string; port: number; password: string | undefined; db: number | undefined; retryDelayOnFailover: number; maxRetriesPerRequest: number; }' is not assignable to parameter of type 'number'.
+  Overload 3 of 8, '(path: string): Redis', gave the following error.
+    Argument of type '{ host: string; port: number; password: string | undefined; db: number | undefined; retryDelayOnFailover: number; maxRetriesPerRequest: number; }' is not assignable to parameter of type 'string'.
+src/middleware/advancedRateLimit.ts(263,9): error TS2353: Object literal may only specify known properties, and 'client' does not exist in type 'Options'.
+src/middleware/advancedRateLimit.ts(299,7): error TS2353: Object literal may only specify known properties, and 'onLimitReached' does not exist in type 'Partial<Options>'.
+src/middleware/auth.ts(65,28): error TS7030: Not all code paths return a value.
+src/middleware/auth.ts(81,29): error TS7030: Not all code paths return a value.
+src/middleware/auth.ts(105,10): error TS7030: Not all code paths return a value.
+src/monitoring/MetricsCollector.ts(121,20): error TS2532: Object is possibly 'undefined'.
+src/monitoring/MetricsCollector.ts(136,20): error TS18048: 'lastGauge' is possibly 'undefined'.
+src/monitoring/MetricsCollector.ts(198,17): error TS2532: Object is possibly 'undefined'.
+src/monitoring/MetricsCollector.ts(199,17): error TS2532: Object is possibly 'undefined'.
+src/monitoring/MetricsCollector.ts(200,18): error TS2532: Object is possibly 'undefined'.
+src/monitoring/MetricsCollector.ts(271,5): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/monitoring/PerformanceMonitor.ts(293,5): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/scripts/fix-negative-processing-times.ts(45,38): error TS2345: Argument of type '{ totalRecords: any; negativeRecords: any; percentageNegative: string; minNegative: any; maxNegative: any; avgPositive: number; }' is not assignable to parameter of type 'string'.
+src/scripts/fix-negative-processing-times.ts(84,7): error TS2345: Argument of type '{ emailId: string; processingTime: any; timestamp: any; }[]' is not assignable to parameter of type 'string'.
+src/scripts/fix-negative-processing-times.ts(112,37): error TS2345: Argument of type '{ totalRecords: any; negativeRecords: any; minTime: any; maxTime: any; avgTime: number; }' is not assignable to parameter of type 'string'.
+src/scripts/fix-negative-processing-times.ts(169,39): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+src/scripts/optimize-ollama-setup.ts(35,37): error TS2345: Argument of type 'OllamaStatus' is not assignable to parameter of type 'string'.
+src/scripts/optimize-ollama-setup.ts(55,44): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+src/scripts/optimize-ollama-setup.ts(102,58): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+src/scripts/optimize-ollama-setup.ts(142,56): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+src/scripts/optimize-ollama-setup.ts(173,62): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+src/scripts/optimize-ollama-setup.ts(205,53): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+src/scripts/optimize-ollama-setup.ts(246,53): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+src/scripts/process-emails-optimized.ts(48,56): error TS2345: Argument of type '{ mode: "speed" | "quality" | "balanced"; batchSize: number; limit: string | number; }' is not assignable to parameter of type 'string'.
+src/scripts/process-emails-optimized.ts(56,26): error TS2339: Property 'connect' does not exist on type 'RedisService'.
+src/scripts/process-emails-optimized.ts(96,42): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+src/scripts/process-emails-optimized.ts(101,23): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(timeout: string | number | Timeout | undefined): void', gave the following error.
+    Argument of type 'Timer' is not assignable to parameter of type 'string | number | Timeout | undefined'.
+      Type 'Timer' is missing the following properties from type 'Timeout': close, _onTimeout, [Symbol.dispose]
+  Overload 2 of 2, '(id: number | undefined): void', gave the following error.
+    Argument of type 'Timer' is not assignable to parameter of type 'number'.
+src/scripts/runDatabaseMigrations.ts(39,5): error TS2322: Type '(db: Database) => void' is not assignable to type '(db: Database) => Promise<void>'.
+  Type 'void' is not assignable to type 'Promise<void>'.
+src/scripts/runDatabaseMigrations.ts(40,5): error TS2322: Type '(db: Database) => void' is not assignable to type '(db: Database) => Promise<void>'.
+  Type 'void' is not assignable to type 'Promise<void>'.
+src/services/EmailIngestionIntegrationService.ts(44,9): error TS1361: 'IngestionMode' cannot be used as a value because it was imported using 'import type'.
+src/services/EmailIngestionIntegrationService.ts(75,71): error TS2345: Argument of type '{ config: EmailIngestionIntegrationConfig; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(102,80): error TS2345: Argument of type '{ error: string; stack: string | undefined; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(107,32): error TS2322: Type 'string' is not assignable to type 'Error'.
+src/services/EmailIngestionIntegrationService.ts(116,5): error TS2740: Type 'IEmailIngestionService' is missing the following properties from type 'EmailIngestionServiceImpl': config, emailRepository, unifiedEmailService, redis, and 24 more.
+src/services/EmailIngestionIntegrationService.ts(118,7): error TS2739: Type '{ batchSize: number; concurrency: number; maxRetries: number; }' is missing the following properties from type '{ batchSize: number; concurrency: number; maxRetries: number; retryDelay: number; deduplicationWindow: number; priorityBoostKeywords: string[]; }': retryDelay, deduplicationWindow, priorityBoostKeywords
+src/services/EmailIngestionIntegrationService.ts(136,9): error TS2353: Object literal may only specify known properties, and 'db' does not exist in type '{ host: string; port: number; password?: string | undefined; maxRetriesPerRequest?: number | undefined; }'.
+src/services/EmailIngestionIntegrationService.ts(179,69): error TS2345: Argument of type '{ error: string; processed: number; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(195,37): error TS7053: Element implicitly has an 'any' type because expression of type '"emitProgress"' can't be used to index type 'EmailIngestionServiceImpl'.
+  Property 'emitProgress' does not exist on type 'EmailIngestionServiceImpl'.
+src/services/EmailIngestionIntegrationService.ts(197,5): error TS7053: Element implicitly has an 'any' type because expression of type '"emitProgress"' can't be used to index type 'EmailIngestionServiceImpl'.
+  Property 'emitProgress' does not exist on type 'EmailIngestionServiceImpl'.
+src/services/EmailIngestionIntegrationService.ts(215,68): error TS2345: Argument of type '{ emailCount: number; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(220,34): error TS2339: Property 'processEmailsByConversation' does not exist on type 'EmailThreePhaseAnalysisService'.
+src/services/EmailIngestionIntegrationService.ts(226,67): error TS2345: Argument of type '{ emailCount: number; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(230,65): error TS2345: Argument of type '{ error: string; emailCount: number; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(252,82): error TS2345: Argument of type '{ health: HealthStatus; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(265,44): error TS2345: Argument of type '{ error: string; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(271,46): error TS2345: Argument of type '{ checkInterval: number; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(278,30): error TS1361: 'IngestionMode' cannot be used as a value because it was imported using 'import type'.
+src/services/EmailIngestionIntegrationService.ts(278,44): error TS2339: Property 'MANUAL_LOAD' does not exist on type 'typeof IngestionMode'.
+src/services/EmailIngestionIntegrationService.ts(287,86): error TS2345: Argument of type '{ current: number; max: number; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(304,62): error TS2345: Argument of type '{ error: string; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(312,48): error TS2345: Argument of type '{ intervalMinutes: number; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(353,73): error TS2345: Argument of type '{ processed: any; duplicate: any; failed: any; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(359,71): error TS2345: Argument of type '{ error: any; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(364,83): error TS2345: Argument of type '{ error: string; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(376,31): error TS1361: 'IngestionSource' cannot be used as a value because it was imported using 'import type'.
+src/services/EmailIngestionIntegrationService.ts(383,52): error TS2345: Argument of type '{ filePaths: string[]; source: IngestionSource; fileCount: number; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(397,56): error TS2345: Argument of type '{ filePath: string; error: Error; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(407,9): error TS2561: Object literal may only specify known properties, but 'duplicate' does not exist in type 'IngestionBatchResult'. Did you mean to write 'duplicates'?
+src/services/EmailIngestionIntegrationService.ts(407,55): error TS2551: Property 'duplicate' does not exist on type 'IngestionBatchResult'. Did you mean 'duplicates'?
+src/services/EmailIngestionIntegrationService.ts(413,40): error TS2339: Property 'errors' does not exist on type 'IngestionBatchResult'.
+src/services/EmailIngestionIntegrationService.ts(416,53): error TS2345: Argument of type 'IngestionBatchResult' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(421,51): error TS2345: Argument of type '{ error: string; filePaths: string[]; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(426,32): error TS2322: Type 'string' is not assignable to type 'Error'.
+src/services/EmailIngestionIntegrationService.ts(461,40): error TS2339: Property 'pauseQueue' does not exist on type 'EmailIngestionServiceImpl'.
+src/services/EmailIngestionIntegrationService.ts(469,40): error TS2339: Property 'resumeQueue' does not exist on type 'EmailIngestionServiceImpl'.
+src/services/EmailIngestionIntegrationService.ts(489,65): error TS2345: Argument of type '{ remaining: number; }' is not assignable to parameter of type 'string'.
+src/services/EmailIngestionIntegrationService.ts(497,35): error TS2339: Property 'pauseQueue' does not exist on type 'EmailIngestionServiceImpl'.
+src/services/EmailIngestionIntegrationService.ts(504,53): error TS2345: Argument of type '{ error: string; }' is not assignable to parameter of type 'string'.
+src/services/MCPToolsService.ts(171,21): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/services/MCPToolsService.ts(175,28): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/services/PipelineJsonParser.ts(7,10): error TS2305: Module '"../types/AnalysisTypes.js"' has no exported member 'BusinessImpact'.
+src/services/PipelineJsonParser.ts(161,22): error TS18046: 'item' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(161,35): error TS18046: 'item' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(162,41): error TS18046: 'item' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(163,38): error TS18046: 'item' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(164,16): error TS18046: 'item' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(164,30): error TS18046: 'item' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(178,19): error TS2339: Property 'revenue_impact' does not exist on type '{}'.
+src/services/PipelineJsonParser.ts(178,50): error TS2339: Property 'revenue' does not exist on type '{}'.
+src/services/PipelineJsonParser.ts(180,19): error TS2339: Property 'customer_satisfaction' does not exist on type '{}'.
+src/services/PipelineJsonParser.ts(180,57): error TS2339: Property 'customer_satisfaction' does not exist on type '{}'.
+src/services/PipelineJsonParser.ts(183,19): error TS2339: Property 'urgency_reason' does not exist on type '{}'.
+src/services/PipelineJsonParser.ts(184,20): error TS2339: Property 'urgency_reason' does not exist on type '{}'.
+src/services/PipelineJsonParser.ts(186,55): error TS2339: Property 'risk_assessment' does not exist on type '{}'.
+src/services/PipelineJsonParser.ts(208,15): error TS2339: Property 'workflow_state' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(209,15): error TS2339: Property 'business_process' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(210,15): error TS2339: Property 'entities' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(211,15): error TS2339: Property 'contextual_summary' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(214,14): error TS2339: Property 'entities' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(214,38): error TS2339: Property 'entities' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(218,14): error TS2339: Property 'action_items' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(218,50): error TS2339: Property 'action_items' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(235,15): error TS2339: Property 'executive_summary' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(236,15): error TS2339: Property 'business_impact' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(237,15): error TS2339: Property 'sla_assessment' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(240,14): error TS2339: Property 'business_impact' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(240,45): error TS2339: Property 'business_impact' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(244,14): error TS2339: Property 'deep_insights' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(244,51): error TS2339: Property 'deep_insights' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(253,23): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(254,25): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(255,15): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(256,22): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(257,40): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(258,27): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(259,47): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(260,27): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(261,49): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(262,19): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(263,24): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(269,26): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(270,53): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(271,23): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(272,42): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(274,9): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(276,49): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(277,25): error TS18046: 'data' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(293,48): error TS2339: Property 'po_numbers' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(294,51): error TS2339: Property 'quote_numbers' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(295,50): error TS2339: Property 'case_numbers' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(296,50): error TS2339: Property 'part_numbers' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(297,47): error TS2339: Property 'companies' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(298,46): error TS2339: Property 'contacts' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(299,55): error TS2339: Property 'reference_numbers' does not exist on type 'object'.
+src/services/PipelineJsonParser.ts(343,31): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/services/PipelineJsonParser.ts(352,9): error TS18046: 'entities' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(352,49): error TS18046: 'entities' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(353,9): error TS18046: 'entities' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(353,49): error TS18046: 'entities' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(354,9): error TS18046: 'entities' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(354,52): error TS18046: 'entities' is of type 'unknown'.
+src/services/PipelineJsonParser.ts(375,27): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number'.
+src/shared/errors/error-handler.ts(27,3): error TS2459: Module '"../types/errors.js"' declares 'Timestamp' locally, but it is not exported.
+src/shared/errors/walmart-error-handler.ts(567,3): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'Component<ErrorBoundaryProps, ErrorBoundaryState, any>'.
+src/shared/errors/walmart-error-handler.ts(575,3): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'Component<ErrorBoundaryProps, ErrorBoundaryState, any>'.
+src/shared/integration/example-integration-test.ts(211,22): error TS2339: Property 'config' does not exist on type '{}'.
+src/shared/integration/example-integration-test.ts(226,26): error TS2339: Property 'config' does not exist on type '{}'.
+src/shared/integration/example-integration-test.ts(277,24): error TS2339: Property 'config' does not exist on type '{}'.
+src/shared/integration/example-integration-test.ts(286,30): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(304,30): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(336,36): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(356,36): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(371,36): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(382,12): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(388,34): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(394,13): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(400,7): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(414,13): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(417,31): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(429,13): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(446,30): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(467,38): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(498,38): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(509,40): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(521,30): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(546,15): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/example-integration-test.ts(569,15): error TS18046: 'testContext' is of type 'unknown'.
+src/shared/integration/walmart-integration-coordinator.ts(35,11): error TS2564: Property 'monitoring' has no initializer and is not definitely assigned in the constructor.
+src/shared/integration/walmart-integration-coordinator.ts(87,44): error TS2345: Argument of type 'WalmartMonitoringSystem' is not assignable to parameter of type 'WalmartService'.
+  Property 'name' is missing in type 'WalmartMonitoringSystem' but required in type 'WalmartService'.
+src/shared/integration/walmart-integration-coordinator.ts(210,33): error TS2345: Argument of type 'WalmartEventHandler<T>' is not assignable to parameter of type '(...args: any[]) => void'.
+  Types of parameters 'event' and 'args' are incompatible.
+    Type 'any' is not assignable to type 'never'.
+      The intersection 'WalmartWebSocketMessage<T>' was reduced to 'never' because property 'type' has conflicting types in some constituents.
+src/shared/integration/walmart-integration-coordinator.ts(217,34): error TS2345: Argument of type 'WalmartEventHandler<T> | undefined' is not assignable to parameter of type '(...args: any[]) => void'.
+  Type 'undefined' is not assignable to type '(...args: any[]) => void'.
+src/shared/integration/walmart-integration-coordinator.ts(756,38): error TS2345: Argument of type 'string' is not assignable to parameter of type '{ type: "agent.status"; status: "idle" | "error" | "busy" | "terminated"; timestamp: Date; agentId: string; } | { type: "agent.task"; status: "completed" | "failed" | "started"; ... 4 more ...; result?: any; } | ... 22 more ... | { ...; }'.
+  Type 'string' is not assignable to type '{ type: "agent.status"; status: "idle" | "error" | "busy" | "terminated"; timestamp: Date; agentId: string; } | { type: "agent.task"; status: "completed" | "failed" | "started"; ... 4 more ...; result?: any; } | ... 22 more ... | { ...; }'.
+src/shared/integration/walmart-integration-coordinator.ts(777,58): error TS2304: Cannot find name 'SearchResults'.
+src/shared/integration/walmart-integration-coordinator.ts(789,14): error TS2304: Cannot find name 'Order'.
+src/shared/integration/walmart-integration-coordinator.ts(790,38): error TS2304: Cannot find name 'Order'.
+src/shared/monitoring/walmart-monitoring.ts(530,11): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/shared/monitoring/walmart-monitoring.ts(534,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/shared/monitoring/walmart-monitoring.ts(536,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/shared/monitoring/walmart-monitoring.ts(537,15): error TS2532: Object is possibly 'undefined'.
+src/shared/monitoring/walmart-monitoring.ts(538,15): error TS2532: Object is possibly 'undefined'.
+src/shared/monitoring/walmart-monitoring.ts(539,15): error TS2532: Object is possibly 'undefined'.
+src/shared/monitoring/walmart-monitoring.ts(658,9): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Object literal may only specify known properties, and 'timeout' does not exist in type 'RequestInit'.
+  Overload 2 of 2, '(input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Object literal may only specify known properties, and 'timeout' does not exist in type 'RequestInit'.
+src/shared/testing/test-client.ts(268,23): error TS2503: Cannot find namespace 'WebSocketTypes'.
+src/shared/testing/test-client.ts(296,24): error TS2503: Cannot find namespace 'WebSocketTypes'.
+src/shared/testing/test-client.ts(306,24): error TS2503: Cannot find namespace 'WebSocketTypes'.
+src/shared/testing/test-client.ts(317,14): error TS2503: Cannot find namespace 'WebSocketTypes'.
+src/shared/types/index.ts(11,1): error TS2308: Module "./core.js" has already exported a member named 'HealthCheck'. Consider explicitly re-exporting to resolve the ambiguity.
+src/shared/types/index.ts(19,1): error TS2308: Module "./core.js" has already exported a member named 'ErrorContext'. Consider explicitly re-exporting to resolve the ambiguity.
+src/shared/types/index.ts(102,11): error TS2304: Cannot find name 'ApiError'.
+src/test/setup-integration.ts(16,8): error TS2307: Cannot find module './utils/error-handling.js' or its corresponding type declarations.
+src/test/setup-integration.ts(36,33): error TS7006: Parameter 'issue' implicitly has an 'any' type.
+src/test/setup-integration.ts(40,44): error TS7006: Parameter 'rec' implicitly has an 'any' type.
+src/test/setup-integration.ts(48,38): error TS2307: Cannot find module './utils/error-handling.js' or its corresponding type declarations.
+src/test/setup-integration.ts(66,67): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+src/test/setup-integration.ts(89,48): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+src/test/setup-unit.ts(163,8): error TS7017: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
+src/test/setup-unit.ts(172,1): error TS2740: Type '{ now: Mock<[], number>; mark: Mock<[markName: string, markOptions?: PerformanceMarkOptions | undefined], PerformanceMark>; measure: Mock<[measureName: string, startOrMeasureOptions?: string | ... 1 more ... | undefined, endMark?: string | undefined], PerformanceMeasure>; }' is missing the following properties from type 'Performance': eventCounts, navigation, onresourcetimingbufferfull, timeOrigin, and 12 more.
+src/test/setup-unit.ts(200,1): error TS2322: Type 'Mock<[], Promise<{ ok: true; json: () => Promise<{ success: boolean; data: string; }>; text: () => Promise<string>; }>>' is not assignable to type '{ (input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>; (input: string | URL | Request, init?: RequestInit | undefined): Promise<...>; }'.
+  Type 'Promise<{ ok: true; json: () => Promise<{ success: boolean; data: string; }>; text: () => Promise<string>; }>' is not assignable to type 'Promise<Response>'.
+    Type '{ ok: true; json: () => Promise<{ success: boolean; data: string; }>; text: () => Promise<string>; }' is missing the following properties from type 'Response': headers, redirected, status, statusText, and 9 more.
+src/test/utils/ollama-test-helper.ts(218,38): error TS2345: Argument of type 'string[]' is not assignable to parameter of type 'string'.
+src/test/utils/ollama-test-helper.ts(222,21): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/test/utils/ollama-test-helper.ts(238,66): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/test/utils/ollama-test-helper.ts(271,45): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/types/walmart-websocket-events.ts(8,33): error TS2459: Module '"../shared/types/websocket.js"' declares 'Timestamp' locally, but it is not exported.
+src/ui/App.tsx(99,15): error TS2353: Object literal may only specify known properties, and 'connectionParams' does not exist in type 'WebSocketClientOptions'.
+src/ui/components/Auth/RegisterForm.tsx(39,13): error TS7030: Not all code paths return a value.
+src/ui/components/Auth/RegisterForm.tsx(321,13): error TS2322: Type 'boolean | null' is not assignable to type 'boolean | undefined'.
+  Type 'null' is not assignable to type 'boolean | undefined'.
+src/ui/components/Email/EmailDashboard.tsx(195,28): error TS2339: Property 'totalEmails' does not exist on type 'GetAnalyticsResponse'.
+src/ui/components/Email/EmailDashboard.tsx(202,29): error TS2339: Property 'averageProcessingTime' does not exist on type 'GetAnalyticsResponse'.
+src/ui/components/Email/EmailDashboard.tsx(203,42): error TS2339: Property 'workflowDistribution' does not exist on type 'GetAnalyticsResponse'.
+src/ui/components/Email/EmailDashboard.tsx(214,26): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/ui/components/Email/EmailDashboard.tsx(220,30): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/ui/components/Email/EmailDashboard.tsx(221,28): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/ui/components/Email/EmailDashboard.tsx(221,57): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/ui/components/Email/EmailDashboard.tsx(700,15): error TS2532: Object is possibly 'undefined'.
+src/ui/components/Email/EmailDashboard.tsx(835,25): error TS2353: Object literal may only specify known properties, and 'drawBorder' does not exist in type '_DeepPartialObject<Partial<GridLineOptions>>'.
+src/ui/components/Email/EmailDashboard.tsx(848,25): error TS2353: Object literal may only specify known properties, and 'drawBorder' does not exist in type '_DeepPartialObject<Partial<GridLineOptions>>'.
+src/ui/components/Email/EmailIngestionMonitoringDashboard.tsx(31,3): error TS2305: Module '"lucide-react"' has no exported member 'Queue'.
+src/ui/components/Email/EmailIngestionMonitoringDashboard.tsx(58,3): error TS2305: Module '"recharts"' has no exported member 'RechartsTooltipPayload'.
+src/ui/components/Email/EmailIngestionMonitoringDashboard.tsx(274,13): error TS7030: Not all code paths return a value.
+src/ui/components/Email/EmailIngestionMonitoringErrorBoundary.tsx(1,28): error TS1484: 'ErrorInfo' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/ui/components/Email/EmailIngestionMonitoringErrorBoundary.tsx(1,39): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/ui/components/Email/EmailIngestionMonitoringErrorBoundary.tsx(65,3): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'Component<Props, State, any>'.
+src/ui/components/Email/EmailIngestionMonitoringErrorBoundary.tsx(140,3): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'Component<Props, State, any>'.
+src/ui/components/Email/EmailIngestionMonitoringWrapper.tsx(171,20): error TS2339: Property 'gtag' does not exist on type 'Window & typeof globalThis'.
+src/ui/components/Email/EmailIngestionMonitoringWrapper.tsx(172,18): error TS2339: Property 'gtag' does not exist on type 'Window & typeof globalThis'.
+src/ui/components/Email/EmailIngestionPanel.tsx(25,21): error TS2345: Argument of type 'IngestionBatchResult' is not assignable to parameter of type 'SetStateAction<IngestionProgress | null>'.
+  Type 'IngestionBatchResult' is missing the following properties from type 'IngestionProgress': total, skipped, queued
+src/ui/components/Email/index.ts(12,15): error TS2724: '"./EmailDashboard"' has no exported member named 'EmailDashboardProps'. Did you mean 'EmailDashboard'?
+src/ui/components/ErrorBoundary/ErrorBoundary.tsx(1,28): error TS1484: 'ErrorInfo' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/ui/components/ErrorBoundary/ErrorBoundary.tsx(1,39): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/ui/components/ErrorBoundary/ErrorBoundary.tsx(43,3): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'Component<Props, State, any>'.
+src/ui/components/ErrorBoundary/ErrorBoundary.tsx(48,56): error TS2345: Argument of type '{ error: string; stack: string | undefined; componentStack: string | null | undefined; errorCount: number; timestamp: string; }' is not assignable to parameter of type 'string'.
+src/ui/components/ErrorBoundary/ErrorBoundary.tsx(73,3): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'Component<Props, State, any>'.
+src/ui/components/ErrorBoundary/ErrorBoundary.tsx(89,3): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'Component<Props, State, any>'.
+src/ui/components/ErrorBoundary/ErrorBoundary.tsx(119,3): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'Component<Props, State, any>'.
+src/ui/components/ErrorBoundary/ErrorBoundary.tsx(165,51): error TS2345: Argument of type '{ error: string; stack: string | undefined; componentStack: string | undefined; timestamp: string; }' is not assignable to parameter of type 'string'.
+src/ui/components/ErrorRecovery/ErrorRecoveryBoundary.tsx(1,17): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/ui/components/ErrorRecovery/ErrorRecoveryBoundary.tsx(7,23): error TS2307: Cannot find module '../UI/Alert' or its corresponding type declarations.
+src/ui/components/ErrorRecovery/ErrorRecoveryBoundary.tsx(8,24): error TS2307: Cannot find module '../UI/Button' or its corresponding type declarations.
+src/ui/components/Layout/Sidebar.tsx(282,35): error TS2339: Property 'submenu' does not exist on type '{ path: string; label: string; icon: Element; }'.
+src/ui/components/Layout/Sidebar.tsx(282,51): error TS2339: Property 'submenu' does not exist on type '{ path: string; label: string; icon: Element; }'.
+src/ui/components/Layout/Sidebar.tsx(287,20): error TS2339: Property 'submenu' does not exist on type '{ path: string; label: string; icon: Element; }'.
+src/ui/components/Layout/Sidebar.tsx(287,34): error TS7006: Parameter 'sub' implicitly has an 'any' type.
+src/ui/components/Monitoring/MonitoringDashboard.tsx(316,17): error TS2345: Argument of type '([service, health]: [string, ServiceHealth]) => JSX.Element' is not assignable to parameter of type '(value: [string, ServiceHealth], index: number, array: [string, ServiceHealth][]) => Element'.
+  Types of parameters '__0' and 'value' are incompatible.
+    Type '[string, import("/home/pricepro2006/CrewAI_Team/src/monitoring/HealthChecker").ServiceHealth]' is not assignable to type '[string, ServiceHealth]'.
+      Type at position 1 in source is not compatible with type at position 1 in target.
+        The types of 'lastCheck' are incompatible between these types.
+          Type 'Date' is not assignable to type 'string'.
+src/ui/components/Monitoring/MonitoringDashboard.tsx(511,56): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/ui/components/Monitoring/MonitoringDashboard.tsx(511,63): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/ui/components/Monitoring/MonitoringDashboard.tsx(652,42): error TS2339: Property 'database' does not exist on type '{ healthy: number; degraded: number; unhealthy: number; }'.
+src/ui/components/Monitoring/MonitoringDashboard.tsx(657,41): error TS2339: Property 'database' does not exist on type '{ healthy: number; degraded: number; unhealthy: number; }'.
+src/ui/components/Monitoring/MonitoringDashboard.tsx(672,42): error TS2339: Property 'ollama' does not exist on type '{ healthy: number; degraded: number; unhealthy: number; }'.
+src/ui/components/Monitoring/MonitoringDashboard.tsx(677,41): error TS2339: Property 'ollama' does not exist on type '{ healthy: number; degraded: number; unhealthy: number; }'.
+src/ui/components/Monitoring/MonitoringDashboard.tsx(692,42): error TS2339: Property 'chromadb' does not exist on type '{ healthy: number; degraded: number; unhealthy: number; }'.
+src/ui/components/Monitoring/MonitoringDashboard.tsx(694,46): error TS2339: Property 'chromadb' does not exist on type '{ healthy: number; degraded: number; unhealthy: number; }'.
+src/ui/components/Monitoring/MonitoringDashboard.tsx(699,41): error TS2339: Property 'chromadb' does not exist on type '{ healthy: number; degraded: number; unhealthy: number; }'.
+src/ui/components/Monitoring/MonitoringDashboard.tsx(713,41): error TS2339: Property 'rateLimit' does not exist on type '{ healthy: number; degraded: number; unhealthy: number; }'.
+src/ui/components/Monitoring/MonitoringDashboard.tsx(716,50): error TS2339: Property 'redis' does not exist on type '{ healthy: number; degraded: number; unhealthy: number; }'.
+src/ui/components/NetworkStatus/NetworkStatus.tsx(25,13): error TS7030: Not all code paths return a value.
+src/ui/components/Security/CSRFMonitor.tsx(175,3): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'Component<CSRFErrorBoundaryProps, CSRFErrorBoundaryState, any>'.
+src/ui/components/Security/CSRFMonitor.tsx(186,3): error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'Component<CSRFErrorBoundaryProps, CSRFErrorBoundaryState, any>'.
+src/ui/components/Security/SecurityStatusMonitor.tsx(11,31): error TS2307: Cannot find module '../../../hooks/useCSRF' or its corresponding type declarations.
+src/ui/components/Security/SecurityStatusMonitor.tsx(79,34): error TS2339: Property 'websocket' does not exist on type 'CreateTRPCReactBase<CreateRouterInner<RootConfig<{ ctx: TRPCContext; meta: object; errorShape: { data: { stack: string | undefined; requestId: any; code: "TIMEOUT" | "FORBIDDEN" | "PARSE_ERROR" | "BAD_REQUEST" | "INTERNAL_SERVER_ERROR" | ... 9 more ... | "CLIENT_CLOSED_REQUEST"; httpStatus: number; path?: string | u...'.
+src/ui/components/Toast/Toast.tsx(48,13): error TS7030: Not all code paths return a value.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(96,5): error TS2353: Object literal may only specify known properties, and 'includeAnalysis' does not exist in type '{ search?: string | undefined; page?: number | undefined; filters?: { status?: ("red" | "yellow" | "green")[] | undefined; priority?: ("high" | "medium" | "low" | "critical")[] | undefined; workflowState?: ("IN_PROGRESS" | ... 1 more ... | "COMPLETION")[] | undefined; emailAlias?: string[] | undefined; dateRange?: {...'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(107,5): error TS2353: Object literal may only specify known properties, and 'includeWorkflowMetrics' does not exist in type '{ refreshKey?: number | undefined; }'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(144,20): error TS2345: Argument of type '(prev: { emailId: string; message: string; severity: "critical" | "warning"; }[]) => { emailId: string; message: string; severity: string; }[]' is not assignable to parameter of type 'SetStateAction<{ emailId: string; message: string; severity: "critical" | "warning"; }[]>'.
+  Type '(prev: { emailId: string; message: string; severity: "critical" | "warning"; }[]) => { emailId: string; message: string; severity: string; }[]' is not assignable to type '(prevState: { emailId: string; message: string; severity: "critical" | "warning"; }[]) => { emailId: string; message: string; severity: "critical" | "warning"; }[]'.
+    Type '{ emailId: string; message: string; severity: string; }[]' is not assignable to type '{ emailId: string; message: string; severity: "critical" | "warning"; }[]'.
+      Type '{ emailId: string; message: string; severity: string; }' is not assignable to type '{ emailId: string; message: string; severity: "critical" | "warning"; }'.
+        Types of property 'severity' are incompatible.
+          Type 'string' is not assignable to type '"critical" | "warning"'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(213,45): error TS2345: Argument of type '() => { totalEmails: any; todaysEmails: any; workflowCompletion: any; avgResponseTime: any; criticalAlerts: { emailId: string; message: string; severity: "warning" | "critical"; }[]; agentUtilization: any; pendingAssignment: any; urgentCount: any; }' is not assignable to parameter of type '() => DashboardMetrics'.
+  Call signature return types '{ totalEmails: any; todaysEmails: any; workflowCompletion: any; avgResponseTime: any; criticalAlerts: { emailId: string; message: string; severity: "critical" | "warning"; }[]; agentUtilization: any; pendingAssignment: any; urgentCount: any; }' and 'DashboardMetrics' are incompatible.
+    The types of 'criticalAlerts' are incompatible between these types.
+      Type '{ emailId: string; message: string; severity: "critical" | "warning"; }[]' is not assignable to type 'Alert[]'.
+        Type '{ emailId: string; message: string; severity: "critical" | "warning"; }' is missing the following properties from type 'Alert': id, type, timestamp
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(215,25): error TS2339: Property 'total' does not exist on type '{ success: boolean; data: GetEmailsResponse; }'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(216,28): error TS2339: Property 'urgentCount' does not exist on type '{ success: boolean; data: GetEmailsResponse; }'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(223,32): error TS2339: Property 'todaysCount' does not exist on type '{ success: boolean; data: GetEmailsResponse; }'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(223,69): error TS2339: Property 'todaysCount' does not exist on type '{ totalEmails: number; criticalCount: number; inProgressCount: number; completedCount: number; statusDistribution: Record<string, number>; }'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(224,38): error TS2339: Property 'workflowCompletion' does not exist on type '{ success: boolean; data: GetAnalyticsResponse; }'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(225,35): error TS2339: Property 'avgResponseTime' does not exist on type '{ success: boolean; data: GetAnalyticsResponse; }'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(227,36): error TS2339: Property 'agentUtilization' does not exist on type '{ success: boolean; data: GetAnalyticsResponse; }'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(228,37): error TS2339: Property 'pendingAssignmentCount' does not exist on type '{ success: boolean; data: GetEmailsResponse; }'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(374,37): error TS2322: Type '{ metrics: DashboardMetrics; realtime: boolean; }' is not assignable to type 'IntrinsicAttributes & MetricsBarProps'.
+  Property 'realtime' does not exist on type 'IntrinsicAttributes & MetricsBarProps'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(381,13): error TS2322: Type '{ metrics: DashboardMetrics; isLoading: boolean; wsConnected: boolean; }' is not assignable to type 'IntrinsicAttributes & EmailDashboardViewProps'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & EmailDashboardViewProps'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(388,59): error TS2339: Property 'emails' does not exist on type '{ success: boolean; data: GetEmailsResponse; }'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(397,13): error TS2322: Type '{ analytics: GetAnalyticsResponse; isLoading: false; wsConnected: boolean; }' is not assignable to type 'IntrinsicAttributes & AnalyticsViewProps'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & AnalyticsViewProps'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(406,62): error TS2339: Property 'emails' does not exist on type '{ success: boolean; data: GetEmailsResponse; }'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(420,59): error TS2339: Property 'agents' does not exist on type '{ success: boolean; data: GetAnalyticsResponse; }'.
+src/ui/components/UnifiedEmail/UnifiedEmailDashboardEnhanced.tsx(421,79): error TS2339: Property 'agentPerformance' does not exist on type '{ success: boolean; data: GetAnalyticsResponse; }'.
+src/ui/hooks/useAuth.tsx(324,57): error TS2339: Property 'mutate' does not exist on type 'object & { getQueryKey: (input: { password: string; }, type?: QueryType | undefined) => QueryKey; useQuery: ProcedureUseQuery<BuildProcedure<"query", { _config: RootConfig<{ ctx: TRPCContext; meta: object; errorShape: { ...; }; transformer: typeof SuperJSON; }>; ... 5 more ...; _output_out: unique symbol; }, { ...; ...'.
+src/ui/hooks/useEnhancedWebSocket.ts(116,21): error TS18048: 'handlers' is possibly 'undefined'.
+src/ui/hooks/useEnhancedWebSocket.ts(116,21): error TS7053: Element implicitly has an 'any' type because expression of type 'keyof WebSocketEventHandlers' can't be used to index type 'Set<Function>'.
+  Property 'onConnect' does not exist on type 'Set<Function>'.
+src/ui/hooks/useEnhancedWebSocket.ts(126,9): error TS18048: 'handlers' is possibly 'undefined'.
+src/ui/hooks/useEnhancedWebSocket.ts(126,18): error TS2339: Property 'onEvent' does not exist on type 'Set<Function>'.
+src/ui/hooks/useEnhancedWebSocket.ts(128,9): error TS18048: 'handlers' is possibly 'undefined'.
+src/ui/hooks/useEnhancedWebSocket.ts(128,18): error TS2339: Property 'onEvent' does not exist on type 'Set<Function>'.
+src/utils/error-handling/index.ts(7,9): error TS2451: Cannot redeclare block-scoped variable 'window'.
+src/utils/error-handling/index.ts(8,9): error TS2451: Cannot redeclare block-scoped variable 'PromiseRejectionEvent'.
+src/utils/logger.ts(9,9): error TS2451: Cannot redeclare block-scoped variable 'window'.

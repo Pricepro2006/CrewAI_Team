@@ -1,4 +1,4 @@
-import type { ProcessedDocument, QueryResult, Document } from './types.js';
+import type { ProcessedDocument, QueryResult, Document } from "./types.js";
 
 /**
  * Interface for vector store implementations
@@ -26,7 +26,7 @@ export interface IVectorStore {
   searchWithFilter(
     query: string,
     filter: Record<string, any>,
-    limit?: number
+    limit?: number,
   ): Promise<QueryResult[]>;
 
   /**

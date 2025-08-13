@@ -17,7 +17,7 @@
     "no-case-declarations": "error",
     "no-useless-escape": "error",
     "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_", "destructuredArrayIgnorePattern": "^_" }]
   },
   "ignorePatterns": [
     "dist/",

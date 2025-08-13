@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Shield, RefreshCw, AlertTriangle } from 'lucide-react';
+import React from "react";
+import { X, Shield, RefreshCw, AlertTriangle } from "lucide-react";
 
 interface CSRFErrorModalProps {
   isOpen: boolean;
@@ -45,8 +45,8 @@ export const CSRFErrorModal: React.FC<CSRFErrorModalProps> = ({
             <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-gray-600 dark:text-gray-300">
               <p className="mb-2">
-                We need to refresh your security credentials to continue. This is a standard 
-                security measure to protect your data.
+                We need to refresh your security credentials to continue. This
+                is a standard security measure to protect your data.
               </p>
               {error && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -67,7 +67,8 @@ export const CSRFErrorModal: React.FC<CSRFErrorModalProps> = ({
           {isMaxRetries && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-md">
               <p className="text-sm text-red-800 dark:text-red-200">
-                We're having trouble connecting. Please refresh the page or try again later.
+                We're having trouble connecting. Please refresh the page or try
+                again later.
               </p>
             </div>
           )}
@@ -114,7 +115,9 @@ export function useCSRFErrorModal() {
   const [isOpen, setIsOpen] = React.useState(false);
   const [error, setError] = React.useState<Error | null>(null);
   const [retryCount, setRetryCount] = React.useState(0);
-  const [retryCallback, setRetryCallback] = React.useState<(() => void) | null>(null);
+  const [retryCallback, setRetryCallback] = React.useState<(() => void) | null>(
+    null,
+  );
 
   const showError = React.useCallback((error: Error, onRetry?: () => void) => {
     setError(error);
@@ -123,7 +126,7 @@ export function useCSRFErrorModal() {
   }, []);
 
   const handleRetry = React.useCallback(() => {
-    setRetryCount(prev => prev + 1);
+    setRetryCount((prev) => prev + 1);
     if (retryCallback) {
       retryCallback();
     }

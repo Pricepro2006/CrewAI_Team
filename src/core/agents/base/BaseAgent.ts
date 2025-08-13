@@ -7,7 +7,11 @@ import type {
 } from "./AgentTypes.js";
 import { logger } from "../../../utils/logger.js";
 import { OllamaProvider } from "../../llm/OllamaProvider.js";
-import { MODEL_CONFIG, getModelConfig, getModelTimeout } from "../../../config/models.config.js";
+import {
+  MODEL_CONFIG,
+  getModelConfig,
+  getModelTimeout,
+} from "../../../config/models.config.js";
 
 export abstract class BaseAgent {
   protected tools: Map<string, BaseTool> = new Map();
@@ -19,12 +23,12 @@ export abstract class BaseAgent {
   constructor(
     public readonly name: string,
     public readonly description: string,
-    protected readonly model: string = getModelConfig('primary'), // Now llama3.2:3b
+    protected readonly model: string = getModelConfig("primary"), // Now llama3.2:3b
   ) {
     logger.info(`Initializing agent: ${name} with model: ${model}`, "AGENT");
 
     // Get timeout for this model
-    this.timeout = getModelTimeout('primary');
+    this.timeout = getModelTimeout("primary");
 
     // Initialize LLM provider
     this.llm = new OllamaProvider({

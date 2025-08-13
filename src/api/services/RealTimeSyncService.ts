@@ -1,24 +1,24 @@
-import { EventEmitter } from 'events';
-import type * as WebSocket from 'ws';
-import type { WebSocketService } from './WebSocketService.js';
-import type { EmailStorageService } from './EmailStorageService.js';
-import type { IEMSDataFlowService } from './IEMSDataFlowService.js';
-import { logger } from '../../utils/logger.js';
-import { z } from 'zod';
+import { EventEmitter } from "events";
+import type * as WebSocket from "ws";
+import type { WebSocketService } from "./WebSocketService.js";
+import type { EmailStorageService } from "./EmailStorageService.js";
+import type { IEMSDataFlowService } from "./IEMSDataFlowService.js";
+import { logger } from "../../utils/logger.js";
+import { z } from "zod";
 
 // Real-time sync event types
 export enum SyncEventType {
-  EMAIL_CREATED = 'email:created',
-  EMAIL_UPDATED = 'email:updated',
-  EMAIL_DELETED = 'email:deleted',
-  STATUS_CHANGED = 'status:changed',
-  WORKFLOW_UPDATED = 'workflow:updated',
-  SYNC_REQUESTED = 'sync:requested',
-  SYNC_STARTED = 'sync:started',
-  SYNC_COMPLETED = 'sync:completed',
-  SYNC_FAILED = 'sync:failed',
-  BATCH_UPDATE = 'batch:update',
-  ANALYSIS_RECEIVED = 'analysis:received'
+  EMAIL_CREATED = "email:created",
+  EMAIL_UPDATED = "email:updated",
+  EMAIL_DELETED = "email:deleted",
+  STATUS_CHANGED = "status:changed",
+  WORKFLOW_UPDATED = "workflow:updated",
+  SYNC_REQUESTED = "sync:requested",
+  SYNC_STARTED = "sync:started",
+  SYNC_COMPLETED = "sync:completed",
+  SYNC_FAILED = "sync:failed",
+  BATCH_UPDATE = "batch:update",
+  ANALYSIS_RECEIVED = "analysis:received",
 }
 
 // Sync event schema
@@ -27,11 +27,13 @@ const SyncEventSchema = z.object({
   timestamp: z.string().datetime(),
   source: z.string(),
   data: z.any(),
-  metadata: z.object({
-    userId: z.string().optional(),
-    sessionId: z.string().optional(),
-    correlationId: z.string().optional()
-  }).optional()
+  metadata: z
+    .object({
+      userId: z.string().optional(),
+      sessionId: z.string().optional(),
+      correlationId: z.string().optional(),
+    })
+    .optional(),
 });
 
 type SyncEvent = z.infer<typeof SyncEventSchema>;
@@ -68,10 +70,7 @@ export class RealTimeSyncService extends EventEmitter {
   private eventBuffer: Map<string, SyncEvent[]> = new Map();
   private bufferTimeout?: NodeJS.Timeout;
 
-  constructor(
-    wsService: WebSocketService,
-    emailService: EmailStorageService
-  ) {
+  constructor(wsService: WebSocketService, emailService: EmailStorageService) {
     super();
     this.wsService = wsService;
     this.emailService = emailService;
@@ -80,7 +79,7 @@ export class RealTimeSyncService extends EventEmitter {
       eventsPerMinute: 0,
       activeSubscriptions: 0,
       errorCount: 0,
-      averageProcessingTime: 0
+      averageProcessingTime: 0,
     };
 
     this.setupEventListeners();
@@ -101,22 +100,25 @@ export class RealTimeSyncService extends EventEmitter {
   subscribe(
     events: SyncEventType[],
     callback: (event: SyncEvent) => void,
-    filter?: Record<string, any>
+    filter?: Record<string, any>,
   ): string {
     const id = this.generateSubscriptionId();
-    
+
     const subscription: SyncSubscription = {
       id,
       events,
       filter,
-      callback
+      callback,
     };
 
     this.subscriptions.set(id, subscription);
     this.statistics.activeSubscriptions = this.subscriptions.size;
-    
-    logger.info(`New sync subscription created: ${id}`, 'REAL_TIME_SYNC', { events, filter });
-    
+
+    logger.info(`New sync subscription created: ${id}`, "REAL_TIME_SYNC", {
+      events,
+      filter,
+    });
+
     return id;
   }
 
@@ -125,35 +127,40 @@ export class RealTimeSyncService extends EventEmitter {
    */
   unsubscribe(subscriptionId: string): boolean {
     const deleted = this.subscriptions.delete(subscriptionId);
-    
+
     if (deleted) {
       this.statistics.activeSubscriptions = this.subscriptions.size;
       logger.info(`Sync subscription removed: ${subscriptionId}`);
     }
-    
+
     return deleted;
   }
 
   /**
    * Publish a sync event
    */
-  async publishEvent(event: Omit<SyncEvent, 'timestamp'>): Promise<void> {
+  async publishEvent(event: Omit<SyncEvent, "timestamp">): Promise<void> {
     const fullEvent: SyncEvent = {
       ...event,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     // Validate event
     try {
       SyncEventSchema.parse(fullEvent);
     } catch (error) {
-      logger.error('Invalid sync event', 'REAL_TIME_SYNC', {}, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "Invalid sync event",
+        "REAL_TIME_SYNC",
+        {},
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return;
     }
 
     // Add to queue
     this.eventQueue.push(fullEvent);
-    
+
     // Process queue
     await this.processEventQueue();
   }
@@ -172,20 +179,25 @@ export class RealTimeSyncService extends EventEmitter {
     try {
       while (this.eventQueue.length > 0) {
         const event = this.eventQueue.shift()!;
-        
+
         // Process event
         await this.processEvent(event);
-        
+
         // Update statistics
         this.statistics.eventsProcessed++;
         this.statistics.lastEventTime = new Date();
       }
     } catch (error) {
-      logger.error('Error processing event queue', 'REAL_TIME_SYNC', {}, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "Error processing event queue",
+        "REAL_TIME_SYNC",
+        {},
+        error instanceof Error ? error : new Error(String(error)),
+      );
       this.statistics.errorCount++;
     } finally {
       this.isProcessing = false;
-      
+
       // Update average processing time
       const processingTime = Date.now() - startTime;
       this.updateAverageProcessingTime(processingTime);
@@ -196,7 +208,11 @@ export class RealTimeSyncService extends EventEmitter {
    * Process a single event
    */
   private async processEvent(event: SyncEvent): Promise<void> {
-    logger.debug(`Processing sync event: ${event.type}`, 'REAL_TIME_SYNC', event);
+    logger.debug(
+      `Processing sync event: ${event.type}`,
+      "REAL_TIME_SYNC",
+      event,
+    );
 
     // Buffer events for batch processing
     if (this.shouldBufferEvent(event)) {
@@ -210,7 +226,12 @@ export class RealTimeSyncService extends EventEmitter {
         try {
           subscription.callback(event);
         } catch (error) {
-          logger.error(`Subscription callback error: ${subscription.id}`, 'REAL_TIME_SYNC', {}, error instanceof Error ? error : new Error(String(error)));
+          logger.error(
+            `Subscription callback error: ${subscription.id}`,
+            "REAL_TIME_SYNC",
+            {},
+            error instanceof Error ? error : new Error(String(error)),
+          );
         }
       }
     }
@@ -229,7 +250,7 @@ export class RealTimeSyncService extends EventEmitter {
     const bufferableEvents = [
       SyncEventType.EMAIL_CREATED,
       SyncEventType.EMAIL_UPDATED,
-      SyncEventType.STATUS_CHANGED
+      SyncEventType.STATUS_CHANGED,
     ];
 
     return bufferableEvents.includes(event.type);
@@ -240,11 +261,11 @@ export class RealTimeSyncService extends EventEmitter {
    */
   private bufferEvent(event: SyncEvent): void {
     const key = `${event.type}:${event.source}`;
-    
+
     if (!this.eventBuffer.has(key)) {
       this.eventBuffer.set(key, []);
     }
-    
+
     this.eventBuffer.get(key)!.push(event);
 
     // Reset buffer timeout
@@ -275,15 +296,15 @@ export class RealTimeSyncService extends EventEmitter {
       const batchEvent: SyncEvent = {
         type: SyncEventType.BATCH_UPDATE,
         timestamp: new Date().toISOString(),
-        source: 'sync-service',
+        source: "sync-service",
         data: {
-          eventType: events[0]?.type || 'unknown',
+          eventType: events[0]?.type || "unknown",
           count: events.length,
-          events: events
+          events: events,
         },
         metadata: {
-          correlationId: this.generateCorrelationId()
-        }
+          correlationId: this.generateCorrelationId(),
+        },
       };
 
       // Process batch event
@@ -297,7 +318,10 @@ export class RealTimeSyncService extends EventEmitter {
   /**
    * Check if event matches subscription
    */
-  private matchesSubscription(event: SyncEvent, subscription: SyncSubscription): boolean {
+  private matchesSubscription(
+    event: SyncEvent,
+    subscription: SyncSubscription,
+  ): boolean {
     // Check event type
     if (!subscription.events.includes(event.type)) {
       return false;
@@ -320,11 +344,15 @@ export class RealTimeSyncService extends EventEmitter {
    */
   private broadcastEvent(event: SyncEvent): void {
     const wsMessage = {
-      type: 'sync_event',
-      event: event
+      type: "sync_event",
+      event: event,
     };
 
-    this.wsService.broadcastEmailBulkUpdate(event.type, [], { successful: 1, failed: 0, total: 1 });
+    this.wsService.broadcastEmailBulkUpdate(event.type, [], {
+      successful: 1,
+      failed: 0,
+      total: 1,
+    });
   }
 
   /**
@@ -335,15 +363,15 @@ export class RealTimeSyncService extends EventEmitter {
       case SyncEventType.SYNC_REQUESTED:
         await this.handleSyncRequest(event);
         break;
-        
+
       case SyncEventType.ANALYSIS_RECEIVED:
         await this.handleAnalysisReceived(event);
         break;
-        
+
       case SyncEventType.STATUS_CHANGED:
         await this.handleStatusChange(event);
         break;
-        
+
       case SyncEventType.BATCH_UPDATE:
         await this.handleBatchUpdate(event);
         break;
@@ -355,17 +383,17 @@ export class RealTimeSyncService extends EventEmitter {
    */
   private async handleSyncRequest(event: SyncEvent): Promise<void> {
     if (!this.dataFlowService) {
-      logger.warn('Data flow service not available for sync request');
+      logger.warn("Data flow service not available for sync request");
       return;
     }
 
-    logger.info('Processing sync request', 'REAL_TIME_SYNC', event.metadata);
+    logger.info("Processing sync request", "REAL_TIME_SYNC", event.metadata);
 
     // Publish sync started event
     await this.publishEvent({
       type: SyncEventType.SYNC_STARTED,
-      source: 'sync-service',
-      data: { requestId: event.metadata?.correlationId }
+      source: "sync-service",
+      data: { requestId: event.metadata?.correlationId },
     });
 
     try {
@@ -375,17 +403,17 @@ export class RealTimeSyncService extends EventEmitter {
       // Publish sync completed event
       await this.publishEvent({
         type: SyncEventType.SYNC_COMPLETED,
-        source: 'sync-service',
+        source: "sync-service",
         data: result,
-        metadata: event.metadata
+        metadata: event.metadata,
       });
     } catch (error) {
       // Publish sync failed event
       await this.publishEvent({
         type: SyncEventType.SYNC_FAILED,
-        source: 'sync-service',
+        source: "sync-service",
         data: { error: error instanceof Error ? error.message : String(error) },
-        metadata: event.metadata
+        metadata: event.metadata,
       });
     }
   }
@@ -394,24 +422,29 @@ export class RealTimeSyncService extends EventEmitter {
    * Handle new analysis received
    */
   private async handleAnalysisReceived(event: SyncEvent): Promise<void> {
-    logger.info('Processing new analysis', event.data);
+    logger.info("Processing new analysis", event.data);
 
     try {
       // Extract email data from analysis
       const emailData = event.data.email;
-      
+
       // Create or update email
       const email = await this.emailService.createEmail(emailData);
 
       // Publish email created event
       await this.publishEvent({
         type: SyncEventType.EMAIL_CREATED,
-        source: 'analysis-processor',
+        source: "analysis-processor",
         data: { email },
-        metadata: event.metadata
+        metadata: event.metadata,
       });
     } catch (error) {
-      logger.error('Failed to process analysis', 'REAL_TIME_SYNC', {}, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "Failed to process analysis",
+        "REAL_TIME_SYNC",
+        {},
+        error instanceof Error ? error : new Error(String(error)),
+      );
     }
   }
 
@@ -420,8 +453,10 @@ export class RealTimeSyncService extends EventEmitter {
    */
   private async handleStatusChange(event: SyncEvent): Promise<void> {
     const { emailId, oldStatus, newStatus, userId } = event.data;
-    
-    logger.info(`Status changed for email ${emailId}: ${oldStatus} -> ${newStatus}`);
+
+    logger.info(
+      `Status changed for email ${emailId}: ${oldStatus} -> ${newStatus}`,
+    );
 
     try {
       // Update email status
@@ -429,15 +464,20 @@ export class RealTimeSyncService extends EventEmitter {
 
       // Create audit log entry
       await this.emailService.createAuditLog({
-        entityType: 'email',
+        entityType: "email",
         entityId: emailId,
-        action: 'status_change',
+        action: "status_change",
         oldValues: { status: oldStatus },
         newValues: { status: newStatus },
-        performedBy: userId || 'system'
+        performedBy: userId || "system",
       });
     } catch (error) {
-      logger.error('Failed to update status', 'REAL_TIME_SYNC', {}, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "Failed to update status",
+        "REAL_TIME_SYNC",
+        {},
+        error instanceof Error ? error : new Error(String(error)),
+      );
     }
   }
 
@@ -446,7 +486,7 @@ export class RealTimeSyncService extends EventEmitter {
    */
   private async handleBatchUpdate(event: SyncEvent): Promise<void> {
     const { eventType, count, events } = event.data;
-    
+
     logger.info(`Processing batch update: ${count} ${eventType} events`);
 
     // Process individual events without buffering
@@ -460,27 +500,29 @@ export class RealTimeSyncService extends EventEmitter {
    */
   private setupEventListeners(): void {
     // Listen for WebSocket connections
-    this.wsService.on('connection', (ws: WebSocket) => {
-      logger.info('New WebSocket connection for real-time sync');
+    this.wsService.on("connection", (ws: WebSocket) => {
+      logger.info("New WebSocket connection for real-time sync");
 
       // Send initial sync status
-      ws.send(JSON.stringify({
-        type: 'sync_status',
-        data: this.getStatistics()
-      }));
+      ws.send(
+        JSON.stringify({
+          type: "sync_status",
+          data: this.getStatistics(),
+        }),
+      );
     });
 
     // Listen for sync requests via WebSocket
-    this.wsService.on('message', async (data: any) => {
-      if (data.type === 'sync_request') {
+    this.wsService.on("message", async (data: any) => {
+      if (data.type === "sync_request") {
         await this.publishEvent({
           type: SyncEventType.SYNC_REQUESTED,
-          source: 'websocket',
+          source: "websocket",
           data: data.payload,
           metadata: {
             sessionId: data.sessionId,
-            userId: data.userId
-          }
+            userId: data.userId,
+          },
         });
       }
     });
@@ -493,28 +535,28 @@ export class RealTimeSyncService extends EventEmitter {
     if (!this.dataFlowService) return;
 
     // Listen for sync events
-    this.dataFlowService.on('sync:start', () => {
+    this.dataFlowService.on("sync:start", () => {
       this.publishEvent({
         type: SyncEventType.SYNC_STARTED,
-        source: 'data-flow-service',
-        data: {}
+        source: "data-flow-service",
+        data: {},
       });
     });
 
-    this.dataFlowService.on('sync:complete', (result: any) => {
+    this.dataFlowService.on("sync:complete", (result: any) => {
       this.publishEvent({
         type: SyncEventType.SYNC_COMPLETED,
-        source: 'data-flow-service',
-        data: result
+        source: "data-flow-service",
+        data: result,
       });
     });
 
     // Listen for new emails
-    this.dataFlowService.on('email:created', (email: any) => {
+    this.dataFlowService.on("email:created", (email: any) => {
       this.publishEvent({
         type: SyncEventType.EMAIL_CREATED,
-        source: 'data-flow-service',
-        data: { email }
+        source: "data-flow-service",
+        data: { email },
       });
     });
   }
@@ -527,10 +569,12 @@ export class RealTimeSyncService extends EventEmitter {
     setInterval(() => {
       const now = Date.now();
       const oneMinuteAgo = now - 60000;
-      
+
       // Count events in the last minute
       // This is simplified - in production, you'd track timestamps
-      this.statistics.eventsPerMinute = Math.floor(this.statistics.eventsProcessed / 10);
+      this.statistics.eventsPerMinute = Math.floor(
+        this.statistics.eventsProcessed / 10,
+      );
     }, 60000); // Every minute
   }
 
@@ -539,10 +583,11 @@ export class RealTimeSyncService extends EventEmitter {
    */
   private updateAverageProcessingTime(newTime: number): void {
     const { averageProcessingTime, eventsProcessed } = this.statistics;
-    
+
     // Calculate new average
-    this.statistics.averageProcessingTime = 
-      (averageProcessingTime * (eventsProcessed - 1) + newTime) / eventsProcessed;
+    this.statistics.averageProcessingTime =
+      (averageProcessingTime * (eventsProcessed - 1) + newTime) /
+      eventsProcessed;
   }
 
   /**
@@ -565,18 +610,22 @@ export class RealTimeSyncService extends EventEmitter {
   getStatistics(): SyncStatistics {
     return {
       ...this.statistics,
-      activeSubscriptions: this.subscriptions.size
+      activeSubscriptions: this.subscriptions.size,
     };
   }
 
   /**
    * Get active subscriptions
    */
-  getSubscriptions(): Array<{ id: string; events: SyncEventType[]; filter?: any }> {
-    return Array.from(this.subscriptions.values()).map(sub => ({
+  getSubscriptions(): Array<{
+    id: string;
+    events: SyncEventType[];
+    filter?: any;
+  }> {
+    return Array.from(this.subscriptions.values()).map((sub) => ({
       id: sub.id,
       events: sub.events,
-      filter: sub.filter
+      filter: sub.filter,
     }));
   }
 
@@ -586,6 +635,6 @@ export class RealTimeSyncService extends EventEmitter {
   clearSubscriptions(): void {
     this.subscriptions.clear();
     this.statistics.activeSubscriptions = 0;
-    logger.info('All sync subscriptions cleared');
+    logger.info("All sync subscriptions cleared");
   }
 }

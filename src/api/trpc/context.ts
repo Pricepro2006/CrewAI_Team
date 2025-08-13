@@ -14,6 +14,9 @@ import { mcpToolsService } from "../services/MCPToolsService.js";
 import { DealDataService } from "../services/DealDataService.js";
 import { EmailStorageService } from "../services/EmailStorageService.js";
 import { WalmartGroceryService } from "../services/WalmartGroceryService.js";
+import { getStoredCSRFToken } from "../middleware/security/csrf.js";
+// import { EmailIngestionServiceImpl } from "../../core/services/EmailIngestionServiceImpl.js";
+import { EventEmitter } from "events";
 
 // Context User interface (extends PublicUser with runtime properties)
 export interface User extends PublicUser {
@@ -30,6 +33,8 @@ let userService: UserService;
 let dealDataService: DealDataService;
 let emailStorageService: EmailStorageService;
 let walmartGroceryService: WalmartGroceryService;
+// let emailIngestionService: EmailIngestionServiceImpl;
+let eventEmitter: EventEmitter;
 
 async function initializeServices() {
   if (!masterOrchestrator) {
@@ -85,12 +90,19 @@ async function initializeServices() {
     dealDataService = new DealDataService();
   }
 
-  if (!emailStorageService) {
-    emailStorageService = new EmailStorageService();
-  }
+  // if (!emailStorageService) {
+  //   emailStorageService = new EmailStorageService(); // TODO: Fix database schema issues
+  // }
+  emailStorageService = null as any; // Temporary fix
 
   if (!walmartGroceryService) {
     walmartGroceryService = WalmartGroceryService.getInstance();
+  }
+  // if (!emailIngestionService) {
+  //   emailIngestionService = new EmailIngestionServiceImpl();
+  // }
+  if (!eventEmitter) {
+    eventEmitter = new EventEmitter();
   }
 
   return {
@@ -102,6 +114,8 @@ async function initializeServices() {
     dealDataService,
     emailStorageService,
     walmartGroceryService,
+    // emailIngestionService,
+    eventEmitter,
     agentRegistry: masterOrchestrator.agentRegistry,
     ragSystem: masterOrchestrator.ragSystem,
     mcpTools: mcpToolsService.getAvailableTools(),
@@ -212,6 +226,7 @@ type TRPCContext = {
   batchId: string | undefined;
   validatedInput: unknown;
   csrfToken?: string;
+  rateLimits?: Map<string, { count: number; resetTime: number }>;
   masterOrchestrator: MasterOrchestrator;
   conversationService: ConversationService;
   taskService: TaskService;
@@ -220,6 +235,8 @@ type TRPCContext = {
   dealDataService: DealDataService;
   emailStorageService: EmailStorageService;
   walmartGroceryService: WalmartGroceryService;
+  // emailIngestionService: EmailIngestionServiceImpl;
+  eventEmitter: EventEmitter;
   agentRegistry: any;
   ragSystem: any;
   mcpTools: any;
@@ -259,6 +276,19 @@ export async function createContext({
     };
   }
 
+  // Extract CSRF token from cookies/session for tRPC context
+  // This is crucial for CSRF validation in tRPC procedures
+  const csrfToken = getStoredCSRFToken(req);
+  
+  if (!csrfToken && req.method !== "GET") {
+    logger.debug("No CSRF token found in request context", "TRPC_CONTEXT", {
+      method: req.method,
+      path: req.path,
+      hasCookies: !!req.cookies,
+      cookieNames: req.cookies ? Object.keys(req.cookies) : [],
+    });
+  }
+
   // Set security headers
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -273,7 +303,7 @@ export async function createContext({
     timestamp: new Date(),
     batchId: undefined as string | undefined, // Will be set by batch middleware when needed
     validatedInput: undefined as unknown, // Will be set by input validation middleware when needed
-    csrfToken: undefined as string | undefined, // Will be set by CSRF middleware when needed
+    csrfToken, // Properly extracted CSRF token from cookies
     ...services,
   };
 }

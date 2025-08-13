@@ -1,15 +1,23 @@
-import type { Request, Response, NextFunction } from 'express';
-import { AppError, ErrorCode, isOperationalError, sanitizeError } from "../../utils/error-handling/index.js";
-import { getUserFriendlyError, getErrorSeverity } from '../../utils/error-handling/error-messages.js';
-import { logger } from '../../utils/logger.js';
-import { v4 as uuidv4 } from 'uuid';
+import type { Request, Response, NextFunction } from "express";
+import {
+  AppError,
+  ErrorCode,
+  // isOperationalError, // Unused import
+  sanitizeError,
+} from "../../utils/error-handling/server.js";
+import {
+  getUserFriendlyError,
+  getErrorSeverity,
+} from "../../utils/error-handling/error-messages.js";
+import { logger } from "../../utils/logger.js";
+import { v4 as uuidv4 } from "uuid";
 
 export interface ErrorResponse {
   error: {
     id: string;
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
     timestamp: string;
     path?: string;
     method?: string;
@@ -28,7 +36,7 @@ export function errorHandler(
   err: Error | AppError,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void {
   // If response was already sent, delegate to default Express error handler
   if (res.headersSent) {
@@ -49,7 +57,7 @@ export function errorHandler(
       body: sanitizeRequestBody(req.body),
       headers: sanitizeHeaders(req.headers),
       ip: req.ip,
-      userAgent: req.get('user-agent'),
+      userAgent: req.get("user-agent"),
     },
   };
 
@@ -57,22 +65,22 @@ export function errorHandler(
   if (err instanceof AppError) {
     const severity = getErrorSeverity(err.code);
     switch (severity) {
-      case 'critical':
-        logger.error('Critical error occurred', logData);
+      case "critical":
+        logger.error("Critical error occurred", logData);
         break;
-      case 'error':
-        logger.error('Error occurred', logData);
+      case "error":
+        logger.error("Error occurred", logData);
         break;
-      case 'warning':
-        logger.warn('Warning error occurred', logData);
+      case "warning":
+        logger.warn("Warning error occurred", logData);
         break;
-      case 'info':
-        logger.info('Info error occurred', logData);
+      case "info":
+        logger.info("Info error occurred", logData);
         break;
     }
   } else {
     // Unknown errors are always logged as errors
-    logger.error('Unexpected error occurred', logData);
+    logger.error("Unexpected error occurred", logData);
   }
 
   // Prepare error response
@@ -88,7 +96,8 @@ export function errorHandler(
         id: errorId,
         code: err.code,
         message: err.message,
-        details: process.env.NODE_ENV === 'development' ? err.details : undefined,
+        details:
+          process.env['NODE_ENV'] === "development" ? err.details : undefined,
         timestamp,
         path: req.path,
         method: req.method,
@@ -101,22 +110,23 @@ export function errorHandler(
     };
   } else {
     // Handle non-AppError errors
-    const isProduction = process.env.NODE_ENV === 'production';
-    
+    const isProduction = process.env['NODE_ENV'] === "production";
+
     errorResponse = {
       error: {
         id: errorId,
-        code: 'INTERNAL_SERVER_ERROR',
-        message: isProduction ? 'An unexpected error occurred' : err.message,
+        code: "INTERNAL_SERVER_ERROR",
+        message: isProduction ? "An unexpected error occurred" : err.message,
         details: isProduction ? undefined : { stack: err.stack },
         timestamp,
         path: req.path,
         method: req.method,
       },
       userMessage: {
-        title: 'Something Went Wrong',
-        message: 'An unexpected error occurred. Our team has been notified.',
-        action: 'Please try again later. If the problem persists, contact support.',
+        title: "Something Went Wrong",
+        message: "An unexpected error occurred. Our team has been notified.",
+        action:
+          "Please try again later. If the problem persists, contact support.",
       },
     };
   }
@@ -125,13 +135,17 @@ export function errorHandler(
   res.status(statusCode).json(errorResponse);
 
   // For critical errors, consider alerting
-  if (err instanceof AppError && getErrorSeverity(err.code) === 'critical') {
+  if (err instanceof AppError && getErrorSeverity(err.code) === "critical") {
     // TODO: Send alert to monitoring service or admin
-    logger.error('Critical error requires immediate attention', 'ERROR_HANDLER', {
-      errorId,
-      code: err.code,
-      message: err.message,
-    });
+    logger.error(
+      "Critical error requires immediate attention",
+      "ERROR_HANDLER",
+      {
+        errorId,
+        code: err.code,
+        message: err.message,
+      },
+    );
   }
 }
 
@@ -143,7 +157,7 @@ export function notFoundHandler(req: Request, res: Response): void {
     ErrorCode.NOT_FOUND,
     `Route ${req.method} ${req.path} not found`,
     404,
-    { method: req.method, path: req.path }
+    { method: req.method, path: req.path },
   );
 
   errorHandler(error, req, res, () => {});
@@ -153,7 +167,7 @@ export function notFoundHandler(req: Request, res: Response): void {
  * Async error wrapper for route handlers
  */
 export function asyncErrorWrapper(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>,
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
@@ -163,8 +177,13 @@ export function asyncErrorWrapper(
 /**
  * Validation error formatter for express-validator
  */
-export function validationErrorFormatter(errors: any[]): AppError {
-  const formattedErrors = errors.reduce((acc, error) => {
+interface ValidationError {
+  param: string;
+  msg: string;
+}
+
+export function validationErrorFormatter(errors: ValidationError[]): AppError {
+  const formattedErrors = errors.reduce<Record<string, string[]>>((acc, error) => {
     if (!acc[error.param]) {
       acc[error.param] = [];
     }
@@ -172,28 +191,32 @@ export function validationErrorFormatter(errors: any[]): AppError {
     return acc;
   }, {});
 
-  return new AppError(
-    ErrorCode.VALIDATION_ERROR,
-    'Validation failed',
-    422,
-    { fields: formattedErrors }
-  );
+  return new AppError(ErrorCode.VALIDATION_ERROR, "Validation failed", 422, {
+    fields: formattedErrors,
+  });
 }
 
 /**
  * Sanitize request body to remove sensitive fields
  */
-function sanitizeRequestBody(body: any): any {
-  if (!body || typeof body !== 'object') {
+function sanitizeRequestBody(body: unknown): unknown {
+  if (!body || typeof body !== "object" || body === null) {
     return body;
   }
 
-  const sensitiveFields = ['password', 'token', 'apiKey', 'secret', 'creditCard', 'ssn'];
-  const sanitized = { ...body };
+  const sensitiveFields = [
+    "password",
+    "token",
+    "apiKey",
+    "secret",
+    "creditCard",
+    "ssn",
+  ];
+  const sanitized = { ...(body as Record<string, unknown>) };
 
   for (const field of sensitiveFields) {
     if (field in sanitized) {
-      sanitized[field] = '[REDACTED]';
+      sanitized[field] = "[REDACTED]";
     }
   }
 
@@ -203,13 +226,22 @@ function sanitizeRequestBody(body: any): any {
 /**
  * Sanitize headers to remove sensitive information
  */
-function sanitizeHeaders(headers: any): any {
-  const sensitiveHeaders = ['authorization', 'cookie', 'x-api-key', 'x-auth-token'];
-  const sanitized = { ...headers };
+function sanitizeHeaders(headers: unknown): unknown {
+  if (!headers || typeof headers !== "object" || headers === null) {
+    return headers;
+  }
+  
+  const sensitiveHeaders = [
+    "authorization",
+    "cookie",
+    "x-api-key",
+    "x-auth-token",
+  ];
+  const sanitized = { ...(headers as Record<string, unknown>) };
 
   for (const header of sensitiveHeaders) {
     if (header in sanitized) {
-      sanitized[header] = '[REDACTED]';
+      sanitized[header] = "[REDACTED]";
     }
   }
 

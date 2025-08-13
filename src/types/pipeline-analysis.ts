@@ -81,7 +81,7 @@ export type WorkflowState =
   | "BLOCKED"
   | "CANCELLED";
 
-export type PriorityLevel = "Critical" | "High" | "Medium" | "Low";
+export type PriorityLevel = "critical" | "high" | "medium" | "low";
 
 export type BusinessProcess =
   | "Order Management"

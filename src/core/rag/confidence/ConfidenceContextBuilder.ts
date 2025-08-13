@@ -3,7 +3,7 @@
  * Optimizes context for confidence-aware generation
  */
 
-import type { ScoredDocument, ContextOptions, BuiltContext } from './types.js';
+import type { ScoredDocument, ContextOptions, BuiltContext } from "./types.js";
 
 export class ConfidenceContextBuilder {
   private readonly maxTokensDefault = 4000;
@@ -15,7 +15,7 @@ export class ConfidenceContextBuilder {
   buildContext(
     documents: ScoredDocument[],
     query: string,
-    options: ContextOptions
+    options: ContextOptions,
   ): BuiltContext {
     const maxTokens = options.maxTokens || this.maxTokensDefault;
     const warnings: string[] = [];
@@ -29,28 +29,28 @@ export class ConfidenceContextBuilder {
     let estimatedTokens: number;
 
     switch (options.mode) {
-      case 'unified':
+      case "unified":
         ({ content, usedDocs, estimatedTokens } = this.buildUnifiedContext(
           prioritizedDocs,
           query,
           maxTokens,
-          options
+          options,
         ));
         break;
-      case 'sectioned':
+      case "sectioned":
         ({ content, usedDocs, estimatedTokens } = this.buildSectionedContext(
           prioritizedDocs,
           query,
           maxTokens,
-          options
+          options,
         ));
         break;
-      case 'hierarchical':
+      case "hierarchical":
         ({ content, usedDocs, estimatedTokens } = this.buildHierarchicalContext(
           prioritizedDocs,
           query,
           maxTokens,
-          options
+          options,
         ));
         break;
       default:
@@ -58,7 +58,7 @@ export class ConfidenceContextBuilder {
           prioritizedDocs,
           query,
           maxTokens,
-          options
+          options,
         ));
     }
 
@@ -67,15 +67,17 @@ export class ConfidenceContextBuilder {
 
     // Add warnings if necessary
     if (usedDocs.length < documents.length) {
-      warnings.push(`Context limited to ${usedDocs.length} of ${documents.length} documents due to token constraints`);
+      warnings.push(
+        `Context limited to ${usedDocs.length} of ${documents.length} documents due to token constraints`,
+      );
     }
 
     if (confidence < 0.6) {
-      warnings.push('Context confidence is below recommended threshold');
+      warnings.push("Context confidence is below recommended threshold");
     }
 
     if (estimatedTokens > maxTokens * 0.9) {
-      warnings.push('Context is near token limit, may be truncated');
+      warnings.push("Context is near token limit, may be truncated");
     }
 
     return {
@@ -83,7 +85,7 @@ export class ConfidenceContextBuilder {
       sources: usedDocs,
       totalTokens: estimatedTokens,
       confidence,
-      warnings
+      warnings,
     };
   }
 
@@ -93,7 +95,7 @@ export class ConfidenceContextBuilder {
   private prioritizeDocuments(
     documents: ScoredDocument[],
     query: string,
-    options: ContextOptions
+    options: ContextOptions,
   ): ScoredDocument[] {
     // Sort by confidence and relevance
     const sorted = [...documents].sort((a, b) => {
@@ -124,22 +126,26 @@ export class ConfidenceContextBuilder {
   /**
    * Apply temporal prioritization
    */
-  private applyTemporalPrioritization(documents: ScoredDocument[]): ScoredDocument[] {
+  private applyTemporalPrioritization(
+    documents: ScoredDocument[],
+  ): ScoredDocument[] {
     const now = Date.now();
     const oneYearMs = 365 * 24 * 60 * 60 * 1000;
 
-    return documents.map(doc => {
-      if (doc.timestamp) {
-        const age = now - new Date(doc.timestamp).getTime();
-        const recencyBonus = Math.max(0, 1 - (age / oneYearMs)) * 0.1;
-        
-        return {
-          ...doc,
-          confidence: Math.min(1, doc.confidence + recencyBonus)
-        };
-      }
-      return doc;
-    }).sort((a, b) => b.confidence - a.confidence);
+    return documents
+      .map((doc) => {
+        if (doc.timestamp) {
+          const age = now - new Date(doc.timestamp).getTime();
+          const recencyBonus = Math.max(0, 1 - age / oneYearMs) * 0.1;
+
+          return {
+            ...doc,
+            confidence: Math.min(1, doc.confidence + recencyBonus),
+          };
+        }
+        return doc;
+      })
+      .sort((a, b) => b.confidence - a.confidence);
   }
 
   /**
@@ -149,7 +155,7 @@ export class ConfidenceContextBuilder {
     documents: ScoredDocument[],
     query: string,
     maxTokens: number,
-    options: ContextOptions
+    options: ContextOptions,
   ): { content: string; usedDocs: ScoredDocument[]; estimatedTokens: number } {
     const usedDocs: ScoredDocument[] = [];
     const sections: string[] = [];
@@ -173,7 +179,10 @@ export class ConfidenceContextBuilder {
         // Try to include partial content
         const remainingTokens = maxTokens - estimatedTokens;
         if (remainingTokens > this.minTokensPerDoc) {
-          const partialSection = this.truncateContent(docSection, remainingTokens);
+          const partialSection = this.truncateContent(
+            docSection,
+            remainingTokens,
+          );
           sections.push(partialSection);
           usedDocs.push(doc);
           estimatedTokens += this.estimateTokens(partialSection);
@@ -183,9 +192,9 @@ export class ConfidenceContextBuilder {
     }
 
     return {
-      content: sections.join('\n'),
+      content: sections.join("\n"),
       usedDocs,
-      estimatedTokens
+      estimatedTokens,
     };
   }
 
@@ -196,7 +205,7 @@ export class ConfidenceContextBuilder {
     documents: ScoredDocument[],
     query: string,
     maxTokens: number,
-    options: ContextOptions
+    options: ContextOptions,
   ): { content: string; usedDocs: ScoredDocument[]; estimatedTokens: number } {
     const usedDocs: ScoredDocument[] = [];
     const sections: string[] = [];
@@ -210,7 +219,7 @@ export class ConfidenceContextBuilder {
     for (let i = 0; i < documents.length; i++) {
       const doc = documents[i];
       if (!doc) continue;
-      
+
       const docSection = this.formatDocumentForSectioned(doc, i + 1, options);
       const docTokens = this.estimateTokens(docSection);
 
@@ -224,9 +233,9 @@ export class ConfidenceContextBuilder {
     }
 
     return {
-      content: sections.join('\n'),
+      content: sections.join("\n"),
       usedDocs,
-      estimatedTokens
+      estimatedTokens,
     };
   }
 
@@ -237,7 +246,7 @@ export class ConfidenceContextBuilder {
     documents: ScoredDocument[],
     query: string,
     maxTokens: number,
-    options: ContextOptions
+    options: ContextOptions,
   ): { content: string; usedDocs: ScoredDocument[]; estimatedTokens: number } {
     const usedDocs: ScoredDocument[] = [];
     const sections: string[] = [];
@@ -249,17 +258,19 @@ export class ConfidenceContextBuilder {
     estimatedTokens += this.estimateTokens(queryContext);
 
     // Group documents by confidence level
-    const highConfidence = documents.filter(doc => doc.confidence >= 0.8);
-    const mediumConfidence = documents.filter(doc => doc.confidence >= 0.6 && doc.confidence < 0.8);
-    const lowConfidence = documents.filter(doc => doc.confidence < 0.6);
+    const highConfidence = documents.filter((doc) => doc.confidence >= 0.8);
+    const mediumConfidence = documents.filter(
+      (doc) => doc.confidence >= 0.6 && doc.confidence < 0.8,
+    );
+    const lowConfidence = documents.filter((doc) => doc.confidence < 0.6);
 
     // Add high confidence section
     if (highConfidence.length > 0) {
       const highSection = this.buildConfidenceSection(
-        'High Confidence Information',
+        "High Confidence Information",
         highConfidence,
         maxTokens - estimatedTokens,
-        options
+        options,
       );
       if (highSection.content) {
         sections.push(highSection.content);
@@ -271,10 +282,10 @@ export class ConfidenceContextBuilder {
     // Add medium confidence section if space allows
     if (mediumConfidence.length > 0 && estimatedTokens < maxTokens * 0.7) {
       const mediumSection = this.buildConfidenceSection(
-        'Medium Confidence Information',
+        "Medium Confidence Information",
         mediumConfidence,
         maxTokens - estimatedTokens,
-        options
+        options,
       );
       if (mediumSection.content) {
         sections.push(mediumSection.content);
@@ -286,10 +297,10 @@ export class ConfidenceContextBuilder {
     // Add low confidence section if space allows
     if (lowConfidence.length > 0 && estimatedTokens < maxTokens * 0.8) {
       const lowSection = this.buildConfidenceSection(
-        'Additional Information (Lower Confidence)',
+        "Additional Information (Lower Confidence)",
         lowConfidence,
         maxTokens - estimatedTokens,
-        options
+        options,
       );
       if (lowSection.content) {
         sections.push(lowSection.content);
@@ -299,9 +310,9 @@ export class ConfidenceContextBuilder {
     }
 
     return {
-      content: sections.join('\n'),
+      content: sections.join("\n"),
       usedDocs,
-      estimatedTokens
+      estimatedTokens,
     };
   }
 
@@ -312,7 +323,7 @@ export class ConfidenceContextBuilder {
     title: string,
     documents: ScoredDocument[],
     maxTokens: number,
-    options: ContextOptions
+    options: ContextOptions,
   ): { content: string; usedDocs: ScoredDocument[]; estimatedTokens: number } {
     const usedDocs: ScoredDocument[] = [];
     const sections: string[] = [];
@@ -337,48 +348,58 @@ export class ConfidenceContextBuilder {
     }
 
     return {
-      content: sections.length > 1 ? sections.join('\n') : '',
+      content: sections.length > 1 ? sections.join("\n") : "",
       usedDocs,
-      estimatedTokens
+      estimatedTokens,
     };
   }
 
   /**
    * Format document for unified context
    */
-  private formatDocumentForUnified(doc: ScoredDocument, options: ContextOptions): string {
+  private formatDocumentForUnified(
+    doc: ScoredDocument,
+    options: ContextOptions,
+  ): string {
     let formatted = doc.content;
 
     if (options.includeConfidence) {
       formatted += ` (Confidence: ${Math.round(doc.confidence * 100)}%)`;
     }
 
-    return formatted + '\n\n';
+    return formatted + "\n\n";
   }
 
   /**
    * Format document for sectioned context
    */
-  private formatDocumentForSectioned(doc: ScoredDocument, index: number, options: ContextOptions): string {
+  private formatDocumentForSectioned(
+    doc: ScoredDocument,
+    index: number,
+    options: ContextOptions,
+  ): string {
     let formatted = `### Document ${index}`;
-    
+
     if (options.includeConfidence) {
       formatted += ` (Confidence: ${Math.round(doc.confidence * 100)}%)`;
     }
-    
-    formatted += '\n\n' + doc.content;
+
+    formatted += "\n\n" + doc.content;
 
     if (doc.source) {
       formatted += `\n\n*Source: ${doc.source}*`;
     }
 
-    return formatted + '\n\n';
+    return formatted + "\n\n";
   }
 
   /**
    * Format document for hierarchical context
    */
-  private formatDocumentForHierarchical(doc: ScoredDocument, options: ContextOptions): string {
+  private formatDocumentForHierarchical(
+    doc: ScoredDocument,
+    options: ContextOptions,
+  ): string {
     let formatted = doc.content;
 
     if (options.includeConfidence) {
@@ -389,7 +410,7 @@ export class ConfidenceContextBuilder {
       formatted += ` [${doc.source}]`;
     }
 
-    return formatted + '\n\n';
+    return formatted + "\n\n";
   }
 
   /**
@@ -411,31 +432,41 @@ export class ConfidenceContextBuilder {
 
     // Truncate at word boundary
     const truncated = content.substring(0, maxChars);
-    const lastSpace = truncated.lastIndexOf(' ');
-    
+    const lastSpace = truncated.lastIndexOf(" ");
+
     if (lastSpace > maxChars * 0.8) {
-      return truncated.substring(0, lastSpace) + '...';
+      return truncated.substring(0, lastSpace) + "...";
     }
 
-    return truncated + '...';
+    return truncated + "...";
   }
 
   /**
    * Calculate context confidence
    */
-  private calculateContextConfidence(documents: ScoredDocument[], query: string): number {
+  private calculateContextConfidence(
+    documents: ScoredDocument[],
+    query: string,
+  ): number {
     if (documents.length === 0) return 0;
 
     // Average confidence of included documents
-    const avgConfidence = documents.reduce((sum, doc) => sum + doc.confidence, 0) / documents.length;
+    const avgConfidence =
+      documents.reduce((sum, doc) => sum + doc.confidence, 0) /
+      documents.length;
 
     // Adjust based on document count
     const countFactor = Math.min(1, documents.length / 3); // Ideal: 3+ documents
 
     // Adjust based on query coverage
     const queryTerms = query.toLowerCase().split(/\s+/);
-    const contextText = documents.map(doc => doc.content).join(' ').toLowerCase();
-    const coveredTerms = queryTerms.filter(term => contextText.includes(term));
+    const contextText = documents
+      .map((doc) => doc.content)
+      .join(" ")
+      .toLowerCase();
+    const coveredTerms = queryTerms.filter((term) =>
+      contextText.includes(term),
+    );
     const coverageFactor = coveredTerms.length / queryTerms.length;
 
     return avgConfidence * 0.6 + countFactor * 0.2 + coverageFactor * 0.2;
@@ -448,13 +479,13 @@ export class ConfidenceContextBuilder {
     const summary = [
       `Context built from ${context.sources.length} documents`,
       `Estimated ${context.totalTokens} tokens`,
-      `Overall confidence: ${Math.round(context.confidence * 100)}%`
+      `Overall confidence: ${Math.round(context.confidence * 100)}%`,
     ];
 
     if (context.warnings.length > 0) {
       summary.push(`Warnings: ${context.warnings.length}`);
     }
 
-    return summary.join(', ');
+    return summary.join(", ");
   }
 }

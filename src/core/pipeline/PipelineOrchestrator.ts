@@ -112,20 +112,107 @@ export class PipelineOrchestrator {
         message_id,
         subject,
         sender_email,
+        sender_name,
         recipients as recipient_emails,
         received_at as date_received,
         body_text as body,
+        body_preview,
         categories as folder,
         is_read,
+        has_attachments,
         created_at,
         updated_at
       FROM emails_enhanced
       ORDER BY received_at DESC
     `,
       )
-      .all() as Email[];
+      .all() as any[];
 
-    return emails;
+    // Transform database format to EmailAnalysisAgent expected format
+    return emails.map((email) => this.transformEmailForAgent(email));
+  }
+
+  /**
+   * Transform database email format to EmailAnalysisAgent expected format
+   */
+  private transformEmailForAgent(dbEmail: any): Email {
+    return {
+      id: dbEmail.id,
+      subject: dbEmail.subject,
+      body: dbEmail.body || "",
+      bodyPreview:
+        dbEmail.body_preview || dbEmail.body?.substring(0, 200) || "",
+      from: {
+        emailAddress: {
+          address: dbEmail.sender_email || "unknown@email.com",
+          name:
+            dbEmail.sender_name ||
+            dbEmail.sender_email?.split("@")[0] ||
+            "Unknown",
+        },
+      },
+      to: this.parseRecipients(dbEmail.recipient_emails),
+      receivedDateTime: dbEmail.date_received,
+      isRead: dbEmail.is_read || false,
+      categories: dbEmail.folder ? [dbEmail.folder] : [],
+      metadata: {
+        folder: dbEmail.folder,
+        createdAt: dbEmail.created_at,
+        updatedAt: dbEmail.updated_at,
+        messageId: dbEmail.message_id,
+        hasAttachments: dbEmail.has_attachments || false,
+      },
+      // Legacy fields for backward compatibility
+      sender_email: dbEmail.sender_email || "unknown@email.com",
+      recipient_emails: dbEmail.recipient_emails,
+      date_received: dbEmail.date_received,
+      raw_headers: dbEmail.raw_headers,
+      message_id: dbEmail.message_id,
+      in_reply_to: dbEmail.in_reply_to,
+      thread_id: dbEmail.thread_id,
+      labels: dbEmail.labels,
+      attachments: dbEmail.attachments,
+      is_read: dbEmail.is_read || false,
+      is_starred: dbEmail.is_starred || false,
+      folder: dbEmail.folder,
+      created_at: dbEmail.created_at,
+      updated_at: dbEmail.updated_at,
+    };
+  }
+
+  /**
+   * Parse recipients string into expected format
+   */
+  private parseRecipients(
+    recipientsStr: string | null,
+  ): Array<{ emailAddress: { address: string; name: string } }> {
+    if (!recipientsStr) return [];
+
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(recipientsStr);
+      if (Array.isArray(parsed)) {
+        return parsed.map((r) => ({
+          emailAddress: {
+            address: typeof r === "string" ? r : r.address || r,
+            name:
+              typeof r === "string"
+                ? r.split("@")[0]
+                : r.name || (r.address ? r.address.split("@")[0] : "Unknown"),
+          },
+        }));
+      }
+    } catch {
+      // If not JSON, treat as comma-separated string
+      return recipientsStr.split(",").map((email) => ({
+        emailAddress: {
+          address: email.trim(),
+          name: email.trim().split("@")[0] || "Unknown",
+        },
+      }));
+    }
+
+    return [];
   }
 
   /**

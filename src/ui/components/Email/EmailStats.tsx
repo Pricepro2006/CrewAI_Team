@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   ChartBarIcon,
   ClockIcon,
@@ -7,8 +7,8 @@ import {
   TruckIcon,
   DocumentTextIcon,
   UserGroupIcon,
-  CogIcon
-} from '@heroicons/react/24/outline';
+  CogIcon,
+} from "@heroicons/react/24/outline";
 
 export interface EmailStatsProps {
   stats?: {
@@ -25,25 +25,25 @@ interface StatCardProps {
   value: number | string;
   icon: React.ReactNode;
   description?: string;
-  color?: 'default' | 'success' | 'warning' | 'danger';
-  format?: 'number' | 'percentage' | 'time';
+  color?: "default" | "success" | "warning" | "danger";
+  format?: "number" | "percentage" | "time";
 }
 
-const StatCard: React.FC<StatCardProps> = ({ 
-  title, 
-  value, 
-  icon, 
-  description, 
-  color = 'default',
-  format = 'number'
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  icon,
+  description,
+  color = "default",
+  format = "number",
 }) => {
   const formatValue = (val: number | string) => {
-    if (typeof val === 'string') return val;
-    
+    if (typeof val === "string") return val;
+
     switch (format) {
-      case 'percentage':
+      case "percentage":
         return `${val.toFixed(1)}%`;
-      case 'time':
+      case "time":
         return val < 1000 ? `${val}ms` : `${(val / 1000).toFixed(1)}s`;
       default:
         return val.toLocaleString();
@@ -53,18 +53,12 @@ const StatCard: React.FC<StatCardProps> = ({
   return (
     <div className={`email-stats__card email-stats__card--${color}`}>
       <div className="email-stats__card-header">
-        <div className="email-stats__card-icon">
-          {icon}
-        </div>
+        <div className="email-stats__card-icon">{icon}</div>
         <div className="email-stats__card-title">{title}</div>
       </div>
-      <div className="email-stats__card-value">
-        {formatValue(value)}
-      </div>
+      <div className="email-stats__card-value">{formatValue(value)}</div>
       {description && (
-        <div className="email-stats__card-description">
-          {description}
-        </div>
+        <div className="email-stats__card-description">{description}</div>
       )}
     </div>
   );
@@ -80,7 +74,10 @@ export const EmailStats: React.FC<EmailStatsProps> = ({ stats, loading }) => {
         </div>
         <div className="email-stats__grid">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="email-stats__card email-stats__card--loading">
+            <div
+              key={i}
+              className="email-stats__card email-stats__card--loading"
+            >
               <div className="email-stats__card-skeleton"></div>
             </div>
           ))}
@@ -101,17 +98,27 @@ export const EmailStats: React.FC<EmailStatsProps> = ({ stats, loading }) => {
   }
 
   // Calculate workflow percentages
-  const totalWorkflowEmails = Object.values(stats.workflowDistribution).reduce((sum, count) => sum + count, 0);
-  const workflowPercentages = Object.entries(stats.workflowDistribution).map(([workflow, count]) => ({
-    workflow,
-    count,
-    percentage: totalWorkflowEmails > 0 ? (count / totalWorkflowEmails) * 100 : 0
-  }));
+  const totalWorkflowEmails = Object.values(stats.workflowDistribution).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
+  const workflowPercentages = Object.entries(stats.workflowDistribution).map(
+    ([workflow, count]) => ({
+      workflow,
+      count,
+      percentage:
+        totalWorkflowEmails > 0 ? (count / totalWorkflowEmails) * 100 : 0,
+    }),
+  );
 
   // Calculate SLA compliance rate
-  const totalSLAEmails = Object.values(stats.slaCompliance).reduce((sum, count) => sum + count, 0);
-  const onTrackEmails = stats.slaCompliance['on-track'] || 0;
-  const slaComplianceRate = totalSLAEmails > 0 ? (onTrackEmails / totalSLAEmails) * 100 : 0;
+  const totalSLAEmails = Object.values(stats.slaCompliance).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
+  const onTrackEmails = stats.slaCompliance["on-track"] || 0;
+  const slaComplianceRate =
+    totalSLAEmails > 0 ? (onTrackEmails / totalSLAEmails) * 100 : 0;
 
   // Top workflow categories
   const topWorkflows = workflowPercentages
@@ -136,7 +143,7 @@ export const EmailStats: React.FC<EmailStatsProps> = ({ stats, loading }) => {
           icon={<DocumentTextIcon />}
           description="All analyzed emails"
         />
-        
+
         <StatCard
           title="Avg Processing Time"
           value={stats.averageProcessingTime}
@@ -144,35 +151,41 @@ export const EmailStats: React.FC<EmailStatsProps> = ({ stats, loading }) => {
           description="End-to-end analysis time"
           format="time"
         />
-        
+
         <StatCard
           title="SLA Compliance"
           value={slaComplianceRate}
           icon={<CheckCircleIcon />}
           description="Emails within SLA"
-          color={slaComplianceRate >= 95 ? 'success' : slaComplianceRate >= 80 ? 'warning' : 'danger'}
+          color={
+            slaComplianceRate >= 95
+              ? "success"
+              : slaComplianceRate >= 80
+                ? "warning"
+                : "danger"
+          }
           format="percentage"
         />
-        
+
         <StatCard
           title="Overdue Items"
-          value={stats.slaCompliance['overdue'] || 0}
+          value={stats.slaCompliance["overdue"] || 0}
           icon={<ExclamationTriangleIcon />}
           description="Past SLA deadline"
           color="danger"
         />
-        
+
         <StatCard
           title="At Risk"
-          value={stats.slaCompliance['at-risk'] || 0}
+          value={stats.slaCompliance["at-risk"] || 0}
           icon={<ExclamationTriangleIcon />}
           description="Approaching SLA deadline"
           color="warning"
         />
-        
+
         <StatCard
           title="On Track"
-          value={stats.slaCompliance['on-track'] || 0}
+          value={stats.slaCompliance["on-track"] || 0}
           icon={<CheckCircleIcon />}
           description="Within SLA timeline"
           color="success"
@@ -186,11 +199,11 @@ export const EmailStats: React.FC<EmailStatsProps> = ({ stats, loading }) => {
           {topWorkflows.map(({ workflow, count, percentage }) => {
             const getWorkflowIcon = (workflowName: string) => {
               switch (workflowName) {
-                case 'Order Management':
+                case "Order Management":
                   return <DocumentTextIcon />;
-                case 'Shipping/Logistics':
+                case "Shipping/Logistics":
                   return <TruckIcon />;
-                case 'Customer Support':
+                case "Customer Support":
                   return <UserGroupIcon />;
                 default:
                   return <CogIcon />;
@@ -211,7 +224,7 @@ export const EmailStats: React.FC<EmailStatsProps> = ({ stats, loading }) => {
                   </div>
                 </div>
                 <div className="email-stats__workflow-bar">
-                  <div 
+                  <div
                     className="email-stats__workflow-progress"
                     style={{ width: `${percentage}%` }}
                   />
@@ -228,19 +241,19 @@ export const EmailStats: React.FC<EmailStatsProps> = ({ stats, loading }) => {
         <div className="email-stats__sla-grid">
           <div className="email-stats__sla-item email-stats__sla-item--success">
             <div className="email-stats__sla-value">
-              {stats.slaCompliance['on-track'] || 0}
+              {stats.slaCompliance["on-track"] || 0}
             </div>
             <div className="email-stats__sla-label">On Track</div>
           </div>
           <div className="email-stats__sla-item email-stats__sla-item--warning">
             <div className="email-stats__sla-value">
-              {stats.slaCompliance['at-risk'] || 0}
+              {stats.slaCompliance["at-risk"] || 0}
             </div>
             <div className="email-stats__sla-label">At Risk</div>
           </div>
           <div className="email-stats__sla-item email-stats__sla-item--danger">
             <div className="email-stats__sla-value">
-              {stats.slaCompliance['overdue'] || 0}
+              {stats.slaCompliance["overdue"] || 0}
             </div>
             <div className="email-stats__sla-label">Overdue</div>
           </div>
@@ -257,25 +270,28 @@ export const EmailStats: React.FC<EmailStatsProps> = ({ stats, loading }) => {
               Excellent SLA compliance rate of {slaComplianceRate.toFixed(1)}%
             </div>
           )}
-          
+
           {stats.averageProcessingTime < 2000 && (
             <div className="email-stats__insight email-stats__insight--success">
               <ClockIcon className="email-stats__insight-icon" />
-              Fast processing time averaging {(stats.averageProcessingTime / 1000).toFixed(1)}s
+              Fast processing time averaging{" "}
+              {(stats.averageProcessingTime / 1000).toFixed(1)}s
             </div>
           )}
-          
-          {(stats.slaCompliance['overdue'] || 0) > 0 && (
+
+          {(stats.slaCompliance["overdue"] || 0) > 0 && (
             <div className="email-stats__insight email-stats__insight--warning">
               <ExclamationTriangleIcon className="email-stats__insight-icon" />
-              {stats.slaCompliance['overdue']} emails are overdue - review high priority items
+              {stats.slaCompliance["overdue"]} emails are overdue - review high
+              priority items
             </div>
           )}
-          
+
           {topWorkflows[0] && topWorkflows[0].percentage > 85 && (
             <div className="email-stats__insight email-stats__insight--info">
               <ChartBarIcon className="email-stats__insight-icon" />
-              {topWorkflows[0].workflow} dominates with {topWorkflows[0].percentage.toFixed(1)}% of emails
+              {topWorkflows[0].workflow} dominates with{" "}
+              {topWorkflows[0].percentage.toFixed(1)}% of emails
             </div>
           )}
         </div>

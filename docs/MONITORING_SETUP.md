@@ -140,47 +140,44 @@ Most monitoring endpoints require admin privileges. Ensure your user has the `is
 ### Tracking Custom Operations
 
 ```typescript
-import { performanceMonitor } from '@/monitoring/PerformanceMonitor';
+import { performanceMonitor } from "@/monitoring/PerformanceMonitor";
 
 // Track async operation
 const result = await performanceMonitor.trackAsync(
-  'custom_operation',
+  "custom_operation",
   async () => {
     // Your operation code
     return await someAsyncOperation();
   },
-  { metadata: 'additional context' }
+  { metadata: "additional context" },
 );
 
 // Track sync operation
-const syncResult = performanceMonitor.track(
-  'sync_operation',
-  () => {
-    // Your sync code
-    return computeSomething();
-  }
-);
+const syncResult = performanceMonitor.track("sync_operation", () => {
+  // Your sync code
+  return computeSomething();
+});
 ```
 
 ### Recording Custom Metrics
 
 ```typescript
-import { metricsCollector } from '@/monitoring/MetricsCollector';
+import { metricsCollector } from "@/monitoring/MetricsCollector";
 
 // Counter
-metricsCollector.increment('custom_counter', 1, { label: 'value' });
+metricsCollector.increment("custom_counter", 1, { label: "value" });
 
 // Gauge
-metricsCollector.gauge('queue_size', queue.length);
+metricsCollector.gauge("queue_size", queue.length);
 
 // Histogram
-metricsCollector.histogram('processing_time_ms', processingTime);
+metricsCollector.histogram("processing_time_ms", processingTime);
 ```
 
 ### Tracking Errors
 
 ```typescript
-import { errorTracker } from '@/monitoring/ErrorTracker';
+import { errorTracker } from "@/monitoring/ErrorTracker";
 
 try {
   // Your code
@@ -188,13 +185,13 @@ try {
   errorTracker.trackError(
     error as Error,
     {
-      endpoint: '/api/custom',
+      endpoint: "/api/custom",
       userId: user.id,
-      requestId: req.id
+      requestId: req.id,
     },
-    'medium', // severity: low, medium, high, critical
-    false,    // handled
-    ['custom', 'api'] // tags
+    "medium", // severity: low, medium, high, critical
+    false, // handled
+    ["custom", "api"], // tags
   );
 }
 ```
@@ -204,15 +201,15 @@ try {
 The monitoring system emits events for critical conditions:
 
 ```typescript
-healthChecker.on('critical-service-failure', ({ service, health }) => {
+healthChecker.on("critical-service-failure", ({ service, health }) => {
   // Handle critical failure
 });
 
-healthChecker.on('service-down', ({ service, failures }) => {
+healthChecker.on("service-down", ({ service, failures }) => {
   // Handle service down after consecutive failures
 });
 
-errorTracker.on('critical-error', (errorEvent) => {
+errorTracker.on("critical-error", (errorEvent) => {
   // Handle critical errors
 });
 ```

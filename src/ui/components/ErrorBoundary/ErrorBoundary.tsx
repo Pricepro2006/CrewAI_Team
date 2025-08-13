@@ -1,6 +1,6 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { logger } from '../../utils/logger';
-import { ErrorFallback } from './ErrorFallback.js';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { logger } from "../../utils/logger.js";
+import { ErrorFallback } from "./ErrorFallback.js";
 
 interface Props {
   children: ReactNode;
@@ -45,7 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
     const { errorCount } = this.state;
 
     // Log error to monitoring service
-    logger.error('React Error Boundary caught error:', {
+    logger.error("React Error Boundary caught error:", {
       error: error.message,
       stack: error.stack,
       componentStack: errorInfo.componentStack,
@@ -76,7 +76,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     if (hasError && resetOnKeysChange && resetKeys) {
       const hasResetKeyChanged = resetKeys.some(
-        (key, index) => key !== this.previousResetKeys[index]
+        (key, index) => key !== this.previousResetKeys[index],
       );
 
       if (hasResetKeyChanged) {
@@ -146,7 +146,7 @@ export class ErrorBoundary extends Component<Props, State> {
 // Higher-order component for easier usage
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<Props, 'children'>
+  errorBoundaryProps?: Omit<Props, "children">,
 ) {
   const WrappedComponent = (props: P) => (
     <ErrorBoundary {...errorBoundaryProps}>
@@ -162,7 +162,7 @@ export function withErrorBoundary<P extends object>(
 // Hook for error handling in functional components
 export function useErrorHandler() {
   return (error: Error, errorInfo?: { componentStack?: string }) => {
-    logger.error('useErrorHandler caught error:', {
+    logger.error("useErrorHandler caught error:", {
       error: error.message,
       stack: error.stack,
       componentStack: errorInfo?.componentStack,

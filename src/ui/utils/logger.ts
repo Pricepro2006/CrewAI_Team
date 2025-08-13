@@ -7,7 +7,7 @@ export enum LogLevel {
   INFO = 1,
   WARN = 2,
   ERROR = 3,
-  FATAL = 4
+  FATAL = 4,
 }
 
 export interface LogEntry {
@@ -27,7 +27,8 @@ export class Logger {
   private maxLogs: number = 1000;
 
   private constructor() {
-    this.logLevel = process.env.NODE_ENV === 'development' ? LogLevel.DEBUG : LogLevel.INFO;
+    this.logLevel =
+      process.env.NODE_ENV === "development" ? LogLevel.DEBUG : LogLevel.INFO;
     this.enableConsole = true;
   }
 
@@ -40,26 +41,32 @@ export class Logger {
 
   private formatLogEntry(entry: LogEntry): string {
     const levelName = LogLevel[entry.level].padEnd(5);
-    const component = entry.component ? `[${entry.component}]` : '';
-    const metadata = entry.metadata ? ` ${JSON.stringify(entry.metadata)}` : '';
-    
+    const component = entry.component ? `[${entry.component}]` : "";
+    const metadata = entry.metadata ? ` ${JSON.stringify(entry.metadata)}` : "";
+
     let formatted = `${entry.timestamp} ${levelName} ${component} ${entry.message}${metadata}`;
-    
+
     if (entry.stack) {
       formatted += `\n${entry.stack}`;
     }
-    
+
     return formatted;
   }
 
   private getLogColor(level: LogLevel): string {
     switch (level) {
-      case LogLevel.DEBUG: return '#36a3d9'; // Cyan
-      case LogLevel.INFO: return '#4caf50';  // Green
-      case LogLevel.WARN: return '#ff9800';  // Yellow
-      case LogLevel.ERROR: return '#f44336'; // Red
-      case LogLevel.FATAL: return '#9c27b0'; // Purple
-      default: return '#000000';
+      case LogLevel.DEBUG:
+        return "#36a3d9"; // Cyan
+      case LogLevel.INFO:
+        return "#4caf50"; // Green
+      case LogLevel.WARN:
+        return "#ff9800"; // Yellow
+      case LogLevel.ERROR:
+        return "#f44336"; // Red
+      case LogLevel.FATAL:
+        return "#9c27b0"; // Purple
+      default:
+        return "#000000";
     }
   }
 
@@ -86,7 +93,13 @@ export class Logger {
     }
   }
 
-  private log(level: LogLevel, message: string, component?: string, metadata?: Record<string, any>, error?: Error): void {
+  private log(
+    level: LogLevel,
+    message: string,
+    component?: string,
+    metadata?: Record<string, any>,
+    error?: Error,
+  ): void {
     if (level < this.logLevel) return;
 
     const entry: LogEntry = {
@@ -95,11 +108,11 @@ export class Logger {
       message,
       ...(component && { component }),
       ...(metadata && { metadata }),
-      ...(error?.stack && { stack: error.stack })
+      ...(error?.stack && { stack: error.stack }),
     };
 
     this.writeToConsole(entry);
-    
+
     // Store in memory for retrieval
     this.logs.push(entry);
     if (this.logs.length > this.maxLogs) {
@@ -107,30 +120,52 @@ export class Logger {
     }
   }
 
-  debug(message: string, component?: string, metadata?: Record<string, any>): void {
+  debug(
+    message: string,
+    component?: string,
+    metadata?: Record<string, any>,
+  ): void {
     this.log(LogLevel.DEBUG, message, component, metadata);
   }
 
-  info(message: string, component?: string, metadata?: Record<string, any>): void {
+  info(
+    message: string,
+    component?: string,
+    metadata?: Record<string, any>,
+  ): void {
     this.log(LogLevel.INFO, message, component, metadata);
   }
 
-  warn(message: string, component?: string, metadata?: Record<string, any>): void {
+  warn(
+    message: string,
+    component?: string,
+    metadata?: Record<string, any>,
+  ): void {
     this.log(LogLevel.WARN, message, component, metadata);
   }
 
-  error(message: string, component?: string, metadata?: Record<string, any>, error?: Error): void {
+  error(
+    message: string,
+    component?: string,
+    metadata?: Record<string, any>,
+    error?: Error,
+  ): void {
     this.log(LogLevel.ERROR, message, component, metadata, error);
   }
 
-  fatal(message: string, component?: string, metadata?: Record<string, any>, error?: Error): void {
+  fatal(
+    message: string,
+    component?: string,
+    metadata?: Record<string, any>,
+    error?: Error,
+  ): void {
     this.log(LogLevel.FATAL, message, component, metadata, error);
   }
 
   // Get stored logs
   getLogs(level?: LogLevel): LogEntry[] {
     if (level !== undefined) {
-      return this.logs.filter(log => log.level >= level);
+      return this.logs.filter((log) => log.level >= level);
     }
     return [...this.logs];
   }
@@ -161,19 +196,28 @@ export function createPerformanceMonitor(component: string) {
   return {
     start: (operation: string) => {
       const startTime = Date.now();
-      
+
       return {
         end: (metadata?: Record<string, any>) => {
           const duration = Date.now() - startTime;
-          logger.debug(`Performance: ${operation} took ${duration}ms`, component, metadata);
-          
+          logger.debug(
+            `Performance: ${operation} took ${duration}ms`,
+            component,
+            metadata,
+          );
+
           // Alert if operation takes too long
-          if (duration > 3000) { // 3 seconds for UI operations
-            logger.warn(`Slow operation detected: ${operation} took ${duration}ms`, component, metadata);
+          if (duration > 3000) {
+            // 3 seconds for UI operations
+            logger.warn(
+              `Slow operation detected: ${operation} took ${duration}ms`,
+              component,
+              metadata,
+            );
           }
-        }
+        },
       };
-    }
+    },
   };
 }
 
@@ -181,13 +225,13 @@ export function createPerformanceMonitor(component: string) {
 export function withErrorHandling<T extends any[], R>(
   fn: (...args: T) => Promise<R>,
   component: string,
-  operation: string
+  operation: string,
 ): (...args: T) => Promise<R> {
   return async (...args: T): Promise<R> => {
     const errorHandler = createErrorHandler(component);
     const perf = createPerformanceMonitor(component);
     const perfMonitor = perf.start(operation);
-    
+
     try {
       const result = await fn(...args);
       perfMonitor.end({ success: true });

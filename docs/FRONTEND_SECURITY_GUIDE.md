@@ -11,10 +11,12 @@ This guide covers the security features implemented in the CrewAI Team applicati
 The application implements strict CORS policies to prevent unauthorized cross-origin requests.
 
 **Allowed Origins:**
+
 - Development: `http://localhost:3000`, `http://localhost:5173-5175`
 - Production: Configured via `PRODUCTION_ORIGINS` environment variable
 
 **Important for Frontend:**
+
 - All API requests must include `credentials: "include"` to send cookies
 - The origin header is automatically set by browsers
 - Preflight requests are cached for 24 hours for performance
@@ -24,14 +26,17 @@ The application implements strict CORS policies to prevent unauthorized cross-or
 Content Security Policy prevents XSS attacks by controlling which resources can be loaded.
 
 **Development Mode:**
+
 - Allows `'unsafe-inline'` and `'unsafe-eval'` for React DevTools and HMR
 - WebSocket connections to localhost are permitted
 
 **Production Mode:**
+
 - Stricter policies without unsafe-inline/eval
 - Consider using nonces for inline scripts if needed
 
 **Allowed Resources:**
+
 - Scripts: Self-hosted, CDN (jsdelivr, unpkg)
 - Styles: Self-hosted, inline (required for React), Google Fonts
 - Images: Self-hosted, data URIs, HTTPS sources
@@ -43,28 +48,30 @@ Content Security Policy prevents XSS attacks by controlling which resources can 
 All state-changing requests require a CSRF token to prevent cross-site request forgery.
 
 **Implementation:**
+
 ```typescript
-import { useCSRF } from '@/hooks/useCSRF';
+import { useCSRF } from "@/hooks/useCSRF";
 
 // The hook automatically fetches and manages CSRF tokens
 const { token, getHeaders } = useCSRF();
 
 // Headers are automatically included in tRPC requests
 // For manual fetch requests:
-fetch('/api/endpoint', {
-  method: 'POST',
+fetch("/api/endpoint", {
+  method: "POST",
   headers: {
     ...getHeaders(),
-    'Content-Type': 'application/json'
+    "Content-Type": "application/json",
   },
-  credentials: 'include',
-  body: JSON.stringify(data)
+  credentials: "include",
+  body: JSON.stringify(data),
 });
 ```
 
 ### 4. Security Headers
 
 Additional security headers are automatically applied:
+
 - `X-Frame-Options: DENY` - Prevents clickjacking
 - `X-Content-Type-Options: nosniff` - Prevents MIME sniffing
 - `X-XSS-Protection: 1; mode=block` - Legacy XSS protection
@@ -78,7 +85,7 @@ Additional security headers are automatically applied:
 The tRPC client is pre-configured with security headers:
 
 ```typescript
-import { api } from '@/lib/trpc';
+import { api } from "@/lib/trpc";
 
 // All tRPC calls automatically include CSRF tokens
 const { data } = api.user.profile.useQuery();
@@ -106,9 +113,9 @@ const { submitForm } = useCSRFForm();
 
 const handleUpload = async (file: File) => {
   const formData = new FormData();
-  formData.append('file', file);
-  
-  const result = await submitForm('/api/upload', formData);
+  formData.append("file", file);
+
+  const result = await submitForm("/api/upload", formData);
 };
 ```
 
@@ -130,25 +137,29 @@ import { SecurityStatusMonitor } from '@/components/Security';
 Monitor CSRF token status:
 
 ```typescript
-import { useCSRFStatus } from '@/hooks/useTRPCWithCSRF';
+import { useCSRFStatus } from "@/hooks/useTRPCWithCSRF";
 
 const status = useCSRFStatus();
-console.log('CSRF Token Age:', status.tokenAge);
-console.log('Has Token:', status.hasToken);
+console.log("CSRF Token Age:", status.tokenAge);
+console.log("Has Token:", status.hasToken);
 ```
 
 ## Common Issues and Solutions
 
 ### Issue: CORS Errors
+
 **Solution:** Ensure your development server URL is in the allowed origins list and you're using `credentials: "include"`
 
 ### Issue: CSP Violations
+
 **Solution:** Check browser console for specific violations. Add required sources to CSP configuration if legitimate.
 
 ### Issue: CSRF Token Errors
+
 **Solution:** The token automatically refreshes. If persistent, clear cookies and reload.
 
 ### Issue: WebSocket Connection Rejected
+
 **Solution:** Verify your origin is allowed and you're connecting to the correct port (3002 by default).
 
 ## Testing Security
@@ -162,6 +173,7 @@ node scripts/test-frontend-security.js
 ```
 
 This will verify:
+
 - CORS configuration
 - CSP headers
 - Security headers presence
@@ -198,10 +210,11 @@ Enable debug logging for security issues:
 
 ```typescript
 // In browser console
-localStorage.setItem('debug', 'SECURITY,CSRF,TRPC');
+localStorage.setItem("debug", "SECURITY,CSRF,TRPC");
 ```
 
 Check security headers:
+
 ```bash
 curl -I http://localhost:3001/health
 ```

@@ -199,14 +199,14 @@
   .vmware-tdsynnex-section .table-header {
     display: none;
   }
-  
+
   .vmware-tdsynnex-section .table-row {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     padding: 1rem;
   }
-  
+
   .vmware-tdsynnex-section .table-cell::before {
     content: attr(data-label);
     font-weight: 600;

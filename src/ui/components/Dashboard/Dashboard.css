@@ -237,19 +237,19 @@
   .dashboard {
     padding: 1rem;
   }
-  
+
   .dashboard-header h1 {
     font-size: 2rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .dashboard-sections {
     grid-template-columns: 1fr;
   }
-  
+
   .stats-value {
     font-size: 2rem;
   }
@@ -259,15 +259,15 @@
   .dashboard {
     padding: 1rem 0.5rem;
   }
-  
+
   .dashboard-header h1 {
     font-size: 1.75rem;
   }
-  
+
   .stats-card {
     padding: 1rem;
   }
-  
+
   .stats-value {
     font-size: 1.75rem;
   }

@@ -3,34 +3,35 @@
 
 :root {
   /* Brand Colors - TD SYNNEX */
-  --td-synnex-primary: #00539B;
-  --td-synnex-secondary: #00AEEF;
-  --td-synnex-accent: #FF6900;
-  
+  --td-synnex-primary: #00539b;
+  --td-synnex-secondary: #00aeef;
+  --td-synnex-accent: #ff6900;
+
   /* Status Colors */
-  --status-red: #DC2626;
-  --status-red-bg: #FEE2E2;
-  --status-red-border: #F87171;
-  
-  --status-yellow: #F59E0B;
-  --status-yellow-bg: #FEF3C7;
-  --status-yellow-border: #FCD34D;
-  
-  --status-green: #10B981;
-  --status-green-bg: #D1FAE5;
-  --status-green-border: #34D399;
-  
+  --status-red: #dc2626;
+  --status-red-bg: #fee2e2;
+  --status-red-border: #f87171;
+
+  --status-yellow: #f59e0b;
+  --status-yellow-bg: #fef3c7;
+  --status-yellow-border: #fcd34d;
+
+  --status-green: #10b981;
+  --status-green-bg: #d1fae5;
+  --status-green-border: #34d399;
+
   /* Table Specific Colors */
-  --table-header-bg: #F8FAFC;
+  --table-header-bg: #f8fafc;
   --table-header-text: #475569;
-  --table-row-hover: #F1F5F9;
-  --table-row-selected: #E0F2FE;
-  --table-border: #E2E8F0;
-  
+  --table-row-hover: #f1f5f9;
+  --table-row-selected: #e0f2fe;
+  --table-border: #e2e8f0;
+
   /* Typography */
-  --font-sans: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
-  
+  --font-sans:
+    Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+
   /* Spacing Scale */
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
@@ -38,18 +39,20 @@
   --space-lg: 1.5rem;
   --space-xl: 2rem;
   --space-2xl: 3rem;
-  
+
   /* Border Radius */
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
   /* Z-Index Scale */
   --z-dropdown: 1000;
   --z-sticky: 1020;
@@ -61,15 +64,15 @@
 /* Dark Mode Theme */
 @media (prefers-color-scheme: dark) {
   :root {
-    --table-header-bg: #1E293B;
-    --table-header-text: #CBD5E1;
+    --table-header-bg: #1e293b;
+    --table-header-text: #cbd5e1;
     --table-row-hover: #334155;
-    --table-row-selected: #1E3A8A;
+    --table-row-selected: #1e3a8a;
     --table-border: #475569;
-    
-    --status-red-bg: #7F1D1D;
-    --status-yellow-bg: #78350F;
-    --status-green-bg: #064E3B;
+
+    --status-red-bg: #7f1d1d;
+    --status-yellow-bg: #78350f;
+    --status-green-bg: #064e3b;
   }
 }
 
@@ -77,7 +80,7 @@
 .email-table-modern {
   font-family: var(--font-sans);
   font-size: 14px;
-  color: #1F2937;
+  color: #1f2937;
   background: white;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -108,7 +111,7 @@
 }
 
 .email-table-modern th.sortable::after {
-  content: '⇅';
+  content: "⇅";
   position: absolute;
   right: 8px;
   opacity: 0.3;
@@ -116,12 +119,12 @@
 }
 
 .email-table-modern th.sortable.sorted-asc::after {
-  content: '↑';
+  content: "↑";
   opacity: 1;
 }
 
 .email-table-modern th.sortable.sorted-desc::after {
-  content: '↓';
+  content: "↓";
   opacity: 1;
 }
 
@@ -198,13 +201,13 @@
 
 .email-alias-prefix {
   font-weight: 600;
-  color: #1F2937;
+  color: #1f2937;
   font-size: 14px;
 }
 
 .email-alias-domain {
   font-size: 12px;
-  color: #6B7280;
+  color: #6b7280;
 }
 
 /* Requested By Cell Design */
@@ -226,18 +229,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #1F2937;
+  color: #1f2937;
   font-weight: 500;
 }
 
 .subject-attachment-icon {
   flex-shrink: 0;
-  color: #9CA3AF;
+  color: #9ca3af;
 }
 
 /* Summary Cell Design */
 .summary-text {
-  color: #6B7280;
+  color: #6b7280;
   font-size: 13px;
   line-height: 1.5;
   max-width: 450px;
@@ -249,7 +252,7 @@
 
 /* Time Cell Design */
 .time-text {
-  color: #9CA3AF;
+  color: #9ca3af;
   font-size: 13px;
   white-space: nowrap;
 }
@@ -300,7 +303,7 @@
   font-weight: 500;
   border: 1px solid var(--table-border);
   background: white;
-  color: #4B5563;
+  color: #4b5563;
   cursor: pointer;
   transition: all 0.15s ease;
   display: inline-flex;
@@ -310,7 +313,7 @@
 
 .quick-filter-btn:hover {
   background: var(--table-row-hover);
-  border-color: #CBD5E1;
+  border-color: #cbd5e1;
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
@@ -334,13 +337,13 @@
   align-items: center;
   gap: var(--space-sm);
   font-size: 13px;
-  color: #6B7280;
+  color: #6b7280;
 }
 
 /* Bulk Actions Bar Design */
 .bulk-actions-modern {
-  background: #EFF6FF;
-  border: 1px solid #BFDBFE;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   border-radius: var(--radius-md);
   padding: var(--space-md) var(--space-lg);
   display: flex;
@@ -363,7 +366,7 @@
 
 .bulk-actions-count {
   font-weight: 600;
-  color: #1E40AF;
+  color: #1e40af;
 }
 
 .bulk-actions-buttons {
@@ -376,15 +379,15 @@
   border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 500;
-  border: 1px solid #BFDBFE;
+  border: 1px solid #bfdbfe;
   background: white;
-  color: #1E40AF;
+  color: #1e40af;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .bulk-action-btn:hover {
-  background: #DBEAFE;
+  background: #dbeafe;
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
@@ -394,12 +397,12 @@
   .email-table-modern {
     font-size: 13px;
   }
-  
+
   .email-table-modern th,
   .email-table-modern td {
     padding: 10px 12px;
   }
-  
+
   .summary-text {
     display: none;
   }
@@ -410,11 +413,11 @@
   .time-text {
     display: none;
   }
-  
+
   .subject-container {
     max-width: 200px;
   }
-  
+
   .email-table-modern th {
     font-size: 11px;
   }

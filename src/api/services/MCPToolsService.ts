@@ -24,7 +24,7 @@ export class MCPToolsService {
   private constructor(config?: MCPToolsConfig) {
     this.config = {
       enabledTools: config?.enabledTools || ["*"],
-      timeout: config?.timeout || 30000
+      timeout: config?.timeout || 30000,
     };
     this.initializeTools();
   }
@@ -45,7 +45,7 @@ export class MCPToolsService {
         logger.info("Executing BrightData scraper", "MCP_TOOLS", { params });
         // Integration with BrightData MCP
         return { success: true, data: "Mock scraping result" };
-      }
+      },
     });
 
     this.registerTool({
@@ -55,7 +55,7 @@ export class MCPToolsService {
         logger.info("Executing sequential thinking", "MCP_TOOLS", { params });
         // Integration with sequential thinking MCP
         return { success: true, thought: "Mock thought process" };
-      }
+      },
     });
 
     this.registerTool({
@@ -65,11 +65,11 @@ export class MCPToolsService {
         logger.info("Executing memory operation", "MCP_TOOLS", { params });
         // Integration with memory MCP
         return { success: true, stored: true };
-      }
+      },
     });
 
     logger.info("MCP tools initialized", "MCP_TOOLS", {
-      toolCount: this.tools.size
+      toolCount: this.tools.size,
     });
   }
 
@@ -86,31 +86,31 @@ export class MCPToolsService {
 
     try {
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Tool execution timeout")), this.config.timeout);
+        setTimeout(
+          () => reject(new Error("Tool execution timeout")),
+          this.config.timeout,
+        );
       });
 
-      const result = await Promise.race([
-        tool.execute(params),
-        timeoutPromise
-      ]);
+      const result = await Promise.race([tool.execute(params), timeoutPromise]);
 
-      logger.info("MCP tool executed successfully", "MCP_TOOLS", { 
-        tool: toolName 
+      logger.info("MCP tool executed successfully", "MCP_TOOLS", {
+        tool: toolName,
       });
       return result;
     } catch (error) {
-      logger.error("MCP tool execution failed", "MCP_TOOLS", { 
-        tool: toolName, 
-        error 
+      logger.error("MCP tool execution failed", "MCP_TOOLS", {
+        tool: toolName,
+        error,
       });
       throw error;
     }
   }
 
   getAvailableTools(): Array<{ name: string; description: string }> {
-    return Array.from(this.tools.values()).map(tool => ({
+    return Array.from(this.tools.values()).map((tool) => ({
       name: tool.name,
-      description: tool.description
+      description: tool.description,
     }));
   }
 

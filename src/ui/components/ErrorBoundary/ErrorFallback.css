@@ -44,7 +44,7 @@
 }
 
 .error-fallback-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -75,7 +75,8 @@
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -87,7 +88,11 @@
   position: absolute;
   width: 120px;
   height: 120px;
-  background: radial-gradient(circle, rgba(239, 68, 68, 0.1) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(239, 68, 68, 0.1) 0%,
+    transparent 70%
+  );
   border-radius: 50%;
   animation: pulse 2s infinite;
 }
@@ -245,7 +250,7 @@
 
 .error-stack pre,
 .error-component-stack pre {
-  font-family: 'Fira Code', 'Courier New', monospace;
+  font-family: "Fira Code", "Courier New", monospace;
   font-size: 0.75rem;
   white-space: pre-wrap;
   word-break: break-all;
@@ -289,7 +294,11 @@
   }
 
   .error-icon-bg {
-    background: radial-gradient(circle, rgba(239, 68, 68, 0.2) 0%, transparent 70%);
+    background: radial-gradient(
+      circle,
+      rgba(239, 68, 68, 0.2) 0%,
+      transparent 70%
+    );
   }
 
   .retry-warning {

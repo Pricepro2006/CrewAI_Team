@@ -123,7 +123,7 @@ export class MaestroFramework extends EventEmitter {
     context.initialize();
 
     try {
-      let result: any;
+      let result: unknown;
 
       // Execute based on task type
       switch (task.type) {

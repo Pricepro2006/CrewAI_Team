@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -12,7 +12,7 @@ import {
   type VisibilityState,
   type RowSelectionState,
   type Table as TanstackTable,
-} from '@tanstack/react-table';
+} from "@tanstack/react-table";
 import {
   Table,
   TableBody,
@@ -20,13 +20,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../../components/ui/table.js';
-import { Checkbox } from '../../../components/ui/checkbox.js';
-import { StatusIndicator } from './StatusIndicator.js';
-import { InlineAssignment } from './AssignmentDropdown.js';
-import { formatDistanceToNow } from 'date-fns';
-import { cn } from '../../../lib/utils.js';
-import type { EmailRecord, SortableColumn, SortDirection } from '../../../types/email-dashboard.interfaces.js';
+} from "../../../components/ui/table.js";
+import { Checkbox } from "../../../components/ui/checkbox.js";
+import { StatusIndicator } from "./StatusIndicator.js";
+import { InlineAssignment } from "./AssignmentDropdown.js";
+import { formatDistanceToNow } from "date-fns";
+import { cn } from "../../../lib/utils.js";
+import type {
+  EmailRecord,
+  SortableColumn,
+  SortDirection,
+} from "../../../types/email-dashboard.interfaces.js";
 
 interface TeamMember {
   id: string;
@@ -88,11 +92,13 @@ export function EmailTable({
   const columns = useMemo<ColumnDef<EmailRecord>[]>(
     () => [
       {
-        id: 'select',
+        id: "select",
         header: ({ table }: { table: TanstackTable<EmailRecord> }) => (
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
-            onCheckedChange={(value: boolean) => table.toggleAllPageRowsSelected(!!value)}
+            onCheckedChange={(value: boolean) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
             aria-label="Select all"
             className="translate-y-[2px]"
           />
@@ -110,45 +116,45 @@ export function EmailTable({
         size: 40,
       },
       {
-        accessorKey: 'status',
-        header: 'Status',
+        accessorKey: "status",
+        header: "Status",
         cell: ({ row }) => (
           <StatusIndicator
             status={row.original.status}
             statusText={row.original.status_text}
             size="md"
-            showPulse={row.original.status === 'red'}
+            showPulse={row.original.status === "red"}
             showTooltip
           />
         ),
         size: 80,
       },
       {
-        accessorKey: 'email_alias',
-        header: 'Email Alias',
+        accessorKey: "email_alias",
+        header: "Email Alias",
         cell: ({ row }) => (
           <div className="flex flex-col">
             <span className="font-medium text-sm truncate max-w-[200px]">
-              {row.original.email_alias.split('@')[0]}
+              {row.original.email_alias.split("@")[0]}
             </span>
             <span className="text-xs text-muted-foreground">
-              @{row.original.email_alias.split('@')[1]}
+              @{row.original.email_alias.split("@")[1]}
             </span>
           </div>
         ),
         size: 220,
       },
       {
-        accessorKey: 'requested_by',
-        header: 'Requested By',
+        accessorKey: "requested_by",
+        header: "Requested By",
         cell: ({ row }) => (
           <div className="font-medium text-sm">{row.original.requested_by}</div>
         ),
         size: 150,
       },
       {
-        accessorKey: 'subject',
-        header: 'Subject',
+        accessorKey: "subject",
+        header: "Subject",
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <span className="text-sm line-clamp-1">{row.original.subject}</span>
@@ -172,8 +178,8 @@ export function EmailTable({
         size: 300,
       },
       {
-        accessorKey: 'summary',
-        header: 'Summary',
+        accessorKey: "summary",
+        header: "Summary",
         cell: ({ row }) => (
           <div className="text-sm text-muted-foreground line-clamp-2">
             {row.original.summary}
@@ -182,8 +188,8 @@ export function EmailTable({
         size: 350,
       },
       {
-        accessorKey: 'assignedTo',
-        header: 'Assigned To',
+        accessorKey: "assignedTo",
+        header: "Assigned To",
         cell: ({ row }) => (
           <div className="text-sm" onClick={(e) => e.stopPropagation()}>
             {onAssignEmail && teamMembers.length > 0 ? (
@@ -198,7 +204,9 @@ export function EmailTable({
                 {row.original.assignedTo ? (
                   <span className="font-medium">{row.original.assignedTo}</span>
                 ) : (
-                  <span className="text-muted-foreground italic">Unassigned</span>
+                  <span className="text-muted-foreground italic">
+                    Unassigned
+                  </span>
                 )}
               </div>
             )}
@@ -207,17 +215,19 @@ export function EmailTable({
         size: 150,
       },
       {
-        accessorKey: 'timestamp',
-        header: 'Time',
+        accessorKey: "timestamp",
+        header: "Time",
         cell: ({ row }) => (
           <div className="text-sm text-muted-foreground whitespace-nowrap">
-            {formatDistanceToNow(new Date(row.original.timestamp), { addSuffix: true })}
+            {formatDistanceToNow(new Date(row.original.timestamp), {
+              addSuffix: true,
+            })}
           </div>
         ),
         size: 120,
       },
     ],
-    [teamMembers, onAssignEmail]
+    [teamMembers, onAssignEmail],
   );
 
   const table = useReactTable({
@@ -230,11 +240,11 @@ export function EmailTable({
     onSortingChange: (updater) => {
       setSorting(updater);
       // Call external sort handler if provided
-      if (onSort && typeof updater === 'function') {
+      if (onSort && typeof updater === "function") {
         const newSorting = updater(sorting);
         if (newSorting.length > 0 && newSorting[0]) {
           const { id, desc } = newSorting[0];
-          onSort(id as SortableColumn, desc ? 'desc' : 'asc');
+          onSort(id as SortableColumn, desc ? "desc" : "asc");
         }
       }
     },
@@ -243,7 +253,7 @@ export function EmailTable({
     onRowSelectionChange: (updater) => {
       setRowSelection(updater);
       // Call external selection handler if provided
-      if (onEmailsSelect && typeof updater === 'function') {
+      if (onEmailsSelect && typeof updater === "function") {
         const newSelection = updater(rowSelection);
         const selectedIds = Object.keys(newSelection)
           .filter((key) => newSelection[key])
@@ -269,7 +279,7 @@ export function EmailTable({
       }
       onRowClick?.(email);
     },
-    [onRowClick]
+    [onRowClick],
   );
 
   if (loading) {
@@ -338,7 +348,7 @@ export function EmailTable({
   }
 
   return (
-    <div className={cn('w-full space-y-4', className)}>
+    <div className={cn("w-full space-y-4", className)}>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -352,7 +362,10 @@ export function EmailTable({
                   >
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -363,24 +376,35 @@ export function EmailTable({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
+                  data-state={row.getIsSelected() && "selected"}
                   className={cn(
-                    'cursor-pointer transition-colors',
-                    'hover:bg-muted/50',
-                    row.original.isRead === false && 'font-semibold'
+                    "cursor-pointer transition-colors",
+                    "hover:bg-muted/50",
+                    row.original.isRead === false && "font-semibold",
                   )}
-                  onClick={(e: React.MouseEvent) => handleRowClick(row.original, e)}
+                  onClick={(e: React.MouseEvent) =>
+                    handleRowClick(row.original, e)
+                  }
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} style={{ width: cell.column.getSize() }}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <TableCell
+                      key={cell.id}
+                      style={{ width: cell.column.getSize() }}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>

@@ -22,8 +22,8 @@ vi.mock("../../utils/logger", () => ({
 describe("Microsoft Graph Webhook Handler", () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
-  let mockSend: any;
-  let mockStatus: any;
+  let mockSend: unknown;
+  let mockStatus: unknown;
 
   beforeEach(() => {
     mockSend = vi.fn();

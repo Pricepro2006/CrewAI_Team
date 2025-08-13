@@ -27,7 +27,7 @@ export interface EmailRecord {
 }
 
 // Status types
-export type EmailStatus = 'red' | 'yellow' | 'green';
+export type EmailStatus = "red" | "yellow" | "green";
 
 export interface StatusOption {
   value: EmailStatus;
@@ -37,10 +37,10 @@ export interface StatusOption {
 }
 
 // Workflow states
-export type WorkflowState = 'START_POINT' | 'IN_PROGRESS' | 'COMPLETION';
+export type WorkflowState = "START_POINT" | "IN_PROGRESS" | "COMPLETION";
 
 // Priority levels
-export type Priority = 'Critical' | 'High' | 'Medium' | 'Low';
+export type Priority = "critical" | "high" | "medium" | "low";
 
 // Email entities
 export interface EmailEntities {
@@ -78,16 +78,16 @@ export interface SortConfig {
   direction: SortDirection;
 }
 
-export type SortableColumn = 
-  | 'timestamp'
-  | 'email_alias'
-  | 'requested_by'
-  | 'subject'
-  | 'status'
-  | 'priority'
-  | 'workflow_type';
+export type SortableColumn =
+  | "timestamp"
+  | "email_alias"
+  | "requested_by"
+  | "subject"
+  | "status"
+  | "priority"
+  | "workflow_type";
 
-export type SortDirection = 'asc' | 'desc';
+export type SortDirection = "asc" | "desc";
 
 // Pagination configuration
 export interface PaginationConfig {
@@ -115,7 +115,7 @@ export interface EmailTableProps {
 export interface StatusIndicatorProps {
   status: EmailStatus;
   statusText: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   showPulse?: boolean;
   showTooltip?: boolean;
   className?: string;
@@ -132,7 +132,7 @@ export interface TableToolbarProps {
   className?: string;
 }
 
-export type ExportFormat = 'csv' | 'excel' | 'pdf';
+export type ExportFormat = "csv" | "excel" | "pdf";
 
 export interface FilterPanelProps {
   filters: FilterConfig;
@@ -164,7 +164,13 @@ export interface DashboardStatsProps {
   className?: string;
 }
 
-export type StatType = 'total' | 'critical' | 'inProgress' | 'completed' | 'today' | 'week';
+export type StatType =
+  | "total"
+  | "critical"
+  | "inProgress"
+  | "completed"
+  | "today"
+  | "week";
 
 export interface EmailDetailsProps {
   email: EmailRecord;
@@ -242,18 +248,18 @@ export interface EmailAction {
   condition?: (email: EmailRecord) => boolean;
 }
 
-export type EmailActionType = 
-  | 'reply'
-  | 'forward'
-  | 'assign'
-  | 'changeStatus'
-  | 'addTag'
-  | 'archive'
-  | 'delete'
-  | 'markAsRead'
-  | 'markAsUnread'
-  | 'print'
-  | 'export';
+export type EmailActionType =
+  | "reply"
+  | "forward"
+  | "assign"
+  | "changeStatus"
+  | "addTag"
+  | "archive"
+  | "delete"
+  | "markAsRead"
+  | "markAsUnread"
+  | "print"
+  | "export";
 
 // Table Column Configuration
 
@@ -264,7 +270,7 @@ export interface TableColumn {
   width?: string | number;
   minWidth?: string | number;
   maxWidth?: string | number;
-  align?: 'left' | 'center' | 'right';
+  align?: "left" | "center" | "right";
   render?: (value: any, record: EmailRecord) => React.ReactNode;
   className?: string;
 }
@@ -284,29 +290,29 @@ export interface FilterPreset {
 // WebSocket Event Interfaces
 
 export interface EmailUpdateEvent {
-  type: 'update';
+  type: "update";
   email: EmailRecord;
 }
 
 export interface EmailDeleteEvent {
-  type: 'delete';
+  type: "delete";
   emailId: string;
 }
 
 export interface EmailCreateEvent {
-  type: 'create';
+  type: "create";
   email: EmailRecord;
 }
 
 export interface StatsUpdateEvent {
-  type: 'stats';
+  type: "stats";
   stats: Partial<DashboardStats>;
 }
 
-export type EmailWebSocketEvent = 
-  | EmailUpdateEvent 
-  | EmailDeleteEvent 
-  | EmailCreateEvent 
+export type EmailWebSocketEvent =
+  | EmailUpdateEvent
+  | EmailDeleteEvent
+  | EmailCreateEvent
   | StatsUpdateEvent;
 
 // Utility Types
@@ -321,46 +327,49 @@ export type ValueOf<T> = T[keyof T];
 
 export const EMAIL_STATUS_CONFIG: Record<EmailStatus, StatusOption> = {
   red: {
-    value: 'red',
-    label: 'Critical',
-    color: '#DC2626',
-    description: 'Requires immediate attention'
+    value: "red",
+    label: "Critical",
+    color: "#DC2626",
+    description: "Requires immediate attention",
   },
   yellow: {
-    value: 'yellow',
-    label: 'In Progress',
-    color: '#F59E0B',
-    description: 'Currently being processed'
+    value: "yellow",
+    label: "In Progress",
+    color: "#F59E0B",
+    description: "Currently being processed",
   },
   green: {
-    value: 'green',
-    label: 'Completed',
-    color: '#10B981',
-    description: 'Successfully completed'
-  }
+    value: "green",
+    label: "Completed",
+    color: "#10B981",
+    description: "Successfully completed",
+  },
 };
 
-export const PRIORITY_CONFIG: Record<Priority, { label: string; color: string; order: number }> = {
-  Critical: { label: 'Critical', color: '#DC2626', order: 1 },
-  High: { label: 'High', color: '#F59E0B', order: 2 },
-  Medium: { label: 'Medium', color: '#3B82F6', order: 3 },
-  Low: { label: 'Low', color: '#6B7280', order: 4 }
+export const PRIORITY_CONFIG: Record<
+  Priority,
+  { label: string; color: string; order: number }
+> = {
+  critical: { label: "Critical", color: "#DC2626", order: 1 },
+  high: { label: "High", color: "#F59E0B", order: 2 },
+  medium: { label: "Medium", color: "#3B82F6", order: 3 },
+  low: { label: "Low", color: "#6B7280", order: 4 },
 };
 
 export const DEFAULT_PAGINATION: PaginationConfig = {
   page: 1,
   pageSize: 20,
   total: 0,
-  totalPages: 0
+  totalPages: 0,
 };
 
 export const DEFAULT_SORT: SortConfig = {
-  column: 'timestamp',
-  direction: 'desc'
+  column: "timestamp",
+  direction: "desc",
 };
 
 export const DEFAULT_FILTERS: FilterConfig = {
-  search: '',
+  search: "",
   emailAliases: [],
   requesters: [],
   statuses: [],
@@ -369,9 +378,9 @@ export const DEFAULT_FILTERS: FilterConfig = {
   priorities: [],
   dateRange: {
     start: null,
-    end: null
+    end: null,
   },
   hasAttachments: undefined,
   isRead: undefined,
-  tags: []
+  tags: [],
 };

@@ -4,6 +4,7 @@
  */
 
 import { logger } from "../utils/logger.js";
+import { BusinessImpact } from "../types/AnalysisTypes.js";
 import type {
   LlamaAnalysisData,
   Phi4AnalysisData,
@@ -15,7 +16,7 @@ import type {
 import type {
   ExtractedEntities,
   ActionItem,
-  BusinessImpact,
+  BusinessImpact as AnalysisBusinessImpact,
 } from "../types/analysis-results.js";
 
 export class PipelineJsonParser {
@@ -121,10 +122,10 @@ export class PipelineJsonParser {
    * Map priority score to priority level
    */
   mapPriorityScore(score: number): PriorityLevel {
-    if (score >= 8) return "Critical";
-    if (score >= 6) return "High";
-    if (score >= 4) return "Medium";
-    return "Low";
+    if (score >= 8) return "critical";
+    if (score >= 6) return "high";
+    if (score >= 4) return "medium";
+    return "low";
   }
 
   /**
@@ -152,10 +153,11 @@ export class PipelineJsonParser {
   /**
    * Convert action items to standardized format
    */
-  parseActionItems(items: any[]): ActionItem[] {
+  parseActionItems(items: unknown[]): ActionItem[] {
     if (!Array.isArray(items)) return [];
 
     return items
+      .filter((item) => item !== null && item !== undefined && typeof item === "object")
       .map((item) => ({
         task: String(item.task || item.description || ""),
         priority: this.mapPriorityLevel(item.priority),
@@ -169,7 +171,10 @@ export class PipelineJsonParser {
   /**
    * Parse business impact data
    */
-  parseBusinessImpact(llamaImpact: any, phi4Impact: any): BusinessImpact {
+  parseBusinessImpact(
+    llamaImpact: unknown,
+    phi4Impact: unknown,
+  ): AnalysisBusinessImpact {
     const revenue =
       phi4Impact?.revenue_impact || llamaImpact?.revenue || undefined;
     const satisfaction = this.parseCustomerSatisfaction(
@@ -191,7 +196,7 @@ export class PipelineJsonParser {
 
   // Private helper methods
 
-  private validateLlamaAnalysis(data: any): ValidationResult {
+  private validateLlamaAnalysis(data: unknown): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -218,7 +223,7 @@ export class PipelineJsonParser {
     return { isValid: errors.length === 0, errors, warnings };
   }
 
-  private validatePhi4Analysis(data: any): ValidationResult {
+  private validatePhi4Analysis(data: unknown): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -244,7 +249,7 @@ export class PipelineJsonParser {
     return { isValid: errors.length === 0, errors, warnings };
   }
 
-  private normalizeLlamaAnalysis(data: any): Partial<LlamaAnalysisData> {
+  private normalizeLlamaAnalysis(data: unknown): Partial<LlamaAnalysisData> {
     return {
       workflow_state: data.workflow_state || "NEW",
       business_process: data.business_process || "General",
@@ -260,7 +265,7 @@ export class PipelineJsonParser {
     };
   }
 
-  private normalizePhi4Analysis(data: any): Partial<Phi4AnalysisData> {
+  private normalizePhi4Analysis(data: unknown): Partial<Phi4AnalysisData> {
     return {
       executive_summary: data.executive_summary || "",
       business_impact: this.normalizeBusinessImpact(data.business_impact),
@@ -274,7 +279,7 @@ export class PipelineJsonParser {
     };
   }
 
-  private normalizeEntities(entities: any): LlamaAnalysisData["entities"] {
+  private normalizeEntities(entities: unknown): LlamaAnalysisData["entities"] {
     if (!entities || typeof entities !== "object") {
       return {
         po_numbers: [],
@@ -296,7 +301,9 @@ export class PipelineJsonParser {
     };
   }
 
-  private normalizeActionItems(items: any): LlamaAnalysisData["action_items"] {
+  private normalizeActionItems(
+    items: unknown,
+  ): LlamaAnalysisData["action_items"] {
     if (!Array.isArray(items)) return [];
 
     return items
@@ -327,19 +334,19 @@ export class PipelineJsonParser {
     };
   }
 
-  private normalizeArray(arr: any): string[] {
+  private normalizeArray(arr: unknown): string[] {
     if (!arr) return [];
     if (!Array.isArray(arr)) return [String(arr)];
     return arr.map((item) => String(item)).filter((item) => item.length > 0);
   }
 
-  private normalizeQualityScore(score: any): number {
+  private normalizeQualityScore(score: unknown): number {
     const parsed = parseFloat(score);
     if (isNaN(parsed)) return 0;
     return Math.min(Math.max(parsed, 0), 10);
   }
 
-  private extractOrderReferences(entities: any): string[] {
+  private extractOrderReferences(entities: unknown): string[] {
     const references: string[] = [];
 
     // Combine various order-related references
@@ -350,19 +357,19 @@ export class PipelineJsonParser {
     return [...new Set(references)]; // Remove duplicates
   }
 
-  private mapPriorityLevel(priority: any): PriorityLevel {
+  private mapPriorityLevel(priority: unknown): PriorityLevel {
     const priorityMap: Record<string, PriorityLevel> = {
-      critical: "Critical",
-      high: "High",
-      medium: "Medium",
-      low: "Low",
+      critical: "critical",
+      high: "high",
+      medium: "medium",
+      low: "low",
     };
 
     const normalized = String(priority || "medium").toLowerCase();
-    return priorityMap[normalized] || "Medium";
+    return priorityMap[normalized] || "medium";
   }
 
-  private parseDeadline(deadline: any): string | undefined {
+  private parseDeadline(deadline: unknown): string | undefined {
     if (!deadline) return undefined;
 
     // Try to parse as date
@@ -378,10 +385,10 @@ export class PipelineJsonParser {
 
   private parseCustomerSatisfaction(
     satisfaction: any,
-  ): BusinessImpact["customerSatisfaction"] {
+  ): AnalysisBusinessImpact["customerSatisfaction"] {
     const satisfactionMap: Record<
       string,
-      BusinessImpact["customerSatisfaction"]
+      AnalysisBusinessImpact["customerSatisfaction"]
     > = {
       positive: "Positive",
       neutral: "Neutral",
@@ -393,7 +400,7 @@ export class PipelineJsonParser {
     return satisfactionMap[normalized] || "Neutral";
   }
 
-  private parseRiskLevel(risk: any): "High" | "Medium" | "Low" | undefined {
+  private parseRiskLevel(risk: unknown): "High" | "Medium" | "Low" | undefined {
     if (!risk) return undefined;
 
     const riskMap: Record<string, "High" | "Medium" | "Low"> = {

@@ -1,0 +1,29 @@
+{
+  "learned_phrases": {
+    "pricing_agreement": [
+      "1284-b0c6q4 for the special pricing.",
+      "please apply spa cas-091284-b0c6q4 f",
+      "please apply spa cas-091284-b0c6q4 for th"
+    ],
+    "order_status": [
+      "issue with recent order"
+    ]
+  },
+  "intent_corrections": {
+    "pricing_negotiation": 1
+  },
+  "successful_actions": {
+    "competitive_response": 3,
+    "generate_quote": 1
+  },
+  "failed_actions": {},
+  "confidence_adjustments": {
+    "pricing_negotiation": 0.95
+  },
+  "custom_patterns": {},
+  "processing_stats": {
+    "total_processed": 3,
+    "automation_rate": 0.0,
+    "accuracy_rate": 0.0
+  }
+}

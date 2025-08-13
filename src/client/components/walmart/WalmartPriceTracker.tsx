@@ -26,13 +26,13 @@ import {
   X,
   Plus,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
-import { Button } from '../../../components/ui/button.js';
-import { Badge } from '../../../components/ui/badge.js';
-import { Input } from '../../../components/ui/input.js';
-import { Label } from '../../../components/ui/label.js';
-import { Switch } from '../../../components/ui/switch.js';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
+import { Switch } from '../../../components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -40,25 +40,25 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog.js';
+} from '../../../components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select.js';
+} from '../../../components/ui/select';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../components/ui/tooltip.js';
-import { Slider } from '../../../components/ui/slider.js';
-import { cn } from '../../lib/utils.js';
-import { formatPrice } from '../../lib/utils.js';
-import { useGroceryStore } from '../../store/groceryStore.js';
-import type { WalmartProduct, PriceAlert, PriceHistory } from '../../../types/walmart-grocery.js';
+} from '../../../components/ui/tooltip';
+import { Slider } from '../../../components/ui/slider';
+import { cn } from '../../lib/utils';
+import { formatPrice } from '../../lib/utils';
+import { useGroceryStore } from '../../store/groceryStore';
+import type { WalmartProduct, PriceAlert, PriceHistory } from '../../../types/walmart-grocery';
 
 interface WalmartPriceTrackerProps {
   product?: WalmartProduct;
@@ -231,8 +231,12 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   
-  // Mock data
-  const currentPrice = product?.price || 29.99;
+  // Mock data - handle ProductPrice type properly
+  const currentPrice = typeof product?.price === 'number' 
+    ? product.price 
+    : (typeof product?.price === 'object' && product?.price !== null && 'regular' in product.price)
+      ? (product.price as { regular: number }).regular
+      : 29.99;
   const priceHistory = useMemo(() => generatePriceHistory(currentPrice), [currentPrice]);
   
   const filteredHistory = useMemo(() => {
@@ -454,7 +458,7 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "h-2 w-2 rounded-full",
-                    existingAlert.status === 'active' ? "bg-green-500" : "bg-gray-400"
+                    existingAlert ? "bg-green-500" : "bg-gray-400"
                   )} />
                   <div>
                     <p className="font-medium">

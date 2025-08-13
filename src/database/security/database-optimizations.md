@@ -29,6 +29,7 @@ The `DatabasePerformanceOptimizer` class configures SQLite for optimal performan
 Added comprehensive composite indexes for common query patterns:
 
 #### Email Queries
+
 - `idx_emails_received_sender_subject`: For email listing with timestamp ordering
 - `idx_emails_graph_received`: For graph_id lookups with timestamp
 - `idx_emails_enhanced_assigned_status`: For user-based queries with status
@@ -37,6 +38,7 @@ Added comprehensive composite indexes for common query patterns:
 - `idx_emails_enhanced_conversation`: For conversation reference queries
 
 #### Analysis Queries
+
 - `idx_analysis_workflow_priority`: For workflow state queries with priority
 - `idx_analysis_sla_workflow`: For SLA monitoring queries
 - `idx_analysis_priority_email`: For priority-based queries
@@ -45,6 +47,7 @@ Added comprehensive composite indexes for common query patterns:
 - `idx_analysis_models`: For model performance analysis
 
 #### Entity and Relationship Queries
+
 - `idx_email_entities_type_value_conf`: For entity type and value queries
 - `idx_email_entities_type_method`: For extraction method queries
 - `idx_email_entities_email_type`: For entity queries by email
@@ -119,6 +122,7 @@ Created RBAC tables and permissions system:
 ## Best Practices
 
 ### Query Writing
+
 ```typescript
 // Good: Parameterized query with proper indexes
 const query = `
@@ -127,24 +131,30 @@ const query = `
   ORDER BY received_at DESC
   LIMIT ?
 `;
-const params = [userId, 'in_progress', 50];
+const params = [userId, "in_progress", 50];
 
 // Bad: String concatenation (blocked by security layer)
 const query = `SELECT * FROM emails WHERE user = '${userId}'`; // NEVER DO THIS
 ```
 
 ### Index Usage
+
 ```typescript
 // Composite index usage
 // Query that uses idx_emails_enhanced_assigned_status effectively
-const emails = db.prepare(`
+const emails = db
+  .prepare(
+    `
   SELECT * FROM emails_enhanced
   WHERE assigned_to = ? AND status = ?
   ORDER BY received_at DESC
-`).all(userId, status);
+`,
+  )
+  .all(userId, status);
 ```
 
 ### Performance Monitoring
+
 ```typescript
 // Use the performance optimizer
 const optimizer = new DatabasePerformanceOptimizer(db);
@@ -159,13 +169,14 @@ if (stats.fullTableScans) {
 ## Maintenance Tasks
 
 ### Regular Optimization
+
 ```typescript
 // Run periodic optimizations
 const optimizer = new DatabasePerformanceOptimizer(db);
 
 // Daily tasks
-optimizer.analyzeTableStats('emails_enhanced');
-optimizer.analyzeTableStats('email_analysis');
+optimizer.analyzeTableStats("emails_enhanced");
+optimizer.analyzeTableStats("email_analysis");
 
 // Weekly tasks
 optimizer.optimizeDatabase(); // VACUUM and ANALYZE
@@ -175,17 +186,22 @@ optimizer.clearCache(); // Clear query plan cache
 ```
 
 ### Security Audits
+
 ```typescript
 // Check security violations
 const securityManager = getDatabaseSecurityManager();
 const stats = securityManager.getSecurityStatistics();
 
 // Review audit logs
-const auditLogs = db.prepare(`
+const auditLogs = db
+  .prepare(
+    `
   SELECT * FROM audit_logs 
   WHERE created_at > datetime('now', '-7 days')
   ORDER BY created_at DESC
-`).all();
+`,
+  )
+  .all();
 ```
 
 ## Performance Metrics

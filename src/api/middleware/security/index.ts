@@ -10,25 +10,28 @@ import { logger } from "../../../utils/logger.js";
 // Sanitization schemas for common input types
 export const sanitizationSchemas = {
   string: z.string().max(1000).trim(),
-  
-  sqlSafe: z.string()
+
+  sqlSafe: z
+    .string()
     .max(500)
     .trim()
     .regex(/^[a-zA-Z0-9\s\-_,.()'"%]+$/, "Invalid characters detected"),
-  
-  htmlSafe: z.string()
-    .transform(str => str
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;")
-      .replace(/&/g, "&amp;")
+
+  htmlSafe: z
+    .string()
+    .transform((str) =>
+      str
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;")
+        .replace(/&/g, "&amp;"),
     ),
-  
+
   email: z.string().email().toLowerCase().trim(),
-  
+
   uuid: z.string().uuid(),
-  
+
   url: z.string().url().max(2048),
 };
 
@@ -58,9 +61,9 @@ export function createSecurityAuditMiddleware() {
 
     try {
       const result = await next();
-      
+
       const duration = Date.now() - startTime;
-      
+
       // Log successful requests
       logger.debug("tRPC Request Completed", "SECURITY_AUDIT", {
         path,
@@ -73,7 +76,7 @@ export function createSecurityAuditMiddleware() {
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       // Log failed requests
       logger.warn("tRPC Request Failed", "SECURITY_AUDIT", {
         path,
@@ -94,10 +97,7 @@ export function createSecurityAuditMiddleware() {
  * Create authentication middleware
  */
 export function createAuthMiddleware() {
-  return async (opts: {
-    ctx: Context;
-    next: () => Promise<any>;
-  }) => {
+  return async (opts: { ctx: Context; next: () => Promise<any> }) => {
     const { ctx, next } = opts;
 
     // Check if user is authenticated
@@ -127,10 +127,7 @@ export function createAuthMiddleware() {
  * Create authorization middleware for role-based access
  */
 export function createAuthorizationMiddleware(allowedRoles: string[]) {
-  return async (opts: {
-    ctx: Context;
-    next: () => Promise<any>;
-  }) => {
+  return async (opts: { ctx: Context; next: () => Promise<any> }) => {
     const { ctx, next } = opts;
 
     // Ensure user is authenticated first
@@ -208,10 +205,7 @@ export function createRateLimitMiddleware(options: {
 }) {
   const requests = new Map<string, { count: number; resetAt: number }>();
 
-  return async (opts: {
-    ctx: Context;
-    next: () => Promise<any>;
-  }) => {
+  return async (opts: { ctx: Context; next: () => Promise<any> }) => {
     const { ctx, next } = opts;
 
     // Generate rate limit key
@@ -224,14 +218,15 @@ export function createRateLimitMiddleware(options: {
 
     // Get or create rate limit data
     let data = requests.get(key);
-    
+
     if (!data || data.resetAt < now) {
       data = { count: 0, resetAt: now + options.windowMs };
       requests.set(key, data);
     }
 
     // Clean up old entries periodically
-    if (Math.random() < 0.01) { // 1% chance
+    if (Math.random() < 0.01) {
+      // 1% chance
       for (const [k, v] of requests.entries()) {
         if (v.resetAt < windowStart) {
           requests.delete(k);
@@ -263,15 +258,15 @@ export function createRateLimitMiddleware(options: {
 }
 
 // Re-export enhanced CSRF protection from dedicated module
-export { 
+export {
   createEnhancedCSRFProtection as createCSRFProtection,
   ensureCSRFToken,
   generateCSRFToken,
   setCSRFCookie,
   getStoredCSRFToken,
   getRequestCSRFToken,
-  getCSRFStats
-} from './csrf.js';
+  getCSRFStats,
+} from "./csrf.js";
 
 /**
  * Create IP allowlist/blocklist middleware
@@ -280,10 +275,7 @@ export function createIPRestriction(options: {
   allowlist?: string[];
   blocklist?: string[];
 }) {
-  return async (opts: {
-    ctx: Context;
-    next: () => Promise<any>;
-  }) => {
+  return async (opts: { ctx: Context; next: () => Promise<any> }) => {
     const { ctx, next } = opts;
 
     const clientIP = ctx.req.ip || ctx.req.connection?.remoteAddress || "";

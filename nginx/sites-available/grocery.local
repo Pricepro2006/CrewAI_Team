@@ -1,0 +1,405 @@
+# Walmart Grocery Agent Microservices Nginx Configuration
+# Domain: grocery.local
+# Phase 6 Task 3: Production-ready reverse proxy with load balancing
+
+# Rate limiting zones
+limit_req_zone $binary_remote_addr zone=api_limit:10m rate=100r/m;
+limit_req_zone $binary_remote_addr zone=pricing_limit:10m rate=60r/m;
+limit_req_zone $binary_remote_addr zone=nlp_limit:10m rate=30r/m;
+
+# Upstream blocks for load balancing
+upstream walmart_api_backend {
+    least_conn;
+    server 127.0.0.1:3000 max_fails=3 fail_timeout=30s;
+    # Future horizontal scaling: add more instances here
+    # server 127.0.0.1:3001 max_fails=3 fail_timeout=30s;
+    keepalive 32;
+}
+
+upstream walmart_websocket_backend {
+    ip_hash;  # Sticky sessions for WebSocket connections
+    server 127.0.0.1:8080 max_fails=3 fail_timeout=30s;
+    keepalive 16;
+}
+
+upstream walmart_pricing_backend {
+    least_conn;
+    server 127.0.0.1:3007 max_fails=3 fail_timeout=30s;
+    keepalive 32;
+}
+
+upstream walmart_nlp_backend {
+    least_conn;
+    server 127.0.0.1:3008 max_fails=3 fail_timeout=30s;
+    keepalive 32;
+}
+
+upstream walmart_cache_backend {
+    least_conn;
+    server 127.0.0.1:3006 max_fails=3 fail_timeout=30s;
+    keepalive 16;
+}
+
+upstream walmart_monitor_backend {
+    least_conn;
+    server 127.0.0.1:3009 max_fails=3 fail_timeout=30s;
+    keepalive 16;
+}
+
+# Main server block - HTTPS
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name grocery.local www.grocery.local;
+
+    # SSL Configuration (placeholder - update with real certificates)
+    ssl_certificate /etc/ssl/certs/grocery.local.crt;
+    ssl_certificate_key /etc/ssl/private/grocery.local.key;
+    
+    # Modern SSL configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' wss: ws:;" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # Logging
+    access_log /home/pricepro2006/CrewAI_Team/nginx/logs/grocery.local.access.log combined;
+    error_log /home/pricepro2006/CrewAI_Team/nginx/logs/grocery.local.error.log warn;
+
+    # Compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types
+        application/json
+        application/javascript
+        application/xml+rss
+        application/atom+xml
+        image/svg+xml
+        text/plain
+        text/css
+        text/xml
+        text/javascript
+        application/xml
+        application/rss+xml
+        application/atom+xml
+        application/x-javascript
+        font/truetype
+        font/opentype
+        application/vnd.ms-fontobject;
+
+    # Client settings
+    client_max_body_size 10M;
+    client_body_timeout 60s;
+    client_header_timeout 60s;
+
+    # API Gateway - Main application routes
+    location /api/ {
+        limit_req zone=api_limit burst=20 nodelay;
+        
+        proxy_pass http://walmart_api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        
+        proxy_cache_bypass $http_upgrade;
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 30s;
+        proxy_read_timeout 30s;
+        
+        # API response headers
+        add_header X-Service "walmart-api-server" always;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    }
+
+    # WebSocket service with upgrade support
+    location /ws/ {
+        proxy_pass http://walmart_websocket_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # WebSocket specific timeouts
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+        proxy_connect_timeout 30s;
+        
+        add_header X-Service "walmart-websocket" always;
+    }
+
+    # Pricing service with caching
+    location /pricing/ {
+        limit_req zone=pricing_limit burst=10 nodelay;
+        
+        proxy_pass http://walmart_pricing_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Pricing cache configuration
+        proxy_cache_valid 200 302 5m;
+        proxy_cache_valid 404 1m;
+        add_header X-Cache-Status $upstream_cache_status always;
+        add_header X-Service "walmart-pricing" always;
+        
+        proxy_connect_timeout 15s;
+        proxy_send_timeout 15s;
+        proxy_read_timeout 15s;
+    }
+
+    # NLP Queue service
+    location /nlp/ {
+        limit_req zone=nlp_limit burst=5 nodelay;
+        
+        proxy_pass http://walmart_nlp_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        add_header X-Service "walmart-nlp-queue" always;
+        add_header Cache-Control "no-cache" always;
+        
+        proxy_connect_timeout 45s;
+        proxy_send_timeout 45s;
+        proxy_read_timeout 45s;
+    }
+
+    # Cache service
+    location /cache/ {
+        proxy_pass http://walmart_cache_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        add_header X-Service "walmart-cache-warmer" always;
+        add_header Cache-Control "public, max-age=300" always;
+        
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 10s;
+        proxy_read_timeout 10s;
+    }
+
+    # Monitoring service
+    location /monitor/ {
+        proxy_pass http://walmart_monitor_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        add_header X-Service "walmart-memory-monitor" always;
+        add_header Cache-Control "no-cache" always;
+        
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 10s;
+        proxy_read_timeout 10s;
+    }
+
+    # Health check endpoints
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain always;
+        add_header X-Health-Check "nginx" always;
+    }
+
+    # Service mesh health checks
+    location /health/api {
+        proxy_pass http://walmart_api_backend/health;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 5s;
+        access_log off;
+    }
+
+    location /health/ws {
+        proxy_pass http://walmart_websocket_backend/health;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 5s;
+        access_log off;
+    }
+
+    location /health/pricing {
+        proxy_pass http://walmart_pricing_backend/health;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 5s;
+        access_log off;
+    }
+
+    location /health/nlp {
+        proxy_pass http://walmart_nlp_backend/health;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 5s;
+        access_log off;
+    }
+
+    location /health/cache {
+        proxy_pass http://walmart_cache_backend/health;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 5s;
+        access_log off;
+    }
+
+    location /health/monitor {
+        proxy_pass http://walmart_monitor_backend/health;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 5s;
+        access_log off;
+    }
+
+    # Static assets (if needed)
+    location /static/ {
+        alias /home/pricepro2006/CrewAI_Team/public/;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        add_header X-Content-Type-Options nosniff;
+    }
+
+    # Default route to API server
+    location / {
+        proxy_pass http://walmart_api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        add_header X-Service "walmart-api-server" always;
+    }
+
+    # Security: Block access to sensitive files
+    location ~ /\.(ht|git|env) {
+        deny all;
+        return 404;
+    }
+
+    location ~ /\.well-known {
+        allow all;
+    }
+}
+
+# HTTP to HTTPS redirect
+server {
+    listen 80;
+    listen [::]:80;
+    server_name grocery.local www.grocery.local;
+    
+    # Security headers even on HTTP
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    
+    # Redirect all HTTP to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+# Development HTTP server (optional - for local development)
+server {
+    listen 8000;
+    server_name grocery.local;
+    
+    access_log /home/pricepro2006/CrewAI_Team/nginx/logs/grocery.local.dev.access.log combined;
+    error_log /home/pricepro2006/CrewAI_Team/nginx/logs/grocery.local.dev.error.log warn;
+    
+    # Same location blocks as HTTPS but without SSL
+    location /api/ {
+        limit_req zone=api_limit burst=20 nodelay;
+        proxy_pass http://walmart_api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        add_header X-Service "walmart-api-server" always;
+    }
+
+    location /ws/ {
+        proxy_pass http://walmart_websocket_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        add_header X-Service "walmart-websocket" always;
+    }
+
+    location /pricing/ {
+        limit_req zone=pricing_limit burst=10 nodelay;
+        proxy_pass http://walmart_pricing_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        add_header X-Service "walmart-pricing" always;
+    }
+
+    location /nlp/ {
+        limit_req zone=nlp_limit burst=5 nodelay;
+        proxy_pass http://walmart_nlp_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        add_header X-Service "walmart-nlp-queue" always;
+    }
+
+    location /cache/ {
+        proxy_pass http://walmart_cache_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        add_header X-Service "walmart-cache-warmer" always;
+    }
+
+    location /monitor/ {
+        proxy_pass http://walmart_monitor_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        add_header X-Service "walmart-memory-monitor" always;
+    }
+
+    location /health {
+        return 200 "healthy (dev)\n";
+        add_header Content-Type text/plain always;
+    }
+
+    location / {
+        proxy_pass http://walmart_api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        add_header X-Service "walmart-api-server" always;
+    }
+}

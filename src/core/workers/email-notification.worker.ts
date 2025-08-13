@@ -103,7 +103,7 @@ async function processEmailNotification(job: any) {
 }
 
 // Create the worker only if Redis is available
-let emailNotificationWorker: any;
+let emailNotificationWorker: unknown;
 
 try {
   emailNotificationWorker = new Worker(
@@ -137,9 +137,13 @@ try {
 
   logger.info("Email notification worker started successfully", "EMAIL_WORKER");
 } catch (error) {
-  logger.warn("Email notification worker not started - Redis unavailable", "EMAIL_WORKER", {
-    error: error instanceof Error ? error.message : String(error),
-  });
+  logger.warn(
+    "Email notification worker not started - Redis unavailable",
+    "EMAIL_WORKER",
+    {
+      error: error instanceof Error ? error.message : String(error),
+    },
+  );
 }
 
 // Graceful shutdown

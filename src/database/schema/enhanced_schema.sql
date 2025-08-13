@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS messages (
     parent_message_id TEXT,
     thread_id TEXT,
     confidence_score REAL,
-    processing_time INTEGER,
+    processing_time INTEGER CHECK (processing_time >= 0),
     model_used TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

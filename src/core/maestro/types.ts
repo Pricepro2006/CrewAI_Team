@@ -1,6 +1,6 @@
 export interface Task {
   id?: string;
-  type: 'agent' | 'tool' | 'composite';
+  type: "agent" | "tool" | "composite";
   priority?: number;
   data: any;
   timeout?: number;
@@ -25,7 +25,7 @@ export interface MaestroConfig {
 
 export interface QueueConfig {
   maxSize: number;
-  strategy: 'fifo' | 'lifo' | 'priority';
+  strategy: "fifo" | "lifo" | "priority";
 }
 
 export interface QueueItem {

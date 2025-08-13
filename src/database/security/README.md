@@ -19,13 +19,16 @@ The security implementation consists of multiple layers:
 The core protection class that validates SQL queries and parameters:
 
 ```typescript
-import { SqlInjectionProtection, createSqlInjectionProtection } from './SqlInjectionProtection';
+import {
+  SqlInjectionProtection,
+  createSqlInjectionProtection,
+} from "./SqlInjectionProtection";
 
 const sqlSecurity = createSqlInjectionProtection({
   enableStrictValidation: true,
   enableBlacklist: true,
   maxQueryLength: 10000,
-  maxParameterCount: 100
+  maxParameterCount: 100,
 });
 
 // Validate parameters
@@ -33,8 +36,8 @@ const safeParams = sqlSecurity.validateQueryParameters([userId, userName]);
 
 // Validate complete query
 const { query, params } = sqlSecurity.validateQueryExecution(
-  'SELECT * FROM users WHERE id = ? AND name = ?',
-  [1, 'John Doe']
+  "SELECT * FROM users WHERE id = ? AND name = ?",
+  [1, "John Doe"],
 );
 ```
 
@@ -43,18 +46,18 @@ const { query, params } = sqlSecurity.validateQueryExecution(
 Handles database errors securely without exposing sensitive information:
 
 ```typescript
-import { DatabaseErrorHandler } from './DatabaseErrorHandler';
+import { DatabaseErrorHandler } from "./DatabaseErrorHandler";
 
 try {
   // Database operation
   await repository.findById(id);
 } catch (error) {
   const secureError = DatabaseErrorHandler.handleError(error, {
-    operation: 'findById',
-    table: 'users',
-    userId: currentUser.id
+    operation: "findById",
+    table: "users",
+    userId: currentUser.id,
   });
-  
+
   // secureError.userMessage contains safe message for client
   // Original error details are logged securely
   throw new Error(secureError.userMessage);
@@ -69,15 +72,15 @@ All repositories inherit from BaseRepository which includes built-in security:
 // Automatic SQL injection protection
 const users = await userRepository.findAll({
   where: { name: userInput }, // Automatically validated
-  orderBy: sortColumn,        // Automatically sanitized
-  limit: 10
+  orderBy: sortColumn, // Automatically sanitized
+  limit: 10,
 });
 
 // Safe search functionality
 const results = await userRepository.search(
-  searchTerm,  // Validated for SQL injection
-  ['name', 'email'], // Column names sanitized
-  { limit: 20 }
+  searchTerm, // Validated for SQL injection
+  ["name", "email"], // Column names sanitized
+  { limit: 20 },
 );
 ```
 
@@ -86,7 +89,10 @@ const results = await userRepository.search(
 Enhanced middleware for API endpoints:
 
 ```typescript
-import { createEnhancedInputValidation, createDatabaseInputValidation } from './enhanced-security';
+import {
+  createEnhancedInputValidation,
+  createDatabaseInputValidation,
+} from "./enhanced-security";
 
 // In your tRPC router
 const protectedProcedure = publicProcedure
@@ -145,7 +151,7 @@ Built-in monitoring tracks:
 ### Security Configuration
 
 ```typescript
-import { initializeDatabaseSecurity } from './index';
+import { initializeDatabaseSecurity } from "./index";
 
 const securityManager = initializeDatabaseSecurity({
   sqlInjection: {
@@ -153,23 +159,23 @@ const securityManager = initializeDatabaseSecurity({
     strictValidation: true,
     enableBlacklist: true,
     maxQueryLength: 10000,
-    maxParameterCount: 100
+    maxParameterCount: 100,
   },
   errorHandling: {
     exposeSensitiveErrors: false,
-    logLevel: 'error',
-    includeStackTrace: false
+    logLevel: "error",
+    includeStackTrace: false,
   },
   validation: {
     enforceInputValidation: true,
     maxInputSize: 1024 * 1024, // 1MB
-    maxNestingDepth: 10
+    maxNestingDepth: 10,
   },
   monitoring: {
     enabled: true,
     alertThreshold: 5,
-    logSecurityEvents: true
-  }
+    logSecurityEvents: true,
+  },
 });
 ```
 
@@ -179,22 +185,22 @@ const securityManager = initializeDatabaseSecurity({
 // Development
 const devConfig = {
   sqlInjection: {
-    enableQueryLogging: true
+    enableQueryLogging: true,
   },
   errorHandling: {
-    includeStackTrace: true
-  }
+    includeStackTrace: true,
+  },
 };
 
 // Production
 const prodConfig = {
   sqlInjection: {
-    enableQueryLogging: false
+    enableQueryLogging: false,
   },
   errorHandling: {
     exposeSensitiveErrors: false,
-    includeStackTrace: false
-  }
+    includeStackTrace: false,
+  },
 };
 ```
 
@@ -203,7 +209,7 @@ const prodConfig = {
 ### Repository Operations
 
 ```typescript
-import { UserRepository } from './repositories/UserRepository';
+import { UserRepository } from "./repositories/UserRepository";
 
 const userRepo = new UserRepository(db);
 
@@ -211,77 +217,82 @@ const userRepo = new UserRepository(db);
 try {
   // Safe parameter handling
   const user = await userRepo.findById(userId);
-  
+
   // Safe search with column validation
-  const users = await userRepo.search(searchTerm, ['name', 'email']);
-  
+  const users = await userRepo.search(searchTerm, ["name", "email"]);
+
   // Safe dynamic conditions
   const activeUsers = await userRepo.findAll({
-    where: { 
-      status: 'active',
-      role: { operator: 'IN', value: ['user', 'admin'] }
+    where: {
+      status: "active",
+      role: { operator: "IN", value: ["user", "admin"] },
     },
-    orderBy: 'created_at',
-    orderDirection: 'DESC'
+    orderBy: "created_at",
+    orderDirection: "DESC",
   });
-  
 } catch (error) {
   // Errors are automatically sanitized
-  console.error('Database operation failed:', error.message);
+  console.error("Database operation failed:", error.message);
 }
 ```
 
 ### tRPC Integration
 
 ```typescript
-import { z } from 'zod';
-import { DatabaseInputSchemas } from './security';
+import { z } from "zod";
+import { DatabaseInputSchemas } from "./security";
 
 export const userRouter = router({
   getUser: protectedProcedure
-    .input(z.object({
-      id: DatabaseInputSchemas.id,
-      includeProfile: z.boolean().optional()
-    }))
+    .input(
+      z.object({
+        id: DatabaseInputSchemas.id,
+        includeProfile: z.boolean().optional(),
+      }),
+    )
     .query(async ({ input }) => {
       // Input is automatically validated for SQL injection
       return await userService.getUser(input.id);
     }),
-    
+
   searchUsers: protectedProcedure
-    .input(z.object({
-      query: DatabaseInputSchemas.searchQuery,
-      filters: z.object({
-        role: DatabaseInputSchemas.userRole.optional(),
-        status: DatabaseInputSchemas.userStatus.optional()
-      }).optional()
-    }))
+    .input(
+      z.object({
+        query: DatabaseInputSchemas.searchQuery,
+        filters: z
+          .object({
+            role: DatabaseInputSchemas.userRole.optional(),
+            status: DatabaseInputSchemas.userStatus.optional(),
+          })
+          .optional(),
+      }),
+    )
     .query(async ({ input }) => {
       // Search query is validated for malicious patterns
       return await userService.searchUsers(input.query, input.filters);
-    })
+    }),
 });
 ```
 
 ### Security Monitoring
 
 ```typescript
-import { getDatabaseSecurityManager } from './security';
+import { getDatabaseSecurityManager } from "./security";
 
 const securityManager = getDatabaseSecurityManager();
 
 // Get security statistics
 const stats = securityManager.getSecurityStatistics();
-console.log('Security violations:', stats.violations);
+console.log("Security violations:", stats.violations);
 
 // Reset violation counters
-securityManager.resetViolationCounters('sql_injection');
+securityManager.resetViolationCounters("sql_injection");
 
 // Update configuration
 securityManager.updateConfig({
   monitoring: {
-    alertThreshold: 3
-  }
+    alertThreshold: 3,
+  },
 });
 ```
 
@@ -313,30 +324,24 @@ The test suite covers:
 ### Example Test Cases
 
 ```typescript
-describe('SQL Injection Protection', () => {
-  it('should block malicious SQL patterns', () => {
+describe("SQL Injection Protection", () => {
+  it("should block malicious SQL patterns", () => {
     const maliciousInputs = [
       "'; DROP TABLE users; --",
       "1' OR '1'='1",
-      "UNION SELECT * FROM passwords"
+      "UNION SELECT * FROM passwords",
     ];
-    
-    maliciousInputs.forEach(input => {
+
+    maliciousInputs.forEach((input) => {
       expect(() => {
         sqlSecurity.validateQueryParameters([input]);
       }).toThrow(SqlInjectionError);
     });
   });
-  
-  it('should allow safe parameters', () => {
-    const safeInputs = [
-      'normal string',
-      'user@example.com',
-      123,
-      true,
-      null
-    ];
-    
+
+  it("should allow safe parameters", () => {
+    const safeInputs = ["normal string", "user@example.com", 123, true, null];
+
     expect(() => {
       sqlSecurity.validateQueryParameters(safeInputs);
     }).not.toThrow();
@@ -350,7 +355,7 @@ describe('SQL Injection Protection', () => {
 
 ```typescript
 // ✅ Good - Parameterized
-const query = 'SELECT * FROM users WHERE id = ?';
+const query = "SELECT * FROM users WHERE id = ?";
 const params = [userId];
 
 // ❌ Bad - String concatenation
@@ -374,7 +379,7 @@ const results = await repository.search(userInput, columns);
 // ✅ Good - Schema validation
 const schema = z.object({
   email: DatabaseInputSchemas.email,
-  role: DatabaseInputSchemas.userRole
+  role: DatabaseInputSchemas.userRole,
 });
 
 // ❌ Bad - No validation
@@ -409,7 +414,7 @@ try {
 const securityManager = getDatabaseSecurityManager();
 const stats = securityManager.getSecurityStatistics();
 
-if (Object.values(stats.violations).some(v => v.count > 5)) {
+if (Object.values(stats.violations).some((v) => v.count > 5)) {
   alertSecurityTeam(stats);
 }
 ```
@@ -452,12 +457,12 @@ Enable detailed logging in development:
 ```typescript
 const securityManager = initializeDatabaseSecurity({
   sqlInjection: {
-    enableQueryLogging: true
+    enableQueryLogging: true,
   },
   errorHandling: {
-    logLevel: 'debug',
-    includeStackTrace: true
-  }
+    logLevel: "debug",
+    includeStackTrace: true,
+  },
 });
 ```
 

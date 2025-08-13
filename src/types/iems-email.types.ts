@@ -3,8 +3,11 @@
  * Types for the TD SYNNEX Email Management System integration
  */
 
-export type EmailCategory = 'email-alias' | 'marketing-splunk' | 'vmware-tdsynnex';
-export type EmailStatus = 'red' | 'yellow' | 'green';
+export type EmailCategory =
+  | "email-alias"
+  | "marketing-splunk"
+  | "vmware-tdsynnex";
+export type EmailStatus = "red" | "yellow" | "green";
 
 export interface IEMSEmail {
   id: string;
@@ -19,14 +22,14 @@ export interface IEMSEmail {
   action?: string;
   receivedTime: Date;
   hasAttachments: boolean;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   rawData?: any;
 }
 
 export interface IEMSMailbox {
   email: string;
   name: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   expectedResponseTime: string;
   categories: string[];
   keyContacts: string[];
@@ -35,7 +38,7 @@ export interface IEMSMailbox {
 export interface IEMSDistributionList {
   email: string;
   name: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   categories: string[];
   members: string[];
   expectedResponseTime?: string;
@@ -98,7 +101,7 @@ export interface EmailStatusInfo {
 
 export interface EmailActionRequest {
   emailId: string;
-  action: 'assign' | 'complete' | 'escalate' | 'respond';
+  action: "assign" | "complete" | "escalate" | "respond";
   data?: {
     assigneeId?: string;
     assigneeName?: string;

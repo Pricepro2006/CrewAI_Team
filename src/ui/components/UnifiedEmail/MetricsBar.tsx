@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   EnvelopeIcon,
   ChartBarIcon,
@@ -7,9 +7,9 @@ import {
   UserGroupIcon,
   CheckCircleIcon,
   ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon
-} from '@heroicons/react/24/outline';
-import type { DashboardMetrics } from '../../../types/unified-email.types.js';
+  ArrowTrendingDownIcon,
+} from "@heroicons/react/24/outline";
+import type { DashboardMetrics } from "../../../types/unified-email.types.js";
 
 interface MetricsBarProps {
   metrics: DashboardMetrics;
@@ -19,8 +19,8 @@ interface MetricCardProps {
   label: string;
   value: string | number;
   icon?: React.ReactNode;
-  status?: 'good' | 'warning' | 'critical' | 'normal';
-  trend?: 'up' | 'down' | 'neutral';
+  status?: "good" | "warning" | "critical" | "normal";
+  trend?: "up" | "down" | "neutral";
   trendValue?: string;
   tooltip?: string;
   onClick?: () => void;
@@ -30,22 +30,22 @@ const MetricCard: React.FC<MetricCardProps> = ({
   label,
   value,
   icon,
-  status = 'normal',
+  status = "normal",
   trend,
   trendValue,
   tooltip,
-  onClick
+  onClick,
 }) => {
   const statusClasses = {
-    good: 'metric-card--good',
-    warning: 'metric-card--warning',
-    critical: 'metric-card--critical',
-    normal: 'metric-card--normal'
+    good: "metric-card--good",
+    warning: "metric-card--warning",
+    critical: "metric-card--critical",
+    normal: "metric-card--normal",
   };
 
   return (
-    <div 
-      className={`metric-card ${statusClasses[status]} ${onClick ? 'metric-card--clickable' : ''}`}
+    <div
+      className={`metric-card ${statusClasses[status]} ${onClick ? "metric-card--clickable" : ""}`}
       onClick={onClick}
       title={tooltip}
     >
@@ -55,7 +55,11 @@ const MetricCard: React.FC<MetricCardProps> = ({
           {value}
           {trend && (
             <span className={`metric-card__trend metric-card__trend--${trend}`}>
-              {trend === 'up' ? <ArrowTrendingUpIcon /> : <ArrowTrendingDownIcon />}
+              {trend === "up" ? (
+                <ArrowTrendingUpIcon />
+              ) : (
+                <ArrowTrendingDownIcon />
+              )}
               {trendValue && <span>{trendValue}</span>}
             </span>
           )}
@@ -69,18 +73,18 @@ const MetricCard: React.FC<MetricCardProps> = ({
 export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
   // Determine workflow completion status
   const getWorkflowStatus = (completion: number) => {
-    if (completion < 10) return 'critical';
-    if (completion < 30) return 'warning';
-    if (completion > 50) return 'good';
-    return 'normal';
+    if (completion < 10) return "critical";
+    if (completion < 30) return "warning";
+    if (completion > 50) return "good";
+    return "normal";
   };
 
   // Determine response time status
   const getResponseTimeStatus = (hours: number) => {
-    if (hours > 8) return 'critical';
-    if (hours > 4) return 'warning';
-    if (hours <= 2) return 'good';
-    return 'normal';
+    if (hours > 8) return "critical";
+    if (hours > 4) return "warning";
+    if (hours <= 2) return "good";
+    return "normal";
   };
 
   return (
@@ -99,7 +103,7 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
           label="Today's Emails"
           value={metrics.todaysEmails.toLocaleString()}
           icon={<EnvelopeIcon />}
-          trend={metrics.todaysEmails > 100 ? 'up' : 'down'}
+          trend={metrics.todaysEmails > 100 ? "up" : "down"}
           tooltip="Emails received today"
         />
 
@@ -110,8 +114,8 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
           icon={<ChartBarIcon />}
           status={getWorkflowStatus(metrics.workflowCompletion)}
           tooltip="Percentage of emails with complete workflow chains (Start → In Progress → Completion)"
-          trend={metrics.workflowCompletion > 3.5 ? 'up' : 'down'}
-          trendValue={metrics.workflowCompletion > 3.5 ? '+' : '-'}
+          trend={metrics.workflowCompletion > 3.5 ? "up" : "down"}
+          trendValue={metrics.workflowCompletion > 3.5 ? "+" : "-"}
         />
 
         {/* Average Response Time */}
@@ -121,7 +125,7 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
           icon={<ClockIcon />}
           status={getResponseTimeStatus(metrics.avgResponseTime)}
           tooltip="Average time to first response"
-          trend={metrics.avgResponseTime < 4.3 ? 'up' : 'down'}
+          trend={metrics.avgResponseTime < 4.3 ? "up" : "down"}
         />
 
         {/* Urgent/Critical */}
@@ -129,7 +133,13 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
           label="Urgent/Critical"
           value={metrics.urgentCount}
           icon={<ExclamationTriangleIcon />}
-          status={metrics.urgentCount > 10 ? 'critical' : metrics.urgentCount > 5 ? 'warning' : 'normal'}
+          status={
+            metrics.urgentCount > 10
+              ? "critical"
+              : metrics.urgentCount > 5
+                ? "warning"
+                : "normal"
+          }
           tooltip="Number of urgent or critical emails requiring immediate attention"
         />
 
@@ -138,7 +148,7 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
           label="Pending Assignment"
           value={metrics.pendingAssignment}
           icon={<UserGroupIcon />}
-          status={metrics.pendingAssignment > 20 ? 'warning' : 'normal'}
+          status={metrics.pendingAssignment > 20 ? "warning" : "normal"}
           tooltip="Emails waiting to be assigned to an agent"
         />
 
@@ -147,7 +157,13 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
           label="Agent Utilization"
           value={`${metrics.agentUtilization}%`}
           icon={<UserGroupIcon />}
-          status={metrics.agentUtilization > 90 ? 'warning' : metrics.agentUtilization < 50 ? 'warning' : 'good'}
+          status={
+            metrics.agentUtilization > 90
+              ? "warning"
+              : metrics.agentUtilization < 50
+                ? "warning"
+                : "good"
+          }
           tooltip="Percentage of agent capacity currently in use"
         />
 

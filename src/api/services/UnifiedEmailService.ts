@@ -51,6 +51,7 @@ export class UnifiedEmailService {
   private emailRepository: EmailRepository;
 
   constructor() {
+    // Use the real email storage service
     this.emailStorage = new EmailStorageService();
     this.iemsData = IEMSDataService.getInstance();
     this.analysisPipeline = new EmailAnalysisPipeline();
@@ -488,7 +489,7 @@ export class UnifiedEmailService {
           primary: "general",
           secondary: [],
         },
-        priority: "Medium",
+        priority: "medium",
         intent: "informational",
         urgency: "medium",
         confidence: 0.5,
@@ -579,7 +580,7 @@ export class UnifiedEmailService {
 
     return {
       id: email.id,
-      messageId: email.message_id || email.messageId,
+      messageId: email.internet_message_id || email.message_id || email.messageId,  // Check correct DB column first
       graphResourceId: email.graph_id || email.graphId,
       subject: email.subject,
       bodyText: email.body_text || email.bodyText,
@@ -727,10 +728,14 @@ export class UnifiedEmailService {
         completed: completedResult.total || 0,
       };
     } catch (error) {
-      logger.warn("Failed to get status counts, using defaults", "UNIFIED_EMAIL", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      
+      logger.warn(
+        "Failed to get status counts, using defaults",
+        "UNIFIED_EMAIL",
+        {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      );
+
       // Return default values if query fails
       return {
         critical: 0,

@@ -1,19 +1,24 @@
 import { WebSocketServer } from "ws";
-import { WebSocketAuthManager, createWebSocketAuthMiddleware, type AuthenticatedWebSocket } from "../middleware/websocketAuth.js";
+import {
+  WebSocketAuthManager,
+  createWebSocketAuthMiddleware,
+  type AuthenticatedWebSocket,
+} from "../middleware/websocketAuth.js";
 import { wsService } from "../services/WebSocketService.js";
 import type { UserService } from "../services/UserService.js";
 import { logger } from "../../utils/logger.js";
+import { getGroceryNLPQueueWebSocketManager } from "./grocery-nlp-queue.js";
 
 /**
  * Setup authenticated WebSocket server
  */
 export function setupAuthenticatedWebSocketServer(
   wss: WebSocketServer,
-  userService: UserService
+  userService: UserService,
 ): WebSocketAuthManager {
   // Create auth manager
   const authManager = new WebSocketAuthManager(userService);
-  
+
   // Create auth middleware
   const authMiddleware = createWebSocketAuthMiddleware(authManager);
 
@@ -27,10 +32,17 @@ export function setupAuthenticatedWebSocketServer(
     // Apply authentication middleware
     await authMiddleware(ws, req);
 
+    // Check if this is a grocery NLP queue connection
+    if (req.url?.includes('/grocery-nlp-queue')) {
+      const groceryNLPManager = getGroceryNLPQueueWebSocketManager();
+      groceryNLPManager.handleConnection(ws, req);
+      return; // Let the grocery NLP manager handle this connection
+    }
+
     // Register with WebSocket service
     if (ws.clientId) {
       wsService.registerClient(ws.clientId, ws);
-      
+
       // Subscribe to default channels based on permissions
       const defaultSubscriptions = getDefaultSubscriptions(ws);
       if (defaultSubscriptions.length > 0) {
@@ -42,55 +54,67 @@ export function setupAuthenticatedWebSocketServer(
     ws.on("message", async (data) => {
       try {
         const message = JSON.parse(data.toString());
-        
+
         // Check authentication for protected message types
         if (requiresAuth(message.type) && !ws.isAuthenticated) {
-          ws.send(JSON.stringify({
-            type: "error",
-            error: "Authentication required for this operation",
-          }));
+          ws.send(
+            JSON.stringify({
+              type: "error",
+              error: "Authentication required for this operation",
+            }),
+          );
           return;
         }
 
         // Handle subscription requests
         if (message.type === "subscribe" && ws.clientId) {
-          const allowed = filterAllowedSubscriptions(message.channels || [], ws);
+          const allowed = filterAllowedSubscriptions(
+            message.channels || [],
+            ws,
+          );
           if (allowed.length > 0) {
             wsService.subscribe(ws.clientId, allowed);
-            ws.send(JSON.stringify({
-              type: "subscribed",
-              channels: allowed,
-            }));
+            ws.send(
+              JSON.stringify({
+                type: "subscribed",
+                channels: allowed,
+              }),
+            );
           }
         }
 
         // Handle unsubscribe requests
         if (message.type === "unsubscribe" && ws.clientId) {
           wsService.unsubscribe(ws.clientId, message.channels || []);
-          ws.send(JSON.stringify({
-            type: "unsubscribed",
-            channels: message.channels,
-          }));
+          ws.send(
+            JSON.stringify({
+              type: "unsubscribed",
+              channels: message.channels,
+            }),
+          );
         }
 
         // Update activity
         if (ws.isAuthenticated) {
           authManager.updateActivity(ws);
         }
-
       } catch (error) {
         logger.error(`WebSocket message handling error: ${error}`, "WS_SETUP");
       }
     });
 
     // Send welcome message
-    ws.send(JSON.stringify({
-      type: "welcome",
-      clientId: ws.clientId,
-      isAuthenticated: ws.isAuthenticated,
-      permissions: ws.permissions,
-      subscriptions: ws.clientId ? wsService.getClientSubscriptions(ws.clientId) : [],
-    }));
+    ws.send(
+      JSON.stringify({
+        type: "welcome",
+        clientId: ws.clientId,
+        isAuthenticated: ws.isAuthenticated,
+        permissions: ws.permissions,
+        subscriptions: ws.clientId
+          ? wsService.getClientSubscriptions(ws.clientId)
+          : [],
+      }),
+    );
   });
 
   // Handle server errors
@@ -102,7 +126,7 @@ export function setupAuthenticatedWebSocketServer(
   const healthCheckInterval = setInterval(() => {
     const stats = authManager.getStats();
     const wsStats = wsService.getConnectionStats();
-    
+
     logger.info("WebSocket Health Check", "WS_SETUP", {
       authenticated: stats.totalAuthenticated,
       total: wsStats.totalClients,
@@ -158,7 +182,7 @@ function getDefaultSubscriptions(ws: AuthenticatedWebSocket): string[] {
  */
 function filterAllowedSubscriptions(
   requested: string[],
-  ws: AuthenticatedWebSocket
+  ws: AuthenticatedWebSocket,
 ): string[] {
   if (!ws.permissions) return [];
 
@@ -175,9 +199,20 @@ function filterAllowedSubscriptions(
       allowed.push(channel);
     } else if (channel === "system.health" && ws.isAuthenticated) {
       allowed.push(channel);
-    } else if (channel.startsWith("agent.") && ws.permissions.includes("write")) {
+    } else if (
+      channel.startsWith("agent.") &&
+      ws.permissions.includes("write")
+    ) {
       allowed.push(channel);
-    } else if (channel.startsWith("task.") && ws.permissions.includes("write")) {
+    } else if (
+      channel.startsWith("task.") &&
+      ws.permissions.includes("write")
+    ) {
+      allowed.push(channel);
+    } else if (
+      channel.startsWith("grocery-nlp.") &&
+      ws.permissions.includes("read")
+    ) {
       allowed.push(channel);
     }
     // Add more channel permission mappings as needed
@@ -190,11 +225,7 @@ function filterAllowedSubscriptions(
  * Check if a message type requires authentication
  */
 function requiresAuth(messageType: string): boolean {
-  const publicMessageTypes = [
-    "auth",
-    "ping",
-    "pong",
-  ];
+  const publicMessageTypes = ["auth", "ping", "pong"];
 
   return !publicMessageTypes.includes(messageType);
 }
@@ -204,7 +235,7 @@ function requiresAuth(messageType: string): boolean {
  */
 export function createAuthenticatedWebSocketServer(
   port: number,
-  userService: UserService
+  userService: UserService,
 ): { wss: WebSocketServer; authManager: WebSocketAuthManager } {
   const wss = new WebSocketServer({
     port,
@@ -229,15 +260,19 @@ export function createAuthenticatedWebSocketServer(
     verifyClient: (info: any) => {
       // Could add IP filtering, origin checks, etc.
       const origin = info.origin || info.req.headers.origin;
-      
+
       // In production, check against allowed origins
       if (process.env.NODE_ENV === "production") {
         const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",");
         if (allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
-          logger.warn("WebSocket connection rejected - invalid origin", "WS_SETUP", {
-            origin,
-            ip: info.req.socket.remoteAddress,
-          });
+          logger.warn(
+            "WebSocket connection rejected - invalid origin",
+            "WS_SETUP",
+            {
+              origin,
+              ip: info.req.socket.remoteAddress,
+            },
+          );
           return false;
         }
       }
@@ -246,7 +281,10 @@ export function createAuthenticatedWebSocketServer(
     },
   });
 
-  logger.info(`Authenticated WebSocket server created on port ${port}`, "WS_SETUP");
+  logger.info(
+    `Authenticated WebSocket server created on port ${port}`,
+    "WS_SETUP",
+  );
 
   const authManager = setupAuthenticatedWebSocketServer(wss, userService);
 
