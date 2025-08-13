@@ -409,3 +409,4 @@ extract_real_bi.py
 diagnose_hang.py
 process_*.py
 monitor_production.py
+gemini.settings.json
