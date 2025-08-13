@@ -1,0 +1,777 @@
+
+🚀 Adaptive Three-Phase Email Processing
+
+Processing emails with chain-aware analysis
+
+📊 Processing 100 conversations with 776 emails
+
+
+[1/100] conv_b89538a8f3cdf026
+  📊 26 emails | 96.7h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 19167ms (3 phases)
+    ✓ Email 2: 20335ms (3 phases)
+    ✓ Email 3: 35068ms (3 phases)
+
+[2/100] conv_3d4349f04957d10c
+  📊 21 emails | 24.8h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 48588ms (3 phases)
+    ✓ Email 2: 12399ms (3 phases)
+    ✓ Email 3: 16741ms (3 phases)
+
+[3/100] conv_ff48dff45ce1e09e
+  📊 18 emails | 24h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 12771ms (2 phases)
+    ✓ Email 2: 6193ms (2 phases)
+    ✓ Email 3: 5348ms (2 phases)
+
+[4/100] conv_98428831256b34f0
+  📊 14 emails | 8.1h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 6578ms (2 phases)
+    ✓ Email 2: 24561ms (2 phases)
+    ✓ Email 3: 5314ms (2 phases)
+
+[5/100] conv_d52cbb69f159efdd
+  📊 13 emails | 24.2h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 6013ms (2 phases)
+    ✓ Email 2: 6201ms (2 phases)
+    ✓ Email 3: 19844ms (2 phases)
+
+[6/100] conv_9502759ae19a6fc8
+  📊 11 emails | 45.1h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 6051ms (2 phases)
+    ✓ Email 2: 8306ms (2 phases)
+    ✓ Email 3: 5313ms (2 phases)
+
+[7/100] conv_c42054e8723322f8
+  📊 9 emails | 21.3h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 39756ms (3 phases)
+    ✓ Email 2: 19657ms (3 phases)
+    ✓ Email 3: 22743ms (3 phases)
+
+[8/100] conv_a54a94378223f109
+  📊 9 emails | 142.4h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 27399ms (3 phases)
+    ✓ Email 2: 18632ms (3 phases)
+    ✓ Email 3: 17806ms (3 phases)
+
+[9/100] conv_5844e3d7c1b74351
+  📊 9 emails | 6.9h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 4921ms (2 phases)
+    ✓ Email 2: 6695ms (2 phases)
+    ✓ Email 3: 14189ms (2 phases)
+
+[10/100] conv_51cf67a75ebc64ce
+  📊 9 emails | 67.5h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 6670ms (2 phases)
+    ✓ Email 2: 12087ms (2 phases)
+    ✓ Email 3: 6424ms (2 phases)
+
+📊 Progress: 10/100
+  Complete chains: 4 | Phase 3: 12
+  Rate: 1.3 conv/min
+
+[11/100] conv_29d9496969b2e640
+  📊 9 emails | 48.9h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 7152ms (2 phases)
+    ✓ Email 2: 24454ms (2 phases)
+    ✓ Email 3: 6701ms (2 phases)
+
+[12/100] conv_f52dfa20825b369d
+  📊 8 emails | 2.9h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 6556ms (2 phases)
+    ✓ Email 2: 8977ms (2 phases)
+    ✓ Email 3: 22479ms (2 phases)
+
+[13/100] conv_f155563ff52edaf8
+  📊 8 emails | 30h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 43820ms (3 phases)
+    ✓ Email 2: 32346ms (3 phases)
+    ✓ Email 3: 35090ms (3 phases)
+
+[14/100] conv_8a9da25572d77347
+  📊 8 emails | 47.2h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 18026ms (3 phases)
+    ✓ Email 2: 25952ms (3 phases)
+    ✓ Email 3: 20319ms (3 phases)
+
+[15/100] conv_316d7523bc22ff38
+  📊 8 emails | 71.8h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 14959ms (3 phases)
+    ✓ Email 2: 21281ms (3 phases)
+    ✓ Email 3: 21222ms (3 phases)
+
+[16/100] conv_1c0a52a399dd9171
+  📊 8 emails | 74.1h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 8180ms (2 phases)
+    ✓ Email 2: 6276ms (2 phases)
+    ✓ Email 3: 20008ms (2 phases)
+
+[17/100] conv_b73fcc278429597a
+  📊 7 emails | 141.8h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 44065ms (3 phases)
+    ✓ Email 2: 19258ms (3 phases)
+    ✓ Email 3: 40852ms (3 phases)
+
+[18/100] conv_87f65dfc1fa63723
+  📊 7 emails | 41.7h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 10113ms (2 phases)
+    ✓ Email 2: 6510ms (2 phases)
+    ✓ Email 3: 7561ms (2 phases)
+
+[19/100] conv_631d9f59af24f4f6
+  📊 7 emails | 7.3h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 26393ms (2 phases)
+    ✓ Email 2: 4818ms (2 phases)
+    ✓ Email 3: 8238ms (2 phases)
+
+[20/100] conv_4bc630d98ca00b4f
+  📊 7 emails | 139.2h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 25509ms (3 phases)
+    ✓ Email 2: 25185ms (3 phases)
+    ✓ Email 3: 24183ms (3 phases)
+
+📊 Progress: 20/100
+  Complete chains: 9 | Phase 3: 27
+  Rate: 1.1 conv/min
+
+[21/100] conv_de6b9f8df4f837f7
+  📊 6 emails | 29.8h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 20131ms (3 phases)
+    ✓ Email 2: 16957ms (3 phases)
+    ✓ Email 3: 16146ms (3 phases)
+
+[22/100] conv_b40b105de53c44f0
+  📊 6 emails | 22.9h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 6275ms (2 phases)
+    ✓ Email 2: 8684ms (2 phases)
+    ✓ Email 3: 6574ms (2 phases)
+
+[23/100] conv_ad267d8ab5614a01
+  📊 6 emails | 4.5h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 20831ms (2 phases)
+    ✓ Email 2: 15175ms (2 phases)
+    ✓ Email 3: 7048ms (2 phases)
+
+[24/100] conv_a677926e1172ba6b
+  📊 6 emails | 25.7h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 38192ms (3 phases)
+    ✓ Email 2: 18210ms (3 phases)
+    ✓ Email 3: 19704ms (3 phases)
+
+[25/100] conv_a28f1c3ab859a653
+  📊 6 emails | 3.5h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 19394ms (2 phases)
+    ✓ Email 2: 31400ms (2 phases)
+    ✓ Email 3: 8267ms (2 phases)
+
+[26/100] conv_a22fbf404971bd05
+  📊 6 emails | 23.1h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 6502ms (2 phases)
+    ✓ Email 2: 5471ms (2 phases)
+    ✓ Email 3: 16520ms (2 phases)
+
+[27/100] conv_9ce54f81665eb2d9
+  📊 6 emails | 93.9h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 6587ms (2 phases)
+    ✓ Email 2: 29804ms (2 phases)
+    ✓ Email 3: 6626ms (2 phases)
+
+[28/100] conv_72d3e00e76a2dff4
+  📊 6 emails | 3.3h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 19917ms (3 phases)
+    ✓ Email 2: 32768ms (3 phases)
+    ✓ Email 3: 19381ms (3 phases)
+
+[29/100] conv_5e0923c64aabefe1
+  📊 6 emails | 0.2h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 39106ms (3 phases)
+    ✓ Email 2: 19582ms (3 phases)
+    ✓ Email 3: 17717ms (3 phases)
+
+[30/100] conv_4bb2678ab73bdffb
+  📊 6 emails | 31h duration
+  ⚡ Chain: 50% - unknown
+    ✓ Email 1: 6520ms (2 phases)
+    ✓ Email 2: 23347ms (2 phases)
+    ✓ Email 3: 5984ms (2 phases)
+
+📊 Progress: 30/100
+  Complete chains: 13 | Phase 3: 39
+  Rate: 1.2 conv/min
+
+[31/100] conv_3f946cb15d99f175
+  📊 6 emails | 4.6h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 25769ms (2 phases)
+    ✓ Email 2: 7385ms (2 phases)
+    ✓ Email 3: 7577ms (2 phases)
+
+[32/100] conv_3bf8a92e2c12e814
+  📊 6 emails | 49.4h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 7201ms (2 phases)
+    ✓ Email 2: 7724ms (2 phases)
+    ✓ Email 3: 12555ms (2 phases)
+
+[33/100] conv_2d8bd265b4df97f8
+  📊 6 emails | 44.8h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 21520ms (2 phases)
+    ✓ Email 2: 5440ms (2 phases)
+[33m2025-08-02T00:50:02.694Z WARN   Phase 2 failed, using phase 1 results[0m
+    ✓ Email 3: 300969ms (2 phases)
+
+[34/100] conv_26d47fa7c12fc1ae
+  📊 6 emails | 138h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 6544ms (2 phases)
+    ✓ Email 2: 6546ms (2 phases)
+    ✓ Email 3: 9558ms (2 phases)
+
+[35/100] conv_22e3f9edbb7f955e
+  📊 6 emails | 18.3h duration
+  ✓ Chain: 85% - support_ticket
+    ✓ Email 1: 18280ms (3 phases)
+    ✓ Email 2: 17771ms (3 phases)
+    ✓ Email 3: 14114ms (3 phases)
+
+[36/100] conv_2146cef1727bc1f3
+  📊 6 emails | 25h duration
+  ⚡ Chain: 50% - unknown
+    ✓ Email 1: 24606ms (2 phases)
+    ✓ Email 2: 12339ms (2 phases)
+    ✓ Email 3: 6821ms (2 phases)
+
+[37/100] conv_1a3c0596ca839544
+  📊 6 emails | 75.8h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 18783ms (2 phases)
+    ✓ Email 2: 5285ms (2 phases)
+    ✓ Email 3: 14768ms (2 phases)
+
+[38/100] conv_1477a3740d422566
+  📊 6 emails | 35.3h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 19932ms (2 phases)
+    ✓ Email 2: 12224ms (2 phases)
+    ✓ Email 3: 7095ms (2 phases)
+
+[39/100] conv_12b76aeeaa5e3340
+  📊 6 emails | 24.6h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 23088ms (3 phases)
+    ✓ Email 2: 23012ms (3 phases)
+    ✓ Email 3: 18129ms (3 phases)
+
+[40/100] conv_11524b9b3468a4ee
+  📊 6 emails | 24.1h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 14395ms (2 phases)
+    ✓ Email 2: 5647ms (2 phases)
+    ✓ Email 3: 7773ms (2 phases)
+
+📊 Progress: 40/100
+  Complete chains: 15 | Phase 3: 45
+  Rate: 1.1 conv/min
+
+[41/100] conv_09981e569891e8d0
+  📊 6 emails | 19.3h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 16221ms (3 phases)
+    ✓ Email 2: 58595ms (3 phases)
+    ✓ Email 3: 16608ms (3 phases)
+
+[42/100] conv_039a9c8a726ea7f8
+  📊 6 emails | 3.2h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 30534ms (2 phases)
+    ✓ Email 2: 18824ms (2 phases)
+    ✓ Email 3: 11671ms (2 phases)
+
+[43/100] conv_fdf16d31a9ecbbe8
+  📊 5 emails | 0.4h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 3314ms (2 phases)
+    ✓ Email 2: 34080ms (2 phases)
+    ✓ Email 3: 10778ms (2 phases)
+
+[44/100] conv_f89a7c1412d02dbf
+  📊 5 emails | 4.4h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 22170ms (3 phases)
+    ✓ Email 2: 31917ms (3 phases)
+    ✓ Email 3: 33530ms (3 phases)
+
+[45/100] conv_f706f8018acdb46b
+  📊 5 emails | 18.8h duration
+  ⚡ Chain: 50% - order_processing
+[33m2025-08-02T01:04:38.545Z WARN   Phase 2 failed, using phase 1 results[0m
+    ✓ Email 1: 300887ms (2 phases)
+    ✓ Email 2: 17167ms (2 phases)
+    ✓ Email 3: 18458ms (2 phases)
+
+[46/100] conv_f43f93999e3fad49
+  📊 5 emails | 92.9h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 17131ms (3 phases)
+    ✓ Email 2: 19202ms (3 phases)
+[33m2025-08-02T01:10:51.367Z WARN   Phase 2 failed, using phase 1 results[0m
+    ✓ Email 3: 310698ms (3 phases)
+
+[47/100] conv_ea8952702b78ea40
+  📊 5 emails | 11.1h duration
+  ✓ Chain: 85% - support_ticket
+    ✓ Email 1: 18548ms (3 phases)
+    ✓ Email 2: 13429ms (3 phases)
+    ✓ Email 3: 18995ms (3 phases)
+
+[48/100] conv_df6ab91d709b6b70
+  📊 5 emails | 2h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 6050ms (2 phases)
+    ✓ Email 2: 5630ms (2 phases)
+    ✓ Email 3: 3427ms (2 phases)
+
+[49/100] conv_de65b5bb98f37035
+  📊 5 emails | 2.1h duration
+  ⚡ Chain: 50% - unknown
+    ✓ Email 1: 7907ms (2 phases)
+    ✓ Email 2: 12944ms (2 phases)
+    ✓ Email 3: 15498ms (2 phases)
+
+[50/100] conv_d929f65de64b99e7
+  📊 5 emails | 47.5h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 15842ms (3 phases)
+    ✓ Email 2: 14005ms (3 phases)
+    ✓ Email 3: 34084ms (3 phases)
+
+📊 Progress: 50/100
+  Complete chains: 20 | Phase 3: 60
+  Rate: 0.9 conv/min
+
+[51/100] conv_d3bfc1520461432f
+  📊 5 emails | 162.2h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 12653ms (2 phases)
+    ✓ Email 2: 4820ms (2 phases)
+    ✓ Email 3: 7075ms (2 phases)
+
+[52/100] conv_d3148bfb1f5e6cdf
+  📊 5 emails | 17.4h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 16926ms (3 phases)
+    ✓ Email 2: 17892ms (3 phases)
+    ✓ Email 3: 16785ms (3 phases)
+
+[53/100] conv_d2222541313fccb7
+  📊 5 emails | 3.5h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 16738ms (2 phases)
+    ✓ Email 2: 5305ms (2 phases)
+    ✓ Email 3: 6154ms (2 phases)
+
+[54/100] conv_cf7652eb7ab54aa4
+  📊 5 emails | 22.1h duration
+  ✓ Chain: 85% - support_ticket
+    ✓ Email 1: 14893ms (3 phases)
+    ✓ Email 2: 35422ms (3 phases)
+    ✓ Email 3: 20934ms (3 phases)
+
+[55/100] conv_cf672e263acea333
+  📊 5 emails | 121.7h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 6273ms (2 phases)
+    ✓ Email 2: 11421ms (2 phases)
+    ✓ Email 3: 5400ms (2 phases)
+
+[56/100] conv_cd96a758d731d844
+  📊 5 emails | 69.4h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 25209ms (3 phases)
+    ✓ Email 2: 15579ms (3 phases)
+    ✓ Email 3: 12849ms (3 phases)
+
+[57/100] conv_bff4dd64a846b310
+  📊 5 emails | 142.6h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 14869ms (3 phases)
+    ✓ Email 2: 30805ms (3 phases)
+    ✓ Email 3: 13924ms (3 phases)
+
+[58/100] conv_bd4836bcf47b2f69
+  📊 5 emails | 0.3h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 5945ms (2 phases)
+    ✓ Email 2: 4834ms (2 phases)
+    ✓ Email 3: 4846ms (2 phases)
+
+[59/100] conv_b74efde461f0eb76
+  📊 5 emails | 1.2h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 11757ms (2 phases)
+    ✓ Email 2: 17001ms (2 phases)
+    ✓ Email 3: 4033ms (2 phases)
+
+[60/100] conv_b3817a833457d7fa
+  📊 5 emails | 100.4h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 5640ms (2 phases)
+    ✓ Email 2: 11180ms (2 phases)
+    ✓ Email 3: 6564ms (2 phases)
+
+📊 Progress: 60/100
+  Complete chains: 24 | Phase 3: 72
+  Rate: 1.0 conv/min
+
+[61/100] conv_b37db3bb5f98b1cf
+  📊 5 emails | 166.7h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 20603ms (2 phases)
+    ✓ Email 2: 5562ms (2 phases)
+    ✓ Email 3: 7842ms (2 phases)
+
+[62/100] conv_ade2b6da0cfbe3d4
+  📊 5 emails | 27.1h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 14009ms (2 phases)
+    ✓ Email 2: 10565ms (2 phases)
+    ✓ Email 3: 5824ms (2 phases)
+
+[63/100] conv_ab599f3bc3b2c2ab
+  📊 5 emails | 45.1h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 5392ms (2 phases)
+    ✓ Email 2: 7153ms (2 phases)
+    ✓ Email 3: 7532ms (2 phases)
+
+[64/100] conv_a5b48b2e556eabe7
+  📊 5 emails | 88.4h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 18593ms (3 phases)
+    ✓ Email 2: 13552ms (3 phases)
+    ✓ Email 3: 43665ms (3 phases)
+
+[65/100] conv_a4f59075b41ccecb
+  📊 5 emails | 74.6h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 12901ms (3 phases)
+    ✓ Email 2: 16328ms (3 phases)
+    ✓ Email 3: 16529ms (3 phases)
+
+[66/100] conv_94fa96bacbcfbc81
+  📊 5 emails | 74.3h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 6156ms (2 phases)
+    ✓ Email 2: 5297ms (2 phases)
+    ✓ Email 3: 5860ms (2 phases)
+
+[67/100] conv_8ff161968d31e4f7
+  📊 5 emails | 39.9h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 5205ms (2 phases)
+    ✓ Email 2: 4895ms (2 phases)
+    ✓ Email 3: 7648ms (2 phases)
+
+[68/100] conv_8c23d2f51baaaec5
+  📊 5 emails | 99.3h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 19746ms (3 phases)
+    ✓ Email 2: 13599ms (3 phases)
+    ✓ Email 3: 16188ms (3 phases)
+
+[69/100] conv_8b04e317aec5fae7
+  📊 5 emails | 3.2h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 10399ms (2 phases)
+    ✓ Email 2: 22162ms (2 phases)
+    ✓ Email 3: 5133ms (2 phases)
+
+[70/100] conv_82af8a577d188f5f
+  📊 5 emails | 30.4h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 23559ms (3 phases)
+    ✓ Email 2: 14641ms (3 phases)
+    ✓ Email 3: 16316ms (3 phases)
+
+📊 Progress: 70/100
+  Complete chains: 28 | Phase 3: 84
+  Rate: 1.0 conv/min
+
+[71/100] conv_79450e332d58f67d
+  📊 5 emails | 2.6h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 7089ms (2 phases)
+    ✓ Email 2: 24256ms (2 phases)
+    ✓ Email 3: 24311ms (2 phases)
+
+[72/100] conv_763108991d7c3126
+  📊 5 emails | 32.5h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 5082ms (2 phases)
+    ✓ Email 2: 5291ms (2 phases)
+    ✓ Email 3: 5756ms (2 phases)
+
+[73/100] conv_74ef992de6e157d7
+  📊 5 emails | 40.2h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 5333ms (2 phases)
+    ✓ Email 2: 6035ms (2 phases)
+    ✓ Email 3: 21773ms (2 phases)
+
+[74/100] conv_73ed6905edbb3018
+  📊 5 emails | 97.8h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 7390ms (2 phases)
+    ✓ Email 2: 6041ms (2 phases)
+    ✓ Email 3: 6617ms (2 phases)
+
+[75/100] conv_73b25213fd6063a3
+  📊 5 emails | 11.1h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 8347ms (2 phases)
+    ✓ Email 2: 12084ms (2 phases)
+    ✓ Email 3: 6297ms (2 phases)
+
+[76/100] conv_6e654763b21b9d01
+  📊 5 emails | 184.7h duration
+  ✓ Chain: 100% - order_processing
+    ✓ Email 1: 15857ms (3 phases)
+    ✓ Email 2: 29627ms (3 phases)
+    ✓ Email 3: 24095ms (3 phases)
+
+[77/100] conv_6d4edf2ed559c191
+  📊 5 emails | 6.8h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 5661ms (2 phases)
+    ✓ Email 2: 23068ms (2 phases)
+    ✓ Email 3: 21921ms (2 phases)
+
+[78/100] conv_5a296463bc34a098
+  📊 5 emails | 4h duration
+  ✓ Chain: 85% - order_processing
+    ✓ Email 1: 18876ms (3 phases)
+    ✓ Email 2: 11881ms (3 phases)
+    ✓ Email 3: 19972ms (3 phases)
+
+[79/100] conv_59755febaa723767
+  📊 5 emails | 22.3h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 5986ms (2 phases)
+    ✓ Email 2: 6551ms (2 phases)
+    ✓ Email 3: 4725ms (2 phases)
+
+[80/100] conv_4931b5c6fbf02c5f
+  📊 5 emails | 141.6h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 5775ms (2 phases)
+    ✓ Email 2: 3612ms (2 phases)
+    ✓ Email 3: 6142ms (2 phases)
+
+📊 Progress: 80/100
+  Complete chains: 30 | Phase 3: 90
+  Rate: 1.1 conv/min
+
+[81/100] conv_3afd53ae686ed66f
+  📊 5 emails | 1.2h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 7050ms (2 phases)
+    ✓ Email 2: 5635ms (2 phases)
+    ✓ Email 3: 4856ms (2 phases)
+
+[82/100] conv_2f5d1e84d8381a1d
+  📊 5 emails | 16.7h duration
+  ✓ Chain: 85% - support_ticket
+    ✓ Email 1: 15576ms (3 phases)
+    ✓ Email 2: 16231ms (3 phases)
+    ✓ Email 3: 17621ms (3 phases)
+
+[83/100] conv_2def270d250c3813
+  📊 5 emails | 6.7h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 6738ms (2 phases)
+    ✓ Email 2: 5615ms (2 phases)
+    ✓ Email 3: 5696ms (2 phases)
+
+[84/100] conv_28b571ae7f4b6928
+  📊 5 emails | 74h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 4972ms (2 phases)
+    ✓ Email 2: 4624ms (2 phases)
+    ✓ Email 3: 4829ms (2 phases)
+
+[85/100] conv_278e155be6148454
+  📊 5 emails | 12.3h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 27689ms (3 phases)
+    ✓ Email 2: 21860ms (3 phases)
+    ✓ Email 3: 33332ms (3 phases)
+
+[86/100] conv_1ca5d29fb8fb95fe
+  📊 5 emails | 71.8h duration
+  ⚡ Chain: 50% - unknown
+    ✓ Email 1: 5544ms (2 phases)
+    ✓ Email 2: 4656ms (2 phases)
+    ✓ Email 3: 4950ms (2 phases)
+
+[87/100] conv_1b7d0c52fc25329f
+  📊 5 emails | 0.7h duration
+  ✓ Chain: 85% - quote_request
+    ✓ Email 1: 12542ms (3 phases)
+    ✓ Email 2: 13494ms (3 phases)
+    ✓ Email 3: 16220ms (3 phases)
+
+[88/100] conv_1779d231819b8903
+  📊 5 emails | 0.7h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 6250ms (2 phases)
+    ✓ Email 2: 5545ms (2 phases)
+    ✓ Email 3: 5626ms (2 phases)
+
+[89/100] conv_0deef9eb55cfdf17
+  📊 5 emails | 22.7h duration
+  ⚡ Chain: 50% - order_processing
+    ✓ Email 1: 6158ms (2 phases)
+    ✓ Email 2: 16691ms (2 phases)
+    ✓ Email 3: 6259ms (2 phases)
+
+[90/100] conv_09fd0f934ccd82ab
+  📊 5 emails | 59.1h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 5994ms (2 phases)
+    ✓ Email 2: 11409ms (2 phases)
+    ✓ Email 3: 5139ms (2 phases)
+
+📊 Progress: 90/100
+  Complete chains: 33 | Phase 3: 99
+  Rate: 1.1 conv/min
+
+[91/100] conv_08478f2f6e54dfb9
+  📊 5 emails | 18.7h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 14340ms (2 phases)
+    ✓ Email 2: 6848ms (2 phases)
+    ✓ Email 3: 4952ms (2 phases)
+
+[92/100] conv_fa566306ee2dcc91
+  📊 4 emails | 25.4h duration
+  ⚡ Chain: 50% - quote_request
+    ✓ Email 1: 5070ms (2 phases)
+    ✓ Email 2: 4728ms (2 phases)
+    ✓ Email 3: 12681ms (2 phases)
+
+[93/100] conv_f691e5ec9523cc52
+  📊 4 emails | 23.7h duration
+  ⚡ Chain: 50% - support_ticket
+    ✓ Email 1: 5770ms (2 phases)
+    ✓ Email 2: 4912ms (2 phases)
+    ✓ Email 3: 4936ms (2 phases)
+
+[94/100] conv_f0df5f1a86828d42
+  📊 4 emails | 20.1h duration
+  ⚡ Chain: 40% - order_processing
+    ✓ Email 1: 16649ms (2 phases)
+    ✓ Email 2: 10060ms (2 phases)
+    ✓ Email 3: 4645ms (2 phases)
+
+[95/100] conv_f09d1bb8ac79335f
+  📊 4 emails | 119.3h duration
+  ⚡ Chain: 50% - unknown
+    ✓ Email 1: 5565ms (2 phases)
+    ✓ Email 2: 13555ms (2 phases)
+    ✓ Email 3: 2561ms (2 phases)
+
+[96/100] conv_ef3e08787e3469c4
+  📊 4 emails | 0.5h duration
+  ⚡ Chain: 40% - order_processing
+    ✓ Email 1: 10094ms (2 phases)
+    ✓ Email 2: 9366ms (2 phases)
+    ✓ Email 3: 4933ms (2 phases)
+
+[97/100] conv_e9c38409aad859bc
+  📊 4 emails | 42.6h duration
+  ✓ Chain: 75% - order_processing
+    ✓ Email 1: 16132ms (3 phases)
+    ✓ Email 2: 13330ms (3 phases)
+    ✓ Email 3: 36391ms (3 phases)
+
+[98/100] conv_e920333e045a1d2d
+  📊 4 emails | 15.4h duration
+  ⚡ Chain: 40% - order_processing
+    ✓ Email 1: 2688ms (2 phases)
+    ✓ Email 2: 5602ms (2 phases)
+    ✓ Email 3: 15164ms (2 phases)
+
+[99/100] conv_e7632f6e74419cf7
+  📊 4 emails | 1.1h duration
+  ⚡ Chain: 40% - quote_request
+    ✓ Email 1: 10755ms (2 phases)
+    ✓ Email 2: 6801ms (2 phases)
+    ✓ Email 3: 15266ms (2 phases)
+
+[100/100] conv_e4619453c75cf52b
+  📊 4 emails | 60.6h duration
+  ✓ Chain: 75% - order_processing
+    ✓ Email 1: 16081ms (3 phases)
+    ✓ Email 2: 18827ms (3 phases)
+    ✓ Email 3: 15089ms (3 phases)
+
+📊 Progress: 100/100
+  Complete chains: 35 | Phase 3: 105
+  Rate: 1.2 conv/min
+
+
+✅ Processing Complete!
+
+📊 Final Statistics:
+  Conversations: 100/100
+  Emails: 300/776
+  Complete chains (3-phase): 35 (35.0%)
+  Incomplete chains (2-phase): 65
+  Phase 3 analyses: 105
+  Errors: 0
+  Time: 85.4 minutes
+  Rate: 3.5 emails/min
+
+📊 Sample Results:
+  RE: Q2 2025 buy-in status update po#70878970 Reque...
+    State: pending | Priority: critical | Type: order_processing | Score: 75%
+  RE: Q2 2025 buy-in status update po#70878970 Reque...
+    State: pending | Priority: critical | Type: order_processing | Score: 75%
+  RE: Q2 2025 buy-in status update po#70878970 Reque...
+    State: pending | Priority: critical | Type: order_processing | Score: 75%
+  RE: 7Y8G4AA UHG pricing...
+    State: pending | Priority: medium | Type: quote_request | Score: 40%
+  Re: 7Y8G4AA UHG pricing...
+    State: pending | Priority: medium | Type: quote_request | Score: 40%
+
+🎉 The fans should be running! Processing emails with proper JSON! 🌪️

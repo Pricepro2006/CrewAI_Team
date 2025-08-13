@@ -3,9 +3,9 @@
  * Part of GROUP 2B WebSearch Enhancement
  */
 
-export { 
+export {
   BusinessSearchPromptEnhancer,
   businessSearchPromptEnhancer,
   type BusinessSearchEnhancementOptions,
-  type BusinessSearchExample
-} from './BusinessSearchPromptEnhancer.js';
+  type BusinessSearchExample,
+} from "./BusinessSearchPromptEnhancer.js";

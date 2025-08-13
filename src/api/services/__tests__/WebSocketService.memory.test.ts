@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { WebSocketService } from "../WebSocketService.js";
 import { EventEmitter } from "events";
 import type { AuthenticatedWebSocket } from "../../middleware/websocketAuth.js";
+import type { Event, CloseEvent, ErrorEvent, MessageEvent } from "ws";
 
 // Mock logger
 vi.mock("../../../utils/logger", () => ({
@@ -28,32 +29,98 @@ describe("WebSocketService - Memory Leak Prevention", () => {
   });
 
   // Mock WebSocket implementation
-  class MockWebSocket extends EventEmitter implements Partial<AuthenticatedWebSocket> {
-    readyState = 1; // OPEN
-    OPEN = 1;
-    CLOSED = 3;
+  class MockWebSocket extends EventEmitter implements AuthenticatedWebSocket {
+    readyState: 0 | 1 | 2 | 3 = 1; // OPEN
+    readonly OPEN = 1 as const;
+    readonly CONNECTING = 0 as const;
+    readonly CLOSING = 2 as const;
+    readonly CLOSED = 3 as const;
     isAuthenticated = false;
     clientId?: string;
     userId?: string;
     userRole?: string;
     permissions?: string[];
+    lastActivity?: Date;
+
+    // Required WebSocket properties
+    binaryType: "nodebuffer" | "arraybuffer" | "fragments" = "nodebuffer";
+    bufferedAmount = 0;
+    extensions = "";
+    protocol = "";
+    url = "";
+    isPaused = false;
+
+    // Event handler properties - using ws types
+    onopen: ((event: Event) => void) | null = null;
+    onclose: ((event: CloseEvent) => void) | null = null;
+    onerror: ((event: ErrorEvent) => void) | null = null;
+    onmessage: ((event: MessageEvent) => void) | null = null;
 
     constructor() {
       super();
       this.setMaxListeners(0);
     }
 
-    close(code?: number, reason?: string) {
+    close(code?: number, reason?: string | Buffer) {
       this.readyState = this.CLOSED;
       this.emit("close", code, reason);
     }
 
-    ping() {
+    ping(data?: any, mask?: boolean, cb?: (err: Error) => void) {
       this.emit("pong");
+      if (cb) cb(null as any);
     }
 
-    send(data: string) {
+    pong(data?: any, mask?: boolean, cb?: (err: Error) => void) {
+      if (cb) cb(null as any);
+    }
+
+    send(data: any, cb?: (err?: Error) => void): void;
+    send(
+      data: any,
+      options: {
+        mask?: boolean;
+        binary?: boolean;
+        compress?: boolean;
+        fin?: boolean;
+      },
+      cb?: (err?: Error) => void,
+    ): void;
+    send(data: any, optionsOrCb?: any, cb?: (err?: Error) => void) {
       // Mock send
+      if (typeof optionsOrCb === "function") {
+        optionsOrCb();
+      } else if (cb) {
+        cb();
+      }
+    }
+
+    terminate() {
+      this.readyState = this.CLOSED;
+      this.emit("close");
+    }
+
+    pause() {
+      this.isPaused = true;
+    }
+
+    resume() {
+      this.isPaused = false;
+    }
+
+    addEventListener(
+      method: string,
+      listener: (...args: any[]) => void,
+      options?: any,
+    ): void {
+      this.addListener(method, listener);
+    }
+
+    removeEventListener(
+      method: string,
+      listener: (...args: any[]) => void,
+    ): void {
+      this.removeListener(method, listener);
     }
   }
 
@@ -71,7 +138,9 @@ describe("WebSocketService - Memory Leak Prevention", () => {
 
       // Verify client is registered
       expect(wsService.getClientCount()).toBe(1);
-      expect(wsService.getClientSubscriptions(clientId)).toContain("agent.status");
+      expect(wsService.getClientSubscriptions(clientId)).toContain(
+        "agent.status",
+      );
 
       // Disconnect client
       ws.close();
@@ -100,9 +169,9 @@ describe("WebSocketService - Memory Leak Prevention", () => {
         const ws = new MockWebSocket() as AuthenticatedWebSocket;
         ws.clientId = `extra-client-${i}`;
         const closeSpy = vi.spyOn(ws, "close");
-        
+
         wsService.registerClient(`extra-client-${i}`, ws);
-        
+
         // Should close connection with "Server at capacity" message
         expect(closeSpy).toHaveBeenCalledWith(1008, "Server at capacity");
       }
@@ -138,19 +207,22 @@ describe("WebSocketService - Memory Leak Prevention", () => {
       ws.clientId = clientId;
 
       // Count initial listeners
-      const initialListenerCount = ws.listenerCount("close") + ws.listenerCount("error");
+      const initialListenerCount =
+        ws.listenerCount("close") + ws.listenerCount("error");
 
       wsService.registerClient(clientId, ws);
 
       // Should have added listeners
-      const afterRegisterCount = ws.listenerCount("close") + ws.listenerCount("error");
+      const afterRegisterCount =
+        ws.listenerCount("close") + ws.listenerCount("error");
       expect(afterRegisterCount).toBeGreaterThan(initialListenerCount);
 
       // Disconnect
       ws.close();
 
       // Should have removed all listeners
-      const afterCloseCount = ws.listenerCount("close") + ws.listenerCount("error");
+      const afterCloseCount =
+        ws.listenerCount("close") + ws.listenerCount("error");
       expect(afterCloseCount).toBe(0);
     });
 
@@ -169,7 +241,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
 
         // Verify no more pings after disconnect
         const pingSpy = vi.spyOn(ws, "ping");
-        
+
         setTimeout(() => {
           expect(pingSpy).not.toHaveBeenCalled();
           done();
@@ -198,7 +270,9 @@ describe("WebSocketService - Memory Leak Prevention", () => {
       wsService.subscribe("disconnected", ["test"]);
 
       // Verify both clients are registered initially
-      expect((wsService as any).authenticatedClients.has("disconnected")).toBe(true);
+      expect((wsService as any).authenticatedClients.has("disconnected")).toBe(
+        true,
+      );
       expect((wsService as any).subscriptions.has("disconnected")).toBe(true);
 
       // Manually remove disconnected client from clients map to simulate orphaned data
@@ -208,9 +282,13 @@ describe("WebSocketService - Memory Leak Prevention", () => {
       (wsService as any).cleanupOrphanedData();
 
       // Verify orphaned data is cleaned up
-      expect((wsService as any).authenticatedClients.has("disconnected")).toBe(false);
+      expect((wsService as any).authenticatedClients.has("disconnected")).toBe(
+        false,
+      );
       expect((wsService as any).subscriptions.has("disconnected")).toBe(false);
-      expect((wsService as any).clientPermissions.has("disconnected")).toBe(false);
+      expect((wsService as any).clientPermissions.has("disconnected")).toBe(
+        false,
+      );
 
       // Active client data should remain
       expect((wsService as any).authenticatedClients.has("active")).toBe(true);
@@ -238,7 +316,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
 
       // Run memory cleanup
       (wsService as any).startMemoryCleanup();
-      
+
       // Wait for cleanup to run
       setTimeout(() => {
         const queue = messageQueue.get(clientId);
@@ -279,7 +357,8 @@ describe("WebSocketService - Memory Leak Prevention", () => {
       // Get interval references
       const healthInterval = (wsService as any).healthInterval;
       const memoryCleanupInterval = (wsService as any).memoryCleanupInterval;
-      const performanceMonitorInterval = (wsService as any).performanceMonitorInterval;
+      const performanceMonitorInterval = (wsService as any)
+        .performanceMonitorInterval;
 
       // Shutdown
       wsService.shutdown();
@@ -321,9 +400,9 @@ describe("WebSocketService - Memory Leak Prevention", () => {
       for (let i = 0; i < 5; i++) {
         const ws = new MockWebSocket() as AuthenticatedWebSocket;
         ws.clientId = clientId;
-        
+
         wsService.registerClient(clientId, ws);
-        
+
         // Disconnect
         ws.close();
       }
@@ -353,7 +432,7 @@ describe.skip("WebSocketService - Memory Usage Over Time", () => {
         const ws = new MockWebSocket() as AuthenticatedWebSocket;
         ws.clientId = `client-${iteration}-${i}`;
         ws.isAuthenticated = true;
-        
+
         wsService.registerClient(ws.clientId, ws);
         wsService.subscribe(ws.clientId, ["test1", "test2", "test3"]);
         clients.push(ws);
@@ -369,10 +448,10 @@ describe.skip("WebSocketService - Memory Usage Over Time", () => {
       }
 
       // Disconnect all clients
-      clients.forEach(ws => ws.close());
+      clients.forEach((ws) => ws.close());
 
       // Wait for cleanup
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Force garbage collection if available
       if (global.gc) {

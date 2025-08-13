@@ -1,5 +1,5 @@
 /* Email Table Specific Styles */
-@import './email-dashboard-theme.css';
+@import "./email-dashboard-theme.css";
 
 /* Table Container */
 .email-table-container {
@@ -227,19 +227,19 @@
   .email-table-header th {
     @apply px-2 py-2 text-xs;
   }
-  
+
   .email-table-cell {
     @apply px-2 py-2 text-xs;
   }
-  
+
   .email-subject-cell {
     @apply max-w-[150px];
   }
-  
+
   .email-summary-cell {
     @apply hidden;
   }
-  
+
   .email-alias-domain {
     @apply hidden;
   }
@@ -265,7 +265,9 @@
 /* Dark Mode Adjustments */
 @media (prefers-color-scheme: dark) {
   .email-table-container {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+    box-shadow:
+      0 1px 3px 0 rgba(0, 0, 0, 0.3),
+      0 1px 2px 0 rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -280,7 +282,7 @@
 }
 
 .email-table-row::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 0;
@@ -291,11 +293,11 @@
 }
 
 .email-table-row:hover::before {
-  background: var(--td-synnex-secondary, #00AEEF);
+  background: var(--td-synnex-secondary, #00aeef);
 }
 
 .email-table-row.selected::before {
-  background: var(--td-synnex-primary, #00539B);
+  background: var(--td-synnex-primary, #00539b);
 }
 
 /* Checkbox Hover Effects */
@@ -341,14 +343,14 @@
 
 /* Email Alias Hover Effects */
 .email-alias-cell:hover .email-alias-prefix {
-  color: var(--td-synnex-primary, #00539B);
+  color: var(--td-synnex-primary, #00539b);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 /* Subject Cell Hover Effects */
 .email-subject-cell:hover .email-subject-text {
-  color: var(--td-synnex-primary, #00539B);
+  color: var(--td-synnex-primary, #00539b);
 }
 
 /* Action Button Hover States */
@@ -359,7 +361,7 @@
 }
 
 .email-action-btn::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -368,7 +370,9 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   transform: translate(-50%, -50%);
-  transition: width 0.3s ease, height 0.3s ease;
+  transition:
+    width 0.3s ease,
+    height 0.3s ease;
 }
 
 .email-action-btn:hover::after {
@@ -378,7 +382,7 @@
 
 /* Filter Panel Hover Effects */
 .email-filter-option:hover {
-  background: var(--table-row-hover, #F1F5F9);
+  background: var(--table-row-hover, #f1f5f9);
   padding-left: 12px;
   transition: all 0.15s ease;
 }
@@ -390,13 +394,18 @@
 }
 
 .email-quick-filter-btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: left 0.5s ease;
 }
 
@@ -453,11 +462,14 @@
 
 /* Loading State Interactions */
 .email-table-loading-spinner {
-  animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;
+  animation:
+    spin 1s linear infinite,
+    pulse 2s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -467,20 +479,20 @@
 
 /* Focus States for Accessibility */
 .email-table-row:focus-within {
-  outline: 2px solid var(--td-synnex-primary, #00539B);
+  outline: 2px solid var(--td-synnex-primary, #00539b);
   outline-offset: -2px;
 }
 
 .email-action-btn:focus,
 .email-quick-filter-btn:focus,
 .email-bulk-btn:focus {
-  outline: 2px solid var(--td-synnex-primary, #00539B);
+  outline: 2px solid var(--td-synnex-primary, #00539b);
   outline-offset: 2px;
 }
 
 /* Keyboard Navigation Styles */
 .email-table-row[tabindex]:focus {
-  background: var(--table-row-selected, #E0F2FE);
+  background: var(--table-row-selected, #e0f2fe);
   outline: none;
 }
 
@@ -490,7 +502,8 @@
 .status-indicator,
 .email-action-btn,
 .email-quick-filter-btn {
-  transition-property: background-color, color, transform, box-shadow, border-color;
+  transition-property:
+    background-color, color, transform, box-shadow, border-color;
   transition-duration: 150ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

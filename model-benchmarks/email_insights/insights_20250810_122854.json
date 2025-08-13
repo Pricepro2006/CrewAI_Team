@@ -1,0 +1,361 @@
+{
+  "timestamp": "2025-08-10T12:28:54.417441",
+  "summary": {},
+  "top_patterns": [
+    {
+      "structure": "@-@",
+      "value": "font-family",
+      "frequency": 9080
+    },
+    {
+      "structure": "@-@",
+      "value": "font-face",
+      "frequency": 7113
+    },
+    {
+      "structure": "#A",
+      "value": "0in",
+      "frequency": 2920
+    },
+    {
+      "structure": "@-@",
+      "value": "sans-serif",
+      "frequency": 2392
+    },
+    {
+      "structure": "#A",
+      "value": "0pt",
+      "frequency": 2203
+    },
+    {
+      "structure": "@-@",
+      "value": "font-size",
+      "frequency": 2131
+    },
+    {
+      "structure": "@#",
+      "value": "WordSection1",
+      "frequency": 1522
+    },
+    {
+      "structure": "@-@",
+      "value": "text-decoration",
+      "frequency": 967
+    },
+    {
+      "structure": "#A",
+      "value": "05pt",
+      "frequency": 960
+    },
+    {
+      "structure": "@-@",
+      "value": "http-equiv",
+      "frequency": 913
+    },
+    {
+      "structure": "@-@",
+      "value": "Content-Type",
+      "frequency": 913
+    },
+    {
+      "structure": "A/A",
+      "value": "text/html",
+      "frequency": 913
+    },
+    {
+      "structure": "A-#",
+      "value": "utf-8",
+      "frequency": 913
+    },
+    {
+      "structure": "@.@",
+      "value": "p.MsoNormal",
+      "frequency": 782
+    },
+    {
+      "structure": "A@.A@",
+      "value": "li.MsoNormal",
+      "frequency": 782
+    },
+    {
+      "structure": "A@.A@",
+      "value": "div.MsoNormal",
+      "frequency": 782
+    },
+    {
+      "structure": "A@.A@",
+      "value": "span.MsoHyperlink",
+      "frequency": 680
+    },
+    {
+      "structure": "@#",
+      "value": "msonormal0",
+      "frequency": 486
+    },
+    {
+      "structure": "@-@",
+      "value": "apple-system",
+      "frequency": 355
+    },
+    {
+      "structure": "@-@",
+      "value": "margin-right",
+      "frequency": 346
+    },
+    {
+      "structure": "@-@",
+      "value": "margin-left",
+      "frequency": 346
+    },
+    {
+      "structure": "#A",
+      "value": "25pt",
+      "frequency": 324
+    },
+    {
+      "structure": "#A",
+      "value": "618A",
+      "frequency": 266
+    },
+    {
+      "structure": "#A\\#A#",
+      "value": "618A\\61F1",
+      "frequency": 266
+    },
+    {
+      "structure": "@#",
+      "value": "EmailStyle20",
+      "frequency": 257
+    },
+    {
+      "structure": "#A",
+      "value": "0cm",
+      "frequency": 252
+    },
+    {
+      "structure": "A@.A@",
+      "value": "span.separator",
+      "frequency": 210
+    },
+    {
+      "structure": "A@.A@",
+      "value": "span.MsoHyperlinkFollowed",
+      "frequency": 169
+    },
+    {
+      "structure": "@.@#",
+      "value": "li.msonormal0",
+      "frequency": 162
+    },
+    {
+      "structure": "@#",
+      "value": "EmailStyle21",
+      "frequency": 156
+    },
+    {
+      "structure": "@-@",
+      "value": "font-weight",
+      "frequency": 155
+    },
+    {
+      "structure": "@-@",
+      "value": "margin-bottom",
+      "frequency": 149
+    },
+    {
+      "structure": "@#",
+      "value": "EmailStyle22",
+      "frequency": 144
+    },
+    {
+      "structure": "@#",
+      "value": "EmailStyle19",
+      "frequency": 132
+    },
+    {
+      "structure": "@-@",
+      "value": "margin-top",
+      "frequency": 126
+    },
+    {
+      "structure": "A/A",
+      "value": "text/css",
+      "frequency": 118
+    },
+    {
+      "structure": "@-@",
+      "value": "text-align",
+      "frequency": 115
+    },
+    {
+      "structure": "@:@",
+      "value": "display:none",
+      "frequency": 111
+    },
+    {
+      "structure": "A@.A@",
+      "value": "Word.Document",
+      "frequency": 102
+    },
+    {
+      "structure": "A@.A@",
+      "value": "span.MsoSmartlink",
+      "frequency": 95
+    },
+    {
+      "structure": "@:#A#A#A#",
+      "value": "background:#F3F2F1",
+      "frequency": 95
+    },
+    {
+      "structure": "#A",
+      "value": "25in",
+      "frequency": 94
+    },
+    {
+      "structure": "#A",
+      "value": "96607D",
+      "frequency": 91
+    },
+    {
+      "structure": "@#",
+      "value": "EmailStyle17",
+      "frequency": 81
+    },
+    {
+      "structure": "A-#",
+      "value": "Insigh-131094",
+      "frequency": 77
+    },
+    {
+      "structure": "@-@",
+      "value": "font-style",
+      "frequency": 76
+    },
+    {
+      "structure": "@#",
+      "value": "xl66",
+      "frequency": 75
+    },
+    {
+      "structure": "@#",
+      "value": "xl67",
+      "frequency": 75
+    },
+    {
+      "structure": "@#",
+      "value": "xl68",
+      "frequency": 75
+    },
+    {
+      "structure": "@:#A",
+      "value": "background:#BFBFBF",
+      "frequency": 75
+    }
+  ],
+  "email_classification": {
+    "personal_communication": 9,
+    "system_generated": 780,
+    "general": 119,
+    "order_processing": 4,
+    "scheduling": 4,
+    "agreement": 84
+  },
+  "workflow_detection": {
+    "spa_order": 20,
+    "order_processing": 7,
+    "support_ticket": 2,
+    "quote_request": 1
+  },
+  "actionable_insights": [
+    {
+      "type": "automation_opportunity",
+      "pattern": "font-family",
+      "frequency": 9080,
+      "recommendation": "Pattern 'font-family' appears 9080 times - consider automating processing"
+    },
+    {
+      "type": "automation_opportunity",
+      "pattern": "font-face",
+      "frequency": 7113,
+      "recommendation": "Pattern 'font-face' appears 7113 times - consider automating processing"
+    },
+    {
+      "type": "automation_opportunity",
+      "pattern": "0in",
+      "frequency": 2920,
+      "recommendation": "Pattern '0in' appears 2920 times - consider automating processing"
+    },
+    {
+      "type": "automation_opportunity",
+      "pattern": "sans-serif",
+      "frequency": 2392,
+      "recommendation": "Pattern 'sans-serif' appears 2392 times - consider automating processing"
+    },
+    {
+      "type": "automation_opportunity",
+      "pattern": "0pt",
+      "frequency": 2203,
+      "recommendation": "Pattern '0pt' appears 2203 times - consider automating processing"
+    },
+    {
+      "type": "automation_opportunity",
+      "pattern": "font-size",
+      "frequency": 2131,
+      "recommendation": "Pattern 'font-size' appears 2131 times - consider automating processing"
+    },
+    {
+      "type": "automation_opportunity",
+      "pattern": "WordSection1",
+      "frequency": 1522,
+      "recommendation": "Pattern 'WordSection1' appears 1522 times - consider automating processing"
+    },
+    {
+      "type": "automation_opportunity",
+      "pattern": "text-decoration",
+      "frequency": 967,
+      "recommendation": "Pattern 'text-decoration' appears 967 times - consider automating processing"
+    },
+    {
+      "type": "automation_opportunity",
+      "pattern": "05pt",
+      "frequency": 960,
+      "recommendation": "Pattern '05pt' appears 960 times - consider automating processing"
+    },
+    {
+      "type": "automation_opportunity",
+      "pattern": "http-equiv",
+      "frequency": 913,
+      "recommendation": "Pattern 'http-equiv' appears 913 times - consider automating processing"
+    },
+    {
+      "type": "workflow_automation",
+      "workflow": "spa_order",
+      "frequency": 20,
+      "recommendation": "Workflow 'spa_order' detected 20 times - automate this flow"
+    },
+    {
+      "type": "email_routing",
+      "category": "system_generated",
+      "volume": 780,
+      "recommendation": "Route 'system_generated' emails (780) to specialized team"
+    },
+    {
+      "type": "email_routing",
+      "category": "general",
+      "volume": 119,
+      "recommendation": "Route 'general' emails (119) to specialized team"
+    },
+    {
+      "type": "email_routing",
+      "category": "agreement",
+      "volume": 84,
+      "recommendation": "Route 'agreement' emails (84) to specialized team"
+    },
+    {
+      "type": "pattern_diversity",
+      "unique_structures": 48,
+      "recommendation": "High pattern diversity detected - review for new business processes"
+    }
+  ]
+}

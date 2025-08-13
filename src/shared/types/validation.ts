@@ -1,9 +1,9 @@
 export interface ValidationResult {
   valid: boolean;
-  errors?: ValidationError[];
+  errors?: ValidationIssue[];
 }
 
-export interface ValidationError {
+export interface ValidationIssue {
   field: string;
   message: string;
   code?: string;

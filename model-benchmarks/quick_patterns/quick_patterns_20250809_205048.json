@@ -1,0 +1,974 @@
+{
+  "BD": {
+    "prefix": "BD",
+    "count": 19,
+    "unique_count": 16,
+    "avg_length": 10.7,
+    "min_length": 10,
+    "max_length": 11,
+    "likely_type": "quote",
+    "context_confidence": 0.5263157894736842,
+    "examples": [
+      "BD 4260862",
+      "BD#46467496",
+      "BD 46577322",
+      "BD 45504390",
+      "BD 46670178",
+      "BD#46257778",
+      "BD 46020855",
+      "BD#46467460",
+      "BD44469796",
+      "BD 46733126"
+    ]
+  },
+  "BID": {
+    "prefix": "BID",
+    "count": 8,
+    "unique_count": 4,
+    "avg_length": 9.0,
+    "min_length": 9,
+    "max_length": 9,
+    "likely_type": "bid",
+    "context_confidence": 1.0,
+    "examples": [
+      "BID012325",
+      "BID040225",
+      "BID040325",
+      "BID051625"
+    ]
+  },
+  "BO": {
+    "prefix": "BO",
+    "count": 57,
+    "unique_count": 52,
+    "avg_length": 12.0,
+    "min_length": 11,
+    "max_length": 12,
+    "likely_type": "order",
+    "context_confidence": 0.3508771929824561,
+    "examples": [
+      "BO 159351641",
+      "BO#159451044",
+      "BO 153243708",
+      "BO#159421960",
+      "BO#162616086",
+      "BO#160262270",
+      "BO#160572522",
+      "BO#161393577",
+      "BO#157897638",
+      "BO#161645130"
+    ]
+  },
+  "BP": {
+    "prefix": "BP",
+    "count": 3,
+    "unique_count": 1,
+    "avg_length": 9.0,
+    "min_length": 9,
+    "max_length": 9,
+    "likely_type": "unknown",
+    "context_confidence": 0.0,
+    "examples": [
+      "BP 014576"
+    ]
+  },
+  "CAS": {
+    "prefix": "CAS",
+    "count": 1187,
+    "unique_count": 506,
+    "avg_length": 10.0,
+    "min_length": 10,
+    "max_length": 10,
+    "likely_type": "deal",
+    "context_confidence": 0.3117101937657961,
+    "examples": [
+      "CAS-107073",
+      "CAS-082190",
+      "CAS-090889",
+      "CAS-075603",
+      "CAS-113340",
+      "CAS-078820",
+      "CAS-113872",
+      "CAS-112460",
+      "CAS-077668",
+      "CAS-097234"
+    ]
+  },
+  "CASE": {
+    "prefix": "CASE",
+    "count": 3,
+    "unique_count": 2,
+    "avg_length": 12.0,
+    "min_length": 12,
+    "max_length": 12,
+    "likely_type": "ticket",
+    "context_confidence": 1.0,
+    "examples": [
+      "CASE#3486228",
+      "CASE#3477959"
+    ]
+  },
+  "CPQ": {
+    "prefix": "CPQ",
+    "count": 22,
+    "unique_count": 22,
+    "avg_length": 11.0,
+    "min_length": 10,
+    "max_length": 11,
+    "likely_type": "quote",
+    "context_confidence": 0.7727272727272727,
+    "examples": [
+      "CPQ-2360749",
+      "CPQ-3030284",
+      "CPQ-2889440",
+      "CPQ-2778110",
+      "CPQ-2705656",
+      "CPQ-2480302",
+      "CPQ-2527237",
+      "CPQ1084490",
+      "CPQ-1340849",
+      "CPQ-2459919"
+    ]
+  },
+  "D": {
+    "prefix": "D",
+    "count": 8,
+    "unique_count": 7,
+    "avg_length": 12.1,
+    "min_length": 7,
+    "max_length": 14,
+    "likely_type": "order",
+    "context_confidence": 0.375,
+    "examples": [
+      "D-000000742223",
+      "D-000000747697",
+      "D-000000757784",
+      "D-000000747595",
+      "D128124",
+      "D1449549",
+      "D-000000739015"
+    ]
+  },
+  "DA": {
+    "prefix": "DA",
+    "count": 9,
+    "unique_count": 6,
+    "avg_length": 13.0,
+    "min_length": 13,
+    "max_length": 13,
+    "likely_type": "quote",
+    "context_confidence": 0.8888888888888888,
+    "examples": [
+      "DA-6136997977",
+      "DA-5110715558",
+      "DA-5510177154",
+      "DA-6096827894",
+      "DA-6242700003",
+      "DA-6047954348"
+    ]
+  },
+  "DR": {
+    "prefix": "DR",
+    "count": 79,
+    "unique_count": 51,
+    "avg_length": 8.8,
+    "min_length": 8,
+    "max_length": 12,
+    "likely_type": "quote",
+    "context_confidence": 0.24050632911392406,
+    "examples": [
+      "DR9140302",
+      "DR9139454",
+      "DR-051513",
+      "DR0295235",
+      "DR1334508",
+      "DR9139685",
+      "DR979320",
+      "DR9140407",
+      "DR9139852",
+      "DR1157260"
+    ]
+  },
+  "E": {
+    "prefix": "E",
+    "count": 4,
+    "unique_count": 4,
+    "avg_length": 9.0,
+    "min_length": 9,
+    "max_length": 9,
+    "likely_type": "order",
+    "context_confidence": 0.25,
+    "examples": [
+      "E64270112",
+      "E63550112",
+      "E64250112",
+      "E13339112"
+    ]
+  },
+  "ECPQ": {
+    "prefix": "ECPQ",
+    "count": 4,
+    "unique_count": 4,
+    "avg_length": 12.0,
+    "min_length": 12,
+    "max_length": 12,
+    "likely_type": "quote",
+    "context_confidence": 1.0,
+    "examples": [
+      "ECPQ-2892525",
+      "ECPQ-2920014",
+      "ECPQ-2848014",
+      "ECPQ-2874417"
+    ]
+  },
+  "F": {
+    "prefix": "F",
+    "count": 3,
+    "unique_count": 3,
+    "avg_length": 8.0,
+    "min_length": 8,
+    "max_length": 8,
+    "likely_type": "unknown",
+    "context_confidence": 0.0,
+    "examples": [
+      "F1623790",
+      "F1287660",
+      "F8991570"
+    ]
+  },
+  "FS": {
+    "prefix": "FS",
+    "count": 6,
+    "unique_count": 3,
+    "avg_length": 9.0,
+    "min_length": 9,
+    "max_length": 9,
+    "likely_type": "quote",
+    "context_confidence": 1.0,
+    "examples": [
+      "FS4938111",
+      "FS4928947",
+      "FS4993979"
+    ]
+  },
+  "FTQ": {
+    "prefix": "FTQ",
+    "count": 694,
+    "unique_count": 338,
+    "avg_length": 11.0,
+    "min_length": 10,
+    "max_length": 11,
+    "likely_type": "quote",
+    "context_confidence": 0.930835734870317,
+    "examples": [
+      "FTQ-3661265",
+      "FTQ-3630472",
+      "FTQ-3619694",
+      "FTQ-3826143",
+      "FTQ-3716195",
+      "FTQ-4029991",
+      "FTQ-3733882",
+      "FTQ-3660387",
+      "FTQ-3849772",
+      "FTQ-3778325"
+    ]
+  },
+  "H": {
+    "prefix": "H",
+    "count": 127,
+    "unique_count": 89,
+    "avg_length": 7.1,
+    "min_length": 7,
+    "max_length": 10,
+    "likely_type": "deal",
+    "context_confidence": 0.5511811023622047,
+    "examples": [
+      "H490123",
+      "H487067",
+      "H488157",
+      "H493785",
+      "H483420",
+      "H494183",
+      "H475776",
+      "H486759",
+      "H487992",
+      "H499906"
+    ]
+  },
+  "ID": {
+    "prefix": "ID",
+    "count": 18,
+    "unique_count": 16,
+    "avg_length": 10.9,
+    "min_length": 9,
+    "max_length": 12,
+    "likely_type": "order",
+    "context_confidence": 0.5555555555555556,
+    "examples": [
+      "ID 79276239",
+      "ID 364622",
+      "ID 149948316",
+      "ID 148079745",
+      "ID 53230024",
+      "ID 360029",
+      "ID 28474620",
+      "ID 5818762",
+      "ID 148279746",
+      "ID 148078815"
+    ]
+  },
+  "IN": {
+    "prefix": "IN",
+    "count": 4,
+    "unique_count": 4,
+    "avg_length": 9.8,
+    "min_length": 9,
+    "max_length": 10,
+    "likely_type": "order",
+    "context_confidence": 0.25,
+    "examples": [
+      "IN00795220",
+      "IN00830164",
+      "IN1101510",
+      "IN00790778"
+    ]
+  },
+  "MSO": {
+    "prefix": "MSO",
+    "count": 16,
+    "unique_count": 13,
+    "avg_length": 13.0,
+    "min_length": 13,
+    "max_length": 13,
+    "likely_type": "order",
+    "context_confidence": 0.25,
+    "examples": [
+      "MSO#156578632",
+      "MSO#161329169",
+      "MSO 162397185",
+      "MSO#161782635",
+      "MSO#160475785",
+      "MSO#160916123",
+      "MSO#162022952",
+      "MSO#162242395",
+      "MSO 162192891",
+      "MSO 162060700"
+    ]
+  },
+  "NUMERIC_PO": {
+    "prefix": "NUMERIC_PO",
+    "count": 2032,
+    "unique_count": 1545,
+    "avg_length": 8.9,
+    "min_length": 8,
+    "max_length": 10,
+    "likely_type": "unknown",
+    "context_confidence": 0.0,
+    "examples": [
+      "159784022",
+      "158014750",
+      "505679327",
+      "0000002640",
+      "505595797",
+      "155147681",
+      "0068970027",
+      "161912154",
+      "0070876531",
+      "0505656333"
+    ]
+  },
+  "NUMERIC_QUOTE": {
+    "prefix": "NUMERIC_QUOTE",
+    "count": 752,
+    "unique_count": 684,
+    "avg_length": 8.9,
+    "min_length": 8,
+    "max_length": 10,
+    "likely_type": "unknown",
+    "context_confidence": 0.0,
+    "examples": [
+      "149778178",
+      "0228135704",
+      "45623292",
+      "146846124",
+      "148835571",
+      "45636037",
+      "149994347",
+      "148594391",
+      "149372871",
+      "146006241"
+    ]
+  },
+  "NUMERIC_SO": {
+    "prefix": "NUMERIC_SO",
+    "count": 98,
+    "unique_count": 91,
+    "avg_length": 9.1,
+    "min_length": 8,
+    "max_length": 10,
+    "likely_type": "unknown",
+    "context_confidence": 0.0,
+    "examples": [
+      "0337785351",
+      "162242395",
+      "0337652603",
+      "160664486",
+      "159485911",
+      "0335058419",
+      "118657347",
+      "0335553168",
+      "161327772",
+      "1152297730"
+    ]
+  },
+  "O": {
+    "prefix": "O",
+    "count": 7,
+    "unique_count": 4,
+    "avg_length": 10.0,
+    "min_length": 9,
+    "max_length": 11,
+    "likely_type": "order",
+    "context_confidence": 0.7142857142857143,
+    "examples": [
+      "O 160676500",
+      "O 3117954",
+      "O000172232",
+      "O000260401"
+    ]
+  },
+  "OP": {
+    "prefix": "OP",
+    "count": 3,
+    "unique_count": 2,
+    "avg_length": 9.0,
+    "min_length": 9,
+    "max_length": 9,
+    "likely_type": "order",
+    "context_confidence": 0.6666666666666666,
+    "examples": [
+      "OP-241118",
+      "OP-250417"
+    ]
+  },
+  "OPP": {
+    "prefix": "OPP",
+    "count": 19,
+    "unique_count": 12,
+    "avg_length": 11.1,
+    "min_length": 11,
+    "max_length": 12,
+    "likely_type": "quote",
+    "context_confidence": 0.7368421052631579,
+    "examples": [
+      "OPP-1591375",
+      "OPP 4292529",
+      "OPP 4317543",
+      "OPP-1574269",
+      "OPP-1479753",
+      "OPP-1600977",
+      "OPP-00775766",
+      "OPP 4327461",
+      "OPP-1581188",
+      "OPP-1591960"
+    ]
+  },
+  "P": {
+    "prefix": "P",
+    "count": 15,
+    "unique_count": 8,
+    "avg_length": 10.2,
+    "min_length": 8,
+    "max_length": 12,
+    "likely_type": "order",
+    "context_confidence": 0.8666666666666667,
+    "examples": [
+      "P000079560",
+      "P000079486",
+      "P60000466852",
+      "P5207080",
+      "P60000507578",
+      "P222800977",
+      "P198383992",
+      "P000077396"
+    ]
+  },
+  "PA": {
+    "prefix": "PA",
+    "count": 49,
+    "unique_count": 26,
+    "avg_length": 8.0,
+    "min_length": 8,
+    "max_length": 8,
+    "likely_type": "order",
+    "context_confidence": 0.32653061224489793,
+    "examples": [
+      "PA254590",
+      "PA251468",
+      "PA253150",
+      "PA252825",
+      "PA251426",
+      "PA254577",
+      "PA251342",
+      "PA251205",
+      "PA253615",
+      "PA251147"
+    ]
+  },
+  "PO": {
+    "prefix": "PO",
+    "count": 678,
+    "unique_count": 526,
+    "avg_length": 11.6,
+    "min_length": 9,
+    "max_length": 13,
+    "likely_type": "order",
+    "context_confidence": 1.0,
+    "examples": [
+      "PO 505671969",
+      "PO 505652239",
+      "PO 505725220",
+      "PO 505244314",
+      "PO 68785760",
+      "PO#37576934",
+      "PO 0504759498",
+      "PO 70884093",
+      "PO#37668831",
+      "PO 68907188"
+    ]
+  },
+  "PR": {
+    "prefix": "PR",
+    "count": 6,
+    "unique_count": 4,
+    "avg_length": 9.8,
+    "min_length": 8,
+    "max_length": 11,
+    "likely_type": "quote",
+    "context_confidence": 0.5,
+    "examples": [
+      "PR 17641393",
+      "PR 2504530",
+      "PR185862",
+      "PR-4069907"
+    ]
+  },
+  "PROC": {
+    "prefix": "PROC",
+    "count": 3,
+    "unique_count": 2,
+    "avg_length": 11.0,
+    "min_length": 11,
+    "max_length": 11,
+    "likely_type": "order",
+    "context_confidence": 0.3333333333333333,
+    "examples": [
+      "PROC0008813",
+      "PROC0002262"
+    ]
+  },
+  "Q": {
+    "prefix": "Q",
+    "count": 120,
+    "unique_count": 97,
+    "avg_length": 8.9,
+    "min_length": 8,
+    "max_length": 13,
+    "likely_type": "quote",
+    "context_confidence": 0.38333333333333336,
+    "examples": [
+      "Q00233609",
+      "Q-530486",
+      "Q-533757",
+      "Q-972225",
+      "Q-01022410464",
+      "Q-125005",
+      "Q-463912",
+      "Q-533660",
+      "Q-500424",
+      "Q00246762"
+    ]
+  },
+  "QT": {
+    "prefix": "QT",
+    "count": 3,
+    "unique_count": 1,
+    "avg_length": 8.0,
+    "min_length": 8,
+    "max_length": 8,
+    "likely_type": "order",
+    "context_confidence": 1.0,
+    "examples": [
+      "QT246781"
+    ]
+  },
+  "R": {
+    "prefix": "R",
+    "count": 5,
+    "unique_count": 4,
+    "avg_length": 10.8,
+    "min_length": 9,
+    "max_length": 14,
+    "likely_type": "unknown",
+    "context_confidence": 0.0,
+    "examples": [
+      "R13339802",
+      "R006609661",
+      "R006659231",
+      "R-000000742031"
+    ]
+  },
+  "RB": {
+    "prefix": "RB",
+    "count": 6,
+    "unique_count": 4,
+    "avg_length": 9.0,
+    "min_length": 9,
+    "max_length": 9,
+    "likely_type": "quote",
+    "context_confidence": 0.16666666666666666,
+    "examples": [
+      "RB-494649",
+      "RB-499720",
+      "RB-499813",
+      "RB-500655"
+    ]
+  },
+  "REGE": {
+    "prefix": "REGE",
+    "count": 5,
+    "unique_count": 2,
+    "avg_length": 15.0,
+    "min_length": 15,
+    "max_length": 15,
+    "likely_type": "deal",
+    "context_confidence": 1.0,
+    "examples": [
+      "REGE-0019569761",
+      "REGE-0017684081"
+    ]
+  },
+  "RFQ": {
+    "prefix": "RFQ",
+    "count": 5,
+    "unique_count": 5,
+    "avg_length": 11.4,
+    "min_length": 9,
+    "max_length": 14,
+    "likely_type": "unknown",
+    "context_confidence": 0.0,
+    "examples": [
+      "RFQ 1000048506",
+      "RFQ 5600009156",
+      "RFQ340866",
+      "RFQ 2807024",
+      "RFQ250045"
+    ]
+  },
+  "RITM": {
+    "prefix": "RITM",
+    "count": 5,
+    "unique_count": 4,
+    "avg_length": 12.2,
+    "min_length": 11,
+    "max_length": 16,
+    "likely_type": "quote",
+    "context_confidence": 0.4,
+    "examples": [
+      "RITM2683858",
+      "RITM000002664639",
+      "RITM1693921",
+      "RITM2808817"
+    ]
+  },
+  "RQ": {
+    "prefix": "RQ",
+    "count": 13,
+    "unique_count": 12,
+    "avg_length": 10.9,
+    "min_length": 10,
+    "max_length": 11,
+    "likely_type": "order",
+    "context_confidence": 0.8461538461538461,
+    "examples": [
+      "RQ-0148542",
+      "RQ 56477951",
+      "RQ 56486803",
+      "RQ 56474720",
+      "RQ 56481480",
+      "RQ 56487135",
+      "RQ 56466821",
+      "RQ 56460965",
+      "RQ 56473572",
+      "RQ 56483167"
+    ]
+  },
+  "SCM": {
+    "prefix": "SCM",
+    "count": 46,
+    "unique_count": 34,
+    "avg_length": 12.0,
+    "min_length": 12,
+    "max_length": 12,
+    "likely_type": "spa",
+    "context_confidence": 0.6956521739130435,
+    "examples": [
+      "SCM 13798217",
+      "SCM 13809776",
+      "SCM#14455129",
+      "SCM 13347094",
+      "SCM#13812962",
+      "SCM#14523086",
+      "SCM#14430412",
+      "SCM#15034017",
+      "SCM 14062126",
+      "SCM 14722964"
+    ]
+  },
+  "SKU": {
+    "prefix": "SKU",
+    "count": 7,
+    "unique_count": 6,
+    "avg_length": 11.3,
+    "min_length": 11,
+    "max_length": 12,
+    "likely_type": "order",
+    "context_confidence": 0.2857142857142857,
+    "examples": [
+      "SKU 8882498",
+      "SKU 14557079",
+      "SKU#5658502",
+      "SKU 9044211",
+      "SKU 14557044",
+      "SKU#9720669"
+    ]
+  },
+  "SO": {
+    "prefix": "SO",
+    "count": 113,
+    "unique_count": 97,
+    "avg_length": 12.1,
+    "min_length": 10,
+    "max_length": 13,
+    "likely_type": "order",
+    "context_confidence": 0.7964601769911505,
+    "examples": [
+      "SO 157370165",
+      "SO 0337258532",
+      "SO 162086784",
+      "SO 337688993",
+      "SO#160581697",
+      "SO 161384836",
+      "SO#0335202418",
+      "SO 160263700",
+      "SO 161063653",
+      "SO#162221861"
+    ]
+  },
+  "SP": {
+    "prefix": "SP",
+    "count": 27,
+    "unique_count": 13,
+    "avg_length": 11.0,
+    "min_length": 11,
+    "max_length": 11,
+    "likely_type": "spa",
+    "context_confidence": 0.6666666666666666,
+    "examples": [
+      "SP-00193446",
+      "SP-00182562",
+      "SP-00137752",
+      "SP-00194566",
+      "SP-00126039",
+      "SP-00187191",
+      "SP-00184135",
+      "SP-00183542",
+      "SP-00099348",
+      "SP-00185882"
+    ]
+  },
+  "SPA": {
+    "prefix": "SPA",
+    "count": 33,
+    "unique_count": 25,
+    "avg_length": 11.0,
+    "min_length": 10,
+    "max_length": 11,
+    "likely_type": "spa",
+    "context_confidence": 1.0,
+    "examples": [
+      "SPA#6605041",
+      "SPA#6661819",
+      "SPA#6736151",
+      "SPA#6427734",
+      "SPA 6423990",
+      "SPA#6795242",
+      "SPA#6596333",
+      "SPA#6748502",
+      "SPA 6832119",
+      "SPA#6879161"
+    ]
+  },
+  "SPR": {
+    "prefix": "SPR",
+    "count": 8,
+    "unique_count": 3,
+    "avg_length": 11.0,
+    "min_length": 11,
+    "max_length": 11,
+    "likely_type": "quote",
+    "context_confidence": 0.75,
+    "examples": [
+      "SPR-0582815",
+      "SPR-0589212",
+      "SPR-0588016"
+    ]
+  },
+  "TDSYN": {
+    "prefix": "TDSYN",
+    "count": 3,
+    "unique_count": 1,
+    "avg_length": 15.0,
+    "min_length": 15,
+    "max_length": 15,
+    "likely_type": "quote",
+    "context_confidence": 1.0,
+    "examples": [
+      "TDSYN 146714542"
+    ]
+  },
+  "TPID": {
+    "prefix": "TPID",
+    "count": 48,
+    "unique_count": 42,
+    "avg_length": 12.0,
+    "min_length": 11,
+    "max_length": 13,
+    "likely_type": "spa",
+    "context_confidence": 0.4791666666666667,
+    "examples": [
+      "TPID 2266519",
+      "TPID 14787692",
+      "TPID 25903285",
+      "TPID 5442098",
+      "TPID 628853",
+      "TPID 13794770",
+      "TPID 7819803",
+      "TPID 642283",
+      "TPID 16040553",
+      "TPID 1314362"
+    ]
+  },
+  "TS": {
+    "prefix": "TS",
+    "count": 85,
+    "unique_count": 57,
+    "avg_length": 10.0,
+    "min_length": 10,
+    "max_length": 10,
+    "likely_type": "quote",
+    "context_confidence": 0.3058823529411765,
+    "examples": [
+      "TS-1818562",
+      "TS-1784667",
+      "TS-1778236",
+      "TS-1827954",
+      "TS-1808663",
+      "TS-1786990",
+      "TS-1777765",
+      "TS-1796137",
+      "TS-1809481",
+      "TS-1767957"
+    ]
+  },
+  "USA": {
+    "prefix": "USA",
+    "count": 3,
+    "unique_count": 2,
+    "avg_length": 11.5,
+    "min_length": 9,
+    "max_length": 14,
+    "likely_type": "order",
+    "context_confidence": 0.6666666666666666,
+    "examples": [
+      "USA254198",
+      "USA 0010352150"
+    ]
+  },
+  "VCB": {
+    "prefix": "VCB",
+    "count": 6,
+    "unique_count": 6,
+    "avg_length": 12.0,
+    "min_length": 12,
+    "max_length": 12,
+    "likely_type": "quote",
+    "context_confidence": 0.16666666666666666,
+    "examples": [
+      "VCB-00070126",
+      "VCB-00069887",
+      "VCB-00066172",
+      "VCB-00063978",
+      "VCB-00068611",
+      "VCB-00063979"
+    ]
+  },
+  "VPO": {
+    "prefix": "VPO",
+    "count": 12,
+    "unique_count": 12,
+    "avg_length": 12.0,
+    "min_length": 12,
+    "max_length": 12,
+    "likely_type": "order",
+    "context_confidence": 1.0,
+    "examples": [
+      "VPO 35255668",
+      "VPO#35829467",
+      "VPO 35626980",
+      "VPO#35468718",
+      "VPO 36502191",
+      "VPO 36412164",
+      "VPO#33762332",
+      "VPO 37461070",
+      "VPO 37671126",
+      "VPO 35665788"
+    ]
+  },
+  "WQ": {
+    "prefix": "WQ",
+    "count": 339,
+    "unique_count": 316,
+    "avg_length": 11.0,
+    "min_length": 8,
+    "max_length": 12,
+    "likely_type": "quote",
+    "context_confidence": 0.8495575221238938,
+    "examples": [
+      "WQ148073238",
+      "WQ146036391",
+      "WQ149149683",
+      "WQ149728886",
+      "WQ149133181",
+      "WQ148981490",
+      "WQ149321630",
+      "WQ149732356",
+      "WQ146599302",
+      "WQ147855159"
+    ]
+  },
+  "X": {
+    "prefix": "X",
+    "count": 3,
+    "unique_count": 2,
+    "avg_length": 8.0,
+    "min_length": 7,
+    "max_length": 9,
+    "likely_type": "unknown",
+    "context_confidence": 0.0,
+    "examples": [
+      "X 4102169",
+      "X821404"
+    ]
+  }
+}

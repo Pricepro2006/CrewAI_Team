@@ -29,31 +29,32 @@ import {
   ChevronDown,
   Info,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
-import { Button } from '../../../components/ui/button.js';
-import { Badge } from '../../../components/ui/badge.js';
-import { Input } from '../../../components/ui/input.js';
-import { ScrollArea } from '../../../components/ui/scroll-area.js';
-import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar.js';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Input } from '../../../components/ui/input';
+import { ScrollArea } from '../../../components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../components/ui/dropdown-menu.js';
+} from '../../../components/ui/dropdown-menu';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../components/ui/tooltip.js';
-import { Separator } from '../../../components/ui/separator.js';
-import { cn } from '../../lib/utils.js';
-import { formatPrice } from '../../lib/utils.js';
-import { useCart } from '../../hooks/useCart.js';
-import { useGroceryStore } from '../../store/groceryStore.js';
-import type { WalmartProduct } from '../../../types/walmart-grocery.js';
+} from '../../../components/ui/tooltip';
+import { Separator } from '../../../components/ui/separator';
+import { cn } from '../../lib/utils';
+import { formatPrice } from '../../lib/utils';
+import { useCart } from '../../hooks/useCart';
+import { useGroceryStore } from '../../store/groceryStore';
+import type { WalmartProduct } from '../../../types/walmart-grocery';
+import { normalizePrice, getEffectivePrice, isOnSale, calculateSavings } from '../../../utils/walmart-price';
 
 interface WalmartChatInterfaceProps {
   onProductSelect?: (product: WalmartProduct) => void;
@@ -108,6 +109,46 @@ const suggestionPrompts = [
   'Track my recent order',
 ];
 
+// Helper to create mock WalmartProduct
+const createMockProduct = (
+  id: string,
+  name: string,
+  regularPrice: number,
+  salePrice: number,
+  categoryName: string,
+  brand: string = 'Generic'
+): WalmartProduct => ({
+  id,
+  walmartId: id,
+  name,
+  brand,
+  category: {
+    id: `cat-${categoryName.toLowerCase()}`,
+    name: categoryName,
+    path: ['Grocery', categoryName],
+    level: 2,
+  },
+  description: `${name} - ${brand}`,
+  price: {
+    currency: 'USD',
+    regular: regularPrice,
+    sale: salePrice,
+  },
+  images: [],
+  availability: {
+    inStock: true,
+    stockLevel: "in_stock" as const,
+    quantity: 100,
+  },
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  metadata: {
+    source: "manual" as const,
+    dealEligible: salePrice < regularPrice,
+    tags: [categoryName.toLowerCase(), brand.toLowerCase()],
+  },
+});
+
 // Simulated AI responses
 const generateAssistantResponse = (userMessage: string): Partial<ChatMessage> => {
   const lowerMessage = userMessage.toLowerCase();
@@ -116,26 +157,8 @@ const generateAssistantResponse = (userMessage: string): Partial<ChatMessage> =>
     return {
       content: 'I found some great deals for you today! Here are the top products on sale:',
       products: [
-        {
-          id: 'deal-1',
-          name: 'Organic Bananas',
-          price: 0.49,
-          originalPrice: 0.69,
-          category: 'Produce',
-          unit: 'lb',
-          inStock: true,
-          thumbnailUrl: '',
-        },
-        {
-          id: 'deal-2',
-          name: 'Whole Milk Gallon',
-          price: 2.99,
-          originalPrice: 3.99,
-          category: 'Dairy',
-          unit: 'gallon',
-          inStock: true,
-          thumbnailUrl: '',
-        },
+        createMockProduct('deal-1', 'Organic Bananas', 0.69, 0.49, 'Produce', 'Fresh Farms'),
+        createMockProduct('deal-2', 'Whole Milk Gallon', 3.99, 2.99, 'Dairy', 'Great Value'),
       ],
       suggestions: ['Show me more deals', 'Add all to cart', 'Filter by category'],
     };
@@ -145,22 +168,8 @@ const generateAssistantResponse = (userMessage: string): Partial<ChatMessage> =>
     return {
       content: 'Based on your purchase history, here are items you might want to reorder:',
       products: [
-        {
-          id: 'reorder-1',
-          name: 'Eggs - Large, Dozen',
-          price: 3.49,
-          category: 'Dairy',
-          unit: 'dozen',
-          inStock: true,
-        },
-        {
-          id: 'reorder-2',
-          name: 'Bread - Whole Wheat',
-          price: 2.99,
-          category: 'Bakery',
-          unit: 'loaf',
-          inStock: true,
-        },
+        createMockProduct('reorder-1', 'Eggs - Large, Dozen', 3.49, 3.49, 'Dairy', 'Farm Fresh'),
+        createMockProduct('reorder-2', 'Bread - Whole Wheat', 2.99, 2.99, 'Bakery', 'Nature\'s Own'),
       ],
       actions: [
         {
@@ -235,14 +244,14 @@ const MessageContent: React.FC<{ message: ChatMessage }> = ({ message }) => {
               <div className="flex-1">
                 <p className="font-medium text-sm">{product.name}</p>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{formatPrice(product.price)}</span>
-                  {product.originalPrice && product.originalPrice > product.price && (
+                  <span className="text-sm font-medium">{formatPrice(getEffectivePrice(product.price))}</span>
+                  {isOnSale(product.price) && (
                     <>
                       <span className="text-xs text-muted-foreground line-through">
-                        {formatPrice(product.originalPrice)}
+                        {formatPrice(normalizePrice(product.price).regular)}
                       </span>
                       <Badge variant="destructive" className="text-xs">
-                        Save {formatPrice(product.originalPrice - product.price)}
+                        Save {formatPrice(calculateSavings(product.price))}
                       </Badge>
                     </>
                   )}

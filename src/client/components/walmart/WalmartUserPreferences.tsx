@@ -32,13 +32,13 @@ import {
   Milk,
   Egg,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '../../../components/ui/card.js';
-import { Button } from '../../../components/ui/button.js';
-import { Badge } from '../../../components/ui/badge.js';
-import { Input } from '../../../components/ui/input.js';
-import { Label } from '../../../components/ui/label.js';
-import { Switch } from '../../../components/ui/switch.js';
-import { Separator } from '../../../components/ui/separator.js';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
+import { Switch } from '../../../components/ui/switch';
+import { Separator } from '../../../components/ui/separator';
 import {
   Dialog,
   DialogContent,
@@ -46,26 +46,26 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog.js';
+} from '../../../components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select.js';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
-import { Checkbox } from '../../../components/ui/checkbox.js';
-import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group.js';
+} from '../../../components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import { Checkbox } from '../../../components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '../../../components/ui/accordion.js';
-import { cn } from '../../lib/utils.js';
-import { useGroceryStore } from '../../store/groceryStore.js';
-import type { UserPreferences } from '../../../types/walmart-grocery.js';
+} from '../../../components/ui/accordion';
+import { cn } from '../../lib/utils';
+import { useGroceryStore } from '../../store/groceryStore';
+import type { UserPreferences, DietaryFilter, AllergenType } from '../../../types/walmart-grocery';
 
 interface WalmartUserPreferencesProps {
   onSavePreferences?: (preferences: UserPreferences) => void;
@@ -75,7 +75,7 @@ interface WalmartUserPreferencesProps {
 }
 
 interface DietaryOption {
-  id: string;
+  id: DietaryFilter;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   description?: string;
@@ -91,12 +91,11 @@ interface NotificationSetting {
 const dietaryOptions: DietaryOption[] = [
   { id: 'vegetarian', label: 'Vegetarian', icon: Leaf, description: 'No meat or fish' },
   { id: 'vegan', label: 'Vegan', icon: Leaf, description: 'No animal products' },
-  { id: 'gluten-free', label: 'Gluten-Free', icon: Wheat, description: 'No gluten' },
-  { id: 'dairy-free', label: 'Dairy-Free', icon: Milk, description: 'No dairy products' },
-  { id: 'nut-free', label: 'Nut-Free', icon: Ban, description: 'No tree nuts or peanuts' },
+  { id: 'gluten_free', label: 'Gluten-Free', icon: Wheat, description: 'No gluten' },
+  { id: 'organic', label: 'Organic', icon: Milk, description: 'Certified organic products' },
   { id: 'kosher', label: 'Kosher', icon: Star, description: 'Kosher certified' },
   { id: 'halal', label: 'Halal', icon: Star, description: 'Halal certified' },
-  { id: 'pescatarian', label: 'Pescatarian', icon: Fish, description: 'Vegetarian + fish' },
+  { id: 'non_gmo', label: 'Non-GMO', icon: Ban, description: 'Non-GMO verified' },
 ];
 
 const allergenOptions = [
@@ -144,18 +143,20 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
   };
   
   const handleDietaryToggle = (dietId: string) => {
+    const dietaryFilter = dietId as DietaryFilter;
     const current = editedPreferences.dietaryRestrictions || [];
-    const updated = current.includes(dietId)
-      ? current.filter(d => d !== dietId)
-      : [...current, dietId];
+    const updated = current.includes(dietaryFilter)
+      ? current.filter(d => d !== dietaryFilter)
+      : [...current, dietaryFilter];
     handlePreferenceChange('dietaryRestrictions', updated);
   };
   
   const handleAllergenToggle = (allergen: string) => {
+    const allergenType = allergen.toLowerCase().replace(' ', '_') as AllergenType;
     const current = editedPreferences.allergens || [];
-    const updated = current.includes(allergen)
-      ? current.filter(a => a !== allergen)
-      : [...current, allergen];
+    const updated = current.includes(allergenType)
+      ? current.filter(a => a !== allergenType)
+      : [...current, allergenType];
     handlePreferenceChange('allergens', updated);
   };
   
@@ -343,7 +344,7 @@ export const WalmartUserPreferences: React.FC<WalmartUserPreferencesProps> = ({
                       <div key={allergen} className="flex items-center space-x-2">
                         <Checkbox
                           id={allergen}
-                          checked={editedPreferences.allergens?.includes(allergen) || false}
+                          checked={editedPreferences.allergens?.includes(allergen.toLowerCase().replace(' ', '_') as AllergenType) || false}
                           onCheckedChange={() => handleAllergenToggle(allergen)}
                         />
                         <Label

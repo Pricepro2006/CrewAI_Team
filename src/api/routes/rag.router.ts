@@ -54,8 +54,10 @@ const upload = multer({
 });
 
 // Middleware to handle file uploads in tRPC context
-export const fileUploadMiddleware: ReturnType<typeof upload.single> = upload.single("file");
-export const multiFileUploadMiddleware: ReturnType<typeof upload.array> = upload.array("files", 10);
+export const fileUploadMiddleware: ReturnType<typeof upload.single> =
+  upload.single("file");
+export const multiFileUploadMiddleware: ReturnType<typeof upload.array> =
+  upload.array("files", 10);
 
 export const ragRouter: Router<any> = router({
   // Upload a document
@@ -143,7 +145,7 @@ export const ragRouter: Router<any> = router({
   // Get RAG statistics
   stats: publicProcedure.query(async ({ ctx }) => {
     const stats = await ctx.ragSystem.getStats();
-    
+
     // Map the stats to match what the Dashboard expects
     return {
       ...stats,

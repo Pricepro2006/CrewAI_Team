@@ -5,41 +5,44 @@
  */
 
 // Core System Types
-export * from './core.js';
-export * from './api.js';
-export * from './database.js';
-export * from './websocket.js';
-export * from './agents.js';
-export * from './monitoring.js';
-export * from './validation.js';
-export * from './email.js';
-export * from './orchestration.js';
-export * from './rag.js';
-export * from './auth.js';
-export * from './errors.js';
-export * from './events.js';
+export * from "./core.js";
+export * from "./api.js";
+export * from "./database.js";
+export * from "./websocket.js";
+export * from "./agents.js";
+export * from "./monitoring.js";
+export * from "./validation.js";
+export * from "./email.js";
+export * from "./orchestration.js";
+export * from "./rag.js";
+export * from "./auth.js";
+export * from "./errors.js";
+export * from "./events.js";
 
 // Re-export common utility types
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
-export type RequiredFields<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
+export type RequiredFields<T, K extends keyof T> = Omit<T, K> &
+  Required<Pick<T, K>>;
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
 export type DeepRequired<T> = {
-  [P in keyof T]-?: T[P] extends object | undefined ? DeepRequired<Required<T[P]>> : T[P];
+  [P in keyof T]-?: T[P] extends object | undefined
+    ? DeepRequired<Required<T[P]>>
+    : T[P];
 };
 
 // Type guards and validation utilities
 export function isString(value: unknown): value is string {
-  return typeof value === 'string';
+  return typeof value === "string";
 }
 
 export function isNumber(value: unknown): value is number {
-  return typeof value === 'number' && !isNaN(value);
+  return typeof value === "number" && !isNaN(value);
 }
 
 export function isBoolean(value: unknown): value is boolean {
-  return typeof value === 'boolean';
+  return typeof value === "boolean";
 }
 
 export function isArray<T>(value: unknown): value is T[] {
@@ -47,7 +50,7 @@ export function isArray<T>(value: unknown): value is T[] {
 }
 
 export function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export function isDefined<T>(value: T | undefined | null): value is T {
@@ -67,8 +70,10 @@ export interface TimestampedEntity {
 export interface PaginationRequest {
   page: number;
   pageSize: number;
+  limit?: number;
+  offset?: number;
   sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
+  sortDirection?: "asc" | "desc";
 }
 
 export interface PaginationResponse<T> {
@@ -109,8 +114,8 @@ export interface ResponseMetadata {
 
 // Configuration types
 export interface EnvironmentConfig {
-  NODE_ENV: 'development' | 'production' | 'test' | 'staging';
-  LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error';
+  NODE_ENV: "development" | "production" | "test" | "staging";
+  LOG_LEVEL: "debug" | "info" | "warn" | "error";
   PORT: number;
   DATABASE_URL?: string;
   CORS_ORIGINS: string[];
@@ -118,7 +123,7 @@ export interface EnvironmentConfig {
 
 // Health check types
 export interface HealthStatus {
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: "healthy" | "degraded" | "unhealthy";
   timestamp: Timestamp;
   services: Record<string, ServiceHealth>;
   metadata?: {
@@ -130,7 +135,7 @@ export interface HealthStatus {
 }
 
 export interface ServiceHealth {
-  status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
+  status: "healthy" | "degraded" | "unhealthy" | "unknown";
   responseTime?: number;
   error?: string;
   metadata?: Record<string, unknown>;

@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   XMarkIcon,
   PaperAirplaneIcon,
   PaperClipIcon,
   EyeIcon,
   DocumentTextIcon,
-  UserPlusIcon
-} from '@heroicons/react/24/outline';
+  UserPlusIcon,
+} from "@heroicons/react/24/outline";
 
 export interface EmailComposeProps {
   onClose: () => void;
@@ -27,7 +27,7 @@ export interface EmailData {
   subject: string;
   body: string;
   attachments?: File[];
-  priority?: 'low' | 'normal' | 'high';
+  priority?: "low" | "normal" | "high";
   template?: string;
 }
 
@@ -35,14 +35,14 @@ export const EmailCompose: React.FC<EmailComposeProps> = ({
   onClose,
   onSend,
   replyTo,
-  template
+  template,
 }) => {
   const [emailData, setEmailData] = useState<EmailData>({
     to: replyTo ? [replyTo.from] : [],
-    subject: replyTo ? `Re: ${replyTo.subject}` : '',
-    body: '',
-    priority: 'normal',
-    attachments: []
+    subject: replyTo ? `Re: ${replyTo.subject}` : "",
+    body: "",
+    priority: "normal",
+    attachments: [],
   });
 
   const [showPreview, setShowPreview] = useState(false);
@@ -51,9 +51,9 @@ export const EmailCompose: React.FC<EmailComposeProps> = ({
   // Email templates for TD SYNNEX workflows
   const emailTemplates = [
     {
-      id: 'order-confirmation',
-      name: 'Order Confirmation',
-      subject: 'Order Confirmation - PO #{PO_NUMBER}',
+      id: "order-confirmation",
+      name: "Order Confirmation",
+      subject: "Order Confirmation - PO #{PO_NUMBER}",
       body: `Dear {CUSTOMER_NAME},
 
 Thank you for your order. We have received your purchase order #{PO_NUMBER} and are processing it.
@@ -68,12 +68,12 @@ Your order is now in our system and will be processed within 2-4 business hours.
 If you have any questions, please don't hesitate to contact us.
 
 Best regards,
-TD SYNNEX Team`
+TD SYNNEX Team`,
     },
     {
-      id: 'quote-response',
-      name: 'Quote Response',
-      subject: 'Quote Response - {QUOTE_NUMBER}',
+      id: "quote-response",
+      name: "Quote Response",
+      subject: "Quote Response - {QUOTE_NUMBER}",
       body: `Dear {CUSTOMER_NAME},
 
 Thank you for your quote request. Please find the requested pricing information below:
@@ -88,12 +88,12 @@ This quote is valid for 30 days from the date of issue. Please let us know if yo
 We look forward to your business.
 
 Best regards,
-TD SYNNEX Sales Team`
+TD SYNNEX Sales Team`,
     },
     {
-      id: 'support-response',
-      name: 'Support Response',
-      subject: 'Support Case Update - {CASE_NUMBER}',
+      id: "support-response",
+      name: "Support Response",
+      subject: "Support Case Update - {CASE_NUMBER}",
       body: `Dear {CUSTOMER_NAME},
 
 Thank you for contacting TD SYNNEX support. We have received your case and assigned it the reference number {CASE_NUMBER}.
@@ -108,62 +108,75 @@ Our technical team is reviewing your request and will respond within {SLA_TIME}.
 If you have any urgent questions, please contact us at support@tdsynnex.com.
 
 Best regards,
-TD SYNNEX Support Team`
-    }
+TD SYNNEX Support Team`,
+    },
   ];
 
   const handleInputChange = (field: keyof EmailData, value: any) => {
-    setEmailData(prev => ({
+    setEmailData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleToChange = (value: string) => {
-    const emails = value.split(',').map(email => email.trim()).filter(email => email);
-    handleInputChange('to', emails);
+    const emails = value
+      .split(",")
+      .map((email) => email.trim())
+      .filter((email) => email);
+    handleInputChange("to", emails);
   };
 
   const handleCcChange = (value: string) => {
-    const emails = value.split(',').map(email => email.trim()).filter(email => email);
-    handleInputChange('cc', emails);
+    const emails = value
+      .split(",")
+      .map((email) => email.trim())
+      .filter((email) => email);
+    handleInputChange("cc", emails);
   };
 
   const handleBccChange = (value: string) => {
-    const emails = value.split(',').map(email => email.trim()).filter(email => email);
-    handleInputChange('bcc', emails);
+    const emails = value
+      .split(",")
+      .map((email) => email.trim())
+      .filter((email) => email);
+    handleInputChange("bcc", emails);
   };
 
   const handleTemplateSelect = (templateId: string) => {
-    const template = emailTemplates.find(t => t.id === templateId);
+    const template = emailTemplates.find((t) => t.id === templateId);
     if (template) {
-      setEmailData(prev => ({
+      setEmailData((prev) => ({
         ...prev,
         subject: template.subject,
         body: template.body,
-        template: templateId
+        template: templateId,
       }));
     }
   };
 
   const handleAttachmentAdd = (files: FileList) => {
     const newAttachments = Array.from(files);
-    setEmailData(prev => ({
+    setEmailData((prev) => ({
       ...prev,
-      attachments: [...(prev.attachments || []), ...newAttachments]
+      attachments: [...(prev.attachments || []), ...newAttachments],
     }));
   };
 
   const handleAttachmentRemove = (index: number) => {
-    setEmailData(prev => ({
+    setEmailData((prev) => ({
       ...prev,
-      attachments: prev.attachments?.filter((_, i) => i !== index)
+      attachments: prev.attachments?.filter((_, i) => i !== index),
     }));
   };
 
   const handleSend = async () => {
-    if (!emailData.to.length || !emailData.subject.trim() || !emailData.body.trim()) {
-      alert('Please fill in all required fields');
+    if (
+      !emailData.to.length ||
+      !emailData.subject.trim() ||
+      !emailData.body.trim()
+    ) {
+      alert("Please fill in all required fields");
       return;
     }
 
@@ -171,8 +184,8 @@ TD SYNNEX Support Team`
     try {
       await onSend(emailData);
     } catch (error) {
-      console.error('Failed to send email:', error);
-      alert('Failed to send email. Please try again.');
+      console.error("Failed to send email:", error);
+      alert("Failed to send email. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -186,7 +199,7 @@ TD SYNNEX Support Team`
   const isValidForm = () => {
     return (
       emailData.to.length > 0 &&
-      emailData.to.every(email => validateEmail(email)) &&
+      emailData.to.every((email) => validateEmail(email)) &&
       emailData.subject.trim() &&
       emailData.body.trim()
     );
@@ -195,14 +208,11 @@ TD SYNNEX Support Team`
   return (
     <div className="email-compose">
       <div className="email-compose__overlay" onClick={onClose} />
-      
+
       <div className="email-compose__modal">
         <div className="email-compose__header">
           <h2>Compose Email</h2>
-          <button
-            onClick={onClose}
-            className="email-compose__close"
-          >
+          <button onClick={onClose} className="email-compose__close">
             <XMarkIcon className="email-compose__close-icon" />
           </button>
         </div>
@@ -215,12 +225,12 @@ TD SYNNEX Support Team`
               Template
             </label>
             <select
-              value={emailData.template || ''}
+              value={emailData.template || ""}
               onChange={(e) => handleTemplateSelect(e.target.value)}
               className="email-compose__select"
             >
               <option value="">Select Template</option>
-              {emailTemplates.map(template => (
+              {emailTemplates.map((template) => (
                 <option key={template.id} value={template.id}>
                   {template.name}
                 </option>
@@ -237,7 +247,7 @@ TD SYNNEX Support Team`
               </label>
               <input
                 type="text"
-                value={emailData.to.join(', ')}
+                value={emailData.to.join(", ")}
                 onChange={(e) => handleToChange(e.target.value)}
                 placeholder="Enter email addresses separated by commas"
                 className="email-compose__input"
@@ -249,7 +259,7 @@ TD SYNNEX Support Team`
               <label className="email-compose__label">CC</label>
               <input
                 type="text"
-                value={(emailData.cc || []).join(', ')}
+                value={(emailData.cc || []).join(", ")}
                 onChange={(e) => handleCcChange(e.target.value)}
                 placeholder="Enter CC email addresses"
                 className="email-compose__input"
@@ -260,7 +270,7 @@ TD SYNNEX Support Team`
               <label className="email-compose__label">BCC</label>
               <input
                 type="text"
-                value={(emailData.bcc || []).join(', ')}
+                value={(emailData.bcc || []).join(", ")}
                 onChange={(e) => handleBccChange(e.target.value)}
                 placeholder="Enter BCC email addresses"
                 className="email-compose__input"
@@ -275,7 +285,7 @@ TD SYNNEX Support Team`
               <input
                 type="text"
                 value={emailData.subject}
-                onChange={(e) => handleInputChange('subject', e.target.value)}
+                onChange={(e) => handleInputChange("subject", e.target.value)}
                 placeholder="Enter email subject"
                 className="email-compose__input"
                 required
@@ -286,7 +296,7 @@ TD SYNNEX Support Team`
               <label className="email-compose__label">Priority</label>
               <select
                 value={emailData.priority}
-                onChange={(e) => handleInputChange('priority', e.target.value)}
+                onChange={(e) => handleInputChange("priority", e.target.value)}
                 className="email-compose__select"
               >
                 <option value="low">Low</option>
@@ -305,14 +315,14 @@ TD SYNNEX Support Team`
                 className="email-compose__preview-btn"
               >
                 <EyeIcon className="email-compose__preview-icon" />
-                {showPreview ? 'Edit' : 'Preview'}
+                {showPreview ? "Edit" : "Preview"}
               </button>
             </div>
 
             {showPreview ? (
               <div className="email-compose__preview">
                 <div className="email-compose__preview-content">
-                  {emailData.body.split('\n').map((line, index) => (
+                  {emailData.body.split("\n").map((line, index) => (
                     <p key={index}>{line}</p>
                   ))}
                 </div>
@@ -320,7 +330,7 @@ TD SYNNEX Support Team`
             ) : (
               <textarea
                 value={emailData.body}
-                onChange={(e) => handleInputChange('body', e.target.value)}
+                onChange={(e) => handleInputChange("body", e.target.value)}
                 placeholder="Enter your message here..."
                 className="email-compose__textarea"
                 rows={12}
@@ -335,16 +345,21 @@ TD SYNNEX Support Team`
               <PaperClipIcon className="email-compose__label-icon" />
               Attachments
             </label>
-            
+
             <div className="email-compose__attachment-controls">
               <input
                 type="file"
                 multiple
-                onChange={(e) => e.target.files && handleAttachmentAdd(e.target.files)}
+                onChange={(e) =>
+                  e.target.files && handleAttachmentAdd(e.target.files)
+                }
                 className="email-compose__file-input"
                 id="attachment-input"
               />
-              <label htmlFor="attachment-input" className="email-compose__file-label">
+              <label
+                htmlFor="attachment-input"
+                className="email-compose__file-label"
+              >
                 Add Files
               </label>
             </div>
@@ -353,7 +368,9 @@ TD SYNNEX Support Team`
               <div className="email-compose__attachment-list">
                 {emailData.attachments.map((file, index) => (
                   <div key={index} className="email-compose__attachment-item">
-                    <span className="email-compose__attachment-name">{file.name}</span>
+                    <span className="email-compose__attachment-name">
+                      {file.name}
+                    </span>
                     <span className="email-compose__attachment-size">
                       {(file.size / 1024).toFixed(1)} KB
                     </span>
@@ -386,7 +403,7 @@ TD SYNNEX Support Team`
             >
               Cancel
             </button>
-            
+
             <button
               onClick={handleSend}
               disabled={!isValidForm() || isLoading}

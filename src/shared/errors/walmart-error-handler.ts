@@ -604,7 +604,7 @@ export function isWalmartError(error: unknown): error is WalmartBaseError {
   return error instanceof WalmartBaseError;
 }
 
-export function createErrorFromResponse(response: any): WalmartBaseError {
+export function createErrorFromResponse(response: Record<string, unknown>): WalmartBaseError {
   if (response.error) {
     return new WalmartBaseError(
       response.error.code || "SERVER_ERROR",

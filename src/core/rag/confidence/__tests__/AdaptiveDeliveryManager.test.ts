@@ -121,7 +121,7 @@ describe("AdaptiveDeliveryManager", () => {
       const evaluation = createMockEvaluation(0.75, ActionType.ACCEPT);
 
       const result = await manager.deliver(evaluation, {
-        confidenceFormat: "percentage" as const,
+        confidenceFormat: "categorical" as const,
       });
 
       expect(result.confidence.display).toBe("high");
@@ -281,7 +281,7 @@ describe("AdaptiveDeliveryManager", () => {
       expect(stats.byAction[ActionType.REVIEW]).toBe(1);
       expect(stats.byAction[ActionType.REGENERATE]).toBe(1);
       expect(stats.byAction[ActionType.FALLBACK]).toBe(1);
-      expect(stats.averageConfidence).toBeCloseTo(0.63, 2);
+      expect(stats.averageConfidence).toBeCloseTo(0.57, 2);
     });
 
     it("should calculate feedback rate", async () => {

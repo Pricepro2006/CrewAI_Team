@@ -1,7 +1,7 @@
 // Test implementation for MasterOrchestrator methods
 // This bypasses the complex import issues for now
 
-import axios from 'axios';
+import axios from "axios";
 
 interface Plan {
   steps: PlanStep[];
@@ -24,9 +24,9 @@ class TestMasterOrchestrator {
   private model: string;
 
   constructor() {
-    this.ollamaUrl = 'http://localhost:11434';
+    this.ollamaUrl = "http://localhost:11434";
     // Using mistral for testing - it's much faster than qwen3:14b
-    this.model = 'mistral:7b';
+    this.model = "mistral:7b";
   }
 
   async createPlan(queryText: string): Promise<Plan> {
@@ -66,13 +66,13 @@ Important: Return ONLY the JSON object, no additional text.`;
         options: {
           temperature: 0.3,
           top_p: 0.9,
-          num_predict: 2000
-        }
+          num_predict: 2000,
+        },
       });
 
       return this.parsePlan(response.data.response);
     } catch (error) {
-      console.error('Failed to create plan:', error);
+      console.error("Failed to create plan:", error);
       throw error;
     }
   }
@@ -80,73 +80,79 @@ Important: Return ONLY the JSON object, no additional text.`;
   parsePlan(response: string): Plan {
     try {
       // Remove any thinking tags or extra text
-      const cleanResponse = response.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-      
+      const cleanResponse = response
+        .replace(/<think>[\s\S]*?<\/think>/g, "")
+        .trim();
+
       // Extract JSON from the response
       const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('No valid JSON found in response');
+        throw new Error("No valid JSON found in response");
       }
-      
+
       const parsed = JSON.parse(jsonMatch[0]);
-      
+
       // Validate the plan structure
       if (!parsed.steps || !Array.isArray(parsed.steps)) {
-        throw new Error('Invalid plan structure: missing steps array');
+        throw new Error("Invalid plan structure: missing steps array");
       }
-      
+
       // Ensure all required fields
       return {
         steps: parsed.steps.map((step: any, index: number) => ({
           id: step.id || `step-${index + 1}`,
-          description: step.description || 'No description provided',
-          agentType: step.agentType || 'ResearchAgent',
+          description: step.description || "No description provided",
+          agentType: step.agentType || "ResearchAgent",
           requiresTool: step.requiresTool || false,
           toolName: step.toolName,
-          ragQuery: step.ragQuery || '',
-          expectedOutput: step.expectedOutput || 'General output',
+          ragQuery: step.ragQuery || "",
+          expectedOutput: step.expectedOutput || "General output",
           dependencies: step.dependencies || [],
-          parameters: step.parameters || {}
-        }))
+          parameters: step.parameters || {},
+        })),
       };
     } catch (error) {
-      console.error('Failed to parse plan:', error);
-      console.error('Raw response:', response.substring(0, 500) + '...');
-      
+      console.error("Failed to parse plan:", error);
+      console.error("Raw response:", response.substring(0, 500) + "...");
+
       // Return a fallback plan
       return {
-        steps: [{
-          id: 'fallback-1',
-          description: 'Process query with general approach',
-          agentType: 'ResearchAgent',
-          requiresTool: false,
-          ragQuery: '',
-          expectedOutput: 'General response to query',
-          dependencies: [],
-          parameters: {}
-        }]
+        steps: [
+          {
+            id: "fallback-1",
+            description: "Process query with general approach",
+            agentType: "ResearchAgent",
+            requiresTool: false,
+            ragQuery: "",
+            expectedOutput: "General response to query",
+            dependencies: [],
+            parameters: {},
+          },
+        ],
       };
     }
   }
 
   async testPlanCreation() {
-    console.log('Testing MasterOrchestrator plan creation...\n');
+    console.log("Testing MasterOrchestrator plan creation...\n");
 
     const testQueries = [
-      'Write a Python function to calculate fibonacci numbers',
-      'Search for information about climate change and summarize the findings',
-      'Analyze this CSV data and create a visualization'
+      "Write a Python function to calculate fibonacci numbers",
+      "Search for information about climate change and summarize the findings",
+      "Analyze this CSV data and create a visualization",
     ];
 
     for (const query of testQueries) {
       console.log(`\nQuery: "${query}"`);
-      console.log('---');
-      
+      console.log("---");
+
       try {
         const plan = await this.createPlan(query);
-        console.log(`✅ Successfully created plan with ${plan.steps.length} steps:`);
-        
-        plan.steps.forEach(step => {
+        console.log(
+          `✅ Successfully created plan with ${plan.steps.length} steps:`,
+        );
+
+        plan.steps.forEach((step) => {
           console.log(`\n  Step ${step.id}:`);
           console.log(`    Description: ${step.description}`);
           console.log(`    Agent: ${step.agentType}`);
@@ -171,10 +177,10 @@ async function main() {
 
 main()
   .then(() => {
-    console.log('\n✅ Test completed!');
+    console.log("\n✅ Test completed!");
     process.exit(0);
   })
   .catch((error) => {
-    console.error('\n❌ Test failed:', error);
+    console.error("\n❌ Test failed:", error);
     process.exit(1);
   });

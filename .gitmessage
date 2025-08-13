@@ -1,0 +1,34 @@
+# Security Fix Commit Template
+# Type: security
+# Format: security: <summary>
+#
+# Example:
+# security: Fix SQL injection vulnerability in user input handling
+#
+# Body should include:
+# - What security issue was fixed
+# - How it was fixed
+# - Impact/severity level
+# - Testing performed
+# - References (CVE, security advisories, etc.)
+
+security: 
+
+# Security Issue Details
+# ----------------------
+# Issue: 
+# Severity: [Critical/High/Medium/Low]
+# Component: 
+# 
+# Fix Description:
+# 
+# 
+# Testing:
+# - [ ] Unit tests added/updated
+# - [ ] Security scan passed
+# - [ ] Manual testing completed
+# 
+# References:
+# - 
+
+# Co-authored-by: 

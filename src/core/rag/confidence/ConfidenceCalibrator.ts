@@ -4,7 +4,7 @@
  */
 
 export interface CalibrationOptions {
-  method: 'temperature_scaling' | 'platt_scaling';
+  method: "temperature_scaling" | "platt_scaling";
 }
 
 export interface CalibrationResult {
@@ -24,14 +24,17 @@ export class ConfidenceCalibrator {
   /**
    * Calibrate confidence score
    */
-  calibrate(confidence: number, options: CalibrationOptions): CalibrationResult {
+  calibrate(
+    confidence: number,
+    options: CalibrationOptions,
+  ): CalibrationResult {
     // Simple placeholder implementation
     const calibratedScore = Math.min(Math.max(confidence * 0.9, 0), 1);
-    
+
     return {
       calibratedScore,
       originalScore: confidence,
-      method: options.method
+      method: options.method,
     };
   }
 
@@ -42,7 +45,7 @@ export class ConfidenceCalibrator {
     // Placeholder implementation
     this.calibrationParameters[method] = {
       trainingPoints: dataPoints.length,
-      lastTrained: new Date().toISOString()
+      lastTrained: new Date().toISOString(),
     };
   }
 
@@ -53,7 +56,8 @@ export class ConfidenceCalibrator {
     return {
       calibrated: true,
       methods: Object.keys(this.calibrationParameters),
-      lastCalibration: this.calibrationParameters.temperature_scaling?.lastTrained || null
+      lastCalibration:
+        this.calibrationParameters.temperature_scaling?.lastTrained || null,
     };
   }
 

@@ -35,7 +35,8 @@
 }
 
 @keyframes iconPulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {
@@ -108,7 +109,7 @@
 .error-modal-stack {
   padding: 1rem;
   margin: 0;
-  font-family: 'Fira Code', 'Courier New', monospace;
+  font-family: "Fira Code", "Courier New", monospace;
   font-size: 0.75rem;
   line-height: 1.5;
   color: var(--muted-foreground);

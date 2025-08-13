@@ -9,8 +9,8 @@ export {
   SqlInjectionError,
   DatabaseInputSchemas,
   createSqlInjectionProtection,
-  type SqlSecurityConfig
-} from './SqlInjectionProtection.js';
+  type SqlSecurityConfig,
+} from "./SqlInjectionProtection.js";
 
 export {
   DatabaseErrorHandler,
@@ -18,8 +18,8 @@ export {
   withDatabaseErrorHandling,
   createDatabaseErrorMiddleware,
   databaseErrorHandler,
-  type DatabaseError
-} from './DatabaseErrorHandler.js';
+  type DatabaseError,
+} from "./DatabaseErrorHandler.js";
 
 // Security configuration
 export interface DatabaseSecurityConfig {
@@ -33,7 +33,7 @@ export interface DatabaseSecurityConfig {
   };
   errorHandling: {
     exposeSensitiveErrors: boolean;
-    logLevel: 'error' | 'warn' | 'info' | 'debug';
+    logLevel: "error" | "warn" | "info" | "debug";
     includeStackTrace: boolean;
   };
   validation: {
@@ -56,43 +56,49 @@ export const DEFAULT_SECURITY_CONFIG: DatabaseSecurityConfig = {
     enabled: true,
     strictValidation: true,
     enableBlacklist: true,
-    enableQueryLogging: process.env.NODE_ENV === 'development',
+    enableQueryLogging: process.env.NODE_ENV === "development",
     maxQueryLength: 10000,
-    maxParameterCount: 100
+    maxParameterCount: 100,
   },
   errorHandling: {
     exposeSensitiveErrors: false,
-    logLevel: 'error',
-    includeStackTrace: process.env.NODE_ENV === 'development'
+    logLevel: "error",
+    includeStackTrace: process.env.NODE_ENV === "development",
   },
   validation: {
     enforceInputValidation: true,
     maxInputSize: 1024 * 1024, // 1MB
-    maxNestingDepth: 10
+    maxNestingDepth: 10,
   },
   monitoring: {
     enabled: true,
     alertThreshold: 5, // Alert after 5 security violations
-    logSecurityEvents: true
-  }
+    logSecurityEvents: true,
+  },
 };
 
 /**
  * Security violation counter
  */
 class SecurityViolationCounter {
-  private violations = new Map<string, { count: number; lastViolation: Date }>();
+  private violations = new Map<
+    string,
+    { count: number; lastViolation: Date }
+  >();
 
-  increment(type: string, identifier: string = 'global'): number {
+  increment(type: string, identifier: string = "global"): number {
     const key = `${type}:${identifier}`;
-    const current = this.violations.get(key) || { count: 0, lastViolation: new Date() };
+    const current = this.violations.get(key) || {
+      count: 0,
+      lastViolation: new Date(),
+    };
     current.count++;
     current.lastViolation = new Date();
     this.violations.set(key, current);
     return current.count;
   }
 
-  getCount(type: string, identifier: string = 'global'): number {
+  getCount(type: string, identifier: string = "global"): number {
     const key = `${type}:${identifier}`;
     return this.violations.get(key)?.count || 0;
   }
@@ -132,7 +138,7 @@ export class DatabaseSecurityManager {
       enableQueryLogging: this.config.sqlInjection.enableQueryLogging,
       enableBlacklist: this.config.sqlInjection.enableBlacklist,
       maxQueryLength: this.config.sqlInjection.maxQueryLength,
-      maxParameterCount: this.config.sqlInjection.maxParameterCount
+      maxParameterCount: this.config.sqlInjection.maxParameterCount,
     });
     this.violationCounter = new SecurityViolationCounter();
   }
@@ -140,7 +146,11 @@ export class DatabaseSecurityManager {
   /**
    * Validate query and parameters
    */
-  validateQuery(query: string, params: any[] = [], context: any = {}): {
+  validateQuery(
+    query: string,
+    params: any[] = [],
+    context: any = {},
+  ): {
     query: string;
     params: any[];
   } {
@@ -152,7 +162,7 @@ export class DatabaseSecurityManager {
       return this.sqlSecurity.validateQueryExecution(query, params);
     } catch (error) {
       if (error instanceof SqlInjectionError) {
-        this.recordSecurityViolation('sql_injection', context);
+        this.recordSecurityViolation("sql_injection", context);
         throw error;
       }
       throw error;
@@ -170,15 +180,15 @@ export class DatabaseSecurityManager {
     // Check input size
     const inputSize = JSON.stringify(input).length;
     if (inputSize > this.config.validation.maxInputSize) {
-      this.recordSecurityViolation('input_size_exceeded', context);
-      throw new Error('Input size exceeds maximum allowed limit');
+      this.recordSecurityViolation("input_size_exceeded", context);
+      throw new Error("Input size exceeds maximum allowed limit");
     }
 
     // Check nesting depth
     const depth = this.getObjectDepth(input);
     if (depth > this.config.validation.maxNestingDepth) {
-      this.recordSecurityViolation('nesting_depth_exceeded', context);
-      throw new Error('Input nesting depth exceeds maximum allowed limit');
+      this.recordSecurityViolation("nesting_depth_exceeded", context);
+      throw new Error("Input nesting depth exceeds maximum allowed limit");
     }
 
     // Validate for SQL injection in input
@@ -187,7 +197,7 @@ export class DatabaseSecurityManager {
       return input;
     } catch (error) {
       if (error instanceof SqlInjectionError) {
-        this.recordSecurityViolation('input_sql_injection', context);
+        this.recordSecurityViolation("input_sql_injection", context);
         throw error;
       }
       throw error;
@@ -210,7 +220,7 @@ export class DatabaseSecurityManager {
   } {
     return {
       violations: this.violationCounter.getStatistics(),
-      config: this.config
+      config: this.config,
     };
   }
 
@@ -226,14 +236,14 @@ export class DatabaseSecurityManager {
    */
   updateConfig(newConfig: Partial<DatabaseSecurityConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    
+
     // Recreate SQL injection protection with new config
     this.sqlSecurity = createSqlInjectionProtection({
       enableStrictValidation: this.config.sqlInjection.strictValidation,
       enableQueryLogging: this.config.sqlInjection.enableQueryLogging,
       enableBlacklist: this.config.sqlInjection.enableBlacklist,
       maxQueryLength: this.config.sqlInjection.maxQueryLength,
-      maxParameterCount: this.config.sqlInjection.maxParameterCount
+      maxParameterCount: this.config.sqlInjection.maxParameterCount,
     });
   }
 
@@ -241,16 +251,16 @@ export class DatabaseSecurityManager {
    * Record security violation
    */
   private recordSecurityViolation(type: string, context: any = {}): void {
-    const identifier = context.userId || context.ip || 'anonymous';
+    const identifier = context.userId || context.ip || "anonymous";
     const violationCount = this.violationCounter.increment(type, identifier);
 
     if (this.config.monitoring.logSecurityEvents) {
-      import('../../utils/logger.js').then(({ logger }) => {
-        logger.warn('Database Security Violation', 'DATABASE_SECURITY', {
+      import("../../utils/logger.js").then(({ logger }) => {
+        logger.warn("Database Security Violation", "DATABASE_SECURITY", {
           violationType: type,
           violationCount,
           context,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       });
     }
@@ -265,20 +275,24 @@ export class DatabaseSecurityManager {
    * Alert on security violations
    */
   private alertSecurityViolation(
-    type: string, 
-    identifier: string, 
-    count: number, 
-    context: any
+    type: string,
+    identifier: string,
+    count: number,
+    context: any,
   ): void {
-    import('../../utils/logger.js').then(({ logger }) => {
-      logger.error('Security Alert - Repeated Violations', 'DATABASE_SECURITY_ALERT', {
-        violationType: type,
-        identifier,
-        violationCount: count,
-        threshold: this.config.monitoring.alertThreshold,
-        context,
-        timestamp: new Date().toISOString()
-      });
+    import("../../utils/logger.js").then(({ logger }) => {
+      logger.error(
+        "Security Alert - Repeated Violations",
+        "DATABASE_SECURITY_ALERT",
+        {
+          violationType: type,
+          identifier,
+          violationCount: count,
+          threshold: this.config.monitoring.alertThreshold,
+          context,
+          timestamp: new Date().toISOString(),
+        },
+      );
     });
 
     // Here you could add additional alerting mechanisms:
@@ -292,26 +306,32 @@ export class DatabaseSecurityManager {
    * Get object nesting depth
    */
   private getObjectDepth(obj: any): number {
-    if (obj === null || typeof obj !== 'object') {
+    if (obj === null || typeof obj !== "object") {
       return 0;
     }
-    
+
     if (Array.isArray(obj)) {
-      return 1 + Math.max(0, ...obj.map(item => this.getObjectDepth(item)));
+      return 1 + Math.max(0, ...obj.map((item) => this.getObjectDepth(item)));
     }
-    
-    return 1 + Math.max(0, ...Object.values(obj).map(value => this.getObjectDepth(value)));
+
+    return (
+      1 +
+      Math.max(
+        0,
+        ...Object.values(obj).map((value) => this.getObjectDepth(value)),
+      )
+    );
   }
 
   /**
    * Validate input recursively for SQL injection
    */
   private validateInputRecursively(input: any): void {
-    if (typeof input === 'string') {
+    if (typeof input === "string") {
       this.sqlSecurity.validateQueryParameters([input]);
     } else if (Array.isArray(input)) {
-      input.forEach(item => this.validateInputRecursively(item));
-    } else if (input && typeof input === 'object') {
+      input.forEach((item) => this.validateInputRecursively(item));
+    } else if (input && typeof input === "object") {
       Object.entries(input).forEach(([key, value]) => {
         this.sqlSecurity.validateQueryParameters([key]);
         this.validateInputRecursively(value);
@@ -326,7 +346,7 @@ export class DatabaseSecurityManager {
 let securityManager: DatabaseSecurityManager | null = null;
 
 export function getDatabaseSecurityManager(
-  config?: Partial<DatabaseSecurityConfig>
+  config?: Partial<DatabaseSecurityConfig>,
 ): DatabaseSecurityManager {
   if (!securityManager) {
     securityManager = new DatabaseSecurityManager(config);
@@ -338,7 +358,7 @@ export function getDatabaseSecurityManager(
  * Initialize database security with configuration
  */
 export function initializeDatabaseSecurity(
-  config: Partial<DatabaseSecurityConfig> = {}
+  config: Partial<DatabaseSecurityConfig> = {},
 ): DatabaseSecurityManager {
   securityManager = new DatabaseSecurityManager(config);
   return securityManager;

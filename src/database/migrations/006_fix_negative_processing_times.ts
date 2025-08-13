@@ -1,15 +1,15 @@
-import Database from 'better-sqlite3';
-import { logger } from '../../utils/logger.js';
+import Database from "better-sqlite3";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Migration to fix negative processing times in email_analysis table
- * 
+ *
  * Issue: Approximately 30% of email analytics records have negative processing times
  * Root causes:
  * - Incorrect timestamp calculations
  * - Race conditions in async operations
  * - Missing validation before storing data
- * 
+ *
  * Solution:
  * - Set all negative values to a reasonable default (median of positive values)
  * - Add CHECK constraint to prevent future negative values
@@ -17,13 +17,15 @@ import { logger } from '../../utils/logger.js';
  */
 
 export function up(db: Database.Database): void {
-  logger.info('Starting migration: fix_negative_processing_times');
+  logger.info("Starting migration: fix_negative_processing_times");
 
   try {
     // Start transaction for data integrity
     db.transaction(() => {
       // 1. Get statistics about current data
-      const stats = db.prepare(`
+      const stats = db
+        .prepare(
+          `
         SELECT 
           COUNT(*) as total_records,
           COUNT(CASE WHEN processing_time_ms < 0 THEN 1 END) as negative_records,
@@ -31,22 +33,32 @@ export function up(db: Database.Database): void {
           MAX(processing_time_ms) as max_negative,
           AVG(CASE WHEN processing_time_ms >= 0 THEN processing_time_ms END) as avg_positive
         FROM email_analysis
-      `).get() as any;
+      `,
+        )
+        .get() as any;
 
       // If SQLite doesn't support MEDIAN, calculate it manually
-      const medianPositive = db.prepare(`
+      const medianPositive = db
+        .prepare(
+          `
         SELECT processing_time_ms 
         FROM email_analysis 
         WHERE processing_time_ms >= 0 
         ORDER BY processing_time_ms 
         LIMIT 1 
         OFFSET (SELECT COUNT(*) / 2 FROM email_analysis WHERE processing_time_ms >= 0)
-      `).get() as any;
+      `,
+        )
+        .get() as any;
 
       const medianValue = medianPositive?.processing_time_ms || 500; // Default to 500ms if no positive values
 
-      logger.info(`Migration stats: ${stats.negative_records} negative records out of ${stats.total_records} total`);
-      logger.info(`Using median positive value: ${medianValue}ms for corrections`);
+      logger.info(
+        `Migration stats: ${stats.negative_records} negative records out of ${stats.total_records} total`,
+      );
+      logger.info(
+        `Using median positive value: ${medianValue}ms for corrections`,
+      );
 
       // 2. Create backup table for audit trail
       db.exec(`
@@ -60,21 +72,29 @@ export function up(db: Database.Database): void {
       `);
 
       // 3. Backup negative values before correction
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO email_analysis_backup_neg_times (id, email_id, original_processing_time_ms, corrected_processing_time_ms)
         SELECT id, email_id, processing_time_ms, ? 
         FROM email_analysis 
         WHERE processing_time_ms < 0
-      `).run(medianValue);
+      `,
+      ).run(medianValue);
 
       // 4. Fix negative processing times
-      const updateResult = db.prepare(`
+      const updateResult = db
+        .prepare(
+          `
         UPDATE email_analysis 
         SET processing_time_ms = ?
         WHERE processing_time_ms < 0
-      `).run(medianValue);
+      `,
+        )
+        .run(medianValue);
 
-      logger.info(`Updated ${updateResult.changes} records with negative processing times`);
+      logger.info(
+        `Updated ${updateResult.changes} records with negative processing times`,
+      );
 
       // 5. Add validation trigger to prevent future negative values
       db.exec(`
@@ -104,25 +124,30 @@ export function up(db: Database.Database): void {
       `);
 
       // 7. Log summary of changes
-      const summary = db.prepare(`
+      const summary = db
+        .prepare(
+          `
         SELECT 
           COUNT(*) as corrected_records,
           MIN(corrected_processing_time_ms) as correction_value,
           MAX(original_processing_time_ms) as worst_negative
         FROM email_analysis_backup_neg_times
-      `).get() as any;
+      `,
+        )
+        .get() as any;
 
-      logger.info(`Migration completed: ${summary.corrected_records} records corrected`);
+      logger.info(
+        `Migration completed: ${summary.corrected_records} records corrected`,
+      );
     })();
-
   } catch (error) {
-    logger.error('Failed to fix negative processing times', error);
+    logger.error("Failed to fix negative processing times", error);
     throw error;
   }
 }
 
 export function down(db: Database.Database): void {
-  logger.info('Rolling back migration: fix_negative_processing_times');
+  logger.info("Rolling back migration: fix_negative_processing_times");
 
   try {
     db.transaction(() => {
@@ -131,7 +156,9 @@ export function down(db: Database.Database): void {
       db.exec(`DROP TRIGGER IF EXISTS validate_processing_time_update`);
 
       // 2. Restore original negative values from backup
-      const restoreCount = db.prepare(`
+      const restoreCount = db
+        .prepare(
+          `
         UPDATE email_analysis 
         SET processing_time_ms = (
           SELECT original_processing_time_ms 
@@ -141,9 +168,13 @@ export function down(db: Database.Database): void {
         WHERE email_id IN (
           SELECT email_id FROM email_analysis_backup_neg_times
         )
-      `).run();
+      `,
+        )
+        .run();
 
-      logger.info(`Restored ${restoreCount.changes} records to original values`);
+      logger.info(
+        `Restored ${restoreCount.changes} records to original values`,
+      );
 
       // 3. Drop backup table
       db.exec(`DROP TABLE IF EXISTS email_analysis_backup_neg_times`);
@@ -151,17 +182,17 @@ export function down(db: Database.Database): void {
       // 4. Drop index
       db.exec(`DROP INDEX IF EXISTS idx_email_analysis_processing_time`);
     })();
-
   } catch (error) {
-    logger.error('Failed to rollback negative processing times fix', error);
+    logger.error("Failed to rollback negative processing times fix", error);
     throw error;
   }
 }
 
 export const migration = {
   version: 6,
-  name: 'fix_negative_processing_times',
-  description: 'Fix negative processing times in email_analysis table and add validation',
+  name: "fix_negative_processing_times",
+  description:
+    "Fix negative processing times in email_analysis table and add validation",
   up,
-  down
+  down,
 };

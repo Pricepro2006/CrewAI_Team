@@ -1,18 +1,12 @@
 import React, { useState } from "react";
-import { ShoppingCartIcon, ClipboardListIcon, TruckIcon, ChartBarIcon } from "@heroicons/react/24/outline";
-import { WalmartGroceryList } from "./WalmartGroceryList.js";
+import { ShoppingCartIcon, ClipboardIcon, TruckIcon, ChartBarIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { WalmartProductSearch } from "./WalmartProductSearch.js";
+import { WalmartNLPSearch } from "./WalmartNLPSearch.js";
 import { WalmartShoppingCart } from "./WalmartShoppingCart.js";
-import { WalmartOrderHistory } from "./WalmartOrderHistory.js";
-import { WalmartPriceTracker } from "./WalmartPriceTracker.js";
 import { WalmartDealAlert } from "./WalmartDealAlert.js";
 import { WalmartBudgetTracker } from "./WalmartBudgetTracker.js";
-import { WalmartDeliveryScheduler } from "./WalmartDeliveryScheduler.js";
-import { WalmartSubstitutionManager } from "./WalmartSubstitutionManager.js";
-import { WalmartUserPreferences } from "./WalmartUserPreferences.js";
-import { WalmartChatInterface } from "./WalmartChatInterface.js";
 
-type ViewType = "dashboard" | "search" | "list" | "cart" | "orders" | "tracking" | "chat";
+type ViewType = "dashboard" | "search" | "nlp-search" | "cart" | "deals" | "budget" | "orders";
 
 export const WalmartDashboard: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>("dashboard");
@@ -21,16 +15,14 @@ export const WalmartDashboard: React.FC = () => {
     switch (activeView) {
       case "search":
         return <WalmartProductSearch />;
-      case "list":
-        return <WalmartGroceryList />;
+      case "nlp-search":
+        return <WalmartNLPSearch />;
       case "cart":
         return <WalmartShoppingCart />;
-      case "orders":
-        return <WalmartOrderHistory />;
-      case "tracking":
-        return <WalmartPriceTracker />;
-      case "chat":
-        return <WalmartChatInterface />;
+      case "deals":
+        return <WalmartDealAlert />;
+      case "budget":
+        return <WalmartBudgetTracker />;
       default:
         return <DashboardOverview onNavigate={setActiveView} />;
     }
@@ -52,16 +44,23 @@ export const WalmartDashboard: React.FC = () => {
               Dashboard
             </button>
             <button
+              onClick={() => setActiveView("nlp-search")}
+              className={`px-4 py-2 rounded flex items-center gap-2 ${activeView === "nlp-search" ? "bg-blue-700" : "hover:bg-blue-700"}`}
+            >
+              <SparklesIcon className="h-4 w-4" />
+              Smart Search
+            </button>
+            <button
               onClick={() => setActiveView("search")}
               className={`px-4 py-2 rounded ${activeView === "search" ? "bg-blue-700" : "hover:bg-blue-700"}`}
             >
-              Search
+              Classic Search
             </button>
             <button
-              onClick={() => setActiveView("list")}
-              className={`px-4 py-2 rounded ${activeView === "list" ? "bg-blue-700" : "hover:bg-blue-700"}`}
+              onClick={() => setActiveView("deals")}
+              className={`px-4 py-2 rounded ${activeView === "deals" ? "bg-blue-700" : "hover:bg-blue-700"}`}
             >
-              Lists
+              Deals
             </button>
             <button
               onClick={() => setActiveView("cart")}
@@ -70,10 +69,10 @@ export const WalmartDashboard: React.FC = () => {
               Cart
             </button>
             <button
-              onClick={() => setActiveView("chat")}
-              className={`px-4 py-2 rounded ${activeView === "chat" ? "bg-blue-700" : "hover:bg-blue-700"}`}
+              onClick={() => setActiveView("budget")}
+              className={`px-4 py-2 rounded ${activeView === "budget" ? "bg-blue-700" : "hover:bg-blue-700"}`}
             >
-              AI Assistant
+              Budget
             </button>
           </nav>
         </div>
@@ -97,6 +96,18 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
         <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
         <div className="space-y-3">
           <button
+            onClick={() => onNavigate("nlp-search")}
+            className="w-full text-left flex items-center gap-3 p-3 hover:bg-gray-50 rounded border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50"
+          >
+            <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-2 rounded">
+              <SparklesIcon className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h3 className="font-medium">Smart Search (AI-Powered)</h3>
+              <p className="text-sm text-gray-600">Use natural language to find products</p>
+            </div>
+          </button>
+          <button
             onClick={() => onNavigate("search")}
             className="w-full text-left flex items-center gap-3 p-3 hover:bg-gray-50 rounded"
           >
@@ -104,20 +115,20 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
               <ShoppingCartIcon className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-medium">Search Products</h3>
-              <p className="text-sm text-gray-600">Find groceries and household items</p>
+              <h3 className="font-medium">Classic Search</h3>
+              <p className="text-sm text-gray-600">Traditional product search</p>
             </div>
           </button>
           <button
-            onClick={() => onNavigate("list")}
+            onClick={() => onNavigate("cart")}
             className="w-full text-left flex items-center gap-3 p-3 hover:bg-gray-50 rounded"
           >
             <div className="bg-green-100 p-2 rounded">
-              <ClipboardListIcon className="h-6 w-6 text-green-600" />
+              <ShoppingCartIcon className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <h3 className="font-medium">My Lists</h3>
-              <p className="text-sm text-gray-600">View and manage shopping lists</p>
+              <h3 className="font-medium">Shopping Cart</h3>
+              <p className="text-sm text-gray-600">View and manage your cart</p>
             </div>
           </button>
           <button
@@ -142,13 +153,13 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
       <WalmartBudgetTracker />
 
       {/* Delivery Schedule */}
-      <WalmartDeliveryScheduler />
+      {/* <WalmartDeliveryScheduler /> */}
 
       {/* Substitution Preferences */}
-      <WalmartSubstitutionManager />
+      {/* <WalmartSubstitutionManager /> */}
 
       {/* User Preferences */}
-      <WalmartUserPreferences />
+      {/* <WalmartUserPreferences /> */}
     </div>
   );
 };

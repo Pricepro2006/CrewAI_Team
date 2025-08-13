@@ -35,14 +35,28 @@ const dataCollectionSchemas = {
   }),
 
   ecommerce: z.object({
-    platform: z.enum(["amazon", "walmart", "ebay", "homedepot", "zara", "etsy", "bestbuy"]),
+    platform: z.enum([
+      "amazon",
+      "walmart",
+      "ebay",
+      "homedepot",
+      "zara",
+      "etsy",
+      "bestbuy",
+    ]),
     productUrl: z.string().url().optional(),
     searchKeyword: z.string().optional(),
     maxProducts: z.number().min(1).max(100).optional(),
   }),
 
   socialMedia: z.object({
-    platform: z.enum(["linkedin", "instagram", "tiktok", "facebook", "youtube"]),
+    platform: z.enum([
+      "linkedin",
+      "instagram",
+      "tiktok",
+      "facebook",
+      "youtube",
+    ]),
     profileUrl: z.string().url(),
     includeComments: z.boolean().default(false),
     includeMedia: z.boolean().default(false),
@@ -69,11 +83,15 @@ export const dataCollectionRouter = createFeatureRouter(
     searchEngine: publicProcedure
       .input(dataCollectionSchemas.searchEngine)
       .mutation(async ({ input, ctx }) => {
-        logger.info("Starting search engine data collection", "DATA_COLLECTION", {
-          query: input.query,
-          engine: input.engine,
-          requestId: ctx.requestId,
-        });
+        logger.info(
+          "Starting search engine data collection",
+          "DATA_COLLECTION",
+          {
+            query: input.query,
+            engine: input.engine,
+            requestId: ctx.requestId,
+          },
+        );
 
         try {
           const searchParams: SearchEngineParams = {
@@ -85,12 +103,17 @@ export const dataCollectionRouter = createFeatureRouter(
             cursor: input.cursor,
           };
 
-          const results = await brightDataService.collectSearchResults(searchParams);
+          const results =
+            await brightDataService.collectSearchResults(searchParams);
 
-          logger.info("Search engine data collection completed", "DATA_COLLECTION", {
-            recordsCollected: results.length,
-            requestId: ctx.requestId,
-          });
+          logger.info(
+            "Search engine data collection completed",
+            "DATA_COLLECTION",
+            {
+              recordsCollected: results.length,
+              requestId: ctx.requestId,
+            },
+          );
 
           return {
             success: true,
@@ -103,12 +126,16 @@ export const dataCollectionRouter = createFeatureRouter(
             },
           };
         } catch (error) {
-          logger.error("Search engine data collection failed", "DATA_COLLECTION", {
-            error,
-            requestId: ctx.requestId,
-          });
+          logger.error(
+            "Search engine data collection failed",
+            "DATA_COLLECTION",
+            {
+              error,
+              requestId: ctx.requestId,
+            },
+          );
           throw new Error(
-            `Search engine data collection failed: ${error instanceof Error ? error.message : "Unknown error"}`
+            `Search engine data collection failed: ${error instanceof Error ? error.message : "Unknown error"}`,
           );
         }
       }),
@@ -117,10 +144,14 @@ export const dataCollectionRouter = createFeatureRouter(
     webScraping: publicProcedure
       .input(dataCollectionSchemas.webScraping)
       .mutation(async ({ input, ctx }) => {
-        logger.info("Starting web scraping data collection", "DATA_COLLECTION", {
-          url: input.url,
-          requestId: ctx.requestId,
-        });
+        logger.info(
+          "Starting web scraping data collection",
+          "DATA_COLLECTION",
+          {
+            url: input.url,
+            requestId: ctx.requestId,
+          },
+        );
 
         try {
           const scrapingParams: WebScrapingParams = {
@@ -131,12 +162,17 @@ export const dataCollectionRouter = createFeatureRouter(
             respectRobots: input.respectRobots,
           };
 
-          const results = await brightDataService.collectWebScrapingData(scrapingParams);
+          const results =
+            await brightDataService.collectWebScrapingData(scrapingParams);
 
-          logger.info("Web scraping data collection completed", "DATA_COLLECTION", {
-            recordsCollected: results.length,
-            requestId: ctx.requestId,
-          });
+          logger.info(
+            "Web scraping data collection completed",
+            "DATA_COLLECTION",
+            {
+              recordsCollected: results.length,
+              requestId: ctx.requestId,
+            },
+          );
 
           return {
             success: true,
@@ -149,12 +185,16 @@ export const dataCollectionRouter = createFeatureRouter(
             },
           };
         } catch (error) {
-          logger.error("Web scraping data collection failed", "DATA_COLLECTION", {
-            error,
-            requestId: ctx.requestId,
-          });
+          logger.error(
+            "Web scraping data collection failed",
+            "DATA_COLLECTION",
+            {
+              error,
+              requestId: ctx.requestId,
+            },
+          );
           throw new Error(
-            `Web scraping failed: ${error instanceof Error ? error.message : "Unknown error"}`
+            `Web scraping failed: ${error instanceof Error ? error.message : "Unknown error"}`,
           );
         }
       }),
@@ -176,13 +216,18 @@ export const dataCollectionRouter = createFeatureRouter(
             maxProducts: input.maxProducts,
           };
 
-          const results = await brightDataService.collectEcommerceData(ecommerceParams);
+          const results =
+            await brightDataService.collectEcommerceData(ecommerceParams);
 
-          logger.info("E-commerce data collection completed", "DATA_COLLECTION", {
-            platform: input.platform,
-            recordsCollected: results.length,
-            requestId: ctx.requestId,
-          });
+          logger.info(
+            "E-commerce data collection completed",
+            "DATA_COLLECTION",
+            {
+              platform: input.platform,
+              recordsCollected: results.length,
+              requestId: ctx.requestId,
+            },
+          );
 
           return {
             success: true,
@@ -201,7 +246,7 @@ export const dataCollectionRouter = createFeatureRouter(
             requestId: ctx.requestId,
           });
           throw new Error(
-            `E-commerce data collection failed: ${error instanceof Error ? error.message : "Unknown error"}`
+            `E-commerce data collection failed: ${error instanceof Error ? error.message : "Unknown error"}`,
           );
         }
       }),
@@ -210,10 +255,14 @@ export const dataCollectionRouter = createFeatureRouter(
     socialMedia: publicProcedure
       .input(dataCollectionSchemas.socialMedia)
       .mutation(async ({ input, ctx }) => {
-        logger.info("Starting social media data collection", "DATA_COLLECTION", {
-          platform: input.platform,
-          requestId: ctx.requestId,
-        });
+        logger.info(
+          "Starting social media data collection",
+          "DATA_COLLECTION",
+          {
+            platform: input.platform,
+            requestId: ctx.requestId,
+          },
+        );
 
         try {
           const socialParams: SocialMediaParams = {
@@ -223,13 +272,18 @@ export const dataCollectionRouter = createFeatureRouter(
             includeMedia: input.includeMedia,
           };
 
-          const results = await brightDataService.collectSocialMediaData(socialParams);
+          const results =
+            await brightDataService.collectSocialMediaData(socialParams);
 
-          logger.info("Social media data collection completed", "DATA_COLLECTION", {
-            platform: input.platform,
-            recordsCollected: results.length,
-            requestId: ctx.requestId,
-          });
+          logger.info(
+            "Social media data collection completed",
+            "DATA_COLLECTION",
+            {
+              platform: input.platform,
+              recordsCollected: results.length,
+              requestId: ctx.requestId,
+            },
+          );
 
           return {
             success: true,
@@ -242,13 +296,17 @@ export const dataCollectionRouter = createFeatureRouter(
             },
           };
         } catch (error) {
-          logger.error("Social media data collection failed", "DATA_COLLECTION", {
-            error,
-            platform: input.platform,
-            requestId: ctx.requestId,
-          });
+          logger.error(
+            "Social media data collection failed",
+            "DATA_COLLECTION",
+            {
+              error,
+              platform: input.platform,
+              requestId: ctx.requestId,
+            },
+          );
           throw new Error(
-            `Social media data collection failed: ${error instanceof Error ? error.message : "Unknown error"}`
+            `Social media data collection failed: ${error instanceof Error ? error.message : "Unknown error"}`,
           );
         }
       }),
@@ -275,7 +333,7 @@ export const dataCollectionRouter = createFeatureRouter(
           requestId: ctx.requestId,
         });
         throw new Error(
-          `Failed to get statistics: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to get statistics: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
       }
     }),
@@ -322,7 +380,15 @@ export const dataCollectionRouter = createFeatureRouter(
     platforms: publicProcedure.query(() => {
       return {
         searchEngines: ["google", "bing", "yandex"],
-        ecommerce: ["amazon", "walmart", "ebay", "homedepot", "zara", "etsy", "bestbuy"],
+        ecommerce: [
+          "amazon",
+          "walmart",
+          "ebay",
+          "homedepot",
+          "zara",
+          "etsy",
+          "bestbuy",
+        ],
         socialMedia: ["linkedin", "instagram", "tiktok", "facebook", "youtube"],
         webScraping: {
           supportedFormats: ["markdown", "html", "extracted_data"],

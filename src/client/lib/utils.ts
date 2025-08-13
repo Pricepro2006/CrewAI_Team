@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -11,15 +11,18 @@ export function cn(...inputs: ClassValue[]) {
  * @param currency - The currency code (default: 'USD')
  * @returns Formatted price string
  */
-export function formatPrice(price: number | string, currency: string = 'USD'): string {
-  const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
-  
+export function formatPrice(
+  price: number | string,
+  currency: string = "USD",
+): string {
+  const numericPrice = typeof price === "string" ? parseFloat(price) : price;
+
   if (isNaN(numericPrice)) {
-    return '$0.00';
+    return "$0.00";
   }
-  
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
     currency: currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,

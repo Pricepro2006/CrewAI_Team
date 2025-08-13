@@ -40,9 +40,24 @@ export interface WalmartProduct extends TimestampedEntity {
   variants?: ProductVariant[];
   bundleComponents?: BundleComponent[];
   metadata: ProductMetadata;
+  
+  // Additional properties for service compatibility
+  unit?: string;
+  size?: string;
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  barcode?: string;
+  inStock?: boolean;
+  stockLevel?: number;
+  stock?: number;
+  originalPrice?: number;
+  averageRating?: number;
+  reviewCount?: number;
+  location?: string;
+  nutritionalInfo?: any;
 }
 
-export interface ProductCategory {
+export type ProductCategory = string | {
   id: string;
   name: string;
   path: string[];
@@ -50,7 +65,7 @@ export interface ProductCategory {
   parentId?: string;
 }
 
-export interface ProductPrice {
+export type ProductPrice = number | {
   currency: string;
   regular: number;
   sale?: number;
@@ -845,6 +860,142 @@ export type WalmartApiResponse<T> = ApiResponse<T> & {
 };
 
 // =====================================================
+// Grocery List Types
+// =====================================================
+
+export interface GroceryList extends TimestampedEntity {
+  id: string;
+  user_id: string;
+  list_name: string;
+  description?: string;
+  list_type: "shopping" | "wishlist" | "recurring";
+  status: "active" | "completed" | "archived";
+  shared_with?: string[];
+  is_shared?: boolean;
+  estimated_total?: number;
+  items?: GroceryItem[];
+}
+
+export interface GroceryItem extends TimestampedEntity {
+  id: string;
+  list_id: string;
+  item_name: string;
+  product_id?: string;
+  brand?: string;
+  category?: string;
+  quantity: number;
+  unit?: string;
+  estimated_price?: number;
+  actual_price?: number;
+  notes?: string;
+  status?: "pending" | "in_cart" | "purchased" | "unavailable";
+  product?: WalmartProduct;
+}
+
+// =====================================================
+// Shopping Session Types
+// =====================================================
+
+export interface ShoppingSession extends TimestampedEntity {
+  id: string;
+  user_id: string;
+  list_id?: string;
+  session_type: "online" | "in_store" | "pickup" | "delivery";
+  status: "active" | "paused" | "completed" | "abandoned";
+  start_time: Timestamp;
+  end_time?: Timestamp;
+  store_id?: string;
+  cart?: ShoppingCart;
+  budget?: number;
+  spent?: number;
+}
+
+// =====================================================
+// User Preferences Types
+// =====================================================
+
+export interface UserPreferences extends TimestampedEntity {
+  id: string;
+  user_id: string;
+  dietary_preferences?: DietaryFilter[];
+  favorite_brands?: string[];
+  preferred_stores?: string[];
+  budget_settings?: BudgetSettings;
+  notification_preferences?: NotificationPreferences;
+  substitution_preferences?: SubstitutionPreferences;
+  delivery_preferences?: DeliveryPreferences;
+  // Additional properties used by components
+  preferredBrands?: string[];
+  dietaryRestrictions?: DietaryFilter[];
+  allergens?: AllergenType[];
+  avoidProducts?: string[];
+  favoriteProducts?: string[];
+  preferOrganic?: boolean;
+  preferGeneric?: boolean;
+}
+
+export interface BudgetSettings {
+  monthly_budget?: number;
+  weekly_budget?: number;
+  category_budgets?: Record<string, number>;
+  alerts_enabled?: boolean;
+  alert_threshold?: number;
+}
+
+export interface NotificationPreferences {
+  deals?: boolean;
+  order_updates?: boolean;
+  price_drops?: boolean;
+  back_in_stock?: boolean;
+  reminders?: boolean;
+}
+
+export interface SubstitutionPreferences {
+  allow_substitutions?: boolean;
+  brand_preference?: "same" | "any" | "premium";
+  size_preference?: "exact" | "larger" | "smaller" | "any";
+  price_limit?: number;
+}
+
+export interface DeliveryPreferences {
+  preferred_windows?: TimeSlot[];
+  leave_at_door?: boolean;
+  delivery_instructions?: string;
+  preferred_address?: string;
+}
+
+// =====================================================
+// Delivery Types
+// =====================================================
+
+export interface DeliverySlot {
+  id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  available: boolean;
+  price?: number;
+  capacity?: number;
+  reserved?: boolean;
+}
+
+// =====================================================
+// Deal Match Types
+// =====================================================
+
+export interface DealMatch {
+  deal_id: string;
+  product_id: string;
+  user_id?: string;
+  match_score: number;
+  matched_criteria: string[];
+  potential_savings: number;
+  savings: number; // Adding missing savings property
+  deal?: Deal;
+  product?: WalmartProduct;
+}
+
+// =====================================================
 // Utility Types
 // =====================================================
 
@@ -859,4 +1010,76 @@ export type WalmartEntityMap = {
   store: Store;
   deal: Deal;
   user: CustomerInfo;
+  groceryList: GroceryList;
+  groceryItem: GroceryItem;
+  shoppingSession: ShoppingSession;
+  userPreferences: UserPreferences;
 };
+
+// =====================================================
+// Additional Exports for Missing Types
+// =====================================================
+
+export interface DeliveryOptions {
+  available: boolean;
+  windows: DeliverySlot[];
+  fees: CartFees;
+}
+
+export interface RecurringSchedule {
+  frequency: "daily" | "weekly" | "biweekly" | "monthly";
+  dayOfWeek?: number;
+  dayOfMonth?: number;
+  time?: string;
+  active: boolean;
+}
+
+export interface SearchOptions extends SearchQuery {
+  includeOutOfStock?: boolean;
+  includeSimilar?: boolean;
+}
+
+export interface PriceAlert {
+  id: string;
+  userId: string;
+  productId: string;
+  targetPrice: number;
+  currentPrice: number;
+  active: boolean;
+  createdAt: Timestamp;
+  triggeredAt?: Timestamp;
+}
+
+export interface PriceHistory {
+  productId: string;
+  price: number;
+  date: Timestamp;
+  wasOnSale: boolean;
+}
+
+export interface SubstitutionOptions extends SubstitutionPreference {
+  suggestions?: SubstitutionSuggestion[];
+}
+
+export interface SubstitutionSuggestion extends WalmartProduct {
+  matchScore: number;
+  priceDifference: number;
+  reason: string;
+}
+
+export interface DealNotification {
+  id: string;
+  dealId: string;
+  userId: string;
+  sent: boolean;
+  sentAt?: Timestamp;
+  opened?: boolean;
+  clicked?: boolean;
+}
+
+export interface AlertSettings {
+  enabled: boolean;
+  threshold: number;
+  frequency: "instant" | "daily" | "weekly";
+  categories?: string[];
+}

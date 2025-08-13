@@ -1,7 +1,9 @@
 import { config } from "dotenv";
 config(); // Load environment variables
 
+import CredentialManager from "../config/CredentialManager.js";
 import express from "express";
+import compression from "compression";
 import cookieParser from "cookie-parser";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { createContext } from "./trpc/context.js";
@@ -19,7 +21,10 @@ import {
   getRateLimitStatus,
   cleanupRateLimiting,
 } from "./middleware/rateLimiter.js";
-import { optionalAuthenticateJWT as authenticateToken, type AuthenticatedRequest } from "./middleware/auth.js";
+import {
+  optionalAuthenticateJWT as authenticateToken,
+  type AuthenticatedRequest,
+} from "./middleware/auth.js";
 import { wsService } from "./services/WebSocketService.js";
 import { logger } from "../utils/logger.js";
 import uploadRoutes from "./routes/upload.routes.js";
@@ -28,16 +33,24 @@ import { emailAnalysisRouter } from "./routes/email-analysis.router.js";
 import emailAssignmentRouter from "./routes/email-assignment.router.js";
 import csrfRouter from "./routes/csrf.router.js";
 import websocketMonitorRouter from "./routes/websocket-monitor.router.js";
+import metricsRouter from "./routes/metrics.router.js";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
 } from "./services/ServiceCleanupManager.js";
 import { setupWalmartWebSocket } from "./websocket/walmart-updates.js";
+import { walmartWSServer } from "./websocket/WalmartWebSocketServer.js";
 import { DealDataService } from "./services/DealDataService.js";
 import { EmailStorageService } from "./services/EmailStorageService.js";
 import { applySecurityHeaders } from "./middleware/security/headers.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
-import { GracefulShutdown } from "../utils/error-handling/index.js";
+import { 
+  initializeCredentials, 
+  ensureCredentialsInitialized,
+  credentialHealthCheck 
+} from "./middleware/security/credential-validation.js";
+import { csrfValidator } from "./middleware/csrfValidator.js";
+import { GracefulShutdown } from "../utils/error-handling/server.js";
 import {
   requestTracking,
   errorTracking,
@@ -46,13 +59,26 @@ import {
   authTracking,
 } from "./middleware/monitoring.js";
 import monitoringRouter from "./routes/monitoring.router.js";
+import emailPipelineHealthRouter from "./routes/email-pipeline-health.router.js";
+import circuitBreakerRouter from "./routes/circuit-breaker.router.js";
+
+import { errorTracker } from "../monitoring/ErrorTracker.js";
 
 const app: Express = express();
 const gracefulShutdown = new GracefulShutdown();
 const PORT = appConfig.api.port;
 
+// Add error listener to prevent crashes
+errorTracker.on("error", () => {
+  // Silently handle error events to prevent unhandled error exceptions
+});
+
 // Trust proxy for accurate IP addresses in rate limiting
 app.set("trust proxy", 1);
+
+// CRITICAL: Cookie parser MUST be early in the middleware stack
+// This ensures cookies are parsed before any middleware that needs them (CSRF, auth, etc.)
+app.use(cookieParser()); // Enable cookie parsing for CSRF tokens
 
 // Apply comprehensive security headers (includes CORS)
 applySecurityHeaders(app, {
@@ -62,9 +88,24 @@ applySecurityHeaders(app, {
   },
 });
 
+// Body parsers need to come after cookie parser but before routes
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-app.use(cookieParser()); // Enable cookie parsing for CSRF tokens
+
+// Add response compression (Performance Optimization - 60-70% bandwidth reduction)
+// Compression should come after parsers but before routes
+app.use(compression({
+  filter: (req, res) => {
+    // Don't compress if client explicitly requests no compression
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    // Compress all responses by default for JSON/text content
+    return compression.filter(req, res);
+  },
+  threshold: 1024, // Only compress responses larger than 1KB
+  level: 6 // Balanced compression level (1=fast, 9=best compression)
+}))
 
 // Monitoring middleware (must be early in the chain)
 app.use(requestTracking);
@@ -108,7 +149,7 @@ app.get("/health", async (_req, res) => {
 
   try {
     // Check ChromaDB connection (if configured)
-    const chromaUrl = process.env.CHROMA_URL || "http://localhost:8001";
+    const chromaUrl = process.env.CHROMA_BASE_URL || process.env.CHROMA_URL || "http://localhost:8000";
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -138,8 +179,15 @@ app.get("/health", async (_req, res) => {
     services.database = "error";
   }
 
-  const overallStatus = Object.values(services).every(
-    (s) => s === "running" || s === "connected" || s === "not_configured",
+  // ChromaDB is optional - system is healthy without it
+  const criticalServices = {
+    api: services.api,
+    database: services.database,
+    // ChromaDB and Ollama are optional enhancements
+  };
+  
+  const overallStatus = Object.values(criticalServices).every(
+    (s) => s === "running" || s === "connected",
   )
     ? "healthy"
     : "degraded";
@@ -162,7 +210,7 @@ app.get("/api/rate-limit-status", async (req: AuthenticatedRequest, res) => {
     const authReq = req as AuthenticatedRequest;
 
     // Only allow admins to check rate limit status
-    if (!authReq.user || authReq.user.role !== 'admin') {
+    if (!authReq.user || authReq.user.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -184,7 +232,19 @@ app.use("/api/upload", uploadRateLimiter);
 app.use("/api", uploadRoutes);
 
 // CSRF routes (no auth required for token fetching)
+// MUST come before CSRF validator middleware
 app.use("/api", csrfRouter);
+
+// Apply CSRF validation to all state-changing operations
+// This runs AFTER the CSRF token endpoints but BEFORE all other routes
+app.use(csrfValidator([
+  "/api/csrf-token",     // Skip CSRF endpoints themselves
+  "/api/health",          // Skip health checks
+  "/health",              // Skip root health check
+  "/api/webhooks",        // Skip webhooks (they use different auth)
+  "/api/rate-limit-status", // Skip rate limit status
+  "/trpc"                 // TEMPORARILY skip tRPC for testing
+]));
 
 // Webhook routes (needs to be before tRPC)
 app.use("/api/webhooks", webhookRouter);
@@ -195,11 +255,29 @@ app.use("/api/email-analysis", emailAnalysisRouter);
 // Email assignment routes
 app.use("/api/email-assignment", emailAssignmentRouter);
 
+// Analyzed emails routes (simple direct database access)
+import analyzedEmailsRouter from "./routes/analyzed-emails.router.js";
+app.use("/", analyzedEmailsRouter);
+
+// NLP routes for Walmart Grocery (Qwen3:0.6b)
+import nlpRouter from "./routes/nlp.router.js";
+app.use("/api/nlp", nlpRouter);
+
 // WebSocket monitoring routes (authenticated)
 app.use("/api/websocket", websocketMonitorRouter);
 
 // Monitoring routes
 app.use("/api/monitoring", monitoringRouter);
+
+// Circuit Breaker monitoring and control
+app.use("/api/circuit-breaker", circuitBreakerRouter);
+
+// Email pipeline health routes
+app.use("/api/health", emailPipelineHealthRouter);
+
+// Add credential health endpoint
+app.get("/api/health/credentials", credentialHealthCheck);
+app.use("/api/metrics", metricsRouter);
 
 // tRPC middleware
 app.use(
@@ -256,20 +334,35 @@ gracefulShutdown.register(async () => {
 // Setup graceful shutdown signal handlers
 gracefulShutdown.setupSignalHandlers();
 
-// Start HTTP server
-const server = app.listen(PORT, () => {
-  console.log(`🚀 API Server running on http://localhost:${PORT}`);
-  console.log(`📡 tRPC endpoint: http://localhost:${PORT}/trpc`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+// Initialize credentials and start HTTP server
+const server = app.listen(PORT, async () => {
+  try {
+    // Initialize credentials on server start
+    await initializeCredentials();
+    
+    console.log(`🚀 API Server running on http://localhost:${PORT}`);
+    console.log(`📡 tRPC endpoint: http://localhost:${PORT}/trpc`);
+    console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+    console.log(`🔐 Credential health: http://localhost:${PORT}/api/health/credentials`);
 
-  // Start WebSocket health monitoring
-  wsService.startHealthMonitoring(30000); // Every 30 seconds
-  logger.info("WebSocket health monitoring started", "WEBSOCKET");
+    // Initialize Walmart WebSocket server
+    walmartWSServer.initialize(server, "/ws/walmart");
+    console.log(`🛒 Walmart WebSocket: ws://localhost:${PORT}/ws/walmart`);
+
+    // Start WebSocket health monitoring
+    wsService.startHealthMonitoring(30000); // Every 30 seconds
+    logger.info("WebSocket health monitoring started", "WEBSOCKET");
+  } catch (error) {
+    console.error('❌ Failed to initialize credentials:', error);
+    console.error('🔧 Run: node scripts/setup-security.js for help');
+    process.exit(1);
+  }
 });
 
 // WebSocket server for subscriptions with enhanced security
+// Using HTTP upgrade on same port instead of separate port
 const wss = new WebSocketServer({
-  port: PORT + 1,
+  noServer: true,  // Don't create a separate server
   path: "/trpc-ws",
   // Add origin validation and rate limiting
   verifyClient: (info: { origin?: string; req: any }) => {
@@ -372,13 +465,29 @@ const wsHandler = applyWSSHandler({
     }),
 });
 
+// Handle HTTP upgrade for WebSocket connections on the same port
+server.on('upgrade', (request, socket, head) => {
+  const pathname = request.url || '';
+  
+  if (pathname === '/trpc-ws') {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } else {
+    // Let other handlers deal with non-tRPC WebSocket connections
+    // (e.g., Walmart WebSocket is already handled by its own server)
+  }
+});
+
 console.log(
-  `🔌 WebSocket server running on ws://localhost:${PORT + 1}/trpc-ws`,
+  `🔌 WebSocket server running on ws://localhost:${PORT}/trpc-ws (using HTTP upgrade)`,
 );
 
 // Setup Walmart-specific WebSocket handlers
 const dealDataService = DealDataService.getInstance();
-const emailStorageService = new EmailStorageService();
+// Use the RealEmailStorageService for Walmart WebSocket
+import { realEmailStorageService } from "./services/RealEmailStorageService.js";
+const emailStorageService = realEmailStorageService as any;
 const walmartRealtimeManager = setupWalmartWebSocket(
   wss,
   dealDataService,

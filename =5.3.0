@@ -1,0 +1,32 @@
+Collecting flask-socketio
+  Downloading Flask_SocketIO-5.5.1-py3-none-any.whl.metadata (2.6 kB)
+Requirement already satisfied: Flask>=0.9 in ./playwright_env/lib/python3.12/site-packages (from flask-socketio) (3.1.1)
+Collecting python-socketio>=5.12.0 (from flask-socketio)
+  Downloading python_socketio-5.13.0-py3-none-any.whl.metadata (3.2 kB)
+Requirement already satisfied: blinker>=1.9.0 in ./playwright_env/lib/python3.12/site-packages (from Flask>=0.9->flask-socketio) (1.9.0)
+Requirement already satisfied: click>=8.1.3 in ./playwright_env/lib/python3.12/site-packages (from Flask>=0.9->flask-socketio) (8.2.1)
+Requirement already satisfied: itsdangerous>=2.2.0 in ./playwright_env/lib/python3.12/site-packages (from Flask>=0.9->flask-socketio) (2.2.0)
+Requirement already satisfied: jinja2>=3.1.2 in ./playwright_env/lib/python3.12/site-packages (from Flask>=0.9->flask-socketio) (3.1.6)
+Requirement already satisfied: markupsafe>=2.1.1 in ./playwright_env/lib/python3.12/site-packages (from Flask>=0.9->flask-socketio) (3.0.2)
+Requirement already satisfied: werkzeug>=3.1.0 in ./playwright_env/lib/python3.12/site-packages (from Flask>=0.9->flask-socketio) (3.1.3)
+Collecting bidict>=0.21.0 (from python-socketio>=5.12.0->flask-socketio)
+  Downloading bidict-0.23.1-py3-none-any.whl.metadata (8.7 kB)
+Collecting python-engineio>=4.11.0 (from python-socketio>=5.12.0->flask-socketio)
+  Downloading python_engineio-4.12.2-py3-none-any.whl.metadata (2.2 kB)
+Collecting simple-websocket>=0.10.0 (from python-engineio>=4.11.0->python-socketio>=5.12.0->flask-socketio)
+  Downloading simple_websocket-1.1.0-py3-none-any.whl.metadata (1.5 kB)
+Collecting wsproto (from simple-websocket>=0.10.0->python-engineio>=4.11.0->python-socketio>=5.12.0->flask-socketio)
+  Downloading wsproto-1.2.0-py3-none-any.whl.metadata (5.6 kB)
+Collecting h11<1,>=0.9.0 (from wsproto->simple-websocket>=0.10.0->python-engineio>=4.11.0->python-socketio>=5.12.0->flask-socketio)
+  Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+Downloading Flask_SocketIO-5.5.1-py3-none-any.whl (18 kB)
+Downloading python_socketio-5.13.0-py3-none-any.whl (77 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 77.8/77.8 kB 1.2 MB/s eta 0:00:00
+Downloading bidict-0.23.1-py3-none-any.whl (32 kB)
+Downloading python_engineio-4.12.2-py3-none-any.whl (59 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 59.5/59.5 kB 2.9 MB/s eta 0:00:00
+Downloading simple_websocket-1.1.0-py3-none-any.whl (13 kB)
+Downloading wsproto-1.2.0-py3-none-any.whl (24 kB)
+Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+Installing collected packages: h11, bidict, wsproto, simple-websocket, python-engineio, python-socketio, flask-socketio
+Successfully installed bidict-0.23.1 flask-socketio-5.5.1 h11-0.16.0 python-engineio-4.12.2 python-socketio-5.13.0 simple-websocket-1.1.0 wsproto-1.2.0

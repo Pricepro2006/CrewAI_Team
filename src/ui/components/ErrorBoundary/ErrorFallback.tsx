@@ -1,10 +1,17 @@
-import React from 'react';
-import { AlertCircle, RefreshCw, Home, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
-import { Button } from '../../../components/ui/button.js';
-import { Card } from '../../../components/ui/card.js';
-import { Alert, AlertDescription } from '../../../components/ui/alert.js';
-import { cn } from '../../../utils/cn.js';
-import './ErrorFallback.css';
+import React from "react";
+import {
+  AlertCircle,
+  RefreshCw,
+  Home,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { Button } from "../../../components/ui/button.js";
+import { Card } from "../../../components/ui/card.js";
+import { Alert, AlertDescription } from "../../../components/ui/alert.js";
+import { cn } from "../../../utils/cn.js";
+import "./ErrorFallback.css";
 
 interface ErrorFallbackProps {
   error: Error;
@@ -29,45 +36,55 @@ export function ErrorFallback({
   const handleReset = async () => {
     setIsResetting(true);
     // Add a small delay for better UX
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     onReset();
     setIsResetting(false);
   };
 
   const errorMessages = {
     network: {
-      title: 'Connection Problem',
-      description: 'Unable to connect to our servers. Please check your internet connection.',
-      icon: '🌐',
+      title: "Connection Problem",
+      description:
+        "Unable to connect to our servers. Please check your internet connection.",
+      icon: "🌐",
     },
     permission: {
-      title: 'Access Denied',
-      description: 'You don\'t have permission to access this resource.',
-      icon: '🔒',
+      title: "Access Denied",
+      description: "You don't have permission to access this resource.",
+      icon: "🔒",
     },
     notFound: {
-      title: 'Page Not Found',
-      description: 'The page you\'re looking for doesn\'t exist.',
-      icon: '🔍',
+      title: "Page Not Found",
+      description: "The page you're looking for doesn't exist.",
+      icon: "🔍",
     },
     default: {
-      title: 'Something went wrong',
-      description: 'An unexpected error occurred. Our team has been notified.',
-      icon: '⚠️',
+      title: "Something went wrong",
+      description: "An unexpected error occurred. Our team has been notified.",
+      icon: "⚠️",
     },
   };
 
   const getErrorType = (error: Error) => {
-    if (error.message.toLowerCase().includes('network') || error.message.toLowerCase().includes('fetch')) {
-      return 'network';
+    if (
+      error.message.toLowerCase().includes("network") ||
+      error.message.toLowerCase().includes("fetch")
+    ) {
+      return "network";
     }
-    if (error.message.toLowerCase().includes('permission') || error.message.toLowerCase().includes('unauthorized')) {
-      return 'permission';
+    if (
+      error.message.toLowerCase().includes("permission") ||
+      error.message.toLowerCase().includes("unauthorized")
+    ) {
+      return "permission";
     }
-    if (error.message.toLowerCase().includes('not found') || error.message.toLowerCase().includes('404')) {
-      return 'notFound';
+    if (
+      error.message.toLowerCase().includes("not found") ||
+      error.message.toLowerCase().includes("404")
+    ) {
+      return "notFound";
     }
-    return 'default';
+    return "default";
   };
 
   const errorType = getErrorType(error);
@@ -76,8 +93,8 @@ export function ErrorFallback({
   return (
     <div
       className={cn(
-        'error-fallback-container',
-        isIsolated ? 'error-fallback-isolated' : 'error-fallback-fullscreen'
+        "error-fallback-container",
+        isIsolated ? "error-fallback-isolated" : "error-fallback-fullscreen",
       )}
     >
       <Card className="error-fallback-card">
@@ -94,7 +111,7 @@ export function ErrorFallback({
           <div className="error-text-content">
             <h2 className="error-title">{errorConfig.title}</h2>
             <p className="error-description">{errorConfig.description}</p>
-            
+
             {/* Error Message */}
             {error.message && error.message !== errorConfig.description && (
               <Alert className="error-alert" variant="destructive">
@@ -107,8 +124,8 @@ export function ErrorFallback({
             {errorCount > 1 && (
               <div className="retry-warning">
                 <p className="retry-warning-text">
-                  This error has occurred {errorCount} times. 
-                  {errorCount >= 3 && ' The issue might persist.'}
+                  This error has occurred {errorCount} times.
+                  {errorCount >= 3 && " The issue might persist."}
                 </p>
               </div>
             )}
@@ -138,7 +155,7 @@ export function ErrorFallback({
 
             {!isIsolated && (
               <Button
-                onClick={() => window.location.href = '/'}
+                onClick={() => (window.location.href = "/")}
                 variant="outline"
                 className="error-action-button"
               >
@@ -148,7 +165,9 @@ export function ErrorFallback({
             )}
 
             <Button
-              onClick={() => window.location.href = 'mailto:support@example.com'}
+              onClick={() =>
+                (window.location.href = "mailto:support@example.com")
+              }
               variant="ghost"
               className="error-action-button"
             >
@@ -158,7 +177,7 @@ export function ErrorFallback({
           </div>
 
           {/* Technical Details (Development Only) */}
-          {process.env.NODE_ENV === 'development' && (
+          {process.env.NODE_ENV === "development" && (
             <div className="error-details-section">
               <button
                 onClick={() => setShowDetails(!showDetails)}

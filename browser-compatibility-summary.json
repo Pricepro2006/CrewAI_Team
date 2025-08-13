@@ -1,0 +1,31 @@
+{
+  "timestamp": "2025-08-08T02:46:10.981Z",
+  "totalTests": 0,
+  "browserResults": {
+    "chrome-desktop": {
+      "passed": 0,
+      "total": 0,
+      "compatibility": 0,
+      "failed": 0
+    },
+    "firefox-desktop": {
+      "passed": 0,
+      "total": 0,
+      "compatibility": 0,
+      "failed": 0
+    },
+    "safari-desktop": {
+      "passed": 0,
+      "total": 0,
+      "compatibility": 0,
+      "failed": 0
+    },
+    "edge-desktop": {
+      "passed": 0,
+      "total": 0,
+      "compatibility": 0,
+      "failed": 0
+    }
+  },
+  "overallCompatibility": 0
+}

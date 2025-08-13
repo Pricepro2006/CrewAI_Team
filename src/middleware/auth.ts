@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import appConfig from '../config/app.config.js';
+import type { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import appConfig from "../config/app.config.js";
 
 export interface User {
   id: string;
   email: string;
-  role: 'user' | 'admin';
+  role: "user" | "admin";
   isAdmin: boolean;
   permissions: string[];
   createdAt: Date;
@@ -17,9 +17,13 @@ export interface AuthenticatedRequest extends Request {
 }
 
 // JWT verification middleware
-export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+export const authenticateToken = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
 
   if (!token) {
     return next(); // Continue without user - rate limiting will handle anonymous users
@@ -27,30 +31,30 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
 
   try {
     const decoded = jwt.verify(token, appConfig.security.jwtSecret) as any;
-    
+
     // Construct user object from JWT payload
     req.user = {
       id: decoded.id || decoded.sub,
       email: decoded.email,
-      role: decoded.role || 'user',
-      isAdmin: decoded.role === 'admin' || decoded.isAdmin || false,
+      role: decoded.role || "user",
+      isAdmin: decoded.role === "admin" || decoded.isAdmin || false,
       permissions: decoded.permissions || [],
       createdAt: new Date(decoded.createdAt || Date.now()),
-      lastLogin: decoded.lastLogin ? new Date(decoded.lastLogin) : undefined
+      lastLogin: decoded.lastLogin ? new Date(decoded.lastLogin) : undefined,
     };
 
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      console.warn('Invalid JWT token:', error.message);
+      console.warn("Invalid JWT token:", error.message);
       // Continue without user but log the attempt
     } else if (error instanceof jwt.TokenExpiredError) {
-      console.warn('Expired JWT token');
+      console.warn("Expired JWT token");
       // Continue without user
     } else {
-      console.error('JWT verification error:', error);
+      console.error("JWT verification error:", error);
     }
-    
+
     // Don't fail the request, just continue without authentication
     // Rate limiting will still apply based on IP
     next();
@@ -58,30 +62,38 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
 };
 
 // Require authentication middleware
-export const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const requireAuth = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
   if (!req.user) {
     return res.status(401).json({
-      error: 'Authentication required',
-      message: 'Please provide a valid authentication token'
+      error: "Authentication required",
+      message: "Please provide a valid authentication token",
     });
   }
-  
+
   next();
 };
 
 // Require admin role middleware
-export const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const requireAdmin = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
   if (!req.user) {
     return res.status(401).json({
-      error: 'Authentication required',
-      message: 'Please provide a valid authentication token'
+      error: "Authentication required",
+      message: "Please provide a valid authentication token",
     });
   }
 
-  if (!req.user.isAdmin && req.user.role !== 'admin') {
+  if (!req.user.isAdmin && req.user.role !== "admin") {
     return res.status(403).json({
-      error: 'Insufficient permissions',
-      message: 'Admin access required'
+      error: "Insufficient permissions",
+      message: "Admin access required",
     });
   }
 
@@ -93,15 +105,15 @@ export const requirePermission = (permission: string) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({
-        error: 'Authentication required',
-        message: 'Please provide a valid authentication token'
+        error: "Authentication required",
+        message: "Please provide a valid authentication token",
       });
     }
 
     if (!req.user.isAdmin && !req.user.permissions.includes(permission)) {
       return res.status(403).json({
-        error: 'Insufficient permissions',
-        message: `Permission '${permission}' required`
+        error: "Insufficient permissions",
+        message: `Permission '${permission}' required`,
       });
     }
 
@@ -121,11 +133,11 @@ export const generateToken = (user: Partial<User>): string => {
     createdAt: user.createdAt?.toISOString(),
     lastLogin: user.lastLogin?.toISOString(),
     iat: Math.floor(Date.now() / 1000), // Issued at
-    exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // Expires in 24 hours
+    exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // Expires in 24 hours
   };
 
   return jwt.sign(payload, appConfig.security.jwtSecret, {
-    algorithm: 'HS256'
+    algorithm: "HS256",
   });
 };
 
@@ -133,7 +145,7 @@ export const generateToken = (user: Partial<User>): string => {
 export const refreshToken = (token: string): string | null => {
   try {
     const decoded = jwt.verify(token, appConfig.security.jwtSecret, {
-      ignoreExpiration: true // We'll check expiration manually
+      ignoreExpiration: true, // We'll check expiration manually
     }) as any;
 
     // Check if token is close to expiring (within 2 hours)
@@ -149,15 +161,15 @@ export const refreshToken = (token: string): string | null => {
     const newPayload = {
       ...decoded,
       iat: now,
-      exp: now + (24 * 60 * 60),
-      lastLogin: new Date().toISOString()
+      exp: now + 24 * 60 * 60,
+      lastLogin: new Date().toISOString(),
     };
 
     return jwt.sign(newPayload, appConfig.security.jwtSecret, {
-      algorithm: 'HS256'
+      algorithm: "HS256",
     });
   } catch (error) {
-    console.error('Token refresh error:', error);
+    console.error("Token refresh error:", error);
     return null;
   }
 };
@@ -171,5 +183,5 @@ export const extractUserId = (req: Request): string | null => {
 // Check if user is admin (for rate limiting bypass)
 export const isAdminUser = (req: Request): boolean => {
   const authReq = req as AuthenticatedRequest;
-  return authReq.user?.isAdmin || authReq.user?.role === 'admin' || false;
+  return authReq.user?.isAdmin || authReq.user?.role === "admin" || false;
 };

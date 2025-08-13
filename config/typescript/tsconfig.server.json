@@ -1,12 +1,12 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "module": "ESNext",
+    "module": "NodeNext",
     "target": "ES2022",
     "outDir": "../../dist",
     "rootDir": "../../src",
     "noEmit": false,
-    "moduleResolution": "node",
+    "moduleResolution": "NodeNext",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
@@ -20,18 +20,33 @@
       "@api/*": ["api/*"],
       "@config/*": ["config/*"],
       "@utils/*": ["utils/*"]
-    }
+    },
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": false
   },
   "include": [
     "../../src/api/**/*",
     "../../src/core/**/*",
     "../../src/config/**/*",
-    "../../src/utils/**/*"
+    "../../src/utils/**/*",
+    "../../src/shared/**/*",
+    "../../src/database/**/*",
+    "../../src/monitoring/**/*",
+    "../../src/middleware/**/*",
+    "../../src/types/**/*"
   ],
   "exclude": [
-    "src/ui/**/*",
-    "node_modules",
-    "dist"
+    "../../src/ui/**/*",
+    "../../node_modules",
+    "../../dist",
+    "../../**/*.test.ts",
+    "../../**/*.test.tsx",
+    "../../**/*.spec.ts",
+    "../../**/*.spec.tsx",
+    "../../**/test/**/*",
+    "../../**/tests/**/*",
+    "../../**/__tests__/**/*",
+    "../../src/test/**/*"
   ],
   "ts-node": {
     "esm": true,

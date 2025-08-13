@@ -7,6 +7,7 @@ import { performanceOptimizer } from "./PerformanceOptimizer.js";
 import { queryPerformanceMonitor } from "./QueryPerformanceMonitor.js";
 import { LazyLoader } from "../../utils/LazyLoader.js";
 import { ConnectionPool } from "../../core/database/ConnectionPool.js";
+import type { EmailRecord } from "../../shared/types/email.js";
 
 // Enhanced email analysis interfaces
 export interface EmailAnalysisResult {
@@ -21,7 +22,7 @@ export interface QuickAnalysis {
     primary: string;
     secondary?: string[];
   };
-  priority: "Critical" | "High" | "Medium" | "Low";
+  priority: "critical" | "high" | "medium" | "low";
   intent: string;
   urgency: string;
   confidence: number;
@@ -110,7 +111,103 @@ export interface EmailWithAnalysis extends Email {
   analysis: EmailAnalysisResult;
 }
 
-export class EmailStorageService {
+// Email Storage Service Interface
+export interface EmailStorageServiceInterface {
+  getEmailsByWorkflow(
+    workflow: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<EmailWithAnalysis[]>;
+  getEmailWithAnalysis(emailId: string): Promise<EmailWithAnalysis | null>;
+  updateWorkflowState(
+    emailId: string,
+    newState: string,
+    changedBy?: string,
+  ): Promise<void>;
+  getWorkflowAnalytics(): Promise<{
+    totalEmails: number;
+    workflowDistribution: Record<string, number>;
+    slaCompliance: Record<string, number>;
+    averageProcessingTime: number;
+  }>;
+  getWorkflowPatterns(): Promise<any[]>;
+  startSLAMonitoring(intervalMs?: number): void;
+  stopSLAMonitoring(): void;
+  getDashboardStats(): Promise<{
+    totalEmails: number;
+    criticalCount: number;
+    inProgressCount: number;
+    completedCount: number;
+    statusDistribution: Record<string, number>;
+  }>;
+  getEmailsForTableView(options: {
+    page?: number;
+    pageSize?: number;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    filters?: {
+      status?: string[];
+      emailAlias?: string[];
+      workflowState?: string[];
+      priority?: string[];
+      dateRange?: { start: string; end: string };
+    };
+    search?: string;
+    refreshKey?: number;
+  }): Promise<{
+    emails: Array<{
+      id: string;
+      email_alias: string;
+      requested_by: string;
+      subject: string;
+      summary: string;
+      status: string;
+      status_text: string;
+      workflow_state: string;
+      priority: string;
+      received_date: string;
+      is_read: boolean;
+      has_attachments: boolean;
+    }>;
+    totalCount: number;
+    totalPages: number;
+    fromCache?: boolean;
+    performanceMetrics?: {
+      queryTime: number;
+      cacheHit: boolean;
+      optimizationGain: number;
+    };
+  }>;
+  createEmail(emailData: {
+    messageId: string;
+    emailAlias: string;
+    requestedBy: string;
+    subject: string;
+    summary: string;
+    status: "red" | "yellow" | "green";
+    statusText: string;
+    workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
+    workflowType?: string;
+    priority?: "critical" | "high" | "medium" | "low";
+    receivedDate: Date;
+    hasAttachments?: boolean;
+    isRead?: boolean;
+    body?: string;
+    entities?: any[];
+    recipients?: any[];
+  }): Promise<string>;
+  updateEmailStatus(
+    emailId: string,
+    newStatus: "red" | "yellow" | "green",
+    newStatusText?: string,
+    performedBy?: string,
+  ): Promise<void>;
+  getEmail(emailId: string): Promise<any | null>;
+  updateEmail(emailId: string, updates: Partial<any>): Promise<void>;
+  close(): Promise<void>;
+}
+
+export class EmailStorageService implements EmailStorageServiceInterface {
   private db: Database.Database;
   private connectionPool?: ConnectionPool;
   private slaMonitoringInterval: NodeJS.Timeout | null = null;
@@ -273,7 +370,7 @@ export class EmailStorageService {
     method: "get" | "all" = "all",
   ): Promise<T> {
     const startTime = Date.now();
-    let result: T;
+    let result: T | undefined;
     let error: string | undefined;
     let retryCount = 0;
     const maxRetries = 3;
@@ -351,6 +448,11 @@ export class EmailStorageService {
       }
     }
 
+    if (result === undefined) {
+      throw new Error(
+        `Query failed: ${queryDescription}. No result obtained after ${maxRetries} retries.`,
+      );
+    }
     return result;
   }
 
@@ -507,8 +609,8 @@ export class EmailStorageService {
     // Create indexes for performance
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_emails_graph_id ON emails(graph_id);
-      CREATE INDEX IF NOT EXISTS idx_emails_received_at ON emails(received_at);
-      CREATE INDEX IF NOT EXISTS idx_emails_sender ON emails(sender_email);
+      CREATE INDEX IF NOT EXISTS idx_emails_received_time ON emails(received_time);
+      CREATE INDEX IF NOT EXISTS idx_emails_from_address ON emails(from_address);
       CREATE INDEX IF NOT EXISTS idx_email_analysis_email_id ON email_analysis(email_id);
       CREATE INDEX IF NOT EXISTS idx_workflow_primary ON email_analysis(deep_workflow_primary);
       CREATE INDEX IF NOT EXISTS idx_workflow_state ON email_analysis(workflow_state);
@@ -800,6 +902,89 @@ export class EmailStorageService {
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
+    }
+  }
+
+  /**
+   * Store email analysis results separately from email data
+   */
+  async storeEmailAnalysis(
+    messageId: string,
+    analysis: EmailAnalysisResult,
+  ): Promise<void> {
+    try {
+      logger.info(
+        `Storing email analysis for message ID: ${messageId}`,
+        "EMAIL_STORAGE",
+      );
+
+      // Validate and sanitize processing times before storage
+      const validatedProcessingTimes = this.validateProcessingTimes(
+        analysis.processingMetadata,
+      );
+
+      const transaction = this.db.transaction(() => {
+        // Store enhanced analysis
+        const analysisStmt = this.db.prepare(`
+          INSERT OR REPLACE INTO email_analysis (
+            id, email_id, 
+            quick_workflow, quick_priority, quick_intent, quick_urgency,
+            quick_confidence, quick_suggested_state, quick_model, quick_processing_time,
+            deep_workflow_primary, deep_workflow_secondary, deep_workflow_related,
+            deep_workflow_confidence, deep_entities, deep_action_items,
+            deep_workflow_state, deep_business_impact, deep_contextual_summary,
+            action_summary, stage1_time, stage2_time, total_time, models_used,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        const analysisId = uuidv4();
+
+        analysisStmt.run(
+          analysisId,
+          messageId, // Use messageId as email_id reference
+          analysis.quick.workflow.primary,
+          analysis.quick.priority,
+          analysis.quick.intent,
+          analysis.quick.urgency,
+          analysis.quick.confidence,
+          analysis.quick.suggestedState,
+          validatedProcessingTimes.models.stage1,
+          validatedProcessingTimes.stage1Time,
+          analysis.deep.detailedWorkflow.primary,
+          JSON.stringify(analysis.deep.detailedWorkflow.secondary || []),
+          JSON.stringify(
+            analysis.deep.detailedWorkflow.relatedCategories || [],
+          ),
+          analysis.deep.detailedWorkflow.confidence,
+          JSON.stringify(analysis.deep.entities),
+          JSON.stringify(analysis.deep.actionItems),
+          JSON.stringify(analysis.deep.workflowState),
+          JSON.stringify(analysis.deep.businessImpact),
+          analysis.deep.contextualSummary || "",
+          analysis.actionSummary,
+          validatedProcessingTimes.stage1Time,
+          validatedProcessingTimes.stage2Time,
+          validatedProcessingTimes.totalTime,
+          JSON.stringify(validatedProcessingTimes.models),
+          new Date().toISOString(),
+          new Date().toISOString(),
+        );
+      });
+
+      transaction();
+
+      logger.info(
+        `Email analysis stored successfully for message ID: ${messageId}`,
+        "EMAIL_STORAGE",
+      );
+    } catch (error: any) {
+      logger.error(
+        `Failed to store email analysis for message ID: ${messageId}`,
+        "EMAIL_STORAGE",
+        { error: error.message },
+      );
+      throw error;
     }
   }
 
@@ -1215,7 +1400,17 @@ export class EmailStorageService {
       )
     `);
 
-    const slaViolations = stmt.all() as any[];
+    interface SLAViolationRecord {
+      id: string;
+      subject: string;
+      received_at: string;
+      deep_workflow_primary: string;
+      quick_priority: "critical" | "high" | "medium" | "low";
+      action_sla_status: string;
+      workflow_state: string;
+    }
+
+    const slaViolations = stmt.all() as SLAViolationRecord[];
 
     // Process SLA violations in batches to avoid N+1 updates
     const updates: Array<{ status: "at-risk" | "overdue"; emailId: string }> =
@@ -1296,7 +1491,7 @@ export class EmailStorageService {
           wsService.broadcastEmailSLAAlert(
             broadcast.emailId,
             broadcast.workflow,
-            broadcast.priority as "Critical" | "High" | "Medium" | "Low",
+            broadcast.priority as "critical" | "high" | "medium" | "low",
             broadcast.status,
             broadcast.timeRemaining,
             broadcast.overdueDuration,
@@ -1355,7 +1550,7 @@ export class EmailStorageService {
     statusText: string;
     workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
     workflowType?: string;
-    priority?: "Critical" | "High" | "Medium" | "Low";
+    priority?: "critical" | "high" | "medium" | "low";
     receivedDate: Date;
     hasAttachments?: boolean;
     isRead?: boolean;
@@ -1920,7 +2115,17 @@ export class EmailStorageService {
 
       // Execute optimized queries with performance monitoring
       const startTime = Date.now();
-      const [emails, countResult] = await Promise.all([
+
+      logger.debug("Executing table view queries", "EMAIL_STORAGE", {
+        dataQueryCacheKey: `${cacheKey}_data`,
+        countQueryCacheKey: `${cacheKey}_count`,
+        dataQuery: dataQuery.replace(/\s+/g, " ").trim(),
+        countQuery: countQuery.replace(/\s+/g, " ").trim(),
+        dataParamsLength: dataParams.length,
+        countParamsLength: params.length,
+      });
+
+      const [emailsResult, countResult] = await Promise.all([
         this.executeCachedQuery<any[]>(
           `${cacheKey}_data`,
           "email_table_view_data",
@@ -1936,8 +2141,29 @@ export class EmailStorageService {
         ),
       ]);
 
+      logger.debug("Query results received", "EMAIL_STORAGE", {
+        emailsResultType: typeof emailsResult,
+        emailsResultIsArray: Array.isArray(emailsResult),
+        emailsResultLength: Array.isArray(emailsResult)
+          ? emailsResult.length
+          : "N/A",
+        countResultType: typeof countResult,
+        countResultKeys: countResult ? Object.keys(countResult) : "N/A",
+      });
+
       const queryTime = Date.now() - startTime;
-      const totalCount = countResult.total;
+
+      // Defensive programming: ensure emailsResult is an array
+      const emails = Array.isArray(emailsResult) ? emailsResult : [];
+      if (!Array.isArray(emailsResult)) {
+        logger.error(
+          `Expected emails array but received: ${typeof emailsResult}`,
+          "EMAIL_STORAGE",
+          { receivedType: typeof emailsResult, receivedValue: emailsResult },
+        );
+      }
+
+      const totalCount = countResult?.total || 0;
       const totalPages = Math.ceil(totalCount / pageSize);
 
       // Transform emails to include proper status mapping
@@ -2719,7 +2945,7 @@ export class EmailStorageService {
         logger.error(
           "Failed to track processing time anomaly",
           "EMAIL_STORAGE",
-          trackingError,
+          trackingError as Record<string, any>,
         );
       }
     }
@@ -2764,7 +2990,7 @@ export class EmailStorageService {
       logger.error(
         "Failed to track processing time anomaly",
         "EMAIL_STORAGE",
-        error,
+        error as Record<string, any>,
       );
     }
   }

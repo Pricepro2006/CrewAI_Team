@@ -1,0 +1,196 @@
+{
+  "analysisDate": "2025-07-31T20:30:05.725Z",
+  "dateRange": {
+    "start": "2025-05-01",
+    "end": "2025-07-31"
+  },
+  "totalEmails": 20741,
+  "coverage": {
+    "toMailboxes": 10263,
+    "fromNickPaul": 112,
+    "coveragePercentage": 49.48170290728508,
+    "details": [
+      {
+        "email": "enpointe2@tdsynnex.com",
+        "count": 35,
+        "type": "TO"
+      },
+      {
+        "email": "us.insightsurface@tdsynnex.com",
+        "count": 153,
+        "type": "TO"
+      },
+      {
+        "email": "insight3@tdsynnex.com",
+        "count": 660,
+        "type": "TO"
+      },
+      {
+        "email": "insightordersupport@tdsynnex.com",
+        "count": 4220,
+        "type": "TO"
+      },
+      {
+        "email": "team4401@tdsynnex.com",
+        "count": 729,
+        "type": "TO"
+      },
+      {
+        "email": "buildamac@tdsynnex.com",
+        "count": 670,
+        "type": "TO"
+      },
+      {
+        "email": "salesinsight@tdsynnex.com",
+        "count": 165,
+        "type": "TO"
+      },
+      {
+        "email": "compucom@tdsynnex.com",
+        "count": 653,
+        "type": "TO"
+      },
+      {
+        "email": "optiv@tdsynnex.com",
+        "count": 242,
+        "type": "TO"
+      },
+      {
+        "email": "insight-hpe-bto-quoterequest@tdsynnex.com",
+        "count": 32,
+        "type": "TO"
+      },
+      {
+        "email": "insightsilverpeak@tdsynnex.com",
+        "count": 3,
+        "type": "TO"
+      },
+      {
+        "email": "insightcisco@tdsynnex.com",
+        "count": 19,
+        "type": "TO"
+      },
+      {
+        "email": "insightimperva@tdsynnex.com",
+        "count": 1,
+        "type": "TO"
+      },
+      {
+        "email": "insightcp@tdsynnex.com",
+        "count": 6,
+        "type": "TO"
+      },
+      {
+        "email": "insightfortinet@tdsynnex.com",
+        "count": 26,
+        "type": "TO"
+      },
+      {
+        "email": "insightwatchguard@tdsynnex.com",
+        "count": 7,
+        "type": "TO"
+      },
+      {
+        "email": "sales4406@tdsynnex.com",
+        "count": 265,
+        "type": "TO"
+      },
+      {
+        "email": "sales4460@tdsynnex.com",
+        "count": 1533,
+        "type": "TO"
+      },
+      {
+        "email": "nick.paul@tdsynnex.com",
+        "count": 844,
+        "type": "TO"
+      }
+    ]
+  },
+  "topSenders": [
+    {
+      "sender_email": "InsightOrderSupport@tdsynnex.com",
+      "count": 3460
+    },
+    {
+      "sender_email": "Team4401@tdsynnex.com",
+      "count": 2186
+    },
+    {
+      "sender_email": "us.insightsurface@tdsynnex.com",
+      "count": 1643
+    },
+    {
+      "sender_email": "Optiv@tdsynnex.com",
+      "count": 1242
+    },
+    {
+      "sender_email": "InsightHPI@tdsynnex.com",
+      "count": 931
+    },
+    {
+      "sender_email": "buildamac@tdsynnex.com",
+      "count": 817
+    },
+    {
+      "sender_email": "hwprocurementhp@insight.com",
+      "count": 657
+    },
+    {
+      "sender_email": "CompuCom@tdsynnex.com",
+      "count": 466
+    },
+    {
+      "sender_email": "b2b@synnex.com",
+      "count": 463
+    },
+    {
+      "sender_email": "EMT@tdsynnex.com",
+      "count": 309
+    }
+  ],
+  "monthlyDistribution": [
+    {
+      "month": "2025-05",
+      "count": 20719
+    },
+    {
+      "month": "2025-06",
+      "count": 3
+    },
+    {
+      "month": "2025-07",
+      "count": 19
+    }
+  ],
+  "mailboxesChecked": [
+    "t119889c@tdsynnex.com",
+    "enpointe2@tdsynnex.com",
+    "us.insightsurface@tdsynnex.com",
+    "insighthpi@tdsynnex.com",
+    "insight3@tdsynnex.com",
+    "insightordersupport@tdsynnex.com",
+    "team4401@tdsynnex.com",
+    "buildamac@tdsynnex.com",
+    "salesinsight@tdsynnex.com",
+    "compucom@tdsynnex.com",
+    "optiv@tdsynnex.com",
+    "insight-hpe-bto-quoterequest@tdsynnex.com",
+    "insightinfoblox@tdsynnex.com",
+    "insightcradlepoint@tdsynnex.com",
+    "insightsilverpeak@tdsynnex.com",
+    "insightcisco@tdsynnex.com",
+    "insightimperva@tdsynnex.com",
+    "insightcp@tdsynnex.com",
+    "insighthpe@tdsynnex.com",
+    "insightfortinet@tdsynnex.com",
+    "insightjuniper@tdsynnex.com",
+    "insightwatchguard@tdsynnex.com",
+    "insighttargus2@tdsynnex.com",
+    "sales4406@tdsynnex.com",
+    "sales4460@tdsynnex.com",
+    "t119889c@tdsynnex.com",
+    "nick.paul@tdsynnex.com"
+  ],
+  "recommendation": "RE-EXTRACT NEEDED"
+}

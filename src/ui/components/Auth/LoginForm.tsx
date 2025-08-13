@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth.js';
-import './AuthForms.css';
+import React, { useState } from "react";
+import { useAuth } from "../../hooks/useAuth.js";
+import "./AuthForms.css";
 
 interface LoginFormProps {
   onSuccess?: () => void;
   onSwitchToRegister?: () => void;
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({ 
-  onSuccess, 
-  onSwitchToRegister 
+export const LoginForm: React.FC<LoginFormProps> = ({
+  onSuccess,
+  onSwitchToRegister,
 }) => {
   const { login } = useAuth();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
     rememberMe: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -22,14 +22,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -37,13 +37,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/\\S+@\\S+\\.\\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     }
 
     setErrors(newErrors);
@@ -52,7 +52,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -63,7 +63,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       onSuccess?.();
     } catch (error: any) {
       setErrors({
-        general: error?.message || 'Login failed. Please try again.',
+        general: error?.message || "Login failed. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -79,9 +79,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         </div>
 
         {errors.general && (
-          <div className="auth-error-banner">
-            {errors.general}
-          </div>
+          <div className="auth-error-banner">{errors.general}</div>
         )}
 
         <div className="auth-form-body">
@@ -95,14 +93,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className={`form-input ${errors.email ? 'error' : ''}`}
+              className={`form-input ${errors.email ? "error" : ""}`}
               placeholder="Enter your email"
               disabled={isLoading}
               autoComplete="email"
             />
-            {errors.email && (
-              <span className="form-error">{errors.email}</span>
-            )}
+            {errors.email && <span className="form-error">{errors.email}</span>}
           </div>
 
           <div className="form-group">
@@ -115,7 +111,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className={`form-input ${errors.password ? 'error' : ''}`}
+              className={`form-input ${errors.password ? "error" : ""}`}
               placeholder="Enter your password"
               disabled={isLoading}
               autoComplete="current-password"
@@ -134,9 +130,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 onChange={handleChange}
                 disabled={isLoading}
               />
-              <span className="checkbox-text">
-                Remember me for 30 days
-              </span>
+              <span className="checkbox-text">Remember me for 30 days</span>
             </label>
           </div>
         </div>
@@ -144,17 +138,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <div className="auth-form-footer">
           <button
             type="submit"
-            className={`auth-button primary ${isLoading ? 'loading' : ''}`}
+            className={`auth-button primary ${isLoading ? "loading" : ""}`}
             disabled={isLoading}
           >
-            {isLoading ? 'Signing In...' : 'Sign In'}
+            {isLoading ? "Signing In..." : "Sign In"}
           </button>
 
           <div className="auth-links">
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="auth-link"
-              onClick={() => alert('Password reset feature coming soon!')}
+              onClick={() => alert("Password reset feature coming soon!")}
               disabled={isLoading}
             >
               Forgot your password?

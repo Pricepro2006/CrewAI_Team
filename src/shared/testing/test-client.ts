@@ -214,9 +214,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
 
       ws.on("message", (data) => {
         if (this.connection) {
-          const message = JSON.parse(
-            data.toString(),
-          ) as WebSocketMessage;
+          const message = JSON.parse(data.toString()) as WebSocketMessage;
           this.connection.receivedMessages.push(message);
           this.connection.lastActivity = new Date().toISOString();
 
@@ -408,7 +406,9 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
     return this;
   }
 
-  toBeInstanceOf(constructor: new (...args: any[]) => any): TestAssertions<T> {
+  toBeInstanceOf(
+    constructor: new (...args: unknown[]) => unknown,
+  ): TestAssertions<T> {
     const passed = this.isNegated
       ? !(this.actual instanceof constructor)
       : this.actual instanceof constructor;
@@ -828,7 +828,7 @@ export async function createTestContext(
         id: "test-user",
         email: "test@example.com",
         username: "testuser",
-        password: "testpassword",
+        password: process.env.TEST_USER_PASSWORD || "test123",
         role: "user",
         permissions: ["read", "write"],
       },
@@ -836,7 +836,7 @@ export async function createTestContext(
         id: "admin-user",
         email: "admin@example.com",
         username: "admin",
-        password: "adminpassword",
+        password: process.env.TEST_ADMIN_PASSWORD || "admin123",
         role: "admin",
         permissions: ["read", "write", "admin"],
       },

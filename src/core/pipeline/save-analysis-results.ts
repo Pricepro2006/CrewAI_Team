@@ -1,18 +1,6 @@
 import { getDatabaseManager } from "../../database/DatabaseManager.js";
 import { logger } from "../../utils/logger.js";
-// TODO: Fix types import - create types file or use correct path
-// import type { LlamaAnalysisResult, CriticalAnalysisResult } from "./types.js";
-
-// Mock types for now
-interface LlamaAnalysisResult {
-  summary: string;
-  priority: number;
-}
-
-interface CriticalAnalysisResult {
-  isUrgent: boolean;
-  businessImpact: string;
-}
+import type { LlamaAnalysisResult, CriticalAnalysisResult } from "./types.js";
 
 export interface AnalysisToSave {
   emailId: string;

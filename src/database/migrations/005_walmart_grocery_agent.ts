@@ -486,10 +486,17 @@ export class WalmartGroceryAgentMigration {
   }
 
   // Migration metadata
-  static readonly version = 5;
-  static readonly name = "walmart_grocery_agent";
-  static readonly description =
-    "Add tables for Walmart grocery shopping agent functionality";
+  static get version(): number {
+    return 5;
+  }
+
+  static get name(): string {
+    return "walmart_grocery_agent";
+  }
+
+  static get description(): string {
+    return "Add tables for Walmart grocery shopping agent functionality";
+  }
 }
 
 export default WalmartGroceryAgentMigration;

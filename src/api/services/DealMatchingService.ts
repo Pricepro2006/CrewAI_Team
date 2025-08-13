@@ -6,7 +6,7 @@
 import { logger } from "../../utils/logger.js";
 import { DealDataService } from "./DealDataService.js";
 import type { WalmartProductRepository } from "../../database/repositories/WalmartProductRepository.js";
-import { getDatabaseManager } from "../../database/DatabaseManager.js";
+import { getWalmartDatabaseManager } from "../../database/WalmartDatabaseManager.js";
 import type { WalmartProduct } from "../../types/walmart-grocery.js";
 import type { Deal, DealItem } from "../types/deal.types.js";
 
@@ -43,7 +43,7 @@ export class DealMatchingService {
 
   private constructor() {
     this.dealService = DealDataService.getInstance();
-    this.productRepo = getDatabaseManager().walmartProducts;
+    this.productRepo = getWalmartDatabaseManager().walmartProducts;
     this.matchCache = new Map();
   }
 
@@ -173,7 +173,10 @@ export class DealMatchingService {
             totalProducts++;
 
             // Update category breakdown
-            const category = bestDeal.product?.category?.name || "Other";
+            const category =
+              typeof bestDeal.product?.category === "object"
+                ? bestDeal.product.category.name
+                : bestDeal.product?.category || "Other";
             if (!categoryBreakdown[category]) {
               categoryBreakdown[category] = { count: 0, totalSavings: 0 };
             }
@@ -271,11 +274,14 @@ export class DealMatchingService {
             deal,
             dealItem: bestItem,
             savings:
-              (product.price.wasPrice || product.price.regular || 0) -
-              bestItem.dealer_net_price,
+              (typeof product.price === "object"
+                ? product.price.wasPrice || product.price.regular || 0
+                : product.price || 0) - bestItem.dealer_net_price,
             savingsPercent: this.calculateDiscount(
               bestItem.dealer_net_price,
-              product.price.wasPrice || product.price.regular || 0,
+              typeof product.price === "object"
+                ? product.price.wasPrice || product.price.regular || 0
+                : product.price || 0,
             ),
             matchConfidence: 0.8,
             matchType: "similar",
@@ -401,7 +407,10 @@ export class DealMatchingService {
     try {
       if (!product.category) return matches;
 
-      const category = product.category.name;
+      const category =
+        typeof product.category === "string"
+          ? product.category
+          : product.category.name;
 
       // Map Walmart categories to deal product families
       const familyMapping: Record<string, string[]> = {
@@ -457,7 +466,10 @@ export class DealMatchingService {
     dealItem: DealItem,
     matchType: "exact" | "similar" | "category",
   ): DealMatch {
-    const walmartPrice = product.price.regular || 0;
+    const walmartPrice =
+      typeof product.price === "object"
+        ? product.price.regular || 0
+        : product.price || 0;
     const dealPrice = dealItem.dealer_net_price;
     const savings = Math.max(0, walmartPrice - dealPrice);
     const savingsPercent =
@@ -505,7 +517,11 @@ export class DealMatchingService {
 
     // Category/family match
     if (product.category && item.product_family) {
-      const categoryMatch = product.category.name
+      const categoryName =
+        typeof product.category === "string"
+          ? product.category
+          : product.category.name;
+      const categoryMatch = categoryName
         .toLowerCase()
         .includes(item.product_family.toLowerCase());
       if (categoryMatch) {

@@ -1,9 +1,12 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode } from "react";
 import { ErrorBoundary } from "../ErrorBoundary/index.js";
-import { useErrorRecovery, useNetworkRecovery } from '../../hooks/useErrorRecovery.js';
-import { Alert } from '../UI/Alert.js';
-import { Button } from '../UI/Button.js';
-import { WifiOff, RefreshCw } from 'lucide-react';
+import {
+  useErrorRecovery,
+  useNetworkRecovery,
+} from "../../hooks/useErrorRecovery.js";
+import { Alert } from "../Alert";
+import { Button } from "../Button";
+import { WifiOff, RefreshCw } from "lucide-react";
 
 interface ErrorRecoveryBoundaryProps {
   children: ReactNode;
@@ -22,12 +25,12 @@ export function ErrorRecoveryBoundary({
 }: ErrorRecoveryBoundaryProps) {
   const [boundaryError, setBoundaryError] = React.useState<Error | null>(null);
   const [retryKey, setRetryKey] = React.useState(0);
-  
+
   const { isOnline } = useNetworkRecovery();
   const errorRecovery = useErrorRecovery({
     maxRetries,
     onMaxRetriesExceeded: (error) => {
-      console.error('Max retries exceeded:', error);
+      console.error("Max retries exceeded:", error);
     },
   });
 
@@ -40,7 +43,7 @@ export function ErrorRecoveryBoundary({
   const handleRetry = () => {
     setBoundaryError(null);
     errorRecovery.reset();
-    setRetryKey(prev => prev + 1); // Force re-render of children
+    setRetryKey((prev) => prev + 1); // Force re-render of children
   };
 
   // Show network status banner if offline
@@ -72,21 +75,25 @@ export function ErrorRecoveryBoundary({
           <div className="error-recovery-content">
             <h2>Something went wrong</h2>
             <p className="error-message">
-              {boundaryError.message || 'An unexpected error occurred'}
+              {boundaryError.message || "An unexpected error occurred"}
             </p>
 
             {!isOnline && (
               <Alert type="info" className="offline-notice">
-                This error may be due to your offline status. Please check your internet connection.
+                This error may be due to your offline status. Please check your
+                internet connection.
               </Alert>
             )}
 
             <div className="error-recovery-actions">
-              {errorRecovery.canRetry && errorRecovery.retryCount < maxRetries && (
-                <div className="retry-info">
-                  <p>Retry attempt {errorRecovery.retryCount} of {maxRetries}</p>
-                </div>
-              )}
+              {errorRecovery.canRetry &&
+                errorRecovery.retryCount < maxRetries && (
+                  <div className="retry-info">
+                    <p>
+                      Retry attempt {errorRecovery.retryCount} of {maxRetries}
+                    </p>
+                  </div>
+                )}
 
               <Button
                 onClick={handleRetry}
@@ -94,7 +101,7 @@ export function ErrorRecoveryBoundary({
                 icon={<RefreshCw size={16} />}
                 disabled={!errorRecovery.canRetry}
               >
-                {errorRecovery.canRetry ? 'Try Again' : 'Refresh Page'}
+                {errorRecovery.canRetry ? "Try Again" : "Refresh Page"}
               </Button>
 
               {!errorRecovery.canRetry && (
@@ -143,7 +150,7 @@ export function AsyncBoundary({
   loading,
   error,
   onRetry,
-  retryText = 'Try Again',
+  retryText = "Try Again",
   loadingComponent,
   errorComponent,
 }: AsyncBoundaryProps) {
@@ -165,7 +172,7 @@ export function AsyncBoundary({
       <>
         {errorComponent || (
           <Alert type="error" className="async-error">
-            <p>{error.message || 'An error occurred'}</p>
+            <p>{error.message || "An error occurred"}</p>
             {onRetry && (
               <Button
                 onClick={onRetry}

@@ -1,6 +1,14 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { Download, FileText, FileSpreadsheet, Filter, Calendar, Settings, Loader } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import React, { useState, useCallback, useMemo } from "react";
+import {
+  Download,
+  FileText,
+  FileSpreadsheet,
+  Filter,
+  Calendar,
+  Settings,
+  Loader,
+} from "lucide-react";
+import * as XLSX from "xlsx";
 
 /**
  * Data Export Manager Component
@@ -12,7 +20,7 @@ export interface ExportColumn {
   id: string;
   label: string;
   field: string;
-  type: 'text' | 'number' | 'date' | 'boolean' | 'currency' | 'status';
+  type: "text" | "number" | "date" | "boolean" | "currency" | "status";
   format?: (value: any) => string;
   width?: number;
   included: boolean;
@@ -22,7 +30,13 @@ export interface ExportFilter {
   id: string;
   label: string;
   field: string;
-  operator: 'equals' | 'contains' | 'greaterThan' | 'lessThan' | 'between' | 'in';
+  operator:
+    | "equals"
+    | "contains"
+    | "greaterThan"
+    | "lessThan"
+    | "between"
+    | "in";
   value: any;
   enabled: boolean;
 }
@@ -33,7 +47,7 @@ export interface ExportTemplate {
   description: string;
   columns: ExportColumn[];
   filters: ExportFilter[];
-  format: 'csv' | 'xlsx' | 'pdf';
+  format: "csv" | "xlsx" | "pdf";
   options: {
     includeHeaders: boolean;
     includeFilters: boolean;
@@ -53,12 +67,14 @@ interface DataExportManagerProps {
   onExport: (exportData: {
     data: any[];
     columns: ExportColumn[];
-    format: 'csv' | 'xlsx' | 'pdf';
+    format: "csv" | "xlsx" | "pdf";
     filename: string;
     options: any;
   }) => Promise<void>;
   templates?: ExportTemplate[];
-  onTemplateSave?: (template: Omit<ExportTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onTemplateSave?: (
+    template: Omit<ExportTemplate, "id" | "createdAt" | "updatedAt">,
+  ) => void;
   onTemplateLoad?: (template: ExportTemplate) => void;
   onTemplateDelete?: (templateId: string) => void;
   defaultFilename?: string;
@@ -73,105 +89,117 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
   onTemplateSave,
   onTemplateLoad,
   onTemplateDelete,
-  defaultFilename = 'export',
-  className = ''
+  defaultFilename = "export",
+  className = "",
 }) => {
   // State management
   const [isOpen, setIsOpen] = useState(false);
-  const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx' | 'pdf'>('xlsx');
+  const [exportFormat, setExportFormat] = useState<"csv" | "xlsx" | "pdf">(
+    "xlsx",
+  );
   const [columns, setColumns] = useState<ExportColumn[]>(initialColumns);
   const [filters, setFilters] = useState<ExportFilter[]>([]);
   const [filename, setFilename] = useState(defaultFilename);
   const [isExporting, setIsExporting] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  
+
   // Export options
   const [exportOptions, setExportOptions] = useState({
     includeHeaders: true,
     includeFilters: false,
     includeMetadata: true,
-    dateFormat: 'YYYY-MM-DD',
-    currencyFormat: 'USD',
-    sheetName: 'Export Data'
+    dateFormat: "YYYY-MM-DD",
+    currencyFormat: "USD",
+    sheetName: "Export Data",
   });
 
   // Template management
-  const [newTemplateName, setNewTemplateName] = useState('');
-  const [newTemplateDescription, setNewTemplateDescription] = useState('');
+  const [newTemplateName, setNewTemplateName] = useState("");
+  const [newTemplateDescription, setNewTemplateDescription] = useState("");
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
 
   // Filter data based on active filters
   const filteredData = useMemo(() => {
     let filtered = [...data];
-    
-    filters.filter(filter => filter.enabled).forEach(filter => {
-      filtered = filtered.filter(item => {
-        const value = item[filter.field];
-        const filterValue = filter.value;
-        
-        switch (filter.operator) {
-          case 'equals': {
-            return value === filterValue;
+
+    filters
+      .filter((filter) => filter.enabled)
+      .forEach((filter) => {
+        filtered = filtered.filter((item) => {
+          const value = item[filter.field];
+          const filterValue = filter.value;
+
+          switch (filter.operator) {
+            case "equals": {
+              return value === filterValue;
+            }
+            case "contains": {
+              return String(value || "")
+                .toLowerCase()
+                .includes(String(filterValue).toLowerCase());
+            }
+            case "greaterThan": {
+              return Number(value) > Number(filterValue);
+            }
+            case "lessThan": {
+              return Number(value) < Number(filterValue);
+            }
+            case "between": {
+              return (
+                Number(value) >= Number(filterValue.min) &&
+                Number(value) <= Number(filterValue.max)
+              );
+            }
+            case "in": {
+              return Array.isArray(filterValue) && filterValue.includes(value);
+            }
+            default:
+              return true;
           }
-          case 'contains': {
-            return String(value || '').toLowerCase().includes(String(filterValue).toLowerCase());
-          }
-          case 'greaterThan': {
-            return Number(value) > Number(filterValue);
-          }
-          case 'lessThan': {
-            return Number(value) < Number(filterValue);
-          }
-          case 'between': {
-            return Number(value) >= Number(filterValue.min) && Number(value) <= Number(filterValue.max);
-          }
-          case 'in': {
-            return Array.isArray(filterValue) && filterValue.includes(value);
-          }
-          default:
-            return true;
-        }
+        });
       });
-    });
-    
+
     return filtered;
   }, [data, filters]);
 
   // Get included columns
   const includedColumns = useMemo(() => {
-    return columns.filter(col => col.included);
+    return columns.filter((col) => col.included);
   }, [columns]);
 
   // Generate filename with timestamp
-  const generateFilename = useCallback((format: string) => {
-    const timestamp = new Date().toISOString().split('T')[0];
-    const baseName = filename || defaultFilename;
-    return `${baseName}_${timestamp}.${format}`;
-  }, [filename, defaultFilename]);
+  const generateFilename = useCallback(
+    (format: string) => {
+      const timestamp = new Date().toISOString().split("T")[0];
+      const baseName = filename || defaultFilename;
+      return `${baseName}_${timestamp}.${format}`;
+    },
+    [filename, defaultFilename],
+  );
 
   // Format cell value based on column type
   const formatCellValue = useCallback((value: any, column: ExportColumn) => {
-    if (value === null || value === undefined) return '';
-    
+    if (value === null || value === undefined) return "";
+
     if (column.format) {
       return column.format(value);
     }
-    
+
     switch (column.type) {
-      case 'date': {
+      case "date": {
         const date = new Date(value);
         return date.toLocaleDateString();
       }
-      case 'currency':
-        return new Intl.NumberFormat('en-US', { 
-          style: 'currency', 
-          currency: 'USD' 
+      case "currency":
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
         }).format(Number(value));
-      case 'number':
+      case "number":
         return Number(value).toLocaleString();
-      case 'boolean':
-        return value ? 'Yes' : 'No';
+      case "boolean":
+        return value ? "Yes" : "No";
       default:
         return String(value);
     }
@@ -179,50 +207,57 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
 
   // Prepare export data
   const prepareExportData = useCallback(() => {
-    const exportData = filteredData.map(item => {
+    const exportData = filteredData.map((item) => {
       const row: Record<string, any> = {};
-      includedColumns.forEach(column => {
+      includedColumns.forEach((column) => {
         row[column.label] = formatCellValue(item[column.field], column);
       });
       return row;
     });
-    
+
     return exportData;
   }, [filteredData, includedColumns, formatCellValue]);
 
   // Export to CSV
   const exportToCSV = useCallback(async () => {
     const exportData = prepareExportData();
-    
+
     if (exportData.length === 0) {
-      alert('No data to export');
+      alert("No data to export");
       return;
     }
 
     try {
       // Create CSV content
-      const headers = includedColumns.map(col => col.label);
+      const headers = includedColumns.map((col) => col.label);
       const csvContent = [
-        exportOptions.includeHeaders ? headers.join(',') : null,
-        ...exportData.map(row => 
-          headers.map(header => {
-            const value = row[header];
-            // Escape commas and quotes in CSV
-            if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
-              return `"${value.replace(/"/g, '""')}"`;
-            }
-            return value;
-          }).join(',')
-        )
-      ].filter(Boolean).join('\n');
+        exportOptions.includeHeaders ? headers.join(",") : null,
+        ...exportData.map((row) =>
+          headers
+            .map((header) => {
+              const value = row[header];
+              // Escape commas and quotes in CSV
+              if (
+                typeof value === "string" &&
+                (value.includes(",") || value.includes('"'))
+              ) {
+                return `"${value.replace(/"/g, '""')}"`;
+              }
+              return value;
+            })
+            .join(","),
+        ),
+      ]
+        .filter(Boolean)
+        .join("\n");
 
       // Create and download file
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', generateFilename('csv'));
-      link.style.visibility = 'hidden';
+      link.setAttribute("href", url);
+      link.setAttribute("download", generateFilename("csv"));
+      link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -231,22 +266,28 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
       await onExport({
         data: exportData,
         columns: includedColumns,
-        format: 'csv',
-        filename: generateFilename('csv'),
-        options: exportOptions
+        format: "csv",
+        filename: generateFilename("csv"),
+        options: exportOptions,
       });
     } catch (error) {
-      console.error('CSV export failed:', error);
-      alert('Export failed. Please try again.');
+      console.error("CSV export failed:", error);
+      alert("Export failed. Please try again.");
     }
-  }, [prepareExportData, includedColumns, exportOptions, generateFilename, onExport]);
+  }, [
+    prepareExportData,
+    includedColumns,
+    exportOptions,
+    generateFilename,
+    onExport,
+  ]);
 
   // Export to Excel
   const exportToExcel = useCallback(async () => {
     const exportData = prepareExportData();
-    
+
     if (exportData.length === 0) {
-      alert('No data to export');
+      alert("No data to export");
       return;
     }
 
@@ -256,56 +297,74 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
       const worksheet = XLSX.utils.json_to_sheet(exportData);
 
       // Set column widths
-      const columnWidths = includedColumns.map(col => ({
-        wch: col.width || Math.max(col.label.length, 15)
+      const columnWidths = includedColumns.map((col) => ({
+        wch: col.width || Math.max(col.label.length, 15),
       }));
-      worksheet['!cols'] = columnWidths;
+      worksheet["!cols"] = columnWidths;
 
       // Add metadata sheet if requested
       if (exportOptions.includeMetadata) {
         const metadata = [
-          { Property: 'Export Date', Value: new Date().toLocaleString() },
-          { Property: 'Total Records', Value: exportData.length },
-          { Property: 'Columns Exported', Value: includedColumns.length },
-          { Property: 'Filters Applied', Value: filters.filter(f => f.enabled).length }
+          { Property: "Export Date", Value: new Date().toLocaleString() },
+          { Property: "Total Records", Value: exportData.length },
+          { Property: "Columns Exported", Value: includedColumns.length },
+          {
+            Property: "Filters Applied",
+            Value: filters.filter((f) => f.enabled).length,
+          },
         ];
-        
-        if (filters.filter(f => f.enabled).length > 0) {
-          metadata.push({ Property: 'Active Filters', Value: '' });
-          filters.filter(f => f.enabled).forEach(filter => {
-            metadata.push({
-              Property: `${filter.label}`,
-              Value: `${filter.operator}: ${filter.value}`
+
+        if (filters.filter((f) => f.enabled).length > 0) {
+          metadata.push({ Property: "Active Filters", Value: "" });
+          filters
+            .filter((f) => f.enabled)
+            .forEach((filter) => {
+              metadata.push({
+                Property: `${filter.label}`,
+                Value: `${filter.operator}: ${filter.value}`,
+              });
             });
-          });
         }
 
         const metadataSheet = XLSX.utils.json_to_sheet(metadata);
-        XLSX.utils.book_append_sheet(workbook, metadataSheet, 'Metadata');
+        XLSX.utils.book_append_sheet(workbook, metadataSheet, "Metadata");
       }
 
       // Add main data sheet
-      XLSX.utils.book_append_sheet(workbook, worksheet, exportOptions.sheetName);
+      XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        exportOptions.sheetName,
+      );
 
       // Write file
-      XLSX.writeFile(workbook, generateFilename('xlsx'));
+      XLSX.writeFile(workbook, generateFilename("xlsx"));
 
       await onExport({
         data: exportData,
         columns: includedColumns,
-        format: 'xlsx',
-        filename: generateFilename('xlsx'),
-        options: exportOptions
+        format: "xlsx",
+        filename: generateFilename("xlsx"),
+        options: exportOptions,
       });
     } catch (error) {
-      console.error('Excel export failed:', error);
-      alert('Export failed. Please try again.');
+      console.error("Excel export failed:", error);
+      alert("Export failed. Please try again.");
     }
-  }, [prepareExportData, includedColumns, exportOptions, filters, generateFilename, onExport]);
+  }, [
+    prepareExportData,
+    includedColumns,
+    exportOptions,
+    filters,
+    generateFilename,
+    onExport,
+  ]);
 
   // Export to PDF (simplified - in real app would use a proper PDF library)
   const exportToPDF = useCallback(async () => {
-    alert('PDF export feature would be implemented with a library like jsPDF or Puppeteer');
+    alert(
+      "PDF export feature would be implemented with a library like jsPDF or Puppeteer",
+    );
     // Implementation would depend on requirements:
     // - Simple table: jsPDF with autoTable plugin
     // - Complex formatting: Puppeteer to generate from HTML
@@ -317,13 +376,13 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
     setIsExporting(true);
     try {
       switch (exportFormat) {
-        case 'csv':
+        case "csv":
           await exportToCSV();
           break;
-        case 'xlsx':
+        case "xlsx":
           await exportToExcel();
           break;
-        case 'pdf':
+        case "pdf":
           await exportToPDF();
           break;
       }
@@ -334,76 +393,98 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
 
   // Toggle column inclusion
   const toggleColumn = useCallback((columnId: string) => {
-    setColumns(prev => prev.map(col => 
-      col.id === columnId ? { ...col, included: !col.included } : col
-    ));
+    setColumns((prev) =>
+      prev.map((col) =>
+        col.id === columnId ? { ...col, included: !col.included } : col,
+      ),
+    );
   }, []);
 
   // Add filter
   const addFilter = useCallback(() => {
     const newFilter: ExportFilter = {
       id: `filter_${Date.now()}`,
-      label: columns[0]?.label || '',
-      field: columns[0]?.field || '',
-      operator: 'contains',
-      value: '',
-      enabled: true
+      label: columns[0]?.label || "",
+      field: columns[0]?.field || "",
+      operator: "contains",
+      value: "",
+      enabled: true,
     };
-    setFilters(prev => [...prev, newFilter]);
+    setFilters((prev) => [...prev, newFilter]);
   }, [columns]);
 
   // Update filter
-  const updateFilter = useCallback((filterId: string, updates: Partial<ExportFilter>) => {
-    setFilters(prev => prev.map(filter => 
-      filter.id === filterId ? { ...filter, ...updates } : filter
-    ));
-  }, []);
+  const updateFilter = useCallback(
+    (filterId: string, updates: Partial<ExportFilter>) => {
+      setFilters((prev) =>
+        prev.map((filter) =>
+          filter.id === filterId ? { ...filter, ...updates } : filter,
+        ),
+      );
+    },
+    [],
+  );
 
   // Remove filter
   const removeFilter = useCallback((filterId: string) => {
-    setFilters(prev => prev.filter(filter => filter.id !== filterId));
+    setFilters((prev) => prev.filter((filter) => filter.id !== filterId));
   }, []);
 
   // Save template
   const saveTemplate = useCallback(() => {
     if (!newTemplateName.trim()) return;
 
-    const template: Omit<ExportTemplate, 'id' | 'createdAt' | 'updatedAt'> = {
+    const template: Omit<ExportTemplate, "id" | "createdAt" | "updatedAt"> = {
       name: newTemplateName,
       description: newTemplateDescription,
       columns,
       filters,
       format: exportFormat,
       options: exportOptions,
-      isDefault: false
+      isDefault: false,
     };
 
     onTemplateSave?.(template);
-    setNewTemplateName('');
-    setNewTemplateDescription('');
+    setNewTemplateName("");
+    setNewTemplateDescription("");
     setShowSaveTemplate(false);
-  }, [newTemplateName, newTemplateDescription, columns, filters, exportFormat, exportOptions, onTemplateSave]);
+  }, [
+    newTemplateName,
+    newTemplateDescription,
+    columns,
+    filters,
+    exportFormat,
+    exportOptions,
+    onTemplateSave,
+  ]);
 
   // Load template
-  const loadTemplate = useCallback((template: ExportTemplate) => {
-    setColumns(template.columns);
-    setFilters(template.filters);
-    setExportFormat(template.format);
-    setExportOptions({
-      ...template.options,
-      sheetName: template.options.filename || exportOptions.sheetName
-    });
-    setShowTemplates(false);
-    onTemplateLoad?.(template);
-  }, [onTemplateLoad]);
+  const loadTemplate = useCallback(
+    (template: ExportTemplate) => {
+      setColumns(template.columns);
+      setFilters(template.filters);
+      setExportFormat(template.format);
+      setExportOptions({
+        ...template.options,
+        sheetName: template.options.filename || exportOptions.sheetName,
+      });
+      setShowTemplates(false);
+      onTemplateLoad?.(template);
+    },
+    [onTemplateLoad],
+  );
 
   // Get export format icon
   const getFormatIcon = (format: string) => {
     switch (format) {
-      case 'csv': return FileText;
-      case 'xlsx': return FileSpreadsheet;
-      case 'pdf': return FileText;
-      default: return Download;
+      case "csv":
+        return FileText;
+      case "xlsx":
+        return FileSpreadsheet;
+      case "pdf":
+        return FileText;
+      default:
+        return Download;
     }
   };
 
@@ -430,7 +511,9 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
             {/* Header */}
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Export Data</h2>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Export Data
+                </h2>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="text-gray-500 hover:text-gray-700"
@@ -448,9 +531,11 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
               <div className="p-6 space-y-6">
                 {/* Export Format Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">Export Format</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Export Format
+                  </label>
                   <div className="grid grid-cols-3 gap-3">
-                    {(['csv', 'xlsx', 'pdf'] as const).map((format) => {
+                    {(["csv", "xlsx", "pdf"] as const).map((format) => {
                       const Icon = getFormatIcon(format);
                       return (
                         <button
@@ -458,12 +543,14 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                           onClick={() => setExportFormat(format)}
                           className={`flex items-center space-x-2 p-3 border rounded-lg transition-colors ${
                             exportFormat === format
-                              ? 'border-blue-500 bg-blue-50 text-blue-700'
-                              : 'border-gray-300 hover:bg-gray-50'
+                              ? "border-blue-500 bg-blue-50 text-blue-700"
+                              : "border-gray-300 hover:bg-gray-50"
                           }`}
                         >
                           <Icon className="w-5 h-5" />
-                          <span className="font-medium">{format.toUpperCase()}</span>
+                          <span className="font-medium">
+                            {format.toUpperCase()}
+                          </span>
                         </button>
                       );
                     })}
@@ -472,7 +559,9 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
 
                 {/* Filename */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Filename</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Filename
+                  </label>
                   <input
                     type="text"
                     value={filename}
@@ -488,21 +577,28 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                 {/* Column Selection */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <label className="block text-sm font-medium text-gray-700">Columns to Export</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Columns to Export
+                    </label>
                     <div className="text-sm text-gray-600">
                       {includedColumns.length} of {columns.length} selected
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-gray-200 rounded-md p-3">
                     {columns.map((column) => (
-                      <label key={column.id} className="flex items-center space-x-2">
+                      <label
+                        key={column.id}
+                        className="flex items-center space-x-2"
+                      >
                         <input
                           type="checkbox"
                           checked={column.included}
                           onChange={() => toggleColumn(column.id)}
                           className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                         />
-                        <span className="text-sm text-gray-700">{column.label}</span>
+                        <span className="text-sm text-gray-700">
+                          {column.label}
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -527,38 +623,50 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                         <input
                           type="checkbox"
                           checked={exportOptions.includeHeaders}
-                          onChange={(e) => setExportOptions(prev => ({
-                            ...prev,
-                            includeHeaders: e.target.checked
-                          }))}
+                          onChange={(e) =>
+                            setExportOptions((prev) => ({
+                              ...prev,
+                              includeHeaders: e.target.checked,
+                            }))
+                          }
                           className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                         />
-                        <span className="text-sm text-gray-700">Include Headers</span>
+                        <span className="text-sm text-gray-700">
+                          Include Headers
+                        </span>
                       </label>
                       <label className="flex items-center space-x-2">
                         <input
                           type="checkbox"
                           checked={exportOptions.includeMetadata}
-                          onChange={(e) => setExportOptions(prev => ({
-                            ...prev,
-                            includeMetadata: e.target.checked
-                          }))}
+                          onChange={(e) =>
+                            setExportOptions((prev) => ({
+                              ...prev,
+                              includeMetadata: e.target.checked,
+                            }))
+                          }
                           className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                         />
-                        <span className="text-sm text-gray-700">Include Metadata</span>
+                        <span className="text-sm text-gray-700">
+                          Include Metadata
+                        </span>
                       </label>
                     </div>
-                    
-                    {exportFormat === 'xlsx' && (
+
+                    {exportFormat === "xlsx" && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Sheet Name</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Sheet Name
+                        </label>
                         <input
                           type="text"
                           value={exportOptions.sheetName}
-                          onChange={(e) => setExportOptions(prev => ({
-                            ...prev,
-                            sheetName: e.target.value
-                          }))}
+                          onChange={(e) =>
+                            setExportOptions((prev) => ({
+                              ...prev,
+                              sheetName: e.target.value,
+                            }))
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -568,7 +676,9 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
 
                 {/* Data Preview */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">Data Preview</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Data Preview
+                  </label>
                   <div className="border border-gray-200 rounded-md overflow-hidden">
                     <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
                       <span className="text-sm text-gray-600">
@@ -580,7 +690,10 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                         <thead className="bg-gray-50">
                           <tr>
                             {includedColumns.slice(0, 4).map((column) => (
-                              <th key={column.id} className="px-4 py-2 text-left text-gray-600">
+                              <th
+                                key={column.id}
+                                className="px-4 py-2 text-left text-gray-600"
+                              >
                                 {column.label}
                               </th>
                             ))}
@@ -593,9 +706,15 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                         </thead>
                         <tbody>
                           {filteredData.slice(0, 3).map((row, index) => (
-                            <tr key={index} className="border-t border-gray-200">
+                            <tr
+                              key={index}
+                              className="border-t border-gray-200"
+                            >
                               {includedColumns.slice(0, 4).map((column) => (
-                                <td key={column.id} className="px-4 py-2 text-gray-900">
+                                <td
+                                  key={column.id}
+                                  className="px-4 py-2 text-gray-900"
+                                >
                                   {formatCellValue(row[column.field], column)}
                                 </td>
                               ))}
@@ -606,7 +725,10 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                           ))}
                           {filteredData.length > 3 && (
                             <tr>
-                              <td colSpan={Math.min(includedColumns.length, 5)} className="px-4 py-2 text-center text-gray-500">
+                              <td
+                                colSpan={Math.min(includedColumns.length, 5)}
+                                className="px-4 py-2 text-center text-gray-500"
+                              >
                                 +{filteredData.length - 3} more rows...
                               </td>
                             </tr>
@@ -621,22 +743,31 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                 {templates.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <label className="block text-sm font-medium text-gray-700">Export Templates</label>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Export Templates
+                      </label>
                       <button
                         onClick={() => setShowTemplates(!showTemplates)}
                         className="text-sm text-blue-600 hover:text-blue-700"
                       >
-                        {showTemplates ? 'Hide' : 'Show'} Templates
+                        {showTemplates ? "Hide" : "Show"} Templates
                       </button>
                     </div>
-                    
+
                     {showTemplates && (
                       <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
                         {templates.map((template) => (
-                          <div key={template.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <div
+                            key={template.id}
+                            className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                          >
                             <div className="flex-1">
-                              <div className="font-medium text-sm text-gray-900">{template.name}</div>
-                              <div className="text-xs text-gray-600">{template.description}</div>
+                              <div className="font-medium text-sm text-gray-900">
+                                {template.name}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                {template.description}
+                              </div>
                             </div>
                             <div className="flex space-x-2">
                               <button
@@ -707,10 +838,14 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
       {showSaveTemplate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
           <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Save Export Template</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Save Export Template
+            </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Template Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Template Name
+                </label>
                 <input
                   type="text"
                   value={newTemplateName}
@@ -720,7 +855,9 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description (optional)
+                </label>
                 <textarea
                   value={newTemplateDescription}
                   onChange={(e) => setNewTemplateDescription(e.target.value)}

@@ -38,13 +38,13 @@ export interface EmailAnalysis {
     intent: string;
     urgency: string;
   };
-  priority: 'Critical' | 'High' | 'Medium' | 'Low';
+  priority: "Critical" | "High" | "Medium" | "Low";
   entities: EmailEntities;
   workflowState: string;
   suggestedActions: string[];
   confidence: number;
   summary: string;
-  prioritySource?: 'pattern-rule' | 'workflow-rule' | 'model';
+  prioritySource?: "pattern-rule" | "workflow-rule" | "model";
 }
 
 export interface EmailEntities {

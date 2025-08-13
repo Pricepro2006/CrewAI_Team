@@ -6,6 +6,24 @@ export interface Email {
   id: string;
   subject: string;
   body: string;
+  bodyPreview?: string;
+  from: {
+    emailAddress: {
+      address: string;
+      name: string;
+    };
+  };
+  to?: Array<{
+    emailAddress: {
+      address: string;
+      name: string;
+    };
+  }>;
+  receivedDateTime: string;
+  isRead: boolean;
+  categories: string[];
+  metadata?: Record<string, any>;
+  // Keep legacy fields for backward compatibility
   sender_email: string;
   recipient_emails?: string;
   date_received: string;

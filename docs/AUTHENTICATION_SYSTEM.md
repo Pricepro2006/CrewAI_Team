@@ -9,6 +9,7 @@ The CrewAI Team project now includes a comprehensive JWT-based authentication sy
 ### Backend Components
 
 #### 1. Database Schema (`/src/database/migrations/008_create_users_table.ts`)
+
 - **Users table**: Core user information with role-based access
 - **Refresh tokens table**: Secure token management with expiration
 - **User sessions table**: Device and session tracking
@@ -16,22 +17,26 @@ The CrewAI Team project now includes a comprehensive JWT-based authentication sy
 - **Email verification tokens table**: Email verification workflow
 
 #### 2. Authentication Utilities
+
 - **JWT Manager** (`/src/api/utils/jwt.ts`): Token generation, verification, and management
 - **Password Manager** (`/src/api/utils/password.ts`): Secure password hashing, validation, and strength checking
 
 #### 3. User Service (`/src/api/services/UserService.ts`)
+
 - Complete CRUD operations for users
 - Password management and authentication
 - Token lifecycle management
 - Session handling and cleanup
 
 #### 4. Authentication Middleware (`/src/api/middleware/auth.ts`)
+
 - JWT verification for Express routes
 - TRPC authentication middleware
 - Role-based authorization
 - Rate limiting for auth endpoints
 
 #### 5. Authentication Router (`/src/api/routes/auth.router.ts`)
+
 - Login/logout endpoints
 - User registration
 - Token refresh functionality
@@ -41,12 +46,14 @@ The CrewAI Team project now includes a comprehensive JWT-based authentication sy
 ### Frontend Components
 
 #### 1. Authentication Hooks (`/src/ui/hooks/useAuth.ts`)
+
 - React context for authentication state
 - Automatic token management
 - Session persistence
 - Role-based utilities
 
 #### 2. UI Components
+
 - **LoginForm**: Polished login interface with validation
 - **RegisterForm**: Registration with real-time password strength checking
 - **AuthModal**: Modal wrapper for authentication forms
@@ -55,18 +62,21 @@ The CrewAI Team project now includes a comprehensive JWT-based authentication sy
 ## 🔐 Security Features
 
 ### Password Security
+
 - **Strength Validation**: Real-time password strength analysis
 - **Entropy Calculation**: Mathematical password strength measurement
 - **Compromised Password Detection**: Basic breach detection
 - **Secure Hashing**: bcrypt with configurable salt rounds
 
 ### JWT Security
+
 - **Short-lived Access Tokens**: 15-minute expiration by default
 - **Secure Refresh Tokens**: 7-30 day expiration with rotation
 - **Token Rotation**: New tokens issued on refresh
 - **Proper Audience/Issuer**: JWT claims validation
 
 ### Additional Security
+
 - **Rate Limiting**: Authentication endpoint protection
 - **CSRF Protection**: Cross-site request forgery prevention
 - **Session Management**: Device tracking and bulk logout
@@ -75,11 +85,13 @@ The CrewAI Team project now includes a comprehensive JWT-based authentication sy
 ## 🚀 Getting Started
 
 ### 1. Install Dependencies
+
 ```bash
 npm install bcrypt jsonwebtoken @types/bcrypt @types/jsonwebtoken
 ```
 
 ### 2. Environment Configuration
+
 ```env
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-minimum-32-chars
@@ -95,24 +107,24 @@ DATABASE_PATH=./data/app.db
 ```
 
 ### 3. Run Database Migration
+
 ```bash
 # Run the migration to create authentication tables
 npx tsx src/database/migrations/migrate.ts up
 ```
 
 ### 4. Update App.tsx
+
 ```tsx
-import { AuthProvider } from './hooks/useAuth';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from "./hooks/useAuth";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        {/* Your app components */}
-      </AuthProvider>
+      <AuthProvider>{/* Your app components */}</AuthProvider>
     </QueryClientProvider>
   );
 }
@@ -123,48 +135,51 @@ function App() {
 ### Frontend Authentication
 
 #### Login Component
+
 ```tsx
-import { useAuth } from '../hooks/useAuth';
-import { LoginForm } from '../components/Auth/LoginForm';
+import { useAuth } from "../hooks/useAuth";
+import { LoginForm } from "../components/Auth/LoginForm";
 
 function LoginPage() {
   const { login, isAuthenticated } = useAuth();
-  
+
   if (isAuthenticated) {
     return <Navigate to="/dashboard" />;
   }
-  
-  return <LoginForm onSuccess={() => navigate('/dashboard')} />;
+
+  return <LoginForm onSuccess={() => navigate("/dashboard")} />;
 }
 ```
 
 #### Protected Route
+
 ```tsx
-import { useRequireAuth } from '../hooks/useAuth';
+import { useRequireAuth } from "../hooks/useAuth";
 
 function ProtectedComponent() {
-  const isAuthenticated = useRequireAuth('/login');
-  
+  const isAuthenticated = useRequireAuth("/login");
+
   if (!isAuthenticated) {
     return <div>Redirecting to login...</div>;
   }
-  
+
   return <div>Protected content</div>;
 }
 ```
 
 #### Role-based Access
+
 ```tsx
-import { useIsAdmin, useIsModerator } from '../hooks/useAuth';
+import { useIsAdmin, useIsModerator } from "../hooks/useAuth";
 
 function AdminPanel() {
   const isAdmin = useIsAdmin();
   const isModerator = useIsModerator();
-  
+
   if (!isAdmin && !isModerator) {
     return <div>Access denied</div>;
   }
-  
+
   return <div>Admin/Moderator content</div>;
 }
 ```
@@ -172,55 +187,57 @@ function AdminPanel() {
 ### Backend API Usage
 
 #### Protected TRPC Procedure
+
 ```typescript
-import { protectedProcedure } from '../trpc/enhanced-router';
+import { protectedProcedure } from "../trpc/enhanced-router";
 
 export const userRouter = router({
-  getProfile: protectedProcedure
-    .query(({ ctx }) => {
-      return ctx.user; // Authenticated user
-    }),
-    
+  getProfile: protectedProcedure.query(({ ctx }) => {
+    return ctx.user; // Authenticated user
+  }),
+
   updateProfile: protectedProcedure
     .input(updateProfileSchema)
     .mutation(async ({ input, ctx }) => {
       // Update user profile
       return await userService.updateUser(ctx.user.id, input);
-    })
+    }),
 });
 ```
 
 #### Admin-only Procedure
+
 ```typescript
-import { adminProcedure } from '../trpc/enhanced-router';
+import { adminProcedure } from "../trpc/enhanced-router";
 
 export const adminRouter = router({
-  listUsers: adminProcedure
-    .query(async () => {
-      return await userService.listUsers();
-    })
+  listUsers: adminProcedure.query(async () => {
+    return await userService.listUsers();
+  }),
 });
 ```
 
 ## 🔧 Configuration Options
 
 ### JWT Configuration
+
 ```typescript
 // In app.config.ts
 export const appConfig = {
   security: {
     jwtSecret: process.env.JWT_SECRET,
-    accessTokenExpiry: '15m',
-    refreshTokenExpiry: '7d',
+    accessTokenExpiry: "15m",
+    refreshTokenExpiry: "7d",
     rateLimiting: {
       windowMs: 60000, // 1 minute
-      maxRequests: 5    // 5 attempts per minute
-    }
-  }
+      maxRequests: 5, // 5 attempts per minute
+    },
+  },
 };
 ```
 
 ### Password Policy
+
 ```typescript
 // Configurable in PasswordManager
 const passwordRequirements = {
@@ -229,31 +246,33 @@ const passwordRequirements = {
   requireLowercase: true,
   requireNumbers: true,
   requireSpecialChars: true,
-  preventCommonPatterns: true
+  preventCommonPatterns: true,
 };
 ```
 
 ## 🧪 Testing
 
 ### Authentication Tests (TODO)
+
 - Unit tests for JWT utilities
 - Password manager tests
 - User service integration tests
 - Authentication flow end-to-end tests
 
 ### Example Test Structure
+
 ```typescript
-describe('Authentication System', () => {
-  describe('JWT Manager', () => {
-    it('should generate valid access tokens');
-    it('should verify tokens correctly');
-    it('should handle token expiration');
+describe("Authentication System", () => {
+  describe("JWT Manager", () => {
+    it("should generate valid access tokens");
+    it("should verify tokens correctly");
+    it("should handle token expiration");
   });
-  
-  describe('User Service', () => {
-    it('should create users with hashed passwords');
-    it('should authenticate users correctly');
-    it('should manage refresh tokens');
+
+  describe("User Service", () => {
+    it("should create users with hashed passwords");
+    it("should authenticate users correctly");
+    it("should manage refresh tokens");
   });
 });
 ```
@@ -261,20 +280,26 @@ describe('Authentication System', () => {
 ## 🚀 Advanced Features
 
 ### Automatic Token Refresh
+
 The frontend automatically refreshes tokens 5 minutes before expiration, ensuring seamless user experience.
 
 ### Multi-device Session Management
+
 Users can view and manage sessions across multiple devices with the ability to logout from specific devices or all devices.
 
 ### Password Strength Analysis
+
 Real-time password strength checking with:
+
 - Character variety analysis
 - Entropy calculation
 - Common password detection
 - Visual strength indicators
 
 ### Role-based Authorization
+
 Three-tier role system:
+
 - **User**: Basic access
 - **Moderator**: Enhanced permissions
 - **Admin**: Full system access
@@ -309,6 +334,7 @@ Three-tier role system:
 4. **CORS Issues**: Configure CORS properly for frontend-backend communication
 
 ### Debug Mode
+
 Set `LOG_LEVEL=debug` to enable detailed authentication logging.
 
 ## 📋 API Reference
@@ -316,7 +342,7 @@ Set `LOG_LEVEL=debug` to enable detailed authentication logging.
 ### Authentication Endpoints
 
 - `POST /trpc/auth.login` - User login
-- `POST /trpc/auth.register` - User registration  
+- `POST /trpc/auth.register` - User registration
 - `POST /trpc/auth.refreshToken` - Refresh access token
 - `POST /trpc/auth.logout` - Logout from current device
 - `POST /trpc/auth.logoutAll` - Logout from all devices

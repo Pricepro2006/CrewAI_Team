@@ -4,9 +4,10 @@
  */
 
 import { logger } from "../../utils/logger.js";
+import { v4 as uuidv4 } from "uuid";
 import type { WalmartProductRepository, SubstitutionRepository, UserPreferencesRepository } from "../../database/repositories/WalmartProductRepository.js";
 import type { GroceryListRepository, GroceryItemRepository, ShoppingSessionRepository } from "../../database/repositories/GroceryRepository.js";
-import { getDatabaseManager } from "../../database/DatabaseManager.js";
+import { getWalmartDatabaseManager } from "../../database/WalmartDatabaseManager.js";
 import { BrightDataScraper } from "./BrightDataScraper.js";
 import { ProductLookupService } from "./ProductLookupService.js";
 import { DealMatchingService } from "./DealMatchingService.js";
@@ -21,7 +22,7 @@ import type {
 } from "../../database/repositories/GroceryRepository.js";
 import type { UserPreferences } from "../../database/repositories/WalmartProductRepository.js";
 
-export interface SearchOptions {
+export interface ServiceSearchOptions {
   query: string;
   category?: string;
   priceRange?: { min: number; max: number };
@@ -65,15 +66,16 @@ export class WalmartGroceryService {
   private chromadb: ChromaDBManager;
 
   private constructor() {
-    const dbManager = getDatabaseManager();
+    // Use dedicated Walmart database manager
+    const walmartDbManager = getWalmartDatabaseManager();
     
-    // Initialize repositories
-    this.productRepo = dbManager.walmartProducts;
-    this.substitutionRepo = dbManager.substitutions;
-    this.preferencesRepo = dbManager.userPreferences;
-    this.listRepo = dbManager.groceryLists;
-    this.itemRepo = dbManager.groceryItems;
-    this.sessionRepo = dbManager.shoppingSessions;
+    // Initialize repositories from Walmart-specific database
+    this.productRepo = walmartDbManager.walmartProducts;
+    this.substitutionRepo = walmartDbManager.substitutions;
+    this.preferencesRepo = walmartDbManager.userPreferences;
+    this.listRepo = walmartDbManager.groceryLists;
+    this.itemRepo = walmartDbManager.groceryItems;
+    this.sessionRepo = walmartDbManager.shoppingSessions;
     
     // Initialize services
     this.scraper = BrightDataScraper.getInstance();
@@ -92,7 +94,7 @@ export class WalmartGroceryService {
   /**
    * Search for products with advanced filtering
    */
-  async searchProducts(options: SearchOptions): Promise<WalmartProduct[]> {
+  async searchProducts(options: ServiceSearchOptions): Promise<WalmartProduct[]> {
     try {
       logger.info("Searching products", "WALMART_SERVICE", { options });
 
@@ -177,7 +179,10 @@ export class WalmartGroceryService {
           await this.productRepo.upsertProduct(this.convertToRepoProduct(updatedProduct));
           
           // Record price history if price changed
-          if (updatedProduct.price.regular !== (product as any).current_price) {
+          const updatedPrice = typeof updatedProduct.price === 'object' 
+            ? updatedProduct.price.regular 
+            : updatedProduct.price;
+          if (updatedPrice !== (product as any).current_price) {
             // TODO: Implement recordPriceHistory method in repository
             // await this.productRepo.recordPriceHistory(
             //   productId, 
@@ -203,12 +208,13 @@ export class WalmartGroceryService {
   async createGroceryList(userId: string, name: string, description?: string): Promise<RepoGroceryList> {
     try {
       const list = await this.listRepo.createList({
+        id: uuidv4(),  // Generate ID here
         user_id: userId,
         list_name: name,
         description,
         list_type: "shopping",
         status: "active"
-      });
+      } as RepoGroceryList);
 
       logger.info("Created grocery list", "WALMART_SERVICE", { 
         listId: list.id, 
@@ -254,6 +260,7 @@ export class WalmartGroceryService {
           const product = this.productRepo.entityToProduct(productEntity);
 
           const groceryItem = await this.itemRepo.addItem({
+            id: uuidv4(),  // Generate ID here
             list_id: listId,
             item_name: product.name,
             product_id: product.product_id,
@@ -261,7 +268,7 @@ export class WalmartGroceryService {
             quantity: item.quantity,
             estimated_price: product.current_price,
             notes: item.notes
-          });
+          } as RepoGroceryItem);
 
           addedItems.push(convertRepoGroceryItemToService(groceryItem));
         }
@@ -296,7 +303,7 @@ export class WalmartGroceryService {
   ): Promise<WalmartProduct[]> {
     try {
       // Get user preferences
-      const preferences = await this.preferencesRepo.getPreference(userId, "grocery_substitution", null);
+      const preferences = await this.preferencesRepo.getPreferences(userId);
       
       // Get original product
       const originalProduct = await this.getProductDetails(productId);
@@ -306,7 +313,7 @@ export class WalmartGroceryService {
 
       // Find similar products
       // Use searchProducts as fallback since findSimilarProducts doesn't exist
-      const substituteEntities = await this.productRepo.searchProducts(`similar to ${productId}`, { limit: 10 });
+      const substituteEntities = await this.productRepo.searchProducts(`similar to ${productId}`, 10);
 
       // Convert ProductEntity[] to WalmartProduct[]
       let substitutes = substituteEntities.map(entity => this.transformEntityToProduct(entity));
@@ -325,11 +332,12 @@ export class WalmartGroceryService {
 
       // Record substitution suggestions
       for (const substitute of scoredSubstitutes.slice(0, 3)) {
-        await this.substitutionRepo.create({
+        await this.substitutionRepo.recordSubstitution({
+          id: '', // Will be generated by recordSubstitution
           original_product_id: productId,
           substitute_product_id: substitute.id,
-          confidence_score: 0.8, // Placeholder - would calculate real score
-          price_difference: (substitute.price || 0) - (originalProduct.price || 0),
+          similarity_score: 0.8, // Placeholder - would calculate real score
+          price_difference: Number(substitute.price || 0) - Number(originalProduct.price || 0),
           reason: "system_generated"
         });
       }
@@ -351,11 +359,13 @@ export class WalmartGroceryService {
   ): Promise<RepoShoppingSession> {
     try {
       const session = await this.sessionRepo.createSession({
+        id: uuidv4(),  // Generate ID here
         user_id: userId,
         list_id: listId,
         session_type: type,
-        status: "active"
-      });
+        status: "active",
+        started_at: new Date().toISOString()
+      } as RepoShoppingSession);
 
       logger.info("Started shopping session", "WALMART_SERVICE", { 
         sessionId: session.id,
@@ -381,14 +391,14 @@ export class WalmartGroceryService {
       }
 
       // Calculate totals
-      const items = await this.itemRepo.getItemsByList(session.list_id!);
+      const items = await this.itemRepo.getListItems(session.list_id!);
       let subtotal = 0;
       let itemsFound = 0;
       let itemsSubstituted = 0;
 
       for (const item of items) {
         if (item.status === "purchased") {
-          subtotal += (item.actual_price || item.estimated_price || 0) * item.quantity;
+          subtotal += (item.actual_price || item.estimated_price || 0) * (item.quantity || 1);
           itemsFound++;
         } else if (item.status === "substituted") {
           itemsSubstituted++;
@@ -424,8 +434,10 @@ export class WalmartGroceryService {
   async getRecommendations(userId: string, context?: any): Promise<WalmartProduct[]> {
     try {
       // Get user preferences and history
-      const preferences = await this.preferencesRepo.getPreference(userId, "grocery_substitution", null);
-      const recentSessions = await this.sessionRepo.getUserSessions(userId, "completed", 5);
+      const preferences = await this.preferencesRepo.getPreferences(userId);
+      // Get recent sessions - using available methods
+      const activeSession = await this.sessionRepo.getActiveSession(userId);
+      const recentSessions = activeSession ? [activeSession] : [];
       
       // Build recommendation context
       const recommendationContext = {
@@ -493,8 +505,8 @@ export class WalmartGroceryService {
     let filtered = products;
 
     // Apply brand preferences
-    const preferredBrands = options?.preferredBrands || preferences.preferredBrands || [];
-    const avoidBrands = options?.avoidBrands || preferences.avoidProducts || [];
+    const preferredBrands = options?.preferredBrands || preferences.preferred_brands || [];
+    const avoidBrands = options?.avoidBrands || preferences.avoided_brands || [];
 
     if (avoidBrands.length > 0) {
       filtered = filtered.filter(p => !avoidBrands.includes(p.brand || ""));
@@ -512,7 +524,7 @@ export class WalmartGroceryService {
     }
 
     // Apply dietary restrictions
-    if (preferences.dietaryRestrictions?.length) {
+    if (preferences.dietary_restrictions?.length) {
       // This would need more sophisticated filtering based on product attributes
       // For now, just a placeholder
     }
@@ -535,8 +547,8 @@ export class WalmartGroceryService {
       let score = 0;
       
       // Price similarity (max 0.4)
-      const priceDiff = Math.abs((sub.price || 0) - (original.price || 0));
-      const priceScore = Math.max(0, 0.4 - (priceDiff / (original.price || 1)) * 0.4);
+      const priceDiff = Math.abs(Number(sub.price || 0) - Number(original.price || 0));
+      const priceScore = Math.max(0, 0.4 - (priceDiff / Number(original.price || 1)) * 0.4);
       score += priceScore;
       
       // Rating score (max 0.3)
@@ -565,9 +577,9 @@ export class WalmartGroceryService {
    * Helper: Update list estimated total
    */
   private async updateListTotal(listId: string): Promise<void> {
-    const items = await this.itemRepo.getItemsByList(listId);
+    const items = await this.itemRepo.getListItems(listId);
     const total = items.reduce((sum, item) => {
-      return sum + (item.estimated_price || 0) * item.quantity;
+      return sum + Number(item.estimated_price || 0) * Number(item.quantity || 1);
     }, 0);
     
     await this.listRepo.updateList(listId, { estimated_total: total });
@@ -577,12 +589,11 @@ export class WalmartGroceryService {
    * Helper: Get recent purchases for user
    */
   private async getRecentPurchases(userId: string): Promise<WalmartProduct[]> {
-    const sessions = await this.sessionRepo.getUserSessions(userId, "completed", 3);
+    const session = await this.sessionRepo.getSession(userId);
     const products: WalmartProduct[] = [];
     
-    for (const session of sessions) {
-      if (session.list_id) {
-        const items = await this.itemRepo.getItemsByList(session.list_id);
+    if (session && session.list_id) {
+        const items = await this.itemRepo.getListItems(session.list_id);
         for (const item of items.filter(i => i.status === "purchased" && i.product_id)) {
           const productEntity = await this.productRepo.findById(item.product_id!);
           if (productEntity) {
@@ -590,7 +601,6 @@ export class WalmartGroceryService {
             products.push(product);
           }
         }
-      }
     }
     
     return products;
@@ -610,27 +620,57 @@ export class WalmartGroceryService {
    */
   private transformEntityToProduct(entity: any): WalmartProduct {
     return {
-      id: entity.product_id || entity.id,
+      id: entity.product_id || entity.id || uuidv4(),
+      walmartId: entity.walmart_id || entity.product_id || entity.id,
       name: entity.name,
       brand: entity.brand,
       description: entity.description,
-      category: entity.category || "Uncategorized",
+      category: {
+        id: entity.category_id || "uncategorized",
+        name: entity.category || "Uncategorized",
+        path: [entity.category || "Uncategorized"],
+        level: 1,
+      },
       subcategory: entity.subcategory,
-      price: entity.price,
-      originalPrice: entity.original_price,
+      price: {
+        currency: "USD",
+        regular: entity.price || 0,
+        sale: entity.sale_price,
+        unit: entity.unit_price,
+        unitOfMeasure: entity.unit || "each",
+      },
+      images: entity.image_url ? [{
+        id: "primary",
+        url: entity.image_url,
+        type: "primary" as const,
+      }] : [],
+      availability: {
+        inStock: entity.in_stock ?? true,
+        stockLevel: entity.stock_quantity > 0 ? "in_stock" as const : "out_of_stock" as const,
+        quantity: entity.stock_quantity,
+      },
+      metadata: {
+        source: "api" as const,
+        lastScraped: new Date().toISOString(),
+      },
+      // Additional properties for compatibility
       unit: entity.unit || "each",
       size: entity.size,
       imageUrl: entity.image_url,
       thumbnailUrl: entity.thumbnail_url,
       barcode: entity.upc,
-      inStock: entity.in_stock,
+      inStock: entity.in_stock ?? true,
       stockLevel: entity.stock_quantity,
-      location: entity.aisle_location ? { aisle: entity.aisle_location } : undefined,
+      location: entity.aisle_location || undefined,
       ratings: entity.rating && entity.review_count ? {
         average: entity.rating,
-        count: entity.review_count
+        count: entity.review_count,
+        distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+        reviews: [],
       } : undefined,
       nutritionalInfo: entity.nutritional_info,
+      createdAt: entity.created_at || new Date().toISOString(),
+      updatedAt: entity.updated_at || new Date().toISOString(),
     };
   }
 
@@ -639,16 +679,17 @@ export class WalmartGroceryService {
    */
   private convertToRepoProduct(product: WalmartProduct): import("../../database/repositories/WalmartProductRepository.js").WalmartProduct {
     return {
+      id: product.id,
       product_id: product.walmartId,
       name: product.name,
       brand: product.brand,
       description: product.description,
-      category_path: product.category.name,
-      department: product.category.path[0],
-      current_price: product.price.regular,
-      regular_price: product.price.wasPrice,
-      unit_price: product.price.unit,
-      unit_measure: product.price.unitOfMeasure,
+      category_path: typeof product.category === 'object' ? product.category.name : product.category,
+      department: typeof product.category === 'object' && product.category.path ? product.category.path[0] : undefined,
+      current_price: typeof product.price === 'object' ? product.price.regular : product.price,
+      regular_price: typeof product.price === 'object' ? product.price.wasPrice : undefined,
+      unit_price: typeof product.price === 'object' ? product.price.unit : undefined,
+      unit_measure: typeof product.price === 'object' ? product.price.unitOfMeasure : undefined,
       in_stock: product.availability.inStock,
       stock_level: product.availability.quantity,
       online_only: product.availability.onlineOnly,
@@ -673,13 +714,13 @@ export class WalmartGroceryService {
   private transformDatabaseListToType(dbList: any): RepoGroceryList {
     return {
       id: dbList.id,
-      userId: dbList.user_id,
-      name: dbList.list_name,
+      user_id: dbList.user_id,
+      list_name: dbList.list_name,
       description: dbList.description,
       items: [], // Will be populated separately
       totalEstimate: dbList.estimated_total || 0,
-      createdAt: dbList.created_at ? new Date(dbList.created_at) : new Date(),
-      updatedAt: dbList.updated_at ? new Date(dbList.updated_at) : new Date(),
+      created_at: dbList.created_at || new Date().toISOString(),
+      updated_at: dbList.updated_at || new Date().toISOString(),
       tags: [],
       isShared: false
     };

@@ -16,7 +16,11 @@ class MetricsCollector {
   /**
    * Increment a counter metric
    */
-  increment(name: string, value: number = 1, labels?: Record<string, string>): void {
+  increment(
+    name: string,
+    value: number = 1,
+    labels?: Record<string, string>,
+  ): void {
     const key = this.getKey(name, labels);
     const current = this.counters.get(key) || 0;
     this.counters.set(key, current + value);
@@ -33,11 +37,26 @@ class MetricsCollector {
   /**
    * Record a histogram value
    */
-  histogram(name: string, value: number, labels?: Record<string, string>): void {
+  histogram(
+    name: string,
+    value: number,
+    labels?: Record<string, string>,
+  ): void {
     const key = this.getKey(name, labels);
     const values = this.histograms.get(key) || [];
     values.push(value);
     this.histograms.set(key, values);
+  }
+
+  /**
+   * Start a timer and return a function to end it
+   */
+  startTimer(name: string, labels?: Record<string, string>): () => void {
+    const start = Date.now();
+    return () => {
+      const duration = Date.now() - start;
+      this.histogram(name, duration, labels);
+    };
   }
 
   /**
@@ -57,10 +76,10 @@ class MetricsCollector {
             avg: values.reduce((a, b) => a + b, 0) / values.length,
             p50: this.percentile(values, 0.5),
             p95: this.percentile(values, 0.95),
-            p99: this.percentile(values, 0.99)
-          }
-        ])
-      )
+            p99: this.percentile(values, 0.99),
+          },
+        ]),
+      ),
     };
   }
 
@@ -80,7 +99,7 @@ class MetricsCollector {
     const labelStr = Object.entries(labels)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}="${v}"`)
-      .join(',');
+      .join(",");
     return `${name}{${labelStr}}`;
   }
 

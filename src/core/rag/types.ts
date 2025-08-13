@@ -1,4 +1,4 @@
-import type { Document, DocumentMetadata } from '../shared/types.js';
+import type { Document, DocumentMetadata } from "../shared/types.js";
 export type { Document, DocumentMetadata };
 
 export interface ProcessedDocument extends Document {
@@ -18,7 +18,7 @@ export interface RAGConfig {
 }
 
 export interface VectorStoreConfig {
-  type: 'chromadb' | 'pinecone' | 'weaviate' | 'qdrant' | 'mcp-vectorize';
+  type: "chromadb" | "pinecone" | "weaviate" | "qdrant" | "mcp-vectorize";
   path?: string;
   baseUrl?: string;
   apiKey?: string;
@@ -33,7 +33,7 @@ export interface VectorStoreConfig {
 export interface ChunkingConfig {
   size: number;
   overlap: number;
-  method?: 'sentence' | 'token' | 'character';
+  method?: "sentence" | "token" | "character";
   separator?: string;
   trimWhitespace?: boolean;
   preserveFormatting?: boolean;
@@ -50,7 +50,16 @@ export interface RetrievalConfig {
 
 export interface FilterConfig {
   field: string;
-  operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'nin' | 'contains';
+  operator:
+    | "eq"
+    | "neq"
+    | "gt"
+    | "gte"
+    | "lt"
+    | "lte"
+    | "in"
+    | "nin"
+    | "contains";
   value: any;
 }
 

@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import Database from "better-sqlite3";
 
 /**
  * Migration: Create users table and authentication-related tables
@@ -7,7 +7,7 @@ import Database from 'better-sqlite3';
  */
 
 export function up(db: Database) {
-  console.log('Creating users and authentication tables...');
+  console.log("Creating users and authentication tables...");
 
   // Create users table
   db.exec(`
@@ -121,11 +121,11 @@ export function up(db: Database) {
     CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_used ON email_verification_tokens(used);
   `);
 
-  console.log('✅ Users and authentication tables created successfully');
+  console.log("✅ Users and authentication tables created successfully");
 }
 
 export function down(db: Database) {
-  console.log('Dropping users and authentication tables...');
+  console.log("Dropping users and authentication tables...");
 
   // Drop tables in reverse order due to foreign key constraints
   db.exec(`DROP TABLE IF EXISTS email_verification_tokens;`);
@@ -134,5 +134,5 @@ export function down(db: Database) {
   db.exec(`DROP TABLE IF EXISTS refresh_tokens;`);
   db.exec(`DROP TABLE IF EXISTS users;`);
 
-  console.log('✅ Users and authentication tables dropped successfully');
+  console.log("✅ Users and authentication tables dropped successfully");
 }

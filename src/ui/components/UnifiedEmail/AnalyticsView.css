@@ -377,7 +377,7 @@
   .analytics-charts-container {
     grid-template-columns: 1fr;
   }
-  
+
   .analytics-metrics-grid {
     grid-template-columns: 1fr;
   }
@@ -387,15 +387,15 @@
   .analytics-view {
     padding: 1rem;
   }
-  
+
   .analytics-title {
     font-size: 1.5rem;
   }
-  
+
   .analytics-metric-value {
     font-size: 1.5rem;
   }
-  
+
   .analytics-workflow-grid {
     grid-template-columns: 1fr;
   }

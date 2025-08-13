@@ -9,7 +9,7 @@ import type {
   WalmartProductRepository,
   ProductEntity,
 } from "../../database/repositories/WalmartProductRepository.js";
-import { getDatabaseManager } from "../../database/DatabaseManager.js";
+import { getWalmartDatabaseManager } from "../../database/WalmartDatabaseManager.js";
 import type { WalmartProduct } from "../../types/walmart-grocery.js";
 import { MasterOrchestrator } from "../../core/orchestration/MasterOrchestrator.js";
 
@@ -45,7 +45,7 @@ export class ProductLookupService {
 
   private constructor() {
     this.chromadb = new ChromaDBManager();
-    this.productRepo = getDatabaseManager().walmartProducts;
+    this.productRepo = getWalmartDatabaseManager().walmartProducts;
     this.orchestrator = MasterOrchestrator.getInstance();
     this.embeddingCache = new Map();
   }
@@ -398,11 +398,16 @@ export class ProductLookupService {
 
       // Category filter
       if (filters.categories?.length) {
-        const hasCategory = filters.categories.some(
-          (cat) =>
-            product.category?.name?.includes(cat) ||
-            product.category?.path?.includes(cat),
-        );
+        const hasCategory = filters.categories.some((cat) => {
+          if (!product.category) return false;
+          if (typeof product.category === "string") {
+            return product.category.includes(cat);
+          }
+          return (
+            product.category.name?.includes(cat) ||
+            product.category.path?.includes(cat)
+          );
+        });
         if (!hasCategory) return false;
       }
 
@@ -415,7 +420,10 @@ export class ProductLookupService {
 
       // Price filter
       if (filters.priceRange) {
-        const price = product.price.regular || 0;
+        const price =
+          typeof product.price === "object"
+            ? product.price.regular || 0
+            : product.price || 0;
         if (price < filters.priceRange.min || price > filters.priceRange.max) {
           return false;
         }

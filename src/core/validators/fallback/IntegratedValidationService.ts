@@ -1,6 +1,15 @@
-import { BusinessResponseValidator, type ValidationResult } from '../BusinessResponseValidator.js';
-import { FallbackSearchManager, type FallbackSearchOptions } from './FallbackSearchManager.js';
-import { UserFeedbackCollector, type UserFeedback } from './UserFeedbackCollector.js';
+import {
+  BusinessResponseValidator,
+  type ValidationResult,
+} from "../BusinessResponseValidator.js";
+import {
+  FallbackSearchManager,
+  type FallbackSearchOptions,
+} from "./FallbackSearchManager.js";
+import {
+  UserFeedbackCollector,
+  type UserFeedback,
+} from "./UserFeedbackCollector.js";
 
 export interface IntegratedValidationOptions {
   enableFallback?: boolean;
@@ -33,12 +42,12 @@ export class IntegratedValidationService {
       minConfidenceThreshold: 0.6,
       maxFallbackAttempts: 3,
       cacheResults: true,
-      ...options
+      ...options,
     };
 
     this.validator = new BusinessResponseValidator({
       privacyMode: this.options.privacyMode,
-      minConfidenceThreshold: this.options.minConfidenceThreshold
+      minConfidenceThreshold: this.options.minConfidenceThreshold,
     });
 
     this.fallbackManager = new FallbackSearchManager();
@@ -49,13 +58,13 @@ export class IntegratedValidationService {
    * Validate a response with integrated fallback and feedback
    */
   public async validate(
-    text: string, 
-    context?: { 
-      query?: string; 
-      location?: string; 
+    text: string,
+    context?: {
+      query?: string;
+      location?: string;
       businessType?: string;
       previousAttempts?: number;
-    }
+    },
   ): Promise<IntegratedValidationResult> {
     // Check cache first
     const cacheKey = this.generateCacheKey(text, context);
@@ -70,7 +79,7 @@ export class IntegratedValidationService {
 
     // If validation fails and fallback is enabled, try fallback search
     if (
-      this.options.enableFallback && 
+      this.options.enableFallback &&
       (!result.isValid || !result.hasActionableInfo) &&
       context?.query &&
       (context.previousAttempts || 0) < this.options.maxFallbackAttempts
@@ -80,11 +89,12 @@ export class IntegratedValidationService {
         missingInfo: result.missingInfo,
         currentResults: result.contactInfo,
         location: context.location,
-        searchDepth: result.confidence < 0.3 ? 'deep' : 'shallow'
+        searchDepth: result.confidence < 0.3 ? "deep" : "shallow",
       };
 
-      const fallbackResult = await this.fallbackManager.performFallbackSearch(fallbackOptions);
-      
+      const fallbackResult =
+        await this.fallbackManager.performFallbackSearch(fallbackOptions);
+
       if (fallbackResult.success && fallbackResult.enhancedInfo) {
         // Merge fallback results with original
         result = this.mergeResults(result, fallbackResult.enhancedInfo);
@@ -94,14 +104,17 @@ export class IntegratedValidationService {
     }
 
     // Get enhancement suggestions
-    const enhancementSuggestions = this.generateEnhancementSuggestions(result, context);
+    const enhancementSuggestions = this.generateEnhancementSuggestions(
+      result,
+      context,
+    );
 
     // Create integrated result
     const integratedResult: IntegratedValidationResult = {
       ...result,
       fallbackUsed,
       fallbackSources,
-      enhancementSuggestions
+      enhancementSuggestions,
     };
 
     // Cache the result
@@ -116,17 +129,17 @@ export class IntegratedValidationService {
    * Submit user feedback for a validation result
    */
   public submitFeedback(
-    feedback: Omit<UserFeedback, 'id' | 'timestamp'>
+    feedback: Omit<UserFeedback, "id" | "timestamp">,
   ): UserFeedback {
     if (!this.options.enableFeedback) {
-      throw new Error('Feedback collection is disabled');
+      throw new Error("Feedback collection is disabled");
     }
 
     const submittedFeedback = this.feedbackCollector.collectFeedback(feedback);
-    
+
     // Learn from feedback to improve future validations
     this.applyFeedbackLearnings(submittedFeedback);
-    
+
     return submittedFeedback;
   }
 
@@ -146,13 +159,13 @@ export class IntegratedValidationService {
       hitRate: number;
     };
   } {
-    const feedbackStats = this.options.enableFeedback 
+    const feedbackStats = this.options.enableFeedback
       ? this.feedbackCollector.getStats(timeRange)
       : null;
 
     const cacheStats = {
       size: this.validationCache.size,
-      hitRate: 0 // Would need to track hits/misses for real hit rate
+      hitRate: 0, // Would need to track hits/misses for real hit rate
     };
 
     // Placeholder validation stats
@@ -160,13 +173,13 @@ export class IntegratedValidationService {
       total: 0,
       successful: 0,
       fallbackUsed: 0,
-      averageConfidence: 0
+      averageConfidence: 0,
     };
 
     return {
       validationStats,
       feedbackStats,
-      cacheStats
+      cacheStats,
     };
   }
 
@@ -189,18 +202,26 @@ export class IntegratedValidationService {
     const recommendations: string[] = [];
 
     if (feedbackInsights) {
-      if (feedbackInsights.frequentlyIncorrectFields.includes('incorrectPhone')) {
-        recommendations.push('Consider improving phone number extraction patterns');
+      if (
+        feedbackInsights.frequentlyIncorrectFields.includes("incorrectPhone")
+      ) {
+        recommendations.push(
+          "Consider improving phone number extraction patterns",
+        );
       }
-      if (feedbackInsights.frequentlyIncorrectFields.includes('incorrectAddress')) {
-        recommendations.push('Address extraction needs improvement for better accuracy');
+      if (
+        feedbackInsights.frequentlyIncorrectFields.includes("incorrectAddress")
+      ) {
+        recommendations.push(
+          "Address extraction needs improvement for better accuracy",
+        );
       }
     }
 
     return {
       recommendations,
       patternImprovements: feedbackInsights?.suggestedPatternImprovements || [],
-      dataSourcePerformance: [] // Would be populated from actual metrics
+      dataSourcePerformance: [], // Would be populated from actual metrics
     };
   }
 
@@ -215,17 +236,17 @@ export class IntegratedValidationService {
   /**
    * Export all data for analysis
    */
-  public exportData(format: 'json' | 'csv' = 'json'): {
+  public exportData(format: "json" | "csv" = "json"): {
     feedback?: string;
     statistics: any;
     insights: any;
   } {
     return {
-      feedback: this.options.enableFeedback 
+      feedback: this.options.enableFeedback
         ? this.feedbackCollector.exportFeedback(format)
         : undefined,
       statistics: this.getStatistics(),
-      insights: this.getInsights()
+      insights: this.getInsights(),
     };
   }
 
@@ -233,16 +254,21 @@ export class IntegratedValidationService {
    * Merge validation results
    */
   private mergeResults(
-    original: ValidationResult, 
-    enhanced: ValidationResult['contactInfo']
+    original: ValidationResult,
+    enhanced: ValidationResult["contactInfo"],
   ): ValidationResult {
     // Merge contact info, preferring higher confidence items
     const merged = { ...original };
 
     // Merge phones
-    const phoneMap = new Map(original.contactInfo.phones.map(p => [p.normalized, p]));
-    enhanced.phones.forEach(p => {
-      if (!phoneMap.has(p.normalized) || p.confidence > phoneMap.get(p.normalized)!.confidence) {
+    const phoneMap = new Map(
+      original.contactInfo.phones.map((p) => [p.normalized, p]),
+    );
+    enhanced.phones.forEach((p) => {
+      if (
+        !phoneMap.has(p.normalized) ||
+        p.confidence > phoneMap.get(p.normalized)!.confidence
+      ) {
         phoneMap.set(p.normalized, p);
       }
     });
@@ -252,9 +278,13 @@ export class IntegratedValidationService {
     // (Abbreviated for brevity)
 
     // Recalculate confidence and validity
-    merged.confidence = this.validator['calculateOverallConfidence'](merged.contactInfo);
+    merged.confidence = this.validator["calculateOverallConfidence"](
+      merged.contactInfo,
+    );
     merged.isValid = merged.confidence >= this.options.minConfidenceThreshold;
-    merged.hasActionableInfo = this.validator['hasActionableContactInfo'](merged.contactInfo);
+    merged.hasActionableInfo = this.validator["hasActionableContactInfo"](
+      merged.contactInfo,
+    );
 
     return merged;
   }
@@ -263,7 +293,7 @@ export class IntegratedValidationService {
    * Generate cache key
    */
   private generateCacheKey(text: string, context?: any): string {
-    const contextStr = context ? JSON.stringify(context) : '';
+    const contextStr = context ? JSON.stringify(context) : "";
     return `${text.substring(0, 100)}_${contextStr}`;
   }
 
@@ -271,28 +301,43 @@ export class IntegratedValidationService {
    * Generate enhancement suggestions
    */
   private generateEnhancementSuggestions(
-    result: ValidationResult, 
-    context?: any
+    result: ValidationResult,
+    context?: any,
   ): string[] {
     const suggestions: string[] = [];
 
     // Add context-aware suggestions
     if (context?.businessType) {
-      if (context.businessType === 'restaurant' && !result.contactInfo.hours.length) {
-        suggestions.push('Restaurant hours are important - try searching for menu or hours page');
+      if (
+        context.businessType === "restaurant" &&
+        !result.contactInfo.hours.length
+      ) {
+        suggestions.push(
+          "Restaurant hours are important - try searching for menu or hours page",
+        );
       }
-      if (context.businessType === 'retail' && !result.contactInfo.addresses.length) {
-        suggestions.push('Retail locations often have store locator pages');
+      if (
+        context.businessType === "retail" &&
+        !result.contactInfo.addresses.length
+      ) {
+        suggestions.push("Retail locations often have store locator pages");
       }
     }
 
     // Add quality-based suggestions
     if (result.confidence < 0.5) {
-      suggestions.push('Low confidence results - consider refining search terms');
+      suggestions.push(
+        "Low confidence results - consider refining search terms",
+      );
     }
 
-    if (result.contactInfo.phones.length === 0 && result.contactInfo.websites.length > 0) {
-      suggestions.push('No phone found but website available - check contact page');
+    if (
+      result.contactInfo.phones.length === 0 &&
+      result.contactInfo.websites.length > 0
+    ) {
+      suggestions.push(
+        "No phone found but website available - check contact page",
+      );
     }
 
     return [...result.suggestions, ...suggestions];
@@ -307,13 +352,13 @@ export class IntegratedValidationService {
     // 2. Adjust confidence thresholds
     // 3. Reorder data sources
     // 4. Update caching strategies
-    
+
     // For now, just log the learning
     if (feedback.userRating <= 2) {
-      console.log('Low rating received, learning from feedback:', {
+      console.log("Low rating received, learning from feedback:", {
         query: feedback.query,
         issues: feedback.specificIssues,
-        suggestions: feedback.suggestedCorrection
+        suggestions: feedback.suggestedCorrection,
       });
     }
   }

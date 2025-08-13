@@ -30,7 +30,7 @@ import type {
 } from "./types.js";
 import type { QueryAnalysis, AgentRoutingPlan } from "./enhanced-types.js";
 import { logger, createPerformanceMonitor } from "../../utils/logger.js";
-// import { wsService } from "../../api/services/WebSocketService.js"; // TODO: Integrate WebSocket updates
+import { wsService } from "../../api/services/WebSocketService.js";
 import { VectorStore } from "../rag/VectorStore.js";
 import { EventEmitter } from "events";
 import { PerformanceOptimizer } from "../../api/services/PerformanceOptimizer.js";
@@ -116,9 +116,9 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
 
     // Initialize confidence scoring components
     const vectorStore = new VectorStore({
-      type: 'chromadb',
-      collectionName: 'confidence-rag',
-      path: 'http://localhost:8000'
+      type: "chromadb",
+      collectionName: "confidence-rag",
+      path: "http://localhost:8000",
     });
     this.confidenceRAG = {
       analyzer: new QueryComplexityAnalyzer(),
@@ -176,7 +176,9 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
 
     try {
       // Step 1: Analyze query complexity
-      const complexity = await this.confidenceRAG.analyzer.assessComplexity(query.text);
+      const complexity = await this.confidenceRAG.analyzer.assessComplexity(
+        query.text,
+      );
 
       this.emit("confidence:update", {
         stage: "query-analysis",
@@ -587,12 +589,12 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
   ): ConfidenceOrchestratorResult {
     const evaluation: ResponseEvaluationResult = {
       overallConfidence: 0,
-      qualityMetrics: { 
-        factuality: 0, 
-        relevance: 0, 
-        coherence: 0, 
-        completeness: 0, 
-        consistency: 0 
+      qualityMetrics: {
+        factuality: 0,
+        relevance: 0,
+        coherence: 0,
+        completeness: 0,
+        consistency: 0,
       },
       factualityScore: 0,
       relevanceScore: 0,
@@ -712,7 +714,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
       performance: {
         operationCounts: {},
         averageExecutionTimes: {},
-        totalOperations: 0
+        totalOperations: 0,
       },
       optimization: this.performanceOptimizer.getStatistics(),
     };

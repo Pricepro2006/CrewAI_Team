@@ -103,7 +103,7 @@
 }
 
 .sidebar-item.active::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 0;
@@ -257,15 +257,15 @@
     z-index: 1000;
     box-shadow: var(--shadow-lg);
   }
-  
+
   .sidebar.open {
     left: 0;
   }
-  
+
   .sidebar.collapsed {
     left: -64px;
   }
-  
+
   .sidebar.collapsed.open {
     left: 0;
   }

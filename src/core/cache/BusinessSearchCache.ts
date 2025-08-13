@@ -1,8 +1,8 @@
-import { LRUCache } from 'lru-cache';
-import { createHash } from 'crypto';
-import Redis from 'ioredis';
-import { logger } from '../../utils/logger.js';
-import type { ValidationResult } from '../validators/BusinessResponseValidator.js';
+import { LRUCache } from "lru-cache";
+import { createHash } from "crypto";
+import Redis from "ioredis";
+import { logger } from "../../utils/logger.js";
+import type { ValidationResult } from "../validators/BusinessResponseValidator.js";
 
 export interface CacheEntry {
   response: string;
@@ -50,9 +50,9 @@ export class BusinessSearchCache {
       maxAge: 60 * 60 * 1000, // 1 hour
       staleWhileRevalidate: 5 * 60 * 1000, // 5 minutes
       useRedis: false,
-      redisPrefix: 'bsc:',
+      redisPrefix: "bsc:",
       compressionThreshold: 1024, // 1KB
-      ...config
+      ...config,
     };
 
     // Initialize LRU cache
@@ -63,10 +63,10 @@ export class BusinessSearchCache {
       updateAgeOnGet: true,
       noDeleteOnStaleGet: true,
       dispose: (value, key, reason) => {
-        if (reason === 'evict') {
+        if (reason === "evict") {
           this.stats.evictions++;
         }
-      }
+      },
     });
 
     // Initialize Redis if enabled
@@ -82,35 +82,43 @@ export class BusinessSearchCache {
       size: 0,
       hitRate: 0,
       avgResponseTime: 0,
-      memoryUsage: 0
+      memoryUsage: 0,
     };
   }
 
   private initializeRedis(): void {
     try {
       this.redisClient = new Redis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
+        host: process.env.REDIS_HOST || "localhost",
+        port: parseInt(process.env.REDIS_PORT || "6379"),
         password: process.env.REDIS_PASSWORD,
         retryStrategy: (times: number) => {
           if (times > 3) {
-            logger.error('Redis connection failed for cache, falling back to memory only');
+            logger.error(
+              "Redis connection failed for cache, falling back to memory only",
+            );
             this.config.useRedis = false;
             return null;
           }
           return Math.min(times * 50, 2000);
-        }
+        },
       });
 
-      this.redisClient.on('error', (err) => {
-        logger.error('Redis cache error:', err instanceof Error ? err.message : String(err));
+      this.redisClient.on("error", (err) => {
+        logger.error(
+          "Redis cache error:",
+          err instanceof Error ? err.message : String(err),
+        );
       });
 
-      this.redisClient.on('connect', () => {
-        logger.info('Redis cache connected');
+      this.redisClient.on("connect", () => {
+        logger.info("Redis cache connected");
       });
     } catch (error) {
-      logger.error('Failed to initialize Redis for cache:', error instanceof Error ? error.message : String(error));
+      logger.error(
+        "Failed to initialize Redis for cache:",
+        error instanceof Error ? error.message : String(error),
+      );
       this.config.useRedis = false;
     }
   }
@@ -119,14 +127,20 @@ export class BusinessSearchCache {
    * Generate a cache key from query and location
    */
   private generateKey(query: string, location?: string): string {
-    const normalized = `${query.toLowerCase().trim()}|${(location || 'default').toLowerCase().trim()}`;
-    return createHash('sha256').update(normalized).digest('hex').substring(0, 16);
+    const normalized = `${query.toLowerCase().trim()}|${(location || "default").toLowerCase().trim()}`;
+    return createHash("sha256")
+      .update(normalized)
+      .digest("hex")
+      .substring(0, 16);
   }
 
   /**
    * Get an entry from cache
    */
-  public async get(query: string, location?: string): Promise<CacheEntry | null> {
+  public async get(
+    query: string,
+    location?: string,
+  ): Promise<CacheEntry | null> {
     const startTime = Date.now();
     const key = this.generateKey(query, location);
 
@@ -138,7 +152,7 @@ export class BusinessSearchCache {
       if (!entry && this.config.useRedis && this.redisClient) {
         const redisKey = `${this.config.redisPrefix}${key}`;
         const redisData = await this.redisClient.get(redisKey);
-        
+
         if (redisData) {
           entry = JSON.parse(redisData) as CacheEntry;
           // Restore to memory cache
@@ -150,7 +164,8 @@ export class BusinessSearchCache {
         // Check if entry is stale
         const age = Date.now() - entry.timestamp;
         const isStale = age > this.config.maxAge;
-        const isWithinStaleWindow = age < this.config.maxAge + this.config.staleWhileRevalidate;
+        const isWithinStaleWindow =
+          age < this.config.maxAge + this.config.staleWhileRevalidate;
 
         if (isStale && !isWithinStaleWindow) {
           // Too stale, treat as miss
@@ -162,26 +177,26 @@ export class BusinessSearchCache {
         // Hit - increment hit count
         entry.hitCount++;
         this.stats.hits++;
-        
+
         // Update in caches
         if (this.config.useRedis && this.redisClient) {
           const redisKey = `${this.config.redisPrefix}${key}`;
           await this.redisClient.set(
-            redisKey, 
+            redisKey,
             JSON.stringify(entry),
-            'PX',
-            this.config.maxAge
+            "PX",
+            this.config.maxAge,
           );
         }
-        
+
         this.memoryCache.set(key, entry);
         this.trackResponseTime(Date.now() - startTime);
-        
-        logger.debug('Cache hit', 'BUSINESS_CACHE', {
+
+        logger.debug("Cache hit", "BUSINESS_CACHE", {
           key,
           age: age / 1000,
           isStale,
-          hitCount: entry.hitCount
+          hitCount: entry.hitCount,
         });
 
         return entry;
@@ -191,9 +206,11 @@ export class BusinessSearchCache {
       this.stats.misses++;
       this.trackResponseTime(Date.now() - startTime);
       return null;
-
     } catch (error) {
-      logger.error('Cache get error:', error instanceof Error ? error.message : String(error));
+      logger.error(
+        "Cache get error:",
+        error instanceof Error ? error.message : String(error),
+      );
       this.stats.misses++;
       this.trackResponseTime(Date.now() - startTime);
       return null;
@@ -208,10 +225,10 @@ export class BusinessSearchCache {
     location: string | undefined,
     response: string,
     validation?: ValidationResult,
-    metadata?: Partial<CacheEntry['metadata']>
+    metadata?: Partial<CacheEntry["metadata"]>,
   ): Promise<void> {
     const key = this.generateKey(query, location);
-    
+
     const entry: CacheEntry = {
       response,
       validation,
@@ -221,8 +238,8 @@ export class BusinessSearchCache {
         query,
         location,
         enhanced: metadata?.enhanced || false,
-        modelUsed: metadata?.modelUsed
-      }
+        modelUsed: metadata?.modelUsed,
+      },
     };
 
     try {
@@ -233,31 +250,32 @@ export class BusinessSearchCache {
       if (this.config.useRedis && this.redisClient) {
         const redisKey = `${this.config.redisPrefix}${key}`;
         const data = JSON.stringify(entry);
-        
+
         // Compress if needed (in production, use zlib)
         if (data.length > this.config.compressionThreshold) {
-          logger.debug('Large cache entry, consider compression', 'BUSINESS_CACHE', {
-            size: data.length,
-            key
-          });
+          logger.debug(
+            "Large cache entry, consider compression",
+            "BUSINESS_CACHE",
+            {
+              size: data.length,
+              key,
+            },
+          );
         }
 
-        await this.redisClient.set(
-          redisKey,
-          data,
-          'PX',
-          this.config.maxAge
-        );
+        await this.redisClient.set(redisKey, data, "PX", this.config.maxAge);
       }
 
-      logger.debug('Cache set', 'BUSINESS_CACHE', {
+      logger.debug("Cache set", "BUSINESS_CACHE", {
         key,
         responseLength: response.length,
-        enhanced: entry.metadata.enhanced
+        enhanced: entry.metadata.enhanced,
       });
-
     } catch (error) {
-      logger.error('Cache set error:', error instanceof Error ? error.message : String(error));
+      logger.error(
+        "Cache set error:",
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -279,7 +297,10 @@ export class BusinessSearchCache {
 
       return deleted;
     } catch (error) {
-      logger.error('Cache delete error:', error instanceof Error ? error.message : String(error));
+      logger.error(
+        "Cache delete error:",
+        error instanceof Error ? error.message : String(error),
+      );
       return false;
     }
   }
@@ -308,19 +329,24 @@ export class BusinessSearchCache {
         size: 0,
         hitRate: 0,
         avgResponseTime: 0,
-        memoryUsage: 0
+        memoryUsage: 0,
       };
 
-      logger.info('Cache cleared');
+      logger.info("Cache cleared");
     } catch (error) {
-      logger.error('Cache clear error:', error instanceof Error ? error.message : String(error));
+      logger.error(
+        "Cache clear error:",
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
   /**
    * Preload cache with common queries
    */
-  public async preload(queries: Array<{ query: string; location?: string; response: string }>): Promise<void> {
+  public async preload(
+    queries: Array<{ query: string; location?: string; response: string }>,
+  ): Promise<void> {
     logger.info(`Preloading cache with ${queries.length} entries`);
 
     for (const item of queries) {
@@ -333,25 +359,29 @@ export class BusinessSearchCache {
    */
   public getStats(): CacheStats {
     const total = this.stats.hits + this.stats.misses;
-    
+
     return {
       ...this.stats,
       size: this.memoryCache.size,
       hitRate: total > 0 ? (this.stats.hits / total) * 100 : 0,
-      memoryUsage: this.memoryCache.calculatedSize || 0
+      memoryUsage: this.memoryCache.calculatedSize || 0,
     };
   }
 
   /**
    * Get entries matching a pattern
    */
-  public async search(pattern: RegExp): Promise<Array<{ key: string; entry: CacheEntry }>> {
+  public async search(
+    pattern: RegExp,
+  ): Promise<Array<{ key: string; entry: CacheEntry }>> {
     const results: Array<{ key: string; entry: CacheEntry }> = [];
 
     // Search memory cache
     for (const [key, entry] of this.memoryCache.entries()) {
-      if (pattern.test(entry.metadata.query) || 
-          (entry.metadata.location && pattern.test(entry.metadata.location))) {
+      if (
+        pattern.test(entry.metadata.query) ||
+        (entry.metadata.location && pattern.test(entry.metadata.location))
+      ) {
         results.push({ key, entry });
       }
     }
@@ -375,21 +405,23 @@ export class BusinessSearchCache {
     const hotQueries = entries
       .sort((a, b) => b.hitCount - a.hitCount)
       .slice(0, 10)
-      .map(e => ({
+      .map((e) => ({
         query: e.metadata.query,
         location: e.metadata.location,
-        hitCount: e.hitCount
+        hitCount: e.hitCount,
       }));
 
     // Count stale entries
-    const staleEntries = entries.filter(e => 
-      now - e.timestamp > this.config.maxAge
+    const staleEntries = entries.filter(
+      (e) => now - e.timestamp > this.config.maxAge,
     ).length;
 
     // Calculate average age
-    const avgAge = entries.length > 0
-      ? entries.reduce((sum, e) => sum + (now - e.timestamp), 0) / entries.length
-      : 0;
+    const avgAge =
+      entries.length > 0
+        ? entries.reduce((sum, e) => sum + (now - e.timestamp), 0) /
+          entries.length
+        : 0;
 
     // Calculate memory pressure (0-100)
     const memoryPressure = (this.memoryCache.size / this.config.maxSize) * 100;
@@ -398,7 +430,7 @@ export class BusinessSearchCache {
       hotQueries,
       staleEntries,
       avgAge,
-      memoryPressure
+      memoryPressure,
     };
   }
 
@@ -407,7 +439,7 @@ export class BusinessSearchCache {
    */
   private trackResponseTime(time: number): void {
     this.responseTimeHistory.push(time);
-    
+
     if (this.responseTimeHistory.length > this.MAX_RESPONSE_TIME_HISTORY) {
       this.responseTimeHistory.shift();
     }
@@ -442,17 +474,19 @@ export class BusinessSearchCache {
   /**
    * Import cache entries
    */
-  public async importCache(entries: Array<CacheEntry & { key: string }>): Promise<void> {
+  public async importCache(
+    entries: Array<CacheEntry & { key: string }>,
+  ): Promise<void> {
     for (const { key, ...entry } of entries) {
       this.memoryCache.set(key, entry);
-      
+
       if (this.config.useRedis && this.redisClient) {
         const redisKey = `${this.config.redisPrefix}${key}`;
         await this.redisClient.set(
           redisKey,
           JSON.stringify(entry),
-          'PX',
-          this.config.maxAge - (Date.now() - entry.timestamp)
+          "PX",
+          this.config.maxAge - (Date.now() - entry.timestamp),
         );
       }
     }

@@ -5,16 +5,16 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { Search, Filter, X, Loader2 } from 'lucide-react';
-import { Input } from '../../../components/ui/input.js';
-import { Button } from '../../../components/ui/button.js';
-import { Card, CardContent } from '../../../components/ui/card.js';
+import { Input } from '../../../components/ui/input';
+import { Button } from '../../../components/ui/button';
+import { Card, CardContent } from '../../../components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select.js';
+} from '../../../components/ui/select';
 import {
   Sheet,
   SheetContent,
@@ -22,13 +22,14 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '../../../components/ui/sheet.js';
-import { Badge } from '../../../components/ui/badge.js';
-import { Slider } from '../../../components/ui/slider.js';
-import { Checkbox } from '../../../components/ui/checkbox.js';
-import { useWalmartSearch } from '../../hooks/useWalmartSearch.js';
-import { useDebounce } from '../../hooks/useDebounce.js';
-import type { WalmartProduct, SearchOptions } from '../../../types/walmart-grocery.js';
+} from '../../../components/ui/sheet';
+import { Badge } from '../../../components/ui/badge';
+import { Slider } from '../../../components/ui/slider';
+import { Checkbox } from '../../../components/ui/checkbox';
+import { useWalmartSearch } from '../../hooks/useWalmartSearch';
+import { useDebounce } from '../../hooks/useDebounce';
+import type { WalmartProduct, SearchOptions, DietaryFilter } from '../../../types/walmart-grocery';
+import type { ExtendedSearchOptions } from '../../../types/walmart-search-extended';
 
 interface WalmartProductSearchProps {
   onProductSelect?: (product: WalmartProduct) => void;
@@ -56,14 +57,13 @@ const CATEGORIES = [
 ];
 
 const DIETARY_PREFERENCES = [
-  { value: 'organic', label: 'Organic' },
-  { value: 'gluten-free', label: 'Gluten Free' },
-  { value: 'vegan', label: 'Vegan' },
-  { value: 'vegetarian', label: 'Vegetarian' },
-  { value: 'dairy-free', label: 'Dairy Free' },
-  { value: 'sugar-free', label: 'Sugar Free' },
-  { value: 'keto', label: 'Keto Friendly' },
-  { value: 'paleo', label: 'Paleo' },
+  { value: 'organic' as DietaryFilter, label: 'Organic' },
+  { value: 'gluten_free' as DietaryFilter, label: 'Gluten Free' },
+  { value: 'vegan' as DietaryFilter, label: 'Vegan' },
+  { value: 'vegetarian' as DietaryFilter, label: 'Vegetarian' },
+  { value: 'kosher' as DietaryFilter, label: 'Kosher' },
+  { value: 'halal' as DietaryFilter, label: 'Halal' },
+  { value: 'non_gmo' as DietaryFilter, label: 'Non-GMO' },
 ];
 
 export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
@@ -75,14 +75,14 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
   autoFocus = false,
 }) => {
   const [query, setQuery] = useState(initialQuery);
-  const [filters, setFilters] = useState<SearchOptions>({
+  const [filters, setFilters] = useState<ExtendedSearchOptions>({
     query: initialQuery,
     category: undefined,
     minPrice: undefined,
     maxPrice: undefined,
     inStock: true,
     dietary: [],
-    limit: 20,
+    pagination: { page: 1, pageSize: 20, limit: 20, offset: 0 },
   });
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100]);
@@ -94,10 +94,17 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
   useEffect(() => {
     if (debouncedQuery || filters.category) {
       const searchOptions: SearchOptions = {
-        ...filters,
         query: debouncedQuery,
-        minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
-        maxPrice: priceRange[1] < 100 ? priceRange[1] : undefined,
+        filters: {
+          categories: filters.category ? [filters.category] : undefined,
+          priceRange: {
+            min: priceRange[0] > 0 ? priceRange[0] : undefined,
+            max: priceRange[1] < 100 ? priceRange[1] : undefined,
+          },
+          availability: filters.inStock ? 'in_stock' : 'all',
+          dietary: filters.dietary,
+        },
+        pagination: filters.pagination,
       };
       
       search(searchOptions);
@@ -112,18 +119,19 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
   }, [results, onSearchResults]);
 
   const handleCategoryChange = (category: string) => {
-    setFilters(prev => ({
+    setFilters((prev: ExtendedSearchOptions) => ({
       ...prev,
       category: category === 'all' ? undefined : category,
     }));
   };
 
   const handleDietaryToggle = (dietary: string) => {
-    setFilters(prev => ({
+    const dietaryFilter = dietary as DietaryFilter;
+    setFilters((prev: ExtendedSearchOptions) => ({
       ...prev,
-      dietary: prev.dietary?.includes(dietary)
-        ? prev.dietary.filter(d => d !== dietary)
-        : [...(prev.dietary || []), dietary],
+      dietary: prev.dietary?.includes(dietaryFilter)
+        ? prev.dietary.filter(d => d !== dietaryFilter)
+        : [...(prev.dietary || []), dietaryFilter],
     }));
   };
 
@@ -135,7 +143,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
       maxPrice: undefined,
       inStock: true,
       dietary: [],
-      limit: 20,
+      pagination: { page: 1, pageSize: 20, limit: 20, offset: 0 },
     });
     setPriceRange([0, 100]);
   };
