@@ -94,7 +94,7 @@ tail -f logs/*.log | grep -i error
 | WebSocket | 8080 | `npm run websocket:start` | `wscat -c ws://localhost:8080` |
 | NLP | 3008 | `npm run nlp:start` | `curl localhost:3008/health` |
 | Grocery | 3005 | `npm run grocery:start` | `curl localhost:3005/health` |
-| Monitor | 3002 | `npm run monitor` | `open http://localhost:3002` |
+| Monitor | 3010 | `npm run monitor` | `open http://localhost:3010` |
 
 ---
 
