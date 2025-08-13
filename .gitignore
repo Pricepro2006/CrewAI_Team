@@ -59,6 +59,9 @@ tsc-output.txt
 *.swp
 *.swo
 
+# Claude configuration
+.claude/commands/
+
 # OS
 .DS_Store
 Thumbs.db
