@@ -101,7 +101,7 @@ export function up(db: Database) {
     );
   `);
 
-  -- Create deal_notifications table for tracking sent notifications
+  // Create deal_notifications table for tracking sent notifications
   db.exec(`
     CREATE TABLE IF NOT EXISTS deal_notifications (
       id TEXT PRIMARY KEY,
@@ -168,7 +168,7 @@ export function up(db: Database) {
     );
   `);
 
-  -- Create deal_sources table for tracking where deals come from
+  // Create deal_sources table for tracking where deals come from
   db.exec(`
     CREATE TABLE IF NOT EXISTS deal_sources (
       id TEXT PRIMARY KEY,
@@ -218,7 +218,7 @@ export function up(db: Database) {
     );
   `);
 
-  -- Create tracked_deals table for deals we're monitoring
+  // Create tracked_deals table for deals we're monitoring
   db.exec(`
     CREATE TABLE IF NOT EXISTS tracked_deals (
       id TEXT PRIMARY KEY,
@@ -276,7 +276,7 @@ export function up(db: Database) {
     );
   `);
 
-  -- Create comprehensive indexes for deal_alerts
+  // Create comprehensive indexes for deal_alerts
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_deal_alerts_user_id ON deal_alerts(user_id);
     CREATE INDEX IF NOT EXISTS idx_deal_alerts_status ON deal_alerts(status);
@@ -295,7 +295,7 @@ export function up(db: Database) {
     CREATE INDEX IF NOT EXISTS idx_deal_alerts_user_active ON deal_alerts(user_id, status) WHERE status = 'active';
   `);
 
-  -- Create indexes for deal_notifications
+  // Create indexes for deal_notifications
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_deal_notifications_alert_id ON deal_notifications(alert_id);
     CREATE INDEX IF NOT EXISTS idx_deal_notifications_user_id ON deal_notifications(user_id);
@@ -310,7 +310,7 @@ export function up(db: Database) {
     CREATE INDEX IF NOT EXISTS idx_deal_notifications_effectiveness ON deal_notifications(alert_id, was_clicked, was_purchased, sent_at);
   `);
 
-  -- Create indexes for deal_sources
+  // Create indexes for deal_sources
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_deal_sources_active ON deal_sources(is_active);
     CREATE INDEX IF NOT EXISTS idx_deal_sources_next_poll ON deal_sources(next_poll_at);
@@ -318,7 +318,7 @@ export function up(db: Database) {
     CREATE INDEX IF NOT EXISTS idx_deal_sources_source_type ON deal_sources(source_type);
   `);
 
-  -- Create indexes for tracked_deals
+  // Create indexes for tracked_deals
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_tracked_deals_source_id ON tracked_deals(source_id);
     CREATE INDEX IF NOT EXISTS idx_tracked_deals_product_name ON tracked_deals(product_name);

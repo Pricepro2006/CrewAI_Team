@@ -133,7 +133,7 @@ export function up(db: Database) {
     );
   `);
 
-  -- Create brand_preferences table for detailed brand tracking
+  // Create brand_preferences table for detailed brand tracking
   db.exec(`
     CREATE TABLE IF NOT EXISTS brand_preferences (
       id TEXT PRIMARY KEY,
@@ -163,7 +163,7 @@ export function up(db: Database) {
     );
   `);
 
-  -- Create dietary_goals table for tracking nutrition goals
+  // Create dietary_goals table for tracking nutrition goals
   db.exec(`
     CREATE TABLE IF NOT EXISTS dietary_goals (
       id TEXT PRIMARY KEY,
@@ -201,7 +201,7 @@ export function up(db: Database) {
     );
   `);
 
-  -- Create indexes for user_preferences
+  // Create indexes for user_preferences
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_user_preferences_user_id ON user_preferences(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_preferences_updated_at ON user_preferences(updated_at DESC);
@@ -210,7 +210,7 @@ export function up(db: Database) {
     CREATE INDEX IF NOT EXISTS idx_user_preferences_dietary ON user_preferences(dietary_restrictions, dietary_preferences);
   `);
 
-  -- Create indexes for brand_preferences
+  // Create indexes for brand_preferences
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_brand_preferences_user_id ON brand_preferences(user_id);
     CREATE INDEX IF NOT EXISTS idx_brand_preferences_brand_name ON brand_preferences(brand_name);
@@ -221,7 +221,7 @@ export function up(db: Database) {
     CREATE INDEX IF NOT EXISTS idx_brand_preferences_last_purchase ON brand_preferences(last_purchase_date DESC);
   `);
 
-  -- Create indexes for dietary_goals
+  // Create indexes for dietary_goals
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_dietary_goals_user_id ON dietary_goals(user_id);
     CREATE INDEX IF NOT EXISTS idx_dietary_goals_goal_type ON dietary_goals(goal_type);

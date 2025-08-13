@@ -209,7 +209,7 @@ export function up(db: Database) {
     );
   `);
 
-  -- Create comprehensive indexes for purchase_history
+  // Create comprehensive indexes for purchase_history
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_purchase_history_user_id ON purchase_history(user_id);
     CREATE INDEX IF NOT EXISTS idx_purchase_history_purchase_date ON purchase_history(purchase_date DESC);
@@ -237,7 +237,7 @@ export function up(db: Database) {
     CREATE INDEX IF NOT EXISTS idx_purchase_history_user_store_date ON purchase_history(user_id, store_name, purchase_date DESC);
   `);
 
-  -- Create indexes for purchase_receipts
+  // Create indexes for purchase_receipts
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_purchase_receipts_user_id ON purchase_receipts(user_id);
     CREATE INDEX IF NOT EXISTS idx_purchase_receipts_purchase_date ON purchase_receipts(purchase_date DESC);
