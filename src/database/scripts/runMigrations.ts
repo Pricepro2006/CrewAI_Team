@@ -3,8 +3,8 @@
  * Usage: pnpm tsx src/database/scripts/runMigrations.ts
  */
 
-import { getDatabaseManager } from "../DatabaseManager";
-import { logger } from "../../utils/logger";
+import { getDatabaseManager } from "../DatabaseManager.js";
+import { logger } from "../../utils/logger.js";
 import FixNegativeProcessingTimesMigration from "../migrations/006_fix_negative_processing_times";
 
 async function runMigrations() {
