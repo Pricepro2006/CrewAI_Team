@@ -1,8 +1,8 @@
 import crypto from "crypto";
 import { LRUCache } from "lru-cache";
-import { logger } from "../../utils/logger";
-import type { User } from "../trpc/context";
-import { securityMonitor, SecurityEventType } from "./SecurityMonitoringService";
+import { logger } from "../../utils/logger.js";
+import type { User } from "../trpc/context.js";
+import { securityMonitor, SecurityEventType } from "./SecurityMonitoringService.js";
 
 /**
  * Secure Guest User Service

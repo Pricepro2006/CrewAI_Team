@@ -4,9 +4,9 @@ import {
   adminProcedure, 
   protectedProcedure,
   createPermissionMiddleware 
-} from "../trpc/enhanced-router";
-import { securityMonitor } from "../services/SecurityMonitoringService";
-import { guestUserService } from "../services/GuestUserService";
+} from "../trpc/enhanced-router.js";
+import { securityMonitor } from "../services/SecurityMonitoringService.js";
+import { guestUserService } from "../services/GuestUserService.js";
 import { TRPCError } from "@trpc/server";
 
 // Permission middleware for security endpoints

@@ -9,7 +9,7 @@ import {
 } from "../trpc/enhanced-router.js";
 import { UserService } from "../services/UserService.js";
 import { jwtManager } from "../utils/jwt.js";
-import { passwordManager } from "../utils/password";
+import { passwordManager } from "../utils/password.js";
 import { randomUUID } from "crypto";
 import { logger } from "../../utils/logger.js";
 
