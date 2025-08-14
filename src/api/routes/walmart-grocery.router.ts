@@ -735,12 +735,13 @@ export const walmartGroceryRouter = createFeatureRouter(
     getLists: publicProcedure
       .use(walmartDatabaseMiddleware)
       .input(z.object({ userId: z.string() }))
-      .query(withDatabaseContext(async (ctx: DatabaseContext, input) => {
+      .query(async ({ ctx, input }) => {
+        const dbCtx = ctx as DatabaseContext;
         logger.info("Fetching grocery lists", "WALMART", {
           userId: input.userId,
         });
 
-        const listsResult = await ctx.safeDb.select(
+        const listsResult = await dbCtx.safeDb.select(
           'grocery_lists',
           ['id', 'user_id', 'name', 'description', 'estimated_total', 'created_at', 'updated_at'],
           'user_id = ?',
@@ -768,13 +769,14 @@ export const walmartGroceryRouter = createFeatureRouter(
             isShared: false,
           })),
         };
-      })),
+      }),
 
     // Create a new grocery list
     createList: publicProcedure
       .use(walmartDatabaseMiddleware)
       .input(walmartSchemas.createList)
-      .mutation(withDatabaseContext(async (ctx: DatabaseContext, input) => {
+      .mutation(async ({ ctx, input }) => {
+        const dbCtx = ctx as DatabaseContext;
         logger.info("Creating grocery list", "WALMART", input);
 
         const listData = {
@@ -785,7 +787,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           updated_at: new Date().toISOString()
         };
 
-        const result = await ctx.safeDb.insert('grocery_lists', listData);
+        const result = await dbCtx.safeDb.insert('grocery_lists', listData);
 
         if (result.warnings.length > 0) {
           logger.warn("Schema warnings in createList", "WALMART", {
@@ -795,7 +797,7 @@ export const walmartGroceryRouter = createFeatureRouter(
         }
 
         // Get the created list to return full data
-        const createdLists = await ctx.safeDb.select(
+        const createdLists = await dbCtx.safeDb.select(
           'grocery_lists',
           ['id', 'user_id', 'name', 'description', 'created_at', 'updated_at'],
           'user_id = ? AND name = ?',
@@ -819,13 +821,14 @@ export const walmartGroceryRouter = createFeatureRouter(
             isShared: false,
           },
         };
-      })),
+      }),
 
     // Update a grocery list
     updateList: publicProcedure
       .use(walmartDatabaseMiddleware)
       .input(walmartSchemas.updateList)
-      .mutation(withDatabaseContext(async (ctx: DatabaseContext, input) => {
+      .mutation(async ({ ctx, input }) => {
+        const dbCtx = ctx as DatabaseContext;
         logger.info("Updating grocery list", "WALMART", input);
 
         const updateData: Record<string, any> = {
@@ -839,7 +842,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           updateData.description = input.description;
         }
 
-        const result = await ctx.safeDb.update(
+        const result = await dbCtx.safeDb.update(
           'grocery_lists',
           updateData,
           'id = ?',
@@ -862,16 +865,17 @@ export const walmartGroceryRouter = createFeatureRouter(
           listId: input.listId,
           affectedRows: result.affectedRows,
         };
-      })),
+      }),
 
     // Delete a grocery list
     deleteList: publicProcedure
       .use(walmartDatabaseMiddleware)
       .input(z.object({ listId: z.string() }))
-      .mutation(withDatabaseContext(async (ctx: DatabaseContext, input) => {
+      .mutation(async ({ ctx, input }) => {
+        const dbCtx = ctx as DatabaseContext;
         logger.info("Deleting grocery list", "WALMART", input);
 
-        const result = await ctx.safeDb.delete(
+        const result = await dbCtx.safeDb.delete(
           'grocery_lists',
           'id = ?',
           [input.listId]
@@ -886,7 +890,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           listId: input.listId,
           affectedRows: result.affectedRows,
         };
-      })),
+      }),
 
     // Add items to a list
     addItemToList: publicProcedure
@@ -945,7 +949,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           itemId: input.itemId,
           affectedRows: result.affectedRows,
         };
-      })),
+      }),
 
     // Get user orders
     getOrders: publicProcedure
@@ -1777,12 +1781,13 @@ export const walmartGroceryRouter = createFeatureRouter(
     // Get dashboard statistics - REAL DATA instead of hardcoded
     getStats: publicProcedure
       .use(walmartDatabaseMiddleware)
-      .query(withDatabaseContext(async (ctx: DatabaseContext) => {
+      .query(async ({ ctx }) => {
+        const dbCtx = ctx as DatabaseContext;
         logger.info("Fetching dashboard statistics", "WALMART");
         
         try {
           // Get real product count from database
-          const productCount = await ctx.safeDb.query(
+          const productCount = await dbCtx.safeDb.query(
             'walmart_products',
             ['COUNT(*) as count'],
             undefined,
