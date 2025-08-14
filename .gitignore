@@ -406,3 +406,18 @@ extract_real_bi.py
 diagnose_hang.py
 process_*.py
 monitor_production.py
+./.claude/agents/*
+
+# Fine-tuning directories to ignore
+fine-tuning/archived/
+fine-tuning/model_cache/
+fine-tuning/venv_training/
+fine-tuning/**/*.log
+fine-tuning/**/*.pid
+fine-tuning/**/checkpoints*/
+fine-tuning/**/test_results/
+fine-tuning/**/evaluation_results/
+fine-tuning/**/*output/
+fine-tuning/**/phase1_results/
+fine-tuning/**/*.gguf
+fine-tuning/**/__pycache__/

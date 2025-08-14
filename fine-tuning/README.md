@@ -1,293 +1,323 @@
-# LFM2-1.2B Adaptive Fine-Tuning for Email Batch Analysis
-**Zero-Hardcoding Methodology with Curriculum Learning**
+# Fine-Tuning Pipeline for TD SYNNEX Email Intelligence
 
----
+## 🚀 Overview
 
-## 🚀 Current Project: LFM2-1.2B Adaptive Training
-**Status**: Phase 3 - Baseline Training (Fixing gradient checkpointing issue)  
-**Last Updated**: August 13, 2025
+This directory contains the fine-tuning pipeline for training language models to analyze TD SYNNEX email chains with business intelligence extraction capabilities. Currently training **Microsoft Phi-2 (2.7B)** to match Claude's comprehensive analysis quality.
 
-### ⚠️ IMPORTANT: Active vs Archived Files
-- **USE**: Scripts in main `fine-tuning/` directory
-- **DO NOT USE**: Files in `archive_old_100_examples/` (outdated, hardcoded)
+## 📊 Current Status
 
----
+| Metric | Status |
+|--------|--------|
+| **Active Model** | Microsoft Phi-2 (2.7B parameters) |
+| **Training Status** | 🟢 ACTIVE - Step 2/63 (3.17%) |
+| **Dataset** | 2,974 train / 744 validation examples |
+| **Target Accuracy** | 70% threshold for deployment |
+| **ETA** | ~6.5 hours (CPU training) |
 
-## Project Overview
+## 🎯 Project Objectives
 
-This project implements an **adaptive, zero-hardcoding training pipeline** to fine-tune the LiquidAI/LFM2-1.2B model (1.17B parameters) for mapping email batch numbers to Claude's comprehensive analysis of TD SYNNEX emails.
+Train a local LLM to accurately:
+1. **Extract Entities** - PO numbers, quotes, customers, products
+2. **Detect Workflows** - START, IN-PROGRESS, COMPLETION states
+3. **Generate Business Intelligence** - Financial insights, strategic recommendations
+4. **Identify Action Items** - Next steps, follow-ups, decisions needed
 
-### Key Innovation: Zero-Hardcoding Philosophy
-- All thresholds computed dynamically from data distributions
-- Adaptive curriculum learning with 10 difficulty levels
-- Error-focused resampling that prioritizes problematic examples
-- No hardcoded values - everything data-driven
-
-### Model Architecture
-- **Base Model**: LiquidAI/LFM2-1.2B (1.17B parameters)
-- **Training Method**: LoRA (r=8, alpha=16, dropout=0.05)
-- **Trainable Parameters**: 442,368 (0.038% of total)
-- **Hardware**: CPU-only (AMD Ryzen 7 PRO, 54GB RAM)
-
----
-
-## 📊 Current Training Status
-
-### Completed Phases ✅
-| Phase | Description | Status | Key Outputs |
-|-------|-------------|--------|-------------|
-| **Phase 1** | Data Analysis | ✅ Complete | 4,124 batch analyses extracted, 82.2% avg quality |
-| **Phase 2** | Adaptive Dataset Generation | ✅ Complete | 500 train / 100 validation examples |
-
-### In Progress 🔄
-| Phase | Description | Status | Current Issue |
-|-------|-------------|--------|---------------|
-| **Phase 3** | Baseline Training | ⚠️ Blocked | Gradient checkpointing incompatibility |
-
-### Pending Phases ⏳
-- **Phase 4**: Evaluation Framework
-- **Phase 5**: Iterative Improvement  
-- **Phase 6**: Production Deployment
-
----
-
-## Dataset Details
-
-### Source Data
-- **Primary**: `/home/pricepro2006/CrewAI_Team/claude_final_analysis_20250601_083919.md` (13MB)
-  - Claude's comprehensive analysis of all email batches
-- **Email Batches**: `/home/pricepro2006/CrewAI_Team/email_batches/`
-  - 3,380 JSON files containing TD SYNNEX emails
-
-### Adaptive Dataset Statistics
-| Metric | Training | Validation |
-|--------|----------|------------|
-| **Total Examples** | 500 | 100 |
-| **Unique Batches** | 350 | 97 |
-| **Avg Difficulty** | 0.91 | 2.12 |
-| **Curriculum Level** | 2 | 2 |
-| **Quality Distribution** | 351 poor, 86 fair, 63 good | 45 good, 33 fair, 22 poor |
-
----
-
-## Training Pipeline
-
-### Phase 1: Data Analysis ✅
-```bash
-python3 phase1_data_analysis.py
-```
-**Outputs**:
-- `phase1_results/data_analysis_report.json` - Overall statistics
-- `phase1_results/quality_metrics.json` - Quality scores for all batches
-- `phase1_results/pattern_library.json` - Extracted patterns
-
-### Phase 2: Adaptive Dataset Generation ✅
-```bash
-python3 phase2_adaptive_dataset_generator.py
-```
-**Key Feature - Zero Hardcoding**:
-```python
-# Dynamic threshold computation (no hardcoded values)
-quality_thresholds = {
-    'excellent': np.percentile(scores, 75),  # Top 25%
-    'good': np.percentile(scores, 50),       # Top 50%
-    'fair': np.percentile(scores, 25)        # Top 75%
-}
-```
-**Outputs**:
-- `datasets/adaptive_train.json` - 500 training examples
-- `datasets/adaptive_val.json` - 100 validation examples
-- `datasets/dataset_report.json` - Generation metadata
-
-### Phase 3: Baseline Training 🔄
-```bash
-python3 train_adaptive_lfm2.py
-```
-**Current Issue**: Gradient checkpointing incompatibility with LFM2
-```python
-# Fix needed in train_adaptive_lfm2.py line 184:
-gradient_checkpointing=False  # Was True, causes conv1d tensor error
-```
-
----
-
-## Directory Structure
+## 🏗️ Directory Structure
 
 ```
 fine-tuning/
-├── 📊 Active Training Pipeline
-│   ├── phase1_data_analysis.py                 # Analyzes email batches
-│   ├── phase2_adaptive_dataset_generator.py    # Creates adaptive datasets
-│   ├── train_adaptive_lfm2.py                 # Main training script (500 examples)
-│   ├── training_progress_monitor.py           # Real-time progress visualization
-│   │
-│   ├── phase1_results/                        # Analysis outputs
-│   │   ├── data_analysis_report.json
-│   │   ├── quality_metrics.json
-│   │   └── pattern_library.json
-│   │
-│   ├── datasets/                               # Adaptive datasets
-│   │   ├── adaptive_train.json (500 examples)
-│   │   ├── adaptive_val.json (100 examples)
-│   │   └── dataset_report.json
-│   │
-│   └── models/
-│       └── lfm2_adaptive_curriculum/          # Target for trained model
-│
-├── 📚 Documentation
-│   ├── README.md                              # This file
-│   ├── ADAPTIVE_TRAINING_PLAN.md              # Original 6-phase plan
-│   ├── COMPREHENSIVE_ADAPTIVE_TRAINING_PLAN.md # Enhanced zero-hardcoding plan
-│   └── FILE_INVENTORY_COMPLETE.md             # Complete file listing
-│
-├── 📝 Logs
-│   ├── adaptive_training.log                  # Current training log
-│   └── adaptive_training_live.log             # Live output
-│
-└── ⚠️ ARCHIVED - DO NOT USE
-    └── archive_old_100_examples/
-        ├── train_email_batch_analysis.py      # OLD: Only 100 examples, hardcoded
-        ├── email_batch_training.log           # OLD: Wrong dataset
-        └── email_batch_analyzer/              # OLD: Incomplete checkpoint
+├── active/                    # Current training files
+│   ├── scripts/              # Training & evaluation scripts
+│   ├── data/                 # Active datasets
+│   ├── models/               # Trained model checkpoints
+│   └── logs/                 # Training logs
+├── archived/                  # Historical experiments
+│   ├── models/               # Previous model attempts
+│   ├── scripts/              # Old training scripts
+│   └── docs/                 # Historical documentation
+├── datasets/                  # Source datasets
+│   └── claude_final_analysis_20250601_083919.md
+├── docs/                      # Current documentation
+│   └── PHI2_TRAINING_STATUS.md
+└── utils/                     # Utility scripts
+    ├── evaluation/
+    ├── monitoring/
+    └── data_processing/
 ```
 
----
+## 🚦 Quick Start
 
-## How to Run
-
-### Prerequisites
+### Monitor Current Training
 ```bash
-pip install transformers peft datasets torch
-```
-
-### Step 1: Verify Adaptive Datasets Exist
-```bash
-ls -la datasets/adaptive_*.json
-# Should show adaptive_train.json (500) and adaptive_val.json (100)
-```
-
-### Step 2: Fix Gradient Checkpointing Issue
-Edit `train_adaptive_lfm2.py` line 184:
-```python
-gradient_checkpointing=False  # Change from True
-```
-
-### Step 3: Launch Training
-```bash
+# Check training status
 cd /home/pricepro2006/CrewAI_Team/fine-tuning
-python3 train_adaptive_lfm2.py
+python3 active/scripts/monitor_training.py
+
+# View live logs
+tail -f phi2_training_live_fixed.log
+
+# Check process
+ps aux | grep train_phi2_fixed
 ```
 
-### Step 4: Monitor Progress
+### Start New Training
 ```bash
-# Real-time monitoring
-python3 training_progress_monitor.py --live
+# Activate environment
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 
-# Check logs
-tail -f adaptive_training.log
+# Run training
+cd active/scripts
+python3 train_phi2_adaptive.py
+
+# Or use the fixed version for debugging
+python3 train_phi2_fixed.py
 ```
 
----
+### Evaluate Model
+```bash
+# After training completes
+python3 active/scripts/phase4_evaluation_phi2.py \
+    --model-path active/models/phi2-finetuned \
+    --test-data datasets/claude_val.json
+```
 
-## ⚠️ Common Issues & Solutions
+## 📈 Training Configuration
 
-### 1. Gradient Checkpointing Error
-**Error**: `Expected 2D (unbatched) or 3D (batched) input to conv1d`  
-**Fix**: Set `gradient_checkpointing=False` in training arguments
+### Phi-2 Settings
+```python
+Model: microsoft/phi-2
+Total Parameters: 2.7B
+Trainable (LoRA): 5.2M (0.19%)
 
-### 2. TensorBoard Missing
-**Error**: `TensorBoardCallback requires tensorboard`  
-**Fix**: Set `report_to=[]` in training arguments
+Hyperparameters:
+- Batch Size: 1
+- Gradient Accumulation: 8
+- Learning Rate: 2e-4
+- Max Length: 1024 tokens
+- Epochs: 1 (can increase if needed)
 
-### 3. Wrong Dataset Size
-**Issue**: Training on 100 examples instead of 500  
-**Fix**: Use `train_adaptive_lfm2.py` NOT the archived scripts
+LoRA Configuration:
+- r: 8
+- alpha: 16
+- dropout: 0.1
+- targets: ["q_proj", "v_proj", "k_proj", "dense"]
+```
 
----
+### Hardware Requirements
+- **Minimum RAM:** 32GB
+- **Recommended RAM:** 54GB+ (current setup)
+- **CPU:** Multi-core (6+ cores recommended)
+- **Storage:** 20GB free space
 
-## Training Data Format
+## 📝 Dataset Format
 
-### Input Format (Adaptive Dataset)
+### Training Data Structure
 ```json
 {
-  "batch_number": 2435,
-  "instruction": "Analyze email batch #2435",
-  "input": "This batch contains 5 emails from TD SYNNEX communications.",
-  "output": "## Batch 2435 Analysis\n\n[Claude's comprehensive analysis...]",
-  "difficulty": 0.85,
-  "quality_score": 78.5,
-  "curriculum_level": 2
+  "examples": [
+    {
+      "input": "<|user|>\nAnalyze the following TD SYNNEX email batch and extract...<|end|>\n<|assistant|>",
+      "output": "## Email Batch Analysis\n\n### Workflow State: IN-PROGRESS\n..."
+    }
+  ]
 }
 ```
 
-### Key Patterns Being Learned
-1. **Email Chain Workflows**: START → IN-PROGRESS → COMPLETION states
-2. **Business Entities**: SPAs (CAS-*), POs, Quote IDs
-3. **Action Sequences**: Order processing, quote generation, support tickets
-4. **Temporal Patterns**: Email threading and response patterns
-5. **Urgency Classification**: Priority determination from context
+### Ground Truth Source
+- **Claude's Analysis:** 4,124 email batches analyzed
+- **Located at:** `/claude_final_analysis_20250601_083919.md`
+- **Quality:** Professional TD SYNNEX business intelligence
+
+## 🧪 Evaluation Metrics
+
+| Category | Weight | Description |
+|----------|--------|-------------|
+| **Entity Extraction** | 30% | PO numbers, quotes, customers |
+| **Workflow Detection** | 25% | State identification, chain completeness |
+| **Business Intelligence** | 25% | Insights, recommendations, risks |
+| **Summary Quality** | 20% | Conciseness, accuracy, relevance |
+
+**Deployment Threshold:** 70% overall accuracy
+
+## 🛠️ Key Scripts
+
+### Active Training Scripts
+- **train_phi2_adaptive.py** - Main adaptive training pipeline
+- **train_phi2_fixed.py** - Fixed version with progress monitoring
+- **cpu_optimized_phi2_training.py** - CPU-optimized trainer
+- **monitor_training.py** - Real-time training monitor
+- **phase4_evaluation_phi2.py** - Evaluation framework
+
+### Data Processing
+- **generate_training_from_claude_no_emails.py** - Dataset generator
+- **phase2_adaptive_dataset_generator.py** - Adaptive dataset creation
+
+## 📊 Training Progress Tracking
+
+### Log Files
+- `phi2_training_progress.log` - Detailed progress with losses
+- `phi2_training_live_fixed.log` - Live output from training
+- `phi2_training.log` - General training information
+
+### Monitoring Commands
+```bash
+# Real-time GPU/CPU usage
+htop
+
+# Check memory usage
+free -h
+
+# Monitor specific process
+top -p $(pgrep -f train_phi2)
+
+# View training metrics
+grep "Loss:" phi2_training_progress.log | tail -5
+```
+
+## 🚀 Deployment Pipeline
+
+### 1. Training Completion
+- Model saved to `active/models/phi2-finetuned/`
+- Final evaluation metrics calculated
+
+### 2. Accuracy Verification
+- Must exceed 70% threshold
+- Compare against Claude's ground truth
+
+### 3. Model Export
+```bash
+# Convert to GGUF format for production
+python3 utils/export_to_gguf.py \
+    --model active/models/phi2-finetuned \
+    --output models/phi2-td-synnex.gguf
+```
+
+### 4. Integration
+- Deploy to email processing pipeline
+- Set up inference server
+- Configure API endpoints
+
+## 📚 Historical Context
+
+### Previous Attempts (Archived)
+- **Llama 3.2 (3B)** - Memory constraints, training issues
+- **Gemma 2B** - Authentication problems with Hugging Face
+- **Qwen 2.5 (1.5B)** - Insufficient capacity for complex analysis
+- **Phi-3.5-mini** - DynamicCache compatibility issues
+- **LFM2** - Custom model, convergence problems
+
+### Why Phi-2?
+1. **Optimal Size** - 2.7B parameters fits in available RAM
+2. **Architecture** - Proven transformer design
+3. **LoRA Support** - Efficient fine-tuning
+4. **Community** - Well-documented and supported
+5. **Performance** - Good balance of quality and speed
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Training Stuck at 0%
+- First step takes 5-10 minutes due to gradient accumulation
+- Check CPU usage: should be 500-600%
+- Verify with: `ps aux | grep train_phi2`
+
+#### Out of Memory
+- Reduce batch size in configuration
+- Enable gradient checkpointing
+- Clear cache: `rm -rf ~/.cache/huggingface`
+
+#### Slow Training
+- Normal: ~6.5 minutes per step on CPU
+- Consider reducing max_length to 512
+- Use fewer gradient accumulation steps
+
+## 📋 Requirements
+
+### Python Dependencies
+```txt
+torch>=2.0.0
+transformers>=4.36.0
+peft>=0.7.0
+datasets>=2.14.0
+accelerate>=0.25.0
+bitsandbytes>=0.41.0
+psutil>=5.9.0
+numpy>=1.24.0
+tqdm>=4.65.0
+```
+
+### System Dependencies
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install python3-dev python3-pip python3-venv
+
+# Resource monitoring
+sudo apt-get install htop iotop
+```
+
+## 🤝 Contributing
+
+### Adding New Models
+1. Create script in `active/scripts/train_[model]_adaptive.py`
+2. Follow existing template structure
+3. Add evaluation metrics
+4. Document in this README
+
+### Improving Datasets
+1. Enhance `datasets/` with new examples
+2. Maintain Claude analysis quality standard
+3. Update data generators in `utils/data_processing/`
+
+## 📞 Support
+
+### Project Information
+- **Project:** TD SYNNEX Email Intelligence System
+- **Branch:** feat/llama32-fine-tuning
+- **Lead:** CrewAI Team
+- **Status:** Active Development
+
+### Resources
+- [Phi-2 Model Card](https://huggingface.co/microsoft/phi-2)
+- [LoRA Paper](https://arxiv.org/abs/2106.09685)
+- [TD SYNNEX Workflow Documentation](../docs/)
+
+## 📅 Timeline
+
+| Date | Milestone |
+|------|-----------|
+| Aug 11, 2025 | Initial experiments with Llama 3.2 |
+| Aug 12, 2025 | Switched to alternative models |
+| Aug 13, 2025 | Selected Phi-2, started training |
+| Aug 14, 2025 | Expected training completion |
+| Aug 15, 2025 | Evaluation and deployment (if >70%) |
+
+## 🎯 Next Steps
+
+1. **Immediate**
+   - [x] Monitor current Phi-2 training
+   - [ ] Prepare production deployment scripts
+   - [ ] Document API integration points
+
+2. **Post-Training**
+   - [ ] Run comprehensive evaluation
+   - [ ] Export to GGUF format
+   - [ ] Benchmark inference speed
+   - [ ] Create API wrapper
+
+3. **Production**
+   - [ ] Deploy to email pipeline
+   - [ ] Set up monitoring
+   - [ ] Create backup strategies
+   - [ ] Document maintenance procedures
 
 ---
 
-## Success Metrics
+**Last Updated:** August 13, 2025 22:20 EST  
+**Current Training:** Phi-2 Step 2/63 (PID: 1162222)  
+**Estimated Completion:** ~6.5 hours
 
-### Training Targets
-- [ ] Complete 5 epochs on 500 examples
-- [ ] Achieve training loss < 2.0
-- [ ] Validation loss convergence
-- [ ] Save best model checkpoint
-
-### Production Goals
-- [ ] Zero errors on 2,000+ test queries
-- [ ] Accurate batch-to-analysis mapping
-- [ ] Synonym learning capability
-- [ ] Sub-second inference time
-
----
-
-## Important Notes
-
-### ⚠️ DO NOT USE These Old Files
-| File | Problem | Location |
-|------|---------|----------|
-| `train_email_batch_analysis.py` | Hardcoded to 100 examples | `archive_old_100_examples/` |
-| Old training logs | Wrong dataset, incomplete | `archive_old_100_examples/` |
-| Old model checkpoints | Trained on wrong data | `archive_old_100_examples/` |
-
-### ✅ USE These Current Files
-| File | Purpose | Examples |
-|------|---------|----------|
-| `train_adaptive_lfm2.py` | Main training script | 500 train / 100 val |
-| `datasets/adaptive_*.json` | Adaptive datasets | Zero-hardcoding |
-| `training_progress_monitor.py` | Progress visualization | Real-time updates |
-
----
-
-## Next Steps
-
-1. **Immediate**: Fix gradient checkpointing in `train_adaptive_lfm2.py`
-2. **Today**: Complete Phase 3 baseline training with 500 examples
-3. **Tomorrow**: Implement Phase 4 evaluation framework
-4. **This Week**: Begin Phase 5 iterative improvements
-5. **Next Week**: Deploy to production (Phase 6)
-
----
-
-## References
-
-### Project Documents
-- Adaptive Training Plan: `ADAPTIVE_TRAINING_PLAN.md`
-- Comprehensive Plan: `COMPREHENSIVE_ADAPTIVE_TRAINING_PLAN.md`
-- File Inventory: `FILE_INVENTORY_COMPLETE.md`
-
-### Original Llama 3.2 Work (Archived)
-- Pattern Discovery: `/model-benchmarks/TRUE_PATTERN_DISCOVERY_REPORT.md`
-- Email Analysis: `/model-benchmarks/FINAL_ANALYSIS_REPORT.md`
-- Original attempt with 143,221 emails (replaced by LFM2 approach)
-
----
-
-*Branch: feat/llama32-fine-tuning*  
-*Model: LiquidAI/LFM2-1.2B*  
-*Created: August 11, 2025*  
-*Updated: August 13, 2025 - Adaptive Pipeline v2.0*
+*For real-time updates, see [PHI2_TRAINING_STATUS.md](docs/PHI2_TRAINING_STATUS.md)*
