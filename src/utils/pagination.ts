@@ -99,8 +99,10 @@ export function createCursorPagination<T extends { id: string; created_at?: stri
   const { limit, includeTotal } = input;
   
   // Extract cursors from data
-  const startCursor = data.length > 0 ? encodeCursor(data[0]) : undefined;
-  const endCursor = data.length > 0 ? encodeCursor(data[data.length - 1]) : undefined;
+  const firstItem = data[0];
+  const lastItem = data[data.length - 1];
+  const startCursor = firstItem ? encodeCursor(firstItem) : undefined;
+  const endCursor = lastItem ? encodeCursor(lastItem) : undefined;
   
   const meta: CursorPaginationMeta = {
     limit,

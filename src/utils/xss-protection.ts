@@ -5,7 +5,7 @@
 
 import DOMPurify from 'isomorphic-dompurify';
 import { z } from 'zod';
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 /**
  * XSS attack vectors to protect against
