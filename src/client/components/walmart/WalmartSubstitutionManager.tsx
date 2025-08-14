@@ -52,10 +52,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../../../components/ui/tooltip';
-import { cn } from '../../lib/utils';
-import { formatPrice } from '../../lib/utils';
+import { cn, formatPrice } from '../../lib/utils';
 import { useGroceryStore } from '../../store/groceryStore';
 import { useCart } from '../../hooks/useCart';
+import { getNumericPrice } from '../../../utils/walmart-product';
 import type { WalmartProduct, SubstitutionOptions, DietaryFilter, AllergenType } from '../../../types/walmart-grocery';
 
 interface WalmartSubstitutionManagerProps {
@@ -96,8 +96,8 @@ const SubstitutionCard: React.FC<{
   isSelected?: boolean;
 }> = ({ original, suggestion, onSelect, onFeedback, isSelected = false }) => {
   // Handle ProductPrice type properly for price calculations
-  const originalPrice = typeof original.price === 'number' ? original.price : original.price.regular;
-  const suggestionPrice = typeof suggestion.price === 'number' ? suggestion.price : suggestion.price.regular;
+  const originalPrice = getNumericPrice(original.price);
+  const suggestionPrice = getNumericPrice(suggestion.price);
   const priceDiff = suggestionPrice - originalPrice;
   const priceDiffPercent = (priceDiff / originalPrice) * 100;
   
@@ -297,10 +297,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
   });
   const [filterCategory, setFilterCategory] = useState<'all' | 'preferred' | 'cheaper' | 'healthier'>('all');
   
-  // Mock substitution suggestions - helper function to get numeric price
-  const getProductPrice = (product: WalmartProduct): number => {
-    return typeof product.price === 'number' ? product.price : product.price.regular;
-  };
+  // Mock substitution suggestions
 
   const mockSuggestions: SubstitutionSuggestion[] = product ? [
     {
@@ -309,14 +306,14 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
       walmartId: 'sub-wm-1',
       name: `${product.brand || 'Store Brand'} ${typeof product.category === 'string' ? product.category : 'Product'} Alternative`,
       brand: 'Great Value',
-      price: getProductPrice(product) * 0.85,
+      price: getNumericPrice(product.price) * 0.85,
       description: 'Alternative product with similar quality',
       images: product.images || [],
       availability: product.availability || { inStock: true },
       metadata: product.metadata || { source: 'manual' as const },
       reason: 'Similar product, lower price',
       matchScore: 92,
-      priceDifference: -getProductPrice(product) * 0.15,
+      priceDifference: -getNumericPrice(product.price) * 0.15,
       isPreferred: true,
       nutritionComparison: {
         calories: { original: 120, substitute: 110 },
@@ -330,14 +327,14 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
       walmartId: 'sub-wm-2',
       name: `Organic ${product.name}`,
       brand: 'Nature Valley',
-      price: getProductPrice(product) * 1.2,
+      price: getNumericPrice(product.price) * 1.2,
       description: 'Organic alternative with better nutritional profile',
       images: product.images || [],
       availability: product.availability || { inStock: true },
       metadata: product.metadata || { source: 'manual' as const },
       reason: 'Organic option available',
       matchScore: 85,
-      priceDifference: getProductPrice(product) * 0.2,
+      priceDifference: getNumericPrice(product.price) * 0.2,
       nutritionComparison: {
         calories: { original: 120, substitute: 115 },
         protein: { original: 3, substitute: 5 },
@@ -350,14 +347,14 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
       walmartId: 'sub-wm-3',
       name: `Premium ${typeof product.category === 'string' ? product.category : 'Product'}`,
       brand: product.brand || 'Premium Brand',
-      price: getProductPrice(product) * 1.1,
+      price: getNumericPrice(product.price) * 1.1,
       description: 'Premium version with enhanced quality',
       images: product.images || [],
       availability: product.availability || { inStock: true },
       metadata: product.metadata || { source: 'manual' as const },
       reason: 'Same brand, different size',
       matchScore: 88,
-      priceDifference: getProductPrice(product) * 0.1,
+      priceDifference: getNumericPrice(product.price) * 0.1,
     },
   ] : [];
   
@@ -440,7 +437,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{sub.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatPrice(typeof sub.price === 'number' ? sub.price : sub.price.regular)} • {sub.reason}
+                      {formatPrice(getNumericPrice(sub.price))} • {sub.reason}
                     </p>
                   </div>
                   {sub.isPreferred && (
@@ -511,7 +508,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
                     <div>
                       <p className="font-medium">{product.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {formatPrice(getProductPrice(product))} • Original selection
+                        {formatPrice(getNumericPrice(product.price))} • Original selection
                       </p>
                     </div>
                   </div>
@@ -522,7 +519,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
               </div>
               
               {/* Filter tabs */}
-              <Tabs value={filterCategory} onValueChange={(value: any) => setFilterCategory(value)}>
+              <Tabs value={filterCategory} onValueChange={(value: string) => setFilterCategory(value as 'all' | 'preferred' | 'cheaper' | 'healthier')}>
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="all" className="text-xs">
                     All ({mockSuggestions.length})
