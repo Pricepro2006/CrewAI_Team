@@ -58,8 +58,8 @@ export function createPermissionMiddleware(requiredPermissions: string[]) {
       securityMonitor.logEvent({
         type: isGuest ? SecurityEventType.GUEST_ACCESS_DENIED : SecurityEventType.PERMISSION_DENIED,
         userId: ctx.user.id,
-        ip: (ctx.user.metadata as any)?.ip,
-        userAgent: (ctx.user.metadata as any)?.userAgent,
+        ip: (ctx.user as any).metadata?.ip,
+        userAgent: (ctx.user as any).metadata?.userAgent,
         resource: path,
         reason: `Missing permissions: ${requiredPermissions.join(", ")}`,
         metadata: {
@@ -124,8 +124,8 @@ export function createGuestAllowedMiddleware(guestPermissions: string[] = ["read
         securityMonitor.logEvent({
           type: SecurityEventType.GUEST_ACCESS_DENIED,
           userId: ctx.user.id,
-          ip: (ctx.user.metadata as any)?.ip,
-          userAgent: (ctx.user.metadata as any)?.userAgent,
+          ip: (ctx.user as any).metadata?.ip,
+          userAgent: (ctx.user as any).metadata?.userAgent,
           resource: (opts as any).path || "unknown",
           reason: "Guest lacks required permissions",
         });
@@ -228,8 +228,8 @@ export function createGuestRateLimitMiddleware(
         securityMonitor.logEvent({
           type: SecurityEventType.GUEST_RATE_LIMITED,
           userId: guestId,
-          ip: (ctx.user.metadata as any)?.ip,
-          userAgent: (ctx.user.metadata as any)?.userAgent,
+          ip: (ctx.user as any).metadata?.ip,
+          userAgent: (ctx.user as any).metadata?.userAgent,
           resource: path,
           reason: `Rate limit exceeded: ${counter.count}/${maxRequests}`,
           metadata: {
@@ -277,8 +277,8 @@ export function createEnhancedAuthorizationMiddleware(
       securityMonitor.logEvent({
         type: SecurityEventType.GUEST_ACCESS_DENIED,
         userId: ctx.user.id,
-        ip: (ctx.user.metadata as any)?.ip,
-        userAgent: (ctx.user.metadata as any)?.userAgent,
+        ip: (ctx.user as any).metadata?.ip,
+        userAgent: (ctx.user as any).metadata?.userAgent,
         resource: (opts as any).path || "role-based-endpoint",
         reason: "Guest attempted to access role-based resource",
       });
