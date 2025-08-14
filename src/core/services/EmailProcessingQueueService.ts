@@ -5,12 +5,8 @@
  * priority handling, and comprehensive monitoring.
  */
 
-import * as BullMQ from "bullmq";
-const Queue = BullMQ.Queue || (BullMQ as any).default?.Queue || (BullMQ as any);
-const QueueScheduler = BullMQ.QueueScheduler || (BullMQ as any).default?.QueueScheduler || (BullMQ as any);
-const Worker = BullMQ.Worker || (BullMQ as any).default?.Worker || (BullMQ as any);
-const QueueEvents = BullMQ.QueueEvents || (BullMQ as any).default?.QueueEvents || (BullMQ as any);
-import type { Job } from "bullmq";
+import { Queue, Worker, QueueEvents, Job } from "bullmq";
+import type { JobsOptions } from "bullmq";
 import { Redis } from "ioredis";
 import { EventEmitter } from "events";
 import { Logger } from "../../utils/logger.js";
@@ -165,7 +161,7 @@ export class EmailProcessingQueueService extends EventEmitter {
    */
   private async createQueue(phase: string, queueName: string): Promise<void> {
     // Create queue
-    const queue = new (Queue as any)(queueName, {
+    const queue = new Queue(queueName, {
       connection: this.redisConnection.duplicate(),
       defaultJobOptions: {
         removeOnComplete: {
@@ -183,16 +179,13 @@ export class EmailProcessingQueueService extends EventEmitter {
 
     this.queues.set(phase, queue);
 
-    // Create scheduler for delayed jobs
-    const scheduler = new (QueueScheduler as any)(queueName, {
-      connection: this.redisConnection.duplicate(),
-    });
-
-    this.schedulers.set(phase, scheduler);
+    // Note: QueueScheduler is deprecated in newer BullMQ versions
+    // We'll remove the scheduler logic for now
+    // this.schedulers.set(phase, null);
 
     // Create queue events for monitoring
     if (this.config.monitoring.enableEvents) {
-      const events = new (QueueEvents as any)(queueName, {
+      const events = new QueueEvents(queueName, {
         connection: this.redisConnection.duplicate(),
       });
 
@@ -353,9 +346,9 @@ export class EmailProcessingQueueService extends EventEmitter {
     const queueName = this.config.queues[phase];
     const concurrency = this.config.concurrency[phase];
 
-    const worker = new Worker<EmailJob, JobResult>(
+    const worker = new Worker(
       queueName,
-      async (job: any) => {
+      async (job: Job<EmailJob>) => {
         const startTime = Date.now();
 
         try {
@@ -527,7 +520,7 @@ export class EmailProcessingQueueService extends EventEmitter {
 
     // Get metrics for all queues
     const allMetrics = new Map<string, QueueMetrics>();
-    for (const [phase] of this.queues) {
+    for (const [phase] of Array.from(this.queues.keys())) {
       const metrics = await this.calculateQueueMetrics(phase);
       allMetrics.set(phase, metrics);
     }
@@ -603,7 +596,7 @@ export class EmailProcessingQueueService extends EventEmitter {
 
       // Log summary
       if (allMetrics instanceof Map) {
-        for (const [phase, metrics] of allMetrics) {
+        for (const [phase, metrics] of Array.from(allMetrics.entries())) {
           logger.debug(
             `Queue ${phase}: ${metrics.active} active, ${metrics.waiting} waiting`,
           );
@@ -642,7 +635,7 @@ export class EmailProcessingQueueService extends EventEmitter {
     const queueHealth: Record<string, { healthy: boolean; issues: string[] }> =
       {};
 
-    for (const [phase, queue] of this.queues) {
+    for (const [phase, queue] of Array.from(this.queues.entries())) {
       const issues: string[] = [];
       let healthy = true;
 
@@ -704,25 +697,27 @@ export class EmailProcessingQueueService extends EventEmitter {
     }
 
     // Close workers first
-    for (const [phase, worker] of this.workers) {
+    for (const [phase, worker] of Array.from(this.workers.entries())) {
       logger.debug(`Closing worker for ${phase}...`);
       await worker.close();
     }
 
     // Close queue events
-    for (const [phase, events] of this.queueEvents) {
+    for (const [phase, events] of Array.from(this.queueEvents.entries())) {
       logger.debug(`Closing events for ${phase}...`);
       await events.close();
     }
 
-    // Close schedulers
-    for (const [phase, scheduler] of this.schedulers) {
+    // Close schedulers (deprecated in newer BullMQ versions)
+    for (const [phase, scheduler] of Array.from(this.schedulers.entries())) {
       logger.debug(`Closing scheduler for ${phase}...`);
-      await scheduler.close();
+      if (scheduler && scheduler.close) {
+        await scheduler.close();
+      }
     }
 
     // Close queues
-    for (const [phase, queue] of this.queues) {
+    for (const [phase, queue] of Array.from(this.queues.entries())) {
       logger.debug(`Closing queue for ${phase}...`);
       await queue.close();
     }
