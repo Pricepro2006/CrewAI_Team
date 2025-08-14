@@ -192,7 +192,7 @@ export class PreferenceLearningService {
    */
   async learnFromAction(
     userId: string,
-    action: Omit<LearningEvent, 'id' | 'timestamp'>
+    action: Omit<LearningEvent, 'id' | 'timestamp' | 'userId'>
   ): Promise<void> {
     try {
       // Record the learning event
@@ -419,8 +419,7 @@ export class PreferenceLearningService {
         ...summary.adaptiveParameters,
         userId,
         prioritizeHistory: true,
-        includeAlternatives: true,
-        personalized: true
+        includeAlternatives: true
       };
 
     } catch (error) {
@@ -494,7 +493,7 @@ export class PreferenceLearningService {
 
   private async processPurchase(event: LearningEvent): Promise<void> {
     // Reinforce brand preference
-    if (event.brand) {
+    if (event.brand && event.category) {
       await this.reinforcePreference(event.userId, 'brand', event.brand, event.category);
     }
 
@@ -523,14 +522,14 @@ export class PreferenceLearningService {
 
   private async processRecommendationClick(event: LearningEvent): Promise<void> {
     // Positive signal - reinforce preferences that led to this match
-    if (event.brand) {
+    if (event.brand && event.category) {
       await this.reinforcePreference(event.userId, 'brand', event.brand, event.category);
     }
   }
 
   private async processRecommendationDismiss(event: LearningEvent): Promise<void> {
     // Negative signal - weaken preferences that led to this match
-    if (event.brand) {
+    if (event.brand && event.category) {
       await this.weakenPreference(event.userId, 'brand', event.brand, event.category);
     }
   }
