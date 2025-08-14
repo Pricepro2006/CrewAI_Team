@@ -17,20 +17,20 @@ import {
   WifiIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
-import { api } from "../../../lib/trpc.js";
-import { useEmailWebSocket } from "../../hooks/useEnhancedWebSocket.js";
-import { MetricsBar } from "./MetricsBar.js";
-import { EmailListView } from "./EmailListView.js";
-import { EmailDashboardView } from "./EmailDashboardView.js";
-import { AnalyticsView } from "./AnalyticsView.js";
-import { AgentView } from "./AgentView.js";
-import { StatusLegend } from "./StatusLegend.js";
+import { api } from "../../../lib/trpc";
+import { useEmailWebSocket } from "../../hooks/useEnhancedWebSocket";
+import { MetricsBar } from "./MetricsBar";
+import { EmailListView } from "./EmailListView";
+import { EmailDashboardView } from "./EmailDashboardView";
+import { AnalyticsView } from "./AnalyticsView";
+import { AgentView } from "./AgentView";
+import { StatusLegend } from "./StatusLegend";
 import type {
   UnifiedEmailData,
   ViewMode,
   FilterConfig,
   DashboardMetrics,
-} from "../../../types/unified-email.types.js";
+} from "../../../types/unified-email.types";
 import type {
   EmailStatsUpdatedEvent,
   EmailAnalyticsUpdatedEvent,
@@ -39,7 +39,7 @@ import type {
   EmailStateChangedEvent,
   EmailSLAAlertEvent,
   WebSocketEventHandlers,
-} from "../../../shared/types/websocket-events.js";
+} from "../../../shared/types/websocket-events";
 import "./UnifiedEmailDashboard.css";
 
 interface UnifiedEmailDashboardProps {
@@ -69,7 +69,7 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
   className,
   initialView = "dashboard",
 }) => {
-  const [viewMode, setViewMode] = useState<ViewMode>(initialView);
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView as ViewMode);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterConfig>(defaultFilters);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -93,9 +93,6 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
     isLoading: emailsLoading 
   } = api.emails.getTableData.useQuery({
     ...filters,
-    includeAnalysis: true,
-    includeWorkflowState: true,
-    includeAgentInfo: true,
   });
 
   // Analytics data with workflow metrics
@@ -103,11 +100,7 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
     data: analytics, 
     refetch: refetchAnalytics,
     isLoading: analyticsLoading 
-  } = api.emails.getAnalytics.useQuery({
-    includeWorkflowMetrics: true,
-    includeAgentMetrics: true,
-    includeTrends: true,
-  });
+  } = api.emails.getAnalytics.useQuery({});
 
   // Dashboard stats
   const { 
@@ -148,7 +141,7 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
           message: `${event.data.workflow} - ${event.data.slaStatus === 'overdue' 
             ? `Overdue by ${event.data.overdueDuration} mins` 
             : `At risk - ${event.data.timeRemaining} mins remaining`}`,
-          severity: event.data.slaStatus === 'overdue' ? 'critical' : 'warning',
+          severity: (event.data.slaStatus === 'overdue' ? 'critical' : 'warning') as 'critical' | 'warning',
         }
       ].slice(-5)); // Keep last 5 alerts
     },
