@@ -14,9 +14,11 @@ import { logger } from '../utils/logger.js';
 import { initializeSecureConfig } from '../utils/secrets.js';
 import { redisClient } from '../config/redis.config.js';
 import { io } from '../api/websocket/index.js';
-import type { 
+import { 
   IngestionMode,
-  IngestionSource,
+  IngestionSource
+} from '../core/services/EmailIngestionService.js';
+import type {
   IngestionBatchResult,
   QueueStatus,
   HealthStatus,
@@ -41,7 +43,7 @@ export interface EmailIngestionIntegrationConfig {
  * Default configuration for production deployment
  */
 const defaultConfig: EmailIngestionIntegrationConfig = {
-  mode: IngestionMode.HYBRID,
+  mode: IngestionMode.HYBRID as IngestionMode,
   enableWebSocketUpdates: true,
   enableAnalysisIntegration: true,
   enableHealthMonitoring: true,
@@ -275,7 +277,7 @@ export class EmailIngestionIntegrationService {
    * Start auto-pull scheduler
    */
   private async startScheduler(): Promise<void> {
-    if (this.config.mode === IngestionMode.MANUAL_LOAD) {
+    if (this.config.mode === (IngestionMode.MANUAL_LOAD as IngestionMode)) {
       logger.info('Scheduler not started - running in manual mode only');
       return;
     }
