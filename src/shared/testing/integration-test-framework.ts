@@ -23,7 +23,7 @@ export interface TestConfig {
   cleanup: boolean;
   database: DatabaseTestConfig;
   services: ServiceTestConfig;
-  authentication: AuthTestConfig;
+  authentication?: AuthTestConfig;
   monitoring: MonitoringTestConfig;
 }
 
@@ -225,6 +225,7 @@ export interface TestResponse<T = unknown> {
   data: T;
   duration: number;
   requestId?: string;
+  responseTime?: number;
 }
 
 export interface TestError extends Error {
@@ -247,6 +248,17 @@ export interface TestWebSocketClient {
   reconnectAttempts: number;
   messageQueue: QueuedMessage[];
   eventHandlers: Map<string, EventHandler[]>;
+  
+  // Methods
+  connect(): Promise<TestWebSocketConnection>;
+  disconnect(): Promise<void>;
+  subscribe(channel: string): Promise<void>;
+  unsubscribe(channel: string): Promise<void>;
+  send(message: WebSocketMessage): Promise<void>;
+  on(event: string, handler: (message: any) => void): void;
+  once(event: string, handler: (message: any) => void): void;
+  off(event: string, handler?: (message: any) => void): void;
+  waitForMessage(event: string, timeout?: number): Promise<any>;
 }
 
 export interface TestWebSocketConnection {
