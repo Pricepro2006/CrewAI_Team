@@ -7,7 +7,7 @@
 
 import { EventEmitter } from "events";
 import { Logger } from "../../utils/logger.js";
-import { withUnitOfWork, type UnitOfWork } from "../../database/UnitOfWork.js";
+import { withUnitOfWork, type UnitOfWork as IUnitOfWork } from "../../database/UnitOfWork.js";
 import type {
   EmailRecord,
   EmailPriority,
@@ -69,7 +69,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
    * Analyze an email chain for completeness and patterns
    */
   async analyzeChain(email: EmailWithThread): Promise<ChainAnalysisResult> {
-    return withUnitOfWork(async (uow: UnitOfWork) => {
+    return withUnitOfWork(async (uow) => {
       try {
         const startTime = Date.now();
 
@@ -497,7 +497,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
    * Get chain statistics from repository
    */
   async getChainStatistics(): Promise<any> {
-    return withUnitOfWork(async (uow: UnitOfWork) => {
+    return withUnitOfWork(async (uow) => {
       return await uow.chains.getChainStatistics();
     });
   }
@@ -508,7 +508,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
   async findChainsNeedingReanalysis(
     hoursOld: number = 24,
   ): Promise<EmailChain[]> {
-    return withUnitOfWork(async (uow: UnitOfWork) => {
+    return withUnitOfWork(async (uow) => {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursOld);
 
