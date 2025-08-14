@@ -279,10 +279,22 @@ router.put('/config/:service', asyncHandler(async (req, res) => {
 
     const validatedConfig = ConfigUpdateSchema.parse(req.body);
     
-    circuitBreakerService.updateServiceConfig(service, {
-      service: service as any, // Type assertion needed for enum validation
-      ...validatedConfig,
-    });
+    // Build configuration with proper types
+    const updatePayload: any = {
+      service: service as any
+    };
+    
+    if (validatedConfig.config) {
+      updatePayload.config = validatedConfig.config;
+    }
+    if (validatedConfig.retryPolicy) {
+      updatePayload.retryPolicy = validatedConfig.retryPolicy;
+    }
+    if (validatedConfig.bulkhead) {
+      updatePayload.bulkhead = validatedConfig.bulkhead;
+    }
+    
+    circuitBreakerService.updateServiceConfig(service, updatePayload);
     
     logger.info('Circuit breaker configuration updated via API', 'CIRCUIT_BREAKER_API', {
       service,
