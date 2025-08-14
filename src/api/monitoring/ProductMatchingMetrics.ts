@@ -63,7 +63,7 @@ export class ProductMatchingMetrics extends EventEmitter {
   private alertRules: AlertRule[] = [];
   private activeAlerts: Map<string, Alert> = new Map();
   private metricsRetentionHours = 24;
-  private collectionInterval: NodeJS.Timeout | null = null;
+  private collectionInterval: NodeJS.Timeout | undefined = undefined;
   
   // Services to monitor
   private optimizedAlgorithm: OptimizedProductMatchingAlgorithm;
@@ -366,7 +366,7 @@ export class ProductMatchingMetrics extends EventEmitter {
     if (sorted.length === 0) return 0;
     
     const index = Math.ceil(sorted.length * p) - 1;
-    return sorted[Math.max(0, index)];
+    return sorted[Math.max(0, index)] ?? 0;
   }
   
   /**
@@ -583,7 +583,7 @@ export class ProductMatchingMetrics extends EventEmitter {
   stop(): void {
     if (this.collectionInterval) {
       clearInterval(this.collectionInterval);
-      this.collectionInterval = null;
+      this.collectionInterval = undefined;
     }
     
     logger.info("Metrics collection stopped", "METRICS");
