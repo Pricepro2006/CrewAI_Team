@@ -15,7 +15,7 @@ import type {
   UserPreferences,
   PriceAlert,
   Order,
-} from "../../types/walmart-grocery";
+} from "../../types/walmart-grocery.js";
 
 interface GroceryState {
   // Cart State
@@ -122,12 +122,12 @@ export const useGroceryStore = create<GroceryState>()(
 
         // Computed values
         get cartItemCount(): number {
-          return get().cart.items.reduce((sum, item) => sum + item.quantity, 0);
+          return get().cart.items.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
         },
         
         get cartTotal(): number {
           const state = get();
-          return state.cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          return state.cart.items.reduce((sum: number, item: CartItem) => sum + (item.price * item.quantity), 0);
         },
         
         get favoriteProductIds(): Set<string> {
@@ -302,9 +302,9 @@ export const useGroceryStore = create<GroceryState>()(
               return {
                 ...list,
                 items: list.items.filter((i) => i.id !== itemId),
-                totalEstimate:
-                  list.totalEstimate -
-                  (item.product?.price || 0) * item.quantity,
+                estimated_total:
+                  (list.estimated_total || 0) -
+                  (typeof item.product?.price === 'number' ? item.product.price : item.product?.price?.regular || 0) * item.quantity,
                 updatedAt: new Date(),
               };
             }),
@@ -326,8 +326,8 @@ export const useGroceryStore = create<GroceryState>()(
             productId,
             targetPrice,
             currentPrice: 0, // This should be fetched
-            created: new Date(),
-            status: "active",
+            createdAt: new Date().toISOString(),
+            active: true,
           };
 
           set((state) => ({
@@ -382,8 +382,8 @@ export const useGroceryStore = create<GroceryState>()(
             error: null,
           });
         },
-      }),
-      {
+        })),
+        {
         name: "walmart-grocery-store",
         partialize: (state) => ({
           cart: state.cart,

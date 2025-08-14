@@ -153,7 +153,13 @@
     "build:prod": "./scripts/build-optimized.sh",
     "perf:report": "tsx src/scripts/performance-report-generator.ts",
     "perf:analyze": "tsx src/scripts/simple-frontend-analysis.ts",
-    "monitor": "tsx src/scripts/performance-dashboard.ts"
+    "monitor": "tsx src/scripts/performance-dashboard.ts",
+    "build:analyze": "npm run build && npx vite-bundle-analyzer dist/",
+    "perf:optimize": "tsx src/scripts/implement-performance-optimizations.ts",
+    "perf:monitor": "tsx src/scripts/comprehensive-performance-benchmark.ts",
+    "db:vacuum": "sqlite3 data/crewai_enhanced.db 'VACUUM;' && sqlite3 data/app.db 'VACUUM;'",
+    "db:analyze": "tsx src/scripts/database-performance-benchmark.ts",
+    "frontend:analyze": "tsx src/scripts/simple-frontend-analysis.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
