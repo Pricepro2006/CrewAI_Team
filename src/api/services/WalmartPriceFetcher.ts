@@ -100,7 +100,7 @@ export class WalmartPriceFetcher {
         throw new Error(`Could not fetch price for product ${productId} from any source`);
       },
       // Fallback: try cache or return mock data
-      async () => await this.getFallbackPrice(productId, location)
+      await this.getFallbackPrice(productId, location)
     );
   }
 
