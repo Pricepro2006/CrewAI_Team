@@ -94,5 +94,5 @@ export function ensureCSRFTokenExists(req: Request, res: Response, next: NextFun
   }
   
   (req as any).csrfToken = storedToken;
-  next();
+  return next();
 }

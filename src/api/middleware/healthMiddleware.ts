@@ -107,7 +107,17 @@ export function readinessProbe(serviceId: string, readinessChecks?: (() => Promi
       if (readinessChecks && readinessChecks.length > 0) {
         for (let i = 0; i < readinessChecks.length; i++) {
           try {
-            const checkReady = await readinessChecks[i]();
+            const checkFn = readinessChecks[i];
+            if (!checkFn) {
+              checkResults.push({
+                check: `readiness_check_${i + 1}`,
+                ready: false,
+                error: 'Check function is undefined'
+              });
+              ready = false;
+              continue;
+            }
+            const checkReady = await checkFn();
             checkResults.push({
               check: `readiness_check_${i + 1}`,
               ready: checkReady
