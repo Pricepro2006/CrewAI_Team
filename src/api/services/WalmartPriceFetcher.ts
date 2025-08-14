@@ -291,7 +291,10 @@ export class WalmartPriceFetcher {
       // Remove webdriver traces
       await page.addInitScript(() => {
         // Remove webdriver property
-        delete navigator.webdriver;
+        Object.defineProperty(navigator, 'webdriver', {
+          value: undefined,
+          configurable: true
+        });
         
         // Mock permissions API
         Object.defineProperty(navigator, 'permissions', {
@@ -337,7 +340,7 @@ export class WalmartPriceFetcher {
           await page.reload({ waitUntil: 'networkidle' });
         }
       } catch (error) {
-        logger.debug(`Initial navigation failed: ${error.message}`, "WALMART_PRICE");
+        logger.debug(`Initial navigation failed: ${error instanceof Error ? error.message : String(error)}`, "WALMART_PRICE");
         // Try one more time with longer timeout
         await page.goto(productUrl, { 
           waitUntil: 'domcontentloaded',
@@ -508,9 +511,9 @@ export class WalmartPriceFetcher {
       
     } catch (error) {
       logger.error("Web scraping failed", "WALMART_PRICE", { 
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         productId,
-        stack: error.stack?.substring(0, 500) // Limit stack trace length
+        stack: error instanceof Error ? error.stack?.substring(0, 500) : undefined // Limit stack trace length
       });
       return null;
     } finally {
@@ -518,7 +521,7 @@ export class WalmartPriceFetcher {
         try {
           await browser.close();
         } catch (e) {
-          logger.debug("Error closing browser", "WALMART_PRICE", { error: e.message });
+          logger.debug("Error closing browser", "WALMART_PRICE", { error: e instanceof Error ? e.message : String(e) });
         }
       }
     }
@@ -658,10 +661,10 @@ export class WalmartPriceFetcher {
           }
 
         } catch (apiError) {
-          if (apiError.name === 'AbortError') {
+          if (apiError instanceof Error && apiError.name === 'AbortError') {
             logger.debug(`API request timed out`, "WALMART_PRICE");
           } else {
-            logger.debug(`API endpoint error: ${apiError.message}`, "WALMART_PRICE");
+            logger.debug(`API endpoint error: ${apiError instanceof Error ? apiError.message : String(apiError)}`, "WALMART_PRICE");
           }
           continue;
         }
@@ -671,7 +674,7 @@ export class WalmartPriceFetcher {
       return await this.fetchViaWebScraping(productId, location);
 
     } catch (error) {
-      logger.debug("All API methods failed", "WALMART_PRICE", { error: error.message });
+      logger.debug("All API methods failed", "WALMART_PRICE", { error: error instanceof Error ? error.message : String(error) });
       return null;
     }
   }
