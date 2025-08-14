@@ -1838,7 +1838,7 @@ export const walmartGroceryRouter = createFeatureRouter(
             }
           };
         }
-      })),
+      }),
 
     // Get trending products for Price History tab - REAL DATA
     getTrending: publicProcedure
@@ -1895,7 +1895,7 @@ export const walmartGroceryRouter = createFeatureRouter(
             period: `Last ${input.days} days`
           };
         }
-      })),
+      }),
 
     // Get budget data - REAL spending data
     getBudget: publicProcedure
@@ -1986,5 +1986,5 @@ export const walmartGroceryRouter = createFeatureRouter(
           };
         }
       }),
-  }),
+  })
 );
