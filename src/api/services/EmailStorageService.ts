@@ -274,7 +274,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
     // Create a proxy that intercepts database method calls
     const handler: ProxyHandler<Database.Database> = {
-      get: (target, prop) => {
+      get: (target, prop: string | symbol) => {
         // For prepare method, return a function that uses the pool
         if (prop === "prepare") {
           return (sql: string) => {
@@ -300,7 +300,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         // For transaction method
         if (prop === "transaction") {
           return <T>(fn: (...params: DatabaseQueryParams[]) => T) => {
-            return (...args: DatabaseQueryParams[]): T => {
+            return async (...args: DatabaseQueryParams[]): Promise<T> => {
               return pool.execute((db) => {
                 const transaction = db.transaction(fn);
                 return transaction(...args);
@@ -334,7 +334,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         }
 
         // Default: return property as-is
-        return target[prop];
+        return (target as any)[prop];
       },
     };
 
@@ -2035,7 +2035,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
       // Build query with parameterized queries (no string concatenation)
       const whereClauses: string[] = [];
-      const params: DatabaseQueryParams[] = [];
+      const params: (string | number | boolean | null)[] = [];
 
       // Search filter
       if (options.search) {

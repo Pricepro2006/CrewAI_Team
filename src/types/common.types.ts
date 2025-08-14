@@ -3,7 +3,12 @@
  * Replaces 'any' types with proper TypeScript interfaces
  */
 
+import type Database from "better-sqlite3";
+
 // Database and Query Types
+export type DatabaseConnection = Database.Database;
+export type DatabaseTransaction = Database.Transaction;
+
 export interface DatabaseQueryParams {
   [key: string]: string | number | boolean | null;
 }
