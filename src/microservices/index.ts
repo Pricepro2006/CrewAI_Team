@@ -26,13 +26,19 @@
 // Core Discovery Components
 export {
   ServiceRegistry,
-  ServiceMetadata,
   serviceRegistry,
+} from './discovery/ServiceRegistry.js';
+
+export type {
+  ServiceMetadata,
 } from './discovery/ServiceRegistry.js';
 
 export {
   LoadBalancer,
   LoadBalancerFactory,
+} from './discovery/LoadBalancer.js';
+
+export type {
   LoadBalancingStrategy,
   LoadBalancerConfig,
   ServiceInstance,
@@ -41,15 +47,21 @@ export {
 
 export {
   HealthChecker,
+  healthChecker,
+} from './discovery/HealthChecker.js';
+
+export type {
   HealthCheckConfig,
   HealthCheckResult,
   HealthMetrics,
-  healthChecker,
 } from './discovery/HealthChecker.js';
 
 export {
   ServiceProxy,
   ServiceProxyFactory,
+} from './discovery/ServiceProxy.js';
+
+export type {
   ServiceProxyConfig,
   ProxyRequest,
   ProxyResponse,
@@ -58,14 +70,16 @@ export {
 
 export {
   ServiceDiscovery,
+  serviceDiscovery,
+} from './discovery/ServiceDiscovery.js';
+
+export type {
   ServiceConfig,
   ServiceDiscoveryStats,
-  serviceDiscovery,
 } from './discovery/ServiceDiscovery.js';
 
 // Walmart-Specific Configuration and Integration
 export {
-  WalmartServiceDefinition,
   WALMART_SERVICES,
   SERVICE_DEPENDENCIES,
   LOAD_BALANCING_STRATEGIES,
@@ -80,21 +94,21 @@ export {
   generateDeploymentManifest,
 } from './config/WalmartServiceConfig.js';
 
+export type {
+  WalmartServiceDefinition,
+} from './config/WalmartServiceConfig.js';
+
 export {
   WalmartServiceMesh,
-  ServiceMeshOptions,
-  ServiceMeshStatus,
   walmartServiceMesh,
 } from './WalmartServiceMesh.js';
 
-// Utility Types
 export type {
-  ServiceConfig,
-  ServiceMetadata,
-  LoadBalancingStrategy,
-  HealthCheckConfig,
-  ServiceProxyConfig,
-} from './discovery/ServiceDiscovery.js';
+  ServiceMeshOptions,
+  ServiceMeshStatus,
+} from './WalmartServiceMesh.js';
+
+// Note: Utility types are now exported directly from their respective modules above
 
 /**
  * Quick Start Example:
