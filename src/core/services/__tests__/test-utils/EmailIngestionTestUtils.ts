@@ -7,10 +7,12 @@
 
 import { vi } from 'vitest';
 import { 
-  RawEmailData, 
   IngestionSource, 
-  EmailIngestionConfig, 
   IngestionMode 
+} from '../../EmailIngestionService.js';
+import type { 
+  RawEmailData, 
+  EmailIngestionConfig 
 } from '../../EmailIngestionService.js';
 import { EmailRepository } from '../../../../database/repositories/EmailRepository.js';
 import { UnifiedEmailService } from '../../../../api/services/UnifiedEmailService.js';
@@ -19,7 +21,7 @@ import { UnifiedEmailService } from '../../../../api/services/UnifiedEmailServic
 // Test Data Factories
 // =====================================================
 
-export class EmailTestDataFactory {
+class EmailTestDataFactory {
   private static emailCounter = 0;
 
   static createBasicEmail(overrides: Partial<RawEmailData> = {}): RawEmailData {
@@ -139,7 +141,7 @@ export class EmailTestDataFactory {
 // Configuration Factories
 // =====================================================
 
-export class ConfigTestFactory {
+class ConfigTestFactory {
   static createDefaultConfig(): EmailIngestionConfig {
     return {
       mode: IngestionMode.MANUAL,
@@ -212,80 +214,90 @@ export class ConfigTestFactory {
 // Mock Factories
 // =====================================================
 
-export class MockFactory {
-  static createMockEmailRepository(): EmailRepository {
-    const mock = new EmailRepository({ db: {} as any });
-    
-    // Default implementations
-    vi.mocked(mock.getStatistics).mockResolvedValue({
-      total: 0,
-      pending: 0,
-      analyzed: 0,
-      failed: 0,
-      byPriority: {
-        critical: 0,
-        high: 0,
-        medium: 0,
-        low: 0
-      }
-    });
-
-    vi.mocked(mock.findOne).mockResolvedValue(null);
-    vi.mocked(mock.create).mockResolvedValue({
-      id: 'mock-email-id',
-      messageId: 'mock-message-id',
-      subject: 'Mock Email',
-      status: 'pending'
-    } as any);
-
-    return mock;
-  }
-
-  static createMockUnifiedEmailService(): UnifiedEmailService {
-    const mock = new UnifiedEmailService();
-    
-    vi.mocked(mock.processIncomingEmail).mockImplementation(async (email) => ({
-      id: `processed-${email.messageId}`,
-      subject: email.subject,
-      from: email.from.address,
-      status: 'processed',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    } as any));
+class MockFactory {
+  static createMockEmailRepository(): any {
+    const mock = {
+      getStatistics: vi.fn().mockResolvedValue({
+        total: 0,
+        pending: 0,
+        analyzed: 0,
+        failed: 0,
+        byPriority: {
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0
+        }
+      }),
+      findOne: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({
+        id: 'mock-email-id',
+        messageId: 'mock-message-id',
+        subject: 'Mock Email',
+        status: 'pending'
+      }),
+      findById: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      findAll: vi.fn().mockResolvedValue([])
+    };
 
     return mock;
   }
 
-  static createFailingUnifiedEmailService(failureRate = 0.3): UnifiedEmailService {
-    const mock = new UnifiedEmailService();
-    
-    vi.mocked(mock.processIncomingEmail).mockImplementation(async (email) => {
-      if (Math.random() < failureRate) {
-        throw new Error('Simulated processing failure');
-      }
-      
-      return {
-        id: `processed-${email.messageId}`,
+  static createMockUnifiedEmailService(): any {
+    const mock = {
+      processIncomingEmail: vi.fn().mockImplementation(async (email: any) => ({
+        id: `processed-${email.messageId || email.id}`,
         subject: email.subject,
-        from: email.from.address
-      } as any;
-    });
+        from: typeof email.from === 'string' ? email.from : email.from?.emailAddress?.address || email.from?.address,
+        status: 'processed',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })),
+      getStatus: vi.fn().mockResolvedValue('operational'),
+      healthCheck: vi.fn().mockResolvedValue({ healthy: true })
+    };
 
     return mock;
   }
 
-  static createSlowUnifiedEmailService(delayMs = 100): UnifiedEmailService {
-    const mock = new UnifiedEmailService();
-    
-    vi.mocked(mock.processIncomingEmail).mockImplementation(async (email) => {
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-      
-      return {
-        id: `processed-${email.messageId}`,
-        subject: email.subject,
-        from: email.from.address
-      } as any;
-    });
+  static createFailingUnifiedEmailService(failureRate = 0.3): any {
+    const mock = {
+      processIncomingEmail: vi.fn().mockImplementation(async (email: any) => {
+        if (Math.random() < failureRate) {
+          throw new Error('Simulated processing failure');
+        }
+        
+        return {
+          id: `processed-${email.messageId || email.id}`,
+          subject: email.subject,
+          from: typeof email.from === 'string' ? email.from : email.from?.emailAddress?.address || email.from?.address,
+          status: 'processed'
+        };
+      }),
+      getStatus: vi.fn().mockResolvedValue('operational'),
+      healthCheck: vi.fn().mockResolvedValue({ healthy: true })
+    };
+
+    return mock;
+  }
+
+  static createSlowUnifiedEmailService(delayMs = 100): any {
+    const mock = {
+      processIncomingEmail: vi.fn().mockImplementation(async (email: any) => {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        
+        return {
+          id: `processed-${email.messageId || email.id}`,
+          subject: email.subject,
+          from: typeof email.from === 'string' ? email.from : email.from?.emailAddress?.address || email.from?.address,
+          status: 'processed'
+        };
+      }),
+      getStatus: vi.fn().mockResolvedValue('operational'),
+      healthCheck: vi.fn().mockResolvedValue({ healthy: true })
+    };
 
     return mock;
   }
@@ -303,7 +315,7 @@ export interface PerformanceMetrics {
   peakMemory: number;
 }
 
-export class PerformanceTestUtils {
+class PerformanceTestUtils {
   static async measurePerformance<T>(
     operation: () => Promise<T>,
     operationCount: number = 1
@@ -366,7 +378,7 @@ export class PerformanceTestUtils {
 // Test Assertion Helpers
 // =====================================================
 
-export class TestAssertions {
+class TestAssertions {
   static expectSuccessfulIngestion(result: any): void {
     expect(result.success).toBe(true);
     expect(result.data).toBeDefined();
@@ -414,7 +426,7 @@ export class TestAssertions {
 // Test Environment Utilities
 // =====================================================
 
-export class TestEnvironmentUtils {
+class TestEnvironmentUtils {
   static setupTestEnvironment(): void {
     process.env.NODE_ENV = 'test';
     process.env.LOG_LEVEL = 'error';
@@ -460,5 +472,6 @@ export {
   MockFactory,
   PerformanceTestUtils,
   TestAssertions,
-  TestEnvironmentUtils
+  TestEnvironmentUtils,
+  type PerformanceMetrics
 };
