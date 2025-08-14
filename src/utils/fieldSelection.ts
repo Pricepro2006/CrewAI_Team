@@ -20,13 +20,15 @@ export interface FieldSelectionOptions {
 }
 
 // Validation schemas
-export const fieldSelectionSchema = z.object({
-  include: z.array(z.string()).optional(),
-  exclude: z.array(z.string()).optional(),
-  select: z.record(z.union([z.boolean(), z.lazy(() => fieldSelectionSchema)])).optional(),
-  maxDepth: z.number().min(1).max(10).default(5),
-  allowWildcard: z.boolean().default(true),
-});
+export const fieldSelectionSchema: z.ZodType<any> = z.lazy(() => 
+  z.object({
+    include: z.array(z.string()).optional(),
+    exclude: z.array(z.string()).optional(),
+    select: z.record(z.union([z.boolean(), fieldSelectionSchema])).optional(),
+    maxDepth: z.number().min(1).max(10).default(5),
+    allowWildcard: z.boolean().default(true),
+  })
+);
 
 export type FieldSelectionInput = z.infer<typeof fieldSelectionSchema>;
 
@@ -58,7 +60,9 @@ export class AdvancedFieldSelector {
     if (this.cache.size >= this.maxCacheSize) {
       // Remove oldest entries
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
     }
     this.cache.set(cacheKey, selector);
 
@@ -191,6 +195,7 @@ export class AdvancedFieldSelector {
     if (path.length === 0) return;
 
     const [first, ...rest] = path;
+    if (!first) return; // TypeScript guard
     
     if (rest.length === 0) {
       selector[first] = value;

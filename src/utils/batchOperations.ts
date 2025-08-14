@@ -477,7 +477,7 @@ export class WalmartBatchOperations {
     return this.processor.processBatch(
       inventoryUpdates,
       async (batch) => {
-        const results = [];
+        const results: any[] = [];
         
         // Group by location for efficiency
         const byLocation = batch.reduce((acc, item) => {
@@ -556,7 +556,7 @@ export class BatchOperationMonitor {
   /**
    * Get metrics for operation type
    */
-  static getMetrics(operationType?: string): Record<string, any> {
+  static getMetrics(operationType?: string): Record<string, any> | null {
     if (operationType) {
       return this.metrics.get(operationType) || null;
     }

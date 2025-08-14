@@ -89,7 +89,7 @@ export class OptimizedJSONSerializer {
    */
   private synchronousSerialize(data: any): string {
     if (this.config.enableCircularDetection) {
-      this.circularRefs.clear();
+      this.circularRefs = new WeakSet();
     }
 
     const replacer = this.createOptimizedReplacer();
@@ -111,7 +111,7 @@ export class OptimizedJSONSerializer {
     process.nextTick(() => {
       try {
         stream.writeData(data);
-        stream.end();
+        stream.push(null); // Signal end of stream
       } catch (error) {
         stream.destroy(error as Error);
       }
@@ -260,7 +260,7 @@ class JSONStream extends Readable {
     this.config = config;
   }
 
-  _read(): void {
+  override _read(): void {
     // Readable stream interface implementation
   }
 
@@ -306,7 +306,10 @@ class JSONStream extends Readable {
     const entries = Object.entries(obj);
     
     for (let i = 0; i < entries.length; i++) {
-      const [key, value] = entries[i];
+      const entry = entries[i];
+      if (!entry) continue;
+      
+      const [key, value] = entry;
       
       if (i > 0) {
         this.push(',');
@@ -359,7 +362,16 @@ class JSONStream extends Readable {
     }
   }
 
-  push(chunk: string): boolean {
+  override push(chunk: string | null): boolean {
+    if (chunk === null) {
+      // End of stream
+      if (this.buffer.length > 0) {
+        super.push(this.buffer);
+        this.buffer = '';
+      }
+      return super.push(null);
+    }
+    
     this.buffer += chunk;
     
     if (this.buffer.length >= this.config.chunkSize) {
@@ -490,7 +502,10 @@ export const JSONOptimization = {
     
     for (let i = 0; i < maxLength; i++) {
       const index = Math.floor(i * step);
-      sample.push(arr[index]);
+      const item = arr[index];
+      if (item !== undefined) {
+        sample.push(item);
+      }
     }
     
     return {
