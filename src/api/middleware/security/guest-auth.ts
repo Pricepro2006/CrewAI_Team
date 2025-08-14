@@ -29,7 +29,7 @@ export function createPermissionMiddleware(requiredPermissions: string[]) {
     }
 
     // Check if user is active
-    if (!ctx.user.isActive) {
+    if (!ctx.user.is_active) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Account is inactive",
@@ -159,7 +159,7 @@ export function createStrictAuthMiddleware() {
     }
 
     // Check if user is active
-    if (!ctx.user.isActive) {
+    if (!ctx.user.is_active) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Account is inactive",
