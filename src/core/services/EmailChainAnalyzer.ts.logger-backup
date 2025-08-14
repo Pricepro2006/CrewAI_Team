@@ -21,8 +21,7 @@ interface EmailRecord {
   thread_emails?: EmailRecord[];
 }
 
-const logger = Logger.getInstance();
-const COMPONENT = "EmailChainAnalyzer";
+const logger = Logger.getInstance("EmailChainAnalyzer");
 
 interface EmailChainNode {
   id: string;
@@ -99,7 +98,7 @@ export class EmailChainAnalyzer {
    * Analyze email chain completeness
    */
   async analyzeChain(emailId: string): Promise<ChainAnalysis> {
-    logger.debug(`Analyzing chain for email ${emailId}`, COMPONENT);
+    logger.debug(`Analyzing chain for email ${emailId}`);
 
     // Get the email and its chain
     const email = this.getEmail(emailId);
@@ -110,7 +109,7 @@ export class EmailChainAnalyzer {
 
     // Get all related emails in the chain
     const chainEmails = this.getEmailChain(email);
-    logger.debug(`Found ${chainEmails.length} emails in chain`, COMPONENT);
+    logger.debug(`Found ${chainEmails.length} emails in chain`);
 
     // Analyze chain structure
     const analysis = this.analyzeChainStructure(chainEmails);
@@ -139,7 +138,7 @@ export class EmailChainAnalyzer {
         chainMap.set(analysis.chain_id, analysis);
         processedChains.add(analysis.chain_id);
       } catch (error) {
-        logger.error(`Error analyzing chain for ${emailId}:`, COMPONENT, {}, error);
+        logger.error(`Error analyzing chain for ${emailId}:`, error);
       }
     }
 

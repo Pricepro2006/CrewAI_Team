@@ -14,8 +14,7 @@ import type {
 } from "../workers/EmailProcessingWorkerPool.js";
 import type { QueueMetrics } from "../services/EmailProcessingQueueService.js";
 
-const logger = Logger.getInstance();
-const COMPONENT = "EmailProcessingMonitor";
+const logger = Logger.getInstance("EmailProcessingMonitor");
 
 // ============================================
 // TYPE DEFINITIONS
@@ -132,7 +131,7 @@ export class EmailProcessingMonitor extends EventEmitter {
    * Start monitoring
    */
   start(): void {
-    logger.info("Starting performance monitoring...", COMPONENT);
+    logger.info("Starting performance monitoring...");
 
     // Start metrics collection
     this.sampleInterval = setInterval(() => {
@@ -153,7 +152,7 @@ export class EmailProcessingMonitor extends EventEmitter {
    * Stop monitoring
    */
   stop(): void {
-    logger.info("Stopping performance monitoring...", COMPONENT);
+    logger.info("Stopping performance monitoring...");
 
     if (this.sampleInterval) {
       clearInterval(this.sampleInterval);
