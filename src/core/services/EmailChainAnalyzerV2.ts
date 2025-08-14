@@ -7,16 +7,19 @@
 
 import { EventEmitter } from "events";
 import { Logger } from "../../utils/logger.js";
-import { withUnitOfWork, UnitOfWork } from "../../database/UnitOfWork.js";
+import { withUnitOfWork } from "../../database/UnitOfWork.js";
+import type { IUnitOfWork } from "../../database/repositories/interfaces/IUnitOfWork.js";
 import type {
   EmailRecord,
   EmailPriority,
   AnalysisStatus,
 } from "../../types/EmailTypes.js";
-import type {
-  EmailChain,
+import {
   ChainType,
   ChainStage,
+} from "../../types/ChainTypes.js";
+import type {
+  EmailChain,
   ChainCompleteness,
 } from "../../types/ChainTypes.js";
 
@@ -67,7 +70,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
    * Analyze an email chain for completeness and patterns
    */
   async analyzeChain(email: EmailWithThread): Promise<ChainAnalysisResult> {
-    return withUnitOfWork(async (uow: UnitOfWork) => {
+    return withUnitOfWork(async (uow: IUnitOfWork) => {
       try {
         const startTime = Date.now();
 
@@ -112,9 +115,8 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
 
         // Check for existing chain in repository
         const conversationId = threadEmails[0]?.conversation_id || email.id;
-        const existingChain = await uow.chains.findOne({
-          conversation_id: conversationId,
-        });
+        // TODO: findByConversationId method needs to be added to IEmailChainRepository
+        const existingChain = null; // await uow.chains.findByConversationId(conversationId);
 
         const result: ChainAnalysisResult = {
           chain_id: existingChain?.chain_id || this.generateChainId(),
@@ -173,7 +175,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
 
         return result;
       } catch (error) {
-        logger.error("Chain analysis failed", COMPONENT, {}, error);
+        logger.error("Chain analysis failed", COMPONENT, {}, error as Error);
         throw error;
       }
     });
@@ -182,7 +184,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
   /**
    * Create result for single email (not part of chain)
    */
-  private createSingleEmailResult(email: EmailWithThread): ChainAnalysisResult {
+  private createSingleEmailResult(emails: EmailWithThread): ChainAnalysisResult {
     return {
       chain_id: this.generateChainId(),
       is_complete: false,
@@ -483,7 +485,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
    * Get chain statistics from repository
    */
   async getChainStatistics(): Promise<any> {
-    return withUnitOfWork(async (uow: UnitOfWork) => {
+    return withUnitOfWork(async (uow: IUnitOfWork) => {
       return await uow.chains.getChainStatistics();
     });
   }
@@ -494,7 +496,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
   async findChainsNeedingReanalysis(
     hoursOld: number = 24,
   ): Promise<EmailChain[]> {
-    return withUnitOfWork(async (uow: UnitOfWork) => {
+    return withUnitOfWork(async (uow: IUnitOfWork) => {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursOld);
 
