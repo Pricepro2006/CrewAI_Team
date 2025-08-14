@@ -11,7 +11,9 @@ import {
 } from '../EmailIngestionServiceFactory.js';
 import {
   IngestionMode,
-  IngestionSource,
+  IngestionSource
+} from '../EmailIngestionService.js';
+import type {
   RawEmailData
 } from '../EmailIngestionService.js';
 import { logger } from '../../../utils/logger.js';
@@ -19,7 +21,7 @@ import { logger } from '../../../utils/logger.js';
 /**
  * Example 1: Basic Manual Ingestion
  */
-export async function basicManualIngestionExample(): Promise<void> {
+async function basicManualIngestionExample(): Promise<void> {
   console.log('=== Basic Manual Ingestion Example ===\n');
 
   // Create service with manual mode configuration
@@ -87,7 +89,7 @@ export async function basicManualIngestionExample(): Promise<void> {
 /**
  * Example 2: Batch Processing from JSON File
  */
-export async function batchProcessingExample(): Promise<void> {
+async function batchProcessingExample(): Promise<void> {
   console.log('\n=== Batch Processing Example ===\n');
 
   // Use high-throughput preset configuration
@@ -155,7 +157,7 @@ export async function batchProcessingExample(): Promise<void> {
 /**
  * Example 3: Auto-Pull Configuration
  */
-export async function autoPullExample(): Promise<void> {
+async function autoPullExample(): Promise<void> {
   console.log('\n=== Auto-Pull Example ===\n');
 
   // Use auto-pull preset configuration
@@ -190,7 +192,7 @@ export async function autoPullExample(): Promise<void> {
 /**
  * Example 4: Error Handling and Recovery
  */
-export async function errorHandlingExample(): Promise<void> {
+async function errorHandlingExample(): Promise<void> {
   console.log('\n=== Error Handling Example ===\n');
 
   const service = await EmailIngestionServiceFactory.create();
@@ -247,7 +249,7 @@ export async function errorHandlingExample(): Promise<void> {
 /**
  * Example 5: Environment Validation
  */
-export function environmentValidationExample(): void {
+function environmentValidationExample(): void {
   console.log('\n=== Environment Validation Example ===\n');
 
   // Validate current environment
@@ -273,7 +275,7 @@ export function environmentValidationExample(): void {
 /**
  * Example 6: Performance Monitoring
  */
-export async function performanceMonitoringExample(): Promise<void> {
+async function performanceMonitoringExample(): Promise<void> {
   console.log('\n=== Performance Monitoring Example ===\n');
 
   const service = await EmailIngestionServiceFactory.create(
@@ -329,7 +331,7 @@ export async function performanceMonitoringExample(): Promise<void> {
 /**
  * Example 7: Complete Integration Workflow
  */
-export async function completeIntegrationExample(): Promise<void> {
+async function completeIntegrationExample(): Promise<void> {
   console.log('\n=== Complete Integration Workflow ===\n');
 
   // 1. Environment validation
