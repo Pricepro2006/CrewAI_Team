@@ -232,4 +232,18 @@ export interface PoolStatistics {
   avg_wait_time_ms: number;
   connection_errors: number;
   pool_efficiency: number;
+  // Optional legacy fields for compatibility
+  poolSize?: number;
+  activeConnections?: number;
+  availableConnections?: number;
+  totalQueries?: number;
+  checkpoints?: number;
+  recycledConnections?: number;
+  connectionDetails?: Array<{
+    id: string;
+    inUse: boolean;
+    queryCount: number;
+    idleTime: number;
+    lifetime: number;
+  }>;
 }
