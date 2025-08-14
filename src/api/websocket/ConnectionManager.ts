@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { WebSocket } from 'ws';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { ClientConnection } from './WebSocketGateway.js';
+import type { ClientConnection } from './WebSocketGateway.js';
 import { EventMonitor } from '../../core/events/EventMonitor.js';
 import Redis from 'ioredis';
 

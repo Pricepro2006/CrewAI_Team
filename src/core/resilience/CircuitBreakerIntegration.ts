@@ -366,7 +366,7 @@ export class CircuitBreakerIntegrationExamples {
   async processGroceryList(userInput: string, userId: string): Promise<any> {
     try {
       // Step 1: Use LLM to parse grocery list (with circuit breaker)
-      const parsedList = await this.ollamaProvider.generate(
+      const parsedList = await this.llamaCppProvider.generate(
         `Parse this grocery list and extract items with quantities: ${userInput}`,
         { format: 'json', temperature: 0.1 }
       );

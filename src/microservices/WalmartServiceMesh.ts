@@ -20,7 +20,8 @@ import {
 } from './config/WalmartServiceConfig.js';
 import { logger } from '../utils/logger.js';
 import { metrics } from '../api/monitoring/metrics.js';
-import express, { Express } from 'express';
+import express from 'express';
+import type { Express } from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { Server } from 'http';
 import WebSocket from 'ws';

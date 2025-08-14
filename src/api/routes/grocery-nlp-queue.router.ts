@@ -3,7 +3,8 @@
  * Provides endpoints for queue operations, monitoring, and batch processing
  */
 
-import express, { Request, Response, NextFunction } from "express";
+import express from "express";
+import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { getGroceryNLPQueue } from "../services/GroceryNLPQueue.js";
 import { logger } from "../../utils/logger.js";

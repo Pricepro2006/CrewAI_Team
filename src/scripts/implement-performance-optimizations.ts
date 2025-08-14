@@ -333,20 +333,19 @@ class PerformanceDashboard {
       external: (memory.external / 1024 / 1024).toFixed(2)
     };
     
-    console.log(`
-🧠 MEMORY USAGE:
-   RSS Memory: ${memoryMB.rss} MB
-   Heap Total: ${memoryMB.heapTotal} MB
-   Heap Used:  ${memoryMB.heapUsed} MB
-   External:   ${memoryMB.external} MB
-
-⚡ SYSTEM:
-   Node.js Version: ${process.version}
-   Platform: ${process.platform}
-   Uptime: ${(process.uptime() / 60).toFixed(1)} minutes
-   
-📅 TIMESTAMP: ${new Date().toISOString()}
-`);
+    console.log('');
+    console.log('MEMORY USAGE:');
+    console.log(\`   RSS Memory: \${memoryMB.rss} MB\`);
+    console.log(\`   Heap Total: \${memoryMB.heapTotal} MB\`);
+    console.log(\`   Heap Used:  \${memoryMB.heapUsed} MB\`);
+    console.log(\`   External:   \${memoryMB.external} MB\`);
+    console.log('');
+    console.log('SYSTEM:');
+    console.log(\`   Node.js Version: \${process.version}\`);
+    console.log(\`   Platform: \${process.platform}\`);
+    console.log(\`   Uptime: \${(process.uptime() / 60).toFixed(1)} minutes\`);
+    console.log('');
+    console.log(\`TIMESTAMP: \${new Date().toISOString()}\`);
     
     // Memory usage warning
     const heapUsedPercent = (memory.heapUsed / memory.heapTotal) * 100;
@@ -354,7 +353,7 @@ class PerformanceDashboard {
       console.log('⚠️  HIGH MEMORY USAGE DETECTED!');
     }
     
-    console.log('\\nPress Ctrl+C to exit dashboard');
+    console.log('\nPress Ctrl+C to exit dashboard');
   }
 
   public startMonitoring() {

@@ -12,7 +12,7 @@ import type {
 } from "./types.js";
 
 export class ConfidenceResponseGenerator {
-  private llm: OllamaProvider;
+  private llm: LlamaCppProvider;
   private defaultOptions: GenerationOptions = {
     temperature: 0.7,
     maxTokens: 1000,
@@ -20,7 +20,7 @@ export class ConfidenceResponseGenerator {
     format: "text",
   };
 
-  constructor(llm: OllamaProvider) {
+  constructor(llm: LlamaCppProvider) {
     this.llm = llm;
   }
 

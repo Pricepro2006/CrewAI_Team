@@ -4,8 +4,8 @@ import React, {
   useState,
   useCallback,
   useRef,
-  ReactNode,
 } from "react";
+import type { ReactNode } from "react";
 import { toast } from "../components/Toast/useToast";
 import { errorLogger } from "../utils/errorLogger";
 import { translateError } from "../utils/errorTranslator";

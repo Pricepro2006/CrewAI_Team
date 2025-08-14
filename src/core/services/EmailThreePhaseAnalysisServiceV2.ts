@@ -22,16 +22,18 @@ import {
   enhancePromptForEmailType,
 } from "../prompts/ThreePhasePrompts.js";
 import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
-import { withUnitOfWork, IUnitOfWork } from "../../database/UnitOfWork.js";
-import { EmailRecord, AnalysisStatus } from "../../types/EmailTypes.js";
-import {
+import { withUnitOfWork } from "../../database/UnitOfWork.js";
+import type { IUnitOfWork } from "../../database/UnitOfWork.js";
+import { AnalysisStatus } from "../../types/EmailTypes.js";
+import type { EmailRecord } from "../../types/EmailTypes.js";
+import { AnalysisPhase } from "../../types/AnalysisTypes.js";
+import type {
   EmailAnalysis,
   Phase1Results,
   Phase2Results,
   Phase3Results,
-  AnalysisPhase,
 } from "../../types/AnalysisTypes.js";
-import { EmailChain } from "../../types/ChainTypes.js";
+import type { EmailChain } from "../../types/ChainTypes.js";
 
 const logger = new Logger("EmailThreePhaseAnalysisServiceV2");
 

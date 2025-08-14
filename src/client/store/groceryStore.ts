@@ -15,7 +15,7 @@ import type {
   UserPreferences,
   PriceAlert,
   Order,
-} from "../../types/walmart-grocery.js";
+} from "../../types/walmart-grocery";
 
 interface GroceryState {
   // Cart State
@@ -384,7 +384,10 @@ export const useGroceryStore = create<GroceryState>()(
           priceAlerts: state.priceAlerts,
           searchHistory: state.searchHistory,
         }),
-      },
-    ),
-  ),
+      }
+      )
+    )
+  )
+  )
 );
+

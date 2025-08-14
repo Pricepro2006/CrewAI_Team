@@ -31,7 +31,7 @@ if (
       lazyConnect: true,
     });
 
-    redisClient.on("error", (err) => {
+    redisClient.on("error", (err: Error) => {
       console.warn(
         "Redis rate limiting unavailable, falling back to memory store:",
         err.message,

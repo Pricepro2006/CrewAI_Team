@@ -6,7 +6,8 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
-import { healthCheckService, HealthStatus } from '../../monitoring/HealthCheckService.js';
+import { healthCheckService } from '../../monitoring/HealthCheckService.js';
+import type { HealthStatus } from '../../monitoring/HealthCheckService.js';
 import { logger } from '../../utils/logger.js';
 import { performance } from 'perf_hooks';
 

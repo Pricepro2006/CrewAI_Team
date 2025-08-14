@@ -1,8 +1,8 @@
 import { BaseRepository } from "./BaseRepository.js";
-import { IAnalysisRepository } from "./interfaces/IAnalysisRepository.js";
-import {
+import type { IAnalysisRepository } from "./interfaces/IAnalysisRepository.js";
+import { AnalysisPhase } from "../../types/AnalysisTypes.js";
+import type {
   EmailAnalysis,
-  AnalysisPhase,
   Phase1Results,
   Phase2Results,
   Phase3Results,

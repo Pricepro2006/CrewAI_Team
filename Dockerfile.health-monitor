@@ -1,0 +1,41 @@
+# Dockerfile for Walmart Health Monitoring Service
+
+FROM node:20.11.0-alpine AS base
+
+# Install system dependencies
+RUN apk add --no-cache curl netcat-openbsd
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig*.json ./
+
+# Install dependencies
+RUN npm ci --production --prefer-offline --no-audit
+
+# Copy monitoring service source
+COPY src/api/services/HealthCheckService.ts ./src/api/services/
+COPY src/monitoring/ ./src/monitoring/
+COPY src/shared/ ./src/shared/
+COPY src/utils/ ./src/utils/
+
+# Build the service
+RUN npx tsc src/monitoring/HealthChecker.ts --outDir dist --target es2020 --module commonjs --moduleResolution node --esModuleInterop --allowSyntheticDefaultImports
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S healthmonitor -u 1001
+
+# Set ownership
+RUN chown -R healthmonitor:nodejs /app
+
+USER healthmonitor
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3010/health || exit 1
+
+EXPOSE 3010
+
+CMD ["node", "dist/src/monitoring/HealthChecker.js"]

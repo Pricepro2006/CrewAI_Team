@@ -1,0 +1,30 @@
+{
+  "extraction_date": "2025-07-30T16:57:22.416081",
+  "date_range": {
+    "start": "2025-05-09",
+    "end": "2025-07-30"
+  },
+  "total_emails": 0,
+  "total_batches": 0,
+  "batch_size": 5,
+  "user_email": {
+    "email": "T119889C@TDSynnex.com",
+    "name": "Nick Paul",
+    "priority": "high",
+    "expectedResponseTime": "2h",
+    "categories": [
+      "main",
+      "primary",
+      "insight",
+      "compucom",
+      "optiv"
+    ],
+    "keyContacts": [
+      "Nick.Paul@TDSynnex.com"
+    ],
+    "folders_to_monitor": [
+      "Inbox"
+    ]
+  },
+  "output_directory": "/home/pricepro2006/iems_project/db_backups/email_batches"
+}

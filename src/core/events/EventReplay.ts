@@ -1,7 +1,8 @@
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { BaseEvent } from './EventBus.js';
-import { EventStore, EventQuery } from './EventStore.js';
+import type { BaseEvent } from './EventBus.js';
+import { EventStore } from './EventStore.js';
+import type { EventQuery } from './EventStore.js';
 import { ServiceRegistry } from './ServiceRegistry.js';
 
 // Event replay schemas and types

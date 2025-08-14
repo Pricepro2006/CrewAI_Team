@@ -92,7 +92,7 @@ export class CacheService {
         database: this.config.redis?.db
       });
 
-      this.redisClient.on('error', (err) => {
+      this.redisClient.on('error', (err: Error) => {
         logger.error('Redis error', 'CACHE_SERVICE', { error: err });
         this.isRedisAvailable = false;
       });

@@ -30,11 +30,11 @@ import {
   ArrowRight,
   Plus,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Input } from '../../../components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
+import { Button } from '../../../components/ui/button.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Input } from '../../../components/ui/input.js';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
 import {
   Sheet,
   SheetContent,
@@ -42,7 +42,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '../../../components/ui/sheet';
+} from '../../../components/ui/sheet.js';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,32 +50,32 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../components/ui/dropdown-menu';
-import { ScrollArea } from '../../../components/ui/scroll-area';
-import { Separator } from '../../../components/ui/separator';
-import { cn } from '../../lib/utils';
-import { formatPrice } from '../../lib/utils';
+} from '../../../components/ui/dropdown-menu.js';
+import { ScrollArea } from '../../../components/ui/scroll-area.js';
+import { Separator } from '../../../components/ui/separator.js';
+import { cn } from '../../lib/utils.js';
+import { formatPrice } from '../../lib/utils.js';
 
 // Import all Walmart components
-import { WalmartProductSearch } from './WalmartProductSearch';
-import { WalmartShoppingCart } from './WalmartShoppingCart';
-import { WalmartProductCard } from './WalmartProductCard';
-import { WalmartGroceryList } from './WalmartGroceryList';
-import { WalmartPriceTracker } from './WalmartPriceTracker';
-import { WalmartDeliveryScheduler } from './WalmartDeliveryScheduler';
-import { WalmartDealAlert } from './WalmartDealAlert';
-import { WalmartSubstitutionManager } from './WalmartSubstitutionManager';
-import { WalmartOrderHistory } from './WalmartOrderHistory';
-import { WalmartBudgetTracker } from './WalmartBudgetTracker';
-import { WalmartUserPreferences } from './WalmartUserPreferences';
-import { WalmartChatInterface } from './WalmartChatInterface';
-import { WalmartLivePricing } from './WalmartLivePricing';
+import { WalmartProductSearch } from './WalmartProductSearch.js';
+import { WalmartShoppingCart } from './WalmartShoppingCart.js';
+import { WalmartProductCard } from './WalmartProductCard.js';
+import { WalmartGroceryList } from './WalmartGroceryList.js';
+import { WalmartPriceTracker } from './WalmartPriceTracker.js';
+import { WalmartDeliveryScheduler } from './WalmartDeliveryScheduler.js';
+import { WalmartDealAlert } from './WalmartDealAlert.js';
+import { WalmartSubstitutionManager } from './WalmartSubstitutionManager.js';
+import { WalmartOrderHistory } from './WalmartOrderHistory.js';
+import { WalmartBudgetTracker } from './WalmartBudgetTracker.js';
+import { WalmartUserPreferences } from './WalmartUserPreferences.js';
+import { WalmartChatInterface } from './WalmartChatInterface.js';
+import { WalmartLivePricing } from './WalmartLivePricing.js';
 
 // Hooks and store
-import { useGroceryStore } from '../../store/groceryStore';
-import { useCart } from '../../hooks/useCart';
-import { useWalmartSearch } from '../../hooks/useWalmartSearch';
-import { useWalmartDeals } from '../../hooks/useWalmartDeals';
+import { useGroceryStore } from '../../store/groceryStore.js';
+import { useCart } from '../../hooks/useCart.js';
+import { useWalmartSearch } from '../../hooks/useWalmartSearch.js';
+import { useWalmartDeals } from '../../hooks/useWalmartDeals.js';
 
 import type { WalmartProduct, CartItem, Order } from '../../../types/walmart-grocery';
 import { normalizePrice, getEffectivePrice, isOnSale, calculateSavings } from '../../../utils/walmart-price';

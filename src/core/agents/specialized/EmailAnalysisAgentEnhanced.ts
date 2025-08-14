@@ -1,6 +1,6 @@
 import { BaseAgent } from "../base/BaseAgent.js";
 import type { AgentContext, AgentResult } from "../base/AgentTypes.js";
-import { OllamaProvider } from "../../llm/OllamaProvider.js";
+import { LlamaCppProvider } from "../../llm/LlamaCppProvider.js";
 import { logger } from "../../../utils/logger.js";
 import { EmailAnalysisCache } from "../../cache/EmailAnalysisCache.js";
 import type { EmailAnalysis } from "./EmailAnalysisTypes.js";
@@ -129,8 +129,8 @@ export interface EmailAnalysisResult {
 }
 
 export class EmailAnalysisAgentEnhanced extends BaseAgent {
-  private quickProvider: OllamaProvider;
-  private deepProvider: OllamaProvider;
+  private quickProvider: LlamaCppProvider;
+  private deepProvider: LlamaCppProvider;
   private cache: EmailAnalysisCache;
 
   // TD SYNNEX specific configurations based on analysis
@@ -226,15 +226,21 @@ export class EmailAnalysisAgentEnhanced extends BaseAgent {
     );
 
     // Stage 1: Quick categorization model
-    this.quickProvider = new OllamaProvider({
-      model: "qwen3:0.6b",
-      baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
+    this.quickProvider = new LlamaCppProvider({
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/qwen3:0.6b.gguf`,
+      contextSize: 8192,
+      threads: 8,
+      temperature: 0.7,
+      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
     });
 
     // Stage 2: Deep analysis model
-    this.deepProvider = new OllamaProvider({
-      model: "granite3.3:2b",
-      baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
+    this.deepProvider = new LlamaCppProvider({
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/granite3.3:2b.gguf`,
+      contextSize: 8192,
+      threads: 8,
+      temperature: 0.7,
+      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
     });
 
     this.cache = new EmailAnalysisCache({

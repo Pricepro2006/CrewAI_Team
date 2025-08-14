@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { BaseEvent, EventHandler } from './EventBus.js';
+import type { BaseEvent, EventHandler } from './EventBus.js';
 
 // Routing schemas and types
 export const RouteRuleSchema = z.object({

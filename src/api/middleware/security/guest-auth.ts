@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
-import type { Context } from "../../trpc/context";
-import { logger } from "../../../utils/logger";
-import { guestUserService } from "../../services/GuestUserService";
-import { securityMonitor, SecurityEventType } from "../../services/SecurityMonitoringService";
+import type { Context } from "../../trpc/context.js";
+import { logger } from "../../../utils/logger.js";
+import { guestUserService } from "../../services/GuestUserService.js";
+import { securityMonitor, SecurityEventType } from "../../services/SecurityMonitoringService.js";
 
 /**
  * Enhanced authentication middleware that supports guest users with restricted permissions

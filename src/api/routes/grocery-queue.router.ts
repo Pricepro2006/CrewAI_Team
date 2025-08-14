@@ -1,7 +1,8 @@
 import express, { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { GroceryDataPipeline, PriceUpdate, InventoryUpdate, ProductMatch } from '../services/GroceryDataPipeline.js';
+import { GroceryDataPipeline } from '../services/GroceryDataPipeline.js';
+import type { PriceUpdate, InventoryUpdate, ProductMatch } from '../services/GroceryDataPipeline.js';
 import { RedisMessageQueue } from '../services/RedisMessageQueue.js';
 import { createRateLimiter } from '../middleware/rateLimiter.js';
 

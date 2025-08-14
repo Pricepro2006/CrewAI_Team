@@ -1,7 +1,10 @@
 import { EventEmitter } from 'events';
-import { CentralizedCacheService, CacheTier } from './CentralizedCacheService.js';
-import { PricingService, PriceRequest, PriceResponse } from '../../microservices/pricing-service/PricingService.js';
-import { ListManagementService, List, ListItem } from './ListManagementService.js';
+import { CentralizedCacheService } from './CentralizedCacheService.js';
+import type { CacheTier } from './CentralizedCacheService.js';
+import { PricingService } from '../../microservices/pricing-service/PricingService.js';
+import type { PriceRequest, PriceResponse } from '../../microservices/pricing-service/PricingService.js';
+import { ListManagementService } from './ListManagementService.js';
+import type { List, ListItem } from './ListManagementService.js';
 import { z } from 'zod';
 
 // Cache integration configuration

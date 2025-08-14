@@ -1,4 +1,4 @@
-import { OllamaProvider } from "../llm/OllamaProvider.js";
+import { LlamaCppProvider } from "../llm/LlamaCppProvider.js";
 import { AgentRegistry } from "../agents/registry/AgentRegistry.js";
 import { RAGSystem } from "../rag/RAGSystem.js";
 import { PlanExecutor } from "./PlanExecutor.js";
@@ -23,7 +23,7 @@ import {
 } from "../../utils/timeout.js";
 
 export class MasterOrchestrator {
-  private llm: OllamaProvider;
+  private llm: LlamaCppProvider;
   public agentRegistry: AgentRegistry;
   public ragSystem: RAGSystem;
   private planExecutor: PlanExecutor;
@@ -35,9 +35,12 @@ export class MasterOrchestrator {
   constructor(config: MasterOrchestratorConfig) {
     logger.info("Initializing MasterOrchestrator", "ORCHESTRATOR", { config });
 
-    this.llm = new OllamaProvider({
-      model: config.model || "llama3.2:3b", // Primary model from three-stage pipeline
-      baseUrl: config.ollamaUrl,
+    this.llm = new LlamaCppProvider({
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/${config.model || "llama-3.2-3b"}.gguf`,
+      contextSize: 8192,
+      threads: 8,
+      temperature: 0.7,
+      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
     });
 
     this.agentRegistry = new AgentRegistry();

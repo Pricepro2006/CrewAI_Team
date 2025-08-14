@@ -3,7 +3,7 @@
  * Replaces the 6-step planning approach with a streamlined 4-step confidence workflow
  */
 
-import { OllamaProvider } from "../llm/OllamaProvider.js";
+import { LlamaCppProvider } from "../llm/LlamaCppProvider.js";
 import { AgentRegistry } from "../agents/registry/AgentRegistry.js";
 import { RAGSystem } from "../rag/RAGSystem.js";
 import { PlanExecutor } from "./PlanExecutor.js";
@@ -48,7 +48,7 @@ export interface ConfidenceOrchestratorResult extends ExecutionResult {
 }
 
 export class ConfidenceMasterOrchestrator extends EventEmitter {
-  private llm: OllamaProvider;
+  private llm: LlamaCppProvider;
   public agentRegistry: AgentRegistry;
   public ragSystem: RAGSystem;
   private planExecutor: PlanExecutor;
@@ -100,11 +100,12 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     // Initialize LLM with model selection based on configuration
     // Default to complex model (granite3.3:2b) for main orchestrator
     const defaultModel = MODEL_CONFIGS.COMPLEX.model;
-    this.llm = new OllamaProvider({
-      model: config.model || defaultModel,
-      baseUrl: config.ollamaUrl,
-      temperature: MODEL_CONFIGS.COMPLEX.temperature,
-      maxTokens: MODEL_CONFIGS.COMPLEX.maxTokens,
+    this.llm = new LlamaCppProvider({
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/config.model.gguf`,
+      contextSize: 8192,
+      threads: 8,
+      temperature: 0.7,
+      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
     });
 
     // Initialize core systems
@@ -216,12 +217,13 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
             systemLoad,
           },
         );
-        this.llm = new OllamaProvider({
-          model: adjustedModelConfig.model,
-          baseUrl: this.llm.getConfig().baseUrl,
-          temperature: adjustedModelConfig.temperature,
-          maxTokens: adjustedModelConfig.maxTokens,
-        });
+        this.llm = new LlamaCppProvider({
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/adjustedModelConfig.model.gguf`,
+      contextSize: 8192,
+      threads: 8,
+      temperature: 0.7,
+      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
+    });
       }
 
       // Step 3: Route based on complexity
@@ -274,11 +276,12 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     logger.info("Handling simple query", "CONFIDENCE_ORCHESTRATOR");
 
     // Use simple model for quick responses
-    const simpleModel = new OllamaProvider({
-      model: MODEL_CONFIGS.SIMPLE.model,
-      baseUrl: this.llm.getConfig().baseUrl,
-      temperature: MODEL_CONFIGS.SIMPLE.temperature,
-      maxTokens: MODEL_CONFIGS.SIMPLE.maxTokens,
+    const simpleModel = new LlamaCppProvider({
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/MODEL_CONFIGS.SIMPLE.model.gguf`,
+      contextSize: 8192,
+      threads: 8,
+      temperature: 0.7,
+      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
     });
 
     // Generate direct response

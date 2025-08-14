@@ -147,7 +147,7 @@ export class CentralizedCacheService extends EventEmitter {
       this.emit('redis:connected');
     });
 
-    this.redisClient.on('error', (error) => {
+    this.redisClient.on('error', (error: Error) => {
       this.stats.errors[CacheTier.REDIS]++;
       this.emit('redis:error', error);
     });

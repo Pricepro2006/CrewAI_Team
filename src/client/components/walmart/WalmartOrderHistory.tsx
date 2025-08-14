@@ -26,19 +26,19 @@ import {
   FileText,
   Check,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { Separator } from '../../../components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
+import { Button } from '../../../components/ui/button.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Input } from '../../../components/ui/input.js';
+import { Label } from '../../../components/ui/label.js';
+import { Separator } from '../../../components/ui/separator.js';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select';
+} from '../../../components/ui/select.js';
 import {
   Dialog,
   DialogContent,
@@ -46,18 +46,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import { Progress } from '../../../components/ui/progress';
-import { ScrollArea } from '../../../components/ui/scroll-area';
-import { Checkbox } from '../../../components/ui/checkbox';
-import { Alert, AlertDescription } from '../../../components/ui/alert';
+} from '../../../components/ui/dialog.js';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
+import { Progress } from '../../../components/ui/progress.js';
+import { ScrollArea } from '../../../components/ui/scroll-area.js';
+import { Checkbox } from '../../../components/ui/checkbox.js';
+import { Alert, AlertDescription } from '../../../components/ui/alert.js';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '../../../components/ui/accordion';
+} from '../../../components/ui/accordion.js';
 // import { useToast } from '../../../components/ui/use-toast';
 // Temporary mock for missing toast hook
 const useToast = () => ({ toast: ({ title, description }: { title: string; description: string }) => console.log('Toast:', title, description) });
@@ -65,13 +65,13 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '../../../components/ui/collapsible';
-import { Calendar as CalendarComponent } from '../../../components/ui/calendar';
-import { cn } from '../../lib/utils';
-import { formatPrice } from '../../lib/utils';
-import { useGroceryStore } from '../../store/groceryStore';
-import { useCart } from '../../hooks/useCart';
-import type { UIOrder, UIOrderItem, UIWalmartProduct } from '../../../types/ui/walmart-ui-types';
+} from '../../../components/ui/collapsible.js';
+import { Calendar as CalendarComponent } from '../../../components/ui/calendar.js';
+import { cn } from '../../lib/utils.js';
+import { formatPrice } from '../../lib/utils.js';
+import { useGroceryStore } from '../../store/groceryStore.js';
+import { useCart } from '../../hooks/useCart.js';
+import type { UIOrder, UIOrderItem, UIWalmartProduct } from '../../../types/ui/walmart-ui-types.js';
 
 interface WalmartOrderHistoryProps {
   onReorder?: (order: UIOrder) => void;

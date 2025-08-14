@@ -5,7 +5,7 @@
  */
 
 import { businessSearchPromptEnhancer } from "./BusinessSearchPromptEnhancer.js";
-import { OllamaProvider } from "../llm/OllamaProvider.js";
+import { LlamaCppProvider } from "../llm/LlamaCppProvider.js";
 import { logger } from "../../utils/logger.js";
 
 // Example 1: Basic Enhancement
@@ -21,10 +21,13 @@ export function basicEnhancementExample() {
 
 // Example 2: Integration with OllamaProvider
 export async function ollamaIntegrationExample() {
-  const ollama = new OllamaProvider({
-    model: "llama2",
-    baseUrl: "http://localhost:11434",
-  });
+  const ollama = new LlamaCppProvider({
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/llama2.gguf`,
+      contextSize: 8192,
+      threads: 8,
+      temperature: 0.7,
+      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
+    });
 
   const userQuery = "I need a 24-hour pharmacy near downtown";
 
@@ -52,12 +55,15 @@ export async function ollamaIntegrationExample() {
 // Example 3: Agent Integration Pattern
 export class BusinessSearchAgent {
   private promptEnhancer = businessSearchPromptEnhancer;
-  private ollama: OllamaProvider;
+  private ollama: LlamaCppProvider;
 
   constructor() {
-    this.ollama = new OllamaProvider({
-      model: "llama2",
-      baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
+    this.ollama = new LlamaCppProvider({
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/llama2.gguf`,
+      contextSize: 8192,
+      threads: 8,
+      temperature: 0.7,
+      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
     });
   }
 

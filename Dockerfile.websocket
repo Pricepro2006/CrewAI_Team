@@ -1,0 +1,41 @@
+# Dockerfile for Walmart WebSocket Gateway Service
+
+FROM node:20.11.0-alpine AS base
+
+# Install system dependencies
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig*.json ./
+
+# Install dependencies
+RUN npm ci --production --prefer-offline --no-audit
+
+# Copy WebSocket gateway source
+COPY src/api/websocket/ ./src/api/websocket/
+COPY src/shared/ ./src/shared/
+COPY src/utils/ ./src/utils/
+COPY src/config/ ./src/config/
+
+# Build the service
+RUN npx tsc src/api/websocket/WebSocketGateway.ts --outDir dist --target es2020 --module commonjs --moduleResolution node --esModuleInterop --allowSyntheticDefaultImports
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S websocket -u 1001
+
+# Set ownership
+RUN chown -R websocket:nodejs /app
+
+USER websocket
+
+# Health check via TCP connection
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD nc -z localhost 8080 || exit 1
+
+EXPOSE 8080
+
+CMD ["node", "dist/src/api/websocket/WebSocketGateway.js"]

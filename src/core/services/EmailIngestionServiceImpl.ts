@@ -5,7 +5,8 @@
  * Supports 60+ emails/minute throughput with comprehensive error handling
  */
 
-import { Queue, Worker, Job, QueueEvents } from 'bullmq';
+import { Queue, Worker, QueueEvents } from 'bullmq';
+import type { Job } from 'bullmq';
 import { Redis } from 'ioredis';
 import { readFile } from 'fs/promises';
 import { createHash, randomUUID } from 'crypto';

@@ -8,6 +8,21 @@ import { queryPerformanceMonitor } from "./QueryPerformanceMonitor.js";
 import { LazyLoader } from "../../utils/LazyLoader.js";
 import { ConnectionPool } from "../../core/database/ConnectionPool.js";
 import type { EmailRecord } from "../../shared/types/email.js";
+import type { 
+  EmailEntity, 
+  EmailRecipient, 
+  DatabaseQueryParams, 
+  DatabaseRow,
+  DatabaseConnection,
+  DatabaseTransaction
+} from "../../types/common.types.js";
+import type { 
+  EmailInsertData, 
+  EmailUpdateData, 
+  EmailQueryOptions,
+  PoolConnection,
+  PoolStatistics
+} from "../../types/email-storage.types.js";
 
 // Enhanced email analysis interfaces
 export interface EmailAnalysisResult {
@@ -193,8 +208,8 @@ export interface EmailStorageServiceInterface {
     hasAttachments?: boolean;
     isRead?: boolean;
     body?: string;
-    entities?: any[];
-    recipients?: any[];
+    entities?: EmailEntity[];
+    recipients?: EmailRecipient[];
   }): Promise<string>;
   updateEmailStatus(
     emailId: string,
@@ -202,8 +217,8 @@ export interface EmailStorageServiceInterface {
     newStatusText?: string,
     performedBy?: string,
   ): Promise<void>;
-  getEmail(emailId: string): Promise<any | null>;
-  updateEmail(emailId: string, updates: Partial<any>): Promise<void>;
+  getEmail(emailId: string): Promise<EmailRecord | null>;
+  updateEmail(emailId: string, updates: Partial<EmailUpdateData>): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -258,23 +273,23 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     const pool = this.connectionPool!;
 
     // Create a proxy that intercepts database method calls
-    const handler: ProxyHandler<any> = {
+    const handler: ProxyHandler<Database.Database> = {
       get: (target, prop) => {
         // For prepare method, return a function that uses the pool
         if (prop === "prepare") {
           return (sql: string) => {
             // Return a statement-like object that uses the pool
             return {
-              run: (...params: any[]) => {
+              run: (...params: DatabaseQueryParams[]) => {
                 return pool.execute((db) => db.prepare(sql).run(...params));
               },
-              get: (...params: any[]) => {
+              get: (...params: DatabaseQueryParams[]) => {
                 return pool.execute((db) => db.prepare(sql).get(...params));
               },
-              all: (...params: any[]) => {
+              all: (...params: DatabaseQueryParams[]) => {
                 return pool.execute((db) => db.prepare(sql).all(...params));
               },
-              iterate: (...params: any[]) => {
+              iterate: (...params: DatabaseQueryParams[]) => {
                 // For iterate, we need special handling as it returns an iterator
                 return pool.execute((db) => db.prepare(sql).iterate(...params));
               },
@@ -284,8 +299,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
         // For transaction method
         if (prop === "transaction") {
-          return (fn: (...params: any[]) => unknown) => {
-            return (...args: any[]) => {
+          return <T>(fn: (...params: DatabaseQueryParams[]) => T) => {
+            return (...args: DatabaseQueryParams[]): T => {
               return pool.execute((db) => {
                 const transaction = db.transaction(fn);
                 return transaction(...args);
@@ -366,7 +381,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   private async executeOptimizedQuery<T>(
     queryDescription: string,
     query: string,
-    params: any[] = [],
+    params: DatabaseQueryParams[] = [],
     method: "get" | "all" = "all",
   ): Promise<T> {
     const startTime = Date.now();
@@ -463,7 +478,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     cacheKey: string,
     queryDescription: string,
     query: string,
-    params: any[] = [],
+    params: DatabaseQueryParams[] = [],
     method: "get" | "all" = "all",
   ): Promise<T> {
     return performanceOptimizer.cacheQuery(cacheKey, async () => {
@@ -978,11 +993,12 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         `Email analysis stored successfully for message ID: ${messageId}`,
         "EMAIL_STORAGE",
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(
         `Failed to store email analysis for message ID: ${messageId}`,
         "EMAIL_STORAGE",
-        { error: error.message },
+        { error: errorMessage },
       );
       throw error;
     }
@@ -1555,8 +1571,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     hasAttachments?: boolean;
     isRead?: boolean;
     body?: string;
-    entities?: any[];
-    recipients?: any[];
+    entities?: EmailEntity[];
+    recipients?: EmailRecipient[];
   }): Promise<string> {
     try {
       // Validate input data
@@ -2019,7 +2035,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
       // Build query with parameterized queries (no string concatenation)
       const whereClauses: string[] = [];
-      const params: any[] = [];
+      const params: DatabaseQueryParams[] = [];
 
       // Search filter
       if (options.search) {
@@ -2239,7 +2255,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       const loadFn = async (offset: number, limit: number) => {
         // Build base query with parameterized queries
         const whereClauses: string[] = [];
-        const params: any[] = [];
+        const params: DatabaseQueryParams[] = [];
 
         // Apply filters (same logic as getEmailsForTableView)
         if (options.search) {
@@ -2390,7 +2406,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   // VALIDATION AND UTILITY METHODS
   // =====================================================
 
-  private validateEmailData(emailData: any): void {
+  private validateEmailData(emailData: EmailInsertData): void {
     if (!emailData.messageId) throw new Error("Message ID is required");
     if (!emailData.emailAlias) throw new Error("Email alias is required");
     if (!emailData.requestedBy) throw new Error("Requested by is required");
@@ -2511,7 +2527,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     }
   }
 
-  private extractEntitiesOfType(entities: any[] = [], type: string): string {
+  private extractEntitiesOfType(entities: EmailEntity[] = [], type: string): string {
     const filtered = entities.filter((e) => e.type === type);
     return JSON.stringify(filtered.map((e) => e.value));
   }
@@ -2524,9 +2540,9 @@ export class EmailStorageService implements EmailStorageServiceInterface {
    * Get comprehensive performance statistics
    */
   async getPerformanceMetrics(): Promise<{
-    database: any;
-    cache: any;
-    lazyLoader: any;
+    database: PerformanceMetric[];
+    cache: PerformanceMetric[];
+    lazyLoader: Record<string, unknown>;
     recommendations: string[];
   }> {
     try {
@@ -2597,7 +2613,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     options: {
       sortBy?: string;
       sortOrder?: "asc" | "desc";
-      filters?: any;
+      filters?: Record<string, unknown>;
       search?: string;
     },
   ): Promise<void> {
@@ -2714,7 +2730,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   /**
    * Get connection pool statistics (if using pool)
    */
-  getPoolStats(): any {
+  getPoolStats(): PoolStatistics | null {
     if (this.useConnectionPool && this.connectionPool) {
       return this.connectionPool.getStats();
     }
@@ -2724,7 +2740,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   /**
    * Get a single email by ID
    */
-  async getEmail(emailId: string): Promise<any | null> {
+  async getEmail(emailId: string): Promise<EmailRecord | null> {
     try {
       const stmt = this.db.prepare(`
         SELECT * FROM emails 
@@ -2772,7 +2788,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     emailId?: string;
     action: string;
     userId: string;
-    details?: any;
+    details?: Record<string, unknown>;
     timestamp: string;
   }): Promise<void> {
     try {
@@ -2956,7 +2972,13 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   /**
    * Track processing time anomalies for pattern analysis
    */
-  private trackProcessingTimeAnomaly(anomaly: any): void {
+  private trackProcessingTimeAnomaly(anomaly: {
+    type: string;
+    issues: string[];
+    originalValues: Record<string, unknown>;
+    correctedValues: Record<string, unknown>;
+    timestamp: string;
+  }): void {
     try {
       // Create table if it doesn't exist
       this.db.exec(`

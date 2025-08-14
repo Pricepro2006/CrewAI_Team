@@ -1,8 +1,9 @@
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { BaseEvent } from '../../core/events/EventBus.js';
-import { ClientConnection, Subscription } from './WebSocketGateway.js';
-import { MessageBatcher, BatchedMessage } from './MessageBatcher.js';
+import type { BaseEvent } from '../../core/events/EventBus.js';
+import type { ClientConnection, Subscription } from './WebSocketGateway.js';
+import { MessageBatcher } from './MessageBatcher.js';
+import type { BatchedMessage } from './MessageBatcher.js';
 import { ConnectionManager } from './ConnectionManager.js';
 
 // Subscription routing schemas
