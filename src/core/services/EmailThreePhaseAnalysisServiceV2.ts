@@ -22,8 +22,7 @@ import {
   enhancePromptForEmailType,
 } from "../prompts/ThreePhasePrompts.js";
 import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
-import { withUnitOfWork } from "../../database/UnitOfWork.js";
-import type { IUnitOfWork } from "../../database/UnitOfWork.js";
+import { withUnitOfWork, type IUnitOfWork } from "../../database/UnitOfWork.js";
 import { AnalysisStatus } from "../../types/EmailTypes.js";
 import type { EmailRecord } from "../../types/EmailTypes.js";
 import { AnalysisPhase } from "../../types/AnalysisTypes.js";
@@ -33,9 +32,9 @@ import type {
   Phase2Results,
   Phase3Results,
 } from "../../types/AnalysisTypes.js";
-import type { EmailChain } from "../../types/ChainTypes.js";
+import type { EmailChain, ChainEntity } from "../../types/ChainTypes.js";
 
-const logger = new Logger("EmailThreePhaseAnalysisServiceV2");
+const logger = Logger.getInstance();
 
 // ============================================
 // TYPE DEFINITIONS
@@ -265,21 +264,18 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
       }
 
       // Analyze chain
-      const chainAnalysis = await this.chainAnalyzer.analyzeChain({
-        ...email,
-        thread_emails: conversationEmails,
-      });
+      const chainAnalysis = await this.chainAnalyzer.analyzeChain(email.id);
 
       // Create or update chain in repository
       const chain: Omit<EmailChain, "id"> = {
         chain_id: chainAnalysis.chain_id,
-        conversation_id: chainAnalysis.conversation_id || email.id,
+        conversation_id: email.id,
         email_ids: conversationEmails.map((e) => e.id),
         email_count: conversationEmails.length,
-        chain_type: chainAnalysis.chain_type,
+        chain_type: chainAnalysis.chain_type as any,
         completeness_score: chainAnalysis.completeness_score,
         is_complete: chainAnalysis.is_complete,
-        missing_stages: chainAnalysis.missing_stages || [],
+        missing_stages: [],
         start_time: new Date(conversationEmails[0].received_time),
         end_time: new Date(
           conversationEmails[conversationEmails.length - 1].received_time,
@@ -288,8 +284,8 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
         participants: Array.from(
           new Set(conversationEmails.map((e) => e.from_address)),
         ),
-        key_entities: chainAnalysis.key_entities || [],
-        workflow_state: chainAnalysis.workflow_state,
+        key_entities: this.extractChainEntities(chainAnalysis),
+        workflow_state: chainAnalysis.workflow_states?.[0] || "unknown",
         created_at: new Date(),
       };
 
@@ -360,11 +356,13 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
     await uow.analyses.create(analysis);
 
     // Update email with analysis results
-    await uow.emails.updateWorkflowState(
-      email.id,
-      results.enhanced_classification.primary_intent,
-      results.enhanced_classification.confidence,
-    );
+    if ("enhanced_classification" in results) {
+      await uow.emails.updateWorkflowState(
+        email.id,
+        results.enhanced_classification.primary_intent,
+        results.enhanced_classification.confidence,
+      );
+    }
 
     // Store entities
     const entities = this.extractEntities(results);
@@ -441,8 +439,34 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
         efficiency_gain: 0,
         automation_potential: 0,
       },
-      processing_time_ms: results.phase3_processing_time || 0,
+      processing_time_ms: results.processing_time_ms || 0,
     };
+  }
+
+  /**
+   * Extract chain entities from chain analysis
+   */
+  private extractChainEntities(chainAnalysis: any): ChainEntity[] {
+    const entities: ChainEntity[] = [];
+    const now = new Date();
+    
+    if (chainAnalysis.key_entities) {
+      Object.entries(chainAnalysis.key_entities).forEach(([type, values]) => {
+        if (Array.isArray(values)) {
+          values.forEach((value) => {
+            entities.push({
+              type,
+              value: String(value),
+              count: 1,
+              first_seen: now,
+              last_seen: now,
+            });
+          });
+        }
+      });
+    }
+    
+    return entities;
   }
 
   /**
@@ -562,8 +586,6 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
       const prompt = enhancePromptForEmailType(
         PHASE2_ENHANCED_PROMPT,
         phase1Results.basic_classification.type,
-        email,
-        phase1Results,
       );
 
       const llmResponse = await this.callLLM("llama3.2", prompt, {
@@ -627,8 +649,6 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
       const prompt = enhancePromptForEmailType(
         PHASE3_STRATEGIC_PROMPT,
         phase2Results.enhanced_classification.primary_intent,
-        email,
-        phase2Results,
       );
 
       const llmResponse = await this.callLLM("phi-4", prompt, {
@@ -813,7 +833,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
    * Shutdown the service
    */
   async shutdown(): Promise<void> {
-    await this.redisService.disconnect();
+    // RedisService doesn't have disconnect method, just remove listeners
     this.removeAllListeners();
     logger.info("EmailThreePhaseAnalysisServiceV2 shutdown complete");
   }
