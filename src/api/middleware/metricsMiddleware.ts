@@ -54,8 +54,12 @@ export function metricsMiddleware(req: MetricsRequest, res: Response, next: Next
       );
     }
     
-    // Call original end
-    return originalEnd.call(res, chunk, encoding, cb);
+    // Call original end with proper parameter handling
+    if (typeof encoding === 'function') {
+      return originalEnd.call(res, chunk, encoding);
+    } else {
+      return originalEnd.call(res, chunk, encoding, cb);
+    }
   };
   
   next();
@@ -145,7 +149,7 @@ export function traced<T extends (...args: any[]) => any>(
     const startTime = performance.now();
     
     try {
-      const result = await fn.apply(this, args);
+      const result = await fn(...args);
       const duration = performance.now() - startTime;
       
       metricsCollectionService.recordTrace(
@@ -189,7 +193,7 @@ export function cachedWithMetrics<T extends (...args: any[]) => any>(
     if (cache.has(key)) {
       const duration = performance.now() - startTime;
       metricsCollectionService.recordAPIMetric('CACHE_HIT', cacheType, 200, duration);
-      return cache.get(key);
+      return cache.get(key) as ReturnType<T>;
     }
     
     // Cache miss - execute function
