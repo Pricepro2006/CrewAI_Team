@@ -7,8 +7,7 @@
 
 import { EventEmitter } from "events";
 import { Logger } from "../../utils/logger.js";
-import { withUnitOfWork } from "../../database/UnitOfWork.js";
-import type { IUnitOfWork } from "../../database/repositories/interfaces/IUnitOfWork.js";
+import { withUnitOfWork, type UnitOfWork } from "../../database/UnitOfWork.js";
 import type {
   EmailRecord,
   EmailPriority,
@@ -53,7 +52,7 @@ interface EmailWithThread {
   body_text?: string;
   body_preview?: string;
   sender_email: string;
-  received_at: string;
+  received_time: Date | string;  // Support both Date and string formats
   thread_emails?: EmailRecord[];
 }
 
@@ -70,7 +69,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
    * Analyze an email chain for completeness and patterns
    */
   async analyzeChain(email: EmailWithThread): Promise<ChainAnalysisResult> {
-    return withUnitOfWork(async (uow: IUnitOfWork) => {
+    return withUnitOfWork(async (uow: UnitOfWork) => {
       try {
         const startTime = Date.now();
 
@@ -94,8 +93,8 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
         // Sort emails by received time
         threadEmails.sort(
           (a, b) =>
-            new Date(a.received_time).getTime() -
-            new Date(b.received_time).getTime(),
+            this.getDateValue(a.received_time).getTime() -
+            this.getDateValue(b.received_time).getTime(),
         );
 
         // Detect chain type
@@ -115,8 +114,8 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
 
         // Check for existing chain in repository
         const conversationId = threadEmails[0]?.conversation_id || email.id;
-        // TODO: findByConversationId method needs to be added to IEmailChainRepository
-        const existingChain = null; // await uow.chains.findByConversationId(conversationId);
+        const existingChains = await uow.chains.findAll({ conversation_id: conversationId } as Partial<EmailChain>);
+        const existingChain = existingChains.length > 0 ? existingChains[0] : null;
 
         const result: ChainAnalysisResult = {
           chain_id: existingChain?.chain_id || this.generateChainId(),
@@ -132,7 +131,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
         // Update or create chain in repository
         const firstEmail = threadEmails[0];
         const lastEmail = threadEmails[threadEmails.length - 1];
-        
+
         const chainData: EmailChain = {
           id: existingChain?.id || "",
           chain_id: result.chain_id,
@@ -143,8 +142,8 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
           completeness_score: completeness.score,
           is_complete: completeness.is_complete,
           missing_stages: completeness.missing_stages,
-          start_time: firstEmail ? new Date(firstEmail.received_time) : new Date(),
-          end_time: lastEmail ? new Date(lastEmail.received_time) : new Date(),
+          start_time: firstEmail ? this.getDateValue(firstEmail.received_time) : new Date(),
+          end_time: lastEmail ? this.getDateValue(lastEmail.received_time) : new Date(),
           duration_hours: 0,
           participants: this.extractParticipants(threadEmails),
           key_entities: keyEntities,
@@ -184,7 +183,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
   /**
    * Create result for single email (not part of chain)
    */
-  private createSingleEmailResult(emails: EmailWithThread): ChainAnalysisResult {
+  private createSingleEmailResult(email: EmailWithThread): ChainAnalysisResult {
     return {
       chain_id: this.generateChainId(),
       is_complete: false,
@@ -367,7 +366,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
       const poNumbers = text.match(/\b(PO|P\.O\.|po)[\s#-]?\d{4,}/gi) || [];
       poNumbers.forEach((po) => {
         const key = `po:${po}`;
-        this.updateEntityMap(entityMap, key, "po_number", email.received_time);
+        this.updateEntityMap(entityMap, key, "po_number", this.getDateValue(email.received_time));
       });
 
       // Extract quote numbers
@@ -378,7 +377,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
           entityMap,
           key,
           "quote_number",
-          email.received_time,
+          this.getDateValue(email.received_time),
         );
       });
 
@@ -390,7 +389,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
           entityMap,
           key,
           "case_number",
-          email.received_time,
+          this.getDateValue(email.received_time),
         );
       });
     });
@@ -482,10 +481,23 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
   }
 
   /**
+   * Helper method to convert Date or string to Date object
+   */
+  private getDateValue(value: Date | string | undefined): Date {
+    if (!value) {
+      return new Date();
+    }
+    if (value instanceof Date) {
+      return value;
+    }
+    return new Date(value);
+  }
+
+  /**
    * Get chain statistics from repository
    */
   async getChainStatistics(): Promise<any> {
-    return withUnitOfWork(async (uow: IUnitOfWork) => {
+    return withUnitOfWork(async (uow: UnitOfWork) => {
       return await uow.chains.getChainStatistics();
     });
   }
@@ -496,7 +508,7 @@ export class EmailChainAnalyzerV2 extends EventEmitter {
   async findChainsNeedingReanalysis(
     hoursOld: number = 24,
   ): Promise<EmailChain[]> {
-    return withUnitOfWork(async (uow: IUnitOfWork) => {
+    return withUnitOfWork(async (uow: UnitOfWork) => {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursOld);
 
