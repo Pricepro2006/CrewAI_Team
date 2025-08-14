@@ -5,10 +5,11 @@
  * priority handling, and comprehensive monitoring.
  */
 
-import Queue from "bullmq";
-import QueueScheduler from "bullmq";
-import Worker from "bullmq";
-import QueueEvents from "bullmq";
+import * as BullMQ from "bullmq";
+const Queue = BullMQ.Queue || (BullMQ as any).default?.Queue || (BullMQ as any);
+const QueueScheduler = BullMQ.QueueScheduler || (BullMQ as any).default?.QueueScheduler || (BullMQ as any);
+const Worker = BullMQ.Worker || (BullMQ as any).default?.Worker || (BullMQ as any);
+const QueueEvents = BullMQ.QueueEvents || (BullMQ as any).default?.QueueEvents || (BullMQ as any);
 import type { Job } from "bullmq";
 import { Redis } from "ioredis";
 import { EventEmitter } from "events";
@@ -124,10 +125,10 @@ export interface JobResult {
 export class EmailProcessingQueueService extends EventEmitter {
   private config: QueueConfig;
   private redisConnection: Redis;
-  private queues: Map<string, Queue> = new Map();
-  private schedulers: Map<string, QueueScheduler> = new Map();
-  private workers: Map<string, Worker> = new Map();
-  private queueEvents: Map<string, QueueEvents> = new Map();
+  private queues: Map<string, any> = new Map();
+  private schedulers: Map<string, any> = new Map();
+  private workers: Map<string, any> = new Map();
+  private queueEvents: Map<string, any> = new Map();
   private metricsInterval?: NodeJS.Timeout;
   private metrics: Map<string, QueueMetrics> = new Map();
   private isShuttingDown = false;
@@ -164,7 +165,7 @@ export class EmailProcessingQueueService extends EventEmitter {
    */
   private async createQueue(phase: string, queueName: string): Promise<void> {
     // Create queue
-    const queue = new Queue(queueName, {
+    const queue = new (Queue as any)(queueName, {
       connection: this.redisConnection.duplicate(),
       defaultJobOptions: {
         removeOnComplete: {
@@ -183,7 +184,7 @@ export class EmailProcessingQueueService extends EventEmitter {
     this.queues.set(phase, queue);
 
     // Create scheduler for delayed jobs
-    const scheduler = new QueueScheduler(queueName, {
+    const scheduler = new (QueueScheduler as any)(queueName, {
       connection: this.redisConnection.duplicate(),
     });
 
@@ -191,7 +192,7 @@ export class EmailProcessingQueueService extends EventEmitter {
 
     // Create queue events for monitoring
     if (this.config.monitoring.enableEvents) {
-      const events = new QueueEvents(queueName, {
+      const events = new (QueueEvents as any)(queueName, {
         connection: this.redisConnection.duplicate(),
       });
 
@@ -219,7 +220,7 @@ export class EmailProcessingQueueService extends EventEmitter {
   /**
    * Set up event handlers for queue monitoring
    */
-  private setupQueueEventHandlers(phase: string, events: QueueEvents): void {
+  private setupQueueEventHandlers(phase: string, events: any): void {
     events.on("completed", ({ jobId, returnvalue, prev }: any) => {
       this.emit("job:completed", {
         phase,
@@ -287,7 +288,7 @@ export class EmailProcessingQueueService extends EventEmitter {
         this.config.retryStrategy.attempts,
     });
 
-    logger.debug(`Added job ${queueJob.id} to ${phase} queue`, {
+    logger.debug(`Added job ${queueJob.id} to ${phase} queue`, undefined, {
       conversationId: validatedJob.conversationId,
       emailCount: validatedJob.emails.length,
       priority: validatedJob.priority,
@@ -348,7 +349,7 @@ export class EmailProcessingQueueService extends EventEmitter {
   async startWorker(
     phase: "phase1" | "phase2" | "phase3",
     processor: (job: Job<EmailJob>) => Promise<JobResult>,
-  ): Promise<Worker> {
+  ): Promise<any> {
     const queueName = this.config.queues[phase];
     const concurrency = this.config.concurrency[phase];
 
@@ -395,7 +396,7 @@ export class EmailProcessingQueueService extends EventEmitter {
   /**
    * Set up worker event handlers
    */
-  private setupWorkerEventHandlers(phase: string, worker: Worker): void {
+  private setupWorkerEventHandlers(phase: string, worker: any): void {
     worker.on("completed", (job: any, result: any) => {
       logger.debug(`Worker completed job ${job.id} in ${phase}`);
     });
@@ -421,7 +422,7 @@ export class EmailProcessingQueueService extends EventEmitter {
     const queue = this.queues.get(phase);
     if (!queue) return undefined;
 
-    return queue.getJob(jobId);
+    return (queue as any).getJob(jobId);
   }
 
   /**
@@ -438,15 +439,15 @@ export class EmailProcessingQueueService extends EventEmitter {
 
     switch (status) {
       case "waiting":
-        return queue.getWaiting(start, end);
+        return (queue as any).getWaiting(start, end);
       case "active":
-        return queue.getActive(start, end);
+        return (queue as any).getActive(start, end);
       case "completed":
-        return queue.getCompleted(start, end);
+        return (queue as any).getCompleted(start, end);
       case "failed":
-        return queue.getFailed(start, end);
+        return (queue as any).getFailed(start, end);
       case "delayed":
-        return queue.getDelayed(start, end);
+        return (queue as any).getDelayed(start, end);
       default:
         return [];
     }
