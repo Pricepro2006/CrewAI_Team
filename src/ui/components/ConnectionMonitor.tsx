@@ -4,10 +4,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useConnectionWithFallback, ConnectionMode, ConnectionQuality } from '../hooks/useConnectionWithFallback.js';
+import { useConnectionWithFallback } from '../hooks/useConnectionWithFallback.js';
+import type { ConnectionMode, ConnectionQuality } from '../hooks/useConnectionWithFallback.js';
 import { 
-  WifiIcon, 
-  WifiOffIcon,
+  WifiIcon,
   SignalIcon,
   ArrowPathIcon,
   ExclamationTriangleIcon,
@@ -85,7 +85,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
           color: 'text-red-500',
           bgColor: 'bg-red-50',
           borderColor: 'border-red-200',
-          icon: WifiOffIcon,
+          icon: WifiIcon,
           label: 'Offline'
         };
       default:
