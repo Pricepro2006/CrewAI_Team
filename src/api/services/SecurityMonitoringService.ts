@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
-import { logger } from "../../utils/logger";
-import type { User } from "../trpc/context";
-import { guestUserService } from "./GuestUserService";
+import { logger } from "../../utils/logger.js";
+import type { User } from "../trpc/context.js";
+import { guestUserService } from "./GuestUserService.js";
 
 /**
  * Security event types for monitoring
