@@ -24,9 +24,9 @@ cd /home/pricepro2006/CrewAI_Team
 
 ### 2. Access the Dashboard
 
-- **Dashboard**: http://localhost:3002/monitoring
-- **API Endpoints**: http://localhost:3002/api/monitoring
-- **WebSocket**: ws://localhost:3003/monitoring
+- **Dashboard**: http://localhost:3010/monitoring
+- **API Endpoints**: http://localhost:3010/api/monitoring
+- **WebSocket**: ws://localhost:8080/monitoring
 
 ## Integration with Existing Services
 
@@ -125,7 +125,7 @@ wss.on('connection', (ws) => {
 
 ```bash
 # API server port
-MONITORING_API_PORT=3002
+MONITORING_API_PORT=3010
 
 # WebSocket server port
 MONITORING_WS_PORT=3003

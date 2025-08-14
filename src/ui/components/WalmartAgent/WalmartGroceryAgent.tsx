@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
-import { Search, ShoppingCart, Package, DollarSign, Clock, TrendingUp, AlertCircle, CheckCircle, List, PieChart, BarChart3, History, Zap } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Search, ShoppingCart, Package, DollarSign, Clock, TrendingUp, AlertCircle, CheckCircle, List, PieChart, BarChart3, History, Zap, Sparkles } from 'lucide-react';
 import { api } from '../../../lib/trpc.js';
-import { WalmartLivePricing } from './WalmartLivePricing.js';
-import { GroceryListEnhanced } from './GroceryListEnhanced.js';
+import { 
+  LazyWalmartLivePricing, 
+  LazyGroceryListAndTracker, 
+  LazyWalmartHybridSearch 
+} from './LazyComponentLoader.js';
+import { VirtualizedProductList } from '../VirtualizedList/VirtualizedProductList.js';
 import './WalmartGroceryAgent.css';
 
 interface GroceryItem {
@@ -29,14 +34,53 @@ interface PriceHistory {
   price: number;
 }
 
-type TabType = 'shopping' | 'grocery-list' | 'budget-tracker' | 'price-history' | 'live-pricing';
+type TabType = 'shopping' | 'hybrid-search' | 'list-tracker' | 'price-history' | 'live-pricing';
 
 export const WalmartGroceryAgent: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('shopping');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [priceAlerts, setPriceAlerts] = useState<Map<string, number>>(new Map());
+
+  // Sync activeTab with URL
+  useEffect(() => {
+    const pathSegments = location.pathname.split('/');
+    const lastSegment = pathSegments[pathSegments.length - 1];
+    
+    // Map URL segments to tab IDs
+    const urlToTab: Record<string, TabType> = {
+      'walmart': 'shopping',
+      'shopping': 'shopping',
+      'smart-search': 'hybrid-search',
+      'list-tracker': 'list-tracker',
+      'price-history': 'price-history',
+      'live-pricing': 'live-pricing'
+    };
+    
+    const mappedTab = urlToTab[lastSegment];
+    if (mappedTab && mappedTab !== activeTab) {
+      setActiveTab(mappedTab);
+    }
+  }, [location.pathname]);
+
+  // Update URL when tab changes
+  const handleTabChange = (newTab: TabType) => {
+    setActiveTab(newTab);
+    
+    // Map tab IDs to URL segments
+    const tabToUrl: Record<TabType, string> = {
+      'shopping': '/walmart',
+      'hybrid-search': '/walmart/smart-search',
+      'list-tracker': '/walmart/list-tracker',
+      'price-history': '/walmart/price-history',
+      'live-pricing': '/walmart/live-pricing'
+    };
+    
+    navigate(tabToUrl[newTab]);
+  };
 
   // Fetch real dashboard stats instead of hardcoded values
   const { data: statsData } = api.walmartGrocery.getStats.useQuery(undefined, {
@@ -49,21 +93,17 @@ export const WalmartGroceryAgent: React.FC = () => {
     { enabled: activeTab === 'price-history' }
   );
 
-  // Fetch budget data
-  const { data: budgetData } = api.walmartGrocery.getBudget.useQuery(
-    { userId: 'default_user' },
-    { enabled: activeTab === 'budget-tracker' }
-  );
+  // Budget data no longer needed here - moved to GroceryListAndTracker component
 
   // Use tRPC mutation for searching products
   const searchProductsMutation = api.walmartGrocery.searchProducts.useMutation({
     onError: (error) => {
-      console.error('Search failed:', error);
+      // Error handling handled by component state and user feedback
       // You might want to show a toast notification here
     }
   });
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return;
     
     try {
@@ -94,12 +134,12 @@ export const WalmartGroceryAgent: React.FC = () => {
       // Keep the search results empty on error
       setSearchResults(null);
     }
-  };
+  }, [searchQuery, searchProductsMutation]);
   
   // Use the mutation's isPending state for compatibility with newer React Query versions
   const isSearching = searchProductsMutation.isPending || searchProductsMutation.isLoading;
 
-  const toggleItemSelection = (itemId: string) => {
+  const toggleItemSelection = useCallback((itemId: string) => {
     const newSelection = new Set(selectedItems);
     if (newSelection.has(itemId)) {
       newSelection.delete(itemId);
@@ -107,32 +147,32 @@ export const WalmartGroceryAgent: React.FC = () => {
       newSelection.add(itemId);
     }
     setSelectedItems(newSelection);
-  };
+  }, [selectedItems]);
 
-  const setPriceAlert = (itemId: string, targetPrice: number) => {
+  const setPriceAlert = useCallback((itemId: string, targetPrice: number) => {
     const newAlerts = new Map(priceAlerts);
     newAlerts.set(itemId, targetPrice);
     setPriceAlerts(newAlerts);
-  };
+  }, [priceAlerts]);
 
-  const calculateTotalSavings = () => {
+  const calculateTotalSavings = useMemo(() => {
     if (!searchResults) return 0;
     return searchResults.items
       .filter(item => selectedItems.has(item.id))
       .reduce((total, item) => total + (item.savings || 0), 0);
-  };
+  }, [searchResults, selectedItems]);
 
-  const calculateTotalPrice = () => {
+  const calculateTotalPrice = useMemo(() => {
     if (!searchResults) return 0;
     return searchResults.items
       .filter(item => selectedItems.has(item.id))
       .reduce((total, item) => total + item.price, 0);
-  };
+  }, [searchResults, selectedItems]);
 
   const tabs = [
     { id: 'shopping' as TabType, label: 'Shopping', icon: ShoppingCart },
-    { id: 'grocery-list' as TabType, label: 'Grocery List', icon: List },
-    { id: 'budget-tracker' as TabType, label: 'Budget Tracker', icon: PieChart },
+    { id: 'hybrid-search' as TabType, label: 'Smart Search', icon: Sparkles },
+    { id: 'list-tracker' as TabType, label: 'List & Tracker', icon: List },
     { id: 'price-history' as TabType, label: 'Price History', icon: BarChart3 },
     { id: 'live-pricing' as TabType, label: 'Live Pricing', icon: Zap },
   ];
@@ -190,7 +230,7 @@ export const WalmartGroceryAgent: React.FC = () => {
             <button
               key={tab.id}
               className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
             >
               <IconComponent size={20} />
               {tab.label}
@@ -264,72 +304,16 @@ export const WalmartGroceryAgent: React.FC = () => {
             </div>
           </div>
 
-          <div className="results-grid">
-            {searchResults.items.map((item) => (
-              <div 
-                key={item.id} 
-                className={`grocery-item ${selectedItems.has(item.id) ? 'selected' : ''} ${!item.inStock ? 'out-of-stock' : ''}`}
-              >
-                <div className="item-image">
-                  <img src={item.imageUrl} alt={item.name} />
-                  {item.savings && (
-                    <div className="savings-badge">
-                      Save ${item.savings.toFixed(2)}
-                    </div>
-                  )}
-                  {!item.inStock && (
-                    <div className="stock-overlay">Out of Stock</div>
-                  )}
-                </div>
-                
-                <div className="item-details">
-                  <h3 className="item-name">{item.name}</h3>
-                  <p className="item-category">{item.category} • {item.unit}</p>
-                  
-                  <div className="item-pricing">
-                    <span className="current-price">${item.price.toFixed(2)}</span>
-                    {item.originalPrice && (
-                      <span className="original-price">${item.originalPrice.toFixed(2)}</span>
-                    )}
-                  </div>
-                  
-                  <div className="item-actions">
-                    <button
-                      className={`select-button ${selectedItems.has(item.id) ? 'selected' : ''}`}
-                      onClick={() => toggleItemSelection(item.id)}
-                      disabled={!item.inStock}
-                    >
-                      {selectedItems.has(item.id) ? (
-                        <>
-                          <CheckCircle size={16} />
-                          Selected
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingCart size={16} />
-                          Add to List
-                        </>
-                      )}
-                    </button>
-                    
-                    <button 
-                      className="alert-button"
-                      onClick={() => setPriceAlert(item.id, item.price * 0.9)}
-                    >
-                      <AlertCircle size={16} />
-                      Set Alert
-                    </button>
-                  </div>
-                  
-                  {priceAlerts.has(item.id) && (
-                    <div className="price-alert-info">
-                      Alert when price drops to ${priceAlerts.get(item.id)!.toFixed(2)}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Use virtualized list for better performance with large result sets */}
+          <VirtualizedProductList
+            items={searchResults.items}
+            selectedItems={selectedItems}
+            priceAlerts={priceAlerts}
+            onToggleSelection={toggleItemSelection}
+            onSetPriceAlert={setPriceAlert}
+            height={600}
+            itemHeight={120}
+          />
         </div>
       )}
 
@@ -371,11 +355,15 @@ export const WalmartGroceryAgent: React.FC = () => {
           </>
         )}
 
-        {activeTab === 'grocery-list' && (
-          <GroceryListEnhanced />
+        {activeTab === 'hybrid-search' && (
+          <LazyWalmartHybridSearch />
         )}
 
-        {activeTab === 'budget-tracker' && (
+        {activeTab === 'list-tracker' && (
+          <LazyGroceryListAndTracker />
+        )}
+
+        {activeTab === 'budget-tracker-old' && (
           <div className="budget-section">
             <h2 className="section-title">Budget Tracker</h2>
             
@@ -565,7 +553,7 @@ export const WalmartGroceryAgent: React.FC = () => {
         )}
 
         {activeTab === 'live-pricing' && (
-          <WalmartLivePricing />
+          <LazyWalmartLivePricing />
         )}
       </div>
     </div>

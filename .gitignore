@@ -59,6 +59,9 @@ tsc-output.txt
 *.swp
 *.swo
 
+# Claude configuration
+.claude/commands/
+
 # OS
 .DS_Store
 Thumbs.db
@@ -406,3 +409,4 @@ extract_real_bi.py
 diagnose_hang.py
 process_*.py
 monitor_production.py
+gemini.settings.json

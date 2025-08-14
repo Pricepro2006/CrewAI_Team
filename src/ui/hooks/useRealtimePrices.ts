@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useGroceryWebSocket, type GroceryWebSocketEvent } from "./useGroceryWebSocket.js";
+import { useGroceryWebSocket, type GroceryWebSocketEvent } from "./useGroceryWebSocketFixed.js";
 import { logger } from "../../utils/logger.js";
 
 export interface PriceUpdate {
