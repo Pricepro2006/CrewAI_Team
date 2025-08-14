@@ -273,8 +273,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
         {
           operation: operation,
           table: this.tableName,
-          queryPreview: query.substring(0, 100),
-        },
+        } as any,
       );
 
       // Re-throw with user-friendly message

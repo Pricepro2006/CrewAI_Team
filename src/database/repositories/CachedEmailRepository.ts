@@ -92,7 +92,7 @@ export class CachedEmailRepository extends EmailRepository {
   /**
    * Create a new email record with cache invalidation
    */
-  async createEmail(params: CreateEmailParams): Promise<string> {
+  override async createEmail(params: CreateEmailParams): Promise<string> {
     const startTime = Date.now();
 
     try {
@@ -148,7 +148,7 @@ export class CachedEmailRepository extends EmailRepository {
   /**
    * Update an email record with cache invalidation
    */
-  async updateEmail(emailId: string, params: UpdateEmailParams): Promise<void> {
+  override async updateEmail(emailId: string, params: UpdateEmailParams): Promise<void> {
     const startTime = Date.now();
 
     try {
@@ -205,7 +205,7 @@ export class CachedEmailRepository extends EmailRepository {
   /**
    * Store email entities with caching
    */
-  async storeEmailEntities(emailId: string, entities: EmailEntity[]): Promise<void> {
+  override async storeEmailEntities(emailId: string, entities: EmailEntity[]): Promise<void> {
     const startTime = Date.now();
 
     try {
@@ -243,7 +243,7 @@ export class CachedEmailRepository extends EmailRepository {
   /**
    * Query emails with caching
    */
-  async queryEmails(params: EmailQueryParams): Promise<{ emails: any[]; total: number }> {
+  override async queryEmails(params: EmailQueryParams): Promise<{ emails: any[]; total: number }> {
     const startTime = Date.now();
     const cacheKey = this.generateQueryCacheKey(params);
 
@@ -320,7 +320,7 @@ export class CachedEmailRepository extends EmailRepository {
   /**
    * Get email by ID with caching
    */
-  async getEmailById(emailId: string): Promise<any | null> {
+  override async getEmailById(emailId: string): Promise<any | null> {
     const startTime = Date.now();
     const cacheKey = this.generateEmailCacheKey(emailId);
 
@@ -364,7 +364,7 @@ export class CachedEmailRepository extends EmailRepository {
   /**
    * Get email by Graph ID with caching
    */
-  async getEmailByGraphId(graphId: string): Promise<any | null> {
+  override async getEmailByGraphId(graphId: string): Promise<any | null> {
     const startTime = Date.now();
     const cacheKey = this.generateGraphEmailCacheKey(graphId);
 
@@ -419,7 +419,7 @@ export class CachedEmailRepository extends EmailRepository {
   /**
    * Get analytics with caching
    */
-  async getAnalytics(dateRange?: { start: Date; end: Date }): Promise<any> {
+  override async getAnalytics(dateRange?: { start: Date; end: Date }): Promise<any> {
     const startTime = Date.now();
     const cacheKey = this.generateAnalyticsCacheKey(dateRange);
 
@@ -469,7 +469,7 @@ export class CachedEmailRepository extends EmailRepository {
   /**
    * Bulk get emails by IDs with caching
    */
-  async getEmailsByIds(emailIds: string[]): Promise<Map<string, any>> {
+  override async getEmailsByIds(emailIds: string[]): Promise<Map<string, any>> {
     const startTime = Date.now();
     const results = new Map<string, any>();
 
