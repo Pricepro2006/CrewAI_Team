@@ -269,7 +269,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       this.emit("phase:start", { phase: 1, email: email.id });
       const phase1Results = await this.runPhase1(email, options);
       this.emit("phase:complete", { phase: 1, results: phase1Results });
-      logger.info(`Phase 1 complete in ${phase1Results.processing_time}ms`, COMPONENT);
+      logger.info(`Phase 1 complete in ${phase1Results.processing_time}ms`);
 
       // Check chain completeness
       const isCompleteChain =
@@ -290,7 +290,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
       // Phase 3: Strategic analysis (only for complete chains)
       if (isCompleteChain || options.forceAllPhases) {
-        logger.info("Running Phase 3 for complete chain analysis", COMPONENT);
+        logger.info("Running Phase 3 for complete chain analysis");
         this.emit("phase:start", { phase: 3, email: email.id });
         const phase3Results = await this.runPhase3(
           email,
@@ -377,7 +377,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
             );
           }
         } catch (perfError) {
-          logger.warn("Failed to track two-phase analysis performance", COMPONENT, { error: perfError });
+          logger.warn("Failed to track two-phase analysis performance", { error: perfError });
         }
 
         logger.info(
@@ -393,7 +393,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         return phase2WithDefaults;
       }
     } catch (error) {
-      logger.error("Email analysis failed:", COMPONENT, {}, error as Error);
+      logger.error("Email analysis failed:", error);
       
       // Track performance with defensive programming
       try {
@@ -405,14 +405,14 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           );
         }
       } catch (perfError) {
-        logger.warn("Failed to track performance metrics", COMPONENT, { error: perfError });
+        logger.warn("Failed to track performance metrics", { error: perfError });
       }
       
       // Emit error event with defensive programming
       try {
         this.emit("analysis:error", { email: email.id, error });
       } catch (emitError) {
-        logger.warn("Failed to emit analysis error event", COMPONENT, { error: emitError });
+        logger.warn("Failed to emit analysis error event", { error: emitError });
       }
       
       throw error;
@@ -430,7 +430,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
     // Check cache first
     if (!options.skipCache && this.phase1Cache.has(email.id)) {
-      logger.debug("Phase 1 cache hit", COMPONENT);
+      logger.debug("Phase 1 cache hit");
       return this.phase1Cache.get(email.id)!;
     }
 
@@ -476,7 +476,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // Check if email already has chain analysis (from fixed script)
     if ((email as any).chainAnalysis) {
       chainAnalysis = (email as any).chainAnalysis;
-      logger.debug(`Using provided chain analysis for ${email.id}`, COMPONENT);
+      logger.debug(`Using provided chain analysis for ${email.id}`);
     } else {
       // Fall back to analyzing chain if not provided
       try {
@@ -490,7 +490,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           missing_elements: chain.missing_elements,
         };
       } catch (error) {
-        logger.error(`Chain analysis failed for ${email.id}:`, COMPONENT, {}, error as Error);
+        logger.error(`Chain analysis failed for ${email.id}:`, error);
         // Continue without chain analysis
       }
     }
@@ -539,7 +539,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        logger.debug(`Phase 2 attempt ${attempt + 1}/${maxRetries + 1}`, COMPONENT);
+        logger.debug(`Phase 2 attempt ${attempt + 1}/${maxRetries + 1}`);
 
         // Build enhanced context-aware prompt
         const prompt = this.buildPhase2Prompt(
@@ -566,7 +566,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
         // Validate response structure - if validation fails, treat as parsing error to trigger retry
         if (!this.validatePhase2Response(phase2Data)) {
-          logger.warn(`Invalid Phase 2 response structure on attempt ${attempt + 1}`, COMPONENT, {
+          logger.warn(`Invalid Phase 2 response structure on attempt ${attempt + 1}`, {
             hasWorkflowValidation: !!phase2Data.workflow_validation,
             hasMissedEntities: !!phase2Data.missed_entities,
             hasActionItems: !!phase2Data.action_items,
@@ -589,7 +589,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
         // Check if this is a direct fallback that should skip quality assessment
         if ((phase2Data as any).__directFallback) {
-          logger.info("Direct fallback detected, skipping quality assessment", COMPONENT);
+          logger.info("Direct fallback detected, skipping quality assessment");
           // Remove the marker and merge with Phase 1 results
           delete (phase2Data as any).__directFallback;
           // Merge Phase 1 results to ensure we have all required fields
@@ -657,11 +657,11 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         return finalResults;
       } catch (error) {
         lastError = error as Error;
-        logger.warn(`Phase 2 attempt ${attempt + 1} failed:`, COMPONENT, { error: (error as Error).message });
+        logger.warn(`Phase 2 attempt ${attempt + 1} failed:`, error);
 
         // Check for special parsing failure error
         if ((error as Error).message === "PARSING_FAILED_ALL_RETRIES") {
-          logger.info("All parsing attempts failed, using pure fallback immediately", COMPONENT);
+          logger.info("All parsing attempts failed, using pure fallback immediately");
           return this.getPhase2Fallback(phase1Results, Date.now() - startTime);
         }
 
@@ -675,7 +675,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       }
     }
 
-    logger.error("Phase 2 failed after all retries:", COMPONENT, {}, lastError || undefined);
+    logger.error("Phase 2 failed after all retries:", lastError);
 
     // Track parsing failure and fallback usage
     this.trackParsingMetric(false, maxRetries + 1, true);
@@ -702,7 +702,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         sender: email.sender_email,
       });
     } catch (error) {
-      logger.warn("Failed to sanitize email content, using fallback", COMPONENT, { error });
+      logger.warn("Failed to sanitize email content, using fallback", { error });
       sanitizedEmail = null;
     }
 
@@ -717,13 +717,13 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     try {
       if (PromptSanitizer.detectInjectionAttempt(safeEmail.subject) ||
           PromptSanitizer.detectInjectionAttempt(safeEmail.body)) {
-        logger.warn("Potential prompt injection detected in email", COMPONENT, {
+        logger.warn("Potential prompt injection detected in email", {
           emailId: email.id,
           sender: email.sender_email,
         });
       }
     } catch (error) {
-      logger.warn("Failed to check for injection attempts", COMPONENT, { error });
+      logger.warn("Failed to check for injection attempts", { error });
     }
 
     // Use enhanced prompt for retries with safe fallbacks
@@ -736,7 +736,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     try {
       prompt = enhancePromptForEmailType(basePrompt, emailCharacteristics) || basePrompt;
     } catch (error) {
-      logger.warn("Failed to enhance prompt for email type, using base prompt", COMPONENT, { error });
+      logger.warn("Failed to enhance prompt for email type, using base prompt", { error });
       prompt = basePrompt;
     }
 
@@ -752,7 +752,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         .replace("{EMAIL_SUBJECT}", safeEmail.subject)
         .replace("{EMAIL_BODY}", safeEmail.body);
     } catch (error) {
-      logger.error("Failed to build prompt, using fallback", COMPONENT, { error });
+      logger.error("Failed to build prompt, using fallback", { error });
       return `Analyze email: Subject="${safeEmail.subject}", Body="${safeEmail.body}". Context: ${JSON.stringify(phase1Results)}`;
     }
   }
@@ -774,12 +774,12 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         0.001             // estimated cost (very low for local model)
       );
     } catch (error) {
-      logger.warn("Rate limit check failed, proceeding with request", COMPONENT, { error });
+      logger.warn("Rate limit check failed, proceeding with request", { error });
       rateLimitResult = { allowed: true }; // Fallback to allow the request
     }
 
     if (rateLimitResult && !rateLimitResult.allowed) {
-      logger.warn("LLM rate limit exceeded for Llama 3.2", COMPONENT, {
+      logger.warn("LLM rate limit exceeded for Llama 3.2", {
         remainingRequests: rateLimitResult.remainingRequests,
         resetTime: rateLimitResult.resetTime,
       });
@@ -955,7 +955,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           sender: email.sender_email,
         });
       } catch (error) {
-        logger.warn("Failed to sanitize email content in Phase 3, using fallback", COMPONENT, { error });
+        logger.warn("Failed to sanitize email content in Phase 3, using fallback", { error });
         sanitizedEmail = null;
       }
 
@@ -970,13 +970,13 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       try {
         if (PromptSanitizer.detectInjectionAttempt(safeEmail.subject) ||
             PromptSanitizer.detectInjectionAttempt(safeEmail.body)) {
-          logger.warn("Potential prompt injection detected in Phase 3", COMPONENT, {
+          logger.warn("Potential prompt injection detected in Phase 3", {
             emailId: email.id,
             sender: email.sender_email,
           });
         }
       } catch (error) {
-        logger.warn("Failed to check for injection attempts in Phase 3", COMPONENT, { error });
+        logger.warn("Failed to check for injection attempts in Phase 3", { error });
       }
 
       // Build comprehensive prompt with all context using safe content
@@ -989,7 +989,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           .replace("{EMAIL_SUBJECT}", safeEmail.subject)
           .replace("{EMAIL_BODY}", safeEmail.body);
       } catch (error) {
-        logger.error("Failed to build Phase 3 prompt, using fallback", COMPONENT, { error });
+        logger.error("Failed to build Phase 3 prompt, using fallback", { error });
         prompt = `Strategic analysis for email: Subject="${safeEmail.subject}", Body="${safeEmail.body}". Phase 1: ${JSON.stringify(phase1Results)}. Phase 2: ${JSON.stringify(phase2Results)}`;
       }
 
@@ -1002,12 +1002,12 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           0.005 // estimated cost (higher for larger model)
         );
       } catch (error) {
-        logger.warn("Rate limit check failed for Phase 3, proceeding with request", COMPONENT, { error });
+        logger.warn("Rate limit check failed for Phase 3, proceeding with request", { error });
         rateLimitResult = { allowed: true }; // Fallback to allow the request
       }
 
       if (rateLimitResult && !rateLimitResult.allowed) {
-        logger.warn("LLM rate limit exceeded for Phi-4", COMPONENT, {
+        logger.warn("LLM rate limit exceeded for Phi-4", {
           remainingRequests: rateLimitResult.remainingRequests,
           resetTime: rateLimitResult.resetTime,
         });
@@ -1121,7 +1121,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
       return results;
     } catch (error) {
-      logger.error("Phase 3 error:", COMPONENT, {}, error as Error);
+      logger.error("Phase 3 error:", error);
 
       // Return Phase 2 results with strategic defaults
       return {
@@ -1159,7 +1159,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     const results = new Set<string>();
     patterns.forEach((pattern) => {
       const matches = [...text.matchAll(pattern)];
-      matches.forEach((m) => { if (m[1]) results.add(m[1]); });
+      matches.forEach((m) => results.add(m[1]));
     });
 
     return Array.from(results);
@@ -1175,7 +1175,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     const results = new Set<string>();
     patterns.forEach((pattern) => {
       const matches = [...text.matchAll(pattern)];
-      matches.forEach((m) => { if (m[1]) results.add(m[1]); });
+      matches.forEach((m) => results.add(m[1]));
     });
 
     return Array.from(results);
@@ -1192,7 +1192,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     const results = new Set<string>();
     patterns.forEach((pattern) => {
       const matches = [...text.matchAll(pattern)];
-      matches.forEach((m) => { if (m[1]) results.add(m[1]); });
+      matches.forEach((m) => results.add(m[1]));
     });
 
     return Array.from(results);
@@ -1508,8 +1508,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       // Ensure required Phase 2 fields exist with proper defaults
       return this.validateAndNormalizeResponse(parsed);
     } catch (error) {
-      logger.error("JSON parse error:", COMPONENT, {}, error as Error);
-      logger.debug("Raw response: " + response.substring(0, 500) + "...", COMPONENT);
+      logger.error("JSON parse error:", error);
+      logger.debug("Raw response:", response.substring(0, 500) + "...");
 
       // Retry on parsing failures unless we've exhausted all attempts
       if (attemptNumber < maxRetries) {
@@ -1522,7 +1522,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       // Try fallback extraction methods only if it doesn't look like JSON or this is a retry
       const fallbackResult = this.attemptFallbackExtraction(response);
       if (fallbackResult) {
-        logger.info("Successfully used fallback extraction method", COMPONENT);
+        logger.info("Successfully used fallback extraction method");
         return fallbackResult;
       }
 
@@ -1558,10 +1558,10 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     logger.info(`After quick comment removal: ${quickCleaned.substring(0, 100)}...`);
     try {
       JSON.parse(quickCleaned);
-      logger.info("Response is valid JSON after comment removal", COMPONENT);
+      logger.info("Response is valid JSON after comment removal");
       return quickCleaned;
     } catch (error) {
-      logger.info("Response not valid JSON after comment removal:", COMPONENT, { error: error instanceof Error ? error.message : String(error) });
+      logger.info("Response not valid JSON after comment removal:", error.message);
       
       // Continue with full extraction process for comments
       
@@ -1606,10 +1606,10 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // First try to parse as-is to see if it's already valid JSON
     try {
       JSON.parse(cleaned);
-      logger.debug("JSON is already valid, skipping cleanup steps", COMPONENT);
+      logger.debug("JSON is already valid, skipping cleanup steps");
     } catch (error) {
       // Only apply fixes if JSON is invalid
-      logger.debug("JSON is invalid, applying cleanup:", COMPONENT, { error: error instanceof Error ? error.message : String(error) });
+      logger.debug("JSON is invalid, applying cleanup:", error.message);
       cleaned = cleaned
         .replace(/(?<!")([a-zA-Z_][a-zA-Z0-9_]*)(?!"):/g, '"$1":') // Quote unquoted keys only
         .replace(/'/g, '"') // Convert single quotes to double quotes
@@ -1622,10 +1622,10 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // Strategy 1: Try to parse cleaned response directly
     try {
       const parsed = JSON.parse(cleaned);
-      logger.debug("Strategy 1 successful: Direct parsing", COMPONENT);
+      logger.debug("Strategy 1 successful: Direct parsing");
       return cleaned;
     } catch (error) {
-      logger.debug("Strategy 1 failed:", COMPONENT, { error: error instanceof Error ? error.message : String(error) });
+      logger.debug("Strategy 1 failed:", error.message);
       logger.debug("Cleaned content sample:", cleaned.substring(0, 200) + '...');
       // Continue to next strategy
     }
@@ -1663,7 +1663,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           logger.debug("Strategy 2 successful: Balanced brace extraction with cleanup");
           return candidate;
         } catch (error) {
-          logger.debug("Strategy 2 failed with balanced braces:", COMPONENT, { error: error instanceof Error ? error.message : String(error) });
+          logger.debug("Strategy 2 failed with balanced braces:", error.message);
           // Continue to next strategy
         }
       }
@@ -1714,9 +1714,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     let match;
     
     while ((match = kvPattern.exec(text)) !== null) {
-      const key = match[1]?.trim();
-      let value = match[2]?.trim();
-      if (!key || !value) continue;
+      const key = match[1].trim();
+      let value = match[2].trim();
 
       // Clean up the value - remove surrounding quotes and trailing punctuation
       value = value.replace(/^["']+|["']+$/g, ""); // Remove leading/trailing quotes
@@ -1992,7 +1991,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         logger.warn("Redis service not available for caching analysis results");
       }
     } catch (error) {
-      logger.error("Failed to cache analysis results in Redis", COMPONENT, { 
+      logger.error("Failed to cache analysis results in Redis", { 
         error: error.message,
         emailId: email.id 
       });
