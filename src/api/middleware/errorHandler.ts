@@ -187,7 +187,7 @@ export function validationErrorFormatter(errors: ValidationError[]): AppError {
     if (!acc[error.param]) {
       acc[error.param] = [];
     }
-    acc[error.param].push(error.msg);
+    acc[error.param]?.push(error.msg);
     return acc;
   }, {});
 
