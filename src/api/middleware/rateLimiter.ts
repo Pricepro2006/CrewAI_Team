@@ -1,15 +1,15 @@
 import rateLimit from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import type { Request, Response } from "express";
 import { TRPCError } from "@trpc/server";
 
 interface AuthenticatedRequest extends Request {
-  user?: {
+  user?: ({ [key: string]: any; id: string } | {
     id?: string;
     role?: string;
     isAdmin?: boolean;
-  };
+  });
 }
 
 // Enhanced Redis-based rate limiting with user awareness
