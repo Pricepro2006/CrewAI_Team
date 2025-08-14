@@ -60,8 +60,10 @@ export class Logger {
   private isWriting: boolean = false;
   private piiRedactor: PIIRedactor;
   private enablePIIRedaction: boolean;
+  private component?: string;
 
-  private constructor() {
+  constructor(component?: string) {
+    this.component = component;
     // Handle different environments gracefully
     if (isNode && path && typeof process?.cwd === "function") {
       try {
