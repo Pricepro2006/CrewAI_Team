@@ -133,7 +133,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
   /**
    * Wrap an OllamaProvider instance with middleware functionality
    */
-  public wrapProvider(provider: LlamaCppProvider): LlamaCppProvider {
+  public wrapProvider(provider: OllamaProvider): OllamaProvider {
     // Check if feature is enabled
     if (!this.isEnabled()) {
       logger.info("BusinessSearchMiddleware is disabled via feature flag");
@@ -170,7 +170,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
    * Wrap the generate method
    */
   private wrapGenerate(
-    provider: LlamaCppProvider,
+    provider: OllamaProvider,
     originalMethod: (...args: unknown[]) => unknown,
   ) {
     return async (
@@ -291,7 +291,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
    * Wrap the generateWithLogProbs method
    */
   private wrapGenerateWithLogProbs(
-    provider: LlamaCppProvider,
+    provider: OllamaProvider,
     originalMethod: (...args: unknown[]) => unknown,
   ) {
     return async (
@@ -357,7 +357,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
    * Wrap the generateStream method
    */
   private wrapGenerateStream(
-    provider: LlamaCppProvider,
+    provider: OllamaProvider,
     originalMethod: (...args: unknown[]) => unknown,
   ) {
     return async (
