@@ -70,7 +70,7 @@ export interface DatabaseConfig {
 }
 
 export class DatabaseManager {
-  private connectionPool: DatabaseConnectionPool;
+  public readonly connectionPool: DatabaseConnectionPool;
   private chromaManager: ChromaDBManager;
   private migrator: DatabaseMigrator;
   private isInitialized: boolean = false;
@@ -207,7 +207,9 @@ export class DatabaseManager {
 
       for (const statement of statements) {
         try {
-          this.db.exec(statement + ";");
+          await this.connectionPool.executeQuery((db) => {
+            db.exec(statement + ";");
+          });
         } catch (error) {
           // Log warning for statements that might already exist
           if (
@@ -223,7 +225,8 @@ export class DatabaseManager {
       }
 
       // Apply Walmart Grocery Agent migration
-      const groceryMigration = new WalmartGroceryAgentMigration(this.db);
+      const db = this.connectionPool.getConnection().getDatabase();
+      const groceryMigration = new WalmartGroceryAgentMigration(db);
       try {
         await groceryMigration.up();
         logger.info(
