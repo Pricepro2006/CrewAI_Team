@@ -6,7 +6,7 @@ import { logger } from "../../utils/logger.js";
 
 interface MonitoredRequest extends Request {
   id?: string;
-  user?: { id?: string };
+  user?: { [key: string]: any; id: string } | { id?: string };
 }
 
 // Generate request ID
@@ -201,7 +201,7 @@ export function errorTracking(
 // Performance monitoring for specific operations
 export function monitorOperation(operationName: string) {
   return function (
-    target: unknown,
+    target: any,
     propertyKey: string,
     descriptor: PropertyDescriptor,
   ) {
