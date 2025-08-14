@@ -17,6 +17,14 @@ import type {
 // Core Product Types
 // =====================================================
 
+export interface LivePrice {
+  price?: number;
+  salePrice?: number;
+  wasPrice?: number;
+  inStock?: boolean;
+  lastUpdated?: string;
+}
+
 export interface WalmartProduct extends TimestampedEntity {
   id: string;
   walmartId: string;
@@ -51,6 +59,7 @@ export interface WalmartProduct extends TimestampedEntity {
   stockLevel?: number;
   stock?: number;
   originalPrice?: number;
+  livePrice?: LivePrice;
   averageRating?: number;
   reviewCount?: number;
   location?: string;
