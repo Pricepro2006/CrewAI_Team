@@ -5,7 +5,8 @@
  * Enhanced with circuit breaker pattern for resilient external API calls
  */
 
-import { logger } from "../../utils/logger.js";
+import { Logger } from "../../utils/logger.js";
+const logger = Logger.getInstance();
 import { circuitBreakerService } from "../../core/resilience/CircuitBreakerService.js";
 import { cacheManager } from "../../core/cache/RedisCacheManager.js";
 import type { WalmartProduct } from "../../types/walmart-grocery.js";
@@ -59,7 +60,7 @@ export class WalmartPriceFetcher {
     return circuitBreakerService.executeExternalAPI(
       'walmart',
       'fetchProductPrice',
-      async () => {
+      async (): Promise<PriceResult | null> => {
         // Check cache first
         const cached = this.getCachedPrice(productId, location.zipCode);
         if (cached) {
@@ -99,7 +100,7 @@ export class WalmartPriceFetcher {
         throw new Error(`Could not fetch price for product ${productId} from any source`);
       },
       // Fallback: try cache or return mock data
-      await this.getFallbackPrice(productId, location)
+      async () => await this.getFallbackPrice(productId, location)
     );
   }
 

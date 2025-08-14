@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import Database from "better-sqlite3";
 import appConfig from "../../config/app.config.js";
-import { logger } from "../../utils/logger.js";
+import { Logger } from "../../utils/logger.js";
+const logger = Logger.getInstance();
 import { wsService } from "./WebSocketService.js";
 import { performanceOptimizer } from "./PerformanceOptimizer.js";
 import { queryPerformanceMonitor } from "./QueryPerformanceMonitor.js";
@@ -17,12 +18,31 @@ import type {
   DatabaseTransaction
 } from "../../types/common.types.js";
 import type { 
-  EmailInsertData, 
   EmailUpdateData, 
   EmailQueryOptions,
   PoolConnection,
   PoolStatistics
 } from "../../types/email-storage.types.js";
+
+// Extended type for createEmail method
+interface CreateEmailData {
+  messageId: string;
+  emailAlias: string;
+  requestedBy: string;
+  subject: string;
+  summary: string;
+  status: "red" | "yellow" | "green";
+  statusText: string;
+  workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
+  workflowType?: string;
+  priority?: "critical" | "high" | "medium" | "low";
+  receivedDate: Date;
+  hasAttachments?: boolean;
+  isRead?: boolean;
+  body?: string;
+  entities?: EmailEntity[];
+  recipients?: EmailRecipient[];
+}
 
 // Enhanced email analysis interfaces
 export interface EmailAnalysisResult {
@@ -193,24 +213,7 @@ export interface EmailStorageServiceInterface {
       optimizationGain: number;
     };
   }>;
-  createEmail(emailData: {
-    messageId: string;
-    emailAlias: string;
-    requestedBy: string;
-    subject: string;
-    summary: string;
-    status: "red" | "yellow" | "green";
-    statusText: string;
-    workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
-    workflowType?: string;
-    priority?: "critical" | "high" | "medium" | "low";
-    receivedDate: Date;
-    hasAttachments?: boolean;
-    isRead?: boolean;
-    body?: string;
-    entities?: EmailEntity[];
-    recipients?: EmailRecipient[];
-  }): Promise<string>;
+  createEmail(emailData: CreateEmailData): Promise<string>;
   updateEmailStatus(
     emailId: string,
     newStatus: "red" | "yellow" | "green",
@@ -280,16 +283,16 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           return (sql: string) => {
             // Return a statement-like object that uses the pool
             return {
-              run: (...params: DatabaseQueryParams[]) => {
+              run: (...params: any[]) => {
                 return pool.execute((db) => db.prepare(sql).run(...params));
               },
-              get: (...params: DatabaseQueryParams[]) => {
+              get: (...params: any[]) => {
                 return pool.execute((db) => db.prepare(sql).get(...params));
               },
-              all: (...params: DatabaseQueryParams[]) => {
+              all: (...params: any[]) => {
                 return pool.execute((db) => db.prepare(sql).all(...params));
               },
-              iterate: (...params: DatabaseQueryParams[]) => {
+              iterate: (...params: any[]) => {
                 // For iterate, we need special handling as it returns an iterator
                 return pool.execute((db) => db.prepare(sql).iterate(...params));
               },
@@ -299,8 +302,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
         // For transaction method
         if (prop === "transaction") {
-          return <T>(fn: (...params: DatabaseQueryParams[]) => T) => {
-            return async (...args: DatabaseQueryParams[]): Promise<T> => {
+          return <T>(fn: (trx: DatabaseTransaction) => T) => {
+            return async (): Promise<T> => {
               return pool.execute((db) => {
                 const transaction = db.transaction(fn);
                 return transaction(...args);
@@ -381,7 +384,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   private async executeOptimizedQuery<T>(
     queryDescription: string,
     query: string,
-    params: DatabaseQueryParams[] = [],
+    params: any[] = [],
     method: "get" | "all" = "all",
   ): Promise<T> {
     const startTime = Date.now();
@@ -478,7 +481,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     cacheKey: string,
     queryDescription: string,
     query: string,
-    params: DatabaseQueryParams[] = [],
+    params: any[] = [],
     method: "get" | "all" = "all",
   ): Promise<T> {
     return performanceOptimizer.cacheQuery(cacheKey, async () => {
@@ -1556,24 +1559,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   /**
    * Create email record from IEMS data
    */
-  async createEmail(emailData: {
-    messageId: string;
-    emailAlias: string;
-    requestedBy: string;
-    subject: string;
-    summary: string;
-    status: "red" | "yellow" | "green";
-    statusText: string;
-    workflowState: "START_POINT" | "IN_PROGRESS" | "COMPLETION";
-    workflowType?: string;
-    priority?: "critical" | "high" | "medium" | "low";
-    receivedDate: Date;
-    hasAttachments?: boolean;
-    isRead?: boolean;
-    body?: string;
-    entities?: EmailEntity[];
-    recipients?: EmailRecipient[];
-  }): Promise<string> {
+  async createEmail(emailData: CreateEmailData): Promise<string> {
     try {
       // Validate input data
       this.validateEmailData(emailData);
@@ -2406,7 +2392,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   // VALIDATION AND UTILITY METHODS
   // =====================================================
 
-  private validateEmailData(emailData: EmailInsertData): void {
+  private validateEmailData(emailData: CreateEmailData): void {
     if (!emailData.messageId) throw new Error("Message ID is required");
     if (!emailData.emailAlias) throw new Error("Email alias is required");
     if (!emailData.requestedBy) throw new Error("Requested by is required");
@@ -2732,7 +2718,26 @@ export class EmailStorageService implements EmailStorageServiceInterface {
    */
   getPoolStats(): PoolStatistics | null {
     if (this.useConnectionPool && this.connectionPool) {
-      return this.connectionPool.getStats();
+      const stats = this.connectionPool.getStats();
+      return {
+        total_connections: stats.poolSize,
+        active_connections: stats.activeConnections,
+        idle_connections: stats.availableConnections,
+        pending_requests: 0, // Not tracked in current implementation
+        avg_wait_time_ms: 0, // Not tracked in current implementation
+        connection_errors: 0, // Not tracked in current implementation
+        pool_efficiency: stats.totalQueries > 0 
+          ? (stats.totalQueries - stats.recycledConnections) / stats.totalQueries 
+          : 0,
+        // Additional stats from ConnectionPool
+        poolSize: stats.poolSize,
+        activeConnections: stats.activeConnections,
+        availableConnections: stats.availableConnections,
+        totalQueries: stats.totalQueries,
+        checkpoints: stats.checkpoints,
+        recycledConnections: stats.recycledConnections,
+        connectionDetails: stats.connectionDetails
+      };
     }
     return null;
   }
