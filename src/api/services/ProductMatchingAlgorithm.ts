@@ -450,8 +450,8 @@ export class ProductMatchingAlgorithm {
 
     // Find the matching history item
     const historyItem = userHistory.find(h => 
-      h.productName.toLowerCase().includes(match.product.name.toLowerCase().split(' ')[0]) ||
-      match.product.name.toLowerCase().includes(h.productName.toLowerCase().split(' ')[0])
+      h.productName?.toLowerCase().includes(match.product.name?.toLowerCase().split(' ')[0] || '') ||
+      match.product.name?.toLowerCase().includes(h.productName?.toLowerCase().split(' ')[0] || '')
     );
 
     if (!historyItem) {
@@ -643,7 +643,7 @@ export class ProductMatchingAlgorithm {
     }
 
     // Boost confidence if price data is fresh
-    if (breakdown.freshnessBoost > 0) {
+    if (breakdown.freshnessBoost && breakdown.freshnessBoost > 0) {
       confidence += 0.1;
     }
 
@@ -682,18 +682,18 @@ export class ProductMatchingAlgorithm {
     for (let i = 1; i <= n; i++) {
       for (let j = 1; j <= m; j++) {
         if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
+          matrix[i][j] = matrix[i - 1]?.[j - 1] ?? 0;
         } else {
           matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1,
-            matrix[i][j - 1] + 1,
-            matrix[i - 1][j] + 1
+            (matrix[i - 1]?.[j - 1] ?? 0) + 1,
+            (matrix[i]?.[j - 1] ?? 0) + 1,
+            (matrix[i - 1]?.[j] ?? 0) + 1
           );
         }
       }
     }
 
-    return matrix[n][m];
+    return matrix[n]?.[m] ?? 0;
   }
 
   private calculateNGramSimilarity(s1: string, s2: string, n: number): number {
