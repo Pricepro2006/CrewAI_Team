@@ -19,11 +19,12 @@ import { promisify } from 'node:util';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
-import Redis from 'ioredis';
-import { MemoryManager, MemoryMetrics, LeakDetectionResult } from './MemoryManager.js';
+import { Redis } from 'ioredis';
+import { MemoryManager } from './MemoryManager.js';
+import type { MemoryMetrics, LeakDetectionResult } from './MemoryManager.js';
 import { logger } from '../utils/logger.js';
 import { metrics as promMetrics } from '../api/monitoring/metrics.js';
-import WebSocket from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 
 const execAsync = promisify(exec);
 
@@ -80,7 +81,7 @@ export class MemoryMonitoringService extends EventEmitter {
   
   private app: express.Application;
   private redis: Redis;
-  private wss?: WebSocket.Server;
+  private wss?: WebSocketServer;
   private services = new Map<string, ServiceMemoryProfile>();
   private memoryManagers = new Map<string, MemoryManager>();
   private alerts = new Map<string, Alert>();
@@ -117,7 +118,7 @@ export class MemoryMonitoringService extends EventEmitter {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
       db: parseInt(process.env.REDIS_METRICS_DB || '3'),
-      retryStrategy: (times) => Math.min(times * 100, 3000)
+      retryStrategy: (times: number) => Math.min(times * 100, 3000)
     });
     
     // Initialize service profiles
@@ -275,6 +276,7 @@ export class MemoryMonitoringService extends EventEmitter {
     this.app.get('/metrics', async (req, res) => {
       const metrics = await this.collectAllMetrics();
       res.json(metrics);
+      return;
     });
     
     // Get service-specific metrics
@@ -283,7 +285,8 @@ export class MemoryMonitoringService extends EventEmitter {
       const profile = this.services.get(service);
       
       if (!profile) {
-        return res.status(404).json({ error: 'Service not found' });
+        res.status(404).json({ error: 'Service not found' });
+        return;
       }
       
       const manager = this.memoryManagers.get(service);
@@ -294,6 +297,7 @@ export class MemoryMonitoringService extends EventEmitter {
         statistics: stats,
         metrics: await this.getServiceMetricsHistory(service)
       });
+      return;
     });
     
     // Get alerts
@@ -327,11 +331,13 @@ export class MemoryMonitoringService extends EventEmitter {
       const manager = this.memoryManagers.get(service);
       
       if (!manager) {
-        return res.status(404).json({ error: 'Service not found' });
+        res.status(404).json({ error: 'Service not found' });
+        return;
       }
       
       manager.forceGC();
       res.json({ success: true, message: 'Garbage collection triggered' });
+      return;
     });
     
     // Take heap snapshot
@@ -341,7 +347,8 @@ export class MemoryMonitoringService extends EventEmitter {
       const manager = this.memoryManagers.get(service);
       
       if (!manager) {
-        return res.status(404).json({ error: 'Service not found' });
+        res.status(404).json({ error: 'Service not found' });
+        return;
       }
       
       try {
@@ -353,6 +360,7 @@ export class MemoryMonitoringService extends EventEmitter {
           error: error instanceof Error ? error.message : 'Unknown error'
         });
       }
+      return;
     });
     
     // Get memory report
@@ -381,11 +389,13 @@ export class MemoryMonitoringService extends EventEmitter {
       const { rules } = req.body;
       
       if (!Array.isArray(rules)) {
-        return res.status(400).json({ error: 'Rules must be an array' });
+        res.status(400).json({ error: 'Rules must be an array' });
+        return;
       }
       
       this.alertRules = rules;
       res.json({ success: true, rules: this.alertRules });
+      return;
     });
   }
   
@@ -403,7 +413,7 @@ export class MemoryMonitoringService extends EventEmitter {
       });
       
       // Setup WebSocket server for real-time updates
-      this.wss = new WebSocket.Server({ server, path: '/ws' });
+      this.wss = new WebSocketServer({ server, path: '/ws' });
       this.setupWebSocket();
     });
     
@@ -432,7 +442,7 @@ export class MemoryMonitoringService extends EventEmitter {
   private setupWebSocket(): void {
     if (!this.wss) return;
     
-    this.wss.on('connection', (ws) => {
+    this.wss.on('connection', (ws: WebSocket) => {
       logger.debug('WebSocket client connected', 'MEMORY_MONITOR');
       
       // Send initial state
@@ -445,7 +455,7 @@ export class MemoryMonitoringService extends EventEmitter {
       }));
       
       // Handle client messages
-      ws.on('message', (message) => {
+      ws.on('message', (message: Buffer | ArrayBuffer | Buffer[]) => {
         try {
           const data = JSON.parse(message.toString());
           this.handleWebSocketMessage(ws, data);
@@ -490,7 +500,7 @@ export class MemoryMonitoringService extends EventEmitter {
     
     const message = JSON.stringify({ type, data, timestamp: Date.now() });
     
-    this.wss.clients.forEach((client) => {
+    this.wss.clients.forEach((client: WebSocket) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message);
       }
@@ -612,7 +622,9 @@ export class MemoryMonitoringService extends EventEmitter {
     } catch (error) {
       // Fallback to checking by port
       try {
-        const { stdout } = await execAsync(`lsof -i -P -n | grep LISTEN | grep :${this.getServicePort(service)}`);
+        const port = this.getServicePort(service);
+        if (port === undefined) return null;
+        const { stdout } = await execAsync(`lsof -i -P -n | grep LISTEN | grep :${port}`);
         const parts = stdout.trim().split(/\s+/);
         const pid = parseInt(parts[1]);
         
@@ -638,9 +650,9 @@ export class MemoryMonitoringService extends EventEmitter {
   /**
    * Get service port
    */
-  private getServicePort(service: string): number {
+  private getServicePort(service: string): number | undefined {
     const config = this.SERVICE_CONFIGS.find(c => c.name === service);
-    return config?.port || 3000;
+    return config?.port;
   }
   
   /**
@@ -892,9 +904,9 @@ export class MemoryMonitoringService extends EventEmitter {
       const values = await this.redis.mget(...keys);
       
       return values
-        .filter(v => v !== null)
-        .map(v => JSON.parse(v!))
-        .sort((a, b) => b.lastUpdate - a.lastUpdate)
+        .filter((v): v is string => v !== null)
+        .map((v: string) => JSON.parse(v))
+        .sort((a: ServiceMemoryProfile, b: ServiceMemoryProfile) => b.lastUpdate - a.lastUpdate)
         .slice(0, 100); // Return last 100 metrics
         
     } catch (error) {
