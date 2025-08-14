@@ -100,6 +100,7 @@ export function createGuestAllowedMiddleware(guestPermissions: string[] = ["read
   return async (opts: {
     ctx: Context;
     next: () => Promise<any>;
+    path?: string;
   }) => {
     const { ctx, next } = opts;
 
@@ -125,7 +126,7 @@ export function createGuestAllowedMiddleware(guestPermissions: string[] = ["read
           userId: ctx.user.id,
           ip: (ctx.user.metadata as any)?.ip,
           userAgent: (ctx.user.metadata as any)?.userAgent,
-          resource: opts.path || "unknown",
+          resource: (opts as any).path || "unknown",
           reason: "Guest lacks required permissions",
         });
 
@@ -147,6 +148,7 @@ export function createStrictAuthMiddleware() {
   return async (opts: {
     ctx: Context;
     next: () => Promise<any>;
+    path?: string;
   }) => {
     const { ctx, next } = opts;
 
@@ -258,6 +260,7 @@ export function createEnhancedAuthorizationMiddleware(
   return async (opts: {
     ctx: Context;
     next: () => Promise<any>;
+    path?: string;
   }) => {
     const { ctx, next } = opts;
 
@@ -276,7 +279,7 @@ export function createEnhancedAuthorizationMiddleware(
         userId: ctx.user.id,
         ip: (ctx.user.metadata as any)?.ip,
         userAgent: (ctx.user.metadata as any)?.userAgent,
-        resource: opts.path || "role-based-endpoint",
+        resource: (opts as any).path || "role-based-endpoint",
         reason: "Guest attempted to access role-based resource",
       });
 
