@@ -393,10 +393,9 @@ export const useGroceryStore = create<GroceryState>()(
           priceAlerts: state.priceAlerts,
           searchHistory: state.searchHistory,
         }),
-      }
-      )
-    )
-  )
-  )
+      },
+      ),
+    ),
+  ),
 );
 
