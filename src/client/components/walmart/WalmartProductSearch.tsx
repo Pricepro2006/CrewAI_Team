@@ -5,16 +5,16 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { Search, Filter, X, Loader2 } from 'lucide-react';
-import { Input } from '../../../components/ui/input';
-import { Button } from '../../../components/ui/button';
-import { Card, CardContent } from '../../../components/ui/card';
+import { Input } from '../../../components/ui/input.js';
+import { Button } from '../../../components/ui/button.js';
+import { Card, CardContent } from '../../../components/ui/card.js';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select';
+} from '../../../components/ui/select.js';
 import {
   Sheet,
   SheetContent,
@@ -22,14 +22,14 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '../../../components/ui/sheet';
-import { Badge } from '../../../components/ui/badge';
-import { Slider } from '../../../components/ui/slider';
-import { Checkbox } from '../../../components/ui/checkbox';
-import { useWalmartSearch } from '../../hooks/useWalmartSearch';
-import { useDebounce } from '../../hooks/useDebounce';
-import type { WalmartProduct, SearchOptions, DietaryFilter } from '../../../types/walmart-grocery';
-import type { ExtendedSearchOptions } from '../../../types/walmart-search-extended';
+} from '../../../components/ui/sheet.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Slider } from '../../../components/ui/slider.js';
+import { Checkbox } from '../../../components/ui/checkbox.js';
+import { useWalmartSearch } from '../../hooks/useWalmartSearch.js';
+import { useDebounce } from '../../hooks/useDebounce.js';
+import type { WalmartProduct, SearchOptions, DietaryFilter } from '../../../types/walmart-grocery.js';
+import type { ExtendedSearchOptions } from '../../../types/walmart-search-extended.js';
 
 interface WalmartProductSearchProps {
   onProductSelect?: (product: WalmartProduct) => void;
@@ -87,7 +87,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100]);
 
-  const debouncedQuery = useDebounce(query, 500);
+  const debouncedQuery = useDebounce<string>(query, 500);
   const { search, results, loading, error } = useWalmartSearch();
 
   // Perform search when query or filters change
@@ -130,7 +130,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
     setFilters((prev: ExtendedSearchOptions) => ({
       ...prev,
       dietary: prev.dietary?.includes(dietaryFilter)
-        ? prev.dietary.filter(d => d !== dietaryFilter)
+        ? prev.dietary.filter((d: DietaryFilter) => d !== dietaryFilter)
         : [...(prev.dietary || []), dietaryFilter],
     }));
   };
@@ -165,7 +165,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
             type="text"
             placeholder="Search Walmart groceries..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
             className="pl-10 pr-10"
             autoFocus={autoFocus}
           />
@@ -206,7 +206,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
                 type="text"
                 placeholder="Search for groceries..."
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
                 className="pl-10 pr-10 h-12 text-lg"
                 autoFocus={autoFocus}
               />
@@ -255,8 +255,8 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
                 <Checkbox
                   id="in-stock"
                   checked={filters.inStock}
-                  onCheckedChange={(checked) =>
-                    setFilters(prev => ({ ...prev, inStock: !!checked }))
+                  onCheckedChange={(checked: boolean) =>
+                    setFilters((prev: ExtendedSearchOptions) => ({ ...prev, inStock: !!checked }))
                   }
                 />
                 <label
@@ -270,7 +270,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
               {filters.dietary && filters.dietary.length > 0 && (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">Dietary:</span>
-                  {filters.dietary.map(diet => (
+                  {filters.dietary.map((diet: DietaryFilter) => (
                     <Badge key={diet} variant="secondary">
                       {diet}
                       <button
@@ -333,7 +333,7 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
                   </label>
                   <Slider
                     value={priceRange}
-                    onValueChange={(value) => setPriceRange(value as [number, number])}
+                    onValueChange={(value: number[]) => setPriceRange(value as [number, number])}
                     min={0}
                     max={100}
                     step={5}
@@ -368,8 +368,8 @@ export const WalmartProductSearch: React.FC<WalmartProductSearchProps> = ({
                   <Checkbox
                     id="filter-in-stock"
                     checked={filters.inStock}
-                    onCheckedChange={(checked) =>
-                      setFilters(prev => ({ ...prev, inStock: !!checked }))
+                    onCheckedChange={(checked: boolean) =>
+                      setFilters((prev: ExtendedSearchOptions) => ({ ...prev, inStock: !!checked }))
                     }
                   />
                   <label

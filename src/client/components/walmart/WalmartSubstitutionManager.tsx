@@ -23,11 +23,11 @@ import {
   Ban,
   Zap,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Label } from '../../../components/ui/label';
-import { Switch } from '../../../components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
+import { Button } from '../../../components/ui/button.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Label } from '../../../components/ui/label.js';
+import { Switch } from '../../../components/ui/switch.js';
 import {
   Dialog,
   DialogContent,
@@ -35,28 +35,28 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog';
+} from '../../../components/ui/dialog.js';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
-import { Checkbox } from '../../../components/ui/checkbox';
+} from '../../../components/ui/select.js';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
+import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group.js';
+import { Checkbox } from '../../../components/ui/checkbox.js';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../components/ui/tooltip';
-import { cn, formatPrice } from '../../lib/utils';
-import { useGroceryStore } from '../../store/groceryStore';
-import { useCart } from '../../hooks/useCart';
-import { getNumericPrice } from '../../../utils/walmart-product';
-import type { WalmartProduct, SubstitutionOptions, DietaryFilter, AllergenType } from '../../../types/walmart-grocery';
+} from '../../../components/ui/tooltip.js';
+import { cn, formatPrice } from '../../lib/utils.js';
+import { useGroceryStore } from '../../store/groceryStore.js';
+import { useCart } from '../../hooks/useCart.js';
+import { getNumericPrice } from '../../../utils/walmart-product.js';
+import type { WalmartProduct, SubstitutionOptions, DietaryFilter, AllergenType } from '../../../types/walmart-grocery.js';
 
 interface WalmartSubstitutionManagerProps {
   product?: WalmartProduct;
@@ -66,7 +66,15 @@ interface WalmartSubstitutionManagerProps {
   className?: string;
 }
 
-interface SubstitutionSuggestion extends WalmartProduct {
+interface SubstitutionSuggestion {
+  id: string;
+  walmartId: string;
+  name: string;
+  brand?: string;
+  price: number;
+  thumbnailUrl?: string;
+  inStock?: boolean;
+  availability?: { inStock: boolean };
   reason: string;
   matchScore: number;
   priceDifference: number;
@@ -91,13 +99,13 @@ interface SubstitutionPreferences {
 const SubstitutionCard: React.FC<{
   original: WalmartProduct;
   suggestion: SubstitutionSuggestion;
-  onSelect: (product: WalmartProduct) => void;
+  onSelect: (product: SubstitutionSuggestion) => void;
   onFeedback: (productId: string, positive: boolean) => void;
   isSelected?: boolean;
 }> = ({ original, suggestion, onSelect, onFeedback, isSelected = false }) => {
   // Handle ProductPrice type properly for price calculations
   const originalPrice = getNumericPrice(original.price);
-  const suggestionPrice = getNumericPrice(suggestion.price);
+  const suggestionPrice = suggestion.price; // Already a number
   const priceDiff = suggestionPrice - originalPrice;
   const priceDiffPercent = (priceDiff / originalPrice) * 100;
   
@@ -187,7 +195,7 @@ const SubstitutionCard: React.FC<{
                   size="icon"
                   variant="ghost"
                   className="h-8 w-8"
-                  onClick={(e) => {
+                  onClick={(e: React.MouseEvent) => {
                     e.stopPropagation();
                     onFeedback(suggestion.id, true);
                   }}
@@ -206,7 +214,7 @@ const SubstitutionCard: React.FC<{
                   size="icon"
                   variant="ghost"
                   className="h-8 w-8"
-                  onClick={(e) => {
+                  onClick={(e: React.MouseEvent) => {
                     e.stopPropagation();
                     onFeedback(suggestion.id, false);
                   }}
@@ -301,16 +309,14 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
 
   const mockSuggestions: SubstitutionSuggestion[] = product ? [
     {
-      ...product, // Inherit all properties from WalmartProduct
       id: 'sub-1',
       walmartId: 'sub-wm-1',
       name: `${product.brand || 'Store Brand'} ${typeof product.category === 'string' ? product.category : 'Product'} Alternative`,
       brand: 'Great Value',
       price: getNumericPrice(product.price) * 0.85,
-      description: 'Alternative product with similar quality',
-      images: product.images || [],
-      availability: product.availability || { inStock: true },
-      metadata: product.metadata || { source: 'manual' as const },
+      thumbnailUrl: product.thumbnailUrl,
+      inStock: true,
+      availability: { inStock: true },
       reason: 'Similar product, lower price',
       matchScore: 92,
       priceDifference: -getNumericPrice(product.price) * 0.15,
@@ -322,16 +328,14 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
       },
     },
     {
-      ...product, // Inherit all properties from WalmartProduct
       id: 'sub-2',
       walmartId: 'sub-wm-2',
       name: `Organic ${product.name}`,
       brand: 'Nature Valley',
       price: getNumericPrice(product.price) * 1.2,
-      description: 'Organic alternative with better nutritional profile',
-      images: product.images || [],
-      availability: product.availability || { inStock: true },
-      metadata: product.metadata || { source: 'manual' as const },
+      thumbnailUrl: product.thumbnailUrl,
+      inStock: true,
+      availability: { inStock: true },
       reason: 'Organic option available',
       matchScore: 85,
       priceDifference: getNumericPrice(product.price) * 0.2,
@@ -342,16 +346,14 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
       },
     },
     {
-      ...product, // Inherit all properties from WalmartProduct
       id: 'sub-3',
       walmartId: 'sub-wm-3',
       name: `Premium ${typeof product.category === 'string' ? product.category : 'Product'}`,
       brand: product.brand || 'Premium Brand',
       price: getNumericPrice(product.price) * 1.1,
-      description: 'Premium version with enhanced quality',
-      images: product.images || [],
-      availability: product.availability || { inStock: true },
-      metadata: product.metadata || { source: 'manual' as const },
+      thumbnailUrl: product.thumbnailUrl,
+      inStock: true,
+      availability: { inStock: true },
       reason: 'Same brand, different size',
       matchScore: 88,
       priceDifference: getNumericPrice(product.price) * 0.1,
@@ -372,12 +374,46 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
     }
   });
   
-  const handleSelectSubstitution = (substitute: WalmartProduct) => {
+  const handleSelectSubstitution = (substitute: SubstitutionSuggestion) => {
     setSelectedSubstitute(substitute.id);
     if (onSelectSubstitution) {
-      onSelectSubstitution(substitute);
+      // Convert SubstitutionSuggestion to WalmartProduct for callback
+      const productToSelect: WalmartProduct = {
+        id: substitute.id,
+        walmartId: substitute.walmartId,
+        name: substitute.name,
+        brand: substitute.brand || 'Generic',
+        category: 'General',
+        description: '',
+        price: substitute.price,
+        images: [],
+        availability: substitute.availability || { inStock: true },
+        metadata: { source: 'manual' },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        thumbnailUrl: substitute.thumbnailUrl,
+        inStock: substitute.inStock ?? true
+      };
+      onSelectSubstitution(productToSelect);
     } else {
-      addItem(substitute);
+      // Convert for cart
+      const productForCart: WalmartProduct = {
+        id: substitute.id,
+        walmartId: substitute.walmartId,
+        name: substitute.name,
+        brand: substitute.brand || 'Generic',
+        category: 'General',
+        description: '',
+        price: substitute.price,
+        images: [],
+        availability: substitute.availability || { inStock: true },
+        metadata: { source: 'manual' },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        thumbnailUrl: substitute.thumbnailUrl,
+        inStock: substitute.inStock ?? true
+      };
+      addItem(productForCart);
     }
   };
   
@@ -437,7 +473,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{sub.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatPrice(getNumericPrice(sub.price))} • {sub.reason}
+                      {formatPrice(sub.price)} • {sub.reason}
                     </p>
                   </div>
                   {sub.isPreferred && (
@@ -596,7 +632,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
               <Switch
                 id="auto-substitute"
                 checked={substitutionPrefs.autoSubstitute}
-                onCheckedChange={(checked) =>
+                onCheckedChange={(checked: boolean) =>
                   setSubstitutionPrefs(prev => ({ ...prev, autoSubstitute: checked }))
                 }
               />
@@ -607,8 +643,8 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
               <Label>Price preference</Label>
               <RadioGroup
                 value={substitutionPrefs.priceRange}
-                onValueChange={(value: any) =>
-                  setSubstitutionPrefs(prev => ({ ...prev, priceRange: value }))
+                onValueChange={(value: string) =>
+                  setSubstitutionPrefs(prev => ({ ...prev, priceRange: value as 'cheaper' | 'similar' | 'any' }))
                 }
               >
                 <div className="flex items-center space-x-2">
@@ -641,11 +677,11 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
                     <Checkbox
                       id={factor}
                       checked={substitutionPrefs.priorityFactors.includes(factor as any)}
-                      onCheckedChange={(checked) => {
+                      onCheckedChange={(checked: boolean) => {
                         setSubstitutionPrefs(prev => ({
                           ...prev,
                           priorityFactors: checked
-                            ? [...prev.priorityFactors, factor as any]
+                            ? [...prev.priorityFactors, factor as 'price' | 'brand' | 'nutrition' | 'organic']
                             : prev.priorityFactors.filter(f => f !== factor),
                         }));
                       }}
