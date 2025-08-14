@@ -115,11 +115,10 @@ const RolePermissions: Record<string, string[]> = {
   ],
   premium: [
     // All user permissions plus premium features
-    Permissions.LIST_READ,
-    Permissions.LIST_CREATE,
-    Permissions.LIST_UPDATE,
-    Permissions.LIST_DELETE,
-    Permissions.LIST_SHARE,
+    Permissions.GROCERY_LIST_READ,
+    Permissions.GROCERY_LIST_CREATE,
+    Permissions.GROCERY_LIST_UPDATE,
+    Permissions.GROCERY_LIST_DELETE,
     Permissions.ORDER_CREATE,
     Permissions.ORDER_READ,
     Permissions.ORDER_CANCEL,
@@ -128,6 +127,7 @@ const RolePermissions: Record<string, string[]> = {
     Permissions.USER_PREFERENCES_UPDATE,
     "premium:ai:advanced",
     "premium:deals:exclusive",
+    "premium:list:share",
   ],
   admin: [
     // All permissions
@@ -728,21 +728,21 @@ export function startSecurityCleanup(): void {
   setInterval(() => {
     // Clean up expired sessions
     const now = Date.now();
-    for (const [sessionId, session] of activeSessions.entries()) {
+    activeSessions.forEach((session, sessionId) => {
       if (now - session.lastActivity > SESSION_TIMEOUT) {
         activeSessions.delete(sessionId);
       }
-    }
+    });
     
     // Clean up old login attempts
-    for (const [identifier, attempts] of loginAttempts.entries()) {
+    loginAttempts.forEach((attempts, identifier) => {
       if (
         attempts.lockedUntil &&
         attempts.lockedUntil < now - LOCKOUT_DURATION
       ) {
         loginAttempts.delete(identifier);
       }
-    }
+    });
     
     // In production, clean up blacklisted tokens older than refresh token expiry
     // This is a simplified version

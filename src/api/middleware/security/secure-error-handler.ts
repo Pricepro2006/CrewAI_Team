@@ -150,7 +150,7 @@ function sanitizeErrorForClient(
   
   // Determine error category and severity
   let category = ErrorCategory.INTERNAL;
-  let severity = ErrorSeverity.MEDIUM;
+  let severity = ErrorSeverity.MEDIUM as ErrorSeverity;
   let statusCode = 500;
   let code = "INTERNAL_ERROR";
   let message = USER_FRIENDLY_MESSAGES.INTERNAL_ERROR;
@@ -245,21 +245,18 @@ function sanitizeErrorForClient(
     ...error.metadata,
   };
   
-  switch (severity) {
-    case ErrorSeverity.CRITICAL:
-      logger.error("Critical error occurred", "ERROR_HANDLER", logData);
-      // Trigger alerts for critical errors
-      // alertService.sendCriticalAlert(logData);
-      break;
-    case ErrorSeverity.HIGH:
-      logger.error("High severity error", "ERROR_HANDLER", logData);
-      break;
-    case ErrorSeverity.MEDIUM:
-      logger.warn("Medium severity error", "ERROR_HANDLER", logData);
-      break;
-    case ErrorSeverity.LOW:
-      logger.info("Low severity error", "ERROR_HANDLER", logData);
-      break;
+  if (severity === ErrorSeverity.CRITICAL) {
+    logger.error("Critical error occurred", "ERROR_HANDLER", logData);
+    // Trigger alerts for critical errors if needed
+    // alertService.sendCriticalAlert(logData);
+  } else if (severity === ErrorSeverity.HIGH) {
+    logger.error("High severity error", "ERROR_HANDLER", logData);
+  } else if (severity === ErrorSeverity.MEDIUM) {
+    logger.warn("Medium severity error", "ERROR_HANDLER", logData);
+  } else if (severity === ErrorSeverity.LOW) {
+    logger.info("Low severity error", "ERROR_HANDLER", logData);
+  } else {
+    logger.error("Unknown severity error", "ERROR_HANDLER", logData);
   }
   
   return {
@@ -504,11 +501,11 @@ class ErrorMetrics {
     this.metrics.set(code, existing);
     
     // Alert on error spikes
-    if (existing.count > 100 && severity === ErrorSeverity.HIGH) {
+    if (existing.count > 100 && (severity === (ErrorSeverity.HIGH as ErrorSeverity) || severity === (ErrorSeverity.CRITICAL as ErrorSeverity))) {
       logger.error("Error spike detected", "ERROR_METRICS", {
         code,
         count: existing.count,
-        severity,
+        severity: severity,
       });
       // alertService.sendErrorSpikeAlert({ code, count: existing.count });
     }
@@ -517,13 +514,13 @@ class ErrorMetrics {
   getMetrics(): Record<string, any> {
     const result: Record<string, any> = {};
     
-    for (const [code, data] of this.metrics.entries()) {
+    this.metrics.forEach((data, code) => {
       result[code] = {
         count: data.count,
         lastOccurred: data.lastOccurred.toISOString(),
         severity: data.severity,
       };
-    }
+    });
     
     return result;
   }

@@ -14,10 +14,10 @@
  */
 
 import { z } from "zod";
-import DOMPurify from "isomorphic-dompurify";
+import * as DOMPurify from "isomorphic-dompurify";
 import validator from "validator";
 import { createHash } from "crypto";
-import path from "path";
+import * as path from "path";
 import { logger } from "../../../utils/logger.js";
 import type { Request, Response, NextFunction } from "express";
 
@@ -113,7 +113,7 @@ export function sanitizeString(
     sanitized = DOMPurify.sanitize(sanitized, {
       ALLOWED_TAGS: ["b", "i", "em", "strong", "a", "p", "br"],
       ALLOWED_ATTR: ["href", "title"],
-      ALLOWED_PROTOCOLS: ["http", "https", "mailto"],
+      ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
     });
   }
 
