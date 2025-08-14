@@ -6,7 +6,7 @@ import { logger } from "../../utils/logger.js";
 
 interface MonitoredRequest extends Request {
   id?: string;
-  user?: { [key: string]: any; id: string } | { id?: string };
+  user?: { [key: string]: any; id: string };
 }
 
 // Generate request ID

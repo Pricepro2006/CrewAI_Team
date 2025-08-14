@@ -5,11 +5,7 @@ import type { Request, Response } from "express";
 import { TRPCError } from "@trpc/server";
 
 interface AuthenticatedRequest extends Request {
-  user?: ({ [key: string]: any; id: string } | {
-    id?: string;
-    role?: string;
-    isAdmin?: boolean;
-  });
+  user?: { [key: string]: any; id: string };
 }
 
 // Enhanced Redis-based rate limiting with user awareness
@@ -90,7 +86,7 @@ function createRateLimiter(options: {
               args,
             );
             const result = await redisClient!.sendCommand(cmd);
-            return result as unknown; // Type assertion to match RedisReply interface
+            return result as any; // Type assertion for RedisReply compatibility
           },
           prefix: `rl:${options.keyPrefix}:`,
         })

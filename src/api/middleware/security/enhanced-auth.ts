@@ -115,7 +115,17 @@ const RolePermissions: Record<string, string[]> = {
   ],
   premium: [
     // All user permissions plus premium features
-    ...RolePermissions.user,
+    Permissions.LIST_READ,
+    Permissions.LIST_CREATE,
+    Permissions.LIST_UPDATE,
+    Permissions.LIST_DELETE,
+    Permissions.LIST_SHARE,
+    Permissions.ORDER_CREATE,
+    Permissions.ORDER_READ,
+    Permissions.ORDER_CANCEL,
+    Permissions.USER_PROFILE_READ,
+    Permissions.USER_PROFILE_UPDATE,
+    Permissions.USER_PREFERENCES_UPDATE,
     "premium:ai:advanced",
     "premium:deals:exclusive",
   ],
