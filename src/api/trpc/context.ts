@@ -22,6 +22,12 @@ import { EventEmitter } from "events";
 export interface User extends PublicUser {
   permissions: string[];
   lastActivity: Date;
+  metadata?: {
+    isGuest?: boolean;
+    ip?: string;
+    userAgent?: string;
+    sessionStart?: string;
+  };
 }
 
 // Initialize services (singleton pattern)
