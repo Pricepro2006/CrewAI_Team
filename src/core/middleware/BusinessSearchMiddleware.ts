@@ -145,18 +145,18 @@ export class BusinessSearchMiddleware extends EventEmitter {
       get: (target, prop, receiver) => {
         // Intercept specific methods
         if (prop === "generate") {
-          return this.wrapGenerate(target, target.generate.bind(target));
+          return this.wrapGenerate(target, (target as any).generate.bind(target));
         }
         if (prop === "generateWithLogProbs") {
           return this.wrapGenerateWithLogProbs(
             target,
-            target.generateWithLogProbs.bind(target),
+            (target as any).generateWithLogProbs.bind(target),
           );
         }
         if (prop === "generateStream") {
           return this.wrapGenerateStream(
             target,
-            target.generateStream.bind(target),
+            (target as any).generateStream.bind(target),
           );
         }
 
@@ -183,7 +183,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
         // Check circuit breaker
         if (!this.checkCircuitBreaker()) {
           logger.warn("Circuit breaker is open, bypassing middleware");
-          return originalMethod(prompt, options);
+          return originalMethod(prompt, options) as Promise<string>;
         }
 
         // Track request
@@ -193,7 +193,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
         const shouldEnhance = await this.shouldEnhancePrompt(prompt);
 
         if (!shouldEnhance) {
-          return originalMethod(prompt, options);
+          return originalMethod(prompt, options) as Promise<string>;
         }
 
         // Extract location from prompt for cache key
@@ -240,7 +240,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
         this.metrics.enhancedRequests++;
 
         // Call the original method with enhanced prompt
-        const response = await originalMethod(enhancedPrompt, options);
+        const response = await originalMethod(enhancedPrompt, options) as string;
 
         // Validate response if enabled
         let validation: ValidationResult | undefined;
@@ -263,7 +263,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
             validation,
             {
               enhanced: true,
-              modelUsed: provider.getConfig().model,
+              modelUsed: 'unknown', // provider doesn't have getConfig method
             },
           );
         }
@@ -279,7 +279,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
           cached: false,
         });
 
-        return response;
+        return response as string;
       } catch (error) {
         this.handleError(error);
         throw error;
@@ -304,7 +304,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
         // Check circuit breaker
         if (!this.checkCircuitBreaker()) {
           logger.warn("Circuit breaker is open, bypassing middleware");
-          return originalMethod(prompt, options);
+          return originalMethod(prompt, options) as Promise<OllamaGenerateWithLogProbsResponse>;
         }
 
         // Track request
@@ -314,7 +314,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
         const shouldEnhance = await this.shouldEnhancePrompt(prompt);
 
         if (!shouldEnhance) {
-          return originalMethod(prompt, options);
+          return originalMethod(prompt, options) as Promise<OllamaGenerateWithLogProbsResponse>;
         }
 
         // Enhance the prompt
@@ -322,7 +322,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
         this.metrics.enhancedRequests++;
 
         // Call the original method with enhanced prompt
-        const response = await originalMethod(enhancedPrompt, options);
+        const response = await originalMethod(enhancedPrompt, options) as OllamaGenerateWithLogProbsResponse;
 
         // Validate response if enabled
         if (this.config.validateResponses && response.text) {
@@ -345,7 +345,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
           latency: Date.now() - startTime,
         });
 
-        return response;
+        return response as OllamaGenerateWithLogProbsResponse;
       } catch (error) {
         this.handleError(error);
         throw error;
@@ -371,7 +371,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
         // Check circuit breaker
         if (!this.checkCircuitBreaker()) {
           logger.warn("Circuit breaker is open, bypassing middleware");
-          return originalMethod(prompt, options, onChunk);
+          return originalMethod(prompt, options, onChunk) as Promise<string>;
         }
 
         // Track request
@@ -381,7 +381,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
         const shouldEnhance = await this.shouldEnhancePrompt(prompt);
 
         if (!shouldEnhance) {
-          return originalMethod(prompt, options, onChunk);
+          return originalMethod(prompt, options, onChunk) as Promise<string>;
         }
 
         // Enhance the prompt
@@ -402,7 +402,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
           enhancedPrompt,
           options,
           wrappedOnChunk,
-        );
+        ) as string;
 
         // Validate response if enabled
         if (this.config.validateResponses) {
@@ -431,7 +431,7 @@ export class BusinessSearchMiddleware extends EventEmitter {
           latency: Date.now() - startTime,
         });
 
-        return response;
+        return response as string;
       } catch (error) {
         this.handleError(error);
         throw error;
