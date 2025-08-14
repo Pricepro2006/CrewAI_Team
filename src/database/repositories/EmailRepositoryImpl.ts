@@ -1,39 +1,65 @@
 import { BaseRepository } from "./BaseRepository.js";
 import type { IEmailRepository } from "./interfaces/IEmailRepository.js";
 import type { PaginationOptions, PaginatedResult } from "./interfaces/IRepository.js";
-import {
+import type {
   EmailRecord,
-  AnalysisStatus,
-  EmailPriority,
   EmailFolder,
 } from "../../types/EmailTypes.js";
+import { AnalysisStatus, EmailPriority } from "../../types/EmailTypes.js";
 import { executeQuery, executeTransaction } from "../ConnectionPool.js";
 import { logger } from "../../utils/logger.js";
 import Database from "better-sqlite3";
 
 /**
- * Adapter type to satisfy BaseEntity constraint
+ * Database row type with string dates
  */
-interface EmailEntity extends Omit<EmailRecord, 'created_at' | 'updated_at' | 'received_time' | 'sent_time' | 'analyzed_at'> {
+interface EmailDbRow {
   id: string;
-  created_at?: string;
-  updated_at?: string;
-  received_time: string;
-  sent_time?: string;
+  internet_message_id: string;
+  subject: string;
+  body_text: string;
+  body_html?: string;
+  from_address: string;
+  to_addresses: string;
+  cc_addresses?: string;
+  bcc_addresses?: string;
+  received_date_time: string;
+  sent_date_time?: string;
+  conversation_id?: string;
+  thread_id?: string;
+  in_reply_to?: string;
+  references?: string;
+  has_attachments: number;
+  importance: string;
+  folder: string;
+  status: string;
+  workflow_state?: string;
+  priority?: string;
+  confidence_score?: number;
   analyzed_at?: string;
+  created_at: string;
+  updated_at?: string;
+  error_message?: string;
 }
 
 /**
  * Email repository implementation following the repository pattern
+ * Note: Uses composition over inheritance to handle type mismatches
  */
-export class EmailRepositoryImpl
-  extends BaseRepository<EmailEntity>
-  implements IEmailRepository
+export class EmailRepositoryImpl implements IEmailRepository
 {
+  protected tableName = "emails";
+  protected primaryKey = "id";
+
   constructor() {
-    super(null as any, "emails"); // We'll use connection pool instead of direct db
-    this.tableName = "emails";
-    this.primaryKey = "id";
+    // No super call needed as we're not extending BaseRepository
+  }
+
+  /**
+   * Generate a new UUID for entity ID
+   */
+  protected generateId(): string {
+    return require('uuid').v4();
   }
 
   /**
@@ -80,7 +106,7 @@ export class EmailRepositoryImpl
   /**
    * Map EmailRecord entity to database row
    */
-  protected mapEntityToRow(entity: Partial<EmailRecord> | Partial<EmailEntity>): any {
+  protected mapEntityToRow(entity: Partial<EmailRecord>): any {
     const row: any = {};
 
     if (entity.message_id !== undefined) row.internet_message_id = entity.message_id;  // Map to DB column name
@@ -518,9 +544,9 @@ export class EmailRepositoryImpl
   }
 
   /**
-   * Override findById to use connection pool
+   * Find entity by ID
    */
-  override async findById(id: string): Promise<EmailRecord | null> {
+  async findById(id: string): Promise<EmailRecord | null> {
     return executeQuery((db) => {
       const stmt = db.prepare(
         `SELECT * FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
@@ -531,9 +557,9 @@ export class EmailRepositoryImpl
   }
 
   /**
-   * Override findAll to use connection pool
+   * Find all entities with optional filtering
    */
-  override async findAll(filter?: Partial<EmailEntity>): Promise<EmailRecord[]> {
+  async findAll(filter?: Partial<EmailRecord>): Promise<EmailRecord[]> {
     return executeQuery((db) => {
       let query = `SELECT * FROM ${this.tableName}`;
       const params: any[] = [];
@@ -556,21 +582,18 @@ export class EmailRepositoryImpl
   }
 
   /**
-   * Override create to use connection pool
+   * Create a new email record
    */
-  override async create(data: Omit<EmailEntity, "id">): Promise<EmailRecord> {
+  async create(data: Omit<EmailRecord, "id">): Promise<EmailRecord> {
     return executeQuery((db) => {
       const id = this.generateId();
       const now = new Date();
       const emailData: EmailRecord = {
-        ...data as any,
+        ...data,
         id,
         created_at: now,
         status: data.status || AnalysisStatus.PENDING,
-        received_time: typeof data.received_time === 'string' ? new Date(data.received_time) : data.received_time,
-        sent_time: data.sent_time ? (typeof data.sent_time === 'string' ? new Date(data.sent_time) : data.sent_time) : undefined,
-        analyzed_at: data.analyzed_at ? (typeof data.analyzed_at === 'string' ? new Date(data.analyzed_at) : data.analyzed_at) : undefined,
-      } as EmailRecord;
+      };
 
       const row = this.mapEntityToRow(emailData);
       const columns = Object.keys(row);
@@ -587,11 +610,11 @@ export class EmailRepositoryImpl
   }
 
   /**
-   * Override update to use connection pool
+   * Update an email record
    */
-  override async update(
+  async update(
     id: string,
-    data: Partial<Omit<EmailEntity, "id" | "created_at">>,
+    data: Partial<EmailRecord>,
   ): Promise<EmailRecord | null> {
     return executeQuery((db) => {
       const row = this.mapEntityToRow(data);
@@ -620,9 +643,9 @@ export class EmailRepositoryImpl
   }
 
   /**
-   * Override delete to use connection pool
+   * Delete an email record
    */
-  override async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<boolean> {
     return executeQuery((db) => {
       const stmt = db.prepare(
         `DELETE FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
@@ -639,9 +662,9 @@ export class EmailRepositoryImpl
   }
 
   /**
-   * Override count to use connection pool
+   * Count email records
    */
-  override async count(filter?: Partial<EmailEntity>): Promise<number> {
+  async count(filter?: Partial<EmailRecord>): Promise<number> {
     return executeQuery((db) => {
       let query = `SELECT COUNT(*) as count FROM ${this.tableName}`;
       const params: any[] = [];
@@ -662,23 +685,10 @@ export class EmailRepositoryImpl
   }
 
   /**
-   * Override exists to use connection pool
+   * Check if email exists
    */
-  override async exists(conditions: Record<string, any>): Promise<boolean> {
-    if (typeof conditions === 'string') {
-      // Handle legacy id-based check
-      const id = conditions;
-      return executeQuery((db) => {
-        const stmt = db.prepare(
-          `SELECT EXISTS(SELECT 1 FROM ${this.tableName} WHERE ${this.primaryKey} = ?) as exists`,
-        );
-        const result = stmt.get(id) as { exists: number };
-        return result.exists === 1;
-      });
-    }
-    // Handle condition-based check
-    const count = await this.count(conditions as Partial<EmailEntity>);
-    return count > 0;
+  async exists(id: string): Promise<boolean> {
+    return this.existsById(id);
   }
 
   /**
@@ -695,7 +705,7 @@ export class EmailRepositoryImpl
   }
 
   /**
-   * Implement findPaginated for IPaginatedRepository interface
+   * Find emails with pagination
    */
   async findPaginated(options: PaginationOptions): Promise<PaginatedResult<EmailRecord>> {
     return executeQuery((db) => {
