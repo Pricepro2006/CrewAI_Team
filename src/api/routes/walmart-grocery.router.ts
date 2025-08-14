@@ -930,10 +930,11 @@ export const walmartGroceryRouter = createFeatureRouter(
     removeItemFromList: publicProcedure
       .use(walmartDatabaseMiddleware)
       .input(walmartSchemas.removeItemFromList)
-      .mutation(withDatabaseContext(async (ctx: DatabaseContext, input) => {
+      .mutation(async ({ ctx, input }) => {
+        const dbCtx = ctx as DatabaseContext;
         logger.info("Removing item from list", "WALMART", input);
 
-        const result = await ctx.safeDb.delete(
+        const result = await dbCtx.safeDb.delete(
           'grocery_items',
           'id = ? AND list_id = ?',
           [input.itemId, input.listId]
@@ -1796,7 +1797,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           
           // Get user's saved amount this month from orders
           const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-          const savedResult = await ctx.safeDb.query(
+          const savedResult = await dbCtx.safeDb.query(
             'grocery_orders',
             ['COALESCE(SUM(total_savings), 0) as totalSaved'],
             "strftime('%Y-%m', created_at) = ?",
@@ -1804,7 +1805,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           );
           
           // Get active price alerts count
-          const alertsResult = await ctx.safeDb.query(
+          const alertsResult = await dbCtx.safeDb.query(
             'price_alerts',
             ['COUNT(*) as count'],
             'is_active = 1',
@@ -1846,12 +1847,13 @@ export const walmartGroceryRouter = createFeatureRouter(
         limit: z.number().min(1).max(20).default(6),
         days: z.number().min(1).max(90).default(30)
       }))
-      .query(withDatabaseContext(async (ctx: DatabaseContext, input) => {
+      .query(async ({ ctx, input }) => {
+        const dbCtx = ctx as DatabaseContext;
         logger.info("Fetching trending products", "WALMART", input);
         
         try {
           // Get products with recent price changes
-          const trendingProducts = await ctx.safeDb.query(
+          const trendingProducts = await dbCtx.safeDb.query(
             'walmart_products',
             ['id', 'name', 'category', 'current_price', 'original_price', 'image_url', 'stock_status'],
             'current_price IS NOT NULL',
@@ -1902,14 +1904,15 @@ export const walmartGroceryRouter = createFeatureRouter(
         userId: z.string().default('default_user'),
         month: z.string().optional() // YYYY-MM format
       }))
-      .query(withDatabaseContext(async (ctx: DatabaseContext, input) => {
+      .query(async ({ ctx, input }) => {
+        const dbCtx = ctx as DatabaseContext;
         logger.info("Fetching budget data", "WALMART", input);
         
         const currentMonth = input.month || new Date().toISOString().slice(0, 7);
         
         try {
           // Get user's budget settings
-          const budgetSettings = await ctx.safeDb.query(
+          const budgetSettings = await dbCtx.safeDb.query(
             'grocery_user_preferences',
             ['monthly_budget', 'budget_categories'],
             'user_id = ?',
@@ -1982,6 +1985,6 @@ export const walmartGroceryRouter = createFeatureRouter(
             }
           };
         }
-      })),
+      }),
   }),
 );
