@@ -21,6 +21,7 @@ import {
   PHASE3_STRATEGIC_PROMPT,
   enhancePromptForEmailType,
 } from "../prompts/ThreePhasePrompts.js";
+import type { EmailCharacteristics } from "../prompts/ThreePhasePrompts.js";
 import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
 import { withUnitOfWork, type IUnitOfWork } from "../../database/UnitOfWork.js";
 import { AnalysisStatus } from "../../types/EmailTypes.js";
@@ -230,7 +231,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
           error instanceof Error ? error.message : "Unknown error",
         );
 
-        logger.error("Email analysis failed", error);
+        logger.error("Email analysis failed", error instanceof Error ? error.message : String(error));
         this.emit("analysis:error", { email: email.id, error });
         throw error;
       }
@@ -378,6 +379,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
         importance: "normal",
         folder: "system" as any,
         status: AnalysisStatus.ANALYZED,
+        created_at: new Date(),
       });
     }
   }
@@ -405,9 +407,16 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
    * Extract Phase 2 results for storage
    */
   private extractPhase2Results(results: any): Phase2Results {
+    const phase1Results = this.extractPhase1Results(results);
     return {
+      ...phase1Results,
       enhanced_classification: results.enhanced_classification,
-      missed_entities: results.missed_entities || {},
+      missed_entities: results.missed_entities || {
+        company_names: [],
+        people: [],
+        technical_terms: [],
+        deadlines: [],
+      },
       action_items: results.action_items || [],
       contextual_insights: results.contextual_insights || {
         business_impact: "standard",
@@ -422,7 +431,9 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
    * Extract Phase 3 results for storage
    */
   private extractPhase3Results(results: Phase3Results): Phase3Results {
+    const phase2Results = this.extractPhase2Results(results);
     return {
+      ...phase2Results,
       strategic_analysis: results.strategic_analysis,
       pattern_recognition: results.pattern_recognition || {
         similar_chains: [],
@@ -439,6 +450,7 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
         efficiency_gain: 0,
         automation_potential: 0,
       },
+      workflow_intelligence: results.workflow_intelligence,
       processing_time_ms: results.processing_time_ms || 0,
     };
   }
@@ -583,9 +595,18 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
 
     try {
       // Call LLM for enhancement
+      const emailCharacteristics: EmailCharacteristics = {
+        hasOrderReferences: phase1Results.entities.parts.length > 0,
+        hasQuoteRequests: phase1Results.entities.quotes.length > 0,
+        isEscalation: phase1Results.basic_classification.priority === "high",
+        isFromKeyCustomer: false,
+        hasTechnicalIssues: false,
+        urgencyScore: phase1Results.basic_classification.urgency ? 7 : 3,
+        financialImpact: 0,
+      };
       const prompt = enhancePromptForEmailType(
         PHASE2_ENHANCED_PROMPT,
-        phase1Results.basic_classification.type,
+        emailCharacteristics,
       );
 
       const llmResponse = await this.callLLM("llama3.2", prompt, {
@@ -646,9 +667,18 @@ export class EmailThreePhaseAnalysisServiceV2 extends EventEmitter {
 
     try {
       // Call advanced LLM for strategic analysis
+      const emailCharacteristics: EmailCharacteristics = {
+        hasOrderReferences: phase1Results.entities.parts.length > 0,
+        hasQuoteRequests: phase1Results.entities.quotes.length > 0,
+        isEscalation: phase1Results.basic_classification.priority === "high",
+        isFromKeyCustomer: false,
+        hasTechnicalIssues: false,
+        urgencyScore: phase1Results.basic_classification.urgency ? 7 : 3,
+        financialImpact: 0,
+      };
       const prompt = enhancePromptForEmailType(
         PHASE3_STRATEGIC_PROMPT,
-        phase2Results.enhanced_classification.primary_intent,
+        emailCharacteristics,
       );
 
       const llmResponse = await this.callLLM("phi-4", prompt, {
