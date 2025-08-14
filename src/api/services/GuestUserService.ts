@@ -231,7 +231,7 @@ export class GuestUserService {
    * Check if a user is a guest
    */
   isGuestUser(user: User): boolean {
-    return user.username === "guest" && user.id.startsWith("guest-");
+    return user.metadata?.isGuest === true || user.id.startsWith("guest-");
   }
   
   /**
