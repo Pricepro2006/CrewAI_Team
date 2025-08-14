@@ -4,7 +4,8 @@
  * Continuously adapts recommendations and matching algorithms
  */
 
-import { logger } from "../../utils/logger.js";
+import { Logger } from "../../utils/logger.js";
+const logger = Logger.getInstance();
 import { getDatabaseManager } from "../../database/DatabaseManager.js";
 import { PurchaseHistoryService } from "./PurchaseHistoryService.js";
 import type { PurchaseRecord, ProductFrequency } from "./PurchaseHistoryService.js";
@@ -80,8 +81,11 @@ export class PreferenceLearningService {
 
   private constructor() {
     const dbManager = getDatabaseManager();
-    this.db = dbManager.connectionPool?.getConnection().getDatabase() || 
-              (() => { throw new Error("Database connection not available"); })();
+    const connection = dbManager.connectionPool?.getConnection();
+    if (!connection) {
+      throw new Error("Database connection not available");
+    }
+    this.db = connection.getDatabase();
     this.historyService = PurchaseHistoryService.getInstance();
     
     this.config = {
