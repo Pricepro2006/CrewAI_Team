@@ -112,10 +112,7 @@ export class SmartMatchingService {
               return [] as ProductFrequency[];
             })
           : Promise.resolve([] as ProductFrequency[]),
-        () => options.location?.zipCode
-          ? this.priceFetcher.prefetchPricesForLocation(options.location.zipCode)
-            .catch(() => null)
-          : Promise.resolve(null)
+        () => Promise.resolve(null) // prefetchPricesForLocation not implemented yet
       ];
       
       // Use high priority for initial data fetching
@@ -123,27 +120,29 @@ export class SmartMatchingService {
         processedQuery,
         userHistoryResult,
         preFetchedPrices
-      ] = await this.nlpQueue.enqueueBatch(parallelOps, "high");
+      ] = await this.nlpQueue.enqueueBatch(parallelOps, "high") as [string, ProductFrequency[], any];
       
-      const userHistory = userHistoryResult || [];
+      const userHistory: ProductFrequency[] = userHistoryResult || [];
 
       // Determine matching strategy based on query and user context
       const strategy = this.determineMatchingStrategy(processedQuery, userHistory, options);
       
       // Execute parallel matching operations through queue
-      const matchingOps = [
+      const matchingOps: (() => Promise<MatchedProduct[] | null>)[] = [
         () => this.executeMatching(processedQuery, strategy, userHistory, options),
-        () => this.getCachedSuggestions(query, options.userId)
+        () => this.getCachedSuggestions(query, options.userId).then(suggestions => 
+          suggestions ? suggestions.map((s: any) => ({...s} as MatchedProduct)) : null
+        )
       ];
       
       const [matches, cachedSuggestions] = await this.nlpQueue.enqueueBatch(
         matchingOps, 
         "normal"
-      );
+      ) as [MatchedProduct[] | null, MatchedProduct[] | null];
       
       // Score and rank results in parallel batches
       const rankedMatches = await this.scoreAndRankMatchesParallel(
-        matches, 
+        matches || [], 
         query, 
         userHistory, 
         options
@@ -246,8 +245,10 @@ export class SmartMatchingService {
     // Strategy 1: History-first (user has purchase history for similar items)
     if (options.prioritizeHistory && userHistory.length > 0) {
       const historyMatch = userHistory.find(h => 
-        h.productName.toLowerCase().includes(query.toLowerCase()) ||
-        query.toLowerCase().includes(h.productName.toLowerCase().split(' ')[0])
+        h.productName && (
+          h.productName.toLowerCase().includes(query.toLowerCase()) ||
+          query.toLowerCase().includes(h.productName.toLowerCase().split(' ')[0])
+        )
       );
       if (historyMatch) {
         return 'history_first';
@@ -323,7 +324,7 @@ export class SmartMatchingService {
         if (searchResults && searchResults.length > 0) {
           const product = searchResults[0];
           matches.push({
-            product,
+            product: product as any, // Type assertion needed due to WalmartProduct interface variations
             matchScore: similarity * 1.2, // Boost history matches
             matchReason: `Previously purchased ${historyItem.purchaseCount} times`,
             confidence: 0.9,
@@ -422,7 +423,11 @@ export class SmartMatchingService {
     if (searchResults) {
       // Filter and score by price threshold
       for (const product of searchResults) {
-        const price = product.livePrice?.price || product.price || 0;
+        const price = typeof product.livePrice === 'object' && product.livePrice?.price 
+          ? product.livePrice.price 
+          : typeof product.price === 'number' 
+            ? product.price 
+            : 0;
         
         if (options.priceThreshold === undefined || price <= options.priceThreshold) {
           const similarity = await this.matchingAlgorithm.calculateSimilarity(query, product.name);
