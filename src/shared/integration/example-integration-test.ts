@@ -41,7 +41,7 @@ const authenticateUser = vi
 // =====================================================
 
 describe("CrewAI Team Integration Tests", () => {
-  let testContext: unknown;
+  let testContext: TestContext;
   let authToken: string;
 
   beforeEach(async () => {
@@ -208,7 +208,7 @@ describe("CrewAI Team Integration Tests", () => {
       // Test user authentication
       authToken = await authenticateUser(
         testContext,
-        testContext?.config?.authentication?.defaultUser || {
+        testContext.config.authentication?.defaultUser || {
           username: "test",
           password: "test",
         },
@@ -223,7 +223,7 @@ describe("CrewAI Team Integration Tests", () => {
 
     it("should fail authentication with invalid credentials", async () => {
       const invalidUser = {
-        ...(testContext?.config?.authentication?.defaultUser || {
+        ...(testContext.config.authentication?.defaultUser || {
           username: "test",
           password: "test",
         }),
@@ -274,7 +274,7 @@ describe("CrewAI Team Integration Tests", () => {
       if (!authToken) {
         authToken = await authenticateUser(
           testContext,
-          testContext?.config?.authentication?.defaultUser || {
+          testContext.config.authentication?.defaultUser || {
             username: "test",
             password: "test",
           },
@@ -379,8 +379,9 @@ describe("CrewAI Team Integration Tests", () => {
 
   describe("WebSocket Real-time Updates", () => {
     it("should connect to WebSocket and receive messages", async () => {
-      if (!testContext.config.services.websocket.enabled) {
-        console.log("⏭️  WebSocket tests skipped (disabled in config)");
+      // Check if WebSocket is available in test services
+      if (!testContext.services.websocket) {
+        console.log("⏭️  WebSocket tests skipped (not configured)");
         return;
       }
 

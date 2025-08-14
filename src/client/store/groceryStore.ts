@@ -63,10 +63,10 @@ interface GroceryState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 
-  // Computed values (memoized)
-  cartItemCount: number;
-  cartTotal: number;
-  favoriteProductIds: Set<string>;
+  // Computed getters (readonly)
+  readonly cartItemCount: number;
+  readonly cartTotal: number;
+  readonly favoriteProductIds: Set<string>;
   
   // Performance optimized actions
   batchUpdateCart: (updates: Array<{ productId: string; quantity: number }>) => void;
@@ -121,21 +121,21 @@ export const useGroceryStore = create<GroceryState>()(
         error: null,
 
         // Computed values
-        get cartItemCount() {
+        get cartItemCount(): number {
           return get().cart.items.reduce((sum, item) => sum + item.quantity, 0);
         },
         
-        get cartTotal() {
+        get cartTotal(): number {
           const state = get();
           return state.cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         },
         
-        get favoriteProductIds() {
-          return new Set(get().preferences.favoriteProducts);
+        get favoriteProductIds(): Set<string> {
+          return new Set(get().preferences.favoriteProducts || []);
         },
 
         // Performance optimized batch update
-        batchUpdateCart: (updates) => {
+        batchUpdateCart: (updates: Array<{ productId: string; quantity: number }>) => {
           set((state) => {
             updates.forEach(({ productId, quantity }) => {
               const existingItem = state.cart.items.find(item => item.productId === productId);
@@ -216,16 +216,18 @@ export const useGroceryStore = create<GroceryState>()(
         },
 
         // Grocery List Actions
-        createList: (name, description) => {
+        createList: (name: string, description?: string): GroceryList => {
           const newList: GroceryList = {
             id: `list-${Date.now()}`,
-            userId: "current-user",
-            name,
+            user_id: "current-user",
+            list_name: name,
             description,
+            list_type: "shopping",
+            status: "active",
             items: [],
-            totalEstimate: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            estimated_total: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           };
 
           set((state) => ({
@@ -235,17 +237,17 @@ export const useGroceryStore = create<GroceryState>()(
           return newList;
         },
 
-        updateList: (listId, updates) => {
+        updateList: (listId: string, updates: Partial<GroceryList>) => {
           set((state) => ({
             lists: state.lists.map((list) =>
               list.id === listId
-                ? { ...list, ...updates, updatedAt: new Date() }
+                ? { ...list, ...updates, updatedAt: new Date().toISOString() }
                 : list,
             ),
           }));
         },
 
-        deleteList: (listId) => {
+        deleteList: (listId: string) => {
           set((state) => ({
             lists: state.lists.filter((list) => list.id !== listId),
             currentListId:
@@ -253,30 +255,37 @@ export const useGroceryStore = create<GroceryState>()(
           }));
         },
 
-        setCurrentList: (listId) => {
+        setCurrentList: (listId: string | null) => {
           set({ currentListId: listId });
         },
 
-        addToList: (listId, product, quantity) => {
+        addToList: (listId: string, product: WalmartProduct, quantity: number) => {
           set((state) => ({
             lists: state.lists.map((list) => {
               if (list.id !== listId) return list;
 
+              const productPrice = typeof product.price === 'number' ? product.price : product.price.regular;
               const newItem: GroceryItem = {
                 id: `item-${Date.now()}`,
-                listId,
-                productId: product.id,
-                product,
+                list_id: listId,
+                item_name: product.name,
+                product_id: product.id,
+                brand: product.brand,
+                category: typeof product.category === 'string' ? product.category : product.category.name,
                 quantity,
-                isPurchased: false,
-                addedAt: new Date(),
+                estimated_price: productPrice,
+                status: "pending",
+                product,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
               };
 
+              const currentTotal = list.estimated_total || 0;
               return {
                 ...list,
-                items: [...list.items, newItem],
-                totalEstimate: list.totalEstimate + product.price * quantity,
-                updatedAt: new Date(),
+                items: [...(list.items || []), newItem],
+                estimated_total: currentTotal + productPrice * quantity,
+                updatedAt: new Date().toISOString(),
               };
             }),
           }));
