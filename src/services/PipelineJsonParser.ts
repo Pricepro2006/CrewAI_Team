@@ -4,7 +4,6 @@
  */
 
 import { logger } from "../utils/logger.js";
-import { BusinessImpact } from "../types/AnalysisTypes.js";
 import type {
   LlamaAnalysisData,
   Phi4AnalysisData,
@@ -158,13 +157,16 @@ export class PipelineJsonParser {
 
     return items
       .filter((item) => item !== null && item !== undefined && typeof item === "object")
-      .map((item) => ({
-        task: String(item.task || item.description || ""),
-        priority: this.mapPriorityLevel(item.priority),
-        deadline: this.parseDeadline(item.deadline),
-        owner: item.owner || item.assignee || undefined,
-        status: "Pending" as const,
-      }))
+      .map((item) => {
+        const itemObj = item as any;
+        return {
+          task: String(itemObj.task || itemObj.description || ""),
+          priority: this.mapPriorityLevel(itemObj.priority),
+          deadline: this.parseDeadline(itemObj.deadline),
+          owner: itemObj.owner || itemObj.assignee || undefined,
+          status: "Pending" as const,
+        };
+      })
       .filter((item) => item.task.length > 0);
   }
 
@@ -175,16 +177,19 @@ export class PipelineJsonParser {
     llamaImpact: unknown,
     phi4Impact: unknown,
   ): AnalysisBusinessImpact {
+    const llamaData = llamaImpact as any;
+    const phi4Data = phi4Impact as any;
+    
     const revenue =
-      phi4Impact?.revenue_impact || llamaImpact?.revenue || undefined;
+      phi4Data?.revenue_impact || llamaData?.revenue || undefined;
     const satisfaction = this.parseCustomerSatisfaction(
-      phi4Impact?.customer_satisfaction || llamaImpact?.customer_satisfaction,
+      phi4Data?.customer_satisfaction || llamaData?.customer_satisfaction,
     );
     const urgencyReason =
-      phi4Impact?.urgency_reason ||
-      llamaImpact?.urgency_reason ||
+      phi4Data?.urgency_reason ||
+      llamaData?.urgency_reason ||
       "Standard processing required";
-    const riskLevel = this.parseRiskLevel(phi4Impact?.risk_assessment);
+    const riskLevel = this.parseRiskLevel(phi4Data?.risk_assessment);
 
     return {
       revenue: revenue,
@@ -205,18 +210,20 @@ export class PipelineJsonParser {
       return { isValid: false, errors, warnings };
     }
 
+    const dataObj = data as any;
+
     // Check required fields
-    if (!data.workflow_state) warnings.push("Missing workflow_state");
-    if (!data.business_process) warnings.push("Missing business_process");
-    if (!data.entities) warnings.push("Missing entities object");
-    if (!data.contextual_summary) warnings.push("Missing contextual_summary");
+    if (!dataObj.workflow_state) warnings.push("Missing workflow_state");
+    if (!dataObj.business_process) warnings.push("Missing business_process");
+    if (!dataObj.entities) warnings.push("Missing entities object");
+    if (!dataObj.contextual_summary) warnings.push("Missing contextual_summary");
 
     // Validate nested structures
-    if (data.entities && typeof data.entities !== "object") {
+    if (dataObj.entities && typeof dataObj.entities !== "object") {
       errors.push("Invalid entities structure");
     }
 
-    if (data.action_items && !Array.isArray(data.action_items)) {
+    if (dataObj.action_items && !Array.isArray(dataObj.action_items)) {
       errors.push("action_items must be an array");
     }
 
@@ -232,17 +239,19 @@ export class PipelineJsonParser {
       return { isValid: false, errors, warnings };
     }
 
+    const dataObj = data as any;
+
     // Check required fields
-    if (!data.executive_summary) warnings.push("Missing executive_summary");
-    if (!data.business_impact) warnings.push("Missing business_impact");
-    if (!data.sla_assessment) warnings.push("Missing sla_assessment");
+    if (!dataObj.executive_summary) warnings.push("Missing executive_summary");
+    if (!dataObj.business_impact) warnings.push("Missing business_impact");
+    if (!dataObj.sla_assessment) warnings.push("Missing sla_assessment");
 
     // Validate nested structures
-    if (data.business_impact && typeof data.business_impact !== "object") {
+    if (dataObj.business_impact && typeof dataObj.business_impact !== "object") {
       errors.push("Invalid business_impact structure");
     }
 
-    if (data.deep_insights && !Array.isArray(data.deep_insights)) {
+    if (dataObj.deep_insights && !Array.isArray(dataObj.deep_insights)) {
       errors.push("deep_insights must be an array");
     }
 
@@ -250,32 +259,34 @@ export class PipelineJsonParser {
   }
 
   private normalizeLlamaAnalysis(data: unknown): Partial<LlamaAnalysisData> {
+    const dataObj = data as any;
     return {
-      workflow_state: data.workflow_state || "NEW",
-      business_process: data.business_process || "General",
-      intent: data.intent || "Information",
-      urgency_level: data.urgency_level || "Medium",
-      entities: this.normalizeEntities(data.entities),
-      contextual_summary: data.contextual_summary || "",
-      action_items: this.normalizeActionItems(data.action_items),
-      suggested_response: data.suggested_response,
-      quality_score: this.normalizeQualityScore(data.quality_score),
-      sla_status: data.sla_status,
-      business_impact: data.business_impact,
+      workflow_state: dataObj.workflow_state || "NEW",
+      business_process: dataObj.business_process || "General",
+      intent: dataObj.intent || "Information",
+      urgency_level: dataObj.urgency_level || "Medium",
+      entities: this.normalizeEntities(dataObj.entities),
+      contextual_summary: dataObj.contextual_summary || "",
+      action_items: this.normalizeActionItems(dataObj.action_items),
+      suggested_response: dataObj.suggested_response,
+      quality_score: this.normalizeQualityScore(dataObj.quality_score),
+      sla_status: dataObj.sla_status,
+      business_impact: dataObj.business_impact,
     };
   }
 
   private normalizePhi4Analysis(data: unknown): Partial<Phi4AnalysisData> {
+    const dataObj = data as any;
     return {
-      executive_summary: data.executive_summary || "",
-      business_impact: this.normalizeBusinessImpact(data.business_impact),
-      sla_assessment: data.sla_assessment || "",
-      deep_insights: this.normalizeArray(data.deep_insights),
+      executive_summary: dataObj.executive_summary || "",
+      business_impact: this.normalizeBusinessImpact(dataObj.business_impact),
+      sla_assessment: dataObj.sla_assessment || "",
+      deep_insights: this.normalizeArray(dataObj.deep_insights),
       strategic_recommendations: this.normalizeArray(
-        data.strategic_recommendations,
+        dataObj.strategic_recommendations,
       ),
-      quality_score: this.normalizeQualityScore(data.quality_score),
-      confidence_level: data.confidence_level,
+      quality_score: this.normalizeQualityScore(dataObj.quality_score),
+      confidence_level: dataObj.confidence_level,
     };
   }
 
@@ -290,14 +301,15 @@ export class PipelineJsonParser {
       };
     }
 
+    const entitiesObj = entities as any;
     return {
-      po_numbers: this.normalizeArray(entities.po_numbers),
-      quote_numbers: this.normalizeArray(entities.quote_numbers),
-      case_numbers: this.normalizeArray(entities.case_numbers),
-      part_numbers: this.normalizeArray(entities.part_numbers),
-      companies: this.normalizeArray(entities.companies),
-      contacts: this.normalizeArray(entities.contacts),
-      reference_numbers: this.normalizeArray(entities.reference_numbers),
+      po_numbers: this.normalizeArray(entitiesObj.po_numbers),
+      quote_numbers: this.normalizeArray(entitiesObj.quote_numbers),
+      case_numbers: this.normalizeArray(entitiesObj.case_numbers),
+      part_numbers: this.normalizeArray(entitiesObj.part_numbers),
+      companies: this.normalizeArray(entitiesObj.companies),
+      contacts: this.normalizeArray(entitiesObj.contacts),
+      reference_numbers: this.normalizeArray(entitiesObj.reference_numbers),
     };
   }
 
@@ -341,18 +353,19 @@ export class PipelineJsonParser {
   }
 
   private normalizeQualityScore(score: unknown): number {
-    const parsed = parseFloat(score);
+    const parsed = parseFloat(String(score));
     if (isNaN(parsed)) return 0;
     return Math.min(Math.max(parsed, 0), 10);
   }
 
   private extractOrderReferences(entities: unknown): string[] {
     const references: string[] = [];
+    const entitiesObj = entities as any;
 
     // Combine various order-related references
-    if (entities.po_numbers) references.push(...entities.po_numbers);
-    if (entities.so_numbers) references.push(...entities.so_numbers);
-    if (entities.order_numbers) references.push(...entities.order_numbers);
+    if (entitiesObj.po_numbers) references.push(...entitiesObj.po_numbers);
+    if (entitiesObj.so_numbers) references.push(...entitiesObj.so_numbers);
+    if (entitiesObj.order_numbers) references.push(...entitiesObj.order_numbers);
 
     return [...new Set(references)]; // Remove duplicates
   }
@@ -373,7 +386,7 @@ export class PipelineJsonParser {
     if (!deadline) return undefined;
 
     // Try to parse as date
-    const date = new Date(deadline);
+    const date = new Date(deadline as string | number | Date);
     if (!isNaN(date.getTime())) {
       return date.toISOString();
     }
