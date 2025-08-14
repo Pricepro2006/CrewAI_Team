@@ -33,7 +33,7 @@ export function metricsMiddleware(req: MetricsRequest, res: Response, next: Next
   
   // Override res.end to capture metrics
   const originalEnd = res.end;
-  res.end = function(chunk?: any, encoding?: BufferEncoding | (() => void), cb?: (() => void)): Response {
+  res.end = function(...args: any[]): Response {
     // Calculate duration
     const duration = req.metricsStartTime ? performance.now() - req.metricsStartTime : 0;
     
@@ -54,12 +54,8 @@ export function metricsMiddleware(req: MetricsRequest, res: Response, next: Next
       );
     }
     
-    // Call original end with proper parameter handling
-    if (typeof encoding === 'function') {
-      return originalEnd.call(res, chunk, encoding);
-    } else {
-      return originalEnd.call(res, chunk, encoding, cb);
-    }
+    // Call original end with the same arguments
+    return originalEnd.apply(res, args as any);
   };
   
   next();
@@ -198,7 +194,7 @@ export function cachedWithMetrics<T extends (...args: any[]) => any>(
     
     // Cache miss - execute function
     try {
-      const result = await fn.apply(this, args);
+      const result = await fn(...args);
       cache.set(key, result);
       
       const duration = performance.now() - startTime;
