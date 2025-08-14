@@ -222,7 +222,7 @@ export async function cancellationExample() {
     const result = await queryPromise;
     console.log("Query completed:", result);
   } catch (error) {
-    console.log("Query was cancelled:", error.message);
+    console.log("Query was cancelled:", error instanceof Error ? error.message : String(error));
   }
 }
 

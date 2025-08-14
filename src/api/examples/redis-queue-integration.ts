@@ -39,6 +39,7 @@ export async function setupRedisQueueSystem(app?: Express): Promise<{
     queues: {
       defaultTtl: 86400, // 24 hours
       maxLength: 50000, // Larger queue for grocery data
+      trimStrategy: 'MAXLEN', // Required property for queue management
       retryLimit: 5,
       retryBackoff: 'exponential',
       deadLetterQueue: true
