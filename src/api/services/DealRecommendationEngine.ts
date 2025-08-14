@@ -7,8 +7,8 @@
 import { logger } from "../../utils/logger.js";
 import { WalmartPriceFetcher } from "./WalmartPriceFetcher.js";
 import { PurchaseHistoryService } from "./PurchaseHistoryService.js";
-import { getDatabaseManager } from "../../database/DatabaseManager.js";
-import type { WalmartProduct } from "../../types/walmart-grocery.js";
+import { getDatabaseConnection } from "../../database/ConnectionPool.js";
+import type { WalmartProduct, ProductPrice } from "../../types/walmart-grocery.js";
 import type { PurchaseRecord, ProductFrequency } from "./PurchaseHistoryService.js";
 import type Database from "better-sqlite3";
 
@@ -99,9 +99,7 @@ export class DealRecommendationEngine {
   private historyService: PurchaseHistoryService;
 
   private constructor() {
-    const dbManager = getDatabaseManager();
-    this.db = dbManager.connectionPool?.getConnection().getDatabase() || 
-              (() => { throw new Error("Database connection not available"); })();
+    this.db = getDatabaseConnection().getDatabase();
     this.priceFetcher = WalmartPriceFetcher.getInstance();
     this.historyService = PurchaseHistoryService.getInstance();
     
@@ -279,11 +277,11 @@ export class DealRecommendationEngine {
   async trackPrice(productId: string, product: WalmartProduct): Promise<void> {
     try {
       const now = new Date().toISOString();
-      const price = product.livePrice?.price || product.price || 0;
-      const salePrice = product.livePrice?.salePrice;
-      const wasPrice = product.livePrice?.wasPrice;
-      const source = product.livePrice?.source || 'unknown';
-      const location = product.livePrice?.storeLocation;
+      const price = this.getNumericPrice(product.price);
+      const salePrice = typeof product.price === 'object' ? product.price.sale : undefined;
+      const wasPrice = typeof product.price === 'object' ? product.price.wasPrice : undefined;
+      const source = 'product_data';
+      const location = 'store';
 
       const stmt = this.db.prepare(`
         INSERT INTO price_history (id, product_id, price, sale_price, was_price, store_location, recorded_at, source, created_at)
@@ -368,7 +366,9 @@ export class DealRecommendationEngine {
 
         if (searchResults && searchResults.length > 0) {
           const product = searchResults[0];
-          const currentPrice = product.livePrice?.price || product.price || 0;
+          if (!product) continue;
+          
+          const currentPrice = this.getNumericPrice(product.price);
           const averageHistoricalPrice = historyItem.averagePrice;
 
           // Calculate savings
@@ -434,16 +434,18 @@ export class DealRecommendationEngine {
         if (searchResults && searchResults.length >= 2) {
           // Find bulk opportunities by comparing different sizes
           const sorted = searchResults.sort((a, b) => {
-            const priceA = a.livePrice?.price || a.price || 0;
-            const priceB = b.livePrice?.price || b.price || 0;
+            const priceA = this.getNumericPrice(a.price);
+            const priceB = this.getNumericPrice(b.price);
             return priceA - priceB;
           });
 
           const smallest = sorted[0];
           const largest = sorted[sorted.length - 1];
 
-          const smallPrice = smallest.livePrice?.price || smallest.price || 0;
-          const largePrice = largest.livePrice?.price || largest.price || 0;
+          if (!smallest || !largest) continue;
+
+          const smallPrice = this.getNumericPrice(smallest.price);
+          const largePrice = this.getNumericPrice(largest.price);
 
           // Estimate unit savings (simplified)
           if (largePrice > smallPrice && largePrice < smallPrice * 2) {
@@ -531,7 +533,7 @@ export class DealRecommendationEngine {
 
             if (searchResults) {
               for (const product of searchResults) {
-                const currentPrice = product.livePrice?.price || product.price || 0;
+                const currentPrice = this.getNumericPrice(product.price);
                 
                 // Mock seasonal discount (in real implementation, would compare to historical data)
                 const seasonalDiscount = 0.15; // 15% off during off-peak
@@ -597,7 +599,9 @@ export class DealRecommendationEngine {
 
         if (searchResults && searchResults.length > 0) {
           const storeBrandProduct = searchResults[0];
-          const storeBrandPrice = storeBrandProduct.livePrice?.price || storeBrandProduct.price || 0;
+          if (!storeBrandProduct) continue;
+          
+          const storeBrandPrice = this.getNumericPrice(storeBrandProduct.price);
           const originalPrice = item.averagePrice;
 
           if (storeBrandPrice > 0 && originalPrice > storeBrandPrice) {
@@ -676,8 +680,10 @@ export class DealRecommendationEngine {
       let score = deal.dealScore;
 
       // Boost score based on user history
+      const productName = deal.product.name || '';
+      const firstWord = productName.toLowerCase().split(' ')[0] || '';
       const userItem = userHistory.find(h => 
-        h.productName.toLowerCase().includes(deal.product.name.toLowerCase().split(' ')[0])
+        firstWord && h.productName.toLowerCase().includes(firstWord)
       );
 
       if (userItem) {
@@ -734,8 +740,10 @@ export class DealRecommendationEngine {
     userHistory: ProductFrequency[]
   ): Promise<void> {
     for (const deal of deals) {
+      const productName = deal.product.name || '';
+      const firstWord = productName.toLowerCase().split(' ')[0] || '';
       const userItem = userHistory.find(h => 
-        h.productName.toLowerCase().includes(deal.product.name.toLowerCase().split(' ')[0])
+        firstWord && h.productName.toLowerCase().includes(firstWord)
       );
 
       if (userItem) {
@@ -800,6 +808,13 @@ export class DealRecommendationEngine {
     return direction;
   }
 
+  private getNumericPrice(price: ProductPrice): number {
+    if (typeof price === 'number') {
+      return price;
+    }
+    return price?.regular || 0;
+  }
+
   private calculateVolatility(prices: number[]): number {
     if (prices.length < 2) return 0;
 
@@ -807,18 +822,19 @@ export class DealRecommendationEngine {
     const variance = prices.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / prices.length;
     const standardDeviation = Math.sqrt(variance);
 
-    return standardDeviation / mean; // Coefficient of variation
+    return mean > 0 ? standardDeviation / mean : 0; // Coefficient of variation
   }
 
   private predictNextPrice(prices: number[]): number {
-    if (prices.length < 3) return prices[prices.length - 1];
+    if (prices.length === 0) return 0;
+    if (prices.length < 3) return prices[prices.length - 1] || 0;
 
     // Simple linear regression for prediction
     const n = prices.length;
     const x = Array.from({ length: n }, (_, i) => i);
     const sumX = x.reduce((sum, val) => sum + val, 0);
     const sumY = prices.reduce((sum, val) => sum + val, 0);
-    const sumXY = x.reduce((sum, val, i) => sum + val * prices[i], 0);
+    const sumXY = x.reduce((sum, val, i) => sum + val * (prices[i] || 0), 0);
     const sumXX = x.reduce((sum, val) => sum + val * val, 0);
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
