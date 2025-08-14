@@ -48,7 +48,7 @@ export function createHTTPMonitoringMiddleware() {
       startTime,
       requestId,
       userId: (req as any).user?.id,
-      sessionId: req.session?.id,
+      sessionId: (req as any).session?.id,
       userAgent: req.get('User-Agent'),
       ip: req.ip || req.connection.remoteAddress,
     } as MonitoringContext;
@@ -130,7 +130,7 @@ export function createHTTPMonitoringMiddleware() {
           traceId,
           requestId,
           userId: (req as any).user?.id,
-          sessionId: req.session?.id,
+          sessionId: (req as any).session?.id,
         }
       );
 
@@ -296,7 +296,6 @@ export function createWebSocketMonitoring() {
           reason: error.message,
         }),
         {
-          connectionId,
           userId,
           component: 'websocket',
           operation: 'websocket_error',
@@ -450,7 +449,6 @@ export const groceryMonitoring = {
         sentryErrorTracker.captureError(
           new NLPParsingError(error.message, {
             query,
-            confidence,
           }),
           {
             traceId: context.traceId,
