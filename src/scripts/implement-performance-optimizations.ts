@@ -6,7 +6,8 @@
 
 import { writeFile, readFile } from "fs/promises";
 import { existsSync } from "fs";
-import { spawn } from "child_process";
+import { spawn, ChildProcess } from "child_process";
+import * as path from "path";
 
 interface OptimizationTask {
   name: string;
@@ -21,20 +22,24 @@ class PerformanceOptimizer {
 
   private async executeCommand(command: string, description: string): Promise<boolean> {
     return new Promise((resolve) => {
-      const process = spawn('sh', ['-c', command], { stdio: 'pipe' });
+      const childProcess: ChildProcess = spawn('sh', ['-c', command], { stdio: 'pipe' });
       
       let output = '';
       let error = '';
       
-      process.stdout.on('data', (data) => {
-        output += data.toString();
-      });
+      if (childProcess.stdout) {
+        childProcess.stdout.on('data', (data: Buffer) => {
+          output += data.toString();
+        });
+      }
       
-      process.stderr.on('data', (data) => {
-        error += data.toString();
-      });
+      if (childProcess.stderr) {
+        childProcess.stderr.on('data', (data: Buffer) => {
+          error += data.toString();
+        });
+      }
       
-      process.on('close', (code) => {
+      childProcess.on('close', (code: number | null) => {
         if (code === 0) {
           console.log(`   ✅ ${description}`);
           resolve(true);
@@ -66,7 +71,7 @@ class PerformanceOptimizer {
     }
     
     try {
-      let config = await readFile(viteConfigPath, 'utf-8');
+      let config: string = await readFile(viteConfigPath, 'utf-8');
       
       // Check if optimizations are already present
       if (config.includes('sourcemap: false') && config.includes('chunkSizeWarningLimit')) {
@@ -186,10 +191,11 @@ echo "   CSS files: $(find dist/ -name "*.css" | wc -l)"
     console.log('🔧 Optimizing package.json scripts...');
     
     try {
-      const packageJson = JSON.parse(await readFile('package.json', 'utf-8'));
+      const packageContent: string = await readFile('package.json', 'utf-8');
+      const packageJson: Record<string, any> = JSON.parse(packageContent);
       
       // Add performance-focused scripts
-      const newScripts = {
+      const newScripts: Record<string, string> = {
         "build:prod": "./scripts/build-optimized.sh",
         "build:analyze": "npm run build && npx vite-bundle-analyzer dist/",
         "perf:report": "tsx src/scripts/performance-report-generator.ts",
@@ -277,7 +283,7 @@ echo "💡 Consider archiving old data if databases are still large"
     console.log('🔧 Creating memory optimization configuration...');
     
     const configPath = 'config/memory-optimization.json';
-    const config = {
+    const config: Record<string, any> = {
       "node": {
         "maxOldSpaceSize": 4096,
         "maxSemiSpaceSize": 256,
@@ -312,21 +318,35 @@ echo "💡 Consider archiving old data if databases are still large"
 
 import { performance } from "perf_hooks";
 
+interface Metrics {
+  memory: NodeJS.MemoryUsage;
+  cpu: NodeJS.CpuUsage;
+  uptime: number;
+  timestamp: string;
+}
+
+interface MemoryMB {
+  rss: string;
+  heapTotal: string;
+  heapUsed: string;
+  external: string;
+}
+
 class PerformanceDashboard {
-  private metrics = {
+  private metrics: Metrics = {
     memory: process.memoryUsage(),
     cpu: process.cpuUsage(),
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
   };
 
-  public displayMetrics() {
+  public displayMetrics(): void {
     console.clear();
     console.log('📊 WALMART GROCERY AGENT - PERFORMANCE DASHBOARD');
     console.log('='.repeat(60));
     
-    const memory = process.memoryUsage();
-    const memoryMB = {
+    const memory: NodeJS.MemoryUsage = process.memoryUsage();
+    const memoryMB: MemoryMB = {
       rss: (memory.rss / 1024 / 1024).toFixed(2),
       heapTotal: (memory.heapTotal / 1024 / 1024).toFixed(2),
       heapUsed: (memory.heapUsed / 1024 / 1024).toFixed(2),
@@ -348,7 +368,7 @@ class PerformanceDashboard {
     console.log(\`TIMESTAMP: \${new Date().toISOString()}\`);
     
     // Memory usage warning
-    const heapUsedPercent = (memory.heapUsed / memory.heapTotal) * 100;
+    const heapUsedPercent: number = (memory.heapUsed / memory.heapTotal) * 100;
     if (heapUsedPercent > 80) {
       console.log('⚠️  HIGH MEMORY USAGE DETECTED!');
     }
@@ -356,9 +376,9 @@ class PerformanceDashboard {
     console.log('\nPress Ctrl+C to exit dashboard');
   }
 
-  public startMonitoring() {
+  public startMonitoring(): void {
     this.displayMetrics();
-    setInterval(() => {
+    setInterval((): void => {
       this.displayMetrics();
     }, 5000); // Update every 5 seconds
   }
@@ -390,7 +410,7 @@ dashboard.startMonitoring();
     await this.addTask('monitoring', 'Set up performance monitoring dashboard', 'Medium');
     
     // Execute optimizations
-    const results = [
+    const results: Array<{ task: string; success: boolean }> = [
       { task: 'vite-config', success: await this.optimizeViteConfig() },
       { task: 'build-script', success: await this.createProductionBuildScript() },
       { task: 'package-scripts', success: await this.optimizePackageJson() },
@@ -400,8 +420,8 @@ dashboard.startMonitoring();
     ];
     
     // Update task status
-    this.tasks.forEach(task => {
-      const result = results.find(r => r.task === task.name);
+    this.tasks.forEach((task: OptimizationTask) => {
+      const result = results.find((r: { task: string; success: boolean }) => r.task === task.name);
       if (result) {
         task.implemented = result.success;
       }
@@ -412,8 +432,8 @@ dashboard.startMonitoring();
     console.log('OPTIMIZATION IMPLEMENTATION RESULTS');
     console.log('='.repeat(60));
     
-    const completed = this.tasks.filter(t => t.implemented).length;
-    const total = this.tasks.length;
+    const completed: number = this.tasks.filter((t: OptimizationTask) => t.implemented).length;
+    const total: number = this.tasks.length;
     
     console.log(`\\n📊 Overall Progress: ${completed}/${total} tasks completed (${((completed/total)*100).toFixed(1)}%)`);
     
@@ -446,7 +466,7 @@ dashboard.startMonitoring();
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   const optimizer = new PerformanceOptimizer();
   
   try {
@@ -458,9 +478,12 @@ async function main() {
 }
 
 // Run if this is the main module
-const isMainModule = process.argv[1] === new URL(import.meta.url).pathname;
-if (isMainModule) {
-  main();
+const isMain = process.argv[1] && process.argv[1].endsWith('implement-performance-optimizations.ts');
+if (isMain) {
+  main().catch((error: unknown) => {
+    console.error('Main function failed:', error);
+    process.exit(1);
+  });
 }
 
 export { PerformanceOptimizer };
