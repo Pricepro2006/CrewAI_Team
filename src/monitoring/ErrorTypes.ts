@@ -581,36 +581,60 @@ export function createErrorFromCode(
   context: Record<string, any> = {}
 ): BaseGroceryError {
   // Map error codes to appropriate error classes
-  const errorClasses: Record<string, typeof BaseGroceryError> = {
-    'NLP_PARSING_ERROR': NLPParsingError,
-    'QUERY_UNDERSTANDING_ERROR': QueryUnderstandingError,
-    'INTENT_EXTRACTION_ERROR': IntentExtractionError,
-    'PRODUCT_MATCHING_ERROR': ProductMatchingError,
-    'PRODUCT_NOT_FOUND': ProductNotFoundError,
-    'PRODUCT_AMBIGUITY_ERROR': ProductAmbiguityError,
-    'PRICE_FETCH_ERROR': PriceFetchError,
-    'PRICE_UNAVAILABLE': PriceUnavailableError,
-    'STORE_LOCATION_ERROR': StoreLocationError,
-    'DEAL_DETECTION_ERROR': DealDetectionError,
-    'DEAL_VALIDATION_ERROR': DealValidationError,
-    'DATABASE_CONNECTION_ERROR': DatabaseConnectionError,
-    'DATABASE_QUERY_ERROR': DatabaseQueryError,
-    'DATA_INTEGRITY_ERROR': DataIntegrityError,
-    'WALMART_API_ERROR': WalmartAPIError,
-    'RATE_LIMIT_ERROR': RateLimitError,
-    'AUTHENTICATION_ERROR': AuthenticationError,
-    'WEBSOCKET_CONNECTION_ERROR': WebSocketConnectionError,
-    'WEBSOCKET_MESSAGE_ERROR': WebSocketMessageError,
-    'MEMORY_LIMIT_ERROR': MemoryLimitError,
-    'PERFORMANCE_THRESHOLD_ERROR': PerformanceThresholdError,
-    'CONFIGURATION_ERROR': ConfigurationError,
-    'VALIDATION_ERROR': ValidationError,
-    'BUSINESS_LOGIC_ERROR': BusinessLogicError,
-    'USER_SESSION_ERROR': UserSessionError,
-  };
-
-  const ErrorClass = errorClasses[code] || BaseGroceryError;
-  return new ErrorClass(message, context);
+  switch (code) {
+    case 'NLP_PARSING_ERROR':
+      return new NLPParsingError(message, context);
+    case 'QUERY_UNDERSTANDING_ERROR':
+      return new QueryUnderstandingError(message, context);
+    case 'INTENT_EXTRACTION_ERROR':
+      return new IntentExtractionError(message, context);
+    case 'PRODUCT_MATCHING_ERROR':
+      return new ProductMatchingError(message, context);
+    case 'PRODUCT_NOT_FOUND':
+      return new ProductNotFoundError(message, context);
+    case 'PRODUCT_AMBIGUITY_ERROR':
+      return new ProductAmbiguityError(message, context);
+    case 'PRICE_FETCH_ERROR':
+      return new PriceFetchError(message, context);
+    case 'PRICE_UNAVAILABLE':
+      return new PriceUnavailableError(message, context);
+    case 'STORE_LOCATION_ERROR':
+      return new StoreLocationError(message, context);
+    case 'DEAL_DETECTION_ERROR':
+      return new DealDetectionError(message, context);
+    case 'DEAL_VALIDATION_ERROR':
+      return new DealValidationError(message, context);
+    case 'DATABASE_CONNECTION_ERROR':
+      return new DatabaseConnectionError(message, context);
+    case 'DATABASE_QUERY_ERROR':
+      return new DatabaseQueryError(message, context);
+    case 'DATA_INTEGRITY_ERROR':
+      return new DataIntegrityError(message, context);
+    case 'WALMART_API_ERROR':
+      return new WalmartAPIError(message, context);
+    case 'RATE_LIMIT_ERROR':
+      return new RateLimitError(message, context);
+    case 'AUTHENTICATION_ERROR':
+      return new AuthenticationError(message, context);
+    case 'WEBSOCKET_CONNECTION_ERROR':
+      return new WebSocketConnectionError(message, context);
+    case 'WEBSOCKET_MESSAGE_ERROR':
+      return new WebSocketMessageError(message, context);
+    case 'MEMORY_LIMIT_ERROR':
+      return new MemoryLimitError(message, context);
+    case 'PERFORMANCE_THRESHOLD_ERROR':
+      return new PerformanceThresholdError(message, context);
+    case 'CONFIGURATION_ERROR':
+      return new ConfigurationError(message, context);
+    case 'VALIDATION_ERROR':
+      return new ValidationError(message, context);
+    case 'BUSINESS_LOGIC_ERROR':
+      return new BusinessLogicError(message, context);
+    case 'USER_SESSION_ERROR':
+      return new UserSessionError(message, context);
+    default:
+      return new BaseGroceryError(message, code, 'unknown', 'medium', context, false);
+  }
 }
 
 // Export all error types
@@ -641,4 +665,4 @@ export const GroceryErrorTypes = {
   ValidationError,
   BusinessLogicError,
   UserSessionError,
-};
+} as const;
