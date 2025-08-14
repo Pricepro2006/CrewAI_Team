@@ -5,14 +5,17 @@
  * priority handling, and comprehensive monitoring.
  */
 
-import { Queue, QueueScheduler, Worker, QueueEvents } from "bullmq";
+import Queue from "bullmq";
+import QueueScheduler from "bullmq";
+import Worker from "bullmq";
+import QueueEvents from "bullmq";
 import type { Job } from "bullmq";
 import { Redis } from "ioredis";
 import { EventEmitter } from "events";
 import { Logger } from "../../utils/logger.js";
 import { z } from "zod";
 
-const logger = new Logger("EmailProcessingQueueService");
+const logger = Logger.getInstance();
 
 // ============================================
 // TYPE DEFINITIONS
@@ -217,7 +220,7 @@ export class EmailProcessingQueueService extends EventEmitter {
    * Set up event handlers for queue monitoring
    */
   private setupQueueEventHandlers(phase: string, events: QueueEvents): void {
-    events.on("completed", ({ jobId, returnvalue, prev }) => {
+    events.on("completed", ({ jobId, returnvalue, prev }: any) => {
       this.emit("job:completed", {
         phase,
         jobId,
@@ -226,7 +229,7 @@ export class EmailProcessingQueueService extends EventEmitter {
       });
     });
 
-    events.on("failed", ({ jobId, failedReason, prev }) => {
+    events.on("failed", ({ jobId, failedReason, prev }: any) => {
       this.emit("job:failed", {
         phase,
         jobId,
@@ -235,7 +238,7 @@ export class EmailProcessingQueueService extends EventEmitter {
       });
     });
 
-    events.on("progress", ({ jobId, data }) => {
+    events.on("progress", ({ jobId, data }: any) => {
       this.emit("job:progress", {
         phase,
         jobId,
@@ -243,7 +246,7 @@ export class EmailProcessingQueueService extends EventEmitter {
       });
     });
 
-    events.on("delayed", ({ jobId, delay }) => {
+    events.on("delayed", ({ jobId, delay }: any) => {
       this.emit("job:delayed", {
         phase,
         jobId,
@@ -251,7 +254,7 @@ export class EmailProcessingQueueService extends EventEmitter {
       });
     });
 
-    events.on("stalled", ({ jobId }) => {
+    events.on("stalled", ({ jobId }: any) => {
       logger.warn(`Job ${jobId} stalled in ${phase} queue`);
       this.emit("job:stalled", { phase, jobId });
     });
@@ -351,7 +354,7 @@ export class EmailProcessingQueueService extends EventEmitter {
 
     const worker = new Worker<EmailJob, JobResult>(
       queueName,
-      async (job) => {
+      async (job: any) => {
         const startTime = Date.now();
 
         try {
@@ -393,11 +396,11 @@ export class EmailProcessingQueueService extends EventEmitter {
    * Set up worker event handlers
    */
   private setupWorkerEventHandlers(phase: string, worker: Worker): void {
-    worker.on("completed", (job, result) => {
+    worker.on("completed", (job: any, result: any) => {
       logger.debug(`Worker completed job ${job.id} in ${phase}`);
     });
 
-    worker.on("failed", (job, error) => {
+    worker.on("failed", (job: any, error: any) => {
       logger.error(`Worker failed job ${job?.id} in ${phase}:`, error);
     });
 
