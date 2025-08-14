@@ -267,7 +267,7 @@ router.delete("/queue/:id", asyncHandler(async (req: Request, res: Response) => 
   const { id } = req.params;
   
   if (!id) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: {
         code: "MISSING_REQUEST_ID",
@@ -275,6 +275,7 @@ router.delete("/queue/:id", asyncHandler(async (req: Request, res: Response) => 
       },
       timestamp: Date.now()
     } as ApiResponse);
+    return;
   }
   
   const cancelled = queue.cancelRequest(id);
@@ -330,7 +331,7 @@ router.get("/queue/:id", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   
   if (!id) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: {
         code: "MISSING_REQUEST_ID",
@@ -338,6 +339,7 @@ router.get("/queue/:id", asyncHandler(async (req: Request, res: Response) => {
       },
       timestamp: Date.now()
     } as ApiResponse);
+    return;
   }
   
   const item = queue.getRequest(id);

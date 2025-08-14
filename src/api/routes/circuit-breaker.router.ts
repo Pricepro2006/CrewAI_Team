@@ -79,11 +79,12 @@ router.get('/state/:service?/:operation?', asyncHandler(async (req, res) => {
       state = circuitBreakerService.getCircuitBreakerState(service)[circuitBreakerName];
       
       if (!state) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Circuit breaker not found',
           service,
           operation,
         });
+        return;
       }
     } else if (service) {
       // Get all circuit breakers for service
@@ -116,9 +117,10 @@ router.post('/reset/:service/:operation?', asyncHandler(async (req, res) => {
     const { service, operation } = req.params;
     
     if (!service) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Service parameter is required',
       });
+      return;
     }
 
     circuitBreakerService.resetCircuitBreaker(service, operation);
@@ -158,9 +160,10 @@ router.post('/force-open/:service/:operation?', asyncHandler(async (req, res) =>
     const { service, operation } = req.params;
     
     if (!service) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Service parameter is required',
       });
+      return;
     }
 
     circuitBreakerService.forceCircuitBreakerOpen(service, operation);
@@ -220,9 +223,10 @@ router.post('/retry/:itemId', asyncHandler(async (req, res) => {
     const { itemId } = req.params;
     
     if (!itemId) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Item ID parameter is required',
       });
+      return;
     }
 
     const success = await circuitBreakerService.retryDeadLetterItem(itemId);
@@ -267,9 +271,10 @@ router.put('/config/:service', asyncHandler(async (req, res) => {
     const { service } = req.params;
     
     if (!service) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Service parameter is required',
       });
+      return;
     }
 
     const validatedConfig = ConfigUpdateSchema.parse(req.body);
@@ -294,10 +299,11 @@ router.put('/config/:service', asyncHandler(async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Invalid configuration',
         details: error.errors,
       });
+      return;
     }
 
     logger.error('Failed to update circuit breaker configuration', 'CIRCUIT_BREAKER_API', {
@@ -325,7 +331,7 @@ router.get('/metrics', asyncHandler(async (req, res) => {
       overall_health: systemHealth.overall,
       services: Object.entries(systemHealth.services).map(([serviceName, serviceData]) => ({
         service: serviceName,
-        circuit_breakers: Object.entries(serviceData.circuitBreakers).map(([name, cb]) => ({
+        circuit_breakers: Object.entries(serviceData.circuitBreakers).map(([name, cb]: [string, any]) => ({
           name: name.replace(`${serviceName}_`, ''),
           state: cb.state,
           total_requests: cb.totalRequests,
@@ -369,8 +375,8 @@ if (process.env.NODE_ENV === 'development') {
       const { shouldFail = false, delay = 0 } = req.body;
       
       const result = await circuitBreakerService.executeWithCircuitBreaker(
-        service,
-        operation,
+        service as any,
+        operation as any,
         async () => {
           if (delay > 0) {
             await new Promise(resolve => setTimeout(resolve, delay));
