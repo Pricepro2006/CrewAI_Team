@@ -5,7 +5,8 @@
  * priority handling, and comprehensive monitoring.
  */
 
-import { Queue, QueueScheduler, Worker, QueueEvents, Job } from "bullmq";
+import { Queue, QueueScheduler, Worker, QueueEvents } from "bullmq";
+import type { Job } from "bullmq";
 import { Redis } from "ioredis";
 import { EventEmitter } from "events";
 import { Logger } from "../../utils/logger.js";

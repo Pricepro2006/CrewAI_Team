@@ -1,7 +1,7 @@
-import { IUnitOfWork } from "./repositories/interfaces/IUnitOfWork.js";
-import { IEmailRepository } from "./repositories/interfaces/IEmailRepository.js";
-import { IEmailChainRepository } from "./repositories/interfaces/IEmailChainRepository.js";
-import { IAnalysisRepository } from "./repositories/interfaces/IAnalysisRepository.js";
+import type { IUnitOfWork } from "./repositories/interfaces/IUnitOfWork.js";
+import type { IEmailRepository } from "./repositories/interfaces/IEmailRepository.js";
+import type { IEmailChainRepository } from "./repositories/interfaces/IEmailChainRepository.js";
+import type { IAnalysisRepository } from "./repositories/interfaces/IAnalysisRepository.js";
 import { EmailRepositoryImpl } from "./repositories/EmailRepositoryImpl.js";
 import { EmailChainRepositoryImpl } from "./repositories/EmailChainRepositoryImpl.js";
 import { AnalysisRepositoryImpl } from "./repositories/AnalysisRepositoryImpl.js";

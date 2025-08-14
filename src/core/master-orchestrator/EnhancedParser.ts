@@ -8,11 +8,11 @@ import { logger } from "../../utils/logger.js";
  * Based on master_orchestrator_instructions.md patterns
  */
 export class EnhancedParser {
-  private llm: OllamaProvider;
+  private llm: LlamaCppProvider;
   private entityPatterns: Map<string, RegExp> = new Map();
   private intentClassifier: Map<string, string[]> = new Map();
 
-  constructor(llm: OllamaProvider) {
+  constructor(llm: LlamaCppProvider) {
     this.llm = llm;
     this.initializePatterns();
   }

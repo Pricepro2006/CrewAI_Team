@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { BaseEvent } from '../../core/events/EventBus.js';
+import type { BaseEvent } from '../../core/events/EventBus.js';
 import pako from 'pako';
 
 // Batching configuration schemas

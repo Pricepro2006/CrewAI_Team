@@ -6,7 +6,7 @@ import type {
   ToolExecutionParams,
 } from "./AgentTypes.js";
 import { logger } from "../../../utils/logger.js";
-import { OllamaProvider } from "../../llm/OllamaProvider.js";
+import { LlamaCppProvider } from "../../llm/LlamaCppProvider.js";
 import {
   MODEL_CONFIG,
   getModelConfig,
@@ -17,7 +17,7 @@ export abstract class BaseAgent {
   protected tools: Map<string, BaseTool> = new Map();
   protected capabilities: Set<string> = new Set();
   protected initialized = false;
-  protected llm: OllamaProvider;
+  protected llm: LlamaCppProvider;
   protected timeout: number;
 
   constructor(
@@ -30,10 +30,13 @@ export abstract class BaseAgent {
     // Get timeout for this model
     this.timeout = getModelTimeout("primary");
 
-    // Initialize LLM provider
-    this.llm = new OllamaProvider({
-      model: this.model,
-      baseUrl: MODEL_CONFIG.api.ollamaUrl,
+    // Initialize LLM provider with llama.cpp
+    this.llm = new LlamaCppProvider({
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/${this.model}.gguf`,
+      contextSize: 8192,
+      threads: 8,
+      temperature: 0.7,
+      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
     });
   }
 

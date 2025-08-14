@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
-import { RedisMessageQueue, GroceryMessage, QueueConsumer } from './RedisMessageQueue.js';
+import { RedisMessageQueue } from './RedisMessageQueue.js';
+import type { GroceryMessage, QueueConsumer } from './RedisMessageQueue.js';
 import { UnifiedCacheManager } from './UnifiedCacheManager.js';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';

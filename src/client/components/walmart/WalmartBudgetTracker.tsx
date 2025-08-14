@@ -29,13 +29,13 @@ import {
   Sparkles,
   Package,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { Progress } from '../../../components/ui/progress';
-import { Slider } from '../../../components/ui/slider';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
+import { Button } from '../../../components/ui/button.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Input } from '../../../components/ui/input.js';
+import { Label } from '../../../components/ui/label.js';
+import { Progress } from '../../../components/ui/progress.js';
+import { Slider } from '../../../components/ui/slider.js';
 import {
   Dialog,
   DialogContent,
@@ -43,27 +43,27 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog';
+} from '../../../components/ui/dialog.js';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+} from '../../../components/ui/select.js';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../components/ui/tooltip';
-import { Calendar as CalendarComponent } from '../../../components/ui/calendar';
-import { Switch } from '../../../components/ui/switch';
-import { cn } from '../../lib/utils';
-import { formatPrice } from '../../lib/utils';
-import { useGroceryStore } from '../../store/groceryStore';
-import type { Order } from '../../../types/walmart-grocery';
+} from '../../../components/ui/tooltip.js';
+import { Calendar as CalendarComponent } from '../../../components/ui/calendar.js';
+import { Switch } from '../../../components/ui/switch.js';
+import { cn } from '../../lib/utils.js';
+import { formatPrice } from '../../lib/utils.js';
+import { useGroceryStore } from '../../store/groceryStore.js';
+import type { Order } from '../../../types/walmart-grocery.js';
 
 interface WalmartBudgetTrackerProps {
   onSetBudget?: (budget: BudgetConfig) => void;

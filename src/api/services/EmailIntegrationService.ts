@@ -23,6 +23,80 @@ import type {
 } from '../../core/services/EmailIngestionService.js';
 import { IngestionSource } from '../../core/services/EmailIngestionService.js';
 import type { Phase1Results, Phase2Results, Phase3Results } from '../../core/services/EmailThreePhaseAnalysisService.js';
+import type { EmailEntity, EmailRecipient } from '../../types/common.types.js';
+
+// Input data types for different ingestion sources
+export type JsonEmailData = Array<{
+  id?: string;
+  messageId?: string;
+  subject: string;
+  from: {
+    emailAddress: {
+      name: string;
+      address: string;
+    };
+  };
+  to?: Array<{
+    emailAddress: {
+      name: string;
+      address: string;
+    };
+  }>;
+  body?: {
+    content?: string;
+    contentType?: string;
+  };
+  receivedDateTime?: string;
+  hasAttachments?: boolean;
+  isRead?: boolean;
+}>;
+
+export interface DatabaseEmailCriteria {
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+  limit?: number;
+  status?: string[];
+  keywords?: string[];
+}
+
+export interface ApiEmailConfig {
+  endpoint: string;
+  headers?: Record<string, string>;
+  params?: Record<string, unknown>;
+  authConfig?: {
+    type: 'bearer' | 'basic' | 'apikey';
+    credentials: Record<string, string>;
+  };
+}
+
+export type IngestionDataInput = JsonEmailData | DatabaseEmailCriteria | ApiEmailConfig;
+
+// Entity extraction types
+export interface ExtractedEntities {
+  po_numbers?: (string | number)[];
+  quote_numbers?: (string | number)[];
+  part_numbers?: (string | number)[];
+  companies?: (string | number)[];
+  [key: string]: (string | number)[] | undefined;
+}
+
+// Action item types
+export type ActionItemSource = string | {
+  description?: string;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
+  due_date?: string;
+  assignee?: string;
+};
+
+export interface MappedActionItem {
+  type: 'task' | 'followup' | 'escalation';
+  description: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  due_date?: string;
+  assignee?: string;
+}
 
 // Define IngestionProgress interface
 export interface IngestionProgress {
@@ -232,7 +306,7 @@ export class EmailIntegrationService {
   /**
    * Ingest emails from various sources and process them
    */
-  public async ingestEmails(source: 'json' | 'database' | 'api', data: any): Promise<IngestionBatchResult> {
+  public async ingestEmails(source: 'json' | 'database' | 'api', data: IngestionDataInput): Promise<IngestionBatchResult> {
     try {
       this.isProcessing = true;
       
@@ -335,36 +409,36 @@ export class EmailIntegrationService {
     const entities: Array<{ type: string; value: string }> = [];
     
     // Get entities from the deepest analysis available
-    const entitySource = analysis.phase3Analysis?.entities || 
+    const entitySource: ExtractedEntities | undefined = analysis.phase3Analysis?.entities || 
                         analysis.phase2Analysis?.entities || 
                         analysis.phase1Analysis?.entities;
     
     if (entitySource) {
       // Handle PO numbers
       if (entitySource.po_numbers && Array.isArray(entitySource.po_numbers)) {
-        entitySource.po_numbers.forEach((po: any) => {
+        entitySource.po_numbers.forEach((po: string | number) => {
           entities.push({ type: 'PO_NUMBER', value: String(po) });
         });
       }
       
       // Handle quote numbers
       if (entitySource.quote_numbers && Array.isArray(entitySource.quote_numbers)) {
-        entitySource.quote_numbers.forEach((quote: any) => {
+        entitySource.quote_numbers.forEach((quote: string | number) => {
           entities.push({ type: 'QUOTE_NUMBER', value: String(quote) });
         });
       }
       
       // Handle part numbers
       if (entitySource.part_numbers && Array.isArray(entitySource.part_numbers)) {
-        entitySource.part_numbers.forEach((part: any) => {
+        entitySource.part_numbers.forEach((part: string | number) => {
           entities.push({ type: 'PART_NUMBER', value: String(part) });
         });
       }
       
-      // Handle company names (phase1 uses 'companies', phase2 uses 'company_names')
-      const companies = (entitySource as any).companies || (entitySource as any).company_names;
+      // Handle company names (phase1 uses 'companies', phase2 uses 'company_names')  
+      const companies = entitySource.companies || (entitySource as ExtractedEntities & { company_names?: (string | number)[] }).company_names;
       if (companies && Array.isArray(companies)) {
-        companies.forEach((company: any) => {
+        companies.forEach((company: string | number) => {
           entities.push({ type: 'COMPANY', value: String(company) });
         });
       }
@@ -377,18 +451,18 @@ export class EmailIntegrationService {
    * Map entities for deep analysis
    */
   private mapEntities(analysis: AnalysisResult) {
-    const phase1Entities: any = analysis.phase1Analysis?.entities || {};
-    const phase2MissedEntities: any = analysis.phase2Analysis?.missed_entities || {};
+    const phase1Entities: ExtractedEntities & { quotes?: (string | number)[]; cases?: (string | number)[]; parts?: (string | number)[] } = analysis.phase1Analysis?.entities || {};
+    const phase2MissedEntities: ExtractedEntities = analysis.phase2Analysis?.missed_entities || {};
     
     return {
       poNumbers: Array.isArray(phase1Entities.po_numbers) ? 
-        phase1Entities.po_numbers.map((po: any) => ({ value: String(po), format: 'standard', confidence: 0.9 })) : [],
+        phase1Entities.po_numbers.map((po: string | number) => ({ value: String(po), format: 'standard', confidence: 0.9 })) : [],
       quoteNumbers: Array.isArray(phase1Entities.quotes) ? 
-        phase1Entities.quotes.map((q: any) => ({ value: String(q), type: 'quote', confidence: 0.9 })) : [],
+        phase1Entities.quotes.map((q: string | number) => ({ value: String(q), type: 'quote', confidence: 0.9 })) : [],
       caseNumbers: Array.isArray(phase1Entities.cases) ?
-        phase1Entities.cases.map((c: any) => ({ value: String(c), confidence: 0.9 })) : [],
+        phase1Entities.cases.map((c: string | number) => ({ value: String(c), confidence: 0.9 })) : [],
       partNumbers: Array.isArray(phase1Entities.parts) ? 
-        phase1Entities.parts.map((p: any) => ({ value: String(p), confidence: 0.9 })) : [],
+        phase1Entities.parts.map((p: string | number) => ({ value: String(p), confidence: 0.9 })) : [],
       orderReferences: [],
       contacts: []
     };
@@ -397,14 +471,14 @@ export class EmailIntegrationService {
   /**
    * Map action items from analysis
    */
-  private mapActionItems(analysis: AnalysisResult) {
-    const actionItems: any[] = [];
+  private mapActionItems(analysis: AnalysisResult): MappedActionItem[] {
+    const actionItems: MappedActionItem[] = [];
     
-    const actionSource = analysis.phase3Analysis?.action_items || 
-                        analysis.phase2Analysis?.action_items;
+    const actionSource: ActionItemSource[] = analysis.phase3Analysis?.action_items || 
+                        analysis.phase2Analysis?.action_items || [];
     
     if (actionSource && Array.isArray(actionSource)) {
-      actionSource.forEach((item: any) => {
+      actionSource.forEach((item: ActionItemSource) => {
         actionItems.push({
           type: 'task',
           description: typeof item === 'string' ? item : (item.description || String(item)),
@@ -421,16 +495,19 @@ export class EmailIntegrationService {
   /**
    * Parse JSON email data
    */
-  private parseJsonEmails(data: any): RawEmailData[] {
+  private parseJsonEmails(data: JsonEmailData | string): RawEmailData[] {
+    let parsedData: JsonEmailData;
     if (typeof data === 'string') {
-      data = JSON.parse(data);
+      parsedData = JSON.parse(data);
+    } else {
+      parsedData = data;
     }
     
-    if (!Array.isArray(data)) {
-      data = [data];
+    if (!Array.isArray(parsedData)) {
+      parsedData = [parsedData];
     }
     
-    return data.map((email: any) => ({
+    return parsedData.map((email) => ({
       messageId: email.id || email.messageId || `msg_${Date.now()}_${Math.random()}`,
       subject: email.subject || 'No Subject',
       body: {
@@ -455,7 +532,7 @@ export class EmailIntegrationService {
   /**
    * Fetch emails from database
    */
-  private async fetchDatabaseEmails(criteria: any): Promise<RawEmailData[]> {
+  private async fetchDatabaseEmails(criteria: DatabaseEmailCriteria): Promise<RawEmailData[]> {
     // Implementation would fetch from your database
     // For now, return empty array
     return [];
@@ -464,7 +541,7 @@ export class EmailIntegrationService {
   /**
    * Fetch emails from API (Microsoft Graph, Gmail, etc.)
    */
-  private async fetchApiEmails(config: any): Promise<RawEmailData[]> {
+  private async fetchApiEmails(config: ApiEmailConfig): Promise<RawEmailData[]> {
     // Implementation would fetch from external APIs
     // For now, return empty array
     return [];
@@ -495,17 +572,17 @@ export class EmailIntegrationService {
   /**
    * Event emitter methods
    */
-  public on(event: string, listener: (...args: any[]) => void): void {
+  public on(event: string, listener: (...args: unknown[]) => void): void {
     // TODO: Enable when EmailIngestionService extends EventEmitter
     // this.emailIngestion.on(event, listener);
   }
 
-  public off(event: string, listener: (...args: any[]) => void): void {
-    // TODO: Enable when EmailIngestionService extends EventEmitter
+  public off(event: string, listener: (...args: unknown[]) => void): void {
+    // TODO: Enable when EmailIngrationService extends EventEmitter
     // this.emailIngestion.off(event, listener);
   }
 
-  public emit(event: string, ...args: any[]): boolean {
+  public emit(event: string, ...args: unknown[]): boolean {
     // TODO: Enable when EmailIngestionService extends EventEmitter
     // return this.emailIngestion.emit(event, ...args);
     return false;

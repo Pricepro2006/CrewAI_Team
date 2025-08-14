@@ -210,7 +210,7 @@ export function createQueryCacheMiddleware(options: CacheMiddlewareOptions = {})
       // Try to get from cache
       const cached = await cacheManager.get(cacheKey, namespace);
 
-      if (cached !== null) {
+      if (cached !== null && cached !== undefined) {
         // Cache hit
         metrics.increment('trpc_cache.hit');
         metrics.histogram('trpc_cache.get_duration', Date.now() - startTime);
@@ -219,17 +219,18 @@ export function createQueryCacheMiddleware(options: CacheMiddlewareOptions = {})
           onCacheHit(cacheKey, cached);
         }
 
+        const cachedData = cached as { data: any; meta?: any; cachedAt?: string | number };
         logger.debug('tRPC cache hit', 'CACHE_MIDDLEWARE', {
           procedure: path,
           cacheKey,
-          age: cached.cachedAt ? Date.now() - new Date(cached.cachedAt).getTime() : 'unknown',
+          age: cachedData.cachedAt ? Date.now() - new Date(cachedData.cachedAt).getTime() : 'unknown',
         });
 
         return {
           ok: true,
-          data: cached.data,
+          data: cachedData.data,
           meta: {
-            ...cached.meta,
+            ...cachedData.meta,
             fromCache: true,
             cacheKey,
           },

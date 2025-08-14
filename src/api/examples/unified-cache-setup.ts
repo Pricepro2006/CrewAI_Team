@@ -10,7 +10,7 @@
 import { UnifiedCacheManager } from '../services/UnifiedCacheManager.js';
 import { PricingService } from '../../microservices/pricing-service/PricingService.js';
 import { ListManagementService } from '../services/ListManagementService.js';
-import { Express } from 'express';
+import type { Express } from 'express';
 
 /**
  * Initialize the unified cache system for the application

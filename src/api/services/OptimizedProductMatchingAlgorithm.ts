@@ -13,7 +13,8 @@
 import { LRUCache } from 'lru-cache';
 import { logger } from "../../utils/logger.js";
 import { RedisCacheManager } from "../../core/cache/RedisCacheManager.js";
-import { ProductMatchingAlgorithm, SimilarityMetrics, ComprehensiveScore, ProductFeatures } from "./ProductMatchingAlgorithm.js";
+import { ProductMatchingAlgorithm } from "./ProductMatchingAlgorithm.js";
+import type { SimilarityMetrics, ComprehensiveScore, ProductFeatures } from "./ProductMatchingAlgorithm.js";
 import type { MatchedProduct, SmartMatchingOptions } from "./SmartMatchingService.js";
 import type { ProductFrequency } from "./PurchaseHistoryService.js";
 import crypto from 'crypto';

@@ -26,14 +26,14 @@ import {
   Repeat,
   Star,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { Badge } from '../../../components/ui/badge';
-import { Checkbox } from '../../../components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card.js';
+import { Button } from '../../../components/ui/button.js';
+import { Input } from '../../../components/ui/input.js';
+import { Label } from '../../../components/ui/label.js';
+import { Badge } from '../../../components/ui/badge.js';
+import { Checkbox } from '../../../components/ui/checkbox.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.js';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs.js';
 import {
   Dialog,
   DialogContent,
@@ -41,21 +41,21 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../../components/ui/dialog';
+} from '../../../components/ui/dialog.js';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../components/ui/dropdown-menu';
-import { Textarea } from '../../../components/ui/textarea';
-import { useGroceryStore } from '../../store/groceryStore';
-import { useCart } from '../../hooks/useCart';
-import { formatPrice } from '../../lib/utils';
-import { cn } from '../../lib/utils';
-import type { GroceryList, GroceryItem, WalmartProduct } from '../../../types/walmart-grocery';
-import { getNumericPrice, getCategoryName, extendGroceryItem } from '../../../utils/walmart-product';
+} from '../../../components/ui/dropdown-menu.js';
+import { Textarea } from '../../../components/ui/textarea.js';
+import { useGroceryStore } from '../../store/groceryStore.js';
+import { useCart } from '../../hooks/useCart.js';
+import { formatPrice } from '../../lib/utils.js';
+import { cn } from '../../lib/utils.js';
+import type { GroceryList, GroceryItem, WalmartProduct } from '../../../types/walmart-grocery.js';
+import { getNumericPrice, getCategoryName, extendGroceryItem } from '../../../utils/walmart-product.js';
 
 interface WalmartGroceryListProps {
   onSelectList?: (list: GroceryList) => void;

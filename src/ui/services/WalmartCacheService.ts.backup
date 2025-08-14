@@ -1,0 +1,161 @@
+/**
+ * Walmart Cache Service
+ * Multi-layer intelligent caching system for optimal performance
+ * Supports memory, IndexedDB, and API-level caching with smart invalidation
+ */
+
+import { WalmartProduct, SearchResult, SearchQuery, PriceHistoryPoint } from '../components/Walmart/types/WalmartTypes';
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  ttl: number; // Time to live in milliseconds
+  hits: number;
+  size: number; // Estimated size in bytes
+}
+
+interface CacheConfig {
+  memory: {
+    maxSize: number; // Max memory cache size in MB
+    maxEntries: number;
+    defaultTtl: number;
+  };
+  indexedDB: {
+    maxSize: number; // Max IndexedDB size in MB
+    dbName: string;
+    version: number;
+    defaultTtl: number;
+  };
+  api: {
+    defaultTtl: number;
+    retryAttempts: number;
+    retryDelay: number;
+  };
+}
+
+interface CacheStats {
+  memory: {
+    size: number;
+    entries: number;
+    hits: number;
+    misses: number;
+    hitRate: number;
+  };
+  indexedDB: {
+    size: number;
+    entries: number;
+    hits: number;
+    misses: number;
+    hitRate: number;
+  };
+  total: {
+    hits: number;
+    misses: number;
+    hitRate: number;
+  };
+}
+
+class WalmartCacheService {
+  private memoryCache = new Map<string, CacheEntry<any>>();
+  private indexedDB: IDBDatabase | null = null;
+  private stats: CacheStats;
+  private config: CacheConfig;
+  private initPromise: Promise<void> | null = null;
+  
+  constructor(config?: Partial<CacheConfig>) {
+    this.config = {
+      memory: {
+        maxSize: 50, // 50MB
+        maxEntries: 1000,
+        defaultTtl: 5 * 60 * 1000, // 5 minutes
+        ...config?.memory
+      },
+      indexedDB: {
+        maxSize: 200, // 200MB
+        dbName: 'WalmartCache',
+        version: 1,
+        defaultTtl: 60 * 60 * 1000, // 1 hour
+        ...config?.indexedDB
+      },
+      api: {
+        defaultTtl: 10 * 60 * 1000, // 10 minutes
+        retryAttempts: 3,
+        retryDelay: 1000,
+        ...config?.api
+      }
+    };
+    
+    this.stats = {
+      memory: { size: 0, entries: 0, hits: 0, misses: 0, hitRate: 0 },
+      indexedDB: { size: 0, entries: 0, hits: 0, misses: 0, hitRate: 0 },
+      total: { hits: 0, misses: 0, hitRate: 0 }
+    };
+    
+    this.initPromise = this.initIndexedDB();
+  }
+  
+  /**
+   * Initialize IndexedDB
+   */
+  private async initIndexedDB(): Promise<void> {
+    if (!('indexedDB' in window)) {
+      console.warn('IndexedDB not supported, using memory cache only');
+      return;
+    }
+    
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.config.indexedDB.dbName, this.config.indexedDB.version);
+      
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        this.indexedDB = request.result;
+        resolve();
+      };
+      
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        
+        // Create object stores
+        if (!db.objectStoreNames.contains('products')) {
+          db.createObjectStore('products', { keyPath: 'id' });
+        }
+        
+        if (!db.objectStoreNames.contains('searches')) {
+          db.createObjectStore('searches', { keyPath: 'id' });
+        }
+        
+        if (!db.objectStoreNames.contains('priceHistory')) {
+          db.createObjectStore('priceHistory', { keyPath: 'id' });
+        }
+        
+        if (!db.objectStoreNames.contains('cache')) {
+          db.createObjectStore('cache', { keyPath: 'key' });
+        }
+      };
+    });
+  }
+  
+  /**
+   * Ensure IndexedDB is initialized
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (this.initPromise) {
+      await this.initPromise;
+      this.initPromise = null;
+    }
+  }
+  
+  /**
+   * Generate cache key from parameters
+   */
+  private getCacheKey(type: string, params: any): string {
+    const sortedParams = JSON.stringify(params, Object.keys(params).sort());
+    return `${type}:${btoa(sortedParams).replace(/[+/=]/g, '')}`;
+  }
+  
+  /**
+   * Estimate data size in bytes
+   */
+  private estimateSize(data: any): number {
+    return new Blob([JSON.stringify(data)]).size;
+  }\n  \n  /**\n   * Check if cache entry is expired\n   */\n  private isExpired(entry: CacheEntry<any>): boolean {\n    return Date.now() - entry.timestamp > entry.ttl;\n  }\n  \n  /**\n   * Update cache statistics\n   */\n  private updateStats(layer: 'memory' | 'indexedDB', type: 'hit' | 'miss'): void {\n    this.stats[layer][`${type}s`]++;\n    this.stats.total[`${type}s`]++;\n    \n    // Calculate hit rates\n    const layerStats = this.stats[layer];\n    layerStats.hitRate = layerStats.hits / (layerStats.hits + layerStats.misses);\n    \n    this.stats.total.hitRate = this.stats.total.hits / (this.stats.total.hits + this.stats.total.misses);\n  }\n  \n  /**\n   * Cleanup expired entries from memory cache\n   */\n  private cleanupMemoryCache(): void {\n    const now = Date.now();\n    let totalSize = 0;\n    \n    // Remove expired entries\n    for (const [key, entry] of this.memoryCache.entries()) {\n      if (this.isExpired(entry)) {\n        this.memoryCache.delete(key);\n      } else {\n        totalSize += entry.size;\n      }\n    }\n    \n    // If still over limit, remove least recently used entries\n    const maxSizeBytes = this.config.memory.maxSize * 1024 * 1024;\n    if (totalSize > maxSizeBytes || this.memoryCache.size > this.config.memory.maxEntries) {\n      const entries = Array.from(this.memoryCache.entries())\n        .map(([key, entry]) => ({ key, ...entry }))\n        .sort((a, b) => (a.timestamp + a.hits) - (b.timestamp + b.hits));\n      \n      while (\n        (totalSize > maxSizeBytes || this.memoryCache.size > this.config.memory.maxEntries) &&\n        entries.length > 0\n      ) {\n        const entry = entries.shift()!;\n        this.memoryCache.delete(entry.key);\n        totalSize -= entry.size;\n      }\n    }\n    \n    this.stats.memory.size = totalSize;\n    this.stats.memory.entries = this.memoryCache.size;\n  }\n  \n  /**\n   * Get item from memory cache\n   */\n  private getFromMemoryCache<T>(key: string): T | null {\n    const entry = this.memoryCache.get(key);\n    if (!entry || this.isExpired(entry)) {\n      if (entry) this.memoryCache.delete(key);\n      this.updateStats('memory', 'miss');\n      return null;\n    }\n    \n    entry.hits++;\n    this.updateStats('memory', 'hit');\n    return entry.data;\n  }\n  \n  /**\n   * Set item in memory cache\n   */\n  private setInMemoryCache<T>(key: string, data: T, ttl?: number): void {\n    const size = this.estimateSize(data);\n    const entry: CacheEntry<T> = {\n      data,\n      timestamp: Date.now(),\n      ttl: ttl || this.config.memory.defaultTtl,\n      hits: 0,\n      size\n    };\n    \n    this.memoryCache.set(key, entry);\n    this.cleanupMemoryCache();\n  }\n  \n  /**\n   * Get item from IndexedDB cache\n   */\n  private async getFromIndexedDBCache<T>(key: string): Promise<T | null> {\n    await this.ensureInitialized();\n    if (!this.indexedDB) {\n      this.updateStats('indexedDB', 'miss');\n      return null;\n    }\n    \n    return new Promise((resolve) => {\n      const transaction = this.indexedDB!.transaction(['cache'], 'readonly');\n      const store = transaction.objectStore('cache');\n      const request = store.get(key);\n      \n      request.onsuccess = () => {\n        const result = request.result;\n        if (!result || this.isExpired(result)) {\n          this.updateStats('indexedDB', 'miss');\n          if (result) {\n            // Clean up expired entry\n            this.deleteFromIndexedDBCache(key);\n          }\n          resolve(null);\n          return;\n        }\n        \n        result.hits++;\n        this.updateStats('indexedDB', 'hit');\n        \n        // Update hit count\n        const updateTransaction = this.indexedDB!.transaction(['cache'], 'readwrite');\n        const updateStore = updateTransaction.objectStore('cache');\n        updateStore.put(result);\n        \n        resolve(result.data);\n      };\n      \n      request.onerror = () => {\n        this.updateStats('indexedDB', 'miss');\n        resolve(null);\n      };\n    });\n  }\n  \n  /**\n   * Set item in IndexedDB cache\n   */\n  private async setInIndexedDBCache<T>(key: string, data: T, ttl?: number): Promise<void> {\n    await this.ensureInitialized();\n    if (!this.indexedDB) return;\n    \n    const size = this.estimateSize(data);\n    const entry: CacheEntry<T> & { key: string } = {\n      key,\n      data,\n      timestamp: Date.now(),\n      ttl: ttl || this.config.indexedDB.defaultTtl,\n      hits: 0,\n      size\n    };\n    \n    return new Promise((resolve, reject) => {\n      const transaction = this.indexedDB!.transaction(['cache'], 'readwrite');\n      const store = transaction.objectStore('cache');\n      const request = store.put(entry);\n      \n      request.onsuccess = () => resolve();\n      request.onerror = () => reject(request.error);\n    });\n  }\n  \n  /**\n   * Delete item from IndexedDB cache\n   */\n  private async deleteFromIndexedDBCache(key: string): Promise<void> {\n    await this.ensureInitialized();\n    if (!this.indexedDB) return;\n    \n    return new Promise((resolve) => {\n      const transaction = this.indexedDB!.transaction(['cache'], 'readwrite');\n      const store = transaction.objectStore('cache');\n      const request = store.delete(key);\n      \n      request.onsuccess = () => resolve();\n      request.onerror = () => resolve(); // Don't throw on delete errors\n    });\n  }\n  \n  /**\n   * Get cached item with fallback through cache layers\n   */\n  public async get<T>(key: string): Promise<T | null> {\n    // Try memory cache first\n    const memoryResult = this.getFromMemoryCache<T>(key);\n    if (memoryResult !== null) {\n      return memoryResult;\n    }\n    \n    // Try IndexedDB cache\n    const indexedDBResult = await this.getFromIndexedDBCache<T>(key);\n    if (indexedDBResult !== null) {\n      // Promote to memory cache\n      this.setInMemoryCache(key, indexedDBResult);\n      return indexedDBResult;\n    }\n    \n    return null;\n  }\n  \n  /**\n   * Set item in all appropriate cache layers\n   */\n  public async set<T>(key: string, data: T, ttl?: number): Promise<void> {\n    // Set in memory cache\n    this.setInMemoryCache(key, data, ttl);\n    \n    // Set in IndexedDB cache for persistence\n    await this.setInIndexedDBCache(key, data, ttl);\n  }\n  \n  /**\n   * Delete item from all cache layers\n   */\n  public async delete(key: string): Promise<void> {\n    this.memoryCache.delete(key);\n    await this.deleteFromIndexedDBCache(key);\n  }\n  \n  /**\n   * Product-specific cache methods\n   */\n  public async getProduct(productId: string): Promise<WalmartProduct | null> {\n    const key = this.getCacheKey('product', { id: productId });\n    return this.get<WalmartProduct>(key);\n  }\n  \n  public async setProduct(product: WalmartProduct, ttl?: number): Promise<void> {\n    const key = this.getCacheKey('product', { id: product.id });\n    await this.set(key, product, ttl);\n  }\n  \n  /**\n   * Search results cache methods\n   */\n  public async getSearchResults(query: SearchQuery): Promise<SearchResult | null> {\n    const key = this.getCacheKey('search', query);\n    return this.get<SearchResult>(key);\n  }\n  \n  public async setSearchResults(result: SearchResult, ttl?: number): Promise<void> {\n    const key = this.getCacheKey('search', { \n      query: result.query, \n      filters: result.filters \n    });\n    await this.set(key, result, ttl);\n  }\n  \n  /**\n   * Price history cache methods\n   */\n  public async getPriceHistory(productId: string): Promise<PriceHistoryPoint[] | null> {\n    const key = this.getCacheKey('priceHistory', { productId });\n    return this.get<PriceHistoryPoint[]>(key);\n  }\n  \n  public async setPriceHistory(productId: string, history: PriceHistoryPoint[], ttl?: number): Promise<void> {\n    const key = this.getCacheKey('priceHistory', { productId });\n    await this.set(key, history, ttl);\n  }\n  \n  /**\n   * Invalidate cache by pattern\n   */\n  public async invalidatePattern(pattern: string): Promise<void> {\n    // Invalidate memory cache\n    for (const key of this.memoryCache.keys()) {\n      if (key.includes(pattern)) {\n        this.memoryCache.delete(key);\n      }\n    }\n    \n    // Invalidate IndexedDB cache\n    await this.ensureInitialized();\n    if (!this.indexedDB) return;\n    \n    return new Promise((resolve) => {\n      const transaction = this.indexedDB!.transaction(['cache'], 'readwrite');\n      const store = transaction.objectStore('cache');\n      const request = store.openCursor();\n      \n      request.onsuccess = (event) => {\n        const cursor = (event.target as IDBRequest).result;\n        if (cursor) {\n          if (cursor.key.toString().includes(pattern)) {\n            cursor.delete();\n          }\n          cursor.continue();\n        } else {\n          resolve();\n        }\n      };\n      \n      request.onerror = () => resolve();\n    });\n  }\n  \n  /**\n   * Invalidate category cache\n   */\n  public async invalidateCategory(category: string): Promise<void> {\n    await this.invalidatePattern(`category:${category}`);\n    await this.invalidatePattern(`search:`);\n  }\n  \n  /**\n   * Invalidate product cache\n   */\n  public async invalidateProduct(productId: string): Promise<void> {\n    await this.invalidatePattern(`product:${productId}`);\n    await this.invalidatePattern(`priceHistory:${productId}`);\n  }\n  \n  /**\n   * Clear all cache\n   */\n  public async clear(): Promise<void> {\n    // Clear memory cache\n    this.memoryCache.clear();\n    \n    // Clear IndexedDB cache\n    await this.ensureInitialized();\n    if (!this.indexedDB) return;\n    \n    return new Promise((resolve) => {\n      const transaction = this.indexedDB!.transaction(['cache'], 'readwrite');\n      const store = transaction.objectStore('cache');\n      const request = store.clear();\n      \n      request.onsuccess = () => {\n        // Reset stats\n        this.stats = {\n          memory: { size: 0, entries: 0, hits: 0, misses: 0, hitRate: 0 },\n          indexedDB: { size: 0, entries: 0, hits: 0, misses: 0, hitRate: 0 },\n          total: { hits: 0, misses: 0, hitRate: 0 }\n        };\n        resolve();\n      };\n      \n      request.onerror = () => resolve();\n    });\n  }\n  \n  /**\n   * Cleanup expired entries\n   */\n  public async cleanup(): Promise<void> {\n    this.cleanupMemoryCache();\n    \n    // Cleanup IndexedDB\n    await this.ensureInitialized();\n    if (!this.indexedDB) return;\n    \n    return new Promise((resolve) => {\n      const transaction = this.indexedDB!.transaction(['cache'], 'readwrite');\n      const store = transaction.objectStore('cache');\n      const request = store.openCursor();\n      \n      request.onsuccess = (event) => {\n        const cursor = (event.target as IDBRequest).result;\n        if (cursor) {\n          const entry = cursor.value;\n          if (this.isExpired(entry)) {\n            cursor.delete();\n          }\n          cursor.continue();\n        } else {\n          resolve();\n        }\n      };\n      \n      request.onerror = () => resolve();\n    });\n  }\n  \n  /**\n   * Get cache statistics\n   */\n  public getStats(): CacheStats {\n    return JSON.parse(JSON.stringify(this.stats));\n  }\n  \n  /**\n   * Warm cache with frequently accessed data\n   */\n  public async warmCache(products: WalmartProduct[]): Promise<void> {\n    const promises = products.map(product => \n      this.setProduct(product, this.config.memory.defaultTtl)\n    );\n    \n    await Promise.all(promises);\n  }\n}\n\n// Export singleton instance\nexport const walmartCacheService = new WalmartCacheService();\n\n// Periodic cleanup\nsetInterval(() => {\n  walmartCacheService.cleanup();\n}, 10 * 60 * 1000); // Cleanup every 10 minutes\n\nexport default WalmartCacheService;"

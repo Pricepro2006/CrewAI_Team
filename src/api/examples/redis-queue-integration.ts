@@ -7,7 +7,7 @@
  * system for async grocery data processing.
  */
 
-import { Express } from 'express';
+import type { Express } from 'express';
 import { RedisMessageQueue } from '../services/RedisMessageQueue.js';
 import { GroceryDataPipeline } from '../services/GroceryDataPipeline.js';
 import { UnifiedCacheManager } from '../services/UnifiedCacheManager.js';

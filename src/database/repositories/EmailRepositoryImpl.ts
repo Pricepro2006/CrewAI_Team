@@ -1,6 +1,6 @@
 import { BaseRepository } from "./BaseRepository.js";
-import { IEmailRepository } from "./interfaces/IEmailRepository.js";
-import {
+import type { IEmailRepository } from "./interfaces/IEmailRepository.js";
+import type {
   EmailRecord,
   AnalysisStatus,
   EmailPriority,

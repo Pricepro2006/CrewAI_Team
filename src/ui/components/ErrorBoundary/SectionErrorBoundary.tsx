@@ -1,4 +1,5 @@
-import React, { Component, ReactNode, ErrorInfo } from "react";
+import React, { Component } from "react";
+import type { ReactNode, ErrorInfo } from "react";
 import { ErrorFallback } from "./ErrorFallback";
 import { errorLogger } from "../../utils/errorLogger";
 import { translateError, getErrorSeverity } from "../../utils/errorTranslator";

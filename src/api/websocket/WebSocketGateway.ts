@@ -2,7 +2,8 @@ import { EventEmitter } from 'events';
 import { WebSocket, WebSocketServer } from 'ws';
 import { IncomingMessage } from 'http';
 import { z } from 'zod';
-import { EventBus, BaseEvent } from '../../core/events/EventBus.js';
+import { EventBus } from '../../core/events/EventBus.js';
+import type { BaseEvent } from '../../core/events/EventBus.js';
 import { EventMonitor } from '../../core/events/EventMonitor.js';
 import { CircuitBreakerManager } from '../../core/events/CircuitBreaker.js';
 

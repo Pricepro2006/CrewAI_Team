@@ -1,10 +1,31 @@
 import { useState, useCallback, useMemo } from "react";
+import type { FilterCondition } from "../../types/common.types.js";
 
 /**
  * Report Generation Hook
  * Implements 2025 best practices for custom report generation and scheduling
  * Agent 16: Export & Reporting
  */
+
+// Report data types
+export type ReportDataValue = string | number | boolean | Date | null;
+export type ReportDataRow = Record<string, ReportDataValue>;
+export type ReportDataSet = ReportDataRow[];
+
+// Report generation types
+export interface ProcessedSection {
+  type: "table" | "chart" | "metric" | "text";
+  data?: ReportDataSet;
+  fields?: ReportField[];
+  config?: Record<string, unknown>;
+  content?: string;
+}
+
+export interface ReportGenerationOptions {
+  filters?: FilterCondition[];
+  filename?: string;
+  includeMetadata?: boolean;
+}
 
 export interface ReportField {
   id: string;
@@ -18,7 +39,7 @@ export interface ReportField {
     | "status"
     | "calculated";
   source: string; // Field path in data
-  format?: (value: any) => string;
+  format?: (value: ReportDataValue) => string;
   aggregation?: "sum" | "avg" | "count" | "min" | "max" | "first" | "last";
   groupBy?: boolean;
   sortable?: boolean;
@@ -30,7 +51,7 @@ export interface ReportSection {
   name: string;
   type: "table" | "chart" | "metric" | "text";
   fields: ReportField[];
-  filters?: any[];
+  filters?: FilterCondition[];
   groupBy?: string[];
   sortBy?: { field: string; direction: "asc" | "desc" }[];
   chartConfig?: {
@@ -86,7 +107,7 @@ export interface ReportSchedule {
   customCron?: string;
   recipients: string[];
   format: "pdf" | "excel" | "csv" | "html";
-  filters?: any[];
+  filters?: FilterCondition[];
   enabled: boolean;
   nextRun: string;
   lastRun?: string;
@@ -107,7 +128,7 @@ export interface GeneratedReport {
   error?: string;
   metadata: {
     dataSnapshot: string;
-    filters: any[];
+    filters: FilterCondition[];
     recordCount: number;
   };
 }
@@ -336,10 +357,10 @@ export const useReportGeneration = (
   const generateReport = useCallback(
     async (
       templateId: string,
-      data: any[],
+      data: ReportDataSet,
       format: "pdf" | "excel" | "csv" | "html" = "pdf",
       options: {
-        filters?: any[];
+        filters?: FilterCondition[];
         filename?: string;
         includeMetadata?: boolean;
       } = {},
@@ -568,7 +589,7 @@ export const useReportGeneration = (
 
   // Import template
   const importTemplate = useCallback(
-    (templateData: any) => {
+    (templateData: Partial<ReportTemplate> & { template?: ReportTemplate }) => {
       try {
         const imported = templateData.template || templateData;
         const template: ReportTemplate = {
@@ -678,20 +699,20 @@ function incrementVersion(version: string): string {
   return `${parts[0]}.${parts[1]}.${patch}`;
 }
 
-function applyFilters(data: any[], filters: any[]): any[] {
+function applyFilters(data: ReportDataSet, filters: FilterCondition[]): ReportDataSet {
   // Implementation would depend on filter structure
   return data;
 }
 
-function groupData(data: any[], groupBy: string[]): any[] {
+function groupData(data: ReportDataSet, groupBy: string[]): ReportDataSet {
   // Implementation would group data by specified fields
   return data;
 }
 
 function sortData(
-  data: any[],
+  data: ReportDataSet,
   sortBy: { field: string; direction: "asc" | "desc" }[],
-): any[] {
+): ReportDataSet {
   return data.sort((a, b) => {
     for (const sort of sortBy) {
       const aVal = a[sort.field];
@@ -706,15 +727,15 @@ function sortData(
 }
 
 // Section processors (simplified - would be more complex in real implementation)
-async function processTableSection(section: ReportSection, data: any[]) {
+async function processTableSection(section: ReportSection, data: ReportDataSet) {
   return { type: "table", data, fields: section.fields };
 }
 
-async function processChartSection(section: ReportSection, data: any[]) {
+async function processChartSection(section: ReportSection, data: ReportDataSet) {
   return { type: "chart", data, config: section.chartConfig };
 }
 
-async function processMetricSection(section: ReportSection, data: any[]) {
+async function processMetricSection(section: ReportSection, data: ReportDataSet) {
   return { type: "metric", data, config: section.metricConfig };
 }
 
@@ -725,8 +746,8 @@ async function processTextSection(section: ReportSection) {
 // Report generators (simplified - would use actual libraries)
 async function generatePDFReport(
   template: ReportTemplate,
-  sections: any[],
-  options: any,
+  sections: ProcessedSection[],
+  options: ReportGenerationOptions,
 ) {
   // Would use jsPDF or similar
   return { downloadUrl: "mock-pdf-url", fileSize: 1024 };
@@ -734,8 +755,8 @@ async function generatePDFReport(
 
 async function generateExcelReport(
   template: ReportTemplate,
-  sections: any[],
-  options: any,
+  sections: ProcessedSection[],
+  options: ReportGenerationOptions,
 ) {
   // Would use XLSX or similar
   return { downloadUrl: "mock-excel-url", fileSize: 2048 };
@@ -743,8 +764,8 @@ async function generateExcelReport(
 
 async function generateCSVReport(
   template: ReportTemplate,
-  sections: any[],
-  options: any,
+  sections: ProcessedSection[],
+  options: ReportGenerationOptions,
 ) {
   // Would generate CSV content
   return { downloadUrl: "mock-csv-url", fileSize: 512 };
@@ -752,8 +773,8 @@ async function generateCSVReport(
 
 async function generateHTMLReport(
   template: ReportTemplate,
-  sections: any[],
-  options: any,
+  sections: ProcessedSection[],
+  options: ReportGenerationOptions,
 ) {
   // Would generate HTML content
   return { downloadUrl: "mock-html-url", fileSize: 1536 };

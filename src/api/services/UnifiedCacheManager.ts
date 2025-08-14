@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
-import { CentralizedCacheService, CacheConfig } from './CentralizedCacheService.js';
-import { CacheIntegrationService, CacheIntegrationConfig } from './CacheIntegrationService.js';
+import { CentralizedCacheService } from './CentralizedCacheService.js';
+import type { CacheConfig } from './CentralizedCacheService.js';
+import { CacheIntegrationService } from './CacheIntegrationService.js';
+import type { CacheIntegrationConfig } from './CacheIntegrationService.js';
 import { PricingService } from '../../microservices/pricing-service/PricingService.js';
 import { ListManagementService } from './ListManagementService.js';
 import { z } from 'zod';

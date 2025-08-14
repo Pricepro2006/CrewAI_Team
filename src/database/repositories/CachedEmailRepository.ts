@@ -9,7 +9,8 @@
  * - Analytics data
  */
 
-import { EmailRepository, EmailRepositoryConfig, CreateEmailParams, UpdateEmailParams, EmailQueryParams, EmailEntity } from './EmailRepository.js';
+import { EmailRepository } from './EmailRepository.js';
+import type { EmailRepositoryConfig, CreateEmailParams, UpdateEmailParams, EmailQueryParams, EmailEntity } from './EmailRepository.js';
 import { cacheManager } from '../../core/cache/RedisCacheManager.js';
 import { logger } from '../../utils/logger.js';
 import { metrics } from '../../api/monitoring/metrics.js';

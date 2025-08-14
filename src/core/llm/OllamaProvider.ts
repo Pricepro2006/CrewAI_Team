@@ -541,7 +541,9 @@ export class OllamaProvider extends EventEmitter {
 
   private buildPrompt(prompt: string, systemPrompt?: string): string {
     if (systemPrompt || this.config.systemPrompt) {
-      return `${systemPrompt || this.config.systemPrompt}\n\n${prompt}`;
+      return `${systemPrompt || this.config.systemPrompt}
+
+${prompt}`;
     }
     return prompt;
   }

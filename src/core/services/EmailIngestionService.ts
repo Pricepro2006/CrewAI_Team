@@ -14,7 +14,8 @@
  * - Real-time progress tracking
  */
 
-import { Queue, Worker, Job, QueueEvents } from 'bullmq';
+import { Queue, Worker, QueueEvents } from 'bullmq';
+import type { Job } from 'bullmq';
 import { createHash } from 'crypto';
 import { EmailRepository } from '../../database/repositories/EmailRepository.js';
 import { EmailQueueProcessor } from '../processors/EmailQueueProcessor.js';

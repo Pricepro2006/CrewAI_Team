@@ -3,8 +3,8 @@
  * Tracks request/response times, errors, and performance metrics
  */
 
-import { Request, Response, NextFunction } from 'express';
-import { monitoringService } from '../../../services/MonitoringService';
+import type { Request, Response, NextFunction } from 'express';
+import { monitoringService } from '../../../services/MonitoringService.js';
 import { logger } from '../../../utils/logger.js';
 
 interface MonitoringRequest extends Request {

@@ -1,7 +1,8 @@
 import { EventEmitter } from 'events';
 import { z } from 'zod';
 import Redis from 'ioredis';
-import { BaseEvent, EventBus } from '../../core/events/EventBus.js';
+import { EventBus } from '../../core/events/EventBus.js';
+import type { BaseEvent } from '../../core/events/EventBus.js';
 import { EventMonitor } from '../../core/events/EventMonitor.js';
 import { CircuitBreakerManager } from '../../core/events/CircuitBreaker.js';
 import { WebSocketGateway } from './WebSocketGateway.js';

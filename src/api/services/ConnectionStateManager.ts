@@ -5,7 +5,8 @@
  */
 
 import { EventEmitter } from 'events';
-import { PollingFallbackService, PollingConfig } from './PollingFallbackService.js';
+import { PollingFallbackService } from './PollingFallbackService.js';
+import type { PollingConfig } from './PollingFallbackService.js';
 import { logger } from '../../utils/logger.js';
 
 export type ConnectionMode = 'websocket' | 'polling' | 'hybrid' | 'offline';

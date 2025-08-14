@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { BaseEvent } from './EventBus.js';
+import type { BaseEvent } from './EventBus.js';
 
 // Monitoring schemas and types
 export const EventMetricsSchema = z.object({
