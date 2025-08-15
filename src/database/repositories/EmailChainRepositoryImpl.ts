@@ -1,4 +1,4 @@
-import { BaseRepository } from "./BaseRepository.js";
+// Removed BaseRepository import as we don't extend it
 import { IEmailChainRepository } from "./interfaces/IEmailChainRepository.js";
 import {
   EmailChain,
@@ -11,14 +11,19 @@ import { logger } from "../../utils/logger.js";
 /**
  * Email chain repository implementation
  */
-export class EmailChainRepositoryImpl
-  extends BaseRepository<EmailChain>
-  implements IEmailChainRepository
-{
+export class EmailChainRepositoryImpl implements IEmailChainRepository {
+  protected tableName = "email_chains";
+  protected primaryKey = "id";
+
   constructor() {
-    super(null as any, "email_chains");
-    this.tableName = "email_chains";
-    this.primaryKey = "id";
+    // No super call needed
+  }
+
+  /**
+   * Generate a new UUID for entity ID
+   */
+  protected generateId(): string {
+    return require('uuid').v4();
   }
 
   /**
@@ -206,7 +211,7 @@ export class EmailChainRepositoryImpl
       }
 
       // Update email_ids and count
-      const emailIds = chain.email_ids ? JSON.parse(chain.email_ids) : [];
+      const emailIds = (chain as any).email_ids ? JSON.parse((chain as any).email_ids) : [];
       if (!emailIds.includes(emailId)) {
         emailIds.push(emailId);
 
@@ -238,8 +243,8 @@ export class EmailChainRepositoryImpl
       }
 
       // Update email_ids and count
-      const emailIds: string[] = chain.email_ids
-        ? JSON.parse(chain.email_ids)
+      const emailIds: string[] = (chain as any).email_ids
+        ? JSON.parse((chain as any).email_ids)
         : [];
       const filteredIds = emailIds.filter((id) => id !== emailId);
 
@@ -456,6 +461,30 @@ export class EmailChainRepositoryImpl
   }
 
   /**
+   * Adapter method to match IRepository interface
+   */
+  async findAll(filter?: Partial<EmailChain>): Promise<EmailChain[]> {
+    return executeQuery((db) => {
+      let query = `SELECT * FROM ${this.tableName}`;
+      const params: any[] = [];
+
+      if (filter && Object.keys(filter).length > 0) {
+        const conditions = Object.keys(filter).map((key) => {
+          params.push(filter[key as keyof EmailChain]);
+          return `${key} = ?`;
+        });
+        query += ` WHERE ${conditions.join(' AND ')}`;
+      }
+
+      query += ` ORDER BY created_at DESC`;
+
+      const stmt = db.prepare(query);
+      const rows = stmt.all(...params) as any[];
+      return rows.map((row) => this.mapRowToEntity(row));
+    });
+  }
+
+  /**
    * Override methods to use connection pool
    */
   async findById(id: string): Promise<EmailChain | null> {
@@ -520,6 +549,55 @@ export class EmailChainRepositoryImpl
 
       logger.info("Chain updated", "CHAIN_REPOSITORY", { id });
       return this.findById(id);
+    });
+  }
+
+  /**
+   * Count chains with optional filtering
+   */
+  async count(filter?: Partial<EmailChain>): Promise<number> {
+    return executeQuery((db) => {
+      let query = `SELECT COUNT(*) as count FROM ${this.tableName}`;
+      const params: any[] = [];
+
+      if (filter && Object.keys(filter).length > 0) {
+        const conditions = Object.keys(filter).map((key) => {
+          params.push(filter[key as keyof EmailChain]);
+          return `${key} = ?`;
+        });
+        query += ` WHERE ${conditions.join(' AND ')}`;
+      }
+
+      const stmt = db.prepare(query);
+      const result = stmt.get(...params) as { count: number };
+      return result.count;
+    });
+  }
+
+  /**
+   * Check if a chain exists
+   */
+  async exists(id: string): Promise<boolean> {
+    const chain = await this.findById(id);
+    return chain !== null;
+  }
+
+  /**
+   * Delete a chain
+   */
+  async delete(id: string): Promise<boolean> {
+    return executeQuery((db) => {
+      const stmt = db.prepare(
+        `DELETE FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
+      );
+      const result = stmt.run(id);
+      const deleted = result.changes > 0;
+
+      if (deleted) {
+        logger.info("Chain deleted", "CHAIN_REPOSITORY", { id });
+      }
+
+      return deleted;
     });
   }
 }

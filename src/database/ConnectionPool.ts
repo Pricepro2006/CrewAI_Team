@@ -15,7 +15,10 @@
  * - Performance optimization
  */
 
-import Database from "better-sqlite3";
+// Use require for better-sqlite3 to avoid type issues
+const Database = require("better-sqlite3");
+// Type definition for Database instance
+type DatabaseInstance = any;
 import { Worker, isMainThread, threadId } from "worker_threads";
 import { Logger } from "../utils/logger.js";
 import appConfig from "../config/app.config.js";
@@ -63,7 +66,7 @@ export interface PoolStats {
 // ============================================
 
 export class DatabaseConnection {
-  private db: Database.Database;
+  private db: DatabaseInstance;
   private config: ConnectionPoolConfig;
   private metrics: ConnectionMetrics;
   private disposed: boolean = false;
@@ -138,7 +141,7 @@ export class DatabaseConnection {
   /**
    * Get the underlying database instance
    */
-  getDatabase(): Database.Database {
+  getDatabase(): DatabaseInstance {
     if (this.disposed) {
       throw new Error(`Connection ${this.metrics.id} has been disposed`);
     }
@@ -297,7 +300,7 @@ export class DatabaseConnectionPool {
    * Execute query with performance tracking
    */
   public async executeQuery<T>(
-    queryFn: (db: Database.Database) => T,
+    queryFn: (db: DatabaseInstance) => T,
   ): Promise<T> {
     const startTime = Date.now();
     const connection = this.getConnection();
@@ -326,7 +329,7 @@ export class DatabaseConnectionPool {
    * Execute transaction with automatic rollback on error
    */
   public async executeTransaction<T>(
-    transactionFn: (db: Database.Database) => T,
+    transactionFn: (db: DatabaseInstance) => T,
   ): Promise<T> {
     const connection = this.getConnection();
     const db = connection.getDatabase();
@@ -533,7 +536,7 @@ export function getDatabaseConnection(
  * Execute query with automatic connection management
  */
 export async function executeQuery<T>(
-  queryFn: (db: Database.Database) => T,
+  queryFn: (db: DatabaseInstance) => T,
   config?: Partial<ConnectionPoolConfig>,
 ): Promise<T> {
   const pool = DatabaseConnectionPool.getInstance(config);
@@ -544,7 +547,7 @@ export async function executeQuery<T>(
  * Execute transaction with automatic connection management
  */
 export async function executeTransaction<T>(
-  transactionFn: (db: Database.Database) => T,
+  transactionFn: (db: DatabaseInstance) => T,
   config?: Partial<ConnectionPoolConfig>,
 ): Promise<T> {
   const pool = DatabaseConnectionPool.getInstance(config);

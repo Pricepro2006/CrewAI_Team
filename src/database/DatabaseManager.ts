@@ -3,7 +3,8 @@
  * Coordinates SQLite and ChromaDB operations with proper initialization
  */
 
-import Database from "better-sqlite3";
+// Use require for better-sqlite3 to avoid type issues
+const Database = require("better-sqlite3");
 import { readFileSync } from "fs";
 import { join } from "path";
 import { logger } from "../utils/logger.js";
@@ -18,8 +19,15 @@ import {
   type ConnectionPoolConfig,
 } from "./ConnectionPool.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = join(fileURLToPath(import.meta.url), "..");
+import { dirname } from "path";
+// Handle __dirname for ES modules
+let __dirname: string;
+try {
+  const __filename = fileURLToPath(import.meta.url);
+  __dirname = dirname(__filename);
+} catch {
+  __dirname = process.cwd();
+}
 
 // Repository imports
 import { UserRepository } from "./repositories/UserRepository.js";
@@ -71,6 +79,7 @@ export interface DatabaseConfig {
 
 export class DatabaseManager {
   public readonly connectionPool: DatabaseConnectionPool;
+  private db: Database.Database | null = null;
   private chromaManager: ChromaDBManager;
   private migrator: DatabaseMigrator;
   private isInitialized: boolean = false;
@@ -135,6 +144,7 @@ export class DatabaseManager {
     // Initialize repositories with connection pool
     const repoConnection = this.connectionPool.getConnection();
     const db = repoConnection.getDatabase();
+    this.db = db;
 
     this.users = new UserRepository(db);
     this.emails = new EmailRepository({ db });
@@ -478,8 +488,11 @@ export class DatabaseManager {
    * Get direct access to SQLite database (via connection pool)
    */
   getSQLiteDatabase(): Database.Database {
-    const connection = this.connectionPool.getConnection();
-    return connection.getDatabase();
+    if (!this.db) {
+      const connection = this.connectionPool.getConnection();
+      this.db = connection.getDatabase();
+    }
+    return this.db;
   }
 
   /**

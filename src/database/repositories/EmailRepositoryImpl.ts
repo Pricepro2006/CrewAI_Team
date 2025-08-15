@@ -8,7 +8,8 @@ import type {
 import { AnalysisStatus, EmailPriority } from "../../types/EmailTypes.js";
 import { executeQuery, executeTransaction } from "../ConnectionPool.js";
 import { logger } from "../../utils/logger.js";
-import Database from "better-sqlite3";
+// Use require for better-sqlite3 to avoid type issues
+const Database = require("better-sqlite3");
 
 /**
  * Database row type with string dates
@@ -46,8 +47,7 @@ interface EmailDbRow {
  * Email repository implementation following the repository pattern
  * Note: Uses composition over inheritance to handle type mismatches
  */
-export class EmailRepositoryImpl implements IEmailRepository
-{
+export class EmailRepositoryImpl implements IEmailRepository {
   protected tableName = "emails";
   protected primaryKey = "id";
 
@@ -158,7 +158,7 @@ export class EmailRepositoryImpl implements IEmailRepository
         WHERE conversation_id = ? 
         ORDER BY received_date_time ASC
       `);
-      const rows = stmt.all(conversationId);
+      const rows = stmt.all(conversationId) as any[];
       return rows.map((row) => this.mapRowToEntity(row));
     });
   }
@@ -186,7 +186,7 @@ export class EmailRepositoryImpl implements IEmailRepository
       }
 
       const stmt = db.prepare(query);
-      const rows = stmt.all(...params);
+      const rows = stmt.all(...params) as any[];
       return rows.map((row) => this.mapRowToEntity(row));
     });
   }
@@ -210,7 +210,7 @@ export class EmailRepositoryImpl implements IEmailRepository
         AnalysisStatus.ANALYZING,
         limit,
         offset,
-      );
+      ) as any[];
       return rows.map((row) => this.mapRowToEntity(row));
     });
   }
@@ -223,7 +223,7 @@ export class EmailRepositoryImpl implements IEmailRepository
       const stmt = db.prepare(
         `SELECT * FROM ${this.tableName} WHERE internet_message_id = ?`,  // Use correct DB column name
       );
-      const row = stmt.get(messageId);
+      const row = stmt.get(messageId) as any;
       return row ? this.mapRowToEntity(row) : null;
     });
   }
@@ -238,7 +238,7 @@ export class EmailRepositoryImpl implements IEmailRepository
         WHERE thread_id = ? 
         ORDER BY received_date_time ASC
       `);
-      const rows = stmt.all(threadId);
+      const rows = stmt.all(threadId) as any[];
       return rows.map((row) => this.mapRowToEntity(row));
     });
   }
@@ -265,7 +265,7 @@ export class EmailRepositoryImpl implements IEmailRepository
       }
 
       const stmt = db.prepare(query);
-      const rows = stmt.all(...params);
+      const rows = stmt.all(...params) as any[];
       return rows.map((row) => this.mapRowToEntity(row));
     });
   }
@@ -493,7 +493,7 @@ export class EmailRepositoryImpl implements IEmailRepository
       }
 
       const stmt = db.prepare(query);
-      const rows = stmt.all(...params);
+      const rows = stmt.all(...params) as any[];
       return rows.map((row) => this.mapRowToEntity(row));
     });
   }
@@ -538,7 +538,7 @@ export class EmailRepositoryImpl implements IEmailRepository
       }
 
       const stmt = db.prepare(query);
-      const rows = stmt.all(...params);
+      const rows = stmt.all(...params) as any[];
       return rows.map((row) => this.mapRowToEntity(row));
     });
   }
@@ -551,7 +551,7 @@ export class EmailRepositoryImpl implements IEmailRepository
       const stmt = db.prepare(
         `SELECT * FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
       );
-      const row = stmt.get(id);
+      const row = stmt.get(id) as any;
       return row ? this.mapRowToEntity(row) : null;
     });
   }
@@ -616,12 +616,12 @@ export class EmailRepositoryImpl implements IEmailRepository
     id: string,
     data: Partial<EmailRecord>,
   ): Promise<EmailRecord | null> {
-    return executeQuery((db) => {
+    return executeQuery(async (db) => {
       const row = this.mapEntityToRow(data);
       const columns = Object.keys(row);
 
       if (columns.length === 0) {
-        return this.findById(id);
+        return await this.findById(id);
       }
 
       const values = columns.map((col) => row[col]);
@@ -638,7 +638,7 @@ export class EmailRepositoryImpl implements IEmailRepository
       }
 
       logger.info("Email updated", "EMAIL_REPOSITORY", { emailId: id });
-      return this.findById(id);
+      return await this.findById(id);
     });
   }
 
@@ -747,7 +747,7 @@ export class EmailRepositoryImpl implements IEmailRepository
       dataParams.push(limit, offset);
       
       const dataStmt = db.prepare(dataQuery);
-      const rows = dataStmt.all(...dataParams);
+      const rows = dataStmt.all(...dataParams) as any[];
       const data = rows.map((row) => this.mapRowToEntity(row));
       
       const totalPages = Math.ceil(total / limit);

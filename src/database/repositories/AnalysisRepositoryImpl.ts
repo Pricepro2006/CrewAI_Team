@@ -1,4 +1,4 @@
-import { BaseRepository } from "./BaseRepository.js";
+// Removed BaseRepository import as we don't extend it
 import type { IAnalysisRepository } from "./interfaces/IAnalysisRepository.js";
 import { AnalysisPhase } from "../../types/AnalysisTypes.js";
 import type {
@@ -13,14 +13,19 @@ import { logger } from "../../utils/logger.js";
 /**
  * Email analysis repository implementation
  */
-export class AnalysisRepositoryImpl
-  extends BaseRepository<EmailAnalysis>
-  implements IAnalysisRepository
-{
+export class AnalysisRepositoryImpl implements IAnalysisRepository {
+  protected tableName = "email_analysis";
+  protected primaryKey = "id";
+
   constructor() {
-    super(null as any, "email_analysis");
-    this.tableName = "email_analysis";
-    this.primaryKey = "id";
+    // No super call needed
+  }
+
+  /**
+   * Generate a new UUID for entity ID
+   */
+  protected generateId(): string {
+    return require('uuid').v4();
   }
 
   /**
@@ -428,6 +433,30 @@ export class AnalysisRepositoryImpl
   }
 
   /**
+   * Adapter method to match IRepository interface
+   */
+  async findAll(filter?: Partial<EmailAnalysis>): Promise<EmailAnalysis[]> {
+    return executeQuery((db) => {
+      let query = `SELECT * FROM ${this.tableName}`;
+      const params: any[] = [];
+
+      if (filter && Object.keys(filter).length > 0) {
+        const conditions = Object.keys(filter).map((key) => {
+          params.push(filter[key as keyof EmailAnalysis]);
+          return `${key} = ?`;
+        });
+        query += ` WHERE ${conditions.join(' AND ')}`;
+      }
+
+      query += ` ORDER BY created_at DESC`;
+
+      const stmt = db.prepare(query);
+      const rows = stmt.all(...params) as any[];
+      return rows.map((row) => this.mapRowToEntity(row));
+    });
+  }
+
+  /**
    * Override methods to use connection pool
    */
   async create(data: Omit<EmailAnalysis, "id">): Promise<EmailAnalysis> {
@@ -454,6 +483,101 @@ export class AnalysisRepositoryImpl
         emailId: data.email_id,
       });
       return analysisData;
+    });
+  }
+
+  /**
+   * Find analysis by ID
+   */
+  async findById(id: string): Promise<EmailAnalysis | null> {
+    return executeQuery((db) => {
+      const stmt = db.prepare(
+        `SELECT * FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
+      );
+      const row = stmt.get(id) as any;
+      return row ? this.mapRowToEntity(row) : null;
+    });
+  }
+
+  /**
+   * Update an analysis record
+   */
+  async update(
+    id: string,
+    data: Partial<Omit<EmailAnalysis, "id" | "created_at">>,
+  ): Promise<EmailAnalysis | null> {
+    return executeQuery(async (db) => {
+      const row = this.mapEntityToRow(data);
+      const columns = Object.keys(row);
+
+      if (columns.length === 0) {
+        return await this.findById(id);
+      }
+
+      const values = columns.map((col) => row[col]);
+      values.push(id);
+
+      const setClause = columns.map((col) => `${col} = ?`).join(", ");
+      const query = `UPDATE ${this.tableName} SET ${setClause}, updated_at = datetime('now') WHERE ${this.primaryKey} = ?`;
+
+      const stmt = db.prepare(query);
+      const result = stmt.run(...values);
+
+      if (result.changes === 0) {
+        return null;
+      }
+
+      logger.info("Analysis updated", "ANALYSIS_REPOSITORY", { id });
+      return await this.findById(id);
+    });
+  }
+
+  /**
+   * Count analyses with optional filtering
+   */
+  async count(filter?: Partial<EmailAnalysis>): Promise<number> {
+    return executeQuery((db) => {
+      let query = `SELECT COUNT(*) as count FROM ${this.tableName}`;
+      const params: any[] = [];
+
+      if (filter && Object.keys(filter).length > 0) {
+        const conditions = Object.keys(filter).map((key) => {
+          params.push(filter[key as keyof EmailAnalysis]);
+          return `${key} = ?`;
+        });
+        query += ` WHERE ${conditions.join(' AND ')}`;
+      }
+
+      const stmt = db.prepare(query);
+      const result = stmt.get(...params) as { count: number };
+      return result.count;
+    });
+  }
+
+  /**
+   * Check if an analysis exists
+   */
+  async exists(id: string): Promise<boolean> {
+    const analysis = await this.findById(id);
+    return analysis !== null;
+  }
+
+  /**
+   * Delete an analysis
+   */
+  async delete(id: string): Promise<boolean> {
+    return executeQuery((db) => {
+      const stmt = db.prepare(
+        `DELETE FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
+      );
+      const result = stmt.run(id);
+      const deleted = result.changes > 0;
+
+      if (deleted) {
+        logger.info("Analysis deleted", "ANALYSIS_REPOSITORY", { id });
+      }
+
+      return deleted;
     });
   }
 
