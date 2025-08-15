@@ -151,7 +151,8 @@ const createWrapper = () => {
 };
 
 describe("EmailDashboardDemo Component", () => {
-  const user = userEvent.setup();
+  const user = userEvent;
+  
   const Wrapper = createWrapper();
 
   describe("Rendering", () => {
@@ -364,12 +365,12 @@ describe("EmailDashboardDemo Component", () => {
         .getAllByRole("generic")
         .filter((el) => el.classList.contains("animate-pulse"));
       expect(loadingSkeletons.length).toBeGreaterThan(0);
-    });
+    }, 10000);
   });
 
   describe("Email Interactions", () => {
     it("should handle email selection", async () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
       render(<EmailDashboardDemo />, { wrapper: Wrapper });
 

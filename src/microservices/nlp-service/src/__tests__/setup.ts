@@ -7,7 +7,7 @@ import { vi } from 'vitest';
 
 // Mock environment variables
 process.env.NODE_ENV = 'test';
-process.env.LOG_LEVEL = 'silent';
+process.env.LOG_LEVEL = 'error';
 process.env.MONITORING_ENABLED = 'false';
 process.env.SERVICE_DISCOVERY_ENABLED = 'false';
 process.env.OLLAMA_NUM_PARALLEL = '2';

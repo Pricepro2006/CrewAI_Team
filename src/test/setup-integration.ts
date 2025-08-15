@@ -63,7 +63,7 @@ beforeAll(async () => {
       "Global test setup"
     );
     
-    logger.error("Failed to setup integration test environment:", error);
+    logger.error("Failed to setup integration test environment:", String(error));
     handleTestError(error, "Global test setup");
   }
 }, 120000); // 2 minutes timeout for setup
@@ -86,7 +86,7 @@ afterAll(async () => {
     
     logger.info("Integration test cleanup completed");
   } catch (error) {
-    logger.error("Error during test cleanup:", error);
+    logger.error("Error during test cleanup:", String(error));
     // Don't throw here to avoid masking test results
   }
 });

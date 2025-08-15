@@ -265,7 +265,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
     }
   }
 
-  async send(message: WebSocketTypes.WebSocketMessage): Promise<void> {
+  async send(message: WebSocketMessage): Promise<void> {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       await this.connect();
     }
@@ -293,7 +293,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
 
   on(
     eventType: string,
-    handler: (message: WebSocketTypes.WebSocketMessage) => Promise<void>,
+    handler: (message: WebSocketMessage) => void,
   ): void {
     if (!this.eventHandlers.has(eventType)) {
       this.eventHandlers.set(eventType, []);
@@ -303,7 +303,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
 
   once(
     eventType: string,
-    handler: (message: WebSocketTypes.WebSocketMessage) => Promise<void>,
+    handler: (message: WebSocketMessage) => void,
   ): void {
     if (!this.eventHandlers.has(eventType)) {
       this.eventHandlers.set(eventType, []);
@@ -314,17 +314,48 @@ export class WebSocketTestClient implements TestWebSocketClient {
   async waitForMessage(
     eventType: string,
     timeout: number = 5000,
-  ): Promise<WebSocketTypes.WebSocketMessage> {
+  ): Promise<WebSocketMessage> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject(new Error(`Timeout waiting for message of type: ${eventType}`));
       }, timeout);
 
-      this.once(eventType, async (message) => {
+      this.once(eventType, (message) => {
         clearTimeout(timeoutId);
         resolve(message);
       });
     });
+  }
+
+  async unsubscribe(channel: string): Promise<void> {
+    await this.send({
+      id: `unsub-${Date.now()}`,
+      type: "system.disconnect",
+      channel,
+      data: { action: "unsubscribe", channel },
+      timestamp: new Date().toISOString(),
+    });
+
+    if (this.connection) {
+      const index = this.connection.subscriptions.indexOf(channel);
+      if (index > -1) {
+        this.connection.subscriptions.splice(index, 1);
+      }
+    }
+  }
+
+  off(eventType: string, handler?: (message: WebSocketMessage) => void): void {
+    if (!handler) {
+      this.eventHandlers.delete(eventType);
+    } else {
+      const handlers = this.eventHandlers.get(eventType);
+      if (handlers) {
+        const index = handlers.findIndex((h) => h.handler === handler);
+        if (index > -1) {
+          handlers.splice(index, 1);
+        }
+      }
+    }
   }
 }
 

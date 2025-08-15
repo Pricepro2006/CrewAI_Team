@@ -307,7 +307,7 @@ class MockFactory {
 // Performance Test Utilities
 // =====================================================
 
-export interface PerformanceMetrics {
+interface PerformanceMetrics {
   totalTime: number;
   avgTimePerOperation: number;
   throughputPerMinute: number;
@@ -472,6 +472,7 @@ export {
   MockFactory,
   PerformanceTestUtils,
   TestAssertions,
-  TestEnvironmentUtils,
-  type PerformanceMetrics
+  TestEnvironmentUtils
 };
+
+export type { PerformanceMetrics };

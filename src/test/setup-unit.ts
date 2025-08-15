@@ -210,6 +210,8 @@ vi.mock('chromadb', async () => {
 
   // Mock ChromaClient class
   class MockChromaClient {
+    config: any;
+    
     constructor(config = {}) {
       // Store config if needed
       this.config = config;
@@ -225,15 +227,15 @@ vi.mock('chromadb', async () => {
     }
 
     // Collection management methods
-    async createCollection({ name, metadata } = {}) {
+    async createCollection({ name, metadata }: { name?: string; metadata?: any } = {}) {
       return createMockCollection(name);
     }
 
-    async getCollection({ name } = {}) {
+    async getCollection({ name }: { name?: string } = {}) {
       return createMockCollection(name);
     }
 
-    async getOrCreateCollection({ name, metadata } = {}) {
+    async getOrCreateCollection({ name, metadata }: { name?: string; metadata?: any } = {}) {
       return createMockCollection(name);
     }
 
@@ -244,7 +246,7 @@ vi.mock('chromadb', async () => {
       ];
     }
 
-    async deleteCollection({ name } = {}) {
+    async deleteCollection({ name }: { name?: string } = {}) {
       return undefined;
     }
 
@@ -378,7 +380,7 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
 }));
 
 // Add helpful test utilities
-global.createMockResponse = (data: any, status = 200) => ({
+(global as any).createMockResponse = (data: any, status = 200) => ({
   status,
   data,
   headers: {},
@@ -386,20 +388,20 @@ global.createMockResponse = (data: any, status = 200) => ({
   statusText: 'OK'
 });
 
-global.createMockPromise = <T>(value: T, delay = 0) => {
+(global as any).createMockPromise = <T>(value: T, delay = 0) => {
   return new Promise<T>((resolve) => {
     setTimeout(() => resolve(value), delay);
   });
 };
 
 // Mock setTimeout and setInterval for faster tests
-global.fastTimeout = (callback: () => void, delay: number) => {
+(global as any).fastTimeout = (callback: () => void, delay: number) => {
   // Reduce delays to speed up tests
   const fastDelay = Math.min(delay, 100);
   return setTimeout(callback, fastDelay);
 };
 
-global.fastInterval = (callback: () => void, delay: number) => {
+(global as any).fastInterval = (callback: () => void, delay: number) => {
   // Reduce intervals to speed up tests
   const fastDelay = Math.min(delay, 100);
   return setInterval(callback, fastDelay);

@@ -9,11 +9,11 @@ const logger = new Logger("test:error-handling");
 export function setupTestErrorHandling(): void {
   // Set up error handling for tests
   process.on("unhandledRejection", (reason, promise) => {
-    logger.error("Unhandled Rejection at:", promise, "reason:", reason);
+    logger.error("Unhandled Rejection at:", String(promise), "reason:", String(reason));
   });
 
   process.on("uncaughtException", (error) => {
-    logger.error("Uncaught Exception:", error);
+    logger.error("Uncaught Exception:", String(error));
   });
 }
 
@@ -78,7 +78,7 @@ export async function checkOllamaHealth(baseUrl: string): Promise<{
 }
 
 export function handleTestError(error: unknown, context: string): void {
-  logger.error(`Test error in ${context}:`, error);
+  logger.error(`Test error in ${context}:`, String(error));
   
   if (error instanceof Error) {
     logger.error("Stack trace:", error.stack);

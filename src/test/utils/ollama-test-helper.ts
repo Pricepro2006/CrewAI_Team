@@ -215,11 +215,11 @@ async function ensureTestModelsAvailable(): Promise<void> {
     const data = await response.json() as { models?: Array<{ name: string }> };
     const availableModels = data.models?.map((m) => m.name) || [];
     
-    logger.info('Available models:', availableModels);
+    logger.info('Available models:', availableModels.join(', '));
     
     // Check if primary test model is available
     const primaryModelAvailable = availableModels.some((name: string) => 
-      name.includes(TEST_MODELS.primary.split(':')[0])
+      name.includes((TEST_MODELS.primary as string).split(':')[0])
     );
     
     if (!primaryModelAvailable) {
@@ -235,7 +235,7 @@ async function ensureTestModelsAvailable(): Promise<void> {
       
       let foundModel = null;
       for (const model of alternativeModels) {
-        if (availableModels.some((name: string) => name.includes(model.split(':')[0]))) {
+        if (availableModels.some((name: string) => name.includes((model as string).split(':')[0]))) {
           foundModel = model;
           break;
         }
@@ -268,7 +268,7 @@ export async function ensureModelAvailable(modelName: string): Promise<boolean> 
     const availableModels = data.models?.map((m) => m.name) || [];
     
     const isAvailable = availableModels.some((name: string) => 
-      name === modelName || name.startsWith((modelName || '').split(':')[0])
+      name === modelName || name.startsWith(modelName ? modelName.split(':')[0] : '')
     );
     
     if (isAvailable) {

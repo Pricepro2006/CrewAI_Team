@@ -5,7 +5,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { SafeContent, SafeText, SafeLink, useSanitize } from '../SafeContent';
+import { SafeContent, SafeText, SafeLink, useSanitize } from '../SafeContent.js';
 import { renderHook } from '@testing-library/react';
 
 // Mock DOMPurify for consistent test results
