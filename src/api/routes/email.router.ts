@@ -4,7 +4,6 @@ import {
   publicProcedure,
   protectedProcedure,
 } from "../trpc/enhanced-router.js";
-import { EmailStorageService } from "../services/EmailStorageService.js";
 import { mockEmailStorageService } from "../services/MockEmailStorageService.js";
 import { realEmailStorageService } from "../services/RealEmailStorageService.js";
 // import { emailStorageAdapter } from "../services/EmailStorageServiceAdapter.js"; // Disabled - conflicts with enhanced DB

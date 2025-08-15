@@ -496,7 +496,7 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
-                  <Queue className="w-4 h-4 text-orange-500" />
+                  <Activity className="w-4 h-4 text-orange-500" />
                   <CardTitle className="text-base">Queue Size</CardTitle>
                 </div>
               </CardHeader>

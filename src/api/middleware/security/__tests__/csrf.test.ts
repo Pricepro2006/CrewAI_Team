@@ -26,7 +26,7 @@ vi.mock("../../../../utils/logger", () => ({
 describe("CSRF Protection", () => {
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
-  let mockContext: unknown;
+  let mockContext: any;
 
   beforeEach(() => {
     // Reset mocks
