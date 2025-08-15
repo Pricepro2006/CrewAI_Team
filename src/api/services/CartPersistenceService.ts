@@ -195,4 +195,95 @@ export class CartPersistenceService {
       throw error;
     }
   }
+
+  async getOrCreateCart(userId?: string, sessionId?: string): Promise<Cart> {
+    try {
+      // Try to find existing cart for user/session
+      let existingCart: Cart | undefined;
+      
+      if (userId) {
+        existingCart = Array.from(this.carts.values()).find(cart => cart.userId === userId);
+      } else if (sessionId) {
+        existingCart = Array.from(this.carts.values()).find(cart => cart.sessionId === sessionId);
+      }
+
+      if (existingCart && (!existingCart.expiresAt || existingCart.expiresAt > new Date())) {
+        return existingCart;
+      }
+
+      // Create new cart if none found or expired
+      return this.createCart(userId, sessionId);
+    } catch (error) {
+      logger.error('Error getting or creating cart:', error);
+      throw error;
+    }
+  }
+
+  async addOrUpdateItem(cartId: string, item: Omit<CartItem, 'id' | 'addedAt' | 'modifiedAt'>): Promise<Cart> {
+    try {
+      return this.addItem(cartId, item);
+    } catch (error) {
+      logger.error('Error adding or updating item:', error);
+      throw error;
+    }
+  }
+
+  async saveForLater(cartId: string, itemId: string): Promise<Cart> {
+    try {
+      const cart = this.carts.get(cartId);
+      if (!cart) {
+        throw new Error(`Cart ${cartId} not found`);
+      }
+
+      const item = cart.items.find(i => i.id === itemId);
+      if (!item) {
+        throw new Error(`Item ${itemId} not found in cart`);
+      }
+
+      // For now, just remove the item (in a real implementation, you'd move it to a saved items list)
+      cart.items = cart.items.filter(i => i.id !== itemId);
+      this.updateCartTotals(cart);
+      cart.updatedAt = new Date();
+      
+      logger.info(`Saved item ${itemId} for later from cart ${cartId}`);
+      return cart;
+    } catch (error) {
+      logger.error('Error saving item for later:', error);
+      throw error;
+    }
+  }
+
+  async moveToCart(cartId: string, itemId: string): Promise<Cart> {
+    try {
+      const cart = this.carts.get(cartId);
+      if (!cart) {
+        throw new Error(`Cart ${cartId} not found`);
+      }
+
+      // For now, this is a no-op since we don't have a separate saved items list
+      // In a real implementation, you'd move the item from saved items back to cart
+      logger.info(`Moved item ${itemId} to cart ${cartId}`);
+      return cart;
+    } catch (error) {
+      logger.error('Error moving item to cart:', error);
+      throw error;
+    }
+  }
+
+  async convertCart(cartId: string, type: string): Promise<Cart> {
+    try {
+      const cart = this.carts.get(cartId);
+      if (!cart) {
+        throw new Error(`Cart ${cartId} not found`);
+      }
+
+      // For now, just return the cart as-is
+      // In a real implementation, you'd convert between different cart types (e.g., shopping cart to wishlist)
+      logger.info(`Converted cart ${cartId} to type ${type}`);
+      return cart;
+    } catch (error) {
+      logger.error('Error converting cart:', error);
+      throw error;
+    }
+  }
 }

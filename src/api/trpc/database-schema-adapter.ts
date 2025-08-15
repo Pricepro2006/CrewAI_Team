@@ -33,16 +33,29 @@ export class DatabaseSchemaAdapter {
   constructor(private db: Database.Database) {}
 
   /**
+   * Validate and sanitize table name to prevent SQL injection
+   */
+  private sanitizeTableName(tableName: string): string {
+    // Only allow alphanumeric characters and underscores
+    if (!/^[a-zA-Z0-9_]+$/.test(tableName)) {
+      throw new Error(`Invalid table name: ${tableName}. Only alphanumeric characters and underscores are allowed.`);
+    }
+    return tableName;
+  }
+
+  /**
    * Get all columns for a table
    */
   getTableColumns(tableName: string): string[] {
-    const cacheKey = tableName;
+    const sanitizedTableName = this.sanitizeTableName(tableName);
+    const cacheKey = sanitizedTableName;
     if (this.columnCache.has(cacheKey)) {
       return this.columnCache.get(cacheKey)!;
     }
 
     try {
-      const pragma = this.db.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{
+      // Use parameterized query with double quotes for identifier
+      const pragma = this.db.prepare(`PRAGMA table_info("${sanitizedTableName}")`).all() as Array<{
         cid: number;
         name: string;
         type: string;
@@ -54,15 +67,15 @@ export class DatabaseSchemaAdapter {
       const columns = pragma.map(col => col.name);
       this.columnCache.set(cacheKey, columns);
       
-      logger.debug(`Cached columns for table ${tableName}`, "SCHEMA_ADAPTER", {
-        table: tableName,
+      logger.debug(`Cached columns for table ${sanitizedTableName}`, "SCHEMA_ADAPTER", {
+        table: sanitizedTableName,
         columnCount: columns.length,
         columns: columns.join(', ')
       });
 
       return columns;
     } catch (error) {
-      logger.error(`Failed to get columns for table ${tableName}`, "SCHEMA_ADAPTER", { error });
+      logger.error(`Failed to get columns for table ${sanitizedTableName}`, "SCHEMA_ADAPTER", { error });
       return [];
     }
   }
@@ -125,8 +138,9 @@ export class DatabaseSchemaAdapter {
       });
     }
 
+    const sanitizedTableName = this.sanitizeTableName(tableName);
     const columnsToSelect = availableColumns.length > 0 ? availableColumns.join(', ') : '*';
-    const query = `SELECT ${columnsToSelect} FROM ${tableName}${whereClause ? ` WHERE ${whereClause}` : ''}`;
+    const query = `SELECT ${columnsToSelect} FROM "${sanitizedTableName}"${whereClause ? ` WHERE ${whereClause}` : ''}`;
 
     return {
       query,
@@ -155,8 +169,9 @@ export class DatabaseSchemaAdapter {
       });
     }
 
+    const sanitizedTableName = this.sanitizeTableName(tableName);
     const placeholders = validColumns.map(() => '?').join(', ');
-    const query = `INSERT INTO ${tableName} (${validColumns.join(', ')}) VALUES (${placeholders})`;
+    const query = `INSERT INTO "${sanitizedTableName}" (${validColumns.join(', ')}) VALUES (${placeholders})`;
     const values = validColumns.map(col => data[col]);
 
     return {
@@ -187,12 +202,14 @@ export class DatabaseSchemaAdapter {
       });
     }
 
+    const sanitizedTableName = this.sanitizeTableName(tableName);
+    
     if (validColumns.length === 0) {
-      throw new Error(`No valid columns found for UPDATE query on table ${tableName}`);
+      throw new Error(`No valid columns found for UPDATE query on table ${sanitizedTableName}`);
     }
 
     const setClause = validColumns.map(col => `${col} = ?`).join(', ');
-    const query = `UPDATE ${tableName} SET ${setClause} WHERE ${whereClause}`;
+    const query = `UPDATE "${sanitizedTableName}" SET ${setClause} WHERE ${whereClause}`;
     const values = validColumns.map(col => data[col]);
 
     return {
@@ -244,7 +261,13 @@ export class DatabaseSchemaAdapter {
         return true;
       }
 
-      let alterQuery = `ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnType}`;
+      const sanitizedTableName = this.sanitizeTableName(tableName);
+      // Sanitize column name too
+      if (!/^[a-zA-Z0-9_]+$/.test(columnName)) {
+        throw new Error(`Invalid column name: ${columnName}`);
+      }
+      
+      let alterQuery = `ALTER TABLE "${sanitizedTableName}" ADD COLUMN "${columnName}" ${columnType}`;
       if (defaultValue !== undefined) {
         alterQuery += ` DEFAULT ${typeof defaultValue === 'string' ? `'${defaultValue}'` : defaultValue}`;
       }
@@ -252,7 +275,7 @@ export class DatabaseSchemaAdapter {
       this.db.prepare(alterQuery).run();
       
       // Clear cache for this table
-      this.columnCache.delete(tableName);
+      this.columnCache.delete(sanitizedTableName);
       
       logger.info(`Added column ${columnName} to table ${tableName}`, "SCHEMA_ADAPTER", {
         table: tableName,
@@ -316,7 +339,8 @@ export class DatabaseSchemaAdapter {
 
       for (const table of tables) {
         const columns = this.getTableColumns(table.name);
-        const rowCount = this.db.prepare(`SELECT COUNT(*) as count FROM ${table.name}`).get() as { count: number };
+        const sanitizedTableName = this.sanitizeTableName(table.name);
+        const rowCount = this.db.prepare(`SELECT COUNT(*) as count FROM "${sanitizedTableName}"`).get() as { count: number };
         
         schemaInfo[table.name] = {
           columns,

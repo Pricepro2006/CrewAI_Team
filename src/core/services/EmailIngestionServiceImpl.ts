@@ -9,6 +9,7 @@ import { Queue, Worker, QueueEvents } from 'bullmq';
 import type { Job } from 'bullmq';
 import { Redis } from 'ioredis';
 import { readFile } from 'fs/promises';
+import * as path from 'path';
 import { createHash, randomUUID } from 'crypto';
 import { EventEmitter } from 'events';
 import {
@@ -420,7 +421,32 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
   async ingestFromJsonFile(filePath: string): Promise<Result<IngestionBatchResult>> {
     try {
-      const fileContent = await readFile(filePath, 'utf-8');
+      // Security: Validate and sanitize the file path to prevent path traversal
+      const normalizedPath = path.resolve(filePath);
+      
+      // Define allowed base directories for JSON file ingestion
+      const allowedBasePaths = [
+        path.resolve(process.cwd(), 'data'),
+        path.resolve(process.cwd(), 'uploads'),
+        path.resolve(process.cwd(), 'imports'),
+        process.env.ALLOWED_IMPORT_PATH ? path.resolve(process.env.ALLOWED_IMPORT_PATH) : null
+      ].filter(Boolean) as string[];
+      
+      // Check if the normalized path is within allowed directories
+      const isAllowed = allowedBasePaths.some(basePath => 
+        normalizedPath.startsWith(basePath)
+      );
+      
+      if (!isAllowed) {
+        throw new Error('Access denied: File path is outside allowed directories');
+      }
+      
+      // Additional validation: ensure it's a .json file
+      if (!normalizedPath.endsWith('.json')) {
+        throw new Error('Invalid file type: Only JSON files are allowed');
+      }
+      
+      const fileContent = await readFile(normalizedPath, 'utf-8');
       const emails: RawEmailData[] = JSON.parse(fileContent);
       
       if (!Array.isArray(emails)) {

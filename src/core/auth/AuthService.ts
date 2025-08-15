@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import Database from "better-sqlite3";
+import crypto from "crypto";
 import { logger } from "../../utils/logger.js";
 import { TRPCError } from "@trpc/server";
 
@@ -34,15 +35,22 @@ export class AuthService {
 
   constructor(databasePath: string = "./data/app.db") {
     this.db = new Database(databasePath);
-    this.jwtSecret =
-      process.env.JWT_SECRET || "dev-secret-key-change-in-production";
-
-    if (
-      this.jwtSecret === "dev-secret-key-change-in-production" &&
-      process.env.NODE_ENV === "production"
-    ) {
-      logger.error("Using default JWT secret in production!", "AUTH");
-      throw new Error("JWT_SECRET must be set in production");
+    
+    // JWT_SECRET is required in all environments for security
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET === "YOUR_JWT_SECRET_HERE") {
+      logger.error("JWT_SECRET environment variable is not set or using placeholder!", "AUTH");
+      throw new Error("JWT_SECRET must be set in environment variables. Generate one using: openssl rand -base64 64");
+    }
+    
+    this.jwtSecret = process.env.JWT_SECRET;
+    
+    // Additional validation for production
+    if (process.env.NODE_ENV === "production") {
+      // Ensure JWT secret is strong enough
+      if (this.jwtSecret.length < 32) {
+        logger.error("JWT_SECRET is too weak for production!", "AUTH");
+        throw new Error("JWT_SECRET must be at least 32 characters in production");
+      }
     }
 
     this.initializeUserTable();
@@ -366,10 +374,12 @@ export class AuthService {
   }
 
   /**
-   * Generate session ID
+   * Generate cryptographically secure session ID
    */
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Use crypto.randomBytes for cryptographically secure random values
+    const randomBytes = crypto.randomBytes(16).toString('hex');
+    return `session_${Date.now()}_${randomBytes}`;
   }
 
   /**
