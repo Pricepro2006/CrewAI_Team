@@ -1,4 +1,5 @@
 import { LlamaCppProvider } from "../llm/LlamaCppProvider.js";
+import { LLMProviderFactory, LLMProviderInterface } from "../llm/LLMProviderFactory.js";
 import { AgentRegistry } from "../agents/registry/AgentRegistry.js";
 import { RAGSystem } from "../rag/RAGSystem.js";
 import { PlanExecutor } from "./PlanExecutor.js";
@@ -23,26 +24,20 @@ import {
 } from "../../utils/timeout.js";
 
 export class MasterOrchestrator {
-  private llm: LlamaCppProvider;
+  private llm: LLMProviderInterface | null = null;
+  private config: MasterOrchestratorConfig;
   public agentRegistry: AgentRegistry;
   public ragSystem: RAGSystem;
   private planExecutor: PlanExecutor;
   private planReviewer: PlanReviewer;
-  private enhancedParser: EnhancedParser;
+  private enhancedParser: EnhancedParser | null = null;
   private agentRouter: AgentRouter;
   private perfMonitor = createPerformanceMonitor("MasterOrchestrator");
 
   constructor(config: MasterOrchestratorConfig) {
     logger.info("Initializing MasterOrchestrator", "ORCHESTRATOR", { config });
 
-    this.llm = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/${config.model || "llama-3.2-3b"}.gguf`,
-      contextSize: 8192,
-      threads: 8,
-      temperature: 0.7,
-      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-    });
-
+    this.config = config;
     this.agentRegistry = new AgentRegistry();
 
     // Use default RAG config if not provided (for testing)
@@ -68,13 +63,75 @@ export class MasterOrchestrator {
     this.ragSystem = new RAGSystem(ragConfig);
     this.planExecutor = new PlanExecutor(this.agentRegistry, this.ragSystem);
     this.planReviewer = new PlanReviewer();
-    this.enhancedParser = new EnhancedParser(this.llm);
+    // EnhancedParser will be initialized in initialize() method after LLM is created
     this.agentRouter = new AgentRouter();
 
     logger.info("MasterOrchestrator initialized successfully", "ORCHESTRATOR");
   }
 
+  private buildLLMConfig() {
+    // Check if explicit LLM config is provided
+    if (this.config.llm) {
+      return {
+        type: this.config.llm.type,
+        llamacpp: this.config.llm.type === 'llamacpp' || this.config.llm.type === 'auto' ? {
+          modelPath: this.config.llm.llamaModelPath || process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+          contextSize: parseInt(process.env.LLAMA_CONTEXT_SIZE || "8192"),
+          threads: this.config.llm.threads || parseInt(process.env.LLAMA_THREADS || "8"),
+          temperature: parseFloat(process.env.LLAMA_TEMPERATURE || "0.7"),
+          gpuLayers: this.config.llm.gpuLayers || parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
+        } : undefined,
+        ollama: this.config.llm.type === 'ollama' || this.config.llm.type === 'auto' ? {
+          baseUrl: this.config.llm.ollamaUrl || this.config.ollamaUrl || process.env.OLLAMA_URL || 'http://localhost:11434',
+          model: this.config.llm.ollamaModel || process.env.OLLAMA_MODEL_MAIN || 'qwen3:14b',
+          temperature: 0.7,
+          maxTokens: 4096,
+        } : undefined,
+      };
+    }
+
+    // Fallback to backward compatibility (ollamaUrl provided)
+    if (this.config.ollamaUrl) {
+      return {
+        type: 'auto' as const,
+        llamacpp: {
+          modelPath: process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+          contextSize: parseInt(process.env.LLAMA_CONTEXT_SIZE || "8192"),
+          threads: parseInt(process.env.LLAMA_THREADS || "8"),
+          temperature: 0.7,
+          gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
+        },
+        ollama: {
+          baseUrl: this.config.ollamaUrl,
+          model: process.env.OLLAMA_MODEL_MAIN || 'qwen3:14b',
+          temperature: 0.7,
+          maxTokens: 4096,
+        },
+      };
+    }
+
+    // Default to auto-selection
+    return LLMProviderFactory.getDefaultConfig();
+  }
+
   async initialize(): Promise<void> {
+    // Initialize LLM provider using factory
+    try {
+      const llmConfig = this.buildLLMConfig();
+      this.llm = await LLMProviderFactory.createProvider(llmConfig);
+      
+      // Initialize EnhancedParser now that LLM is available
+      this.enhancedParser = new EnhancedParser(this.llm);
+      
+      logger.info("LLM provider initialized successfully", "ORCHESTRATOR", { type: llmConfig.type });
+    } catch (error) {
+      logger.warn(
+        `LLM initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}. System will use fallback responses.`,
+        "ORCHESTRATOR"
+      );
+      // Don't fail initialization - the system can work with limited functionality
+    }
+
     // Initialize RAG system (gracefully handle ChromaDB failures)
     if (this.ragSystem) {
       try {
@@ -385,7 +442,12 @@ export class MasterOrchestrator {
       }
     `;
 
-    const response = await withTimeout(
+    if (!this.llm) {
+      logger.warn("LLM not available, using fallback plan generation", "ORCHESTRATOR");
+      return SimplePlanGenerator.createSimplePlan(query, routingPlan);
+    }
+
+    const llamaResponse = await withTimeout(
       this.llm.generate(prompt, {
         format: "json",
         temperature: 0.3,
@@ -394,7 +456,7 @@ export class MasterOrchestrator {
       DEFAULT_TIMEOUTS.LLM_GENERATION,
       "LLM generation timed out during plan creation",
     );
-    return this.parsePlan(response.response, query);
+    return this.parsePlan(llamaResponse.response, query);
   }
 
   private async replan(
@@ -420,7 +482,12 @@ export class MasterOrchestrator {
       Return the revised plan in the same JSON format.
     `;
 
-    const response = await withTimeout(
+    if (!this.llm) {
+      logger.warn("LLM not available, using fallback replanning", "ORCHESTRATOR");
+      return SimplePlanGenerator.createSimplePlan(query);
+    }
+
+    const llamaResponse = await withTimeout(
       this.llm.generate(prompt, {
         format: "json",
         temperature: 0.3,
@@ -429,7 +496,7 @@ export class MasterOrchestrator {
       DEFAULT_TIMEOUTS.LLM_GENERATION,
       "LLM generation timed out during replanning",
     );
-    return this.parsePlan(response.response, query);
+    return this.parsePlan(llamaResponse.response, query);
   }
 
   private parsePlan(response: string, query?: Query): Plan {

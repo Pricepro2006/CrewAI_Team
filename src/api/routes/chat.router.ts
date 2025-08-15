@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   router,
   publicProcedure,
@@ -250,14 +251,22 @@ export const chatRouter = createFeatureRouter(
         Return only the title, no quotes or explanation.
       `;
 
+        const llmPromise = ctx.masterOrchestrator?.["llm"]?.generate(prompt);
+        if (!llmPromise) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "LLM not available",
+          });
+        }
+        
         const response = await withTimeout(
-          ctx.masterOrchestrator["llm"].generate(prompt),
+          llmPromise,
           DEFAULT_TIMEOUTS.LLM_GENERATION,
           "Title generation timed out",
         );
 
         // Extract string from LLM response
-        const title = typeof response === 'string' ? response : response.response || String(response);
+        const title = typeof response === 'string' ? response : response?.response || String(response || 'Untitled Chat');
 
         await ctx.conversationService.updateTitle(
           input.conversationId,

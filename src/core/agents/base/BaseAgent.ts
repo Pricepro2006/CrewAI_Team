@@ -30,13 +30,14 @@ export abstract class BaseAgent {
     // Get timeout for this model
     this.timeout = getModelTimeout("primary");
 
-    // Initialize LLM provider with llama.cpp
+    // Initialize LLM provider with LlamaCpp
     this.llm = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/${this.model}.gguf`,
-      contextSize: 8192,
-      threads: 8,
-      temperature: 0.7,
+      modelPath: process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+      contextSize: parseInt(process.env.LLAMA_CONTEXT_SIZE || "8192"),
+      threads: parseInt(process.env.LLAMA_THREADS || "8"),
+      temperature: parseFloat(process.env.LLAMA_TEMPERATURE || "0.7"),
       gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
+      maxTokens: 4096,
     });
   }
 
@@ -97,6 +98,16 @@ export abstract class BaseAgent {
     }
 
     logger.info(`Initializing agent ${this.name}`, "AGENT");
+
+    // Initialize LLM provider (LlamaCpp doesn't need explicit initialization)
+    try {
+      logger.debug(`LlamaCpp LLM provider ready for ${this.name}`, "AGENT");
+    } catch (error) {
+      logger.warn(
+        `LLM initialization failed for ${this.name}: ${error instanceof Error ? error.message : 'Unknown error'}. Continuing with fallback responses.`,
+        "AGENT"
+      );
+    }
 
     // Register default tools first
     if (typeof (this as any).registerDefaultTools === "function") {
