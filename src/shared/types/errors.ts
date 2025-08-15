@@ -193,7 +193,7 @@ export type ErrorCode = keyof typeof ERROR_CODES;
 // Error Context Types
 // =====================================================
 
-export interface ErrorContext {
+export interface ExtendedErrorContext {
   requestId?: string;
   userId?: string;
   sessionId?: string;
@@ -220,7 +220,7 @@ export interface ErrorBreadcrumb {
 export interface ErrorHandler {
   name: string;
   canHandle: (error: BaseError) => boolean;
-  handle: (error: BaseError, context: ErrorContext) => Promise<ErrorResult>;
+  handle: (error: BaseError, context: ExtendedErrorContext) => Promise<ErrorResult>;
   priority: number;
 }
 
@@ -259,7 +259,7 @@ export interface CircuitBreakerConfig {
 export interface ErrorReport {
   id: string;
   error: BaseError;
-  context: ErrorContext;
+  context: ExtendedErrorContext;
   environment: string;
   version: string;
   frequency: number;

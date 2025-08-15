@@ -3,7 +3,7 @@
  * Comprehensive type definitions for real-time features
  */
 
-import type { Timestamp } from "./index.js";
+import type { Timestamp } from "./core.js";
 import type {
   Task,
   Message,
@@ -280,11 +280,11 @@ export interface MonitoringAlertEvent {
 export interface MonitoringHealthEvent {
   service: string;
   status: "healthy" | "degraded" | "unhealthy";
-  checks: HealthCheck[];
+  checks: WebSocketHealthCheck[];
   timestamp: Timestamp;
 }
 
-export interface HealthCheck {
+export interface WebSocketHealthCheck {
   name: string;
   status: "healthy" | "degraded" | "unhealthy";
   responseTime?: number;

@@ -4,7 +4,7 @@
  */
 
 // Re-export shared types
-export * from '../../../api/types/grocery-nlp.types.js';
+export * from '../../../../api/types/grocery-nlp.types.js';
 
 // Service-specific types
 export interface NLPServiceConfig {
