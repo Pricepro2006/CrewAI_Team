@@ -163,7 +163,7 @@ The system implements a sophisticated **adaptive three-phase analysis framework*
 - **Multi-Agent Architecture** - Framework created, agents not processing emails ⚠️
 - **Email Intelligence** - Basic rule extraction only (0.011% with AI analysis) ❌
 - **Walmart Integration** - UI components created, backend integration pending ⚠️
-- **Local-First Design** - Ollama integration designed but not deployed ❌
+- **Local-First Design** - llama.cpp integration designed but not deployed ❌
 - **TypeScript Architecture** - End-to-end type safety implemented ✅
 - **Real-Time Updates** - WebSocket infrastructure ready, no live processing ⚠️
 - **Security-First** - Security middleware implemented ✅
@@ -188,7 +188,7 @@ The system implements a sophisticated **adaptive three-phase analysis framework*
 - Node.js 20.11 or higher
 - SQLite 3.44 or higher
 - Redis (for queue management)
-- Ollama (for local LLM inference with llama3.2:3b model)
+- llama.cpp (for local LLM inference with llama3.2:3b model)
 - ChromaDB (for vector operations using llama3.2:3b embeddings)
 - Python 3.x with distutils (for node-gyp compilation)
 
@@ -227,12 +227,12 @@ WALMART_DB_PATH=./data/walmart_grocery.db
 
 # Services
 REDIS_URL=redis://localhost:6379
-OLLAMA_HOST=http://localhost:11434
+llama.cpp_HOST=http://localhost:11434
 CHROMADB_URL=http://localhost:8000
 
 # NLP Configuration
 WALMART_NLP_MODEL=qwen3:0.6b
-OLLAMA_MODEL=qwen3:0.6b
+llama.cpp_MODEL=qwen3:0.6b
 
 # Microservice Ports
 NLP_SERVICE_PORT=3008
@@ -270,7 +270,7 @@ Backend (Node.js + Express)
     └── Database Layer (optimized queries)
 
 Services
-    ├── Ollama (LLM - local inference with llama3.2:3b)
+    ├── llama.cpp (LLM - local inference with llama3.2:3b)
     ├── ChromaDB (Vector operations - using llama3.2:3b embeddings)
     ├── Redis (Queue management)
     └── SQLite (Primary data store)
@@ -531,7 +531,7 @@ This project includes extensive technical documentation covering all aspects of 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │   Backend       │    │   Services      │
-│   React/TS      │◄──►│   Node.js/TS    │◄──►│   Ollama/Redis  │
+│   React/TS      │◄──►│   Node.js/TS    │◄──►│   llama.cpp/Redis  │
 │   266+ Components│    │   12 tRPC Routers│    │   ChromaDB      │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
