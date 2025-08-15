@@ -226,10 +226,10 @@ export const Dashboard: React.FC = () => {
     },
   ];
 
-  const ollamaStatus =
-    health?.services?.ollama || health?.status || "disconnected";
-  const isOllamaConnected =
-    ollamaStatus === "connected" || ollamaStatus === "healthy";
+  const llamaStatus =
+    health?.services?.llama || health?.status || "disconnected";
+  const isLlamaConnected =
+    llamaStatus === "connected" || llamaStatus === "healthy";
 
   return (
     <div className="dashboard">
@@ -248,14 +248,14 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="dashboard-sections">
-          <div className="ollama-status-section">
-            <h2>Ollama Status</h2>
+          <div className="llama-status-section">
+            <h2>Llama.cpp Status</h2>
             <div
-              className={`ollama-status ${isOllamaConnected ? "connected" : "offline"}`}
+              className={`llama-status ${isLlamaConnected ? "connected" : "offline"}`}
             >
               <div className="status-indicator"></div>
               <span className="status-text">
-                {isOllamaConnected ? "Connected" : "Offline"}
+                {isLlamaConnected ? "Connected" : "Offline"}
               </span>
             </div>
           </div>

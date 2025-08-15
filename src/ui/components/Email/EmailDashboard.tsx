@@ -189,14 +189,14 @@ export const EmailDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [utils]);
 
-  // Transform data into the expected format
+  // Transform data into the expected format with accurate processing metrics
   const stats: EmailStats = {
     totalEmails:
       analyticsData?.data?.totalEmails ||
       dashboardStats?.data?.totalEmails ||
       0,
-    processedEmails: dashboardStats?.data?.completedCount || 0,
-    pendingEmails: dashboardStats?.data?.inProgressCount || 0,
+    processedEmails: (dashboardStats?.data?.processingStats?.llmAnalyzed || 0) + (dashboardStats?.data?.processingStats?.strategicAnalyzed || 0),
+    pendingEmails: dashboardStats?.data?.processingStats?.unprocessed || 0,
     failedEmails: 0, // TODO: Add this to the API
     averageProcessingTime:
       (analyticsData?.data?.averageProcessingTime || 0) / 1000, // Convert ms to seconds
@@ -455,7 +455,9 @@ export const EmailDashboard: React.FC = () => {
               <p className="metric-value">
                 {stats.totalEmails.toLocaleString()}
               </p>
-              <p className="metric-change">+12.5% from last week</p>
+              <p className="metric-change">
+                {isLoading ? "Loading..." : `${stats.totalEmails > 0 ? "Stored in database" : "No data"}`}
+              </p>
             </div>
           </div>
 
@@ -478,12 +480,12 @@ export const EmailDashboard: React.FC = () => {
               </svg>
             </div>
             <div className="metric-content">
-              <p className="metric-label">Processed</p>
+              <p className="metric-label">LLM Analyzed</p>
               <p className="metric-value">
                 {stats.processedEmails.toLocaleString()}
               </p>
-              <p className="metric-change metric-positive">
-                {processingRate}% completion rate
+              <p className="metric-change metric-success">
+                {`${processingRate}% of total emails`}
               </p>
             </div>
           </div>
@@ -507,11 +509,11 @@ export const EmailDashboard: React.FC = () => {
               </svg>
             </div>
             <div className="metric-content">
-              <p className="metric-label">Pending</p>
+              <p className="metric-label">Strategic Complete</p>
               <p className="metric-value">
-                {stats.pendingEmails.toLocaleString()}
+                {(dashboardStats?.data?.processingStats?.strategicAnalyzed || 0).toLocaleString()}
               </p>
-              <p className="metric-change metric-warning">Requires attention</p>
+              <p className="metric-change metric-success">Full AI analysis</p>
             </div>
           </div>
 
@@ -534,9 +536,11 @@ export const EmailDashboard: React.FC = () => {
               </svg>
             </div>
             <div className="metric-content">
-              <p className="metric-label">Avg. Processing Time</p>
-              <p className="metric-value">{stats.averageProcessingTime}s</p>
-              <p className="metric-change metric-positive">-0.3s improvement</p>
+              <p className="metric-label">Rule-Based Only</p>
+              <p className="metric-value">{(dashboardStats?.data?.processingStats?.ruleBasedOnly || 0).toLocaleString()}</p>
+              <p className="metric-change metric-neutral">
+                Basic extraction only
+              </p>
             </div>
           </div>
         </div>
@@ -577,62 +581,8 @@ export const EmailDashboard: React.FC = () => {
             if (el) sectionsRef.current[3] = el;
           }}
         >
-          <h2 className="section-title">Recent Processing Activity</h2>
+          <h2 className="section-title">System Status</h2>
           <div className="activity-list">
-            <div className="activity-item">
-              <div className="activity-icon activity-icon-success">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M5 13L9 17L19 7"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <div className="activity-content">
-                <p className="activity-title">Batch Processing Completed</p>
-                <p className="activity-description">
-                  Successfully processed 1,250 emails in order management queue
-                </p>
-                <p className="activity-time">2 minutes ago</p>
-              </div>
-            </div>
-
-            <div className="activity-item">
-              <div className="activity-icon activity-icon-warning">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 9V13M12 17H12.01M12 3L2 20H22L12 3Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <div className="activity-content">
-                <p className="activity-title">High Priority Alert</p>
-                <p className="activity-description">
-                  347 critical emails require immediate attention
-                </p>
-                <p className="activity-time">5 minutes ago</p>
-              </div>
-            </div>
-
             <div className="activity-item">
               <div className="activity-icon activity-icon-info">
                 <svg
@@ -652,13 +602,73 @@ export const EmailDashboard: React.FC = () => {
                 </svg>
               </div>
               <div className="activity-content">
-                <p className="activity-title">System Update</p>
-                <p className="activity-description">
-                  Email categorization model updated to v2.1.0
-                </p>
-                <p className="activity-time">15 minutes ago</p>
+              <p className="activity-title">Database Status</p>
+              <p className="activity-description">
+              {stats.totalEmails.toLocaleString()} emails total: {(dashboardStats?.data?.processingStats?.strategicAnalyzed || 0).toLocaleString()} strategic, {(dashboardStats?.data?.processingStats?.llmAnalyzed || 0).toLocaleString()} LLM-only, {(dashboardStats?.data?.processingStats?.ruleBasedOnly || 0).toLocaleString()} rule-based
+              </p>
+              <p className="activity-time">Live database metrics</p>
               </div>
             </div>
+
+            {(dashboardStats?.data?.processingStats?.unprocessed || 0) > 0 && (
+              <div className="activity-item">
+                <div className="activity-icon activity-icon-warning">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 9V13M12 17H12.01M12 3L2 20H22L12 3Z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div className="activity-content">
+                  <p className="activity-title">Unprocessed Emails</p>
+                  <p className="activity-description">
+                    {(dashboardStats?.data?.processingStats?.unprocessed || 0).toLocaleString()} emails awaiting initial processing
+                  </p>
+                  <p className="activity-time">Needs attention</p>
+                </div>
+              </div>
+            )}
+
+            {stats.processedEmails > 0 && (
+              <div className="activity-item">
+                <div className="activity-icon activity-icon-success">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M5 13L9 17L19 7"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div className="activity-content">
+                  <p className="activity-title">AI Processing Success</p>
+                  <p className="activity-description">
+                    {stats.processedEmails.toLocaleString()} emails with LLM or strategic analysis complete
+                  </p>
+                  <p className="activity-time">
+                    {processingRate}% processing completion rate
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </>

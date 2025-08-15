@@ -52,7 +52,7 @@ export class SectionErrorBoundary extends Component<
     this.previousResetKeys = props.resetKeys || [];
   }
 
-  static getDerivedStateFromError(error: Error): Partial<SectionErrorBoundaryState> {
+  static override getDerivedStateFromError(error: Error): Partial<SectionErrorBoundaryState> {
     return {
       hasError: true,
       error,
@@ -89,7 +89,7 @@ export class SectionErrorBoundary extends Component<
     }
   }
 
-  componentDidUpdate(prevProps: SectionErrorBoundaryProps) {
+  override componentDidUpdate(prevProps: SectionErrorBoundaryProps) {
     const { resetKeys, resetOnPropsChange } = this.props;
     const { hasError } = this.state;
 
@@ -109,7 +109,7 @@ export class SectionErrorBoundary extends Component<
     }
   }
 
-  componentWillUnmount() {
+  override componentWillUnmount() {
     if (this.resetTimeoutId) {
       clearTimeout(this.resetTimeoutId);
     }
@@ -139,7 +139,7 @@ export class SectionErrorBoundary extends Component<
     });
   };
 
-  render() {
+  override render() {
     const { hasError, error, errorCount } = this.state;
     const { children, sectionName, fallback: FallbackComponent, showDetails, customMessage } = this.props;
 
