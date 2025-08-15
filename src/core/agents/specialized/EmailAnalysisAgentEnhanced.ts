@@ -470,7 +470,7 @@ Response format:
         format: "json",
       });
 
-      const parsed = JSON.parse(response);
+      const parsed = JSON.parse(response.response);
 
       // Validate and ensure proper structure
       return {
@@ -529,7 +529,7 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
 
       // Parse and structure the deep analysis
       const deepAnalysis = await this.parseDeepAnalysis(
-        response,
+        response.response,
         quickAnalysis,
         entities,
       );
@@ -973,7 +973,7 @@ Summary:`;
         maxTokens: 50,
       });
 
-      return summary.trim().substring(0, 100);
+      return summary.response.trim().substring(0, 100);
     } catch (error) {
       // Fallback to truncated action
       return primaryAction.action.substring(0, 100);

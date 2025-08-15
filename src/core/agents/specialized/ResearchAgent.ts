@@ -9,7 +9,9 @@ import { WebSearchTool } from "../../tools/web/WebSearchTool.js";
 import { WebScraperTool } from "../../tools/web/WebScraperTool.js";
 import { SearXNGSearchTool } from "../../tools/web/SearXNGProvider.js";
 import { withTimeout, DEFAULT_TIMEOUTS } from "../../../utils/timeout.js";
-import { businessSearchPromptEnhancer } from "../../prompts/BusinessSearchPromptEnhancer.js";
+import { BusinessSearchPromptEnhancer } from "../../prompts/BusinessSearchPromptEnhancer.js";
+
+const businessSearchPromptEnhancer = new BusinessSearchPromptEnhancer();
 import { SearchKnowledgeService } from "../../services/SearchKnowledgeService.js";
 
 export class ResearchAgent extends BaseAgent {
@@ -99,7 +101,7 @@ export class ResearchAgent extends BaseAgent {
       console.log("[ResearchAgent] Query extracted:", query);
 
       // Check if this is a business query and enhance search parameters
-      const isBusinessQuery = businessSearchPromptEnhancer.needsEnhancement(
+      const isBusinessQuery = !businessSearchPromptEnhancer.isAlreadyEnhanced(
         query || taskDescription,
       );
       if (isBusinessQuery) {
@@ -238,7 +240,8 @@ export class ResearchAgent extends BaseAgent {
       }
     `;
 
-    const response = await this.llm.generate(prompt);
+    const responseResponse = await this.llm.generate(prompt);
+    const response = responseResponse.response;
     return this.parseResearchPlan(response);
   }
 
@@ -380,7 +383,7 @@ export class ResearchAgent extends BaseAgent {
     }
 
     // Check if this is a business-related query
-    const isBusinessQuery = businessSearchPromptEnhancer.needsEnhancement(task);
+    const isBusinessQuery = !businessSearchPromptEnhancer.isAlreadyEnhanced(task);
 
     // Increase content size for business queries to capture contact info
     const contentLength = isBusinessQuery ? 1500 : 500;
@@ -436,10 +439,16 @@ export class ResearchAgent extends BaseAgent {
         ? `Focus on businesses in or near ${locationMatch[1]}. Include distance/travel information.`
         : "";
 
-      basePrompt = businessSearchPromptEnhancer.enhance(basePrompt, {
-        enhancementLevel: hasUrgency ? "aggressive" : "standard",
-        includeExamples: true,
-        customInstructions: `
+      const enhancedPrompt = businessSearchPromptEnhancer.enhance(basePrompt, {
+        enableEntityExtraction: true,
+        enableSentimentAnalysis: hasUrgency,
+        enableWorkflowDetection: true,
+        maxContextLength: 3000,
+      });
+      
+      // Append custom instructions to the enhanced prompt
+      basePrompt = enhancedPrompt.user + `
+          
           ${customInstructions}
           
           CRITICAL: Extract and include the following business information:
@@ -454,15 +463,16 @@ export class ResearchAgent extends BaseAgent {
           
           Format business listings clearly with a "Recommendations" section.
           Each business should be a separate subsection with contact details prominently displayed.
-        `,
-      });
+        `;
     }
 
-    return await withTimeout(
+    const llmResponse = await withTimeout(
       this.llm.generate(basePrompt),
       DEFAULT_TIMEOUTS.LLM_GENERATION,
       "LLM synthesis timed out",
     );
+    
+    return llmResponse.response;
   }
 
   private extractSources(results: ResearchResult[]): Source[] {

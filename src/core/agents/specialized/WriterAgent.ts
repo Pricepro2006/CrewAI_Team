@@ -41,14 +41,15 @@ export class WriterAgent extends BaseAgent {
           result = await this.writeGeneral(task, context);
       }
 
+      const writingResult = result as WritingResult;
       return {
         success: true,
-        data: result,
-        output: sanitizeLLMOutput(result.content).content,
+        data: writingResult,
+        output: sanitizeLLMOutput(writingResult.content).content,
         metadata: {
           agent: this.name,
           contentType: taskAnalysis.contentType,
-          wordCount: this.countWords(result.content),
+          wordCount: this.countWords(writingResult.content),
           style: taskAnalysis.style,
           timestamp: new Date().toISOString(),
         },
@@ -84,7 +85,8 @@ export class WriterAgent extends BaseAgent {
       }
     `;
 
-    const response = await this.llm.generate(prompt, { format: "json" });
+    const responseResponse = await this.llm.generate(prompt, { format: "json" });
+    const response = responseResponse.response;
     return this.parseWritingTaskAnalysis(response);
   }
 
@@ -132,7 +134,8 @@ export class WriterAgent extends BaseAgent {
       Use appropriate tone and style for the target audience.
     `;
 
-    const content = await this.llm.generate(prompt);
+    const contentResponse = await this.llm.generate(prompt);
+    const content = contentResponse.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -167,7 +170,8 @@ export class WriterAgent extends BaseAgent {
       Use clear, professional language with proper formatting.
     `;
 
-    const content = await this.llm.generate(prompt);
+    const contentResponse = await this.llm.generate(prompt);
+    const content = contentResponse.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -204,7 +208,8 @@ export class WriterAgent extends BaseAgent {
       Keep it concise and action-oriented.
     `;
 
-    const content = await this.llm.generate(prompt);
+    const contentResponse = await this.llm.generate(prompt);
+    const content = contentResponse.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -238,7 +243,8 @@ export class WriterAgent extends BaseAgent {
       Be imaginative and captivating.
     `;
 
-    const content = await this.llm.generate(prompt);
+    const contentResponse = await this.llm.generate(prompt);
+    const content = contentResponse.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -271,7 +277,8 @@ export class WriterAgent extends BaseAgent {
       Be accurate and comprehensive.
     `;
 
-    const content = await this.llm.generate(prompt);
+    const contentResponse = await this.llm.generate(prompt);
+    const content = contentResponse.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -295,7 +302,8 @@ export class WriterAgent extends BaseAgent {
       Create well-written content that addresses all requirements.
     `;
 
-    const content = await this.llm.generate(prompt);
+    const contentResponse = await this.llm.generate(prompt);
+    const content = contentResponse.response;
 
     return {
       content: sanitizeLLMOutput(content).content,

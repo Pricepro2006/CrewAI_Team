@@ -311,7 +311,7 @@ export class IntegrationCoordinator {
           id: "test-user-001",
           email: "test@crewai.local",
           username: "testuser",
-          password: "TestPassword123!",
+          password: process.env.TEST_USER_PASSWORD || "", // Set TEST_USER_PASSWORD in .env
           role: "user",
           permissions: ["read", "write"],
         },
@@ -319,7 +319,7 @@ export class IntegrationCoordinator {
           id: "admin-user-001",
           email: "admin@crewai.local",
           username: "admin",
-          password: "AdminPassword123!",
+          password: process.env.TEST_ADMIN_PASSWORD || "", // Set TEST_ADMIN_PASSWORD in .env
           role: "admin",
           permissions: ["read", "write", "admin", "delete"],
         },
