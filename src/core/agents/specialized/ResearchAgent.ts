@@ -240,7 +240,7 @@ export class ResearchAgent extends BaseAgent {
       }
     `;
 
-    const responseResponse = await this?.llm?.generate(prompt);
+    const responseResponse = await this.generateLLMResponse(prompt);
     const response = responseResponse?.response;
     return this.parseResearchPlan(response);
   }
@@ -467,7 +467,7 @@ export class ResearchAgent extends BaseAgent {
     }
 
     const llmResponse = await withTimeout(
-      this?.llm?.generate(basePrompt),
+      this.generateLLMResponse(basePrompt),
       DEFAULT_TIMEOUTS.LLM_GENERATION,
       "LLM synthesis timed out",
     );
