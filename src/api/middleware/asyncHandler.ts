@@ -1,15 +1,25 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
-import { logger } from "../../utils/logger.js";
-import { AppError, ErrorCode } from "../../utils/error-handling/server.js";
+import { logger } from "../../utils/logger";
+import { AppError, ErrorCode } from "../../utils/error-handling/server";
 
 /**
  * Wraps async route handlers to properly catch errors with enhanced error handling
  * Test comment for pre-commit hook verification
  */
 export const asyncHandler = (fn: RequestHandler): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};
+
+/**
+ * Enhanced async handler with error processing
+ */
+export const enhancedAsyncHandler = (fn: RequestHandler): RequestHandler => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await Promise.resolve(fn(req, res, next));
+      const result = await Promise.resolve(fn(req, res, next));
+      return result;
     } catch (error) {
       // Log the error with request context
       logger.error("Async handler error", "ASYNC_HANDLER", {

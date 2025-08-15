@@ -18,20 +18,20 @@ import type {
   OllamaProvider,
   OllamaGenerateOptions,
   OllamaGenerateWithLogProbsResponse,
-} from "../llm/OllamaProvider.js";
+} from "../llm/OllamaProvider";
 import {
   BusinessSearchPromptEnhancer,
   type BusinessSearchEnhancementOptions,
-} from "../prompts/BusinessSearchPromptEnhancer.js";
-import { BusinessQueryOptimizer } from "../search/BusinessQueryOptimizer.js";
+} from "../prompts/BusinessSearchPromptEnhancer";
+import { BusinessQueryOptimizer } from "../search/BusinessQueryOptimizer";
 import {
   BusinessResponseValidator,
   type ValidationResult,
-} from "../validators/BusinessResponseValidator.js";
-import { logger } from "../../utils/logger.js";
-import { FeatureFlagService } from "../../config/features/FeatureFlagService.js";
-import { RateLimiter } from "./RateLimiter.js";
-import { BusinessSearchCache } from "../cache/BusinessSearchCache.js";
+} from "../validators/BusinessResponseValidator";
+import { logger } from "../../utils/logger";
+import { FeatureFlagService } from "../../config/features/FeatureFlagService";
+import { RateLimiter } from "./RateLimiter";
+import { BusinessSearchCache } from "../cache/BusinessSearchCache";
 
 export interface MiddlewareMetrics {
   totalRequests: number;
@@ -551,20 +551,21 @@ export class BusinessSearchMiddleware extends EventEmitter {
     }
 
     const options: BusinessSearchEnhancementOptions = {
-      enhancementLevel: this.config.enhancementLevel,
-      includeExamples: true,
-      preserveOriginalMarkers: true,
+      enableEntityExtraction: true,
+      enableSentimentAnalysis: true,
+      enableWorkflowDetection: true,
+      maxContextLength: 2000,
     };
 
     const enhanced = this.promptEnhancer.enhance(prompt, options);
 
     logger.debug("Prompt enhanced for business search", "BUSINESS_SEARCH", {
       originalLength: prompt.length,
-      enhancedLength: enhanced.length,
+      enhancedLength: enhanced.user.length,
       level: this.config.enhancementLevel,
     });
 
-    return enhanced;
+    return enhanced.user;
   }
 
   /**

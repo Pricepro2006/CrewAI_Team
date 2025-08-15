@@ -5,7 +5,7 @@
 
 import type { Request, Response, NextFunction } from 'express';
 import { performance } from 'perf_hooks';
-import { metricsCollectionService } from '../../monitoring/MetricsCollectionService.js';
+import { metricsCollectionService } from '../../monitoring/MetricsCollectionService';
 import { v4 as uuidv4 } from 'uuid';
 
 interface MetricsRequest extends Request {

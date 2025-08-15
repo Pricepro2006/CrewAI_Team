@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
-import { metricsCollector } from "../../monitoring/MetricsCollector.js";
-import { errorTracker } from "../../monitoring/ErrorTracker.js";
-import { performanceMonitor } from "../../monitoring/PerformanceMonitor.js";
-import { logger } from "../../utils/logger.js";
+import { metricsCollector } from "../../monitoring/MetricsCollector";
+import { errorTracker } from "../../monitoring/ErrorTracker";
+import { performanceMonitor } from "../../monitoring/PerformanceMonitor";
+import { logger } from "../../utils/logger";
 
 interface MonitoredRequest extends Request {
   id?: string;
@@ -258,7 +258,7 @@ export function requestSizeTracking(
 
 // Rate limit tracking
 export function rateLimitTracking(
-  req: Request,
+  req: MonitoredRequest,
   res: Response,
   next: NextFunction,
 ): void {

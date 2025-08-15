@@ -4,8 +4,8 @@
  */
 
 import { z } from "zod";
-import { logger } from "../utils/logger.js";
-import type { Context } from "../api/trpc/context.js";
+import { logger } from "../utils/logger";
+import type { Context } from "../api/trpc/context";
 import { TRPCError } from "@trpc/server";
 import LRU from "lru-cache";
 import { createHash } from "crypto";

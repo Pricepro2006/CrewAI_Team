@@ -18,7 +18,7 @@ import * as DOMPurify from "isomorphic-dompurify";
 import validator from "validator";
 import { createHash } from "crypto";
 import * as path from "path";
-import { logger } from "../../../utils/logger.js";
+import { logger } from "../../../utils/logger";
 import type { Request, Response, NextFunction } from "express";
 
 // Validation constants
