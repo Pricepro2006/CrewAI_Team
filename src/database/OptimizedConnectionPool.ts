@@ -101,7 +101,7 @@ export class OptimizedConnectionPool extends EventEmitter {
    */
   private async initializePool(): Promise<void> {
     try {
-      for (let i = 0; i < this.config.minConnections; i++) {
+      for (let i = 0; i < this?.config?.minConnections; i++) {
         await this.createConnection();
       }
       this.emit('pool-initialized', this.metrics);
@@ -137,15 +137,15 @@ export class OptimizedConnectionPool extends EventEmitter {
         connectionTime: Date.now() - startTime,
       };
 
-      this.connections.set(connectionId, connection);
-      this.metrics.connectionCreations++;
-      this.metrics.totalConnections++;
-      this.metrics.idleConnections++;
+      this?.connections?.set(connectionId, connection);
+      this?.metrics?.connectionCreations++;
+      this?.metrics?.totalConnections++;
+      this?.metrics?.idleConnections++;
 
       this.emit('connection-created', { connectionId, connectionTime: connection.connectionTime });
       return connection;
     } catch (error) {
-      this.metrics.errors++;
+      this?.metrics?.errors++;
       this.emit('connection-error', { connectionId, error });
       throw error;
     }
@@ -157,17 +157,17 @@ export class OptimizedConnectionPool extends EventEmitter {
   private applyPragmaSettings(db: Database.Database): void {
     try {
       // Enable foreign keys if configured
-      if (this.config.enableForeignKeys) {
+      if (this?.config?.enableForeignKeys) {
         db.pragma('foreign_keys = ON');
       }
 
       // Apply all pragma settings
-      Object.entries(this.config.pragmaSettings).forEach(([key, value]) => {
+      Object.entries(this?.config?.pragmaSettings).forEach(([key, value]) => {
         db.pragma(`${key} = ${value}`);
       });
 
       // Verify WAL mode is enabled
-      if (this.config.enableWAL) {
+      if (this?.config?.enableWAL) {
         const journalMode = db.pragma('journal_mode', { simple: true });
         if (journalMode !== 'wal') {
           console.warn(`WAL mode not enabled, current mode: ${journalMode}`);
@@ -184,7 +184,7 @@ export class OptimizedConnectionPool extends EventEmitter {
   public async getConnection(): Promise<ConnectionWrapper> {
     return new Promise((resolve, reject) => {
       // Find available idle connection
-      const idleConnection = Array.from(this.connections.values())
+      const idleConnection = Array.from(this?.connections?.values())
         .find(conn => !conn.isActive);
 
       if (idleConnection) {
@@ -194,7 +194,7 @@ export class OptimizedConnectionPool extends EventEmitter {
       }
 
       // Create new connection if under limit
-      if (this.connections.size < this.config.maxConnections) {
+      if (this?.connections?.size < this?.config?.maxConnections) {
         this.createConnection()
           .then(connection => {
             this.activateConnection(connection);
@@ -205,22 +205,22 @@ export class OptimizedConnectionPool extends EventEmitter {
       }
 
       // Queue the request
-      this.waitingQueue.push({
+      this?.waitingQueue?.push({
         resolve,
         reject,
         timestamp: new Date(),
       });
-      this.metrics.waitingQueries++;
+      this?.metrics?.waitingQueries++;
 
       // Set timeout for waiting requests
       setTimeout(() => {
-        const index = this.waitingQueue.findIndex(req => req.resolve === resolve);
+        const index = this?.waitingQueue?.findIndex(req => req.resolve === resolve);
         if (index !== -1) {
-          this.waitingQueue.splice(index, 1);
-          this.metrics.waitingQueries--;
+          this?.waitingQueue?.splice(index, 1);
+          this?.metrics?.waitingQueries--;
           reject(new Error('Connection timeout: No connection available'));
         }
-      }, this.config.connectionTimeout);
+      }, this?.config?.connectionTimeout);
     });
   }
 
@@ -228,20 +228,20 @@ export class OptimizedConnectionPool extends EventEmitter {
    * Release a connection back to the pool
    */
   public releaseConnection(connection: ConnectionWrapper): void {
-    if (!this.connections.has(connection.id)) {
+    if (!this?.connections?.has(connection.id)) {
       console.warn(`Attempted to release unknown connection: ${connection.id}`);
       return;
     }
 
     connection.isActive = false;
     connection.lastUsed = new Date();
-    this.metrics.activeConnections--;
-    this.metrics.idleConnections++;
+    this?.metrics?.activeConnections--;
+    this?.metrics?.idleConnections++;
 
     // Process waiting queue
-    if (this.waitingQueue.length > 0) {
-      const waitingRequest = this.waitingQueue.shift()!;
-      this.metrics.waitingQueries--;
+    if (this?.waitingQueue?.length > 0) {
+      const waitingRequest = this?.waitingQueue?.shift()!;
+      this?.metrics?.waitingQueries--;
       this.activateConnection(connection);
       waitingRequest.resolve(connection);
     }
@@ -266,10 +266,10 @@ export class OptimizedConnectionPool extends EventEmitter {
       // Prepare statement for reuse if specified
       let result: T;
       if (options.prepare) {
-        const stmt = connection.db.prepare(query);
+        const stmt = connection?.db?.prepare(query);
         result = stmt.all(params) as T;
       } else {
-        result = connection.db.prepare(query).all(params) as T;
+        result = connection?.db?.prepare(query).all(params) as T;
       }
 
       // Update metrics
@@ -280,12 +280,12 @@ export class OptimizedConnectionPool extends EventEmitter {
       this.emit('query-executed', {
         connectionId: connection.id,
         queryTime,
-        query: query.substring(0, 100) + (query.length > 100 ? '...' : ''),
+        query: query.substring(0, 100) + (query?.length || 0 > 100 ? '...' : ''),
       });
 
       return result;
     } catch (error) {
-      this.metrics.errors++;
+      this?.metrics?.errors++;
       this.emit('query-error', { error, query: query.substring(0, 100) });
       throw error;
     } finally {
@@ -304,13 +304,13 @@ export class OptimizedConnectionPool extends EventEmitter {
     const connection = await this.getConnection();
 
     try {
-      const result = connection.db.transaction(() => {
+      const result = connection?.db?.transaction(() => {
         return callback(connection.db);
       })();
       this.emit('transaction-completed', { connectionId: connection.id });
       return result;
     } catch (error) {
-      this.metrics.errors++;
+      this?.metrics?.errors++;
       this.emit('transaction-error', { connectionId: connection.id, error });
       throw error;
     } finally {
@@ -347,7 +347,7 @@ export class OptimizedConnectionPool extends EventEmitter {
     isActive: boolean;
     connectionTime: number;
   }> {
-    return Array.from(this.connections.values()).map(conn => ({
+    return Array.from(this?.connections?.values()).map(conn => ({
       id: conn.id,
       createdAt: conn.createdAt,
       lastUsed: conn.lastUsed,
@@ -363,8 +363,8 @@ export class OptimizedConnectionPool extends EventEmitter {
   public async optimizeDatabase(): Promise<void> {
     const connection = await this.getConnection();
     try {
-      connection.db.exec('ANALYZE');
-      connection.db.pragma('optimize');
+      connection?.db?.exec('ANALYZE');
+      connection?.db?.pragma('optimize');
       this.emit('database-optimized');
     } finally {
       this.releaseConnection(connection);
@@ -380,20 +380,20 @@ export class OptimizedConnectionPool extends EventEmitter {
     }
 
     // Close all connections
-    for (const connection of this.connections.values()) {
+    for (const connection of this?.connections?.values()) {
       try {
-        connection.db.close();
-        this.metrics.connectionDestructions++;
+        connection?.db?.close();
+        this?.metrics?.connectionDestructions++;
       } catch (error) {
         console.warn(`Error closing connection ${connection.id}:`, error);
       }
     }
 
-    this.connections.clear();
-    this.waitingQueue.forEach(req => 
+    this?.connections?.clear();
+    this?.waitingQueue?.forEach(req => 
       req.reject(new Error('Connection pool closed'))
     );
-    this.waitingQueue.length = 0;
+    this?.waitingQueue?.length = 0;
 
     this.emit('pool-closed', this.metrics);
   }
@@ -404,32 +404,32 @@ export class OptimizedConnectionPool extends EventEmitter {
   private activateConnection(connection: ConnectionWrapper): void {
     connection.isActive = true;
     connection.lastUsed = new Date();
-    this.metrics.activeConnections++;
-    this.metrics.idleConnections--;
+    this?.metrics?.activeConnections++;
+    this?.metrics?.idleConnections--;
   }
 
   private updateQueryMetrics(queryTime: number): void {
-    this.metrics.totalQueries++;
-    this.queryTimes.push(queryTime);
+    this?.metrics?.totalQueries++;
+    this?.queryTimes?.push(queryTime);
     
     // Keep only last 1000 query times for percentile calculation
-    if (this.queryTimes.length > 1000) {
-      this.queryTimes.shift();
+    if (this?.queryTimes?.length > 1000) {
+      this?.queryTimes?.shift();
     }
 
     // Update average query time
-    const totalTime = this.queryTimes.reduce((sum, time) => sum + time, 0);
-    this.metrics.avgQueryTime = totalTime / this.queryTimes.length;
+    const totalTime = this?.queryTimes?.reduce((sum: any, time: any) => sum + time, 0);
+    this?.metrics?.avgQueryTime = totalTime / this?.queryTimes?.length;
 
     // Count slow queries (>1 second)
     if (queryTime > 1000) {
-      this.metrics.slowQueries++;
+      this?.metrics?.slowQueries++;
     }
   }
 
   private getPercentile(sortedArray: number[], percentile: number): number {
-    if (sortedArray.length === 0) return 0;
-    const index = Math.ceil(sortedArray.length * percentile) - 1;
+    if (sortedArray?.length || 0 === 0) return 0;
+    const index = Math.ceil(sortedArray?.length || 0 * percentile) - 1;
     return sortedArray[Math.max(0, index)] || 0;
   }
 
@@ -443,23 +443,23 @@ export class OptimizedConnectionPool extends EventEmitter {
     const now = new Date();
     const connectionsToClose: string[] = [];
 
-    for (const [id, connection] of this.connections.entries()) {
+    for (const [id, connection] of this?.connections?.entries()) {
       if (!connection.isActive && 
-          (now.getTime() - connection.lastUsed.getTime()) > this.config.idleTimeout &&
-          this.connections.size > this.config.minConnections) {
+          (now.getTime() - connection?.lastUsed?.getTime()) > this?.config?.idleTimeout &&
+          this?.connections?.size > this?.config?.minConnections) {
         connectionsToClose.push(id);
       }
     }
 
     connectionsToClose.forEach(id => {
-      const connection = this.connections.get(id);
+      const connection = this?.connections?.get(id);
       if (connection) {
         try {
-          connection.db.close();
-          this.connections.delete(id);
-          this.metrics.totalConnections--;
-          this.metrics.idleConnections--;
-          this.metrics.connectionDestructions++;
+          connection?.db?.close();
+          this?.connections?.delete(id);
+          this?.metrics?.totalConnections--;
+          this?.metrics?.idleConnections--;
+          this?.metrics?.connectionDestructions++;
           this.emit('connection-cleaned', { connectionId: id });
         } catch (error) {
           console.warn(`Error cleaning up connection ${id}:`, error);

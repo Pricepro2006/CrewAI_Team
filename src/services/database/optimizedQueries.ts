@@ -61,7 +61,7 @@ export class OptimizedQueries {
 
   private prepareStatements(): void {
     // Email list query with filters
-    this.emailListStmt = this.db.prepare(`
+    this.emailListStmt = this?.db?.prepare(`
       SELECT 
         e.id,
         e.internet_message_id,
@@ -97,7 +97,7 @@ export class OptimizedQueries {
     `);
 
     // Dashboard statistics
-    this.dashboardStatsStmt = this.db.prepare(`
+    this.dashboardStatsStmt = this?.db?.prepare(`
       SELECT 
         COUNT(*) as totalEmails,
         COUNT(DISTINCT chain_id) as totalChains,
@@ -119,7 +119,7 @@ export class OptimizedQueries {
     `);
 
     // Chain details
-    this.chainDetailsStmt = this.db.prepare(`
+    this.chainDetailsStmt = this?.db?.prepare(`
       SELECT 
         e.*,
         COUNT(*) OVER (PARTITION BY e.chain_id) as chain_email_count,
@@ -131,7 +131,7 @@ export class OptimizedQueries {
     `);
 
     // Batch processing queue
-    this.batchQueueStmt = this.db.prepare(`
+    this.batchQueueStmt = this?.db?.prepare(`
       WITH priority_emails AS (
         SELECT 
           id,
@@ -165,7 +165,7 @@ export class OptimizedQueries {
     `);
 
     // Processing status
-    this.processingStatusStmt = this.db.prepare(`
+    this.processingStatusStmt = this?.db?.prepare(`
       SELECT 
         (SELECT COUNT(*) FROM emails_enhanced WHERE status = 'pending') as queueDepth,
         (SELECT COUNT(*) FROM emails_enhanced 
@@ -187,7 +187,7 @@ export class OptimizedQueries {
     `);
 
     // Search query
-    this.searchStmt = this.db.prepare(`
+    this.searchStmt = this?.db?.prepare(`
       SELECT 
         e.id,
         e.subject,
@@ -224,7 +224,7 @@ export class OptimizedQueries {
       offset = 0
     } = options;
 
-    return this.emailListStmt.all({
+    return this?.emailListStmt?.all({
       status,
       phase,
       minCompleteness,
@@ -240,7 +240,7 @@ export class OptimizedQueries {
    * Target: <50ms response time
    */
   getDashboardStats(): DashboardStats {
-    return this.dashboardStatsStmt.get();
+    return this?.dashboardStatsStmt?.get();
   }
 
   /**
@@ -248,7 +248,7 @@ export class OptimizedQueries {
    * Target: <100ms response time
    */
   getChainDetails(chainId: string): any[] {
-    return this.chainDetailsStmt.all({ chainId });
+    return this?.chainDetailsStmt?.all({ chainId });
   }
 
   /**
@@ -256,7 +256,7 @@ export class OptimizedQueries {
    * Target: <50ms response time
    */
   getProcessingBatch(batchSize: number = 20): any[] {
-    return this.batchQueueStmt.all({ batchSize });
+    return this?.batchQueueStmt?.all({ batchSize });
   }
 
   /**
@@ -264,7 +264,7 @@ export class OptimizedQueries {
    * Target: <50ms response time
    */
   getProcessingStatus(): ProcessingStatus {
-    return this.processingStatusStmt.get();
+    return this?.processingStatusStmt?.get();
   }
 
   /**
@@ -291,7 +291,7 @@ export class OptimizedQueries {
       offset = 0
     } = filters;
 
-    return this.searchStmt.all({
+    return this?.searchStmt?.all({
       searchTerm,
       status,
       senderEmail,
@@ -310,7 +310,7 @@ export class OptimizedQueries {
     const minCompleteness = phase === 2 ? 0.3 : 0.7;
     const sourcePhase = phase - 1;
     
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT * FROM emails_enhanced
       WHERE phase_completed = @sourcePhase
         AND chain_completeness_score >= @minCompleteness
@@ -334,14 +334,14 @@ export class OptimizedQueries {
     status: string,
     phase?: number
   ): void {
-    const placeholders = emailIds.map(() => '?').join(',');
+    const placeholders = emailIds?.map(() => '?').join(',');
     const updateFields = ['status = ?', 'updated_at = CURRENT_TIMESTAMP'];
     
     if (phase !== undefined) {
       updateFields.push('phase_completed = ?');
     }
     
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE emails_enhanced
       SET ${updateFields.join(', ')}
       WHERE id IN (${placeholders})
@@ -361,7 +361,7 @@ export class OptimizedQueries {
    * For intelligence extraction insights
    */
   getWorkflowPatterns(): any[] {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       WITH chain_workflows AS (
         SELECT 
           chain_id,

@@ -79,7 +79,7 @@ const mockTrpc = {
 vi.mock("../MessageList", () => ({
   MessageList: ({ messages, isProcessing }: any) => (
     <div data-testid="message-list">
-      {messages.map((msg: any, index: number) => (
+      {messages?.map((msg: any, index: number) => (
         <div key={index} data-testid={`message-${index}`}>
           <span data-testid={`role-${index}`}>{msg.role}</span>
           <span data-testid={`content-${index}`}>{msg.content}</span>
@@ -96,7 +96,7 @@ vi.mock("../InputBox", () => ({
       <input
         data-testid="message-input"
         disabled={disabled}
-        onKeyDown={(e) => {
+        onKeyDown={(e: any) => {
           if (e.key === "Enter") {
             const target = e.target as HTMLInputElement;
             onSendMessage(target.value);
@@ -178,11 +178,11 @@ describe("ChatInterface Component", () => {
       response: "New conversation started!",
     });
     
-    mockTrpc.chat.create.useMutation.mockReturnValue({
+    mockTrpc?.chat?.create.useMutation.mockReturnValue({
       mutateAsync: createMutation,
     });
 
-    mockTrpc.chat.history.useQuery.mockReturnValue({
+    mockTrpc?.chat?.history.useQuery.mockReturnValue({
       data: [], // Empty history for new conversation
     });
 
@@ -208,11 +208,11 @@ describe("ChatInterface Component", () => {
       response: "Message sent via Enter!",
     });
     
-    mockTrpc.chat.create.useMutation.mockReturnValue({
+    mockTrpc?.chat?.create.useMutation.mockReturnValue({
       mutateAsync: createMutation,
     });
 
-    mockTrpc.chat.history.useQuery.mockReturnValue({
+    mockTrpc?.chat?.history.useQuery.mockReturnValue({
       data: [], // Empty history
     });
 
@@ -236,11 +236,11 @@ describe("ChatInterface Component", () => {
       () => new Promise(resolve => setTimeout(resolve, 1000))
     );
     
-    mockTrpc.chat.create.useMutation.mockReturnValue({
+    mockTrpc?.chat?.create.useMutation.mockReturnValue({
       mutateAsync: slowCreateMutation,
     });
 
-    mockTrpc.chat.history.useQuery.mockReturnValue({
+    mockTrpc?.chat?.history.useQuery.mockReturnValue({
       data: [],
     });
 
@@ -289,11 +289,11 @@ describe("ChatInterface Component", () => {
   it("should handle message sending errors", async () => {
     const failingMutation = vi.fn().mockRejectedValue(new Error("Network error"));
     
-    mockTrpc.chat.create.useMutation.mockReturnValue({
+    mockTrpc?.chat?.create.useMutation.mockReturnValue({
       mutateAsync: failingMutation,
     });
 
-    mockTrpc.chat.history.useQuery.mockReturnValue({
+    mockTrpc?.chat?.history.useQuery.mockReturnValue({
       data: [],
     });
 
@@ -316,7 +316,7 @@ describe("ChatInterface Component", () => {
   it("should prevent sending empty messages", async () => {
     const createMutation = vi.fn();
     
-    mockTrpc.chat.create.useMutation.mockReturnValue({
+    mockTrpc?.chat?.create.useMutation.mockReturnValue({
       mutateAsync: createMutation,
     });
 
@@ -337,11 +337,11 @@ describe("ChatInterface Component", () => {
       () => new Promise(resolve => { resolvePromise = resolve; })
     );
     
-    mockTrpc.chat.create.useMutation.mockReturnValue({
+    mockTrpc?.chat?.create.useMutation.mockReturnValue({
       mutateAsync: slowMutation,
     });
 
-    mockTrpc.chat.history.useQuery.mockReturnValue({
+    mockTrpc?.chat?.history.useQuery.mockReturnValue({
       data: [],
     });
 

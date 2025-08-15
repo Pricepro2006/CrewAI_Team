@@ -12,7 +12,7 @@ export function setupTestErrorHandling(): void {
     logger.error("Unhandled Rejection at:", String(promise), "reason:", String(reason));
   });
 
-  process.on("uncaughtException", (error) => {
+  process.on("uncaughtException", (error: any) => {
     logger.error("Uncaught Exception:", String(error));
   });
 }
@@ -37,7 +37,7 @@ export async function validateTestEnvironment(): Promise<{
   }
 
   return {
-    isValid: issues.length === 0,
+    isValid: issues?.length || 0 === 0,
     issues,
     recommendations,
   };
@@ -89,7 +89,7 @@ export const testErrorReporter = {
   errors: [] as Array<{ error: Error; context: string; timestamp: Date }>,
   
   reportError(error: Error, context: string): void {
-    this.errors.push({
+    this?.errors?.push({
       error,
       context,
       timestamp: new Date(),
@@ -102,13 +102,13 @@ export const testErrorReporter = {
   } {
     const errorsByType: Record<string, number> = {};
     
-    this.errors.forEach(({ error }) => {
-      const type = error.constructor.name;
+    this?.errors?.forEach(({ error }) => {
+      const type = error?.constructor?.name;
       errorsByType[type] = (errorsByType[type] || 0) + 1;
     });
     
     return {
-      totalErrors: this.errors.length,
+      totalErrors: this?.errors?.length,
       errorsByType,
     };
   },

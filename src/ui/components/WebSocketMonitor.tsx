@@ -25,7 +25,7 @@ export const WebSocketMonitor: React.FC = () => {
     sendMessage,
     reconnect
   } = useWebSocketConnection({
-    onMessage: (message) => {
+    onMessage: (message: any) => {
       const logEntry: MessageLog = {
         id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         message,
@@ -40,7 +40,7 @@ export const WebSocketMonitor: React.FC = () => {
     onDisconnect: () => {
       console.log('WebSocket Monitor: Disconnected');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('WebSocket Monitor: Error', error);
     }
   });
@@ -119,8 +119,8 @@ export const WebSocketMonitor: React.FC = () => {
               <input
                 type="text"
                 value={testMessage}
-                onChange={(e) => setTestMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendTest()}
+                onChange={(e: any) => setTestMessage(e?.target?.value)}
+                onKeyPress={(e: any) => e.key === 'Enter' && handleSendTest()}
                 placeholder="Enter test message..."
                 className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={!connected}
@@ -139,17 +139,17 @@ export const WebSocketMonitor: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-3">Message Log</h3>
             <div className="bg-gray-50 rounded-lg max-h-96 overflow-y-auto">
-              {messages.length === 0 ? (
+              {messages?.length || 0 === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   No messages received yet
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200">
-                  {messages.map((log) => (
+                  {messages?.map((log: any) => (
                     <div key={log.id} className="p-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-blue-600">
-                          {log.message.type}
+                          {log?.message?.type}
                         </span>
                         <span className="text-xs text-gray-500">
                           {new Date(log.timestamp).toLocaleTimeString()}
@@ -157,7 +157,7 @@ export const WebSocketMonitor: React.FC = () => {
                       </div>
                       <div className="text-sm text-gray-700">
                         <pre className="bg-white p-2 rounded text-xs overflow-x-auto">
-                          {JSON.stringify(log.message.data, null, 2)}
+                          {JSON.stringify(log?.message?.data, null, 2)}
                         </pre>
                       </div>
                     </div>

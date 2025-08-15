@@ -50,7 +50,7 @@ class ServiceWorkerManager {
 
   private async register() {
     try {
-      this.registration = await navigator.serviceWorker.register('/sw.js', {
+      this.registration = await navigator?.serviceWorker?.register('/sw.js', {
         scope: '/',
         updateViaCache: 'none' // Always check for updates
       });
@@ -58,13 +58,13 @@ class ServiceWorkerManager {
       console.log('[SW Manager] Service Worker registered successfully');
 
       // Handle registration states
-      if (this.registration.installing) {
+      if (this?.registration?.installing) {
         console.log('[SW Manager] Service Worker installing...');
-        this.trackInstallation(this.registration.installing);
-      } else if (this.registration.waiting) {
+        this.trackInstallation(this?.registration?.installing);
+      } else if (this?.registration?.waiting) {
         console.log('[SW Manager] Service Worker waiting to activate');
         this.updateAvailable = true;
-      } else if (this.registration.active) {
+      } else if (this?.registration?.active) {
         console.log('[SW Manager] Service Worker active');
       }
 
@@ -78,7 +78,7 @@ class ServiceWorkerManager {
       switch (sw.state) {
         case 'installed':
           console.log('[SW Manager] Service Worker installed');
-          if (!navigator.serviceWorker.controller) {
+          if (!navigator?.serviceWorker?.controller) {
             // First time installation
             this.notifyFirstInstall();
           } else {
@@ -101,7 +101,7 @@ class ServiceWorkerManager {
     if (!this.registration) return;
 
     // Listen for updates
-    this.registration.addEventListener('updatefound', () => {
+    this?.registration?.addEventListener('updatefound', () => {
       console.log('[SW Manager] Update found');
       const newSW = this.registration!.installing;
       if (newSW) {
@@ -110,9 +110,9 @@ class ServiceWorkerManager {
     });
 
     // Listen for controller changes
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    navigator?.serviceWorker?.addEventListener('controllerchange', () => {
       console.log('[SW Manager] Controller changed - reloading page');
-      window.location.reload();
+      window?.location?.reload();
     });
 
     // Check for updates periodically
@@ -133,19 +133,19 @@ class ServiceWorkerManager {
   }
 
   private async getMetrics(): Promise<ServiceWorkerMetrics | null> {
-    return new Promise((resolve) => {
-      if (!navigator.serviceWorker.controller) {
+    return new Promise((resolve: any) => {
+      if (!navigator?.serviceWorker?.controller) {
         resolve(null);
         return;
       }
 
       const messageChannel = new MessageChannel();
       
-      messageChannel.port1.onmessage = (event) => {
+      messageChannel?.port1?.onmessage = (event: any) => {
         resolve(event.data);
       };
 
-      navigator.serviceWorker.controller.postMessage(
+      navigator?.serviceWorker?.controller.postMessage(
         { type: 'GET_METRICS' },
         [messageChannel.port2]
       );
@@ -238,11 +238,11 @@ class ServiceWorkerManager {
       </div>
     `;
 
-    document.body.appendChild(notification);
+    document?.body?.appendChild(notification);
 
     // Animate in
     setTimeout(() => {
-      notification.classList.remove('translate-x-full');
+      notification?.classList?.remove('translate-x-full');
     }, 100);
 
     // Setup event listeners
@@ -271,10 +271,10 @@ class ServiceWorkerManager {
   }
 
   private removeNotification(notification: HTMLElement) {
-    notification.classList.add('translate-x-full');
+    notification?.classList?.add('translate-x-full');
     setTimeout(() => {
       if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
+        notification?.parentNode?.removeChild(notification);
       }
     }, 300);
   }
@@ -284,7 +284,7 @@ class ServiceWorkerManager {
     if (!this.registration) return;
     
     try {
-      await this.registration.update();
+      await this?.registration?.update();
       console.log('[SW Manager] Update check completed');
     } catch (error) {
       console.error('[SW Manager] Update check failed:', error);
@@ -295,7 +295,7 @@ class ServiceWorkerManager {
     if (!this.registration?.waiting) return;
 
     // Send skip waiting message to service worker
-    this.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    this?.registration?.waiting.postMessage({ type: 'SKIP_WAITING' });
   }
 
   getCacheStats(): ServiceWorkerMetrics {
@@ -308,7 +308,7 @@ class ServiceWorkerManager {
 
   // Preload critical routes
   async preloadRoute(path: string) {
-    if (!navigator.serviceWorker.controller) return;
+    if (!navigator?.serviceWorker?.controller) return;
 
     try {
       await fetch(path, { 
@@ -323,14 +323,14 @@ class ServiceWorkerManager {
 
   // Preload critical assets
   async preloadAssets(urls: string[]) {
-    const promises = urls.map(url => 
+    const promises = urls?.map(url => 
       fetch(url, { cache: 'force-cache' }).catch(err => 
         console.warn(`[SW Manager] Failed to preload asset: ${url}`, err)
       )
     );
 
     await Promise.allSettled(promises);
-    console.log(`[SW Manager] Preloaded ${urls.length} assets`);
+    console.log(`[SW Manager] Preloaded ${urls?.length || 0} assets`);
   }
 }
 
@@ -366,7 +366,7 @@ export const useServiceWorker = () => {
     isSupported,
     updateAvailable,
     cacheStats,
-    checkForUpdates: serviceWorkerManager.checkForUpdates.bind(serviceWorkerManager),
-    applyUpdate: serviceWorkerManager.applyUpdate.bind(serviceWorkerManager)
+    checkForUpdates: serviceWorkerManager?.checkForUpdates?.bind(serviceWorkerManager),
+    applyUpdate: serviceWorkerManager?.applyUpdate?.bind(serviceWorkerManager)
   };
 };

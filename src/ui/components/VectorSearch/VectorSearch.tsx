@@ -44,7 +44,7 @@ export const VectorSearch: React.FC = () => {
 
       if (response.data) {
         // Transform the RAG response to match our interface
-        const transformedResults: SearchResult[] = response.data.map(
+        const transformedResults: SearchResult[] = response?.data?.map(
           (item: any, index: number) => ({
             id: item.metadata?.id || `result-${index}`,
             content: item.content || item.text || "No content available",
@@ -94,7 +94,7 @@ export const VectorSearch: React.FC = () => {
               type="number"
               className="topk-input"
               value={topK}
-              onChange={(e) => setTopK(parseInt(e.target.value) || 10)}
+              onChange={(e: any) => setTopK(parseInt(e?.target?.value) || 10)}
               min="1"
               max="50"
             />
@@ -109,7 +109,7 @@ export const VectorSearch: React.FC = () => {
             className="search-textarea"
             placeholder="Enter your search query in natural language..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e: any) => setQuery(e?.target?.value)}
             rows={3}
           />
           <button
@@ -129,7 +129,7 @@ export const VectorSearch: React.FC = () => {
                   height="20"
                   viewBox="0 0 24 24"
                   fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+                  xmlns="http://www?.w3?.org/2000/svg"
                 >
                   <circle
                     cx="11"
@@ -167,22 +167,22 @@ export const VectorSearch: React.FC = () => {
         </div>
       )}
 
-      {results.length > 0 && (
+      {results?.length || 0 > 0 && (
         <div className="search-results">
-          <h2>Search Results ({results.length})</h2>
+          <h2>Search Results ({results?.length || 0})</h2>
           <div className="results-list">
-            {results.map((result) => (
+            {results?.map((result: any) => (
               <div key={result.id} className="result-card">
                 <div className="result-header">
                   <div className="result-metadata">
-                    {result.metadata.source && (
+                    {result?.metadata?.source && (
                       <span className="metadata-item">
                         <svg
                           width="16"
                           height="16"
                           viewBox="0 0 24 24"
                           fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
+                          xmlns="http://www?.w3?.org/2000/svg"
                         >
                           <path
                             d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
@@ -190,12 +190,12 @@ export const VectorSearch: React.FC = () => {
                             strokeWidth="2"
                           />
                         </svg>
-                        {result.metadata.source}
+                        {result?.metadata?.source}
                       </span>
                     )}
-                    {result.metadata.page && (
+                    {result?.metadata?.page && (
                       <span className="metadata-item">
-                        Page {result.metadata.page}
+                        Page {result?.metadata?.page}
                       </span>
                     )}
                   </div>
@@ -213,7 +213,7 @@ export const VectorSearch: React.FC = () => {
                   </div>
                 </div>
                 <div className="result-content">{result.content}</div>
-                {result.metadata.timestamp && (
+                {result?.metadata?.timestamp && (
                   <div className="result-footer">
                     <span className="timestamp">
                       <svg
@@ -221,7 +221,7 @@ export const VectorSearch: React.FC = () => {
                         height="14"
                         viewBox="0 0 24 24"
                         fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
+                        xmlns="http://www?.w3?.org/2000/svg"
                       >
                         <circle
                           cx="12"
@@ -236,7 +236,7 @@ export const VectorSearch: React.FC = () => {
                           strokeWidth="2"
                         />
                       </svg>
-                      {new Date(result.metadata.timestamp).toLocaleDateString()}
+                      {new Date(result?.metadata?.timestamp).toLocaleDateString()}
                     </span>
                   </div>
                 )}
@@ -256,7 +256,7 @@ export const VectorSearch: React.FC = () => {
                 height="48"
                 viewBox="0 0 24 24"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www?.w3?.org/2000/svg"
               >
                 <rect
                   x="3"
@@ -305,7 +305,7 @@ export const VectorSearch: React.FC = () => {
                 height="48"
                 viewBox="0 0 24 24"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www?.w3?.org/2000/svg"
               >
                 <circle
                   cx="12"
@@ -334,7 +334,7 @@ export const VectorSearch: React.FC = () => {
                 height="48"
                 viewBox="0 0 24 24"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www?.w3?.org/2000/svg"
               >
                 <path
                   d="M13 2L3 14H12L11 22L21 10H12L13 2Z"

@@ -77,7 +77,7 @@ export const SystemHealthIndicator: React.FC<SystemHealthIndicatorProps> = ({
               className="health-value"
               style={{ color: getHealthColor(health.status) }}
             >
-              {health.status.toUpperCase()}
+              {health?.status?.toUpperCase()}
             </div>
           </div>
         </div>
@@ -88,9 +88,9 @@ export const SystemHealthIndicator: React.FC<SystemHealthIndicatorProps> = ({
             <div className="metric-content">
               <div className="metric-label">Memory</div>
               <div 
-                className={`metric-value ${getMemoryStatus(health.metrics.memory)}`}
+                className={`metric-value ${getMemoryStatus(health?.metrics?.memory)}`}
               >
-                {formatMemory(health.metrics.memory)}
+                {formatMemory(health?.metrics?.memory)}
               </div>
             </div>
           </div>
@@ -100,7 +100,7 @@ export const SystemHealthIndicator: React.FC<SystemHealthIndicatorProps> = ({
             <div className="metric-content">
               <div className="metric-label">CPU</div>
               <div className="metric-value">
-                {formatCPU(health.metrics.cpu)}
+                {formatCPU(health?.metrics?.cpu)}
               </div>
             </div>
           </div>
@@ -122,7 +122,7 @@ export const SystemHealthIndicator: React.FC<SystemHealthIndicatorProps> = ({
             <div className="metric-content">
               <div className="metric-label">Metrics</div>
               <div className="metric-value">
-                {stats.totalMetrics.toLocaleString()}
+                {stats?.totalMetrics?.toLocaleString()}
               </div>
             </div>
           </div>

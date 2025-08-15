@@ -139,7 +139,7 @@ export class SqlInjectionValidator {
       /repository/i,
     ];
 
-    return dbPatterns.some((pattern) => pattern.test(content));
+    return dbPatterns.some((pattern: any) => pattern.test(content));
   }
 
   /**
@@ -161,10 +161,10 @@ export class SqlInjectionValidator {
 
     // Check for vulnerabilities
     for (const vulnPattern of this.VULNERABILITY_PATTERNS) {
-      if (vulnPattern.pattern.test(line)) {
+      if (vulnPattern?.pattern?.test(line)) {
         // Check if it's actually safe despite matching the pattern
         if (!this.isSafeDespitePattern(line)) {
-          this.vulnerabilities.push({
+          this?.vulnerabilities?.push({
             file: filePath,
             line: lineNumber,
             code: line.trim(),
@@ -182,14 +182,14 @@ export class SqlInjectionValidator {
    */
   private isSafeDespitePattern(line: string): boolean {
     // Check for safe patterns in the same line
-    return this.SAFE_PATTERNS.some((pattern) => pattern.test(line));
+    return this?.SAFE_PATTERNS?.some((pattern: any) => pattern.test(line));
   }
 
   /**
    * Generate and display vulnerability report
    */
   private generateReport(): void {
-    if (this.vulnerabilities.length === 0) {
+    if (this?.vulnerabilities?.length === 0) {
       logger.info(
         "✅ No SQL injection vulnerabilities found!",
         "SQL_VALIDATOR",
@@ -198,46 +198,46 @@ export class SqlInjectionValidator {
     }
 
     logger.warn(
-      `Found ${this.vulnerabilities.length} potential SQL injection vulnerabilities`,
+      `Found ${this?.vulnerabilities?.length} potential SQL injection vulnerabilities`,
       "SQL_VALIDATOR",
     );
 
     // Group by severity
-    const critical = this.vulnerabilities.filter(
-      (v) => v.severity === "critical",
+    const critical = this?.vulnerabilities?.filter(
+      (v: any) => v.severity === "critical",
     );
-    const high = this.vulnerabilities.filter((v) => v.severity === "high");
-    const medium = this.vulnerabilities.filter((v) => v.severity === "medium");
-    const low = this.vulnerabilities.filter((v) => v.severity === "low");
+    const high = this?.vulnerabilities?.filter((v: any) => v.severity === "high");
+    const medium = this?.vulnerabilities?.filter((v: any) => v.severity === "medium");
+    const low = this?.vulnerabilities?.filter((v: any) => v.severity === "low");
 
     console.log("\n=== SQL INJECTION VULNERABILITY REPORT ===\n");
 
-    if (critical.length > 0) {
-      console.log(`\n🔴 CRITICAL (${critical.length}):`);
+    if (critical?.length || 0 > 0) {
+      console.log(`\n🔴 CRITICAL (${critical?.length || 0}):`);
       critical.forEach(this.printVulnerability);
     }
 
-    if (high.length > 0) {
-      console.log(`\n🟠 HIGH (${high.length}):`);
+    if (high?.length || 0 > 0) {
+      console.log(`\n🟠 HIGH (${high?.length || 0}):`);
       high.forEach(this.printVulnerability);
     }
 
-    if (medium.length > 0) {
-      console.log(`\n🟡 MEDIUM (${medium.length}):`);
+    if (medium?.length || 0 > 0) {
+      console.log(`\n🟡 MEDIUM (${medium?.length || 0}):`);
       medium.forEach(this.printVulnerability);
     }
 
-    if (low.length > 0) {
-      console.log(`\n🟢 LOW (${low.length}):`);
+    if (low?.length || 0 > 0) {
+      console.log(`\n🟢 LOW (${low?.length || 0}):`);
       low.forEach(this.printVulnerability);
     }
 
     console.log("\n=== SUMMARY ===");
-    console.log(`Total vulnerabilities: ${this.vulnerabilities.length}`);
-    console.log(`Critical: ${critical.length}`);
-    console.log(`High: ${high.length}`);
-    console.log(`Medium: ${medium.length}`);
-    console.log(`Low: ${low.length}`);
+    console.log(`Total vulnerabilities: ${this?.vulnerabilities?.length}`);
+    console.log(`Critical: ${critical?.length || 0}`);
+    console.log(`High: ${high?.length || 0}`);
+    console.log(`Medium: ${medium?.length || 0}`);
+    console.log(`Low: ${low?.length || 0}`);
     console.log("\n=== RECOMMENDATIONS ===");
     console.log("1. Always use parameterized queries with ? placeholders");
     console.log("2. Use prepare() instead of exec() for dynamic queries");

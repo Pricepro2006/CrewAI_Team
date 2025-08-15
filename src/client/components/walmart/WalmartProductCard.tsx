@@ -165,7 +165,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
                       size="icon"
                       variant="outline"
                       className="h-7 w-7"
-                      onClick={(e) => {
+                      onClick={(e: any) => {
                         e.stopPropagation();
                         handleUpdateQuantity(cartQuantity - 1);
                       }}
@@ -177,7 +177,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
                       size="icon"
                       variant="outline"
                       className="h-7 w-7"
-                      onClick={(e) => {
+                      onClick={(e: any) => {
                         e.stopPropagation();
                         handleUpdateQuantity(cartQuantity + 1);
                       }}
@@ -189,7 +189,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
                   <Button
                     size="sm"
                     className="h-7"
-                    onClick={(e) => {
+                    onClick={(e: any) => {
                       e.stopPropagation();
                       handleAddToCart();
                     }}
@@ -261,7 +261,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
                     "absolute top-2 right-2 h-8 w-8 bg-white/80 backdrop-blur-sm",
                     isFavorite && "text-red-500"
                   )}
-                  onClick={(e) => {
+                  onClick={(e: any) => {
                     e.stopPropagation();
                     handleToggleFavorite();
                   }}
@@ -348,7 +348,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
                 <div className="flex items-center gap-1">
                   <span>Nutrition Score:</span>
                   <Badge variant="outline" className="text-xs">
-                    {product.nutritionalInfo.calories ? `${product.nutritionalInfo.calories} cal` : 'N/A'}
+                    {product?.nutritionalInfo?.calories ? `${product?.nutritionalInfo?.calories} cal` : 'N/A'}
                   </Badge>
                 </div>
               )}
@@ -389,7 +389,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
               <Input
                 type="number"
                 value={cartQuantity}
-                onChange={(e) => handleUpdateQuantity(parseInt(e.target.value) || 1)}
+                onChange={(e: any) => handleUpdateQuantity(parseInt(e?.target?.value) || 1)}
                 className="w-16 text-center"
                 min={1}
                 max={99}
@@ -480,7 +480,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({
                 type="number"
                 placeholder="Target price"
                 value={targetPrice}
-                onChange={(e) => setTargetPrice(e.target.value)}
+                onChange={(e: any) => setTargetPrice(e?.target?.value)}
                 step="0.01"
                 min="0"
               />

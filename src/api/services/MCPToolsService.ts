@@ -41,7 +41,7 @@ export class MCPToolsService {
     this.registerTool({
       name: "brightdata_scraper",
       description: "Web scraping via BrightData",
-      execute: async (params) => {
+      execute: async (params: any) => {
         logger.info("Executing BrightData scraper", "MCP_TOOLS", { params });
         // Integration with BrightData MCP
         return { success: true, data: "Mock scraping result" };
@@ -51,7 +51,7 @@ export class MCPToolsService {
     this.registerTool({
       name: "sequential_thinking",
       description: "Sequential thinking for complex problems",
-      execute: async (params) => {
+      execute: async (params: any) => {
         logger.info("Executing sequential thinking", "MCP_TOOLS", { params });
         // Integration with sequential thinking MCP
         return { success: true, thought: "Mock thought process" };
@@ -61,7 +61,7 @@ export class MCPToolsService {
     this.registerTool({
       name: "memory_store",
       description: "Store and retrieve from memory",
-      execute: async (params) => {
+      execute: async (params: any) => {
         logger.info("Executing memory operation", "MCP_TOOLS", { params });
         // Integration with memory MCP
         return { success: true, stored: true };
@@ -69,17 +69,17 @@ export class MCPToolsService {
     });
 
     logger.info("MCP tools initialized", "MCP_TOOLS", {
-      toolCount: this.tools.size,
+      toolCount: this?.tools?.size,
     });
   }
 
   registerTool(tool: MCPTool): void {
-    this.tools.set(tool.name, tool);
+    this?.tools?.set(tool.name, tool);
     logger.info("Registered MCP tool", "MCP_TOOLS", { name: tool.name });
   }
 
   async executeTool(toolName: string, params: any): Promise<any> {
-    const tool = this.tools.get(toolName);
+    const tool = this?.tools?.get(toolName);
     if (!tool) {
       throw new Error(`MCP tool not found: ${toolName}`);
     }
@@ -88,7 +88,7 @@ export class MCPToolsService {
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(
           () => reject(new Error("Tool execution timeout")),
-          this.config.timeout,
+          this?.config?.timeout,
         );
       });
 
@@ -108,17 +108,17 @@ export class MCPToolsService {
   }
 
   getAvailableTools(): Array<{ name: string; description: string }> {
-    return Array.from(this.tools.values()).map((tool) => ({
+    return Array.from(this?.tools?.values()).map((tool: any) => ({
       name: tool.name,
       description: tool.description,
     }));
   }
 
   isToolEnabled(toolName: string): boolean {
-    if (this.config.enabledTools?.includes("*")) {
+    if (this?.config?.enabledTools?.includes("*")) {
       return true;
     }
-    return this.config.enabledTools?.includes(toolName) || false;
+    return this?.config?.enabledTools?.includes(toolName) || false;
   }
 }
 

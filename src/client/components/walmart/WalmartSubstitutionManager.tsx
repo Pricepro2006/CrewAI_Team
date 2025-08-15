@@ -105,7 +105,7 @@ const SubstitutionCard: React.FC<{
 }> = ({ original, suggestion, onSelect, onFeedback, isSelected = false }) => {
   // Handle ProductPrice type properly for price calculations
   const originalPrice = getNumericPrice(original.price);
-  const suggestionPrice = suggestion.price; // Already a number
+  const suggestionPrice = suggestion?.price; // Already a number
   const priceDiff = suggestionPrice - originalPrice;
   const priceDiffPercent = (priceDiff / originalPrice) * 100;
   
@@ -237,36 +237,36 @@ const SubstitutionCard: React.FC<{
               <span className="text-muted-foreground">Calories</span>
               <p className={cn(
                 "font-medium",
-                suggestion.nutritionComparison.calories.substitute < 
-                suggestion.nutritionComparison.calories.original
+                suggestion?.nutritionComparison?.calories.substitute < 
+                suggestion?.nutritionComparison?.calories.original
                   ? "text-green-600"
                   : "text-red-600"
               )}>
-                {suggestion.nutritionComparison.calories.substitute}
+                {suggestion?.nutritionComparison?.calories.substitute}
               </p>
             </div>
             <div>
               <span className="text-muted-foreground">Protein</span>
               <p className={cn(
                 "font-medium",
-                suggestion.nutritionComparison.protein.substitute > 
-                suggestion.nutritionComparison.protein.original
+                suggestion?.nutritionComparison?.protein.substitute > 
+                suggestion?.nutritionComparison?.protein.original
                   ? "text-green-600"
                   : "text-orange-600"
               )}>
-                {suggestion.nutritionComparison.protein.substitute}g
+                {suggestion?.nutritionComparison?.protein.substitute}g
               </p>
             </div>
             <div>
               <span className="text-muted-foreground">Sugar</span>
               <p className={cn(
                 "font-medium",
-                suggestion.nutritionComparison.sugar.substitute < 
-                suggestion.nutritionComparison.sugar.original
+                suggestion?.nutritionComparison?.sugar.substitute < 
+                suggestion?.nutritionComparison?.sugar.original
                   ? "text-green-600"
                   : "text-red-600"
               )}>
-                {suggestion.nutritionComparison.sugar.substitute}g
+                {suggestion?.nutritionComparison?.sugar.substitute}g
               </p>
             </div>
           </div>
@@ -360,7 +360,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
     },
   ] : [];
   
-  const filteredSuggestions = mockSuggestions.filter(sub => {
+  const filteredSuggestions = mockSuggestions?.filter(sub => {
     switch (filterCategory) {
       case 'preferred':
         return sub.isPreferred;
@@ -368,7 +368,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
         return sub.priceDifference < 0;
       case 'healthier':
         return sub.nutritionComparison && 
-               sub.nutritionComparison.calories.substitute < sub.nutritionComparison.calories.original;
+               sub?.nutritionComparison?.calories.substitute < sub?.nutritionComparison?.calories.original;
       default:
         return true;
     }
@@ -443,7 +443,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
               Substitutions
             </CardTitle>
             <Badge variant="secondary" className="text-xs">
-              {filteredSuggestions.length} options
+              {filteredSuggestions?.length || 0} options
             </Badge>
           </div>
         </CardHeader>
@@ -452,7 +452,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
             <p className="text-sm text-muted-foreground text-center py-4">
               Select a product to see substitution options
             </p>
-          ) : filteredSuggestions.length === 0 ? (
+          ) : filteredSuggestions?.length || 0 === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
               No substitutions available
             </p>
@@ -558,7 +558,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
               <Tabs value={filterCategory} onValueChange={(value: string) => setFilterCategory(value as 'all' | 'preferred' | 'cheaper' | 'healthier')}>
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="all" className="text-xs">
-                    All ({mockSuggestions.length})
+                    All ({mockSuggestions?.length || 0})
                   </TabsTrigger>
                   <TabsTrigger value="preferred" className="text-xs">
                     Preferred
@@ -574,7 +574,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
               
               {/* Substitution suggestions */}
               <div className="space-y-3">
-                {filteredSuggestions.length === 0 ? (
+                {filteredSuggestions?.length || 0 === 0 ? (
                   <div className="text-center py-6">
                     <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">
@@ -582,7 +582,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
                     </p>
                   </div>
                 ) : (
-                  filteredSuggestions.map(suggestion => (
+                  filteredSuggestions?.map(suggestion => (
                     <SubstitutionCard
                       key={suggestion.id}
                       original={product}
@@ -676,13 +676,13 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
                   <div key={factor} className="flex items-center space-x-2">
                     <Checkbox
                       id={factor}
-                      checked={substitutionPrefs.priorityFactors.includes(factor as any)}
+                      checked={substitutionPrefs?.priorityFactors?.includes(factor as any)}
                       onCheckedChange={(checked: boolean) => {
                         setSubstitutionPrefs(prev => ({
                           ...prev,
                           priorityFactors: checked
                             ? [...prev.priorityFactors, factor as 'price' | 'brand' | 'nutrition' | 'organic']
-                            : prev.priorityFactors.filter(f => f !== factor),
+                            : prev?.priorityFactors?.filter(f => f !== factor),
                         }));
                       }}
                     />
@@ -701,7 +701,7 @@ export const WalmartSubstitutionManager: React.FC<WalmartSubstitutionManagerProp
             <div className="space-y-2">
               <Label>Brand preferences</Label>
               <div className="text-sm text-muted-foreground">
-                Preferred: {substitutionPrefs.preferredBrands.length || 'None'}
+                Preferred: {substitutionPrefs?.preferredBrands?.length || 'None'}
               </div>
               <Button variant="outline" size="sm" className="w-full">
                 <Heart className="h-4 w-4 mr-2" />

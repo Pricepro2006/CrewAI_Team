@@ -41,13 +41,13 @@ export class AdvancedFieldSelector {
 
   /**
    * Parse field selection string into structured selector
-   * Supports dot notation: "user.profile.name", "items.*.price"
+   * Supports dot notation: "user?.profile?.name", "items.*.price"
    */
   parseFieldSelection(fields: string[]): FieldSelector {
     const cacheKey = fields.sort().join(',');
     
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey)!;
+    if (this?.cache?.has(cacheKey)) {
+      return this?.cache?.get(cacheKey)!;
     }
 
     const selector: FieldSelector = {};
@@ -57,14 +57,14 @@ export class AdvancedFieldSelector {
     }
 
     // Cache the result
-    if (this.cache.size >= this.maxCacheSize) {
+    if (this?.cache?.size >= this.maxCacheSize) {
       // Remove oldest entries
-      const firstKey = this.cache.keys().next().value;
+      const firstKey = this?.cache?.keys().next().value;
       if (firstKey !== undefined) {
-        this.cache.delete(firstKey);
+        this?.cache?.delete(firstKey);
       }
     }
-    this.cache.set(cacheKey, selector);
+    this?.cache?.set(cacheKey, selector);
 
     return selector;
   }
@@ -77,7 +77,7 @@ export class AdvancedFieldSelector {
     options: FieldSelectionOptions
   ): Partial<T> | Partial<T>[] {
     if (Array.isArray(data)) {
-      return data.map(item => this.selectFields(item, options));
+      return data?.map(item => this.selectFields(item, options));
     }
     
     return this.selectFields(data, options);
@@ -195,12 +195,12 @@ export class AdvancedFieldSelector {
    * Set nested field in selector
    */
   private setNestedField(selector: FieldSelector, path: string[], value: boolean | FieldSelector): void {
-    if (path.length === 0) return;
+    if (path?.length || 0 === 0) return;
 
     const [first, ...rest] = path;
     if (!first) return; // TypeScript guard
     
-    if (rest.length === 0) {
+    if (rest?.length || 0 === 0) {
       selector[first] = value;
     } else {
       if (!selector[first] || typeof selector[first] !== 'object') {
@@ -214,11 +214,11 @@ export class AdvancedFieldSelector {
    * Remove nested field from result
    */
   private removeNestedField<T extends Record<string, any>>(obj: Partial<T>, path: string[]): void {
-    if (path.length === 0) return;
+    if (path?.length || 0 === 0) return;
 
     const [first, ...rest] = path;
     
-    if (rest.length === 0) {
+    if (rest?.length || 0 === 0) {
       delete obj[first as keyof T];
     } else if (obj[first as keyof T] && typeof obj[first as keyof T] === 'object') {
       this.removeNestedField(obj[first as keyof T] as Record<string, any>, rest);
@@ -229,7 +229,7 @@ export class AdvancedFieldSelector {
    * Clear the selector cache
    */
   clearCache(): void {
-    this.cache.clear();
+    this?.cache?.clear();
   }
 
   /**
@@ -237,7 +237,7 @@ export class AdvancedFieldSelector {
    */
   getCacheStats() {
     return {
-      size: this.cache.size,
+      size: this?.cache?.size,
       maxSize: this.maxCacheSize,
     };
   }
@@ -288,12 +288,12 @@ export class PerformanceFieldSelector {
     data: T[],
     options: FieldSelectionOptions
   ): Partial<T>[] {
-    if (data.length === 0) return [];
+    if (data?.length || 0 === 0) return [];
 
     // For small arrays, use direct processing
-    if (data.length <= 100) {
+    if (data?.length || 0 <= 100) {
       const selector = new AdvancedFieldSelector();
-      return data.map(item => selector.selectFields(item, options));
+      return data?.map(item => selector.selectFields(item, options));
     }
 
     // For large arrays, use batch processing with optimization
@@ -301,9 +301,9 @@ export class PerformanceFieldSelector {
     const results: Partial<T>[] = [];
     const selector = new AdvancedFieldSelector();
 
-    for (let i = 0; i < data.length; i += batchSize) {
+    for (let i = 0; i < data?.length || 0; i += batchSize) {
       const batch = data.slice(i, i + batchSize);
-      const batchResults = batch.map(item => selector.selectFields(item, options));
+      const batchResults = batch?.map(item => selector.selectFields(item, options));
       results.push(...batchResults);
     }
 
@@ -426,13 +426,13 @@ export class SQLFieldSelector {
 
     if (options.exclude) {
       // Remove excluded fields
-      fields = fields.filter(field => {
+      fields = fields?.filter(field => {
         const fieldName = field.split(' AS ')[1] || field.split('.')[1];
         return fieldName ? !options.exclude!.includes(fieldName) : true;
       });
     }
 
-    return fields.length > 0 ? fields.join(', ') : `${tableName}.*`;
+    return fields?.length || 0 > 0 ? fields.join(', ') : `${tableName}.*`;
   }
 
   /**
@@ -451,7 +451,7 @@ export class SQLFieldSelector {
 
     // Remove unnecessary JOINs based on field selection
     for (const [joinAlias, joinClause] of Object.entries(availableJoins)) {
-      const needsJoin = fieldSelection.include.some(field => 
+      const needsJoin = fieldSelection?.include?.some(field => 
         field.startsWith(`${joinAlias}.`)
       );
 
@@ -476,7 +476,7 @@ export const FieldSelectionOptimization = {
     data: T[],
     options: FieldSelectionOptions
   ): { original: number; selected: number; reduction: number } {
-    if (data.length === 0) {
+    if (data?.length || 0 === 0) {
       return { original: 0, selected: 0, reduction: 0 };
     }
 

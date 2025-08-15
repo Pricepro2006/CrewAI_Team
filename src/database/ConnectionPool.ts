@@ -19,7 +19,7 @@ import Database, { type Database as DatabaseType } from "better-sqlite3";
 // Type definition for Database instance
 type DatabaseInstance = DatabaseType;
 import { Worker, isMainThread, threadId } from "worker_threads";
-import { Logger } from "../utils/logger.js";
+import { Logger } from "../../utils/logger.js";
 import appConfig from "../config/app.config.js";
 
 const logger = new Logger("ConnectionPool");
@@ -84,7 +84,7 @@ export class DatabaseConnection {
     };
 
     this.configureSQLite();
-    logger.debug(`Created connection ${this.metrics.id} on thread ${threadId}`);
+    logger.debug(`Created connection ${this?.metrics?.id} on thread ${threadId}`);
   }
 
   /**
@@ -93,45 +93,45 @@ export class DatabaseConnection {
   private configureSQLite(): void {
     try {
       // Enable WAL mode for better concurrency
-      if (this.config.enableWAL) {
-        this.db.pragma("journal_mode = WAL");
+      if (this?.config?.enableWAL) {
+        this?.db?.pragma("journal_mode = WAL");
         // Optimize WAL checkpoint behavior
-        this.db.pragma("wal_checkpoint = TRUNCATE");
-        this.db.pragma("wal_autocheckpoint = 1000"); // Pages before auto-checkpoint
+        this?.db?.pragma("wal_checkpoint = TRUNCATE");
+        this?.db?.pragma("wal_autocheckpoint = 1000"); // Pages before auto-checkpoint
       }
 
       // Performance optimizations
-      this.db.pragma("synchronous = NORMAL");
-      this.db.pragma(`cache_size = -${this.config.cacheSize * 1024}`); // Negative = KB instead of pages
-      this.db.pragma("temp_store = MEMORY");
-      this.db.pragma(`mmap_size = ${this.config.memoryMap}`);
+      this?.db?.pragma("synchronous = NORMAL");
+      this?.db?.pragma(`cache_size = -${this?.config?.cacheSize * 1024}`); // Negative = KB instead of pages
+      this?.db?.pragma("temp_store = MEMORY");
+      this?.db?.pragma(`mmap_size = ${this?.config?.memoryMap}`);
       
       // Additional performance optimizations
-      this.db.pragma("page_size = 4096"); // Optimal page size for most systems
-      this.db.pragma("cache_spill = 10000"); // Pages before spilling to disk
-      this.db.pragma("optimize"); // Run ANALYZE on tables
+      this?.db?.pragma("page_size = 4096"); // Optimal page size for most systems
+      this?.db?.pragma("cache_spill = 10000"); // Pages before spilling to disk
+      this?.db?.pragma("optimize"); // Run ANALYZE on tables
       
       // Query planner optimizations
-      this.db.pragma("query_only = 0");
-      this.db.pragma("automatic_index = 1"); // Allow automatic index creation
-      this.db.pragma("case_sensitive_like = 0"); // Case-insensitive LIKE by default
+      this?.db?.pragma("query_only = 0");
+      this?.db?.pragma("automatic_index = 1"); // Allow automatic index creation
+      this?.db?.pragma("case_sensitive_like = 0"); // Case-insensitive LIKE by default
 
       // Enable foreign keys
-      if (this.config.enableForeignKeys) {
-        this.db.pragma("foreign_keys = ON");
+      if (this?.config?.enableForeignKeys) {
+        this?.db?.pragma("foreign_keys = ON");
       }
 
       // Set busy timeout
-      this.db.pragma(`busy_timeout = ${this.config.busyTimeout}`);
+      this?.db?.pragma(`busy_timeout = ${this?.config?.busyTimeout}`);
 
       // Enable thread safety (serialized mode)
-      this.db.pragma("threading_mode = 2"); // SQLITE_THREADSAFE=2 (serialized)
+      this?.db?.pragma("threading_mode = 2"); // SQLITE_THREADSAFE=2 (serialized)
 
-      logger.debug(`SQLite configured for connection ${this.metrics.id}`);
+      logger.debug(`SQLite configured for connection ${this?.metrics?.id}`);
     } catch (error) {
       logger.error(
-        `Failed to configure SQLite for connection ${this.metrics.id}:`,
-        this.metrics.id,
+        `Failed to configure SQLite for connection ${this?.metrics?.id}:`,
+        this?.metrics?.id,
         undefined,
         error instanceof Error ? error : new Error(String(error))
       );
@@ -144,11 +144,11 @@ export class DatabaseConnection {
    */
   getDatabase(): DatabaseInstance {
     if (this.disposed) {
-      throw new Error(`Connection ${this.metrics.id} has been disposed`);
+      throw new Error(`Connection ${this?.metrics?.id} has been disposed`);
     }
 
-    this.metrics.lastUsed = new Date();
-    this.metrics.queryCount++;
+    this?.metrics?.lastUsed = new Date();
+    this?.metrics?.queryCount++;
     return this.db;
   }
 
@@ -159,13 +159,13 @@ export class DatabaseConnection {
     if (!this.disposed) {
       // Update memory usage estimate
       try {
-        const pageCount = this.db.pragma("page_count", {
+        const pageCount = this?.db?.pragma("page_count", {
           simple: true,
         }) as number;
-        const pageSize = this.db.pragma("page_size", {
+        const pageSize = this?.db?.pragma("page_size", {
           simple: true,
         }) as number;
-        this.metrics.memoryUsage = pageCount * pageSize;
+        this?.metrics?.memoryUsage = pageCount * pageSize;
       } catch (error) {
         // Ignore errors in metrics collection
       }
@@ -178,8 +178,8 @@ export class DatabaseConnection {
    * Check if connection is idle
    */
   isIdle(): boolean {
-    const idleTime = Date.now() - this.metrics.lastUsed.getTime();
-    return idleTime > this.config.idleTimeout;
+    const idleTime = Date.now() - this?.metrics?.lastUsed.getTime();
+    return idleTime > this?.config?.idleTimeout;
   }
 
   /**
@@ -191,16 +191,16 @@ export class DatabaseConnection {
     }
 
     try {
-      this.db.close();
+      this?.db?.close();
       this.disposed = true;
-      this.metrics.isActive = false;
+      this?.metrics?.isActive = false;
       logger.debug(
-        `Disposed connection ${this.metrics.id} on thread ${threadId}`,
+        `Disposed connection ${this?.metrics?.id} on thread ${threadId}`,
       );
     } catch (error) {
       logger.error(
-        `Error disposing connection ${this.metrics.id}:`,
-        this.metrics.id,
+        `Error disposing connection ${this?.metrics?.id}:`,
+        this?.metrics?.id,
         undefined,
         error instanceof Error ? error : new Error(String(error))
       );
@@ -231,7 +231,7 @@ export class DatabaseConnectionPool {
 
   private constructor(config?: Partial<ConnectionPoolConfig>) {
     this.config = {
-      databasePath: config?.databasePath || appConfig.database.path,
+      databasePath: config?.databasePath || appConfig?.database?.path,
       maxConnections: config?.maxConnections || 10,
       connectionTimeout: config?.connectionTimeout || 30000,
       idleTimeout: config?.idleTimeout || 300000, // 5 minutes
@@ -277,35 +277,35 @@ export class DatabaseConnectionPool {
     }
 
     const currentThreadId = threadId;
-    let connection = this.connections.get(currentThreadId);
+    let connection = this?.connections?.get(currentThreadId);
 
     // Create new connection if none exists for this thread or if disposed
     if (!connection || connection.isDisposed()) {
-      if (this.connections.size >= this.config.maxConnections) {
+      if (this?.connections?.size >= this?.config?.maxConnections) {
         this.cleanupIdleConnections();
 
-        if (this.connections.size >= this.config.maxConnections) {
+        if (this?.connections?.size >= this?.config?.maxConnections) {
           throw new Error(
-            `Maximum connections (${this.config.maxConnections}) reached`,
+            `Maximum connections (${this?.config?.maxConnections}) reached`,
           );
         }
       }
 
       connection = new DatabaseConnection(this.config);
-      this.connections.set(currentThreadId, connection);
+      this?.connections?.set(currentThreadId, connection);
 
       logger.debug(
         `Created new connection for thread ${currentThreadId}`,
         "ConnectionPool",
         {
-          totalConnections: this.connections.size,
+          totalConnections: this?.connections?.size,
         }
       );
     }
 
     // Update metrics
     const metrics = connection.getMetrics();
-    this.connectionMetrics.set(metrics.id, metrics);
+    this?.connectionMetrics?.set(metrics.id, metrics);
 
     return connection;
   }
@@ -325,11 +325,11 @@ export class DatabaseConnectionPool {
       // Track performance
       const queryTime = Date.now() - startTime;
       this.totalQueries++;
-      this.queryTimes.push(queryTime);
+      this?.queryTimes?.push(queryTime);
 
       // Keep only last 1000 query times for average calculation
-      if (this.queryTimes.length > 1000) {
-        this.queryTimes = this.queryTimes.slice(-1000);
+      if (this?.queryTimes?.length > 1000) {
+        this.queryTimes = this?.queryTimes?.slice(-1000);
       }
 
       return result;
@@ -364,12 +364,12 @@ export class DatabaseConnectionPool {
    * Get pool statistics
    */
   public getStats(): PoolStats {
-    const activeConnections = Array.from(this.connections.values()).filter(
-      (conn) => !conn.isDisposed(),
+    const activeConnections = Array.from(this?.connections?.values()).filter(
+      (conn: any) => !conn.isDisposed(),
     ).length;
 
-    const idleConnections = Array.from(this.connections.values()).filter(
-      (conn) => !conn.isDisposed() && conn.isIdle(),
+    const idleConnections = Array.from(this?.connections?.values()).filter(
+      (conn: any) => !conn.isDisposed() && conn.isIdle(),
     ).length;
 
     const threadConnections = new Map<number, number>();
@@ -380,17 +380,17 @@ export class DatabaseConnectionPool {
     }
 
     const avgQueryTime =
-      this.queryTimes.length > 0
-        ? this.queryTimes.reduce((a, b) => a + b, 0) / this.queryTimes.length
+      this?.queryTimes?.length > 0
+        ? this?.queryTimes?.reduce((a: any, b: any) => a + b, 0) / this?.queryTimes?.length
         : 0;
 
-    const totalMemory = Array.from(this.connectionMetrics.values()).reduce(
+    const totalMemory = Array.from(this?.connectionMetrics?.values()).reduce(
       (total, metrics) => total + (metrics.memoryUsage || 0),
       0,
     );
 
     return {
-      totalConnections: this.connections.size,
+      totalConnections: this?.connections?.size,
       activeConnections,
       idleConnections,
       totalQueries: this.totalQueries,
@@ -404,7 +404,7 @@ export class DatabaseConnectionPool {
    * Get detailed connection metrics
    */
   public getConnectionMetrics(): ConnectionMetrics[] {
-    return Array.from(this.connectionMetrics.values());
+    return Array.from(this?.connectionMetrics?.values());
   }
 
   /**
@@ -417,16 +417,16 @@ export class DatabaseConnectionPool {
       if (connection.isIdle() || connection.isDisposed()) {
         connection.dispose();
         connectionsToRemove.push(threadId);
-        this.connectionMetrics.delete(connection.getMetrics().id);
+        this?.connectionMetrics?.delete(connection.getMetrics().id);
       }
     }
 
     for (const threadId of connectionsToRemove) {
-      this.connections.delete(threadId);
+      this?.connections?.delete(threadId);
     }
 
-    if (connectionsToRemove.length > 0) {
-      logger.debug(`Cleaned up ${connectionsToRemove.length} idle connections`);
+    if (connectionsToRemove?.length || 0 > 0) {
+      logger.debug(`Cleaned up ${connectionsToRemove?.length || 0} idle connections`);
     }
   }
 
@@ -436,7 +436,7 @@ export class DatabaseConnectionPool {
   private startCleanupInterval(): void {
     this.cleanupInterval = setInterval(() => {
       this.cleanupIdleConnections();
-    }, this.config.idleTimeout / 2); // Run cleanup at half the idle timeout
+    }, this?.config?.idleTimeout / 2); // Run cleanup at half the idle timeout
   }
 
   /**
@@ -518,8 +518,8 @@ export class DatabaseConnectionPool {
       }
     }
 
-    this.connections.clear();
-    this.connectionMetrics.clear();
+    this?.connections?.clear();
+    this?.connectionMetrics?.clear();
     this.disposed = true;
 
     // Reset singleton
@@ -532,11 +532,11 @@ export class DatabaseConnectionPool {
    * Force close connection for specific thread (for testing)
    */
   public forceCloseConnection(threadId: number): void {
-    const connection = this.connections.get(threadId);
+    const connection = this?.connections?.get(threadId);
     if (connection) {
       connection.dispose();
-      this.connections.delete(threadId);
-      this.connectionMetrics.delete(connection.getMetrics().id);
+      this?.connections?.delete(threadId);
+      this?.connectionMetrics?.delete(connection.getMetrics().id);
       logger.debug(`Force closed connection for thread ${threadId}`);
     }
   }

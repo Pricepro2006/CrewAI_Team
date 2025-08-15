@@ -74,7 +74,7 @@ export class ReactiveListState extends EventEmitter {
     };
 
     this.cache = new LRUCache<string, List>({
-      max: this.config.maxCacheSize,
+      max: this?.config?.maxCacheSize,
       updateAgeOnGet: true
     });
 
@@ -84,14 +84,14 @@ export class ReactiveListState extends EventEmitter {
 
   private startReactiveLoop(): void {
     setInterval(() => {
-      if (!this.isProcessing && this.operationQueue.length > 0) {
+      if (!this.isProcessing && this?.operationQueue?.length > 0) {
         this.processOperationBatch();
       }
-    }, this.config.syncInterval);
+    }, this?.config?.syncInterval);
   }
 
   private async processOperationBatch(): Promise<void> {
-    if (this.isProcessing || this.operationQueue.length === 0) return;
+    if (this.isProcessing || this?.operationQueue?.length === 0) return;
 
     this.isProcessing = true;
     const startTime = Date.now();
@@ -99,7 +99,7 @@ export class ReactiveListState extends EventEmitter {
     try {
       // Process operations in batches for better performance
       const batchSize = 50;
-      const batch = this.operationQueue.splice(0, batchSize);
+      const batch = this?.operationQueue?.splice(0, batchSize);
       
       // Group operations by list for efficient processing
       const operationsByList = new Map<string, ListOperation[]>();
@@ -121,7 +121,7 @@ export class ReactiveListState extends EventEmitter {
 
       // Emit updates for changed lists
       for (const listId of updatedLists) {
-        const list = this.cache.get(listId);
+        const list = this?.cache?.get(listId);
         if (list) {
           this.emitListUpdate(listId, list);
         }
@@ -129,7 +129,7 @@ export class ReactiveListState extends EventEmitter {
 
       const processingTime = Date.now() - startTime;
       this.emit('batch:processed', {
-        count: batch.length,
+        count: batch?.length || 0,
         listsUpdated: updatedLists.size,
         processingTime
       });
@@ -150,7 +150,7 @@ export class ReactiveListState extends EventEmitter {
     listId: string, 
     operations: ListOperation[]
   ): Promise<{ updated: boolean; conflicts: ListOperation[] }> {
-    let list = this.cache.get(listId);
+    let list = this?.cache?.get(listId);
     let updated = false;
     const conflicts: ListOperation[] = [];
 
@@ -172,7 +172,7 @@ export class ReactiveListState extends EventEmitter {
     if (updated && list) {
       list.version++;
       list.updatedAt = Date.now();
-      this.cache.set(listId, list);
+      this?.cache?.set(listId, list);
     }
 
     return { updated, conflicts };
@@ -216,7 +216,7 @@ export class ReactiveListState extends EventEmitter {
 
       case 'UPDATE_ITEM':
         if (!list || !operation.itemId) return { success: false };
-        const updatedItems = list.items.map(item =>
+        const updatedItems = list?.items?.map(item =>
           item.id === operation.itemId
             ? { ...item, ...operation.data, updatedAt: operation.timestamp }
             : item
@@ -228,7 +228,7 @@ export class ReactiveListState extends EventEmitter {
 
       case 'DELETE_ITEM':
         if (!list || !operation.itemId) return { success: false };
-        const filteredItems = list.items.filter(item => item.id !== operation.itemId);
+        const filteredItems = list?.items?.filter(item => item.id !== operation.itemId);
         return {
           success: true,
           list: { ...list, items: filteredItems }
@@ -239,7 +239,9 @@ export class ReactiveListState extends EventEmitter {
         const { fromIndex, toIndex } = operation.data;
         const reorderedItems = [...list.items];
         const [movedItem] = reorderedItems.splice(fromIndex, 1);
-        reorderedItems.splice(toIndex, 0, movedItem);
+        if (movedItem) {
+          reorderedItems.splice(toIndex, 0, movedItem);
+        }
         return {
           success: true,
           list: { ...list, items: reorderedItems }
@@ -255,7 +257,7 @@ export class ReactiveListState extends EventEmitter {
     const validated = ListOperationSchema.parse(operation);
     
     // Add to queue for batch processing
-    this.operationQueue.push(validated);
+    this?.operationQueue?.push(validated);
 
     // For optimistic operations, apply immediately to cache
     if (validated.optimistic) {
@@ -266,7 +268,7 @@ export class ReactiveListState extends EventEmitter {
   }
 
   private applyOptimisticOperation(operation: ListOperation): void {
-    const list = this.cache.get(operation.listId);
+    const list = this?.cache?.get(operation.listId);
     if (list) {
       // Store rollback data
       operation.rollback = { ...list };
@@ -274,7 +276,7 @@ export class ReactiveListState extends EventEmitter {
       // Apply operation optimistically
       this.applyOperation(list, operation).then(result => {
         if (result.success && result.list) {
-          this.cache.set(operation.listId, result.list);
+          this?.cache?.set(operation.listId, result.list);
           this.emitListUpdate(operation.listId, result.list);
         }
       }).catch(error => {
@@ -289,17 +291,17 @@ export class ReactiveListState extends EventEmitter {
   }
 
   public getList(listId: string): List | undefined {
-    return this.cache.get(listId);
+    return this?.cache?.get(listId);
   }
 
   public subscribeToList(listId: string, ws: WebSocket): void {
-    if (!this.subscribers.has(listId)) {
-      this.subscribers.set(listId, new Set());
+    if (!this?.subscribers?.has(listId)) {
+      this?.subscribers?.set(listId, new Set());
     }
-    this.subscribers.get(listId)!.add(ws);
+    this?.subscribers?.get(listId)!.add(ws);
 
     // Send current list state
-    const list = this.cache.get(listId);
+    const list = this?.cache?.get(listId);
     if (list) {
       this.sendToWebSocket(ws, {
         type: 'list:snapshot',
@@ -315,24 +317,25 @@ export class ReactiveListState extends EventEmitter {
   }
 
   public unsubscribeFromList(listId: string, ws: WebSocket): void {
-    const subscribers = this.subscribers.get(listId);
+    const subscribers = this?.subscribers?.get(listId);
     if (subscribers) {
       subscribers.delete(ws);
       if (subscribers.size === 0) {
-        this.subscribers.delete(listId);
+        this?.subscribers?.delete(listId);
       }
     }
   }
 
   private emitListUpdate(listId: string, list: List): void {
-    const subscribers = this.subscribers.get(listId);
+    const subscribers = this?.subscribers?.get(listId);
     if (!subscribers) return;
 
     const message = {
       type: 'list:update',
       listId,
       data: list,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      optimistic: false
     };
 
     for (const ws of subscribers) {
@@ -354,20 +357,20 @@ export class ReactiveListState extends EventEmitter {
 
   public getMetrics() {
     return {
-      cacheSize: this.cache.size,
-      maxCacheSize: this.config.maxCacheSize,
-      pendingOperations: this.operationQueue.length,
-      activeSubscriptions: Array.from(this.subscribers.entries()).reduce(
+      cacheSize: this?.cache?.size,
+      maxCacheSize: this?.config?.maxCacheSize,
+      pendingOperations: this?.operationQueue?.length,
+      activeSubscriptions: Array.from(this?.subscribers?.entries()).reduce(
         (total, [_, subs]) => total + subs.size, 0
       ),
-      subscribedLists: this.subscribers.size
+      subscribedLists: this?.subscribers?.size
     };
   }
 
   public clearCache(): void {
-    this.cache.clear();
-    this.operationQueue.length = 0;
-    this.pendingOperations.clear();
+    this?.cache?.clear();
+    this?.operationQueue?.length = 0;
+    this?.pendingOperations?.clear();
   }
 }
 
@@ -380,9 +383,9 @@ export class ListManagementService extends EventEmitter {
     this.reactiveState = new ReactiveListState(config?.reactive);
     
     // Forward reactive state events
-    this.reactiveState.on('list:updated', (data) => this.emit('list:updated', data));
-    this.reactiveState.on('error', (error) => this.emit('error', error));
-    this.reactiveState.on('batch:processed', (stats) => this.emit('batch:processed', stats));
+    this?.reactiveState?.on('list:updated', (data: any) => this.emit('list:updated', data));
+    this?.reactiveState?.on('error', (error: any) => this.emit('error', error));
+    this?.reactiveState?.on('batch:processed', (stats: any) => this.emit('batch:processed', stats));
   }
 
   // CRUD operations with reactive updates
@@ -396,10 +399,11 @@ export class ListManagementService extends EventEmitter {
         items: data.items || []
       },
       userId: data.ownerId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      optimistic: false
     };
 
-    this.reactiveState.queueOperation(operation);
+    this?.reactiveState?.queueOperation(operation);
     
     // Return optimistic result
     const newList: List = {
@@ -424,7 +428,7 @@ export class ListManagementService extends EventEmitter {
       optimistic: true
     };
 
-    this.reactiveState.queueOperation(operation);
+    this?.reactiveState?.queueOperation(operation);
   }
 
   public async addItem(listId: string, item: Omit<ListItem, 'id' | 'createdAt' | 'updatedAt'>, userId: string): Promise<string> {
@@ -439,7 +443,7 @@ export class ListManagementService extends EventEmitter {
       optimistic: true
     };
 
-    this.reactiveState.queueOperation(operation);
+    this?.reactiveState?.queueOperation(operation);
     return itemId;
   }
 
@@ -454,7 +458,7 @@ export class ListManagementService extends EventEmitter {
       optimistic: true
     };
 
-    this.reactiveState.queueOperation(operation);
+    this?.reactiveState?.queueOperation(operation);
   }
 
   public async deleteItem(listId: string, itemId: string, userId: string): Promise<void> {
@@ -468,7 +472,7 @@ export class ListManagementService extends EventEmitter {
       optimistic: true
     };
 
-    this.reactiveState.queueOperation(operation);
+    this?.reactiveState?.queueOperation(operation);
   }
 
   public async reorderItems(listId: string, fromIndex: number, toIndex: number, userId: string): Promise<void> {
@@ -481,25 +485,25 @@ export class ListManagementService extends EventEmitter {
       optimistic: true
     };
 
-    this.reactiveState.queueOperation(operation);
+    this?.reactiveState?.queueOperation(operation);
   }
 
   // Real-time subscription management
   public subscribeToList(listId: string, ws: WebSocket): void {
-    this.reactiveState.subscribeToList(listId, ws);
+    this?.reactiveState?.subscribeToList(listId, ws);
   }
 
   public unsubscribeFromList(listId: string, ws: WebSocket): void {
-    this.reactiveState.unsubscribeFromList(listId, ws);
+    this?.reactiveState?.unsubscribeFromList(listId, ws);
   }
 
   // Utility methods
   public getList(listId: string): List | undefined {
-    return this.reactiveState.getList(listId);
+    return this?.reactiveState?.getList(listId);
   }
 
   public getMetrics() {
-    return this.reactiveState.getMetrics();
+    return this?.reactiveState?.getMetrics();
   }
 
   public async flush(): Promise<void> {
@@ -508,6 +512,6 @@ export class ListManagementService extends EventEmitter {
   }
 
   public clearCache(): void {
-    this.reactiveState.clearCache();
+    this?.reactiveState?.clearCache();
   }
 }

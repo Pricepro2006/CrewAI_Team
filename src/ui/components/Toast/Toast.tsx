@@ -51,7 +51,7 @@ export function Toast({
       const decrement = (interval / duration) * 100;
 
       const timer = setInterval(() => {
-        setProgress((prev) => {
+        setProgress((prev: any) => {
           const newProgress = prev - decrement;
           if (newProgress <= 0) {
             clearInterval(timer);

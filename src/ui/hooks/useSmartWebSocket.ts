@@ -84,14 +84,14 @@ export function useSmartWebSocket(options: SmartWebSocketOptions = {}) {
   const websocketUrl = useMemo(() => {
     if (wsUrl) return wsUrl;
     
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.hostname;
+    const protocol = window?.location?.protocol === "https:" ? "wss:" : "ws:";
+    const host = window?.location?.hostname;
     const port = process.env.NODE_ENV === "production" ? "" : ":3001";
     return `${protocol}//${host}${port}/trpc-ws`;
   }, [wsUrl]);
 
   // Polling queries (lazy initialization)
-  const pollingQuery = trpc.polling.batchPoll.useQuery(
+  const pollingQuery = trpc?.polling?.batchPoll.useQuery(
     {
       requests: [
         { key: `walmart:${userId}`, lastVersion: state.dataVersion },
@@ -135,7 +135,7 @@ export function useSmartWebSocket(options: SmartWebSocketOptions = {}) {
         if (result.data) {
           let hasChanges = false;
           
-          for (const [key, response] of Object.entries(result.data.responses)) {
+          for (const [key, response] of Object.entries(result?.data?.responses)) {
             if (response.hasChanges) {
               hasChanges = true;
               setState(prev => ({
@@ -256,7 +256,7 @@ export function useSmartWebSocket(options: SmartWebSocketOptions = {}) {
           onConnect?.();
           onModeChange?.('websocket');
         },
-        onClose: (event) => {
+        onClose: (event: any) => {
           if (isUnmountedRef.current) return;
 
           logger.warn('WebSocket closed', 'SMART_WS', { code: event?.code });
@@ -289,7 +289,7 @@ export function useSmartWebSocket(options: SmartWebSocketOptions = {}) {
             startPolling();
           }
         },
-        onMessage: (message) => {
+        onMessage: (message: any) => {
           if (isUnmountedRef.current) return;
 
           try {
@@ -363,7 +363,7 @@ export function useSmartWebSocket(options: SmartWebSocketOptions = {}) {
     stopPolling();
     
     if (wsClientRef.current) {
-      wsClientRef.current.close();
+      wsClientRef?.current?.close();
       wsClientRef.current = null;
     }
     
@@ -385,7 +385,7 @@ export function useSmartWebSocket(options: SmartWebSocketOptions = {}) {
    */
   const sendMessage = useCallback((message: any) => {
     if (wsClientRef.current && state.mode === 'websocket') {
-      wsClientRef.current.send(JSON.stringify(message));
+      wsClientRef?.current?.send(JSON.stringify(message));
       return true;
     }
     
@@ -458,7 +458,7 @@ export function useSmartWebSocket(options: SmartWebSocketOptions = {}) {
       cleanup();
       
       if (wsClientRef.current) {
-        wsClientRef.current.close();
+        wsClientRef?.current?.close();
         wsClientRef.current = null;
       }
       

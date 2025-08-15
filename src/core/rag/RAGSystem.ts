@@ -2,7 +2,7 @@ import { AdaptiveVectorStore } from "./AdaptiveVectorStore.js";
 import { DocumentProcessor } from "./DocumentProcessor.js";
 import { EmbeddingService } from "./EmbeddingService.js";
 import { RetrievalService } from "./RetrievalService.js";
-import { MODEL_CONFIG } from "../../config/models.config.js";
+import { MODEL_CONFIG } from "../../config/models?.config.js";
 import { logger } from "../../utils/logger.js";
 import type {
   Document,
@@ -22,8 +22,8 @@ export class RAGSystem {
     this.vectorStore = new AdaptiveVectorStore(config.vectorStore);
     this.documentProcessor = new DocumentProcessor(config.chunking);
     this.embeddingService = new EmbeddingService({
-      model: MODEL_CONFIG.models.embedding,
-      baseUrl: config.vectorStore.baseUrl || "http://localhost:11434",
+      model: MODEL_CONFIG?.models?.embedding,
+      baseUrl: config?.vectorStore?.baseUrl || "http://localhost:11434",
     });
     this.retrievalService = new RetrievalService(config.retrieval);
   }
@@ -33,9 +33,9 @@ export class RAGSystem {
 
     try {
       // Initialize vector store (will automatically fallback to in-memory if ChromaDB fails)
-      await this.vectorStore.initialize();
+      await this?.vectorStore?.initialize();
       
-      const storeInfo = this.vectorStore.getStoreInfo();
+      const storeInfo = this?.vectorStore?.getStoreInfo();
       if (storeInfo.fallbackUsed) {
         logger.warn(
           "RAG system initialized with in-memory fallback - advanced RAG features may be limited",
@@ -50,7 +50,7 @@ export class RAGSystem {
 
       // Initialize embedding service (gracefully handle failure)
       try {
-        await this.embeddingService.initialize();
+        await this?.embeddingService?.initialize();
         logger.info("Embedding service initialized successfully", "RAG_SYSTEM");
       } catch (error) {
         logger.warn(
@@ -83,7 +83,7 @@ export class RAGSystem {
     }
 
     // Process document into chunks
-    const processedDocs = await this.documentProcessor.processDocument(
+    const processedDocs = await this?.documentProcessor?.processDocument(
       content,
       {
         sourceId: metadata["id"] || `doc-${Date.now()}`,
@@ -92,7 +92,7 @@ export class RAGSystem {
     );
 
     // Add to vector store
-    await this.vectorStore.addDocuments(processedDocs);
+    await this?.vectorStore?.addDocuments(processedDocs);
   }
 
   async addDocuments(
@@ -105,7 +105,7 @@ export class RAGSystem {
     const allProcessedDocs: ProcessedDocument[] = [];
 
     for (const doc of documents) {
-      const processed = await this.documentProcessor.processDocument(
+      const processed = await this?.documentProcessor?.processDocument(
         doc.content,
         {
           sourceId: doc.metadata["id"] || `doc-${Date.now()}-${Math.random()}`,
@@ -115,7 +115,7 @@ export class RAGSystem {
       allProcessedDocs.push(...processed);
     }
 
-    await this.vectorStore.addDocuments(allProcessedDocs);
+    await this?.vectorStore?.addDocuments(allProcessedDocs);
   }
 
   async search(query: string, limit: number = 5): Promise<QueryResult[]> {
@@ -124,10 +124,10 @@ export class RAGSystem {
     }
 
     // Get initial results from vector store
-    const vectorResults = await this.vectorStore.search(query, limit * 2);
+    const vectorResults = await this?.vectorStore?.search(query, limit * 2);
 
     // Apply retrieval enhancements (reranking, filtering)
-    const enhancedResults = await this.retrievalService.enhance(
+    const enhancedResults = await this?.retrievalService?.enhance(
       query,
       vectorResults,
     );
@@ -145,13 +145,13 @@ export class RAGSystem {
       await this.initialize();
     }
 
-    const vectorResults = await this.vectorStore.searchWithFilter(
+    const vectorResults = await this?.vectorStore?.searchWithFilter(
       query,
       filter,
       limit * 2,
     );
 
-    const enhancedResults = await this.retrievalService.enhance(
+    const enhancedResults = await this?.retrievalService?.enhance(
       query,
       vectorResults,
     );
@@ -159,12 +159,112 @@ export class RAGSystem {
     return enhancedResults.slice(0, limit);
   }
 
+  /**
+   * Get context-aware knowledge for LLM prompts
+   * This method is designed to work with MasterOrchestrator
+   */
+  async getContextForPrompt(
+    query: string,
+    options: {
+      limit?: number;
+      filter?: Record<string, any>;
+      includeMetadata?: boolean;
+      formatForLLM?: boolean;
+    } = {}
+  ): Promise<string> {
+    const {
+      limit = 5,
+      filter,
+      includeMetadata = true,
+      formatForLLM = true,
+    } = options;
+
+    // Search for relevant documents
+    const results = filter
+      ? await this.searchWithFilter(query, filter, limit)
+      : await this.search(query, limit);
+
+    if (results?.length || 0 === 0) {
+      return "";
+    }
+
+    // Format results for LLM consumption
+    if (formatForLLM) {
+      const contextParts: string[] = [];
+      
+      contextParts.push("## Relevant Knowledge Base Context\n");
+      
+      results.forEach((result, index) => {
+        contextParts.push(`### Context ${index + 1} (Score: ${result?.score?.toFixed(3)})`);
+        
+        if (includeMetadata && result.metadata) {
+          const { title, category, fileName, filePath } = result.metadata;
+          if (title) contextParts.push(`**Title:** ${title}`);
+          if (category) contextParts.push(`**Category:** ${category}`);
+          if (fileName) contextParts.push(`**Source:** ${fileName}`);
+        }
+        
+        contextParts.push("\n" + result?.content?.trim());
+        contextParts.push(""); // Empty line between contexts
+      });
+      
+      return contextParts.join("\n");
+    } else {
+      // Return raw concatenated content
+      return results?.map(r => r.content).join("\n\n");
+    }
+  }
+
+  /**
+   * Index knowledge base content for a specific agent or category
+   */
+  async indexAgentKnowledge(
+    agentId: string,
+    documents: Array<{ content: string; metadata?: Record<string, any> }>
+  ): Promise<void> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    const enhancedDocs = documents?.map(doc => ({
+      content: doc.content,
+      metadata: {
+        ...doc.metadata,
+        agentId,
+        category: `agent-${agentId}`,
+        indexed: new Date().toISOString(),
+      },
+    }));
+
+    await this.addDocuments(enhancedDocs);
+    
+    logger.info(
+      `Indexed ${documents?.length || 0} documents for agent: ${agentId}`,
+      "RAG_SYSTEM"
+    );
+  }
+
+  /**
+   * Get knowledge specific to an agent
+   */
+  async getAgentKnowledge(
+    agentId: string,
+    query: string,
+    limit: number = 5
+  ): Promise<QueryResult[]> {
+    return await this.searchWithFilter(
+      query,
+      { agentId },
+      limit
+    );
+  }
+
   async deleteDocument(documentId: string): Promise<void> {
     if (!this.isInitialized) {
       await this.initialize();
     }
 
-    await this.vectorStore.deleteBySourceId(documentId);
+    await this?.vectorStore?.deleteBySourceId(documentId);
   }
 
   async getDocument(documentId: string): Promise<Document | null> {
@@ -172,7 +272,7 @@ export class RAGSystem {
       await this.initialize();
     }
 
-    return await this.vectorStore.getDocument(documentId);
+    return await this?.vectorStore?.getDocument(documentId);
   }
 
   async getAllDocuments(
@@ -183,7 +283,7 @@ export class RAGSystem {
       await this.initialize();
     }
 
-    return await this.vectorStore.getAllDocuments(limit, offset);
+    return await this?.vectorStore?.getAllDocuments(limit, offset);
   }
 
   async getStats(): Promise<RAGStats> {
@@ -191,10 +291,10 @@ export class RAGSystem {
       await this.initialize();
     }
 
-    const totalDocuments = await this.vectorStore.getDocumentCount();
-    const totalChunks = await this.vectorStore.getChunkCount();
-    const collections = await this.vectorStore.getCollections();
-    const storeInfo = this.vectorStore.getStoreInfo();
+    const totalDocuments = await this?.vectorStore?.getDocumentCount();
+    const totalChunks = await this?.vectorStore?.getChunkCount();
+    const collections = await this?.vectorStore?.getCollections();
+    const storeInfo = this?.vectorStore?.getStoreInfo();
 
     return {
       totalDocuments,
@@ -203,7 +303,7 @@ export class RAGSystem {
       averageChunksPerDocument:
         totalDocuments > 0 ? Math.round(totalChunks / totalChunks) : 0,
       vectorStoreType: storeInfo.type,
-      embeddingModel: MODEL_CONFIG.models.embedding,
+      embeddingModel: MODEL_CONFIG?.models?.embedding,
       fallbackMode: storeInfo.fallbackUsed,
     };
   }
@@ -228,7 +328,7 @@ export class RAGSystem {
     let embeddingHealth;
 
     try {
-      vectorStoreHealth = await this.vectorStore.healthCheck();
+      vectorStoreHealth = await this?.vectorStore?.healthCheck();
     } catch (error) {
       vectorStoreHealth = {
         status: "error" as const,
@@ -241,7 +341,7 @@ export class RAGSystem {
     // Check embedding service
     try {
       // Try a simple embedding operation
-      await this.embeddingService.embed("test");
+      await this?.embeddingService?.embed("test");
       embeddingHealth = {
         status: "healthy" as const,
         message: "Embedding service operational",
@@ -273,7 +373,7 @@ export class RAGSystem {
       await this.initialize();
     }
 
-    await this.vectorStore.clear();
+    await this?.vectorStore?.clear();
   }
 
   async updateDocument(
@@ -300,15 +400,15 @@ export class RAGSystem {
     } else {
       // Simple CSV export
       const headers = ["id", "content", "metadata"];
-      const rows = documents.map((doc) => [
+      const rows = documents?.map((doc: any) => [
         doc.id,
-        doc.content.replace(/"/g, '""'),
+        doc?.content?.replace(/"/g, '""'),
         JSON.stringify(doc.metadata).replace(/"/g, '""'),
       ]);
 
       return [
         headers.join(","),
-        ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+        ...rows?.map((row: any) => row?.map((cell: any) => `"${cell}"`).join(",")),
       ].join("\n");
     }
   }
@@ -325,11 +425,11 @@ export class RAGSystem {
       // Simple CSV parsing
       const lines = data.split("\n");
       const headers =
-        lines[0]?.split(",").map((h) => h.trim().replace(/"/g, "")) || [];
+        lines[0]?.split(",").map((h: any) => h.trim().replace(/"/g, "")) || [];
 
-      documents = lines.slice(1).map((line) => {
+      documents = lines.slice(1).map((line: any) => {
         const values = line.match(/(".*?"|[^,]+)/g) || [];
-        const cleaned = values.map((v) =>
+        const cleaned = values?.map((v: any) =>
           v.trim().replace(/^"|"$/g, "").replace(/""/g, '"'),
         );
 

@@ -20,7 +20,7 @@ export const InputBox: React.FC<InputBoxProps> = ({
 
       // Reset textarea height
       if (textareaRef.current) {
-        textareaRef.current.style.height = "auto";
+        textareaRef?.current?.style.height = "auto";
       }
     }
   };
@@ -33,12 +33,12 @@ export const InputBox: React.FC<InputBoxProps> = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
+    setMessage(e?.target?.value);
 
     // Auto-resize textarea
     if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      textareaRef?.current?.style.height = "auto";
+      textareaRef?.current?.style.height = `${textareaRef?.current?.scrollHeight}px`;
     }
   };
 

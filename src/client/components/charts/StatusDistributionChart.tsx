@@ -55,7 +55,7 @@ export const StatusDistributionChart: React.FC<
       },
     ];
 
-    const labels = statusData.map((item) => {
+    const labels = statusData?.map((item: any) => {
       if (showPercentages && totalEmails > 0) {
         const percentage = ((item.value / totalEmails) * 100).toFixed(1);
         return `${item.label} (${percentage}%)`;
@@ -68,18 +68,18 @@ export const StatusDistributionChart: React.FC<
       datasets: [
         {
           label: "Email Count",
-          data: statusData.map((item) => item.value),
+          data: statusData?.map((item: any) => item.value),
           backgroundColor:
             chartType === "bar"
-              ? statusData.map((item) => `${item.color}CC`) // Add transparency for bars
-              : statusData.map((item) => item.color),
-          borderColor: statusData.map((item) => item.color),
+              ? statusData?.map((item: any) => `${item.color}CC`) // Add transparency for bars
+              : statusData?.map((item: any) => item.color),
+          borderColor: statusData?.map((item: any) => item.color),
           borderWidth: chartType === "doughnut" || chartType === "pie" ? 2 : 1,
-          hoverBackgroundColor: statusData.map((item) => item.color),
-          hoverBorderColor: statusData.map((item) => item.color),
+          hoverBackgroundColor: statusData?.map((item: any) => item.color),
+          hoverBorderColor: statusData?.map((item: any) => item.color),
           hoverBorderWidth: 3,
           // Custom data for click handling
-          statusKeys: statusData.map((item) => item.key),
+          statusKeys: statusData?.map((item: any) => item.key),
         },
       ],
     };
@@ -113,9 +113,9 @@ export const StatusDistributionChart: React.FC<
               size: 12,
             },
             generateLabels: function (chart: any) {
-              const data = chart.data;
-              if (data.labels.length && data.datasets.length) {
-                return data.labels.map((label: string, i: number) => {
+              const data = chart?.data;
+              if (data?.labels?.length && data?.datasets?.length) {
+                return data?.labels?.map((label: string, i: number) => {
                   const dataset = data.datasets[0];
                   const value = dataset.data[i];
                   return {
@@ -207,11 +207,11 @@ export const StatusDistributionChart: React.FC<
 
   // Handle chart click events
   const handleChartClick = (event: any, elements: any[]) => {
-    if (onClick && elements.length > 0) {
+    if (onClick && elements?.length || 0 > 0) {
       const elementIndex = elements[0].index;
       const dataset = chartData.datasets[0];
       if (dataset && dataset.statusKeys) {
-        const statusKeys = dataset.statusKeys;
+        const statusKeys = dataset?.statusKeys;
         const status = statusKeys[elementIndex];
         const count = dataset.data[elementIndex];
         if (status !== undefined && count !== undefined) {

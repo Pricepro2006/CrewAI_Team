@@ -66,15 +66,15 @@ export class HybridSearchService {
 
       return {
         results: paginatedResults,
-        total: rankedResults.length,
+        total: rankedResults?.length || 0,
         page,
         limit,
-        hasMore: offset + limit < rankedResults.length,
+        hasMore: offset + limit < rankedResults?.length || 0,
         searchTime: Date.now() - startTime,
         strategies: ['text', 'semantic', 'hybrid']
       };
     } catch (error) {
-      logger.error('Error in hybrid search:', error);
+      logger.error('Error in hybrid search:', error as string);
       throw error;
     }
   }
@@ -111,7 +111,7 @@ export class HybridSearchService {
     const merged = [...textResults, ...semanticResults];
     
     // Remove duplicates based on ID
-    const uniqueResults = merged.filter((result, index, self) => 
+    const uniqueResults = merged?.filter((result, index, self) => 
       index === self.findIndex(r => r.id === result.id)
     );
 
@@ -136,7 +136,7 @@ export class HybridSearchService {
     }
 
     // Apply query-specific boosting
-    if (result.title.toLowerCase().includes(query.q.toLowerCase())) {
+    if (result?.title?.toLowerCase().includes(query?.q?.toLowerCase())) {
       score *= 1.1;
     }
 
@@ -151,7 +151,7 @@ export class HybridSearchService {
         filters: { ...query.filters, type: 'product' }
       });
     } catch (error) {
-      logger.error('Error in product search:', error);
+      logger.error('Error in product search:', error as string);
       throw error;
     }
   }
@@ -164,7 +164,7 @@ export class HybridSearchService {
         filters: { ...query.filters, type: 'email' }
       });
     } catch (error) {
-      logger.error('Error in email search:', error);
+      logger.error('Error in email search:', error as string);
       throw error;
     }
   }
@@ -178,7 +178,7 @@ export class HybridSearchService {
         `${partial} suggestion 3`
       ];
     } catch (error) {
-      logger.error('Error getting search suggestions:', error);
+      logger.error('Error getting search suggestions:', error as string);
       throw error;
     }
   }

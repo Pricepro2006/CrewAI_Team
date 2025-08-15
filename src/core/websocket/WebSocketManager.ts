@@ -57,10 +57,10 @@ export class WebSocketManager {
 
   private setupMiddleware(): void {
     // Authentication middleware
-    this.io.use(async (socket: AuthenticatedSocket, next) => {
+    this?.io?.use(async (socket: AuthenticatedSocket, next) => {
       try {
         // TODO: Implement proper JWT authentication
-        const token = socket.handshake.auth.token;
+        const token = socket?.handshake?.auth.token;
 
         if (!token) {
           // For now, allow anonymous connections
@@ -73,7 +73,7 @@ export class WebSocketManager {
 
         // Validate token and extract user info
         // const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        // socket.userId = decoded.userId;
+        // socket.userId = decoded.userId || "";
         // socket.sessionId = decoded.sessionId;
 
         next();
@@ -85,7 +85,7 @@ export class WebSocketManager {
   }
 
   private setupEventHandlers(): void {
-    this.io.on("connection", (socket: AuthenticatedSocket) => {
+    this?.io?.on("connection", (socket: AuthenticatedSocket) => {
       logger.info("Client connected", "WEBSOCKET", {
         socketId: socket.id,
         sessionId: socket.sessionId,
@@ -142,7 +142,7 @@ export class WebSocketManager {
       });
 
       // Handle disconnection
-      socket.on("disconnect", (reason) => {
+      socket.on("disconnect", (reason: any) => {
         logger.info("Client disconnected", "WEBSOCKET", {
           socketId: socket.id,
           sessionId: socket.sessionId,
@@ -151,7 +151,7 @@ export class WebSocketManager {
       });
 
       // Handle errors
-      socket.on("error", (error) => {
+      socket.on("error", (error: any) => {
         logger.error("WebSocket error", "WEBSOCKET", {
           socketId: socket.id,
           error,
@@ -210,25 +210,25 @@ export class WebSocketManager {
     const statsInterval = setInterval(async () => {
       try {
         const stats = await this.getEmailStats();
-        this.io.to("email:stats").emit("data:emailStats", stats);
+        this?.io?.to("email:stats").emit("data:emailStats", stats);
       } catch (error) {
         logger.error("Failed to broadcast email stats", "WEBSOCKET", { error });
       }
     }, 5000);
-    this.updateIntervals.set("emailStats", statsInterval);
+    this?.updateIntervals?.set("emailStats", statsInterval);
 
     // Broadcast daily volume every 30 seconds
     const volumeInterval = setInterval(async () => {
       try {
         const dailyVolume = await this.getDailyVolume();
-        this.io.to("email:dailyVolume").emit("data:dailyVolume", dailyVolume);
+        this?.io?.to("email:dailyVolume").emit("data:dailyVolume", dailyVolume);
       } catch (error) {
         logger.error("Failed to broadcast daily volume", "WEBSOCKET", {
           error,
         });
       }
     }, 30000);
-    this.updateIntervals.set("dailyVolume", volumeInterval);
+    this?.updateIntervals?.set("dailyVolume", volumeInterval);
 
     // Broadcast entity metrics every 30 seconds
     const entityInterval = setInterval(async () => {
@@ -243,7 +243,7 @@ export class WebSocketManager {
         });
       }
     }, 30000);
-    this.updateIntervals.set("entityMetrics", entityInterval);
+    this?.updateIntervals?.set("entityMetrics", entityInterval);
 
     // Broadcast workflow distribution every 60 seconds
     const workflowInterval = setInterval(async () => {
@@ -258,7 +258,7 @@ export class WebSocketManager {
         });
       }
     }, 60000);
-    this.updateIntervals.set("workflowDistribution", workflowInterval);
+    this?.updateIntervals?.set("workflowDistribution", workflowInterval);
   }
 
   /**
@@ -267,7 +267,7 @@ export class WebSocketManager {
   private async getEmailStats() {
     return await redisService.cacheWithFallback(
       CacheKeys.emailStats(),
-      async () => await this.emailAnalyticsService.getStats(),
+      async () => await this?.emailAnalyticsService?.getStats(),
       CacheTTL.SHORT,
     );
   }
@@ -345,14 +345,14 @@ export class WebSocketManager {
       case "emailStats": {
         await redisService.delete(CacheKeys.emailStats());
         const stats = await this.getEmailStats();
-        this.io.to("email:stats").emit("data:emailStats", stats);
+        this?.io?.to("email:stats").emit("data:emailStats", stats);
         break;
       }
 
       case "dailyVolume": {
         await redisService.delete(CacheKeys.emailDailyVolume(7));
         const dailyVolume = await this.getDailyVolume();
-        this.io.to("email:dailyVolume").emit("data:dailyVolume", dailyVolume);
+        this?.io?.to("email:dailyVolume").emit("data:dailyVolume", dailyVolume);
         break;
       }
 
@@ -364,21 +364,21 @@ export class WebSocketManager {
    * Emit event to specific user
    */
   public emitToUser(userId: string, event: string, data: unknown): void {
-    this.io.to(`user:${userId}`).emit(event, data);
+    this?.io?.to(`user:${userId}`).emit(event, data);
   }
 
   /**
    * Emit event to specific channel
    */
   public emitToChannel(channel: string, event: string, data: unknown): void {
-    this.io.to(channel).emit(event, data);
+    this?.io?.to(channel).emit(event, data);
   }
 
   /**
    * Broadcast event to all connected clients
    */
   public broadcast(event: string, data: unknown): void {
-    this.io.emit(event, data);
+    this?.io?.emit(event, data);
   }
 
   /**
@@ -386,9 +386,9 @@ export class WebSocketManager {
    */
   public getStats() {
     return {
-      connectedClients: this.io.engine.clientsCount,
-      rooms: this.io.sockets.adapter.rooms.size,
-      updateIntervals: this.updateIntervals.size,
+      connectedClients: this?.io?.engine.clientsCount,
+      rooms: this?.io?.sockets.adapter?.rooms?.size,
+      updateIntervals: this?.updateIntervals?.size,
     };
   }
 
@@ -403,17 +403,17 @@ export class WebSocketManager {
       clearInterval(interval);
       logger.debug(`Cleared interval: ${name}`, "WEBSOCKET");
     }
-    this.updateIntervals.clear();
+    this?.updateIntervals?.clear();
 
     // Close all connections
-    this.io.disconnectSockets(true);
+    this?.io?.disconnectSockets(true);
 
     // Close email analytics service
-    this.emailAnalyticsService.close();
+    this?.emailAnalyticsService?.close();
 
     // Close the server
-    await new Promise<void>((resolve) => {
-      this.io.close(() => {
+    await new Promise<void>((resolve: any) => {
+      this?.io?.close(() => {
         logger.info("WebSocket server closed", "WEBSOCKET");
         resolve();
       });

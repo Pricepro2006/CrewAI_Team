@@ -382,8 +382,8 @@ class TestAssertions {
   static expectSuccessfulIngestion(result: any): void {
     expect(result.success).toBe(true);
     expect(result.data).toBeDefined();
-    expect(result.data.messageId).toBeDefined();
-    expect(result.data.status).toMatch(/^(processed|duplicate)$/);
+    expect(result?.data?.messageId).toBeDefined();
+    expect(result?.data?.status).toMatch(/^(processed|duplicate)$/);
   }
 
   static expectFailedIngestion(result: any, errorMessage?: string): void {
@@ -400,20 +400,20 @@ class TestAssertions {
     expectedProcessed?: number
   ): void {
     expect(result.success).toBe(true);
-    expect(result.data.totalEmails).toBe(expectedTotal);
-    expect(result.data.processed + result.data.duplicates + result.data.failed).toBe(expectedTotal);
+    expect(result?.data?.totalEmails).toBe(expectedTotal);
+    expect(result?.data?.processed + result?.data?.duplicates + result?.data?.failed).toBe(expectedTotal);
     
     if (expectedProcessed !== undefined) {
-      expect(result.data.processed).toBe(expectedProcessed);
+      expect(result?.data?.processed).toBe(expectedProcessed);
     }
   }
 
   static expectHealthyService(health: any): void {
     expect(health.healthy).toBe(true);
     expect(health.status).toBe('operational');
-    expect(health.components.redis.healthy).toBe(true);
-    expect(health.components.queue.healthy).toBe(true);
-    expect(health.components.database.healthy).toBe(true);
+    expect(health?.components?.redis.healthy).toBe(true);
+    expect(health?.components?.queue.healthy).toBe(true);
+    expect(health?.components?.database.healthy).toBe(true);
   }
 
   static expectDegradedService(health: any): void {

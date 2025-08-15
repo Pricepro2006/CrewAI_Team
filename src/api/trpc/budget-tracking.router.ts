@@ -308,14 +308,14 @@ export const budgetTrackingRouter = router({
           alerts.push({
             id: "budget-warning",
             type: "warning",
-            message: `${summary.percentage.toFixed(0)}% of monthly budget used`,
+            message: `${summary?.percentage?.toFixed(0)}% of monthly budget used`,
             percentage: summary.percentage,
             timestamp: new Date().toISOString(),
           });
         }
 
         // Check category budgets
-        summary.categories.forEach((category: any) => {
+        summary?.categories?.forEach((category: any) => {
           if (category.percentage >= 100) {
             alerts.push({
               id: `category-exceeded-${category.name}`,

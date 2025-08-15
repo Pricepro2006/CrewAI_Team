@@ -142,7 +142,7 @@ export class IntegrationCoordinator {
     // Additional custom handlers can be registered here
 
     // Handle uncaught exceptions
-    process.on("uncaughtException", (error) => {
+    process.on("uncaughtException", (error: any) => {
       console.error("Uncaught Exception:", error);
       const systemError = createSystemError(
         ERROR_CODES.INTERNAL_ERROR,
@@ -193,12 +193,12 @@ export class IntegrationCoordinator {
     // Create default circuit breakers for critical services
     const services = ["database", "ollama", "chromadb", "vectorstore"];
 
-    services.forEach((service) => {
+    services.forEach((service: any) => {
       const circuitBreaker = new CircuitBreaker(defaultCircuitBreakerConfig);
       const retryHandler = new RetryHandler(defaultRetryStrategy);
 
-      this.circuitBreakers.set(service, circuitBreaker);
-      this.retryHandlers.set(service, retryHandler);
+      this?.circuitBreakers?.set(service, circuitBreaker);
+      this?.retryHandlers?.set(service, retryHandler);
     });
   }
 
@@ -251,11 +251,11 @@ export class IntegrationCoordinator {
   // =====================================================
 
   getCircuitBreaker(service: string): CircuitBreaker | undefined {
-    return this.circuitBreakers.get(service);
+    return this?.circuitBreakers?.get(service);
   }
 
   getRetryHandler(service: string): RetryHandler | undefined {
-    return this.retryHandlers.get(service);
+    return this?.retryHandlers?.get(service);
   }
 
   async getHealthStatus(): Promise<HealthStatus> {
@@ -353,7 +353,7 @@ export class IntegrationCoordinator {
     serviceName: string,
     operation: () => Promise<T>,
   ): Promise<T> {
-    const circuitBreaker = this.circuitBreakers.get(serviceName);
+    const circuitBreaker = this?.circuitBreakers?.get(serviceName);
 
     if (circuitBreaker) {
       return await circuitBreaker.execute(operation);
@@ -368,7 +368,7 @@ export class IntegrationCoordinator {
     operation: () => Promise<T>,
     context: Record<string, unknown> = {},
   ): Promise<T> {
-    const retryHandler = this.retryHandlers.get(serviceName);
+    const retryHandler = this?.retryHandlers?.get(serviceName);
 
     if (retryHandler) {
       return await retryHandler.execute(operation, context);

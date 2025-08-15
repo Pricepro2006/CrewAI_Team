@@ -108,10 +108,10 @@ export class DealPipelineIntegration {
       logger.info("Initializing deal pipeline integration", "DEAL_INTEGRATION");
       
       // Start monitoring
-      await this.monitor.startMonitoring();
+      await this?.monitor?.startMonitoring();
       
       // Start the new pipeline
-      await this.pipelineService.start();
+      await this?.pipelineService?.start();
       
       // Begin migration process
       await this.startMigrationProcess();
@@ -140,10 +140,10 @@ export class DealPipelineIntegration {
     const startTime = Date.now();
     
     try {
-      this.performanceStats.totalRequests++;
+      this?.performanceStats?.totalRequests++;
       
       // Get user purchase history for personalization
-      const userHistory = await this.purchaseHistory.getProductFrequency(userId);
+      const userHistory = await this?.purchaseHistory?.getProductFrequency(userId);
       
       const results: IntegratedDealResult[] = [];
       
@@ -158,21 +158,21 @@ export class DealPipelineIntegration {
         const combined = await this.combineAndRankDeals(legacyDeals, newDeals, userHistory);
         results.push(...combined.slice(0, limit));
         
-        this.performanceStats.hybridDeals++;
+        this?.performanceStats?.hybridDeals++;
         
       } else if (this.migrationProgress >= 100) {
         // Use new pipeline exclusively
         const newDeals = await this.getNewPipelineDeals(userId, preferences, userHistory, limit);
         results.push(...newDeals);
         
-        this.performanceStats.newPipelineDeals++;
+        this?.performanceStats?.newPipelineDeals++;
         
       } else {
         // Use legacy engine
         const legacyDeals = await this.getLegacyDeals(userId, preferences, userHistory, limit);
         results.push(...legacyDeals);
         
-        this.performanceStats.legacyEngineDeals++;
+        this?.performanceStats?.legacyEngineDeals++;
       }
       
       // Apply user learning
@@ -186,7 +186,7 @@ export class DealPipelineIntegration {
       
       logger.info("Integrated deals retrieved", "DEAL_INTEGRATION", {
         userId,
-        dealCount: results.length,
+        dealCount: results?.length || 0,
         responseTime,
         source: this.hybridMode ? 'hybrid' : this.migrationProgress >= 100 ? 'new_pipeline' : 'legacy'
       });
@@ -208,8 +208,8 @@ export class DealPipelineIntegration {
   ): Promise<IntegratedDealResult[]> {
     try {
       // Record price in history service
-      await this.priceHistory.recordPrice(product, {
-        currentPrice: product.livePrice?.price || (typeof product.price === 'object' ? product.price.regular : product.price) || 0,
+      await this?.priceHistory?.recordPrice(product, {
+        currentPrice: product.livePrice?.price || (typeof product.price === 'object' ? product?.price?.regular : product.price) || 0,
         salePrice: product.livePrice?.salePrice,
         wasPrice: product.livePrice?.wasPrice,
         source: 'api',
@@ -218,7 +218,7 @@ export class DealPipelineIntegration {
       });
       
       // Detect deals using new engine
-      const newDeals = await this.newDealEngine.detectDeals(
+      const newDeals = await this?.newDealEngine?.detectDeals(
         product.walmartId || product.id,
         product,
         {
@@ -228,7 +228,7 @@ export class DealPipelineIntegration {
         }
       );
       
-      const results: IntegratedDealResult[] = newDeals.map(deal => ({
+      const results: IntegratedDealResult[] = newDeals?.map(deal => ({
         newDeal: deal,
         source: 'new_pipeline' as const,
         confidence: deal.confidenceScore,
@@ -236,13 +236,13 @@ export class DealPipelineIntegration {
       }));
       
       // If deals detected, add to pipeline queue for monitoring
-      if (results.length > 0) {
-        this.pipelineService.addProductToQueue(product.walmartId || product.id, 'high');
+      if (results?.length || 0 > 0) {
+        this?.pipelineService?.addProductToQueue(product.walmartId || product.id, 'high');
         
         // Notify via WebSocket
         for (const result of results) {
           if (result.newDeal) {
-            this.webSocketService.broadcastDealNotification(result.newDeal);
+            this?.webSocketService?.broadcastDealNotification(result.newDeal);
           }
         }
       }
@@ -265,7 +265,7 @@ export class DealPipelineIntegration {
   ): Promise<Array<WalmartProduct & { integratedDeals: IntegratedDealResult[] }>> {
     try {
       // Search for products using price fetcher
-      const products = await this.priceFetcher.searchProductsWithPrices(
+      const products = await this?.priceFetcher?.searchProductsWithPrices(
         query,
         location || { zipCode: '29301', city: 'Spartanburg', state: 'SC' },
         10
@@ -285,8 +285,8 @@ export class DealPipelineIntegration {
       
       logger.info("Product search with deals completed", "DEAL_INTEGRATION", {
         query,
-        productsFound: products.length,
-        totalDeals: results.reduce((sum, p) => sum + p.integratedDeals.length, 0)
+        productsFound: products?.length || 0,
+        totalDeals: results.reduce((sum: any, p: any) => sum + p?.integratedDeals?.length, 0)
       });
       
       return results;
@@ -312,7 +312,7 @@ export class DealPipelineIntegration {
       migrationProgress: this.migrationProgress,
       hybridMode: this.hybridMode,
       performanceStats: { ...this.performanceStats },
-      healthStatus: this.monitor.getHealthStatus()
+      healthStatus: this?.monitor?.getHealthStatus()
     };
   }
 
@@ -352,7 +352,7 @@ export class DealPipelineIntegration {
     limit: number
   ): Promise<IntegratedDealResult[]> {
     try {
-      const legacyDeals = await this.legacyDealEngine.discoverDeals({
+      const legacyDeals = await this?.legacyDealEngine?.discoverDeals({
         userId,
         categories: preferences.preferredCategories,
         maxDeals: limit,
@@ -364,12 +364,12 @@ export class DealPipelineIntegration {
         personalized: true
       });
       
-      return legacyDeals.map(deal => ({
+      return legacyDeals?.map(deal => ({
         legacyDeal: deal,
         userPersonalization: {
           relevanceScore: this.calculateRelevanceScore(deal, userHistory),
-          userPurchaseHistory: userHistory.filter(h => 
-            h.productName.toLowerCase().includes((deal.product.name || '').toLowerCase().split(' ')[0] || '')
+          userPurchaseHistory: userHistory?.filter(h => 
+            h?.productName?.toLowerCase().includes((deal?.product?.name || '').toLowerCase().split(' ')[0] || '')
           ),
           recommendedAction: this.getRecommendedAction(deal, userHistory),
         },
@@ -392,17 +392,17 @@ export class DealPipelineIntegration {
   ): Promise<IntegratedDealResult[]> {
     try {
       // Get active deals from new detection engine
-      const activeDeals = await this.newDealEngine.getActiveDeals({
+      const activeDeals = await this?.newDealEngine?.getActiveDeals({
         minSavingsPercentage: preferences.minSavingsPercentage,
         minDealScore: 0.3,
         limit
       });
       
       // Filter based on user preferences
-      const filteredDeals = activeDeals.filter(deal => {
+      const filteredDeals = activeDeals?.filter(deal => {
         // Category filter
-        if (preferences.preferredCategories.length > 0 && deal.category) {
-          const categoryMatch = preferences.preferredCategories.some(cat => 
+        if (preferences?.preferredCategories?.length > 0 && deal.category) {
+          const categoryMatch = preferences?.preferredCategories?.some(cat => 
             deal.category!.toLowerCase().includes(cat.toLowerCase())
           );
           if (!categoryMatch) return false;
@@ -414,19 +414,19 @@ export class DealPipelineIntegration {
         }
         
         // Deal type filter
-        if (preferences.dealTypes.length > 0) {
-          if (!preferences.dealTypes.includes(deal.dealType)) return false;
+        if (preferences?.dealTypes?.length > 0) {
+          if (!preferences?.dealTypes?.includes(deal.dealType)) return false;
         }
         
         return true;
       });
       
-      return filteredDeals.map(deal => ({
+      return filteredDeals?.map(deal => ({
         newDeal: deal,
         userPersonalization: {
           relevanceScore: this.calculateNewDealRelevance(deal, userHistory),
-          userPurchaseHistory: userHistory.filter(h => 
-            h.productName.toLowerCase().includes((deal.productName || '').toLowerCase().split(' ')[0] || '')
+          userPurchaseHistory: userHistory?.filter(h => 
+            h?.productName?.toLowerCase().includes((deal.productName || '').toLowerCase().split(' ')[0] || '')
           ),
           recommendedAction: this.getNewDealAction(deal, userHistory),
         },
@@ -451,7 +451,7 @@ export class DealPipelineIntegration {
     
     // Remove duplicates based on product ID
     const seenProducts = new Set<string>();
-    const deduplicated = combined.filter(result => {
+    const deduplicated = combined?.filter(result => {
       const productId = result.legacyDeal?.productId || result.newDeal?.productId || '';
       if (seenProducts.has(productId)) {
         return false;
@@ -474,14 +474,14 @@ export class DealPipelineIntegration {
     let baseScore = 0;
     
     if (result.legacyDeal) {
-      baseScore = result.legacyDeal.dealScore;
+      baseScore = result?.legacyDeal?.dealScore;
     } else if (result.newDeal) {
-      baseScore = result.newDeal.dealScore;
+      baseScore = result?.newDeal?.dealScore;
     }
     
     // Boost score based on user personalization
     if (result.userPersonalization) {
-      baseScore += result.userPersonalization.relevanceScore * 0.3;
+      baseScore += result?.userPersonalization?.relevanceScore * 0.3;
     }
     
     // Boost score for new pipeline (during migration)
@@ -494,25 +494,25 @@ export class DealPipelineIntegration {
 
   private calculateRelevanceScore(deal: Deal, userHistory: ProductFrequency[]): number {
     // Check if user has purchased similar products
-    const relevantHistory = userHistory.filter(h => 
-      h.productName.toLowerCase().includes((deal.product.name || '').toLowerCase().split(' ')[0] || '')
+    const relevantHistory = userHistory?.filter(h => 
+      h?.productName?.toLowerCase().includes((deal?.product?.name || '').toLowerCase().split(' ')[0] || '')
     );
     
-    if (relevantHistory.length === 0) return 0.3; // Low relevance for new products
+    if (relevantHistory?.length || 0 === 0) return 0.3; // Low relevance for new products
     
     // Higher score for frequently purchased items
-    const avgFrequency = relevantHistory.reduce((sum, h) => sum + h.purchaseCount, 0) / relevantHistory.length;
+    const avgFrequency = relevantHistory.reduce((sum: any, h: any) => sum + h.purchaseCount, 0) / relevantHistory?.length || 0;
     return Math.min(1.0, 0.5 + (avgFrequency / 10)); // Scale based on frequency
   }
 
   private calculateNewDealRelevance(deal: DetectedDeal, userHistory: ProductFrequency[]): number {
-    const relevantHistory = userHistory.filter(h => 
-      h.productName.toLowerCase().includes((deal.productName || '').toLowerCase().split(' ')[0] || '')
+    const relevantHistory = userHistory?.filter(h => 
+      h?.productName?.toLowerCase().includes((deal.productName || '').toLowerCase().split(' ')[0] || '')
     );
     
-    if (relevantHistory.length === 0) return 0.3;
+    if (relevantHistory?.length || 0 === 0) return 0.3;
     
-    const avgFrequency = relevantHistory.reduce((sum, h) => sum + h.purchaseCount, 0) / relevantHistory.length;
+    const avgFrequency = relevantHistory.reduce((sum: any, h: any) => sum + h.purchaseCount, 0) / relevantHistory?.length || 0;
     return Math.min(1.0, 0.5 + (avgFrequency / 10));
   }
 
@@ -532,7 +532,7 @@ export class DealPipelineIntegration {
     try {
       // Update user preferences based on deal interactions
       // Note: updateUserPreferences method doesn't exist, using alternative approach
-      const viewedDeals = results.map(r => ({
+      const viewedDeals = results?.map(r => ({
         productId: r.legacyDeal?.productId || r.newDeal?.productId || '',
         category: typeof r.legacyDeal?.product?.category === 'object' 
           ? (r.legacyDeal?.product?.category as any)?.name || r.newDeal?.category || ''
@@ -564,7 +564,7 @@ export class DealPipelineIntegration {
     
     // Full migration after 2 weeks if performance is good
     setTimeout(async () => {
-      const healthStatus = this.monitor.getHealthStatus();
+      const healthStatus = this?.monitor?.getHealthStatus();
       if (healthStatus.overall === 'healthy') {
         this.migrationProgress = 100; // 100% - full migration
         this.hybridMode = false;
@@ -580,7 +580,7 @@ export class DealPipelineIntegration {
 
   private setupEventHandlers(): void {
     // Listen for new deals from the pipeline
-    this.pipelineService.on('deal_detected', (deal: DetectedDeal) => {
+    this?.pipelineService?.on('deal_detected', (deal: DetectedDeal) => {
       logger.debug("New deal detected from pipeline", "DEAL_INTEGRATION", {
         dealId: deal.id,
         productName: deal.productName,
@@ -589,14 +589,14 @@ export class DealPipelineIntegration {
     });
     
     // Listen for price updates
-    this.pipelineService.on('price_updated', (data: { productId: string; price: number }) => {
+    this?.pipelineService?.on('price_updated', (data: { productId: string; price: number }) => {
       // Add to monitoring queue for deal detection
-      this.pipelineService.addProductToQueue(data.productId, 'normal');
+      this?.pipelineService?.addProductToQueue(data.productId, 'normal');
     });
     
     // Listen for pipeline health changes
-    this.monitor.on('alert_created', (data: { alertId: string; alert: any }) => {
-      if (data.alert.type === 'error') {
+    this?.monitor?.on('alert_created', (data: { alertId: string; alert: any }) => {
+      if (data?.alert?.type === 'error') {
         // If new pipeline has errors, fall back to legacy temporarily
         this.hybridMode = true;
         logger.warn("Pipeline error detected, enabling hybrid mode", "DEAL_INTEGRATION", {
@@ -608,7 +608,7 @@ export class DealPipelineIntegration {
 
   private updatePerformanceStats(responseTime: number): void {
     // Update rolling average response time
-    this.performanceStats.avgResponseTime = 
-      (this.performanceStats.avgResponseTime * 0.9) + (responseTime * 0.1);
+    this?.performanceStats?.avgResponseTime = 
+      (this?.performanceStats?.avgResponseTime * 0.9) + (responseTime * 0.1);
   }
 }

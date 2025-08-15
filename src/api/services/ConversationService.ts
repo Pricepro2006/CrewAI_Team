@@ -22,19 +22,19 @@ export class ConversationService {
   private db: Database.Database;
 
   constructor() {
-    this.db = new Database(appConfig.database.path);
+    this.db = new Database(appConfig?.database?.path);
     this.initializeDatabase();
   }
 
   private initializeDatabase(): void {
     // Enable foreign keys and performance optimizations
-    this.db.pragma("foreign_keys = ON");
-    this.db.pragma("journal_mode = WAL");
-    this.db.pragma("synchronous = NORMAL");
-    this.db.pragma("cache_size = 10000");
-    this.db.pragma("temp_store = MEMORY");
+    this?.db?.pragma("foreign_keys = ON");
+    this?.db?.pragma("journal_mode = WAL");
+    this?.db?.pragma("synchronous = NORMAL");
+    this?.db?.pragma("cache_size = 10000");
+    this?.db?.pragma("temp_store = MEMORY");
     
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE TABLE IF NOT EXISTS conversations (
         id TEXT PRIMARY KEY,
         title TEXT,
@@ -61,7 +61,7 @@ export class ConversationService {
     const id = uuidv4();
     const now = new Date().toISOString();
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO conversations (id, created_at, updated_at)
       VALUES (?, ?, ?)
     `);
@@ -102,7 +102,7 @@ export class ConversationService {
     return {
       id: conversation.id,
       title: conversation.title,
-      messages: messages.map((m) => ({
+      messages: messages?.map((m: any) => ({
         id: m.id,
         role: m.role,
         content: m.content,
@@ -126,7 +126,7 @@ export class ConversationService {
       .all(limit, offset) as any[];
 
     return Promise.all(
-      conversations.map((c) => this.get(c.id).then((conv) => conv!)),
+      conversations?.map((c: any) => this.get(c.id).then((conv: any) => conv!)),
     );
   }
 
@@ -134,7 +134,7 @@ export class ConversationService {
     const messageId = uuidv4();
     const timestamp = new Date().toISOString();
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO messages (id, conversation_id, role, content, timestamp, metadata)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
@@ -183,8 +183,8 @@ export class ConversationService {
   }
 
   async clearAll(): Promise<void> {
-    this.db.prepare("DELETE FROM messages").run();
-    this.db.prepare("DELETE FROM conversations").run();
+    this?.db?.prepare("DELETE FROM messages").run();
+    this?.db?.prepare("DELETE FROM conversations").run();
   }
 
   async search(query: string, limit: number = 20): Promise<Conversation[]> {
@@ -220,18 +220,18 @@ export class ConversationService {
 
     // Combine and deduplicate conversation IDs
     const conversationIds = new Set([
-      ...titleMatches.map((t) => t.id),
-      ...messageMatches.map((m) => m.id),
+      ...titleMatches?.map((t: any) => t.id),
+      ...messageMatches?.map((m: any) => m.id),
     ]);
 
     // Fetch full conversations
     const conversations = await Promise.all(
       Array.from(conversationIds)
         .slice(0, limit)
-        .map((id) => this.get(id)),
+        .map((id: any) => this.get(id)),
     );
 
-    return conversations.filter((c) => c !== null) as Conversation[];
+    return conversations?.filter((c: any) => c !== null) as Conversation[];
   }
 
   async getRecentConversations(
@@ -253,7 +253,7 @@ export class ConversationService {
       .all(cutoffDate.toISOString(), limit) as any[];
 
     return Promise.all(
-      conversations.map((c) => this.get(c.id).then((conv) => conv!)),
+      conversations?.map((c: any) => this.get(c.id).then((conv: any) => conv!)),
     );
   }
 
@@ -306,7 +306,7 @@ export class ConversationService {
       totalMessages,
       averageMessagesPerConversation:
         Math.round(averageMessagesPerConversation * 10) / 10,
-      recentActivity: recentActivity.map((a) => ({
+      recentActivity: recentActivity?.map((a: any) => ({
         date: a.date,
         count: a.count,
       })),
@@ -334,7 +334,7 @@ export class ConversationService {
     markdown += `---\n\n`;
 
     for (const message of conversation.messages) {
-      const role = message.role.charAt(0).toUpperCase() + message.role.slice(1);
+      const role = message?.role?.charAt(0).toUpperCase() + message?.role?.slice(1);
       markdown += `### ${role}\n`;
       markdown += `*${message.timestamp}*\n\n`;
       markdown += `${message.content}\n\n`;
@@ -366,7 +366,7 @@ export class ConversationService {
           conversation.updatedAt,
           message.id || "",
           message.role,
-          `"${message.content.replace(/"/g, '""')}"`, // Escape quotes
+          `"${message?.content?.replace(/"/g, '""')}"`, // Escape quotes
           message.timestamp || "",
         ].join(",");
 

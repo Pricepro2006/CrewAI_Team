@@ -136,8 +136,8 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
 
   const connectWebSocket = useCallback(() => {
     try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      const protocol = window?.location?.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window?.location?.host}/ws`;
       const websocket = new WebSocket(wsUrl);
 
       websocket.onopen = () => {
@@ -156,7 +156,7 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
         }));
       };
 
-      websocket.onmessage = (event) => {
+      websocket.onmessage = (event: any) => {
         try {
           const message: WebSocketIngestionEvent = JSON.parse(event.data);
           handleWebSocketMessage(message);
@@ -177,7 +177,7 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
         }, 3000);
       };
 
-      websocket.onerror = (error) => {
+      websocket.onerror = (error: any) => {
         console.error('EmailIngestion WebSocket error:', error);
       };
 
@@ -210,7 +210,7 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
             ...prev,
             metrics: {
               ...prev.metrics,
-              totalIngested: prev.metrics.totalIngested + 1,
+              totalIngested: prev?.metrics?.totalIngested + 1,
             },
             lastUpdate: new Date(),
           };
@@ -253,9 +253,9 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
         setThroughputHistory(prev => {
           const newPoint: ThroughputDataPoint = {
             timestamp: new Date().toISOString(),
-            lastMinute: metricsRes.data.throughput.lastMinute,
-            lastHour: metricsRes.data.throughput.lastHour,
-            last24Hours: metricsRes.data.throughput.last24Hours,
+            lastMinute: metricsRes?.data?.throughput.lastMinute,
+            lastHour: metricsRes?.data?.throughput.lastHour,
+            last24Hours: metricsRes?.data?.throughput.last24Hours,
           };
           
           const updated = [...prev, newPoint];
@@ -328,8 +328,8 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
 
   const overallHealthStatus = useMemo(() => {
     if (!state.healthStatus) return 'unknown';
-    return state.healthStatus.healthy ? 'healthy' : 
-           state.healthStatus.status === 'degraded' ? 'degraded' : 'failing';
+    return state?.healthStatus?.healthy ? 'healthy' : 
+           state?.healthStatus?.status === 'degraded' ? 'degraded' : 'failing';
   }, [state.healthStatus]);
 
   const queueHealthIndicator = useMemo(() => {
@@ -344,7 +344,7 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
   const sourceDistributionData = useMemo(() => {
     if (!state.metrics?.bySource) return [];
     
-    return Object.entries(state.metrics.bySource).map(([source, count]) => ({
+    return Object.entries(state?.metrics?.bySource).map(([source, count]) => ({
       name: source.replace('_', ' ').toUpperCase(),
       value: count,
       fill: sourceColors[source as IngestionSource] || '#6b7280',
@@ -419,26 +419,26 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2">
               <div>
                 <span className="font-medium">Queue:</span>{' '}
-                <Badge variant={state.healthStatus.components.queue.healthy ? 'default' : 'destructive'}>
-                  {state.healthStatus.components.queue.healthy ? 'Healthy' : 'Degraded'}
+                <Badge variant={state?.healthStatus?.components.queue.healthy ? 'default' : 'destructive'}>
+                  {state?.healthStatus?.components.queue.healthy ? 'Healthy' : 'Degraded'}
                 </Badge>
               </div>
               <div>
                 <span className="font-medium">Redis:</span>{' '}
-                <Badge variant={state.healthStatus.components.redis.healthy ? 'default' : 'destructive'}>
-                  {state.healthStatus.components.redis.healthy ? 'Connected' : 'Disconnected'}
+                <Badge variant={state?.healthStatus?.components.redis.healthy ? 'default' : 'destructive'}>
+                  {state?.healthStatus?.components.redis.healthy ? 'Connected' : 'Disconnected'}
                 </Badge>
               </div>
               <div>
                 <span className="font-medium">Database:</span>{' '}
-                <Badge variant={state.healthStatus.components.database.healthy ? 'default' : 'destructive'}>
-                  {state.healthStatus.components.database.healthy ? 'Connected' : 'Disconnected'}
+                <Badge variant={state?.healthStatus?.components.database.healthy ? 'default' : 'destructive'}>
+                  {state?.healthStatus?.components.database.healthy ? 'Connected' : 'Disconnected'}
                 </Badge>
               </div>
               <div>
                 <span className="font-medium">Auto-Pull:</span>{' '}
-                <Badge variant={state.healthStatus.components.autoPull.healthy ? 'default' : 'secondary'}>
-                  {state.healthStatus.components.autoPull.healthy ? 'Active' : 'Inactive'}
+                <Badge variant={state?.healthStatus?.components.autoPull.healthy ? 'default' : 'secondary'}>
+                  {state?.healthStatus?.components.autoPull.healthy ? 'Active' : 'Inactive'}
                 </Badge>
               </div>
             </div>
@@ -540,11 +540,11 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="timestamp" 
-                      tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                      tickFormatter={(value: any) => format(new Date(value), 'HH:mm')}
                     />
                     <YAxis />
                     <Tooltip 
-                      labelFormatter={(value) => format(new Date(value), 'MMM dd, HH:mm:ss')}
+                      labelFormatter={(value: any) => format(new Date(value), 'MMM dd, HH:mm:ss')}
                     />
                     <Line 
                       type="monotone" 
@@ -714,11 +714,11 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="timestamp" 
-                      tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                      tickFormatter={(value: any) => format(new Date(value), 'HH:mm')}
                     />
                     <YAxis />
                     <Tooltip 
-                      labelFormatter={(value) => format(new Date(value), 'MMM dd, HH:mm:ss')}
+                      labelFormatter={(value: any) => format(new Date(value), 'MMM dd, HH:mm:ss')}
                     />
                     <Area 
                       type="monotone" 
@@ -756,7 +756,7 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
                         paddingAngle={2}
                         dataKey="value"
                       >
-                        {sourceDistributionData.map((entry, index) => (
+                        {sourceDistributionData?.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
@@ -817,8 +817,8 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
                   {state.metrics ? 
-                    (((state.metrics.totalIngested - state.metrics.failedIngestions) / 
-                      Math.max(state.metrics.totalIngested, 1)) * 100).toFixed(1) : 0}%
+                    (((state?.metrics?.totalIngested - state?.metrics?.failedIngestions) / 
+                      Math.max(state?.metrics?.totalIngested, 1)) * 100).toFixed(1) : 0}%
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Processing success rate
@@ -828,14 +828,14 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
           </div>
 
           {/* Recent Errors */}
-          {state.metrics?.errors && state.metrics.errors.length > 0 && (
+          {state.metrics?.errors && state?.metrics?.errors?.length || 0 > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Recent Errors</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {state.metrics.errors.slice(0, 10).map((error, index) => (
+                  {state?.metrics?.errors.slice(0, 10).map((error, index) => (
                     <div
                       key={index}
                       className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-muted rounded"
@@ -845,7 +845,7 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
                           {error.error}
                         </div>
                         <div className="text-xs text-muted-foreground capitalize">
-                          Source: {error.source.replace('_', ' ')}
+                          Source: {error?.source?.replace('_', ' ')}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mt-2 sm:mt-0">

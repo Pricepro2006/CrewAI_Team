@@ -128,19 +128,19 @@ export class AdvancedRateLimit {
   constructor(config: Partial<AdvancedRateLimitOptions> = {}) {
     this.config = { ...DEFAULT_RATE_LIMIT_CONFIG, ...config };
     this.redis = new Redis({
-      host: this.config.redis.host,
-      port: this.config.redis.port,
-      password: this.config.redis.password,
-      db: this.config.redis.db,
+      host: this?.config?.redis.host,
+      port: this?.config?.redis.port,
+      password: this?.config?.redis.password,
+      db: this?.config?.redis.db,
       retryDelayOnFailover: 100,
       maxRetriesPerRequest: 3,
     });
 
-    this.redis.on("error", (err) => {
+    this?.redis.on("error", (err: any) => {
       console.error("Redis connection error:", err);
     });
 
-    this.redis.on("connect", () => {
+    this?.redis.on("connect", () => {
       console.log("Redis connected for rate limiting");
     });
   }
@@ -158,7 +158,7 @@ export class AdvancedRateLimit {
   private getEndpointType(
     req: Request,
   ): keyof AdvancedRateLimitOptions["endpoints"] {
-    const path = req.path;
+    const path = req?.path;
 
     if (
       path.includes("/auth") ||
@@ -183,7 +183,7 @@ export class AdvancedRateLimit {
   // Generate rate limit key
   private generateKey(req: Request, type: "user" | "ip" | "endpoint"): string {
     const user = (req as any).user;
-    const ip = req.ip || req.connection.remoteAddress || "unknown";
+    const ip = req.ip || req?.connection?.remoteAddress || "unknown";
     const endpoint = this.getEndpointType(req);
 
     switch (type) {
@@ -200,30 +200,30 @@ export class AdvancedRateLimit {
 
   // Apply progressive delay for repeated violations
   private async applyProgressiveDelay(key: string): Promise<void> {
-    if (!this.config.progressiveDelay.enabled) return;
+    if (!this?.config?.progressiveDelay.enabled) return;
 
-    const violations = this.violationCounts.get(key) || 0;
+    const violations = this?.violationCounts?.get(key) || 0;
     if (violations === 0) return;
 
     const delay = Math.min(
-      this.config.progressiveDelay.baseDelayMs *
-        Math.pow(this.config.progressiveDelay.multiplier, violations - 1),
-      this.config.progressiveDelay.maxDelayMs,
+      this?.config?.progressiveDelay.baseDelayMs *
+        Math.pow(this?.config?.progressiveDelay.multiplier, violations - 1),
+      this?.config?.progressiveDelay.maxDelayMs,
     );
 
     if (delay > 0) {
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      await new Promise((resolve: any) => setTimeout(resolve, delay));
     }
   }
 
   // Log rate limit violation
   private logViolation(req: Request, config: RateLimitConfig): void {
-    if (!this.config.monitoring.logViolations) return;
+    if (!this?.config?.monitoring.logViolations) return;
 
     const user = (req as any).user;
-    const ip = req.ip || req.connection.remoteAddress;
+    const ip = req.ip || req?.connection?.remoteAddress;
     const userAgent = req.get("User-Agent");
-    const endpoint = req.path;
+    const endpoint = req?.path;
 
     console.warn("Rate limit violation:", {
       timestamp: new Date().toISOString(),
@@ -239,17 +239,17 @@ export class AdvancedRateLimit {
 
   // Check if monitoring alert threshold is reached
   private checkAlertThreshold(key: string): void {
-    const violations = this.violationCounts.get(key) || 0;
-    if (violations >= this.config.monitoring.alertThreshold) {
+    const violations = this?.violationCounts?.get(key) || 0;
+    if (violations >= this?.config?.monitoring.alertThreshold) {
       console.error("ALERT: High rate limit violations detected:", {
         key,
         violations,
-        threshold: this.config.monitoring.alertThreshold,
+        threshold: this?.config?.monitoring.alertThreshold,
         timestamp: new Date().toISOString(),
       });
 
       // Reset count to avoid spam alerts
-      this.violationCounts.set(key, 0);
+      this?.violationCounts?.set(key, 0);
     }
   }
 
@@ -277,8 +277,8 @@ export class AdvancedRateLimit {
         this.logViolation(req, config);
 
         // Update violation count
-        const violations = this.violationCounts.get(key) || 0;
-        this.violationCounts.set(key, violations + 1);
+        const violations = this?.violationCounts?.get(key) || 0;
+        this?.violationCounts?.set(key, violations + 1);
 
         // Check alert threshold
         this.checkAlertThreshold(key);
@@ -304,7 +304,7 @@ export class AdvancedRateLimit {
   public getUserTierLimiter() {
     return (req: Request, res: Response, next: NextFunction) => {
       const tier = this.getUserTier(req);
-      const config = this.config.tiers[tier];
+      const config = this?.config?.tiers[tier];
       const limiter = this.createRateLimiter(config, "user");
       return limiter(req, res, next);
     };
@@ -314,7 +314,7 @@ export class AdvancedRateLimit {
   public getEndpointLimiter() {
     return (req: Request, res: Response, next: NextFunction) => {
       const endpointType = this.getEndpointType(req);
-      const config = this.config.endpoints[endpointType];
+      const config = this?.config?.endpoints[endpointType];
       const limiter = this.createRateLimiter(config, "endpoint");
       return limiter(req, res, next);
     };
@@ -322,25 +322,25 @@ export class AdvancedRateLimit {
 
   // Get IP-based rate limiter (fallback)
   public getIPLimiter() {
-    const config = this.config.tiers.anonymous;
+    const config = this?.config?.tiers.anonymous;
     return this.createRateLimiter(config, "ip");
   }
 
   // Get auth endpoint specific limiter
   public getAuthLimiter() {
-    const config = this.config.endpoints.auth;
+    const config = this?.config?.endpoints.auth;
     return this.createRateLimiter(config, "ip");
   }
 
   // Get upload endpoint specific limiter
   public getUploadLimiter() {
-    const config = this.config.endpoints.upload;
+    const config = this?.config?.endpoints.upload;
     return this.createRateLimiter(config, "user");
   }
 
   // Get WebSocket connection limiter
   public getWebSocketLimiter() {
-    const config = this.config.endpoints.websocket;
+    const config = this?.config?.endpoints.websocket;
     return this.createRateLimiter(config, "ip");
   }
 
@@ -383,8 +383,8 @@ export class AdvancedRateLimit {
 
   // Cleanup method
   public async cleanup(): Promise<void> {
-    await this.redis.quit();
-    this.violationCounts.clear();
+    await this?.redis.quit();
+    this?.violationCounts?.clear();
   }
 
   // Get current rate limit status for a key
@@ -395,15 +395,15 @@ export class AdvancedRateLimit {
     violations: number;
   }> {
     const tier = this.getUserTier(req);
-    const config = this.config.tiers[tier];
+    const config = this?.config?.tiers[tier];
     const key = this.generateKey(req, "user");
 
-    const current = (await this.redis.get(`rl:${key}`)) || "0";
+    const current = (await this?.redis.get(`rl:${key}`)) || "0";
     const remaining = Math.max(0, config.maxRequests - parseInt(current));
-    const violations = this.violationCounts.get(key) || 0;
+    const violations = this?.violationCounts?.get(key) || 0;
 
     // Calculate reset time
-    const ttl = await this.redis.ttl(`rl:${key}`);
+    const ttl = await this?.redis.ttl(`rl:${key}`);
     const reset = new Date(Date.now() + ttl * 1000);
 
     return {

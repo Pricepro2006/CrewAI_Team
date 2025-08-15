@@ -122,7 +122,7 @@ export class ServiceDiscovery extends EventEmitter {
       }
 
       // Store configuration
-      this.registeredServices.set(serviceId, validatedConfig);
+      this?.registeredServices?.set(serviceId, validatedConfig);
 
       // Start health checking
       await healthChecker.startHealthCheck(serviceMetadata, {
@@ -131,25 +131,25 @@ export class ServiceDiscovery extends EventEmitter {
       });
 
       // Create load balancer if not exists
-      if (!this.loadBalancers.has(validatedConfig.name)) {
+      if (!this?.loadBalancers?.has(validatedConfig.name)) {
         const loadBalancer = LoadBalancerFactory.getInstance(validatedConfig.name, {
           strategy: validatedConfig.load_balancing_strategy,
           healthCheckEnabled: true,
           circuitBreakerEnabled: validatedConfig.circuit_breaker_enabled,
           stickySession: false,
         });
-        this.loadBalancers.set(validatedConfig.name, loadBalancer);
+        this?.loadBalancers?.set(validatedConfig.name, loadBalancer);
       }
 
       // Create proxy if enabled
-      if (validatedConfig.proxy_enabled && !this.proxies.has(validatedConfig.name)) {
+      if (validatedConfig.proxy_enabled && !this?.proxies?.has(validatedConfig.name)) {
         const proxy = ServiceProxyFactory.createProxy(validatedConfig.name, {
           loadBalancingStrategy: validatedConfig.load_balancing_strategy,
           circuitBreakerEnabled: validatedConfig.circuit_breaker_enabled,
           cachingEnabled: validatedConfig.proxy_caching_enabled,
           cacheTTL: validatedConfig.proxy_cache_ttl,
         });
-        this.proxies.set(validatedConfig.name, proxy);
+        this?.proxies?.set(validatedConfig.name, proxy);
       }
 
       // Start heartbeat
@@ -179,11 +179,11 @@ export class ServiceDiscovery extends EventEmitter {
    */
   async deregisterService(serviceName: string, version?: string): Promise<boolean> {
     try {
-      const services = Array.from(this.registeredServices.entries()).filter(
+      const services = Array.from(this?.registeredServices?.entries()).filter(
         ([id, config]) => config.name === serviceName && (!version || config.version === version)
       );
 
-      if (services.length === 0) {
+      if (services?.length || 0 === 0) {
         logger.warn('Service not found for deregistration', 'SERVICE_DISCOVERY', {
           serviceName,
           version,
@@ -199,7 +199,7 @@ export class ServiceDiscovery extends EventEmitter {
         await serviceRegistry.deregister(serviceId);
 
         // Remove from local tracking
-        this.registeredServices.delete(serviceId);
+        this?.registeredServices?.delete(serviceId);
 
         logger.info('Service deregistered', 'SERVICE_DISCOVERY', {
           serviceId,
@@ -211,12 +211,12 @@ export class ServiceDiscovery extends EventEmitter {
       }
 
       // Clean up load balancer if no more instances
-      const remainingServices = Array.from(this.registeredServices.values())
+      const remainingServices = Array.from(this?.registeredServices?.values())
         .filter(config => config.name === serviceName);
       
-      if (remainingServices.length === 0) {
-        this.loadBalancers.delete(serviceName);
-        this.proxies.delete(serviceName);
+      if (remainingServices?.length || 0 === 0) {
+        this?.loadBalancers?.delete(serviceName);
+        this?.proxies?.delete(serviceName);
       }
 
       return true;
@@ -249,14 +249,14 @@ export class ServiceDiscovery extends EventEmitter {
    * Get service proxy for communication
    */
   getServiceProxy(serviceName: string): ServiceProxy | null {
-    return this.proxies.get(serviceName) || null;
+    return this?.proxies?.get(serviceName) || null;
   }
 
   /**
    * Get load balancer for a service
    */
   getLoadBalancer(serviceName: string): LoadBalancer | null {
-    return this.loadBalancers.get(serviceName) || null;
+    return this?.loadBalancers?.get(serviceName) || null;
   }
 
   /**
@@ -268,10 +268,10 @@ export class ServiceDiscovery extends EventEmitter {
     baseConfig: Omit<ServiceConfig, 'port'>
   ): Promise<boolean> {
     try {
-      const currentServices = Array.from(this.registeredServices.values())
+      const currentServices = Array.from(this?.registeredServices?.values())
         .filter(config => config.name === serviceName);
 
-      const currentCount = currentServices.length;
+      const currentCount = currentServices?.length || 0;
 
       if (targetInstances > currentCount) {
         // Scale up
@@ -334,7 +334,7 @@ export class ServiceDiscovery extends EventEmitter {
     let totalConnections = 0;
     const strategiesUsed: Record<string, number> = {};
     
-    this.loadBalancers.forEach(lb => {
+    this?.loadBalancers?.forEach(lb => {
       const stats = lb.getStats();
       totalConnections += stats.active_connections;
       strategiesUsed[stats.strategy] = (strategiesUsed[stats.strategy] || 0) + 1;
@@ -346,7 +346,7 @@ export class ServiceDiscovery extends EventEmitter {
     let totalProxyResponseTime = 0;
     let proxyCount = 0;
 
-    this.proxies.forEach(proxy => {
+    this?.proxies?.forEach(proxy => {
       const metrics = proxy.getMetrics();
       totalProxyRequests += metrics.totalRequests;
       totalSuccessfulRequests += metrics.successfulRequests;
@@ -361,12 +361,12 @@ export class ServiceDiscovery extends EventEmitter {
       registry: registryStats,
       health_checker: healthStats,
       load_balancer: {
-        total_load_balancers: this.loadBalancers.size,
+        total_load_balancers: this?.loadBalancers?.size,
         active_connections: totalConnections,
         strategies_used: strategiesUsed,
       },
       proxies: {
-        total_proxies: this.proxies.size,
+        total_proxies: this?.proxies?.size,
         total_requests: totalProxyRequests,
         success_rate: successRate,
         avg_response_time: avgProxyResponseTime,
@@ -383,7 +383,7 @@ export class ServiceDiscovery extends EventEmitter {
     updates: Partial<ServiceConfig>
   ): Promise<boolean> {
     try {
-      const serviceId = Array.from(this.registeredServices.entries())
+      const serviceId = Array.from(this?.registeredServices?.entries())
         .find(([id, config]) => config.name === serviceName && config.version === version)?.[0];
 
       if (!serviceId) {
@@ -394,14 +394,14 @@ export class ServiceDiscovery extends EventEmitter {
         return false;
       }
 
-      const currentConfig = this.registeredServices.get(serviceId)!;
+      const currentConfig = this?.registeredServices?.get(serviceId)!;
       const newConfig = { ...currentConfig, ...updates };
       
       // Validate new config
       const validatedConfig = ServiceConfigSchema.parse(newConfig);
       
       // Update local storage
-      this.registeredServices.set(serviceId, validatedConfig);
+      this?.registeredServices?.set(serviceId, validatedConfig);
 
       // Update service registry
       await serviceRegistry.update(serviceId, {
@@ -412,7 +412,7 @@ export class ServiceDiscovery extends EventEmitter {
       });
 
       // Update proxy if needed
-      const proxy = this.proxies.get(serviceName);
+      const proxy = this?.proxies?.get(serviceName);
       if (proxy && updates.load_balancing_strategy) {
         proxy.updateConfig({
           loadBalancingStrategy: updates.load_balancing_strategy,
@@ -450,7 +450,7 @@ export class ServiceDiscovery extends EventEmitter {
    */
   private setupServiceEventHandlers(): void {
     // Handle service health changes
-    healthChecker.on('health:failure', async (result) => {
+    healthChecker.on('health:failure', async (result: any) => {
       logger.warn('Service health degraded', 'SERVICE_DISCOVERY', {
         serviceId: result.serviceId,
         serviceName: result.serviceName,
@@ -459,7 +459,7 @@ export class ServiceDiscovery extends EventEmitter {
       this.emit('service:health_degraded', result);
     });
 
-    healthChecker.on('health:success', (result) => {
+    healthChecker.on('health:success', (result: any) => {
       if (result.consecutive_successes === 1) {
         logger.info('Service recovered', 'SERVICE_DISCOVERY', {
           serviceId: result.serviceId,
@@ -470,7 +470,7 @@ export class ServiceDiscovery extends EventEmitter {
     });
 
     // Handle service registry events
-    serviceRegistry.on('service:deregistered', (serviceId) => {
+    serviceRegistry.on('service:deregistered', (serviceId: any) => {
       this.emit('service:lost', serviceId);
     });
   }
@@ -484,22 +484,22 @@ export class ServiceDiscovery extends EventEmitter {
         const stats = await this.getStats();
 
         // Registry metrics
-        metrics.gauge('service_discovery.registry.total_services', stats.registry.total_services);
-        metrics.gauge('service_discovery.registry.healthy_services', stats.registry.healthy_services);
-        metrics.gauge('service_discovery.registry.unhealthy_services', stats.registry.unhealthy_services);
+        metrics.gauge('service_discovery?.registry?.total_services', stats?.registry?.total_services);
+        metrics.gauge('service_discovery?.registry?.healthy_services', stats?.registry?.healthy_services);
+        metrics.gauge('service_discovery?.registry?.unhealthy_services', stats?.registry?.unhealthy_services);
 
         // Health checker metrics
-        metrics.gauge('service_discovery.health.avg_response_time', stats.health_checker.avg_response_time);
-        metrics.gauge('service_discovery.health.overall_uptime', stats.health_checker.overall_uptime);
+        metrics.gauge('service_discovery?.health?.avg_response_time', stats?.health_checker?.avg_response_time);
+        metrics.gauge('service_discovery?.health?.overall_uptime', stats?.health_checker?.overall_uptime);
 
         // Load balancer metrics
-        metrics.gauge('service_discovery.lb.active_connections', stats.load_balancer.active_connections);
-        metrics.gauge('service_discovery.lb.total_balancers', stats.load_balancer.total_load_balancers);
+        metrics.gauge('service_discovery?.lb?.active_connections', stats?.load_balancer?.active_connections);
+        metrics.gauge('service_discovery?.lb?.total_balancers', stats?.load_balancer?.total_load_balancers);
 
         // Proxy metrics
-        metrics.gauge('service_discovery.proxy.success_rate', stats.proxies.success_rate);
-        metrics.gauge('service_discovery.proxy.avg_response_time', stats.proxies.avg_response_time);
-        metrics.gauge('service_discovery.proxy.total_requests', stats.proxies.total_requests);
+        metrics.gauge('service_discovery?.proxy?.success_rate', stats?.proxies?.success_rate);
+        metrics.gauge('service_discovery?.proxy?.avg_response_time', stats?.proxies?.avg_response_time);
+        metrics.gauge('service_discovery?.proxy?.total_requests', stats?.proxies?.total_requests);
 
       } catch (error) {
         logger.warn('Failed to collect service discovery metrics', 'SERVICE_DISCOVERY', {
@@ -521,9 +521,9 @@ export class ServiceDiscovery extends EventEmitter {
 
       try {
         // Deregister all services
-        const serviceIds = Array.from(this.registeredServices.keys());
-        await Promise.all(serviceIds.map(id => {
-          const config = this.registeredServices.get(id)!;
+        const serviceIds = Array.from(this?.registeredServices?.keys());
+        await Promise.all(serviceIds?.map(id => {
+          const config = this?.registeredServices?.get(id)!;
           return this.deregisterService(config.name, config.version);
         }));
 
@@ -568,9 +568,9 @@ export class ServiceDiscovery extends EventEmitter {
     ServiceProxyFactory.shutdown();
 
     // Clear local state
-    this.registeredServices.clear();
-    this.loadBalancers.clear();
-    this.proxies.clear();
+    this?.registeredServices?.clear();
+    this?.loadBalancers?.clear();
+    this?.proxies?.clear();
 
     this.removeAllListeners();
     ServiceDiscovery.instance = null;

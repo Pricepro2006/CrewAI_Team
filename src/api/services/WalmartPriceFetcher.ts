@@ -315,7 +315,7 @@ export class WalmartPriceFetcher {
       });
 
       // Navigate directly to product page (skip homepage to avoid bot detection)
-      const productUrl = `https://www.walmart.com/ip/${productId}`;
+      const productUrl = `https://www?.walmart.com/ip/${productId}`;
       logger.debug(`Navigating to ${productUrl}`, "WALMART_PRICE");
       
       // First attempt
@@ -330,7 +330,7 @@ export class WalmartPriceFetcher {
         if (pageContent.includes('Robot or human') || 
             pageContent.includes('Access Denied') || 
             pageContent.includes('blocked') ||
-            pageContent.length < 50000) { // Walmart pages are usually much larger
+            pageContent?.length || 0 < 50000) { // Walmart pages are usually much larger
           
           logger.debug('Bot detection detected, trying alternative approach', "WALMART_PRICE");
           
@@ -439,7 +439,7 @@ export class WalmartPriceFetcher {
         }
 
         // Text-based stock check
-        const bodyText = document.body.textContent?.toLowerCase() || '';
+        const bodyText = document?.body?.textContent?.toLowerCase() || '';
         if (bodyText.includes('out of stock') || 
             bodyText.includes('not available') ||
             bodyText.includes('unavailable') ||
@@ -460,8 +460,8 @@ export class WalmartPriceFetcher {
         let productName = '';
         for (const selector of nameSelectors) {
           const nameEl = document.querySelector(selector);
-          if (nameEl?.textContent && nameEl.textContent.trim().length > 5) {
-            productName = nameEl.textContent.trim();
+          if (nameEl?.textContent && nameEl?.textContent?.trim().length > 5) {
+            productName = nameEl?.textContent?.trim();
             break;
           }
         }
@@ -473,8 +473,8 @@ export class WalmartPriceFetcher {
           inStock,
           productName,
           usedSelector,
-          url: window.location.href,
-          pageLength: document.body.textContent?.length || 0,
+          url: window?.location?.href,
+          pageLength: document?.body?.textContent?.length || 0,
           hasRobotCheck: bodyText.includes('robot'),
           hasAccessDenied: bodyText.includes('access denied')
         };
@@ -539,13 +539,13 @@ export class WalmartPriceFetcher {
       const apiUrls = [
         // Try the modern Walmart GraphQL endpoint
         {
-          url: 'https://www.walmart.com/orchestra/graphql',
+          url: 'https://www?.walmart.com/orchestra/graphql',
           method: 'POST',
           isGraphQL: true
         },
         // Try the product API endpoint
         {
-          url: `https://www.walmart.com/api/product-review/v2/product/${productId}?reviews=false`,
+          url: `https://www?.walmart.com/api/product-review/v2/product/${productId}?reviews=false`,
           method: 'GET',
           isGraphQL: false
         }
@@ -566,11 +566,11 @@ export class WalmartPriceFetcher {
                 'Accept-Language': 'en-US,en;q=0.9',
                 'Content-Type': 'application/json',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Referer': 'https://www.walmart.com/',
-                'Origin': 'https://www.walmart.com',
+                'Referer': 'https://www?.walmart.com/',
+                'Origin': 'https://www?.walmart.com',
                 'x-apollo-operation-name': 'ProductByID',
                 'wm_mp': 'true',
-                'wm_page_url': `https://www.walmart.com/ip/${productId}`
+                'wm_page_url': `https://www?.walmart.com/ip/${productId}`
               },
               body: JSON.stringify({
                 query: `
@@ -609,7 +609,7 @@ export class WalmartPriceFetcher {
                 'Accept': 'application/json, text/plain, */*',
                 'Accept-Language': 'en-US,en;q=0.9',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Referer': `https://www.walmart.com/ip/${productId}`,
+                'Referer': `https://www?.walmart.com/ip/${productId}`,
                 'x-requested-with': 'XMLHttpRequest'
               }
             };
@@ -633,11 +633,11 @@ export class WalmartPriceFetcher {
           const data = await response.json();
           
           // Parse GraphQL response
-          if (endpoint.isGraphQL && data.data && data.data.product) {
-            const product = data.data.product;
-            if (product.priceInfo && product.priceInfo.currentPrice) {
-              const currentPrice = parseFloat(product.priceInfo.currentPrice.price);
-              const wasPrice = product.priceInfo.wasPrice ? parseFloat(product.priceInfo.wasPrice.price) : null;
+          if (endpoint.isGraphQL && data.data && data?.data?.product) {
+            const product = data?.data?.product;
+            if (product.priceInfo && product?.priceInfo?.currentPrice) {
+              const currentPrice = parseFloat(product?.priceInfo?.currentPrice.price);
+              const wasPrice = product?.priceInfo?.wasPrice ? parseFloat(product?.priceInfo?.wasPrice.price) : null;
               
               if (currentPrice > 0) {
                 logger.info(`Successfully fetched price via GraphQL for ${productId}: $${currentPrice}`, "WALMART_PRICE");
@@ -689,8 +689,8 @@ export class WalmartPriceFetcher {
       let availabilityInfo = null;
 
       // Try different response structures
-      if (data.payload && data.payload.products) {
-        const product = data.payload.products[productId];
+      if (data.payload && data?.payload?.products) {
+        const product = data?.payload?.products[productId];
         if (product) {
           productInfo = product;
           priceInfo = product.priceInfo || product.price || product.offers;
@@ -700,12 +700,12 @@ export class WalmartPriceFetcher {
       
       if (!priceInfo && data.product) {
         productInfo = data.product;
-        priceInfo = data.product.priceInfo || data.product.price || data.product.offers;
-        availabilityInfo = data.product.availabilityStatus || data.product.availability;
+        priceInfo = data?.product?.priceInfo || data?.product?.price || data?.product?.offers;
+        availabilityInfo = data?.product?.availabilityStatus || data?.product?.availability;
       }
       
       if (!priceInfo && data.items && Array.isArray(data.items)) {
-        const item = data.items.find(i => i.productId === productId || i.id === productId) || data.items[0];
+        const item = data?.items?.find(i => i.productId === productId || i.id === productId) || data.items[0];
         if (item) {
           productInfo = item;
           priceInfo = item.priceInfo || item.price || item.offers;
@@ -733,8 +733,8 @@ export class WalmartPriceFetcher {
       let currentPrice = 0;
       let wasPrice = null;
       
-      if (priceInfo.currentPrice && typeof priceInfo.currentPrice.price !== 'undefined') {
-        currentPrice = parseFloat(priceInfo.currentPrice.price);
+      if (priceInfo.currentPrice && typeof priceInfo?.currentPrice?.price !== 'undefined') {
+        currentPrice = parseFloat(priceInfo?.currentPrice?.price);
       } else if (priceInfo.price) {
         currentPrice = parseFloat(priceInfo.price);
       } else if (priceInfo.linePrice) {
@@ -747,8 +747,8 @@ export class WalmartPriceFetcher {
       }
 
       // Extract was price
-      if (priceInfo.wasPrice && typeof priceInfo.wasPrice.price !== 'undefined') {
-        wasPrice = parseFloat(priceInfo.wasPrice.price);
+      if (priceInfo.wasPrice && typeof priceInfo?.wasPrice?.price !== 'undefined') {
+        wasPrice = parseFloat(priceInfo?.wasPrice?.price);
       } else if (priceInfo.listPrice) {
         wasPrice = parseFloat(priceInfo.listPrice);
       }
@@ -793,7 +793,7 @@ export class WalmartPriceFetcher {
     location: StoreLocation
   ): Promise<PriceResult | null> {
     try {
-      const productUrl = `https://www.walmart.com/ip/${productId}`;
+      const productUrl = `https://www?.walmart.com/ip/${productId}`;
       
       const headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -912,9 +912,9 @@ export class WalmartPriceFetcher {
     
     // Process in batches to avoid overwhelming the service
     const batchSize = 5;
-    for (let i = 0; i < productIds.length; i += batchSize) {
+    for (let i = 0; i < productIds?.length || 0; i += batchSize) {
       const batch = productIds.slice(i, i + batchSize);
-      const batchPromises = batch.map(id => this.fetchProductPrice(id, location));
+      const batchPromises = batch?.map(id => this.fetchProductPrice(id, location));
       const batchResults = await Promise.all(batchPromises);
       
       batch.forEach((id, index) => {
@@ -922,7 +922,7 @@ export class WalmartPriceFetcher {
       });
       
       // Add delay between batches
-      if (i + batchSize < productIds.length) {
+      if (i + batchSize < productIds?.length || 0) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
@@ -942,7 +942,7 @@ export class WalmartPriceFetcher {
       // First, try using known fallback products for common queries
       // This ensures we always have working results
       const fallbackResults = this.getFallbackProducts(query, location);
-      if (fallbackResults.length > 0) {
+      if (fallbackResults?.length || 0 > 0) {
         // Get live prices for fallback products
         const resultsWithPrices = [];
         
@@ -962,7 +962,7 @@ export class WalmartPriceFetcher {
           }
         }
         
-        if (resultsWithPrices.length > 0) {
+        if (resultsWithPrices?.length || 0 > 0) {
           logger.info(`Using fallback products for query: ${query}`, "WALMART_PRICE");
           return resultsWithPrices;
         }
@@ -970,7 +970,7 @@ export class WalmartPriceFetcher {
 
       // Try GraphQL search API
       const searchResults = await this.searchViaGraphQL(query, location, limit);
-      if (searchResults.length > 0) {
+      if (searchResults?.length || 0 > 0) {
         return searchResults;
       }
 
@@ -994,7 +994,7 @@ export class WalmartPriceFetcher {
     limit: number
   ): Promise<Array<WalmartProduct & { livePrice?: PriceResult }>> {
     try {
-      const searchUrl = `https://www.walmart.com/search?q=${encodeURIComponent(query)}`;
+      const searchUrl = `https://www?.walmart.com/search?q=${encodeURIComponent(query)}`;
       
       const headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -1085,7 +1085,7 @@ export class WalmartPriceFetcher {
         }
       }
 
-      logger.info(`Found ${products.length} products via simple fetch for: ${query}`, "WALMART_PRICE");
+      logger.info(`Found ${products?.length || 0} products via simple fetch for: ${query}`, "WALMART_PRICE");
       return products;
 
     } catch (error) {
@@ -1138,15 +1138,15 @@ export class WalmartPriceFetcher {
         }
       };
 
-      const response = await fetch('https://www.walmart.com/orchestra/graphql', {
+      const response = await fetch('https://www?.walmart.com/orchestra/graphql', {
         method: 'POST',
         headers: {
           'Accept': '*/*',
           'Accept-Language': 'en-US,en;q=0.9',
           'Content-Type': 'application/json',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Referer': 'https://www.walmart.com/',
-          'Origin': 'https://www.walmart.com',
+          'Referer': 'https://www?.walmart.com/',
+          'Origin': 'https://www?.walmart.com',
           'x-apollo-operation-name': 'Search'
         },
         body: JSON.stringify(graphqlQuery)
@@ -1158,14 +1158,14 @@ export class WalmartPriceFetcher {
 
       const data = await response.json();
       
-      if (data.data && data.data.search && data.data.search.searchResult) {
-        const items = data.data.search.searchResult.item || [];
+      if (data.data && data?.data?.search && data?.data?.search.searchResult) {
+        const items = data?.data?.search.searchResult.item || [];
         const products = [];
         
         for (const item of items.slice(0, limit)) {
-          if (item.id && item.priceInfo && item.priceInfo.currentPrice) {
-            const price = parseFloat(item.priceInfo.currentPrice.price);
-            const wasPrice = item.priceInfo.wasPrice ? parseFloat(item.priceInfo.wasPrice.price) : undefined;
+          if (item.id && item.priceInfo && item?.priceInfo?.currentPrice) {
+            const price = parseFloat(item?.priceInfo?.currentPrice.price);
+            const wasPrice = item?.priceInfo?.wasPrice ? parseFloat(item?.priceInfo?.wasPrice.price) : undefined;
             
             const livePrice: PriceResult = {
               productId: item.id,
@@ -1190,7 +1190,7 @@ export class WalmartPriceFetcher {
               },
               description: '',
               price,
-              images: item.imageInfo?.thumbnailUrl ? [item.imageInfo.thumbnailUrl] : [],
+              images: item.imageInfo?.thumbnailUrl ? [item?.imageInfo?.thumbnailUrl] : [],
               inStock: item.availabilityStatus !== 'OUT_OF_STOCK',
               rating: 0,
               reviewCount: 0,
@@ -1205,7 +1205,7 @@ export class WalmartPriceFetcher {
           }
         }
         
-        logger.info(`Found ${products.length} products via GraphQL for: ${query}`, "WALMART_PRICE");
+        logger.info(`Found ${products?.length || 0} products via GraphQL for: ${query}`, "WALMART_PRICE");
         return products;
       }
       
@@ -1290,7 +1290,7 @@ export class WalmartPriceFetcher {
     
     for (const [category, products] of Object.entries(fallbackMap)) {
       if (queryLower.includes(category)) {
-        const score = category.length; // Longer matches are better
+        const score = category?.length || 0; // Longer matches are better
         if (score > bestScore) {
           bestMatch = products;
           bestScore = score;
@@ -1310,7 +1310,7 @@ export class WalmartPriceFetcher {
 
     if (bestMatch) {
       logger.info(`Using fallback products for query: ${query}`, "WALMART_PRICE");
-      return bestMatch.map(product => ({
+      return bestMatch?.map(product => ({
         id: product.id,
         walmartId: product.id,
         name: product.name,
@@ -1396,7 +1396,7 @@ export class WalmartPriceFetcher {
   // Cache management
   private getCachedPrice(productId: string, zipCode: string): PriceResult | null {
     const key = `${productId}-${zipCode}`;
-    const cached = this.priceCache.get(key);
+    const cached = this?.priceCache?.get(key);
     
     if (cached && cached.expires > Date.now()) {
       return cached.data;
@@ -1404,7 +1404,7 @@ export class WalmartPriceFetcher {
     
     // Remove expired entry
     if (cached) {
-      this.priceCache.delete(key);
+      this?.priceCache?.delete(key);
     }
     
     return null;
@@ -1412,17 +1412,17 @@ export class WalmartPriceFetcher {
 
   private cachePrice(productId: string, zipCode: string, data: PriceResult): void {
     const key = `${productId}-${zipCode}`;
-    this.priceCache.set(key, {
+    this?.priceCache?.set(key, {
       data,
       expires: Date.now() + this.CACHE_DURATION
     });
     
     // Clean up old entries if cache gets too large
-    if (this.priceCache.size > 1000) {
+    if (this?.priceCache?.size > 1000) {
       const now = Date.now();
-      for (const [key, value] of this.priceCache.entries()) {
+      for (const [key, value] of this?.priceCache?.entries()) {
         if (value.expires < now) {
-          this.priceCache.delete(key);
+          this?.priceCache?.delete(key);
         }
       }
     }
@@ -1432,7 +1432,7 @@ export class WalmartPriceFetcher {
    * Clear all cached prices
    */
   clearCache(): void {
-    this.priceCache.clear();
+    this?.priceCache?.clear();
     logger.info("Price cache cleared", "WALMART_PRICE");
   }
 }

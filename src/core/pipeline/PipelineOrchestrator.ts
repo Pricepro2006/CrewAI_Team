@@ -45,39 +45,39 @@ export class PipelineOrchestrator {
 
       // Get all emails
       const emails = await this.getAllEmails();
-      logger.info(`Found ${emails.length} emails to process`, "PIPELINE");
+      logger.info(`Found ${emails?.length || 0} emails to process`, "PIPELINE");
 
       // Stage 1: Pattern-based triage
       logger.info("Starting Stage 1: Pattern Triage", "PIPELINE");
-      const triageResults = await this.stage1.process(emails);
-      await this.updateExecutionRecord(1, triageResults.all.length);
+      const triageResults = await this?.stage1?.process(emails);
+      await this.updateExecutionRecord(1, triageResults?.all?.length);
 
       // Stage 2: Llama 3.2:3b for priority emails (top 1000)
       logger.info(
-        `Starting Stage 2: Llama Analysis for ${triageResults.top5000.length} priority emails (top 1000)`,
+        `Starting Stage 2: Llama Analysis for ${triageResults?.top5000?.length} priority emails (top 1000)`,
         "PIPELINE",
       );
 
       // Set up progress callback for real-time updates
-      this.stage2.setProgressCallback(async (count: number) => {
+      this?.stage2?.setProgressCallback(async (count: number) => {
         await this.updateExecutionRecord(2, count);
       });
 
-      const priorityResults = await this.stage2.process(triageResults.top5000);
+      const priorityResults = await this?.stage2?.process(triageResults.top5000);
       // Final update handled by progress callback, no redundant update needed
 
       // Stage 3: Deep analysis for critical emails (top 100)
       logger.info(
-        `Starting Stage 3: Deep Analysis for ${triageResults.top500.length} critical emails (top 100)`,
+        `Starting Stage 3: Deep Analysis for ${triageResults?.top500?.length} critical emails (top 100)`,
         "PIPELINE",
       );
 
       // Set up progress callback for real-time updates
-      this.stage3.setProgressCallback(async (count: number) => {
+      this?.stage3?.setProgressCallback(async (count: number) => {
         await this.updateExecutionRecord(3, count);
       });
 
-      const criticalResults = await this.stage3.process(triageResults.top500);
+      const criticalResults = await this?.stage3?.process(triageResults.top500);
       // Final update handled by progress callback, no redundant update needed
 
       // Consolidate results
@@ -129,7 +129,7 @@ export class PipelineOrchestrator {
       .all() as any[];
 
     // Transform database format to EmailAnalysisAgent expected format
-    return emails.map((email) => this.transformEmailForAgent(email));
+    return emails?.map((email: any) => this.transformEmailForAgent(email));
   }
 
   /**
@@ -192,19 +192,19 @@ export class PipelineOrchestrator {
       // Try to parse as JSON first
       const parsed = JSON.parse(recipientsStr);
       if (Array.isArray(parsed)) {
-        return parsed.map((r) => ({
+        return parsed?.map((r: any) => ({
           emailAddress: {
             address: typeof r === "string" ? r : r.address || r,
             name:
               typeof r === "string"
                 ? r.split("@")[0]
-                : r.name || (r.address ? r.address.split("@")[0] : "Unknown"),
+                : r.name || (r.address ? r?.address?.split("@")[0] : "Unknown"),
           },
         }));
       }
     } catch {
       // If not JSON, treat as comma-separated string
-      return recipientsStr.split(",").map((email) => ({
+      return recipientsStr.split(",").map((email: any) => ({
         emailAddress: {
           address: email.trim(),
           name: email.trim().split("@")[0] || "Unknown",
@@ -363,10 +363,10 @@ export class PipelineOrchestrator {
     await this.saveConsolidatedResults(Array.from(emailAnalysisMap.values()));
 
     return {
-      totalEmails: triageResults.all.length,
-      stage1Count: triageResults.all.length,
-      stage2Count: priorityResults.length,
-      stage3Count: criticalResults.length,
+      totalEmails: triageResults?.all?.length,
+      stage1Count: triageResults?.all?.length,
+      stage2Count: priorityResults?.length || 0,
+      stage3Count: criticalResults?.length || 0,
       executionId: this.executionId!,
       results: Array.from(emailAnalysisMap.values()),
     };
@@ -415,7 +415,7 @@ export class PipelineOrchestrator {
         result.stage2 ? JSON.stringify(result.stage2) : null,
         result.stage3 ? JSON.stringify(result.stage3) : null,
         result.stage3
-          ? result.stage3.modelUsed
+          ? result?.stage3?.modelUsed
           : result.stage2
             ? "llama3.2:3b"
             : "pattern",
@@ -435,7 +435,7 @@ export class PipelineOrchestrator {
             result.stage1?.processingTime ||
             0,
           result.stage3
-            ? result.stage3.modelUsed
+            ? result?.stage3?.modelUsed
             : result.stage2
               ? "llama3.2:3b"
               : "pattern",

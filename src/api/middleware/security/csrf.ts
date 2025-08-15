@@ -1,7 +1,7 @@
 import { randomBytes, createHash } from "crypto";
 import { TRPCError } from "@trpc/server";
 import type { Request, Response } from "express";
-import { logger } from "../../../utils/logger";
+import { logger } from "../../../utils/logger.js";
 
 /**
  * CSRF Token configuration
@@ -172,9 +172,9 @@ function cleanupOldTokens(): void {
     tokenMetadata.delete(token);
   }
 
-  if (expiredTokens.length > 0) {
+  if (expiredTokens?.length || 0 > 0) {
     logger.debug("Cleaned up expired CSRF tokens", "CSRF", {
-      count: expiredTokens.length,
+      count: expiredTokens?.length || 0,
     });
   }
 }
@@ -274,8 +274,8 @@ export function createEnhancedCSRFProtection(
         userId: ctx.user?.id,
         requestId: ctx.requestId,
         path,
-        ip: ctx.req.ip,
-        userAgent: ctx.req.headers["user-agent"],
+        ip: ctx?.req?.ip,
+        userAgent: ctx?.req?.headers["user-agent"],
       });
 
       throw new TRPCError({
@@ -384,8 +384,8 @@ export function getCSRFStats() {
     totalRotations += metadata.rotationCount;
 
     if (metadata.userId) {
-      const count = stats.tokensByUser.get(metadata.userId) || 0;
-      stats.tokensByUser.set(metadata.userId, count + 1);
+      const count = stats?.tokensByUser?.get(metadata.userId) || 0;
+      stats?.tokensByUser?.set(metadata.userId, count + 1);
     }
   }
 

@@ -9,7 +9,7 @@ import Database from "better-sqlite3";
 import { join } from "path";
 import { existsSync } from "fs";
 import { DatabaseMigrator } from "../database/migrations/DatabaseMigrator.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 import appConfig from "../config/app.config.js";
 
 // Import all migrations
@@ -54,7 +54,7 @@ class MigrationRunner {
   private migrator: DatabaseMigrator;
 
   constructor(dbPath?: string) {
-    const databasePath = dbPath || appConfig.database.path;
+    const databasePath = dbPath || appConfig?.database?.path;
 
     // Ensure database directory exists
     const dbDir = join(databasePath, "..");
@@ -72,11 +72,11 @@ class MigrationRunner {
   }
 
   private setupDatabase(): void {
-    this.db.pragma("foreign_keys = ON");
-    this.db.pragma("journal_mode = WAL");
-    this.db.pragma("synchronous = NORMAL");
-    this.db.pragma("cache_size = 10000");
-    this.db.pragma("temp_store = MEMORY");
+    this?.db?.pragma("foreign_keys = ON");
+    this?.db?.pragma("journal_mode = WAL");
+    this?.db?.pragma("synchronous = NORMAL");
+    this?.db?.pragma("cache_size = 10000");
+    this?.db?.pragma("temp_store = MEMORY");
   }
 
   async runMigrations(targetVersion?: number): Promise<void> {
@@ -91,7 +91,7 @@ class MigrationRunner {
       );
 
       // Filter migrations to run
-      const migrationsToRun = migrations.filter((m) => {
+      const migrationsToRun = migrations?.filter((m: any) => {
         if (targetVersion !== undefined) {
           return (
             m.version > (currentVersion || 0) && m.version <= targetVersion
@@ -100,20 +100,20 @@ class MigrationRunner {
         return m.version > (currentVersion || 0);
       });
 
-      if (migrationsToRun.length === 0) {
+      if (migrationsToRun?.length || 0 === 0) {
         logger.info("No migrations to run", "MIGRATION_RUNNER");
         return;
       }
 
       logger.info(
-        `Found ${migrationsToRun.length} migrations to run`,
+        `Found ${migrationsToRun?.length || 0} migrations to run`,
         "MIGRATION_RUNNER",
       );
 
       // Create backup before migrations
-      const backupPath = `${appConfig.database.path}.backup_${Date.now()}`;
+      const backupPath = `${appConfig?.database?.path}.backup_${Date.now()}`;
       logger.info(`Creating backup at: ${backupPath}`, "MIGRATION_RUNNER");
-      await this.migrator.createBackup(backupPath);
+      await this?.migrator?.createBackup(backupPath);
 
       // Run each migration
       for (const migration of migrationsToRun) {
@@ -149,11 +149,11 @@ class MigrationRunner {
 
       // Validate database integrity
       logger.info("Validating database integrity", "MIGRATION_RUNNER");
-      const validation = await this.migrator.validateIntegrity();
+      const validation = await this?.migrator?.validateIntegrity();
 
       if (!validation.valid) {
         logger.error("Database integrity check failed:", "MIGRATION_RUNNER");
-        validation.errors.forEach((error) =>
+        validation?.errors?.forEach((error: any) =>
           logger.error(`  - ${error}`, "MIGRATION_RUNNER"),
         );
         throw new Error("Database integrity check failed");
@@ -184,18 +184,18 @@ class MigrationRunner {
 
       // Get migrations to rollback (in reverse order)
       const migrationsToRollback = migrations
-        .filter((m) => m.version > version && m.version <= currentVersion)
+        .filter((m: any) => m.version > version && m.version <= currentVersion)
         .reverse();
 
       logger.info(
-        `Found ${migrationsToRollback.length} migrations to rollback`,
+        `Found ${migrationsToRollback?.length || 0} migrations to rollback`,
         "MIGRATION_RUNNER",
       );
 
       // Create backup before rollback
-      const backupPath = `${appConfig.database.path}.rollback_${Date.now()}`;
+      const backupPath = `${appConfig?.database?.path}.rollback_${Date.now()}`;
       logger.info(`Creating backup at: ${backupPath}`, "MIGRATION_RUNNER");
-      await this.migrator.createBackup(backupPath);
+      await this?.migrator?.createBackup(backupPath);
 
       // Rollback each migration
       for (const migration of migrationsToRollback) {
@@ -241,29 +241,29 @@ class MigrationRunner {
 
     console.log("\n=== Migration Status ===");
     console.log(`Current Version: ${currentVersion || "none"}`);
-    console.log(`Total Migrations: ${migrations.length}`);
-    console.log(`Applied Migrations: ${appliedMigrations.length}`);
+    console.log(`Total Migrations: ${migrations?.length || 0}`);
+    console.log(`Applied Migrations: ${appliedMigrations?.length || 0}`);
     console.log(
-      `Pending Migrations: ${migrations.length - appliedMigrations.length}`,
+      `Pending Migrations: ${migrations?.length || 0 - appliedMigrations?.length || 0}`,
     );
 
-    if (appliedMigrations.length > 0) {
+    if (appliedMigrations?.length || 0 > 0) {
       console.log("\nApplied Migrations:");
-      appliedMigrations.forEach((m) => {
+      appliedMigrations.forEach((m: any) => {
         console.log(
           `  - v${m.version}: ${m.name} (${new Date(m.applied_at).toLocaleString()})`,
         );
       });
     }
 
-    const pendingMigrations = migrations.filter(
-      (m) =>
-        !appliedMigrations.some((applied) => applied.version === m.version),
+    const pendingMigrations = migrations?.filter(
+      (m: any) =>
+        !appliedMigrations.some((applied: any) => applied.version === m.version),
     );
 
-    if (pendingMigrations.length > 0) {
+    if (pendingMigrations?.length || 0 > 0) {
       console.log("\nPending Migrations:");
-      pendingMigrations.forEach((m) => {
+      pendingMigrations.forEach((m: any) => {
         console.log(`  - v${m.version}: ${m.name}`);
       });
     }
@@ -298,7 +298,7 @@ class MigrationRunner {
   > {
     try {
       // Ensure migrations table exists
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS schema_migrations (
           version INTEGER PRIMARY KEY,
           name TEXT NOT NULL,
@@ -352,13 +352,13 @@ class MigrationRunner {
   }
 
   close(): void {
-    this.db.close();
+    this?.db?.close();
   }
 }
 
 // CLI interface
 async function main() {
-  const args = process.argv.slice(2);
+  const args = process?.argv?.slice(2);
   const command = args[0] || "migrate";
 
   const runner = new MigrationRunner();
@@ -402,7 +402,7 @@ async function main() {
 
 // Run if called directly
 if (require.main === module) {
-  main().catch((error) => {
+  main().catch((error: any) => {
     console.error("Fatal error:", error);
     process.exit(1);
   });

@@ -75,16 +75,16 @@ export abstract class BaseTool {
           }
         }
 
-        if (param.enum && !param.enum.includes(value)) {
+        if (param.enum && !param?.enum?.includes(value)) {
           errors.push(
-            `Invalid value for ${param.name}: must be one of ${param.enum.join(", ")}`,
+            `Invalid value for ${param.name}: must be one of ${param?.enum?.join(", ")}`,
           );
         }
       }
     }
 
     return {
-      valid: errors.length === 0,
+      valid: errors?.length || 0 === 0,
       errors,
     };
   }
@@ -146,7 +146,7 @@ export abstract class BaseTool {
       schema.properties[param.name] = propSchema;
 
       if (param.required) {
-        schema.required.push(param.name);
+        schema?.required?.push(param.name);
       }
     }
 
@@ -160,13 +160,13 @@ export abstract class BaseTool {
     return {
       name: this.name,
       description: this.description,
-      parameterCount: this.parameters.length,
+      parameterCount: this?.parameters?.length,
       requiredParameters: this.parameters
-        .filter((p) => p.required)
-        .map((p) => p.name),
+        .filter((p: any) => p.required)
+        .map((p: any) => p.name),
       optionalParameters: this.parameters
-        .filter((p) => !p.required)
-        .map((p) => p.name),
+        .filter((p: any) => !p.required)
+        .map((p: any) => p.name),
     };
   }
 

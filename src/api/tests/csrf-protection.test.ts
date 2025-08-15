@@ -87,10 +87,10 @@ describe("CSRF Protection Unit Tests", () => {
       
       expect(cookie.name).toMatch(/csrf-token/);
       expect(cookie.value).toBe(token);
-      expect(cookie.options.httpOnly).toBe(true);
-      expect(cookie.options.sameSite).toBe("strict");
-      expect(cookie.options.path).toBe("/");
-      expect(typeof cookie.options.maxAge).toBe("number");
+      expect(cookie?.options?.httpOnly).toBe(true);
+      expect(cookie?.options?.sameSite).toBe("strict");
+      expect(cookie?.options?.path).toBe("/");
+      expect(typeof cookie?.options?.maxAge).toBe("number");
     });
   });
 
@@ -241,7 +241,7 @@ describe("CSRF Protection Unit Tests", () => {
       expect(mockNext).not.toHaveBeenCalled();
       expect(mockRes._status).toBe(403);
       expect(mockRes._json).toHaveProperty("error");
-      expect(mockRes._json.error).toContain("CSRF");
+      expect(mockRes?._json?.error).toContain("CSRF");
     });
 
     test("csrfValidator should accept POST requests with valid CSRF tokens", () => {
@@ -284,8 +284,8 @@ describe("CSRF Protection Unit Tests", () => {
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(mockRes._status).toBe(403);
-      expect(mockRes._json.error).toContain("CSRF");
-      expect(mockRes._json.reason).toBe("Token mismatch");
+      expect(mockRes?._json?.error).toContain("CSRF");
+      expect(mockRes?._json?.reason).toBe("Token mismatch");
     });
   });
 
@@ -357,13 +357,13 @@ describe("CSRF Protection Unit Tests", () => {
       const cookie = mockRes._cookies[0];
       
       // Verify basic security attributes
-      expect(cookie.options.httpOnly).toBe(true);
-      expect(cookie.options.sameSite).toBe("strict");
-      expect(cookie.options.path).toBe("/");
-      expect(typeof cookie.options.maxAge).toBe("number");
+      expect(cookie?.options?.httpOnly).toBe(true);
+      expect(cookie?.options?.sameSite).toBe("strict");
+      expect(cookie?.options?.path).toBe("/");
+      expect(typeof cookie?.options?.maxAge).toBe("number");
       
       // The secure flag depends on environment and parameter
-      expect(typeof cookie.options.secure).toBe("boolean");
+      expect(typeof cookie?.options?.secure).toBe("boolean");
     });
 
     test("setCSRFCookie should respect the secure parameter correctly", () => {
@@ -377,9 +377,9 @@ describe("CSRF Protection Unit Tests", () => {
       // In non-production, secure should still be false regardless of parameter
       // In production, it follows the environment logic
       if (process.env.NODE_ENV === 'production') {
-        expect(cookie.options.secure).toBe(true);
+        expect(cookie?.options?.secure).toBe(true);
       } else {
-        expect(cookie.options.secure).toBe(false);
+        expect(cookie?.options?.secure).toBe(false);
       }
     });
   });

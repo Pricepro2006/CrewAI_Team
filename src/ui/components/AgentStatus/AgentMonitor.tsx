@@ -21,7 +21,7 @@ export const AgentMonitor: React.FC = () => {
   const [activeAgents, setActiveAgents] = useState<AgentStatus[]>([]);
 
   // Poll for agent status - use type assertion to bypass tRPC inference issues
-  const agentStatus = (api.agent.status as any).useQuery(undefined, {
+  const agentStatus = (api?.agent?.status as any).useQuery(undefined, {
     refetchInterval: 1000, // Refresh every second
     enabled: true,
     trpc: {
@@ -35,7 +35,7 @@ export const AgentMonitor: React.FC = () => {
     }
   }, [agentStatus?.data]);
 
-  if (activeAgents.length === 0) {
+  if (activeAgents?.length || 0 === 0) {
     return null;
   }
 
@@ -43,7 +43,7 @@ export const AgentMonitor: React.FC = () => {
     <div className="agent-monitor">
       <h3>Active Agents</h3>
       <div className="agent-list">
-        {activeAgents.map((agent) => (
+        {activeAgents?.map((agent: any) => (
           <div key={agent.id} className={`agent-status agent-${agent.status}`}>
             <div className="agent-header">
               <span className="agent-icon">

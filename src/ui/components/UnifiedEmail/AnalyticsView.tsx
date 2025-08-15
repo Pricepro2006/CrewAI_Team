@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import type { GetAnalyticsResponse } from "../../../types/unified-email.types.js";
+import type { GetAnalyticsResponse } from "../../../types/unified-email?.types.js";
 import { StatusDistributionChart } from "../../../client/components/charts/StatusDistributionChart.js";
 import { WorkflowTimelineChart } from "../../../client/components/charts/WorkflowTimelineChart.js";
 import {
@@ -137,7 +137,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics }) => {
           </div>
           <div className="analytics-metric-content">
             <div className="analytics-metric-value">
-              {'avgResponseTime' in analytics ? analytics.avgResponseTime?.toFixed(1) : ('averageProcessingTime' in analytics ? analytics.averageProcessingTime.toFixed(1) : '4.0')}h
+              {'avgResponseTime' in analytics ? analytics.avgResponseTime?.toFixed(1) : ('averageProcessingTime' in analytics ? analytics?.averageProcessingTime?.toFixed(1) : '4.0')}h
             </div>
             <div className="analytics-metric-label">Avg Response Time</div>
             <div className="analytics-metric-trend analytics-metric-trend--down">
@@ -210,7 +210,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics }) => {
             title="Workflow State Timeline"
             showProcessingTime={true}
             chartType="line"
-            onClick={(dataPoint) => {
+            onClick={(dataPoint: any) => {
               console.log("Clicked timeline point:", dataPoint);
             }}
             refreshKey={refreshKey}
@@ -226,14 +226,14 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics }) => {
           <div className="analytics-workflow-grid">
             <div className="analytics-workflow-card analytics-workflow-card--complete">
               <div className="analytics-workflow-value">
-                {'workflowData' in analytics ? analytics.workflowData.completeChains : 0}
+                {'workflowData' in analytics ? analytics?.workflowData?.completeChains : 0}
               </div>
               <div className="analytics-workflow-label">Complete Chains</div>
               <div className="analytics-workflow-bar">
                 <div
                   className="analytics-workflow-progress"
                   style={{
-                    width: `${('workflowData' in analytics && analytics.workflowData) ? (analytics.workflowData.completeChains / analytics.workflowData.totalChains) * 100 : 0}%`,
+                    width: `${('workflowData' in analytics && analytics.workflowData) ? (analytics?.workflowData?.completeChains / analytics?.workflowData?.totalChains) * 100 : 0}%`,
                   }}
                 />
               </div>
@@ -241,14 +241,14 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics }) => {
 
             <div className="analytics-workflow-card analytics-workflow-card--partial">
               <div className="analytics-workflow-value">
-                {'workflowData' in analytics ? analytics.workflowData.partialChains : 0}
+                {'workflowData' in analytics ? analytics?.workflowData?.partialChains : 0}
               </div>
               <div className="analytics-workflow-label">Partial Chains</div>
               <div className="analytics-workflow-bar">
                 <div
                   className="analytics-workflow-progress"
                   style={{
-                    width: `${('workflowData' in analytics && analytics.workflowData) ? (analytics.workflowData.partialChains / analytics.workflowData.totalChains) * 100 : 0}%`,
+                    width: `${('workflowData' in analytics && analytics.workflowData) ? (analytics?.workflowData?.partialChains / analytics?.workflowData?.totalChains) * 100 : 0}%`,
                   }}
                 />
               </div>
@@ -256,14 +256,14 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics }) => {
 
             <div className="analytics-workflow-card analytics-workflow-card--broken">
               <div className="analytics-workflow-value">
-                {'workflowData' in analytics ? analytics.workflowData.brokenChains : 0}
+                {'workflowData' in analytics ? analytics?.workflowData?.brokenChains : 0}
               </div>
               <div className="analytics-workflow-label">Broken Chains</div>
               <div className="analytics-workflow-bar">
                 <div
                   className="analytics-workflow-progress"
                   style={{
-                    width: `${('workflowData' in analytics && analytics.workflowData) ? (analytics.workflowData.brokenChains / analytics.workflowData.totalChains) * 100 : 0}%`,
+                    width: `${('workflowData' in analytics && analytics.workflowData) ? (analytics?.workflowData?.brokenChains / analytics?.workflowData?.totalChains) * 100 : 0}%`,
                   }}
                 />
               </div>
@@ -273,11 +273,11 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics }) => {
       )}
 
       {/* Critical Alerts */}
-      {('criticalAlerts' in analytics && analytics.criticalAlerts && analytics.criticalAlerts.length > 0) && (
+      {('criticalAlerts' in analytics && analytics.criticalAlerts && analytics?.criticalAlerts?.length > 0) && (
         <div className="analytics-alerts-section">
           <h4 className="analytics-section-title">Critical Alerts</h4>
           <div className="analytics-alerts-list">
-            {'criticalAlerts' in analytics && analytics.criticalAlerts.map((alert: any, index: number) => (
+            {'criticalAlerts' in analytics && analytics?.criticalAlerts?.map((alert: any, index: number) => (
               <div
                 key={index}
                 className="analytics-alert analytics-alert--critical"
@@ -298,7 +298,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics }) => {
       {/* Refresh Button */}
       <div className="analytics-footer">
         <button
-          onClick={() => setRefreshKey((prev) => prev + 1)}
+          onClick={() => setRefreshKey((prev: any) => prev + 1)}
           className="analytics-refresh-btn"
         >
           🔄 Refresh Analytics

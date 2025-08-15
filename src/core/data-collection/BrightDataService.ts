@@ -87,7 +87,7 @@ export class BrightDataService {
       }
 
       // Call the actual MCP Bright Data search engine tool
-      const searchResults = await this.mcpTools.searchEngine({
+      const searchResults = await this?.mcpTools?.searchEngine({
         query: params.query,
         engine: params.engine || "google",
         cursor: params.cursor,
@@ -118,7 +118,7 @@ export class BrightDataService {
       ];
 
       logger.info("Search engine data collection completed", "BRIGHT_DATA", {
-        recordsCollected: results.length,
+        recordsCollected: results?.length || 0,
         actualResults: searchResults.results?.length || 0,
       });
 
@@ -148,14 +148,14 @@ export class BrightDataService {
       }
 
       // Call actual MCP Bright Data scraping tools
-      const markdownResult = await this.mcpTools.scrapeAsMarkdown({
+      const markdownResult = await this?.mcpTools?.scrapeAsMarkdown({
         url: params.url,
       });
-      const htmlResult = await this.mcpTools.scrapeAsHtml({ url: params.url });
+      const htmlResult = await this?.mcpTools?.scrapeAsHtml({ url: params.url });
 
       let extractedData;
       if (params.extractionPrompt) {
-        extractedData = await this.mcpTools.extract({
+        extractedData = await this?.mcpTools?.extract({
           url: params.url,
           extraction_prompt: params.extractionPrompt,
         });
@@ -191,7 +191,7 @@ export class BrightDataService {
       ];
 
       logger.info("Web scraping data collection completed", "BRIGHT_DATA", {
-        recordsCollected: results.length,
+        recordsCollected: results?.length || 0,
         contentLengths: {
           markdown: markdownResult.content?.length || 0,
           html: htmlResult.content?.length || 0,
@@ -265,7 +265,7 @@ export class BrightDataService {
 
       logger.info("E-commerce data collection completed", "BRIGHT_DATA", {
         platform: params.platform,
-        recordsCollected: results.length,
+        recordsCollected: results?.length || 0,
       });
 
       return results;
@@ -326,7 +326,7 @@ export class BrightDataService {
 
       logger.info("Social media data collection completed", "BRIGHT_DATA", {
         platform: params.platform,
-        recordsCollected: results.length,
+        recordsCollected: results?.length || 0,
       });
 
       return results;
@@ -363,7 +363,7 @@ export class BrightDataService {
   // Private helper methods for specific platforms
 
   private async collectAmazonProduct(url: string): Promise<CollectedData> {
-    const productData = await this.mcpTools.webDataAmazonProduct({ url });
+    const productData = await this?.mcpTools?.webDataAmazonProduct({ url });
 
     return {
       id: `amazon_${Date.now()}`,
@@ -385,9 +385,9 @@ export class BrightDataService {
     keyword: string,
     maxProducts?: number,
   ): Promise<CollectedData[]> {
-    const searchData = await this.mcpTools.webDataAmazonProductSearch({
+    const searchData = await this?.mcpTools?.webDataAmazonProductSearch({
       keyword,
-      url: "https://www.amazon.com",
+      url: "https://www?.amazon?.com",
       pages_to_search: maxProducts
         ? Math.ceil(maxProducts / 16).toString()
         : "1",
@@ -413,7 +413,7 @@ export class BrightDataService {
   }
 
   private async collectWalmartProduct(url: string): Promise<CollectedData> {
-    const productData = await this.mcpTools.webDataWalmartProduct({ url });
+    const productData = await this?.mcpTools?.webDataWalmartProduct({ url });
 
     return {
       id: `walmart_${Date.now()}`,
@@ -432,7 +432,7 @@ export class BrightDataService {
   }
 
   private async collectEbayProduct(url: string): Promise<CollectedData> {
-    const productData = await this.mcpTools.webDataEbayProduct({ url });
+    const productData = await this?.mcpTools?.webDataEbayProduct({ url });
 
     return {
       id: `ebay_${Date.now()}`,
@@ -451,7 +451,7 @@ export class BrightDataService {
   }
 
   private async collectLinkedInProfile(url: string): Promise<CollectedData> {
-    const profileData = await this.mcpTools.webDataLinkedinPersonProfile({
+    const profileData = await this?.mcpTools?.webDataLinkedinPersonProfile({
       url,
     });
 
@@ -472,7 +472,7 @@ export class BrightDataService {
   }
 
   private async collectInstagramProfile(url: string): Promise<CollectedData> {
-    const profileData = await this.mcpTools.webDataInstagramProfiles({ url });
+    const profileData = await this?.mcpTools?.webDataInstagramProfiles({ url });
 
     return {
       id: `instagram_${Date.now()}`,
@@ -491,7 +491,7 @@ export class BrightDataService {
   }
 
   private async collectTikTokProfile(url: string): Promise<CollectedData> {
-    const profileData = await this.mcpTools.webDataTiktokProfiles({ url });
+    const profileData = await this?.mcpTools?.webDataTiktokProfiles({ url });
 
     return {
       id: `tiktok_${Date.now()}`,
@@ -560,20 +560,20 @@ export class BrightDataService {
   private checkRateLimit(operation: string): boolean {
     const now = Date.now();
     const windowMs = 60000; // 1 minute
-    const maxRequests = this.credentials.rateLimitPerMinute || 60;
+    const maxRequests = this?.credentials?.rateLimitPerMinute || 60;
 
-    if (!this.rateLimitTracker.has(operation)) {
-      this.rateLimitTracker.set(operation, []);
+    if (!this?.rateLimitTracker?.has(operation)) {
+      this?.rateLimitTracker?.set(operation, []);
     }
 
-    const requests = this.rateLimitTracker.get(operation)!;
+    const requests = this?.rateLimitTracker?.get(operation)!;
 
     // Remove old requests outside the window
-    while (requests.length > 0 && requests[0]! < now - windowMs) {
+    while (requests?.length || 0 > 0 && requests[0]! < now - windowMs) {
       requests.shift();
     }
 
-    if (requests.length >= maxRequests) {
+    if (requests?.length || 0 >= maxRequests) {
       return false;
     }
 

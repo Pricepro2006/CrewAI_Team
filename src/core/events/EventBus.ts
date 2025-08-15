@@ -128,11 +128,11 @@ export class EventBus extends EventEmitter {
 
   private initializeRedisClients(): void {
     const redisConfig = {
-      host: this.config.redis.host,
-      port: this.config.redis.port,
-      password: this.config.redis.password,
-      db: this.config.redis.db,
-      maxRetriesPerRequest: this.config.redis.maxRetriesPerRequest,
+      host: this?.config?.redis.host,
+      port: this?.config?.redis.port,
+      password: this?.config?.redis.password,
+      db: this?.config?.redis.db,
+      maxRetriesPerRequest: this?.config?.redis.maxRetriesPerRequest,
       retryStrategy: (times: number) => {
         if (times > 3) return null;
         return Math.min(times * 200, 3000);
@@ -145,19 +145,19 @@ export class EventBus extends EventEmitter {
     this.eventStoreClient = new Redis(redisConfig);
 
     // Setup Redis event handlers
-    this.publisherClient.on('connect', () => {
+    this?.publisherClient?.on('connect', () => {
       this.emit('publisher:connected');
     });
 
-    this.publisherClient.on('error', (error) => {
+    this?.publisherClient?.on('error', (error: any) => {
       this.emit('publisher:error', error);
     });
 
-    this.subscriberClient.on('connect', () => {
+    this?.subscriberClient?.on('connect', () => {
       this.emit('subscriber:connected');
     });
 
-    this.subscriberClient.on('error', (error) => {
+    this?.subscriberClient?.on('error', (error: any) => {
       this.emit('subscriber:error', error);
     });
   }
@@ -188,15 +188,15 @@ export class EventBus extends EventEmitter {
 
     try {
       await Promise.all([
-        this.publisherClient.connect(),
-        this.subscriberClient.connect(),
-        this.eventStoreClient.connect()
+        this?.publisherClient?.connect(),
+        this?.subscriberClient?.connect(),
+        this?.eventStoreClient?.connect()
       ]);
 
       this.isConnected = true;
       this.emit('connected');
       
-      console.log(`EventBus connected for service: ${this.config.service.name}@${this.config.service.instanceId}`);
+      console.log(`EventBus connected for service: ${this?.config?.service.name}@${this?.config?.service.instanceId}`);
     } catch (error) {
       this.emit('connection:error', error);
       throw error;
@@ -226,14 +226,14 @@ export class EventBus extends EventEmitter {
       id: eventId,
       type: eventType,
       version: 1,
-      source: this.config.service.name,
+      source: this?.config?.service.name,
       timestamp: now,
       correlationId: options.correlationId,
       causationId: options.causationId,
       metadata: {
         ...options.metadata,
-        serviceVersion: this.config.service.version,
-        instanceId: this.config.service.instanceId
+        serviceVersion: this?.config?.service.version,
+        instanceId: this?.config?.service.instanceId
       },
       payload: payload as Record<string, any>
     };
@@ -243,15 +243,15 @@ export class EventBus extends EventEmitter {
       routingKey: options.routingKey || eventType,
       headers: {
         'content-type': 'application/json',
-        'service': this.config.service.name,
+        'service': this?.config?.service.name,
         'priority': (options.priority || 5).toString()
       },
       deliveryInfo: {
         attempt: 1,
-        maxRetries: this.config.events.maxRetries,
-        retryDelay: this.config.events.retryDelay,
+        maxRetries: this?.config?.events.maxRetries,
+        retryDelay: this?.config?.events.retryDelay,
         publishedAt: now,
-        expiresAt: options.ttl ? now + options.ttl : now + this.config.events.eventTtl
+        expiresAt: options.ttl ? now + options.ttl : now + this?.config?.events.eventTtl
       }
     };
 
@@ -260,13 +260,13 @@ export class EventBus extends EventEmitter {
       EventEnvelopeSchema.parse(envelope);
 
       // Store in event store if enabled
-      if (this.config.events.enableEventStore) {
+      if (this?.config?.events.enableEventStore) {
         await this.storeEvent(envelope);
       }
 
       // Publish to Redis streams for reliability
       const streamKey = this.getStreamKey(envelope.routingKey);
-      const streamId = await this.publisherClient.xadd(
+      const streamId = await this?.publisherClient?.xadd(
         streamKey,
         'MAXLEN', '~', '10000', // Keep last 10k events per stream
         '*', // Auto-generate stream ID
@@ -274,13 +274,13 @@ export class EventBus extends EventEmitter {
       );
 
       // Also publish to pub/sub for real-time delivery
-      await this.publisherClient.publish(
+      await this?.publisherClient?.publish(
         this.getChannelKey(envelope.routingKey),
         JSON.stringify(envelope)
       );
 
-      this.metrics.published++;
-      this.metrics.lastActivity = Date.now();
+      this?.metrics?.published++;
+      this?.metrics?.lastActivity = Date.now();
 
       this.emit('event:published', {
         eventId,
@@ -292,7 +292,7 @@ export class EventBus extends EventEmitter {
       return eventId;
 
     } catch (error) {
-      this.metrics.errors++;
+      this?.metrics?.errors++;
       this.emit('event:publish_error', { eventId, eventType, error });
       throw error;
     }
@@ -316,22 +316,22 @@ export class EventBus extends EventEmitter {
 
     for (const type of eventTypes) {
       // Register handler
-      if (!this.handlers.has(type)) {
-        this.handlers.set(type, []);
+      if (!this?.handlers?.has(type)) {
+        this?.handlers?.set(type, []);
       }
-      this.handlers.get(type)!.push(handler);
+      this?.handlers?.get(type)!.push(handler);
 
       // Subscribe to pub/sub for real-time events
       const channelKey = this.getChannelKey(type);
-      await this.subscriberClient.subscribe(channelKey);
-      this.subscriptions.add(channelKey);
+      await this?.subscriberClient?.subscribe(channelKey);
+      this?.subscriptions?.add(channelKey);
 
       // Setup stream consumer for reliability
       const streamKey = this.getStreamKey(type);
       const consumerGroup = options.consumerGroup || this.getConsumerGroup();
       
       try {
-        await this.subscriberClient.xgroup(
+        await this?.subscriberClient?.xgroup(
           'CREATE', streamKey, consumerGroup, 
           options.fromBeginning ? '0' : '$', 
           'MKSTREAM'
@@ -343,7 +343,7 @@ export class EventBus extends EventEmitter {
         }
       }
 
-      this.emit('subscription:created', { eventType: type, handler: handler.constructor.name });
+      this.emit('subscription:created', { eventType: type, handler: handler?.constructor?.name });
     }
 
     // Start consuming if not already started
@@ -352,25 +352,25 @@ export class EventBus extends EventEmitter {
 
   public unsubscribe(eventType: string, handler?: EventHandler): void {
     if (handler) {
-      const handlers = this.handlers.get(eventType);
+      const handlers = this?.handlers?.get(eventType);
       if (handlers) {
         const index = handlers.indexOf(handler);
         if (index > -1) {
           handlers.splice(index, 1);
         }
-        if (handlers.length === 0) {
-          this.handlers.delete(eventType);
+        if (handlers?.length || 0 === 0) {
+          this?.handlers?.delete(eventType);
         }
       }
     } else {
-      this.handlers.delete(eventType);
+      this?.handlers?.delete(eventType);
     }
 
     // Unsubscribe from Redis if no more handlers
-    if (!this.handlers.has(eventType)) {
+    if (!this?.handlers?.has(eventType)) {
       const channelKey = this.getChannelKey(eventType);
-      this.subscriberClient.unsubscribe(channelKey);
-      this.subscriptions.delete(channelKey);
+      this?.subscriberClient?.unsubscribe(channelKey);
+      this?.subscriptions?.delete(channelKey);
     }
 
     this.emit('subscription:removed', { eventType, handler: handler?.constructor.name });
@@ -380,11 +380,11 @@ export class EventBus extends EventEmitter {
     batchSize?: number;
     processingTimeout?: number;
   } = {}): Promise<void> {
-    const batchSize = options.batchSize || this.config.subscriptions.batchSize;
-    const timeout = options.processingTimeout || this.config.subscriptions.processingTimeout;
+    const batchSize = options.batchSize || this?.config?.subscriptions.batchSize;
+    const timeout = options.processingTimeout || this?.config?.subscriptions.processingTimeout;
 
     // Setup pub/sub message handler for real-time events
-    this.subscriberClient.on('message', async (channel, message) => {
+    this?.subscriberClient?.on('message', async (channel, message) => {
       try {
         const envelope = JSON.parse(message) as EventEnvelope;
         await this.processEvent(envelope, 'pubsub');
@@ -399,26 +399,26 @@ export class EventBus extends EventEmitter {
 
   private async startStreamConsumers(batchSize: number, timeout: number): Promise<void> {
     const consumerGroup = this.getConsumerGroup();
-    const consumerName = `consumer-${this.config.service.instanceId}`;
+    const consumerName = `consumer-${this?.config?.service.instanceId}`;
 
     // Get all subscribed stream keys
     const streamKeys = Array.from(this.subscriptions)
       .map(channel => channel.replace('channel:', 'stream:'));
 
-    if (streamKeys.length === 0) return;
+    if (streamKeys?.length || 0 === 0) return;
 
     // Start consuming loop
     while (!this.isShuttingDown) {
       try {
         for (const streamKey of streamKeys) {
-          const results = await this.subscriberClient.xreadgroup(
+          const results = await this?.subscriberClient?.xreadgroup(
             'GROUP', consumerGroup, consumerName,
             'COUNT', batchSize.toString(),
-            'BLOCK', this.config.subscriptions.idleTimeout.toString(),
+            'BLOCK', this?.config?.subscriptions.idleTimeout.toString(),
             'STREAMS', streamKey, '>'
           );
 
-          if (results && results.length > 0) {
+          if (results && results?.length || 0 > 0) {
             const [, entries] = results[0];
             
             for (const [streamId, fields] of entries) {
@@ -435,7 +435,7 @@ export class EventBus extends EventEmitter {
                 }, 'stream');
 
                 // Acknowledge processing
-                await this.subscriberClient.xack(streamKey, consumerGroup, streamId);
+                await this?.subscriberClient?.xack(streamKey, consumerGroup, streamId);
 
               } catch (error) {
                 this.emit('consumption:error', { streamKey, streamId, error });
@@ -454,10 +454,10 @@ export class EventBus extends EventEmitter {
 
   private async processEvent(envelope: EventEnvelope, source: 'pubsub' | 'stream'): Promise<void> {
     const { event } = envelope;
-    const eventType = event.type;
+    const eventType = event?.type;
 
     // Check if event has expired
-    if (envelope.deliveryInfo.expiresAt && Date.now() > envelope.deliveryInfo.expiresAt) {
+    if (envelope?.deliveryInfo?.expiresAt && Date.now() > envelope?.deliveryInfo?.expiresAt) {
       this.emit('event:expired', { eventId: event.id, eventType });
       return;
     }
@@ -468,8 +468,8 @@ export class EventBus extends EventEmitter {
       return;
     }
 
-    const handlers = this.handlers.get(eventType) || [];
-    if (handlers.length === 0) {
+    const handlers = this?.handlers?.get(eventType) || [];
+    if (handlers?.length || 0 === 0) {
       this.emit('event:no_handlers', { eventId: event.id, eventType });
       return;
     }
@@ -478,11 +478,11 @@ export class EventBus extends EventEmitter {
       eventId: event.id, 
       eventType, 
       source,
-      handlerCount: handlers.length 
+      handlerCount: handlers?.length || 0 
     });
 
     // Process with each handler
-    const processingPromises = handlers.map(async (handler) => {
+    const processingPromises = handlers?.map(async (handler: any) => {
       const startTime = Date.now();
       
       try {
@@ -491,7 +491,7 @@ export class EventBus extends EventEmitter {
         this.emit('event:handler_success', {
           eventId: event.id,
           eventType,
-          handler: handler.constructor.name,
+          handler: handler?.constructor?.name,
           processingTime: Date.now() - startTime
         });
         
@@ -500,7 +500,7 @@ export class EventBus extends EventEmitter {
         
       } catch (error) {
         const processingTime = Date.now() - startTime;
-        this.metrics.errors++;
+        this?.metrics?.errors++;
         
         // Record circuit breaker failure
         this.recordCircuitBreakerFailure(eventType);
@@ -508,7 +508,7 @@ export class EventBus extends EventEmitter {
         this.emit('event:handler_error', {
           eventId: event.id,
           eventType,
-          handler: handler.constructor.name,
+          handler: handler?.constructor?.name,
           error,
           processingTime
         });
@@ -521,7 +521,7 @@ export class EventBus extends EventEmitter {
             this.emit('event:error_handler_failed', {
               eventId: event.id,
               eventType,
-              handler: handler.constructor.name,
+              handler: handler?.constructor?.name,
               originalError: error,
               errorHandlerError
             });
@@ -529,7 +529,7 @@ export class EventBus extends EventEmitter {
         }
 
         // Retry logic for stream-based events
-        if (source === 'stream' && envelope.deliveryInfo.attempt < envelope.deliveryInfo.maxRetries) {
+        if (source === 'stream' && envelope?.deliveryInfo?.attempt < envelope?.deliveryInfo?.maxRetries) {
           await this.scheduleRetry(envelope);
         }
 
@@ -539,8 +539,8 @@ export class EventBus extends EventEmitter {
 
     try {
       await Promise.allSettled(processingPromises);
-      this.metrics.consumed++;
-      this.metrics.lastActivity = Date.now();
+      this?.metrics?.consumed++;
+      this?.metrics?.lastActivity = Date.now();
       
       this.emit('event:processing_completed', { eventId: event.id, eventType });
       
@@ -551,7 +551,7 @@ export class EventBus extends EventEmitter {
 
   // Circuit breaker implementation
   private isCircuitOpen(eventType: string): boolean {
-    const breaker = this.circuitBreakers.get(eventType);
+    const breaker = this?.circuitBreakers?.get(eventType);
     if (!breaker) return false;
 
     const now = Date.now();
@@ -569,7 +569,7 @@ export class EventBus extends EventEmitter {
   }
 
   private recordCircuitBreakerFailure(eventType: string): void {
-    const breaker = this.circuitBreakers.get(eventType) || {
+    const breaker = this?.circuitBreakers?.get(eventType) || {
       failures: 0,
       lastFailure: 0,
       state: 'closed' as const
@@ -583,15 +583,15 @@ export class EventBus extends EventEmitter {
       this.emit('circuit_breaker:opened', { eventType, failures: breaker.failures });
     }
 
-    this.circuitBreakers.set(eventType, breaker);
+    this?.circuitBreakers?.set(eventType, breaker);
   }
 
   private resetCircuitBreaker(eventType: string): void {
-    const breaker = this.circuitBreakers.get(eventType);
+    const breaker = this?.circuitBreakers?.get(eventType);
     if (breaker && breaker.state !== 'closed') {
       breaker.failures = 0;
       breaker.state = 'closed';
-      this.circuitBreakers.set(eventType, breaker);
+      this?.circuitBreakers?.set(eventType, breaker);
       
       this.emit('circuit_breaker:closed', { eventType });
     }
@@ -599,23 +599,23 @@ export class EventBus extends EventEmitter {
 
   // Utility methods
   private getStreamKey(routingKey: string): string {
-    return `${this.config.redis.keyPrefix}stream:${routingKey}`;
+    return `${this?.config?.redis.keyPrefix}stream:${routingKey}`;
   }
 
   private getChannelKey(routingKey: string): string {
-    return `${this.config.redis.keyPrefix}channel:${routingKey}`;
+    return `${this?.config?.redis.keyPrefix}channel:${routingKey}`;
   }
 
   private getConsumerGroup(): string {
-    return this.config.subscriptions.consumerGroup || 
-           `${this.config.service.name}-consumers`;
+    return this?.config?.subscriptions.consumerGroup || 
+           `${this?.config?.service.name}-consumers`;
   }
 
   private async storeEvent(envelope: EventEnvelope): Promise<void> {
-    const storeKey = `${this.config.redis.keyPrefix}store:${envelope.event.id}`;
-    await this.eventStoreClient.setex(
+    const storeKey = `${this?.config?.redis.keyPrefix}store:${envelope?.event?.id}`;
+    await this?.eventStoreClient?.setex(
       storeKey,
-      Math.floor(this.config.events.eventTtl / 1000),
+      Math.floor(this?.config?.events.eventTtl / 1000),
       JSON.stringify(envelope)
     );
   }
@@ -625,18 +625,18 @@ export class EventBus extends EventEmitter {
       ...envelope,
       deliveryInfo: {
         ...envelope.deliveryInfo,
-        attempt: envelope.deliveryInfo.attempt + 1
+        attempt: envelope?.deliveryInfo?.attempt + 1
       }
     };
 
-    const delay = envelope.deliveryInfo.retryDelay * Math.pow(2, envelope.deliveryInfo.attempt - 1);
+    const delay = envelope?.deliveryInfo?.retryDelay * Math.pow(2, envelope?.deliveryInfo?.attempt - 1);
     
-    this.metrics.retries++;
+    this?.metrics?.retries++;
     
     setTimeout(async () => {
       try {
         const streamKey = this.getStreamKey(envelope.routingKey);
-        await this.publisherClient.xadd(
+        await this?.publisherClient?.xadd(
           streamKey,
           'MAXLEN', '~', '10000',
           '*',
@@ -644,13 +644,13 @@ export class EventBus extends EventEmitter {
         );
         
         this.emit('event:retried', {
-          eventId: envelope.event.id,
-          attempt: retryEnvelope.deliveryInfo.attempt,
+          eventId: envelope?.event?.id,
+          attempt: retryEnvelope?.deliveryInfo?.attempt,
           delay
         });
       } catch (error) {
         this.emit('event:retry_failed', {
-          eventId: envelope.event.id,
+          eventId: envelope?.event?.id,
           error
         });
       }
@@ -658,18 +658,18 @@ export class EventBus extends EventEmitter {
   }
 
   private async registerService(): Promise<void> {
-    const serviceKey = `${this.config.redis.keyPrefix}services:${this.config.service.name}`;
+    const serviceKey = `${this?.config?.redis.keyPrefix}services:${this?.config?.service.name}`;
     const serviceInfo = {
-      name: this.config.service.name,
-      version: this.config.service.version,
-      instanceId: this.config.service.instanceId,
+      name: this?.config?.service.name,
+      version: this?.config?.service.version,
+      instanceId: this?.config?.service.instanceId,
       registeredAt: Date.now(),
       lastSeen: Date.now(),
       subscriptions: Array.from(this.subscriptions)
     };
 
-    await this.publisherClient.setex(
-      `${serviceKey}:${this.config.service.instanceId}`,
+    await this?.publisherClient?.setex(
+      `${serviceKey}:${this?.config?.service.instanceId}`,
       60, // 60 seconds TTL
       JSON.stringify(serviceInfo)
     );
@@ -684,16 +684,16 @@ export class EventBus extends EventEmitter {
 
   private async reestablishSubscriptions(): Promise<void> {
     for (const subscription of this.subscriptions) {
-      await this.subscriberClient.subscribe(subscription);
+      await this?.subscriberClient?.subscribe(subscription);
     }
   }
 
   private async performHealthCheck(): Promise<void> {
     try {
       await Promise.all([
-        this.publisherClient.ping(),
-        this.subscriberClient.ping(),
-        this.eventStoreClient.ping()
+        this?.publisherClient?.ping(),
+        this?.subscriberClient?.ping(),
+        this?.eventStoreClient?.ping()
       ]);
       
       this.emit('health:check_passed');
@@ -710,13 +710,13 @@ export class EventBus extends EventEmitter {
   public getMetrics() {
     return {
       ...this.metrics,
-      handlers: this.handlers.size,
-      subscriptions: this.subscriptions.size,
-      circuitBreakers: Array.from(this.circuitBreakers.entries()).map(([eventType, breaker]) => ({
+      handlers: this?.handlers?.size,
+      subscriptions: this?.subscriptions?.size,
+      circuitBreakers: Array.from(this?.circuitBreakers?.entries()).map(([eventType, breaker]) => ({
         eventType,
         ...breaker
       })),
-      uptime: Date.now() - this.metrics.lastActivity
+      uptime: Date.now() - this?.metrics?.lastActivity
     };
   }
 
@@ -741,9 +741,9 @@ export class EventBus extends EventEmitter {
     try {
       // Close all Redis connections
       await Promise.all([
-        this.publisherClient.quit(),
-        this.subscriberClient.quit(),
-        this.eventStoreClient.quit()
+        this?.publisherClient?.quit(),
+        this?.subscriberClient?.quit(),
+        this?.eventStoreClient?.quit()
       ]);
       
       this.isConnected = false;

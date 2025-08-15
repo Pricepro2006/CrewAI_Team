@@ -64,9 +64,9 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
     if (!isSupported || !finalConfig.enableWebVitals) return;
 
     // LCP - Largest Contentful Paint
-    new PerformanceObserver((list) => {
+    new PerformanceObserver((list: any) => {
       const entries = list.getEntries() as PerformanceEventTiming[];
-      const lcp = entries[entries.length - 1]?.startTime;
+      const lcp = entries[entries?.length || 0 - 1]?.startTime;
       
       setMetrics(prev => ({ ...prev, lcp }));
       
@@ -77,7 +77,7 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
     }).observe({ type: 'largest-contentful-paint', buffered: true });
 
     // FID - First Input Delay  
-    new PerformanceObserver((list) => {
+    new PerformanceObserver((list: any) => {
       const entries = list.getEntries() as PerformanceEventTiming[];
       const fid = entries[0]?.processingStart - entries[0]?.startTime;
       
@@ -91,7 +91,7 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
 
     // CLS - Cumulative Layout Shift
     let clsValue = 0;
-    new PerformanceObserver((list) => {
+    new PerformanceObserver((list: any) => {
       for (const entry of list.getEntries()) {
         if (!(entry as any).hadRecentInput) {
           clsValue += (entry as any).value;
@@ -107,7 +107,7 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
     }).observe({ type: 'layout-shift', buffered: true });
 
     // FCP - First Contentful Paint
-    new PerformanceObserver((list) => {
+    new PerformanceObserver((list: any) => {
       const entries = list.getEntries() as PerformanceEventTiming[];
       const fcp = entries[0]?.startTime;
       
@@ -120,7 +120,7 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
   const measureResourceTiming = useCallback(() => {
     if (!isSupported || !finalConfig.enableResourceTiming) return;
 
-    const observer = new PerformanceObserver((list) => {
+    const observer = new PerformanceObserver((list: any) => {
       const entries = list.getEntries() as PerformanceResourceTiming[];
       let totalSize = 0;
       let networkRequests = 0;
@@ -161,9 +161,9 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
   const measurePageLoad = useCallback(() => {
     if (!isSupported) return;
 
-    const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
-    const renderTime = performance.timing.domContentLoadedEventEnd - performance.timing.domLoading;
-    const ttfb = performance.timing.responseStart - performance.timing.navigationStart;
+    const loadTime = performance?.timing?.loadEventEnd - performance?.timing?.navigationStart;
+    const renderTime = performance?.timing?.domContentLoadedEventEnd - performance?.timing?.domLoading;
+    const ttfb = performance?.timing?.responseStart - performance?.timing?.navigationStart;
 
     setMetrics(prev => ({
       ...prev,
@@ -245,7 +245,7 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
     // Example: Send to analytics service
     const reportData = {
       ...metrics,
-      url: window.location.href,
+      url: window?.location?.href,
       userAgent: navigator.userAgent,
       timestamp: Date.now()
     };
@@ -295,9 +295,9 @@ export const usePerformanceMonitor = (config: Partial<PerformanceConfig> = {}) =
       scores.push(cls < 0.1 ? 1 : cls < 0.25 ? 0.5 : 0);
     }
     
-    if (scores.length === 0) return 'F';
+    if (scores?.length || 0 === 0) return 'F';
     
-    const average = scores.reduce((a, b) => a + b) / scores.length;
+    const average = scores.reduce((a: any, b: any) => a + b) / scores?.length || 0;
     
     if (average >= 0.9) return 'A';
     if (average >= 0.75) return 'B';

@@ -157,7 +157,7 @@ export class ThreadContextManager {
     options: ThreadContextOptions = this.getDefaultOptions()
   ): Promise<ThreadContext> {
     const startTime = Date.now();
-    logger.info(`Building thread context for chain ${chain.chain_id} with ${emails.length} emails`);
+    logger.info(`Building thread context for chain ${chain.chain_id} with ${emails?.length || 0} emails`);
 
     // Check for existing context
     const existingContext = await this.getExistingContext(chain.chain_id);
@@ -234,25 +234,25 @@ export class ThreadContextManager {
 
     // Add new chronological entry
     const newEntry = await this.createChronologicalEntry(newEmail, newAnalysis);
-    existingContext.chronologicalFlow.push(newEntry);
+    existingContext?.chronologicalFlow?.push(newEntry);
     
     // Update business decisions if any
     const newDecisions = await this.extractDecisionsFromEmail(newEmail, newAnalysis);
-    existingContext.keyDecisions.push(...newDecisions);
+    existingContext?.keyDecisions?.push(...newDecisions);
     
     // Update stakeholder map
     await this.updateStakeholderMap(existingContext.stakeholderMap, newEmail);
     
     // Track context evolution
     const contextChanges = await this.detectContextChanges(existingContext, newEmail, newAnalysis);
-    if (contextChanges.length > 0) {
-      existingContext.evolutionTimeline.push({
+    if (contextChanges?.length || 0 > 0) {
+      existingContext?.evolutionTimeline?.push({
         timestamp: new Date(),
         changeType: this.classifyContextChange(contextChanges),
         description: `Context updated with email ${newEmail.id}`,
         impact: this.assessChangeImpact(contextChanges),
         causedBy: newEmail.id,
-        businessImplications: contextChanges.map(c => c.businessRationale)
+        businessImplications: contextChanges?.map(c => c.businessRationale)
       });
     }
     
@@ -353,9 +353,9 @@ export class ThreadContextManager {
 
       for (const pattern of decisionIndicators) {
         const matches = emailText.match(pattern);
-        if (matches && matches.length > 0) {
+        if (matches && matches?.length || 0 > 0) {
           const decision: BusinessDecision = {
-            decisionId: `${email.id}_${decisions.length}`,
+            decisionId: `${email.id}_${decisions?.length || 0}`,
             description: this.extractDecisionDescription(emailText, matches[0]),
             decisionMaker: email.from_address,
             timestamp: new Date(email.received_time),
@@ -393,7 +393,7 @@ export class ThreadContextManager {
     emails.forEach(email => {
       participants.add(email.from_address);
       if (email.to_addresses) {
-        email.to_addresses.split(',').forEach(addr => participants.add(addr.trim()));
+        email?.to_addresses?.split(',').forEach(addr => participants.add(addr.trim()));
       }
     });
 
@@ -423,7 +423,7 @@ export class ThreadContextManager {
     const evolutionTimeline = [...existingTimeline];
     
     // Analyze emails for context changes
-    for (let i = 1; i < emails.length; i++) {
+    for (let i = 1; i < emails?.length || 0; i++) {
       const prevEmail = emails[i - 1];
       const currentEmail = emails[i];
       
@@ -431,7 +431,7 @@ export class ThreadContextManager {
       evolutionTimeline.push(...changes);
     }
 
-    return evolutionTimeline.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    return evolutionTimeline.sort((a, b) => a?.timestamp?.getTime() - b?.timestamp?.getTime());
   }
 
   /**
@@ -445,7 +445,7 @@ export class ThreadContextManager {
   ): Promise<ThreadSummary> {
     // Calculate total business value
     const totalBusinessValue = chronologicalFlow.reduce(
-      (sum, entry) => sum + (entry.businessImpact.financialImpact || 0), 
+      (sum, entry) => sum + (entry?.businessImpact?.financialImpact || 0), 
       0
     );
 
@@ -468,7 +468,7 @@ export class ThreadContextManager {
     const confidenceLevel = this.calculateThreadConfidence(chronologicalFlow, keyDecisions);
 
     return {
-      executiveSummary: `Email thread analysis: ${chronologicalFlow.length} emails, ${keyDecisions.length} key decisions, $${totalBusinessValue} business value`,
+      executiveSummary: `Email thread analysis: ${chronologicalFlow?.length || 0} emails, ${keyDecisions?.length || 0} key decisions, $${totalBusinessValue} business value`,
       currentStatus,
       nextCriticalActions,
       keyRisks,
@@ -539,30 +539,30 @@ export class ThreadContextManager {
     const sections = [];
     
     // Executive summary (always included)
-    sections.push(`THREAD SUMMARY: ${context.contextSummary.executiveSummary}`);
+    sections.push(`THREAD SUMMARY: ${context?.contextSummary?.executiveSummary}`);
     
     // Current status and risks
-    sections.push(`STATUS: ${context.contextSummary.currentStatus}`);
-    if (context.contextSummary.keyRisks.length > 0) {
-      sections.push(`RISKS: ${context.contextSummary.keyRisks.slice(0, 3).join(', ')}`);
+    sections.push(`STATUS: ${context?.contextSummary?.currentStatus}`);
+    if (context?.contextSummary?.keyRisks?.length || 0 > 0) {
+      sections.push(`RISKS: ${context?.contextSummary?.keyRisks.slice(0, 3).join(', ')}`);
     }
     
     // Recent context (last 3 emails)
-    const recentFlow = context.chronologicalFlow.slice(-3);
-    if (recentFlow.length > 0) {
+    const recentFlow = context?.chronologicalFlow?.slice(-3);
+    if (recentFlow?.length || 0 > 0) {
       sections.push('RECENT ACTIVITY:');
       recentFlow.forEach((entry, index) => {
-        sections.push(`${index + 1}. ${entry.sender}: ${entry.keyPoints.slice(0, 2).join(', ')}`);
+        sections.push(`${index + 1}. ${entry.sender}: ${entry?.keyPoints?.slice(0, 2).join(', ')}`);
       });
     }
     
     // Key decisions
-    if (context.keyDecisions.length > 0) {
+    if (context?.keyDecisions?.length > 0) {
       const criticalDecisions = context.keyDecisions
         .filter(d => d.impact === 'critical' || d.impact === 'high')
         .slice(-2);
       
-      if (criticalDecisions.length > 0) {
+      if (criticalDecisions?.length || 0 > 0) {
         sections.push('KEY DECISIONS:');
         criticalDecisions.forEach(decision => {
           sections.push(`- ${decision.description} (${decision.impact})`);
@@ -571,14 +571,14 @@ export class ThreadContextManager {
     }
     
     // Business value context
-    if (context.contextSummary.totalBusinessValue > 0) {
-      sections.push(`BUSINESS VALUE: $${context.contextSummary.totalBusinessValue}`);
+    if (context?.contextSummary?.totalBusinessValue > 0) {
+      sections.push(`BUSINESS VALUE: $${context?.contextSummary?.totalBusinessValue}`);
     }
 
     let formatted = sections.join('\n');
     
     // Ensure we don't exceed token limit
-    const estimatedTokens = Math.ceil(formatted.length / 4);
+    const estimatedTokens = Math.ceil(formatted?.length || 0 / 4);
     if (estimatedTokens > maxTokens) {
       const targetLength = maxTokens * 4 * 0.9; // 90% of max to be safe
       formatted = formatted.substring(0, targetLength) + '...';
@@ -595,38 +595,38 @@ export class ThreadContextManager {
     
     // Comprehensive executive summary
     sections.push('=== EXECUTIVE THREAD ANALYSIS ===');
-    sections.push(`Summary: ${context.contextSummary.executiveSummary}`);
-    sections.push(`Business Value: $${context.contextSummary.totalBusinessValue}`);
-    sections.push(`Confidence: ${Math.round(context.contextSummary.confidenceLevel * 100)}%`);
-    sections.push(`Timeline Status: ${context.contextSummary.timelineStatus}`);
+    sections.push(`Summary: ${context?.contextSummary?.executiveSummary}`);
+    sections.push(`Business Value: $${context?.contextSummary?.totalBusinessValue}`);
+    sections.push(`Confidence: ${Math.round(context?.contextSummary?.confidenceLevel * 100)}%`);
+    sections.push(`Timeline Status: ${context?.contextSummary?.timelineStatus}`);
     
     // Complete chronological flow (up to token limit)
     sections.push('\n=== COMPLETE THREAD HISTORY ===');
-    context.chronologicalFlow.forEach((entry, index) => {
-      sections.push(`${index + 1}. [${entry.timestamp.toISOString().split('T')[0]}] ${entry.sender}`);
-      sections.push(`   Key Points: ${entry.keyPoints.join(', ')}`);
-      sections.push(`   Business Impact: $${entry.businessImpact.financialImpact}, ${entry.businessImpact.strategicImportance}`);
+    context?.chronologicalFlow?.forEach((entry, index) => {
+      sections.push(`${index + 1}. [${entry?.timestamp?.toISOString().split('T')[0]}] ${entry.sender}`);
+      sections.push(`   Key Points: ${entry?.keyPoints?.join(', ')}`);
+      sections.push(`   Business Impact: $${entry?.businessImpact?.financialImpact}, ${entry?.businessImpact?.strategicImportance}`);
     });
     
     // Strategic decisions
-    if (context.keyDecisions.length > 0) {
+    if (context?.keyDecisions?.length > 0) {
       sections.push('\n=== STRATEGIC DECISIONS ===');
-      context.keyDecisions.forEach((decision, index) => {
+      context?.keyDecisions?.forEach((decision, index) => {
         sections.push(`${index + 1}. ${decision.description}`);
         sections.push(`   Decision Maker: ${decision.decisionMaker}`);
         sections.push(`   Impact: ${decision.impact}, Reversibility: ${decision.reversibility}`);
-        sections.push(`   Consequences: ${decision.consequences.join(', ')}`);
+        sections.push(`   Consequences: ${decision?.consequences?.join(', ')}`);
       });
     }
     
     // Stakeholder analysis
     sections.push('\n=== STAKEHOLDER LANDSCAPE ===');
-    sections.push(`Decision Makers: ${context.stakeholderMap.primaryDecisionMakers.length}`);
-    sections.push(`Technical Contacts: ${context.stakeholderMap.technicalContacts.length}`);
-    sections.push(`Financial Approvers: ${context.stakeholderMap.financialApprovers.length}`);
+    sections.push(`Decision Makers: ${context?.stakeholderMap?.primaryDecisionMakers?.length || 0}`);
+    sections.push(`Technical Contacts: ${context?.stakeholderMap?.technicalContacts?.length || 0}`);
+    sections.push(`Financial Approvers: ${context?.stakeholderMap?.financialApprovers?.length || 0}`);
     
     // Context evolution
-    if (context.evolutionTimeline.length > 0) {
+    if (context?.evolutionTimeline?.length > 0) {
       sections.push('\n=== CONTEXT EVOLUTION ===');
       const significantChanges = context.evolutionTimeline
         .filter(change => change.impact === 'significant' || change.impact === 'critical')
@@ -635,7 +635,7 @@ export class ThreadContextManager {
       significantChanges.forEach((change, index) => {
         sections.push(`${index + 1}. [${change.changeType}] ${change.description}`);
         sections.push(`   Impact: ${change.impact}`);
-        if (change.businessImplications.length > 0) {
+        if (change?.businessImplications?.length > 0) {
           sections.push(`   Implications: ${change.businessImplications[0]}`);
         }
       });
@@ -643,14 +643,14 @@ export class ThreadContextManager {
     
     // Risk and opportunity analysis
     sections.push('\n=== STRATEGIC ASSESSMENT ===');
-    sections.push(`Key Risks: ${context.contextSummary.keyRisks.join(', ')}`);
-    sections.push(`Opportunities: ${context.contextSummary.opportunitiesIdentified.join(', ')}`);
-    sections.push(`Next Actions: ${context.contextSummary.nextCriticalActions.join(', ')}`);
+    sections.push(`Key Risks: ${context?.contextSummary?.keyRisks.join(', ')}`);
+    sections.push(`Opportunities: ${context?.contextSummary?.opportunitiesIdentified.join(', ')}`);
+    sections.push(`Next Actions: ${context?.contextSummary?.nextCriticalActions.join(', ')}`);
 
     let formatted = sections.join('\n');
     
     // Optimize for token limit
-    const estimatedTokens = Math.ceil(formatted.length / 4);
+    const estimatedTokens = Math.ceil(formatted?.length || 0 / 4);
     if (estimatedTokens > maxTokens) {
       const targetLength = maxTokens * 4 * 0.9;
       formatted = formatted.substring(0, targetLength) + '\n\n[Context truncated due to token limits]';
@@ -675,20 +675,20 @@ export class ThreadContextManager {
 
   private async getExistingContext(chainId: string): Promise<ThreadContext | null> {
     // Try cache first
-    if (this.contextCache.has(chainId)) {
-      return this.contextCache.get(chainId)!;
+    if (this?.contextCache?.has(chainId)) {
+      return this?.contextCache?.get(chainId)!;
     }
 
     // Try Redis
     try {
-      const cached = await this.redisService.getHash(`thread_context:${chainId}`);
+      const cached = await this?.redisService?.getHash(`thread_context:${chainId}`);
       if (cached) {
         const context = JSON.parse(cached.data || '{}') as ThreadContext;
-        this.contextCache.set(chainId, context);
+        this?.contextCache?.set(chainId, context);
         return context;
       }
     } catch (error) {
-      logger.error(`Failed to retrieve context for chain ${chainId}:`, error);
+      logger.error(`Failed to retrieve context for chain ${chainId}:`, error as string);
     }
 
     return null;
@@ -696,23 +696,23 @@ export class ThreadContextManager {
 
   private async cacheThreadContext(context: ThreadContext): Promise<void> {
     // Update in-memory cache
-    this.contextCache.set(context.chainId, context);
+    this?.contextCache?.set(context.chainId, context);
 
     // Update Redis cache
     try {
-      await this.redisService.setHash(
+      await this?.redisService?.setHash(
         `thread_context:${context.chainId}`,
         { data: JSON.stringify(context) },
         this.defaultTTL
       );
     } catch (error) {
-      logger.error(`Failed to cache context for chain ${context.chainId}:`, error);
+      logger.error(`Failed to cache context for chain ${context.chainId}:`, error as string);
     }
   }
 
   private estimateContextTokens(context: ThreadContext): number {
     const serialized = JSON.stringify(context);
-    return Math.ceil(serialized.length / 4);
+    return Math.ceil(serialized?.length || 0 / 4);
   }
 
   // Additional helper methods would be implemented here...
@@ -742,7 +742,7 @@ export class ThreadContextManager {
     
     // Extract financial impact
     const dollarMatches = text.match(/\$[\d,]+(?:\.\d{2})?/g) || [];
-    const financialImpact = dollarMatches.reduce((sum, amount) => {
+    const financialImpact = dollarMatches.reduce((sum: any, amount: any) => {
       const numValue = parseFloat(amount.replace(/[$,]/g, ''));
       return sum + (isNaN(numValue) ? 0 : numValue);
     }, 0);
@@ -768,8 +768,8 @@ export class ThreadContextManager {
     const positive = ["thank", "pleased", "satisfied", "excellent"];
     const negative = ["disappointed", "frustrated", "issue", "problem"];
     
-    const posCount = positive.filter(word => text.includes(word)).length;
-    const negCount = negative.filter(word => text.includes(word)).length;
+    const posCount = positive?.filter(word => text.includes(word)).length;
+    const negCount = negative?.filter(word => text.includes(word)).length;
     
     if (posCount > negCount) return "strengthening";
     if (negCount > posCount) return "straining";
@@ -777,8 +777,8 @@ export class ThreadContextManager {
   }
 
   private assessAnalysisQuality(email: EmailRecord): "high" | "medium" | "low" {
-    const hasSubject = !!email.subject && email.subject.length > 5;
-    const hasBody = !!email.body_text && email.body_text.length > 50;
+    const hasSubject = !!email.subject && email?.subject?.length > 5;
+    const hasBody = !!email.body_text && email?.body_text?.length > 50;
     const hasMetadata = !!email.from_address && !!email.received_time;
     
     if (hasSubject && hasBody && hasMetadata) return "high";
@@ -791,7 +791,7 @@ export class ThreadContextManager {
     // Extract context around the decision keyword
     const index = text.indexOf(match.toLowerCase());
     const start = Math.max(0, index - 50);
-    const end = Math.min(text.length, index + 100);
+    const end = Math.min(text?.length || 0, index + 100);
     return text.substring(start, end).trim();
   }
 
@@ -805,7 +805,7 @@ export class ThreadContextManager {
   private extractAffectedStakeholders(email: EmailRecord): string[] {
     const stakeholders = [email.from_address];
     if (email.to_addresses) {
-      stakeholders.push(...email.to_addresses.split(',').map(addr => addr.trim()));
+      stakeholders.push(...email?.to_addresses?.split(',').map(addr => addr.trim()));
     }
     return [...new Set(stakeholders)];
   }
@@ -893,7 +893,7 @@ export class ThreadContextManager {
 
   private categorizeStakeholder(map: StakeholderMap, stakeholder: Stakeholder): void {
     // Categorize stakeholder based on analysis
-    map.influencers.push(stakeholder);
+    map?.influencers?.push(stakeholder);
   }
 
   private async updateStakeholderAnalysis(stakeholder: Stakeholder, emails: EmailRecord[]): Promise<void> {
@@ -906,15 +906,15 @@ export class ThreadContextManager {
   }
 
   private determineCurrentStatus(flow: ChronologicalEntry[], decisions: BusinessDecision[]): string {
-    if (flow.length === 0) return "No activity";
+    if (flow?.length || 0 === 0) return "No activity";
     
-    const lastEntry = flow[flow.length - 1];
-    const recentDecisions = decisions.filter(d => 
-      d.timestamp.getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 // Last 7 days
+    const lastEntry = flow[flow?.length || 0 - 1];
+    const recentDecisions = decisions?.filter(d => 
+      d?.timestamp?.getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 // Last 7 days
     );
 
-    if (recentDecisions.length > 0) {
-      return `Active - ${recentDecisions.length} recent decisions`;
+    if (recentDecisions?.length || 0 > 0) {
+      return `Active - ${recentDecisions?.length || 0} recent decisions`;
     }
 
     return `Active - last activity from ${lastEntry.sender}`;
@@ -927,7 +927,7 @@ export class ThreadContextManager {
     // Look at recent emails for action items
     const recentEntries = flow.slice(-3);
     recentEntries.forEach(entry => {
-      entry.keyPoints.forEach(point => {
+      entry?.keyPoints?.forEach(point => {
         if (/\b(?:need|should|must|action|follow.?up)\b/.test(point.toLowerCase())) {
           actions.push(point);
         }
@@ -943,17 +943,17 @@ export class ThreadContextManager {
     // Look for risk indicators in recent activity
     const recentEntries = flow.slice(-5);
     recentEntries.forEach(entry => {
-      if (entry.businessImpact.timelineImpact === "delaying") {
+      if (entry?.businessImpact?.timelineImpact === "delaying") {
         risks.push("Timeline delays detected");
       }
-      if (entry.businessImpact.customerRelationshipImpact === "straining") {
+      if (entry?.businessImpact?.customerRelationshipImpact === "straining") {
         risks.push("Customer relationship concerns");
       }
     });
 
     // Add financial risks
-    if (context.financialContext.riskLevel === "high" || context.financialContext.riskLevel === "critical") {
-      risks.push(`Financial risk: ${context.financialContext.riskLevel}`);
+    if (context?.financialContext?.riskLevel === "high" || context?.financialContext?.riskLevel === "critical") {
+      risks.push(`Financial risk: ${context?.financialContext?.riskLevel}`);
     }
 
     return [...new Set(risks)];
@@ -964,31 +964,31 @@ export class ThreadContextManager {
     
     // Look for positive business impacts
     flow.forEach(entry => {
-      if (entry.businessImpact.operationalImpact === "positive") {
+      if (entry?.businessImpact?.operationalImpact === "positive") {
         opportunities.push("Process improvement opportunity");
       }
-      if (entry.businessImpact.customerRelationshipImpact === "strengthening") {
+      if (entry?.businessImpact?.customerRelationshipImpact === "strengthening") {
         opportunities.push("Relationship strengthening opportunity");
       }
     });
 
     // Add expansion opportunities from relationship context
-    if (context.relationshipContext?.expansionOpportunities.length > 0) {
-      opportunities.push(...context.relationshipContext.expansionOpportunities.slice(0, 2));
+    if (context.relationshipContext?.expansionOpportunities?.length || 0 > 0) {
+      opportunities.push(...context?.relationshipContext?.expansionOpportunities.slice(0, 2));
     }
 
     return [...new Set(opportunities)];
   }
 
   private assessTimelineStatus(flow: ChronologicalEntry[], context: BusinessContext): ThreadSummary["timelineStatus"] {
-    const delayingEntries = flow.filter(entry => entry.businessImpact.timelineImpact === "delaying");
-    const acceleratingEntries = flow.filter(entry => entry.businessImpact.timelineImpact === "accelerating");
+    const delayingEntries = flow?.filter(entry => entry?.businessImpact?.timelineImpact === "delaying");
+    const acceleratingEntries = flow?.filter(entry => entry?.businessImpact?.timelineImpact === "accelerating");
     
-    if (delayingEntries.length > acceleratingEntries.length) {
-      return delayingEntries.length > 2 ? "delayed" : "at_risk";
+    if (delayingEntries?.length || 0 > acceleratingEntries?.length || 0) {
+      return delayingEntries?.length || 0 > 2 ? "delayed" : "at_risk";
     }
     
-    if (acceleratingEntries.length > 0) {
+    if (acceleratingEntries?.length || 0 > 0) {
       return "on_track";
     }
     
@@ -996,13 +996,13 @@ export class ThreadContextManager {
   }
 
   private calculateThreadConfidence(flow: ChronologicalEntry[], decisions: BusinessDecision[]): number {
-    if (flow.length === 0) return 0;
+    if (flow?.length || 0 === 0) return 0;
     
-    const highQualityEntries = flow.filter(entry => entry.analysisQuality === "high").length;
-    const totalEntries = flow.length;
+    const highQualityEntries = flow?.filter(entry => entry.analysisQuality === "high").length;
+    const totalEntries = flow?.length || 0;
     const qualityRatio = highQualityEntries / totalEntries;
     
-    const decisionConfidence = decisions.length > 0 ? 0.9 : 0.7;
+    const decisionConfidence = decisions?.length || 0 > 0 ? 0.9 : 0.7;
     const activityConfidence = Math.min(1, totalEntries / 5); // More activity = higher confidence
     
     return (qualityRatio * 0.4 + decisionConfidence * 0.3 + activityConfidence * 0.3);
@@ -1016,7 +1016,7 @@ export class ThreadContextManager {
   ): Promise<ThreadTokenUsage> {
     const contextData = { flow, decisions, stakeholderMap };
     const serialized = JSON.stringify(contextData);
-    const usedTokens = Math.ceil(serialized.length / 4);
+    const usedTokens = Math.ceil(serialized?.length || 0 / 4);
     
     const modelCapacity = options.optimizeForModel === "llama3.2" ? 8000 : 16000;
     const totalCapacity = Math.floor(modelCapacity * 0.6); // Reserve 40% for instructions and response
@@ -1038,8 +1038,8 @@ export class ThreadContextManager {
     const recentEntries = flow.slice(-10);
     const highImpactEntries = flow
       .filter(entry => 
-        entry.businessImpact.strategicImportance === "critical" || 
-        entry.businessImpact.strategicImportance === "high"
+        entry?.businessImpact?.strategicImportance === "critical" || 
+        entry?.businessImpact?.strategicImportance === "high"
       )
       .filter(entry => !recentEntries.includes(entry))
       .slice(-5);
@@ -1060,12 +1060,12 @@ export class ThreadContextManager {
     
     // Summarize older entries by time periods
     const olderEntries = flow.slice(0, -3);
-    if (olderEntries.length > 0) {
+    if (olderEntries?.length || 0 > 0) {
       const summaryEntry: ChronologicalEntry = {
         emailId: "summary_older",
         timestamp: olderEntries[0].timestamp,
         sender: "System Summary",
-        keyPoints: [`Summary of ${olderEntries.length} earlier emails`],
+        keyPoints: [`Summary of ${olderEntries?.length || 0} earlier emails`],
         businessImpact: this.aggregateBusinessImpact(olderEntries),
         contextChanges: [],
         analysisQuality: "medium"
@@ -1081,16 +1081,16 @@ export class ThreadContextManager {
     options: ThreadContextOptions
   ): ChronologicalEntry[] {
     // Remove entries with low business impact and low analysis quality
-    return flow.filter(entry => 
+    return flow?.filter(entry => 
       entry.analysisQuality !== "low" || 
-      entry.businessImpact.strategicImportance !== "low"
+      entry?.businessImpact?.strategicImportance !== "low"
     );
   }
 
   private aggregateBusinessImpact(entries: ChronologicalEntry[]): BusinessImpact {
-    const totalFinancial = entries.reduce((sum, entry) => sum + entry.businessImpact.financialImpact, 0);
+    const totalFinancial = entries.reduce((sum: any, entry: any) => sum + entry?.businessImpact?.financialImpact, 0);
     const strategicImportance = entries.some(entry => 
-      entry.businessImpact.strategicImportance === "critical"
+      entry?.businessImpact?.strategicImportance === "critical"
     ) ? "critical" : "medium";
     
     return {
@@ -1106,8 +1106,8 @@ export class ThreadContextManager {
    * Cleanup method to free resources
    */
   async shutdown(): Promise<void> {
-    await this.redisService.disconnect();
-    this.contextCache.clear();
+    await this?.redisService?.disconnect();
+    this?.contextCache?.clear();
     logger.info("ThreadContextManager shutdown complete");
   }
 }

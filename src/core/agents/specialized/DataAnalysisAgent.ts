@@ -61,7 +61,7 @@ export class DataAnalysisAgent extends BaseAgent {
     const prompt = `
       Analyze this data analysis task: "${task}"
       
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Determine:
       1. Analysis type: statistical, visualization, transformation, or exploration
@@ -79,8 +79,8 @@ export class DataAnalysisAgent extends BaseAgent {
       }
     `;
 
-    const llmResponse: LlamaCppResponse = await this.llm.generate(prompt, { format: "json" });
-    const response = llmResponse.response;
+    const llmResponse: LlamaCppResponse = await this?.llm?.generate(prompt, { format: "json" });
+    const response = llmResponse?.response;
     return this.parseDataTaskAnalysis(response);
   }
 
@@ -111,7 +111,7 @@ export class DataAnalysisAgent extends BaseAgent {
   ): Promise<AnalysisResult> {
     const prompt = `
       Perform statistical analysis based on these requirements:
-      Techniques: ${analysis.techniques.join(", ")}
+      Techniques: ${analysis?.techniques?.join(", ")}
       
       ${context.ragDocuments ? `Data context:\n${context.ragDocuments[0]?.content}` : ""}
       
@@ -125,8 +125,8 @@ export class DataAnalysisAgent extends BaseAgent {
       Format as a structured analysis report.
     `;
 
-    const llmResponse: LlamaCppResponse = await this.llm.generate(prompt);
-    const analysisReport = llmResponse.response;
+    const llmResponse: LlamaCppResponse = await this?.llm?.generate(prompt);
+    const analysisReport = llmResponse?.response;
 
     return {
       type: "statistical",
@@ -156,8 +156,8 @@ export class DataAnalysisAgent extends BaseAgent {
       Return as visualization configuration in JSON format.
     `;
 
-    const llmResponse: LlamaCppResponse = await this.llm.generate(prompt);
-    const vizConfig = llmResponse.response;
+    const llmResponse: LlamaCppResponse = await this?.llm?.generate(prompt);
+    const vizConfig = llmResponse?.response;
 
     return {
       type: "visualization",
@@ -173,7 +173,7 @@ export class DataAnalysisAgent extends BaseAgent {
   ): Promise<AnalysisResult> {
     const prompt = `
       Transform data according to these requirements:
-      Techniques: ${analysis.techniques.join(", ")}
+      Techniques: ${analysis?.techniques?.join(", ")}
       
       ${context.ragDocuments ? `Input data:\n${context.ragDocuments[0]?.content}` : ""}
       
@@ -187,8 +187,8 @@ export class DataAnalysisAgent extends BaseAgent {
       Provide transformed data and transformation steps.
     `;
 
-    const llmResponse: LlamaCppResponse = await this.llm.generate(prompt);
-    const transformation = llmResponse.response;
+    const llmResponse: LlamaCppResponse = await this?.llm?.generate(prompt);
+    const transformation = llmResponse?.response;
 
     return {
       type: "transformation",
@@ -205,7 +205,7 @@ export class DataAnalysisAgent extends BaseAgent {
     const prompt = `
       Explore this dataset comprehensively:
       Analysis complexity: ${analysis.complexity}
-      Expected techniques: ${analysis.techniques.join(", ")}
+      Expected techniques: ${analysis?.techniques?.join(", ")}
       
       ${context.ragDocuments ? `Data:\n${context.ragDocuments[0]?.content}` : ""}
       
@@ -221,8 +221,8 @@ export class DataAnalysisAgent extends BaseAgent {
       Format as an exploratory data analysis report.
     `;
 
-    const llmResponse: LlamaCppResponse = await this.llm.generate(prompt);
-    const exploration = llmResponse.response;
+    const llmResponse: LlamaCppResponse = await this?.llm?.generate(prompt);
+    const exploration = llmResponse?.response;
 
     return {
       type: "exploration",
@@ -239,14 +239,14 @@ export class DataAnalysisAgent extends BaseAgent {
     const prompt = `
       Perform data analysis for: ${task}
       
-      ${context.ragDocuments ? `Data:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Data:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Provide comprehensive analysis including relevant statistics, 
       patterns, insights, and recommendations.
     `;
 
-    const llmResponse: LlamaCppResponse = await this.llm.generate(prompt);
-    const analysis = llmResponse.response;
+    const llmResponse: LlamaCppResponse = await this?.llm?.generate(prompt);
+    const analysis = llmResponse?.response;
 
     return {
       type: "general",
@@ -299,16 +299,16 @@ export class DataAnalysisAgent extends BaseAgent {
       parts.push(`\n**Report:**\n${result.report}`);
     }
 
-    if (result.insights && result.insights.length > 0) {
+    if (result.insights && result?.insights?.length > 0) {
       parts.push(`\n**Key Insights:**`);
-      result.insights.forEach((insight, i) => {
+      result?.insights?.forEach((insight, i) => {
         parts.push(`${i + 1}. ${insight}`);
       });
     }
 
-    if (result.visualizations && result.visualizations.length > 0) {
+    if (result.visualizations && result?.visualizations?.length > 0) {
       parts.push(
-        `\n**Visualizations:** ${result.visualizations.length} chart(s) configured`,
+        `\n**Visualizations:** ${result?.visualizations?.length} chart(s) configured`,
       );
     }
 

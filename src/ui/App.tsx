@@ -27,7 +27,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary/index.js";
 import { setupGlobalErrorHandlers } from "./utils/error-handling.js";
 import { ToastContainer } from "./components/Toast/index.js";
 import { NetworkStatus } from "./components/NetworkStatus/index.js";
-import { webSocketConfig, getApiBaseUrl } from "../config/websocket.config";
+import { webSocketConfig, getApiBaseUrl } from "../config/websocket?.config.js";
 import { ErrorProvider } from "./contexts/ErrorContext.js";
 import {
   DashboardErrorBoundary,
@@ -46,7 +46,7 @@ function AppWithCSRF() {
 
   // Apply dark mode by default
   React.useEffect(() => {
-    document.documentElement.classList.add("dark");
+    document?.documentElement?.classList.add("dark");
   }, []);
 
   // Create query client inside component with improved retry logic
@@ -79,7 +79,7 @@ function AppWithCSRF() {
               }
               return true;
             },
-            retryDelay: (attemptIndex) =>
+            retryDelay: (attemptIndex: any) =>
               Math.min(1000 * 2 ** attemptIndex, 30000),
           },
         },

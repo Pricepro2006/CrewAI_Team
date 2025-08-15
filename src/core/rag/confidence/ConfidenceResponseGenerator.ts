@@ -38,7 +38,7 @@ export class ConfidenceResponseGenerator {
       const prompt = this.buildConfidencePrompt(request, options);
 
       // Generate response
-      const response = await this.llm.generate(prompt, {
+      const response = await this?.llm?.generate(prompt, {
         temperature: options.temperature,
         maxTokens: options.maxTokens,
         format: options.format,
@@ -99,9 +99,9 @@ export class ConfidenceResponseGenerator {
     );
 
     // Add context from retrieval
-    if (request.context.content) {
+    if (request?.context?.content) {
       sections.push("\nContext:");
-      sections.push(request.context.content);
+      sections.push(request?.context?.content);
     }
 
     // Add uncertainty instructions if enabled
@@ -153,7 +153,7 @@ export class ConfidenceResponseGenerator {
       }
 
       // Adjust based on position (middle tokens often more confident)
-      const position = index / words.length;
+      const position = index / words?.length || 0;
       if (position > 0.2 && position < 0.8) {
         confidence += 0.1;
       }
@@ -217,13 +217,13 @@ export class ConfidenceResponseGenerator {
    * Calculate raw confidence score
    */
   private calculateRawConfidence(tokenConfidence: TokenConfidence[]): number {
-    if (tokenConfidence.length === 0) return 0.5;
+    if (tokenConfidence?.length || 0 === 0) return 0.5;
 
     const totalConfidence = tokenConfidence.reduce(
       (sum, token) => sum + token.confidence,
       0,
     );
-    return totalConfidence / tokenConfidence.length;
+    return totalConfidence / tokenConfidence?.length || 0;
   }
 
   /**
@@ -254,12 +254,12 @@ export class ConfidenceResponseGenerator {
     }
 
     // Check for complex query vs simple response
-    if (request.complexity > 7 && response.length < 200) {
+    if (request.complexity > 7 && response?.length || 0 < 200) {
       areas.push("potentially_incomplete");
     }
 
     // Check for low context confidence
-    if (request.context.confidence < 0.6) {
+    if (request?.context?.confidence < 0.6) {
       areas.push("low_context_confidence");
     }
 
@@ -277,16 +277,16 @@ export class ConfidenceResponseGenerator {
     const factors = [];
 
     // Context quality
-    if (request.context.confidence > 0.8) {
+    if (request?.context?.confidence > 0.8) {
       factors.push("high-quality context");
-    } else if (request.context.confidence < 0.6) {
+    } else if (request?.context?.confidence < 0.6) {
       factors.push("low-quality context");
     }
 
     // Response characteristics
-    if (response.length > 300) {
+    if (response?.length || 0 > 300) {
       factors.push("detailed response");
-    } else if (response.length < 100) {
+    } else if (response?.length || 0 < 100) {
       factors.push("brief response");
     }
 
@@ -307,7 +307,7 @@ export class ConfidenceResponseGenerator {
 
     let reasoning = `Confidence score of ${Math.round(confidence * 100)}%`;
 
-    if (factors.length > 0) {
+    if (factors?.length || 0 > 0) {
       reasoning += ` based on: ${factors.join(", ")}.`;
     }
 
@@ -326,7 +326,7 @@ export class ConfidenceResponseGenerator {
     const result = await this.generateWithConfidence(request);
 
     // Simulate streaming by calling onToken for each token
-    result.tokenConfidence.forEach((tokenConf) => {
+    result?.tokenConfidence?.forEach((tokenConf: any) => {
       onToken(tokenConf.token, tokenConf.confidence);
     });
 

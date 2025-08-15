@@ -37,7 +37,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   // Check password strength when password changes
   useEffect(() => {
-    if (formData.password && formData.password.length > 0) {
+    if (formData.password && formData?.password?.length > 0) {
       const checkStrength = async () => {
         try {
           const strength = await checkPasswordStrength(formData.password);
@@ -57,14 +57,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData((prev: any) => ({
       ...prev,
       [name]: value,
     }));
 
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev: any) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -81,7 +81,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     // Username validation
     if (!formData.username) {
       newErrors.username = "Username is required";
-    } else if (formData.username.length < 3) {
+    } else if (formData?.username?.length < 3) {
       newErrors.username = "Username must be at least 3 characters";
     } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
       newErrors.username =
@@ -270,8 +270,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                       color: getStrengthColor(passwordStrength.strength),
                     }}
                   >
-                    {passwordStrength.strength.charAt(0).toUpperCase() +
-                      passwordStrength.strength.slice(1)}{" "}
+                    {passwordStrength?.strength?.charAt(0).toUpperCase() +
+                      passwordStrength?.strength?.slice(1)}{" "}
                     Password
                   </span>
                   {passwordStrength.isCompromised && (
@@ -282,7 +282,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 </div>
                 {!passwordStrength.isValid && (
                   <ul className="strength-requirements">
-                    {passwordStrength.errors.map((error, index) => (
+                    {passwordStrength?.errors?.map((error, index) => (
                       <li key={index} className="requirement-error">
                         {error}
                       </li>

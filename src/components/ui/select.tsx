@@ -27,7 +27,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <svg
-      xmlns="http://www.w3.org/2000/svg"
+      xmlns="http://www?.w3?.org/2000/svg"
       width="24"
       height="24"
       viewBox="0 0 24 24"
@@ -84,7 +84,7 @@ const SelectItem = React.forwardRef<
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <svg
-        xmlns="http://www.w3.org/2000/svg"
+        xmlns="http://www?.w3?.org/2000/svg"
         width="24"
         height="24"
         viewBox="0 0 24 24"

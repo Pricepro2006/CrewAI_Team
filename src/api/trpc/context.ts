@@ -8,7 +8,7 @@ import { MaestroFramework } from "../../core/maestro/MaestroFramework.js";
 import { UserService } from "../services/UserService.js";
 import type { PublicUser } from "../../database/models/User.js";
 import { jwtManager, JWTError } from "../utils/jwt.js";
-import ollamaConfig from "../../config/ollama.config.js";
+import ollamaConfig from "../../config/ollama?.config.js";
 import { logger } from "../../utils/logger.js";
 import { mcpToolsService } from "../services/MCPToolsService.js";
 import { DealDataService } from "../services/DealDataService.js";
@@ -203,7 +203,7 @@ function getPermissionsForRole(role: string): string[] {
 
 // Security headers and request validation
 function validateRequest(req: any) {
-  const ip = req.ip || req.connection.remoteAddress || "unknown";
+  const ip = req.ip || req?.connection?.remoteAddress || "unknown";
   const userAgent = req.headers["user-agent"] || "unknown";
 
   // Log security-relevant request info
@@ -212,7 +212,7 @@ function validateRequest(req: any) {
     userAgent,
     method: req.method,
     path: req.path,
-    hasAuth: !!req.headers.authorization,
+    hasAuth: !!req?.headers?.authorization,
   });
 
   // Basic security checks
@@ -259,7 +259,7 @@ export async function createContext({
   const services = await initializeServices();
 
   // Extract and verify JWT if present
-  const token = req.headers.authorization?.replace("Bearer ", "");
+  const token = req?.headers?.authorization?.replace("Bearer ", "");
   let user: User | null = null;
 
   if (token) {

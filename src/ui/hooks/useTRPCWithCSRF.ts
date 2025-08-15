@@ -9,7 +9,7 @@ import {
 import superjson from "superjson";
 import { api } from "../../lib/trpc.js";
 import { useCSRF, handleCSRFError } from "./useCSRF.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 
 interface TRPCClientConfig {
   apiUrl?: string;
@@ -137,7 +137,7 @@ export function useTRPCWithCSRF(config: TRPCClientConfig = {}) {
       return handleCSRFError(() => mutationFn(input), {
         onTokenRefresh: refreshToken,
         maxRetries: options?.maxRetries ?? 1,
-      }).catch((error) => {
+      }).catch((error: any) => {
         if (options?.onError) {
           options.onError(error);
         }
@@ -159,7 +159,7 @@ export function useTRPCWithCSRF(config: TRPCClientConfig = {}) {
       return handleCSRFError(queryFn, {
         onTokenRefresh: refreshToken,
         maxRetries: options?.maxRetries ?? 1,
-      }).catch((error) => {
+      }).catch((error: any) => {
         if (options?.onError) {
           options.onError(error);
         }

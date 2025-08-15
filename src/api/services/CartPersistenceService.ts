@@ -43,9 +43,9 @@ export class CartPersistenceService {
 
   async getCart(cartId: string): Promise<Cart | null> {
     try {
-      const cart = this.carts.get(cartId);
+      const cart = this?.carts?.get(cartId);
       if (cart && cart.expiresAt && cart.expiresAt < new Date()) {
-        this.carts.delete(cartId);
+        this?.carts?.delete(cartId);
         return null;
       }
       return cart || null;
@@ -69,7 +69,7 @@ export class CartPersistenceService {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
       };
 
-      this.carts.set(cart.id, cart);
+      this?.carts?.set(cart.id, cart);
       logger.info(`Created cart ${cart.id}`);
       return cart;
     } catch (error) {
@@ -80,12 +80,12 @@ export class CartPersistenceService {
 
   async addItem(cartId: string, item: Omit<CartItem, 'id' | 'addedAt' | 'modifiedAt'>): Promise<Cart> {
     try {
-      const cart = this.carts.get(cartId);
+      const cart = this?.carts?.get(cartId);
       if (!cart) {
         throw new Error(`Cart ${cartId} not found`);
       }
 
-      const existingItemIndex = cart.items.findIndex(i => i.productId === item.productId);
+      const existingItemIndex = cart?.items?.findIndex(i => i.productId === item.productId || "");
       
       if (existingItemIndex >= 0) {
         // Update existing item
@@ -102,7 +102,7 @@ export class CartPersistenceService {
           addedAt: new Date(),
           modifiedAt: new Date()
         };
-        cart.items.push(newItem);
+        cart?.items?.push(newItem);
       }
 
       this.updateCartTotals(cart);
@@ -118,12 +118,12 @@ export class CartPersistenceService {
 
   async removeItem(cartId: string, itemId: string): Promise<Cart> {
     try {
-      const cart = this.carts.get(cartId);
+      const cart = this?.carts?.get(cartId);
       if (!cart) {
         throw new Error(`Cart ${cartId} not found`);
       }
 
-      cart.items = cart.items.filter(item => item.id !== itemId);
+      cart.items = cart?.items?.filter(item => item.id !== itemId);
       this.updateCartTotals(cart);
       cart.updatedAt = new Date();
       
@@ -137,12 +137,12 @@ export class CartPersistenceService {
 
   async updateItemQuantity(cartId: string, itemId: string, quantity: number): Promise<Cart> {
     try {
-      const cart = this.carts.get(cartId);
+      const cart = this?.carts?.get(cartId);
       if (!cart) {
         throw new Error(`Cart ${cartId} not found`);
       }
 
-      const item = cart.items.find(i => i.id === itemId);
+      const item = cart?.items?.find(i => i.id === itemId);
       if (!item) {
         throw new Error(`Item ${itemId} not found in cart`);
       }
@@ -167,7 +167,7 @@ export class CartPersistenceService {
 
   async clearCart(cartId: string): Promise<Cart> {
     try {
-      const cart = this.carts.get(cartId);
+      const cart = this?.carts?.get(cartId);
       if (!cart) {
         throw new Error(`Cart ${cartId} not found`);
       }
@@ -186,13 +186,13 @@ export class CartPersistenceService {
   }
 
   private updateCartTotals(cart: Cart): void {
-    cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0);
-    cart.totalPrice = cart.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+    cart.totalItems = cart?.items?.reduce((total: any, item: any) => total + item.quantity, 0);
+    cart.totalPrice = cart?.items?.reduce((total: any, item: any) => total + (item.price * item.quantity), 0);
   }
 
   async getCartsByUser(userId: string): Promise<Cart[]> {
     try {
-      return Array.from(this.carts.values()).filter(cart => cart.userId === userId);
+      return Array.from(this?.carts?.values()).filter(cart => cart.userId === userId);
     } catch (error) {
       logger.error('Error getting carts by user:', error instanceof Error ? error.message : String(error));
       throw error;
@@ -205,9 +205,9 @@ export class CartPersistenceService {
       let existingCart: Cart | undefined;
       
       if (userId) {
-        existingCart = Array.from(this.carts.values()).find(cart => cart.userId === userId);
+        existingCart = Array.from(this?.carts?.values()).find(cart => cart.userId === userId);
       } else if (sessionId) {
-        existingCart = Array.from(this.carts.values()).find(cart => cart.sessionId === sessionId);
+        existingCart = Array.from(this?.carts?.values()).find(cart => cart.sessionId === sessionId);
       }
 
       if (existingCart && (!existingCart.expiresAt || existingCart.expiresAt > new Date())) {
@@ -233,18 +233,18 @@ export class CartPersistenceService {
 
   async saveForLater(cartId: string, itemId: string): Promise<Cart> {
     try {
-      const cart = this.carts.get(cartId);
+      const cart = this?.carts?.get(cartId);
       if (!cart) {
         throw new Error(`Cart ${cartId} not found`);
       }
 
-      const item = cart.items.find(i => i.id === itemId);
+      const item = cart?.items?.find(i => i.id === itemId);
       if (!item) {
         throw new Error(`Item ${itemId} not found in cart`);
       }
 
       // For now, just remove the item (in a real implementation, you'd move it to a saved items list)
-      cart.items = cart.items.filter(i => i.id !== itemId);
+      cart.items = cart?.items?.filter(i => i.id !== itemId);
       this.updateCartTotals(cart);
       cart.updatedAt = new Date();
       
@@ -258,7 +258,7 @@ export class CartPersistenceService {
 
   async moveToCart(cartId: string, itemId: string): Promise<Cart> {
     try {
-      const cart = this.carts.get(cartId);
+      const cart = this?.carts?.get(cartId);
       if (!cart) {
         throw new Error(`Cart ${cartId} not found`);
       }
@@ -275,7 +275,7 @@ export class CartPersistenceService {
 
   async convertCart(cartId: string, type: string): Promise<Cart> {
     try {
-      const cart = this.carts.get(cartId);
+      const cart = this?.carts?.get(cartId);
       if (!cart) {
         throw new Error(`Cart ${cartId} not found`);
       }

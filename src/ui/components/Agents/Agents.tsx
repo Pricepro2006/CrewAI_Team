@@ -32,7 +32,7 @@ const getAgentIcon = (type: string): React.ReactNode => {
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+        xmlns="http://www?.w3?.org/2000/svg"
       >
         <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
         <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" />
@@ -44,7 +44,7 @@ const getAgentIcon = (type: string): React.ReactNode => {
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+        xmlns="http://www?.w3?.org/2000/svg"
       >
         <polyline
           points="16 18 22 12 16 6"
@@ -77,7 +77,7 @@ const getAgentIcon = (type: string): React.ReactNode => {
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+        xmlns="http://www?.w3?.org/2000/svg"
       >
         <path
           d="M18 20V10M12 20V4M6 20V14"
@@ -94,7 +94,7 @@ const getAgentIcon = (type: string): React.ReactNode => {
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+        xmlns="http://www?.w3?.org/2000/svg"
       >
         <path
           d="M14 2L18 6L7 17L3 17L3 13L14 2Z"
@@ -118,7 +118,7 @@ const getAgentIcon = (type: string): React.ReactNode => {
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+        xmlns="http://www?.w3?.org/2000/svg"
       >
         <path
           d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
@@ -136,7 +136,7 @@ const getAgentIcon = (type: string): React.ReactNode => {
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+        xmlns="http://www?.w3?.org/2000/svg"
       >
         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
         <path
@@ -159,10 +159,10 @@ const formatAgentName = (type: string): string => {
 };
 
 const mapCapabilitiesToExpertise = (capabilities: string[]): string[] => {
-  return capabilities.map((cap) =>
+  return capabilities?.map((cap: any) =>
     cap
       .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word: any) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" "),
   );
 };
@@ -187,14 +187,14 @@ export const Agents: React.FC = () => {
   const agents: Agent[] = React.useMemo(() => {
     if (!agentsData) return [];
 
-    return agentsData.map((agent: AgentData) => {
+    return agentsData?.map((agent: AgentData) => {
       // Check if this agent is currently active/busy
       const isActive = agentStatus?.some(
         (status: any) => status.type === agent.type && status.status === "busy",
       );
 
       return {
-        id: agent.type.toLowerCase().replace("agent", "-agent"),
+        id: agent?.type?.toLowerCase().replace("agent", "-agent"),
         name: formatAgentName(agent.type),
         description: agent.description,
         expertise: mapCapabilitiesToExpertise(agent.capabilities),
@@ -231,7 +231,7 @@ export const Agents: React.FC = () => {
         </div>
         <div className="agents-grid">
           {/* Loading skeleton */}
-          {[1, 2, 3, 4, 5].map((i) => (
+          {[1, 2, 3, 4, 5].map((i: any) => (
             <div key={i} className="agent-card" style={{ opacity: 0.5 }}>
               <div className="agent-card-header">
                 <div className="agent-icon">
@@ -290,7 +290,7 @@ export const Agents: React.FC = () => {
           </p>
           <button
             className="chat-with-all-button"
-            onClick={() => window.location.reload()}
+            onClick={() => window?.location?.reload()}
           >
             Retry
           </button>
@@ -314,7 +314,7 @@ export const Agents: React.FC = () => {
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+            xmlns="http://www?.w3?.org/2000/svg"
           >
             <path
               d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"
@@ -329,7 +329,7 @@ export const Agents: React.FC = () => {
       </div>
 
       <div className="agents-grid">
-        {agents.map((agent) => (
+        {agents?.map((agent: any) => (
           <div key={agent.id} className="agent-card">
             <div className="agent-card-header">
               <div className="agent-icon">{agent.icon}</div>
@@ -343,7 +343,7 @@ export const Agents: React.FC = () => {
             <div className="agent-expertise">
               <h4 className="expertise-title">Expertise:</h4>
               <div className="expertise-tags">
-                {agent.expertise.map((skill, index) => (
+                {agent?.expertise?.map((skill, index) => (
                   <span key={index} className="expertise-tag">
                     {skill}
                   </span>

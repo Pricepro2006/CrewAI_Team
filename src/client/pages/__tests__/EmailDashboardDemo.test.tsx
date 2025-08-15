@@ -27,8 +27,8 @@ vi.mock("../../components/dashboard/EmailDashboardMultiPanel", () => ({
         {loading ? "Loading" : "Not Loading"}
       </div>
       <div data-testid="error-state">{error || "No Error"}</div>
-      <div data-testid="email-count">{emails.length}</div>
-      {emails.map((email: any) => (
+      <div data-testid="email-count">{emails?.length || 0}</div>
+      {emails?.map((email: any) => (
         <div key={email.id} data-testid={`email-${email.id}`}>
           <span>{email.subject}</span>
           <button onClick={() => onEmailSelect(email)}>Select</button>
@@ -363,8 +363,8 @@ describe("EmailDashboardDemo Component", () => {
       // Should show loading skeletons
       const loadingSkeletons = screen
         .getAllByRole("generic")
-        .filter((el) => el.classList.contains("animate-pulse"));
-      expect(loadingSkeletons.length).toBeGreaterThan(0);
+        .filter((el: any) => el?.classList?.contains("animate-pulse"));
+      expect(loadingSkeletons?.length || 0).toBeGreaterThan(0);
     }, 10000);
   });
 

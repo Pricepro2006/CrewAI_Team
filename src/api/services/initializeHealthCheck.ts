@@ -27,7 +27,7 @@ export async function initializeHealthCheck(): Promise<void> {
     });
 
     // Set up event listeners for critical health events
-    service.on("health:critical", (health) => {
+    service.on("health:critical", (health: any) => {
       logger.error("CRITICAL: System health is unhealthy", "HEALTH", {
         status: health.status,
         failedServices: health.services
@@ -39,7 +39,7 @@ export async function initializeHealthCheck(): Promise<void> {
       // sendAlert("System Critical", health);
     });
 
-    service.on("health:warning", (health) => {
+    service.on("health:warning", (health: any) => {
       logger.warn("WARNING: System health is degraded", "HEALTH", {
         status: health.status,
         degradedServices: health.services

@@ -57,10 +57,10 @@ export class OptimizedJSONSerializer {
       // Quick size estimation
       const estimatedSize = this.estimateSize(data);
       
-      if (this.config.enableStreaming && estimatedSize > this.config.streamThreshold) {
+      if (this?.config?.enableStreaming && estimatedSize > this?.config?.streamThreshold) {
         logger.debug("Using streaming serialization", "JSON_OPTIMIZATION", {
           estimatedSize,
-          threshold: this.config.streamThreshold,
+          threshold: this?.config?.streamThreshold,
         });
         return this.streamingSerialize(data);
       } else {
@@ -68,7 +68,7 @@ export class OptimizedJSONSerializer {
         const serializationTime = Date.now() - startTime;
         
         logger.debug("Synchronous serialization completed", "JSON_OPTIMIZATION", {
-          dataSize: result.length,
+          dataSize: result?.length || 0,
           serializationTime,
         });
         
@@ -88,13 +88,13 @@ export class OptimizedJSONSerializer {
    * Synchronous serialization with optimizations
    */
   private synchronousSerialize(data: any): string {
-    if (this.config.enableCircularDetection) {
+    if (this?.config?.enableCircularDetection) {
       this.circularRefs = new WeakSet();
     }
 
     const replacer = this.createOptimizedReplacer();
     
-    if (this.config.prettyPrint) {
+    if (this?.config?.prettyPrint) {
       return JSON.stringify(data, replacer, 2);
     } else {
       return JSON.stringify(data, replacer);
@@ -128,30 +128,30 @@ export class OptimizedJSONSerializer {
     
     return (key: string, value: any) => {
       // Handle depth limiting
-      if (depth > this.config.maxDepth) {
+      if (depth > this?.config?.maxDepth) {
         return '[Maximum depth exceeded]';
       }
       
       // Handle circular references
-      if (this.config.enableCircularDetection && 
+      if (this?.config?.enableCircularDetection && 
           value !== null && 
           typeof value === 'object') {
-        if (this.circularRefs.has(value)) {
+        if (this?.circularRefs?.has(value)) {
           return '[Circular Reference]';
         }
-        this.circularRefs.add(value);
+        this?.circularRefs?.add(value);
       }
       
       // Handle large arrays
-      if (Array.isArray(value) && value.length > this.config.maxArrayLength) {
-        const truncated = value.slice(0, this.config.maxArrayLength);
-        truncated.push(`[... ${value.length - this.config.maxArrayLength} more items]`);
+      if (Array.isArray(value) && value?.length || 0 > this?.config?.maxArrayLength) {
+        const truncated = value.slice(0, this?.config?.maxArrayLength);
+        truncated.push(`[... ${value?.length || 0 - this?.config?.maxArrayLength} more items]`);
         return truncated;
       }
       
       // Apply custom replacer if provided
-      if (this.config.customReplacer) {
-        value = this.config.customReplacer(key, value);
+      if (this?.config?.customReplacer) {
+        value = this?.config?.customReplacer(key, value);
       }
       
       // Optimize common patterns
@@ -213,15 +213,15 @@ export class OptimizedJSONSerializer {
     
     if (typeof data === 'number') return String(data).length;
     
-    if (typeof data === 'string') return data.length + 2; // Add quotes
+    if (typeof data === 'string') return data?.length || 0 + 2; // Add quotes
     
     if (Array.isArray(data)) {
       let size = 2; // []
-      for (let i = 0; i < Math.min(data.length, 100); i++) { // Sample first 100 items
+      for (let i = 0; i < Math.min(data?.length || 0, 100); i++) { // Sample first 100 items
         size += this.estimateSize(data[i], depth + 1);
         if (i > 0) size += 1; // comma
       }
-      return size * (data.length / Math.min(data.length, 100)); // Extrapolate
+      return size * (data?.length || 0 / Math.min(data?.length || 0, 100)); // Extrapolate
     }
     
     if (typeof data === 'object') {
@@ -231,7 +231,7 @@ export class OptimizedJSONSerializer {
       for (const [key, value] of Object.entries(data)) {
         if (count >= 50) break; // Sample first 50 properties
         
-        size += key.length + 3; // "key":
+        size += key?.length || 0 + 3; // "key":
         size += this.estimateSize(value, depth + 1);
         if (count > 0) size += 1; // comma
         count++;
@@ -282,7 +282,7 @@ class JSONStream extends Readable {
     this.push('[');
     this.isArrayStarted = true;
     
-    for (let i = 0; i < array.length; i++) {
+    for (let i = 0; i < array?.length || 0; i++) {
       if (i > 0) {
         this.push(',');
       }
@@ -290,7 +290,7 @@ class JSONStream extends Readable {
       this.writeValue(array[i]);
       
       // Flush buffer periodically
-      if (this.buffer.length > this.config.chunkSize) {
+      if (this?.buffer?.length > this?.config?.chunkSize) {
         this.flushBuffer();
       }
     }
@@ -305,7 +305,7 @@ class JSONStream extends Readable {
     
     const entries = Object.entries(obj);
     
-    for (let i = 0; i < entries.length; i++) {
+    for (let i = 0; i < entries?.length || 0; i++) {
       const entry = entries[i];
       if (!entry) continue;
       
@@ -319,7 +319,7 @@ class JSONStream extends Readable {
       this.writeValue(value);
       
       // Flush buffer periodically
-      if (this.buffer.length > this.config.chunkSize) {
+      if (this?.buffer?.length > this?.config?.chunkSize) {
         this.flushBuffer();
       }
     }
@@ -356,7 +356,7 @@ class JSONStream extends Readable {
   }
 
   private flushBuffer(): void {
-    if (this.buffer.length > 0) {
+    if (this?.buffer?.length > 0) {
       this.push(this.buffer);
       this.buffer = '';
     }
@@ -365,7 +365,7 @@ class JSONStream extends Readable {
   override push(chunk: string | null): boolean {
     if (chunk === null) {
       // End of stream
-      if (this.buffer.length > 0) {
+      if (this?.buffer?.length > 0) {
         super.push(this.buffer);
         this.buffer = '';
       }
@@ -374,7 +374,7 @@ class JSONStream extends Readable {
     
     this.buffer += chunk;
     
-    if (this.buffer.length >= this.config.chunkSize) {
+    if (this?.buffer?.length >= this?.config?.chunkSize) {
       const result = super.push(this.buffer);
       this.buffer = '';
       return result;
@@ -407,7 +407,7 @@ export class OptimizedJSONParser {
       }
       
       // Size validation
-      if (jsonString.length > 50 * 1024 * 1024) { // 50MB limit
+      if (jsonString?.length || 0 > 50 * 1024 * 1024) { // 50MB limit
         throw new Error('JSON input too large');
       }
       
@@ -415,7 +415,7 @@ export class OptimizedJSONParser {
       const parseTime = Date.now() - startTime;
       
       logger.debug("JSON parsing completed", "JSON_OPTIMIZATION", {
-        inputSize: jsonString.length,
+        inputSize: jsonString?.length || 0,
         parseTime,
       });
       
@@ -425,7 +425,7 @@ export class OptimizedJSONParser {
       logger.error("JSON parsing failed", "JSON_OPTIMIZATION", {
         error,
         parseTime,
-        inputLength: jsonString.length,
+        inputLength: jsonString?.length || 0,
       });
       throw error;
     }
@@ -492,12 +492,12 @@ export const JSONOptimization = {
    * Compress large arrays by sampling
    */
   compressArray<T>(arr: T[], maxLength: number = 1000): T[] | { sample: T[]; total: number } {
-    if (arr.length <= maxLength) {
+    if (arr?.length || 0 <= maxLength) {
       return arr;
     }
     
     // Sample evenly distributed items
-    const step = arr.length / maxLength;
+    const step = arr?.length || 0 / maxLength;
     const sample: T[] = [];
     
     for (let i = 0; i < maxLength; i++) {
@@ -510,7 +510,7 @@ export const JSONOptimization = {
     
     return {
       sample,
-      total: arr.length,
+      total: arr?.length || 0,
     };
   },
 
@@ -519,7 +519,7 @@ export const JSONOptimization = {
    */
   removeEmptyObjects(obj: any): any {
     if (Array.isArray(obj)) {
-      return obj.map(this.removeEmptyObjects).filter(item => item !== null);
+      return obj?.map(this.removeEmptyObjects).filter(item => item !== null);
     }
     
     if (obj && typeof obj === 'object') {

@@ -51,7 +51,7 @@ async function testIntent(testCase: TestCase) {
       headers: { "Content-Type": "application/json" },
       // Handle connection issues
       maxRedirects: 5,
-      validateStatus: (status) => status < 500
+      validateStatus: (status: any) => status < 500
     });
     const endTime = Date.now();
     
@@ -59,7 +59,7 @@ async function testIntent(testCase: TestCase) {
       throw new Error(`Invalid response: ${response.status}`);
     }
     
-    const result = response.data;
+    const result = response?.data;
     const passed = result.intent === testCase.expectedIntent;
     
     console.log(`${passed ? "✅" : "❌"} ${testCase.description}`);
@@ -67,10 +67,10 @@ async function testIntent(testCase: TestCase) {
     console.log(`   Expected: ${testCase.expectedIntent}, Got: ${result.intent}`);
     console.log(`   Confidence: ${result.confidence}, Time: ${endTime - startTime}ms`);
     if (result.items?.length > 0) {
-      console.log(`   Items: ${result.items.join(", ")}`);
+      console.log(`   Items: ${result?.items?.join(", ")}`);
     }
     if (result.quantities?.length > 0) {
-      console.log(`   Quantities: ${result.quantities.join(", ")}`);
+      console.log(`   Quantities: ${result?.quantities?.join(", ")}`);
     }
     console.log("");
     
@@ -120,10 +120,10 @@ async function runTests() {
   }
   
   console.log("=== Test Summary ===");
-  console.log(`Total: ${testCases.length}`);
-  console.log(`Passed: ${passed} (${((passed/testCases.length)*100).toFixed(1)}%)`);
+  console.log(`Total: ${testCases?.length || 0}`);
+  console.log(`Passed: ${passed} (${((passed/testCases?.length || 0)*100).toFixed(1)}%)`);
   console.log(`Failed: ${failed}`);
-  console.log(`Average time: ${(totalTime/testCases.length).toFixed(0)}ms`);
+  console.log(`Average time: ${(totalTime/testCases?.length || 0).toFixed(0)}ms`);
 }
 
 runTests().catch(console.error);

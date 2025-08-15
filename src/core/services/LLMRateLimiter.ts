@@ -66,12 +66,12 @@ export class LLMRateLimiter {
     estimatedCost?: number
   ): Promise<RateLimitResult> {
     const now = Date.now();
-    const windowStart = now - this.config.windowMs;
+    const windowStart = now - this?.config?.windowMs;
     
     // Get model-specific limits if configured
-    const modelConfig = this.config.modelLimits?.[model];
-    const maxRequests = modelConfig?.maxRequests || this.config.maxRequests;
-    const maxCost = modelConfig?.maxCostPerWindow || this.config.maxCostPerWindow;
+    const modelConfig = this?.config?.modelLimits?.[model];
+    const maxRequests = modelConfig?.maxRequests || this?.config?.maxRequests;
+    const maxCost = modelConfig?.maxCostPerWindow || this?.config?.maxCostPerWindow;
 
     // Create unique keys for this identifier and model
     const requestKey = `llm_rate:${identifier}:${model}:requests`;
@@ -92,13 +92,13 @@ export class LLMRateLimiter {
       const currentCost = (await redisService.get<number>(costKey)) || 0;
 
       // Check burst limits if configured
-      if (this.config.burstLimit && this.config.burstWindowMs) {
+      if (this?.config?.burstLimit && this?.config?.burstWindowMs) {
         const burstAllowed = await this.checkBurstLimit(identifier, model);
         if (!burstAllowed) {
           logger.warn("Burst limit exceeded", "LLM_RATE_LIMITER", {
             identifier,
             model,
-            burstLimit: this.config.burstLimit,
+            burstLimit: this?.config?.burstLimit,
           });
           
           return this.createDeniedResult(requestCount, maxRequests, currentCost, maxCost, now);
@@ -115,7 +115,7 @@ export class LLMRateLimiter {
         });
         
         // Try to queue if enabled
-        if (this.config.enableQueueing) {
+        if (this?.config?.enableQueueing) {
           const queueResult = await this.addToQueue(identifier, model);
           if (queueResult) {
             return {
@@ -144,7 +144,7 @@ export class LLMRateLimiter {
       }
 
       // Request is allowed - update counters
-      const ttlSeconds = Math.ceil(this.config.windowMs / 1000);
+      const ttlSeconds = Math.ceil(this?.config?.windowMs / 1000);
       
       // Increment request count and set TTL
       await redisService.increment(requestKey);
@@ -168,7 +168,7 @@ export class LLMRateLimiter {
         allowed: true,
         remainingRequests: maxRequests - (requestCount + 1),
         remainingCost: maxCost ? maxCost - (currentCost + (estimatedCost || 0)) : undefined,
-        resetTime: new Date(now + this.config.windowMs),
+        resetTime: new Date(now + this?.config?.windowMs),
       };
     } catch (error) {
       logger.error("Rate limiter error", "LLM_RATE_LIMITER", { error });
@@ -177,7 +177,7 @@ export class LLMRateLimiter {
       return {
         allowed: true,
         remainingRequests: 0,
-        resetTime: new Date(now + this.config.windowMs),
+        resetTime: new Date(now + this?.config?.windowMs),
       };
     }
   }
@@ -186,21 +186,21 @@ export class LLMRateLimiter {
    * Check burst limits
    */
   private async checkBurstLimit(identifier: string, model: string): Promise<boolean> {
-    if (!this.config.burstLimit || !this.config.burstWindowMs) {
+    if (!this?.config?.burstLimit || !this?.config?.burstWindowMs) {
       return true;
     }
 
     const burstKey = `llm_burst:${identifier}:${model}`;
     const now = Date.now();
-    const burstWindowStart = now - this.config.burstWindowMs;
+    const burstWindowStart = now - this?.config?.burstWindowMs;
 
     // Get burst requests in current window
     const burstRequests = await redisService.get<number[]>(burstKey) || [];
     
     // Filter out old requests
-    const recentRequests = burstRequests.filter(timestamp => timestamp > burstWindowStart);
+    const recentRequests = burstRequests?.filter(timestamp => timestamp > burstWindowStart);
     
-    if (recentRequests.length >= this.config.burstLimit) {
+    if (recentRequests?.length || 0 >= this?.config?.burstLimit) {
       return false;
     }
 
@@ -209,7 +209,7 @@ export class LLMRateLimiter {
     await redisService.set(
       burstKey, 
       recentRequests, 
-      Math.ceil(this.config.burstWindowMs / 1000)
+      Math.ceil(this?.config?.burstWindowMs / 1000)
     );
 
     return true;
@@ -223,7 +223,7 @@ export class LLMRateLimiter {
     const costKey = `llm_rate:${identifier}:${model}:cost`;
     const windowKey = `llm_rate:${identifier}:${model}:window`;
     
-    const ttlSeconds = Math.ceil(this.config.windowMs / 1000);
+    const ttlSeconds = Math.ceil(this?.config?.windowMs / 1000);
     
     await redisService.set(requestKey, 0, ttlSeconds);
     await redisService.set(costKey, 0, ttlSeconds);
@@ -244,7 +244,7 @@ export class LLMRateLimiter {
       allowed: false,
       remainingRequests: Math.max(0, maxRequests - requestCount),
       remainingCost: maxCost ? Math.max(0, maxCost - currentCost) : undefined,
-      resetTime: new Date(now + this.config.windowMs),
+      resetTime: new Date(now + this?.config?.windowMs),
     };
   }
 
@@ -255,31 +255,31 @@ export class LLMRateLimiter {
     identifier: string,
     model: string
   ): Promise<{ queuePosition: number; estimatedWaitTime: number } | null> {
-    if (!this.config.enableQueueing) {
+    if (!this?.config?.enableQueueing) {
       return null;
     }
 
     const queueKey = `${identifier}:${model}`;
-    const queue = this.requestQueue.get(queueKey) || [];
+    const queue = this?.requestQueue?.get(queueKey) || [];
 
     // Check queue size
-    if (queue.length >= (this.config.maxQueueSize || 100)) {
+    if (queue?.length || 0 >= (this?.config?.maxQueueSize || 100)) {
       logger.warn("Queue is full", "LLM_RATE_LIMITER", {
         identifier,
         model,
-        queueSize: queue.length,
+        queueSize: queue?.length || 0,
       });
       return null;
     }
 
     // Estimate wait time based on current queue and rate limit
-    const estimatedWaitTime = this.estimateWaitTime(queue.length);
+    const estimatedWaitTime = this.estimateWaitTime(queue?.length || 0);
 
     // Add to queue
-    return new Promise((resolve) => {
+    return new Promise((resolve: any) => {
       const queueEntry = {
         resolve: () => resolve({
-          queuePosition: queue.length + 1,
+          queuePosition: queue?.length || 0 + 1,
           estimatedWaitTime,
         }),
         reject: () => resolve(null),
@@ -287,7 +287,7 @@ export class LLMRateLimiter {
       };
 
       queue.push(queueEntry as any);
-      this.requestQueue.set(queueKey, queue);
+      this?.requestQueue?.set(queueKey, queue);
 
       // Set timeout for queue entry
       setTimeout(() => {
@@ -296,7 +296,7 @@ export class LLMRateLimiter {
           queue.splice(index, 1);
           resolve(null);
         }
-      }, this.config.queueTimeout || 60000);
+      }, this?.config?.queueTimeout || 60000);
     });
   }
 
@@ -305,7 +305,7 @@ export class LLMRateLimiter {
    */
   private estimateWaitTime(queuePosition: number): number {
     // Simple estimation: assume requests are processed at max rate
-    const processingRate = this.config.maxRequests / this.config.windowMs;
+    const processingRate = this?.config?.maxRequests / this?.config?.windowMs;
     return Math.ceil(queuePosition / processingRate);
   }
 
@@ -314,9 +314,9 @@ export class LLMRateLimiter {
    */
   async processQueue(identifier: string, model: string): Promise<void> {
     const queueKey = `${identifier}:${model}`;
-    const queue = this.requestQueue.get(queueKey) || [];
+    const queue = this?.requestQueue?.get(queueKey) || [];
 
-    if (queue.length === 0) {
+    if (queue?.length || 0 === 0) {
       return;
     }
 
@@ -344,9 +344,9 @@ export class LLMRateLimiter {
     const requestKey = `llm_rate:${identifier}:${model}:requests`;
     const costKey = `llm_rate:${identifier}:${model}:cost`;
     
-    const modelConfig = this.config.modelLimits?.[model];
-    const maxRequests = modelConfig?.maxRequests || this.config.maxRequests;
-    const maxCost = modelConfig?.maxCostPerWindow || this.config.maxCostPerWindow;
+    const modelConfig = this?.config?.modelLimits?.[model];
+    const maxRequests = modelConfig?.maxRequests || this?.config?.maxRequests;
+    const maxCost = modelConfig?.maxCostPerWindow || this?.config?.maxCostPerWindow;
 
     const currentRequests = (await redisService.get<number>(requestKey)) || 0;
     const currentCost = (await redisService.get<number>(costKey)) || 0;
@@ -356,7 +356,7 @@ export class LLMRateLimiter {
       maxRequests,
       currentCost: maxCost ? currentCost : undefined,
       maxCost,
-      resetTime: new Date(now + this.config.windowMs),
+      resetTime: new Date(now + this?.config?.windowMs),
     };
   }
 }

@@ -113,7 +113,7 @@ export class WorkflowWebSocketHandler {
     logger.info("Broadcasting task created", "WORKFLOW_WS", {
       taskId: task.taskId,
     });
-    this.wsManager.broadcast(WorkflowEvents.TASK_CREATED, {
+    this?.wsManager?.broadcast(WorkflowEvents.TASK_CREATED, {
       ...task,
       timestamp: task.timestamp || new Date().toISOString(),
     });
@@ -130,7 +130,7 @@ export class WorkflowWebSocketHandler {
       taskId,
       updates,
     });
-    this.wsManager.broadcast(WorkflowEvents.TASK_UPDATED, {
+    this?.wsManager?.broadcast(WorkflowEvents.TASK_UPDATED, {
       taskId,
       updates,
       timestamp: new Date().toISOString(),
@@ -144,7 +144,7 @@ export class WorkflowWebSocketHandler {
     logger.info("Broadcasting task completed", "WORKFLOW_WS", {
       taskId: task.taskId,
     });
-    this.wsManager.broadcast(WorkflowEvents.TASK_COMPLETED, {
+    this?.wsManager?.broadcast(WorkflowEvents.TASK_COMPLETED, {
       ...task,
       timestamp: task.timestamp || new Date().toISOString(),
     });
@@ -160,7 +160,7 @@ export class WorkflowWebSocketHandler {
       newStatus: event.newStatus,
     });
 
-    this.wsManager.broadcast(WorkflowEvents.STATUS_CHANGED, {
+    this?.wsManager?.broadcast(WorkflowEvents.STATUS_CHANGED, {
       ...event,
       timestamp: event.timestamp || new Date().toISOString(),
     });
@@ -184,7 +184,7 @@ export class WorkflowWebSocketHandler {
       severity: event.severity,
     });
 
-    this.wsManager.broadcast(WorkflowEvents.SLA_WARNING, event);
+    this?.wsManager?.broadcast(WorkflowEvents.SLA_WARNING, event);
   }
 
   /**
@@ -196,7 +196,7 @@ export class WorkflowWebSocketHandler {
       hoursOverdue: event.hoursOverdue,
     });
 
-    this.wsManager.broadcast(WorkflowEvents.SLA_VIOLATED, event);
+    this?.wsManager?.broadcast(WorkflowEvents.SLA_VIOLATED, event);
   }
 
   /**
@@ -204,11 +204,11 @@ export class WorkflowWebSocketHandler {
    */
   broadcastMetricsUpdated(metrics: WorkflowMetricsEvent): void {
     logger.info("Broadcasting metrics update", "WORKFLOW_WS", {
-      totalTasks: metrics.executive.total_tasks,
-      criticalTasks: metrics.executive.red_tasks,
+      totalTasks: metrics?.executive?.total_tasks,
+      criticalTasks: metrics?.executive?.red_tasks,
     });
 
-    this.wsManager.broadcast(WorkflowEvents.METRICS_UPDATED, metrics);
+    this?.wsManager?.broadcast(WorkflowEvents.METRICS_UPDATED, metrics);
   }
 
   /**
@@ -226,7 +226,7 @@ export class WorkflowWebSocketHandler {
       tasksCreated: event.tasksCreated,
     });
 
-    this.wsManager.broadcast(eventType, event);
+    this?.wsManager?.broadcast(eventType, event);
   }
 
   /**
@@ -240,7 +240,7 @@ export class WorkflowWebSocketHandler {
 
     logger.info(`Broadcasting sync ${status}`, "WORKFLOW_WS");
 
-    this.wsManager.broadcast(eventType, {
+    this?.wsManager?.broadcast(eventType, {
       status,
       timestamp: new Date().toISOString(),
       ...details,
@@ -265,7 +265,7 @@ export class WorkflowWebSocketHandler {
       phase,
     });
 
-    this.wsManager.broadcast(eventType, {
+    this?.wsManager?.broadcast(eventType, {
       emailId,
       phase,
       status,
@@ -282,7 +282,7 @@ export class WorkflowWebSocketHandler {
       message,
     });
 
-    this.wsManager.broadcast("workflow:critical:alert", {
+    this?.wsManager?.broadcast("workflow:critical:alert", {
       taskId,
       message,
       severity: "CRITICAL",

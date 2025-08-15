@@ -14,8 +14,8 @@ export function useWalmartProductSearch() {
     total: number;
   }>({ products: [], total: 0 });
 
-  const searchProducts = trpc.walmartGrocery.searchProducts.useMutation({
-    onSuccess: (data) => {
+  const searchProducts = trpc?.walmartGrocery?.searchProducts.useMutation({
+    onSuccess: (data: any) => {
       setSearchResults({
         products: data.products || [],
         total: data.metadata?.totalResults || 0
@@ -57,7 +57,7 @@ export function useWalmartProductSearch() {
 
 // Hook for getting product details
 export function useWalmartProduct(productId: string) {
-  return trpc.walmartGrocery.getProductDetails.useQuery(
+  return trpc?.walmartGrocery?.getProductDetails.useQuery(
     {
       productId,
       includeReviews: false,
@@ -75,7 +75,7 @@ export function useWalmartRecommendations(params: {
   category?: string;
   budget?: number;
 }) {
-  return trpc.walmartGrocery.getRecommendations.useQuery({
+  return trpc?.walmartGrocery?.getRecommendations.useQuery({
     userId: params.userId || "default",
     category: params.category,
     budget: params.budget,
@@ -85,10 +85,10 @@ export function useWalmartRecommendations(params: {
 
 // Hook for analyzing deals
 export function useWalmartDealAnalysis() {
-  return trpc.walmartGrocery.analyzeDeal.useQuery;
+  return trpc?.walmartGrocery?.analyzeDeal.useQuery;
 }
 
 // Hook for scraping product data
 export function useWalmartProductScraper() {
-  return trpc.walmartGrocery.scrapeData.useMutation();
+  return trpc?.walmartGrocery?.scrapeData.useMutation();
 }

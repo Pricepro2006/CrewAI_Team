@@ -134,14 +134,14 @@ class WebSocketPerformanceTracker extends EventEmitter {
       endpoint,
     };
 
-    this.connections.set(connectionId, metrics);
+    this?.connections?.set(connectionId, metrics);
 
     // Track WebSocket events
-    ws.on('message', (data) => {
-      this.trackMessage(connectionId, 'inbound', 'message', data.length);
+    ws.on('message', (data: any) => {
+      this.trackMessage(connectionId, 'inbound', 'message', data?.length || 0);
     });
 
-    ws.on('error', (error) => {
+    ws.on('error', (error: any) => {
       this.trackError(connectionId, error.message);
     });
 
@@ -161,7 +161,7 @@ class WebSocketPerformanceTracker extends EventEmitter {
 
   // Track WebSocket disconnection
   trackDisconnection(connectionId: string): void {
-    const connection = this.connections.get(connectionId);
+    const connection = this?.connections?.get(connectionId);
     if (connection) {
       const now = Date.now();
       connection.disconnectedAt = now;
@@ -187,24 +187,24 @@ class WebSocketPerformanceTracker extends EventEmitter {
     const size = this.calculateMessageSize(data);
     
     this.trackMessage(connectionId, 'outbound', event, size, messageId);
-    this.pendingMessages.set(messageId, Date.now());
+    this?.pendingMessages?.set(messageId, Date.now());
     
     return messageId;
   }
 
   // Track message acknowledgment
   trackMessageAck(messageId: string): void {
-    const sentAt = this.pendingMessages.get(messageId);
+    const sentAt = this?.pendingMessages?.get(messageId);
     if (sentAt) {
       const latency = Date.now() - sentAt;
       this.updateLatencyMetrics(messageId, latency);
-      this.pendingMessages.delete(messageId);
+      this?.pendingMessages?.delete(messageId);
     }
   }
 
   // Track message processing time
   trackMessageProcessing(connectionId: string, event: string, processingTime: number): void {
-    const connection = this.connections.get(connectionId);
+    const connection = this?.connections?.get(connectionId);
     if (connection) {
       // Update processing metrics
       connection.lastActivity = Date.now();
@@ -222,7 +222,7 @@ class WebSocketPerformanceTracker extends EventEmitter {
   }
 
   private trackMessage(connectionId: string, type: 'inbound' | 'outbound', event: string, size: number, messageId?: string): void {
-    const connection = this.connections.get(connectionId);
+    const connection = this?.connections?.get(connectionId);
     if (connection) {
       // Update connection metrics
       if (type === 'inbound') {
@@ -243,23 +243,23 @@ class WebSocketPerformanceTracker extends EventEmitter {
         timestamp: Date.now(),
       };
 
-      this.messages.push(messageMetrics);
+      this?.messages?.push(messageMetrics);
       
       // Keep only recent messages for memory efficiency
-      if (this.messages.length > 10000) {
-        this.messages = this.messages.slice(-5000);
+      if (this?.messages?.length > 10000) {
+        this.messages = this?.messages?.slice(-5000);
       }
 
-      this.connections.set(connectionId, connection);
+      this?.connections?.set(connectionId, connection);
     }
   }
 
   private trackError(connectionId: string, errorMessage: string): void {
-    const connection = this.connections.get(connectionId);
+    const connection = this?.connections?.get(connectionId);
     if (connection) {
       connection.errorCount++;
       connection.lastActivity = Date.now();
-      this.connections.set(connectionId, connection);
+      this?.connections?.set(connectionId, connection);
 
       logger.warn('WebSocket error tracked', 'WS_PERF', {
         connectionId,
@@ -277,26 +277,26 @@ class WebSocketPerformanceTracker extends EventEmitter {
 
   private updateLatencyMetrics(messageId: string, latency: number): void {
     // Find the message and update its latency
-    const message = this.messages.find(m => m.messageId === messageId);
+    const message = this?.messages?.find(m => m.messageId === messageId);
     if (message) {
       message.latency = latency;
       
       // Update connection latency metrics
-      const connection = this.connections.get(message.connectionId);
+      const connection = this?.connections?.get(message.connectionId);
       if (connection) {
         const totalMessages = connection.messagesSent + connection.messagesReceived;
         connection.avgLatency = ((connection.avgLatency * (totalMessages - 1)) + latency) / totalMessages;
         connection.maxLatency = Math.max(connection.maxLatency, latency);
         connection.minLatency = Math.min(connection.minLatency, latency);
         
-        this.connections.set(message.connectionId, connection);
+        this?.connections?.set(message.connectionId, connection);
 
         // Check for high latency alert
-        if (latency > this.alertThresholds.maxLatency) {
+        if (latency > this?.alertThresholds?.maxLatency) {
           this.emit('high-latency-alert', {
             connectionId: message.connectionId,
             latency,
-            threshold: this.alertThresholds.maxLatency,
+            threshold: this?.alertThresholds?.maxLatency,
             event: message.event,
           });
         }
@@ -321,24 +321,24 @@ class WebSocketPerformanceTracker extends EventEmitter {
     const now = Date.now();
     const fiveMinutesAgo = now - (5 * 60 * 1000);
     
-    const activeConnections = Array.from(this.connections.values()).filter(c => !c.disconnectedAt);
-    const recentConnections = Array.from(this.connections.values()).filter(c => c.connectedAt > fiveMinutesAgo);
-    const recentMessages = this.messages.filter(m => m.timestamp > fiveMinutesAgo);
-    const recentDisconnections = Array.from(this.connections.values()).filter(c => 
+    const activeConnections = Array.from(this?.connections?.values()).filter(c => !c.disconnectedAt);
+    const recentConnections = Array.from(this?.connections?.values()).filter(c => c.connectedAt > fiveMinutesAgo);
+    const recentMessages = this?.messages?.filter(m => m.timestamp > fiveMinutesAgo);
+    const recentDisconnections = Array.from(this?.connections?.values()).filter(c => 
       c.disconnectedAt && c.disconnectedAt > fiveMinutesAgo
     );
 
     // Calculate aggregates
     const aggregates: WebSocketAggregates = {
       timestamp: now,
-      activeConnections: activeConnections.length,
-      totalConnections: recentConnections.length,
-      totalDisconnections: recentDisconnections.length,
+      activeConnections: activeConnections?.length || 0,
+      totalConnections: recentConnections?.length || 0,
+      totalDisconnections: recentDisconnections?.length || 0,
       avgConnectionDuration: this.calculateAverageConnectionDuration(recentDisconnections),
-      totalMessages: recentMessages.length,
-      messagesPerSecond: recentMessages.length / 300, // 5 minutes = 300 seconds
+      totalMessages: recentMessages?.length || 0,
+      messagesPerSecond: recentMessages?.length || 0 / 300, // 5 minutes = 300 seconds
       avgMessageLatency: this.calculateAverageLatency(recentMessages),
-      totalBytesTransferred: recentMessages.reduce((sum, m) => sum + m.size, 0),
+      totalBytesTransferred: recentMessages.reduce((sum: any, m: any) => sum + m.size, 0),
       errorRate: this.calculateErrorRate(recentConnections, recentMessages),
       connectionErrorRate: this.calculateConnectionErrorRate(recentConnections),
       topEndpoints: this.getTopEndpoints(activeConnections),
@@ -361,29 +361,29 @@ class WebSocketPerformanceTracker extends EventEmitter {
   }
 
   private calculateAverageConnectionDuration(disconnections: WebSocketMetrics[]): number {
-    if (disconnections.length === 0) return 0;
-    const totalDuration = disconnections.reduce((sum, c) => sum + (c.connectionDuration || 0), 0);
-    return totalDuration / disconnections.length;
+    if (disconnections?.length || 0 === 0) return 0;
+    const totalDuration = disconnections.reduce((sum: any, c: any) => sum + (c.connectionDuration || 0), 0);
+    return totalDuration / disconnections?.length || 0;
   }
 
   private calculateAverageLatency(messages: MessageMetrics[]): number {
-    const messagesWithLatency = messages.filter(m => m.latency !== undefined);
-    if (messagesWithLatency.length === 0) return 0;
-    const totalLatency = messagesWithLatency.reduce((sum, m) => sum + (m.latency || 0), 0);
-    return totalLatency / messagesWithLatency.length;
+    const messagesWithLatency = messages?.filter(m => m.latency !== undefined);
+    if (messagesWithLatency?.length || 0 === 0) return 0;
+    const totalLatency = messagesWithLatency.reduce((sum: any, m: any) => sum + (m.latency || 0), 0);
+    return totalLatency / messagesWithLatency?.length || 0;
   }
 
   private calculateErrorRate(connections: WebSocketMetrics[], messages: MessageMetrics[]): number {
-    const totalErrors = connections.reduce((sum, c) => sum + c.errorCount, 0) + 
-                       messages.filter(m => m.error).length;
-    const totalEvents = connections.length + messages.length;
+    const totalErrors = connections.reduce((sum: any, c: any) => sum + c.errorCount, 0) + 
+                       messages?.filter(m => m.error).length;
+    const totalEvents = connections?.length || 0 + messages?.length || 0;
     return totalEvents > 0 ? (totalErrors / totalEvents) * 100 : 0;
   }
 
   private calculateConnectionErrorRate(connections: WebSocketMetrics[]): number {
-    if (connections.length === 0) return 0;
-    const connectionsWithErrors = connections.filter(c => c.errorCount > 0).length;
-    return (connectionsWithErrors / connections.length) * 100;
+    if (connections?.length || 0 === 0) return 0;
+    const connectionsWithErrors = connections?.filter(c => c.errorCount > 0).length;
+    return (connectionsWithErrors / connections?.length || 0) * 100;
   }
 
   private getTopEndpoints(connections: WebSocketMetrics[]): Array<{ endpoint: string; connections: number; avgLatency: number }> {
@@ -433,15 +433,15 @@ class WebSocketPerformanceTracker extends EventEmitter {
   }
 
   private getPerformanceDistribution(messages: MessageMetrics[]): { fast: number; medium: number; slow: number } {
-    const messagesWithLatency = messages.filter(m => m.latency !== undefined);
-    if (messagesWithLatency.length === 0) {
+    const messagesWithLatency = messages?.filter(m => m.latency !== undefined);
+    if (messagesWithLatency?.length || 0 === 0) {
       return { fast: 0, medium: 0, slow: 0 };
     }
 
-    const fast = messagesWithLatency.filter(m => (m.latency || 0) < 100).length;
-    const medium = messagesWithLatency.filter(m => (m.latency || 0) >= 100 && (m.latency || 0) <= 500).length;
-    const slow = messagesWithLatency.filter(m => (m.latency || 0) > 500).length;
-    const total = messagesWithLatency.length;
+    const fast = messagesWithLatency?.filter(m => (m.latency || 0) < 100).length;
+    const medium = messagesWithLatency?.filter(m => (m.latency || 0) >= 100 && (m.latency || 0) <= 500).length;
+    const slow = messagesWithLatency?.filter(m => (m.latency || 0) > 500).length;
+    const total = messagesWithLatency?.length || 0;
 
     return {
       fast: Math.round((fast / total) * 100),
@@ -454,21 +454,21 @@ class WebSocketPerformanceTracker extends EventEmitter {
     const alerts: string[] = [];
 
     // High latency alert
-    if (aggregates.avgMessageLatency > this.alertThresholds.maxLatency) {
-      alerts.push(`High average message latency: ${aggregates.avgMessageLatency.toFixed(0)}ms`);
+    if (aggregates.avgMessageLatency > this?.alertThresholds?.maxLatency) {
+      alerts.push(`High average message latency: ${aggregates?.avgMessageLatency?.toFixed(0)}ms`);
     }
 
     // High error rate alert
-    if (aggregates.errorRate > this.alertThresholds.maxErrorRate) {
-      alerts.push(`High error rate: ${aggregates.errorRate.toFixed(1)}%`);
+    if (aggregates.errorRate > this?.alertThresholds?.maxErrorRate) {
+      alerts.push(`High error rate: ${aggregates?.errorRate?.toFixed(1)}%`);
     }
 
     // Connection spike alert
-    if (aggregates.totalConnections > this.alertThresholds.maxConnectionSpike) {
+    if (aggregates.totalConnections > this?.alertThresholds?.maxConnectionSpike) {
       alerts.push(`Connection spike detected: ${aggregates.totalConnections} new connections`);
     }
 
-    if (alerts.length > 0) {
+    if (alerts?.length || 0 > 0) {
       this.emit('aggregate-alerts', {
         alerts,
         aggregates,
@@ -486,32 +486,32 @@ class WebSocketPerformanceTracker extends EventEmitter {
 
   // Public API methods
   getActiveConnections(): WebSocketMetrics[] {
-    return Array.from(this.connections.values()).filter(c => !c.disconnectedAt);
+    return Array.from(this?.connections?.values()).filter(c => !c.disconnectedAt);
   }
 
   getConnectionMetrics(connectionId: string): WebSocketMetrics | undefined {
-    return this.connections.get(connectionId);
+    return this?.connections?.get(connectionId);
   }
 
   getCurrentAggregates(): WebSocketAggregates | null {
     const now = Date.now();
     const activeConnections = this.getActiveConnections();
-    const recentMessages = this.messages.filter(m => m.timestamp > now - (5 * 60 * 1000));
+    const recentMessages = this?.messages?.filter(m => m.timestamp > now - (5 * 60 * 1000));
 
-    if (activeConnections.length === 0 && recentMessages.length === 0) {
+    if (activeConnections?.length || 0 === 0 && recentMessages?.length || 0 === 0) {
       return null;
     }
 
     return {
       timestamp: now,
-      activeConnections: activeConnections.length,
+      activeConnections: activeConnections?.length || 0,
       totalConnections: 0, // This would be calculated differently in a real scenario
       totalDisconnections: 0,
       avgConnectionDuration: 0,
-      totalMessages: recentMessages.length,
-      messagesPerSecond: recentMessages.length / 300,
+      totalMessages: recentMessages?.length || 0,
+      messagesPerSecond: recentMessages?.length || 0 / 300,
       avgMessageLatency: this.calculateAverageLatency(recentMessages),
-      totalBytesTransferred: recentMessages.reduce((sum, m) => sum + m.size, 0),
+      totalBytesTransferred: recentMessages.reduce((sum: any, m: any) => sum + m.size, 0),
       errorRate: this.calculateErrorRate(activeConnections, recentMessages),
       connectionErrorRate: this.calculateConnectionErrorRate(activeConnections),
       topEndpoints: this.getTopEndpoints(activeConnections),
@@ -530,27 +530,27 @@ class WebSocketPerformanceTracker extends EventEmitter {
     const cutoff = Date.now() - (60 * 60 * 1000); // 1 hour ago
     
     // Remove old disconnected connections
-    for (const [connectionId, connection] of this.connections.entries()) {
+    for (const [connectionId, connection] of this?.connections?.entries()) {
       if (connection.disconnectedAt && connection.disconnectedAt < cutoff) {
-        this.connections.delete(connectionId);
+        this?.connections?.delete(connectionId);
       }
     }
 
     // Remove old messages
-    this.messages = this.messages.filter(m => m.timestamp > cutoff);
+    this.messages = this?.messages?.filter(m => m.timestamp > cutoff);
 
     // Clean up pending messages
-    for (const [messageId, timestamp] of this.pendingMessages.entries()) {
+    for (const [messageId, timestamp] of this?.pendingMessages?.entries()) {
       if (timestamp < cutoff) {
-        this.pendingMessages.delete(messageId);
+        this?.pendingMessages?.delete(messageId);
       }
     }
 
     logger.debug('WebSocket performance tracker cleanup completed', 'WS_PERF', {
       active_connections: this.getActiveConnections().length,
-      total_connections: this.connections.size,
-      total_messages: this.messages.length,
-      pending_messages: this.pendingMessages.size,
+      total_connections: this?.connections?.size,
+      total_messages: this?.messages?.length,
+      pending_messages: this?.pendingMessages?.size,
     });
   }
 

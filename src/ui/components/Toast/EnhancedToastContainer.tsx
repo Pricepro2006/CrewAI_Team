@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { toastManager, Toast } from "./useToast";
+import { toastManager, Toast } from "./useToast.js";
 import "./ToastContainer.css";
 
 interface ToastContainerProps {
@@ -15,7 +15,7 @@ export const EnhancedToastContainer: React.FC<ToastContainerProps> = ({
 
   useEffect(() => {
     // Subscribe to toast manager
-    const unsubscribe = toastManager.subscribe((newToasts) => {
+    const unsubscribe = toastManager.subscribe((newToasts: any) => {
       setToasts(newToasts.slice(0, maxToasts));
     });
 
@@ -97,7 +97,7 @@ export const EnhancedToastContainer: React.FC<ToastContainerProps> = ({
         transform: (position === "top-center" || position === "bottom-center") ? "translateX(-50%)" : undefined,
       }}
     >
-      {toasts.map((toast) => (
+      {toasts?.map((toast: any) => (
         <div
           key={toast.id}
           className={getToastClasses(toast.type)}
@@ -110,10 +110,10 @@ export const EnhancedToastContainer: React.FC<ToastContainerProps> = ({
             <p className="text-sm font-medium">{toast.message}</p>
             {toast.options?.action && (
               <button
-                onClick={toast.options.action.onClick}
+                onClick={toast?.options?.action.onClick}
                 className="mt-2 text-sm font-medium underline hover:no-underline"
               >
-                {toast.options.action.label}
+                {toast?.options?.action.label}
               </button>
             )}
           </div>

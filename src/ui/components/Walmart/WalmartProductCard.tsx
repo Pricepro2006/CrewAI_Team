@@ -84,14 +84,14 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({ product 
         {/* Price */}
         <div className="flex items-baseline gap-2 mb-3">
           <span className="text-xl font-bold text-blue-600">
-            ${(typeof product.price === 'number' ? product.price : (product.price.sale || product.price.regular || 0)).toFixed(2)}
+            ${(typeof product.price === 'number' ? product.price : (product?.price?.sale || product?.price?.regular || 0)).toFixed(2)}
           </span>
           {product.unit && (
             <span className="text-sm text-gray-500">/ {product.unit}</span>
           )}
-          {typeof product.price === 'object' && product.price.wasPrice && product.price.wasPrice > (product.price.sale || product.price.regular) && (
+          {typeof product.price === 'object' && product?.price?.wasPrice && product?.price?.wasPrice > (product?.price?.sale || product?.price?.regular) && (
             <span className="text-sm text-gray-400 line-through">
-              ${(typeof product.price === 'object' ? product.price.wasPrice : 0)?.toFixed(2)}
+              ${(typeof product.price === 'object' ? product?.price?.wasPrice : 0)?.toFixed(2)}
             </span>
           )}
         </div>
@@ -138,7 +138,7 @@ export const WalmartProductCard: React.FC<WalmartProductCardProps> = ({ product 
               <p className="mb-2">{product.description}</p>
             )}
             {product.category && (
-              <p><span className="font-medium">Category:</span> {typeof product.category === 'string' ? product.category : product.category.name}</p>
+              <p><span className="font-medium">Category:</span> {typeof product.category === 'string' ? product.category : product?.category?.name}</p>
             )}
             {product.nutritionalInfo && (
               <div>

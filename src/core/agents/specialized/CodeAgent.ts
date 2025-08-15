@@ -60,7 +60,7 @@ export class CodeAgent extends BaseAgent {
     const prompt = `
       Analyze this coding task: "${task}"
       
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Determine:
       1. Task type: generation, analysis, refactoring, or debugging
@@ -77,7 +77,7 @@ export class CodeAgent extends BaseAgent {
       }
     `;
 
-    const response = await this.llm.generate(prompt, { format: "json" });
+    const response = await this?.llm?.generate(prompt, { format: "json" });
     return this.parseTaskAnalysis(response.response);
   }
 
@@ -106,12 +106,12 @@ export class CodeAgent extends BaseAgent {
   ): Promise<CodeResult> {
     const prompt = `
       Generate ${analysis.language} code for the following requirements:
-      ${analysis.requirements.join("\n")}
+      ${analysis?.requirements?.join("\n")}
       
       Consider these challenges:
-      ${analysis.challenges.join("\n")}
+      ${analysis?.challenges?.join("\n")}
       
-      ${context.ragDocuments ? `Reference context:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Reference context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Generate clean, well-documented code with:
       1. Proper error handling
@@ -120,7 +120,7 @@ export class CodeAgent extends BaseAgent {
       4. Best practices for ${analysis.language}
     `;
 
-    const response = await this.llm.generate(prompt);
+    const response = await this?.llm?.generate(prompt);
 
     return {
       code: response.response,
@@ -151,7 +151,7 @@ export class CodeAgent extends BaseAgent {
       5. Improvement suggestions
     `;
 
-    const analysisResult = await this.llm.generate(prompt);
+    const analysisResult = await this?.llm?.generate(prompt);
 
     return {
       code: codeToAnalyze,
@@ -184,7 +184,7 @@ export class CodeAgent extends BaseAgent {
       Provide the refactored code with comments explaining changes.
     `;
 
-    const response = await this.llm.generate(prompt);
+    const response = await this?.llm?.generate(prompt);
 
     return {
       code: response.response,
@@ -220,7 +220,7 @@ export class CodeAgent extends BaseAgent {
       Provide fixed code with comments explaining the bugs and fixes.
     `;
 
-    const response = await this.llm.generate(prompt);
+    const response = await this?.llm?.generate(prompt);
 
     return {
       code: response.response,
@@ -237,12 +237,12 @@ export class CodeAgent extends BaseAgent {
     const prompt = `
       Complete this coding task: ${task}
       
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Provide a complete solution with explanation.
     `;
 
-    const llmResponse = await this.llm.generate(prompt);
+    const llmResponse = await this?.llm?.generate(prompt);
 
     return {
       code: this.extractCode(llmResponse.response),
@@ -257,7 +257,7 @@ export class CodeAgent extends BaseAgent {
     const codeBlockRegex = /```[\w]*\n([\s\S]*?)```/g;
     const matches = response.match(codeBlockRegex);
 
-    if (matches && matches.length > 0) {
+    if (matches && matches?.length || 0 > 0) {
       return matches[0].replace(/```[\w]*\n/, "").replace(/```$/, "");
     }
 
@@ -289,9 +289,9 @@ export class CodeAgent extends BaseAgent {
       parts.push(`\n**Explanation:**\n${result.explanation}`);
     }
 
-    if (result.suggestions && result.suggestions.length > 0) {
+    if (result.suggestions && result?.suggestions?.length > 0) {
       parts.push(
-        `\n**Suggestions:**\n${result.suggestions.map((s) => `- ${s}`).join("\n")}`,
+        `\n**Suggestions:**\n${result?.suggestions?.map((s: any) => `- ${s}`).join("\n")}`,
       );
     }
 

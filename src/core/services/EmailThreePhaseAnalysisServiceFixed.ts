@@ -95,19 +95,19 @@ export class EmailThreePhaseAnalysisServiceFixed extends EventEmitter {
       this.emit("phase:start", { phase: 1, email: email.id });
       const phase1Result = this.runPhase1(email, emailBody);
       this.emit("phase:complete", { phase: 1, result: phase1Result });
-      this.stats.phase1Count++;
+      this?.stats?.phase1Count++;
 
       // Phase 2: LLM Enhancement
       this.emit("phase:start", { phase: 2, email: email.id });
       const phase2Result = await this.runPhase2(email, emailBody, phase1Result);
       this.emit("phase:complete", { phase: 2, result: phase2Result });
-      this.stats.phase2Count++;
+      this?.stats?.phase2Count++;
 
       // Phase 3: Strategic Analysis (only for complete chains)
       let finalResult = phase2Result;
       if (
         options.chainContext?.isComplete &&
-        options.chainContext.completenessScore >= 70
+        options?.chainContext?.completenessScore >= 70
       ) {
         this.emit("phase:start", { phase: 3, email: email.id });
         finalResult = await this.runPhase3(
@@ -117,16 +117,16 @@ export class EmailThreePhaseAnalysisServiceFixed extends EventEmitter {
           options.chainContext,
         );
         this.emit("phase:complete", { phase: 3, result: finalResult });
-        this.stats.phase3Count++;
+        this?.stats?.phase3Count++;
       }
 
       // Update processing stats
       const processingTime = Date.now() - startTime;
-      this.stats.totalProcessed++;
-      this.stats.averageProcessingTime =
-        (this.stats.averageProcessingTime * (this.stats.totalProcessed - 1) +
+      this?.stats?.totalProcessed++;
+      this?.stats?.averageProcessingTime =
+        (this?.stats?.averageProcessingTime * (this?.stats?.totalProcessed - 1) +
           processingTime) /
-        this.stats.totalProcessed;
+        this?.stats?.totalProcessed;
 
       // Save analysis results directly to emails_enhanced table
       await this.saveAnalysisToEnhancedTable(
@@ -147,7 +147,7 @@ export class EmailThreePhaseAnalysisServiceFixed extends EventEmitter {
         processing_time_ms: processingTime,
       };
     } catch (error) {
-      logger.error(`Analysis failed for email ${email.id}:`, error);
+      logger.error(`Analysis failed for email ${email.id}:`, error as string);
       this.emit("analysis:error", { email: email.id, error });
       throw error;
     }
@@ -226,7 +226,7 @@ Enhance this analysis by providing:
 Respond ONLY with valid JSON.`;
 
     try {
-      const responseData = await this.nlpQueue.enqueue(
+      const responseData = await this?.nlpQueue?.enqueue(
         async () => {
           const response = await axios.post(
             "http://localhost:11434/api/generate",
@@ -244,7 +244,7 @@ Respond ONLY with valid JSON.`;
               timeout: 30000,
             },
           );
-          return response.data.response;
+          return response?.data?.response;
         },
         "normal", // priority
         30000, // timeout
@@ -253,7 +253,7 @@ Respond ONLY with valid JSON.`;
       );
 
       const enhancement = JSON.parse(responseData);
-      this.stats.jsonSuccessCount++;
+      this?.stats.jsonSuccessCount++;
 
       // Merge with phase 1 results
       return {
@@ -277,7 +277,7 @@ Respond ONLY with valid JSON.`;
       } as AnalysisResult;
     } catch (error) {
       logger.warn("Phase 2 enhancement failed, using phase 1 results:", error);
-      this.stats.jsonFailureCount++;
+      this?.stats.jsonFailureCount++;
 
       return {
         ...phase1Result,
@@ -316,7 +316,7 @@ Provide strategic insights for this COMPLETE workflow chain:
 Respond ONLY with valid JSON.`;
 
     try {
-      const responseData = await this.nlpQueue.enqueue(
+      const responseData = await this?.nlpQueue?.enqueue(
         async () => {
           const response = await axios.post(
             "http://localhost:11434/api/generate",
@@ -334,7 +334,7 @@ Respond ONLY with valid JSON.`;
               timeout: 60000,
             },
           );
-          return response.data.response;
+          return response?.data?.response;
         },
         "high", // priority - phase 3 strategic analysis is high priority
         60000, // timeout
@@ -343,7 +343,7 @@ Respond ONLY with valid JSON.`;
       );
 
       const strategic = JSON.parse(responseData);
-      this.stats.jsonSuccessCount++;
+      this?.stats.jsonSuccessCount++;
 
       return {
         ...phase2Result,
@@ -353,8 +353,8 @@ Respond ONLY with valid JSON.`;
         processing_time_ms: Date.now() - startTime,
       };
     } catch (error) {
-      logger.warn("Phase 3 strategic analysis failed:", error);
-      this.stats.jsonFailureCount++;
+      logger.warn("Phase 3 strategic analysis failed:", error as string);
+      this?.stats.jsonFailureCount++;
 
       return {
         ...phase2Result,
@@ -369,7 +369,7 @@ Respond ONLY with valid JSON.`;
     result: AnalysisResult,
     chainContext?: ChainContext,
   ): Promise<void> {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE emails_enhanced SET
         workflow_state = ?,
         priority = ?,
@@ -397,7 +397,7 @@ Respond ONLY with valid JSON.`;
 
     stmt.run(
       result.workflow_state,
-      result.priority.toUpperCase(),
+      result?.priority?.toUpperCase(),
       result.confidence,
       new Date().toISOString(),
       chainContext?.completenessScore || 0,
@@ -421,9 +421,9 @@ Respond ONLY with valid JSON.`;
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = [...text.matchAll(pattern)];
-      matches.forEach((m) => results.add(m[1]));
+      matches.forEach((m: any) => results.add(m[1]));
     });
 
     return Array.from(results);
@@ -436,9 +436,9 @@ Respond ONLY with valid JSON.`;
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = [...text.matchAll(pattern)];
-      matches.forEach((m) => results.add(m[1]));
+      matches.forEach((m: any) => results.add(m[1]));
     });
 
     return Array.from(results);
@@ -452,9 +452,9 @@ Respond ONLY with valid JSON.`;
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = [...text.matchAll(pattern)];
-      matches.forEach((m) => results.add(m[0]));
+      matches.forEach((m: any) => results.add(m[0]));
     });
 
     return Array.from(results);
@@ -474,15 +474,15 @@ Respond ONLY with valid JSON.`;
   private extractEmails(text: string): any[] {
     const pattern = /[\w.-]+@[\w.-]+\.\w+/g;
     const emails = text.match(pattern) || [];
-    return emails.map((email) => ({ type: "email", value: email }));
+    return emails?.map((email: any) => ({ type: "email", value: email }));
   }
 
   private extractKeyPhrases(subject: string): string[] {
     return subject
       .split(/\s+/)
       .filter(
-        (word) =>
-          word.length > 4 &&
+        (word: any) =>
+          word?.length || 0 > 4 &&
           !["from", "with", "about", "your"].includes(word.toLowerCase()),
       )
       .slice(0, 5);
@@ -536,13 +536,13 @@ Respond ONLY with valid JSON.`;
     return {
       ...this.stats,
       jsonSuccessRate:
-        this.stats.jsonSuccessCount /
-          (this.stats.jsonSuccessCount + this.stats.jsonFailureCount) || 0,
+        this?.stats.jsonSuccessCount /
+          (this?.stats.jsonSuccessCount + this?.stats.jsonFailureCount) || 0,
     };
   }
 
   async shutdown() {
-    this.db.close();
+    this?.db?.close();
     logger.info("EmailThreePhaseAnalysisServiceFixed shutdown complete");
   }
 }

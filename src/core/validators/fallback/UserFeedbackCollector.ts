@@ -54,10 +54,10 @@ export class UserFeedbackCollector {
     };
 
     // Store feedback by query
-    if (!this.feedback.has(feedback.query)) {
-      this.feedback.set(feedback.query, []);
+    if (!this?.feedback?.has(feedback.query)) {
+      this?.feedback?.set(feedback.query, []);
     }
-    this.feedback.get(feedback.query)!.push(fullFeedback);
+    this?.feedback?.get(feedback.query)!.push(fullFeedback);
 
     // Process suggested corrections
     if (feedback.suggestedCorrection) {
@@ -77,25 +77,25 @@ export class UserFeedbackCollector {
    * Get feedback statistics
    */
   public getStats(timeRange?: { start: Date; end: Date }): FeedbackStats {
-    const allFeedback = Array.from(this.feedback.values()).flat();
+    const allFeedback = Array.from(this?.feedback?.values()).flat();
 
     let relevantFeedback = allFeedback;
     if (timeRange) {
-      relevantFeedback = allFeedback.filter(
-        (f) => f.timestamp >= timeRange.start && f.timestamp <= timeRange.end,
+      relevantFeedback = allFeedback?.filter(
+        (f: any) => f.timestamp >= timeRange.start && f.timestamp <= timeRange.end,
       );
     }
 
     // Calculate average rating
-    const ratings = relevantFeedback.map((f) => f.userRating);
+    const ratings = relevantFeedback?.map((f: any) => f.userRating);
     const averageRating =
-      ratings.length > 0
-        ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+      ratings?.length || 0 > 0
+        ? ratings.reduce((a: any, b: any) => a + b, 0) / ratings?.length || 0
         : 0;
 
     // Count common issues
     const issueCounts = new Map<string, number>();
-    relevantFeedback.forEach((f) => {
+    relevantFeedback.forEach((f: any) => {
       issueCounts.set(
         f.feedbackType,
         (issueCounts.get(f.feedbackType) || 0) + 1,
@@ -117,8 +117,8 @@ export class UserFeedbackCollector {
 
     // Calculate improvement trend (daily average)
     const dailyRatings = new Map<string, number[]>();
-    relevantFeedback.forEach((f) => {
-      const dateKey = f.timestamp.toISOString().split("T")[0] || "";
+    relevantFeedback.forEach((f: any) => {
+      const dateKey = f?.timestamp?.toISOString().split("T")[0] || "";
       if (dateKey && !dailyRatings.has(dateKey)) {
         dailyRatings.set(dateKey, []);
       }
@@ -130,12 +130,12 @@ export class UserFeedbackCollector {
     const improvementTrend = Array.from(dailyRatings.entries())
       .map(([date, ratings]) => ({
         date,
-        rating: ratings.reduce((a, b) => a + b, 0) / ratings.length,
+        rating: ratings.reduce((a: any, b: any) => a + b, 0) / ratings?.length || 0,
       }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+      .sort((a, b) => a?.date?.localeCompare(b.date));
 
     return {
-      totalFeedback: relevantFeedback.length,
+      totalFeedback: relevantFeedback?.length || 0,
       averageRating,
       commonIssues,
       improvementTrend,
@@ -146,14 +146,14 @@ export class UserFeedbackCollector {
    * Get feedback for a specific query
    */
   public getFeedbackForQuery(query: string): UserFeedback[] {
-    return this.feedback.get(query) || [];
+    return this?.feedback?.get(query) || [];
   }
 
   /**
    * Get improvement suggestions for a query
    */
   public getSuggestions(query: string): string[] {
-    return this.improvementSuggestions.get(query) || [];
+    return this?.improvementSuggestions?.get(query) || [];
   }
 
   /**
@@ -250,8 +250,8 @@ export class UserFeedbackCollector {
       suggestions.push(`Correct business name: ${corrections.businessName}`);
     }
 
-    if (suggestions.length > 0) {
-      this.improvementSuggestions.set(query, suggestions);
+    if (suggestions?.length || 0 > 0) {
+      this?.improvementSuggestions?.set(query, suggestions);
     }
   }
 
@@ -279,7 +279,7 @@ export class UserFeedbackCollector {
    * Export feedback data for analysis
    */
   public exportFeedback(format: "json" | "csv" = "json"): string {
-    const allFeedback = Array.from(this.feedback.values()).flat();
+    const allFeedback = Array.from(this?.feedback?.values()).flat();
 
     if (format === "json") {
       return JSON.stringify(allFeedback, null, 2);
@@ -297,21 +297,21 @@ export class UserFeedbackCollector {
         "comments",
       ];
 
-      const rows = allFeedback.map((f) => [
+      const rows = allFeedback?.map((f: any) => [
         f.id,
-        f.timestamp.toISOString(),
+        f?.timestamp?.toISOString(),
         f.query,
         f.userRating,
         f.feedbackType,
-        f.validationResult.isValid,
-        f.validationResult.hasActionableInfo,
-        f.validationResult.confidence,
+        f?.validationResult?.isValid,
+        f?.validationResult?.hasActionableInfo,
+        f?.validationResult?.confidence,
         f.additionalComments || "",
       ]);
 
       return [
         headers.join(","),
-        ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+        ...rows?.map((row: any) => row?.map((cell: any) => `"${cell}"`).join(",")),
       ].join("\n");
     }
   }
@@ -338,16 +338,16 @@ export class UserFeedbackCollector {
     }>;
   } {
     // Analyze feedback to provide actionable insights
-    const allFeedback = Array.from(this.feedback.values()).flat();
+    const allFeedback = Array.from(this?.feedback?.values()).flat();
 
     // Find patterns that frequently result in low ratings
     const lowRatedQueries = allFeedback
-      .filter((f) => f.userRating <= 2)
-      .map((f) => f.query);
+      .filter((f: any) => f.userRating <= 2)
+      .map((f: any) => f.query);
 
     // Identify frequently incorrect fields
     const fieldIssues = new Map<string, number>();
-    allFeedback.forEach((f) => {
+    allFeedback.forEach((f: any) => {
       if (f.specificIssues) {
         Object.entries(f.specificIssues).forEach(([field, hasIssue]) => {
           if (hasIssue) {

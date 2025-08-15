@@ -143,7 +143,7 @@ describe.skip("AdvancedRateLimit", () => {
       // Next request should be rate limited
       const response = await request(app).get("/test");
       expect(response.status).toBe(429);
-      expect(response.body.error).toBe("Rate limit exceeded");
+      expect(response?.body?.error).toBe("Rate limit exceeded");
     });
 
     it("should apply higher limits to authenticated users", async () => {
@@ -411,7 +411,7 @@ describe.skip("AdvancedRateLimit", () => {
       await request(app).get("/test");
 
       // Wait for window to expire
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve: any) => setTimeout(resolve, 150));
 
       // Should be able to make another request
       const response = await request(app).get("/test");

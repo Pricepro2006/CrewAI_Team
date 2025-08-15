@@ -112,7 +112,7 @@ describe('GroceryDataPipeline', () => {
       expect(pipeline).toBeDefined();
       
       // Start the pipeline to register consumers
-      expect(pipeline.start()).resolves.not.toThrow();
+      expect(pipeline.start()).resolves?.not?.toThrow();
     });
   });
 
@@ -309,7 +309,7 @@ describe('GroceryDataPipeline', () => {
       
       expect(result.success).toBe(true);
       expect(result.messageType).toBe('price_update');
-      expect(result.result.productId).toBe('PROD123');
+      expect(result?.result?.productId).toBe('PROD123');
       expect(result.cacheUpdated).toBe(true);
     });
 
@@ -336,7 +336,7 @@ describe('GroceryDataPipeline', () => {
       
       expect(result.success).toBe(true);
       expect(result.messageType).toBe('inventory_sync');
-      expect(result.result.inStock).toBe(true);
+      expect(result?.result?.inStock).toBe(true);
     });
 
     it('should process product matching messages', async () => {
@@ -362,7 +362,7 @@ describe('GroceryDataPipeline', () => {
       
       expect(result.success).toBe(true);
       expect(result.messageType).toBe('product_match');
-      expect(result.result.confidence).toBeGreaterThanOrEqual(0.6);
+      expect(result?.result?.confidence).toBeGreaterThanOrEqual(0.6);
     });
 
     it('should process nutrition fetch messages', async () => {
@@ -382,8 +382,8 @@ describe('GroceryDataPipeline', () => {
       
       expect(result.success).toBe(true);
       expect(result.messageType).toBe('nutrition_fetch');
-      expect(result.result.productId).toBe('NUTRITION_PROD');
-      expect(result.result.calories).toBeGreaterThan(0);
+      expect(result?.result?.productId).toBe('NUTRITION_PROD');
+      expect(result?.result?.calories).toBeGreaterThan(0);
     });
 
     it('should handle processing errors gracefully', async () => {
@@ -487,7 +487,7 @@ describe('GroceryDataPipeline', () => {
 
     it('should emit price update events', async () => {
       let priceUpdatedEvent: any = null;
-      pipeline.on('price:updated', (data) => {
+      pipeline.on('price:updated', (data: any) => {
         priceUpdatedEvent = data;
       });
 
@@ -514,13 +514,13 @@ describe('GroceryDataPipeline', () => {
       await priceConsumer.process(mockMessage);
       
       expect(priceUpdatedEvent).toBeDefined();
-      expect(priceUpdatedEvent.result.productId).toBe('EVENT_PROD');
-      expect(priceUpdatedEvent.result.priceChange).toBe('-18.20%');
+      expect(priceUpdatedEvent?.result?.productId).toBe('EVENT_PROD');
+      expect(priceUpdatedEvent?.result?.priceChange).toBe('-18.20%');
     });
 
     it('should emit inventory update events', async () => {
       let inventoryUpdatedEvent: any = null;
-      pipeline.on('inventory:updated', (data) => {
+      pipeline.on('inventory:updated', (data: any) => {
         inventoryUpdatedEvent = data;
       });
 
@@ -545,8 +545,8 @@ describe('GroceryDataPipeline', () => {
       await inventoryConsumer.process(mockMessage);
       
       expect(inventoryUpdatedEvent).toBeDefined();
-      expect(inventoryUpdatedEvent.result.inStock).toBe(false);
-      expect(inventoryUpdatedEvent.result.quantity).toBe(0);
+      expect(inventoryUpdatedEvent?.result?.inStock).toBe(false);
+      expect(inventoryUpdatedEvent?.result?.quantity).toBe(0);
     });
   });
 
@@ -622,7 +622,7 @@ describe('GroceryDataPipeline', () => {
       const result = await priceConsumer.process(mockMessage);
       
       expect(result.dependentJobs).toBeDefined();
-      expect(result.dependentJobs.length).toBeGreaterThan(0);
+      expect(result?.dependentJobs?.length).toBeGreaterThan(0);
       expect(mockMessageQueue.enqueue).toHaveBeenCalledWith(
         'grocery_deal_analysis',
         expect.objectContaining({

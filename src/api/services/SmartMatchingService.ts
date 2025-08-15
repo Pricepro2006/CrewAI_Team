@@ -106,7 +106,7 @@ export class SmartMatchingService {
       const parallelOps = [
         () => this.preprocessQuery(query, options),
         () => options.userId 
-          ? this.historyService.getProductFrequency(options.userId)
+          ? this?.historyService?.getProductFrequency(options.userId)
             .catch(error => {
               logger.warn("Could not fetch user history", "SMART_MATCHING", { error });
               return [] as ProductFrequency[];
@@ -120,7 +120,7 @@ export class SmartMatchingService {
         processedQuery,
         userHistoryResult,
         preFetchedPrices
-      ] = await this.nlpQueue.enqueueBatch(parallelOps, "high") as [string, ProductFrequency[], any];
+      ] = await this?.nlpQueue?.enqueueBatch(parallelOps, "high") as [string, ProductFrequency[], any];
       
       const userHistory: ProductFrequency[] = userHistoryResult || [];
 
@@ -131,11 +131,11 @@ export class SmartMatchingService {
       const matchingOps: (() => Promise<MatchedProduct[] | null>)[] = [
         () => this.executeMatching(processedQuery, strategy, userHistory, options),
         () => this.getCachedSuggestions(query, options.userId).then(suggestions => 
-          suggestions ? suggestions.map((s: any) => ({...s} as MatchedProduct)) : null
+          suggestions ? suggestions?.map((s: any) => ({...s} as MatchedProduct)) : null
         )
       ];
       
-      const [matches, cachedSuggestions] = await this.nlpQueue.enqueueBatch(
+      const [matches, cachedSuggestions] = await this?.nlpQueue?.enqueueBatch(
         matchingOps, 
         "normal"
       ) as [MatchedProduct[] | null, MatchedProduct[] | null];
@@ -169,8 +169,8 @@ export class SmartMatchingService {
       logger.info("Smart matching completed", "SMART_MATCHING", {
         query,
         strategy,
-        primaryCount: primary.length,
-        alternativeCount: alternatives.length,
+        primaryCount: primary?.length || 0,
+        alternativeCount: alternatives?.length || 0,
         executionTime
       });
 
@@ -182,7 +182,7 @@ export class SmartMatchingService {
           originalQuery: query,
           processedQuery,
           matchingStrategy: strategy,
-          totalResults: primary.length + alternatives.length,
+          totalResults: primary?.length || 0 + alternatives?.length || 0,
           executionTime
         }
       };
@@ -243,11 +243,11 @@ export class SmartMatchingService {
     options: SmartMatchingOptions
   ): string {
     // Strategy 1: History-first (user has purchase history for similar items)
-    if (options.prioritizeHistory && userHistory.length > 0) {
+    if (options.prioritizeHistory && userHistory?.length || 0 > 0) {
       const historyMatch = userHistory.find(h => 
         h.productName && (
-          h.productName.toLowerCase().includes(query.toLowerCase()) ||
-          query.toLowerCase().includes(h.productName.toLowerCase().split(' ')[0])
+          h?.productName?.toLowerCase().includes(query.toLowerCase()) ||
+          query.toLowerCase().includes(h?.productName?.toLowerCase().split(' ')[0])
         )
       );
       if (historyMatch) {
@@ -308,20 +308,20 @@ export class SmartMatchingService {
     
     // First, look for exact or close matches in purchase history
     for (const historyItem of userHistory) {
-      const similarity = await this.matchingAlgorithm.calculateSimilarity(
+      const similarity = await this?.matchingAlgorithm?.calculateSimilarity(
         query,
         historyItem.productName
       );
       
       if (similarity > 0.6) {
         // Try to find the current product info
-        const searchResults = await this.priceFetcher.searchProductsWithPrices(
+        const searchResults = await this?.priceFetcher?.searchProductsWithPrices(
           historyItem.productName,
           options.location,
           1
         );
         
-        if (searchResults && searchResults.length > 0) {
+        if (searchResults && searchResults?.length || 0 > 0) {
           const product = searchResults[0];
           matches.push({
             product: product as any, // Type assertion needed due to WalmartProduct interface variations
@@ -339,13 +339,13 @@ export class SmartMatchingService {
     }
 
     // Fill remaining slots with fuzzy matching
-    if (matches.length < maxResults) {
-      const remainingSlots = maxResults - matches.length;
+    if (matches?.length || 0 < maxResults) {
+      const remainingSlots = maxResults - matches?.length || 0;
       const fuzzyMatches = await this.executeFuzzyMatching(query, options, remainingSlots);
       
       // Filter out duplicates and add
       for (const fuzzyMatch of fuzzyMatches) {
-        const isDuplicate = matches.some(m => m.product.walmartId === fuzzyMatch.product.walmartId);
+        const isDuplicate = matches.some(m => m?.product?.walmartId === fuzzyMatch?.product?.walmartId);
         if (!isDuplicate) {
           matches.push(fuzzyMatch);
         }
@@ -369,7 +369,7 @@ export class SmartMatchingService {
     if (options.preferredBrands?.length) {
       for (const brand of options.preferredBrands) {
         const brandQuery = `${brand} ${query}`;
-        const searchResults = await this.priceFetcher.searchProductsWithPrices(
+        const searchResults = await this?.priceFetcher?.searchProductsWithPrices(
           brandQuery,
           options.location,
           3
@@ -377,7 +377,7 @@ export class SmartMatchingService {
         
         if (searchResults) {
           for (const product of searchResults) {
-            const similarity = await this.matchingAlgorithm.calculateSimilarity(query, product.name);
+            const similarity = await this?.matchingAlgorithm?.calculateSimilarity(query, product.name);
             if (similarity > 0.5) {
               matches.push({
                 product,
@@ -395,8 +395,8 @@ export class SmartMatchingService {
     }
 
     // Fill remaining with general search
-    if (matches.length < maxResults) {
-      const remainingSlots = maxResults - matches.length;
+    if (matches?.length || 0 < maxResults) {
+      const remainingSlots = maxResults - matches?.length || 0;
       const generalMatches = await this.executeFuzzyMatching(query, options, remainingSlots);
       matches.push(...generalMatches);
     }
@@ -412,7 +412,7 @@ export class SmartMatchingService {
     options: SmartMatchingOptions,
     maxResults: number
   ): Promise<MatchedProduct[]> {
-    const searchResults = await this.priceFetcher.searchProductsWithPrices(
+    const searchResults = await this?.priceFetcher?.searchProductsWithPrices(
       query,
       options.location,
       maxResults * 2 // Get more results to filter by price
@@ -424,13 +424,13 @@ export class SmartMatchingService {
       // Filter and score by price threshold
       for (const product of searchResults) {
         const price = typeof product.livePrice === 'object' && product.livePrice?.price 
-          ? product.livePrice.price 
+          ? product?.livePrice?.price 
           : typeof product.price === 'number' 
             ? product.price 
             : 0;
         
         if (options.priceThreshold === undefined || price <= options.priceThreshold) {
-          const similarity = await this.matchingAlgorithm.calculateSimilarity(query, product.name);
+          const similarity = await this?.matchingAlgorithm?.calculateSimilarity(query, product.name);
           
           if (similarity > 0.4) {
             let priceScore = 1.0;
@@ -462,7 +462,7 @@ export class SmartMatchingService {
     options: SmartMatchingOptions,
     maxResults: number
   ): Promise<MatchedProduct[]> {
-    const searchResults = await this.priceFetcher.searchProductsWithPrices(
+    const searchResults = await this?.priceFetcher?.searchProductsWithPrices(
       query,
       options.location,
       maxResults
@@ -472,7 +472,7 @@ export class SmartMatchingService {
 
     if (searchResults) {
       for (const product of searchResults) {
-        const similarity = await this.matchingAlgorithm.calculateSimilarity(query, product.name);
+        const similarity = await this?.matchingAlgorithm?.calculateSimilarity(query, product.name);
         
         if (similarity > 0.3) {
           matches.push({
@@ -501,7 +501,7 @@ export class SmartMatchingService {
   ): Promise<MatchedProduct[]> {
     // Calculate comprehensive scores
     for (const match of matches) {
-      const comprehensiveScore = await this.matchingAlgorithm.calculateComprehensiveScore(
+      const comprehensiveScore = await this?.matchingAlgorithm?.calculateComprehensiveScore(
         match,
         originalQuery,
         userHistory,
@@ -530,8 +530,8 @@ export class SmartMatchingService {
   } {
     const highConfidenceThreshold = 0.7;
     
-    const primary = matches.filter(m => m.confidence >= highConfidenceThreshold);
-    const alternatives = matches.filter(m => m.confidence < highConfidenceThreshold);
+    const primary = matches?.filter(m => m.confidence >= highConfidenceThreshold);
+    const alternatives = matches?.filter(m => m.confidence < highConfidenceThreshold);
     
     return { primary, alternatives };
   }
@@ -575,7 +575,7 @@ export class SmartMatchingService {
     const alternatives: AlternativeProduct[] = [];
     
     // Extract brand and base product name
-    const productName = product.name;
+    const productName = product?.name;
     const words = productName.split(' ');
     
     // Try different size variations
@@ -589,13 +589,13 @@ export class SmartMatchingService {
     
     for (const variation of sizeVariations) {
       if (variation !== productName) {
-        const searchResults = await this.priceFetcher.searchProductsWithPrices(
+        const searchResults = await this?.priceFetcher?.searchProductsWithPrices(
           variation,
           options.location,
           1
         );
         
-        if (searchResults && searchResults.length > 0) {
+        if (searchResults && searchResults?.length || 0 > 0) {
           const altProduct = searchResults[0];
           const altPrice = altProduct.livePrice?.price || altProduct.price || 0;
           const originalPrice = product.livePrice?.price || product.price || 0;
@@ -635,7 +635,7 @@ export class SmartMatchingService {
     // Extract current brand from product name
     let currentBrand = '';
     for (const brand of Object.keys(brandAlternatives)) {
-      if (product.name.includes(brand)) {
+      if (product?.name?.includes(brand)) {
         currentBrand = brand;
         break;
       }
@@ -643,14 +643,14 @@ export class SmartMatchingService {
     
     if (currentBrand && brandAlternatives[currentBrand]) {
       for (const altBrand of brandAlternatives[currentBrand]) {
-        const altQuery = product.name.replace(currentBrand, altBrand);
-        const searchResults = await this.priceFetcher.searchProductsWithPrices(
+        const altQuery = product?.name?.replace(currentBrand, altBrand);
+        const searchResults = await this?.priceFetcher?.searchProductsWithPrices(
           altQuery,
           options.location,
           1
         );
         
-        if (searchResults && searchResults.length > 0) {
+        if (searchResults && searchResults?.length || 0 > 0) {
           const altProduct = searchResults[0];
           const altPrice = altProduct.livePrice?.price || altProduct.price || 0;
           const originalPrice = product.livePrice?.price || product.price || 0;
@@ -682,13 +682,13 @@ export class SmartMatchingService {
       .toLowerCase()
       .split(' ')
       .filter(word => 
-        word.length > 2 && 
+        word?.length || 0 > 2 && 
         !['the', 'and', 'with', 'for', 'from'].includes(word)
       );
     
-    if (productTerms.length >= 2) {
+    if (productTerms?.length || 0 >= 2) {
       const similarQuery = productTerms.slice(0, 3).join(' ');
-      const searchResults = await this.priceFetcher.searchProductsWithPrices(
+      const searchResults = await this?.priceFetcher?.searchProductsWithPrices(
         similarQuery,
         options.location,
         3
@@ -697,7 +697,7 @@ export class SmartMatchingService {
       if (searchResults) {
         for (const altProduct of searchResults) {
           if (altProduct.walmartId !== product.walmartId) {
-            const similarity = await this.matchingAlgorithm.calculateSimilarity(
+            const similarity = await this?.matchingAlgorithm?.calculateSimilarity(
               product.name,
               altProduct.name
             );
@@ -733,25 +733,25 @@ export class SmartMatchingService {
     const suggestions: string[] = [];
     
     // Suggestion 1: If no good matches, suggest more specific terms
-    if (primaryMatches.length === 0) {
+    if (primaryMatches?.length || 0 === 0) {
       suggestions.push("Try being more specific with brand names or sizes");
       suggestions.push("Check spelling and try alternative product names");
     }
     
     // Suggestion 2: Based on purchase history patterns
-    if (userHistory.length > 0) {
-      const relatedItems = userHistory.filter(item =>
-        item.productName.toLowerCase().includes(query.split(' ')[0].toLowerCase())
+    if (userHistory?.length || 0 > 0) {
+      const relatedItems = userHistory?.filter(item =>
+        item?.productName?.toLowerCase().includes(query.split(' ')[0].toLowerCase())
       );
       
-      if (relatedItems.length > 0) {
+      if (relatedItems?.length || 0 > 0) {
         suggestions.push(`Based on your history, you usually buy ${relatedItems[0].productName}`);
       }
     }
     
     // Suggestion 3: Complementary products
     const complementaryProducts = this.getComplementaryProducts(query);
-    if (complementaryProducts.length > 0) {
+    if (complementaryProducts?.length || 0 > 0) {
       suggestions.push(`Don't forget: ${complementaryProducts.slice(0, 2).join(', ')}`);
     }
     
@@ -804,18 +804,18 @@ export class SmartMatchingService {
     const batches = [];
     
     // Split matches into batches
-    for (let i = 0; i < matches.length; i += BATCH_SIZE) {
+    for (let i = 0; i < matches?.length || 0; i += BATCH_SIZE) {
       batches.push(matches.slice(i, i + BATCH_SIZE));
     }
     
     // Use NLP queue to manage concurrent batch processing
     // This ensures we don't exceed OLLAMA_NUM_PARALLEL limit
-    const scoringOperations = batches.map(batch => 
+    const scoringOperations = batches?.map(batch => 
       () => this.scoreBatch(batch, query, userHistory, options)
     );
     
     // Process through queue with normal priority
-    const scoredBatches = await this.nlpQueue.enqueueBatch(
+    const scoredBatches = await this?.nlpQueue?.enqueueBatch(
       scoringOperations,
       "normal"
     );
@@ -835,7 +835,7 @@ export class SmartMatchingService {
     options: SmartMatchingOptions
   ): Promise<MatchedProduct[]> {
     return Promise.all(
-      batch.map(async match => {
+      batch?.map(async match => {
         const score = await this.calculateMatchScore(match, query, userHistory, options);
         return { ...match, matchScore: score };
       })
@@ -861,7 +861,7 @@ export class SmartMatchingService {
     
     // Boost for price deals
     if (match.product?.discount > 0) {
-      score += 0.1 * (match.product.discount / 100);
+      score += 0.1 * (match?.product?.discount / 100);
     }
     
     // Boost for brand preference
@@ -901,7 +901,7 @@ export class SmartMatchingService {
     cachedSuggestions: string[] | null
   ): Promise<string[]> {
     // Return cached if available and recent
-    if (cachedSuggestions && cachedSuggestions.length > 0) {
+    if (cachedSuggestions && cachedSuggestions?.length || 0 > 0) {
       return cachedSuggestions;
     }
     

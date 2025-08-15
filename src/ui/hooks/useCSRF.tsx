@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 
 // CSRF Token configuration matching backend
 const CSRF_TOKEN_HEADER = "x-csrf-token";
@@ -54,7 +54,7 @@ export function CSRFProvider({ children }: CSRFProviderProps) {
         }
 
         const data = await response.json();
-        const newToken = data.token;
+        const newToken = data?.token;
 
         if (!newToken) {
           throw new Error("CSRF token not found in response");
@@ -133,12 +133,12 @@ export function CSRFProvider({ children }: CSRFProviderProps) {
 
       // Verify stored token is still valid
       fetchCSRFToken()
-        .then((newToken) => {
+        .then((newToken: any) => {
           if (newToken && newToken !== storedToken) {
             setToken(newToken);
           }
         })
-        .catch((err) => {
+        .catch((err: any) => {
           logger.error("Failed to verify stored CSRF token", "CSRF", err);
         });
     } else {
@@ -241,7 +241,7 @@ export async function handleCSRFError<T>(
       // Check if it's a CSRF error
       const isCSRFError =
         (error instanceof Error &&
-          error.message.toLowerCase().includes("csrf")) ||
+          error?.message?.toLowerCase().includes("csrf")) ||
         (error as any)?.code === "FORBIDDEN" ||
         (error as any)?.response?.status === 403;
 
@@ -261,7 +261,7 @@ export async function handleCSRFError<T>(
         }
 
         // Wait before retry
-        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        await new Promise((resolve: any) => setTimeout(resolve, retryDelay));
         continue;
       }
 

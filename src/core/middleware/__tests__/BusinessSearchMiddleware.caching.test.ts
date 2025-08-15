@@ -160,7 +160,7 @@ describe("BusinessSearchMiddleware - Caching Integration", () => {
       // Add artificial delay to mock provider
       (mockProvider.generate as any).mockImplementation(
         () =>
-          new Promise((resolve) => setTimeout(() => resolve("Response"), 100)),
+          new Promise((resolve: any) => setTimeout(() => resolve("Response"), 100)),
       );
 
       // First request - slow

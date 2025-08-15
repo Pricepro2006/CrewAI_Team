@@ -67,7 +67,7 @@ vi.mock("../EmailChainAnalyzer.js", () => ({
 
 vi.mock("/home/pricepro2006/CrewAI_Team/src/database/ConnectionPool.ts", () => {
   return {
-    executeQuery: vi.fn((fn) => {
+    executeQuery: vi.fn((fn: any) => {
       const mockStmt = {
         run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
         get: vi.fn().mockReturnValue({
@@ -221,10 +221,10 @@ describe("EmailThreePhaseAnalysisService", () => {
       const result = await service.analyzeEmail(mockEmail);
 
       // Verify Phase 1 extraction
-      expect(result.entities.po_numbers).toContain("12345678");
-      expect(result.entities.dollar_amounts).toContain("$75,000");
+      expect(result?.entities?.po_numbers).toContain("12345678");
+      expect(result?.entities?.dollar_amounts).toContain("$75,000");
       // Check if "DL380" or "ProLiant DL380" is detected in part numbers
-      const hasPartNumber = result.entities.part_numbers.some(part => 
+      const hasPartNumber = result?.entities?.part_numbers.some(part => 
         part.includes("DL380") || part.includes("PROLIANT")
       );
       expect(hasPartNumber).toBe(true);
@@ -406,12 +406,12 @@ describe("EmailThreePhaseAnalysisService", () => {
       const result = await service.analyzeEmail(mockEmail);
 
       expect(result.strategic_insights).toBeDefined();
-      expect(result.strategic_insights.opportunity).toContain("Incomplete chain"); // Update to match actual service behavior
-      expect(result.strategic_insights.risk).toBeDefined(); // Check it exists instead of specific content
+      expect(result?.strategic_insights?.opportunity).toContain("Incomplete chain"); // Update to match actual service behavior
+      expect(result?.strategic_insights?.risk).toBeDefined(); // Check it exists instead of specific content
       expect(result.escalation_needed).toBeDefined(); // Check it exists instead of specific value
       expect(result.revenue_impact).toContain("$75000"); // Update to match actual format
       expect(result.workflow_intelligence).toBeDefined();
-      expect(result.workflow_intelligence.predicted_next_steps).toHaveLength(1); // Update to match actual service behavior
+      expect(result?.workflow_intelligence?.predicted_next_steps).toHaveLength(1); // Update to match actual service behavior
     });
   });
 
@@ -437,13 +437,13 @@ describe("EmailThreePhaseAnalysisService", () => {
     it("should emit correct events during processing", async () => {
       const events: any[] = [];
 
-      service.on("phase:start", (data) =>
+      service.on("phase:start", (data: any) =>
         events.push({ type: "start", ...data }),
       );
-      service.on("phase:complete", (data) =>
+      service.on("phase:complete", (data: any) =>
         events.push({ type: "complete", phase: data.phase }),
       );
-      service.on("analysis:complete", (data) =>
+      service.on("analysis:complete", (data: any) =>
         events.push({ type: "done", email: data.email }),
       );
 
@@ -455,13 +455,13 @@ describe("EmailThreePhaseAnalysisService", () => {
       await service.analyzeEmail(mockEmail);
 
       // Should have phase events (actual behavior may be 2 phases due to optimization)
-      expect(events.filter((e) => e.type === "start")).toHaveLength(2); // Update to match actual service behavior
-      expect(events.filter((e) => e.type === "complete")).toHaveLength(2); // Update to match actual service behavior  
-      expect(events.filter((e) => e.type === "done")).toHaveLength(1);
+      expect(events?.filter((e: any) => e.type === "start")).toHaveLength(2); // Update to match actual service behavior
+      expect(events?.filter((e: any) => e.type === "complete")).toHaveLength(2); // Update to match actual service behavior  
+      expect(events?.filter((e: any) => e.type === "done")).toHaveLength(1);
 
       // Verify phase order (only check what actually exists)
-      const phaseStarts = events.filter((e) => e.type === "start");
-      if (phaseStarts.length >= 2) {
+      const phaseStarts = events?.filter((e: any) => e.type === "start");
+      if (phaseStarts?.length || 0 >= 2) {
         expect(phaseStarts[0].phase).toBe(1);
         expect(phaseStarts[1].phase).toBe(2);
       }
@@ -522,7 +522,7 @@ describe("EmailThreePhaseAnalysisService", () => {
 
       expect(results).toHaveLength(3);
       // Check that processing completed successfully instead of specific timing fields
-      expect(results.every((r) => r.workflow_state)).toBe(true); // Update to match actual service behavior
+      expect(results.every((r: any) => r.workflow_state)).toBe(true); // Update to match actual service behavior
     });
   });
 
@@ -561,7 +561,7 @@ describe("EmailThreePhaseAnalysisService", () => {
     it("should complete analysis within reasonable time", async () => {
       vi.mocked(axios.post).mockImplementation(
         () =>
-          new Promise((resolve) => {
+          new Promise((resolve: any) => {
             setTimeout(() => {
               resolve({
                 status: 200,

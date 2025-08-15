@@ -41,12 +41,12 @@ const Modal: React.FC<ModalProps> = ({
 
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
-      document.body.style.overflow = "hidden";
+      document?.body?.style.overflow = "hidden";
     }
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "unset";
+      document?.body?.style.overflow = "unset";
     };
   }, [isOpen, closeOnEscape, onClose]);
 
@@ -72,7 +72,7 @@ const Modal: React.FC<ModalProps> = ({
       <div 
         className={`modal-content modal-${size} ${className}`}
         data-testid="modal-content"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e: any) => e.stopPropagation()}
       >
         {(title || showCloseButton) && (
           <div className="modal-header" data-testid="modal-header">
@@ -237,7 +237,7 @@ describe("Modal Component", () => {
   it("should render different sizes", () => {
     const sizes = ["small", "medium", "large"] as const;
 
-    sizes.forEach((size) => {
+    sizes.forEach((size: any) => {
       const { rerender } = render(
         <Modal isOpen={true} onClose={() => {}} size={size}>
           {size} modal
@@ -294,7 +294,7 @@ describe("Modal Component", () => {
       </Modal>
     );
 
-    expect(document.body.style.overflow).toBe("hidden");
+    expect(document?.body?.style.overflow).toBe("hidden");
 
     rerender(
       <Modal isOpen={false} onClose={() => {}}>
@@ -302,7 +302,7 @@ describe("Modal Component", () => {
       </Modal>
     );
 
-    expect(document.body.style.overflow).toBe("unset");
+    expect(document?.body?.style.overflow).toBe("unset");
   });
 
   it("should clean up event listeners when unmounted", () => {
@@ -319,7 +319,7 @@ describe("Modal Component", () => {
     fireEvent.keyDown(document, { key: "Escape", code: "Escape" });
 
     expect(onClose).not.toHaveBeenCalled();
-    expect(document.body.style.overflow).toBe("unset");
+    expect(document?.body?.style.overflow).toBe("unset");
   });
 
   it("should handle complex modal content", () => {

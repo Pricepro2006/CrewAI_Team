@@ -84,12 +84,12 @@ export class LlamaCppProvider extends EventEmitter {
   }
 
   private validateConfig(): void {
-    if (!this.config.modelPath) {
+    if (!this?.config?.modelPath) {
       throw new Error("Model path is required");
     }
 
-    if (!fs.existsSync(this.config.modelPath)) {
-      throw new Error(`Model file not found: ${this.config.modelPath}`);
+    if (!fs.existsSync(this?.config?.modelPath)) {
+      throw new Error(`Model file not found: ${this?.config?.modelPath}`);
     }
 
     if (!fs.existsSync(this.llamaCppPath)) {
@@ -114,26 +114,26 @@ export class LlamaCppProvider extends EventEmitter {
 
     return new Promise((resolve, reject) => {
       const args = [
-        "-m", this.config.modelPath,
-        "-c", String(this.config.contextSize),
-        "-t", String(this.config.threads),
-        "--temp", String(this.config.temperature),
-        "--top-p", String(this.config.topP),
-        "--top-k", String(this.config.topK),
-        "-n", String(this.config.maxTokens),
-        "--repeat-penalty", String(this.config.repeatPenalty),
+        "-m", this?.config?.modelPath,
+        "-c", String(this?.config?.contextSize),
+        "-t", String(this?.config?.threads),
+        "--temp", String(this?.config?.temperature),
+        "--top-p", String(this?.config?.topP),
+        "--top-k", String(this?.config?.topK),
+        "-n", String(this?.config?.maxTokens),
+        "--repeat-penalty", String(this?.config?.repeatPenalty),
       ];
 
-      if (this.config.gpuLayers && this.config.gpuLayers > 0) {
-        args.push("-ngl", String(this.config.gpuLayers));
+      if (this?.config?.gpuLayers && this?.config?.gpuLayers > 0) {
+        args.push("-ngl", String(this?.config?.gpuLayers));
       }
 
-      if (this.config.batchSize) {
-        args.push("-b", String(this.config.batchSize));
+      if (this?.config?.batchSize) {
+        args.push("-b", String(this?.config?.batchSize));
       }
 
-      if (this.config.seed !== undefined) {
-        args.push("--seed", String(this.config.seed));
+      if (this?.config?.seed !== undefined) {
+        args.push("--seed", String(this?.config?.seed));
       }
 
       // Add interactive mode for continuous processing
@@ -150,7 +150,7 @@ export class LlamaCppProvider extends EventEmitter {
         reject(new Error("Model initialization timeout"));
       }, 60000); // 60 second timeout
 
-      this.process.stdout?.on("data", (data: Buffer) => {
+      this?.process?.stdout?.on("data", (data: Buffer) => {
         const output = data.toString();
         initOutput += output;
 
@@ -158,23 +158,23 @@ export class LlamaCppProvider extends EventEmitter {
         if (output.includes("llama_model_load") || output.includes("system_info")) {
           clearTimeout(initTimeout);
           this.modelLoaded = true;
-          this.emit("model-loaded", { model: this.config.modelPath });
+          this.emit("model-loaded", { model: this?.config?.modelPath });
           resolve();
         }
       });
 
-      this.process.stderr?.on("data", (data: Buffer) => {
+      this?.process?.stderr?.on("data", (data: Buffer) => {
         errorOutput += data.toString();
         console.error("llama.cpp error:", data.toString());
       });
 
-      this.process.on("error", (error) => {
+      this?.process?.on("error", (error: any) => {
         clearTimeout(initTimeout);
         this.modelLoaded = false;
         reject(error);
       });
 
-      this.process.on("exit", (code) => {
+      this?.process?.on("exit", (code: any) => {
         this.modelLoaded = false;
         this.process = null;
         if (code !== 0) {
@@ -195,7 +195,7 @@ export class LlamaCppProvider extends EventEmitter {
 
     try {
       // Track metrics
-      metricsCollector.increment("llama_cpp.requests.total");
+      metricsCollector.increment("llama_cpp?.requests?.total");
 
       // Ensure process is initialized
       if (!this.modelLoaded) {
@@ -220,7 +220,7 @@ export class LlamaCppProvider extends EventEmitter {
       // Track performance
       const duration = Date.now() - startTime;
       performanceMonitor.recordMetric("llama_cpp_generation_time", duration);
-      metricsCollector.recordHistogram("llama_cpp.generation.duration", duration);
+      metricsCollector.recordHistogram("llama_cpp?.generation?.duration", duration);
 
       // Sanitize output
       response.response = sanitizeLLMOutput(response.response);
@@ -232,7 +232,7 @@ export class LlamaCppProvider extends EventEmitter {
         context: "llama_cpp_generation",
         prompt: prompt.substring(0, 100),
       });
-      metricsCollector.increment("llama_cpp.requests.failed");
+      metricsCollector.increment("llama_cpp?.requests?.failed");
       throw error;
     }
   }
@@ -284,7 +284,7 @@ export class LlamaCppProvider extends EventEmitter {
             const tokensPerSecond = tokensGenerated / (duration / 1000);
 
             resolve({
-              model: path.basename(this.config.modelPath),
+              model: path.basename(this?.config?.modelPath),
               created_at: new Date().toISOString(),
               response: responseText,
               done: true,
@@ -306,11 +306,11 @@ export class LlamaCppProvider extends EventEmitter {
       };
 
       // Attach handlers
-      this.process.stdout?.on("data", responseHandler);
-      this.process.stderr?.once("data", errorHandler);
+      this?.process?.stdout?.on("data", responseHandler);
+      this?.process?.stderr?.once("data", errorHandler);
 
       // Send the prompt
-      this.process.stdin?.write(prompt + "\n");
+      this?.process?.stdin?.write(prompt + "\n");
     });
   }
 
@@ -331,8 +331,8 @@ export class LlamaCppProvider extends EventEmitter {
 
       // Build the full prompt
       let fullPrompt = prompt;
-      if (options.systemPrompt || this.config.systemPrompt) {
-        const systemPrompt = options.systemPrompt || this.config.systemPrompt;
+      if (options.systemPrompt || this?.config?.systemPrompt) {
+        const systemPrompt = options.systemPrompt || this?.config?.systemPrompt;
         fullPrompt = `System: ${systemPrompt}\n\nUser: ${prompt}\n\nAssistant:`;
       }
 
@@ -386,10 +386,10 @@ export class LlamaCppProvider extends EventEmitter {
     };
 
     // Send the prompt
-    this.process.stdin?.write(prompt + "\n");
+    this?.process?.stdin?.write(prompt + "\n");
 
     // Create async iterator for stdout
-    const stdout = this.process.stdout;
+    const stdout = this?.process?.stdout;
     if (!stdout) {
       throw new Error("Process stdout not available");
     }
@@ -413,11 +413,11 @@ export class LlamaCppProvider extends EventEmitter {
    */
   public async cleanup(): Promise<void> {
     if (this.process) {
-      this.process.stdin?.write("exit\n");
-      this.process.kill("SIGTERM");
+      this?.process?.stdin?.write("exit\n");
+      this?.process?.kill("SIGTERM");
       
       // Wait for process to exit
-      await new Promise<void>((resolve) => {
+      await new Promise<void>((resolve: any) => {
         if (!this.process) {
           resolve();
           return;
@@ -428,7 +428,7 @@ export class LlamaCppProvider extends EventEmitter {
           resolve();
         }, 5000);
 
-        this.process.on("exit", () => {
+        this?.process?.on("exit", () => {
           clearTimeout(timeout);
           resolve();
         });
@@ -448,8 +448,8 @@ export class LlamaCppProvider extends EventEmitter {
     loaded: boolean;
   } {
     return {
-      model: path.basename(this.config.modelPath),
-      contextSize: this.config.contextSize || 8192,
+      model: path.basename(this?.config?.modelPath),
+      contextSize: this?.config?.contextSize || 8192,
       loaded: this.modelLoaded,
     };
   }

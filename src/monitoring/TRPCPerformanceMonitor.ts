@@ -64,8 +64,8 @@ export class TRPCPerformanceMonitor {
   createTRPCMiddleware() {
     return async (opts: any) => {
       const start = Date.now();
-      const procedure = opts.path;
-      const type = opts.type;
+      const procedure = opts?.path;
+      const type = opts?.type;
       const userId = opts.ctx?.user?.id;
       const callId = `${procedure}_${start}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -81,7 +81,7 @@ export class TRPCPerformanceMonitor {
         }
       );
 
-      this.activeTransactions.set(callId, transaction);
+      this?.activeTransactions?.set(callId, transaction);
 
       // Add breadcrumb
       sentryErrorTracker.addBreadcrumb(
@@ -198,22 +198,22 @@ export class TRPCPerformanceMonitor {
 
         throw error;
       } finally {
-        this.activeTransactions.delete(callId);
+        this?.activeTransactions?.delete(callId);
       }
     };
   }
 
   // Record performance metrics
   private recordMetrics(metrics: TRPCCallMetrics): void {
-    const procedureMetrics = this.callMetrics.get(metrics.procedure) || [];
+    const procedureMetrics = this?.callMetrics?.get(metrics.procedure) || [];
     procedureMetrics.push(metrics);
 
     // Limit retention to avoid memory leaks
-    if (procedureMetrics.length > this.maxMetricsRetention) {
-      procedureMetrics.splice(0, procedureMetrics.length - this.maxMetricsRetention);
+    if (procedureMetrics?.length || 0 > this.maxMetricsRetention) {
+      procedureMetrics.splice(0, procedureMetrics?.length || 0 - this.maxMetricsRetention);
     }
 
-    this.callMetrics.set(metrics.procedure, procedureMetrics);
+    this?.callMetrics?.set(metrics.procedure, procedureMetrics);
 
     // Log slow calls
     if (metrics.duration > this.thresholds[metrics.type].warning) {
@@ -247,8 +247,8 @@ export class TRPCPerformanceMonitor {
         'error',
         {
           procedure: metrics.procedure,
-          duration: metrics.duration.toString(),
-          threshold: threshold.critical.toString(),
+          duration: metrics?.duration?.toString(),
+          threshold: threshold?.critical?.toString(),
           severity: 'critical',
         }
       );
@@ -271,17 +271,17 @@ export class TRPCPerformanceMonitor {
     const cutoff = Date.now() - timeWindowMs;
     const stats: Record<string, any> = {};
 
-    const procedures = procedure ? [procedure] : Array.from(this.callMetrics.keys());
+    const procedures = procedure ? [procedure] : Array.from(this?.callMetrics?.keys());
 
     procedures.forEach(proc => {
-      const metrics = this.callMetrics.get(proc) || [];
-      const recentMetrics = metrics.filter(m => m.timestamp.getTime() > cutoff);
+      const metrics = this?.callMetrics?.get(proc) || [];
+      const recentMetrics = metrics?.filter(m => m?.timestamp?.getTime() > cutoff);
 
-      if (recentMetrics.length === 0) return;
+      if (recentMetrics?.length || 0 === 0) return;
 
-      const successful = recentMetrics.filter(m => m.success);
-      const failed = recentMetrics.filter(m => !m.success);
-      const durations = recentMetrics.map(m => m.duration).sort((a, b) => a - b);
+      const successful = recentMetrics?.filter(m => m.success);
+      const failed = recentMetrics?.filter(m => !m.success);
+      const durations = recentMetrics?.map(m => m.duration).sort((a, b) => a - b);
 
       // Calculate memory statistics
       const memoryStats = recentMetrics
@@ -289,26 +289,26 @@ export class TRPCPerformanceMonitor {
         .map(m => m.memoryUsage!.heapUsed);
 
       stats[proc] = {
-        totalCalls: recentMetrics.length,
-        successfulCalls: successful.length,
-        failedCalls: failed.length,
-        successRate: successful.length / recentMetrics.length,
-        avgDuration: durations.reduce((sum, d) => sum + d, 0) / durations.length,
+        totalCalls: recentMetrics?.length || 0,
+        successfulCalls: successful?.length || 0,
+        failedCalls: failed?.length || 0,
+        successRate: successful?.length || 0 / recentMetrics?.length || 0,
+        avgDuration: durations.reduce((sum: any, d: any) => sum + d, 0) / durations?.length || 0,
         minDuration: durations[0] || 0,
-        maxDuration: durations[durations.length - 1] || 0,
+        maxDuration: durations[durations?.length || 0 - 1] || 0,
         p50: this.percentile(durations, 0.5),
         p95: this.percentile(durations, 0.95),
         p99: this.percentile(durations, 0.99),
         memoryUsage: {
-          avg: memoryStats.length > 0 
-            ? memoryStats.reduce((sum, m) => sum + m, 0) / memoryStats.length 
+          avg: memoryStats?.length || 0 > 0 
+            ? memoryStats.reduce((sum: any, m: any) => sum + m, 0) / memoryStats?.length || 0 
             : 0,
-          max: memoryStats.length > 0 ? Math.max(...memoryStats) : 0,
+          max: memoryStats?.length || 0 > 0 ? Math.max(...memoryStats) : 0,
         },
         errorTypes: this.getErrorTypes(failed),
         thresholdViolations: {
-          warning: recentMetrics.filter(m => m.duration > this.thresholds[m.type].warning).length,
-          critical: recentMetrics.filter(m => m.duration > this.thresholds[m.type].critical).length,
+          warning: recentMetrics?.filter(m => m.duration > this.thresholds[m.type].warning).length,
+          critical: recentMetrics?.filter(m => m.duration > this.thresholds[m.type].critical).length,
         },
       };
     });
@@ -362,7 +362,7 @@ export class TRPCPerformanceMonitor {
       procedures: stats,
       slowProcedures,
       errorProneProcedures,
-      activeTransactions: this.activeTransactions.size,
+      activeTransactions: this?.activeTransactions?.size,
     };
   }
 
@@ -379,10 +379,10 @@ export class TRPCPerformanceMonitor {
   clearOldMetrics(olderThanMs = 86400000): void { // 24 hours default
     const cutoff = Date.now() - olderThanMs;
     
-    this.callMetrics.forEach((metrics, procedure) => {
-      const recentMetrics = metrics.filter(m => m.timestamp.getTime() > cutoff);
-      if (recentMetrics.length < metrics.length) {
-        this.callMetrics.set(procedure, recentMetrics);
+    this?.callMetrics?.forEach((metrics, procedure) => {
+      const recentMetrics = metrics?.filter(m => m?.timestamp?.getTime() > cutoff);
+      if (recentMetrics?.length || 0 < metrics?.length || 0) {
+        this?.callMetrics?.set(procedure, recentMetrics);
       }
     });
 
@@ -433,16 +433,16 @@ export class TRPCPerformanceMonitor {
     
     try {
       const inputStr = JSON.stringify(input);
-      return inputStr.length > 50 ? `hash_${inputStr.length}_${inputStr.substring(0, 10)}` : inputStr;
+      return inputStr?.length || 0 > 50 ? `hash_${inputStr?.length || 0}_${inputStr.substring(0, 10)}` : inputStr;
     } catch {
       return 'unhashable_input';
     }
   }
 
   private percentile(values: number[], p: number): number {
-    if (values.length === 0) return 0;
-    const index = Math.ceil(values.length * p) - 1;
-    return values[Math.max(0, Math.min(index, values.length - 1))];
+    if (values?.length || 0 === 0) return 0;
+    const index = Math.ceil(values?.length || 0 * p) - 1;
+    return values[Math.max(0, Math.min(index, values?.length || 0 - 1))];
   }
 
   private getErrorTypes(failedMetrics: TRPCCallMetrics[]): Record<string, number> {
@@ -450,7 +450,7 @@ export class TRPCPerformanceMonitor {
     
     failedMetrics.forEach(metric => {
       if (metric.error) {
-        const errorType = metric.error.name || 'UnknownError';
+        const errorType = metric?.error?.name || 'UnknownError';
         errorTypes[errorType] = (errorTypes[errorType] || 0) + 1;
       }
     });
@@ -464,18 +464,18 @@ export class TRPCPerformanceMonitor {
       const metrics = this.exportMetrics();
       
       // Send key metrics to Sentry
-      sentryErrorTracker.recordCustomMetric('trpc_total_calls', metrics.overview.totalCalls);
-      sentryErrorTracker.recordCustomMetric('trpc_total_errors', metrics.overview.totalErrors);
-      sentryErrorTracker.recordCustomMetric('trpc_success_rate', metrics.overview.averageSuccessRate);
+      sentryErrorTracker.recordCustomMetric('trpc_total_calls', metrics?.overview?.totalCalls);
+      sentryErrorTracker.recordCustomMetric('trpc_total_errors', metrics?.overview?.totalErrors);
+      sentryErrorTracker.recordCustomMetric('trpc_success_rate', metrics?.overview?.averageSuccessRate);
       sentryErrorTracker.recordCustomMetric('trpc_active_transactions', metrics.activeTransactions);
 
       // Log summary
       logger.info('TRPC performance report', 'TRPC_PERFORMANCE', {
-        totalCalls: metrics.overview.totalCalls,
-        totalErrors: metrics.overview.totalErrors,
-        successRate: metrics.overview.averageSuccessRate,
-        slowProceduresCount: metrics.slowProcedures.length,
-        errorProneProceduresCount: metrics.errorProneProcedures.length,
+        totalCalls: metrics?.overview?.totalCalls,
+        totalErrors: metrics?.overview?.totalErrors,
+        successRate: metrics?.overview?.averageSuccessRate,
+        slowProceduresCount: metrics?.slowProcedures?.length,
+        errorProneProceduresCount: metrics?.errorProneProcedures?.length,
       });
 
       // Clean up old metrics

@@ -136,13 +136,13 @@ export class RedisMessageQueue extends EventEmitter {
 
   private initializeRedisClients(): void {
     const redisConfig = {
-      host: this.config.redis.host,
-      port: this.config.redis.port,
-      password: this.config.redis.password,
-      db: this.config.redis.db,
-      lazyConnect: this.config.redis.lazyConnect,
-      enableOfflineQueue: this.config.redis.enableOfflineQueue,
-      maxRetriesPerRequest: this.config.redis.maxRetriesPerRequest,
+      host: this?.config?.redis.host,
+      port: this?.config?.redis.port,
+      password: this?.config?.redis.password,
+      db: this?.config?.redis.db,
+      lazyConnect: this?.config?.redis.lazyConnect,
+      enableOfflineQueue: this?.config?.redis.enableOfflineQueue,
+      maxRetriesPerRequest: this?.config?.redis.maxRetriesPerRequest,
       retryDelayOnFailover: 100,
       retryStrategy: (times: number) => {
         if (times > 3) return null;
@@ -155,22 +155,22 @@ export class RedisMessageQueue extends EventEmitter {
   }
 
   private setupEventHandlers(): void {
-    this.redisClient.on('connect', () => {
+    this?.redisClient?.on('connect', () => {
       this.isConnected = true;
       this.emit('connected');
     });
 
-    this.redisClient.on('error', (error) => {
+    this?.redisClient?.on('error', (error: any) => {
       this.isConnected = false;
       this.emit('error', { source: 'redis', error });
     });
 
-    this.redisClient.on('ready', () => {
+    this?.redisClient?.on('ready', () => {
       this.emit('ready');
       this.startProcessingLoop();
     });
 
-    this.subscriberClient.on('error', (error) => {
+    this?.subscriberClient?.on('error', (error: any) => {
       this.emit('error', { source: 'subscriber', error });
     });
   }
@@ -181,8 +181,8 @@ export class RedisMessageQueue extends EventEmitter {
 
     try {
       await Promise.all([
-        this.redisClient.connect(),
-        this.subscriberClient.connect()
+        this?.redisClient?.connect(),
+        this?.subscriberClient?.connect()
       ]);
       this.emit('queue:connected');
     } catch (error) {
@@ -212,7 +212,7 @@ export class RedisMessageQueue extends EventEmitter {
     };
 
     // Validate message based on type
-    if (message.type.startsWith('grocery:')) {
+    if (message?.type?.startsWith('grocery:')) {
       GroceryMessageSchema.parse(queueMessage);
     } else {
       BaseMessageSchema.parse(queueMessage);
@@ -231,9 +231,9 @@ export class RedisMessageQueue extends EventEmitter {
       }
 
       // Add to Redis Stream
-      await this.redisClient.xadd(
+      await this?.redisClient?.xadd(
         streamKey,
-        'MAXLEN', '~', this.config.queues.maxLength.toString(),
+        'MAXLEN', '~', this?.config?.queues.maxLength.toString(),
         '*', // Auto-generate stream ID
         'message', JSON.stringify(queueMessage)
       );
@@ -277,16 +277,16 @@ export class RedisMessageQueue extends EventEmitter {
       const consumerName = `consumer-${process.pid}-${nanoid(8)}`;
 
       // Try to read new messages
-      const results = await this.redisClient.xreadgroup(
+      const results = await this?.redisClient?.xreadgroup(
         'GROUP', consumerGroup, consumerName,
         'COUNT', count.toString(),
-        'BLOCK', this.config.processing.blockTimeout.toString(),
+        'BLOCK', this?.config?.processing.blockTimeout.toString(),
         'STREAMS', streamKey, '>'
       );
 
       const messages: BaseMessage[] = [];
       
-      if (results && results.length > 0) {
+      if (results && results?.length || 0 > 0) {
         const [, streamEntries] = results[0];
         
         for (const [streamId, fields] of streamEntries) {
@@ -307,7 +307,7 @@ export class RedisMessageQueue extends EventEmitter {
 
       this.emit('messages:dequeued', {
         queueName,
-        count: messages.length,
+        count: messages?.length || 0,
         consumerName
       });
 
@@ -332,7 +332,7 @@ export class RedisMessageQueue extends EventEmitter {
       // Ensure consumer group exists
       await this.ensureConsumerGroup(queueName);
       
-      this.consumers.set(`${queueName}:${consumer.name}`, consumer as QueueConsumer);
+      this?.consumers?.set(`${queueName}:${consumer.name}`, consumer as QueueConsumer);
       
       this.emit('consumer:registered', {
         queueName,
@@ -353,7 +353,7 @@ export class RedisMessageQueue extends EventEmitter {
 
   public async startConsumer(queueName: string, consumerName: string): Promise<void> {
     const key = `${queueName}:${consumerName}`;
-    const consumer = this.consumers.get(key);
+    const consumer = this?.consumers?.get(key);
     
     if (!consumer) {
       throw new Error(`Consumer ${consumerName} not found for queue ${queueName}`);
@@ -383,15 +383,15 @@ export class RedisMessageQueue extends EventEmitter {
     
     while (true) {
       try {
-        const messages = await this.dequeue(queueName, this.config.processing.batchSize);
+        const messages = await this.dequeue(queueName, this?.config?.processing.batchSize);
         
-        if (messages.length === 0) {
-          await this.sleep(this.config.processing.idleTimeout);
+        if (messages?.length || 0 === 0) {
+          await this.sleep(this?.config?.processing.idleTimeout);
           continue;
         }
 
         // Process messages concurrently within batch
-        const processingPromises = messages.map(message => 
+        const processingPromises = messages?.map(message => 
           this.processMessage(queueName, consumer, message, workerName)
         );
 
@@ -433,7 +433,7 @@ export class RedisMessageQueue extends EventEmitter {
       // Process with timeout
       const result = await Promise.race([
         consumer.process(message),
-        this.createTimeoutPromise(this.config.processing.processingTimeout)
+        this.createTimeoutPromise(this?.config?.processing.processingTimeout)
       ]);
 
       const processingTime = Date.now() - startTime;
@@ -533,7 +533,7 @@ export class RedisMessageQueue extends EventEmitter {
     }
 
     // Move to dead letter queue
-    if (this.config.queues.deadLetterQueue) {
+    if (this?.config?.queues.deadLetterQueue) {
       await this.moveToDeadLetterQueue(queueName, message, error);
     }
 
@@ -580,7 +580,7 @@ export class RedisMessageQueue extends EventEmitter {
 
   // Utility methods
   private getStreamKey(queueName: string): string {
-    return `${this.config.redis.keyPrefix}${queueName}:stream`;
+    return `${this?.config?.redis.keyPrefix}${queueName}:stream`;
   }
 
   private getConsumerGroup(queueName: string): string {
@@ -588,7 +588,7 @@ export class RedisMessageQueue extends EventEmitter {
   }
 
   private getDeadLetterQueueKey(queueName: string): string {
-    return `${this.config.redis.keyPrefix}${queueName}:dlq`;
+    return `${this?.config?.redis.keyPrefix}${queueName}:dlq`;
   }
 
   private async ensureConsumerGroup(queueName: string): Promise<void> {
@@ -596,7 +596,7 @@ export class RedisMessageQueue extends EventEmitter {
       const streamKey = this.getStreamKey(queueName);
       const consumerGroup = this.getConsumerGroup(queueName);
       
-      await this.redisClient.xgroup('CREATE', streamKey, consumerGroup, '0', 'MKSTREAM');
+      await this?.redisClient?.xgroup('CREATE', streamKey, consumerGroup, '0', 'MKSTREAM');
     } catch (error) {
       // Group might already exist, check if it's a different error
       if (!(error as Error).message.includes('BUSYGROUP')) {
@@ -606,8 +606,8 @@ export class RedisMessageQueue extends EventEmitter {
   }
 
   private async checkMessageExists(queueName: string, messageId: string): Promise<boolean> {
-    const key = `${this.config.redis.keyPrefix}${queueName}:msg:${messageId}`;
-    const exists = await this.redisClient.exists(key);
+    const key = `${this?.config?.redis.keyPrefix}${queueName}:msg:${messageId}`;
+    const exists = await this?.redisClient?.exists(key);
     return exists === 1;
   }
 
@@ -616,15 +616,15 @@ export class RedisMessageQueue extends EventEmitter {
     messageId: string,
     scheduledAt: number
   ): Promise<void> {
-    const key = `${this.config.redis.keyPrefix}${queueName}:scheduled`;
-    await this.redisClient.zadd(key, scheduledAt.toString(), messageId);
+    const key = `${this?.config?.redis.keyPrefix}${queueName}:scheduled`;
+    await this?.redisClient?.zadd(key, scheduledAt.toString(), messageId);
   }
 
   private calculateRetryDelay(retryCount: number): number {
     const baseDelay = 1000; // 1 second
     const now = Date.now();
 
-    switch (this.config.queues.retryBackoff) {
+    switch (this?.config?.queues.retryBackoff) {
       case 'fixed':
         return now + baseDelay;
       case 'linear':
@@ -641,7 +641,7 @@ export class RedisMessageQueue extends EventEmitter {
     const streamId = message.metadata?.streamId;
 
     if (streamId) {
-      await this.redisClient.xack(streamKey, consumerGroup, streamId);
+      await this?.redisClient?.xack(streamKey, consumerGroup, streamId);
     }
   }
 
@@ -661,7 +661,7 @@ export class RedisMessageQueue extends EventEmitter {
       }
     };
 
-    await this.redisClient.lpush(dlqKey, JSON.stringify(dlqMessage));
+    await this?.redisClient?.lpush(dlqKey, JSON.stringify(dlqMessage));
     
     this.emit('message:dead_letter', {
       queueName,
@@ -671,14 +671,14 @@ export class RedisMessageQueue extends EventEmitter {
   }
 
   private addToProcessingQueue(queueName: string, messageId: string): void {
-    if (!this.processingQueues.has(queueName)) {
-      this.processingQueues.set(queueName, new Set());
+    if (!this?.processingQueues?.has(queueName)) {
+      this?.processingQueues?.set(queueName, new Set());
     }
-    this.processingQueues.get(queueName)!.add(messageId);
+    this?.processingQueues?.get(queueName)!.add(messageId);
   }
 
   private removeFromProcessingQueue(queueName: string, messageId: string): void {
-    const queue = this.processingQueues.get(queueName);
+    const queue = this?.processingQueues?.get(queueName);
     if (queue) {
       queue.delete(messageId);
     }
@@ -727,11 +727,11 @@ export class RedisMessageQueue extends EventEmitter {
 
   // Public API methods
   public async getQueueStats(queueName: string): Promise<QueueStats | null> {
-    return this.stats.get(queueName) || null;
+    return this?.stats?.get(queueName) || null;
   }
 
   public async getAllQueueStats(): Promise<QueueStats[]> {
-    return Array.from(this.stats.values());
+    return Array.from(this?.stats?.values());
   }
 
   public async pauseQueue(queueName: string): Promise<void> {
@@ -746,7 +746,7 @@ export class RedisMessageQueue extends EventEmitter {
 
   public async clearQueue(queueName: string): Promise<number> {
     const streamKey = this.getStreamKey(queueName);
-    const result = await this.redisClient.del(streamKey);
+    const result = await this?.redisClient?.del(streamKey);
     
     this.emit('queue:cleared', { queueName, deletedMessages: result });
     return result;
@@ -758,8 +758,8 @@ export class RedisMessageQueue extends EventEmitter {
     }
 
     await Promise.all([
-      this.redisClient.quit(),
-      this.subscriberClient.quit()
+      this?.redisClient?.quit(),
+      this?.subscriberClient?.quit()
     ]);
 
     this.removeAllListeners();

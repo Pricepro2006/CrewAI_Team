@@ -47,7 +47,7 @@ export const LazyLineChart: React.FC<LazyChartProps> = ({
 }) => (
   <Suspense fallback={<SkeletonLoader height="300px" />}>
     <LazyRecharts>
-      {(recharts) => {
+      {(recharts: any) => {
         const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = recharts;
         return (
           <ResponsiveContainer width={width} height={height}>
@@ -74,7 +74,7 @@ export const LazyBarChart: React.FC<LazyChartProps> = ({
 }) => (
   <Suspense fallback={<SkeletonLoader height="300px" />}>
     <LazyRecharts>
-      {(recharts) => {
+      {(recharts: any) => {
         const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = recharts;
         return (
           <ResponsiveContainer width={width} height={height}>
@@ -101,7 +101,7 @@ export const LazyPieChart: React.FC<LazyChartProps> = ({
 }) => (
   <Suspense fallback={<SkeletonLoader height="300px" />}>
     <LazyRecharts>
-      {(recharts) => {
+      {(recharts: any) => {
         const { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } = recharts;
         return (
           <ResponsiveContainer width={width} height={height}>
@@ -114,8 +114,8 @@ export const LazyPieChart: React.FC<LazyChartProps> = ({
                 fill="#8884d8"
                 dataKey={yKey}
               >
-                {data.map((entry: ChartDataPoint, index: number) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                {data?.map((entry: ChartDataPoint, index: number) => (
+                  <Cell key={`cell-${index}`} fill={colors[index % colors?.length || 0]} />
                 ))}
               </Pie>
               <Tooltip />

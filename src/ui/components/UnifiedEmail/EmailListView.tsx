@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { UnifiedEmailData } from "../../../types/unified-email.types.js";
+import type { UnifiedEmailData } from "../../../types/unified-email?.types.js";
 import "./EmailListView.css";
 
 interface EmailListViewProps {
@@ -113,7 +113,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
   );
 
   // Use mock data if no emails provided
-  const displayEmails = emails.length > 0 ? emails : mockEmails;
+  const displayEmails = emails?.length || 0 > 0 ? emails : mockEmails;
 
   const renderEmailAliasTable = () => (
     <div className="email-table-container">
@@ -128,7 +128,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
           </tr>
         </thead>
         <tbody>
-          {displayEmails.map((email) => (
+          {displayEmails?.map((email: any) => (
             <tr
               key={email.id}
               className={selectedEmailId === email.id ? "selected" : ""}
@@ -169,7 +169,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
           </tr>
         </thead>
         <tbody>
-          {sampleMarketing.map((item) => (
+          {sampleMarketing?.map((item: any) => (
             <tr key={item.id}>
               <td>{item.from}</td>
               <td>{item.requestedBy}</td>
@@ -198,7 +198,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
           </tr>
         </thead>
         <tbody>
-          {sampleVMware.map((item) => (
+          {sampleVMware?.map((item: any) => (
             <tr key={item.id}>
               <td>{item.from}</td>
               <td>{item.requestedBy}</td>
@@ -224,19 +224,19 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
             className={`email-tab ${activeTab === "alias" ? "active" : ""}`}
             onClick={() => setActiveTab("alias")}
           >
-            Email Alias ({displayEmails.length})
+            Email Alias ({displayEmails?.length || 0})
           </button>
           <button
             className={`email-tab ${activeTab === "marketing" ? "active" : ""}`}
             onClick={() => setActiveTab("marketing")}
           >
-            Marketing-Splunk ({sampleMarketing.length})
+            Marketing-Splunk ({sampleMarketing?.length || 0})
           </button>
           <button
             className={`email-tab ${activeTab === "vmware" ? "active" : ""}`}
             onClick={() => setActiveTab("vmware")}
           >
-            VMware@TDSynnex ({sampleVMware.length})
+            VMware@TDSynnex ({sampleVMware?.length || 0})
           </button>
         </div>
       </div>

@@ -54,53 +54,53 @@ export class PriceAlertService {
         userId: config.userId
       };
 
-      this.alerts.set(alert.id, alert);
+      this?.alerts?.set(alert.id, alert);
       logger.info(`Created price alert ${alert.id} for product ${config.productId}`);
       return alert;
     } catch (error) {
-      logger.error('Error creating price alert:', error);
+      logger.error('Error creating price alert:', error as string);
       throw error;
     }
   }
 
   async getAlerts(userId?: string): Promise<PriceAlert[]> {
     try {
-      const alerts = Array.from(this.alerts.values());
-      return userId ? alerts.filter(alert => alert.userId === userId) : alerts;
+      const alerts = Array.from(this?.alerts?.values());
+      return userId ? alerts?.filter(alert => alert.userId === userId) : alerts;
     } catch (error) {
-      logger.error('Error getting price alerts:', error);
+      logger.error('Error getting price alerts:', error as string);
       throw error;
     }
   }
 
   async updateAlert(alertId: string, updates: Partial<PriceAlert>): Promise<PriceAlert> {
     try {
-      const alert = this.alerts.get(alertId);
+      const alert = this?.alerts?.get(alertId);
       if (!alert) {
         throw new Error(`Alert ${alertId} not found`);
       }
 
       const updatedAlert = { ...alert, ...updates };
-      this.alerts.set(alertId, updatedAlert);
+      this?.alerts?.set(alertId, updatedAlert);
       
       logger.info(`Updated price alert ${alertId}`);
       return updatedAlert;
     } catch (error) {
-      logger.error('Error updating price alert:', error);
+      logger.error('Error updating price alert:', error as string);
       throw error;
     }
   }
 
   async deleteAlert(alertId: string): Promise<void> {
     try {
-      if (!this.alerts.has(alertId)) {
+      if (!this?.alerts?.has(alertId)) {
         throw new Error(`Alert ${alertId} not found`);
       }
 
-      this.alerts.delete(alertId);
+      this?.alerts?.delete(alertId);
       logger.info(`Deleted price alert ${alertId}`);
     } catch (error) {
-      logger.error('Error deleting price alert:', error);
+      logger.error('Error deleting price alert:', error as string);
       throw error;
     }
   }
@@ -109,7 +109,7 @@ export class PriceAlertService {
     try {
       const triggeredAlerts: PriceAlert[] = [];
       
-      for (const alert of this.alerts.values()) {
+      for (const alert of this?.alerts?.values()) {
         if (!alert.isActive) continue;
 
         // Mock price checking logic
@@ -124,7 +124,7 @@ export class PriceAlertService {
 
       return triggeredAlerts;
     } catch (error) {
-      logger.error('Error checking price alerts:', error);
+      logger.error('Error checking price alerts:', error as string);
       throw error;
     }
   }

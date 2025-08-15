@@ -61,11 +61,11 @@ export class QueryPerformanceMonitor {
       error: success ? undefined : 'Operation failed',
     };
 
-    this.performanceHistory.push(entry);
+    this?.performanceHistory?.push(entry);
 
     // Maintain history size limit
-    if (this.performanceHistory.length > this.MAX_HISTORY_SIZE) {
-      this.performanceHistory.shift();
+    if (this?.performanceHistory?.length > this.MAX_HISTORY_SIZE) {
+      this?.performanceHistory?.shift();
     }
 
     // Check for performance alerts
@@ -77,28 +77,28 @@ export class QueryPerformanceMonitor {
    */
   private checkPerformanceThresholds(entry: QueryPerformanceEntry): void {
     const now = Date.now();
-    const operation = entry.query.split(' ')[0] || 'unknown';
-    const alertKey = `${operation}_${entry.executionTime > this.alertThresholds.criticalQueryTime ? "critical" : "slow"}`;
+    const operation = entry?.query?.split(' ')[0] || 'unknown';
+    const alertKey = `${operation}_${entry.executionTime > this?.alertThresholds?.criticalQueryTime ? "critical" : "slow"}`;
 
     // Check if we're in cooldown period
-    const lastAlert = this.lastAlertTime.get(alertKey) || 0;
+    const lastAlert = this?.lastAlertTime?.get(alertKey) || 0;
     if (now - lastAlert < this.ALERT_COOLDOWN) {
       return;
     }
 
     // Check for slow/critical queries
-    if (entry.executionTime > this.alertThresholds.criticalQueryTime) {
+    if (entry.executionTime > this?.alertThresholds?.criticalQueryTime) {
       logger.warn(
         `Critical query performance: ${operation} took ${entry.executionTime}ms`,
         "QUERY_MONITOR",
       );
-      this.lastAlertTime.set(alertKey, now);
-    } else if (entry.executionTime > this.alertThresholds.slowQueryTime) {
+      this?.lastAlertTime?.set(alertKey, now);
+    } else if (entry.executionTime > this?.alertThresholds?.slowQueryTime) {
       logger.warn(
         `Slow query detected: ${operation} took ${entry.executionTime}ms`,
         "QUERY_MONITOR",
       );
-      this.lastAlertTime.set(alertKey, now);
+      this?.lastAlertTime?.set(alertKey, now);
     }
   }
 
@@ -107,7 +107,7 @@ export class QueryPerformanceMonitor {
    */
   stopMonitoring(): void {
     this.isMonitoring = false;
-    this.monitors.clear();
+    this?.monitors?.clear();
     logger.info("Query performance monitoring stopped", "QUERY_MONITOR");
   }
 
@@ -151,7 +151,7 @@ export class QueryPerformanceMonitor {
       createdAt: Date.now(),
     };
 
-    this.monitors.set(monitorId, monitorInfo);
+    this?.monitors?.set(monitorId, monitorInfo);
 
     logger.info("Query monitor registered", "QUERY_MONITOR", {
       monitorId,
@@ -167,7 +167,7 @@ export class QueryPerformanceMonitor {
   getPerformanceStatistics(): PerformanceStatistics {
     const recentQueries = this.getRecentQueries(5 * 60 * 1000); // Last 5 minutes
 
-    if (recentQueries.length === 0) {
+    if (recentQueries?.length || 0 === 0) {
       return this.getEmptyStatistics();
     }
 
@@ -175,23 +175,23 @@ export class QueryPerformanceMonitor {
       (sum, q) => sum + q.executionTime,
       0,
     );
-    const averageTime = totalTime / recentQueries.length;
+    const averageTime = totalTime / recentQueries?.length || 0;
 
-    const slowQueries = recentQueries.filter(
-      (q) => q.executionTime > this.alertThresholds.slowQueryTime,
+    const slowQueries = recentQueries?.filter(
+      (q: any) => q.executionTime > this?.alertThresholds?.slowQueryTime,
     );
-    const criticalQueries = recentQueries.filter(
-      (q) => q.executionTime > this.alertThresholds.criticalQueryTime,
+    const criticalQueries = recentQueries?.filter(
+      (q: any) => q.executionTime > this?.alertThresholds?.criticalQueryTime,
     );
 
-    const errors = recentQueries.filter((q) => q.error);
-    const errorRate = (errors.length / recentQueries.length) * 100;
+    const errors = recentQueries?.filter((q: any) => q.error);
+    const errorRate = (errors?.length || 0 / recentQueries?.length || 0) * 100;
 
     return {
-      totalQueries: recentQueries.length,
+      totalQueries: recentQueries?.length || 0,
       averageExecutionTime: Math.round(averageTime),
-      slowQueriesCount: slowQueries.length,
-      criticalQueriesCount: criticalQueries.length,
+      slowQueriesCount: slowQueries?.length || 0,
+      criticalQueriesCount: criticalQueries?.length || 0,
       errorRate: Math.round(errorRate * 100) / 100,
       cacheHitRatio: this.calculateCacheHitRatio(recentQueries),
       topSlowQueries: this.getTopSlowQueries(recentQueries, 5),
@@ -280,11 +280,11 @@ export class QueryPerformanceMonitor {
 
 
   private addToHistory(entry: QueryPerformanceEntry): void {
-    this.performanceHistory.push(entry);
+    this?.performanceHistory?.push(entry);
 
     // Maintain history size limit
-    if (this.performanceHistory.length > this.MAX_HISTORY_SIZE) {
-      this.performanceHistory = this.performanceHistory.slice(
+    if (this?.performanceHistory?.length > this.MAX_HISTORY_SIZE) {
+      this.performanceHistory = this?.performanceHistory?.slice(
         -this.MAX_HISTORY_SIZE,
       );
     }
@@ -294,7 +294,7 @@ export class QueryPerformanceMonitor {
     const alerts: PerformanceAlert[] = [];
 
     // Check for slow query
-    if (entry.executionTime > this.alertThresholds.criticalQueryTime) {
+    if (entry.executionTime > this?.alertThresholds?.criticalQueryTime) {
       alerts.push({
         type: "critical_slow_query",
         severity: "critical",
@@ -304,10 +304,10 @@ export class QueryPerformanceMonitor {
         details: {
           executionTime: entry.executionTime,
           query: entry.query?.substring(0, 100),
-          threshold: this.alertThresholds.criticalQueryTime,
+          threshold: this?.alertThresholds?.criticalQueryTime,
         },
       });
-    } else if (entry.executionTime > this.alertThresholds.slowQueryTime) {
+    } else if (entry.executionTime > this?.alertThresholds?.slowQueryTime) {
       alerts.push({
         type: "slow_query",
         severity: "warning",
@@ -317,7 +317,7 @@ export class QueryPerformanceMonitor {
         details: {
           executionTime: entry.executionTime,
           query: entry.query?.substring(0, 100),
-          threshold: this.alertThresholds.slowQueryTime,
+          threshold: this?.alertThresholds?.slowQueryTime,
         },
       });
     }
@@ -338,19 +338,19 @@ export class QueryPerformanceMonitor {
     }
 
     // Process alerts
-    alerts.forEach((alert) => this.processAlert(alert));
+    alerts.forEach((alert: any) => this.processAlert(alert));
   }
 
   private processAlert(alert: PerformanceAlert): void {
     const alertKey = `${alert.type}_${alert.queryId}`;
-    const lastAlert = this.lastAlertTime.get(alertKey);
+    const lastAlert = this?.lastAlertTime?.get(alertKey);
 
     // Implement alert cooldown
     if (lastAlert && Date.now() - lastAlert < this.ALERT_COOLDOWN) {
       return;
     }
 
-    this.lastAlertTime.set(alertKey, Date.now());
+    this?.lastAlertTime?.set(alertKey, Date.now());
 
     // Log alert
     logger.warn("Performance alert", "QUERY_MONITOR", alert);
@@ -367,31 +367,31 @@ export class QueryPerformanceMonitor {
   }
 
   private updateQueryMonitor(entry: QueryPerformanceEntry): void {
-    this.monitors.forEach((monitor) => {
+    this?.monitors?.forEach((monitor: any) => {
       if (this.matchesPattern(entry.query, monitor.pattern)) {
-        monitor.statistics.totalQueries++;
-        monitor.statistics.totalExecutionTime += entry.executionTime;
-        monitor.statistics.averageExecutionTime =
-          monitor.statistics.totalExecutionTime /
-          monitor.statistics.totalQueries;
+        monitor?.statistics?.totalQueries++;
+        monitor?.statistics?.totalExecutionTime += entry.executionTime;
+        monitor?.statistics?.averageExecutionTime =
+          monitor?.statistics?.totalExecutionTime /
+          monitor?.statistics?.totalQueries;
 
-        if (entry.executionTime > monitor.statistics.maxExecutionTime) {
-          monitor.statistics.maxExecutionTime = entry.executionTime;
-          monitor.statistics.slowestQuery = entry.query;
+        if (entry.executionTime > monitor?.statistics?.maxExecutionTime) {
+          monitor?.statistics?.maxExecutionTime = entry.executionTime;
+          monitor?.statistics?.slowestQuery = entry.query;
         }
 
         if (
-          entry.executionTime < monitor.statistics.minExecutionTime ||
-          monitor.statistics.minExecutionTime === 0
+          entry.executionTime < monitor?.statistics?.minExecutionTime ||
+          monitor?.statistics?.minExecutionTime === 0
         ) {
-          monitor.statistics.minExecutionTime = entry.executionTime;
+          monitor?.statistics?.minExecutionTime = entry.executionTime;
         }
 
         if (entry.error) {
-          monitor.statistics.errorCount++;
+          monitor?.statistics?.errorCount++;
         }
 
-        monitor.statistics.lastExecution = entry.timestamp;
+        monitor?.statistics?.lastExecution = entry.timestamp;
       }
     });
   }
@@ -399,7 +399,7 @@ export class QueryPerformanceMonitor {
   private broadcastPerformanceUpdate(entry: QueryPerformanceEntry): void {
     // Broadcast selective performance updates
     if (
-      entry.executionTime > this.alertThresholds.slowQueryTime ||
+      entry.executionTime > this?.alertThresholds?.slowQueryTime ||
       entry.error
     ) {
       try {
@@ -408,9 +408,9 @@ export class QueryPerformanceMonitor {
           value: entry.executionTime,
           component: "database",
           metric: "query_time",
-          threshold: this.alertThresholds.slowQueryTime,
+          threshold: this?.alertThresholds?.slowQueryTime,
           severity:
-            entry.executionTime > this.alertThresholds.criticalQueryTime
+            entry.executionTime > this?.alertThresholds?.criticalQueryTime
               ? ("critical" as const)
               : ("warning" as const),
           timestamp: new Date(),
@@ -437,15 +437,15 @@ export class QueryPerformanceMonitor {
 
   private getRecentQueries(timeWindow: number): QueryPerformanceEntry[] {
     const cutoff = Date.now() - timeWindow;
-    return this.performanceHistory.filter((entry) => entry.timestamp > cutoff);
+    return this?.performanceHistory?.filter((entry: any) => entry.timestamp > cutoff);
   }
 
   private calculateCacheHitRatio(queries: QueryPerformanceEntry[]): number {
-    const cacheableQueries = queries.filter((q) => q.cacheHit !== undefined);
-    if (cacheableQueries.length === 0) return 0;
+    const cacheableQueries = queries?.filter((q: any) => q.cacheHit !== undefined);
+    if (cacheableQueries?.length || 0 === 0) return 0;
 
-    const hits = cacheableQueries.filter((q) => q.cacheHit).length;
-    return Math.round((hits / cacheableQueries.length) * 100);
+    const hits = cacheableQueries?.filter((q: any) => q.cacheHit).length;
+    return Math.round((hits / cacheableQueries?.length || 0) * 100);
   }
 
   private getTopSlowQueries(
@@ -453,11 +453,11 @@ export class QueryPerformanceMonitor {
     limit: number,
   ): Array<{ query: string; time: number }> {
     return queries
-      .filter((q) => !q.error)
+      .filter((q: any) => !q.error)
       .sort((a, b) => b.executionTime - a.executionTime)
       .slice(0, limit)
-      .map((q) => ({
-        query: q.query.substring(0, 200),
+      .map((q: any) => ({
+        query: q?.query?.substring(0, 200),
         time: q.executionTime,
       }));
   }
@@ -466,19 +466,19 @@ export class QueryPerformanceMonitor {
     const recentQueries = this.getRecentQueries(10 * 60 * 1000); // Last 10 minutes
     const olderCutoff = Date.now() - 10 * 60 * 1000;
     const olderQueries = this.getRecentQueries(20 * 60 * 1000).filter(
-      (q) => q.timestamp < olderCutoff,
+      (q: any) => q.timestamp < olderCutoff,
     ); // 10-20 minutes ago
 
-    if (recentQueries.length === 0 || olderQueries.length === 0) {
+    if (recentQueries?.length || 0 === 0 || olderQueries?.length || 0 === 0) {
       return 'stable';
     }
 
     const recentAvg =
-      recentQueries.reduce((sum, q) => sum + q.executionTime, 0) /
-      recentQueries.length;
+      recentQueries.reduce((sum: any, q: any) => sum + q.executionTime, 0) /
+      recentQueries?.length || 0;
     const olderAvg =
-      olderQueries.reduce((sum, q) => sum + q.executionTime, 0) /
-      olderQueries.length;
+      olderQueries.reduce((sum: any, q: any) => sum + q.executionTime, 0) /
+      olderQueries?.length || 0;
 
     const percentChange = ((recentAvg - olderAvg) / olderAvg) * 100;
 
@@ -494,18 +494,18 @@ export class QueryPerformanceMonitor {
 
   private checkSystemPerformance(stats: PerformanceStatistics): void {
     // Check error rate
-    if (stats.errorRate > this.alertThresholds.highErrorRate) {
+    if (stats.errorRate > this?.alertThresholds?.highErrorRate) {
       logger.warn('High error rate detected', 'QUERY_MONITOR', {
         errorRate: stats.errorRate,
-        threshold: this.alertThresholds.highErrorRate,
+        threshold: this?.alertThresholds?.highErrorRate,
       });
     }
 
     // Check cache hit ratio
-    if (stats.cacheHitRatio < this.alertThresholds.lowCacheHitRatio) {
+    if (stats.cacheHitRatio < this?.alertThresholds?.lowCacheHitRatio) {
       logger.warn('Low cache hit ratio', 'QUERY_MONITOR', {
         cacheHitRatio: stats.cacheHitRatio,
-        threshold: this.alertThresholds.lowCacheHitRatio,
+        threshold: this?.alertThresholds?.lowCacheHitRatio,
       });
     }
 
@@ -517,8 +517,8 @@ export class QueryPerformanceMonitor {
 
   private cleanupHistory(): void {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000; // Keep 24 hours
-    this.performanceHistory = this.performanceHistory.filter(
-      (entry) => entry.timestamp > cutoff
+    this.performanceHistory = this?.performanceHistory?.filter(
+      (entry: any) => entry.timestamp > cutoff
     );
   }
 
@@ -532,8 +532,8 @@ export class QueryPerformanceMonitor {
 
     const alerts: PerformanceAlert[] = [];
 
-    recentQueries.forEach((query) => {
-      if (query.executionTime > this.alertThresholds.criticalQueryTime) {
+    recentQueries.forEach((query: any) => {
+      if (query.executionTime > this?.alertThresholds?.criticalQueryTime) {
         alerts.push({
           type: "critical_slow_query",
           severity: "critical",
@@ -564,7 +564,7 @@ export class QueryPerformanceMonitor {
   ): HourlyStats[] {
     const hourlyMap = new Map<number, QueryPerformanceEntry[]>();
 
-    queries.forEach((query) => {
+    queries.forEach((query: any) => {
       const hour = Math.floor(query.timestamp / (60 * 60 * 1000));
       if (!hourlyMap.has(hour)) {
         hourlyMap.set(hour, []);
@@ -575,14 +575,14 @@ export class QueryPerformanceMonitor {
     return Array.from(hourlyMap.entries())
       .map(([hour, hourQueries]) => ({
         hour: hour * 60 * 60 * 1000,
-        queryCount: hourQueries.length,
+        queryCount: hourQueries?.length || 0,
         averageTime:
-          hourQueries.reduce((sum, q) => sum + q.executionTime, 0) /
-          hourQueries.length,
-        slowQueries: hourQueries.filter(
-          (q) => q.executionTime > this.alertThresholds.slowQueryTime,
+          hourQueries.reduce((sum: any, q: any) => sum + q.executionTime, 0) /
+          hourQueries?.length || 0,
+        slowQueries: hourQueries?.filter(
+          (q: any) => q.executionTime > this?.alertThresholds?.slowQueryTime,
         ).length,
-        errors: hourQueries.filter((q) => q.error).length,
+        errors: hourQueries?.filter((q: any) => q.error).length,
       }))
       .sort((a, b) => a.hour - b.hour);
   }
@@ -592,7 +592,7 @@ export class QueryPerformanceMonitor {
   ): QueryTypeBreakdown[] {
     const typeMap = new Map<string, QueryPerformanceEntry[]>();
 
-    queries.forEach((query) => {
+    queries.forEach((query: any) => {
       const type = this.classifyQuery(query.query);
       if (!typeMap.has(type)) {
         typeMap.set(type, []);
@@ -602,11 +602,11 @@ export class QueryPerformanceMonitor {
 
     return Array.from(typeMap.entries()).map(([type, typeQueries]) => ({
       type,
-      count: typeQueries.length,
+      count: typeQueries?.length || 0,
       averageTime:
-        typeQueries.reduce((sum, q) => sum + q.executionTime, 0) /
-        typeQueries.length,
-      percentage: (typeQueries.length / queries.length) * 100,
+        typeQueries.reduce((sum: any, q: any) => sum + q.executionTime, 0) /
+        typeQueries?.length || 0,
+      percentage: (typeQueries?.length || 0 / queries?.length || 0) * 100,
     }));
   }
 
@@ -658,24 +658,24 @@ export class QueryPerformanceMonitor {
     queries: QueryPerformanceEntry[],
   ): ResourceUtilization {
     // Simplified resource estimation
-    const totalTime = queries.reduce((sum, q) => sum + q.executionTime, 0);
+    const totalTime = queries.reduce((sum: any, q: any) => sum + q.executionTime, 0);
     const timeWindow = 5 * 60 * 1000; // 5 minutes
 
     return {
       cpuUtilization: Math.min(100, (totalTime / timeWindow) * 100),
-      memoryUtilization: Math.min(100, queries.length * 0.1), // Rough estimate
+      memoryUtilization: Math.min(100, queries?.length || 0 * 0.1), // Rough estimate
       ioUtilization: Math.min(
         100,
-        queries.filter((q) => q.query.includes("JOIN")).length * 2,
+        queries?.filter((q: any) => q?.query?.includes("JOIN")).length * 2,
       ),
     };
   }
 
   private getMonitorStatuses(): MonitorStatus[] {
-    return Array.from(this.monitors.values()).map((monitor) => ({
+    return Array.from(this?.monitors?.values()).map((monitor: any) => ({
       id: monitor.id,
       pattern: monitor.pattern,
-      isActive: monitor.statistics.lastExecution ? Date.now() - monitor.statistics.lastExecution < 5 * 60 * 1000 : false,
+      isActive: monitor?.statistics?.lastExecution ? Date.now() - monitor?.statistics?.lastExecution < 5 * 60 * 1000 : false,
       statistics: monitor.statistics,
     }));
   }

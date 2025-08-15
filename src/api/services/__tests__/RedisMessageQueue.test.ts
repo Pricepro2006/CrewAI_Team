@@ -83,7 +83,7 @@ describe('RedisMessageQueue', () => {
 
     it('should handle connection errors gracefully', async () => {
       const error = new Error('Connection failed');
-      mockRedisInstance.connect.mockRejectedValueOnce(error);
+      mockRedisInstance?.connect?.mockRejectedValueOnce(error);
 
       await expect(messageQueue.connect()).rejects.toThrow('Connection failed');
     });
@@ -177,7 +177,7 @@ describe('RedisMessageQueue', () => {
     });
 
     it('should handle message deduplication', async () => {
-      mockRedisInstance.exists.mockResolvedValueOnce(1); // Message exists
+      mockRedisInstance?.exists?.mockResolvedValueOnce(1); // Message exists
       
       const message: BaseMessage = {
         id: 'duplicate-msg',
@@ -242,7 +242,7 @@ describe('RedisMessageQueue', () => {
         ]
       ];
 
-      mockRedisInstance.xreadgroup.mockResolvedValueOnce(mockStreamData);
+      mockRedisInstance?.xreadgroup?.mockResolvedValueOnce(mockStreamData);
 
       const messages = await messageQueue.dequeue('test_queue', 1);
       
@@ -253,7 +253,7 @@ describe('RedisMessageQueue', () => {
     });
 
     it('should return empty array when no messages available', async () => {
-      mockRedisInstance.xreadgroup.mockResolvedValueOnce(null);
+      mockRedisInstance?.xreadgroup?.mockResolvedValueOnce(null);
 
       const messages = await messageQueue.dequeue('empty_queue', 5);
       
@@ -261,7 +261,7 @@ describe('RedisMessageQueue', () => {
     });
 
     it('should handle dequeue errors', async () => {
-      mockRedisInstance.xreadgroup.mockRejectedValueOnce(new Error('Stream error'));
+      mockRedisInstance?.xreadgroup?.mockRejectedValueOnce(new Error('Stream error'));
 
       await expect(messageQueue.dequeue('error_queue', 1)).rejects.toThrow('Stream error');
     });
@@ -283,7 +283,7 @@ describe('RedisMessageQueue', () => {
 
       await expect(
         messageQueue.registerConsumer('test_queue', mockConsumer)
-      ).resolves.not.toThrow();
+      ).resolves?.not?.toThrow();
 
       expect(mockRedisInstance.xgroup).toHaveBeenCalledWith(
         'CREATE',
@@ -296,7 +296,7 @@ describe('RedisMessageQueue', () => {
 
     it('should handle existing consumer group gracefully', async () => {
       const busyGroupError = new Error('BUSYGROUP Consumer Group name already exists');
-      mockRedisInstance.xgroup.mockRejectedValueOnce(busyGroupError);
+      mockRedisInstance?.xgroup?.mockRejectedValueOnce(busyGroupError);
 
       const mockConsumer = {
         name: 'existing_consumer',
@@ -306,7 +306,7 @@ describe('RedisMessageQueue', () => {
 
       await expect(
         messageQueue.registerConsumer('test_queue', mockConsumer)
-      ).resolves.not.toThrow();
+      ).resolves?.not?.toThrow();
     });
 
     it('should start consumer workers', async () => {
@@ -319,7 +319,7 @@ describe('RedisMessageQueue', () => {
       await messageQueue.registerConsumer('test_queue', mockConsumer);
       
       // Mock dequeue to return empty results to prevent infinite loop
-      mockRedisInstance.xreadgroup.mockResolvedValue(null);
+      mockRedisInstance?.xreadgroup?.mockResolvedValue(null);
 
       // Start consumer (this will run indefinitely, so we just verify it doesn't throw)
       const startPromise = messageQueue.startConsumer('test_queue', 'worker_consumer');
@@ -393,7 +393,7 @@ describe('RedisMessageQueue', () => {
       const error = new Error('Max retries exceeded');
       
       let deadLetterEmitted = false;
-      messageQueue.on('message:dead_letter', (data) => {
+      messageQueue.on('message:dead_letter', (data: any) => {
         expect(data.messageId).toBe('dlq-msg');
         expect(data.error).toBe('Max retries exceeded');
         deadLetterEmitted = true;
@@ -423,8 +423,8 @@ describe('RedisMessageQueue', () => {
     });
 
     it('should pause and resume queues', async () => {
-      await expect(messageQueue.pauseQueue('test_queue')).resolves.not.toThrow();
-      await expect(messageQueue.resumeQueue('test_queue')).resolves.not.toThrow();
+      await expect(messageQueue.pauseQueue('test_queue')).resolves?.not?.toThrow();
+      await expect(messageQueue.resumeQueue('test_queue')).resolves?.not?.toThrow();
     });
 
     it('should get queue statistics', async () => {
@@ -450,14 +450,14 @@ describe('RedisMessageQueue', () => {
       });
 
       // Simulate Redis connection event
-      mockRedisInstance.on.mock.calls.find(([event]) => event === 'connect')?.[1]();
+      mockRedisInstance?.on?.mock.calls.find(([event]) => event === 'connect')?.[1]();
       
       expect(connectedEmitted).toBe(true);
     });
 
     it('should emit enqueue events', async () => {
       let enqueueEvent: any = null;
-      messageQueue.on('message:enqueued', (data) => {
+      messageQueue.on('message:enqueued', (data: any) => {
         enqueueEvent = data;
       });
 

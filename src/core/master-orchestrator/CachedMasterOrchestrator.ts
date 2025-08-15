@@ -28,7 +28,7 @@ export class CachedMasterOrchestrator extends MasterOrchestrator {
       "Cached MasterOrchestrator initialized",
       "CACHED_ORCHESTRATOR",
       {
-        cacheEnabled: this.queryCache.isEnabled(),
+        cacheEnabled: this?.queryCache?.isEnabled(),
         poolEnabled: true,
       },
     );
@@ -38,20 +38,20 @@ export class CachedMasterOrchestrator extends MasterOrchestrator {
    * Process query with caching optimization
    */
   override async processQuery(query: Query): Promise<ExecutionResult> {
-    const perf = this.cachedPerfMonitor.start("processQuery");
+    const perf = this?.cachedPerfMonitor?.start("processQuery");
     const cacheKey = this.generateCacheKey(query);
 
     logger.info("Processing query with caching", "CACHED_ORCHESTRATOR", {
-      query: query.text.substring(0, 100),
+      query: query?.text?.substring(0, 100),
       conversationId: query.conversationId,
-      cacheEnabled: this.queryCache.isEnabled(),
+      cacheEnabled: this?.queryCache?.isEnabled(),
     });
 
     try {
       // Step 1: Check cache first
-      if (this.queryCache.isEnabled()) {
+      if (this?.queryCache?.isEnabled()) {
         const cachedResult =
-          await this.queryCache.get<ExecutionResult>(cacheKey);
+          await this?.queryCache?.get<ExecutionResult>(cacheKey);
 
         if (cachedResult) {
           logger.info(
@@ -84,9 +84,9 @@ export class CachedMasterOrchestrator extends MasterOrchestrator {
       const result = await super.processQuery(query);
 
       // Step 3: Cache the result if successful
-      if (this.queryCache.isEnabled() && result.success) {
+      if (this?.queryCache?.isEnabled() && result.success) {
         const cacheTTL = this.calculateCacheTTL(query, result);
-        await this.queryCache.set(cacheKey, result, cacheTTL);
+        await this?.queryCache?.set(cacheKey, result, cacheTTL);
 
         logger.debug("Result cached", "CACHED_ORCHESTRATOR", {
           cacheKey: cacheKey.substring(0, 20) + "...",
@@ -99,7 +99,7 @@ export class CachedMasterOrchestrator extends MasterOrchestrator {
         ...result.metadata,
         cached: false,
         cacheHit: false,
-        cachingEnabled: this.queryCache.isEnabled(),
+        cachingEnabled: this?.queryCache?.isEnabled(),
       };
 
       perf.end();
@@ -120,15 +120,15 @@ export class CachedMasterOrchestrator extends MasterOrchestrator {
    */
   async getPerformanceStats() {
     const [cacheStats, poolStats, baseStats] = await Promise.all([
-      this.queryCache.getStats(),
-      this.agentPool.getStats(),
+      this?.queryCache?.getStats(),
+      this?.agentPool?.getStats(),
       this.getStats(), // Call parent getStats if available
     ]);
 
     return {
       cache: {
         ...cacheStats,
-        enabled: this.queryCache.isEnabled(),
+        enabled: this?.queryCache?.isEnabled(),
       },
       agentPool: poolStats,
       orchestrator: baseStats || {
@@ -151,11 +151,11 @@ export class CachedMasterOrchestrator extends MasterOrchestrator {
   async clearCaches(): Promise<void> {
     const promises: Promise<void>[] = [];
 
-    if (this.queryCache.isEnabled()) {
-      promises.push(this.queryCache.clearAll());
+    if (this?.queryCache?.isEnabled()) {
+      promises.push(this?.queryCache?.clearAll());
     }
 
-    promises.push(this.agentPool.clearPools());
+    promises.push(this?.agentPool?.clearPools());
 
     await Promise.all(promises);
 
@@ -170,7 +170,7 @@ export class CachedMasterOrchestrator extends MasterOrchestrator {
 
     try {
       // Pre-warm agent pool
-      await this.agentPool.preWarmPool();
+      await this?.agentPool?.preWarmPool();
 
       // Pre-warm RAG system if available
       if ((this.ragSystem as any)?.preWarm) {
@@ -201,24 +201,24 @@ export class CachedMasterOrchestrator extends MasterOrchestrator {
 
     // Check cache health
     totalCount++;
-    components.cache = await this.queryCache.getHealth();
-    if (components.cache.status === "healthy") healthyCount++;
+    components.cache = await this?.queryCache?.getHealth();
+    if (components?.cache?.status === "healthy") healthyCount++;
 
     // Check agent pool health
     totalCount++;
-    const poolStats = this.agentPool.getStats();
+    const poolStats = this?.agentPool?.getStats();
     components.agentPool = {
       status: poolStats.totalAgents > 0 ? "healthy" : "degraded",
       totalAgents: poolStats.totalAgents,
       activeAgents: poolStats.activeAgents,
     };
-    if (components.agentPool.status === "healthy") healthyCount++;
+    if (components?.agentPool?.status === "healthy") healthyCount++;
 
     // Check RAG system health if available
     if ((this.ragSystem as any)?.healthCheck) {
       totalCount++;
       components.ragSystem = await (this.ragSystem as any).healthCheck();
-      if (components.ragSystem.status === "healthy") healthyCount++;
+      if (components?.ragSystem?.status === "healthy") healthyCount++;
     }
 
     // Determine overall health
@@ -245,10 +245,10 @@ export class CachedMasterOrchestrator extends MasterOrchestrator {
     const shutdownPromises: Promise<void>[] = [];
 
     // Close cache
-    shutdownPromises.push(this.queryCache.close());
+    shutdownPromises.push(this?.queryCache?.close());
 
     // Shutdown agent pool
-    shutdownPromises.push(this.agentPool.shutdown());
+    shutdownPromises.push(this?.agentPool?.shutdown());
 
     // Shutdown parent components if available
     if ((this as any).cleanup) {
@@ -297,24 +297,24 @@ export class CachedMasterOrchestrator extends MasterOrchestrator {
 
     // Longer TTL for informational queries
     if (
-      query.text.toLowerCase().includes("help") ||
-      query.text.toLowerCase().includes("how to") ||
-      query.text.toLowerCase().includes("what is")
+      query?.text?.toLowerCase().includes("help") ||
+      query?.text?.toLowerCase().includes("how to") ||
+      query?.text?.toLowerCase().includes("what is")
     ) {
       ttl = baseTime * 4; // 4 hours
     }
 
     // Shorter TTL for time-sensitive queries
     if (
-      query.text.toLowerCase().includes("today") ||
-      query.text.toLowerCase().includes("now") ||
-      query.text.toLowerCase().includes("current")
+      query?.text?.toLowerCase().includes("today") ||
+      query?.text?.toLowerCase().includes("now") ||
+      query?.text?.toLowerCase().includes("current")
     ) {
       ttl = 300; // 5 minutes
     }
 
     // Shorter TTL for queries that return results
-    if (result.results && result.results.length > 0) {
+    if (result.results && result?.results?.length > 0) {
       ttl = Math.min(ttl, 1800); // Max 30 minutes for data queries
     }
 
@@ -345,7 +345,7 @@ export function createCachedOrchestrator(
   const orchestrator = new CachedMasterOrchestrator(config);
 
   // Pre-warm in background
-  orchestrator.preWarm().catch((error) => {
+  orchestrator.preWarm().catch((error: any) => {
     logger.warn("Background pre-warming failed", "CACHED_ORCHESTRATOR", error);
   });
 

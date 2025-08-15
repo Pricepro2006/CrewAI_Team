@@ -11,17 +11,17 @@ export const WalmartShoppingCart: React.FC = () => {
     clearCart 
   } = useGroceryStore();
   
-  const items = cart.items;
+  const items = cart?.items;
   const getTotal = () => cart.total;
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
 
-  const checkout = api.walmartGrocery.createOrder.useMutation({
-    onSuccess: (data) => {
+  const checkout = api?.walmartGrocery?.createOrder.useMutation({
+    onSuccess: (data: any) => {
       // Handle successful checkout
       clearCart();
-      alert(`Order placed successfully! Order ID: ${data.order.id}`);
+      alert(`Order placed successfully! Order ID: ${data?.order?.id}`);
     },
   });
 
@@ -45,7 +45,7 @@ export const WalmartShoppingCart: React.FC = () => {
   const total = subtotal - discountAmount + tax + shipping;
 
   const handleCheckout = () => {
-    const cartItems = items.map((item: any) => ({
+    const cartItems = items?.map((item: any) => ({
       productId: item.productId,
       quantity: item.quantity,
       price: item.price,
@@ -60,14 +60,14 @@ export const WalmartShoppingCart: React.FC = () => {
     });
   };
 
-  if (items.length === 0) {
+  if (items?.length || 0 === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-8 text-center">
         <ShoppingCartIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-gray-700 mb-2">Your cart is empty</h2>
         <p className="text-gray-500 mb-4">Add items to your cart to see them here</p>
         <button
-          onClick={() => window.location.href = "/walmart-grocery/search"}
+          onClick={() => window?.location?.href = "/walmart-grocery/search"}
           className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
         >
           Start Shopping
@@ -84,12 +84,12 @@ export const WalmartShoppingCart: React.FC = () => {
           <div className="p-4 border-b">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <ShoppingCartIcon className="h-6 w-6" />
-              Shopping Cart ({items.length} items)
+              Shopping Cart ({items?.length || 0} items)
             </h2>
           </div>
           
           <div className="divide-y">
-            {items.map((item) => (
+            {items?.map((item: any) => (
               <div key={item.productId} className="p-4 flex gap-4">
                 <img
                   src={item.product?.images?.[0]?.url || "/api/placeholder/80/80"}
@@ -101,7 +101,7 @@ export const WalmartShoppingCart: React.FC = () => {
                   <h3 className="font-medium text-gray-900">{item.product?.name || `Product ${item.productId}`}</h3>
                   <p className="text-sm text-gray-500">each</p>
                   <p className="text-lg font-semibold text-blue-600 mt-1">
-                    ${item.price.toFixed(2)}
+                    ${item?.price?.toFixed(2)}
                   </p>
                 </div>
 
@@ -144,7 +144,7 @@ export const WalmartShoppingCart: React.FC = () => {
             <input
               type="text"
               value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
+              onChange={(e: any) => setPromoCode(e?.target?.value)}
               placeholder="Enter promo code"
               className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
             />

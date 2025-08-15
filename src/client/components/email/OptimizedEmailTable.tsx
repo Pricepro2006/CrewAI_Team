@@ -1,16 +1,16 @@
 import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
-import { VirtualizedEmailTable } from "../virtualized/VirtualizedEmailTable";
-import { EmailTable } from "./EmailTable";
-import { DebouncedSearchInput } from "../search/DebouncedSearchInput";
-import { DashboardSkeleton } from "../loading/SkeletonLoader";
-import { useOptimizedEmails, useOptimizedEmailSearch } from "../../hooks/useOptimizedTRPC";
-import { usePerformanceMonitor } from "../../hooks/usePerformanceMonitor";
-import { useDebounce } from "../../hooks/useDebounce";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
-import { Button } from "../../../components/ui/button";
-import { Badge } from "../../../components/ui/badge";
-import { cn } from "../../../lib/utils";
-import type { EmailRecord } from "../../../types/email-dashboard.interfaces";
+import { VirtualizedEmailTable } from "../virtualized/VirtualizedEmailTable.js";
+import { EmailTable } from "./EmailTable.js";
+import { DebouncedSearchInput } from "../search/DebouncedSearchInput.js";
+import { DashboardSkeleton } from "../loading/SkeletonLoader.js";
+import { useOptimizedEmails, useOptimizedEmailSearch } from "../../hooks/useOptimizedTRPC.js";
+import { usePerformanceMonitor } from "../../hooks/usePerformanceMonitor.js";
+import { useDebounce } from "../../hooks/useDebounce.js";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card.js";
+import { Button } from "../../../components/ui/button.js";
+import { Badge } from "../../../components/ui/badge.js";
+import { cn } from "../../../lib/utils.js";
+import type { EmailRecord } from "../../../types/email-dashboard?.interfaces.js";
 
 interface OptimizedEmailTableProps {
   className?: string;
@@ -71,7 +71,7 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
   const {
     data: searchResponse,
     isLoading: isSearching,
-  } = useOptimizedEmailSearch(debouncedSearchTerm, debouncedSearchTerm.length >= 2);
+  } = useOptimizedEmailSearch(debouncedSearchTerm, debouncedSearchTerm?.length || 0 >= 2);
   
   // Extract search results array from response
   const searchResults = useMemo(() => {
@@ -84,7 +84,7 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
 
   // Determine which data to use
   const displayEmails = useMemo(() => {
-    let emailsToDisplay = debouncedSearchTerm.length >= 2 ? searchResults : emails;
+    let emailsToDisplay = debouncedSearchTerm?.length || 0 >= 2 ? searchResults : emails;
     
     // Apply sorting if configured
     if (sortConfig) {
@@ -116,11 +116,11 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
   }, [onEmailSelect, prefetchEmailDetail]);
 
   const handleBulkAssign = useCallback(async (assignee: string) => {
-    if (selectedEmails.length === 0) return;
+    if (selectedEmails?.length || 0 === 0) return;
     
     try {
       await Promise.all(
-        selectedEmails.map(emailId =>
+        selectedEmails?.map(emailId =>
           updateEmail({ emailId, newState: 'IN_PROGRESS' } as any)
         )
       );
@@ -163,7 +163,7 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
           <div className="text-center">
             <div className="text-red-500 text-lg mb-2">⚠️ Error Loading Emails</div>
             <p className="text-gray-600 mb-4">{error.message || "Failed to load emails"}</p>
-            <Button onClick={() => window.location.reload()}>Retry</Button>
+            <Button onClick={() => window?.location?.reload()}>Retry</Button>
           </div>
         </CardContent>
       </Card>
@@ -171,8 +171,8 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
   }
 
   const isLoadingData = isLoading || isSearching;
-  const totalEmails = displayEmails.length;
-  const selectedCount = selectedEmails.length;
+  const totalEmails = displayEmails?.length || 0;
+  const selectedCount = selectedEmails?.length || 0;
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -203,14 +203,14 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
                 <Badge variant="outline">
                   {selectedCount} selected
                 </Badge>
-                {teamMembers.length > 0 && (
+                {teamMembers?.length || 0 > 0 && (
                   <select
-                    onChange={(e) => e.target.value && handleBulkAssign(e.target.value)}
+                    onChange={(e: any) => e?.target?.value && handleBulkAssign(e?.target?.value)}
                     className="text-sm border border-gray-300 rounded px-2 py-1"
                     defaultValue=""
                   >
                     <option value="">Assign to...</option>
-                    {teamMembers.map(member => (
+                    {teamMembers?.map(member => (
                       <option key={member.id} value={member.name}>
                         {member.name}
                       </option>

@@ -36,8 +36,8 @@ class NLPMicroservice {
     this.setupEventListeners();
     
     logger.logServiceLifecycle('initialized', 'NLP_MICROSERVICE', {
-      version: this.config.discovery.serviceVersion,
-      environment: this.config.environment
+      version: this?.config?.discovery.serviceVersion,
+      environment: this?.config?.environment
     });
   }
 
@@ -59,34 +59,34 @@ class NLPMicroservice {
   private async performStartup(): Promise<void> {
     try {
       logger.logServiceLifecycle('starting', 'NLP_MICROSERVICE', {
-        port: this.config.port,
-        grpcPort: this.config.grpcPort,
-        environment: this.config.environment
+        port: this?.config?.port,
+        grpcPort: this?.config?.grpcPort,
+        environment: this?.config?.environment
       });
 
       // Start core service
-      await this.nlpService.start();
+      await this?.nlpService?.start();
 
       // Start API servers
       await Promise.all([
-        this.restServer.start(),
-        this.grpcServer.start()
+        this?.restServer?.start(),
+        this?.grpcServer?.start()
       ]);
 
       // Start monitoring
-      if (this.config.monitoring.enabled) {
-        this.healthMonitor.start();
+      if (this?.config?.monitoring.enabled) {
+        this?.healthMonitor?.start();
       }
 
       // Start service discovery
-      if (this.config.discovery.enabled) {
-        await this.serviceDiscovery.start();
+      if (this?.config?.discovery.enabled) {
+        await this?.serviceDiscovery?.start();
       }
 
       // Service is now fully started
       logger.logServiceLifecycle('started', 'NLP_MICROSERVICE', {
-        port: this.config.port,
-        grpcPort: this.config.grpcPort,
+        port: this?.config?.port,
+        grpcPort: this?.config?.grpcPort,
         uptime: 0
       });
 
@@ -94,21 +94,21 @@ class NLPMicroservice {
 🚀 NLP Microservice Started Successfully!
 
 📊 Service Information:
-   • Name: ${this.config.discovery.serviceName}
-   • Version: ${this.config.discovery.serviceVersion}
-   • Environment: ${this.config.environment}
+   • Name: ${this?.config?.discovery.serviceName}
+   • Version: ${this?.config?.discovery.serviceVersion}
+   • Environment: ${this?.config?.environment}
 
 🌐 API Endpoints:
-   • REST API: http://${this.config.host}:${this.config.port}
-   • gRPC API: ${this.config.host}:${this.config.grpcPort}
-   • Health Check: http://${this.config.host}:${this.config.port}/health
-   • Metrics: http://${this.config.host}:${this.config.port}/metrics
+   • REST API: http://${this?.config?.host}:${this?.config?.port}
+   • gRPC API: ${this?.config?.host}:${this?.config?.grpcPort}
+   • Health Check: http://${this?.config?.host}:${this?.config?.port}/health
+   • Metrics: http://${this?.config?.host}:${this?.config?.port}/metrics
 
 ⚙️  Configuration:
-   • Max Concurrent: ${this.config.queue.maxConcurrent} (Ollama limit)
-   • Default Timeout: ${this.config.queue.defaultTimeout}ms
-   • Monitoring: ${this.config.monitoring.enabled ? 'Enabled' : 'Disabled'}
-   • Service Discovery: ${this.config.discovery.enabled ? 'Enabled' : 'Disabled'}
+   • Max Concurrent: ${this?.config?.queue.maxConcurrent} (Ollama limit)
+   • Default Timeout: ${this?.config?.queue.defaultTimeout}ms
+   • Monitoring: ${this?.config?.monitoring.enabled ? 'Enabled' : 'Disabled'}
+   • Service Discovery: ${this?.config?.discovery.enabled ? 'Enabled' : 'Disabled'}
 
 🔧 Management:
    • Press Ctrl+C for graceful shutdown
@@ -134,7 +134,7 @@ class NLPMicroservice {
     this.isShuttingDown = true;
 
     logger.logServiceLifecycle('stopping', 'NLP_MICROSERVICE', {
-      shutdownTimeout: this.config.shutdown.timeout
+      shutdownTimeout: this?.config?.shutdown.timeout
     });
 
     try {
@@ -142,36 +142,36 @@ class NLPMicroservice {
 
       // Stop accepting new requests by stopping API servers first
       shutdownPromises.push(
-        this.restServer.stop().catch(error => {
+        this?.restServer?.stop().catch(error => {
           logger.error('Error stopping REST server', 'NLP_MICROSERVICE', { error });
         })
       );
 
       shutdownPromises.push(
-        this.grpcServer.stop().catch(error => {
+        this?.grpcServer?.stop().catch(error => {
           logger.error('Error stopping gRPC server', 'NLP_MICROSERVICE', { error });
         })
       );
 
       // Stop service discovery to prevent new connections
-      if (this.config.discovery.enabled) {
+      if (this?.config?.discovery.enabled) {
         shutdownPromises.push(
-          this.serviceDiscovery.stop().catch(error => {
+          this?.serviceDiscovery?.stop().catch(error => {
             logger.error('Error stopping service discovery', 'NLP_MICROSERVICE', { error });
           })
         );
       }
 
       // Stop monitoring
-      if (this.config.monitoring.enabled) {
-        this.healthMonitor.stop();
+      if (this?.config?.monitoring.enabled) {
+        this?.healthMonitor?.stop();
       }
 
       // Wait for API servers to stop
       await Promise.allSettled(shutdownPromises);
 
       // Finally, stop the core service (allows queue to drain)
-      await this.nlpService.shutdown(this.config.shutdown.timeout);
+      await this?.nlpService?.shutdown(this?.config?.shutdown.timeout);
 
       // Flush logs
       await logger.flush();
@@ -194,13 +194,13 @@ class NLPMicroservice {
     
     try {
       // Force stop gRPC server
-      this.grpcServer.forceShutdown();
+      this?.grpcServer?.forceShutdown();
       
       // Stop other components with shorter timeout
       await Promise.allSettled([
-        this.restServer.stop(),
-        this.serviceDiscovery.stop(),
-        this.nlpService.shutdown(5000) // 5 second timeout
+        this?.restServer?.stop(),
+        this?.serviceDiscovery?.stop(),
+        this?.nlpService?.shutdown(5000) // 5 second timeout
       ]);
       
       await logger.flush();
@@ -217,20 +217,20 @@ class NLPMicroservice {
    */
   private setupEventListeners(): void {
     // NLP Service events
-    this.nlpService.on('error', (error) => {
+    this?.nlpService?.on('error', (error: any) => {
       logger.error('NLP service error', 'NLP_SERVICE', { error });
     });
 
-    this.nlpService.on('metrics-update', (metrics) => {
+    this?.nlpService?.on('metrics-update', (metrics: any) => {
       logger.logPerformanceMetrics('NLP_SERVICE', {
-        requestsPerMinute: metrics.requests.rate * 60,
-        queueSize: metrics.queue.size,
-        memoryUsage: metrics.resources.memory.used
+        requestsPerMinute: metrics?.requests?.rate * 60,
+        queueSize: metrics?.queue?.size,
+        memoryUsage: metrics?.resources?.memory.used
       });
     });
 
     // Health Monitor events
-    this.healthMonitor.on('alert', (alert) => {
+    this?.healthMonitor?.on('alert', (alert: any) => {
       logger.warn('Health alert triggered', 'HEALTH_MONITOR', {
         component: alert.component,
         metric: alert.metric,
@@ -240,30 +240,30 @@ class NLPMicroservice {
       });
     });
 
-    this.healthMonitor.on('healthCheck', (result) => {
-      const unhealthyComponents = result.results.filter(r => r.status !== 'healthy');
-      if (unhealthyComponents.length > 0) {
+    this?.healthMonitor?.on('healthCheck', (result: any) => {
+      const unhealthyComponents = result?.results?.filter(r => r.status !== 'healthy');
+      if (unhealthyComponents?.length || 0 > 0) {
         logger.warn('Health check found issues', 'HEALTH_MONITOR', {
-          unhealthyComponents: unhealthyComponents.map(c => c.component),
+          unhealthyComponents: unhealthyComponents?.map(c => c.component),
           overallHealth: result.overallHealth
         });
       }
     });
 
     // Service Discovery events
-    this.serviceDiscovery.on('registered', (registration) => {
+    this?.serviceDiscovery?.on('registered', (registration: any) => {
       logger.info('Service registered', 'SERVICE_DISCOVERY', {
         serviceId: registration.id,
         serviceName: registration.name
       });
     });
 
-    this.serviceDiscovery.on('heartbeatFailed', (error) => {
+    this?.serviceDiscovery?.on('heartbeatFailed', (error: any) => {
       logger.error('Service heartbeat failed', 'SERVICE_DISCOVERY', { error });
     });
 
     // Process events
-    this.config.shutdown.signals.forEach(signal => {
+    this?.config?.shutdown.signals.forEach(signal => {
       process.on(signal, () => {
         logger.info(`Received ${signal}, starting graceful shutdown`, 'NLP_MICROSERVICE');
         this.stop().catch(error => {
@@ -281,7 +281,7 @@ class NLPMicroservice {
       });
     });
 
-    process.on('uncaughtException', (error) => {
+    process.on('uncaughtException', (error: any) => {
       logger.fatal('Uncaught exception', 'NLP_MICROSERVICE', { error });
       this.forceShutdown();
     });
@@ -292,15 +292,15 @@ class NLPMicroservice {
    */
   getStatus() {
     return {
-      service: this.nlpService.getStatus(),
-      health: this.healthMonitor.getHealthStatus(),
-      discovery: this.serviceDiscovery.getServiceRegistration(),
+      service: this?.nlpService?.getStatus(),
+      health: this?.healthMonitor?.getHealthStatus(),
+      discovery: this?.serviceDiscovery?.getServiceRegistration(),
       config: {
-        environment: this.config.environment,
-        version: this.config.discovery.serviceVersion,
+        environment: this?.config?.environment,
+        version: this?.config?.discovery.serviceVersion,
         ports: {
-          http: this.config.port,
-          grpc: this.config.grpcPort
+          http: this?.config?.port,
+          grpc: this?.config?.grpcPort
         }
       }
     };

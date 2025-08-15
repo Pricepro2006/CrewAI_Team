@@ -1,8 +1,8 @@
 import { useCallback } from "react";
-import { api } from "../../lib/trpc";
-import { useApiErrorRecovery } from "./useApiErrorRecovery";
-import { useErrorReporter } from "../contexts/ErrorContext";
-import { toast } from "../components/Toast/useToast";
+import { api } from "../../lib/trpc.js";
+import { useApiErrorRecovery } from "./useApiErrorRecovery.js";
+import { useErrorReporter } from "../contexts/ErrorContext.js";
+import { toast } from "../components/Toast/useToast.js";
 
 export function useTRPCWithErrorHandling() {
   const { callWithRecovery } = useApiErrorRecovery({
@@ -96,7 +96,7 @@ export function useSafeTRPCQuery<T>(
   
   // Report errors to error context
   if (query.error) {
-    reportError(new Error(query.error.message), {
+    reportError(new Error(query?.error?.message), {
       context: `TRPC Query: ${queryKey}`,
       recoverable: true,
       severity: "medium",

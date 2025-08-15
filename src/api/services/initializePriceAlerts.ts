@@ -64,7 +64,7 @@ async function runPriceAlertMigrations(db: any) {
       WHERE type='table' AND name IN ('deal_alerts', 'deal_notifications', 'deal_sources', 'tracked_deals')
     `).all();
     
-    if (tables.length === 4) {
+    if (tables?.length || 0 === 4) {
       logger.debug("Price alert tables already exist", "PRICE_ALERTS");
       return;
     }

@@ -14,7 +14,7 @@ import {
   handleTestError,
   testErrorReporter,
 } from "./utils/error-handling.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 
 // Set up test environment variables
 process.env['NODE_ENV'] = "test";
@@ -33,11 +33,11 @@ beforeAll(async () => {
     const validation = await validateTestEnvironment();
     if (!validation.isValid) {
       logger.warn("Test environment validation issues found:");
-      validation.issues.forEach(issue => logger.warn(`  - ${issue}`));
+      validation?.issues?.forEach(issue => logger.warn(`  - ${issue}`));
       
-      if (validation.recommendations.length > 0) {
+      if (validation?.recommendations?.length > 0) {
         logger.info("Recommendations:");
-        validation.recommendations.forEach(rec => logger.info(`  - ${rec}`));
+        validation?.recommendations?.forEach(rec => logger.info(`  - ${rec}`));
       }
     }
     

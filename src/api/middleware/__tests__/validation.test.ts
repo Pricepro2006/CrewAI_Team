@@ -21,7 +21,7 @@ describe("Validation Middleware", () => {
         body: "Test Body",
       };
 
-      mockValidation.validateEmailData.mockReturnValue(true);
+      mockValidation?.validateEmailData?.mockReturnValue(true);
       const result = mockValidation.validateEmailData(validEmailData);
 
       expect(result).toBe(true);
@@ -35,7 +35,7 @@ describe("Validation Middleware", () => {
         body: "Test Body",
       };
 
-      mockValidation.validateEmailData.mockReturnValue(false);
+      mockValidation?.validateEmailData?.mockReturnValue(false);
       const result = mockValidation.validateEmailData(invalidEmailData);
 
       expect(result).toBe(false);
@@ -48,7 +48,7 @@ describe("Validation Middleware", () => {
         sortBy: "timestamp",
       };
 
-      mockValidation.validateQueryParams.mockReturnValue(true);
+      mockValidation?.validateQueryParams?.mockReturnValue(true);
       const result = mockValidation.validateQueryParams(validParams);
 
       expect(result).toBe(true);
@@ -58,7 +58,7 @@ describe("Validation Middleware", () => {
       const unsafeInput = "<script>alert('xss')</script>";
       const safeInput = "&lt;script&gt;alert('xss')&lt;/script&gt;";
 
-      mockValidation.sanitizeInput.mockReturnValue(safeInput);
+      mockValidation?.sanitizeInput?.mockReturnValue(safeInput);
       const result = mockValidation.sanitizeInput(unsafeInput);
 
       expect(result).toBe(safeInput);
@@ -68,7 +68,7 @@ describe("Validation Middleware", () => {
 
   describe("Error Handling", () => {
     it("should handle validation errors gracefully", () => {
-      mockValidation.validateEmailData.mockImplementation(() => {
+      mockValidation?.validateEmailData?.mockImplementation(() => {
         throw new Error("Validation failed");
       });
 
@@ -79,7 +79,7 @@ describe("Validation Middleware", () => {
 
     it("should provide meaningful error messages", () => {
       const error = new Error("Email address is required");
-      mockValidation.validateEmailData.mockImplementation(() => {
+      mockValidation?.validateEmailData?.mockImplementation(() => {
         throw error;
       });
 

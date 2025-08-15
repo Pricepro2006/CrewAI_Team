@@ -4,12 +4,12 @@ import {
   ErrorCode,
   // isOperationalError, // Unused import
   sanitizeError,
-} from "../../utils/error-handling/server";
+} from "../../utils/error-handling/server.js";
 import {
   getUserFriendlyError,
   getErrorSeverity,
-} from "../../utils/error-handling/error-messages";
-import { logger } from "../../utils/logger";
+} from "../../utils/error-handling/error-messages.js";
+import { logger } from "../../utils/logger.js";
 import { v4 as uuidv4 } from "uuid";
 
 export interface ErrorResponse {

@@ -44,10 +44,10 @@ export class RealEmailStorageService {
     this.db = new Database(dbPath);
     
     // Enable WAL mode for better concurrent access
-    this.db.pragma('journal_mode = WAL');
-    this.db.pragma('synchronous = NORMAL');
-    this.db.pragma('cache_size = -32000'); // 32MB cache
-    this.db.pragma('temp_store = MEMORY');
+    this?.db?.pragma('journal_mode = WAL');
+    this?.db?.pragma('synchronous = NORMAL');
+    this?.db?.pragma('cache_size = -32000'); // 32MB cache
+    this?.db?.pragma('temp_store = MEMORY');
     
     logger.info('RealEmailStorageService initialized with enhanced database', 'REAL_EMAIL_STORAGE');
   }
@@ -86,28 +86,28 @@ export class RealEmailStorageService {
       
       // Add priority filter
       if (options.filters?.priority?.length) {
-        const placeholders = options.filters.priority.map(() => '?').join(',');
+        const placeholders = options?.filters?.priority?.map(() => '?').join(',');
         whereClauses.push(`priority IN (${placeholders})`);
-        params.push(...options.filters.priority);
+        params.push(...options?.filters?.priority);
       }
       
       // Add date range filter
       if (options.filters?.dateRange) {
-        if (options.filters.dateRange.start) {
+        if (options?.filters?.dateRange.start) {
           whereClauses.push('received_date_time >= ?');
-          params.push(options.filters.dateRange.start);
+          params.push(options?.filters?.dateRange.start);
         }
-        if (options.filters.dateRange.end) {
+        if (options?.filters?.dateRange.end) {
           whereClauses.push('received_date_time <= ?');
-          params.push(options.filters.dateRange.end);
+          params.push(options?.filters?.dateRange.end);
         }
       }
       
-      const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+      const whereClause = whereClauses?.length || 0 > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
       
       // Get total count
       const countQuery = `SELECT COUNT(*) as count FROM emails_enhanced ${whereClause}`;
-      const countStmt = this.db.prepare(countQuery);
+      const countStmt = this?.db?.prepare(countQuery);
       const { count: totalCount } = countStmt.get(...params) as { count: number };
       
       // Get emails with proper mapping
@@ -142,7 +142,7 @@ export class RealEmailStorageService {
         LIMIT ? OFFSET ?
       `;
       
-      const emailsStmt = this.db.prepare(emailsQuery);
+      const emailsStmt = this?.db?.prepare(emailsQuery);
       const emails = emailsStmt.all(...params, pageSize, offset) as any[];
       
       const queryTime = Date.now() - startTime;
@@ -157,7 +157,7 @@ export class RealEmailStorageService {
       //   }
       // });
       
-      logger.info(`Retrieved ${emails.length} emails in ${queryTime}ms`, 'REAL_EMAIL_STORAGE');
+      logger.info(`Retrieved ${emails?.length || 0} emails in ${queryTime}ms`, 'REAL_EMAIL_STORAGE');
       
       return {
         emails,
@@ -189,7 +189,7 @@ export class RealEmailStorageService {
     };
   }> {
     try {
-      const stats = this.db.prepare(`
+      const stats = this?.db?.prepare(`
         SELECT 
           COUNT(*) as totalEmails,
           COUNT(CASE WHEN priority = 'critical' THEN 1 END) as criticalCount,
@@ -233,7 +233,7 @@ export class RealEmailStorageService {
     averageProcessingTime: number;
   }> {
     try {
-      const workflowStats = this.db.prepare(`
+      const workflowStats = this?.db?.prepare(`
         SELECT 
           workflow_type,
           COUNT(*) as count
@@ -247,7 +247,7 @@ export class RealEmailStorageService {
         workflowDistribution[stat.workflow_type] = stat.count;
       });
       
-      const totalCount = this.db.prepare('SELECT COUNT(*) as count FROM emails_enhanced').get() as { count: number };
+      const totalCount = this?.db?.prepare('SELECT COUNT(*) as count FROM emails_enhanced').get() as { count: number };
       
       return {
         totalEmails: totalCount.count,
@@ -267,7 +267,7 @@ export class RealEmailStorageService {
   
   async getEmailsByWorkflow(workflow: string, limit = 50, offset = 0): Promise<any[]> {
     try {
-      const emails = this.db.prepare(`
+      const emails = this?.db?.prepare(`
         SELECT 
           id,
           subject,
@@ -286,7 +286,7 @@ export class RealEmailStorageService {
         LIMIT ? OFFSET ?
       `).all(workflow, limit, offset) as any[];
       
-      return emails.map(email => ({
+      return emails?.map(email => ({
         id: email.id,
         subject: email.subject,
         from: {
@@ -339,7 +339,7 @@ export class RealEmailStorageService {
   
   async getEmailWithAnalysis(emailId: string): Promise<any | null> {
     try {
-      const email = this.db.prepare(`
+      const email = this?.db?.prepare(`
         SELECT * FROM emails_enhanced WHERE id = ?
       `).get(emailId) as any;
       
@@ -423,7 +423,7 @@ export class RealEmailStorageService {
   
   async updateWorkflowState(emailId: string, newState: string, changedBy?: string): Promise<void> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         UPDATE emails_enhanced 
         SET 
           workflow_state = ?,
@@ -442,7 +442,7 @@ export class RealEmailStorageService {
   
   async updateEmailStatus(emailId: string, status: any, statusText?: string, changedBy?: string): Promise<void> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         UPDATE emails_enhanced 
         SET 
           status = ?,
@@ -461,7 +461,7 @@ export class RealEmailStorageService {
   
   async getEmail(emailId: string): Promise<any | null> {
     try {
-      const email = this.db.prepare(`
+      const email = this?.db?.prepare(`
         SELECT * FROM emails_enhanced WHERE id = ?
       `).get(emailId) as any;
       
@@ -478,7 +478,7 @@ export class RealEmailStorageService {
       const values = Object.values(updates);
       values.push(emailId);
       
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         UPDATE emails_enhanced 
         SET ${fields}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
@@ -495,7 +495,7 @@ export class RealEmailStorageService {
   
   async getWorkflowPatterns(): Promise<any[]> {
     try {
-      const patterns = this.db.prepare(`
+      const patterns = this?.db?.prepare(`
         SELECT 
           workflow_type,
           COUNT(*) as count,
@@ -506,7 +506,7 @@ export class RealEmailStorageService {
         ORDER BY count DESC
       `).all() as any[];
       
-      return patterns.map(p => ({
+      return patterns?.map(p => ({
         id: p.workflow_type,
         name: p.workflow_type,
         workflow_type: p.workflow_type,
@@ -526,7 +526,7 @@ export class RealEmailStorageService {
     try {
       const id = emailData.messageId || `email_${Date.now()}`;
       
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT INTO emails_enhanced (
           id,
           subject,
@@ -578,7 +578,7 @@ export class RealEmailStorageService {
   }
   
   close(): void {
-    this.db.close();
+    this?.db?.close();
   }
 }
 

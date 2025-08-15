@@ -21,7 +21,7 @@ export class MCPVectorizeStore implements IVectorStore {
       console.log("Initializing MCP Vectorize Store...");
       console.log(
         "Pipeline ID:",
-        this.config.pipelineId || process.env.VECTORIZE_PIPELINE_ID,
+        this?.config?.pipelineId || process.env.VECTORIZE_PIPELINE_ID,
       );
 
       this.initialized = true;
@@ -38,7 +38,7 @@ export class MCPVectorizeStore implements IVectorStore {
 
     // In a real implementation, this would use mcp__vectorize__extract
     // For now, we'll log the operation
-    console.log(`Adding ${documents.length} documents to MCP Vectorize`);
+    console.log(`Adding ${documents?.length || 0} documents to MCP Vectorize`);
 
     for (const doc of documents) {
       // Convert document to base64
@@ -83,7 +83,7 @@ export class MCPVectorizeStore implements IVectorStore {
 
     // Apply filters to results
     return results
-      .filter((result) => {
+      .filter((result: any) => {
         for (const [key, value] of Object.entries(filter)) {
           if (result.metadata[key] !== value) {
             return false;

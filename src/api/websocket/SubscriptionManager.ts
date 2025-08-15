@@ -124,12 +124,12 @@ export class SubscriptionManager extends EventEmitter {
 
   private setupBatcherIntegration(): void {
     // Listen for batch completion events
-    this.batcher.on('batch_created', (data: { batch: BatchedMessage; targetId: string }) => {
+    this?.batcher?.on('batch_created', (data: { batch: BatchedMessage; targetId: string }) => {
       this.handleBatchCreated(data.batch, data.targetId);
     });
 
     // Monitor batcher performance for adaptive routing
-    this.batcher.on('metrics', (metrics: any) => {
+    this?.batcher?.on('metrics', (metrics: any) => {
       this.adaptRoutingStrategy(metrics);
     });
   }
@@ -167,23 +167,23 @@ export class SubscriptionManager extends EventEmitter {
     SubscriptionRouteSchema.parse(route);
 
     // Add to main routes map
-    this.routes.set(subscription.id, route);
+    this?.routes?.set(subscription.id, route);
 
     // Update event type index
-    subscription.eventTypes.forEach(eventType => {
-      if (!this.eventTypeIndex.has(eventType)) {
-        this.eventTypeIndex.set(eventType, new Set());
+    subscription?.eventTypes?.forEach(eventType => {
+      if (!this?.eventTypeIndex?.has(eventType)) {
+        this?.eventTypeIndex?.set(eventType, new Set());
       }
-      this.eventTypeIndex.get(eventType)!.add(subscription.id);
+      this?.eventTypeIndex?.get(eventType)!.add(subscription.id);
     });
 
     // Update connection index
-    if (!this.connectionIndex.has(connectionId)) {
-      this.connectionIndex.set(connectionId, new Set());
+    if (!this?.connectionIndex?.has(connectionId)) {
+      this?.connectionIndex?.set(connectionId, new Set());
     }
-    this.connectionIndex.get(connectionId)!.add(subscription.id);
+    this?.connectionIndex?.get(connectionId)!.add(subscription.id);
 
-    this.metrics.subscriptionCount = this.routes.size;
+    this?.metrics?.subscriptionCount = this?.routes?.size;
     
     this.emit('subscription_added', {
       subscriptionId: subscription.id,
@@ -194,36 +194,36 @@ export class SubscriptionManager extends EventEmitter {
   }
 
   public removeSubscription(subscriptionId: string): boolean {
-    const route = this.routes.get(subscriptionId);
+    const route = this?.routes?.get(subscriptionId);
     if (!route) return false;
 
     // Remove from main routes map
-    this.routes.delete(subscriptionId);
+    this?.routes?.delete(subscriptionId);
 
     // Update event type index
-    route.eventTypes.forEach(eventType => {
-      const subscribers = this.eventTypeIndex.get(eventType);
+    route?.eventTypes?.forEach(eventType => {
+      const subscribers = this?.eventTypeIndex?.get(eventType);
       if (subscribers) {
         subscribers.delete(subscriptionId);
         if (subscribers.size === 0) {
-          this.eventTypeIndex.delete(eventType);
+          this?.eventTypeIndex?.delete(eventType);
         }
       }
     });
 
     // Update connection index
-    const connectionSubscriptions = this.connectionIndex.get(route.connectionId);
+    const connectionSubscriptions = this?.connectionIndex?.get(route.connectionId);
     if (connectionSubscriptions) {
       connectionSubscriptions.delete(subscriptionId);
       if (connectionSubscriptions.size === 0) {
-        this.connectionIndex.delete(route.connectionId);
+        this?.connectionIndex?.delete(route.connectionId);
       }
     }
 
     // Clear any pending batches for this subscription
     this.clearPendingBatches(route.connectionId, subscriptionId);
 
-    this.metrics.subscriptionCount = this.routes.size;
+    this?.metrics?.subscriptionCount = this?.routes?.size;
     
     this.emit('subscription_removed', {
       subscriptionId,
@@ -235,10 +235,10 @@ export class SubscriptionManager extends EventEmitter {
   }
 
   public removeConnectionSubscriptions(connectionId: string): number {
-    const subscriptionIds = this.connectionIndex.get(connectionId);
+    const subscriptionIds = this?.connectionIndex?.get(connectionId);
     if (!subscriptionIds) return 0;
 
-    const removedCount = subscriptionIds.size;
+    const removedCount = subscriptionIds?.size;
     
     // Remove all subscriptions for this connection
     for (const subscriptionId of subscriptionIds) {
@@ -246,7 +246,7 @@ export class SubscriptionManager extends EventEmitter {
     }
 
     // Clear priority queues for this connection
-    this.priorityQueues.delete(connectionId);
+    this?.priorityQueues?.delete(connectionId);
 
     this.emit('connection_subscriptions_cleared', {
       connectionId,
@@ -261,11 +261,11 @@ export class SubscriptionManager extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      this.metrics.totalEvents++;
+      this?.metrics?.totalEvents++;
       
       const targets = await this.findEventTargets(event);
       
-      if (targets.length === 0) {
+      if (targets?.length || 0 === 0) {
         return {
           routed: false,
           subscriptionsMatched: 0,
@@ -278,13 +278,13 @@ export class SubscriptionManager extends EventEmitter {
 
       const result = await this.deliverToTargets(targets);
       
-      this.metrics.routedEvents++;
+      this?.metrics?.routedEvents++;
       this.updateRoutingTime(Date.now() - startTime);
       
       this.emit('event_routed', {
         eventId: event.id,
         eventType: event.type,
-        targetsCount: targets.length,
+        targetsCount: targets?.length || 0,
         result
       });
 
@@ -294,7 +294,7 @@ export class SubscriptionManager extends EventEmitter {
       };
 
     } catch (error) {
-      this.metrics.routingErrors++;
+      this?.metrics?.routingErrors++;
       this.emit('routing_error', {
         eventId: event.id,
         error,
@@ -314,16 +314,16 @@ export class SubscriptionManager extends EventEmitter {
 
   private async findEventTargets(event: BaseEvent): Promise<MessageTarget[]> {
     const targets: MessageTarget[] = [];
-    const subscriberIds = this.eventTypeIndex.get(event.type);
+    const subscriberIds = this?.eventTypeIndex?.get(event.type);
     
     if (!subscriberIds) return targets;
 
     for (const subscriptionId of subscriberIds) {
-      const route = this.routes.get(subscriptionId);
+      const route = this?.routes?.get(subscriptionId);
       if (!route) continue;
 
       // Check if connection is still active
-      if (!this.connectionManager.getConnection(route.connectionId)) {
+      if (!this?.connectionManager?.getConnection(route.connectionId)) {
         // Queue for cleanup
         this.removeSubscription(subscriptionId);
         continue;
@@ -331,7 +331,7 @@ export class SubscriptionManager extends EventEmitter {
 
       // Apply filters
       if (!await this.matchesFilters(event, route)) {
-        this.metrics.filteredEvents++;
+        this?.metrics?.filteredEvents++;
         continue;
       }
 
@@ -339,7 +339,7 @@ export class SubscriptionManager extends EventEmitter {
       let transformedEvent = event;
       if (route.transform?.enabled) {
         transformedEvent = await this.transformEvent(event, route.transform);
-        this.metrics.transformedEvents++;
+        this?.metrics?.transformedEvents++;
       }
 
       targets.push({
@@ -357,7 +357,7 @@ export class SubscriptionManager extends EventEmitter {
 
   private async deliverToTargets(targets: MessageTarget[]): Promise<Omit<RoutingResult, 'processingTime'>> {
     let routed = false;
-    let subscriptionsMatched = targets.length;
+    let subscriptionsMatched = targets?.length || 0;
     let batchesCreated = 0;
     let eventsFiltered = 0;
     const errors: string[] = [];
@@ -391,11 +391,11 @@ export class SubscriptionManager extends EventEmitter {
     for (const [connectionId, connectionTargets] of batchTargets) {
       try {
         for (const target of connectionTargets) {
-          this.batcher.addMessage(connectionId, target.event, {
+          this?.batcher?.addMessage(connectionId, target.event, {
             priority: target.priority,
             force: target.priority === 'critical'
           });
-          this.metrics.batchedEvents++;
+          this?.metrics?.batchedEvents++;
         }
         batchesCreated++;
         routed = true;
@@ -414,18 +414,18 @@ export class SubscriptionManager extends EventEmitter {
   }
 
   private async deliverImmediately(target: MessageTarget): Promise<void> {
-    const connection = this.connectionManager.getConnection(target.connectionId);
-    if (!connection || connection.ws.readyState !== 1) { // WebSocket.OPEN = 1
+    const connection = this?.connectionManager?.getConnection(target.connectionId);
+    if (!connection || connection?.ws?.readyState !== 1) { // WebSocket.OPEN = 1
       throw new Error(`Connection ${target.connectionId} not available`);
     }
 
     // Check permissions
-    if (!this.connectionManager.hasPermission(target.connectionId, 'receive_events')) {
+    if (!this?.connectionManager?.hasPermission(target.connectionId, 'receive_events')) {
       throw new Error(`Connection ${target.connectionId} lacks permission`);
     }
 
     // Check rate limits
-    if (!this.connectionManager.checkRateLimit(target.connectionId, 'message_receive', 60, 60000)) {
+    if (!this?.connectionManager?.checkRateLimit(target.connectionId, 'message_receive', 60, 60000)) {
       throw new Error(`Connection ${target.connectionId} rate limit exceeded`);
     }
 
@@ -440,9 +440,9 @@ export class SubscriptionManager extends EventEmitter {
       timestamp: Date.now()
     };
 
-    connection.ws.send(JSON.stringify(message));
-    connection.stats.messagesSent++;
-    connection.stats.lastActivity = Date.now();
+    connection?.ws?.send(JSON.stringify(message));
+    connection?.stats?.messagesSent++;
+    connection?.stats?.lastActivity = Date.now();
   }
 
   // Filtering and transformation
@@ -496,7 +496,7 @@ export class SubscriptionManager extends EventEmitter {
     let result = { ...event };
 
     // Remove fields
-    if (transform.removeFields && transform.removeFields.length > 0) {
+    if (transform.removeFields && transform?.removeFields?.length > 0) {
       for (const fieldPath of transform.removeFields) {
         result = this.removeFieldByPath(result, fieldPath);
       }
@@ -534,8 +534,8 @@ export class SubscriptionManager extends EventEmitter {
 
   // Batch handling
   private handleBatchCreated(batch: BatchedMessage, targetId: string): void {
-    const connection = this.connectionManager.getConnection(targetId);
-    if (!connection || connection.ws.readyState !== 1) {
+    const connection = this?.connectionManager?.getConnection(targetId);
+    if (!connection || connection?.ws?.readyState !== 1) {
       return;
     }
 
@@ -551,14 +551,14 @@ export class SubscriptionManager extends EventEmitter {
         timestamp: Date.now()
       };
 
-      connection.ws.send(JSON.stringify(message));
-      connection.stats.messagesSent++;
-      connection.stats.lastActivity = Date.now();
+      connection?.ws?.send(JSON.stringify(message));
+      connection?.stats?.messagesSent++;
+      connection?.stats?.lastActivity = Date.now();
 
       this.emit('batch_delivered', {
         connectionId: targetId,
         batchId: batch.id,
-        eventCount: batch.events.length
+        eventCount: batch?.events?.length
       });
 
     } catch (error) {
@@ -573,7 +573,7 @@ export class SubscriptionManager extends EventEmitter {
   private clearPendingBatches(connectionId: string, subscriptionId?: string): void {
     // This would clear pending batches for the connection/subscription
     // Implementation would depend on how batches are tracked
-    this.priorityQueues.delete(connectionId);
+    this?.priorityQueues?.delete(connectionId);
   }
 
   // Performance optimization
@@ -600,13 +600,13 @@ export class SubscriptionManager extends EventEmitter {
     // Remove empty sets from indexes
     for (const [eventType, subscribers] of this.eventTypeIndex) {
       if (subscribers.size === 0) {
-        this.eventTypeIndex.delete(eventType);
+        this?.eventTypeIndex?.delete(eventType);
       }
     }
 
     for (const [connectionId, subscriptions] of this.connectionIndex) {
       if (subscriptions.size === 0) {
-        this.connectionIndex.delete(connectionId);
+        this?.connectionIndex?.delete(connectionId);
       }
     }
   }
@@ -616,7 +616,7 @@ export class SubscriptionManager extends EventEmitter {
     const staleRoutes: string[] = [];
     
     for (const [subscriptionId, route] of this.routes) {
-      const connection = this.connectionManager.getConnection(route.connectionId);
+      const connection = this?.connectionManager?.getConnection(route.connectionId);
       if (!connection) {
         staleRoutes.push(subscriptionId);
       }
@@ -626,30 +626,30 @@ export class SubscriptionManager extends EventEmitter {
       this.removeSubscription(subscriptionId);
     }
 
-    if (staleRoutes.length > 0) {
+    if (staleRoutes?.length || 0 > 0) {
       this.emit('cleanup_performed', {
-        staleRoutesRemoved: staleRoutes.length
+        staleRoutesRemoved: staleRoutes?.length || 0
       });
     }
   }
 
   // Metrics and monitoring
   private updateMetrics(): void {
-    this.metrics.activeConnections = this.connectionIndex.size;
-    this.metrics.subscriptionCount = this.routes.size;
+    this?.metrics?.activeConnections = this?.connectionIndex?.size;
+    this?.metrics?.subscriptionCount = this?.routes?.size;
     
-    if (this.routingTimes.length > 0) {
-      const sum = this.routingTimes.reduce((total, time) => total + time, 0);
-      this.metrics.averageRoutingTime = sum / this.routingTimes.length;
+    if (this?.routingTimes?.length > 0) {
+      const sum = this?.routingTimes?.reduce((total: any, time: any) => total + time, 0);
+      this?.metrics?.averageRoutingTime = sum / this?.routingTimes?.length;
     }
   }
 
   private updateRoutingTime(time: number): void {
-    this.routingTimes.push(time);
+    this?.routingTimes?.push(time);
     
     // Keep only recent measurements
-    if (this.routingTimes.length > 1000) {
-      this.routingTimes = this.routingTimes.slice(-500);
+    if (this?.routingTimes?.length > 1000) {
+      this.routingTimes = this?.routingTimes?.slice(-500);
     }
   }
 
@@ -668,12 +668,12 @@ export class SubscriptionManager extends EventEmitter {
     const result = JSON.parse(JSON.stringify(obj));
     
     let current = result;
-    for (let i = 0; i < parts.length - 1; i++) {
+    for (let i = 0; i < parts?.length || 0 - 1; i++) {
       if (!(parts[i] in current)) return result;
       current = current[parts[i]];
     }
     
-    delete current[parts[parts.length - 1]];
+    delete current[parts[parts?.length || 0 - 1]];
     return result;
   }
 
@@ -687,20 +687,20 @@ export class SubscriptionManager extends EventEmitter {
   }
 
   public getSubscription(subscriptionId: string): SubscriptionRoute | undefined {
-    return this.routes.get(subscriptionId);
+    return this?.routes?.get(subscriptionId);
   }
 
   public getConnectionSubscriptions(connectionId: string): SubscriptionRoute[] {
-    const subscriptionIds = this.connectionIndex.get(connectionId);
+    const subscriptionIds = this?.connectionIndex?.get(connectionId);
     if (!subscriptionIds) return [];
 
     return Array.from(subscriptionIds)
-      .map(id => this.routes.get(id))
+      .map(id => this?.routes?.get(id))
       .filter(route => route !== undefined) as SubscriptionRoute[];
   }
 
   public getEventTypeSubscribers(eventType: string): string[] {
-    const subscribers = this.eventTypeIndex.get(eventType);
+    const subscribers = this?.eventTypeIndex?.get(eventType);
     return subscribers ? Array.from(subscribers) : [];
   }
 
@@ -714,9 +714,9 @@ export class SubscriptionManager extends EventEmitter {
     const byConnection: Record<string, number> = {};
     const byPriority: Record<string, number> = {};
 
-    for (const route of this.routes.values()) {
+    for (const route of this?.routes?.values()) {
       // Count by event type
-      route.eventTypes.forEach(eventType => {
+      route?.eventTypes?.forEach(eventType => {
         byEventType[eventType] = (byEventType[eventType] || 0) + 1;
       });
 
@@ -728,7 +728,7 @@ export class SubscriptionManager extends EventEmitter {
     }
 
     return {
-      totalSubscriptions: this.routes.size,
+      totalSubscriptions: this?.routes?.size,
       byEventType,
       byConnection,
       byPriority
@@ -744,10 +744,10 @@ export class SubscriptionManager extends EventEmitter {
     const targets = await this.findEventTargets(event);
     
     return {
-      matchingSubscriptions: targets.map(t => t.subscriptionId),
-      targetConnections: [...new Set(targets.map(t => t.connectionId))],
-      wouldBatch: targets.filter(t => t.shouldBatch).map(t => t.connectionId),
-      wouldImmediate: targets.filter(t => !t.shouldBatch).map(t => t.connectionId)
+      matchingSubscriptions: targets?.map(t => t.subscriptionId),
+      targetConnections: [...new Set(targets?.map(t => t.connectionId))],
+      wouldBatch: targets?.filter(t => t.shouldBatch).map(t => t.connectionId),
+      wouldImmediate: targets?.filter(t => !t.shouldBatch).map(t => t.connectionId)
     };
   }
 
@@ -760,16 +760,16 @@ export class SubscriptionManager extends EventEmitter {
     issues: string[];
   } {
     const issues: string[] = [];
-    const errorRate = this.metrics.totalEvents > 0 
-      ? this.metrics.routingErrors / this.metrics.totalEvents 
+    const errorRate = this?.metrics?.totalEvents > 0 
+      ? this?.metrics?.routingErrors / this?.metrics?.totalEvents 
       : 0;
 
-    if (this.metrics.subscriptionCount === 0) {
+    if (this?.metrics?.subscriptionCount === 0) {
       issues.push('No active subscriptions');
     }
 
-    if (this.metrics.averageRoutingTime > 100) {
-      issues.push(`High routing latency: ${Math.round(this.metrics.averageRoutingTime)}ms`);
+    if (this?.metrics?.averageRoutingTime > 100) {
+      issues.push(`High routing latency: ${Math.round(this?.metrics?.averageRoutingTime)}ms`);
     }
 
     if (errorRate > 0.05) {
@@ -778,17 +778,17 @@ export class SubscriptionManager extends EventEmitter {
 
     let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
     
-    if (issues.length > 2 || errorRate > 0.1) {
+    if (issues?.length || 0 > 2 || errorRate > 0.1) {
       status = 'unhealthy';
-    } else if (issues.length > 0 || errorRate > 0.02) {
+    } else if (issues?.length || 0 > 0 || errorRate > 0.02) {
       status = 'degraded';
     }
 
     return {
       status,
-      subscriptions: this.metrics.subscriptionCount,
-      connections: this.metrics.activeConnections,
-      averageRoutingTime: this.metrics.averageRoutingTime,
+      subscriptions: this?.metrics?.subscriptionCount,
+      connections: this?.metrics?.activeConnections,
+      averageRoutingTime: this?.metrics?.averageRoutingTime,
       errorRate,
       issues
     };
@@ -800,15 +800,15 @@ export class SubscriptionManager extends EventEmitter {
     if (this.metricsTimer) clearInterval(this.metricsTimer);
 
     // Clear all data structures
-    this.routes.clear();
-    this.eventTypeIndex.clear();
-    this.connectionIndex.clear();
-    this.priorityQueues.clear();
+    this?.routes?.clear();
+    this?.eventTypeIndex?.clear();
+    this?.connectionIndex?.clear();
+    this?.priorityQueues?.clear();
     this.routingTimes = [];
 
     this.emit('shutdown', {
-      totalEventsProcessed: this.metrics.totalEvents,
-      finalSubscriptionCount: this.metrics.subscriptionCount
+      totalEventsProcessed: this?.metrics?.totalEvents,
+      finalSubscriptionCount: this?.metrics?.subscriptionCount
     });
   }
 }

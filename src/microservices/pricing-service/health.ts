@@ -139,7 +139,7 @@ async function checkExternalAPI(): Promise<boolean> {
     const timeoutId = setTimeout(() => controller.abort(), 2000);
     
     // In production, this would check actual Walmart API
-    // const response = await fetch("https://api.walmart.com/health", {
+    // const response = await fetch("https://api?.walmart.com/health", {
     //   signal: controller.signal,
     // });
     

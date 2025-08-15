@@ -153,7 +153,7 @@ export class PurchaseHistoryService {
   private initializeTables(): void {
     try {
       // Purchase records table
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS purchase_records (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
@@ -178,7 +178,7 @@ export class PurchaseHistoryService {
       `);
 
       // Purchase analytics cache table
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS purchase_analytics_cache (
           user_id TEXT PRIMARY KEY,
           analytics_data TEXT NOT NULL,
@@ -189,17 +189,17 @@ export class PurchaseHistoryService {
       `);
 
       // Create indexes for performance
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE INDEX IF NOT EXISTS idx_purchase_records_user_date 
         ON purchase_records(user_id, purchase_date DESC)
       `);
 
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE INDEX IF NOT EXISTS idx_purchase_records_product 
         ON purchase_records(product_id, user_id)
       `);
 
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE INDEX IF NOT EXISTS idx_purchase_records_category 
         ON purchase_records(category, user_id)
       `);
@@ -225,7 +225,7 @@ export class PurchaseHistoryService {
         metadata: purchase.metadata ? JSON.stringify(purchase.metadata) : null
       };
 
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT INTO purchase_records (
           id, user_id, product_id, product_name, brand, category,
           quantity, unit_price, total_price, store_id, store_location,
@@ -283,7 +283,7 @@ export class PurchaseHistoryService {
   async analyzePurchasePatterns(userId: string): Promise<PurchasePattern[]> {
     try {
       // Single optimized query that includes all necessary data
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         WITH purchase_stats AS (
           SELECT 
             product_id,
@@ -351,11 +351,11 @@ export class PurchaseHistoryService {
 
       const rows = stmt.all(userId, userId, userId);
       
-      const patterns: PurchasePattern[] = rows.map((row: any) => {
+      const patterns: PurchasePattern[] = rows?.map((row: any) => {
         // Parse seasonal trends from JSON string
         let seasonalTrends: SeasonalTrend[] = [];
         if (row.seasonal_trends_json) {
-          const trendsArray = row.seasonal_trends_json.split(',')
+          const trendsArray = row?.seasonal_trends_json?.split(',')
             .filter((s: string) => s && s !== 'null')
             .map((s: string) => {
               try {
@@ -387,7 +387,7 @@ export class PurchaseHistoryService {
 
       logger.info("Purchase patterns analyzed (optimized)", "PURCHASE_HISTORY_SERVICE", {
         userId,
-        patternsCount: patterns.length
+        patternsCount: patterns?.length || 0
       });
 
       return patterns;
@@ -472,7 +472,7 @@ export class PurchaseHistoryService {
         params.push(storeId);
       }
 
-      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+      const whereClause = conditions?.length || 0 > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
       // Build ORDER BY clause
       const orderByMap = {
@@ -486,13 +486,13 @@ export class PurchaseHistoryService {
       const orderClause = `ORDER BY ${orderByColumn} ${sortOrder.toUpperCase()}`;
 
       // Get total count
-      const countStmt = this.db.prepare(`
+      const countStmt = this?.db?.prepare(`
         SELECT COUNT(*) as total FROM purchase_records ${whereClause}
       `);
       const totalResult = countStmt.get(...params) as { total: number };
 
       // Get purchases
-      const dataStmt = this.db.prepare(`
+      const dataStmt = this?.db?.prepare(`
         SELECT * FROM purchase_records 
         ${whereClause} 
         ${orderClause} 
@@ -501,7 +501,7 @@ export class PurchaseHistoryService {
       
       const rows = dataStmt.all(...params, limit, offset);
 
-      const purchases: PurchaseRecord[] = rows.map((row: any) => ({
+      const purchases: PurchaseRecord[] = rows?.map((row: any) => ({
         ...row,
         metadata: row.metadata ? JSON.parse(row.metadata) : undefined
       }));
@@ -516,7 +516,7 @@ export class PurchaseHistoryService {
       logger.info("User purchase history retrieved", "PURCHASE_HISTORY_SERVICE", {
         userId,
         total: result.total,
-        returned: purchases.length
+        returned: purchases?.length || 0
       });
 
       return result;
@@ -531,7 +531,7 @@ export class PurchaseHistoryService {
    */
   async getProductFrequency(userId: string, productId?: string): Promise<ProductFrequency[]> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         WITH product_frequency AS (
           SELECT 
             product_id,
@@ -585,7 +585,7 @@ export class PurchaseHistoryService {
       const params = productId ? [userId, productId, userId, productId] : [userId, userId];
       const rows = stmt.all(...params);
 
-      const frequencies: ProductFrequency[] = rows.map((row: any) => ({
+      const frequencies: ProductFrequency[] = rows?.map((row: any) => ({
         productId: row.product_id,
         productName: row.product_name,
         brand: row.brand,
@@ -605,7 +605,7 @@ export class PurchaseHistoryService {
       logger.info("Product frequency calculated", "PURCHASE_HISTORY_SERVICE", {
         userId,
         productId,
-        frequenciesCount: frequencies.length
+        frequenciesCount: frequencies?.length || 0
       });
 
       return frequencies;
@@ -720,7 +720,7 @@ export class PurchaseHistoryService {
 
       logger.info("Reorder suggestions generated", "PURCHASE_HISTORY_SERVICE", {
         userId,
-        suggestionsCount: suggestions.length,
+        suggestionsCount: suggestions?.length || 0,
         daysAhead
       });
 
@@ -746,7 +746,7 @@ export class PurchaseHistoryService {
       }
 
       // Calculate analytics
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT 
           COUNT(*) as total_purchases,
           SUM(total_price) as total_spent,
@@ -762,7 +762,7 @@ export class PurchaseHistoryService {
       const basicStats = stmt.get(userId) as any;
 
       // Get category statistics
-      const categoryStmt = this.db.prepare(`
+      const categoryStmt = this?.db?.prepare(`
         SELECT 
           category,
           SUM(total_price) as category_spent,
@@ -776,7 +776,7 @@ export class PurchaseHistoryService {
       const categoryStats = categoryStmt.all(userId);
 
       // Get brand preferences
-      const brandStmt = this.db.prepare(`
+      const brandStmt = this?.db?.prepare(`
         SELECT 
           brand,
           COUNT(*) as brand_purchases
@@ -790,7 +790,7 @@ export class PurchaseHistoryService {
       const brandStats = brandStmt.all(userId);
 
       // Get seasonal spending
-      const seasonalStmt = this.db.prepare(`
+      const seasonalStmt = this?.db?.prepare(`
         SELECT 
           CAST(strftime('%m', purchase_date) AS INTEGER) as month,
           AVG(quantity) as avg_quantity,
@@ -810,12 +810,12 @@ export class PurchaseHistoryService {
         averageBasketSize: Math.round((basicStats.avg_basket_size || 0) * 100) / 100,
         averageItemPrice: Math.round((basicStats.avg_item_price || 0) * 100) / 100,
         mostFrequentCategory: categoryStats[0]?.category || "Unknown",
-        mostExpensiveCategory: categoryStats.reduce((max, cat) => 
+        mostExpensiveCategory: categoryStats.reduce((max: any, cat: any) => 
           cat.category_spent > (max?.category_spent || 0) ? cat : max
         )?.category || "Unknown",
         preferredBrands: brandStats.slice(0, 5).map(b => b.brand),
         shoppingFrequency: Math.round((basicStats.avg_days_between_shopping || 0) * 100) / 100,
-        seasonalSpending: seasonalStats.map(s => ({
+        seasonalSpending: seasonalStats?.map(s => ({
           month: s.month,
           averageQuantity: s.avg_quantity,
           averagePurchases: s.avg_purchases
@@ -843,7 +843,7 @@ export class PurchaseHistoryService {
   // Helper methods
 
   private async calculatePriceFlexibility(userId: string, productId: string): Promise<number> {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT AVG(unit_price) as avg_price, 
              AVG((unit_price - (SELECT AVG(unit_price) FROM purchase_records WHERE user_id = ? AND product_id = ?)) * 
                  (unit_price - (SELECT AVG(unit_price) FROM purchase_records WHERE user_id = ? AND product_id = ?))) as variance
@@ -856,7 +856,7 @@ export class PurchaseHistoryService {
   }
 
   private async getSeasonalTrends(userId: string, productId: string): Promise<SeasonalTrend[]> {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT 
         CAST(strftime('%m', purchase_date) AS INTEGER) as month,
         AVG(quantity) as averageQuantity,
@@ -871,7 +871,7 @@ export class PurchaseHistoryService {
   }
 
   private async getPreferredStore(userId: string, productId: string): Promise<string | undefined> {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT store_id, COUNT(*) as count
       FROM purchase_records 
       WHERE user_id = ? AND product_id = ? AND store_id IS NOT NULL
@@ -892,7 +892,7 @@ export class PurchaseHistoryService {
 
   private async getCurrentPrice(productId: string): Promise<number | null> {
     try {
-      const product = await this.productRepo.findById(productId);
+      const product = await this?.productRepo?.findById(productId);
       return product?.current_price || null;
     } catch {
       return null;
@@ -907,9 +907,9 @@ export class PurchaseHistoryService {
   }
 
   private calculateLoyaltyScore(brandStats: any[]): number {
-    if (brandStats.length === 0) return 0;
+    if (brandStats?.length || 0 === 0) return 0;
     
-    const totalPurchases = brandStats.reduce((sum, brand) => sum + brand.brand_purchases, 0);
+    const totalPurchases = brandStats.reduce((sum: any, brand: any) => sum + brand.brand_purchases, 0);
     const topBrandPurchases = brandStats[0]?.brand_purchases || 0;
     
     return Math.round((topBrandPurchases / totalPurchases) * 100) / 100;
@@ -917,7 +917,7 @@ export class PurchaseHistoryService {
 
   private async getCachedAnalytics(userId: string): Promise<PurchaseAnalytics | null> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT analytics_data, expires_at 
         FROM purchase_analytics_cache 
         WHERE user_id = ? AND expires_at > datetime('now')
@@ -937,7 +937,7 @@ export class PurchaseHistoryService {
     try {
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
       
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT OR REPLACE INTO purchase_analytics_cache (user_id, analytics_data, last_updated, expires_at)
         VALUES (?, ?, datetime('now'), ?)
       `);
@@ -950,7 +950,7 @@ export class PurchaseHistoryService {
 
   private async invalidateAnalyticsCache(userId: string): Promise<void> {
     try {
-      const stmt = this.db.prepare(`DELETE FROM purchase_analytics_cache WHERE user_id = ?`);
+      const stmt = this?.db?.prepare(`DELETE FROM purchase_analytics_cache WHERE user_id = ?`);
       stmt.run(userId);
     } catch (error) {
       logger.warn("Failed to invalidate analytics cache", "PURCHASE_HISTORY_SERVICE", { error });
@@ -965,14 +965,14 @@ export class PurchaseHistoryService {
       const cutoffDate = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
       
       // Delete old purchase records
-      const deleteRecordsStmt = this.db.prepare(`
+      const deleteRecordsStmt = this?.db?.prepare(`
         DELETE FROM purchase_records 
         WHERE purchase_date < ?
       `);
       const deletedRecords = deleteRecordsStmt.run(cutoffDate).changes;
 
       // Delete expired cache entries
-      const deleteCacheStmt = this.db.prepare(`
+      const deleteCacheStmt = this?.db?.prepare(`
         DELETE FROM purchase_analytics_cache 
         WHERE expires_at < datetime('now')
       `);

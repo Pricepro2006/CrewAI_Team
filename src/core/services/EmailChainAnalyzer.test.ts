@@ -28,7 +28,7 @@ const sharedMockDb = {
     return {
       run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
       get: vi.fn().mockImplementation((id?: string) => {
-        if (!mockDbData || mockDbData.length === 0) return null;
+        if (!mockDbData || mockDbData?.length || 0 === 0) return null;
         if (id) {
           const found = mockDbData.find((item: any) => item.id === id);
           if (found) {
@@ -53,19 +53,19 @@ const sharedMockDb = {
         
         let filteredData = mockDbData;
         
-        if (params.length === 1 && typeof params[0] === "string") {
+        if (params?.length || 0 === 1 && typeof params[0] === "string") {
           // Handle single param queries like conversation_id
           const conversationId = params[0];
-          filteredData = mockDbData.filter(
+          filteredData = mockDbData?.filter(
             (email: any) =>
               email.thread_id === conversationId || email.conversation_id === conversationId,
           );
-        } else if (params.length === 6) {
+        } else if (params?.length || 0 === 6) {
           // Handle complex subject + sender matching queries
           // params: [subjectPattern1, subjectPattern2, subjectPattern3, subjectPattern4, senderEmail, senderPattern]
           const [pattern1, pattern2, pattern3, pattern4, senderEmail, senderPattern] = params;
           
-          filteredData = mockDbData.filter((email: any) => {
+          filteredData = mockDbData?.filter((email: any) => {
             const subject = email.subject || '';
             const sender = email.from_address || email.sender_email || '';
             
@@ -91,7 +91,7 @@ const sharedMockDb = {
         }
         
         // Map results to expected database schema
-        return filteredData.map((item: any) => ({
+        return filteredData?.map((item: any) => ({
           id: item.id,
           internet_message_id: item.message_id || item.internet_message_id,
           subject: item.subject,
@@ -440,7 +440,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
   beforeEach(() => {
     // Clear the mockDbData array
-    mockDbData.length = 0;
+    mockDbData?.length || 0 = 0;
     
     // Reset all mock functions to ensure clean state
     vi.clearAllMocks();
@@ -450,7 +450,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       return {
         run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
         get: vi.fn().mockImplementation((id?: string) => {
-          if (!mockDbData || mockDbData.length === 0) return null;
+          if (!mockDbData || mockDbData?.length || 0 === 0) return null;
           if (id) {
             const found = mockDbData.find((item: any) => item.id === id);
             if (found) {
@@ -475,16 +475,16 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
           
           let filteredData = mockDbData;
           
-          if (params.length === 1 && typeof params[0] === "string") {
+          if (params?.length || 0 === 1 && typeof params[0] === "string") {
             const conversationId = params[0];
-            filteredData = mockDbData.filter(
+            filteredData = mockDbData?.filter(
               (email: any) =>
                 email.thread_id === conversationId || email.conversation_id === conversationId,
             );
-          } else if (params.length === 6) {
+          } else if (params?.length || 0 === 6) {
             const [pattern1, pattern2, pattern3, pattern4, senderEmail, senderPattern] = params;
             
-            filteredData = mockDbData.filter((email: any) => {
+            filteredData = mockDbData?.filter((email: any) => {
               const subject = email.subject || '';
               const sender = email.from_address || email.sender_email || '';
               
@@ -505,7 +505,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
             });
           }
           
-          return filteredData.map((item: any) => ({
+          return filteredData?.map((item: any) => ({
             id: item.id,
             message_id: item.message_id || item.internet_message_id,
             subject: item.subject,
@@ -528,13 +528,13 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
   afterEach(() => {
     // Clean up after each test
-    mockDbData.length = 0;
+    mockDbData?.length || 0 = 0;
   });
 
   describe("Gradual Scoring System (0-100%)", () => {
     it("should assign low scores (0-30%) to single emails", async () => {
       const singleEmailChain = createEmailChain("single_email");
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...singleEmailChain);
 
       const analysis = await analyzer.analyzeChain("single-1");
@@ -552,7 +552,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       const incompleteChain = createEmailChain(
         "incomplete_chain_no_resolution",
       );
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...incompleteChain);
 
       const analysis = await analyzer.analyzeChain("incomplete-1");
@@ -568,7 +568,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should assign good scores (60-80%) to chains with progress but no resolution", async () => {
       const moderateChain = createEmailChain("moderate_chain_with_progress");
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...moderateChain);
 
       const analysis = await analyzer.analyzeChain("moderate-1");
@@ -584,7 +584,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should assign high scores (80-100%) to complete workflow chains", async () => {
       const completeChain = createEmailChain("complete_chain_full_workflow");
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...completeChain);
 
       const analysis = await analyzer.analyzeChain("complete-1");
@@ -601,7 +601,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should handle long chains without resolution (medium-high scores)", async () => {
       const longChain = createEmailChain("long_chain_no_resolution");
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...longChain);
 
       const analysis = await analyzer.analyzeChain("long-1");
@@ -625,7 +625,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       ];
 
       for (const chain of chains) {
-        mockDbData.length = 0;
+        mockDbData?.length || 0 = 0;
         mockDbData.push(...chain);
         const analysis = await analyzer.analyzeChain(chain[0].id);
 
@@ -636,7 +636,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should award points for middle correspondence", async () => {
       const moderateChain = createEmailChain("moderate_chain_with_progress");
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...moderateChain);
 
       const analysis = await analyzer.analyzeChain("moderate-1");
@@ -647,7 +647,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should award maximum points for completion detection", async () => {
       const completeChain = createEmailChain("complete_chain_full_workflow");
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...completeChain);
 
       const analysis = await analyzer.analyzeChain("complete-1");
@@ -661,12 +661,12 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       const shortChain = createEmailChain("incomplete_chain_no_resolution");
 
       // Test long chain
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...longChain);
       const longAnalysis = await analyzer.analyzeChain("long-1");
 
       // Test short chain
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...shortChain);
       const shortAnalysis = await analyzer.analyzeChain("incomplete-1");
 
@@ -680,7 +680,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should penalize single emails appropriately", async () => {
       const singleChain = createEmailChain("single_email");
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...singleChain);
 
       const analysis = await analyzer.analyzeChain("single-1");
@@ -719,12 +719,12 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
         },
       ];
 
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...quoteChain);
       const analysis = await analyzer.analyzeChain("quote-1");
 
       expect(analysis.chain_type).toBe("quote_request");
-      expect(analysis.key_entities.quote_numbers).toContain("987654");
+      expect(analysis?.key_entities?.quote_numbers).toContain("987654");
       // Should not be penalized for missing quote number since it has one
       expect(analysis.completeness_score).toBeGreaterThanOrEqual(40);
     });
@@ -753,12 +753,12 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
         },
       ];
 
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...orderChain);
       const analysis = await analyzer.analyzeChain("order-1");
 
       expect(analysis.chain_type).toBe("order_processing");
-      expect(analysis.key_entities.po_numbers).toContain("456789");
+      expect(analysis?.key_entities?.po_numbers).toContain("456789");
       // Should not be penalized since it has PO number
       expect(analysis.completeness_score).toBeGreaterThanOrEqual(40);
     });
@@ -790,7 +790,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
         },
       ];
 
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...completionChain);
       const analysis = await analyzer.analyzeChain("comp-1");
 
@@ -824,7 +824,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
         },
       ];
 
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...progressChain);
       const analysis = await analyzer.analyzeChain("prog-1");
 
@@ -848,8 +848,8 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
       for (const scenario of testScenarios) {
         const chain = createEmailChain(scenario);
-        if (chain.length > 0) {
-          mockDbData.length = 0;
+        if (chain?.length || 0 > 0) {
+          mockDbData?.length || 0 = 0;
           mockDbData.push(...chain);
           const analysis = await analyzer.analyzeChain(chain[0].id);
           scores.push(analysis.completeness_score);
@@ -861,16 +861,16 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       expect(uniqueScores.size).toBeGreaterThan(2); // More than just 0 and 100
 
       // Check for scores in different ranges
-      const hasLowScores = scores.some((score) => score > 0 && score < 40);
+      const hasLowScores = scores.some((score: any) => score > 0 && score < 40);
       const hasMidRangeScores = scores.some(
-        (score) => score >= 40 && score < 70,
+        (score: any) => score >= 40 && score < 70,
       );
-      const hasHighScores = scores.some((score) => score >= 70 && score < 100);
+      const hasHighScores = scores.some((score: any) => score >= 70 && score < 100);
 
       expect(hasLowScores || hasMidRangeScores || hasHighScores).toBe(true);
 
       // Ensure no score is exactly 0 or 100 for these test cases
-      const noExtremeScores = scores.every((score) => score > 0 && score < 100);
+      const noExtremeScores = scores.every((score: any) => score > 0 && score < 100);
       expect(noExtremeScores).toBe(true);
     });
 
@@ -881,14 +881,14 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       for (let i = 0; i < 10; i++) {
         const baseChain = createEmailChain("incomplete_chain_no_resolution");
         // Slightly modify each chain
-        const modifiedChain = baseChain.map((email, index) => ({
+        const modifiedChain = baseChain?.map((email, index) => ({
           ...email,
           id: `test-${i}-${index}`,
           conversation_id: `chain-test-${i}`,
           body_text: email.body_text + ` Variation ${i + 1}.`,
         }));
 
-        mockDbData.length = 0;
+        mockDbData?.length || 0 = 0;
         mockDbData.push(...modifiedChain);
         const analysis = await analyzer.analyzeChain(`test-${i}-0`);
         scores.push(analysis.completeness_score);
@@ -904,7 +904,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       );
 
       const maxCount = Math.max(...Object.values(scoreCounts));
-      const totalScores = scores.length;
+      const totalScores = scores?.length || 0;
 
       // No single score should represent exactly 50% of results
       expect(maxCount / totalScores).not.toBe(0.5);
@@ -949,7 +949,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
           },
         ];
 
-        mockDbData.length = 0;
+        mockDbData?.length || 0 = 0;
         mockDbData.push(...singleChain);
         const analysis = await analyzer.analyzeChain(variation.id);
 
@@ -962,7 +962,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should ensure long chains can achieve high scores without being 100%", async () => {
       const completeChain = createEmailChain("complete_chain_full_workflow");
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...completeChain);
 
       const analysis = await analyzer.analyzeChain("complete-1");
@@ -982,7 +982,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
   describe("Edge Cases and Validation", () => {
     it("should handle empty chains gracefully", async () => {
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
 
       const analysis = await analyzer.analyzeChain("nonexistent");
 
@@ -1006,7 +1006,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
         },
       ];
 
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...incompleteDataChain);
       const analysis = await analyzer.analyzeChain("incomplete-data-1");
 
@@ -1030,7 +1030,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
         conversation_id: "very-long-chain",
       }));
 
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...veryLongChain);
       const analysis = await analyzer.analyzeChain("long-1");
 
@@ -1050,7 +1050,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
       // Run same analysis multiple times
       for (let i = 0; i < 5; i++) {
-        mockDbData.length = 0;
+        mockDbData?.length || 0 = 0;
         mockDbData.push(...testChain);
         const analysis = await analyzer.analyzeChain("moderate-1");
         scores.push(analysis.completeness_score);
@@ -1063,7 +1063,7 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
 
     it("should complete analysis within reasonable time", async () => {
       const largeChain = createEmailChain("complete_chain_full_workflow");
-      mockDbData.length = 0;
+      mockDbData?.length || 0 = 0;
       mockDbData.push(...largeChain);
 
       const startTime = Date.now();
@@ -1092,16 +1092,16 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       for (const scenario of scenarios) {
         for (let variation = 0; variation < 3; variation++) {
           const chain = createEmailChain(scenario);
-          if (chain.length > 0) {
+          if (chain?.length || 0 > 0) {
             // Add variation to avoid identical chains
-            const variedChain = chain.map((email, index) => ({
+            const variedChain = chain?.map((email, index) => ({
               ...email,
               id: `${email.id}-var-${variation}`,
               body_text: `${email.body_text} Variation ${variation}.`,
               conversation_id: `${email.conversation_id}-var-${variation}`,
             }));
 
-            mockDbData.length = 0;
+            mockDbData?.length || 0 = 0;
             mockDbData.push(...variedChain);
             const analysis = await analyzer.analyzeChain(variedChain[0].id);
             allScores.push(analysis.completeness_score);
@@ -1110,11 +1110,11 @@ describe("EmailChainAnalyzer - Chain Completeness Scoring Tests", () => {
       }
 
       // Statistical validation
-      expect(allScores.length).toBeGreaterThan(10);
+      expect(allScores?.length || 0).toBeGreaterThan(10);
 
       // Calculate basic statistics
       const average =
-        allScores.reduce((sum, score) => sum + score, 0) / allScores.length;
+        allScores.reduce((sum: any, score: any) => sum + score, 0) / allScores?.length || 0;
       const min = Math.min(...allScores);
       const max = Math.max(...allScores);
 

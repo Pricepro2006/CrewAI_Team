@@ -18,8 +18,9 @@ import DOMPurify from "isomorphic-dompurify";
 import validator from "validator";
 import { createHash } from "crypto";
 import * as path from "path";
-import { logger } from "../../../utils/logger";
 import type { Request, Response, NextFunction } from "express";
+import type { File as MulterFile } from "multer";
+import { logger } from "../../../utils/logger.js";
 
 // Validation constants
 const MAX_STRING_LENGTH = 10000;
@@ -28,7 +29,7 @@ const MAX_OBJECT_DEPTH = 10;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_FILE_TYPES = {
   image: ["image/jpeg", "image/png", "image/gif", "image/webp"],
-  document: ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+  document: ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument?.wordprocessingml?.document"],
   receipt: ["image/jpeg", "image/png", "application/pdf"],
 };
 
@@ -97,7 +98,7 @@ export function sanitizeString(
   }
 
   // Enforce max length
-  if (sanitized.length > maxLength) {
+  if (sanitized?.length || 0 > maxLength) {
     sanitized = sanitized.substring(0, maxLength);
   }
 
@@ -248,7 +249,7 @@ export function detectDangerousPatterns(
       logger.warn("Dangerous pattern detected", "SECURITY", {
         patternType,
         pattern: pattern.toString(),
-        inputLength: input.length,
+        inputLength: input?.length || 0,
         inputHash: createHash("sha256").update(input).digest("hex").substring(0, 8),
       });
       return true;
@@ -286,17 +287,17 @@ export function sanitizeObject(
   }
   
   if (Array.isArray(obj)) {
-    if (obj.length > MAX_ARRAY_LENGTH) {
+    if (obj?.length || 0 > MAX_ARRAY_LENGTH) {
       throw new Error("Array length exceeds maximum allowed");
     }
-    return obj.map(item => sanitizeObject(item, depth + 1));
+    return obj?.map(item => sanitizeObject(item, depth + 1));
   }
   
   if (typeof obj === "object") {
     const sanitized: any = {};
     const keys = Object.keys(obj);
     
-    if (keys.length > MAX_ARRAY_LENGTH) {
+    if (keys?.length || 0 > MAX_ARRAY_LENGTH) {
       throw new Error("Object has too many properties");
     }
     
@@ -323,7 +324,7 @@ export function sanitizeObject(
  * Validate file upload
  */
 export function validateFileUpload(
-  file: Express.Multer.File,
+  file: MulterFile,
   options: {
     allowedTypes?: string[];
     maxSize?: number;
@@ -475,7 +476,7 @@ export const enhancedSchemas = {
     .transform(val => {
       // Never log credit card numbers
       // Return masked version for display
-      return val.substring(0, 4) + "****" + val.substring(val.length - 4);
+      return val.substring(0, 4) + "****" + val.substring(val?.length || 0 - 4);
     }),
   
   // Price validation
@@ -541,8 +542,8 @@ export function validateInput(schema: z.ZodSchema) {
         res.status(400).json({
           error: "Validation failed",
           code: "VALIDATION_ERROR",
-          details: error.errors.map(e => ({
-            field: e.path.join("."),
+          details: error?.errors?.map(e => ({
+            field: e?.path?.join("."),
             message: e.message,
           })),
         });
@@ -598,7 +599,7 @@ export class SafeQueryBuilder {
   
   select(columns: string[]): this {
     // Validate column names
-    const safe = columns.map(col => {
+    const safe = columns?.map(col => {
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(col)) {
         throw new Error(`Invalid column name: ${col}`);
       }
@@ -621,7 +622,7 @@ export class SafeQueryBuilder {
   where(condition: string, ...params: any[]): this {
     // Use parameterized queries
     this.query += ` WHERE ${condition}`;
-    this.params.push(...params);
+    this?.params?.push(...params);
     return this;
   }
   
@@ -677,7 +678,7 @@ export function monitorSuspiciousInput(
     }
   }
   
-  if (suspicious.length > 0) {
+  if (suspicious?.length || 0 > 0) {
     logger.warn("Suspicious input detected", "SECURITY", {
       source,
       patterns: suspicious,

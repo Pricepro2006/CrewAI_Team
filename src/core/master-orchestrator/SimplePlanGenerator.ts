@@ -15,7 +15,7 @@ export class SimplePlanGenerator {
       "ResearchAgent"; // Default to ResearchAgent instead of WriterAgent
 
     logger.debug("SimplePlanGenerator selecting agent", "PLAN_GENERATOR", {
-      query: query.text.substring(0, 100),
+      query: query?.text?.substring(0, 100),
       selectedAgent: agentType,
       hasRoutingPlan: !!routingPlan,
     });
@@ -204,7 +204,7 @@ export class SimplePlanGenerator {
     // Check patterns in priority order
     for (const [patterns, agent] of agentPatterns) {
       if (Array.isArray(patterns)) {
-        if (patterns.some((pattern) => lowerQuery.includes(pattern))) {
+        if (patterns.some((pattern: any) => lowerQuery.includes(pattern))) {
           return agent;
         }
       }
@@ -256,7 +256,7 @@ export class SimplePlanGenerator {
       return true;
     }
 
-    return toolIndicators.some((indicator) => lowerQuery.includes(indicator));
+    return toolIndicators.some((indicator: any) => lowerQuery.includes(indicator));
   }
 
   private static selectTool(queryText: string, agentType: string): string {

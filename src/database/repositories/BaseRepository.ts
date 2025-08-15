@@ -63,7 +63,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
    */
   private sanitizeTableName(tableName: string): string {
     try {
-      return this.sqlSecurity.sanitizeTableName(tableName);
+      return this?.sqlSecurity?.sanitizeTableName(tableName);
     } catch (error) {
       logger.error(
         "Invalid table name provided to repository",
@@ -93,7 +93,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     }
 
     // Check for suspicious properties that might indicate injection attempts
-    const suspiciousKeys = Object.keys(data).filter((key) => {
+    const suspiciousKeys = Object.keys(data).filter((key: any) => {
       try {
         this.sanitizeColumnName(key);
         return false;
@@ -102,7 +102,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
       }
     });
 
-    if (suspiciousKeys.length > 0) {
+    if (suspiciousKeys?.length || 0 > 0) {
       logger.error("Suspicious entity keys detected", "REPOSITORY_SECURITY", {
         tableName: this.tableName,
         suspiciousKeys,
@@ -114,7 +114,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     for (const [key, value] of Object.entries(data)) {
       if (typeof value === "string") {
         try {
-          this.sqlSecurity.validateQueryParameters([value]);
+          this?.sqlSecurity?.validateQueryParameters([value]);
         } catch (error) {
           if (error instanceof SqlInjectionError) {
             logger.error(
@@ -141,7 +141,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     params: any[];
   } {
     try {
-      return this.sqlSecurity.createSecureWhereClause(conditions);
+      return this?.sqlSecurity?.createSecureWhereClause(conditions);
     } catch (error) {
       if (error instanceof SqlInjectionError) {
         logger.error(
@@ -167,7 +167,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     orderDirection: "ASC" | "DESC" = "ASC",
   ): string {
     try {
-      return this.sqlSecurity.createSecureOrderClause(
+      return this?.sqlSecurity?.createSecureOrderClause(
         orderBy || this.primaryKey,
         orderDirection,
       );
@@ -194,7 +194,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
    */
   protected sanitizeColumnName(columnName: string): string {
     try {
-      return this.sqlSecurity.sanitizeColumnName(columnName);
+      return this?.sqlSecurity?.sanitizeColumnName(columnName);
     } catch (error) {
       if (error instanceof SqlInjectionError) {
         logger.error("Invalid column name in query", "REPOSITORY_SECURITY", {
@@ -221,9 +221,9 @@ export abstract class BaseRepository<T extends BaseEntity> {
     try {
       // Validate query and parameters for SQL injection
       const { query: validatedQuery, params: validatedParams } =
-        this.sqlSecurity.validateQueryExecution(query, params);
+        this?.sqlSecurity?.validateQueryExecution(query, params);
 
-      const stmt = this.db.prepare(validatedQuery);
+      const stmt = this?.db?.prepare(validatedQuery);
       let result: R;
 
       switch (operation) {
@@ -420,7 +420,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     } as T;
 
     const columns = Object.keys(entityData)
-      .map((key) => this.sanitizeColumnName(key))
+      .map((key: any) => this.sanitizeColumnName(key))
       .join(", ");
     const placeholders = Object.keys(entityData)
       .map(() => "?")
@@ -462,7 +462,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
   ): Promise<T | null> {
     // Validate ID format
     try {
-      this.sqlSecurity.validateQueryParameters([id]);
+      this?.sqlSecurity?.validateQueryParameters([id]);
     } catch (error) {
       if (error instanceof SqlInjectionError) {
         logger.error("Invalid ID in update operation", "REPOSITORY_SECURITY", {
@@ -490,7 +490,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     };
 
     const updateFields = Object.keys(updateData)
-      .map((key) => `${this.sanitizeColumnName(key)} = ?`)
+      .map((key: any) => `${this.sanitizeColumnName(key)} = ?`)
       .join(", ");
     const values = [...Object.values(updateData), id];
 
@@ -567,7 +567,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
         params,
         "run",
       );
-      const deletedCount = result.changes;
+      const deletedCount = result?.changes;
 
       logger.info(
         `Deleted ${deletedCount} records from ${this.tableName}`,
@@ -599,7 +599,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     logger.warn("Raw SQL query execution", "REPOSITORY_SECURITY", {
       tableName: this.tableName,
       queryType: this.getQueryType(query),
-      paramCount: params.length,
+      paramCount: params?.length || 0,
     });
 
     return this.executeQuery<R>(query, params);
@@ -609,7 +609,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
    * Execute a transaction
    */
   async transaction<R>(callback: (repo: this) => Promise<R>): Promise<R> {
-    const transaction = this.db.transaction(() => {
+    const transaction = this?.db?.transaction(() => {
       return callback(this);
     });
 
@@ -638,12 +638,12 @@ export abstract class BaseRepository<T extends BaseEntity> {
   async bulkCreate(
     entities: Array<Omit<T, "id" | "created_at" | "updated_at">>,
   ): Promise<T[]> {
-    if (entities.length === 0) {
+    if (entities?.length || 0 === 0) {
       return [];
     }
 
     const now = new Date().toISOString();
-    const entitiesWithMetadata = entities.map((entity) => ({
+    const entitiesWithMetadata = entities?.map((entity: any) => ({
       ...entity,
       id: this.generateId(),
       created_at: now,
@@ -656,8 +656,8 @@ export abstract class BaseRepository<T extends BaseEntity> {
       .join(", ");
     const query = `INSERT INTO ${this.tableName} (${columns}) VALUES (${placeholders})`;
 
-    const insertStmt = this.db.prepare(query);
-    const transaction = this.db.transaction((entities: T[]) => {
+    const insertStmt = this?.db?.prepare(query);
+    const transaction = this?.db?.transaction((entities: T[]) => {
       for (const entity of entities) {
         insertStmt.run(...Object.values(entity));
       }
@@ -666,7 +666,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     try {
       transaction(entitiesWithMetadata);
       logger.info(
-        `Bulk created ${entities.length} records in ${this.tableName}`,
+        `Bulk created ${entities?.length || 0} records in ${this.tableName}`,
         "DATABASE",
       );
       return entitiesWithMetadata;
@@ -695,13 +695,13 @@ export abstract class BaseRepository<T extends BaseEntity> {
     searchColumns: string[],
     options: QueryOptions = {},
   ): Promise<T[]> {
-    if (!searchTerm.trim() || searchColumns.length === 0) {
+    if (!searchTerm.trim() || searchColumns?.length || 0 === 0) {
       return [];
     }
 
     // Validate search term
     try {
-      this.sqlSecurity.validateQueryParameters([searchTerm]);
+      this?.sqlSecurity?.validateQueryParameters([searchTerm]);
     } catch (error) {
       if (error instanceof SqlInjectionError) {
         logger.error(
@@ -719,7 +719,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     }
 
     // Sanitize search columns
-    const sanitizedColumns = searchColumns.map((column) => {
+    const sanitizedColumns = searchColumns?.map((column: any) => {
       try {
         return this.sanitizeColumnName(column);
       } catch (error) {
@@ -733,9 +733,9 @@ export abstract class BaseRepository<T extends BaseEntity> {
     });
 
     const searchConditions = sanitizedColumns
-      .map((column) => `${column} LIKE ?`)
+      .map((column: any) => `${column} LIKE ?`)
       .join(" OR ");
-    const searchParams = sanitizedColumns.map(() => `%${searchTerm}%`);
+    const searchParams = sanitizedColumns?.map(() => `%${searchTerm}%`);
 
     const { clause: whereClause, params: whereParams } = this.buildWhereClause(
       options.where || {},

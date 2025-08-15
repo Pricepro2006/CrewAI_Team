@@ -131,17 +131,17 @@ export function analyzeQueryComplexity(query: string): QueryComplexityFactors {
   const lowerQuery = query.toLowerCase();
 
   return {
-    queryLength: query.length,
-    technicalTerms: technicalKeywords.filter((term) =>
+    queryLength: query?.length || 0,
+    technicalTerms: technicalKeywords?.filter((term: any) =>
       lowerQuery.includes(term),
     ).length,
     multiStepRequired:
       query.split(/[.!?]/).length > 2 || lowerQuery.includes("then"),
-    requiresSearch: searchKeywords.some((term) => lowerQuery.includes(term)),
-    requiresAnalysis: analysisKeywords.some((term) =>
+    requiresSearch: searchKeywords.some((term: any) => lowerQuery.includes(term)),
+    requiresAnalysis: analysisKeywords.some((term: any) =>
       lowerQuery.includes(term),
     ),
-    toolCallRequired: toolKeywords.some((term) => lowerQuery.includes(term)),
+    toolCallRequired: toolKeywords.some((term: any) => lowerQuery.includes(term)),
   };
 }
 
@@ -267,13 +267,13 @@ export function getModelForSystemLoad(
     systemLoad.memory > 85 ||
     systemLoad.queueLength > 10
   ) {
-    if (preferredModel.model === MODEL_CONFIGS.HIGH_QUALITY.model) {
+    if (preferredModel.model === MODEL_CONFIGS?.HIGH_QUALITY?.model) {
       return MODEL_CONFIGS.COMPLEX; // Downgrade from 8b to 2b
     }
-    if (preferredModel.model === MODEL_CONFIGS.COMPLEX.model) {
+    if (preferredModel.model === MODEL_CONFIGS?.COMPLEX?.model) {
       return MODEL_CONFIGS.BALANCED; // Downgrade from 2b to 1.7b
     }
-    if (preferredModel.model === MODEL_CONFIGS.BALANCED.model) {
+    if (preferredModel.model === MODEL_CONFIGS?.BALANCED?.model) {
       return MODEL_CONFIGS.SIMPLE; // Downgrade to fastest
     }
   }
@@ -287,19 +287,19 @@ export function getModelForSystemLoad(
 export const MODEL_PERFORMANCE = {
   "pattern-script": {
     avgResponseTime: 0.1,
-    qualityScore: 0.46, // From models.config.ts
+    qualityScore: 0.46, // From models?.config?.ts
     successRate: 0.98,
     bestFor: ["initial_triage", "pattern_matching", "fast_filtering"],
   },
   "llama3.2:3b": {
     avgResponseTime: 45, // CPU inference time
-    qualityScore: 0.656, // From models.config.ts (6.56/10)
+    qualityScore: 0.656, // From models?.config?.ts (6.56/10)
     successRate: 0.92,
     bestFor: ["general_analysis", "structured_responses", "primary_processing"],
   },
   "doomgrave/phi-4:14b-tools-Q3_K_S": {
     avgResponseTime: 180, // CPU inference time
-    qualityScore: 0.775, // From models.config.ts (7.75/10)
+    qualityScore: 0.775, // From models?.config?.ts (7.75/10)
     successRate: 0.95,
     bestFor: ["critical_analysis", "tool_usage", "complex_reasoning"],
   },

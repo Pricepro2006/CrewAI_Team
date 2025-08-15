@@ -4,8 +4,8 @@ import {
   useErrorRecovery,
   useNetworkRecovery,
 } from "../../hooks/useErrorRecovery.js";
-import { Alert } from "../Alert";
-import { Button } from "../Button";
+import { Alert } from "../Alert.js";
+import { Button } from "../Button.js";
 import { WifiOff, RefreshCw } from "lucide-react";
 
 interface ErrorRecoveryBoundaryProps {
@@ -29,7 +29,7 @@ export function ErrorRecoveryBoundary({
   const { isOnline } = useNetworkRecovery();
   const errorRecovery = useErrorRecovery({
     maxRetries,
-    onMaxRetriesExceeded: (error) => {
+    onMaxRetriesExceeded: (error: any) => {
       console.error("Max retries exceeded:", error);
     },
   });
@@ -43,7 +43,7 @@ export function ErrorRecoveryBoundary({
   const handleRetry = () => {
     setBoundaryError(null);
     errorRecovery.reset();
-    setRetryKey((prev) => prev + 1); // Force re-render of children
+    setRetryKey((prev: any) => prev + 1); // Force re-render of children
   };
 
   // Show network status banner if offline
@@ -106,7 +106,7 @@ export function ErrorRecoveryBoundary({
 
               {!errorRecovery.canRetry && (
                 <Button
-                  onClick={() => window.location.reload()}
+                  onClick={() => window?.location?.reload()}
                   variant="secondary"
                 >
                   Reload Application

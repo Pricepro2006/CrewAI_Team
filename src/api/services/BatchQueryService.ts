@@ -66,9 +66,9 @@ export class BatchQueryService {
       result.timing = Date.now() - startTime;
 
       logger.info("Batch product fetch completed", "BATCH_QUERY", {
-        requested: productIds.length,
-        fetched: result.data.size,
-        errors: result.errors.size,
+        requested: productIds?.length || 0,
+        fetched: result?.data?.size,
+        errors: result?.errors?.size,
         timing: result.timing
       });
 
@@ -87,7 +87,7 @@ export class BatchQueryService {
     options: ProductBatchOptions,
     result: BatchResult<WalmartProduct>
   ): Promise<void> {
-    const placeholders = productIds.map(() => '?').join(',');
+    const placeholders = productIds?.map(() => '?').join(',');
     let query = `
       SELECT 
         p.*,
@@ -108,7 +108,7 @@ export class BatchQueryService {
     }
 
     try {
-      const stmt = this.db.prepare(query);
+      const stmt = this?.db?.prepare(query);
       const rows = stmt.all(...productIds) as any[];
 
       for (const row of rows) {
@@ -136,18 +136,18 @@ export class BatchQueryService {
           }
         } as unknown as WalmartProduct;
 
-        result.data.set(row.id, product);
+        result?.data?.set(row.id, product);
       }
 
       // Track missing products as errors
       for (const id of productIds) {
-        if (!result.data.has(id)) {
-          result.errors.set(id, new Error(`Product not found: ${id}`));
+        if (!result?.data?.has(id)) {
+          result?.errors?.set(id, new Error(`Product not found: ${id}`));
         }
       }
     } catch (error: any) {
       for (const id of productIds) {
-        result.errors.set(id, error);
+        result?.errors?.set(id, error);
       }
     }
   }
@@ -182,20 +182,20 @@ export class BatchQueryService {
 
       const params: any[] = [userId];
 
-      if (productIds && productIds.length > 0) {
-        const placeholders = productIds.map(() => '?').join(',');
+      if (productIds && productIds?.length || 0 > 0) {
+        const placeholders = productIds?.map(() => '?').join(',');
         query += ` AND pr.product_id IN (${placeholders})`;
         params.push(...productIds);
       }
 
       if (dateRange) {
         query += ' AND pr.purchase_date BETWEEN ? AND ?';
-        params.push(dateRange.from.toISOString(), dateRange.to.toISOString());
+        params.push(dateRange?.from?.toISOString(), dateRange?.to?.toISOString());
       }
 
       query += ' ORDER BY pr.product_id, pr.purchase_date DESC';
 
-      const stmt = this.db.prepare(query);
+      const stmt = this?.db?.prepare(query);
       const rows = stmt.all(...params) as any[];
 
       // Group by product ID
@@ -224,7 +224,7 @@ export class BatchQueryService {
       logger.info("Batch purchase history fetch completed", "BATCH_QUERY", {
         userId,
         products: historyMap.size,
-        records: rows.length,
+        records: rows?.length || 0,
         timing
       });
 
@@ -250,7 +250,7 @@ export class BatchQueryService {
       const priceMap = new Map<string, any[]>();
 
       for (const chunk of chunks) {
-        const placeholders = chunk.map(() => '?').join(',');
+        const placeholders = chunk?.map(() => '?').join(',');
         const query = `
           SELECT 
             product_id,
@@ -265,7 +265,7 @@ export class BatchQueryService {
           ORDER BY product_id, recorded_at DESC
         `;
 
-        const stmt = this.db.prepare(query);
+        const stmt = this?.db?.prepare(query);
         const rows = stmt.all(...chunk, cutoffDate) as any[];
 
         for (const row of rows) {
@@ -309,11 +309,11 @@ export class BatchQueryService {
     let success = 0;
     let failed = 0;
 
-    const transaction = this.db.transaction((updates) => {
+    const transaction = this?.db?.transaction((updates: any) => {
       for (const update of updates) {
         try {
           // Update current price
-          const updateStmt = this.db.prepare(`
+          const updateStmt = this?.db?.prepare(`
             UPDATE walmart_products 
             SET current_price = ?, updated_at = datetime('now')
             WHERE id = ?
@@ -321,7 +321,7 @@ export class BatchQueryService {
           updateStmt.run(update.price, update.productId);
 
           // Insert price history
-          const historyStmt = this.db.prepare(`
+          const historyStmt = this?.db?.prepare(`
             INSERT INTO price_history (product_id, price, store_id, recorded_at)
             VALUES (?, ?, ?, datetime('now'))
           `);
@@ -344,7 +344,7 @@ export class BatchQueryService {
       const timing = Date.now() - startTime;
       
       logger.info("Batch price update completed", "BATCH_QUERY", {
-        total: updates.length,
+        total: updates?.length || 0,
         success,
         failed,
         timing
@@ -371,7 +371,7 @@ export class BatchQueryService {
       const chunks = this.chunkArray(productIds, 500);
 
       for (const chunk of chunks) {
-        const placeholders = chunk.map(() => '?').join(',');
+        const placeholders = chunk?.map(() => '?').join(',');
         let query = `
           SELECT 
             p.id,
@@ -389,7 +389,7 @@ export class BatchQueryService {
           params.push(storeId);
         }
 
-        const stmt = this.db.prepare(query);
+        const stmt = this?.db?.prepare(query);
         const rows = stmt.all(...params) as any[];
 
         for (const row of rows) {
@@ -410,7 +410,7 @@ export class BatchQueryService {
       const timing = Date.now() - startTime;
       
       logger.info("Batch availability check completed", "BATCH_QUERY", {
-        products: productIds.length,
+        products: productIds?.length || 0,
         available: Array.from(availabilityMap.values()).filter(v => v).length,
         storeId,
         timing
@@ -428,7 +428,7 @@ export class BatchQueryService {
    */
   private chunkArray<T>(array: T[], size: number): T[][] {
     const chunks: T[][] = [];
-    for (let i = 0; i < array.length; i += size) {
+    for (let i = 0; i < array?.length || 0; i += size) {
       chunks.push(array.slice(i, i + size));
     }
     return chunks;
@@ -444,23 +444,23 @@ export class BatchQueryService {
   ): Promise<T> {
     return new Promise((resolve, reject) => {
       // Add IDs to batch queue
-      if (!this.batchQueue.has(batchKey)) {
-        this.batchQueue.set(batchKey, new Set());
+      if (!this?.batchQueue?.has(batchKey)) {
+        this?.batchQueue?.set(batchKey, new Set());
       }
       
-      const queue = this.batchQueue.get(batchKey)!;
+      const queue = this?.batchQueue?.get(batchKey)!;
       ids.forEach(id => queue.add(id));
 
       // Clear existing timer
-      if (this.batchTimers.has(batchKey)) {
-        clearTimeout(this.batchTimers.get(batchKey)!);
+      if (this?.batchTimers?.has(batchKey)) {
+        clearTimeout(this?.batchTimers?.get(batchKey)!);
       }
 
       // Set new timer
       const timer = setTimeout(async () => {
         const batchIds = Array.from(queue);
         queue.clear();
-        this.batchTimers.delete(batchKey);
+        this?.batchTimers?.delete(batchKey);
 
         try {
           const result = await operation(batchIds);
@@ -470,7 +470,7 @@ export class BatchQueryService {
         }
       }, this.BATCH_DELAY);
 
-      this.batchTimers.set(batchKey, timer);
+      this?.batchTimers?.set(batchKey, timer);
     });
   }
 }

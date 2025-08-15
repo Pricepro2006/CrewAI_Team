@@ -87,8 +87,8 @@ export const TEAM_MEMBERS: TeamMember[] = [
 
 // Helper function to get team members by team
 export function getTeamMembersByTeam(team: string): TeamMember[] {
-  return TEAM_MEMBERS.filter(member => 
-    member.teams.some(t => t.toLowerCase() === team.toLowerCase())
+  return TEAM_MEMBERS?.filter(member => 
+    member?.teams?.some(t => t.toLowerCase() === team.toLowerCase())
   );
 }
 
@@ -100,7 +100,7 @@ export function getTeamMemberById(id: string): TeamMember | undefined {
 // Helper function to get team member by email
 export function getTeamMemberByEmail(email: string): TeamMember | undefined {
   return TEAM_MEMBERS.find(member => 
-    member.email.toLowerCase() === email.toLowerCase()
+    member?.email?.toLowerCase() === email.toLowerCase()
   );
 }
 

@@ -30,7 +30,7 @@ import type {
   EmailRecord,
   SortableColumn,
   SortDirection,
-} from "../../../types/email-dashboard.interfaces.js";
+} from "../../../types/email-dashboard?.interfaces.js";
 
 interface TeamMember {
   id: string;
@@ -75,8 +75,8 @@ export function EmailTable({
   // Convert selected emails array to row selection object
   const rowSelectionFromProps = useMemo(() => {
     const selection: RowSelectionState = {};
-    selectedEmails.forEach((id) => {
-      const index = emails.findIndex((email) => email.id === id);
+    selectedEmails.forEach((id: any) => {
+      const index = emails.findIndex((email: any) => email.id === id);
       if (index !== -1) {
         selection[index] = true;
       }
@@ -120,10 +120,10 @@ export function EmailTable({
         header: "Status",
         cell: ({ row }) => (
           <StatusIndicator
-            status={row.original.status}
-            statusText={row.original.status_text}
+            status={row?.original?.status}
+            statusText={row?.original?.status_text}
             size="md"
-            showPulse={row.original.status === "red"}
+            showPulse={row?.original?.status === "red"}
             showTooltip
           />
         ),
@@ -135,10 +135,10 @@ export function EmailTable({
         cell: ({ row }) => (
           <div className="flex flex-col">
             <span className="font-medium text-sm truncate max-w-[200px]">
-              {row.original.email_alias.split("@")[0]}
+              {row?.original?.email_alias.split("@")[0]}
             </span>
             <span className="text-xs text-muted-foreground">
-              @{row.original.email_alias.split("@")[1]}
+              @{row?.original?.email_alias.split("@")[1]}
             </span>
           </div>
         ),
@@ -148,7 +148,7 @@ export function EmailTable({
         accessorKey: "requested_by",
         header: "Requested By",
         cell: ({ row }) => (
-          <div className="font-medium text-sm">{row.original.requested_by}</div>
+          <div className="font-medium text-sm">{row?.original?.requested_by}</div>
         ),
         size: 150,
       },
@@ -157,8 +157,8 @@ export function EmailTable({
         header: "Subject",
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <span className="text-sm line-clamp-1">{row.original.subject}</span>
-            {row.original.hasAttachments && (
+            <span className="text-sm line-clamp-1">{row?.original?.subject}</span>
+            {row?.original?.hasAttachments && (
               <svg
                 className="w-4 h-4 text-muted-foreground flex-shrink-0"
                 fill="none"
@@ -182,7 +182,7 @@ export function EmailTable({
         header: "Summary",
         cell: ({ row }) => (
           <div className="text-sm text-muted-foreground line-clamp-2">
-            {row.original.summary}
+            {row?.original?.summary}
           </div>
         ),
         size: 350,
@@ -191,18 +191,18 @@ export function EmailTable({
         accessorKey: "assignedTo",
         header: "Assigned To",
         cell: ({ row }) => (
-          <div className="text-sm" onClick={(e) => e.stopPropagation()}>
-            {onAssignEmail && teamMembers.length > 0 ? (
+          <div className="text-sm" onClick={(e: any) => e.stopPropagation()}>
+            {onAssignEmail && teamMembers?.length || 0 > 0 ? (
               <InlineAssignment
-                emailId={row.original.id}
-                currentAssignee={row.original.assignedTo}
+                emailId={row?.original?.id}
+                currentAssignee={row?.original?.assignedTo}
                 teamMembers={teamMembers}
                 onAssign={onAssignEmail}
               />
             ) : (
               <div>
-                {row.original.assignedTo ? (
-                  <span className="font-medium">{row.original.assignedTo}</span>
+                {row?.original?.assignedTo ? (
+                  <span className="font-medium">{row?.original?.assignedTo}</span>
                 ) : (
                   <span className="text-muted-foreground italic">
                     Unassigned
@@ -219,7 +219,7 @@ export function EmailTable({
         header: "Time",
         cell: ({ row }) => (
           <div className="text-sm text-muted-foreground whitespace-nowrap">
-            {formatDistanceToNow(new Date(row.original.timestamp), {
+            {formatDistanceToNow(new Date(row?.original?.timestamp), {
               addSuffix: true,
             })}
           </div>
@@ -237,12 +237,12 @@ export function EmailTable({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: (updater) => {
+    onSortingChange: (updater: any) => {
       setSorting(updater);
       // Call external sort handler if provided
       if (onSort && typeof updater === "function") {
         const newSorting = updater(sorting);
-        if (newSorting.length > 0 && newSorting[0]) {
+        if (newSorting?.length || 0 > 0 && newSorting[0]) {
           const { id, desc } = newSorting[0];
           onSort(id as SortableColumn, desc ? "desc" : "asc");
         }
@@ -250,15 +250,15 @@ export function EmailTable({
     },
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: (updater) => {
+    onRowSelectionChange: (updater: any) => {
       setRowSelection(updater);
       // Call external selection handler if provided
       if (onEmailsSelect && typeof updater === "function") {
         const newSelection = updater(rowSelection);
         const selectedIds = Object.keys(newSelection)
-          .filter((key) => newSelection[key])
-          .map((index) => emails[parseInt(index)]?.id)
-          .filter((id): id is string => id !== undefined);
+          .filter((key: any) => newSelection[key])
+          .map((index: any) => emails[parseInt(index)]?.id)
+          .filter((id: any): id is string => id !== undefined);
         onEmailsSelect(selectedIds);
       }
     },
@@ -319,7 +319,7 @@ export function EmailTable({
     );
   }
 
-  if (emails.length === 0) {
+  if (emails?.length || 0 === 0) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="flex flex-col items-center gap-4 text-center">
@@ -352,9 +352,9 @@ export function EmailTable({
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map((headerGroup: any) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
+                {headerGroup?.headers?.map((header: any) => (
                   <TableHead
                     key={header.id}
                     style={{ width: header.getSize() }}
@@ -363,7 +363,7 @@ export function EmailTable({
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
+                          header?.column?.columnDef.header,
                           header.getContext(),
                         )}
                   </TableHead>
@@ -373,26 +373,26 @@ export function EmailTable({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows?.map((row: any) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   className={cn(
                     "cursor-pointer transition-colors",
                     "hover:bg-muted/50",
-                    row.original.isRead === false && "font-semibold",
+                    row?.original?.isRead === false && "font-semibold",
                   )}
                   onClick={(e: React.MouseEvent) =>
                     handleRowClick(row.original, e)
                   }
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map((cell: any) => (
                     <TableCell
                       key={cell.id}
-                      style={{ width: cell.column.getSize() }}
+                      style={{ width: cell?.column?.getSize() }}
                     >
                       {flexRender(
-                        cell.column.columnDef.cell,
+                        cell?.column?.columnDef.cell,
                         cell.getContext(),
                       )}
                     </TableCell>
@@ -402,7 +402,7 @@ export function EmailTable({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={columns?.length || 0}
                   className="h-24 text-center"
                 >
                   No results.

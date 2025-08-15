@@ -37,7 +37,7 @@ export class JWTManager {
   private readonly refreshTokenExpiry: StringValue;
 
   constructor() {
-    const jwtSecret = appConfig.security.jwtSecret;
+    const jwtSecret = appConfig?.security?.jwtSecret;
     if (!jwtSecret) {
       throw new Error("JWT_SECRET must be configured");
     }
@@ -211,7 +211,7 @@ export class JWTManager {
     if (!authHeader) return null;
 
     const parts = authHeader.split(" ");
-    if (parts.length !== 2 || parts[0] !== "Bearer") {
+    if (parts?.length || 0 !== 2 || parts[0] !== "Bearer") {
       return null;
     }
 

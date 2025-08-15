@@ -34,7 +34,7 @@ export async function initializeCaching(): Promise<void> {
     await cacheMonitor.startMonitoring(60000); // Monitor every minute
 
     // Register event listeners for cache monitoring
-    cacheMonitor.on('alert:created', (alert) => {
+    cacheMonitor.on('alert:created', (alert: any) => {
       logger.warn('Cache alert created', 'CACHE_INTEGRATION', {
         alertId: alert.id,
         type: alert.type,
@@ -43,7 +43,7 @@ export async function initializeCaching(): Promise<void> {
       });
     });
 
-    cacheMonitor.on('health:checked', (health) => {
+    cacheMonitor.on('health:checked', (health: any) => {
       if (!health.healthy) {
         logger.warn('Cache health check failed', 'CACHE_INTEGRATION', {
           issues: health.issues,
@@ -101,7 +101,7 @@ export function createCachedEmailRouter() {
     onCacheHit: (key, data) => {
       logger.debug('Email router cache hit', 'CACHE_INTEGRATION', { key });
     },
-    onCacheMiss: (key) => {
+    onCacheMiss: (key: any) => {
       logger.debug('Email router cache miss', 'CACHE_INTEGRATION', { key });
     },
   });
@@ -342,7 +342,7 @@ export class CachedWebSocketHandler {
 
       logger.info('Message broadcast to room', 'CACHE_INTEGRATION', {
         roomId,
-        connectionCount: connections.length,
+        connectionCount: connections?.length || 0,
       });
 
       // Here you would actually send the message to all connections
@@ -417,8 +417,8 @@ export async function monitorCacheHealth(): Promise<void> {
     logger.info('Cache performance report generated', 'CACHE_INTEGRATION', {
       healthy: health.healthy,
       alertCount: report?.alerts?.active || 0,
-      hitRate: health.stats.hitRate,
-      memoryUsage: health.stats.memoryUsage,
+      hitRate: health?.stats?.hitRate,
+      memoryUsage: health?.stats?.memoryUsage,
     });
   } catch (error) {
     logger.error('Cache health monitoring failed', 'CACHE_INTEGRATION', {

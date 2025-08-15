@@ -42,10 +42,10 @@ export class QwenNLPService {
   private isModelReady: boolean = false;
 
   private constructor() {
-    this.modelName = walmartConfig.nlp.model;
+    this.modelName = walmartConfig?.nlp?.model;
     this.ollamaClient = axios.create({
-      baseURL: `${walmartConfig.nlp.host}:${walmartConfig.nlp.port}`,
-      timeout: walmartConfig.nlp.timeout,
+      baseURL: `${walmartConfig?.nlp?.host}:${walmartConfig?.nlp?.port}`,
+      timeout: walmartConfig?.nlp?.timeout,
     });
 
     // Initialize model on startup
@@ -67,13 +67,13 @@ export class QwenNLPService {
       logger.info(`Checking if ${this.modelName} model is available...`, "QWEN_NLP");
 
       // Check if model exists
-      const response = await this.ollamaClient.get("/api/tags");
-      const models = response.data.models || [];
+      const response = await this?.ollamaClient?.get("/api/tags");
+      const models = response?.data?.models || [];
       const modelExists = models.some((m: any) => m.name === this.modelName);
 
       if (!modelExists) {
         logger.info(`Pulling ${this.modelName} model...`, "QWEN_NLP");
-        await this.ollamaClient.post("/api/pull", { name: this.modelName });
+        await this?.ollamaClient?.post("/api/pull", { name: this.modelName });
         logger.info(`${this.modelName} model pulled successfully`, "QWEN_NLP");
       }
 
@@ -103,7 +103,7 @@ export class QwenNLPService {
       const prompt = this.createGroceryPrompt(request.text);
 
       // Call Ollama API with Qwen model
-      const response = await this.ollamaClient.post("/api/generate", {
+      const response = await this?.ollamaClient?.post("/api/generate", {
         model: this.modelName,
         prompt: prompt,
         stream: false,
@@ -115,7 +115,7 @@ export class QwenNLPService {
       });
 
       // Parse the model response
-      const intent = this.parseModelResponse(response.data.response, request.text);
+      const intent = this.parseModelResponse(response?.data?.response, request.text);
 
       const processingTime = Date.now() - startTime;
       logger.info(`NLP processing completed in ${processingTime}ms`, "QWEN_NLP", { intent });
@@ -184,7 +184,7 @@ Response:`;
 
       // Extract products
       if (parsed.products && Array.isArray(parsed.products)) {
-        parsed.products.forEach((product: string) => {
+        parsed?.products?.forEach((product: string) => {
           entities.push({
             type: "product",
             value: product,
@@ -195,7 +195,7 @@ Response:`;
 
       // Extract quantities
       if (parsed.quantities && Array.isArray(parsed.quantities)) {
-        parsed.quantities.forEach((quantity: string) => {
+        parsed?.quantities?.forEach((quantity: string) => {
           entities.push({
             type: "quantity",
             value: quantity,
@@ -206,7 +206,7 @@ Response:`;
 
       // Extract brands
       if (parsed.brands && Array.isArray(parsed.brands)) {
-        parsed.brands.forEach((brand: string) => {
+        parsed?.brands?.forEach((brand: string) => {
           entities.push({
             type: "brand",
             value: brand,

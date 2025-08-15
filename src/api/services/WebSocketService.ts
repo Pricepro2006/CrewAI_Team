@@ -321,23 +321,23 @@ export class WebSocketService extends EventEmitter {
    */
   registerClient(clientId: string, ws: AuthenticatedWebSocket): void {
     // Check client limit to prevent unbounded growth
-    if (this.clients.size >= this.MAX_CLIENTS && !this.clients.has(clientId)) {
+    if (this?.clients?.size >= this.MAX_CLIENTS && !this?.clients?.has(clientId)) {
       ws.close(1008, "Server at capacity");
       return;
     }
 
-    if (!this.clients.has(clientId)) {
-      this.clients.set(clientId, new Set());
+    if (!this?.clients?.has(clientId)) {
+      this?.clients?.set(clientId, new Set());
     }
-    this.clients.get(clientId)!.add(ws);
+    this?.clients?.get(clientId)!.add(ws);
 
     // Track authenticated clients
     if (ws.isAuthenticated) {
-      this.authenticatedClients.set(clientId, ws);
+      this?.authenticatedClients?.set(clientId, ws);
 
       // Store client permissions
       if (ws.permissions) {
-        this.clientPermissions.set(clientId, new Set(ws.permissions));
+        this?.clientPermissions?.set(clientId, new Set(ws.permissions));
       }
 
       logger.info("Authenticated WebSocket client registered", "WS_SERVICE", {
@@ -353,18 +353,18 @@ export class WebSocketService extends EventEmitter {
     };
 
     // Store cleanup handler for later removal
-    this.clientCleanupHandlers.set(clientId, cleanupHandler);
+    this?.clientCleanupHandlers?.set(clientId, cleanupHandler);
 
     // Clean up on disconnect
     ws.once("close", cleanupHandler);
 
     // Handle errors to prevent uncaught exceptions
-    ws.on("error", (error) => {
+    ws.on("error", (error: any) => {
       logger.error(
         `WebSocket error for client ${clientId}: ${error.message}`,
         "WS_SERVICE",
       );
-      this.performanceMetrics.connectionErrors++;
+      this?.performanceMetrics?.connectionErrors++;
     });
   }
 
@@ -372,7 +372,7 @@ export class WebSocketService extends EventEmitter {
    * Unregister a WebSocket client
    */
   unregisterClient(clientId: string, ws: AuthenticatedWebSocket): void {
-    const clientSockets = this.clients.get(clientId);
+    const clientSockets = this?.clients?.get(clientId);
     if (clientSockets) {
       clientSockets.delete(ws);
       if (clientSockets.size === 0) {
@@ -396,20 +396,20 @@ export class WebSocketService extends EventEmitter {
     ws.removeAllListeners();
 
     // Remove cleanup handler reference
-    this.clientCleanupHandlers.delete(clientId);
+    this?.clientCleanupHandlers?.delete(clientId);
   }
 
   /**
    * Subscribe a client to specific message types
    */
   subscribe(clientId: string, types: string[]): void {
-    if (!this.subscriptions.has(clientId)) {
-      this.subscriptions.set(clientId, new Set());
+    if (!this?.subscriptions?.has(clientId)) {
+      this?.subscriptions?.set(clientId, new Set());
     }
-    const clientSubs = this.subscriptions.get(clientId)!;
+    const clientSubs = this?.subscriptions?.get(clientId)!;
 
     // Limit subscriptions per client to prevent memory issues
-    types.forEach((type) => {
+    types.forEach((type: any) => {
       if (clientSubs.size < this.MAX_SUBSCRIPTIONS_PER_CLIENT) {
         clientSubs.add(type);
       } else {
@@ -425,9 +425,9 @@ export class WebSocketService extends EventEmitter {
    * Unsubscribe a client from specific message types
    */
   unsubscribe(clientId: string, types: string[]): void {
-    const clientSubs = this.subscriptions.get(clientId);
+    const clientSubs = this?.subscriptions?.get(clientId);
     if (clientSubs) {
-      types.forEach((type) => clientSubs.delete(type));
+      types.forEach((type: any) => clientSubs.delete(type));
     }
   }
 
@@ -437,23 +437,23 @@ export class WebSocketService extends EventEmitter {
   broadcast(message: WebSocketMessage, requiredPermission?: string): void {
     const messageStr = JSON.stringify(message);
 
-    this.clients.forEach((sockets, clientId) => {
-      const clientSubs = this.subscriptions.get(clientId);
+    this?.clients?.forEach((sockets, clientId) => {
+      const clientSubs = this?.subscriptions?.get(clientId);
 
       // Check if client is subscribed to this message type
       if (clientSubs && (clientSubs.has(message.type) || clientSubs.has("*"))) {
         // Check permissions if required
         if (requiredPermission) {
-          const permissions = this.clientPermissions.get(clientId);
+          const permissions = this?.clientPermissions?.get(clientId);
           if (!permissions || !permissions.has(requiredPermission)) {
             return; // Skip this client if they don't have required permission
           }
         }
 
-        sockets.forEach((ws) => {
+        sockets.forEach((ws: any) => {
           if (ws.readyState === ws.OPEN) {
             ws.send(messageStr);
-            this.performanceMetrics.messagesSent++;
+            this?.performanceMetrics?.messagesSent++;
           }
         });
       }
@@ -467,10 +467,10 @@ export class WebSocketService extends EventEmitter {
    * Send a message to a specific client
    */
   sendToClient(clientId: string, message: WebSocketMessage): void {
-    const sockets = this.clients.get(clientId);
+    const sockets = this?.clients?.get(clientId);
     if (sockets) {
       const messageStr = JSON.stringify(message);
-      sockets.forEach((ws) => {
+      sockets.forEach((ws: any) => {
         if (ws.readyState === ws.OPEN) {
           ws.send(messageStr);
         }
@@ -489,14 +489,14 @@ export class WebSocketService extends EventEmitter {
    * Get the number of connected clients
    */
   getClientCount(): number {
-    return this.clients.size;
+    return this?.clients?.size;
   }
 
   /**
    * Get client subscription info
    */
   getClientSubscriptions(clientId: string): string[] {
-    const subs = this.subscriptions.get(clientId);
+    const subs = this?.subscriptions?.get(clientId);
     return subs ? Array.from(subs) : [];
   }
 
@@ -504,7 +504,7 @@ export class WebSocketService extends EventEmitter {
    * Check if a client has a specific permission
    */
   hasPermission(clientId: string, permission: string): boolean {
-    const permissions = this.clientPermissions.get(clientId);
+    const permissions = this?.clientPermissions?.get(clientId);
     return permissions ? permissions.has(permission) : false;
   }
 
@@ -512,14 +512,14 @@ export class WebSocketService extends EventEmitter {
    * Get authenticated client info
    */
   getAuthenticatedClient(clientId: string): AuthenticatedWebSocket | undefined {
-    return this.authenticatedClients.get(clientId);
+    return this?.authenticatedClients?.get(clientId);
   }
 
   /**
    * Check if client is authenticated
    */
   isClientAuthenticated(clientId: string): boolean {
-    const client = this.authenticatedClients.get(clientId);
+    const client = this?.authenticatedClients?.get(clientId);
     return client ? client.isAuthenticated === true : false;
   }
 
@@ -527,9 +527,9 @@ export class WebSocketService extends EventEmitter {
    * Force disconnect a client
    */
   forceDisconnectClient(clientId: string): void {
-    const sockets = this.clients.get(clientId);
+    const sockets = this?.clients?.get(clientId);
     if (sockets) {
-      sockets.forEach((ws) => {
+      sockets.forEach((ws: any) => {
         ws.close(1008, "Forced disconnect");
       });
     }
@@ -570,7 +570,7 @@ export class WebSocketService extends EventEmitter {
    */
   private setupThrottledBroadcasts(): void {
     // Table data updates - throttled to 200ms (researched best practice)
-    this.throttledBroadcasts.set(
+    this?.throttledBroadcasts?.set(
       "table_data",
       this.createThrottle((message: WebSocketMessage) => {
         this.broadcast(message);
@@ -578,7 +578,7 @@ export class WebSocketService extends EventEmitter {
     );
 
     // Stats updates - throttled to 500ms for dashboard widgets
-    this.throttledBroadcasts.set(
+    this?.throttledBroadcasts?.set(
       "stats",
       this.createThrottle((message: WebSocketMessage) => {
         this.broadcast(message);
@@ -586,7 +586,7 @@ export class WebSocketService extends EventEmitter {
     );
 
     // Performance metrics - throttled to 1000ms
-    this.throttledBroadcasts.set(
+    this?.throttledBroadcasts?.set(
       "performance",
       this.createThrottle((message: WebSocketMessage) => {
         this.broadcast(message);
@@ -601,7 +601,7 @@ export class WebSocketService extends EventEmitter {
     messageType: string,
     message: WebSocketMessage,
   ): void {
-    const throttledFunc = this.throttledBroadcasts.get(messageType);
+    const throttledFunc = this?.throttledBroadcasts?.get(messageType);
     if (throttledFunc) {
       throttledFunc(message);
     } else {
@@ -616,9 +616,9 @@ export class WebSocketService extends EventEmitter {
     this.memoryCleanupInterval = setInterval(() => {
       try {
         // Clean up message queues that exceed max size
-        this.messageQueue.forEach((queue, clientId) => {
-          if (queue.length > this.MAX_MESSAGE_HISTORY) {
-            this.messageQueue.set(
+        this?.messageQueue?.forEach((queue, clientId) => {
+          if (queue?.length || 0 > this.MAX_MESSAGE_HISTORY) {
+            this?.messageQueue?.set(
               clientId,
               queue.slice(-this.MAX_MESSAGE_HISTORY),
             );
@@ -626,22 +626,22 @@ export class WebSocketService extends EventEmitter {
         });
 
         // Clean up disconnected clients
-        this.clients.forEach((sockets, clientId) => {
+        this?.clients?.forEach((sockets, clientId) => {
           const activeSockets = Array.from(sockets).filter(
-            (ws) => ws.readyState === ws.OPEN,
+            (ws: any) => ws.readyState === ws.OPEN,
           );
-          if (activeSockets.length === 0) {
+          if (activeSockets?.length || 0 === 0) {
             this.cleanupClient(clientId);
-          } else if (activeSockets.length !== sockets.size) {
+          } else if (activeSockets?.length || 0 !== sockets.size) {
             // Update client with only active sockets
-            this.clients.set(clientId, new Set(activeSockets));
+            this?.clients?.set(clientId, new Set(activeSockets));
           }
         });
 
         // Clean up orphaned data structures
         this.cleanupOrphanedData();
 
-        this.performanceMetrics.lastCleanup = Date.now();
+        this?.performanceMetrics?.lastCleanup = Date.now();
 
         // Log memory usage for monitoring
         const memUsage = process.memoryUsage();
@@ -649,7 +649,7 @@ export class WebSocketService extends EventEmitter {
           logger.warn("High memory usage detected", "WS_SERVICE", {
             heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024) + "MB",
             heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024) + "MB",
-            clients: this.clients.size,
+            clients: this?.clients?.size,
           });
         }
       } catch (error) {
@@ -677,23 +677,23 @@ export class WebSocketService extends EventEmitter {
           );
         }
 
-        if (this.performanceMetrics.connectionErrors > 10) {
+        if (this?.performanceMetrics?.connectionErrors > 10) {
           this.broadcastPerformanceWarning(
             "websocket",
             "connection_errors",
-            this.performanceMetrics.connectionErrors,
+            this?.performanceMetrics?.connectionErrors,
             10,
             "critical",
           );
-          this.performanceMetrics.connectionErrors = 0; // Reset after alert
+          this?.performanceMetrics?.connectionErrors = 0; // Reset after alert
         }
 
         // Update response time metrics
-        this.performanceMetrics.averageResponseTime =
+        this?.performanceMetrics?.averageResponseTime =
           this.calculateAverageResponseTime();
 
         // Force garbage collection if available (requires --expose-gc flag)
-        if (global.gc && this.clients.size === 0) {
+        if (global.gc && this?.clients?.size === 0) {
           global.gc();
         }
       } catch (error) {
@@ -707,26 +707,26 @@ export class WebSocketService extends EventEmitter {
    */
   private cleanupClient(clientId: string): void {
     // Remove from all data structures
-    this.clients.delete(clientId);
-    this.subscriptions.delete(clientId);
-    this.authenticatedClients.delete(clientId);
-    this.clientPermissions.delete(clientId);
-    this.messageQueue.delete(clientId);
-    this.retryAttempts.delete(clientId);
-    this.clientCleanupHandlers.delete(clientId);
+    this?.clients?.delete(clientId);
+    this?.subscriptions?.delete(clientId);
+    this?.authenticatedClients?.delete(clientId);
+    this?.clientPermissions?.delete(clientId);
+    this?.messageQueue?.delete(clientId);
+    this?.retryAttempts?.delete(clientId);
+    this?.clientCleanupHandlers?.delete(clientId);
 
     // Clear health check timeout
-    const healthCheck = this.connectionHealthChecks.get(clientId);
+    const healthCheck = this?.connectionHealthChecks?.get(clientId);
     if (healthCheck) {
       clearTimeout(healthCheck);
-      this.connectionHealthChecks.delete(clientId);
+      this?.connectionHealthChecks?.delete(clientId);
     }
 
     // Clear any throttle timers associated with this client
-    const throttleTimer = this.throttleTimers.get(clientId);
+    const throttleTimer = this?.throttleTimers?.get(clientId);
     if (throttleTimer) {
       clearTimeout(throttleTimer);
-      this.throttleTimers.delete(clientId);
+      this?.throttleTimers?.delete(clientId);
     }
   }
 
@@ -735,35 +735,35 @@ export class WebSocketService extends EventEmitter {
    */
   private cleanupOrphanedData(): void {
     // Clean up authenticated clients that don't have active connections
-    const clientIds = new Set(this.clients.keys());
+    const clientIds = new Set(this?.clients?.keys());
 
-    this.authenticatedClients.forEach((_, clientId) => {
+    this?.authenticatedClients?.forEach((_, clientId) => {
       if (!clientIds.has(clientId)) {
-        this.authenticatedClients.delete(clientId);
+        this?.authenticatedClients?.delete(clientId);
       }
     });
 
-    this.clientPermissions.forEach((_, clientId) => {
+    this?.clientPermissions?.forEach((_, clientId) => {
       if (!clientIds.has(clientId)) {
-        this.clientPermissions.delete(clientId);
+        this?.clientPermissions?.delete(clientId);
       }
     });
 
-    this.subscriptions.forEach((_, clientId) => {
+    this?.subscriptions?.forEach((_, clientId) => {
       if (!clientIds.has(clientId)) {
-        this.subscriptions.delete(clientId);
+        this?.subscriptions?.delete(clientId);
       }
     });
 
-    this.messageQueue.forEach((_, clientId) => {
+    this?.messageQueue?.forEach((_, clientId) => {
       if (!clientIds.has(clientId)) {
-        this.messageQueue.delete(clientId);
+        this?.messageQueue?.delete(clientId);
       }
     });
 
-    this.retryAttempts.forEach((_, clientId) => {
+    this?.retryAttempts?.forEach((_, clientId) => {
       if (!clientIds.has(clientId)) {
-        this.retryAttempts.delete(clientId);
+        this?.retryAttempts?.delete(clientId);
       }
     });
   }
@@ -790,22 +790,22 @@ export class WebSocketService extends EventEmitter {
         try {
           ws.ping();
         } catch (error) {
-          this.performanceMetrics.connectionErrors++;
+          this?.performanceMetrics?.connectionErrors++;
           this.handleConnectionError(clientId, ws);
         }
       } else {
         // Clean up if connection is no longer open
         clearInterval(healthCheck);
-        this.connectionHealthChecks.delete(clientId);
+        this?.connectionHealthChecks?.delete(clientId);
       }
     }, 30000); // Ping every 30 seconds
 
-    this.connectionHealthChecks.set(clientId, healthCheck);
+    this?.connectionHealthChecks?.set(clientId, healthCheck);
 
     // Setup pong handler with proper cleanup
     const pongHandler = () => {
       // Reset retry attempts on successful pong
-      this.retryAttempts.delete(clientId);
+      this?.retryAttempts?.delete(clientId);
     };
 
     ws.on("pong", pongHandler);
@@ -823,10 +823,10 @@ export class WebSocketService extends EventEmitter {
     clientId: string,
     ws: AuthenticatedWebSocket,
   ): void {
-    const attempts = this.retryAttempts.get(clientId) || 0;
+    const attempts = this?.retryAttempts?.get(clientId) || 0;
 
     if (attempts < 3) {
-      this.retryAttempts.set(clientId, attempts + 1);
+      this?.retryAttempts?.set(clientId, attempts + 1);
       logger.warn(
         `WebSocket connection error for client ${clientId}, attempt ${attempts + 1}/3`,
         "WS_SERVICE",
@@ -865,7 +865,7 @@ export class WebSocketService extends EventEmitter {
   } {
     const stats = this.getConnectionStats();
     const uptime =
-      Date.now() - (this.performanceMetrics.lastCleanup || Date.now());
+      Date.now() - (this?.performanceMetrics?.lastCleanup || Date.now());
 
     return {
       status: stats.totalConnections > 0 ? "healthy" : "idle",
@@ -1163,34 +1163,34 @@ export class WebSocketService extends EventEmitter {
       byPermission: {} as Record<string, number>,
     };
 
-    this.clients.forEach((sockets) => {
+    this?.clients?.forEach((sockets: any) => {
       totalConnections += sockets.size;
     });
 
-    this.subscriptions.forEach((subs) => {
-      subs.forEach((sub) => {
+    this?.subscriptions?.forEach((subs: any) => {
+      subs.forEach((sub: any) => {
         subscriptionStats[sub] = (subscriptionStats[sub] || 0) + 1;
       });
     });
 
     // Collect authentication statistics
-    this.authenticatedClients.forEach((ws) => {
+    this?.authenticatedClients?.forEach((ws: any) => {
       if (ws.userRole) {
         authStats.byRole[ws.userRole] =
           (authStats.byRole[ws.userRole] || 0) + 1;
       }
     });
 
-    this.clientPermissions.forEach((permissions) => {
-      permissions.forEach((perm) => {
+    this?.clientPermissions?.forEach((permissions: any) => {
+      permissions.forEach((perm: any) => {
         authStats.byPermission[perm] = (authStats.byPermission[perm] || 0) + 1;
       });
     });
 
     return {
-      totalClients: this.clients.size,
+      totalClients: this?.clients?.size,
       totalConnections,
-      authenticatedClients: this.authenticatedClients.size,
+      authenticatedClients: this?.authenticatedClients?.size,
       subscriptionStats,
       authStats,
     };
@@ -1374,20 +1374,20 @@ export class WebSocketService extends EventEmitter {
     }
 
     // Clear all throttle timers
-    this.throttleTimers.forEach((timer) => {
+    this?.throttleTimers?.forEach((timer: any) => {
       clearTimeout(timer);
     });
-    this.throttleTimers.clear();
+    this?.throttleTimers?.clear();
 
     // Clear all health check timers
-    this.connectionHealthChecks.forEach((timer) => {
+    this?.connectionHealthChecks?.forEach((timer: any) => {
       clearTimeout(timer);
     });
-    this.connectionHealthChecks.clear();
+    this?.connectionHealthChecks?.clear();
 
     // Close all active connections
-    this.clients.forEach((sockets, clientId) => {
-      sockets.forEach((ws) => {
+    this?.clients?.forEach((sockets, clientId) => {
+      sockets.forEach((ws: any) => {
         if (ws.readyState === ws.OPEN) {
           ws.close(1001, "Server shutting down");
         }
@@ -1395,14 +1395,14 @@ export class WebSocketService extends EventEmitter {
     });
 
     // Clear all data structures
-    this.clients.clear();
-    this.subscriptions.clear();
-    this.authenticatedClients.clear();
-    this.clientPermissions.clear();
-    this.messageQueue.clear();
-    this.throttledBroadcasts.clear();
-    this.retryAttempts.clear();
-    this.clientCleanupHandlers.clear();
+    this?.clients?.clear();
+    this?.subscriptions?.clear();
+    this?.authenticatedClients?.clear();
+    this?.clientPermissions?.clear();
+    this?.messageQueue?.clear();
+    this?.throttledBroadcasts?.clear();
+    this?.retryAttempts?.clear();
+    this?.clientCleanupHandlers?.clear();
 
     // Remove all event listeners
     this.removeAllListeners();

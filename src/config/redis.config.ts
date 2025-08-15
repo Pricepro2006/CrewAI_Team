@@ -54,7 +54,7 @@ redisClient.on('ready', () => {
   logger.info('Redis client ready for commands');
 });
 
-redisClient.on('error', (err) => {
+redisClient.on('error', (err: any) => {
   logger.error('Redis client error', {
     error: err.message,
     stack: err.stack,
@@ -67,7 +67,7 @@ redisClient.on('close', () => {
   logger.warn('Redis client connection closed');
 });
 
-redisClient.on('reconnecting', (timeToReconnect) => {
+redisClient.on('reconnecting', (timeToReconnect: any) => {
   logger.info('Redis client reconnecting', {
     timeToReconnect: `${timeToReconnect}ms`
   });

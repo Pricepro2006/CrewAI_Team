@@ -83,12 +83,12 @@ export class WalmartRealtimeManager {
   registerPriceMonitor(monitor: PriceMonitor): void {
     const { productId, userId } = monitor;
 
-    if (!this.priceMonitors.has(productId)) {
-      this.priceMonitors.set(productId, []);
+    if (!this?.priceMonitors?.has(productId)) {
+      this?.priceMonitors?.set(productId, []);
     }
 
-    const monitors = this.priceMonitors.get(productId)!;
-    const existingIndex = monitors.findIndex((m) => m.userId === userId);
+    const monitors = this?.priceMonitors?.get(productId)!;
+    const existingIndex = monitors.findIndex((m: any) => m.userId === userId);
 
     if (existingIndex >= 0) {
       monitors[existingIndex] = monitor;
@@ -108,11 +108,11 @@ export class WalmartRealtimeManager {
    * Register stock alert for a product
    */
   registerStockAlert(productId: string, userId: string): void {
-    if (!this.stockAlerts.has(productId)) {
-      this.stockAlerts.set(productId, new Set());
+    if (!this?.stockAlerts?.has(productId)) {
+      this?.stockAlerts?.set(productId, new Set());
     }
 
-    this.stockAlerts.get(productId)!.add(userId);
+    this?.stockAlerts?.get(productId)!.add(userId);
 
     logger.info("Stock alert registered", "WALMART_WS", {
       productId,
@@ -124,11 +124,11 @@ export class WalmartRealtimeManager {
    * Enable cart synchronization for a user
    */
   enableCartSync(userId: string, clientId: string): void {
-    if (!this.cartSyncClients.has(userId)) {
-      this.cartSyncClients.set(userId, new Set());
+    if (!this?.cartSyncClients?.has(userId)) {
+      this?.cartSyncClients?.set(userId, new Set());
     }
 
-    this.cartSyncClients.get(userId)!.add(clientId);
+    this?.cartSyncClients?.get(userId)!.add(clientId);
 
     logger.info("Cart sync enabled", "WALMART_WS", {
       userId,
@@ -144,11 +144,11 @@ export class WalmartRealtimeManager {
     currentPrice: number,
     previousPrice: number,
   ): void {
-    const monitors = this.priceMonitors.get(productId) || [];
+    const monitors = this?.priceMonitors?.get(productId) || [];
     const percentChange =
       ((previousPrice - currentPrice) / previousPrice) * 100;
 
-    monitors.forEach((monitor) => {
+    monitors.forEach((monitor: any) => {
       let shouldNotify = false;
 
       // Check if target price reached
@@ -192,9 +192,9 @@ export class WalmartRealtimeManager {
     inStock: boolean,
     quantity?: number,
   ): void {
-    const interestedUsers = this.stockAlerts.get(productId) || new Set();
+    const interestedUsers = this?.stockAlerts?.get(productId) || new Set();
 
-    interestedUsers.forEach((userId) => {
+    interestedUsers.forEach((userId: any) => {
       const message: WalmartStockUpdateMessage = {
         type: "walmart.stock_update",
         productId,
@@ -215,7 +215,7 @@ export class WalmartRealtimeManager {
 
     // Remove alert if item is back in stock
     if (inStock) {
-      this.stockAlerts.delete(productId);
+      this?.stockAlerts?.delete(productId);
     }
   }
 
@@ -228,7 +228,7 @@ export class WalmartRealtimeManager {
   ): Promise<void> {
     try {
       // Get deal details
-      const dealDetails = await this.dealDataService.getDealDetails(dealId);
+      const dealDetails = await this?.dealDataService?.getDealDetails(dealId);
 
       if (!dealDetails) {
         logger.warn("Deal not found for alert", "WALMART_WS", { dealId });
@@ -238,16 +238,16 @@ export class WalmartRealtimeManager {
       // Find users monitoring these products
       const affectedUsers = new Set<string>();
 
-      affectedProducts.forEach((productId) => {
-        const monitors = this.priceMonitors.get(productId) || [];
-        monitors.forEach((monitor) => affectedUsers.add(monitor.userId));
+      affectedProducts.forEach((productId: any) => {
+        const monitors = this?.priceMonitors?.get(productId) || [];
+        monitors.forEach((monitor: any) => affectedUsers.add(monitor.userId));
 
-        const stockWatchers = this.stockAlerts.get(productId) || new Set();
-        stockWatchers.forEach((userId) => affectedUsers.add(userId));
+        const stockWatchers = this?.stockAlerts?.get(productId) || new Set();
+        stockWatchers.forEach((userId: any) => affectedUsers.add(userId));
       });
 
       // Send deal alert to affected users
-      affectedUsers.forEach((userId) => {
+      affectedUsers.forEach((userId: any) => {
         const message: WalmartDealAlertMessage = {
           type: "walmart.deal_alert",
           dealId,
@@ -262,7 +262,7 @@ export class WalmartRealtimeManager {
       logger.info("Deal alerts sent", "WALMART_WS", {
         dealId,
         affectedUsers: affectedUsers.size,
-        products: affectedProducts.length,
+        products: affectedProducts?.length || 0,
       });
     } catch (error) {
       logger.error("Failed to broadcast deal alert", "WALMART_WS", { error });
@@ -273,9 +273,9 @@ export class WalmartRealtimeManager {
    * Sync cart updates across devices
    */
   syncCartUpdate(userId: string, cartData: any, sourceClientId: string): void {
-    const userClients = this.cartSyncClients.get(userId) || new Set();
+    const userClients = this?.cartSyncClients?.get(userId) || new Set();
 
-    userClients.forEach((clientId) => {
+    userClients.forEach((clientId: any) => {
       // Don't send back to source client
       if (clientId !== sourceClientId) {
         const message: WalmartCartSyncMessage = {
@@ -303,7 +303,7 @@ export class WalmartRealtimeManager {
     try {
       // Get user's recent email interactions
       const recentEmails =
-        await this.emailStorageService.getRecentEmailsForUser(
+        await this?.emailStorageService?.getRecentEmailsForUser(
           userId,
           7, // Last 7 days
         );
@@ -312,7 +312,7 @@ export class WalmartRealtimeManager {
       const recommendationData = {
         recentSearches: context.searches || [],
         recentPurchases: context.purchases || [],
-        emailInsights: recentEmails.map((email) => ({
+        emailInsights: recentEmails?.map((email: any) => ({
           subject: email.subject,
           sentiment: email.sentiment,
           entities: email.entities,
@@ -332,7 +332,7 @@ export class WalmartRealtimeManager {
 
       logger.info("Recommendations sent", "WALMART_WS", {
         userId,
-        emailCount: recentEmails.length,
+        emailCount: recentEmails?.length || 0,
       });
     } catch (error) {
       logger.error("Failed to send recommendations", "WALMART_WS", { error });
@@ -411,7 +411,7 @@ export class WalmartRealtimeManager {
     // This would integrate with the BrightData scraping service
     // For now, it's a placeholder
     logger.info("Checking price updates", "WALMART_WS", {
-      monitoredProducts: this.priceMonitors.size,
+      monitoredProducts: this?.priceMonitors?.size,
     });
   }
 
@@ -421,7 +421,7 @@ export class WalmartRealtimeManager {
   private async checkStockUpdates(): Promise<void> {
     // This would integrate with the BrightData scraping service
     logger.info("Checking stock updates", "WALMART_WS", {
-      monitoredProducts: this.stockAlerts.size,
+      monitoredProducts: this?.stockAlerts?.size,
     });
   }
 
@@ -431,9 +431,9 @@ export class WalmartRealtimeManager {
   private async checkNewDeals(): Promise<void> {
     try {
       // Check for new deals in the system
-      const recentDeals = await this.dealDataService.getRecentDeals(1); // Last hour
+      const recentDeals = await this?.dealDataService?.getRecentDeals(1); // Last hour
 
-      if (recentDeals.length > 0) {
+      if (recentDeals?.length || 0 > 0) {
         for (const deal of recentDeals) {
           await this.broadcastDealAlert(deal.id, deal.products || []);
         }
@@ -447,11 +447,11 @@ export class WalmartRealtimeManager {
    * Remove a client from cart sync
    */
   removeCartSyncClient(userId: string, clientId: string): void {
-    const clients = this.cartSyncClients.get(userId);
+    const clients = this?.cartSyncClients?.get(userId);
     if (clients) {
       clients.delete(clientId);
       if (clients.size === 0) {
-        this.cartSyncClients.delete(userId);
+        this?.cartSyncClients?.delete(userId);
       }
     }
   }
@@ -465,9 +465,9 @@ export class WalmartRealtimeManager {
       this.updateInterval = null;
     }
 
-    this.priceMonitors.clear();
-    this.stockAlerts.clear();
-    this.cartSyncClients.clear();
+    this?.priceMonitors?.clear();
+    this?.stockAlerts?.clear();
+    this?.cartSyncClients?.clear();
 
     logger.info("Walmart realtime manager cleaned up", "WALMART_WS");
   }
@@ -488,7 +488,7 @@ export function setupWalmartWebSocket(
 
   // Add Walmart-specific message handling
   wss.on("connection", (ws: AuthenticatedWebSocket) => {
-    ws.on("message", async (data) => {
+    ws.on("message", async (data: any) => {
       try {
         const message = JSON.parse(data.toString());
 

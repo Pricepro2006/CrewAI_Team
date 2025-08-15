@@ -52,12 +52,12 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
         duration: 3000
       });
     },
-    onMessage: (message) => {
+    onMessage: (message: any) => {
       setLastUpdate(new Date());
       setMessageHistory(prev => [...prev.slice(-9), message]);
       onDataReceived?.(message);
     },
-    onModeChange: (mode) => {
+    onModeChange: (mode: any) => {
       const modeMessages = {
         websocket: 'Real-time connection established',
         polling: 'Switched to polling mode (fallback)',
@@ -208,20 +208,20 @@ export const WalmartSmartConnection: React.FC<WalmartSmartConnectionProps> = ({
         {connection.lastError && (
           <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded">
             <p className="text-sm text-red-700">
-              Error: {connection.lastError.message}
+              Error: {connection?.lastError?.message}
             </p>
           </div>
         )}
       </div>
 
       {/* Message History (Debug) */}
-      {process.env.NODE_ENV === 'development' && messageHistory.length > 0 && (
+      {process.env.NODE_ENV === 'development' && messageHistory?.length || 0 > 0 && (
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mb-4">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Recent Messages ({messageHistory.length})
+            Recent Messages ({messageHistory?.length || 0})
           </h3>
           <div className="space-y-1 max-h-32 overflow-auto">
-            {messageHistory.map((msg, idx) => (
+            {messageHistory?.map((msg, idx) => (
               <div key={idx} className="text-xs text-gray-600 dark:text-gray-400 font-mono">
                 {JSON.stringify(msg).substring(0, 100)}...
               </div>

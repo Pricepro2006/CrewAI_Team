@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { createTRPCProxyClient, createWSClient, wsLink } from "@trpc/client";
 import superjson from "superjson";
 import type { AppRouter } from "../../api/trpc/router.js";
-import { webSocketConfig } from "../../config/websocket.config";
+import { webSocketConfig } from "../../config/websocket?.config.js";
 
 interface WebSocketOptions {
   onConnect?: () => void;
@@ -74,7 +74,7 @@ export function useWebSocket(options: WebSocketOptions = {}): {
             isReconnectingRef.current = true;
             reconnectTimeoutRef.current = setTimeout(() => {
               if (isMountedRef.current) {
-                setReconnectAttempts((prev) => prev + 1);
+                setReconnectAttempts((prev: any) => prev + 1);
                 connect();
               }
             }, reconnectDelay);
@@ -114,7 +114,7 @@ export function useWebSocket(options: WebSocketOptions = {}): {
     }
 
     if (clientRef.current) {
-      clientRef.current.close();
+      clientRef?.current?.close();
       clientRef.current = undefined;
     }
 
@@ -187,7 +187,7 @@ export function useAgentStatus(agentId?: string) {
 
     // Clean up previous subscription
     if (unsubscribeRef.current) {
-      unsubscribeRef.current.unsubscribe?.();
+      unsubscribeRef?.current?.unsubscribe?.();
       unsubscribeRef.current = null;
     }
 
@@ -217,7 +217,7 @@ export function useAgentStatus(agentId?: string) {
 
     return () => {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef?.current?.unsubscribe?.();
         unsubscribeRef.current = null;
       }
     };
@@ -227,7 +227,7 @@ export function useAgentStatus(agentId?: string) {
   useEffect(() => {
     return () => {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef?.current?.unsubscribe?.();
         unsubscribeRef.current = null;
       }
     };
@@ -256,7 +256,7 @@ export function usePlanProgress(planId: string) {
 
     // Clean up previous subscription
     if (unsubscribeRef.current) {
-      unsubscribeRef.current.unsubscribe?.();
+      unsubscribeRef?.current?.unsubscribe?.();
       unsubscribeRef.current = null;
     }
 
@@ -286,7 +286,7 @@ export function usePlanProgress(planId: string) {
 
     return () => {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef?.current?.unsubscribe?.();
         unsubscribeRef.current = null;
       }
     };
@@ -296,7 +296,7 @@ export function usePlanProgress(planId: string) {
   useEffect(() => {
     return () => {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef?.current?.unsubscribe?.();
         unsubscribeRef.current = null;
       }
     };
@@ -328,7 +328,7 @@ export function useTaskQueue() {
 
     // Clean up previous subscription
     if (unsubscribeRef.current) {
-      unsubscribeRef.current.unsubscribe?.();
+      unsubscribeRef?.current?.unsubscribe?.();
       unsubscribeRef.current = null;
     }
 
@@ -342,7 +342,7 @@ export function useTaskQueue() {
             },
             {
               onData: (data: any) => {
-                setTasks((prev) => {
+                setTasks((prev: any) => {
                   const newTasks = new Map(prev);
                   newTasks.set(data.taskId, data);
 
@@ -381,7 +381,7 @@ export function useTaskQueue() {
 
     return () => {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef?.current?.unsubscribe?.();
         unsubscribeRef.current = null;
       }
     };
@@ -391,7 +391,7 @@ export function useTaskQueue() {
   useEffect(() => {
     return () => {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef?.current?.unsubscribe?.();
         unsubscribeRef.current = null;
       }
       setTasks(new Map()); // Clear tasks on unmount
@@ -422,7 +422,7 @@ export function useSystemHealth() {
 
     // Clean up previous subscription
     if (unsubscribeRef.current) {
-      unsubscribeRef.current.unsubscribe?.();
+      unsubscribeRef?.current?.unsubscribe?.();
       unsubscribeRef.current = null;
     }
 
@@ -451,7 +451,7 @@ export function useSystemHealth() {
 
     return () => {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef?.current?.unsubscribe?.();
         unsubscribeRef.current = null;
       }
     };
@@ -461,7 +461,7 @@ export function useSystemHealth() {
   useEffect(() => {
     return () => {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef?.current?.unsubscribe?.();
         unsubscribeRef.current = null;
       }
     };
@@ -494,7 +494,7 @@ export function useRAGOperations() {
 
     // Clean up previous subscription
     if (unsubscribeRef.current) {
-      unsubscribeRef.current.unsubscribe?.();
+      unsubscribeRef?.current?.unsubscribe?.();
       unsubscribeRef.current = null;
     }
 
@@ -508,7 +508,7 @@ export function useRAGOperations() {
             },
             {
               onData: (data: any) => {
-                setOperations((prev) => [...prev, data].slice(-20)); // Keep last 20 operations
+                setOperations((prev: any) => [...prev, data].slice(-20)); // Keep last 20 operations
               },
               onError: (error: any) => {
                 console.error("RAG operations subscription error:", error);
@@ -523,7 +523,7 @@ export function useRAGOperations() {
 
     return () => {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef?.current?.unsubscribe?.();
         unsubscribeRef.current = null;
       }
     };
@@ -533,7 +533,7 @@ export function useRAGOperations() {
   useEffect(() => {
     return () => {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current.unsubscribe?.();
+        unsubscribeRef?.current?.unsubscribe?.();
         unsubscribeRef.current = null;
       }
       setOperations([]); // Clear operations on unmount

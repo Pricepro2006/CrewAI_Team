@@ -66,10 +66,10 @@ export class HttpTestClient implements TestHttpClient {
       return {
         status: response.status,
         statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
+        headers: Object.fromEntries(response?.headers?.entries()),
         data,
         duration,
-        requestId: response.headers.get("x-request-id") || undefined,
+        requestId: response?.headers?.get("x-request-id") || undefined,
       };
     } catch (error) {
       throw this.createTestError(error as Error, config);
@@ -161,10 +161,10 @@ export class HttpTestClient implements TestHttpClient {
     const testError = error as TestError;
     testError.code = "REQUEST_FAILED";
     testError.request = config;
-    testError.isTimeout = error.message.includes("timeout");
+    testError.isTimeout = error?.message?.includes("timeout");
     testError.isNetworkError =
-      error.message.includes("network") ||
-      error.message.includes("ECONNREFUSED");
+      error?.message?.includes("network") ||
+      error?.message?.includes("ECONNREFUSED");
     return testError;
   }
 }
@@ -212,15 +212,15 @@ export class WebSocketTestClient implements TestWebSocketClient {
         resolve(this.connection);
       });
 
-      ws.on("message", (data) => {
+      ws.on("message", (data: any) => {
         if (this.connection) {
           const message = JSON.parse(data.toString()) as WebSocketMessage;
-          this.connection.receivedMessages.push(message);
-          this.connection.lastActivity = new Date().toISOString();
+          this?.connection?.receivedMessages.push(message);
+          this?.connection?.lastActivity = new Date().toISOString();
 
           // Trigger event handlers
-          const handlers = this.eventHandlers.get(message.type) || [];
-          handlers.forEach((handler) => {
+          const handlers = this?.eventHandlers?.get(message.type) || [];
+          handlers.forEach((handler: any) => {
             try {
               handler.handler(message);
             } catch (error) {
@@ -230,13 +230,13 @@ export class WebSocketTestClient implements TestWebSocketClient {
         }
       });
 
-      ws.on("error", (error) => {
+      ws.on("error", (error: any) => {
         reject(error);
       });
 
       ws.on("close", () => {
         if (this.connection) {
-          this.connection.connected = false;
+          this?.connection?.connected = false;
         }
         this.ws = undefined;
         this.connectionPromise = undefined;
@@ -255,25 +255,25 @@ export class WebSocketTestClient implements TestWebSocketClient {
 
   async disconnect(): Promise<void> {
     if (this.ws) {
-      this.ws.close();
+      this?.ws?.close();
       this.ws = undefined;
       this.connectionPromise = undefined;
     }
 
     if (this.connection) {
-      this.connection.connected = false;
+      this?.connection?.connected = false;
     }
   }
 
   async send(message: WebSocketMessage): Promise<void> {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+    if (!this.ws || this?.ws?.readyState !== WebSocket.OPEN) {
       await this.connect();
     }
 
     if (this.ws && this.connection) {
-      this.ws.send(JSON.stringify(message));
-      this.connection.sentMessages.push(message);
-      this.connection.lastActivity = new Date().toISOString();
+      this?.ws?.send(JSON.stringify(message));
+      this?.connection?.sentMessages.push(message);
+      this?.connection?.lastActivity = new Date().toISOString();
     }
   }
 
@@ -287,7 +287,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
     });
 
     if (this.connection) {
-      this.connection.subscriptions.push(channel);
+      this?.connection?.subscriptions.push(channel);
     }
   }
 
@@ -295,20 +295,20 @@ export class WebSocketTestClient implements TestWebSocketClient {
     eventType: string,
     handler: (message: WebSocketMessage) => void,
   ): void {
-    if (!this.eventHandlers.has(eventType)) {
-      this.eventHandlers.set(eventType, []);
+    if (!this?.eventHandlers?.has(eventType)) {
+      this?.eventHandlers?.set(eventType, []);
     }
-    this.eventHandlers.get(eventType)!.push({ handler, once: false });
+    this?.eventHandlers?.get(eventType)!.push({ handler, once: false });
   }
 
   once(
     eventType: string,
     handler: (message: WebSocketMessage) => void,
   ): void {
-    if (!this.eventHandlers.has(eventType)) {
-      this.eventHandlers.set(eventType, []);
+    if (!this?.eventHandlers?.has(eventType)) {
+      this?.eventHandlers?.set(eventType, []);
     }
-    this.eventHandlers.get(eventType)!.push({ handler, once: true });
+    this?.eventHandlers?.get(eventType)!.push({ handler, once: true });
   }
 
   async waitForMessage(
@@ -320,7 +320,7 @@ export class WebSocketTestClient implements TestWebSocketClient {
         reject(new Error(`Timeout waiting for message of type: ${eventType}`));
       }, timeout);
 
-      this.once(eventType, (message) => {
+      this.once(eventType, (message: any) => {
         clearTimeout(timeoutId);
         resolve(message);
       });
@@ -337,20 +337,20 @@ export class WebSocketTestClient implements TestWebSocketClient {
     });
 
     if (this.connection) {
-      const index = this.connection.subscriptions.indexOf(channel);
+      const index = this?.connection?.subscriptions.indexOf(channel);
       if (index > -1) {
-        this.connection.subscriptions.splice(index, 1);
+        this?.connection?.subscriptions.splice(index, 1);
       }
     }
   }
 
   off(eventType: string, handler?: (message: WebSocketMessage) => void): void {
     if (!handler) {
-      this.eventHandlers.delete(eventType);
+      this?.eventHandlers?.delete(eventType);
     } else {
-      const handlers = this.eventHandlers.get(eventType);
+      const handlers = this?.eventHandlers?.get(eventType);
       if (handlers) {
-        const index = handlers.findIndex((h) => h.handler === handler);
+        const index = handlers.findIndex((h: any) => h.handler === handler);
         if (index > -1) {
           handlers.splice(index, 1);
         }
@@ -583,11 +583,11 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
   toHaveLength(length: number): TestAssertions<T> {
     const actual = this.actual as unknown as { length: number };
     const passed = this.isNegated
-      ? actual.length !== length
-      : actual.length === length;
+      ? actual?.length || 0 !== length
+      : actual?.length || 0 === length;
     if (!passed) {
       throw new Error(
-        `Expected length ${actual.length} ${this.isNegated ? "not " : ""}to be ${length}`,
+        `Expected length ${actual?.length || 0} ${this.isNegated ? "not " : ""}to be ${length}`,
       );
     }
     return this;
@@ -596,8 +596,8 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
   toContainEqual(expected: unknown): TestAssertions<T> {
     const actual = this.actual as unknown as unknown[];
     const passed = this.isNegated
-      ? !actual.some((item) => this.deepEqual(item, expected))
-      : actual.some((item) => this.deepEqual(item, expected));
+      ? !actual.some((item: any) => this.deepEqual(item, expected))
+      : actual.some((item: any) => this.deepEqual(item, expected));
     if (!passed) {
       throw new Error(
         `Expected array ${this.isNegated ? "not " : ""}to contain equal ${JSON.stringify(expected)}`,
@@ -700,8 +700,8 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
     eventType: string,
   ): TestAssertions<TestWebSocketConnection> {
     const connection = this.actual as unknown as TestWebSocketConnection;
-    const hasMessage = connection.receivedMessages.some(
-      (msg) => msg.type === eventType,
+    const hasMessage = connection?.receivedMessages?.some(
+      (msg: any) => msg.type === eventType,
     );
     const passed = this.isNegated ? !hasMessage : hasMessage;
     if (!passed) {
@@ -714,7 +714,7 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
 
   toHaveSubscription(channel: string): TestAssertions<TestWebSocketConnection> {
     const connection = this.actual as unknown as TestWebSocketConnection;
-    const hasSubscription = connection.subscriptions.includes(channel);
+    const hasSubscription = connection?.subscriptions?.includes(channel);
     const passed = this.isNegated ? !hasSubscription : hasSubscription;
     if (!passed) {
       throw new Error(
@@ -753,7 +753,7 @@ export class TestAssertionsImpl<T = unknown> implements TestAssertions<T> {
     const keysA = Object.keys(a as Record<string, unknown>);
     const keysB = Object.keys(b as Record<string, unknown>);
 
-    if (keysA.length !== keysB.length) return false;
+    if (keysA?.length || 0 !== keysB?.length || 0) return false;
 
     for (const key of keysA) {
       if (!keysB.includes(key)) return false;
@@ -773,8 +773,8 @@ export class TestCleanupManager implements CleanupManager {
   public executed: boolean = false;
 
   register(task: CleanupTask): void {
-    this.tasks.push(task);
-    this.tasks.sort((a, b) => b.priority - a.priority); // Higher priority first
+    this?.tasks?.push(task);
+    this?.tasks?.sort((a, b) => b.priority - a.priority); // Higher priority first
   }
 
   async execute(): Promise<CleanupResult[]> {
@@ -987,7 +987,7 @@ export async function authenticateUser(
   context: TestContext,
   user: TestUser,
 ): Promise<string> {
-  const response = await context.services.http.post<{ token: string }>(
+  const response = await context?.services?.http.post<{ token: string }>(
     "/api/auth/login",
     {
       email: user.email,
@@ -999,10 +999,10 @@ export async function authenticateUser(
     throw new Error(`Authentication failed: ${response.statusText}`);
   }
 
-  const token = response.data.token;
-  context.services.http.setAuthToken(token);
-  context.session.user = user;
-  context.session.authToken = token;
+  const token = response?.data?.token;
+  context?.services?.http.setAuthToken(token);
+  context?.session?.user = user;
+  context?.session?.authToken = token;
 
   return token;
 }

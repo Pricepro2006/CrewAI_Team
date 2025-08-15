@@ -48,7 +48,7 @@ async function benchmarkEndpoint(
       
       // Show progress
       if ((i + 1) % 10 === 0) {
-        process.stdout.write(`  ${i + 1}/${requests} requests completed\r`);
+        process?.stdout?.write(`  ${i + 1}/${requests} requests completed\r`);
       }
     } catch (error) {
       failures++;
@@ -59,11 +59,11 @@ async function benchmarkEndpoint(
 
   // Calculate statistics
   latencies.sort((a, b) => a - b);
-  const avg = latencies.reduce((sum, l) => sum + l, 0) / latencies.length;
+  const avg = latencies.reduce((sum: any, l: any) => sum + l, 0) / latencies?.length || 0;
   const min = latencies[0] || 0;
-  const max = latencies[latencies.length - 1] || 0;
-  const p95 = latencies[Math.floor(latencies.length * 0.95)] || 0;
-  const p99 = latencies[Math.floor(latencies.length * 0.99)] || 0;
+  const max = latencies[latencies?.length || 0 - 1] || 0;
+  const p95 = latencies[Math.floor(latencies?.length || 0 * 0.95)] || 0;
+  const p99 = latencies[Math.floor(latencies?.length || 0 * 0.99)] || 0;
 
   return {
     service: name.split(" - ")[0],
@@ -131,18 +131,18 @@ async function runBenchmarks() {
   
   results.forEach(r => {
     console.log(
-      `${r.service.padEnd(16)} | ${r.endpoint.padEnd(16)} | ${
-        r.avgLatency.toString().padStart(7)
+      `${r?.service?.padEnd(16)} | ${r?.endpoint?.padEnd(16)} | ${
+        r?.avgLatency?.toString().padStart(7)
       } | ${
-        r.minLatency.toString().padStart(7)
+        r?.minLatency?.toString().padStart(7)
       } | ${
-        r.maxLatency.toString().padStart(7)
+        r?.maxLatency?.toString().padStart(7)
       } | ${
-        r.p95Latency.toString().padStart(7)
+        r?.p95Latency?.toString().padStart(7)
       } | ${
-        r.p99Latency.toString().padStart(7)
+        r?.p99Latency?.toString().padStart(7)
       } | ${
-        r.successRate.toFixed(1).padStart(8)}%`
+        r?.successRate?.toFixed(1).padStart(8)}%`
     );
   });
 
@@ -185,7 +185,7 @@ async function runBenchmarks() {
 
   const concurrentResults = await Promise.all(concurrentPromises);
   const concurrentDuration = Date.now() - concurrentStart;
-  const concurrentSuccess = concurrentResults.filter(r => r !== null).length;
+  const concurrentSuccess = concurrentResults?.filter(r => r !== null).length;
 
   console.log(`Total Duration: ${concurrentDuration}ms`);
   console.log(`Successful Requests: ${concurrentSuccess}/50`);
@@ -195,12 +195,12 @@ async function runBenchmarks() {
   // Summary
   console.log("\n=== Summary ===\n");
   
-  const avgLatencies = results.map(r => r.avgLatency);
-  const overallAvg = Math.round(avgLatencies.reduce((a, b) => a + b, 0) / avgLatencies.length);
+  const avgLatencies = results?.map(r => r.avgLatency);
+  const overallAvg = Math.round(avgLatencies.reduce((a: any, b: any) => a + b, 0) / avgLatencies?.length || 0);
   
   console.log(`Overall Average Latency: ${overallAvg}ms`);
   console.log(`Best Performing: ${results.sort((a, b) => a.avgLatency - b.avgLatency)[0].service} - ${results[0].endpoint}`);
-  console.log(`Slowest Service: ${results.sort((a, b) => b.avgLatency - a.avgLatency)[0].service} - ${results[results.length - 1].endpoint}`);
+  console.log(`Slowest Service: ${results.sort((a, b) => b.avgLatency - a.avgLatency)[0].service} - ${results[results?.length || 0 - 1].endpoint}`);
   
   const allPassing = results.every(r => {
     const target = targets[r.service as keyof typeof targets];

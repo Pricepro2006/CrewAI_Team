@@ -9,7 +9,7 @@ import { ChromaDBConnectionManager, ConnectionState } from "../database/vector/C
 import { ResilientChromaDBManager, StorageMode } from "../database/vector/ResilientChromaDBManager.js";
 import { ResilientVectorStore } from "../core/rag/ResilientVectorStore.js";
 import { ChromaDBMonitor } from "../monitoring/ChromaDBMonitor.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 import chalk from "chalk";
 
 class ChromaDBResilienceTest {
@@ -19,7 +19,7 @@ class ChromaDBResilienceTest {
   private monitor = ChromaDBMonitor.getInstance();
 
   async runTests(): Promise<void> {
-    console.log(chalk.bold.blue("\n🧪 ChromaDB Resilience Test Suite\n"));
+    console.log(chalk?.bold?.blue("\n🧪 ChromaDB Resilience Test Suite\n"));
     
     await this.testConnectionRetry();
     await this.testCircuitBreaker();
@@ -28,7 +28,7 @@ class ChromaDBResilienceTest {
     await this.testHealthCheck();
     await this.testMetrics();
     
-    console.log(chalk.bold.green("\n✅ All tests completed!\n"));
+    console.log(chalk?.bold?.green("\n✅ All tests completed!\n"));
   }
 
   /**
@@ -47,27 +47,27 @@ class ChromaDBResilienceTest {
 
     console.log("Attempting to connect to ChromaDB...");
     const startTime = Date.now();
-    const connected = await this.connectionManager.connect();
+    const connected = await this?.connectionManager?.connect();
     const duration = Date.now() - startTime;
 
     if (connected) {
       console.log(chalk.green(`✓ Connected successfully in ${duration}ms`));
-      const metrics = this.connectionManager.getMetrics();
+      const metrics = this?.connectionManager?.getMetrics();
       console.log(`  Connection attempts: ${metrics.connectionAttempts}`);
-      console.log(`  Average response time: ${metrics.averageResponseTime.toFixed(2)}ms`);
+      console.log(`  Average response time: ${metrics?.averageResponseTime?.toFixed(2)}ms`);
     } else {
       console.log(chalk.red(`✗ Connection failed after ${duration}ms`));
-      const metrics = this.connectionManager.getMetrics();
+      const metrics = this?.connectionManager?.getMetrics();
       console.log(`  Connection attempts: ${metrics.connectionAttempts}`);
       console.log(`  Failed connections: ${metrics.failedConnections}`);
       
-      const circuitState = this.connectionManager.getCircuitBreakerState();
+      const circuitState = this?.connectionManager?.getCircuitBreakerState();
       if (circuitState.state === "open") {
         console.log(chalk.yellow(`  Circuit breaker opened after ${circuitState.failures} failures`));
       }
     }
 
-    await this.connectionManager.disconnect();
+    await this?.connectionManager?.disconnect();
   }
 
   /**
@@ -90,10 +90,10 @@ class ChromaDBResilienceTest {
     // Attempt multiple connections to trip the circuit breaker
     for (let i = 1; i <= 4; i++) {
       console.log(`\nAttempt ${i}:`);
-      const connected = await this.connectionManager.connect();
+      const connected = await this?.connectionManager?.connect();
       
-      const state = this.connectionManager.getState();
-      const circuitState = this.connectionManager.getCircuitBreakerState();
+      const state = this?.connectionManager?.getState();
+      const circuitState = this?.connectionManager?.getCircuitBreakerState();
       
       console.log(`  Connection state: ${state}`);
       console.log(`  Circuit breaker: ${circuitState.state}`);
@@ -104,7 +104,7 @@ class ChromaDBResilienceTest {
       }
     }
 
-    await this.connectionManager.disconnect();
+    await this?.connectionManager?.disconnect();
   }
 
   /**
@@ -128,9 +128,9 @@ class ChromaDBResilienceTest {
     });
 
     console.log("Initializing resilient manager...");
-    await this.resilientManager.initialize();
+    await this?.resilientManager?.initialize();
     
-    const mode = this.resilientManager.getStorageMode();
+    const mode = this?.resilientManager?.getStorageMode();
     console.log(`  Storage mode: ${chalk.bold(mode)}`);
     
     if (mode === StorageMode.IN_MEMORY) {
@@ -151,20 +151,20 @@ class ChromaDBResilienceTest {
       ];
       
       console.log("\nAdding test documents to in-memory store...");
-      await this.resilientManager.addDocuments("test-collection", testDocs);
+      await this?.resilientManager?.addDocuments("test-collection", testDocs);
       console.log(chalk.green("✓ Documents added successfully"));
       
       // Test querying in fallback mode
       console.log("\nQuerying documents in fallback mode...");
-      const results = await this.resilientManager.queryDocuments(
+      const results = await this?.resilientManager?.queryDocuments(
         "test-collection",
         [], // Empty embedding for text search
         { nResults: 5 }
       );
       
-      console.log(`  Found ${results.length} documents`);
+      console.log(`  Found ${results?.length || 0} documents`);
       results.forEach((r, i) => {
-        console.log(`  ${i + 1}. ${r.id}: ${r.content.substring(0, 50)}...`);
+        console.log(`  ${i + 1}. ${r.id}: ${r?.content?.substring(0, 50)}...`);
       });
     }
   }
@@ -180,11 +180,11 @@ class ChromaDBResilienceTest {
     
     const healthStatus = await this.resilientManager!.getHealthStatus();
     console.log(`  Current mode: ${healthStatus.mode}`);
-    console.log(`  ChromaDB connected: ${healthStatus.chromadb.connected}`);
-    console.log(`  Documents in memory: ${healthStatus.inMemory.documentCount}`);
-    console.log(`  Pending sync: ${healthStatus.inMemory.pendingSync}`);
+    console.log(`  ChromaDB connected: ${healthStatus?.chromadb?.connected}`);
+    console.log(`  Documents in memory: ${healthStatus?.inMemory?.documentCount}`);
+    console.log(`  Pending sync: ${healthStatus?.inMemory?.pendingSync}`);
     
-    if (healthStatus.inMemory.pendingSync > 0) {
+    if (healthStatus?.inMemory?.pendingSync > 0) {
       console.log(chalk.yellow("\n  📤 Documents pending sync to ChromaDB when it becomes available"));
     }
   }
@@ -203,24 +203,24 @@ class ChromaDBResilienceTest {
     });
 
     console.log("Initializing vector store...");
-    await this.vectorStore.initialize();
+    await this?.vectorStore?.initialize();
     
-    const health = await this.vectorStore.getHealthStatus();
+    const health = await this?.vectorStore?.getHealthStatus();
     console.log("\nHealth Status:");
     console.log(`  Status: ${chalk.bold(health.status)}`);
     console.log(`  Mode: ${health.mode}`);
     console.log(`  Message: ${health.message}`);
     
-    if (health.details.chromadb) {
+    if (health?.details?.chromadb) {
       console.log("\nChromaDB Details:");
-      console.log(`  Connected: ${health.details.chromadb.connected}`);
-      console.log(`  State: ${health.details.chromadb.state}`);
+      console.log(`  Connected: ${health?.details?.chromadb.connected}`);
+      console.log(`  State: ${health?.details?.chromadb.state}`);
     }
     
-    if (health.details.inMemory) {
+    if (health?.details?.inMemory) {
       console.log("\nIn-Memory Details:");
-      console.log(`  Document count: ${health.details.inMemory.documentCount}`);
-      console.log(`  Pending sync: ${health.details.inMemory.pendingSync}`);
+      console.log(`  Document count: ${health?.details?.inMemory.documentCount}`);
+      console.log(`  Pending sync: ${health?.details?.inMemory.pendingSync}`);
     }
     
     // Simulate health check endpoint
@@ -234,20 +234,20 @@ class ChromaDBResilienceTest {
   async testMetrics(): Promise<void> {
     console.log(chalk.yellow("\n📊 Test 6: Metrics and Monitoring"));
     
-    const metrics = this.monitor.getMetrics();
-    const healthSummary = this.monitor.getHealthSummary();
+    const metrics = this?.monitor?.getMetrics();
+    const healthSummary = this?.monitor?.getHealthSummary();
     
     console.log("\nConnection Metrics:");
     console.log(`  Total attempts: ${metrics.connectionAttempts}`);
     console.log(`  Successful: ${metrics.successfulConnections}`);
     console.log(`  Failed: ${metrics.failedConnections}`);
-    console.log(`  Uptime: ${metrics.uptimePercentage.toFixed(2)}%`);
+    console.log(`  Uptime: ${metrics?.uptimePercentage?.toFixed(2)}%`);
     
     console.log("\nPerformance Metrics:");
     console.log(`  Total requests: ${metrics.totalRequests}`);
     console.log(`  Failed requests: ${metrics.failedRequests}`);
-    console.log(`  Avg response time: ${metrics.averageResponseTime.toFixed(2)}ms`);
-    console.log(`  P95 response time: ${metrics.p95ResponseTime.toFixed(2)}ms`);
+    console.log(`  Avg response time: ${metrics?.averageResponseTime?.toFixed(2)}ms`);
+    console.log(`  P95 response time: ${metrics?.p95ResponseTime?.toFixed(2)}ms`);
     
     console.log("\nFallback Metrics:");
     console.log(`  Fallback activations: ${metrics.fallbackActivations}`);
@@ -259,23 +259,23 @@ class ChromaDBResilienceTest {
     console.log(`  Status: ${chalk.bold(healthSummary.status)}`);
     console.log(`  Healthy: ${healthSummary.healthy ? chalk.green("Yes") : chalk.red("No")}`);
     
-    if (healthSummary.issues.length > 0) {
+    if (healthSummary?.issues?.length > 0) {
       console.log("\n  Issues:");
-      healthSummary.issues.forEach(issue => {
+      healthSummary?.issues?.forEach(issue => {
         console.log(`    - ${chalk.yellow(issue)}`);
       });
     }
     
-    if (healthSummary.recommendations.length > 0) {
+    if (healthSummary?.recommendations?.length > 0) {
       console.log("\n  Recommendations:");
-      healthSummary.recommendations.forEach(rec => {
+      healthSummary?.recommendations?.forEach(rec => {
         console.log(`    - ${rec}`);
       });
     }
     
     // Export Prometheus metrics
     console.log("\n📈 Prometheus Metrics Sample:");
-    const promMetrics = this.monitor.getPrometheusMetrics();
+    const promMetrics = this?.monitor?.getPrometheusMetrics();
     console.log(promMetrics.split("\n").slice(0, 10).join("\n") + "\n...");
   }
 
@@ -284,15 +284,15 @@ class ChromaDBResilienceTest {
    */
   async cleanup(): Promise<void> {
     if (this.connectionManager) {
-      await this.connectionManager.disconnect();
+      await this?.connectionManager?.disconnect();
     }
     if (this.resilientManager) {
-      await this.resilientManager.shutdown();
+      await this?.resilientManager?.shutdown();
     }
     if (this.vectorStore) {
-      await this.vectorStore.shutdown();
+      await this?.vectorStore?.shutdown();
     }
-    this.monitor.destroy();
+    this?.monitor?.destroy();
   }
 }
 

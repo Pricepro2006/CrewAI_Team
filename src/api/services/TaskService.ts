@@ -11,8 +11,8 @@ export class TaskService {
   }
 
   private setupEventListeners(): void {
-    this.maestro.on("task:submitted", ({ taskId, task }) => {
-      this.activeTasks.set(taskId, {
+    this?.maestro?.on("task:submitted", ({ taskId, task }) => {
+      this?.activeTasks?.set(taskId, {
         id: taskId,
         status: "queued",
         task,
@@ -21,8 +21,8 @@ export class TaskService {
       });
     });
 
-    this.maestro.on("task:started", ({ taskId }) => {
-      const status = this.activeTasks.get(taskId);
+    this?.maestro?.on("task:started", ({ taskId }) => {
+      const status = this?.activeTasks?.get(taskId);
       if (status) {
         status.status = "running";
         status.startedAt = new Date();
@@ -30,8 +30,8 @@ export class TaskService {
       }
     });
 
-    this.maestro.on("task:completed", ({ taskId, result }) => {
-      const status = this.activeTasks.get(taskId);
+    this?.maestro?.on("task:completed", ({ taskId, result }) => {
+      const status = this?.activeTasks?.get(taskId);
       if (status) {
         status.status = "completed";
         status.completedAt = new Date();
@@ -40,8 +40,8 @@ export class TaskService {
       }
     });
 
-    this.maestro.on("task:failed", ({ taskId, error }) => {
-      const status = this.activeTasks.get(taskId);
+    this?.maestro?.on("task:failed", ({ taskId, error }) => {
+      const status = this?.activeTasks?.get(taskId);
       if (status) {
         status.status = "failed";
         status.completedAt = new Date();
@@ -49,8 +49,8 @@ export class TaskService {
       }
     });
 
-    this.maestro.on("task:cancelled", ({ taskId }) => {
-      const status = this.activeTasks.get(taskId);
+    this?.maestro?.on("task:cancelled", ({ taskId }) => {
+      const status = this?.activeTasks?.get(taskId);
       if (status) {
         status.status = "cancelled";
         status.completedAt = new Date();
@@ -64,33 +64,33 @@ export class TaskService {
       id: uuidv4(),
     };
 
-    return await this.maestro.submitTask(fullTask);
+    return await this?.maestro?.submitTask(fullTask);
   }
 
   getTaskStatus(taskId: string): TaskStatus | null {
-    return this.activeTasks.get(taskId) || null;
+    return this?.activeTasks?.get(taskId) || null;
   }
 
   getAllTasks(): TaskStatus[] {
-    return Array.from(this.activeTasks.values()).sort(
-      (a, b) => b.submittedAt.getTime() - a.submittedAt.getTime(),
+    return Array.from(this?.activeTasks?.values()).sort(
+      (a, b) => b?.submittedAt?.getTime() - a?.submittedAt?.getTime(),
     );
   }
 
   getActiveTasks(): TaskStatus[] {
     return this.getAllTasks().filter(
-      (task) => task.status === "running" || task.status === "queued",
+      (task: any) => task.status === "running" || task.status === "queued",
     );
   }
 
   getCompletedTasks(): TaskStatus[] {
     return this.getAllTasks().filter(
-      (task) => task.status === "completed" || task.status === "failed",
+      (task: any) => task.status === "completed" || task.status === "failed",
     );
   }
 
   async cancelTask(taskId: string): Promise<boolean> {
-    const status = this.activeTasks.get(taskId);
+    const status = this?.activeTasks?.get(taskId);
     if (
       !status ||
       (status.status !== "queued" && status.status !== "running")
@@ -99,7 +99,7 @@ export class TaskService {
     }
 
     // Request cancellation from MaestroFramework
-    const cancelled = await this.maestro.cancelTask(taskId);
+    const cancelled = await this?.maestro?.cancelTask(taskId);
 
     if (cancelled || status.status === "queued") {
       status.status = "cancelled";
@@ -111,9 +111,9 @@ export class TaskService {
   }
 
   clearCompletedTasks(): void {
-    for (const [taskId, status] of this.activeTasks.entries()) {
+    for (const [taskId, status] of this?.activeTasks?.entries()) {
       if (status.status === "completed" || status.status === "failed") {
-        this.activeTasks.delete(taskId);
+        this?.activeTasks?.delete(taskId);
       }
     }
   }
@@ -121,12 +121,12 @@ export class TaskService {
   getQueueStatus(): QueueStatus {
     const tasks = this.getAllTasks();
     return {
-      total: tasks.length,
-      queued: tasks.filter((t) => t.status === "queued").length,
-      running: tasks.filter((t) => t.status === "running").length,
-      completed: tasks.filter((t) => t.status === "completed").length,
-      failed: tasks.filter((t) => t.status === "failed").length,
-      cancelled: tasks.filter((t) => t.status === "cancelled").length,
+      total: tasks?.length || 0,
+      queued: tasks?.filter((t: any) => t.status === "queued").length,
+      running: tasks?.filter((t: any) => t.status === "running").length,
+      completed: tasks?.filter((t: any) => t.status === "completed").length,
+      failed: tasks?.filter((t: any) => t.status === "failed").length,
+      cancelled: tasks?.filter((t: any) => t.status === "cancelled").length,
     };
   }
 }

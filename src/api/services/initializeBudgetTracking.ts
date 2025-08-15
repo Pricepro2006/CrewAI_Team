@@ -38,22 +38,22 @@ export async function initializeBudgetTracking(): Promise<void> {
     const service = initializeBudgetTrackingService(db);
     
     // Set up event listeners
-    service.on("budget:exceeded", (data) => {
+    service.on("budget:exceeded", (data: any) => {
       logger.warn(`Budget exceeded for user ${data.userId}`, "BUDGET", data.summary);
     });
     
-    service.on("budget:warning", (data) => {
+    service.on("budget:warning", (data: any) => {
       logger.info(`Budget warning for user ${data.userId}`, "BUDGET", data.summary);
     });
     
-    service.on("budget:threshold_exceeded", (data) => {
+    service.on("budget:threshold_exceeded", (data: any) => {
       logger.warn(
         `Budget threshold exceeded for user ${data.userId}: ${data.percentage}% (threshold: ${data.threshold}%)`,
         "BUDGET"
       );
     });
     
-    service.on("budget:preferences_updated", (preferences) => {
+    service.on("budget:preferences_updated", (preferences: any) => {
       logger.info(`Budget preferences updated for user ${preferences.userId}`, "BUDGET");
     });
     

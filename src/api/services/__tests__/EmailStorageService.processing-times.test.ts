@@ -5,7 +5,7 @@ import type {
   EmailAnalysisResult,
   ProcessingMetadata,
 } from "../EmailStorageService.js";
-import { logger } from "../../../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 
 // Mock logger to prevent console output during tests
 vi.mock("../../../utils/logger", () => ({

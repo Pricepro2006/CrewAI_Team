@@ -114,9 +114,9 @@ export class Logger {
     this.writeToConsole(entry);
 
     // Store in memory for retrieval
-    this.logs.push(entry);
-    if (this.logs.length > this.maxLogs) {
-      this.logs.shift();
+    this?.logs?.push(entry);
+    if (this?.logs?.length > this.maxLogs) {
+      this?.logs?.shift();
     }
   }
 
@@ -165,7 +165,7 @@ export class Logger {
   // Get stored logs
   getLogs(level?: LogLevel): LogEntry[] {
     if (level !== undefined) {
-      return this.logs.filter((log) => log.level >= level);
+      return this?.logs?.filter((log: any) => log.level >= level);
     }
     return [...this.logs];
   }

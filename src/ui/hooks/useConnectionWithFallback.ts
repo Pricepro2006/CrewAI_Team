@@ -89,7 +89,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
   });
 
   // tRPC polling queries
-  const pollWalmart = trpc.polling.pollWalmartData.useQuery(
+  const pollWalmart = trpc?.polling?.pollWalmartData.useQuery(
     { 
       userId, 
       sessionId: sessionId || websocket.sessionId,
@@ -101,7 +101,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
     }
   );
 
-  const pollEmails = trpc.polling.pollEmailData.useQuery(
+  const pollEmails = trpc?.polling?.pollEmailData.useQuery(
     { userId, lastVersion: state.dataVersion },
     {
       enabled: false,
@@ -109,7 +109,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
     }
   );
 
-  const batchPoll = trpc.polling.batchPoll.useQuery(
+  const batchPoll = trpc?.polling?.batchPoll.useQuery(
     {
       requests: [
         { key: `walmart:${userId}`, lastVersion: state.dataVersion },
@@ -127,14 +127,14 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
    */
   const updateMetrics = useCallback((latency?: number) => {
     if (latency !== undefined) {
-      latencyMeasurementsRef.current.push(latency);
-      if (latencyMeasurementsRef.current.length > 10) {
-        latencyMeasurementsRef.current.shift();
+      latencyMeasurementsRef?.current?.push(latency);
+      if (latencyMeasurementsRef?.current?.length > 10) {
+        latencyMeasurementsRef?.current?.shift();
       }
     }
 
-    const avgLatency = latencyMeasurementsRef.current.length > 0
-      ? Math.round(latencyMeasurementsRef.current.reduce((a, b) => a + b, 0) / latencyMeasurementsRef.current.length)
+    const avgLatency = latencyMeasurementsRef?.current?.length > 0
+      ? Math.round(latencyMeasurementsRef?.current?.reduce((a: any, b: any) => a + b, 0) / latencyMeasurementsRef?.current?.length)
       : 0;
 
     const uptime = Date.now() - sessionStartRef.current;
@@ -190,7 +190,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
       isTransitioning: true,
       metrics: {
         ...prev.metrics,
-        modeChanges: prev.metrics.modeChanges + 1
+        modeChanges: prev?.metrics?.modeChanges + 1
       }
     }));
 
@@ -230,7 +230,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
 
           // Check for data updates
           let hasUpdates = false;
-          for (const [key, response] of Object.entries(result.data.responses)) {
+          for (const [key, response] of Object.entries(result?.data?.responses)) {
             if (response.hasChanges && response.data) {
               hasUpdates = true;
               lastDataRef.current = response.data;
@@ -250,7 +250,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
               ...prev,
               metrics: {
                 ...prev.metrics,
-                dataUpdates: prev.metrics.dataUpdates + 1
+                dataUpdates: prev?.metrics?.dataUpdates + 1
               }
             }));
           }
@@ -335,10 +335,10 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
    */
   useEffect(() => {
     if (websocket.lastMessage) {
-      const latency = Date.now() - (websocket.lastMessage.timestamp || Date.now());
+      const latency = Date.now() - (websocket?.lastMessage?.timestamp || Date.now());
       updateMetrics(latency);
 
-      lastDataRef.current = websocket.lastMessage.data;
+      lastDataRef.current = websocket?.lastMessage?.data;
       
       setState(prev => ({
         ...prev,
@@ -346,11 +346,11 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
         dataVersion: prev.dataVersion + 1,
         metrics: {
           ...prev.metrics,
-          dataUpdates: prev.metrics.dataUpdates + 1
+          dataUpdates: prev?.metrics?.dataUpdates + 1
         }
       }));
 
-      onDataUpdate?.(websocket.lastMessage.data);
+      onDataUpdate?.(websocket?.lastMessage?.data);
     }
   }, [websocket.lastMessage, updateMetrics, onDataUpdate]);
 

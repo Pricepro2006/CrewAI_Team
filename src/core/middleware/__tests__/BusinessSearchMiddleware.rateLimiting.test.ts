@@ -199,7 +199,7 @@ describe("BusinessSearchMiddleware - Rate Limiting Integration", () => {
     it("should track latency including rate limit checks", async () => {
       // Mock rate limit check with delay
       vi.spyOn(middleware as any, "checkRateLimit").mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(true), 50)),
+        () => new Promise((resolve: any) => setTimeout(() => resolve(true), 50)),
       );
 
       const startTime = Date.now();

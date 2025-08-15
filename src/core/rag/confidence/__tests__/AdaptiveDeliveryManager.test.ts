@@ -44,11 +44,11 @@ describe("AdaptiveDeliveryManager", () => {
         includeSourceAttribution: true,
       });
 
-      expect(result.confidence.score).toBe(0.9);
-      expect(result.confidence.category).toBe("high");
+      expect(result?.confidence?.score).toBe(0.9);
+      expect(result?.confidence?.category).toBe("high");
       expect(result.warnings).toHaveLength(0);
-      expect(result.metadata.action).toBe(ActionType.ACCEPT);
-      expect(result.metadata.humanReviewNeeded).toBe(false);
+      expect(result?.metadata?.action).toBe(ActionType.ACCEPT);
+      expect(result?.metadata?.humanReviewNeeded).toBe(false);
       expect(result.content).toContain("Machine learning is a subset");
       expect(result.content).toContain("Confidence:");
       expect(result.content).toContain("Sources:");
@@ -63,10 +63,10 @@ describe("AdaptiveDeliveryManager", () => {
         includeEvidence: true,
       });
 
-      expect(result.confidence.category).toBe("medium");
-      expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.metadata.action).toBe(ActionType.REVIEW);
-      expect(result.metadata.humanReviewNeeded).toBe(true);
+      expect(result?.confidence?.category).toBe("medium");
+      expect(result?.warnings?.length).toBeGreaterThan(0);
+      expect(result?.metadata?.action).toBe(ActionType.REVIEW);
+      expect(result?.metadata?.humanReviewNeeded).toBe(true);
       expect(result.content).toContain("Please note:");
       expect(result.content).toContain("Supporting Evidence:");
       expect(result.content).toContain("Your feedback helps improve accuracy");
@@ -81,9 +81,9 @@ describe("AdaptiveDeliveryManager", () => {
         includeEvidence: true,
       });
 
-      expect(result.confidence.category).toBe("low");
-      expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.metadata.action).toBe(ActionType.REGENERATE);
+      expect(result?.confidence?.category).toBe("low");
+      expect(result?.warnings?.length).toBeGreaterThan(0);
+      expect(result?.metadata?.action).toBe(ActionType.REGENERATE);
       expect(result.content).toContain("Low Confidence Response");
       expect(result.content).toContain("Areas of Uncertainty:");
       expect(result.content).toContain("Recommended Actions:");
@@ -96,9 +96,9 @@ describe("AdaptiveDeliveryManager", () => {
         includeConfidenceScore: true,
       });
 
-      expect(result.confidence.score).toBe(0);
-      expect(result.confidence.category).toBe("very_low");
-      expect(result.metadata.action).toBe(ActionType.FALLBACK);
+      expect(result?.confidence?.score).toBe(0);
+      expect(result?.confidence?.category).toBe("very_low");
+      expect(result?.metadata?.action).toBe(ActionType.FALLBACK);
       expect(result.content).toContain("fallback");
       expect(result.warnings).toContain(
         "Unable to generate a reliable response for this query",
@@ -114,7 +114,7 @@ describe("AdaptiveDeliveryManager", () => {
         confidenceFormat: "percentage",
       });
 
-      expect(result.confidence.display).toBe("75%");
+      expect(result?.confidence?.display).toBe("75%");
     });
 
     it("should format confidence as category", async () => {
@@ -124,7 +124,7 @@ describe("AdaptiveDeliveryManager", () => {
         confidenceFormat: "categorical" as const,
       });
 
-      expect(result.confidence.display).toBe("high");
+      expect(result?.confidence?.display).toBe("high");
     });
 
     it("should format confidence as detailed", async () => {
@@ -134,7 +134,7 @@ describe("AdaptiveDeliveryManager", () => {
         confidenceFormat: "detailed",
       });
 
-      expect(result.confidence.display).toBe("75% (high)");
+      expect(result?.confidence?.display).toBe("75% (high)");
     });
   });
 
@@ -382,7 +382,7 @@ describe("AdaptiveDeliveryManager", () => {
 
       const result = await manager.deliver(evaluation, {});
 
-      expect(result.metadata.uncertaintyAreas).toHaveLength(0);
+      expect(result?.metadata?.uncertaintyAreas).toHaveLength(0);
     });
 
     it("should handle extreme confidence values", async () => {
@@ -392,11 +392,11 @@ describe("AdaptiveDeliveryManager", () => {
       const result1 = await manager.deliver(evaluation1, {});
       const result2 = await manager.deliver(evaluation2, {});
 
-      expect(result1.confidence.score).toBe(1.5); // Preserves original
-      expect(result1.confidence.category).toBe("high");
+      expect(result1?.confidence?.score).toBe(1.5); // Preserves original
+      expect(result1?.confidence?.category).toBe("high");
 
-      expect(result2.confidence.score).toBe(-0.5); // Preserves original
-      expect(result2.confidence.category).toBe("very_low");
+      expect(result2?.confidence?.score).toBe(-0.5); // Preserves original
+      expect(result2?.confidence?.category).toBe("very_low");
     });
   });
 });

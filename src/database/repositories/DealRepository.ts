@@ -302,7 +302,7 @@ export class DealRepository extends BaseRepository<Deal> {
       deal,
       items,
       metadata: {
-        totalItems: items.length,
+        totalItems: items?.length || 0,
         totalValue: Math.round(totalValue * 100) / 100,
         daysUntilExpiration,
         isExpired,
@@ -365,7 +365,7 @@ export class DealRepository extends BaseRepository<Deal> {
 
     // Expiring soon (next 30 days)
     const expiringSoonDeals = await this.findDealsExpiringSoon(30);
-    const expiringSoon = expiringSoonDeals.length;
+    const expiringSoon = expiringSoonDeals?.length || 0;
 
     // By region
     const regionQuery = `
@@ -377,7 +377,7 @@ export class DealRepository extends BaseRepository<Deal> {
     const regionResults =
       this.executeQuery<Array<{ region: string; count: number }>>(regionQuery);
     const byRegion: Record<string, number> = {};
-    regionResults.forEach((r) => (byRegion[r.region] = r.count));
+    regionResults.forEach((r: any) => (byRegion[r.region] = r.count));
 
     // By sales rep
     const salesRepQuery = `
@@ -391,7 +391,7 @@ export class DealRepository extends BaseRepository<Deal> {
         salesRepQuery,
       );
     const bySalesRep: Record<string, number> = {};
-    salesRepResults.forEach((r) => (bySalesRep[r.sales_rep] = r.count));
+    salesRepResults.forEach((r: any) => (bySalesRep[r.sales_rep] = r.count));
 
     return {
       total,
@@ -617,7 +617,7 @@ export class DealItemRepository extends BaseRepository<DealItem> {
       }
     > = {};
 
-    familyResults.forEach((r) => {
+    familyResults.forEach((r: any) => {
       byProductFamily[r.product_family] = {
         count: r.count,
         totalQuantity: r.total_quantity,

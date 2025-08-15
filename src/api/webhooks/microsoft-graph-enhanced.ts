@@ -66,7 +66,7 @@ export const enhancedGraphWebhookHandler = async (
 
   try {
     // Handle validation token for new subscriptions
-    const validationToken = req.query.validationToken as string;
+    const validationToken = req?.query?.validationToken as string;
     if (validationToken) {
       logger.info(
         "Validating Microsoft Graph webhook subscription",
@@ -75,7 +75,7 @@ export const enhancedGraphWebhookHandler = async (
           token: validationToken.substring(0, 10) + "...",
         },
       );
-      metrics.increment("graph.webhook.validation");
+      metrics.increment("graph?.webhook?.validation");
       return res.send(validationToken);
     }
 
@@ -85,7 +85,7 @@ export const enhancedGraphWebhookHandler = async (
       !validateWebhookSignature(req)
     ) {
       logger.error("Invalid webhook signature", "WEBHOOK");
-      metrics.increment("graph.webhook.invalid_signature");
+      metrics.increment("graph?.webhook?.invalid_signature");
       return res.status(401).send("Invalid signature");
     }
 
@@ -98,17 +98,17 @@ export const enhancedGraphWebhookHandler = async (
 
     if (!notifications || !notifications.value) {
       logger.warn("Invalid notification format received");
-      metrics.increment("graph.webhook.invalid_format");
+      metrics.increment("graph?.webhook?.invalid_format");
       return res.status(400).send("Invalid notification format");
     }
 
     logger.info(
-      `Received ${notifications.value.length} notifications`,
+      `Received ${notifications?.value?.length} notifications`,
       "WEBHOOK",
     );
     metrics.increment(
-      "graph.webhook.notifications.batch",
-      notifications.value.length,
+      "graph?.webhook?.notifications.batch",
+      notifications?.value?.length,
     );
 
     // Queue each notification for processing
@@ -121,7 +121,7 @@ export const enhancedGraphWebhookHandler = async (
           expected: expectedClientState,
           received: notification.clientState,
         });
-        metrics.increment("graph.webhook.invalid_client_state");
+        metrics.increment("graph?.webhook?.invalid_client_state");
         continue;
       }
 
@@ -159,7 +159,7 @@ export const enhancedGraphWebhookHandler = async (
       });
 
       // Record metrics
-      metrics.increment("graph.webhook.notifications.queued", 1, {
+      metrics.increment("graph?.webhook?.notifications.queued", 1, {
         changeType: notification.changeType,
         subscriptionId: notification.subscriptionId,
       });
@@ -170,7 +170,7 @@ export const enhancedGraphWebhookHandler = async (
 
     // Record processing time
     const processingTime = Date.now() - startTime;
-    metrics.histogram("graph.webhook.processing_time", processingTime);
+    metrics.histogram("graph?.webhook?.processing_time", processingTime);
 
     // Respond quickly (must be within 3 seconds for Microsoft Graph)
     return res.status(202).send();
@@ -181,7 +181,7 @@ export const enhancedGraphWebhookHandler = async (
       {},
       error instanceof Error ? error : new Error(String(error)),
     );
-    metrics.increment("graph.webhook.error");
+    metrics.increment("graph?.webhook?.error");
 
     // Still respond with 202 to prevent retry storms
     return res.status(202).send();
@@ -190,8 +190,8 @@ export const enhancedGraphWebhookHandler = async (
 
 // Extract email metadata from notification
 function extractEmailMetadata(notification: ChangeNotification): EmailMetadata {
-  const resourceParts = notification.resource.split("/");
-  const emailId = resourceParts[resourceParts.length - 1];
+  const resourceParts = notification?.resource?.split("/");
+  const emailId = resourceParts[resourceParts?.length || 0 - 1];
   const userId = resourceParts[1];
 
   return {

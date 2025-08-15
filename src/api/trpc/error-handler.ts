@@ -59,7 +59,7 @@ export function formatTRPCError(error: unknown, context?: any): TRPCError {
   // Regular Error
   if (error instanceof Error) {
     // Check for common patterns
-    if (error.message.includes("ECONNREFUSED")) {
+    if (error?.message?.includes("ECONNREFUSED")) {
       return new TRPCError({
         code: "PRECONDITION_FAILED",
         message: "Service unavailable",
@@ -76,7 +76,7 @@ export function formatTRPCError(error: unknown, context?: any): TRPCError {
       });
     }
 
-    if (error.message.includes("ETIMEDOUT")) {
+    if (error?.message?.includes("ETIMEDOUT")) {
       return new TRPCError({
         code: "TIMEOUT",
         message: "Request timed out",
@@ -150,7 +150,7 @@ export const errorLoggingMiddleware = async (opts: {
               ...(error instanceof TRPCError && { code: error.code }),
             }
           : String(error),
-      user: opts.ctx.user?.id,
+      user: opts?.ctx?.user?.id,
     });
 
     // Re-throw formatted error
@@ -194,7 +194,7 @@ export const retryMiddleware = (
             logger.info(
               `Retrying tRPC procedure ${opts.path}, attempt ${attempt + 1}/${maxRetries}`,
             );
-            await new Promise((resolve) =>
+            await new Promise((resolve: any) =>
               setTimeout(resolve, retryDelay * Math.pow(2, attempt)),
             );
             continue;
@@ -228,15 +228,15 @@ export class TRPCCircuitBreaker {
     next: () => Promise<any>;
     path: string;
   }) => {
-    const state = this.circuitState.get(opts.path) || "closed";
+    const state = this?.circuitState?.get(opts.path) || "closed";
 
     if (state === "open") {
-      const lastFailure = this.lastFailureTime.get(opts.path) || 0;
+      const lastFailure = this?.lastFailureTime?.get(opts.path) || 0;
       const now = Date.now();
 
       if (now - lastFailure >= this.timeout) {
-        this.circuitState.set(opts.path, "half-open");
-        this.failures.set(opts.path, 0);
+        this?.circuitState?.set(opts.path, "half-open");
+        this?.failures?.set(opts.path, 0);
       } else {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
@@ -253,19 +253,19 @@ export class TRPCCircuitBreaker {
       const result = await opts.next();
 
       if (state === "half-open") {
-        this.circuitState.set(opts.path, "closed");
-        this.failures.set(opts.path, 0);
+        this?.circuitState?.set(opts.path, "closed");
+        this?.failures?.set(opts.path, 0);
         logger.info(`Circuit breaker for ${opts.path} reset to closed`);
       }
 
       return result;
     } catch (error) {
-      const currentFailures = (this.failures.get(opts.path) || 0) + 1;
-      this.failures.set(opts.path, currentFailures);
-      this.lastFailureTime.set(opts.path, Date.now());
+      const currentFailures = (this?.failures?.get(opts.path) || 0) + 1;
+      this?.failures?.set(opts.path, currentFailures);
+      this?.lastFailureTime?.set(opts.path, Date.now());
 
       if (currentFailures >= this.threshold) {
-        this.circuitState.set(opts.path, "open");
+        this?.circuitState?.set(opts.path, "open");
         logger.error(
           `Circuit breaker for ${opts.path} opened after ${currentFailures} failures`,
         );
@@ -277,13 +277,13 @@ export class TRPCCircuitBreaker {
 
   reset(path?: string): void {
     if (path) {
-      this.circuitState.delete(path);
-      this.failures.delete(path);
-      this.lastFailureTime.delete(path);
+      this?.circuitState?.delete(path);
+      this?.failures?.delete(path);
+      this?.lastFailureTime?.delete(path);
     } else {
-      this.circuitState.clear();
-      this.failures.clear();
-      this.lastFailureTime.clear();
+      this?.circuitState?.clear();
+      this?.failures?.clear();
+      this?.lastFailureTime?.clear();
     }
   }
 }

@@ -27,12 +27,12 @@ export class DatabaseErrorHandler {
    * Parse SQLite error and provide structured error information
    */
   private parseSqliteError(error: Error): DatabaseErrorDetails {
-    const message = error.message.toLowerCase();
+    const message = error?.message?.toLowerCase();
     
     // Schema-related errors
     if (message.includes('no such column')) {
-      const columnMatch = error.message.match(/no such column: (\w+)/i);
-      const tableMatch = error.message.match(/table (\w+)/i);
+      const columnMatch = error?.message?.match(/no such column: (\w+)/i);
+      const tableMatch = error?.message?.match(/table (\w+)/i);
       
       return {
         code: 'COLUMN_NOT_FOUND',
@@ -45,7 +45,7 @@ export class DatabaseErrorHandler {
     }
 
     if (message.includes('no such table')) {
-      const tableMatch = error.message.match(/no such table: (\w+)/i);
+      const tableMatch = error?.message?.match(/no such table: (\w+)/i);
       
       return {
         code: 'TABLE_NOT_FOUND',
@@ -58,7 +58,7 @@ export class DatabaseErrorHandler {
 
     // Constraint violations
     if (message.includes('unique constraint failed')) {
-      const constraintMatch = error.message.match(/unique constraint failed: (\w+\.\w+)/i);
+      const constraintMatch = error?.message?.match(/unique constraint failed: (\w+\.\w+)/i);
       
       return {
         code: 'UNIQUE_CONSTRAINT_VIOLATION',
@@ -80,7 +80,7 @@ export class DatabaseErrorHandler {
     }
 
     if (message.includes('not null constraint failed')) {
-      const columnMatch = error.message.match(/not null constraint failed: (\w+\.\w+)/i);
+      const columnMatch = error?.message?.match(/not null constraint failed: (\w+\.\w+)/i);
       
       return {
         code: 'NOT_NULL_VIOLATION',
@@ -245,12 +245,12 @@ export class DatabaseErrorHandler {
     const missingColumns: string[] = [];
     
     for (const column of requiredColumns) {
-      if (!this.schemaAdapter.columnExists(tableName, column)) {
+      if (!this?.schemaAdapter?.columnExists(tableName, column)) {
         missingColumns.push(column);
       }
     }
 
-    if (missingColumns.length > 0) {
+    if (missingColumns?.length || 0 > 0) {
       logger.warn("Missing columns detected before operation", "DB_ERROR_HANDLER", {
         table: tableName,
         missing: missingColumns,
@@ -279,7 +279,7 @@ export class DatabaseErrorHandler {
     for (const column of missingColumns) {
       // Common column name variations
       const variations = this.getColumnVariations(column);
-      const actualColumns = this.schemaAdapter.getTableColumns(tableName);
+      const actualColumns = this?.schemaAdapter?.getTableColumns(tableName);
       
       for (const variation of variations) {
         if (actualColumns.includes(variation)) {
@@ -289,7 +289,7 @@ export class DatabaseErrorHandler {
       }
     }
 
-    return suggestions.length > 0
+    return suggestions?.length || 0 > 0
       ? suggestions.join('; ')
       : 'Check if the database schema is up to date';
   }
@@ -345,7 +345,7 @@ export class DatabaseErrorHandler {
   } {
     try {
       // Test basic database connectivity
-      const testResult = this.db.prepare('SELECT 1 as test').get();
+      const testResult = this?.db?.prepare('SELECT 1 as test').get();
       
       if (!testResult) {
         return {
@@ -355,7 +355,7 @@ export class DatabaseErrorHandler {
       }
 
       // Get database information
-      const dbInfo = this.schemaAdapter.getDatabaseInfo();
+      const dbInfo = this?.schemaAdapter?.getDatabaseInfo();
       
       return {
         status: 'healthy',

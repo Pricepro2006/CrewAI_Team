@@ -110,7 +110,7 @@ const ExecutionGraph: React.FC<ExecutionGraphProps> = ({
         style={{ transform: `scale(${zoom})`, transformOrigin: "top left" }}
       >
         {/* Render edges first (behind nodes) */}
-        {edges.map((edge) => {
+        {edges?.map((edge: any) => {
           const sourceNode = nodes.find(n => n.id === edge.source);
           const targetNode = nodes.find(n => n.id === edge.target);
           
@@ -144,7 +144,7 @@ const ExecutionGraph: React.FC<ExecutionGraphProps> = ({
         })}
 
         {/* Render nodes */}
-        {nodes.map((node) => (
+        {nodes?.map((node: any) => (
           <g 
             key={node.id} 
             data-testid={`node-${node.id}`}
@@ -261,14 +261,14 @@ describe("ExecutionGraph Component", () => {
     expect(screen.getByTestId("graph-controls")).toBeInTheDocument();
 
     // Check if all nodes are rendered
-    mockNodes.forEach((node) => {
+    mockNodes.forEach((node: any) => {
       expect(screen.getByTestId(`node-${node.id}`)).toBeInTheDocument();
       expect(screen.getByTestId(`node-label-${node.id}`)).toHaveTextContent(node.label);
       expect(screen.getByTestId(`node-status-${node.id}`)).toHaveTextContent(node.status);
     });
 
     // Check if all edges are rendered
-    mockEdges.forEach((edge) => {
+    mockEdges.forEach((edge: any) => {
       expect(screen.getByTestId(`edge-${edge.id}`)).toBeInTheDocument();
       if (edge.label) {
         expect(screen.getByTestId(`edge-label-${edge.id}`)).toHaveTextContent(edge.label);

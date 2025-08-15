@@ -112,9 +112,9 @@ export function sanitizeError(error: Error): any {
         "secret",
         "authorization",
       ];
-      sanitized.details = Object.keys(error.details).reduce((acc, key) => {
+      sanitized.details = Object.keys(error.details).reduce((acc: any, key: any) => {
         if (
-          sensitiveFields.some((field) => key.toLowerCase().includes(field))
+          sensitiveFields.some((field: any) => key.toLowerCase().includes(field))
         ) {
           acc[key] = "[REDACTED]";
         } else {

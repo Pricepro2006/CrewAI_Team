@@ -167,7 +167,7 @@ export const useRoutePreloading = () => {
     const prefetchOnHover = (event: Event) => {
       const target = event.target as HTMLElement;
       const link = target.closest('a[href]') as HTMLAnchorElement;
-      if (link && link.href.includes('/walmart')) {
+      if (link && link?.href?.includes('/walmart')) {
         preloadRoute('walmart-dashboard');
       }
     };

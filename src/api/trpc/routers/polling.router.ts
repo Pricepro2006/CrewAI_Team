@@ -98,7 +98,7 @@ export const pollingRouter = router({
         // Get fresh data
         const groceryService = WalmartGroceryService.getInstance();
         const groceryList = await groceryService.getUserGroceryList(input.userId);
-        const cartTotal = groceryList.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+        const cartTotal = groceryList.reduce((sum: any, item: any) => sum + (item.price || 0) * item.quantity, 0);
         
         // Get recommendations and deals (mocked for now)
         const recommendations = [];
@@ -180,7 +180,7 @@ export const pollingRouter = router({
         const data: z.infer<typeof EmailPollingDataSchema> = {
           unreadCount,
           totalCount,
-          recentEmails: emails.map(email => ({
+          recentEmails: emails?.map(email => ({
             id: email.id,
             subject: email.subject,
             from: email.sender_email,
@@ -248,7 +248,7 @@ export const pollingRouter = router({
         
         if (input.customerId) {
           deals = await dealService.getCustomerDeals(input.customerId);
-        } else if (input.productIds && input.productIds.length > 0) {
+        } else if (input.productIds && input?.productIds?.length > 0) {
           deals = await dealService.getDealsByProducts(input.productIds);
         } else {
           deals = await dealService.getActiveDeals();
@@ -257,7 +257,7 @@ export const pollingRouter = router({
         const data = {
           deals,
           timestamp: Date.now(),
-          expiringCount: deals.filter(d => {
+          expiringCount: deals?.filter(d => {
             const endDate = new Date(d.end_date);
             const daysUntilExpiry = (endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
             return daysUntilExpiry <= 7 && daysUntilExpiry > 0;
@@ -299,7 +299,7 @@ export const pollingRouter = router({
     .query(async ({ input }) => {
       const status: Record<string, any> = {};
       
-      if (input.keys && input.keys.length > 0) {
+      if (input.keys && input?.keys?.length > 0) {
         for (const key of input.keys) {
           status[key] = {
             version: getDataVersion(key),
@@ -338,7 +338,7 @@ export const pollingRouter = router({
       const startTime = Date.now();
       const checkInterval = 1000; // Check every second
       
-      return new Promise((resolve) => {
+      return new Promise((resolve: any) => {
         const checkForChanges = () => {
           const currentVersion = getDataVersion(input.key);
           const elapsed = Date.now() - startTime;

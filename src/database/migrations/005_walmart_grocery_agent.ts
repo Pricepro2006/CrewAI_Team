@@ -58,7 +58,7 @@ export class WalmartGroceryAgentMigration {
     ];
 
     for (const table of tables) {
-      this.db.prepare(`DROP TABLE IF EXISTS ${table}`).run();
+      this?.db?.prepare(`DROP TABLE IF EXISTS ${table}`).run();
     }
 
     logger.info("Walmart Grocery Agent migration rolled back", "MIGRATION");

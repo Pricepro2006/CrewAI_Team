@@ -78,7 +78,7 @@ export class ConnectionStateManager extends EventEmitter {
       lastDisconnectionTime: null,
       reconnectAttempts: 0,
       consecutiveFailures: 0,
-      preferredMode: this.config.preferWebSocket ? 'websocket' : 'polling',
+      preferredMode: this?.config?.preferWebSocket ? 'websocket' : 'polling',
       fallbackReason: null
     };
 
@@ -109,18 +109,18 @@ export class ConnectionStateManager extends EventEmitter {
    */
   private setupEventListeners(): void {
     // Polling service events
-    this.pollingService.on('poll:success', () => {
+    this?.pollingService?.on('poll:success', () => {
       this.pollingHealthy = true;
       this.updateConnectionQuality();
     });
 
-    this.pollingService.on('poll:error', () => {
-      this.metrics.pollingFailures++;
+    this?.pollingService?.on('poll:error', () => {
+      this?.metrics?.pollingFailures++;
       this.pollingHealthy = false;
       this.updateConnectionQuality();
     });
 
-    this.pollingService.on('polling:failed', () => {
+    this?.pollingService?.on('polling:failed', () => {
       this.handlePollingFailure();
     });
   }
@@ -132,23 +132,23 @@ export class ConnectionStateManager extends EventEmitter {
     logger.info('WebSocket connected', 'CONNECTION_STATE');
     
     this.websocketHealthy = true;
-    this.state.consecutiveFailures = 0;
-    this.state.reconnectAttempts = 0;
-    this.state.lastConnectionTime = Date.now();
-    this.metrics.totalConnections++;
+    this?.state?.consecutiveFailures = 0;
+    this?.state?.reconnectAttempts = 0;
+    this?.state?.lastConnectionTime = Date.now();
+    this?.metrics?.totalConnections++;
 
-    if (this.config.hybridModeEnabled && this.pollingService.getState().isPolling) {
+    if (this?.config?.hybridModeEnabled && this?.pollingService?.getState().isPolling) {
       this.transitionToMode('hybrid');
     } else {
       this.transitionToMode('websocket');
       // Stop polling if we were in fallback mode
-      if (this.pollingService.getState().isPolling) {
-        this.pollingService.stopPolling();
+      if (this?.pollingService?.getState().isPolling) {
+        this?.pollingService?.stopPolling();
       }
     }
 
     this.updateConnectionQuality();
-    this.emit('connected', { mode: this.state.mode });
+    this.emit('connected', { mode: this?.state?.mode });
   }
 
   /**
@@ -158,21 +158,21 @@ export class ConnectionStateManager extends EventEmitter {
     logger.warn('WebSocket disconnected', 'CONNECTION_STATE', { reason });
     
     this.websocketHealthy = false;
-    this.state.lastDisconnectionTime = Date.now();
-    this.state.consecutiveFailures++;
-    this.metrics.totalDisconnections++;
-    this.metrics.websocketFailures++;
+    this?.state?.lastDisconnectionTime = Date.now();
+    this?.state?.consecutiveFailures++;
+    this?.metrics?.totalDisconnections++;
+    this?.metrics?.websocketFailures++;
 
     // Check if we should fallback to polling
-    if (this.config.autoFallback && 
-        this.state.consecutiveFailures >= this.config.fallbackThreshold) {
+    if (this?.config?.autoFallback && 
+        this?.state?.consecutiveFailures >= this?.config?.fallbackThreshold) {
       this.initiateFallback(reason || 'WebSocket connection unstable');
     } else {
-      this.state.isConnected = false;
+      this?.state?.isConnected = false;
       this.updateConnectionQuality();
       this.emit('disconnected', { 
-        mode: this.state.mode, 
-        willFallback: this.state.consecutiveFailures >= this.config.fallbackThreshold - 1 
+        mode: this?.state?.mode, 
+        willFallback: this?.state?.consecutiveFailures >= this?.config?.fallbackThreshold - 1 
       });
     }
   }
@@ -181,16 +181,16 @@ export class ConnectionStateManager extends EventEmitter {
    * Handle WebSocket reconnection attempt
    */
   onWebSocketReconnecting(attempt: number): void {
-    this.state.reconnectAttempts = attempt;
+    this?.state?.reconnectAttempts = attempt;
     
-    if (attempt >= this.config.maxReconnectAttempts) {
+    if (attempt >= this?.config?.maxReconnectAttempts) {
       logger.error('Max WebSocket reconnection attempts exceeded', 'CONNECTION_STATE');
       this.initiateFallback('Max reconnection attempts exceeded');
     }
 
     this.emit('reconnecting', { 
       attempt, 
-      maxAttempts: this.config.maxReconnectAttempts 
+      maxAttempts: this?.config?.maxReconnectAttempts 
     });
   }
 
@@ -200,11 +200,11 @@ export class ConnectionStateManager extends EventEmitter {
   private async initiateFallback(reason: string): Promise<void> {
     logger.info('Initiating fallback to polling', 'CONNECTION_STATE', { reason });
     
-    this.state.fallbackReason = reason;
-    this.metrics.modeTransitions++;
+    this?.state?.fallbackReason = reason;
+    this?.metrics?.modeTransitions++;
 
     // Start polling
-    if (!this.pollingService.getState().isPolling) {
+    if (!this?.pollingService?.getState().isPolling) {
       // This endpoint should be provided by the consumer
       this.emit('fallback:needed', { reason });
     }
@@ -212,7 +212,7 @@ export class ConnectionStateManager extends EventEmitter {
     this.transitionToMode('polling');
     
     // Schedule WebSocket recovery attempt
-    if (this.config.preferWebSocket) {
+    if (this?.config?.preferWebSocket) {
       this.scheduleRecoveryAttempt();
     }
   }
@@ -238,13 +238,13 @@ export class ConnectionStateManager extends EventEmitter {
    * Transition to a new connection mode
    */
   private transitionToMode(mode: ConnectionMode): void {
-    if (this.state.mode === mode) {
+    if (this?.state?.mode === mode) {
       return;
     }
 
-    const previousMode = this.state.mode;
-    this.state.mode = mode;
-    this.state.isConnected = mode !== 'offline';
+    const previousMode = this?.state?.mode;
+    this?.state?.mode = mode;
+    this?.state?.isConnected = mode !== 'offline';
 
     logger.info('Connection mode transition', 'CONNECTION_STATE', {
       from: previousMode,
@@ -254,7 +254,7 @@ export class ConnectionStateManager extends EventEmitter {
     this.emit('mode:changed', {
       previousMode,
       currentMode: mode,
-      reason: this.state.fallbackReason
+      reason: this?.state?.fallbackReason
     });
   }
 
@@ -267,11 +267,11 @@ export class ConnectionStateManager extends EventEmitter {
     }
 
     this.recoveryTimer = setTimeout(() => {
-      if (this.state.mode === 'polling' && this.config.preferWebSocket) {
+      if (this?.state?.mode === 'polling' && this?.config?.preferWebSocket) {
         logger.info('Attempting WebSocket recovery', 'CONNECTION_STATE');
         this.emit('recovery:attempt');
       }
-    }, this.config.recoveryInterval);
+    }, this?.config?.recoveryInterval);
   }
 
   /**
@@ -281,7 +281,7 @@ export class ConnectionStateManager extends EventEmitter {
     this.qualityCheckTimer = setInterval(() => {
       this.updateConnectionQuality();
       this.updateMetrics();
-    }, this.config.qualityCheckInterval);
+    }, this?.config?.qualityCheckInterval);
   }
 
   /**
@@ -291,19 +291,19 @@ export class ConnectionStateManager extends EventEmitter {
     const avgLatency = this.getAverageLatency();
     let quality: ConnectionQuality = 'offline';
 
-    if (!this.state.isConnected) {
+    if (!this?.state?.isConnected) {
       quality = 'offline';
-    } else if (this.state.mode === 'websocket' || this.state.mode === 'hybrid') {
-      if (avgLatency < 100 && this.state.consecutiveFailures === 0) {
+    } else if (this?.state?.mode === 'websocket' || this?.state?.mode === 'hybrid') {
+      if (avgLatency < 100 && this?.state?.consecutiveFailures === 0) {
         quality = 'excellent';
-      } else if (avgLatency < 300 && this.state.consecutiveFailures < 2) {
+      } else if (avgLatency < 300 && this?.state?.consecutiveFailures < 2) {
         quality = 'good';
-      } else if (avgLatency < 1000 && this.state.consecutiveFailures < 3) {
+      } else if (avgLatency < 1000 && this?.state?.consecutiveFailures < 3) {
         quality = 'fair';
       } else {
         quality = 'poor';
       }
-    } else if (this.state.mode === 'polling') {
+    } else if (this?.state?.mode === 'polling') {
       if (avgLatency < 500) {
         quality = 'good';
       } else if (avgLatency < 2000) {
@@ -313,9 +313,9 @@ export class ConnectionStateManager extends EventEmitter {
       }
     }
 
-    if (this.state.quality !== quality) {
-      const previousQuality = this.state.quality;
-      this.state.quality = quality;
+    if (this?.state?.quality !== quality) {
+      const previousQuality = this?.state?.quality;
+      this?.state?.quality = quality;
       
       this.emit('quality:changed', {
         previousQuality,
@@ -332,15 +332,15 @@ export class ConnectionStateManager extends EventEmitter {
     const now = Date.now();
     const sessionDuration = now - this.sessionStartTime;
 
-    if (this.state.isConnected) {
-      this.metrics.uptime += this.config.qualityCheckInterval;
+    if (this?.state?.isConnected) {
+      this?.metrics?.uptime += this?.config?.qualityCheckInterval;
     } else {
-      this.metrics.downtime += this.config.qualityCheckInterval;
+      this?.metrics?.downtime += this?.config?.qualityCheckInterval;
     }
 
     // Calculate availability percentage
     const availability = sessionDuration > 0 
-      ? (this.metrics.uptime / sessionDuration) * 100 
+      ? (this?.metrics?.uptime / sessionDuration) * 100 
       : 0;
 
     this.emit('metrics:updated', {
@@ -354,35 +354,35 @@ export class ConnectionStateManager extends EventEmitter {
    * Add latency measurement
    */
   addLatencyMeasurement(latency: number): void {
-    this.latencyMeasurements.push(latency);
+    this?.latencyMeasurements?.push(latency);
     
     // Keep only last 20 measurements
-    if (this.latencyMeasurements.length > 20) {
-      this.latencyMeasurements.shift();
+    if (this?.latencyMeasurements?.length > 20) {
+      this?.latencyMeasurements?.shift();
     }
 
-    this.metrics.averageLatency = this.getAverageLatency();
+    this?.metrics?.averageLatency = this.getAverageLatency();
   }
 
   /**
    * Get average latency
    */
   private getAverageLatency(): number {
-    if (this.latencyMeasurements.length === 0) {
+    if (this?.latencyMeasurements?.length === 0) {
       return 0;
     }
     
-    const sum = this.latencyMeasurements.reduce((a, b) => a + b, 0);
-    return Math.round(sum / this.latencyMeasurements.length);
+    const sum = this?.latencyMeasurements?.reduce((a: any, b: any) => a + b, 0);
+    return Math.round(sum / this?.latencyMeasurements?.length);
   }
 
   /**
    * Start polling with endpoint
    */
   async startPolling(endpoint: () => Promise<any>): Promise<void> {
-    await this.pollingService.startPolling(endpoint);
+    await this?.pollingService?.startPolling(endpoint);
     
-    if (this.websocketHealthy && this.config.hybridModeEnabled) {
+    if (this.websocketHealthy && this?.config?.hybridModeEnabled) {
       this.transitionToMode('hybrid');
     } else {
       this.transitionToMode('polling');
@@ -393,11 +393,11 @@ export class ConnectionStateManager extends EventEmitter {
    * Stop polling
    */
   stopPolling(): void {
-    this.pollingService.stopPolling();
+    this?.pollingService?.stopPolling();
     
-    if (this.state.mode === 'hybrid' && this.websocketHealthy) {
+    if (this?.state?.mode === 'hybrid' && this.websocketHealthy) {
       this.transitionToMode('websocket');
-    } else if (this.state.mode === 'polling') {
+    } else if (this?.state?.mode === 'polling') {
       this.transitionToMode('offline');
     }
   }
@@ -414,7 +414,7 @@ export class ConnectionStateManager extends EventEmitter {
     } else if (mode === 'polling') {
       this.emit('polling:required');
     } else if (mode === 'hybrid') {
-      this.config.hybridModeEnabled = true;
+      this?.config?.hybridModeEnabled = true;
       this.emit('hybrid:required');
     }
     
@@ -434,7 +434,7 @@ export class ConnectionStateManager extends EventEmitter {
   getMetrics(): ConnectionMetrics & { availability: number } {
     const sessionDuration = Date.now() - this.sessionStartTime;
     const availability = sessionDuration > 0 
-      ? (this.metrics.uptime / sessionDuration) * 100 
+      ? (this?.metrics?.uptime / sessionDuration) * 100 
       : 0;
 
     return {
@@ -447,9 +447,9 @@ export class ConnectionStateManager extends EventEmitter {
    * Reset connection state
    */
   reset(): void {
-    this.state.consecutiveFailures = 0;
-    this.state.reconnectAttempts = 0;
-    this.state.fallbackReason = null;
+    this?.state?.consecutiveFailures = 0;
+    this?.state?.reconnectAttempts = 0;
+    this?.state?.fallbackReason = null;
     this.latencyMeasurements = [];
     
     logger.info('Connection state reset', 'CONNECTION_STATE');
@@ -469,7 +469,7 @@ export class ConnectionStateManager extends EventEmitter {
       this.recoveryTimer = null;
     }
 
-    this.pollingService.stopPolling();
+    this?.pollingService?.stopPolling();
     this.removeAllListeners();
   }
 }

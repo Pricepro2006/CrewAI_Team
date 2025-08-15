@@ -41,18 +41,18 @@ export class InMemoryVectorStore implements IVectorStore {
         metadata: doc.metadata,
       };
 
-      this.documents.set(doc.id, document);
+      this?.documents?.set(doc.id, document);
 
       // Index by source ID for deletion
-      const sourceId = doc.metadata.sourceId || doc.id;
-      if (!this.sourceIndex.has(sourceId)) {
-        this.sourceIndex.set(sourceId, new Set());
+      const sourceId = doc?.metadata?.sourceId || doc.id;
+      if (!this?.sourceIndex?.has(sourceId)) {
+        this?.sourceIndex?.set(sourceId, new Set());
       }
-      this.sourceIndex.get(sourceId)!.add(doc.id);
+      this?.sourceIndex?.get(sourceId)!.add(doc.id);
     }
 
     logger.info(
-      `Added ${documents.length} documents to in-memory store (total: ${this.documents.size})`,
+      `Added ${documents?.length || 0} documents to in-memory store (total: ${this?.documents?.size})`,
       "VECTOR_STORE"
     );
   }
@@ -67,14 +67,14 @@ export class InMemoryVectorStore implements IVectorStore {
     const results: QueryResult[] = [];
 
     for (const [id, doc] of this.documents) {
-      const contentLower = doc.content.toLowerCase();
+      const contentLower = doc?.content?.toLowerCase();
       
       // Simple relevance scoring based on keyword matches
       let score = 0;
       const queryWords = queryLower.split(/\s+/);
       
       for (const word of queryWords) {
-        if (word.length < 3) continue; // Skip very short words
+        if (word?.length || 0 < 3) continue; // Skip very short words
         
         const wordCount = (contentLower.match(new RegExp(word, 'g')) || []).length;
         score += wordCount;
@@ -83,7 +83,7 @@ export class InMemoryVectorStore implements IVectorStore {
       // Add title/metadata boost
       const metadataText = JSON.stringify(doc.metadata).toLowerCase();
       for (const word of queryWords) {
-        if (word.length >= 3 && metadataText.includes(word)) {
+        if (word?.length || 0 >= 3 && metadataText.includes(word)) {
           score += 2; // Boost for metadata matches
         }
       }
@@ -93,7 +93,7 @@ export class InMemoryVectorStore implements IVectorStore {
           id,
           content: doc.content,
           metadata: doc.metadata,
-          score: score / Math.max(queryWords.length, 1), // Normalize by query length
+          score: score / Math.max(queryWords?.length || 0, 1), // Normalize by query length
         });
       }
     }
@@ -114,10 +114,10 @@ export class InMemoryVectorStore implements IVectorStore {
     }
 
     // Get all search results first
-    const allResults = await this.search(query, this.documents.size);
+    const allResults = await this.search(query, this?.documents?.size);
 
     // Apply filters
-    const filteredResults = allResults.filter((result) => {
+    const filteredResults = allResults?.filter((result: any) => {
       return this.matchesFilter(result.metadata, filter);
     });
 
@@ -129,7 +129,7 @@ export class InMemoryVectorStore implements IVectorStore {
       await this.initialize();
     }
 
-    return this.documents.get(documentId) || null;
+    return this?.documents?.get(documentId) || null;
   }
 
   async deleteBySourceId(sourceId: string): Promise<void> {
@@ -137,12 +137,12 @@ export class InMemoryVectorStore implements IVectorStore {
       await this.initialize();
     }
 
-    const documentIds = this.sourceIndex.get(sourceId);
+    const documentIds = this?.sourceIndex?.get(sourceId);
     if (documentIds) {
       for (const docId of documentIds) {
-        this.documents.delete(docId);
+        this?.documents?.delete(docId);
       }
-      this.sourceIndex.delete(sourceId);
+      this?.sourceIndex?.delete(sourceId);
       
       logger.info(
         `Deleted ${documentIds.size} documents for source ${sourceId}`,
@@ -156,25 +156,25 @@ export class InMemoryVectorStore implements IVectorStore {
       await this.initialize();
     }
 
-    const allDocs = Array.from(this.documents.values());
+    const allDocs = Array.from(this?.documents?.values());
     return allDocs.slice(offset, offset + limit);
   }
 
   async getDocumentCount(): Promise<number> {
-    return this.documents.size;
+    return this?.documents?.size;
   }
 
   async getChunkCount(): Promise<number> {
-    return this.documents.size; // In memory store, chunks are documents
+    return this?.documents?.size; // In memory store, chunks are documents
   }
 
   async getCollections(): Promise<string[]> {
-    return [this.config.collectionName || "in-memory"];
+    return [this?.config?.collectionName || "in-memory"];
   }
 
   async clear(): Promise<void> {
-    this.documents.clear();
-    this.sourceIndex.clear();
+    this?.documents?.clear();
+    this?.sourceIndex?.clear();
     logger.info("Cleared all documents from in-memory store", "VECTOR_STORE");
   }
 
@@ -268,8 +268,8 @@ export class InMemoryVectorStore implements IVectorStore {
     type: string;
   }> {
     return {
-      totalDocuments: this.documents.size,
-      totalChunks: this.documents.size,
+      totalDocuments: this?.documents?.size,
+      totalChunks: this?.documents?.size,
       collections: await this.getCollections(),
       type: "in-memory",
     };

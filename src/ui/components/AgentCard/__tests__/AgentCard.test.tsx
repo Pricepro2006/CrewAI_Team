@@ -183,7 +183,7 @@ describe("AgentCard Component", () => {
   it("should handle different agent types", () => {
     const agentTypes = ["research", "analysis", "data", "communication"];
 
-    agentTypes.forEach((type) => {
+    agentTypes.forEach((type: any) => {
       const { rerender } = render(
         <AgentCard {...mockAgent} type={type} />
       );

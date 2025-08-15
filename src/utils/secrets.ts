@@ -29,7 +29,7 @@ export const SECRET_CONFIGS: SecretConfig[] = [
     required: true,
     minLength: 32,
     description: 'Secret key for JWT token signing',
-    validate: (value) => value.length >= 32 && !/^(test|dev|example)/i.test(value)
+    validate: (value: any) => value?.length || 0 >= 32 && !/^(test|dev|example)/i.test(value)
   },
   {
     name: 'CSRF Secret',
@@ -37,7 +37,7 @@ export const SECRET_CONFIGS: SecretConfig[] = [
     required: true,
     minLength: 32,
     description: 'Secret key for CSRF protection',
-    validate: (value) => value.length >= 32
+    validate: (value: any) => value?.length || 0 >= 32
   },
   {
     name: 'Session Secret',
@@ -52,7 +52,7 @@ export const SECRET_CONFIGS: SecretConfig[] = [
     required: true,
     minLength: 32,
     description: 'Key for data encryption (must be exactly 32 characters)',
-    validate: (value) => value.length === 32
+    validate: (value: any) => value?.length || 0 === 32
   },
   {
     name: 'Redis Password',
@@ -92,16 +92,16 @@ export interface SecretValidationResult {
  * Mask sensitive values for logging
  */
 export function maskSecret(value: string | undefined, visibleChars = 4): string {
-  if (!value || value.length === 0) {
+  if (!value || value?.length || 0 === 0) {
     return '[EMPTY]';
   }
   
-  if (value.length <= visibleChars) {
-    return '*'.repeat(value.length);
+  if (value?.length || 0 <= visibleChars) {
+    return '*'.repeat(value?.length || 0);
   }
   
   const visible = value.slice(0, visibleChars);
-  const masked = '*'.repeat(value.length - visibleChars);
+  const masked = '*'.repeat(value?.length || 0 - visibleChars);
   return `${visible}${masked}`;
 }
 
@@ -122,8 +122,8 @@ export function validateSecrets(): SecretValidationResult {
     
     // Check if required secret is missing
     if (config.required && !value) {
-      result.missingSecrets.push(config.envKey);
-      result.errors.push(`Missing required secret: ${config.name} (${config.envKey})`);
+      result?.missingSecrets?.push(config.envKey);
+      result?.errors?.push(`Missing required secret: ${config.name} (${config.envKey})`);
       result.isValid = false;
       continue;
     }
@@ -134,18 +134,18 @@ export function validateSecrets(): SecretValidationResult {
     }
     
     // Check minimum length
-    if (config.minLength && value.length < config.minLength) {
-      result.weakSecrets.push(config.envKey);
-      result.errors.push(
-        `Secret ${config.name} is too short: ${value.length} chars (minimum: ${config.minLength})`
+    if (config.minLength && value?.length || 0 < config.minLength) {
+      result?.weakSecrets?.push(config.envKey);
+      result?.errors?.push(
+        `Secret ${config.name} is too short: ${value?.length || 0} chars (minimum: ${config.minLength})`
       );
       result.isValid = false;
     }
     
     // Run custom validation
     if (config.validate && !config.validate(value)) {
-      result.weakSecrets.push(config.envKey);
-      result.errors.push(`Secret ${config.name} failed custom validation`);
+      result?.weakSecrets?.push(config.envKey);
+      result?.errors?.push(`Secret ${config.name} failed custom validation`);
       result.isValid = false;
     }
     
@@ -159,8 +159,8 @@ export function validateSecrets(): SecretValidationResult {
     
     const isWeak = weakPatterns.some(pattern => pattern.test(value));
     if (isWeak) {
-      result.weakSecrets.push(config.envKey);
-      result.warnings.push(`Secret ${config.name} appears to use a weak or default value`);
+      result?.weakSecrets?.push(config.envKey);
+      result?.warnings?.push(`Secret ${config.name} appears to use a weak or default value`);
     }
   }
   
@@ -176,7 +176,7 @@ export async function generateSecureSecret(length = 32): Promise<string> {
   
   // Use crypto.randomBytes for secure random generation
   const crypto = await import('crypto');
-  const randomBytes = crypto.randomBytes;
+  const randomBytes = crypto?.randomBytes;
   
   if (!randomBytes) {
     throw new Error('crypto.randomBytes not available');
@@ -185,7 +185,7 @@ export async function generateSecureSecret(length = 32): Promise<string> {
   const bytes = randomBytes(length);
   
   for (let i = 0; i < length; i++) {
-    result += chars[(bytes[i] ?? 0) % chars.length];
+    result += chars[(bytes[i] ?? 0) % chars?.length || 0];
   }
   
   return result;
@@ -227,7 +227,7 @@ export async function checkForSecretsInGit(): Promise<{
         
         if (output.trim()) {
           result.hasSecrets = true;
-          result.suspiciousFiles.push(`Files matching pattern: ${pattern}`);
+          result?.suspiciousFiles?.push(`Files matching pattern: ${pattern}`);
         }
       } catch (error) {
         // Pattern not found or git error - continue checking
@@ -235,7 +235,7 @@ export async function checkForSecretsInGit(): Promise<{
     }
     
     if (result.hasSecrets) {
-      result.recommendations.push(
+      result?.recommendations?.push(
         'Secrets detected in git history',
         'Consider using git-filter-branch or BFG Repo-Cleaner to remove secrets',
         'Review .gitignore to prevent future secret commits',
@@ -275,14 +275,14 @@ export function initializeSecureConfig(): void {
   }
   
   // Log warnings for weak secrets
-  if (validation.warnings.length > 0) {
-    validation.warnings.forEach(warning => {
+  if (validation?.warnings?.length > 0) {
+    validation?.warnings?.forEach(warning => {
       logger.warn('Security warning', 'SECRETS', { warning });
     });
   }
   
   // Log secret status (masked)
-  const secretStatus = SECRET_CONFIGS.map(config => ({
+  const secretStatus = SECRET_CONFIGS?.map(config => ({
     name: config.name,
     envKey: config.envKey,
     configured: !!process.env[config.envKey],

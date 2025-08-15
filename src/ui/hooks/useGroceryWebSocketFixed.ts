@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from "react";
-import { getReconnectionDelay } from "../../config/websocket.config.js";
+import { getReconnectionDelay } from "../../config/websocket?.config.js";
 import { logger } from "../../utils/logger.js";
 
 // Event types specific to grocery operations
@@ -50,7 +50,7 @@ export interface UseGroceryWebSocketReturn extends GroceryWebSocketState {
 }
 
 const WS_URL = process.env.NODE_ENV === 'production' 
-  ? `wss://${window.location.hostname}:8080/ws/walmart`
+  ? `wss://${window?.location?.hostname}:8080/ws/walmart`
   : `ws://localhost:8080/ws/walmart`;
 const MAX_EVENT_HISTORY = 50;
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 10;
@@ -115,8 +115,8 @@ export function useGroceryWebSocket(
 
   // Send message through WebSocket
   const send = useCallback((message: any) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
+    if (wsRef.current && wsRef?.current?.readyState === WebSocket.OPEN) {
+      wsRef?.current?.send(JSON.stringify(message));
       log("Sent message", 'info', message);
     } else {
       log("WebSocket not connected, cannot send message", 'warn');
@@ -129,7 +129,7 @@ export function useGroceryWebSocket(
       return;
     }
 
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    if (wsRef.current && wsRef?.current?.readyState === WebSocket.OPEN) {
       log("WebSocket already connected", 'warn');
       return;
     }
@@ -162,14 +162,14 @@ export function useGroceryWebSocket(
             channels: [
               `grocery.conversation.${conversationId}`,
               `grocery.user.${userId || 'anonymous'}`,
-              "grocery.global.deals",
-              "grocery.global.prices"
+              "grocery?.global?.deals",
+              "grocery?.global?.prices"
             ]
           });
         }
       };
 
-      ws.onclose = (event) => {
+      ws.onclose = (event: any) => {
         if (!isMountedRef.current) return;
 
         log("WebSocket disconnected", 'warn', { code: event.code, reason: event.reason });
@@ -203,17 +203,17 @@ export function useGroceryWebSocket(
         }
       };
 
-      ws.onerror = (event) => {
+      ws.onerror = (event: any) => {
         log("WebSocket error", 'error', event);
         const error = new Error("WebSocket connection error");
         updateState({ error });
         onError?.(error);
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = (event: any) => {
         try {
           const parsed = JSON.parse(event.data);
-          if (parsed.type && (subscriptionsRef.current.size === 0 || subscriptionsRef.current.has(parsed.type))) {
+          if (parsed.type && (subscriptionsRef?.current?.size === 0 || subscriptionsRef?.current?.has(parsed.type))) {
             handleEvent({
               type: parsed.type,
               data: parsed.data,
@@ -260,7 +260,7 @@ export function useGroceryWebSocket(
     }
     
     if (wsRef.current) {
-      wsRef.current.close();
+      wsRef?.current?.close();
       wsRef.current = null;
     }
     
@@ -273,13 +273,13 @@ export function useGroceryWebSocket(
 
   // Subscribe to events
   const subscribe = useCallback((events: GroceryWebSocketEventType[]) => {
-    events.forEach(event => subscriptionsRef.current.add(event));
+    events.forEach(event => subscriptionsRef?.current?.add(event));
     log("Subscribed to events", 'info', events);
   }, [log]);
 
   // Unsubscribe from events
   const unsubscribe = useCallback((events: GroceryWebSocketEventType[]) => {
-    events.forEach(event => subscriptionsRef.current.delete(event));
+    events.forEach(event => subscriptionsRef?.current?.delete(event));
     log("Unsubscribed from events", 'info', events);
   }, [log]);
 

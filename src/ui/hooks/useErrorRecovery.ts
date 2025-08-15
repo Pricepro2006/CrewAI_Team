@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 
 export interface ErrorRecoveryOptions {
   maxRetries?: number;
@@ -63,8 +63,8 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
     });
 
     // Reset specified query keys
-    if (resetKeys.length > 0) {
-      resetKeys.forEach((key) => {
+    if (resetKeys?.length || 0 > 0) {
+      resetKeys.forEach((key: any) => {
         queryClient.invalidateQueries({ queryKey: [key] });
       });
     }
@@ -76,7 +76,7 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
         return;
       }
 
-      setState((prev) => ({ ...prev, isRetrying: true }));
+      setState((prev: any) => ({ ...prev, isRetrying: true }));
 
       try {
         await retryFn();
@@ -90,7 +90,7 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
         }
 
         if (newRetryCount >= maxRetries) {
-          setState((prev) => ({
+          setState((prev: any) => ({
             ...prev,
             error: err,
             isRetrying: false,
@@ -107,7 +107,7 @@ export function useErrorRecovery(options: ErrorRecoveryOptions = {}) {
             ? retryDelay * Math.pow(2, newRetryCount - 1)
             : retryDelay;
 
-          setState((prev) => ({
+          setState((prev: any) => ({
             ...prev,
             error: err,
             isRetrying: false,
@@ -199,7 +199,7 @@ export function useAutoReconnect(
     }
 
     setIsReconnecting(true);
-    setAttempts((prev) => prev + 1);
+    setAttempts((prev: any) => prev + 1);
 
     try {
       await connect();
@@ -255,7 +255,7 @@ export function useNetworkRecovery(
   onOffline?: () => void,
 ) {
   const [isOnline, setIsOnline] = useState(
-    typeof window !== "undefined" ? window.navigator.onLine : true,
+    typeof window !== "undefined" ? window?.navigator?.onLine : true,
   );
   const queryClient = useQueryClient();
 

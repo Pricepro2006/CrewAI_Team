@@ -96,59 +96,59 @@ export class GroceryQueueRouter {
 
   private setupRoutes(): void {
     // Health and status endpoints
-    this.router.get('/health', this.getHealth.bind(this));
-    this.router.get('/status', this.getStatus.bind(this));
-    this.router.get('/stats', this.getStats.bind(this));
-    this.router.get('/queues', this.getQueueList.bind(this));
-    this.router.get('/queues/:queueName/stats', this.getQueueStats.bind(this));
+    this?.router?.get('/health', this?.getHealth?.bind(this));
+    this?.router?.get('/status', this?.getStatus?.bind(this));
+    this?.router?.get('/stats', this?.getStats?.bind(this));
+    this?.router?.get('/queues', this?.getQueueList?.bind(this));
+    this?.router?.get('/queues/:queueName/stats', this?.getQueueStats?.bind(this));
 
     // Job submission endpoints
-    this.router.post('/jobs/price-update', this.jobRateLimiter, this.submitPriceUpdate.bind(this));
-    this.router.post('/jobs/inventory-sync', this.jobRateLimiter, this.submitInventorySync.bind(this));
-    this.router.post('/jobs/product-match', this.jobRateLimiter, this.submitProductMatch.bind(this));
-    this.router.post('/jobs/nutrition-fetch', this.jobRateLimiter, this.submitNutritionFetch.bind(this));
+    this?.router?.post('/jobs/price-update', this.jobRateLimiter, this?.submitPriceUpdate?.bind(this));
+    this?.router?.post('/jobs/inventory-sync', this.jobRateLimiter, this?.submitInventorySync?.bind(this));
+    this?.router?.post('/jobs/product-match', this.jobRateLimiter, this?.submitProductMatch?.bind(this));
+    this?.router?.post('/jobs/nutrition-fetch', this.jobRateLimiter, this?.submitNutritionFetch?.bind(this));
     
     // Batch job submission
-    this.router.post('/jobs/batch', this.jobRateLimiter, this.submitBatchJobs.bind(this));
+    this?.router?.post('/jobs/batch', this.jobRateLimiter, this?.submitBatchJobs?.bind(this));
 
     // Job monitoring endpoints
-    this.router.get('/jobs/:jobId', this.getJobStatus.bind(this));
-    this.router.get('/jobs/:jobId/logs', this.getJobLogs.bind(this));
+    this?.router?.get('/jobs/:jobId', this?.getJobStatus?.bind(this));
+    this?.router?.get('/jobs/:jobId/logs', this?.getJobLogs?.bind(this));
 
     // Queue management endpoints (admin)
-    this.router.post('/admin/control', this.adminRateLimiter, this.controlQueue.bind(this));
-    this.router.post('/admin/retry/:jobId', this.adminRateLimiter, this.retryJob.bind(this));
-    this.router.delete('/admin/jobs/:jobId', this.adminRateLimiter, this.deleteJob.bind(this));
+    this?.router?.post('/admin/control', this.adminRateLimiter, this?.controlQueue?.bind(this));
+    this?.router?.post('/admin/retry/:jobId', this.adminRateLimiter, this?.retryJob?.bind(this));
+    this?.router?.delete('/admin/jobs/:jobId', this.adminRateLimiter, this?.deleteJob?.bind(this));
     
     // Pipeline management
-    this.router.post('/admin/pipeline/start', this.adminRateLimiter, this.startPipeline.bind(this));
-    this.router.post('/admin/pipeline/stop', this.adminRateLimiter, this.stopPipeline.bind(this));
-    this.router.post('/admin/pipeline/restart', this.adminRateLimiter, this.restartPipeline.bind(this));
+    this?.router?.post('/admin/pipeline/start', this.adminRateLimiter, this?.startPipeline?.bind(this));
+    this?.router?.post('/admin/pipeline/stop', this.adminRateLimiter, this?.stopPipeline?.bind(this));
+    this?.router?.post('/admin/pipeline/restart', this.adminRateLimiter, this?.restartPipeline?.bind(this));
 
     // Monitoring and metrics
-    this.router.get('/metrics/processing', this.getProcessingMetrics.bind(this));
-    this.router.get('/metrics/performance', this.getPerformanceMetrics.bind(this));
-    this.router.get('/metrics/errors', this.getErrorMetrics.bind(this));
+    this?.router?.get('/metrics/processing', this?.getProcessingMetrics?.bind(this));
+    this?.router?.get('/metrics/performance', this?.getPerformanceMetrics?.bind(this));
+    this?.router?.get('/metrics/errors', this?.getErrorMetrics?.bind(this));
   }
 
   private setupEventHandlers(): void {
-    this.groceryPipeline.on('job:completed', (data) => {
+    this?.groceryPipeline?.on('job:completed', (data: any) => {
       console.log(`[GroceryQueue] Job completed: ${data.messageId} (${data.processingTime}ms)`);
     });
 
-    this.groceryPipeline.on('job:failed', (data) => {
+    this?.groceryPipeline?.on('job:failed', (data: any) => {
       console.error(`[GroceryQueue] Job failed: ${data.messageId} - ${data.error}`);
     });
 
-    this.groceryPipeline.on('job:retry', (data) => {
+    this?.groceryPipeline?.on('job:retry', (data: any) => {
       console.warn(`[GroceryQueue] Job retry: ${data.messageId} (attempt ${data.retryCount})`);
     });
 
-    this.groceryPipeline.on('pipeline:started', () => {
+    this?.groceryPipeline?.on('pipeline:started', () => {
       console.log('[GroceryQueue] Pipeline started successfully');
     });
 
-    this.groceryPipeline.on('pipeline:stopped', () => {
+    this?.groceryPipeline?.on('pipeline:stopped', () => {
       console.log('[GroceryQueue] Pipeline stopped');
     });
   }
@@ -156,8 +156,8 @@ export class GroceryQueueRouter {
   // Health and status endpoints
   private async getHealth(req: Request, res: Response): Promise<void> {
     try {
-      const pipelineActive = this.groceryPipeline.isActive();
-      const queueStats = await this.groceryPipeline.getQueueStats();
+      const pipelineActive = this?.groceryPipeline?.isActive();
+      const queueStats = await this?.groceryPipeline?.getQueueStats();
       
       const health = {
         status: pipelineActive ? 'healthy' : 'stopped',
@@ -166,8 +166,8 @@ export class GroceryQueueRouter {
           uptime: process.uptime()
         },
         queues: {
-          total: queueStats.length,
-          active: queueStats.filter((q: any) => q.length > 0).length
+          total: queueStats?.length || 0,
+          active: queueStats?.filter((q: any) => q?.length || 0 > 0).length
         },
         timestamp: new Date().toISOString()
       };
@@ -184,12 +184,12 @@ export class GroceryQueueRouter {
 
   private async getStatus(req: Request, res: Response): Promise<void> {
     try {
-      const processingStats = this.groceryPipeline.getProcessingStats();
-      const queueStats = await this.groceryPipeline.getQueueStats();
+      const processingStats = this?.groceryPipeline?.getProcessingStats();
+      const queueStats = await this?.groceryPipeline?.getQueueStats();
 
       res.json({
         pipeline: {
-          active: this.groceryPipeline.isActive(),
+          active: this?.groceryPipeline?.isActive(),
           startedAt: new Date(Date.now() - (process.uptime() * 1000)).toISOString()
         },
         queues: queueStats,
@@ -206,19 +206,19 @@ export class GroceryQueueRouter {
 
   private async getStats(req: Request, res: Response): Promise<void> {
     try {
-      const processingStats = this.groceryPipeline.getProcessingStats();
-      const queueStats = await this.groceryPipeline.getQueueStats();
+      const processingStats = this?.groceryPipeline?.getProcessingStats();
+      const queueStats = await this?.groceryPipeline?.getQueueStats();
       
       // Aggregate statistics
       const totalCompleted = Array.from(processingStats.values())
-        .reduce((sum, stats) => sum + (stats.completed || 0), 0);
+        .reduce((sum: any, stats: any) => sum + (stats.completed || 0), 0);
       const totalFailed = Array.from(processingStats.values())
-        .reduce((sum, stats) => sum + (stats.failed || 0), 0);
+        .reduce((sum: any, stats: any) => sum + (stats.failed || 0), 0);
       const totalRetries = Array.from(processingStats.values())
-        .reduce((sum, stats) => sum + (stats.retry || 0), 0);
+        .reduce((sum: any, stats: any) => sum + (stats.retry || 0), 0);
 
       const avgProcessingTime = Array.from(processingStats.values())
-        .reduce((sum, stats) => sum + (stats.avgProcessingTime || 0), 0) / processingStats.size;
+        .reduce((sum: any, stats: any) => sum + (stats.avgProcessingTime || 0), 0) / processingStats.size;
 
       res.json({
         overview: {
@@ -244,12 +244,12 @@ export class GroceryQueueRouter {
 
   private async getQueueList(req: Request, res: Response): Promise<void> {
     try {
-      const queueStats = await this.groceryPipeline.getQueueStats();
+      const queueStats = await this?.groceryPipeline?.getQueueStats();
       
       res.json({
-        queues: queueStats.map((queue: any) => ({
+        queues: queueStats?.map((queue: any) => ({
           name: queue.name,
-          length: queue.length,
+          length: queue?.length || 0,
           processing: queue.processing,
           completed: queue.completed,
           failed: queue.failed,
@@ -268,7 +268,7 @@ export class GroceryQueueRouter {
   private async getQueueStats(req: Request, res: Response): Promise<void> {
     try {
       const { queueName } = req.params;
-      const stats = await this.messageQueue.getQueueStats(queueName || 'default');
+      const stats = await this?.messageQueue?.getQueueStats(queueName || 'default');
       
       if (!stats) {
         res.status(404).json({ error: 'Queue not found' });
@@ -292,7 +292,7 @@ export class GroceryQueueRouter {
   private async submitPriceUpdate(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const priceData = PriceUpdateRequestSchema.parse(req.body);
-      const jobId = await this.groceryPipeline.submitPriceUpdate(priceData as PriceUpdate);
+      const jobId = await this?.groceryPipeline?.submitPriceUpdate(priceData as PriceUpdate);
       
       res.status(201).json({
         jobId,
@@ -317,7 +317,7 @@ export class GroceryQueueRouter {
   private async submitInventorySync(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const inventoryData = InventoryUpdateRequestSchema.parse(req.body);
-      const jobId = await this.groceryPipeline.submitInventorySync(inventoryData as InventoryUpdate);
+      const jobId = await this?.groceryPipeline?.submitInventorySync(inventoryData as InventoryUpdate);
       
       res.status(201).json({
         jobId,
@@ -342,7 +342,7 @@ export class GroceryQueueRouter {
   private async submitProductMatch(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const matchData = ProductMatchRequestSchema.parse(req.body);
-      const jobId = await this.groceryPipeline.submitProductMatch(matchData as ProductMatch);
+      const jobId = await this?.groceryPipeline?.submitProductMatch(matchData as ProductMatch);
       
       res.status(201).json({
         jobId,
@@ -375,7 +375,7 @@ export class GroceryQueueRouter {
         return;
       }
 
-      const jobId = await this.groceryPipeline.submitNutritionFetch(productId);
+      const jobId = await this?.groceryPipeline?.submitNutritionFetch(productId);
       
       res.status(201).json({
         jobId,
@@ -400,16 +400,16 @@ export class GroceryQueueRouter {
 
           switch (job.type) {
             case 'price_update':
-              jobId = await this.groceryPipeline.submitPriceUpdate(job.data as PriceUpdate);
+              jobId = await this?.groceryPipeline?.submitPriceUpdate(job.data as PriceUpdate);
               break;
             case 'inventory_sync':
-              jobId = await this.groceryPipeline.submitInventorySync(job.data as InventoryUpdate);
+              jobId = await this?.groceryPipeline?.submitInventorySync(job.data as InventoryUpdate);
               break;
             case 'product_match':
-              jobId = await this.groceryPipeline.submitProductMatch(job.data as ProductMatch);
+              jobId = await this?.groceryPipeline?.submitProductMatch(job.data as ProductMatch);
               break;
             case 'nutrition_fetch':
-              jobId = await this.groceryPipeline.submitNutritionFetch(job.data.productId);
+              jobId = await this?.groceryPipeline?.submitNutritionFetch(job?.data?.productId);
               break;
             default:
               throw new Error(`Unsupported job type: ${job.type}`);
@@ -431,12 +431,12 @@ export class GroceryQueueRouter {
         }
       }
 
-      const successCount = results.filter(r => r.success).length;
-      const failureCount = results.length - successCount;
+      const successCount = results?.filter(r => r.success).length;
+      const failureCount = results?.length || 0 - successCount;
 
       res.status(201).json({
         batch: {
-          total: results.length,
+          total: results?.length || 0,
           successful: successCount,
           failed: failureCount,
           submittedAt: new Date().toISOString()
@@ -483,7 +483,7 @@ export class GroceryQueueRouter {
   private async getJobLogs(req: Request, res: Response): Promise<void> {
     try {
       const { jobId } = req.params;
-      const limit = parseInt(req.query.limit as string) || 50;
+      const limit = parseInt(req?.query?.limit as string) || 50;
       
       // Mock job logs
       const logs = Array.from({ length: Math.min(limit, 10) }, (_, i) => ({
@@ -496,7 +496,7 @@ export class GroceryQueueRouter {
       res.json({
         jobId,
         logs,
-        totalCount: logs.length,
+        totalCount: logs?.length || 0,
         limit
       });
     } catch (error) {
@@ -516,21 +516,21 @@ export class GroceryQueueRouter {
       switch (action) {
         case 'pause':
           if (queueName) {
-            await this.messageQueue.pauseQueue(queueName);
+            await this?.messageQueue?.pauseQueue(queueName);
           } else {
-            await this.groceryPipeline.stop();
+            await this?.groceryPipeline?.stop();
           }
           break;
         case 'resume':
           if (queueName) {
-            await this.messageQueue.resumeQueue(queueName);
+            await this?.messageQueue?.resumeQueue(queueName);
           } else {
-            await this.groceryPipeline.start();
+            await this?.groceryPipeline?.start();
           }
           break;
         case 'clear':
           if (queueName) {
-            const deletedCount = await this.messageQueue.clearQueue(queueName);
+            const deletedCount = await this?.messageQueue?.clearQueue(queueName);
             res.json({
               action,
               queueName,
@@ -608,7 +608,7 @@ export class GroceryQueueRouter {
   // Pipeline management
   private async startPipeline(req: Request, res: Response): Promise<void> {
     try {
-      await this.groceryPipeline.start();
+      await this?.groceryPipeline?.start();
       res.json({
         action: 'start',
         success: true,
@@ -625,7 +625,7 @@ export class GroceryQueueRouter {
 
   private async stopPipeline(req: Request, res: Response): Promise<void> {
     try {
-      await this.groceryPipeline.stop();
+      await this?.groceryPipeline?.stop();
       res.json({
         action: 'stop',
         success: true,
@@ -642,9 +642,9 @@ export class GroceryQueueRouter {
 
   private async restartPipeline(req: Request, res: Response): Promise<void> {
     try {
-      await this.groceryPipeline.stop();
+      await this?.groceryPipeline?.stop();
       await new Promise(resolve => setTimeout(resolve, 2000)); // Brief pause
-      await this.groceryPipeline.start();
+      await this?.groceryPipeline?.start();
       
       res.json({
         action: 'restart',
@@ -663,7 +663,7 @@ export class GroceryQueueRouter {
   // Metrics endpoints
   private async getProcessingMetrics(req: Request, res: Response): Promise<void> {
     try {
-      const stats = this.groceryPipeline.getProcessingStats();
+      const stats = this?.groceryPipeline?.getProcessingStats();
       const metrics = Object.fromEntries(
         Array.from(stats.entries()).map(([queue, data]) => [
           queue,
@@ -691,7 +691,7 @@ export class GroceryQueueRouter {
   private async getPerformanceMetrics(req: Request, res: Response): Promise<void> {
     try {
       const memoryUsage = process.memoryUsage();
-      const stats = this.groceryPipeline.getProcessingStats();
+      const stats = this?.groceryPipeline?.getProcessingStats();
       
       res.json({
         performance: {
@@ -726,7 +726,7 @@ export class GroceryQueueRouter {
 
   private async getErrorMetrics(req: Request, res: Response): Promise<void> {
     try {
-      const stats = this.groceryPipeline.getProcessingStats();
+      const stats = this?.groceryPipeline?.getProcessingStats();
       const errorMetrics = Object.fromEntries(
         Array.from(stats.entries()).map(([queue, data]) => [
           queue,
@@ -745,7 +745,7 @@ export class GroceryQueueRouter {
         summary: {
           totalFailures: totalFailed,
           totalRetries: totalRetries,
-          overallErrorRate: totalFailed / Math.max(Object.values(stats).reduce((sum, stat) => sum + (stat.completed || 0) + (stat.failed || 0), 0), 1) * 100
+          overallErrorRate: totalFailed / Math.max(Object.values(stats).reduce((sum: any, stat: any) => sum + (stat.completed || 0) + (stat.failed || 0), 0), 1) * 100
         },
         byQueue: errorMetrics,
         timestamp: new Date().toISOString()

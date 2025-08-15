@@ -368,7 +368,7 @@ describe("JSON Parsing Validation Tests", () => {
 
   describe("Enhanced Markdown Extraction", () => {
     it("should extract JSON from markdown with explanatory text", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: PROBLEMATIC_RESPONSES.MARKDOWN_WITH_EXPLANATIONS },
       });
@@ -376,10 +376,10 @@ describe("JSON Parsing Validation Tests", () => {
       const analysis = await service.analyzeEmail(sampleEmail);
 
       expect(analysis.workflow_validation).toBe("QUOTE_PROCESSING confirmed");
-      expect(analysis.missed_entities.project_names).toEqual([
+      expect(analysis?.missed_entities?.project_names).toEqual([
         "Data Center Expansion",
       ]);
-      expect(analysis.missed_entities.company_names).toEqual(["TechCorp Inc"]);
+      expect(analysis?.missed_entities?.company_names).toEqual(["TechCorp Inc"]);
       expect(analysis.action_items).toHaveLength(1);
       expect(analysis.action_items[0].task).toBe("Prepare detailed quote");
       expect(analysis.confidence).toBe(0.87);
@@ -387,7 +387,7 @@ describe("JSON Parsing Validation Tests", () => {
     });
 
     it("should select correct JSON from multiple code blocks", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: PROBLEMATIC_RESPONSES.MULTIPLE_CODE_BLOCKS },
       });
@@ -395,13 +395,13 @@ describe("JSON Parsing Validation Tests", () => {
       const analysis = await service.analyzeEmail(sampleEmail);
 
       expect(analysis.workflow_validation).toBe("ORDER_MANAGEMENT validated");
-      expect(analysis.missed_entities.company_names).toEqual(["ACME Corp"]);
+      expect(analysis?.missed_entities?.company_names).toEqual(["ACME Corp"]);
       expect(analysis.business_process).toBe("STANDARD_ORDER_FULFILLMENT");
       expect(analysis.confidence).toBe(0.92);
     });
 
     it("should handle nested markdown structure", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: PROBLEMATIC_RESPONSES.NESTED_MARKDOWN },
       });
@@ -409,7 +409,7 @@ describe("JSON Parsing Validation Tests", () => {
       const analysis = await service.analyzeEmail(sampleEmail);
 
       expect(analysis.workflow_validation).toBe("URGENT_SUPPORT confirmed");
-      expect(analysis.missed_entities.project_names).toEqual([
+      expect(analysis?.missed_entities?.project_names).toEqual([
         "Critical System",
       ]);
       expect(analysis.business_process).toBe("CRITICAL_SUPPORT_ESCALATION");
@@ -519,7 +519,7 @@ describe("JSON Parsing Validation Tests", () => {
 
   describe("Fallback Extraction Methods", () => {
     it("should extract from partial JSON in mixed content", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: PROBLEMATIC_RESPONSES.MIXED_CONTENT },
       });
@@ -538,7 +538,7 @@ describe("JSON Parsing Validation Tests", () => {
     });
 
     it("should parse key-value format when JSON fails", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: PROBLEMATIC_RESPONSES.KEY_VALUE_FORMAT },
       });
@@ -556,7 +556,7 @@ describe("JSON Parsing Validation Tests", () => {
     });
 
     it("should handle HTML-like mixed content", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: PROBLEMATIC_RESPONSES.HTML_MIXED },
       });
@@ -564,7 +564,7 @@ describe("JSON Parsing Validation Tests", () => {
       const analysis = await service.analyzeEmail(sampleEmail);
 
       expect(analysis.workflow_validation).toBe("QUOTE_REQUEST validated");
-      expect(analysis.missed_entities.project_names).toEqual([
+      expect(analysis?.missed_entities?.project_names).toEqual([
         "Infrastructure Upgrade",
       ]);
       expect(analysis.business_process).toBe("SPECIALIZED_QUOTE_PROCESSING");
@@ -597,7 +597,7 @@ describe("JSON Parsing Validation Tests", () => {
     });
 
     it("should handle empty responses", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: PROBLEMATIC_RESPONSES.EMPTY_RESPONSE },
       });
@@ -611,7 +611,7 @@ describe("JSON Parsing Validation Tests", () => {
     });
 
     it("should handle minimal JSON responses", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: PROBLEMATIC_RESPONSES.MINIMAL_RESPONSE },
       });
@@ -628,7 +628,7 @@ describe("JSON Parsing Validation Tests", () => {
     });
 
     it("should handle Unicode and special characters", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: PROBLEMATIC_RESPONSES.UNICODE_CONTENT },
       });
@@ -638,13 +638,13 @@ describe("JSON Parsing Validation Tests", () => {
       expect(analysis.workflow_validation).toBe(
         "INTERNATIONAL_ORDER confirmed ✓",
       );
-      expect(analysis.missed_entities.project_names).toEqual([
+      expect(analysis?.missed_entities?.project_names).toEqual([
         "Ñew Proyect 2024",
       ]);
-      expect(analysis.missed_entities.company_names).toEqual([
+      expect(analysis?.missed_entities?.company_names).toEqual([
         "Töch Corp GmbH",
       ]);
-      expect(analysis.missed_entities.people).toEqual([
+      expect(analysis?.missed_entities?.people).toEqual([
         "José García",
         "François Dubois",
       ]);
@@ -692,7 +692,7 @@ describe("JSON Parsing Validation Tests", () => {
       expect(mockedAxios.post).toHaveBeenCalledTimes(3);
 
       // Verify temperature progression
-      const calls = mockedAxios.post.mock.calls;
+      const calls = mockedAxios?.post?.mock.calls;
       expect(calls[0][1].options.temperature).toBe(0.1); // First attempt
       expect(calls[1][1].options.temperature).toBe(0.05); // Second attempt (retry)
       expect(calls[2][1].options.temperature).toBe(0.05); // Third attempt (retry)
@@ -732,7 +732,7 @@ describe("JSON Parsing Validation Tests", () => {
 
       const analysis = await service.analyzeEmail(sampleEmail);
 
-      const calls = mockedAxios.post.mock.calls;
+      const calls = mockedAxios?.post?.mock.calls;
       expect(calls[0][1].prompt).not.toContain("retry attempt");
       expect(calls[1][1].prompt).toContain("retry attempt");
 
@@ -761,7 +761,7 @@ describe("JSON Parsing Validation Tests", () => {
         extracted_requirements: [],
       };
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: JSON.stringify(validResponse) },
       });
@@ -769,9 +769,9 @@ describe("JSON Parsing Validation Tests", () => {
       await service.analyzeEmail(sampleEmail);
 
       const stats = await service.getAnalysisStats();
-      expect(stats.parsingMetrics.successRate).toBeGreaterThan(0);
-      expect(stats.parsingMetrics.totalAttempts).toBeGreaterThan(0);
-      expect(stats.parsingMetrics.retryRate).toBe(0); // No retries needed
+      expect(stats?.parsingMetrics?.successRate).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics?.totalAttempts).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics?.retryRate).toBe(0); // No retries needed
     });
 
     it("should track retry success metrics", async () => {
@@ -807,8 +807,8 @@ describe("JSON Parsing Validation Tests", () => {
       await service.analyzeEmail(sampleEmail);
 
       const stats = await service.getAnalysisStats();
-      expect(stats.parsingMetrics.retryRate).toBeGreaterThan(0);
-      expect(stats.parsingMetrics.successRate).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics?.retryRate).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics?.successRate).toBeGreaterThan(0);
     });
 
     it("should track fallback usage when all retries fail", async () => {
@@ -829,14 +829,14 @@ describe("JSON Parsing Validation Tests", () => {
       await service.analyzeEmail(sampleEmail);
 
       const stats = await service.getAnalysisStats();
-      expect(stats.parsingMetrics.fallbackRate).toBeGreaterThan(0);
-      expect(stats.parsingMetrics.totalAttempts).toBe(3);
+      expect(stats?.parsingMetrics?.fallbackRate).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics?.totalAttempts).toBe(3);
     });
   });
 
   describe("Performance and Consistency", () => {
     it("should parse complex JSON responses within reasonable time", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: PROBLEMATIC_RESPONSES.MARKDOWN_WITH_EXPLANATIONS },
       });
@@ -850,11 +850,11 @@ describe("JSON Parsing Validation Tests", () => {
     });
 
     it("should produce consistent results for identical inputs", async () => {
-      const response = PROBLEMATIC_RESPONSES.NESTED_MARKDOWN;
+      const response = PROBLEMATIC_RESPONSES?.NESTED_MARKDOWN;
 
       const analyses = [];
       for (let i = 0; i < 3; i++) {
-        mockedAxios.post.mockResolvedValue({
+        mockedAxios?.post?.mockResolvedValue({
           status: 200,
           data: { response },
         });

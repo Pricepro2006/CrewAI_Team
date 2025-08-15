@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import Database from "better-sqlite3";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 import path from "path";
 import { up as fixNegativeProcessingTimes } from "../database/migrations/006_fix_negative_processing_times.js";
 
@@ -81,7 +81,7 @@ async function main() {
 
     logger.info(
       "Example negative records:",
-      examples.map((e) => ({
+      examples?.map((e: any) => ({
         emailId: String(e.email_id).substring(0, 8) + "...",
         processingTime: e.processing_time_ms,
         timestamp: e.analysis_timestamp,
@@ -166,7 +166,7 @@ async function main() {
       process.exit(1);
     }
   } catch (error) {
-    logger.error("Migration failed:", error);
+    logger.error("Migration failed:", error as string);
     process.exit(1);
   } finally {
     db.close();
@@ -174,7 +174,7 @@ async function main() {
 }
 
 // Run the script
-main().catch((error) => {
-  logger.error("Script failed:", error);
+main().catch((error: any) => {
+  logger.error("Script failed:", error as string);
   process.exit(1);
 });

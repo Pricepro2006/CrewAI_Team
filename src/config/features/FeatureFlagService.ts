@@ -68,7 +68,7 @@ export class FeatureFlagService extends EventEmitter {
     this.loadFromFile();
     
     // Start refresh interval if configured
-    if (this.config.refreshIntervalMs && this.config.refreshIntervalMs > 0) {
+    if (this?.config?.refreshIntervalMs && this?.config?.refreshIntervalMs > 0) {
       this.startRefreshInterval();
     }
 
@@ -114,7 +114,7 @@ export class FeatureFlagService extends EventEmitter {
       });
 
     envFlags.forEach(flag => {
-      this.flags.set(flag.name, flag);
+      this?.flags?.set(flag.name, flag);
       logger.info(`Loaded feature flag from env: ${flag.name} (${flag.rolloutPercentage}%)`);
     });
   }
@@ -123,19 +123,19 @@ export class FeatureFlagService extends EventEmitter {
    * Load feature flags from JSON file
    */
   private loadFromFile(): void {
-    if (!this.config.configFilePath || !fs.existsSync(this.config.configFilePath)) {
+    if (!this?.config?.configFilePath || !fs.existsSync(this?.config?.configFilePath)) {
       return;
     }
 
     try {
-      const fileContent = fs.readFileSync(this.config.configFilePath, 'utf-8');
+      const fileContent = fs.readFileSync(this?.config?.configFilePath, 'utf-8');
       const config = JSON.parse(fileContent) as FeatureFlagConfig;
       
       if (config.flags) {
-        config.flags.forEach(flag => {
+        config?.flags?.forEach(flag => {
           // Don't override env-based flags
-          if (!this.flags.has(flag.name)) {
-            this.flags.set(flag.name, {
+          if (!this?.flags?.has(flag.name)) {
+            this?.flags?.set(flag.name, {
               ...flag,
               createdAt: new Date(flag.createdAt),
               updatedAt: new Date(flag.updatedAt)
@@ -146,7 +146,7 @@ export class FeatureFlagService extends EventEmitter {
       }
 
       if (config.defaultRolloutPercentage !== undefined) {
-        this.config.defaultRolloutPercentage = config.defaultRolloutPercentage;
+        this?.config?.defaultRolloutPercentage = config.defaultRolloutPercentage;
       }
     } catch (error) {
       logger.error('Error loading feature flags from file', error instanceof Error ? error.message : String(error));
@@ -157,18 +157,18 @@ export class FeatureFlagService extends EventEmitter {
    * Save current flags to file
    */
   private saveToFile(): void {
-    if (!this.config.configFilePath) {
+    if (!this?.config?.configFilePath) {
       return;
     }
 
     try {
       const config: FeatureFlagConfig = {
-        flags: Array.from(this.flags.values()),
-        defaultRolloutPercentage: this.config.defaultRolloutPercentage
+        flags: Array.from(this?.flags?.values()),
+        defaultRolloutPercentage: this?.config?.defaultRolloutPercentage
       };
 
       fs.writeFileSync(
-        this.config.configFilePath,
+        this?.config?.configFilePath,
         JSON.stringify(config, null, 2),
         'utf-8'
       );
@@ -183,14 +183,14 @@ export class FeatureFlagService extends EventEmitter {
    * Ensure business search enhancement flag exists
    */
   private ensureBusinessSearchFlag(): void {
-    if (!this.flags.has('business-search-enhancement')) {
+    if (!this?.flags?.has('business-search-enhancement')) {
       const defaultPercentage = parseInt(
         process.env.BUSINESS_SEARCH_ROLLOUT_PERCENTAGE || 
         process.env.FEATURE_FLAG_BUSINESS_SEARCH_ENHANCEMENT || 
         '0'
       );
 
-      this.flags.set('business-search-enhancement', {
+      this?.flags?.set('business-search-enhancement', {
         name: 'business-search-enhancement',
         enabled: defaultPercentage > 0,
         description: 'GROUP 2B WebSearch Enhancement - Enables business search capabilities in chat',
@@ -215,7 +215,7 @@ export class FeatureFlagService extends EventEmitter {
   private startRefreshInterval(): void {
     this.refreshInterval = setInterval(() => {
       this.refresh();
-    }, this.config.refreshIntervalMs!);
+    }, this?.config?.refreshIntervalMs!);
   }
 
   /**
@@ -228,7 +228,7 @@ export class FeatureFlagService extends EventEmitter {
     this.loadFromFile();
     
     // Check for changes and emit events
-    this.flags.forEach((flag, name) => {
+    this?.flags?.forEach((flag, name) => {
       const previousFlag = previousFlags.get(name);
       if (!previousFlag || 
           previousFlag.enabled !== flag.enabled || 
@@ -246,7 +246,7 @@ export class FeatureFlagService extends EventEmitter {
    * Check if a feature flag is enabled (simple check)
    */
   public isEnabled(flagName: string): boolean {
-    const flag = this.flags.get(flagName);
+    const flag = this?.flags?.get(flagName);
     return flag?.enabled || false;
   }
 
@@ -254,7 +254,7 @@ export class FeatureFlagService extends EventEmitter {
    * Check if a feature is enabled for a specific user (A/B testing)
    */
   public isEnabledForUser(flagName: string, userId: string): boolean {
-    const flag = this.flags.get(flagName);
+    const flag = this?.flags?.get(flagName);
     if (!flag || !flag.enabled) {
       return false;
     }
@@ -270,11 +270,11 @@ export class FeatureFlagService extends EventEmitter {
     }
 
     // Check if we already have an assignment for this user
-    if (!this.userAssignments.has(userId)) {
-      this.userAssignments.set(userId, new Map());
+    if (!this?.userAssignments?.has(userId)) {
+      this?.userAssignments?.set(userId, new Map());
     }
 
-    const userFlags = this.userAssignments.get(userId)!;
+    const userFlags = this?.userAssignments?.get(userId)!;
     if (userFlags.has(flagName)) {
       return userFlags.get(flagName)!;
     }
@@ -293,7 +293,7 @@ export class FeatureFlagService extends EventEmitter {
    * Get user's percentage bucket (for A/B testing)
    */
   public getUserPercentage(flagName: string): number {
-    const flag = this.flags.get(flagName);
+    const flag = this?.flags?.get(flagName);
     return flag?.rolloutPercentage || 0;
   }
 
@@ -302,7 +302,7 @@ export class FeatureFlagService extends EventEmitter {
    */
   private hashUserId(userId: string): number {
     let hash = 0;
-    for (let i = 0; i < userId.length; i++) {
+    for (let i = 0; i < userId?.length || 0; i++) {
       const char = userId.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32bit integer
@@ -314,21 +314,21 @@ export class FeatureFlagService extends EventEmitter {
    * Get a feature flag
    */
   public getFlag(flagName: string): FeatureFlag | undefined {
-    return this.flags.get(flagName);
+    return this?.flags?.get(flagName);
   }
 
   /**
    * Get all feature flags
    */
   public getAllFlags(): FeatureFlag[] {
-    return Array.from(this.flags.values());
+    return Array.from(this?.flags?.values());
   }
 
   /**
    * Update a feature flag
    */
   public updateFlag(flagName: string, updates: Partial<FeatureFlag>): void {
-    const flag = this.flags.get(flagName);
+    const flag = this?.flags?.get(flagName);
     if (!flag) {
       logger.warn(`Feature flag ${flagName} not found`);
       return;
@@ -341,7 +341,7 @@ export class FeatureFlagService extends EventEmitter {
       updatedAt: new Date()
     };
 
-    this.flags.set(flagName, updatedFlag);
+    this?.flags?.set(flagName, updatedFlag);
     this.saveToFile();
 
     logger.info(`Updated feature flag: ${flagName}`, 'FEATURE_FLAGS', updates);
@@ -357,7 +357,7 @@ export class FeatureFlagService extends EventEmitter {
    * Create a new feature flag
    */
   public createFlag(flag: Omit<FeatureFlag, 'createdAt' | 'updatedAt'>): void {
-    if (this.flags.has(flag.name)) {
+    if (this?.flags?.has(flag.name)) {
       logger.warn(`Feature flag ${flag.name} already exists`);
       return;
     }
@@ -368,7 +368,7 @@ export class FeatureFlagService extends EventEmitter {
       updatedAt: new Date()
     };
 
-    this.flags.set(flag.name, newFlag);
+    this?.flags?.set(flag.name, newFlag);
     this.saveToFile();
 
     logger.info(`Created feature flag: ${flag.name}`);
@@ -380,13 +380,13 @@ export class FeatureFlagService extends EventEmitter {
    * Delete a feature flag
    */
   public deleteFlag(flagName: string): void {
-    const flag = this.flags.get(flagName);
+    const flag = this?.flags?.get(flagName);
     if (!flag) {
       logger.warn(`Feature flag ${flagName} not found`);
       return;
     }
 
-    this.flags.delete(flagName);
+    this?.flags?.delete(flagName);
     this.saveToFile();
 
     logger.info(`Deleted feature flag: ${flagName}`);
@@ -429,7 +429,7 @@ export class FeatureFlagService extends EventEmitter {
    * Clear user assignments (useful for testing)
    */
   public clearUserAssignments(): void {
-    this.userAssignments.clear();
+    this?.userAssignments?.clear();
   }
 
   /**
@@ -442,7 +442,7 @@ export class FeatureFlagService extends EventEmitter {
   } {
     return {
       flags: this.getAllFlags(),
-      userAssignmentCount: this.userAssignments.size,
+      userAssignmentCount: this?.userAssignments?.size,
       config: this.config
     };
   }

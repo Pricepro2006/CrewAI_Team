@@ -216,7 +216,7 @@ export async function createRequiredIndexes(db: any): Promise<void> {
   for (const index of requiredIndexes) {
     try {
       const columns = Array.isArray(index.columns)
-        ? index.columns.join(", ")
+        ? index?.columns?.join(", ")
         : index.column;
 
       const sql = `CREATE INDEX IF NOT EXISTS ${index.name} ON ${index.table}(${columns})`;

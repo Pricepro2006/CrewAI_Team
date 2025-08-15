@@ -27,7 +27,7 @@ export const WalmartPriceAlerts: React.FC = () => {
   });
 
   // Fetch user's alerts
-  const { data: alertsData, refetch: refetchAlerts } = api.priceAlerts.getUserAlerts.useQuery(
+  const { data: alertsData, refetch: refetchAlerts } = api?.priceAlerts?.getUserAlerts.useQuery(
     { status: "active" },
     { 
       enabled: true,
@@ -36,13 +36,13 @@ export const WalmartPriceAlerts: React.FC = () => {
   );
 
   // Get notification history
-  const { data: notificationsData } = api.priceAlerts.getNotificationHistory.useQuery(
+  const { data: notificationsData } = api?.priceAlerts?.getNotificationHistory.useQuery(
     { limit: 10 },
     { enabled: true }
   );
 
   // Create alert mutation
-  const createAlertMutation = api.priceAlerts.createAlert.useMutation({
+  const createAlertMutation = api?.priceAlerts?.createAlert.useMutation({
     onSuccess: () => {
       setShowCreateForm(false);
       refetchAlerts();
@@ -51,23 +51,23 @@ export const WalmartPriceAlerts: React.FC = () => {
   });
 
   // Delete alert mutation
-  const deleteAlertMutation = api.priceAlerts.deleteAlert.useMutation({
+  const deleteAlertMutation = api?.priceAlerts?.deleteAlert.useMutation({
     onSuccess: () => {
       refetchAlerts();
     },
   });
 
   // Pause/Resume alert mutations
-  const pauseAlertMutation = api.priceAlerts.pauseAlert.useMutation({
+  const pauseAlertMutation = api?.priceAlerts?.pauseAlert.useMutation({
     onSuccess: () => refetchAlerts(),
   });
 
-  const resumeAlertMutation = api.priceAlerts.resumeAlert.useMutation({
+  const resumeAlertMutation = api?.priceAlerts?.resumeAlert.useMutation({
     onSuccess: () => refetchAlerts(),
   });
 
   // Test alert mutation
-  const testAlertMutation = api.priceAlerts.testAlert.useMutation();
+  const testAlertMutation = api?.priceAlerts?.testAlert.useMutation();
 
   const resetForm = () => {
     setFormData({
@@ -135,7 +135,7 @@ export const WalmartPriceAlerts: React.FC = () => {
               <input
                 type="text"
                 value={formData.productName}
-                onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                onChange={(e: any) => setFormData({ ...formData, productName: e?.target?.value })}
                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="e.g., Great Value Whole Milk"
               />
@@ -148,7 +148,7 @@ export const WalmartPriceAlerts: React.FC = () => {
                   type="number"
                   step="0.01"
                   value={formData.targetPrice}
-                  onChange={(e) => setFormData({ ...formData, targetPrice: parseFloat(e.target.value) })}
+                  onChange={(e: any) => setFormData({ ...formData, targetPrice: parseFloat(e?.target?.value) })}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="0.00"
                 />
@@ -159,7 +159,7 @@ export const WalmartPriceAlerts: React.FC = () => {
                 <input
                   type="number"
                   value={formData.priceDropPercentage}
-                  onChange={(e) => setFormData({ ...formData, priceDropPercentage: parseInt(e.target.value) })}
+                  onChange={(e: any) => setFormData({ ...formData, priceDropPercentage: parseInt(e?.target?.value) })}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="10"
                 />
@@ -170,7 +170,7 @@ export const WalmartPriceAlerts: React.FC = () => {
               <label className="block text-sm font-medium mb-1">Alert Type</label>
               <select
                 value={formData.alertType}
-                onChange={(e) => setFormData({ ...formData, alertType: e.target.value as any })}
+                onChange={(e: any) => setFormData({ ...formData, alertType: e?.target?.value as any })}
                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="price_drop">Price Drop</option>
@@ -185,9 +185,9 @@ export const WalmartPriceAlerts: React.FC = () => {
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={formData.notificationMethods.includes("push")}
-                    onChange={(e) => {
-                      if (e.target.checked) {
+                    checked={formData?.notificationMethods?.includes("push")}
+                    onChange={(e: any) => {
+                      if (e?.target?.checked) {
                         setFormData({
                           ...formData,
                           notificationMethods: [...formData.notificationMethods, "push"],
@@ -195,7 +195,7 @@ export const WalmartPriceAlerts: React.FC = () => {
                       } else {
                         setFormData({
                           ...formData,
-                          notificationMethods: formData.notificationMethods.filter((m) => m !== "push"),
+                          notificationMethods: formData?.notificationMethods?.filter((m: any) => m !== "push"),
                         });
                       }
                     }}
@@ -206,9 +206,9 @@ export const WalmartPriceAlerts: React.FC = () => {
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={formData.notificationMethods.includes("email")}
-                    onChange={(e) => {
-                      if (e.target.checked) {
+                    checked={formData?.notificationMethods?.includes("email")}
+                    onChange={(e: any) => {
+                      if (e?.target?.checked) {
                         setFormData({
                           ...formData,
                           notificationMethods: [...formData.notificationMethods, "email"],
@@ -216,7 +216,7 @@ export const WalmartPriceAlerts: React.FC = () => {
                       } else {
                         setFormData({
                           ...formData,
-                          notificationMethods: formData.notificationMethods.filter((m) => m !== "email"),
+                          notificationMethods: formData?.notificationMethods?.filter((m: any) => m !== "email"),
                         });
                       }
                     }}
@@ -251,9 +251,9 @@ export const WalmartPriceAlerts: React.FC = () => {
 
       {/* Active Alerts List */}
       <div className="space-y-4">
-        <h3 className="font-medium text-gray-700">Active Alerts ({alerts.length})</h3>
+        <h3 className="font-medium text-gray-700">Active Alerts ({alerts?.length || 0})</h3>
         
-        {alerts.length === 0 ? (
+        {alerts?.length || 0 === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <BellIcon className="h-12 w-12 mx-auto mb-2 text-gray-300" />
             <p>No active price alerts</p>
@@ -261,7 +261,7 @@ export const WalmartPriceAlerts: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-2">
-            {alerts.map((alert) => (
+            {alerts?.map((alert: any) => (
               <div
                 key={alert.id}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
@@ -318,11 +318,11 @@ export const WalmartPriceAlerts: React.FC = () => {
       </div>
 
       {/* Recent Notifications */}
-      {notifications.length > 0 && (
+      {notifications?.length || 0 > 0 && (
         <div className="mt-6 pt-6 border-t">
           <h3 className="font-medium text-gray-700 mb-4">Recent Notifications</h3>
           <div className="space-y-2">
-            {notifications.slice(0, 5).map((notification) => (
+            {notifications.slice(0, 5).map((notification: any) => (
               <div
                 key={notification.id}
                 className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg"
@@ -332,7 +332,7 @@ export const WalmartPriceAlerts: React.FC = () => {
                   <p className="text-sm font-medium">{notification.productName}</p>
                   <p className="text-xs text-gray-600">
                     Was ${notification.originalPrice?.toFixed(2)} → Now ${notification.salePrice?.toFixed(2)}
-                    {notification.discountPercentage && ` (${notification.discountPercentage.toFixed(0)}% off)`}
+                    {notification.discountPercentage && ` (${notification?.discountPercentage?.toFixed(0)}% off)`}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     {new Date(notification.sentAt).toLocaleString()}

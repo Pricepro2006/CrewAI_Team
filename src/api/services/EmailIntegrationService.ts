@@ -198,7 +198,7 @@ export class EmailIntegrationService {
     this.analysisService = null as any; // Temporary fix
 
     // Initialize the ingestion service
-    // this.emailIngestion.initialize().catch(error => {
+    // this?.emailIngestion?.initialize().catch(error => {
     //   logger.error('Failed to initialize email ingestion service', 'EMAIL_INTEGRATION', { error });
     // });
 
@@ -216,7 +216,7 @@ export class EmailIntegrationService {
   private setupEventListeners(): void {
     // TODO: EmailIngestionServiceImpl needs to extend EventEmitter
     // // Listen for ingestion completion events
-    // this.emailIngestion.on('email:processed', async (result: any) => {
+    // this?.emailIngestion?.on('email:processed', async (result: any) => {
     //   try {
     //     // The processed email is already stored, just log the event
     //     logger.info('Email processed event received', 'EMAIL_INTEGRATION', {
@@ -228,7 +228,7 @@ export class EmailIntegrationService {
     // });
 
     // // Listen for batch completion
-    // this.emailIngestion.on('batch:completed', async (progress: IngestionProgress) => {
+    // this?.emailIngestion?.on('batch:completed', async (progress: IngestionProgress) => {
     //   logger.info('Batch processing completed', 'EMAIL_INTEGRATION', {
     //     processed: progress.processed,
     //     failed: progress.failed,
@@ -246,12 +246,12 @@ export class EmailIntegrationService {
   ): Promise<void> {
     try {
       // Transform and store in the format expected by EmailStorageService
-      await this.emailStorage.createEmail({
+      await this?.emailStorage?.createEmail({
         messageId: email.messageId,
         emailAlias: email.to[0]?.address || 'unknown@email.com',
-        requestedBy: email.from.name || email.from.address,
+        requestedBy: email?.from?.name || email?.from?.address,
         subject: email.subject,
-        summary: analysisResult.phase1Analysis?.summary || email.body.content.substring(0, 200),
+        summary: analysisResult.phase1Analysis?.summary || email?.body?.content.substring(0, 200),
         status: this.mapPriorityToStatus(analysisResult.phase1Analysis?.priority || 'medium'),
         statusText: analysisResult.phase1Analysis?.intent || 'Email received',
         workflowState: this.mapWorkflowState(analysisResult),
@@ -262,7 +262,7 @@ export class EmailIntegrationService {
       });
 
       // Store the full analysis
-      await this.emailStorage.storeEmailAnalysis(email.messageId, {
+      await this?.emailStorage?.storeEmailAnalysis(email.messageId, {
         quick: {
           workflow: {
             primary: analysisResult.phase1Analysis?.workflow || 'unknown',
@@ -292,9 +292,9 @@ export class EmailIntegrationService {
         },
         actionSummary: analysisResult.phase2Analysis?.action_summary || '',
         processingMetadata: {
-          stage1Time: analysisResult.processingTime.phase1 || 0,
-          stage2Time: analysisResult.processingTime.phase2 || 0,
-          totalTime: analysisResult.processingTime.total || 0,
+          stage1Time: analysisResult?.processingTime?.phase1 || 0,
+          stage2Time: analysisResult?.processingTime?.phase2 || 0,
+          totalTime: analysisResult?.processingTime?.total || 0,
           models: {
             stage1: 'rule-based',
             stage2: analysisResult.llmUsed || 'none'
@@ -339,7 +339,7 @@ export class EmailIntegrationService {
         IngestionSource.MICROSOFT_GRAPH;
 
       // Ingest emails through the pipeline
-      const result = await this.emailIngestion.ingestBatch(emails, ingestionSource);
+      const result = await this?.emailIngestion?.ingestBatch(emails, ingestionSource);
       
       // Handle Result type
       if (!result.success) {
@@ -358,8 +358,8 @@ export class EmailIntegrationService {
   public getProcessingStatus() {
     return {
       isProcessing: this.isProcessing,
-      queueStatus: this.emailIngestion.getQueueStatus(),
-      storageStats: this.emailStorage.getDashboardStats()
+      queueStatus: this?.emailIngestion?.getQueueStatus(),
+      storageStats: this?.emailStorage?.getDashboardStats()
     };
   }
 
@@ -424,7 +424,7 @@ export class EmailIntegrationService {
     if (entitySource) {
       // Handle PO numbers
       if (entitySource.po_numbers && Array.isArray(entitySource.po_numbers)) {
-        entitySource.po_numbers.forEach((po: string | number) => {
+        entitySource?.po_numbers?.forEach((po: string | number) => {
           entities.push({
             id: crypto.randomUUID(),
             type: 'po_number',
@@ -438,7 +438,7 @@ export class EmailIntegrationService {
       
       // Handle quote numbers
       if (entitySource.quote_numbers && Array.isArray(entitySource.quote_numbers)) {
-        entitySource.quote_numbers.forEach((quote: string | number) => {
+        entitySource?.quote_numbers?.forEach((quote: string | number) => {
           entities.push({
             id: crypto.randomUUID(),
             type: 'quote_number',
@@ -452,7 +452,7 @@ export class EmailIntegrationService {
       
       // Handle part numbers
       if (entitySource.part_numbers && Array.isArray(entitySource.part_numbers)) {
-        entitySource.part_numbers.forEach((part: string | number) => {
+        entitySource?.part_numbers?.forEach((part: string | number) => {
           entities.push({
             id: crypto.randomUUID(),
             type: 'part_number',
@@ -492,13 +492,13 @@ export class EmailIntegrationService {
     
     return {
       poNumbers: Array.isArray(phase1Entities.po_numbers) ? 
-        phase1Entities.po_numbers.map((po: string | number) => ({ value: String(po), format: 'standard', confidence: 0.9 })) : [],
+        phase1Entities?.po_numbers?.map((po: string | number) => ({ value: String(po), format: 'standard', confidence: 0.9 })) : [],
       quoteNumbers: Array.isArray(phase1Entities.quotes) ? 
-        phase1Entities.quotes.map((q: string | number) => ({ value: String(q), type: 'quote', confidence: 0.9 })) : [],
+        phase1Entities?.quotes?.map((q: string | number) => ({ value: String(q), type: 'quote', confidence: 0.9 })) : [],
       caseNumbers: Array.isArray(phase1Entities.cases) ?
-        phase1Entities.cases.map((c: string | number) => ({ value: String(c), type: 'case', confidence: 0.9 })) : [],
+        phase1Entities?.cases?.map((c: string | number) => ({ value: String(c), type: 'case', confidence: 0.9 })) : [],
       partNumbers: Array.isArray(phase1Entities.parts) ? 
-        phase1Entities.parts.map((p: string | number) => ({ value: String(p), confidence: 0.9 })) : [],
+        phase1Entities?.parts?.map((p: string | number) => ({ value: String(p), confidence: 0.9 })) : [],
       orderReferences: [],
       contacts: []
     };
@@ -557,7 +557,7 @@ export class EmailIntegrationService {
       parsedData = [parsedData];
     }
     
-    return parsedData.map((email) => ({
+    return parsedData?.map((email: any) => ({
       messageId: email.id || email.messageId || `msg_${Date.now()}_${Math.random()}`,
       subject: email.subject || 'No Subject',
       body: {
@@ -601,21 +601,21 @@ export class EmailIntegrationService {
    * Start auto-pull mode for continuous email ingestion
    */
   public async startAutoPull(interval: number = 5): Promise<void> {
-    await this.emailIngestion.startAutoPull();
+    await this?.emailIngestion?.startAutoPull();
   }
 
   /**
    * Stop auto-pull mode
    */
   public async stopAutoPull(): Promise<void> {
-    await this.emailIngestion.stopAutoPull();
+    await this?.emailIngestion?.stopAutoPull();
   }
 
   /**
    * Clean up resources
    */
   public async shutdown(): Promise<void> {
-    await this.emailIngestion.shutdown();
+    await this?.emailIngestion?.shutdown();
     // EmailStorageService doesn't have a shutdown method, but we could add one if needed
   }
 
@@ -624,17 +624,17 @@ export class EmailIntegrationService {
    */
   public on(event: string, listener: (...args: unknown[]) => void): void {
     // TODO: Enable when EmailIngestionService extends EventEmitter
-    // this.emailIngestion.on(event, listener);
+    // this?.emailIngestion?.on(event, listener);
   }
 
   public off(event: string, listener: (...args: unknown[]) => void): void {
     // TODO: Enable when EmailIngrationService extends EventEmitter
-    // this.emailIngestion.off(event, listener);
+    // this?.emailIngestion?.off(event, listener);
   }
 
   public emit(event: string, ...args: unknown[]): boolean {
     // TODO: Enable when EmailIngestionService extends EventEmitter
-    // return this.emailIngestion.emit(event, ...args);
+    // return this?.emailIngestion?.emit(event, ...args);
     return false;
   }
 }

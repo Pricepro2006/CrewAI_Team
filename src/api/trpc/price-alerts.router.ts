@@ -81,7 +81,7 @@ export const priceAlertsRouter = router({
       try {
         const alert = service.createAlert({
           ...input,
-          userId: ctx.user.id
+          userId: ctx?.user?.id
         });
         
         return {
@@ -122,12 +122,12 @@ export const priceAlertsRouter = router({
       }
       
       try {
-        const alerts = service.getUserAlerts(ctx.user.id, input?.status);
+        const alerts = service.getUserAlerts(ctx?.user?.id, input?.status);
         
         return {
           success: true,
           alerts,
-          count: alerts.length
+          count: alerts?.length || 0
         };
       } catch (error) {
         throw new TRPCError({
@@ -410,14 +410,14 @@ export const priceAlertsRouter = router({
       
       try {
         const notifications = service.getNotificationHistory(
-          ctx.user.id, 
+          ctx?.user?.id, 
           input?.limit || 50
         );
         
         return {
           success: true,
           notifications,
-          count: notifications.length
+          count: notifications?.length || 0
         };
       } catch (error) {
         throw new TRPCError({
@@ -513,7 +513,7 @@ export const priceAlertsRouter = router({
       }
       
       try {
-        const analytics = service.getAlertAnalytics(ctx.user.id);
+        const analytics = service.getAlertAnalytics(ctx?.user?.id);
         
         return {
           success: true,
@@ -548,7 +548,7 @@ export const priceAlertsRouter = router({
         return {
           success: true,
           result,
-          alertsTriggered: result.triggeredAlerts.length
+          alertsTriggered: result?.triggeredAlerts?.length
         };
       } catch (error) {
         throw new TRPCError({

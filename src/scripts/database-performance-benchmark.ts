@@ -70,7 +70,7 @@ class DatabasePerformanceBenchmark {
 
   private calculatePercentile(values: number[], percentile: number): number {
     const sorted = values.sort((a, b) => a - b);
-    const index = Math.ceil((percentile / 100) * sorted.length) - 1;
+    const index = Math.ceil((percentile / 100) * sorted?.length || 0) - 1;
     return sorted[Math.max(0, index)] || 0;
   }
 
@@ -94,7 +94,7 @@ class DatabasePerformanceBenchmark {
       // Warmup run
       try {
         const warmupResult = stmt.all();
-        rowsAffected = Array.isArray(warmupResult) ? warmupResult.length : 0;
+        rowsAffected = Array.isArray(warmupResult) ? warmupResult?.length || 0 : 0;
       } catch (e) {
         // Query might be an action query (INSERT, UPDATE, DELETE)
         try {
@@ -121,7 +121,7 @@ class DatabasePerformanceBenchmark {
         
         // Progress indicator for slow queries
         if ((i + 1) % Math.max(1, Math.floor(iterations / 10)) === 0) {
-          process.stdout.write(`    ${i + 1}/${iterations}\r`);
+          process?.stdout?.write(`    ${i + 1}/${iterations}\r`);
         }
       }
       
@@ -142,9 +142,9 @@ class DatabasePerformanceBenchmark {
     return {
       query: query.replace(/\s+/g, ' ').trim(),
       description,
-      avgExecutionTime: executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length,
+      avgExecutionTime: executionTimes.reduce((sum: any, time: any) => sum + time, 0) / executionTimes?.length || 0,
       minExecutionTime: executionTimes[0] || 0,
-      maxExecutionTime: executionTimes[executionTimes.length - 1] || 0,
+      maxExecutionTime: executionTimes[executionTimes?.length || 0 - 1] || 0,
       p95ExecutionTime: this.calculatePercentile(executionTimes, 95),
       iterations,
       rowsAffected,
@@ -189,10 +189,10 @@ class DatabasePerformanceBenchmark {
         sizeHuman: this.formatBytes(stats.size),
         tableCount: tables.count,
         indexCount: indexes.count,
-        pageSize: pragmaInfo.pageSize.page_size,
-        pageCount: pragmaInfo.pageCount.page_count,
-        freePages: pragmaInfo.freeListCount.freelist_count,
-        unusedSpace: pragmaInfo.freeListCount.freelist_count * pragmaInfo.pageSize.page_size
+        pageSize: pragmaInfo?.pageSize?.page_size,
+        pageCount: pragmaInfo?.pageCount?.page_count,
+        freePages: pragmaInfo?.freeListCount?.freelist_count,
+        unusedSpace: pragmaInfo?.freeListCount?.freelist_count * pragmaInfo?.pageSize?.page_size
       };
       
     } catch (error) {
@@ -205,7 +205,7 @@ class DatabasePerformanceBenchmark {
     try {
       // Get row count
       const rowCountResult = db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`).get() as any;
-      const rowCount = rowCountResult.count;
+      const rowCount = rowCountResult?.count;
       
       if (rowCount === 0) {
         return null; // Skip empty tables
@@ -219,13 +219,13 @@ class DatabasePerformanceBenchmark {
       
       const indexes: IndexAnalysis[] = [];
       for (const index of indexList) {
-        if (!index.name.startsWith('sqlite_')) {
+        if (!index?.name?.startsWith('sqlite_')) {
           const indexInfo = db.prepare(`PRAGMA index_info(${index.name})`).all() as any[];
           
           indexes.push({
             indexName: index.name,
             tableName,
-            columns: indexInfo.map(col => col.name),
+            columns: indexInfo?.map(col => col.name),
             unique: index.unique === 1,
             size: 0, // SQLite doesn't provide easy way to get index size
             usage: 'medium' // We'll classify this based on query patterns
@@ -236,17 +236,17 @@ class DatabasePerformanceBenchmark {
       // Estimate average row size
       const sampleRows = db.prepare(`SELECT * FROM ${tableName} LIMIT 100`).all() as any[];
       let avgRowSize = 0;
-      if (sampleRows.length > 0) {
-        const sampleRowSizes = sampleRows.map(row => 
+      if (sampleRows?.length || 0 > 0) {
+        const sampleRowSizes = sampleRows?.map(row => 
           JSON.stringify(row).length
         );
-        avgRowSize = sampleRowSizes.reduce((sum, size) => sum + size, 0) / sampleRowSizes.length;
+        avgRowSize = sampleRowSizes.reduce((sum: any, size: any) => sum + size, 0) / sampleRowSizes?.length || 0;
       }
       
       return {
         tableName,
         rowCount,
-        indexCount: indexes.length,
+        indexCount: indexes?.length || 0,
         avgRowSize,
         totalSize: rowCount * avgRowSize,
         indexes
@@ -283,7 +283,7 @@ class DatabasePerformanceBenchmark {
         ORDER BY name
       `).all() as any[];
       
-      console.log(`  Found ${tables.length} tables`);
+      console.log(`  Found ${tables?.length || 0} tables`);
       
       // Analyze each table
       for (const table of tables.slice(0, 10)) { // Limit to first 10 tables
@@ -327,7 +327,7 @@ class DatabasePerformanceBenchmark {
         );
         
         // Add index-based queries if indexes exist
-        if (table.indexes.length > 0) {
+        if (table?.indexes?.length > 0) {
           const firstIndex = table.indexes[0];
           const firstColumn = firstIndex.columns[0];
           if (firstColumn) {
@@ -375,28 +375,28 @@ class DatabasePerformanceBenchmark {
         continue;
       }
       
-      console.log(`\n🗄️ ${result.name.toUpperCase()}`);
+      console.log(`\n🗄️ ${result?.name?.toUpperCase()}`);
       console.log('-'.repeat(50));
       
       // Database metrics
       console.log('\n📊 Database Metrics:');
-      console.log(`  File: ${result.metrics.file}`);
-      console.log(`  Size: ${result.metrics.sizeHuman}`);
-      console.log(`  Tables: ${result.metrics.tableCount}`);
-      console.log(`  Indexes: ${result.metrics.indexCount}`);
-      console.log(`  Page Size: ${result.metrics.pageSize} bytes`);
-      console.log(`  Total Pages: ${result.metrics.pageCount}`);
-      console.log(`  Free Pages: ${result.metrics.freePages}`);
+      console.log(`  File: ${result?.metrics?.file}`);
+      console.log(`  Size: ${result?.metrics?.sizeHuman}`);
+      console.log(`  Tables: ${result?.metrics?.tableCount}`);
+      console.log(`  Indexes: ${result?.metrics?.indexCount}`);
+      console.log(`  Page Size: ${result?.metrics?.pageSize} bytes`);
+      console.log(`  Total Pages: ${result?.metrics?.pageCount}`);
+      console.log(`  Free Pages: ${result?.metrics?.freePages}`);
       
-      if (result.metrics.unusedSpace > 0) {
-        console.log(`  Unused Space: ${this.formatBytes(result.metrics.unusedSpace)}`);
-        if (result.metrics.unusedSpace > result.metrics.size * 0.1) {
+      if (result?.metrics?.unusedSpace > 0) {
+        console.log(`  Unused Space: ${this.formatBytes(result?.metrics?.unusedSpace)}`);
+        if (result?.metrics?.unusedSpace > result?.metrics?.size * 0.1) {
           console.log(`  ⚠️ Consider running VACUUM to reclaim space`);
         }
       }
       
       // Table analysis
-      if (result.tableAnalyses.length > 0) {
+      if (result?.tableAnalyses?.length > 0) {
         console.log('\n📋 Table Analysis:');
         
         const sortedTables = result.tableAnalyses
@@ -405,39 +405,39 @@ class DatabasePerformanceBenchmark {
         
         for (const table of sortedTables) {
           console.log(`\n  ${table.tableName}:`);
-          console.log(`    Rows: ${table.rowCount.toLocaleString()}`);
+          console.log(`    Rows: ${table?.rowCount?.toLocaleString()}`);
           console.log(`    Indexes: ${table.indexCount}`);
-          console.log(`    Avg Row Size: ${table.avgRowSize.toFixed(0)} bytes`);
+          console.log(`    Avg Row Size: ${table?.avgRowSize?.toFixed(0)} bytes`);
           console.log(`    Est. Total Size: ${this.formatBytes(table.totalSize)}`);
           
-          if (table.indexes.length > 0) {
-            console.log(`    Indexes: ${table.indexes.map(idx => idx.indexName).join(', ')}`);
+          if (table?.indexes?.length > 0) {
+            console.log(`    Indexes: ${table?.indexes?.map(idx => idx.indexName).join(', ')}`);
           }
         }
       }
       
       // Query benchmarks
-      if (result.benchmarks.length > 0) {
+      if (result?.benchmarks?.length > 0) {
         console.log('\n⚡ Query Performance:');
         
-        const successfulBenchmarks = result.benchmarks.filter(b => b.success);
-        const failedBenchmarks = result.benchmarks.filter(b => !b.success);
+        const successfulBenchmarks = result?.benchmarks?.filter(b => b.success);
+        const failedBenchmarks = result?.benchmarks?.filter(b => !b.success);
         
-        if (successfulBenchmarks.length > 0) {
+        if (successfulBenchmarks?.length || 0 > 0) {
           console.log('\n  Successful Queries:');
           successfulBenchmarks.forEach(benchmark => {
-            const avgMs = benchmark.avgExecutionTime;
-            const p95Ms = benchmark.p95ExecutionTime;
+            const avgMs = benchmark?.avgExecutionTime;
+            const p95Ms = benchmark?.p95ExecutionTime;
             const status = avgMs < 10 ? '🟢' : avgMs < 50 ? '🟡' : '🔴';
             
             console.log(`\n  ${status} ${benchmark.description}`);
             console.log(`    Average: ${avgMs.toFixed(2)}ms`);
             console.log(`    P95: ${p95Ms.toFixed(2)}ms`);
-            console.log(`    Rows: ${benchmark.rowsAffected.toLocaleString()}`);
+            console.log(`    Rows: ${benchmark?.rowsAffected?.toLocaleString()}`);
           });
         }
         
-        if (failedBenchmarks.length > 0) {
+        if (failedBenchmarks?.length || 0 > 0) {
           console.log('\n  Failed Queries:');
           failedBenchmarks.forEach(benchmark => {
             console.log(`\n  ❌ ${benchmark.description}`);
@@ -458,45 +458,45 @@ class DatabasePerformanceBenchmark {
       if (!result.metrics) continue;
       
       // Large database warning
-      if (result.metrics.size > 1024 * 1024 * 1024) { // > 1GB
+      if (result?.metrics?.size > 1024 * 1024 * 1024) { // > 1GB
         recommendations.push({
           priority: 'HIGH',
           database: result.name,
-          issue: `Large database size: ${result.metrics.sizeHuman}`,
+          issue: `Large database size: ${result?.metrics?.sizeHuman}`,
           solution: 'Consider archiving old data, partitioning, or optimizing storage'
         });
       }
       
       // Unused space warning
-      if (result.metrics.unusedSpace > result.metrics.size * 0.2) {
+      if (result?.metrics?.unusedSpace > result?.metrics?.size * 0.2) {
         recommendations.push({
           priority: 'MEDIUM',
           database: result.name,
-          issue: `High unused space: ${this.formatBytes(result.metrics.unusedSpace)}`,
+          issue: `High unused space: ${this.formatBytes(result?.metrics?.unusedSpace)}`,
           solution: 'Run VACUUM command to reclaim space'
         });
       }
       
       // Slow query warnings
-      const slowQueries = result.benchmarks.filter(b => b.success && b.avgExecutionTime > 100);
-      if (slowQueries.length > 0) {
+      const slowQueries = result?.benchmarks?.filter(b => b.success && b.avgExecutionTime > 100);
+      if (slowQueries?.length || 0 > 0) {
         recommendations.push({
           priority: 'HIGH',
           database: result.name,
-          issue: `${slowQueries.length} slow queries detected (>100ms average)`,
+          issue: `${slowQueries?.length || 0} slow queries detected (>100ms average)`,
           solution: 'Add indexes, optimize queries, consider query caching'
         });
       }
       
       // Table without indexes
-      const tablesWithoutIndexes = result.tableAnalyses.filter(t => 
+      const tablesWithoutIndexes = result?.tableAnalyses?.filter(t => 
         t.rowCount > 1000 && t.indexCount === 0
       );
-      if (tablesWithoutIndexes.length > 0) {
+      if (tablesWithoutIndexes?.length || 0 > 0) {
         recommendations.push({
           priority: 'MEDIUM',
           database: result.name,
-          issue: `Large tables without indexes: ${tablesWithoutIndexes.map(t => t.tableName).join(', ')}`,
+          issue: `Large tables without indexes: ${tablesWithoutIndexes?.map(t => t.tableName).join(', ')}`,
           solution: 'Add appropriate indexes based on query patterns'
         });
       }
@@ -505,8 +505,8 @@ class DatabasePerformanceBenchmark {
     // Display recommendations
     const priorities = ['HIGH', 'MEDIUM', 'LOW'];
     for (const priority of priorities) {
-      const priorityRecs = recommendations.filter(r => r.priority === priority);
-      if (priorityRecs.length === 0) continue;
+      const priorityRecs = recommendations?.filter(r => r.priority === priority);
+      if (priorityRecs?.length || 0 === 0) continue;
       
       console.log(`\n🔴 ${priority} PRIORITY:`);
       priorityRecs.forEach((rec, index) => {
@@ -515,15 +515,15 @@ class DatabasePerformanceBenchmark {
       });
     }
     
-    if (recommendations.length === 0) {
+    if (recommendations?.length || 0 === 0) {
       console.log('\n✅ All databases are performing well within acceptable ranges!');
     }
     
     // Overall statistics
-    const totalDatabases = results.filter(r => r.metrics).length;
-    const totalSize = results.reduce((sum, r) => sum + (r.metrics?.size || 0), 0);
-    const totalTables = results.reduce((sum, r) => sum + (r.metrics?.tableCount || 0), 0);
-    const totalIndexes = results.reduce((sum, r) => sum + (r.metrics?.indexCount || 0), 0);
+    const totalDatabases = results?.filter(r => r.metrics).length;
+    const totalSize = results.reduce((sum: any, r: any) => sum + (r.metrics?.size || 0), 0);
+    const totalTables = results.reduce((sum: any, r: any) => sum + (r.metrics?.tableCount || 0), 0);
+    const totalIndexes = results.reduce((sum: any, r: any) => sum + (r.metrics?.indexCount || 0), 0);
     
     console.log('\n📊 OVERALL STATISTICS');
     console.log('-'.repeat(30));
@@ -547,15 +547,15 @@ class DatabasePerformanceBenchmark {
       timestamp: new Date().toISOString(),
       results,
       summary: {
-        totalDatabases: results.filter(r => r.metrics).length,
-        totalSize: results.reduce((sum, r) => sum + (r.metrics?.size || 0), 0),
-        totalTables: results.reduce((sum, r) => sum + (r.metrics?.tableCount || 0), 0),
-        totalIndexes: results.reduce((sum, r) => sum + (r.metrics?.indexCount || 0), 0),
-        avgQueryTime: results.reduce((sum, r) => {
-          const successfulQueries = r.benchmarks.filter(b => b.success);
-          const avgTime = successfulQueries.reduce((s, b) => s + b.avgExecutionTime, 0) / successfulQueries.length;
+        totalDatabases: results?.filter(r => r.metrics).length,
+        totalSize: results.reduce((sum: any, r: any) => sum + (r.metrics?.size || 0), 0),
+        totalTables: results.reduce((sum: any, r: any) => sum + (r.metrics?.tableCount || 0), 0),
+        totalIndexes: results.reduce((sum: any, r: any) => sum + (r.metrics?.indexCount || 0), 0),
+        avgQueryTime: results.reduce((sum: any, r: any) => {
+          const successfulQueries = r?.benchmarks?.filter(b => b.success);
+          const avgTime = successfulQueries.reduce((s: any, b: any) => s + b.avgExecutionTime, 0) / successfulQueries?.length || 0;
           return sum + (avgTime || 0);
-        }, 0) / results.length
+        }, 0) / results?.length || 0
       }
     };
     

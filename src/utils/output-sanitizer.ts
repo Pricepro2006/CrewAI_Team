@@ -105,14 +105,14 @@ export function sanitizeLLMOutput(content: string): SanitizedOutput {
   }
 
   // Validate output length
-  if (sanitized.length > 10000) {
+  if (sanitized?.length || 0 > 10000) {
     warnings.push("Output is unusually long");
   }
 
   return {
     content: sanitized,
     metadata: {
-      sanitized: removedItems.length > 0,
+      sanitized: removedItems?.length || 0 > 0,
       removedItems,
       warnings,
     },
@@ -163,25 +163,25 @@ export function sanitizeForContext(
   switch (context) {
     case "email":
       // Additional email-specific sanitization
-      result.content = result.content.replace(
+      result.content = result?.content?.replace(
         /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
         "[EMAIL_PROTECTED]",
       );
       break;
     case "web":
       // Web-specific sanitization (XSS prevention)
-      result.content = result.content.replace(
+      result.content = result?.content?.replace(
         /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
         "[SCRIPT_REMOVED]",
       );
-      result.content = result.content.replace(
+      result.content = result?.content?.replace(
         /javascript:/gi,
         "[JAVASCRIPT_REMOVED]",
       );
       break;
     case "api":
       // API-specific sanitization (more aggressive)
-      result.content = result.content.replace(
+      result.content = result?.content?.replace(
         /\b[A-Za-z0-9_-]{20,}\b/g,
         "[TOKEN_REDACTED]",
       );

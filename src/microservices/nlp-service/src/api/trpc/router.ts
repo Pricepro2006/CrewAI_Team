@@ -12,8 +12,8 @@ import type { NLPServiceAPI } from '../../types/index.js';
 // Initialize tRPC
 const t = initTRPC.create();
 
-export const router = t.router;
-export const procedure = t.procedure;
+export const router = t?.router;
+export const procedure = t?.procedure;
 
 // Input validation schemas
 const processInputSchema = z.object({
@@ -87,7 +87,7 @@ export function createNLPRouter(nlpService: NLPService) {
         try {
           logger.debug('tRPC process query', 'TRPC_ROUTER', {
             requestId,
-            query: input.query.substring(0, 100),
+            query: input?.query?.substring(0, 100),
             priority: input.priority
           });
           
@@ -109,7 +109,7 @@ export function createNLPRouter(nlpService: NLPService) {
             success: true,
             requestId,
             result: {
-              entities: result.entities.map(e => ({
+              entities: result?.entities?.map(e => ({
                 type: e.type,
                 value: e.value,
                 confidence: e.confidence,
@@ -117,20 +117,20 @@ export function createNLPRouter(nlpService: NLPService) {
                 endIndex: e.endIndex
               })),
               intent: {
-                action: result.intent.action,
-                confidence: result.intent.confidence
+                action: result?.intent?.action,
+                confidence: result?.intent?.confidence
               },
               normalized: {
-                products: result.normalizedItems.map(item => ({
+                products: result?.normalizedItems?.map(item => ({
                   name: item.name,
                   quantity: item.quantity,
                   unit: item.unit
                 }))
               },
               metadata: {
-                processingTime: result.processingMetadata.processingTime,
-                model: result.processingMetadata.model,
-                version: result.processingMetadata.version
+                processingTime: result?.processingMetadata?.processingTime,
+                model: result?.processingMetadata?.model,
+                version: result?.processingMetadata?.version
               }
             },
             processingTime,
@@ -162,11 +162,11 @@ export function createNLPRouter(nlpService: NLPService) {
         try {
           logger.debug('tRPC process batch', 'TRPC_ROUTER', {
             batchId,
-            queryCount: input.queries.length
+            queryCount: input?.queries?.length
           });
           
           const result = await nlpService.processBatch(
-            input.queries.map(q => ({
+            input?.queries?.map(q => ({
               ...q,
               metadata: {
                 ...q.metadata,
@@ -182,7 +182,7 @@ export function createNLPRouter(nlpService: NLPService) {
           return {
             success: true,
             batchId: result.batchId,
-            results: result.results.map((r, index) => {
+            results: result?.results?.map((r, index) => {
               if (!r) {
                 return {
                   success: false,
@@ -197,7 +197,7 @@ export function createNLPRouter(nlpService: NLPService) {
                 success: true,
                 requestId: `${batchId}-${index}`,
                 result: {
-                  entities: r.entities.map(e => ({
+                  entities: r?.entities?.map(e => ({
                     type: e.type,
                     value: e.value,
                     confidence: e.confidence,
@@ -205,23 +205,23 @@ export function createNLPRouter(nlpService: NLPService) {
                     endIndex: e.endIndex
                   })),
                   intent: {
-                    action: r.intent.action,
-                    confidence: r.intent.confidence
+                    action: r?.intent?.action,
+                    confidence: r?.intent?.confidence
                   },
                   normalized: {
-                    products: r.normalizedItems.map(item => ({
+                    products: r?.normalizedItems?.map(item => ({
                       name: item.name,
                       quantity: item.quantity,
                       unit: item.unit
                     }))
                   },
                   metadata: {
-                    processingTime: r.processingMetadata.processingTime,
-                    model: r.processingMetadata.model,
-                    version: r.processingMetadata.version
+                    processingTime: r?.processingMetadata?.processingTime,
+                    model: r?.processingMetadata?.model,
+                    version: r?.processingMetadata?.version
                   }
                 },
-                processingTime: r.processingMetadata.processingTime,
+                processingTime: r?.processingMetadata?.processingTime,
                 queueTime: 0
               };
             }),
@@ -251,22 +251,22 @@ export function createNLPRouter(nlpService: NLPService) {
           uptime: status.uptime,
           startedAt: status.startedAt,
           dependencies: {
-            ollama: status.dependencies.ollama,
-            redis: status.dependencies.redis,
-            queue: status.dependencies.queue
+            ollama: status?.dependencies?.ollama,
+            redis: status?.dependencies?.redis,
+            queue: status?.dependencies?.queue
           },
           resources: {
-            cpu: status.resources.cpu,
+            cpu: status?.resources?.cpu,
             memory: {
-              used: status.resources.memory.used,
-              total: status.resources.memory.total,
-              percentage: status.resources.memory.percentage
+              used: status?.resources?.memory.used,
+              total: status?.resources?.memory.total,
+              percentage: status?.resources?.memory.percentage
             }
           },
           queue: {
-            size: status.queue.size,
-            activeRequests: status.queue.activeRequests,
-            health: status.queue.health
+            size: status?.queue?.size,
+            activeRequests: status?.queue?.activeRequests,
+            health: status?.queue?.health
           }
         };
       }),
@@ -278,40 +278,40 @@ export function createNLPRouter(nlpService: NLPService) {
         return {
           uptime: metrics.uptime,
           requests: {
-            total: metrics.requests.total,
-            successful: metrics.requests.successful,
-            failed: metrics.requests.failed,
-            rate: metrics.requests.rate
+            total: metrics?.requests?.total,
+            successful: metrics?.requests?.successful,
+            failed: metrics?.requests?.failed,
+            rate: metrics?.requests?.rate
           },
           queue: {
-            size: metrics.queue.size,
-            processing: metrics.queue.processing,
-            averageWaitTime: metrics.queue.averageWaitTime,
-            averageProcessingTime: metrics.queue.averageProcessingTime,
-            throughput: metrics.queue.throughput
+            size: metrics?.queue?.size,
+            processing: metrics?.queue?.processing,
+            averageWaitTime: metrics?.queue?.averageWaitTime,
+            averageProcessingTime: metrics?.queue?.averageProcessingTime,
+            throughput: metrics?.queue?.throughput
           },
           resources: {
             cpu: {
-              usage: metrics.resources.cpu.usage,
-              load: metrics.resources.cpu.load
+              usage: metrics?.resources?.cpu.usage,
+              load: metrics?.resources?.cpu.load
             },
             memory: {
-              used: metrics.resources.memory.used,
-              total: metrics.resources.memory.total,
-              heapUsed: metrics.resources.memory.heapUsed,
-              heapTotal: metrics.resources.memory.heapTotal
+              used: metrics?.resources?.memory.used,
+              total: metrics?.resources?.memory.total,
+              heapUsed: metrics?.resources?.memory.heapUsed,
+              heapTotal: metrics?.resources?.memory.heapTotal
             }
           },
           dependencies: {
             ollama: {
-              status: metrics.dependencies.ollama.status,
-              responseTime: metrics.dependencies.ollama.responseTime,
-              lastCheck: metrics.dependencies.ollama.lastCheck
+              status: metrics?.dependencies?.ollama.status,
+              responseTime: metrics?.dependencies?.ollama.responseTime,
+              lastCheck: metrics?.dependencies?.ollama.lastCheck
             },
             redis: {
-              status: metrics.dependencies.redis.status,
-              responseTime: metrics.dependencies.redis.responseTime,
-              lastCheck: metrics.dependencies.redis.lastCheck
+              status: metrics?.dependencies?.redis.status,
+              responseTime: metrics?.dependencies?.redis.responseTime,
+              lastCheck: metrics?.dependencies?.redis.lastCheck
             }
           }
         };
@@ -343,10 +343,10 @@ export function createNLPRouter(nlpService: NLPService) {
           healthy: status.status === 'healthy',
           checks: {
             service: status.status === 'healthy' ? 'pass' : 'fail',
-            queue: status.queue.health === 'healthy' ? 'pass' : 'fail',
+            queue: status?.queue?.health === 'healthy' ? 'pass' : 'fail',
             dependencies: {
-              ollama: status.dependencies.ollama === 'healthy' ? 'pass' : 'fail',
-              redis: status.dependencies.redis === 'healthy' ? 'pass' : 'fail'
+              ollama: status?.dependencies?.ollama === 'healthy' ? 'pass' : 'fail',
+              redis: status?.dependencies?.redis === 'healthy' ? 'pass' : 'fail'
             }
           }
         };

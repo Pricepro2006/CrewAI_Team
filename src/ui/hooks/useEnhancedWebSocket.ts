@@ -25,8 +25,8 @@ const webSocketConfig = {
 };
 
 const getWebSocketUrl = (endpoint: string): string => {
-  const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  const protocol = typeof window !== 'undefined' && window?.location?.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = typeof window !== 'undefined' ? window?.location?.hostname : 'localhost';
   const port = endpoint === 'email' ? '8080' : '3001';
   return `${protocol}//${host}:${port}/ws`;
 };
@@ -123,7 +123,7 @@ export function useEnhancedWebSocket(
   // Handle WebSocket events
   const handleEvent = useCallback((event: WebSocketEvent) => {
     // Call registered handlers
-    const handlers = eventHandlersRef.current.get(event.type);
+    const handlers = eventHandlersRef?.current?.get(event.type);
     if (handlers) {
       handlers.forEach(handler => {
         try {
@@ -135,7 +135,7 @@ export function useEnhancedWebSocket(
     }
 
     // Call handlers from options
-    const handlerKey = `on${event.type.split(':').map(s => 
+    const handlerKey = `on${event?.type?.split(':').map(s => 
       s.charAt(0).toUpperCase() + s.slice(1)
     ).join('')}` as keyof WebSocketEventHandlers;
     
@@ -151,7 +151,7 @@ export function useEnhancedWebSocket(
     // Generic handler
     if (options.handlers?.onEvent) {
       try {
-        options.handlers.onEvent(event);
+        options?.handlers?.onEvent(event);
       } catch (error) {
         console.error('Error in generic WebSocket handler:', error);
       }
@@ -160,12 +160,12 @@ export function useEnhancedWebSocket(
 
   // Setup heartbeat
   const setupHeartbeat = useCallback(() => {
-    if (!websocketConfig.heartbeat.enabled) return;
+    if (!websocketConfig?.heartbeat?.enabled) return;
 
     const sendPing = () => {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         const pingStart = Date.now();
-        wsRef.current.send(JSON.stringify({
+        wsRef?.current?.send(JSON.stringify({
           type: 'ping',
           timestamp: new Date().toISOString(),
         }));
@@ -183,13 +183,13 @@ export function useEnhancedWebSocket(
           }
         };
 
-        wsRef.current.addEventListener('message', pongHandler, { once: true });
+        wsRef?.current?.addEventListener('message', pongHandler, { once: true });
       }
     };
 
     heartbeatIntervalRef.current = setInterval(
       sendPing,
-      websocketConfig.heartbeat.interval
+      websocketConfig?.heartbeat?.interval
     );
   }, [updateState]);
 
@@ -203,7 +203,7 @@ export function useEnhancedWebSocket(
 
   // Process message queue
   const processMessageQueue = useCallback(async () => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    if (!wsRef.current || wsRef?.current?.readyState !== WebSocket.OPEN) return;
 
     const queue = [...messageQueueRef.current];
     messageQueueRef.current = [];
@@ -223,7 +223,7 @@ export function useEnhancedWebSocket(
       return;
     }
 
-    if (stateRef.current.isConnecting) {
+    if (stateRef?.current?.isConnecting) {
       return;
     }
 
@@ -266,7 +266,7 @@ export function useEnhancedWebSocket(
         await processMessageQueue();
       });
 
-      ws.addEventListener('close', (event) => {
+      ws.addEventListener('close', (event: any) => {
         clearHeartbeat();
 
         updateState({
@@ -289,8 +289,8 @@ export function useEnhancedWebSocket(
 
         // Attempt reconnection if enabled
         if (reconnection && !isUnmountedRef.current) {
-          const attempts = stateRef.current.reconnectAttempts;
-          if (attempts < websocketConfig.reconnection.maxAttempts) {
+          const attempts = stateRef?.current?.reconnectAttempts;
+          if (attempts < websocketConfig?.reconnection?.maxAttempts) {
             updateState({
               isReconnecting: true,
               reconnectAttempts: attempts + 1,
@@ -306,7 +306,7 @@ export function useEnhancedWebSocket(
         }
       });
 
-      ws.addEventListener('error', (error) => {
+      ws.addEventListener('error', (error: any) => {
         const wsError: WebSocketError = {
           code: 'CONNECTION_FAILED',
           message: 'WebSocket connection error',
@@ -321,7 +321,7 @@ export function useEnhancedWebSocket(
         console.error('WebSocket error:', error);
       });
 
-      ws.addEventListener('message', (event) => {
+      ws.addEventListener('message', (event: any) => {
         try {
           const data = JSON.parse(event.data);
           handleEvent(data);
@@ -357,7 +357,7 @@ export function useEnhancedWebSocket(
     }
 
     if (wsRef.current) {
-      wsRef.current.close();
+      wsRef?.current?.close();
       wsRef.current = null;
     }
 
@@ -372,10 +372,10 @@ export function useEnhancedWebSocket(
 
   // Send message
   const send = useCallback(async (event: WebSocketEvent): Promise<void> => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+    if (!wsRef.current || wsRef?.current?.readyState !== WebSocket.OPEN) {
       // Queue message if not connected
-      if (messageQueueRef.current.length < maxQueueSize) {
-        messageQueueRef.current.push(event);
+      if (messageQueueRef?.current?.length < maxQueueSize) {
+        messageQueueRef?.current?.push(event);
       }
       throw new Error('WebSocket is not connected');
     }
@@ -415,18 +415,18 @@ export function useEnhancedWebSocket(
     eventType: T['type'],
     handler: (event: T) => void
   ): (() => void) => {
-    if (!eventHandlersRef.current.has(eventType)) {
-      eventHandlersRef.current.set(eventType, new Set());
+    if (!eventHandlersRef?.current?.has(eventType)) {
+      eventHandlersRef?.current?.set(eventType, new Set());
     }
-    eventHandlersRef.current.get(eventType)!.add(handler);
+    eventHandlersRef?.current?.get(eventType)!.add(handler);
 
     // Return unsubscribe function
     return () => {
-      const handlers = eventHandlersRef.current.get(eventType);
+      const handlers = eventHandlersRef?.current?.get(eventType);
       if (handlers) {
         handlers.delete(handler);
         if (handlers.size === 0) {
-          eventHandlersRef.current.delete(eventType);
+          eventHandlersRef?.current?.delete(eventType);
         }
       }
     };
@@ -435,13 +435,13 @@ export function useEnhancedWebSocket(
   // Unregister event handler
   const off = useCallback((eventType: string, handler?: (event: WebSocketEvent) => void) => {
     if (!handler) {
-      eventHandlersRef.current.delete(eventType);
+      eventHandlersRef?.current?.delete(eventType);
     } else {
-      const handlers = eventHandlersRef.current.get(eventType);
+      const handlers = eventHandlersRef?.current?.get(eventType);
       if (handlers) {
         handlers.delete(handler);
         if (handlers.size === 0) {
-          eventHandlersRef.current.delete(eventType);
+          eventHandlersRef?.current?.delete(eventType);
         }
       }
     }

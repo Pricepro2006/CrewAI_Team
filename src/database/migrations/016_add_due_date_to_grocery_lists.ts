@@ -84,10 +84,10 @@ export function up(db: Database.Database) {
     'idx_grocery_lists_active_due_date'
   ];
 
-  const createdIndexes = indexes.map(idx => idx.name);
-  const missingIndexes = expectedIndexes.filter(idx => !createdIndexes.includes(idx));
+  const createdIndexes = indexes?.map(idx => idx.name);
+  const missingIndexes = expectedIndexes?.filter(idx => !createdIndexes.includes(idx));
 
-  if (missingIndexes.length > 0) {
+  if (missingIndexes?.length || 0 > 0) {
     console.warn(`⚠️  Some indexes may not have been created: ${missingIndexes.join(', ')}`);
   }
 

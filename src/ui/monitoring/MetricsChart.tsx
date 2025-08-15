@@ -49,13 +49,13 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
   }, [metrics, metricNames]);
 
   useEffect(() => {
-    if (chartData.length > 0) {
+    if (chartData?.length || 0 > 0) {
       drawChart();
     }
   }, [chartData, hoveredPoint]);
 
   const processMetrics = () => {
-    if (!metrics.length) return;
+    if (!metrics?.length || 0) return;
 
     // Group metrics by name
     const grouped = new Map<string, MonitoringMetric[]>();
@@ -80,7 +80,7 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
       );
 
       // Create points
-      const points: ChartPoint[] = sortedMetrics.map((metric, index) => ({
+      const points: ChartPoint[] = sortedMetrics?.map((metric, index) => ({
         x: index,
         y: metric.value,
         metric
@@ -88,7 +88,7 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
 
       series.push({
         name,
-        color: colors[colorIndex % colors.length],
+        color: colors[colorIndex % colors?.length || 0],
         points
       });
 
@@ -99,8 +99,8 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
   };
 
   const drawChart = () => {
-    const canvas = canvasRef.current;
-    if (!canvas || !chartData.length) return;
+    const canvas = canvasRef?.current;
+    if (!canvas || !chartData?.length || 0) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -127,7 +127,7 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
     let maxX = 0;
 
     chartData.forEach(series => {
-      series.points.forEach(point => {
+      series?.points?.forEach(point => {
         minY = Math.min(minY, point.y);
         maxY = Math.max(maxY, point.y);
         maxX = Math.max(maxX, point.x);
@@ -189,13 +189,13 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
 
     // Draw series
     chartData.forEach((series, seriesIndex) => {
-      if (!series.points.length) return;
+      if (!series?.points?.length) return;
 
       ctx.strokeStyle = series.color;
       ctx.lineWidth = 2;
       ctx.beginPath();
 
-      series.points.forEach((point, pointIndex) => {
+      series?.points?.forEach((point, pointIndex) => {
         const x = scaleX(point.x);
         const y = scaleY(point.y);
 
@@ -210,7 +210,7 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
 
       // Draw points
       ctx.fillStyle = series.color;
-      series.points.forEach(point => {
+      series?.points?.forEach(point => {
         const x = scaleX(point.x);
         const y = scaleY(point.y);
         
@@ -234,14 +234,14 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
 
       // Tooltip background
       const tooltipText = [
-        `${hoveredPoint.metric.name}`,
-        `Value: ${hoveredPoint.metric.value}${hoveredPoint.metric.unit || ''}`,
-        `Time: ${new Date(hoveredPoint.metric.timestamp).toLocaleTimeString()}`
+        `${hoveredPoint?.metric?.name}`,
+        `Value: ${hoveredPoint?.metric?.value}${hoveredPoint?.metric?.unit || ''}`,
+        `Time: ${new Date(hoveredPoint?.metric?.timestamp).toLocaleTimeString()}`
       ];
 
       ctx.font = '12px sans-serif';
-      const maxWidth = Math.max(...tooltipText.map(text => ctx.measureText(text).width)) + 16;
-      const tooltipHeight = tooltipText.length * 16 + 8;
+      const maxWidth = Math.max(...tooltipText?.map(text => ctx.measureText(text).width)) + 16;
+      const tooltipHeight = tooltipText?.length || 0 * 16 + 8;
 
       let tooltipX = x + 10;
       let tooltipY = y - tooltipHeight - 10;
@@ -269,8 +269,8 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
   };
 
   const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !chartData.length) return;
+    const canvas = canvasRef?.current;
+    if (!canvas || !chartData?.length || 0) return;
 
     const rect = canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
@@ -290,7 +290,7 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
     let maxX = 0;
 
     chartData.forEach(series => {
-      series.points.forEach(point => {
+      series?.points?.forEach(point => {
         minY = Math.min(minY, point.y);
         maxY = Math.max(maxY, point.y);
         maxX = Math.max(maxX, point.x);
@@ -305,7 +305,7 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
     const scaleY = (y: number) => padding.top + chartHeight - ((y - minY) / (maxY - minY)) * chartHeight;
 
     chartData.forEach(series => {
-      series.points.forEach(point => {
+      series?.points?.forEach(point => {
         const x = scaleX(point.x);
         const y = scaleY(point.y);
         const distance = Math.sqrt((mouseX - x) ** 2 + (mouseY - y) ** 2);
@@ -324,7 +324,7 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
     setHoveredPoint(null);
   };
 
-  if (!metrics.length) {
+  if (!metrics?.length || 0) {
     return (
       <div className="metrics-chart-empty">
         <h3>{title}</h3>
@@ -337,9 +337,9 @@ export const MetricsChart: React.FC<MetricsChartProps> = ({
     <div className="metrics-chart">
       <h3>{title}</h3>
       
-      {showLegend && chartData.length > 0 && (
+      {showLegend && chartData?.length || 0 > 0 && (
         <div className="chart-legend">
-          {chartData.map(series => (
+          {chartData?.map(series => (
             <div key={series.name} className="legend-item">
               <div 
                 className="legend-color" 

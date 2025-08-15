@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from "react";
 import { trpc } from "../../lib/trpc.js";
-import type { EmailRecord } from "../../types/email-dashboard.interfaces";
+import type { EmailRecord } from "../../types/email-dashboard?.interfaces.js";
 
 // Real tRPC implementations with proper caching and invalidation
 export function useOptimizedEmails(filters?: Record<string, any>) {
@@ -22,23 +22,23 @@ export function useOptimizedEmails(filters?: Record<string, any>) {
   }), [filters]);
 
   // Use real tRPC query for table data
-  const query = trpc.emails.getTableData.useQuery(tableParams, {
+  const query = trpc?.emails?.getTableData.useQuery(tableParams, {
     staleTime: 30000, // 30 seconds
     cacheTime: 300000, // 5 minutes
   });
 
   // Real mutation for updating email status
-  const updateEmailMutation = trpc.emails.updateStatus.useMutation({
+  const updateEmailMutation = trpc?.emails?.updateStatus.useMutation({
     onSuccess: () => {
       // Invalidate queries to refresh data
-      trpc.useContext().emails.getTableData.invalidate();
-      trpc.useContext().emails.getDashboardStats.invalidate();
+      trpc.useContext().emails?.getTableData?.invalidate();
+      trpc.useContext().emails?.getDashboardStats?.invalidate();
     },
   });
 
   const prefetchEmailDetail = useCallback(async (emailId: string) => {
     try {
-      await trpc.useContext().emails.getById.prefetch({ id: emailId });
+      await trpc.useContext().emails?.getById?.prefetch({ id: emailId });
     } catch (error) {
       console.warn('Failed to prefetch email:', emailId, error);
     }
@@ -61,7 +61,7 @@ export function useOptimizedEmails(filters?: Record<string, any>) {
 // Dashboard metrics with intelligent caching
 export function useOptimizedDashboardMetrics(timeRange: string = "24h") {
   // Use real tRPC query for dashboard stats
-  const statsQuery = trpc.emails.getDashboardStats.useQuery({
+  const statsQuery = trpc?.emails?.getDashboardStats.useQuery({
     refreshKey: Date.now(),
   }, {
     staleTime: 60000, // 1 minute
@@ -108,14 +108,14 @@ export function useOptimizedDashboardMetrics(timeRange: string = "24h") {
 // Optimized search with debouncing built into the hook
 export function useOptimizedEmailSearch(searchTerm: string, enabled: boolean = true) {
   // Use real tRPC search query
-  const searchQuery = trpc.emails.searchAdvanced.useQuery({
+  const searchQuery = trpc?.emails?.searchAdvanced.useQuery({
     query: searchTerm,
     page: 1,
     pageSize: 20,
     sortBy: "relevance",
     includeHighlight: true,
   }, {
-    enabled: enabled && searchTerm.length > 2, // Only search if enabled and term is long enough
+    enabled: enabled && searchTerm?.length || 0 > 2, // Only search if enabled and term is long enough
     staleTime: 30000, // 30 seconds
     cacheTime: 300000, // 5 minutes
   });
@@ -134,20 +134,20 @@ export function useOptimizedEmailSearch(searchTerm: string, enabled: boolean = t
 // Batch operations for better performance
 export function useOptimizedEmailBatch() {
   // Real batch update mutation
-  const batchUpdateMutation = trpc.emails.bulkUpdate.useMutation({
+  const batchUpdateMutation = trpc?.emails?.bulkUpdate.useMutation({
     onSuccess: () => {
       // Invalidate queries to refresh data
-      trpc.useContext().emails.getTableData.invalidate();
-      trpc.useContext().emails.getDashboardStats.invalidate();
+      trpc.useContext().emails?.getTableData?.invalidate();
+      trpc.useContext().emails?.getDashboardStats?.invalidate();
     },
   });
 
   // Real batch delete mutation
-  const batchDeleteMutation = trpc.emails.batchDelete.useMutation({
+  const batchDeleteMutation = trpc?.emails?.batchDelete.useMutation({
     onSuccess: () => {
       // Invalidate queries to refresh data
-      trpc.useContext().emails.getTableData.invalidate();
-      trpc.useContext().emails.getDashboardStats.invalidate();
+      trpc.useContext().emails?.getTableData?.invalidate();
+      trpc.useContext().emails?.getDashboardStats?.invalidate();
     },
   });
 
@@ -164,11 +164,11 @@ export function useOptimizedEmailBatch() {
 // Walmart/grocery optimized hooks
 export function useOptimizedWalmartProducts(searchQuery: string, filters?: Record<string, any>) {
   // Use real tRPC query for Walmart products
-  const productsQuery = trpc.walmartGrocery.searchProducts.useMutation();
+  const productsQuery = trpc?.walmartGrocery?.searchProducts.useMutation();
 
   // Trigger search when query changes
   const searchProducts = useCallback(async (query: string) => {
-    if (query.length > 2) {
+    if (query?.length || 0 > 2) {
       return productsQuery.mutateAsync({
         query,
         limit: filters?.limit || 20,
@@ -193,7 +193,7 @@ export function useTRPCPerformanceMonitor() {
   
   const getCacheStats = useCallback(() => {
     // Access query client cache stats
-    const queryClient = trpcContext.client;
+    const queryClient = trpcContext?.client;
     const queryCache = queryClient.getQueryCache();
     const mutationCache = queryClient.getMutationCache();
     
@@ -205,15 +205,15 @@ export function useTRPCPerformanceMonitor() {
   
   const clearCache = useCallback(() => {
     // Clear all tRPC query cache
-    trpcContext.client.clear();
+    trpcContext?.client?.clear();
   }, [trpcContext]);
   
   const prefetchCriticalData = useCallback(async () => {
     // Prefetch critical dashboard data
     try {
       await Promise.all([
-        trpcContext.emails.getDashboardStats.prefetch({ refreshKey: Date.now() }),
-        trpcContext.emails.getTableData.prefetch({
+        trpcContext?.emails?.getDashboardStats.prefetch({ refreshKey: Date.now() }),
+        trpcContext?.emails?.getTableData.prefetch({
           page: 1,
           pageSize: 10,
           sortBy: "received_date",

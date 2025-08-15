@@ -64,8 +64,8 @@ export class NLPService extends EventEmitter {
     this.setupEventListeners();
     
     logger.info('NLP Service initialized', 'NLP_SERVICE', {
-      version: this.status.version,
-      maxConcurrent: this.config.queue.maxConcurrent
+      version: this?.status?.version,
+      maxConcurrent: this?.config?.queue.maxConcurrent
     });
   }
 
@@ -75,28 +75,28 @@ export class NLPService extends EventEmitter {
   async start(): Promise<void> {
     try {
       this.emit('starting');
-      this.status.status = 'starting';
+      this?.status?.status = 'starting';
       
       // Initialize dependencies
       await this.initializeDependencies();
       
       // Start health check monitoring
-      if (this.config.monitoring.enabled) {
+      if (this?.config?.monitoring.enabled) {
         this.startHealthChecks();
         this.startMetricsCollection();
       }
       
-      this.status.status = 'healthy';
+      this?.status?.status = 'healthy';
       this.emit('started');
       
       logger.info('NLP Service started successfully', 'NLP_SERVICE', {
-        port: this.config.port,
-        grpcPort: this.config.grpcPort,
-        maxConcurrent: this.config.queue.maxConcurrent
+        port: this?.config?.port,
+        grpcPort: this?.config?.grpcPort,
+        maxConcurrent: this?.config?.queue.maxConcurrent
       });
       
     } catch (error) {
-      this.status.status = 'unhealthy';
+      this?.status?.status = 'unhealthy';
       this.emit('error', error);
       logger.error('Failed to start NLP Service', 'NLP_SERVICE', { error });
       throw error;
@@ -132,7 +132,7 @@ export class NLPService extends EventEmitter {
       });
       
       // Enqueue the NLP operation with Ollama 2-operation limit
-      const result = await this.queue.enqueue<GroceryNLPResult>(
+      const result = await this?.queue?.enqueue<GroceryNLPResult>(
         () => this.performNLPAnalysis(query, metadata),
         priority,
         timeout,
@@ -145,7 +145,7 @@ export class NLPService extends EventEmitter {
       logger.debug('NLP query processed successfully', 'NLP_SERVICE', {
         requestId,
         processingTime,
-        entitiesFound: result.entities.length,
+        entitiesFound: result?.entities?.length,
         confidence: result.confidence
       });
       
@@ -169,9 +169,9 @@ export class NLPService extends EventEmitter {
       
       // Transform queue errors to service errors
       if (error instanceof Error) {
-        if (error.message.includes('timeout')) {
-          throw this.createError('TIMEOUT', `Query processing timeout after ${timeout || this.config.queue.defaultTimeout}ms`, 408, requestId);
-        } else if (error.message.includes('overflow')) {
+        if (error?.message?.includes('timeout')) {
+          throw this.createError('TIMEOUT', `Query processing timeout after ${timeout || this?.config?.queue.defaultTimeout}ms`, 408, requestId);
+        } else if (error?.message?.includes('overflow')) {
           throw this.createError('QUEUE_OVERFLOW', 'Queue is at capacity', 429, requestId);
         }
       }
@@ -204,7 +204,7 @@ export class NLPService extends EventEmitter {
       throw this.createError('SERVICE_UNAVAILABLE', 'Service is shutting down', 503);
     }
     
-    if (!queries || queries.length === 0) {
+    if (!queries || queries?.length || 0 === 0) {
       throw this.createError('INVALID_QUERY', 'Batch cannot be empty', 400);
     }
     
@@ -213,19 +213,19 @@ export class NLPService extends EventEmitter {
     
     logger.info('Processing NLP batch', 'NLP_SERVICE', {
       batchId,
-      queryCount: queries.length,
+      queryCount: queries?.length || 0,
       priority,
       timeout
     });
     
     try {
       // Create batch operations
-      const operations = queries.map(({ query, metadata }) => 
+      const operations = queries?.map(({ query, metadata }) => 
         () => this.performNLPAnalysis(query, metadata)
       );
       
       // Process batch with queue
-      const results = await this.queue.enqueueBatch<GroceryNLPResult>(
+      const results = await this?.queue?.enqueueBatch<GroceryNLPResult>(
         operations,
         priority,
         {
@@ -237,13 +237,13 @@ export class NLPService extends EventEmitter {
       );
       
       const totalProcessingTime = Date.now() - startTime;
-      const completedCount = results.length;
-      const failedCount = queries.length - completedCount;
-      const errors: Array<Error | null> = new Array(queries.length).fill(null);
+      const completedCount = results?.length || 0;
+      const failedCount = queries?.length || 0 - completedCount;
+      const errors: Array<Error | null> = new Array(queries?.length || 0).fill(null);
       const normalizedResults: Array<GroceryNLPResult | null> = [...results];
       
       // Pad results array if some failed
-      while (normalizedResults.length < queries.length) {
+      while (normalizedResults?.length || 0 < queries?.length || 0) {
         normalizedResults.push(null);
       }
       
@@ -252,7 +252,7 @@ export class NLPService extends EventEmitter {
         totalProcessingTime,
         completedCount,
         failedCount,
-        successRate: completedCount / queries.length
+        successRate: completedCount / queries?.length || 0
       });
       
       return {
@@ -271,7 +271,7 @@ export class NLPService extends EventEmitter {
         batchId,
         error,
         totalProcessingTime,
-        queryCount: queries.length
+        queryCount: queries?.length || 0
       });
       
       throw error;
@@ -290,7 +290,7 @@ export class NLPService extends EventEmitter {
    * Get service metrics
    */
   getMetrics(): ServiceMetrics {
-    const queueMetrics = this.queue.getMetrics();
+    const queueMetrics = this?.queue?.getMetrics();
     const memUsage = process.memoryUsage();
     const uptime = Date.now() - this.startedAt;
     
@@ -307,7 +307,7 @@ export class NLPService extends EventEmitter {
         processing: queueMetrics.activeRequests,
         averageWaitTime: queueMetrics.averageWaitTime,
         averageProcessingTime: queueMetrics.averageProcessingTime,
-        throughput: queueMetrics.throughput.last1min
+        throughput: queueMetrics?.throughput?.last1min
       },
       resources: {
         cpu: {
@@ -323,12 +323,12 @@ export class NLPService extends EventEmitter {
       },
       dependencies: {
         ollama: {
-          status: this.status.dependencies.ollama,
-          lastCheck: this.status.lastHealthCheck
+          status: this?.status?.dependencies.ollama,
+          lastCheck: this?.status?.lastHealthCheck
         },
         redis: {
-          status: this.status.dependencies.redis,
-          lastCheck: this.status.lastHealthCheck
+          status: this?.status?.dependencies.redis,
+          lastCheck: this?.status?.lastHealthCheck
         }
       }
     };
@@ -338,7 +338,7 @@ export class NLPService extends EventEmitter {
    * Get queue status
    */
   getQueueStatus() {
-    return this.queue.getStatus();
+    return this?.queue?.getStatus();
   }
 
   /**
@@ -346,19 +346,19 @@ export class NLPService extends EventEmitter {
    */
   clearQueue(): void {
     logger.warn('Emergency queue clear requested', 'NLP_SERVICE');
-    this.queue.clearQueue();
+    this?.queue?.clearQueue();
   }
 
   /**
    * Graceful shutdown
    */
-  async shutdown(timeout: number = this.config.shutdown.timeout): Promise<void> {
+  async shutdown(timeout: number = this?.config?.shutdown.timeout): Promise<void> {
     if (this.isShuttingDown) {
       return;
     }
     
     this.isShuttingDown = true;
-    this.status.status = 'stopping';
+    this?.status?.status = 'stopping';
     this.emit('stopping');
     
     logger.info('Starting graceful shutdown', 'NLP_SERVICE', { timeout });
@@ -369,12 +369,12 @@ export class NLPService extends EventEmitter {
       
       // Wait for queue to drain or timeout
       const shutdownStart = Date.now();
-      while (this.queue.getStatus().activeRequests > 0 && (Date.now() - shutdownStart) < timeout) {
+      while (this?.queue?.getStatus().activeRequests > 0 && (Date.now() - shutdownStart) < timeout) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       // Final queue status
-      const finalStatus = this.queue.getStatus();
+      const finalStatus = this?.queue?.getStatus();
       if (finalStatus.activeRequests > 0) {
         logger.warn('Shutdown timeout reached with active requests', 'NLP_SERVICE', {
           activeRequests: finalStatus.activeRequests,
@@ -382,7 +382,7 @@ export class NLPService extends EventEmitter {
         });
       }
       
-      this.status.status = 'stopped';
+      this?.status?.status = 'stopped';
       this.emit('stopped');
       
       logger.info('NLP Service shutdown completed', 'NLP_SERVICE', {
@@ -454,7 +454,7 @@ export class NLPService extends EventEmitter {
           value: action,
           confidence: 0.9,
           startIndex: index,
-          endIndex: index + action.length
+          endIndex: index + action?.length || 0
         });
         break;
       }
@@ -492,7 +492,7 @@ export class NLPService extends EventEmitter {
           value: product,
           confidence: 0.85,
           startIndex: index,
-          endIndex: index + product.length,
+          endIndex: index + product?.length || 0,
           metadata: {
             category: this.getCategoryForProduct(product)
           }
@@ -548,11 +548,11 @@ export class NLPService extends EventEmitter {
    * Mock item normalization
    */
   private normalizeItems(entities: GroceryEntity[]): NormalizedGroceryItem[] {
-    const products = entities.filter(e => e.type === 'product');
-    const quantities = entities.filter(e => e.type === 'quantity');
-    const units = entities.filter(e => e.type === 'unit');
+    const products = entities?.filter(e => e.type === 'product');
+    const quantities = entities?.filter(e => e.type === 'quantity');
+    const units = entities?.filter(e => e.type === 'unit');
     
-    return products.map((product, index) => ({
+    return products?.map((product, index) => ({
       name: product.value,
       quantity: quantities[index] ? parseInt(quantities[index].value) : 1,
       unit: units[index]?.value,
@@ -567,9 +567,9 @@ export class NLPService extends EventEmitter {
    * Calculate overall confidence
    */
   private calculateConfidence(entities: GroceryEntity[], intent: GroceryIntent): number {
-    if (entities.length === 0) return 0.1;
+    if (entities?.length || 0 === 0) return 0.1;
     
-    const avgEntityConfidence = entities.reduce((sum, e) => sum + e.confidence, 0) / entities.length;
+    const avgEntityConfidence = entities.reduce((sum: any, e: any) => sum + e.confidence, 0) / entities?.length || 0;
     return (avgEntityConfidence + intent.confidence) / 2;
   }
 
@@ -598,13 +598,13 @@ export class NLPService extends EventEmitter {
    */
   private setupEventListeners(): void {
     // Listen to queue events
-    this.queue.on('queueUpdate', (event) => {
-      this.status.queue.size = event.data.queueSize;
-      this.status.queue.activeRequests = event.data.activeRequests;
+    this?.queue?.on('queueUpdate', (event: any) => {
+      this?.status?.queue.size = event?.data?.queueSize;
+      this?.status?.queue.activeRequests = event?.data?.activeRequests;
     });
     
     // Handle process signals
-    this.config.shutdown.signals.forEach(signal => {
+    this?.config?.shutdown.signals.forEach(signal => {
       process.on(signal, () => {
         logger.info(`Received ${signal}, starting graceful shutdown`, 'NLP_SERVICE');
         this.shutdown().catch(error => {
@@ -622,25 +622,25 @@ export class NLPService extends EventEmitter {
     // Check Ollama connectivity (mock)
     try {
       // This would be a real health check to Ollama
-      this.status.dependencies.ollama = 'healthy';
+      this?.status?.dependencies.ollama = 'healthy';
       logger.debug('Ollama connection established', 'NLP_SERVICE');
     } catch (error) {
-      this.status.dependencies.ollama = 'unhealthy';
+      this?.status?.dependencies.ollama = 'unhealthy';
       logger.warn('Ollama connection failed', 'NLP_SERVICE', { error });
     }
     
     // Check Redis connectivity (mock)
     try {
       // This would be a real health check to Redis
-      this.status.dependencies.redis = 'healthy';
+      this?.status?.dependencies.redis = 'healthy';
       logger.debug('Redis connection established', 'NLP_SERVICE');
     } catch (error) {
-      this.status.dependencies.redis = 'unhealthy';
+      this?.status?.dependencies.redis = 'unhealthy';
       logger.warn('Redis connection failed', 'NLP_SERVICE', { error });
     }
     
     // Check queue health
-    this.status.dependencies.queue = this.queue.isHealthy() ? 'healthy' : 'unhealthy';
+    this?.status?.dependencies.queue = this?.queue?.isHealthy() ? 'healthy' : 'unhealthy';
   }
 
   /**
@@ -649,7 +649,7 @@ export class NLPService extends EventEmitter {
   private startHealthChecks(): void {
     this.healthCheckInterval = setInterval(() => {
       this.performHealthCheck();
-    }, this.config.monitoring.healthCheckInterval);
+    }, this?.config?.monitoring.healthCheckInterval);
   }
 
   /**
@@ -666,15 +666,15 @@ export class NLPService extends EventEmitter {
    * Perform health check
    */
   private performHealthCheck(): void {
-    this.status.lastHealthCheck = Date.now();
+    this?.status?.lastHealthCheck = Date.now();
     
     // Check queue health
-    const queueHealthy = this.queue.isHealthy();
-    this.status.queue.health = queueHealthy ? 'healthy' : 'unhealthy';
+    const queueHealthy = this?.queue?.isHealthy();
+    this?.status?.queue.health = queueHealthy ? 'healthy' : 'unhealthy';
     
     // Check memory usage
     const memUsage = process.memoryUsage();
-    this.status.resources.memory = {
+    this?.status?.resources.memory = {
       used: memUsage.used,
       total: memUsage.used + (memUsage.available || memUsage.heapTotal * 2),
       percentage: (memUsage.heapUsed / memUsage.heapTotal) * 100
@@ -682,10 +682,10 @@ export class NLPService extends EventEmitter {
     
     // Determine overall health
     const isHealthy = queueHealthy && 
-      this.status.dependencies.ollama !== 'unhealthy' &&
-      this.status.resources.memory.percentage < 90;
+      this?.status?.dependencies.ollama !== 'unhealthy' &&
+      this?.status?.resources.memory.percentage < 90;
     
-    this.status.status = isHealthy ? 'healthy' : 'degraded';
+    this?.status?.status = isHealthy ? 'healthy' : 'degraded';
     
     this.emit('health-check', this.status);
   }
@@ -694,10 +694,10 @@ export class NLPService extends EventEmitter {
    * Update service status
    */
   private updateStatus(): void {
-    this.status.uptime = Date.now() - this.startedAt;
-    const queueStatus = this.queue.getStatus();
-    this.status.queue.size = queueStatus.queueSize;
-    this.status.queue.activeRequests = queueStatus.activeRequests;
+    this?.status?.uptime = Date.now() - this.startedAt;
+    const queueStatus = this?.queue?.getStatus();
+    this?.status?.queue.size = queueStatus.queueSize;
+    this?.status?.queue.activeRequests = queueStatus.activeRequests;
   }
 
   /**

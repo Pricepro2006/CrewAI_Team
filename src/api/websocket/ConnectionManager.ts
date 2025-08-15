@@ -165,7 +165,7 @@ export class ConnectionManager extends EventEmitter {
     // Connection cleanup
     this.cleanupTimer = setInterval(() => {
       this.performCleanup();
-    }, this.poolConfig.cleanup.interval);
+    }, this?.poolConfig?.cleanup.interval);
 
     // Metrics collection
     this.metricsTimer = setInterval(() => {
@@ -180,12 +180,12 @@ export class ConnectionManager extends EventEmitter {
     // Heartbeat monitoring
     this.heartbeatTimer = setInterval(() => {
       this.performHeartbeat();
-    }, this.poolConfig.heartbeatInterval);
+    }, this?.poolConfig?.heartbeatInterval);
   }
 
   // Authentication methods
   public async authenticateConnection(token: string, metadata: Record<string, any> = {}): Promise<AuthContext> {
-    this.securityMetrics.authAttempts++;
+    this?.securityMetrics?.authAttempts++;
 
     try {
       // Try JWT authentication first
@@ -194,15 +194,15 @@ export class ConnectionManager extends EventEmitter {
       }
 
       // Try API key authentication
-      if (this.authConfig.apiKey.enabled) {
+      if (this?.authConfig?.apiKey.enabled) {
         return await this.authenticateAPIKey(token, metadata);
       }
 
       throw new Error('Invalid authentication method');
 
     } catch (error) {
-      this.securityMetrics.authFailures++;
-      this.monitor.recordError(error as Error, {
+      this?.securityMetrics?.authFailures++;
+      this?.monitor?.recordError(error as Error, {
         eventType: 'authentication_failed',
         source: 'connection_manager'
       });
@@ -212,11 +212,11 @@ export class ConnectionManager extends EventEmitter {
 
   private async authenticateJWT(token: string, metadata: Record<string, any>): Promise<AuthContext> {
     try {
-      const decoded = jwt.verify(token, this.authConfig.jwt.secret, {
-        algorithms: this.authConfig.jwt.algorithms as jwt.Algorithm[],
-        issuer: this.authConfig.jwt.issuer,
-        audience: this.authConfig.jwt.audience,
-        clockTolerance: this.authConfig.jwt.clockTolerance
+      const decoded = jwt.verify(token, this?.authConfig?.jwt.secret, {
+        algorithms: this?.authConfig?.jwt.algorithms as jwt.Algorithm[],
+        issuer: this?.authConfig?.jwt.issuer,
+        audience: this?.authConfig?.jwt.audience,
+        clockTolerance: this?.authConfig?.jwt.clockTolerance
       }) as any;
 
       const authContext: AuthContext = {
@@ -230,21 +230,21 @@ export class ConnectionManager extends EventEmitter {
       };
 
       // Store session if enabled
-      if (this.authConfig.session.enabled) {
+      if (this?.authConfig?.session.enabled) {
         await this.storeSession(authContext);
       }
 
-      this.securityMetrics.authSuccesses++;
+      this?.securityMetrics?.authSuccesses++;
       return authContext;
 
     } catch (error) {
-      this.securityMetrics.tokenValidationErrors++;
+      this?.securityMetrics?.tokenValidationErrors++;
       throw new Error(`JWT validation failed: ${error}`);
     }
   }
 
   private async authenticateAPIKey(apiKey: string, metadata: Record<string, any>): Promise<AuthContext> {
-    if (!this.authConfig.apiKey.keys.includes(apiKey)) {
+    if (!this?.authConfig?.apiKey.keys.includes(apiKey)) {
       throw new Error('Invalid API key');
     }
 
@@ -257,42 +257,42 @@ export class ConnectionManager extends EventEmitter {
       expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
     };
 
-    if (this.authConfig.session.enabled) {
+    if (this?.authConfig?.session.enabled) {
       await this.storeSession(authContext);
     }
 
-    this.securityMetrics.authSuccesses++;
+    this?.securityMetrics?.authSuccesses++;
     return authContext;
   }
 
   private async storeSession(authContext: AuthContext): Promise<void> {
-    const sessionKey = `${this.authConfig.session.redis.keyPrefix}${authContext.sessionId}`;
+    const sessionKey = `${this?.authConfig?.session.redis.keyPrefix}${authContext.sessionId}`;
     
-    await this.redis.setex(
+    await this?.redis.setex(
       sessionKey,
-      this.authConfig.session.ttl,
+      this?.authConfig?.session.ttl,
       JSON.stringify(authContext)
     );
 
-    this.sessionStore.set(authContext.sessionId, authContext);
+    this?.sessionStore?.set(authContext.sessionId, authContext);
   }
 
   public async getSession(sessionId: string): Promise<AuthContext | null> {
     // Try memory cache first
-    const cached = this.sessionStore.get(sessionId);
+    const cached = this?.sessionStore?.get(sessionId);
     if (cached && cached.expiresAt > Date.now()) {
       return cached;
     }
 
     // Try Redis
-    const sessionKey = `${this.authConfig.session.redis.keyPrefix}${sessionId}`;
-    const sessionData = await this.redis.get(sessionKey);
+    const sessionKey = `${this?.authConfig?.session.redis.keyPrefix}${sessionId}`;
+    const sessionData = await this?.redis.get(sessionKey);
     
     if (sessionData) {
       const authContext = JSON.parse(sessionData) as AuthContext;
       
       if (authContext.expiresAt > Date.now()) {
-        this.sessionStore.set(sessionId, authContext);
+        this?.sessionStore?.set(sessionId, authContext);
         return authContext;
       }
     }
@@ -303,10 +303,10 @@ export class ConnectionManager extends EventEmitter {
   // Connection management
   public async addConnection(connection: ClientConnection, authContext: AuthContext): Promise<boolean> {
     const { userId } = authContext;
-    const userIP = connection.metadata.ip;
+    const userIP = connection?.metadata?.ip;
 
     // Check global connection limit
-    if (this.connections.size >= this.poolConfig.maxConnections) {
+    if (this?.connections?.size >= this?.poolConfig?.maxConnections) {
       this.emit('connection_rejected', {
         reason: 'max_connections_reached',
         connectionId: connection.id,
@@ -316,8 +316,8 @@ export class ConnectionManager extends EventEmitter {
     }
 
     // Check per-user connection limit
-    const userConnections = this.connectionsByUser.get(userId)?.size || 0;
-    if (userConnections >= this.poolConfig.maxConnectionsPerUser) {
+    const userConnections = this?.connectionsByUser?.get(userId)?.size || 0;
+    if (userConnections >= this?.poolConfig?.maxConnectionsPerUser) {
       this.emit('connection_rejected', {
         reason: 'max_user_connections',
         connectionId: connection.id,
@@ -328,8 +328,8 @@ export class ConnectionManager extends EventEmitter {
     }
 
     // Check per-IP connection limit
-    const ipConnections = this.connectionsByIP.get(userIP)?.size || 0;
-    if (ipConnections >= this.poolConfig.maxConnectionsPerIP) {
+    const ipConnections = this?.connectionsByIP?.get(userIP)?.size || 0;
+    if (ipConnections >= this?.poolConfig?.maxConnectionsPerIP) {
       this.emit('connection_rejected', {
         reason: 'max_ip_connections',
         connectionId: connection.id,
@@ -341,71 +341,71 @@ export class ConnectionManager extends EventEmitter {
 
     // Add connection to pools
     connection.userId = userId;
-    connection.metadata.authContext = authContext;
-    this.connections.set(connection.id, connection);
+    connection?.metadata?.authContext = authContext;
+    this?.connections?.set(connection.id, connection);
 
     // Update tracking maps
-    if (!this.connectionsByUser.has(userId)) {
-      this.connectionsByUser.set(userId, new Set());
+    if (!this?.connectionsByUser?.has(userId)) {
+      this?.connectionsByUser?.set(userId, new Set());
     }
-    this.connectionsByUser.get(userId)!.add(connection.id);
+    this?.connectionsByUser?.get(userId)!.add(connection.id);
 
-    if (!this.connectionsByIP.has(userIP)) {
-      this.connectionsByIP.set(userIP, new Set());
+    if (!this?.connectionsByIP?.has(userIP)) {
+      this?.connectionsByIP?.set(userIP, new Set());
     }
-    this.connectionsByIP.get(userIP)!.add(connection.id);
+    this?.connectionsByIP?.get(userIP)!.add(connection.id);
 
     // Update statistics
-    this.stats.total++;
-    this.stats.active++;
-    this.stats.peakConnections = Math.max(this.stats.peakConnections, this.stats.active);
+    this?.stats?.total++;
+    this?.stats?.active++;
+    this?.stats?.peakConnections = Math.max(this?.stats?.peakConnections, this?.stats?.active);
 
     // Track connection rate
-    this.connectionRateWindow.push(Date.now());
-    if (this.connectionRateWindow.length > 100) {
-      this.connectionRateWindow = this.connectionRateWindow.slice(-100);
+    this?.connectionRateWindow?.push(Date.now());
+    if (this?.connectionRateWindow?.length > 100) {
+      this.connectionRateWindow = this?.connectionRateWindow?.slice(-100);
     }
 
     this.emit('connection_added', {
       connectionId: connection.id,
       userId,
-      totalConnections: this.connections.size
+      totalConnections: this?.connections?.size
     });
 
     return true;
   }
 
   public removeConnection(connectionId: string, reason: string = 'unknown'): boolean {
-    const connection = this.connections.get(connectionId);
+    const connection = this?.connections?.get(connectionId);
     if (!connection) return false;
 
     const { userId } = connection;
-    const userIP = connection.metadata.ip;
+    const userIP = connection?.metadata?.ip;
 
     // Remove from main pool
-    this.connections.delete(connectionId);
+    this?.connections?.delete(connectionId);
 
     // Update tracking maps
-    const userConnections = this.connectionsByUser.get(userId);
+    const userConnections = this?.connectionsByUser?.get(userId);
     if (userConnections) {
       userConnections.delete(connectionId);
       if (userConnections.size === 0) {
-        this.connectionsByUser.delete(userId);
+        this?.connectionsByUser?.delete(userId);
       }
     }
 
-    const ipConnections = this.connectionsByIP.get(userIP);
+    const ipConnections = this?.connectionsByIP?.get(userIP);
     if (ipConnections) {
       ipConnections.delete(connectionId);
       if (ipConnections.size === 0) {
-        this.connectionsByIP.delete(userIP);
+        this?.connectionsByIP?.delete(userIP);
       }
     }
 
     // Update statistics
-    this.stats.active--;
+    this?.stats?.active--;
 
-    const connectionDuration = Date.now() - connection.stats.connectedAt;
+    const connectionDuration = Date.now() - connection?.stats?.connectedAt;
     this.updateAverageConnectionTime(connectionDuration);
 
     this.emit('connection_removed', {
@@ -413,31 +413,31 @@ export class ConnectionManager extends EventEmitter {
       userId,
       reason,
       duration: connectionDuration,
-      totalConnections: this.connections.size
+      totalConnections: this?.connections?.size
     });
 
     return true;
   }
 
   public getConnection(connectionId: string): ClientConnection | undefined {
-    return this.connections.get(connectionId);
+    return this?.connections?.get(connectionId);
   }
 
   public getConnectionsByUser(userId: string): ClientConnection[] {
-    const connectionIds = this.connectionsByUser.get(userId);
+    const connectionIds = this?.connectionsByUser?.get(userId);
     if (!connectionIds) return [];
 
     return Array.from(connectionIds)
-      .map(id => this.connections.get(id))
+      .map(id => this?.connections?.get(id))
       .filter(conn => conn !== undefined) as ClientConnection[];
   }
 
   public getConnectionsByRole(role: string): ClientConnection[] {
     const connections: ClientConnection[] = [];
     
-    for (const connection of this.connections.values()) {
-      const authContext = connection.metadata.authContext as AuthContext;
-      if (authContext && authContext.roles.includes(role)) {
+    for (const connection of this?.connections?.values()) {
+      const authContext = connection?.metadata?.authContext as AuthContext;
+      if (authContext && authContext?.roles?.includes(role)) {
         connections.push(connection);
       }
     }
@@ -447,28 +447,28 @@ export class ConnectionManager extends EventEmitter {
 
   // Permission and security checks
   public hasPermission(connectionId: string, permission: string): boolean {
-    const connection = this.connections.get(connectionId);
+    const connection = this?.connections?.get(connectionId);
     if (!connection) return false;
 
-    const authContext = connection.metadata.authContext as AuthContext;
+    const authContext = connection?.metadata?.authContext as AuthContext;
     if (!authContext) return false;
 
-    return authContext.permissions.includes(permission) ||
-           authContext.roles.includes('admin');
+    return authContext?.permissions?.includes(permission) ||
+           authContext?.roles?.includes('admin');
   }
 
   public checkRateLimit(connectionId: string, action: string, limit: number, windowMs: number): boolean {
-    const connection = this.connections.get(connectionId);
+    const connection = this?.connections?.get(connectionId);
     if (!connection) return false;
 
     const rateLimitKey = `${connectionId}:${action}`;
     const now = Date.now();
 
-    if (!connection.metadata.rateLimits) {
-      connection.metadata.rateLimits = {};
+    if (!connection?.metadata?.rateLimits) {
+      connection?.metadata?.rateLimits = {};
     }
 
-    const rateLimit = connection.metadata.rateLimits[rateLimitKey] || {
+    const rateLimit = connection?.metadata?.rateLimits[rateLimitKey] || {
       count: 0,
       windowStart: now
     };
@@ -480,10 +480,10 @@ export class ConnectionManager extends EventEmitter {
     }
 
     rateLimit.count++;
-    connection.metadata.rateLimits[rateLimitKey] = rateLimit;
+    connection?.metadata?.rateLimits[rateLimitKey] = rateLimit;
 
     if (rateLimit.count > limit) {
-      this.securityMetrics.rateLimitViolations++;
+      this?.securityMetrics?.rateLimitViolations++;
       this.emit('rate_limit_exceeded', {
         connectionId,
         action,
@@ -497,7 +497,7 @@ export class ConnectionManager extends EventEmitter {
   }
 
   public detectSuspiciousActivity(connectionId: string, activity: string, severity: 'low' | 'medium' | 'high'): void {
-    this.securityMetrics.suspiciousActivity++;
+    this?.securityMetrics?.suspiciousActivity++;
     
     this.emit('suspicious_activity', {
       connectionId,
@@ -508,9 +508,9 @@ export class ConnectionManager extends EventEmitter {
 
     // Auto-disconnect for high severity activities
     if (severity === 'high') {
-      const connection = this.connections.get(connectionId);
-      if (connection && connection.ws.readyState === WebSocket.OPEN) {
-        connection.ws.close(1008, 'Policy violation');
+      const connection = this?.connections?.get(connectionId);
+      if (connection && connection?.ws?.readyState === WebSocket.OPEN) {
+        connection?.ws?.close(1008, 'Policy violation');
         this.removeConnection(connectionId, 'security_violation');
       }
     }
@@ -523,24 +523,24 @@ export class ConnectionManager extends EventEmitter {
 
     for (const [connectionId, connection] of this.connections) {
       // Check for dead connections
-      if (connection.ws.readyState === WebSocket.CLOSED || 
-          connection.ws.readyState === WebSocket.CLOSING) {
+      if (connection?.ws?.readyState === WebSocket.CLOSED || 
+          connection?.ws?.readyState === WebSocket.CLOSING) {
         connectionsToRemove.push(connectionId);
         continue;
       }
 
       // Check for idle connections
-      const idleTime = now - connection.stats.lastActivity;
-      if (idleTime > this.poolConfig.idleTimeout) {
-        connection.ws.close(1000, 'Idle timeout');
+      const idleTime = now - connection?.stats?.lastActivity;
+      if (idleTime > this?.poolConfig?.idleTimeout) {
+        connection?.ws?.close(1000, 'Idle timeout');
         connectionsToRemove.push(connectionId);
         continue;
       }
 
       // Check session expiry
-      const authContext = connection.metadata.authContext as AuthContext;
+      const authContext = connection?.metadata?.authContext as AuthContext;
       if (authContext && authContext.expiresAt < now) {
-        connection.ws.close(1008, 'Session expired');
+        connection?.ws?.close(1008, 'Session expired');
         connectionsToRemove.push(connectionId);
         continue;
       }
@@ -554,14 +554,14 @@ export class ConnectionManager extends EventEmitter {
     // Clean up session cache
     for (const [sessionId, authContext] of this.sessionStore) {
       if (authContext.expiresAt < now) {
-        this.sessionStore.delete(sessionId);
+        this?.sessionStore?.delete(sessionId);
       }
     }
 
-    if (connectionsToRemove.length > 0) {
+    if (connectionsToRemove?.length || 0 > 0) {
       this.emit('cleanup_performed', {
-        removedConnections: connectionsToRemove.length,
-        activeConnections: this.connections.size
+        removedConnections: connectionsToRemove?.length || 0,
+        activeConnections: this?.connections?.size
       });
     }
   }
@@ -570,10 +570,10 @@ export class ConnectionManager extends EventEmitter {
     let responsiveConnections = 0;
     let unresponsiveConnections = 0;
 
-    for (const connection of this.connections.values()) {
-      if (connection.ws.readyState === WebSocket.OPEN) {
+    for (const connection of this?.connections?.values()) {
+      if (connection?.ws?.readyState === WebSocket.OPEN) {
         try {
-          connection.ws.ping();
+          connection?.ws?.ping();
           responsiveConnections++;
         } catch (error) {
           unresponsiveConnections++;
@@ -591,56 +591,56 @@ export class ConnectionManager extends EventEmitter {
 
   private updateMetrics(): void {
     // Update connection statistics
-    this.stats.active = this.connections.size;
-    this.stats.idle = 0;
+    this?.stats?.active = this?.connections?.size;
+    this?.stats?.idle = 0;
 
     // Reset per-request counters
-    this.stats.byUser = {};
-    this.stats.byIP = {};
-    this.stats.byRole = {};
+    this?.stats?.byUser = {};
+    this?.stats?.byIP = {};
+    this?.stats?.byRole = {};
 
     const now = Date.now();
 
-    for (const connection of this.connections.values()) {
+    for (const connection of this?.connections?.values()) {
       const { userId } = connection;
-      const userIP = connection.metadata.ip;
-      const authContext = connection.metadata.authContext as AuthContext;
+      const userIP = connection?.metadata?.ip;
+      const authContext = connection?.metadata?.authContext as AuthContext;
 
       // Count by user
-      this.stats.byUser[userId] = (this.stats.byUser[userId] || 0) + 1;
+      this?.stats?.byUser[userId] = (this?.stats?.byUser[userId] || 0) + 1;
 
       // Count by IP
-      this.stats.byIP[userIP] = (this.stats.byIP[userIP] || 0) + 1;
+      this?.stats?.byIP[userIP] = (this?.stats?.byIP[userIP] || 0) + 1;
 
       // Count by role
       if (authContext) {
-        authContext.roles.forEach(role => {
-          this.stats.byRole[role] = (this.stats.byRole[role] || 0) + 1;
+        authContext?.roles?.forEach(role => {
+          this?.stats?.byRole[role] = (this?.stats?.byRole[role] || 0) + 1;
         });
       }
 
       // Check if idle
-      const idleTime = now - connection.stats.lastActivity;
+      const idleTime = now - connection?.stats?.lastActivity;
       if (idleTime > 60000) { // 1 minute
-        this.stats.idle++;
+        this?.stats?.idle++;
       }
     }
 
     // Calculate connection rate
-    const recentConnections = this.connectionRateWindow.filter(
+    const recentConnections = this?.connectionRateWindow?.filter(
       timestamp => now - timestamp < 60000 // Last minute
     );
-    this.stats.connectionsPerSecond = recentConnections.length / 60;
+    this?.stats?.connectionsPerSecond = recentConnections?.length || 0 / 60;
   }
 
   private updateAverageConnectionTime(newDuration: number): void {
-    const totalConnections = this.stats.total;
+    const totalConnections = this?.stats?.total;
     
     if (totalConnections === 1) {
-      this.stats.averageConnectionTime = newDuration;
+      this?.stats?.averageConnectionTime = newDuration;
     } else {
-      this.stats.averageConnectionTime = 
-        (this.stats.averageConnectionTime * (totalConnections - 1) + newDuration) / totalConnections;
+      this?.stats?.averageConnectionTime = 
+        (this?.stats?.averageConnectionTime * (totalConnections - 1) + newDuration) / totalConnections;
     }
   }
 
@@ -659,11 +659,11 @@ export class ConnectionManager extends EventEmitter {
   }
 
   public getConnectionCount(): number {
-    return this.connections.size;
+    return this?.connections?.size;
   }
 
   public getAllConnections(): ClientConnection[] {
-    return Array.from(this.connections.values());
+    return Array.from(this?.connections?.values());
   }
 
   public async refreshSession(sessionId: string): Promise<boolean> {
@@ -671,28 +671,28 @@ export class ConnectionManager extends EventEmitter {
     if (!session) return false;
 
     // Extend session TTL
-    const sessionKey = `${this.authConfig.session.redis.keyPrefix}${sessionId}`;
-    await this.redis.expire(sessionKey, this.authConfig.session.ttl);
+    const sessionKey = `${this?.authConfig?.session.redis.keyPrefix}${sessionId}`;
+    await this?.redis.expire(sessionKey, this?.authConfig?.session.ttl);
 
-    session.expiresAt = Date.now() + (this.authConfig.session.ttl * 1000);
-    this.sessionStore.set(sessionId, session);
+    session.expiresAt = Date.now() + (this?.authConfig?.session.ttl * 1000);
+    this?.sessionStore?.set(sessionId, session);
 
     return true;
   }
 
   public async revokeSession(sessionId: string): Promise<boolean> {
     // Remove from Redis
-    const sessionKey = `${this.authConfig.session.redis.keyPrefix}${sessionId}`;
-    await this.redis.del(sessionKey);
+    const sessionKey = `${this?.authConfig?.session.redis.keyPrefix}${sessionId}`;
+    await this?.redis.del(sessionKey);
 
     // Remove from memory cache
-    this.sessionStore.delete(sessionId);
+    this?.sessionStore?.delete(sessionId);
 
     // Close any active connections with this session
-    for (const connection of this.connections.values()) {
-      const authContext = connection.metadata.authContext as AuthContext;
+    for (const connection of this?.connections?.values()) {
+      const authContext = connection?.metadata?.authContext as AuthContext;
       if (authContext && authContext.sessionId === sessionId) {
-        connection.ws.close(1008, 'Session revoked');
+        connection?.ws?.close(1008, 'Session revoked');
         this.removeConnection(connection.id, 'session_revoked');
       }
     }
@@ -705,9 +705,9 @@ export class ConnectionManager extends EventEmitter {
     let sentCount = 0;
 
     for (const connection of connections) {
-      if (connection.ws.readyState === WebSocket.OPEN) {
+      if (connection?.ws?.readyState === WebSocket.OPEN) {
         try {
-          connection.ws.send(JSON.stringify(message));
+          connection?.ws?.send(JSON.stringify(message));
           sentCount++;
         } catch (error) {
           this.emit('broadcast_error', { connectionId: connection.id, error });
@@ -723,9 +723,9 @@ export class ConnectionManager extends EventEmitter {
     let sentCount = 0;
 
     for (const connection of connections) {
-      if (connection.ws.readyState === WebSocket.OPEN) {
+      if (connection?.ws?.readyState === WebSocket.OPEN) {
         try {
-          connection.ws.send(JSON.stringify(message));
+          connection?.ws?.send(JSON.stringify(message));
           sentCount++;
         } catch (error) {
           this.emit('broadcast_error', { connectionId: connection.id, error });
@@ -737,13 +737,13 @@ export class ConnectionManager extends EventEmitter {
   }
 
   public isHealthy(): boolean {
-    const errorRate = this.stats.total > 0 
-      ? this.securityMetrics.authFailures / this.securityMetrics.authAttempts 
+    const errorRate = this?.stats?.total > 0 
+      ? this?.securityMetrics?.authFailures / this?.securityMetrics?.authAttempts 
       : 0;
 
-    return this.connections.size > 0 && 
+    return this?.connections?.size > 0 && 
            errorRate < 0.1 && // Less than 10% auth failure rate
-           this.stats.connectionsPerSecond < 100; // Not being overwhelmed
+           this?.stats?.connectionsPerSecond < 100; // Not being overwhelmed
   }
 
   public getHealthStatus(): {
@@ -754,11 +754,11 @@ export class ConnectionManager extends EventEmitter {
     issues: string[];
   } {
     const issues: string[] = [];
-    const authFailureRate = this.securityMetrics.authAttempts > 0 
-      ? this.securityMetrics.authFailures / this.securityMetrics.authAttempts 
+    const authFailureRate = this?.securityMetrics?.authAttempts > 0 
+      ? this?.securityMetrics?.authFailures / this?.securityMetrics?.authAttempts 
       : 0;
 
-    if (this.connections.size === 0) {
+    if (this?.connections?.size === 0) {
       issues.push('No active connections');
     }
 
@@ -766,27 +766,27 @@ export class ConnectionManager extends EventEmitter {
       issues.push(`High authentication failure rate: ${Math.round(authFailureRate * 100)}%`);
     }
 
-    if (this.stats.connectionsPerSecond > 50) {
+    if (this?.stats?.connectionsPerSecond > 50) {
       issues.push('High connection rate detected');
     }
 
-    if (this.securityMetrics.suspiciousActivity > 0) {
-      issues.push(`${this.securityMetrics.suspiciousActivity} suspicious activities detected`);
+    if (this?.securityMetrics?.suspiciousActivity > 0) {
+      issues.push(`${this?.securityMetrics?.suspiciousActivity} suspicious activities detected`);
     }
 
     let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
     
-    if (issues.length > 2 || authFailureRate > 0.2) {
+    if (issues?.length || 0 > 2 || authFailureRate > 0.2) {
       status = 'unhealthy';
-    } else if (issues.length > 0) {
+    } else if (issues?.length || 0 > 0) {
       status = 'degraded';
     }
 
     return {
       status,
-      connections: this.connections.size,
+      connections: this?.connections?.size,
       authFailureRate,
-      connectionRate: this.stats.connectionsPerSecond,
+      connectionRate: this?.stats?.connectionsPerSecond,
       issues
     };
   }
@@ -800,10 +800,10 @@ export class ConnectionManager extends EventEmitter {
     // Close all connections gracefully
     const closePromises: Promise<void>[] = [];
     
-    for (const connection of this.connections.values()) {
-      closePromises.push(new Promise((resolve) => {
-        if (connection.ws.readyState === WebSocket.OPEN) {
-          connection.ws.close(1001, 'Server shutdown');
+    for (const connection of this?.connections?.values()) {
+      closePromises.push(new Promise((resolve: any) => {
+        if (connection?.ws?.readyState === WebSocket.OPEN) {
+          connection?.ws?.close(1001, 'Server shutdown');
         }
         resolve();
       }));
@@ -812,14 +812,14 @@ export class ConnectionManager extends EventEmitter {
     await Promise.all(closePromises);
 
     // Clear all data structures
-    this.connections.clear();
-    this.connectionsByUser.clear();
-    this.connectionsByIP.clear();
-    this.sessionStore.clear();
+    this?.connections?.clear();
+    this?.connectionsByUser?.clear();
+    this?.connectionsByIP?.clear();
+    this?.sessionStore?.clear();
 
     this.emit('shutdown', {
-      totalConnectionsProcessed: this.stats.total,
-      peakConnections: this.stats.peakConnections
+      totalConnectionsProcessed: this?.stats?.total,
+      peakConnections: this?.stats?.peakConnections
     });
   }
 }

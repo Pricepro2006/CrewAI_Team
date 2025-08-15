@@ -36,7 +36,7 @@ describe("EmailAnalyticsService", () => {
 
   describe("getTotalEmailsCount", () => {
     it("should return total email count", () => {
-      mockStmt.get.mockReturnValue({ total: 33797 });
+      mockStmt?.get?.mockReturnValue({ total: 33797 });
 
       const result = service.getTotalEmailsCount();
 
@@ -47,7 +47,7 @@ describe("EmailAnalyticsService", () => {
     });
 
     it("should return 0 on error", () => {
-      mockStmt.get.mockImplementation(() => {
+      mockStmt?.get?.mockImplementation(() => {
         throw new Error("Database error");
       });
 
@@ -59,7 +59,7 @@ describe("EmailAnalyticsService", () => {
 
   describe("getProcessedEmailsCount", () => {
     it("should return processed email count", () => {
-      mockStmt.get.mockReturnValue({ total: 24990 });
+      mockStmt?.get?.mockReturnValue({ total: 24990 });
 
       const result = service.getProcessedEmailsCount();
 
@@ -70,7 +70,7 @@ describe("EmailAnalyticsService", () => {
     });
 
     it("should return 0 on error", () => {
-      mockStmt.get.mockImplementation(() => {
+      mockStmt?.get?.mockImplementation(() => {
         throw new Error("Database error");
       });
 
@@ -82,7 +82,7 @@ describe("EmailAnalyticsService", () => {
 
   describe("getPendingEmailsCount", () => {
     it("should return pending email count", () => {
-      mockStmt.get.mockReturnValue({ total: 8807 });
+      mockStmt?.get?.mockReturnValue({ total: 8807 });
 
       const result = service.getPendingEmailsCount();
 
@@ -95,7 +95,7 @@ describe("EmailAnalyticsService", () => {
     });
 
     it("should return 0 on error", () => {
-      mockStmt.get.mockImplementation(() => {
+      mockStmt?.get?.mockImplementation(() => {
         throw new Error("Database error");
       });
 
@@ -107,7 +107,7 @@ describe("EmailAnalyticsService", () => {
 
   describe("getAverageProcessingTime", () => {
     it("should return average processing time", () => {
-      mockStmt.get.mockReturnValue({ avg_time: 1234.56 });
+      mockStmt?.get?.mockReturnValue({ avg_time: 1234.56 });
 
       const result = service.getAverageProcessingTime();
 
@@ -118,7 +118,7 @@ describe("EmailAnalyticsService", () => {
     });
 
     it("should return 0 when avg_time is null", () => {
-      mockStmt.get.mockReturnValue({ avg_time: null });
+      mockStmt?.get?.mockReturnValue({ avg_time: null });
 
       const result = service.getAverageProcessingTime();
 
@@ -126,7 +126,7 @@ describe("EmailAnalyticsService", () => {
     });
 
     it("should return 0 on error", () => {
-      mockStmt.get.mockImplementation(() => {
+      mockStmt?.get?.mockImplementation(() => {
         throw new Error("Database error");
       });
 
@@ -157,7 +157,7 @@ describe("EmailAnalyticsService", () => {
     });
 
     it("should return graceful fallback on error", async () => {
-      mockStmt.get.mockImplementation(() => {
+      mockStmt?.get?.mockImplementation(() => {
         throw new Error("Database error");
       });
 
@@ -181,7 +181,7 @@ describe("EmailAnalyticsService", () => {
     });
 
     it("should handle close error gracefully", () => {
-      mockDb.close.mockImplementation(() => {
+      mockDb?.close?.mockImplementation(() => {
         throw new Error("Close error");
       });
 

@@ -22,8 +22,8 @@ const upload = multer({
       "application/json",
       "application/xml",
       "text/csv",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.openxmlformats-officedocument?.wordprocessingml?.document",
+      "application/vnd.openxmlformats-officedocument?.spreadsheetml?.sheet",
     ];
 
     const allowedExtensions = [
@@ -40,7 +40,7 @@ const upload = multer({
     ];
 
     const fileExtension =
-      file.originalname.toLowerCase().match(/\.[^.]+$/)?.[0] || "";
+      file?.originalname?.toLowerCase().match(/\.[^.]+$/)?.[0] || "";
 
     if (
       allowedTypes.includes(file.mimetype) ||
@@ -70,7 +70,7 @@ export const ragRouter: Router<any> = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      await ctx.ragSystem.addDocument(input.content, {
+      await ctx?.ragSystem?.addDocument(input.content, {
         id: Date.now().toString(),
         title: input.filename,
         ...input.metadata,
@@ -93,14 +93,14 @@ export const ragRouter: Router<any> = router({
     )
     .query(async ({ input, ctx }) => {
       if (input.filter) {
-        return await ctx.ragSystem.searchWithFilter(
+        return await ctx?.ragSystem?.searchWithFilter(
           input.query,
           input.filter,
           input.limit,
         );
       }
 
-      return await ctx.ragSystem.search(input.query, input.limit);
+      return await ctx?.ragSystem?.search(input.query, input.limit);
     }),
 
   // Get document by ID
@@ -111,7 +111,7 @@ export const ragRouter: Router<any> = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      const document = await ctx.ragSystem.getDocument(input.documentId);
+      const document = await ctx?.ragSystem?.getDocument(input.documentId);
       if (!document) {
         throw new Error("Document not found");
       }
@@ -126,7 +126,7 @@ export const ragRouter: Router<any> = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      await ctx.ragSystem.deleteDocument(input.documentId);
+      await ctx?.ragSystem?.deleteDocument(input.documentId);
       return { success: true };
     }),
 
@@ -139,12 +139,12 @@ export const ragRouter: Router<any> = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      return await ctx.ragSystem.getAllDocuments(input.limit, input.offset);
+      return await ctx?.ragSystem?.getAllDocuments(input.limit, input.offset);
     }),
 
   // Get RAG statistics
   stats: publicProcedure.query(async ({ ctx }) => {
-    const stats = await ctx.ragSystem.getStats();
+    const stats = await ctx?.ragSystem?.getStats();
 
     // Map the stats to match what the Dashboard expects
     return {
@@ -156,7 +156,7 @@ export const ragRouter: Router<any> = router({
 
   // Clear all documents
   clear: publicProcedure.mutation(async ({ ctx }) => {
-    await ctx.ragSystem.clear();
+    await ctx?.ragSystem?.clear();
     return { success: true };
   }),
 
@@ -168,7 +168,7 @@ export const ragRouter: Router<any> = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      const data = await ctx.ragSystem.exportDocuments(input.format);
+      const data = await ctx?.ragSystem?.exportDocuments(input.format);
       return {
         data,
         format: input.format,
@@ -185,7 +185,7 @@ export const ragRouter: Router<any> = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      await ctx.ragSystem.importDocuments(input.data, input.format);
+      await ctx?.ragSystem?.importDocuments(input.data, input.format);
       return {
         success: true,
         message: "Documents imported successfully",
@@ -207,7 +207,7 @@ export const ragRouter: Router<any> = router({
         logger.info("Processing file upload", "RAG", {
           filename: input.filename,
           mimeType: input.mimeType,
-          size: input.data.length,
+          size: input?.data?.length,
         });
 
         // Decode base64 data
@@ -216,7 +216,7 @@ export const ragRouter: Router<any> = router({
 
         // Process the document
         const documentId = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        await ctx.ragSystem.addDocument(content, {
+        await ctx?.ragSystem?.addDocument(content, {
           id: documentId,
           title: input.filename,
           mimeType: input.mimeType,
@@ -265,7 +265,7 @@ export const ragRouter: Router<any> = router({
           const content = buffer.toString("utf-8");
           const documentId = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-          await ctx.ragSystem.addDocument(content, {
+          await ctx?.ragSystem?.addDocument(content, {
             id: documentId,
             title: file.filename,
             mimeType: file.mimeType,
@@ -287,9 +287,9 @@ export const ragRouter: Router<any> = router({
       }
 
       return {
-        success: errors.length === 0,
-        uploaded: results.length,
-        failed: errors.length,
+        success: errors?.length || 0 === 0,
+        uploaded: results?.length || 0,
+        failed: errors?.length || 0,
         results,
         errors,
       };
@@ -314,10 +314,10 @@ export const ragRouter: Router<any> = router({
         }
 
         const content = await response.text();
-        const filename = input.url.split("/").pop() || "document.txt";
+        const filename = input?.url?.split("/").pop() || "document.txt";
         const documentId = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-        await ctx.ragSystem.addDocument(content, {
+        await ctx?.ragSystem?.addDocument(content, {
           id: documentId,
           title: filename,
           sourceUrl: input.url,
@@ -347,7 +347,7 @@ export const ragRouter: Router<any> = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const document = await ctx.ragSystem.getDocument(input.documentId);
+      const document = await ctx?.ragSystem?.getDocument(input.documentId);
       if (!document) {
         throw new Error("Document not found");
       }
@@ -360,8 +360,8 @@ export const ragRouter: Router<any> = router({
       };
 
       // Re-add document with updated metadata (since we can't update in-place)
-      await ctx.ragSystem.deleteDocument(input.documentId);
-      await ctx.ragSystem.addDocument(document.content, {
+      await ctx?.ragSystem?.deleteDocument(input.documentId);
+      await ctx?.ragSystem?.addDocument(document.content, {
         ...updatedMetadata,
         id: input.documentId,
       });

@@ -34,19 +34,19 @@ export class GrpcAPIServer {
    */
   async start(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const address = `${this.config.host}:${this.config.grpcPort}`;
+      const address = `${this?.config?.host}:${this?.config?.grpcPort}`;
       
-      this.server.bindAsync(address, grpc.ServerCredentials.createInsecure(), (error, port) => {
+      this?.server?.bindAsync(address, grpc?.ServerCredentials?.createInsecure(), (error, port) => {
         if (error) {
           logger.error('Failed to bind gRPC server', 'GRPC_SERVER', { error });
           reject(error);
           return;
         }
         
-        this.server.start();
+        this?.server?.start();
         logger.info('gRPC server started', 'GRPC_SERVER', {
-          host: this.config.host,
-          port: this.config.grpcPort,
+          host: this?.config?.host,
+          port: this?.config?.grpcPort,
           address
         });
         
@@ -59,8 +59,8 @@ export class GrpcAPIServer {
    * Stop the gRPC server
    */
   async stop(): Promise<void> {
-    return new Promise((resolve) => {
-      this.server.tryShutdown((error) => {
+    return new Promise((resolve: any) => {
+      this?.server?.tryShutdown((error: any) => {
         if (error) {
           logger.error('Error stopping gRPC server', 'GRPC_SERVER', { error });
         } else {
@@ -75,7 +75,7 @@ export class GrpcAPIServer {
    * Force stop the gRPC server
    */
   forceShutdown(): void {
-    this.server.forceShutdown();
+    this?.server?.forceShutdown();
     logger.info('gRPC server force shutdown', 'GRPC_SERVER');
   }
 
@@ -105,13 +105,13 @@ export class GrpcAPIServer {
    */
   private setupServices(): void {
     // Add the NLP service
-    this.server.addService(this.proto.nlp.NLPService.service, {
-      ProcessQuery: this.processQuery.bind(this),
-      ProcessBatch: this.processBatch.bind(this),
-      GetStatus: this.getStatus.bind(this),
-      GetMetrics: this.getMetrics.bind(this),
-      GetQueueStatus: this.getQueueStatus.bind(this),
-      HealthCheck: this.healthCheck.bind(this)
+    this?.server?.addService(this?.proto?.nlp.NLPService.service, {
+      ProcessQuery: this?.processQuery?.bind(this),
+      ProcessBatch: this?.processBatch?.bind(this),
+      GetStatus: this?.getStatus?.bind(this),
+      GetMetrics: this?.getMetrics?.bind(this),
+      GetQueueStatus: this?.getQueueStatus?.bind(this),
+      HealthCheck: this?.healthCheck?.bind(this)
     });
   }
 
@@ -132,12 +132,12 @@ export class GrpcAPIServer {
       });
       
       const priorityLevel = this.mapGrpcPriority(priority);
-      const result = await this.nlpService.processQuery(query, priorityLevel, timeout, metadata);
+      const result = await this?.nlpService?.processQuery(query, priorityLevel, timeout, metadata);
       
       const response: NLPServiceAPI.GRPC.NLPResponse = {
         success: true,
         requestId,
-        entities: result.entities.map(e => ({
+        entities: result?.entities?.map(e => ({
           type: e.type,
           value: e.value,
           confidence: e.confidence,
@@ -145,16 +145,16 @@ export class GrpcAPIServer {
           endIndex: e.endIndex
         })),
         intent: {
-          action: result.intent.action,
-          confidence: result.intent.confidence
+          action: result?.intent?.action,
+          confidence: result?.intent?.confidence
         },
-        normalizedProducts: result.normalizedItems.map(item => ({
+        normalizedProducts: result?.normalizedItems?.map(item => ({
           name: item.name,
           quantity: item.quantity,
           unit: item.unit || ''
         })),
         error: '',
-        processingTime: result.processingMetadata.processingTime,
+        processingTime: result?.processingMetadata?.processingTime,
         queueTime: 0
       };
       
@@ -193,15 +193,15 @@ export class GrpcAPIServer {
     try {
       logger.debug('gRPC process batch', 'GRPC_SERVER', {
         batchId,
-        queryCount: queries.length
+        queryCount: queries?.length || 0
       });
       
-      const queryData = queries.map(q => ({
+      const queryData = queries?.map(q => ({
         query: q.query,
         metadata: q.metadata
       }));
       
-      const result = await this.nlpService.processBatch(
+      const result = await this?.nlpService?.processBatch(
         queryData,
         'normal',
         undefined,
@@ -211,7 +211,7 @@ export class GrpcAPIServer {
       const response: NLPServiceAPI.GRPC.BatchNLPResponse = {
         success: true,
         batchId: result.batchId,
-        results: result.results.map((r, index) => {
+        results: result?.results?.map((r, index) => {
           if (!r) {
             return {
               success: false,
@@ -228,7 +228,7 @@ export class GrpcAPIServer {
           return {
             success: true,
             requestId: `${batchId}-${index}`,
-            entities: r.entities.map(e => ({
+            entities: r?.entities?.map(e => ({
               type: e.type,
               value: e.value,
               confidence: e.confidence,
@@ -236,16 +236,16 @@ export class GrpcAPIServer {
               endIndex: e.endIndex
             })),
             intent: {
-              action: r.intent.action,
-              confidence: r.intent.confidence
+              action: r?.intent?.action,
+              confidence: r?.intent?.confidence
             },
-            normalizedProducts: r.normalizedItems.map(item => ({
+            normalizedProducts: r?.normalizedItems?.map(item => ({
               name: item.name,
               quantity: item.quantity,
               unit: item.unit || ''
             })),
             error: '',
-            processingTime: r.processingMetadata.processingTime,
+            processingTime: r?.processingMetadata?.processingTime,
             queueTime: 0
           };
         }),
@@ -268,7 +268,7 @@ export class GrpcAPIServer {
         results: [],
         totalProcessingTime: 0,
         completedCount: 0,
-        failedCount: queries.length
+        failedCount: queries?.length || 0
       };
       
       callback(null, response);
@@ -282,7 +282,7 @@ export class GrpcAPIServer {
     call: grpc.ServerUnaryCall<any, any>,
     callback: grpc.sendUnaryData<any>
   ): void {
-    const status = this.nlpService.getStatus();
+    const status = this?.nlpService?.getStatus();
     callback(null, {
       service: status.service,
       version: status.version,
@@ -290,14 +290,14 @@ export class GrpcAPIServer {
       uptime: status.uptime,
       startedAt: status.startedAt,
       dependencies: {
-        ollama: status.dependencies.ollama,
-        redis: status.dependencies.redis,
-        queue: status.dependencies.queue
+        ollama: status?.dependencies?.ollama,
+        redis: status?.dependencies?.redis,
+        queue: status?.dependencies?.queue
       },
       queue: {
-        size: status.queue.size,
-        activeRequests: status.queue.activeRequests,
-        health: status.queue.health
+        size: status?.queue?.size,
+        activeRequests: status?.queue?.activeRequests,
+        health: status?.queue?.health
       }
     });
   }
@@ -309,7 +309,7 @@ export class GrpcAPIServer {
     call: grpc.ServerUnaryCall<any, any>,
     callback: grpc.sendUnaryData<any>
   ): void {
-    const metrics = this.nlpService.getMetrics();
+    const metrics = this?.nlpService?.getMetrics();
     callback(null, metrics);
   }
 
@@ -320,7 +320,7 @@ export class GrpcAPIServer {
     call: grpc.ServerUnaryCall<any, any>,
     callback: grpc.sendUnaryData<any>
   ): void {
-    const queueStatus = this.nlpService.getQueueStatus();
+    const queueStatus = this?.nlpService?.getQueueStatus();
     callback(null, queueStatus);
   }
 
@@ -331,7 +331,7 @@ export class GrpcAPIServer {
     call: grpc.ServerUnaryCall<any, any>,
     callback: grpc.sendUnaryData<any>
   ): void {
-    const status = this.nlpService.getStatus();
+    const status = this?.nlpService?.getStatus();
     callback(null, {
       status: status.status === 'healthy' ? 'SERVING' : 'NOT_SERVING',
       service: 'nlp-service',

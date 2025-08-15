@@ -80,8 +80,8 @@ function createOrderFromPartial(partialOrder: any): Order {
     metadata: {
       source: 'api',
     },
-    createdAt: partialOrder.createdAt?.toISOString ? partialOrder.createdAt.toISOString() : partialOrder.createdAt || now,
-    updatedAt: partialOrder.updatedAt?.toISOString ? partialOrder.updatedAt.toISOString() : partialOrder.updatedAt || now,
+    createdAt: partialOrder.createdAt?.toISOString ? partialOrder?.createdAt?.toISOString() : partialOrder.createdAt || now,
+    updatedAt: partialOrder.updatedAt?.toISOString ? partialOrder?.updatedAt?.toISOString() : partialOrder.updatedAt || now,
   };
 }
 
@@ -101,7 +101,7 @@ export const walmartProductAPI = {
   }): Promise<{ products: WalmartProduct[]; total: number }> => {
     try {
       // searchProducts is a mutation in the router
-      const result = await client.walmartGrocery.searchProducts.mutate({
+      const result = await client?.walmartGrocery?.searchProducts.mutate({
         query: params.query,
         category: params.category,
         minPrice: params.minPrice,
@@ -125,14 +125,14 @@ export const walmartProductAPI = {
   getProduct: async (productId: string): Promise<WalmartProduct | null> => {
     try {
       // Use getProductDetails instead
-      const result = await client.walmartGrocery.getProductDetails.query({ 
+      const result = await client?.walmartGrocery?.getProductDetails.query({ 
         productId,
         includeReviews: false,
         includeAvailability: true
       });
       // Transform response to match WalmartProduct type
       if (!result || !result.data) return null;
-      const product = result.data;
+      const product = result?.data;
       return {
         id: product.productId || productId,
         name: product.name || 'Unknown Product',
@@ -152,8 +152,8 @@ export const walmartProductAPI = {
   getProductsByIds: async (productIds: string[]): Promise<WalmartProduct[]> => {
     try {
       // Fetch products individually
-      const productPromises = productIds.map(id => 
-        client.walmartGrocery.getProductDetails.query({ 
+      const productPromises = productIds?.map(id => 
+        client?.walmartGrocery?.getProductDetails.query({ 
           productId: id,
           includeReviews: false,
           includeAvailability: true
@@ -164,7 +164,7 @@ export const walmartProductAPI = {
       return results
         .filter(result => result?.data)
         .map(result => {
-          const product = result.data;
+          const product = result?.data;
           return {
             id: product.productId || '',
             name: product.name || 'Unknown Product',
@@ -189,7 +189,7 @@ export const walmartProductAPI = {
     limit?: number;
   }): Promise<WalmartProduct[]> => {
     try {
-      const result = await client.walmartGrocery.getRecommendations.query({
+      const result = await client?.walmartGrocery?.getRecommendations.query({
         userId: params.userId || 'default',
         category: params.category,
         budget: undefined,
@@ -210,7 +210,7 @@ export const walmartDealAPI = {
   findDeals: async (productIds: string[]): Promise<DealMatch[]> => {
     try {
       // Use analyzeDeal instead
-      const result = await client.walmartGrocery.analyzeDeal.query({ 
+      const result = await client?.walmartGrocery?.analyzeDeal.query({ 
         productIds,
         dealId: undefined,
         customerId: undefined
@@ -230,8 +230,8 @@ export const walmartDealAPI = {
   }): Promise<WalmartProduct[]> => {
     try {
       // Use scrapeData to get deals page
-      const result = await client.walmartGrocery.scrapeData.mutate({
-        url: 'https://www.walmart.com/shop/deals',
+      const result = await client?.walmartGrocery?.scrapeData.mutate({
+        url: 'https://www?.walmart.com/shop/deals',
         extractType: 'deals',
         options: { category: params?.category, limit: params?.limit }
       });
@@ -261,7 +261,7 @@ export const walmartListAPI = {
   // Get user's lists
   getLists: async (userId: string): Promise<GroceryList[]> => {
     try {
-      const result = await client.walmartGrocery.getLists.query({ userId });
+      const result = await client?.walmartGrocery?.getLists.query({ userId });
       // Transform the response to match GroceryList[]
       if (!result || !Array.isArray(result)) return [];
       return result;
@@ -279,7 +279,7 @@ export const walmartListAPI = {
     isShared?: boolean;
   }): Promise<GroceryList> => {
     try {
-      const result = await client.walmartGrocery.createList.mutate(params);
+      const result = await client?.walmartGrocery?.createList.mutate(params);
       // Transform the response to match GroceryList type
       if (result.success && result.list) {
         return {
@@ -313,10 +313,10 @@ export const walmartListAPI = {
     updates: Partial<GroceryList>;
   }): Promise<GroceryList> => {
     try {
-      const result = await client.walmartGrocery.updateList.mutate({
+      const result = await client?.walmartGrocery?.updateList.mutate({
         listId: params.listId,
-        name: params.updates.list_name,
-        description: params.updates.description
+        name: params?.updates?.list_name,
+        description: params?.updates?.description
       });
       // Transform the response to match GroceryList type
       if (result.success) {
@@ -324,8 +324,8 @@ export const walmartListAPI = {
         return {
           id: params.listId,
           user_id: '',
-          list_name: params.updates.list_name || '',
-          description: params.updates.description,
+          list_name: params?.updates?.list_name || '',
+          description: params?.updates?.description,
           list_type: "shopping" as const,
           status: "active" as const,
           items: [],
@@ -344,7 +344,7 @@ export const walmartListAPI = {
   // Delete list
   deleteList: async (listId: string): Promise<void> => {
     try {
-      await client.walmartGrocery.deleteList.mutate({ listId });
+      await client?.walmartGrocery?.deleteList.mutate({ listId });
     } catch (error) {
       console.error('Delete list failed:', error);
       throw error;
@@ -359,7 +359,7 @@ export const walmartListAPI = {
     notes?: string;
   }): Promise<void> => {
     try {
-      await client.walmartGrocery.addItemToList.mutate({
+      await client?.walmartGrocery?.addItemToList.mutate({
         listId: params.listId,
         items: [{
           productId: params.productId,
@@ -379,7 +379,7 @@ export const walmartListAPI = {
     itemId: string;
   }): Promise<void> => {
     try {
-      await client.walmartGrocery.removeItemFromList.mutate(params);
+      await client?.walmartGrocery?.removeItemFromList.mutate(params);
     } catch (error) {
       console.error('Remove item from list failed:', error);
       throw error;
@@ -397,7 +397,7 @@ export const walmartOrderAPI = {
     offset?: number;
   }): Promise<{ orders: Order[]; total: number }> => {
     try {
-      const result = await client.walmartGrocery.getOrders.query(params);
+      const result = await client?.walmartGrocery?.getOrders.query(params);
       // Transform result to expected format
       return {
         orders: (result.orders || []).map(createOrderFromPartial),
@@ -412,7 +412,7 @@ export const walmartOrderAPI = {
   // Get order by ID
   getOrder: async (orderId: string): Promise<Order | null> => {
     try {
-      const result = await client.walmartGrocery.getOrder.query({ orderId });
+      const result = await client?.walmartGrocery?.getOrder.query({ orderId });
       return result?.order ? createOrderFromPartial(result.order) : null;
     } catch (error) {
       console.error('Get order failed:', error);
@@ -430,11 +430,11 @@ export const walmartOrderAPI = {
     paymentMethod: string;
   }): Promise<Order> => {
     try {
-      const result = await client.walmartGrocery.createOrder.mutate({
+      const result = await client?.walmartGrocery?.createOrder.mutate({
         userId: params.userId,
         items: params.items,
         deliveryAddress: params.deliveryAddress,
-        deliveryDate: params.deliveryDate.toISOString(),
+        deliveryDate: params?.deliveryDate?.toISOString(),
         deliverySlot: params.deliverySlot
       });
       // Transform the response to match Order type
@@ -455,7 +455,7 @@ export const walmartOrderAPI = {
     status: string;
   }): Promise<Order> => {
     try {
-      const result = await client.walmartGrocery.updateOrderStatus.mutate({
+      const result = await client?.walmartGrocery?.updateOrderStatus.mutate({
         orderId: params.orderId,
         status: params.status as any
       });
@@ -478,7 +478,7 @@ export const walmartOrderAPI = {
     updates: Array<{ timestamp: Date; status: string; description: string }>;
   }> => {
     try {
-      const result = await client.walmartGrocery.trackOrder.query({ orderId });
+      const result = await client?.walmartGrocery?.trackOrder.query({ orderId });
       // Transform result to expected format
       return {
         status: result.status || 'unknown',
@@ -589,10 +589,10 @@ export const walmartPriceAPI = {
     days?: number;
   }): Promise<Array<{ date: Date; price: number; wasOnSale?: boolean }>> => {
     try {
-      const result = await client.walmartGrocery.getPriceHistory.query(params);
+      const result = await client?.walmartGrocery?.getPriceHistory.query(params);
       // Transform result to expected format
       if (result && result.history) {
-        return result.history.map((point: any) => ({
+        return result?.history?.map((point: any) => ({
           date: point.date || new Date(),
           price: point.price || 0,
           wasOnSale: point.available === false
@@ -614,7 +614,7 @@ export const walmartPriceAPI = {
   }): Promise<void> => {
     try {
       // Use createAlert instead of setPriceAlert
-      await client.walmartGrocery.createAlert.mutate({
+      await client?.walmartGrocery?.createAlert.mutate({
         userId: params.userId,
         productId: params.productId,
         alertType: 'price_drop',
@@ -638,7 +638,7 @@ export const walmartPriceAPI = {
   }>> => {
     try {
       // Use getAlerts instead of getPriceAlerts
-      const result = await client.walmartGrocery.getAlerts.query({ userId });
+      const result = await client?.walmartGrocery?.getAlerts.query({ userId });
       // Transform alerts to price alerts format
       return result.alerts
         .filter((alert: any) => alert.type === 'price')
@@ -660,7 +660,7 @@ export const walmartPriceAPI = {
   // Delete price alert
   deletePriceAlert: async (alertId: string): Promise<void> => {
     try {
-      await client.walmartGrocery.deleteAlert.mutate({ alertId });
+      await client?.walmartGrocery?.deleteAlert.mutate({ alertId });
     } catch (error) {
       console.error('Delete price alert failed:', error);
       throw error;
@@ -673,7 +673,7 @@ export const walmartPreferencesAPI = {
   // Get user preferences
   getPreferences: async (userId: string): Promise<UserPreferences> => {
     try {
-      const result = await client.walmartGrocery.getPreferences.query({ userId });
+      const result = await client?.walmartGrocery?.getPreferences.query({ userId });
       // Transform the response to include required properties
       return {
         id: `pref-${userId}`,
@@ -694,7 +694,7 @@ export const walmartPreferencesAPI = {
     preferences: Partial<UserPreferences>;
   }): Promise<UserPreferences> => {
     try {
-      const result = await client.walmartGrocery.updatePreferences.mutate(params);
+      const result = await client?.walmartGrocery?.updatePreferences.mutate(params);
       // Transform the response to include required properties
       return {
         id: `pref-${params.userId}`,

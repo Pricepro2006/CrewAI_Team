@@ -389,7 +389,7 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
 });
 
 (global as any).createMockPromise = <T>(value: T, delay = 0) => {
-  return new Promise<T>((resolve) => {
+  return new Promise<T>((resolve: any) => {
     setTimeout(() => resolve(value), delay);
   });
 };

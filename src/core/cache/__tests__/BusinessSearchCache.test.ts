@@ -24,13 +24,13 @@ vi.mock("ioredis", () => {
       return Promise.resolve("OK");
     }),
     del: vi.fn().mockImplementation((...keys: string[]) => {
-      keys.forEach((key) => mockRedisData.delete(key));
-      return Promise.resolve(keys.length);
+      keys.forEach((key: any) => mockRedisData.delete(key));
+      return Promise.resolve(keys?.length || 0);
     }),
     keys: vi.fn().mockImplementation((pattern: string) => {
       const keys = Array.from(mockRedisData.keys());
       const regex = new RegExp(pattern.replace("*", ".*"));
-      return Promise.resolve(keys.filter((key) => regex.test(key)));
+      return Promise.resolve(keys?.filter((key: any) => regex.test(key)));
     }),
     expire: vi.fn().mockResolvedValue(1),
     quit: vi.fn().mockResolvedValue(undefined),
@@ -165,7 +165,7 @@ describe("BusinessSearchCache", () => {
       expect(entry).not.toBeNull();
 
       // Wait for max age + stale window
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve: any) => setTimeout(resolve, 200));
 
       // Should be too stale now
       entry = await shortLivedCache.get(testQuery, testLocation);
@@ -182,7 +182,7 @@ describe("BusinessSearchCache", () => {
       await shortLivedCache.set(testQuery, testLocation, testResponse);
 
       // Wait past max age but within stale window
-      await new Promise((resolve) => setTimeout(resolve, 75));
+      await new Promise((resolve: any) => setTimeout(resolve, 75));
 
       // Should still return stale content
       const entry = await shortLivedCache.get(testQuery, testLocation);
@@ -290,8 +290,8 @@ describe("BusinessSearchCache", () => {
       const plumberResults = await cache.search(/plumbers/i);
       expect(plumberResults).toHaveLength(2);
       expect(
-        plumberResults.every((r) =>
-          r.entry.metadata.query.includes("plumbers"),
+        plumberResults.every((r: any) =>
+          r?.entry?.metadata.query.includes("plumbers"),
         ),
       ).toBe(true);
 
@@ -345,13 +345,13 @@ describe("BusinessSearchCache", () => {
           return Promise.resolve("OK");
         }),
         del: vi.fn().mockImplementation((...keys: string[]) => {
-          keys.forEach((key) => mockRedisData.delete(key));
-          return Promise.resolve(keys.length);
+          keys.forEach((key: any) => mockRedisData.delete(key));
+          return Promise.resolve(keys?.length || 0);
         }),
         keys: vi.fn().mockImplementation((pattern: string) => {
           const keys = Array.from(mockRedisData.keys());
           const regex = new RegExp(pattern.replace("*", ".*"));
-          return Promise.resolve(keys.filter((key) => regex.test(key)));
+          return Promise.resolve(keys?.filter((key: any) => regex.test(key)));
         }),
         expire: vi.fn().mockResolvedValue(1),
         quit: vi.fn().mockResolvedValue(undefined),

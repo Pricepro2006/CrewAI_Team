@@ -168,11 +168,11 @@ describe.skip("Rate Limiting Integration Tests", () => {
       const responses = await Promise.all(requests);
 
       // Some should succeed, some should be rate limited
-      const successful = responses.filter((r) => r.status === 200);
-      const rateLimited = responses.filter((r) => r.status === 429);
+      const successful = responses?.filter((r: any) => r.status === 200);
+      const rateLimited = responses?.filter((r: any) => r.status === 429);
 
-      expect(successful.length).toBeLessThan(responses.length);
-      expect(rateLimited.length).toBeGreaterThan(0);
+      expect(successful?.length || 0).toBeLessThan(responses?.length || 0);
+      expect(rateLimited?.length || 0).toBeGreaterThan(0);
     });
 
     it("should allow higher limits for authenticated users", async () => {
@@ -198,10 +198,10 @@ describe.skip("Rate Limiting Integration Tests", () => {
       }
 
       const responses = await Promise.all(requests);
-      const successful = responses.filter((r) => r.status === 200);
+      const successful = responses?.filter((r: any) => r.status === 200);
 
       // Should allow more requests than anonymous users
-      expect(successful.length).toBeGreaterThan(15);
+      expect(successful?.length || 0).toBeGreaterThan(15);
     });
 
     it("should apply endpoint-specific rate limits", async () => {
@@ -216,12 +216,12 @@ describe.skip("Rate Limiting Integration Tests", () => {
       }
 
       const authResponses = await Promise.all(authRequests);
-      const authSuccessful = authResponses.filter((r) => r.status === 200);
-      const authRateLimited = authResponses.filter((r) => r.status === 429);
+      const authSuccessful = authResponses?.filter((r: any) => r.status === 200);
+      const authRateLimited = authResponses?.filter((r: any) => r.status === 429);
 
       // Auth endpoint should have stricter limits
-      expect(authSuccessful.length).toBeLessThanOrEqual(5);
-      expect(authRateLimited.length).toBeGreaterThan(0);
+      expect(authSuccessful?.length || 0).toBeLessThanOrEqual(5);
+      expect(authRateLimited?.length || 0).toBeGreaterThan(0);
     });
 
     it("should provide rate limit status information", async () => {
@@ -273,7 +273,7 @@ describe.skip("Rate Limiting Integration Tests", () => {
       wss.on("connection", async (ws, req) => {
         try {
           const mockReq = {
-            ip: req.socket.remoteAddress,
+            ip: req?.socket?.remoteAddress,
             path: "/ws",
             method: "GET",
             headers: req.headers,
@@ -311,7 +311,7 @@ describe.skip("Rate Limiting Integration Tests", () => {
           const ws = new WebSocket(`ws://localhost:${port}`);
           connections.push(ws);
 
-          await new Promise((resolve) => {
+          await new Promise((resolve: any) => {
             ws.on("open", resolve);
             ws.on("close", resolve);
             ws.on("error", resolve);
@@ -319,17 +319,17 @@ describe.skip("Rate Limiting Integration Tests", () => {
         }
 
         // Some connections should be rate limited
-        const openConnections = connections.filter(
-          (ws) => ws.readyState === WebSocket.OPEN,
+        const openConnections = connections?.filter(
+          (ws: any) => ws.readyState === WebSocket.OPEN,
         );
-        const closedConnections = connections.filter(
-          (ws) => ws.readyState === WebSocket.CLOSED,
+        const closedConnections = connections?.filter(
+          (ws: any) => ws.readyState === WebSocket.CLOSED,
         );
 
-        expect(closedConnections.length).toBeGreaterThan(0);
+        expect(closedConnections?.length || 0).toBeGreaterThan(0);
       } finally {
         // Cleanup
-        connections.forEach((ws) => {
+        connections.forEach((ws: any) => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.close();
           }
@@ -365,10 +365,10 @@ describe.skip("Rate Limiting Integration Tests", () => {
       const responses = await Promise.all(requests);
 
       // Some should be rate limited at the Express level
-      const successful = responses.filter((r) => r.status < 400);
-      const rateLimited = responses.filter((r) => r.status === 429);
+      const successful = responses?.filter((r: any) => r.status < 400);
+      const rateLimited = responses?.filter((r: any) => r.status === 429);
 
-      expect(rateLimited.length).toBeGreaterThan(0);
+      expect(rateLimited?.length || 0).toBeGreaterThan(0);
     });
   });
 
@@ -404,7 +404,7 @@ describe.skip("Rate Limiting Integration Tests", () => {
       await Promise.all(requests);
 
       // Wait a bit and try again - should work
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve: any) => setTimeout(resolve, 100));
 
       const response = await request(app).get("/api/test");
       // Should either succeed or fail gracefully

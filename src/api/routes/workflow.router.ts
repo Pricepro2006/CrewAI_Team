@@ -93,32 +93,32 @@ export const workflowRouter: Router<any> = router({
         // Apply filters
         if (input.filter?.status) {
           query += " AND task_status = ?";
-          params.push(input.filter.status);
+          params.push(input?.filter?.status);
         }
 
         if (input.filter?.category) {
           query += " AND workflow_category = ?";
-          params.push(input.filter.category);
+          params.push(input?.filter?.category);
         }
 
         if (input.filter?.owner) {
           query += " AND current_owner = ?";
-          params.push(input.filter.owner);
+          params.push(input?.filter?.owner);
         }
 
         if (input.filter?.priority) {
           query += " AND priority = ?";
-          params.push(input.filter.priority);
+          params.push(input?.filter?.priority);
         }
 
         if (input.filter?.dateRange?.start) {
           query += " AND created_at >= ?";
-          params.push(input.filter.dateRange.start);
+          params.push(input?.filter?.dateRange.start);
         }
 
         if (input.filter?.dateRange?.end) {
           query += " AND created_at <= ?";
-          params.push(input.filter.dateRange.end);
+          params.push(input?.filter?.dateRange.end);
         }
 
         // Add sorting
@@ -153,7 +153,7 @@ export const workflowRouter: Router<any> = router({
         };
 
         // Parse entities JSON
-        const parsedTasks = tasks.map((task: any) => ({
+        const parsedTasks = tasks?.map((task: any) => ({
           ...task,
           entities:
             task.po_numbers || task.quote_numbers || task.customers
@@ -279,7 +279,7 @@ export const workflowRouter: Router<any> = router({
           }
         });
 
-        if (updates.length === 0) {
+        if (updates?.length || 0 === 0) {
           return { success: false, message: "No updates provided" };
         }
 
@@ -298,8 +298,8 @@ export const workflowRouter: Router<any> = router({
 
         // Log status change if applicable
         if (
-          input.updates.task_status &&
-          input.updates.task_status !== currentTask.task_status
+          input?.updates?.task_status &&
+          input?.updates?.task_status !== currentTask.task_status
         ) {
           db.prepare(
             `
@@ -310,8 +310,8 @@ export const workflowRouter: Router<any> = router({
           ).run(
             input.taskId,
             currentTask.task_status,
-            input.updates.task_status,
-            input.updates.current_owner || "system",
+            input?.updates?.task_status,
+            input?.updates?.current_owner || "system",
             "Status updated via API",
           );
         }
@@ -384,7 +384,7 @@ export const workflowRouter: Router<any> = router({
           input.priority,
           input.current_owner,
           input.owner_email ||
-            `${input.current_owner.toLowerCase().replace(/\s+/g, ".")}@tdsynnex.com`,
+            `${input?.current_owner?.toLowerCase().replace(/\s+/g, ".")}@tdsynnex.com`,
           input.dollar_value,
           now,
           now,

@@ -270,7 +270,7 @@ export class GroceryVectorCollections {
 
     for (const [key, config] of Object.entries(this.COLLECTIONS)) {
       try {
-        await this.chromaManager.createCollection(config);
+        await this?.chromaManager?.createCollection(config);
         logger.info(`Created/verified collection: ${key}`, "GROCERY_VECTORS");
       } catch (error) {
         logger.error(
@@ -292,7 +292,7 @@ export class GroceryVectorCollections {
    */
   async addProduct(product: ProductVector): Promise<void> {
     const collection =
-      await this.chromaManager.getCollection("walmart_products");
+      await this?.chromaManager?.getCollection("walmart_products");
 
     const document = {
       id: product.product_id,
@@ -307,7 +307,7 @@ export class GroceryVectorCollections {
       },
     };
 
-    await this.chromaManager.addDocuments("walmart_products", [document]);
+    await this?.chromaManager?.addDocuments("walmart_products", [document]);
   }
 
   /**
@@ -332,11 +332,11 @@ export class GroceryVectorCollections {
       whereClause.price_range = filters.priceRange;
     }
 
-    if (filters?.dietaryTags && filters.dietaryTags.length > 0) {
+    if (filters?.dietaryTags && filters?.dietaryTags?.length > 0) {
       whereClause.dietary_tags = { $in: filters.dietaryTags };
     }
 
-    const results = await this.chromaManager.similaritySearch(
+    const results = await this?.chromaManager?.similaritySearch(
       "walmart_products",
       query,
       {
@@ -352,15 +352,15 @@ export class GroceryVectorCollections {
       },
     );
 
-    return results.map((result) => ({
-      product_id: result.metadata.product_id as string,
-      name: result.metadata.name as string,
-      brand: result.metadata.brand as string,
-      category: result.metadata.category as string,
+    return results?.map((result: any) => ({
+      product_id: result?.metadata?.product_id as string,
+      name: result?.metadata?.name as string,
+      brand: result?.metadata?.brand as string,
+      category: result?.metadata?.category as string,
       description: result.content,
       search_text: "",
-      price_range: result.metadata.price_range as "budget" | "mid" | "premium",
-      dietary_tags: result.metadata.dietary_tags as string[],
+      price_range: result?.metadata?.price_range as "budget" | "mid" | "premium",
+      dietary_tags: result?.metadata?.dietary_tags as string[],
     }));
   }
 
@@ -370,7 +370,7 @@ export class GroceryVectorCollections {
   async addRecipe(recipe: RecipeVector): Promise<void> {
     const document = {
       id: recipe.recipe_id,
-      content: `${recipe.name} ${recipe.cuisine_type} ${recipe.meal_type} ingredients: ${recipe.ingredients.join(" ")}`,
+      content: `${recipe.name} ${recipe.cuisine_type} ${recipe.meal_type} ingredients: ${recipe?.ingredients?.join(" ")}`,
       metadata: {
         recipe_id: recipe.recipe_id,
         name: recipe.name,
@@ -383,7 +383,7 @@ export class GroceryVectorCollections {
       },
     };
 
-    await this.chromaManager.addDocuments("recipes", [document]);
+    await this?.chromaManager?.addDocuments("recipes", [document]);
   }
 
   /**
@@ -397,11 +397,11 @@ export class GroceryVectorCollections {
     const query = `recipe with ${ingredients.join(" and ")}`;
     const whereClause: any = {};
 
-    if (dietaryRestrictions && dietaryRestrictions.length > 0) {
+    if (dietaryRestrictions && dietaryRestrictions?.length || 0 > 0) {
       whereClause.dietary_info = { $all: dietaryRestrictions };
     }
 
-    const results = await this.chromaManager.similaritySearch(
+    const results = await this?.chromaManager?.similaritySearch(
       "recipes",
       query,
       {
@@ -417,15 +417,15 @@ export class GroceryVectorCollections {
       },
     );
 
-    return results.map((result) => ({
-      recipe_id: result.metadata.recipe_id as string,
-      name: result.metadata.name as string,
-      ingredients: result.metadata.ingredients as string[],
-      cuisine_type: result.metadata.cuisine_type as string,
-      meal_type: result.metadata.meal_type as string,
-      prep_time: result.metadata.prep_time as number,
-      difficulty: result.metadata.difficulty as "easy" | "medium" | "hard",
-      dietary_info: result.metadata.dietary_info as string[],
+    return results?.map((result: any) => ({
+      recipe_id: result?.metadata?.recipe_id as string,
+      name: result?.metadata?.name as string,
+      ingredients: result?.metadata?.ingredients as string[],
+      cuisine_type: result?.metadata?.cuisine_type as string,
+      meal_type: result?.metadata?.meal_type as string,
+      prep_time: result?.metadata?.prep_time as number,
+      difficulty: result?.metadata?.difficulty as "easy" | "medium" | "hard",
+      dietary_info: result?.metadata?.dietary_info as string[],
     }));
   }
 
@@ -435,7 +435,7 @@ export class GroceryVectorCollections {
   async storeShoppingPattern(pattern: ShoppingPatternVector): Promise<void> {
     const document = {
       id: pattern.pattern_id,
-      content: `User ${pattern.user_id} ${pattern.pattern_type} shopping pattern: ${pattern.common_items.join(" ")}`,
+      content: `User ${pattern.user_id} ${pattern.pattern_type} shopping pattern: ${pattern?.common_items?.join(" ")}`,
       metadata: {
         user_id: pattern.user_id,
         pattern_type: pattern.pattern_type,
@@ -445,7 +445,7 @@ export class GroceryVectorCollections {
       },
     };
 
-    await this.chromaManager.addDocuments("shopping_patterns", [document]);
+    await this?.chromaManager?.addDocuments("shopping_patterns", [document]);
   }
 
   /**
@@ -456,7 +456,7 @@ export class GroceryVectorCollections {
     currentList: string[],
   ): Promise<string[]> {
     // Find similar shopping patterns
-    const patterns = await this.chromaManager.similaritySearch(
+    const patterns = await this?.chromaManager?.similaritySearch(
       "shopping_patterns",
       currentList.join(" "),
       {
@@ -476,7 +476,7 @@ export class GroceryVectorCollections {
     const recommendations = new Set<string>();
 
     for (const pattern of patterns) {
-      const commonItems = pattern.metadata.common_items as string[];
+      const commonItems = pattern?.metadata?.common_items as string[];
       for (const item of commonItems) {
         if (!currentList.includes(item)) {
           recommendations.add(item);
@@ -503,7 +503,7 @@ export class GroceryVectorCollections {
   > {
     const whereClause: any = { original_product_id: productId };
 
-    const results = await this.chromaManager.similaritySearch(
+    const results = await this?.chromaManager?.similaritySearch(
       "substitutions",
       productId,
       {
@@ -520,13 +520,13 @@ export class GroceryVectorCollections {
     );
 
     return results
-      .map((result) => ({
-        substitute_id: result.metadata.substitute_product_id as string,
-        similarity: result.metadata.similarity_score as number,
-        price_difference: result.metadata.price_difference as number,
-        reason: result.metadata.substitution_reason as string,
+      .map((result: any) => ({
+        substitute_id: result?.metadata?.substitute_product_id as string,
+        similarity: result?.metadata?.similarity_score as number,
+        price_difference: result?.metadata?.price_difference as number,
+        reason: result?.metadata?.substitution_reason as string,
       }))
-      .filter((sub) => {
+      .filter((sub: any) => {
         if (pricePreference === "cheaper") return sub.price_difference < 0;
         if (pricePreference === "similar")
           return Math.abs(sub.price_difference) < 1;

@@ -78,7 +78,7 @@ export class CacheWarmer {
       return {
         itemsWarmed,
         duration,
-        cacheSize: this.cache.size,
+        cacheSize: this?.cache?.size,
         category: category || "all"
       };
     } catch (error) {
@@ -109,7 +109,7 @@ export class CacheWarmer {
         }, { timeout: 5000 }).catch(() => null);
 
         if (response?.data) {
-          this.cache.set(`price:${productId}`, {
+          this?.cache?.set(`price:${productId}`, {
             key: `price:${productId}`,
             value: response.data,
             ttl: Date.now() + 300000, // 5 minutes
@@ -141,12 +141,12 @@ export class CacheWarmer {
         return 0;
       }
 
-      const promotions = response.data.promotions;
+      const promotions = response?.data?.promotions;
       let warmed = 0;
 
       for (const promo of promotions) {
         const key = `promo:${promo.id}`;
-        this.cache.set(key, {
+        this?.cache?.set(key, {
           key,
           value: promo,
           ttl: Date.now() + 600000, // 10 minutes
@@ -173,7 +173,7 @@ export class CacheWarmer {
     }
 
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT user_id, preference_key, preference_value
         FROM grocery_user_preferences
         WHERE last_accessed > datetime('now', '-7 days')
@@ -185,7 +185,7 @@ export class CacheWarmer {
 
       for (const pref of preferences as any[]) {
         const key = `user:${pref.user_id}:${pref.preference_key}`;
-        this.cache.set(key, {
+        this?.cache?.set(key, {
           key,
           value: pref.preference_value,
           ttl: Date.now() + 1800000, // 30 minutes
@@ -208,7 +208,7 @@ export class CacheWarmer {
 
       for (const pref of mockPrefs) {
         const key = `user:${pref.user_id}:${pref.preference_key}`;
-        this.cache.set(key, {
+        this?.cache?.set(key, {
           key,
           value: pref.preference_value,
           ttl: Date.now() + 1800000,
@@ -217,7 +217,7 @@ export class CacheWarmer {
         });
       }
 
-      return mockPrefs.length;
+      return mockPrefs?.length || 0;
     }
   }
 
@@ -243,13 +243,13 @@ export class CacheWarmer {
     if (expired > 0) {
       for (const [key, item] of this.cache) {
         if (item.ttl < now) {
-          this.cache.delete(key);
+          this?.cache?.delete(key);
         }
       }
     }
 
     return {
-      totalItems: this.cache.size,
+      totalItems: this?.cache?.size,
       active,
       expired,
       categories,
@@ -266,17 +266,17 @@ export class CacheWarmer {
     if (category) {
       for (const [key, item] of this.cache) {
         if (item.category === category) {
-          this.cache.delete(key);
+          this?.cache?.delete(key);
           cleared++;
         }
       }
     } else {
-      cleared = this.cache.size;
-      this.cache.clear();
+      cleared = this?.cache?.size;
+      this?.cache?.clear();
     }
 
     logger.info(`Cleared ${cleared} items from cache`, "CACHE_WARMER");
-    return { cleared, remaining: this.cache.size };
+    return { cleared, remaining: this?.cache?.size };
   }
 
   /**
@@ -313,7 +313,7 @@ export class CacheWarmer {
    * Get cached value
    */
   getCached(key: string): any {
-    const item = this.cache.get(key);
+    const item = this?.cache?.get(key);
     if (item && item.ttl > Date.now()) {
       item.lastAccessed = new Date();
       return item.value;
@@ -325,7 +325,7 @@ export class CacheWarmer {
    * Set cached value
    */
   setCached(key: string, value: any, ttl: number = 300000, category: string = "general") {
-    this.cache.set(key, {
+    this?.cache?.set(key, {
       key,
       value,
       ttl: Date.now() + ttl,

@@ -62,14 +62,14 @@ async function createSampleData(dbManager: any, groceryService: any) {
 
   try {
     // Check if sample data already exists
-    const existingUsers = await dbManager.users.count();
+    const existingUsers = await dbManager?.users?.count();
     if (existingUsers > 1) {
       logger.info("Sample data already exists, skipping...", "GROCERY_INIT");
       return;
     }
 
     // Create a test user
-    const testUser = await dbManager.users.createUser({
+    const testUser = await dbManager?.users?.createUser({
       email: "grocery.test@crewai-team.local",
       name: "Grocery Test User",
       role: "user",
@@ -186,10 +186,10 @@ async function createSampleData(dbManager: any, groceryService: any) {
     ];
 
     for (const product of sampleProducts) {
-      await dbManager.walmartProducts.upsertProduct(product);
+      await dbManager?.walmartProducts?.upsertProduct(product);
     }
     logger.info(
-      `Created ${sampleProducts.length} sample products`,
+      `Created ${sampleProducts?.length || 0} sample products`,
       "GROCERY_INIT",
     );
 
@@ -210,7 +210,7 @@ async function createSampleData(dbManager: any, groceryService: any) {
     logger.info(`Created sample grocery list: ${list.id}`, "GROCERY_INIT");
 
     // Create a recurring list template
-    const recurringList = await dbManager.groceryLists.createList({
+    const recurringList = await dbManager?.groceryLists?.createList({
       user_id: testUser.id,
       list_name: "Essentials Template",
       description: "Recurring items bought every week",
@@ -226,7 +226,7 @@ async function createSampleData(dbManager: any, groceryService: any) {
     // Add items to recurring list
     const essentialItems = ["Milk", "Bread", "Eggs", "Bananas", "Yogurt"];
     for (const itemName of essentialItems) {
-      await dbManager.groceryItems.addItem({
+      await dbManager?.groceryItems?.addItem({
         list_id: recurringList.id,
         item_name: itemName,
         quantity: 1,
@@ -255,7 +255,7 @@ if (require.main === module) {
       );
       process.exit(0);
     })
-    .catch((error) => {
+    .catch((error: any) => {
       logger.error(`Script failed: ${error}`, "GROCERY_INIT");
       process.exit(1);
     });

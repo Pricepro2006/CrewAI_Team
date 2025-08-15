@@ -108,9 +108,9 @@ describe("MasterOrchestrator Basic Tests", () => {
       expect(response).toBeDefined();
       expect(response.success).toBe(true);
       expect(response.summary).toBeDefined();
-      expect(response.summary.toLowerCase()).toContain("hello");
+      expect(response?.summary?.toLowerCase()).toContain("hello");
       expect(response.results).toBeDefined();
-      expect(response.results.length).toBeGreaterThan(0);
+      expect(response?.results?.length).toBeGreaterThan(0);
     });
 
     it("should handle query metadata", async () => {
@@ -180,7 +180,7 @@ describe("MasterOrchestrator Basic Tests", () => {
       expect(plan.id).toMatch(/^plan-/);
       expect(plan.metadata?.goal).toBe(query.text);
       expect(plan.steps).toBeInstanceOf(Array);
-      expect(plan.steps.length).toBeGreaterThan(0);
+      expect(plan?.steps?.length).toBeGreaterThan(0);
       expect(plan.metadata?.status).toBe("pending");
 
       // Verify task structure
@@ -194,7 +194,7 @@ describe("MasterOrchestrator Basic Tests", () => {
   describe("Agent Registry", () => {
     it("should have access to agent registry", () => {
       expect(orchestrator.agentRegistry).toBeDefined();
-      expect(orchestrator.agentRegistry.getAgent).toBeDefined();
+      expect(orchestrator?.agentRegistry?.getAgent).toBeDefined();
     });
   });
 
@@ -215,7 +215,7 @@ describe("MasterOrchestrator Basic Tests", () => {
       const allTables = tables.rows || [];
 
       expect(allTables).toBeDefined();
-      expect(allTables.length).toBeGreaterThanOrEqual(0);
+      expect(allTables?.length || 0).toBeGreaterThanOrEqual(0);
     });
   });
 
@@ -279,7 +279,7 @@ describe("MasterOrchestrator Basic Tests", () => {
 
       expect(response).toBeDefined();
       expect(response.success).toBeDefined();
-      expect(response.summary.toLowerCase()).toContain("test");
+      expect(response?.summary?.toLowerCase()).toContain("test");
     });
   });
 });

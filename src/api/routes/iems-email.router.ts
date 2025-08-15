@@ -14,7 +14,7 @@ import { wsService } from "../services/WebSocketService.js";
 const iemsDataService = IEMSDataService.getInstance();
 
 // Initialize service on startup
-iemsDataService.initialize().catch((error) => {
+iemsDataService.initialize().catch((error: any) => {
   logger.error("Failed to initialize IEMS Data Service", "IEMS_ROUTER", error);
 });
 
@@ -275,35 +275,35 @@ export const iemsEmailRouter = router({
       return {
         totalEmails: categorizedEmails.totalCount,
         byCategory: {
-          "email-alias": categorizedEmails.emailAlias.length,
-          "marketing-splunk": categorizedEmails.marketingSplunk.length,
-          "vmware-tdsynnex": categorizedEmails.vmwareTDSynnex.length,
+          "email-alias": categorizedEmails?.emailAlias?.length,
+          "marketing-splunk": categorizedEmails?.marketingSplunk?.length,
+          "vmware-tdsynnex": categorizedEmails?.vmwareTDSynnex?.length,
         },
         byStatus: {
           red: [
             ...categorizedEmails.emailAlias,
             ...categorizedEmails.marketingSplunk,
             ...categorizedEmails.vmwareTDSynnex,
-          ].filter((e) => e.status === "red").length,
+          ].filter((e: any) => e.status === "red").length,
           yellow: [
             ...categorizedEmails.emailAlias,
             ...categorizedEmails.marketingSplunk,
             ...categorizedEmails.vmwareTDSynnex,
-          ].filter((e) => e.status === "yellow").length,
+          ].filter((e: any) => e.status === "yellow").length,
           green: [
             ...categorizedEmails.emailAlias,
             ...categorizedEmails.marketingSplunk,
             ...categorizedEmails.vmwareTDSynnex,
-          ].filter((e) => e.status === "green").length,
+          ].filter((e: any) => e.status === "green").length,
         },
         avgResponseTime: 0, // TODO: Calculate from data
         urgentCount: [
           ...categorizedEmails.emailAlias,
           ...categorizedEmails.marketingSplunk,
           ...categorizedEmails.vmwareTDSynnex,
-        ].filter((e) => e.status === "red").length,
-        pendingAssignments: categorizedEmails.marketingSplunk.filter(
-          (e) => !e.assignedTo,
+        ].filter((e: any) => e.status === "red").length,
+        pendingAssignments: categorizedEmails?.marketingSplunk?.filter(
+          (e: any) => !e.assignedTo,
         ).length,
       };
     } catch (error) {

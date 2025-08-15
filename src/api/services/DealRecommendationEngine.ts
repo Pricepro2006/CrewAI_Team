@@ -119,7 +119,7 @@ export class DealRecommendationEngine {
   private initializeTables(): void {
     try {
       // Price history table
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS price_history (
           id TEXT PRIMARY KEY,
           product_id TEXT NOT NULL,
@@ -134,7 +134,7 @@ export class DealRecommendationEngine {
       `);
 
       // Deal alerts table
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS deal_alerts (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
@@ -151,7 +151,7 @@ export class DealRecommendationEngine {
       `);
 
       // Seasonal patterns cache
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS seasonal_patterns (
           category TEXT NOT NULL,
           month INTEGER NOT NULL,
@@ -163,12 +163,12 @@ export class DealRecommendationEngine {
       `);
 
       // Create indexes
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE INDEX IF NOT EXISTS idx_price_history_product_date 
         ON price_history(product_id, recorded_at DESC)
       `);
 
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE INDEX IF NOT EXISTS idx_deal_alerts_user_active 
         ON deal_alerts(user_id, is_active)
       `);
@@ -193,7 +193,7 @@ export class DealRecommendationEngine {
       let userHistory: ProductFrequency[] = [];
       if (options.userId) {
         try {
-          userHistory = await this.historyService.getProductFrequency(options.userId);
+          userHistory = await this?.historyService?.getProductFrequency(options.userId);
         } catch (error) {
           logger.warn("Could not fetch user history for deals", "DEAL_ENGINE", { error });
         }
@@ -226,19 +226,19 @@ export class DealRecommendationEngine {
       let filteredDeals = scoredDeals;
 
       if (options.minSavings !== undefined) {
-        filteredDeals = filteredDeals.filter(deal => deal.savings >= options.minSavings!);
+        filteredDeals = filteredDeals?.filter(deal => deal.savings >= options.minSavings!);
       }
 
       if (options.minSavingsPercentage !== undefined) {
-        filteredDeals = filteredDeals.filter(deal => deal.savingsPercentage >= options.minSavingsPercentage!);
+        filteredDeals = filteredDeals?.filter(deal => deal.savingsPercentage >= options.minSavingsPercentage!);
       }
 
       if (options.dealTypes?.length) {
-        filteredDeals = filteredDeals.filter(deal => options.dealTypes!.includes(deal.dealType));
+        filteredDeals = filteredDeals?.filter(deal => options.dealTypes!.includes(deal.dealType));
       }
 
       if (options.priceRange) {
-        filteredDeals = filteredDeals.filter(deal => 
+        filteredDeals = filteredDeals?.filter(deal => 
           deal.currentPrice >= options.priceRange!.min && 
           deal.currentPrice <= options.priceRange!.max
         );
@@ -258,8 +258,8 @@ export class DealRecommendationEngine {
       }
 
       logger.info("Deal discovery completed", "DEAL_ENGINE", {
-        totalFound: deals.length,
-        afterFiltering: finalDeals.length,
+        totalFound: deals?.length || 0,
+        afterFiltering: finalDeals?.length || 0,
         userId: options.userId
       });
 
@@ -278,12 +278,12 @@ export class DealRecommendationEngine {
     try {
       const now = new Date().toISOString();
       const price = this.getNumericPrice(product.price);
-      const salePrice = typeof product.price === 'object' ? product.price.sale : undefined;
-      const wasPrice = typeof product.price === 'object' ? product.price.wasPrice : undefined;
+      const salePrice = typeof product.price === 'object' ? product?.price?.sale : undefined;
+      const wasPrice = typeof product.price === 'object' ? product?.price?.wasPrice : undefined;
       const source = 'product_data';
       const location = 'store';
 
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT INTO price_history (id, product_id, price, sale_price, was_price, store_location, recorded_at, source, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
@@ -302,7 +302,7 @@ export class DealRecommendationEngine {
    */
   async analyzePriceTrends(productId: string, days: number = 30): Promise<PriceTrend | null> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT price, recorded_at, source
         FROM price_history
         WHERE product_id = ? AND recorded_at >= datetime('now', '-${days} days')
@@ -311,18 +311,18 @@ export class DealRecommendationEngine {
 
       const history = stmt.all(productId);
 
-      if (history.length < 3) {
+      if (history?.length || 0 < 3) {
         return null; // Need at least 3 data points
       }
 
-      const priceHistory = history.map((row: any) => ({
+      const priceHistory = history?.map((row: any) => ({
         price: row.price,
         date: row.recorded_at,
         source: row.source
       }));
 
       // Calculate trend direction
-      const prices = priceHistory.map(h => h.price);
+      const prices = priceHistory?.map(h => h.price);
       const trendDirection = this.calculateTrendDirection(prices);
       const volatilityScore = this.calculateVolatility(prices);
       const predictedNextPrice = this.predictNextPrice(prices);
@@ -353,23 +353,23 @@ export class DealRecommendationEngine {
     const deals: Deal[] = [];
 
     // Focus on products from user history first
-    const targetProducts = userHistory.length > 0 ? userHistory.slice(0, 10) : [];
+    const targetProducts = userHistory?.length || 0 > 0 ? userHistory.slice(0, 10) : [];
 
     for (const historyItem of targetProducts) {
       try {
         // Get current price
-        const searchResults = await this.priceFetcher.searchProductsWithPrices(
+        const searchResults = await this?.priceFetcher?.searchProductsWithPrices(
           historyItem.productName,
           { zipCode: '29301', city: 'Spartanburg', state: 'SC' },
           1
         );
 
-        if (searchResults && searchResults.length > 0) {
+        if (searchResults && searchResults?.length || 0 > 0) {
           const product = searchResults[0];
           if (!product) continue;
           
           const currentPrice = this.getNumericPrice(product.price);
-          const averageHistoricalPrice = historyItem.averagePrice;
+          const averageHistoricalPrice = historyItem?.averagePrice;
 
           // Calculate savings
           if (currentPrice > 0 && averageHistoricalPrice > currentPrice) {
@@ -419,19 +419,19 @@ export class DealRecommendationEngine {
     const deals: Deal[] = [];
 
     // Focus on frequently purchased items
-    const frequentItems = userHistory.filter(item => 
+    const frequentItems = userHistory?.filter(item => 
       item.purchaseCount >= 3 && item.frequency === 'weekly' || item.frequency === 'monthly'
     ).slice(0, 5);
 
     for (const item of frequentItems) {
       try {
-        const searchResults = await this.priceFetcher.searchProductsWithPrices(
+        const searchResults = await this?.priceFetcher?.searchProductsWithPrices(
           item.productName,
           { zipCode: '29301', city: 'Spartanburg', state: 'SC' },
           3 // Get multiple size options
         );
 
-        if (searchResults && searchResults.length >= 2) {
+        if (searchResults && searchResults?.length || 0 >= 2) {
           // Find bulk opportunities by comparing different sizes
           const sorted = searchResults.sort((a, b) => {
             const priceA = this.getNumericPrice(a.price);
@@ -440,7 +440,7 @@ export class DealRecommendationEngine {
           });
 
           const smallest = sorted[0];
-          const largest = sorted[sorted.length - 1];
+          const largest = sorted[sorted?.length || 0 - 1];
 
           if (!smallest || !largest) continue;
 
@@ -521,11 +521,11 @@ export class DealRecommendationEngine {
     };
 
     for (const [category, info] of Object.entries(seasonalCategories)) {
-      if (info.offPeakMonths.includes(currentMonth)) {
+      if (info?.offPeakMonths?.includes(currentMonth)) {
         // This category should have deals during off-peak
         for (const item of info.items) {
           try {
-            const searchResults = await this.priceFetcher.searchProductsWithPrices(
+            const searchResults = await this?.priceFetcher?.searchProductsWithPrices(
               item,
               { zipCode: '29301', city: 'Spartanburg', state: 'SC' },
               2
@@ -581,8 +581,8 @@ export class DealRecommendationEngine {
     const deals: Deal[] = [];
 
     // Focus on name brand items from history
-    const nameBrandItems = userHistory.filter(item => {
-      const name = item.productName.toLowerCase();
+    const nameBrandItems = userHistory?.filter(item => {
+      const name = item?.productName?.toLowerCase();
       const storeBrands = ['great value', 'walmart', 'equate', 'marketside'];
       return !storeBrands.some(brand => name.includes(brand));
     }).slice(0, 5);
@@ -590,19 +590,19 @@ export class DealRecommendationEngine {
     for (const item of nameBrandItems) {
       try {
         // Search for store brand alternative
-        const storeBrandQuery = `great value ${item.productName.split(' ').slice(-2).join(' ')}`;
-        const searchResults = await this.priceFetcher.searchProductsWithPrices(
+        const storeBrandQuery = `great value ${item?.productName?.split(' ').slice(-2).join(' ')}`;
+        const searchResults = await this?.priceFetcher?.searchProductsWithPrices(
           storeBrandQuery,
           { zipCode: '29301', city: 'Spartanburg', state: 'SC' },
           1
         );
 
-        if (searchResults && searchResults.length > 0) {
+        if (searchResults && searchResults?.length || 0 > 0) {
           const storeBrandProduct = searchResults[0];
           if (!storeBrandProduct) continue;
           
           const storeBrandPrice = this.getNumericPrice(storeBrandProduct.price);
-          const originalPrice = item.averagePrice;
+          const originalPrice = item?.averagePrice;
 
           if (storeBrandPrice > 0 && originalPrice > storeBrandPrice) {
             const savings = originalPrice - storeBrandPrice;
@@ -659,7 +659,7 @@ export class DealRecommendationEngine {
    */
   private deduplicateDeals(deals: Deal[]): Deal[] {
     const seen = new Set<string>();
-    return deals.filter(deal => {
+    return deals?.filter(deal => {
       if (seen.has(deal.productId)) {
         return false;
       }
@@ -680,10 +680,10 @@ export class DealRecommendationEngine {
       let score = deal.dealScore;
 
       // Boost score based on user history
-      const productName = deal.product.name || '';
+      const productName = deal?.product?.name || '';
       const firstWord = productName.toLowerCase().split(' ')[0] || '';
       const userItem = userHistory.find(h => 
-        firstWord && h.productName.toLowerCase().includes(firstWord)
+        firstWord && h?.productName?.toLowerCase().includes(firstWord)
       );
 
       if (userItem) {
@@ -740,10 +740,10 @@ export class DealRecommendationEngine {
     userHistory: ProductFrequency[]
   ): Promise<void> {
     for (const deal of deals) {
-      const productName = deal.product.name || '';
+      const productName = deal?.product?.name || '';
       const firstWord = productName.toLowerCase().split(' ')[0] || '';
       const userItem = userHistory.find(h => 
-        firstWord && h.productName.toLowerCase().includes(firstWord)
+        firstWord && h?.productName?.toLowerCase().includes(firstWord)
       );
 
       if (userItem) {
@@ -792,13 +792,13 @@ export class DealRecommendationEngine {
   // Helper methods for price trend analysis
 
   private calculateTrendDirection(prices: number[]): 'rising' | 'falling' | 'stable' | 'volatile' {
-    if (prices.length < 3) return 'stable';
+    if (prices?.length || 0 < 3) return 'stable';
 
-    const firstHalf = prices.slice(0, Math.floor(prices.length / 2));
-    const secondHalf = prices.slice(Math.floor(prices.length / 2));
+    const firstHalf = prices.slice(0, Math.floor(prices?.length || 0 / 2));
+    const secondHalf = prices.slice(Math.floor(prices?.length || 0 / 2));
 
-    const firstAvg = firstHalf.reduce((sum, p) => sum + p, 0) / firstHalf.length;
-    const secondAvg = secondHalf.reduce((sum, p) => sum + p, 0) / secondHalf.length;
+    const firstAvg = firstHalf.reduce((sum: any, p: any) => sum + p, 0) / firstHalf?.length || 0;
+    const secondAvg = secondHalf.reduce((sum: any, p: any) => sum + p, 0) / secondHalf?.length || 0;
 
     const percentChange = Math.abs((secondAvg - firstAvg) / firstAvg) * 100;
     const direction = secondAvg > firstAvg ? 'rising' : 'falling';
@@ -816,26 +816,26 @@ export class DealRecommendationEngine {
   }
 
   private calculateVolatility(prices: number[]): number {
-    if (prices.length < 2) return 0;
+    if (prices?.length || 0 < 2) return 0;
 
-    const mean = prices.reduce((sum, p) => sum + p, 0) / prices.length;
-    const variance = prices.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / prices.length;
+    const mean = prices.reduce((sum: any, p: any) => sum + p, 0) / prices?.length || 0;
+    const variance = prices.reduce((sum: any, p: any) => sum + Math.pow(p - mean, 2), 0) / prices?.length || 0;
     const standardDeviation = Math.sqrt(variance);
 
     return mean > 0 ? standardDeviation / mean : 0; // Coefficient of variation
   }
 
   private predictNextPrice(prices: number[]): number {
-    if (prices.length === 0) return 0;
-    if (prices.length < 3) return prices[prices.length - 1] || 0;
+    if (prices?.length || 0 === 0) return 0;
+    if (prices?.length || 0 < 3) return prices[prices?.length || 0 - 1] || 0;
 
     // Simple linear regression for prediction
-    const n = prices.length;
+    const n = prices?.length || 0;
     const x = Array.from({ length: n }, (_, i) => i);
-    const sumX = x.reduce((sum, val) => sum + val, 0);
-    const sumY = prices.reduce((sum, val) => sum + val, 0);
+    const sumX = x.reduce((sum: any, val: any) => sum + val, 0);
+    const sumY = prices.reduce((sum: any, val: any) => sum + val, 0);
     const sumXY = x.reduce((sum, val, i) => sum + val * (prices[i] || 0), 0);
-    const sumXX = x.reduce((sum, val) => sum + val * val, 0);
+    const sumXX = x.reduce((sum: any, val: any) => sum + val * val, 0);
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
     const intercept = (sumY - slope * sumX) / n;

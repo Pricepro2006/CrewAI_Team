@@ -86,7 +86,7 @@ export class CircuitBreaker extends EventEmitter {
   }
 
   private shouldAttemptReset(): boolean {
-    return this.nextAttempt ? Date.now() >= this.nextAttempt.getTime() : false;
+    return this.nextAttempt ? Date.now() >= this?.nextAttempt?.getTime() : false;
   }
 
   private transitionToHalfOpen(): void {
@@ -98,7 +98,7 @@ export class CircuitBreaker extends EventEmitter {
   private transitionToOpen(): void {
     logger.warn(`Circuit breaker ${this.name} opened due to failures`, "CIRCUIT_BREAKER");
     this.state = CircuitState.OPEN;
-    this.nextAttempt = new Date(Date.now() + this.options.timeout!);
+    this.nextAttempt = new Date(Date.now() + this?.options?.timeout!);
     this.emit('stateChange', { name: this.name, state: CircuitState.OPEN });
 
     // Set timer to try half-open
@@ -107,7 +107,7 @@ export class CircuitBreaker extends EventEmitter {
     }
     this.halfOpenTimer = setTimeout(() => {
       this.transitionToHalfOpen();
-    }, this.options.timeout!);
+    }, this?.options?.timeout!);
   }
 
   private transitionToClosed(): void {
@@ -122,10 +122,10 @@ export class CircuitBreaker extends EventEmitter {
     this.rejections++;
     this.emit('rejection', { name: this.name });
 
-    if (this.options.fallback) {
+    if (this?.options?.fallback) {
       try {
         this.fallbacks++;
-        const result = await this.options.fallback();
+        const result = await this?.options?.fallback();
         this.emit('fallback', { name: this.name });
         return result;
       } catch (fallbackError) {
@@ -156,7 +156,7 @@ export class CircuitBreaker extends EventEmitter {
 
     logger.warn(`Circuit breaker ${this.name} recorded failure`, "CIRCUIT_BREAKER", {
       failures: this.failures,
-      threshold: this.options.threshold,
+      threshold: this?.options?.threshold,
       error: error?.message
     });
 
@@ -172,16 +172,16 @@ export class CircuitBreaker extends EventEmitter {
 
   private shouldOpen(): boolean {
     // Check absolute threshold
-    if (this.failures >= this.options.threshold!) {
+    if (this.failures >= this?.options?.threshold!) {
       return true;
     }
 
     // Check percentage threshold with volume threshold
-    const totalRequests = this.requests.length;
-    if (totalRequests >= this.options.volumeThreshold!) {
-      const recentFailures = this.requests.filter(r => !r.success).length;
+    const totalRequests = this?.requests?.length;
+    if (totalRequests >= this?.options?.volumeThreshold!) {
+      const recentFailures = this?.requests?.filter(r => !r.success).length;
       const errorRate = (recentFailures / totalRequests) * 100;
-      return errorRate >= this.options.errorThresholdPercentage!;
+      return errorRate >= this?.options?.errorThresholdPercentage!;
     }
 
     return false;
@@ -189,28 +189,28 @@ export class CircuitBreaker extends EventEmitter {
 
   private recordRequest(success: boolean): void {
     const now = Date.now();
-    this.requests.push({ timestamp: now, success });
+    this?.requests?.push({ timestamp: now, success });
 
     // Keep only recent requests (last 60 seconds)
     const cutoff = now - 60000;
-    this.requests = this.requests.filter(r => r.timestamp > cutoff);
+    this.requests = this?.requests?.filter(r => r.timestamp > cutoff);
   }
 
   private startResetTimer(): void {
     this.resetTimer = setInterval(() => {
       this.resetStatistics();
-    }, this.options.resetTimeout!);
+    }, this?.options?.resetTimeout!);
   }
 
   private resetStatistics(): void {
     const now = Date.now();
-    const cutoff = now - this.options.resetTimeout!;
+    const cutoff = now - this?.options?.resetTimeout!;
     
     // Keep only recent requests
-    this.requests = this.requests.filter(r => r.timestamp > cutoff);
+    this.requests = this?.requests?.filter(r => r.timestamp > cutoff);
     
     // Reset counters if circuit is closed and stable
-    if (this.state === CircuitState.CLOSED && this.requests.length === 0) {
+    if (this.state === CircuitState.CLOSED && this?.requests?.length === 0) {
       this.failures = 0;
       this.successes = 0;
       this.rejections = 0;
@@ -219,8 +219,8 @@ export class CircuitBreaker extends EventEmitter {
   }
 
   getStats(): CircuitStats {
-    const totalRequests = this.requests.length;
-    const recentFailures = this.requests.filter(r => !r.success).length;
+    const totalRequests = this?.requests?.length;
+    const recentFailures = this?.requests?.filter(r => !r.success).length;
     const errorRate = totalRequests > 0 ? (recentFailures / totalRequests) * 100 : 0;
 
     return {
@@ -272,12 +272,12 @@ export class CircuitBreakerManager {
   }
 
   create(name: string, options: CircuitBreakerOptions = {}): CircuitBreaker {
-    if (this.breakers.has(name)) {
-      return this.breakers.get(name)!;
+    if (this?.breakers?.has(name)) {
+      return this?.breakers?.get(name)!;
     }
 
     const breaker = new CircuitBreaker(name, options);
-    this.breakers.set(name, breaker);
+    this?.breakers?.set(name, breaker);
 
     // Log state changes
     breaker.on('stateChange', ({ name, state }) => {
@@ -288,7 +288,7 @@ export class CircuitBreakerManager {
   }
 
   get(name: string): CircuitBreaker | undefined {
-    return this.breakers.get(name);
+    return this?.breakers?.get(name);
   }
 
   getAll(): Map<string, CircuitBreaker> {
@@ -304,23 +304,23 @@ export class CircuitBreakerManager {
   }
 
   reset(name: string): void {
-    const breaker = this.breakers.get(name);
+    const breaker = this?.breakers?.get(name);
     if (breaker) {
       breaker.reset();
     }
   }
 
   resetAll(): void {
-    for (const breaker of this.breakers.values()) {
+    for (const breaker of this?.breakers?.values()) {
       breaker.reset();
     }
   }
 
   dispose(): void {
-    for (const breaker of this.breakers.values()) {
+    for (const breaker of this?.breakers?.values()) {
       breaker.dispose();
     }
-    this.breakers.clear();
+    this?.breakers?.clear();
   }
 }
 

@@ -117,13 +117,13 @@ export class AgentRouter {
     const capabilities = baseCapabilities[agentType] || ["general_processing"];
 
     // Add domain-specific capabilities based on analysis
-    if (analysis.resourceRequirements.requiresInternet) {
+    if (analysis?.resourceRequirements?.requiresInternet) {
       capabilities.push("internet_access");
     }
-    if (analysis.resourceRequirements.requiresDatabase) {
+    if (analysis?.resourceRequirements?.requiresDatabase) {
       capabilities.push("database_access");
     }
-    if (analysis.resourceRequirements.requiresVector) {
+    if (analysis?.resourceRequirements?.requiresVector) {
       capabilities.push("vector_search");
     }
 

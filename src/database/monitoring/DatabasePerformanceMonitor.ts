@@ -68,13 +68,13 @@ export class DatabasePerformanceMonitor extends EventEmitter {
    */
   private setupMonitoring(): void {
     // Override database prepare method to track queries
-    const originalPrepare = this.db.prepare.bind(this.db);
+    const originalPrepare = this?.db?.prepare.bind(this.db);
 
     (this.db as any).prepare = (sql: string) => {
       const statement = originalPrepare(sql);
-      const originalRun = statement.run.bind(statement);
-      const originalGet = statement.get.bind(statement);
-      const originalAll = statement.all.bind(statement);
+      const originalRun = statement?.run?.bind(statement);
+      const originalGet = statement?.get?.bind(statement);
+      const originalAll = statement?.all?.bind(statement);
 
       // Track run operations
       statement.run = (...args: any[]) => {
@@ -107,7 +107,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
         const start = Date.now();
         try {
           const result = originalAll(...args);
-          this.recordQuery(sql, Date.now() - start, 0, result.length);
+          this.recordQuery(sql, Date.now() - start, 0, result?.length || 0);
           return result;
         } catch (error) {
           this.recordError(sql, error as Error);
@@ -174,24 +174,24 @@ export class DatabasePerformanceMonitor extends EventEmitter {
     };
 
     // Add to history (keep last 1000 queries)
-    this.queryHistory.push(queryMetric);
-    if (this.queryHistory.length > 1000) {
-      this.queryHistory.shift();
+    this?.queryHistory?.push(queryMetric);
+    if (this?.queryHistory?.length > 1000) {
+      this?.queryHistory?.shift();
     }
 
     // Check for slow queries
-    if (duration > this.thresholds.slowQueryMs) {
-      this.slowQueryLog.push(queryMetric);
+    if (duration > this?.thresholds?.slowQueryMs) {
+      this?.slowQueryLog?.push(queryMetric);
 
-      if (duration > this.thresholds.criticalQueryMs) {
+      if (duration > this?.thresholds?.criticalQueryMs) {
         this.emit("critical-query", queryMetric);
         logger.error("Critical slow query detected", "DB_MONITOR", {
-          query: queryMetric.query.substring(0, 100),
+          query: queryMetric?.query?.substring(0, 100),
           duration,
         });
       } else {
         logger.warn("Slow query detected", "DB_MONITOR", {
-          query: queryMetric.query.substring(0, 100),
+          query: queryMetric?.query?.substring(0, 100),
           duration,
         });
       }
@@ -223,7 +223,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
       const stats = await this.collectStats();
 
       // Check thresholds
-      if (stats.cacheHitRate < this.thresholds.cacheHitRateWarning) {
+      if (stats.cacheHitRate < this?.thresholds?.cacheHitRateWarning) {
         logger.warn("Low cache hit rate", "DB_MONITOR", {
           cacheHitRate: stats.cacheHitRate,
         });
@@ -249,9 +249,9 @@ export class DatabasePerformanceMonitor extends EventEmitter {
    */
   async collectStats(): Promise<DatabaseStats> {
     const stats: DatabaseStats = {
-      totalQueries: this.queryHistory.length,
+      totalQueries: this?.queryHistory?.length,
       avgQueryTime: this.calculateAvgQueryTime(),
-      slowQueries: this.slowQueryLog.length,
+      slowQueries: this?.slowQueryLog?.length,
       errorCount: 0, // Would need to track this
       cacheHitRate: await this.getCacheHitRate(),
       tableStats: await this.getTableStats(),
@@ -269,10 +269,10 @@ export class DatabasePerformanceMonitor extends EventEmitter {
    * Calculate average query time
    */
   private calculateAvgQueryTime(): number {
-    if (this.queryHistory.length === 0) return 0;
+    if (this?.queryHistory?.length === 0) return 0;
 
-    const total = this.queryHistory.reduce((sum, q) => sum + q.duration, 0);
-    return total / this.queryHistory.length;
+    const total = this?.queryHistory?.reduce((sum: any, q: any) => sum + q.duration, 0);
+    return total / this?.queryHistory?.length;
   }
 
   /**
@@ -280,7 +280,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
    */
   private async getCacheHitRate(): Promise<number> {
     try {
-      const result = this.db.prepare("PRAGMA cache_stats").get() as any;
+      const result = this?.db?.prepare("PRAGMA cache_stats").get() as any;
       if (result && result.hit && result.miss) {
         return result.hit / (result.hit + result.miss);
       }
@@ -308,7 +308,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
         .all() as any[];
 
       for (const table of tables) {
-        const tableName = table.name;
+        const tableName = table?.name;
 
         // Get row count
         const countResult = this.db
@@ -367,10 +367,10 @@ export class DatabasePerformanceMonitor extends EventEmitter {
       logger.info("Starting database optimization", "DB_MONITOR");
 
       // Run VACUUM to reclaim space
-      this.db.exec("VACUUM");
+      this?.db?.exec("VACUUM");
 
       // Analyze tables for query optimization
-      this.db.exec("ANALYZE");
+      this?.db?.exec("ANALYZE");
 
       // Rebuild indexes
       const indexes = this.db
@@ -382,7 +382,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
         .all() as any[];
 
       for (const index of indexes) {
-        this.db.exec(`REINDEX ${index.name}`);
+        this?.db?.exec(`REINDEX ${index.name}`);
       }
 
       logger.info("Database optimization completed", "DB_MONITOR");
@@ -401,9 +401,9 @@ export class DatabasePerformanceMonitor extends EventEmitter {
   exportReport(): any {
     const stats = {
       summary: {
-        totalQueries: this.queryHistory.length,
+        totalQueries: this?.queryHistory?.length,
         avgQueryTime: this.calculateAvgQueryTime(),
-        slowQueries: this.slowQueryLog.length,
+        slowQueries: this?.slowQueryLog?.length,
         monitoring: {
           started: this.isMonitoring,
           uptime: process.uptime(),
@@ -429,9 +429,9 @@ export class DatabasePerformanceMonitor extends EventEmitter {
       OTHER: 0,
     };
 
-    this.queryHistory.forEach((q) => {
+    this?.queryHistory?.forEach((q: any) => {
       const type = (
-        q.query.trim().split(" ")[0] || "OTHER"
+        q?.query?.trim().split(" ")[0] || "OTHER"
       ).toUpperCase() as keyof typeof distribution;
       if (type in distribution && type !== "OTHER") {
         (distribution as any)[type]++;
@@ -457,7 +457,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
     }
 
     const slowQueryRatio =
-      this.slowQueryLog.length / Math.max(this.queryHistory.length, 1);
+      this?.slowQueryLog?.length / Math.max(this?.queryHistory?.length, 1);
     if (slowQueryRatio > 0.1) {
       recommendations.push(
         "More than 10% of queries are slow. Review query optimization",

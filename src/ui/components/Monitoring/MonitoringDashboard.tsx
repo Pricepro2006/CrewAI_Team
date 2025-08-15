@@ -132,22 +132,22 @@ export const MonitoringDashboard: React.FC = () => {
     data: healthData,
     isLoading: healthLoading,
     refetch: refetchHealth,
-  } = trpc.monitoring.health.useQuery(undefined, {
+  } = trpc?.monitoring?.health.useQuery(undefined, {
     refetchInterval: autoRefresh ? refreshInterval : false,
   });
 
   const { data: detailedHealth, refetch: refetchDetailedHealth } =
-    trpc.monitoring.healthDetailed.useQuery(undefined, {
+    trpc?.monitoring?.healthDetailed.useQuery(undefined, {
       refetchInterval: autoRefresh ? refreshInterval : false,
     });
 
   const { data: metrics, refetch: refetchMetrics } =
-    trpc.monitoring.metrics.useQuery(undefined, {
+    trpc?.monitoring?.metrics.useQuery(undefined, {
       refetchInterval: autoRefresh ? refreshInterval : false,
     });
 
   const { data: errorStats, refetch: refetchErrors } =
-    trpc.monitoring.errorStats.useQuery(
+    trpc?.monitoring?.errorStats.useQuery(
       { window: 3600000 },
       {
         refetchInterval: autoRefresh ? refreshInterval : false,
@@ -155,7 +155,7 @@ export const MonitoringDashboard: React.FC = () => {
     );
 
   const { data: performanceStats, refetch: refetchPerformance } =
-    trpc.monitoring.performance.useQuery(
+    trpc?.monitoring?.performance.useQuery(
       { window: 300000 },
       {
         refetchInterval: autoRefresh ? refreshInterval : false,
@@ -163,14 +163,14 @@ export const MonitoringDashboard: React.FC = () => {
     );
 
   const { data: slowOps, refetch: refetchSlowOps } =
-    trpc.monitoring.slowOperations.useQuery(
+    trpc?.monitoring?.slowOperations.useQuery(
       { limit: 10 },
       {
         refetchInterval: autoRefresh ? refreshInterval : false,
       },
     );
 
-  const forceHealthCheck = trpc.monitoring.forceHealthCheck.useMutation({
+  const forceHealthCheck = trpc?.monitoring?.forceHealthCheck.useMutation({
     onSuccess: () => {
       refetchHealth();
       refetchDetailedHealth();
@@ -197,7 +197,7 @@ export const MonitoringDashboard: React.FC = () => {
 
   // Prepare chart data
   const errorSeverityData = errorStats
-    ? Object.entries(errorStats.stats.bySeverity).map(([severity, count]) => ({
+    ? Object.entries(errorStats?.stats?.bySeverity).map(([severity, count]) => ({
         name: severity.charAt(0).toUpperCase() + severity.slice(1),
         value: count,
         fill: severityColors[severity as keyof typeof severityColors],
@@ -272,27 +272,27 @@ export const MonitoringDashboard: React.FC = () => {
             }`}
           />
           <AlertTitle>
-            System Status: {healthData.status.toUpperCase()}
+            System Status: {healthData?.status?.toUpperCase()}
           </AlertTitle>
           <AlertDescription className="mt-2">
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <span className="font-medium">Healthy Services:</span>{" "}
-                {healthData.services.healthy}
+                {healthData?.services?.healthy}
               </div>
               <div>
                 <span className="font-medium">Degraded Services:</span>{" "}
-                {healthData.services.degraded}
+                {healthData?.services?.degraded}
               </div>
               <div>
                 <span className="font-medium">Unhealthy Services:</span>{" "}
-                {healthData.services.unhealthy}
+                {healthData?.services?.unhealthy}
               </div>
             </div>
-            {healthData.criticalServicesDown.length > 0 && (
+            {healthData?.criticalServicesDown?.length > 0 && (
               <div className="mt-2 text-red-600">
                 <span className="font-medium">Critical services down:</span>{" "}
-                {healthData.criticalServicesDown.join(", ")}
+                {healthData?.criticalServicesDown?.join(", ")}
               </div>
             )}
           </AlertDescription>
@@ -403,14 +403,14 @@ export const MonitoringDashboard: React.FC = () => {
             </CardContent>
           </Card>
 
-          {slowOps && slowOps.operations.length > 0 && (
+          {slowOps && slowOps?.operations?.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Slowest Operations</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {slowOps.operations.map((op: any, index: number) => (
+                  {slowOps?.operations?.map((op: any, index: number) => (
                     <div
                       key={index}
                       className="flex justify-between items-center p-2 bg-muted rounded"
@@ -443,10 +443,10 @@ export const MonitoringDashboard: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {errorStats.stats.total}
+                      {errorStats?.stats?.total}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {errorStats.stats.errorRate.toFixed(2)} errors/min
+                      {errorStats?.stats?.errorRate.toFixed(2)} errors/min
                     </div>
                   </CardContent>
                 </Card>
@@ -459,12 +459,12 @@ export const MonitoringDashboard: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="flex justify-between text-sm">
-                      <span>Handled: {errorStats.stats.handled}</span>
-                      <span>Unhandled: {errorStats.stats.unhandled}</span>
+                      <span>Handled: {errorStats?.stats?.handled}</span>
+                      <span>Unhandled: {errorStats?.stats?.unhandled}</span>
                     </div>
                     <Progress
                       value={
-                        (errorStats.stats.handled / errorStats.stats.total) *
+                        (errorStats?.stats?.handled / errorStats?.stats?.total) *
                         100
                       }
                       className="mt-2"
@@ -489,7 +489,7 @@ export const MonitoringDashboard: React.FC = () => {
                             paddingAngle={2}
                             dataKey="value"
                           >
-                            {errorSeverityData.map((entry, index) => (
+                            {errorSeverityData?.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
                           </Pie>
@@ -501,14 +501,14 @@ export const MonitoringDashboard: React.FC = () => {
                 </Card>
               </div>
 
-              {errorStats.stats.topErrors.length > 0 && (
+              {errorStats?.stats?.topErrors?.length || 0 > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Top Errors</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {errorStats.stats.topErrors.map((error, index) => (
+                      {errorStats?.stats?.topErrors?.map((error, index) => (
                         <div
                           key={index}
                           className="flex justify-between items-center p-2 bg-muted rounded"
@@ -549,23 +549,23 @@ export const MonitoringDashboard: React.FC = () => {
                       <div className="flex justify-between mb-1">
                         <span className="text-sm">Usage</span>
                         <span className="text-sm font-medium">
-                          {metrics.system.cpu.usage}%
+                          {metrics?.system?.cpu.usage}%
                         </span>
                       </div>
-                      <Progress value={parseFloat(metrics.system.cpu.usage)} />
+                      <Progress value={parseFloat(metrics?.system?.cpu.usage)} />
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       <div>
                         <span className="text-muted-foreground">1m:</span>{" "}
-                        {metrics.system.cpu.loadAverage["1m"]}
+                        {metrics?.system?.cpu.loadAverage["1m"]}
                       </div>
                       <div>
                         <span className="text-muted-foreground">5m:</span>{" "}
-                        {metrics.system.cpu.loadAverage["5m"]}
+                        {metrics?.system?.cpu.loadAverage["5m"]}
                       </div>
                       <div>
                         <span className="text-muted-foreground">15m:</span>{" "}
-                        {metrics.system.cpu.loadAverage["15m"]}
+                        {metrics?.system?.cpu.loadAverage["15m"]}
                       </div>
                     </div>
                   </div>
@@ -582,15 +582,15 @@ export const MonitoringDashboard: React.FC = () => {
                       <div className="flex justify-between mb-1">
                         <span className="text-sm">System Memory</span>
                         <span className="text-sm font-medium">
-                          {metrics.system.memory.usage}%
+                          {metrics?.system?.memory.usage}%
                         </span>
                       </div>
                       <Progress
-                        value={parseFloat(metrics.system.memory.usage)}
+                        value={parseFloat(metrics?.system?.memory.usage)}
                       />
                       <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                        <span>{metrics.system.memory.used} MB used</span>
-                        <span>{metrics.system.memory.total} MB total</span>
+                        <span>{metrics?.system?.memory.used} MB used</span>
+                        <span>{metrics?.system?.memory.total} MB total</span>
                       </div>
                     </div>
                     <div className="pt-2 border-t">
@@ -600,12 +600,12 @@ export const MonitoringDashboard: React.FC = () => {
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
                           <span className="text-muted-foreground">Heap:</span>{" "}
-                          {metrics.system.process.memory.heapUsed}/
-                          {metrics.system.process.memory.heapTotal} MB
+                          {metrics?.system?.process.memory.heapUsed}/
+                          {metrics?.system?.process.memory.heapTotal} MB
                         </div>
                         <div>
                           <span className="text-muted-foreground">RSS:</span>{" "}
-                          {metrics.system.process.memory.rss} MB
+                          {metrics?.system?.process.memory.rss} MB
                         </div>
                       </div>
                     </div>
@@ -622,12 +622,12 @@ export const MonitoringDashboard: React.FC = () => {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">PID:</span>
                       <span className="font-mono">
-                        {metrics.system.process.pid}
+                        {metrics?.system?.process.pid}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Uptime:</span>
-                      <span>{formatUptime(metrics.system.process.uptime)}</span>
+                      <span>{formatUptime(metrics?.system?.process.uptime)}</span>
                     </div>
                   </div>
                 </CardContent>

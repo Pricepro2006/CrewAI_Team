@@ -35,7 +35,7 @@ import type {
   FilterConfig,
   FilterOptions,
   StatusOption,
-} from "../../../types/email-dashboard.interfaces.js";
+} from "../../../types/email-dashboard?.interfaces.js";
 
 interface FilterPanelProps {
   filters: FilterConfig;
@@ -70,7 +70,7 @@ export function FilterPanel({
 
   const handleFilterChange = useCallback(
     (key: keyof FilterConfig, value: any) => {
-      setLocalFilters((prev) => ({
+      setLocalFilters((prev: any) => ({
         ...prev,
         [key]: value,
       }));
@@ -108,7 +108,7 @@ export function FilterPanel({
     (key: keyof FilterConfig, value: string) => {
       const currentValues = (localFilters[key] as string[]) || [];
       const newValues = currentValues.includes(value)
-        ? currentValues.filter((v) => v !== value)
+        ? currentValues?.filter((v: any) => v !== value)
         : [...currentValues, value];
       handleFilterChange(key, newValues);
     },
@@ -152,7 +152,7 @@ export function FilterPanel({
                 placeholder="Search emails..."
                 value={localFilters.search || ""}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  handleFilterChange("search", e.target.value)
+                  handleFilterChange("search", e?.target?.value)
                 }
               />
             </div>
@@ -166,7 +166,7 @@ export function FilterPanel({
                 Status
               </Label>
               <div className="space-y-2">
-                {filterOptions.statuses.map((status) => (
+                {filterOptions?.statuses?.map((status: any) => (
                   <div
                     key={status.value}
                     className="flex items-center space-x-2"
@@ -206,7 +206,7 @@ export function FilterPanel({
             <div className="space-y-2">
               <Label>Workflow State</Label>
               <div className="space-y-2">
-                {filterOptions.workflowStates.map((state) => (
+                {filterOptions?.workflowStates?.map((state: any) => (
                   <div key={state} className="flex items-center space-x-2">
                     <Checkbox
                       id={`workflow-${state}`}
@@ -236,7 +236,7 @@ export function FilterPanel({
             <div className="space-y-2">
               <Label>Priority</Label>
               <div className="space-y-2">
-                {filterOptions.priorities.map((priority) => (
+                {filterOptions?.priorities?.map((priority: any) => (
                   <div key={priority} className="flex items-center space-x-2">
                     <Checkbox
                       id={`priority-${priority}`}
@@ -279,7 +279,7 @@ export function FilterPanel({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All email aliases</SelectItem>
-                  {filterOptions.emailAliases.map((alias) => (
+                  {filterOptions?.emailAliases?.map((alias: any) => (
                     <SelectItem key={alias} value={alias}>
                       {alias}
                     </SelectItem>
@@ -305,7 +305,7 @@ export function FilterPanel({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All requesters</SelectItem>
-                  {filterOptions.requesters.map((requester) => (
+                  {filterOptions?.requesters?.map((requester: any) => (
                     <SelectItem key={requester} value={requester}>
                       {requester}
                     </SelectItem>
@@ -324,14 +324,14 @@ export function FilterPanel({
               </Label>
               <DateRangePicker
                 value={
-                  localFilters.dateRange.start || localFilters.dateRange.end
+                  localFilters?.dateRange?.start || localFilters?.dateRange?.end
                     ? {
-                        from: localFilters.dateRange.start || undefined,
-                        to: localFilters.dateRange.end || undefined,
+                        from: localFilters?.dateRange?.start || undefined,
+                        to: localFilters?.dateRange?.end || undefined,
                       }
                     : undefined
                 }
-                onChange={(dateRange) => {
+                onChange={(dateRange: any) => {
                   handleFilterChange("dateRange", {
                     start: dateRange?.from || null,
                     end: dateRange?.to || null,
@@ -384,7 +384,7 @@ export function FilterPanel({
             </div>
 
             {/* Tags Filter */}
-            {filterOptions.tags.length > 0 && (
+            {filterOptions?.tags?.length > 0 && (
               <>
                 <Separator />
                 <div className="space-y-2">
@@ -393,7 +393,7 @@ export function FilterPanel({
                     Tags
                   </Label>
                   <div className="flex flex-wrap gap-2">
-                    {filterOptions.tags.map((tag) => (
+                    {filterOptions?.tags?.map((tag: any) => (
                       <Badge
                         key={tag}
                         variant={

@@ -30,7 +30,7 @@ class AIAgentTeamSystem {
 
     // Initialize memory
     this.memoryManager = new MemoryManager();
-    await this.memoryManager.initialize();
+    await this?.memoryManager?.initialize();
 
     // Initialize agents
     this.agents = new Map([
@@ -51,13 +51,13 @@ class AIAgentTeamSystem {
 
     try {
       // Store query in memory
-      await this.memoryManager.storeQuery(query);
+      await this?.memoryManager?.storeQuery(query);
 
       // Process through orchestrator
-      const result = await this.orchestrator.processQuery(query);
+      const result = await this?.orchestrator?.processQuery(query);
 
       // Store result in memory
-      await this.memoryManager.storeResult(result);
+      await this?.memoryManager?.storeResult(result);
 
       console.log("✅ Query processed successfully!");
       return result;
@@ -116,7 +116,7 @@ class MasterOrchestrator {
     // Simulate /design --plan command
     const steps = [];
 
-    if (analysis.entities.includes("research")) {
+    if (analysis?.entities?.includes("research")) {
       steps.push({
         agent: "research",
         task: "gather_information",
@@ -124,7 +124,7 @@ class MasterOrchestrator {
       });
     }
 
-    if (analysis.entities.includes("code")) {
+    if (analysis?.entities?.includes("code")) {
       steps.push({
         agent: "code",
         task: "generate_implementation",
@@ -133,7 +133,7 @@ class MasterOrchestrator {
       });
     }
 
-    if (analysis.entities.includes("analysis")) {
+    if (analysis?.entities?.includes("analysis")) {
       steps.push({
         agent: "data",
         task: "analyze_results",
@@ -158,18 +158,18 @@ class MasterOrchestrator {
     for (const step of plan.steps) {
       console.log(`  → Executing ${step.agent} agent for ${step.task}...`);
 
-      const agent = this.agents.get(step.agent);
+      const agent = this?.agents?.get(step.agent);
       if (!agent) throw new Error(`Agent ${step.agent} not found`);
 
       const result = await agent.execute({
         task: step.task,
-        context: await this.memoryManager.getContext(step.agent),
+        context: await this?.memoryManager?.getContext(step.agent),
       });
 
       results.push(result);
 
       // Store intermediate result
-      await this.memoryManager.storeAgentResult(step.agent, result);
+      await this?.memoryManager?.storeAgentResult(step.agent, result);
     }
 
     return results;
@@ -311,7 +311,7 @@ class MemoryManager {
   async initialize() {
     console.log("  💾 Initializing memory system...");
     // Initialize with system entities
-    this.memory.set("system", {
+    this?.memory?.set("system", {
       name: "AIAgentTeamSystem",
       initialized: new Date(),
       agents: ["research", "code", "data", "writer"],
@@ -320,7 +320,7 @@ class MemoryManager {
 
   async storeQuery(query: string) {
     const queryId = `query_${Date.now()}`;
-    this.memory.set(queryId, {
+    this?.memory?.set(queryId, {
       query,
       timestamp: new Date(),
     });
@@ -328,18 +328,18 @@ class MemoryManager {
 
   async storeResult(result: any) {
     const resultId = `result_${Date.now()}`;
-    this.memory.set(resultId, result);
+    this?.memory?.set(resultId, result);
   }
 
   async storeAgentResult(agent: string, result: any) {
     const key = `${agent}_${Date.now()}`;
-    this.memory.set(key, result);
+    this?.memory?.set(key, result);
   }
 
   async getContext(agent: string): Promise<any> {
     // Get recent context for agent
     const context = [];
-    for (const [key, value] of this.memory.entries()) {
+    for (const [key, value] of this?.memory?.entries()) {
       if (key.startsWith(agent)) {
         context.push(value);
       }
@@ -359,7 +359,7 @@ async function runExample() {
   const system = new AIAgentTeamSystem();
 
   // Wait for initialization
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await new Promise((resolve: any) => setTimeout(resolve, 1000));
 
   // Example queries
   const queries = [

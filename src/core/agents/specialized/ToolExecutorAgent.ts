@@ -28,14 +28,14 @@ export class ToolExecutorAgent extends BaseAgent {
       return {
         success: true,
         data: {
-          toolsUsed: toolPlan.tools.map((t) => t.name),
+          toolsUsed: toolPlan?.tools?.map((t: any) => t.name),
           results,
           synthesis,
         },
         output: synthesis,
         metadata: {
           agent: this.name,
-          toolCount: toolPlan.tools.length,
+          toolCount: toolPlan?.tools?.length,
           executionTime: Date.now() - toolPlan.startTime,
           timestamp: new Date().toISOString(),
         },
@@ -54,10 +54,10 @@ export class ToolExecutorAgent extends BaseAgent {
     const prompt = `
       Create a tool execution plan for this task: "${task}"
       
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Available tools:
-      ${availableTools.map((t) => `- ${t.name}: ${t.description}`).join("\n")}
+      ${availableTools?.map((t: any) => `- ${t.name}: ${t.description}`).join("\n")}
       
       Determine:
       1. Which tools to use
@@ -79,8 +79,8 @@ export class ToolExecutorAgent extends BaseAgent {
       }
     `;
 
-    const responseResponse = await this.llm.generate(prompt, { format: "json" });
-    const response = responseResponse.response;
+    const responseResponse = await this?.llm?.generate(prompt, { format: "json" });
+    const response = responseResponse?.response;
     const parsed = this.parseToolPlan(response);
 
     return {
@@ -108,7 +108,7 @@ export class ToolExecutorAgent extends BaseAgent {
     const resolved: ToolSpec[] = [];
 
     for (const spec of toolSpecs) {
-      const tool = this.tools.get(spec.name);
+      const tool = this?.tools?.get(spec.name);
       if (tool) {
         resolved.push({
           name: spec.name,
@@ -131,20 +131,20 @@ export class ToolExecutorAgent extends BaseAgent {
 
     if (plan.parallel) {
       // Execute independent tools in parallel
-      const independentTools = plan.tools.filter(
-        (t) => t.dependsOn.length === 0,
+      const independentTools = plan?.tools?.filter(
+        (t: any) => t?.dependsOn?.length === 0,
       );
       const parallelResults = await Promise.all(
-        independentTools.map((spec) => this.executeTool(spec, context)),
+        independentTools?.map((spec: any) => this.executeTool(spec, context)),
       );
 
       results.push(...parallelResults);
-      independentTools.forEach((t) => completed.add(t.name));
+      independentTools.forEach((t: any) => completed.add(t.name));
 
       // Execute dependent tools
-      const dependentTools = plan.tools.filter((t) => t.dependsOn.length > 0);
+      const dependentTools = plan?.tools?.filter((t: any) => t?.dependsOn?.length > 0);
       for (const spec of dependentTools) {
-        if (spec.dependsOn.every((dep) => completed.has(dep))) {
+        if (spec?.dependsOn?.every((dep: any) => completed.has(dep))) {
           const result = await this.executeTool(spec, context, results);
           results.push(result);
           completed.add(spec.name);
@@ -176,7 +176,7 @@ export class ToolExecutorAgent extends BaseAgent {
       );
 
       // Execute tool
-      const result = await spec.tool.execute(enhancedParams);
+      const result = await spec?.tool?.execute(enhancedParams);
 
       return {
         toolName: spec.name,
@@ -203,26 +203,26 @@ export class ToolExecutorAgent extends BaseAgent {
     let enhanced = { ...spec.parameters };
 
     // Check if we need to use results from dependencies
-    if (spec.dependsOn.length > 0) {
+    if (spec?.dependsOn?.length > 0) {
       const prompt = `
         Enhance tool parameters based on previous results.
         
         Tool: ${spec.name}
         Current parameters: ${JSON.stringify(spec.parameters)}
         
-        ${context.ragDocuments ? `Context from knowledge base:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+        ${context.ragDocuments ? `Context from knowledge base:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
         
         Previous results from dependencies:
         ${previousResults
-          .filter((r) => spec.dependsOn.includes(r.toolName))
-          .map((r) => `${r.toolName}: ${JSON.stringify(r.result)}`)
+          .filter((r: any) => spec?.dependsOn?.includes(r.toolName))
+          .map((r: any) => `${r.toolName}: ${JSON.stringify(r.result)}`)
           .join("\n")}
         
         Provide enhanced parameters in JSON format.
       `;
 
-      const responseResponse = await this.llm.generate(prompt, { format: "json" });
-    const response = responseResponse.response;
+      const responseResponse = await this?.llm?.generate(prompt, { format: "json" });
+    const response = responseResponse?.response;
 
       try {
         enhanced = JSON.parse(response);
@@ -238,9 +238,9 @@ export class ToolExecutorAgent extends BaseAgent {
     results: ToolExecutionResult[],
     task: string,
   ): Promise<string> {
-    const successfulResults = results.filter((r) => r.success);
+    const successfulResults = results?.filter((r: any) => r.success);
 
-    if (successfulResults.length === 0) {
+    if (successfulResults?.length || 0 === 0) {
       return "No tools executed successfully.";
     }
 
@@ -250,7 +250,7 @@ export class ToolExecutorAgent extends BaseAgent {
       Tool Results:
       ${successfulResults
         .map(
-          (r) => `
+          (r: any) => `
         Tool: ${r.toolName}
         Result: ${JSON.stringify(r.result, null, 2)}
       `,
@@ -264,7 +264,7 @@ export class ToolExecutorAgent extends BaseAgent {
       4. Provides actionable insights
     `;
 
-    const llmResponse = await this.llm.generate(prompt);
+    const llmResponse = await this?.llm?.generate(prompt);
     return llmResponse.response;
   }
 
@@ -303,7 +303,7 @@ export class ToolExecutorAgent extends BaseAgent {
     parameters: any,
     context?: AgentContext,
   ): Promise<AgentResult> {
-    const tool = this.tools.get(toolName);
+    const tool = this?.tools?.get(toolName);
 
     if (!tool) {
       return {

@@ -36,8 +36,8 @@ export const useCart = (): UseCartResult => {
   } = useGroceryStore();
 
   // Calculate totals
-  const totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = cart.items.reduce(
+  const totalItems = cart?.items?.reduce((sum: any, item: any) => sum + item.quantity, 0);
+  const subtotal = cart?.items?.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
@@ -50,7 +50,7 @@ export const useCart = (): UseCartResult => {
         addToCart(product, quantity);
 
         // TODO: Replace with proper tRPC mutation
-        // const response = await api.walmartGrocery.cartOperation.mutate({
+        // const response = await api?.walmartGrocery?.cartOperation.mutate({
         //   userId: cart.userId,
         //   productId: product.id,
         //   quantity,
@@ -96,7 +96,7 @@ export const useCart = (): UseCartResult => {
   // Remove item from cart
   const removeItem = useCallback(
     async (productId: string) => {
-      const item = cart.items.find((i) => i.productId === productId);
+      const item = cart?.items?.find((i: any) => i.productId === productId);
       if (!item) return;
 
       try {
@@ -131,7 +131,7 @@ export const useCart = (): UseCartResult => {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to clear cart");
       // Revert optimistic update
-      previousItems.forEach((item) => {
+      previousItems.forEach((item: any) => {
         if (item.product) {
           addToCart(item.product, item.quantity);
         }
@@ -142,7 +142,7 @@ export const useCart = (): UseCartResult => {
   // Check if item is in cart
   const isInCart = useCallback(
     (productId: string): boolean => {
-      return cart.items.some((item) => item.productId === productId);
+      return cart?.items?.some((item: any) => item.productId === productId);
     },
     [cart.items],
   );
@@ -150,7 +150,7 @@ export const useCart = (): UseCartResult => {
   // Get item quantity
   const getItemQuantity = useCallback(
     (productId: string): number => {
-      const item = cart.items.find((i) => i.productId === productId);
+      const item = cart?.items?.find((i: any) => i.productId === productId);
       return item?.quantity || 0;
     },
     [cart.items],
@@ -164,7 +164,7 @@ export const useCart = (): UseCartResult => {
         const parsed = JSON.parse(savedCart);
         if (parsed.items && Array.isArray(parsed.items)) {
           // Restore cart from localStorage
-          parsed.items.forEach((item: CartItem) => {
+          parsed?.items?.forEach((item: CartItem) => {
             if (item.product) {
               addToCart(item.product, item.quantity);
             }
@@ -178,7 +178,7 @@ export const useCart = (): UseCartResult => {
 
   // Save cart to localStorage on changes
   useEffect(() => {
-    if (cart.items.length > 0) {
+    if (cart?.items?.length > 0) {
       localStorage.setItem("walmart-cart", JSON.stringify(cart));
     } else {
       localStorage.removeItem("walmart-cart");

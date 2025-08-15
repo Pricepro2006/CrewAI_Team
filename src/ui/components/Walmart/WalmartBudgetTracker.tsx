@@ -18,7 +18,7 @@ export const WalmartBudgetTracker: React.FC = () => {
 
   // Get spending analytics
   // TODO: Implement getSpendingAnalytics endpoint
-  // const { data: analytics } = api.walmartGrocery.getSpendingAnalytics.useQuery({
+  // const { data: analytics } = api?.walmartGrocery?.getSpendingAnalytics.useQuery({
   //   userId: "default-user",
   //   timeRange: "month",
   // });
@@ -111,7 +111,7 @@ export const WalmartBudgetTracker: React.FC = () => {
               <input
                 type="number"
                 value={newBudget}
-                onChange={(e) => setNewBudget(e.target.value)}
+                onChange={(e: any) => setNewBudget(e?.target?.value)}
                 className="w-24 px-2 py-1 border rounded text-right"
               />
               <button
@@ -168,12 +168,12 @@ export const WalmartBudgetTracker: React.FC = () => {
       {/* Category Breakdown */}
       <div className="space-y-3">
         <h3 className="font-medium text-gray-700">Category Breakdown</h3>
-        {categories.map((category) => (
+        {categories?.map((category: any) => (
           <div key={category.category} className="space-y-1">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">{category.category}</span>
               <span className="text-gray-500">
-                ${category.spent.toFixed(2)} / ${category.allocated.toFixed(2)}
+                ${category?.spent?.toFixed(2)} / ${category?.allocated?.toFixed(2)}
               </span>
             </div>
             <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">

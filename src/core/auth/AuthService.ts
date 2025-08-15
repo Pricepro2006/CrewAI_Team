@@ -47,7 +47,7 @@ export class AuthService {
     // Additional validation for production
     if (process.env.NODE_ENV === "production") {
       // Ensure JWT secret is strong enough
-      if (this.jwtSecret.length < 32) {
+      if (this?.jwtSecret?.length < 32) {
         logger.error("JWT_SECRET is too weak for production!", "AUTH");
         throw new Error("JWT_SECRET must be at least 32 characters in production");
       }
@@ -57,7 +57,7 @@ export class AuthService {
   }
 
   private initializeUserTable(): void {
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -115,7 +115,7 @@ export class AuthService {
       const passwordHash = await bcrypt.hash(password, saltRounds);
 
       // Insert user
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT INTO users (email, password_hash, role)
         VALUES (?, ?, ?)
       `);
@@ -386,7 +386,7 @@ export class AuthService {
    * Close database connection
    */
   close(): void {
-    this.db.close();
+    this?.db?.close();
   }
 }
 

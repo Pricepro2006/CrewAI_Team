@@ -26,17 +26,17 @@ router.get('/metrics', async (req: Request, res: Response) => {
         pools: metrics,
         summary: {
           totalPools: Object.keys(metrics).length,
-          totalConnections: Object.values(metrics).reduce((sum, pool) => sum + pool.totalConnections, 0),
-          totalActiveConnections: Object.values(metrics).reduce((sum, pool) => sum + pool.activeConnections, 0),
-          totalQueries: Object.values(metrics).reduce((sum, pool) => sum + pool.totalQueries, 0),
-          avgQueryTime: Object.values(metrics).reduce((sum, pool) => sum + pool.avgQueryTime, 0) / Object.keys(metrics).length,
-          totalMemoryUsage: Object.values(metrics).reduce((sum, pool) => sum + pool.totalMemoryUsage, 0),
-          totalErrors: Object.values(metrics).reduce((sum, pool) => sum + pool.errors, 0),
+          totalConnections: Object.values(metrics).reduce((sum: any, pool: any) => sum + pool.totalConnections, 0),
+          totalActiveConnections: Object.values(metrics).reduce((sum: any, pool: any) => sum + pool.activeConnections, 0),
+          totalQueries: Object.values(metrics).reduce((sum: any, pool: any) => sum + pool.totalQueries, 0),
+          avgQueryTime: Object.values(metrics).reduce((sum: any, pool: any) => sum + pool.avgQueryTime, 0) / Object.keys(metrics).length,
+          totalMemoryUsage: Object.values(metrics).reduce((sum: any, pool: any) => sum + pool.totalMemoryUsage, 0),
+          totalErrors: Object.values(metrics).reduce((sum: any, pool: any) => sum + pool.errors, 0),
         }
       }
     });
   } catch (error) {
-    logger.error('Failed to get database metrics:', error);
+    logger.error('Failed to get database metrics:', error as string);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve database metrics',
@@ -54,7 +54,7 @@ router.get('/health', async (req: Request, res: Response) => {
     const healthStatus = await databaseManager.getHealthStatus();
     
     const overallHealth = Object.values(healthStatus).every(status => status.healthy);
-    const totalErrors = Object.values(healthStatus).reduce((sum, status) => sum + status.errors.length, 0);
+    const totalErrors = Object.values(healthStatus).reduce((sum: any, status: any) => sum + status?.errors?.length, 0);
     
     res.status(overallHealth ? 200 : 503).json({
       success: true,
@@ -67,13 +67,13 @@ router.get('/health', async (req: Request, res: Response) => {
           healthyDatabases: Object.values(healthStatus).filter(status => status.healthy).length,
           totalErrors: totalErrors,
           errors: Object.values(healthStatus).flatMap(status => 
-            status.errors.map(error => ({ database: status.database, error }))
+            status?.errors?.map(error => ({ database: status.database, error }))
           )
         }
       }
     });
   } catch (error) {
-    logger.error('Failed to get database health:', error);
+    logger.error('Failed to get database health:', error as string);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve database health status',
@@ -86,7 +86,7 @@ router.get('/health', async (req: Request, res: Response) => {
  * GET /api/database/connections/:database
  * Get detailed connection metrics for a specific database
  */
-router.get('/connections/:database', async (req: Request, res: Response) => {
+router.get('/connections/:database', async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { database } = req.params;
     
@@ -101,7 +101,7 @@ router.get('/connections/:database', async (req: Request, res: Response) => {
     const connectionMetrics = pool.getConnectionMetrics();
     const poolMetrics = pool.getMetrics();
     
-    res.json({
+    return res.json({
       success: true,
       timestamp: new Date().toISOString(),
       data: {
@@ -109,17 +109,17 @@ router.get('/connections/:database', async (req: Request, res: Response) => {
         poolMetrics,
         connections: connectionMetrics,
         summary: {
-          totalConnections: connectionMetrics.length,
-          activeConnections: connectionMetrics.filter(conn => conn.isActive).length,
-          avgQueryCount: connectionMetrics.reduce((sum, conn) => sum + conn.queryCount, 0) / connectionMetrics.length,
-          avgQueryTime: connectionMetrics.reduce((sum, conn) => sum + conn.totalQueryTime / conn.queryCount, 0) / connectionMetrics.length,
-          totalMemoryUsage: connectionMetrics.reduce((sum, conn) => sum + conn.memoryUsage, 0),
+          totalConnections: connectionMetrics?.length || 0,
+          activeConnections: connectionMetrics?.filter(conn => conn.isActive).length,
+          avgQueryCount: connectionMetrics.reduce((sum: any, conn: any) => sum + conn.queryCount, 0) / connectionMetrics?.length || 0,
+          avgQueryTime: connectionMetrics.reduce((sum: any, conn: any) => sum + conn.totalQueryTime / conn.queryCount, 0) / connectionMetrics?.length || 0,
+          totalMemoryUsage: connectionMetrics.reduce((sum: any, conn: any) => sum + conn.memoryUsage, 0),
         }
       }
     });
   } catch (error) {
-    logger.error(`Failed to get connection metrics for ${req.params.database}:`, error);
-    res.status(500).json({
+    logger.error(`Failed to get connection metrics for ${req?.params?.database}:`, error as string);
+    return res.status(500).json({
       success: false,
       error: 'Failed to retrieve connection metrics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -131,7 +131,7 @@ router.get('/connections/:database', async (req: Request, res: Response) => {
  * POST /api/database/optimize/:database
  * Trigger optimization for a specific database
  */
-router.post('/optimize/:database', async (req: Request, res: Response) => {
+router.post('/optimize/:database', async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { database } = req.params;
     
@@ -145,7 +145,7 @@ router.post('/optimize/:database', async (req: Request, res: Response) => {
     const startTime = Date.now();
     
     // Run ANALYZE and optimization
-    await databaseManager.execute(database as 'main' | 'walmart', (db) => {
+    await databaseManager.execute(database as 'main' | 'walmart', (db: any) => {
       db.pragma('optimize');
       db.prepare('ANALYZE').run();
       return true;
@@ -155,7 +155,7 @@ router.post('/optimize/:database', async (req: Request, res: Response) => {
     
     logger.info(`Database optimization completed for ${database} in ${optimizationTime}ms`);
     
-    res.json({
+    return res.json({
       success: true,
       timestamp: new Date().toISOString(),
       data: {
@@ -165,8 +165,8 @@ router.post('/optimize/:database', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    logger.error(`Failed to optimize database ${req.params.database}:`, error);
-    res.status(500).json({
+    logger.error(`Failed to optimize database ${req?.params?.database}:`, error as string);
+    return res.status(500).json({
       success: false,
       error: 'Database optimization failed',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -178,7 +178,7 @@ router.post('/optimize/:database', async (req: Request, res: Response) => {
  * POST /api/database/checkpoint/:database
  * Trigger WAL checkpoint for a specific database
  */
-router.post('/checkpoint/:database', async (req: Request, res: Response) => {
+router.post('/checkpoint/:database', async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { database } = req.params;
     
@@ -189,7 +189,7 @@ router.post('/checkpoint/:database', async (req: Request, res: Response) => {
       });
     }
     
-    const checkpointInfo = await databaseManager.execute(database as 'main' | 'walmart', (db) => {
+    const checkpointInfo = await databaseManager.execute(database as 'main' | 'walmart', (db: any) => {
       const info = db.prepare('PRAGMA wal_checkpoint(RESTART)').get() as any;
       return {
         totalPages: info ? info[0] : 0,
@@ -198,9 +198,9 @@ router.post('/checkpoint/:database', async (req: Request, res: Response) => {
       };
     });
     
-    logger.info(`WAL checkpoint completed for ${database}:`, checkpointInfo);
+    logger.info(`WAL checkpoint completed for ${database}:`, JSON.stringify(checkpointInfo));
     
-    res.json({
+    return res.json({
       success: true,
       timestamp: new Date().toISOString(),
       data: {
@@ -210,8 +210,8 @@ router.post('/checkpoint/:database', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    logger.error(`Failed to checkpoint database ${req.params.database}:`, error);
-    res.status(500).json({
+    logger.error(`Failed to checkpoint database ${req?.params?.database}:`, error as string);
+    return res.status(500).json({
       success: false,
       error: 'Database checkpoint failed',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -223,7 +223,7 @@ router.post('/checkpoint/:database', async (req: Request, res: Response) => {
  * GET /api/database/query-performance/:database
  * Get query performance statistics for a specific database
  */
-router.get('/query-performance/:database', async (req: Request, res: Response) => {
+router.get('/query-performance/:database', async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { database } = req.params;
     
@@ -239,8 +239,8 @@ router.get('/query-performance/:database', async (req: Request, res: Response) =
     const connectionMetrics = pool.getConnectionMetrics();
     
     // Calculate performance statistics
-    const totalQueries = connectionMetrics.reduce((sum, conn) => sum + conn.queryCount, 0);
-    const totalQueryTime = connectionMetrics.reduce((sum, conn) => sum + conn.totalQueryTime, 0);
+    const totalQueries = connectionMetrics.reduce((sum: any, conn: any) => sum + conn.queryCount, 0);
+    const totalQueryTime = connectionMetrics.reduce((sum: any, conn: any) => sum + conn.totalQueryTime, 0);
     const avgQueryTime = totalQueries > 0 ? totalQueryTime / totalQueries : 0;
     
     const performanceStats = {
@@ -260,22 +260,22 @@ router.get('/query-performance/:database', async (req: Request, res: Response) =
       },
       memoryStats: {
         totalMemoryUsage: metrics.totalMemoryUsage,
-        avgMemoryPerConnection: connectionMetrics.length > 0 ? 
-          connectionMetrics.reduce((sum, conn) => sum + conn.memoryUsage, 0) / connectionMetrics.length : 0,
+        avgMemoryPerConnection: connectionMetrics?.length || 0 > 0 ? 
+          connectionMetrics.reduce((sum: any, conn: any) => sum + conn.memoryUsage, 0) / connectionMetrics?.length || 0 : 0,
       },
       walStats: {
         checkpoints: metrics.checkpoints,
       }
     };
     
-    res.json({
+    return res.json({
       success: true,
       timestamp: new Date().toISOString(),
       data: performanceStats
     });
   } catch (error) {
-    logger.error(`Failed to get query performance for ${req.params.database}:`, error);
-    res.status(500).json({
+    logger.error(`Failed to get query performance for ${req?.params?.database}:`, error as string);
+    return res.status(500).json({
       success: false,
       error: 'Failed to retrieve query performance statistics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -296,12 +296,12 @@ router.get('/status', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
       healthy: Object.values(healthStatus).every(status => status.healthy),
       databases: Object.keys(metrics).length,
-      totalConnections: Object.values(metrics).reduce((sum, pool) => sum + pool.totalConnections, 0),
-      totalActiveConnections: Object.values(metrics).reduce((sum, pool) => sum + pool.activeConnections, 0),
-      totalQueries: Object.values(metrics).reduce((sum, pool) => sum + pool.totalQueries, 0),
-      totalErrors: Object.values(metrics).reduce((sum, pool) => sum + pool.errors, 0),
-      totalMemoryUsage: Object.values(metrics).reduce((sum, pool) => sum + pool.totalMemoryUsage, 0),
-      avgQueryTime: Object.values(metrics).reduce((sum, pool) => sum + pool.avgQueryTime, 0) / Object.keys(metrics).length,
+      totalConnections: Object.values(metrics).reduce((sum: any, pool: any) => sum + pool.totalConnections, 0),
+      totalActiveConnections: Object.values(metrics).reduce((sum: any, pool: any) => sum + pool.activeConnections, 0),
+      totalQueries: Object.values(metrics).reduce((sum: any, pool: any) => sum + pool.totalQueries, 0),
+      totalErrors: Object.values(metrics).reduce((sum: any, pool: any) => sum + pool.errors, 0),
+      totalMemoryUsage: Object.values(metrics).reduce((sum: any, pool: any) => sum + pool.totalMemoryUsage, 0),
+      avgQueryTime: Object.values(metrics).reduce((sum: any, pool: any) => sum + pool.avgQueryTime, 0) / Object.keys(metrics).length,
       uptime: Math.max(...Object.values(metrics).map(pool => pool.uptime)),
       databases_detail: Object.fromEntries(
         Object.entries(metrics).map(([name, poolMetrics]) => [
@@ -323,7 +323,7 @@ router.get('/status', async (req: Request, res: Response) => {
       data: systemStatus
     });
   } catch (error) {
-    logger.error('Failed to get database system status:', error);
+    logger.error('Failed to get database system status:', error as string);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve database system status',

@@ -71,19 +71,19 @@ export class MasterOrchestrator {
 
   private buildLLMConfig() {
     // Check if explicit LLM config is provided
-    if (this.config.llm) {
+    if (this?.config?.llm) {
       return {
-        type: this.config.llm.type,
-        llamacpp: this.config.llm.type === 'llamacpp' || this.config.llm.type === 'auto' ? {
-          modelPath: this.config.llm.llamaModelPath || process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+        type: this?.config?.llm.type,
+        llamacpp: this?.config?.llm.type === 'llamacpp' || this?.config?.llm.type === 'auto' ? {
+          modelPath: this?.config?.llm.llamaModelPath || process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
           contextSize: parseInt(process.env.LLAMA_CONTEXT_SIZE || "8192"),
-          threads: this.config.llm.threads || parseInt(process.env.LLAMA_THREADS || "8"),
+          threads: this?.config?.llm.threads || parseInt(process.env.LLAMA_THREADS || "8"),
           temperature: parseFloat(process.env.LLAMA_TEMPERATURE || "0.7"),
-          gpuLayers: this.config.llm.gpuLayers || parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
+          gpuLayers: this?.config?.llm.gpuLayers || parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
         } : undefined,
-        ollama: this.config.llm.type === 'ollama' || this.config.llm.type === 'auto' ? {
-          baseUrl: this.config.llm.ollamaUrl || this.config.ollamaUrl || process.env.OLLAMA_URL || 'http://localhost:11434',
-          model: this.config.llm.ollamaModel || process.env.OLLAMA_MODEL_MAIN || 'qwen3:14b',
+        ollama: this?.config?.llm.type === 'ollama' || this?.config?.llm.type === 'auto' ? {
+          baseUrl: this?.config?.llm.ollamaUrl || this?.config?.ollamaUrl || process.env.OLLAMA_URL || 'http://localhost:11434',
+          model: this?.config?.llm.ollamaModel || process.env.OLLAMA_MODEL_MAIN || 'qwen3:14b',
           temperature: 0.7,
           maxTokens: 4096,
         } : undefined,
@@ -91,7 +91,7 @@ export class MasterOrchestrator {
     }
 
     // Fallback to backward compatibility (ollamaUrl provided)
-    if (this.config.ollamaUrl) {
+    if (this?.config?.ollamaUrl) {
       return {
         type: 'auto' as const,
         llamacpp: {
@@ -102,7 +102,7 @@ export class MasterOrchestrator {
           gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
         },
         ollama: {
-          baseUrl: this.config.ollamaUrl,
+          baseUrl: this?.config?.ollamaUrl,
           model: process.env.OLLAMA_MODEL_MAIN || 'qwen3:14b',
           temperature: 0.7,
           maxTokens: 4096,
@@ -135,11 +135,11 @@ export class MasterOrchestrator {
     // Initialize RAG system (gracefully handle ChromaDB failures)
     if (this.ragSystem) {
       try {
-        await this.ragSystem.initialize();
+        await this?.ragSystem?.initialize();
         
         // Check if we're using fallback mode
-        const ragHealth = await this.ragSystem.getHealthStatus();
-        if (ragHealth.vectorStore.fallbackUsed) {
+        const ragHealth = await this?.ragSystem?.getHealthStatus();
+        if (ragHealth?.vectorStore?.fallbackUsed) {
           logger.info(
             "RAG system initialized with in-memory fallback - ChromaDB unavailable but system operational", 
             "ORCHESTRATOR"
@@ -159,7 +159,7 @@ export class MasterOrchestrator {
     }
 
     // Initialize agents registry
-    await this.agentRegistry.initialize();
+    await this?.agentRegistry?.initialize();
 
     logger.info("MasterOrchestrator initialization completed", "ORCHESTRATOR");
   }
@@ -169,17 +169,17 @@ export class MasterOrchestrator {
   }
 
   async processQuery(query: Query): Promise<ExecutionResult> {
-    const perf = this.perfMonitor.start("processQuery");
+    const perf = this?.perfMonitor?.start("processQuery");
 
     logger.info("Processing query", "ORCHESTRATOR", {
-      query: query.text.substring(0, 100),
+      query: query?.text?.substring(0, 100),
       conversationId: query.conversationId,
     });
 
     try {
       // Step 0: Enhanced query analysis with timeout
       const queryAnalysis = await withTimeout(
-        this.enhancedParser.parseQuery(query),
+        this?.enhancedParser?.parseQuery(query),
         DEFAULT_TIMEOUTS.QUERY_PROCESSING,
         "Query analysis timed out",
       );
@@ -194,7 +194,7 @@ export class MasterOrchestrator {
 
       // Step 0.5: Create intelligent agent routing plan with timeout
       const routingPlan = await withTimeout(
-        this.agentRouter.routeQuery(queryAnalysis),
+        this?.agentRouter?.routeQuery(queryAnalysis),
         DEFAULT_TIMEOUTS.PLAN_CREATION,
         "Agent routing plan creation timed out",
       );
@@ -214,13 +214,13 @@ export class MasterOrchestrator {
         "Plan creation timed out",
       );
       logger.info("Plan created successfully", "ORCHESTRATOR", {
-        steps: plan.steps.length,
+        steps: plan?.steps?.length,
       });
 
       // Broadcast plan creation
       wsService.broadcastPlanUpdate(plan.id, "created", {
         completed: 0,
-        total: plan.steps.length,
+        total: plan?.steps?.length,
       });
 
       // Step 2: Execute plan with replan loop
@@ -248,19 +248,19 @@ export class MasterOrchestrator {
           `Executing plan (attempt ${attempts + 1}/${maxAttempts})`,
           "ORCHESTRATOR",
           {
-            stepsCount: plan.steps.length,
+            stepsCount: plan?.steps?.length,
           },
         );
 
         executionResult = await withTimeout(
-          this.planExecutor.execute(plan),
+          this?.planExecutor?.execute(plan),
           DEFAULT_TIMEOUTS.AGENT_EXECUTION,
           "Plan execution timed out",
         );
 
         // Step 3: Review execution results with timeout
         const review = await withTimeout(
-          this.planReviewer.reviewPlan(plan),
+          this?.planReviewer?.reviewPlan(plan),
           DEFAULT_TIMEOUTS.PLAN_CREATION,
           "Plan review timed out",
         );
@@ -278,8 +278,8 @@ export class MasterOrchestrator {
         ) {
           // Check if failures are only infrastructure-related
           const hasOnlyInfrastructureFailures =
-            review.failedSteps.length === 0 &&
-            review.feedback.includes("infrastructure limitations");
+            review?.failedSteps?.length === 0 &&
+            review?.feedback?.includes("infrastructure limitations");
 
           if (hasOnlyInfrastructureFailures) {
             logger.info(
@@ -378,13 +378,36 @@ export class MasterOrchestrator {
       );
       return SimplePlanGenerator.createSimplePlan(query, routingPlan);
     }
+    
+    // Retrieve relevant context from RAG system
+    let ragContext = "";
+    try {
+      logger.debug("Searching knowledge base for relevant context", "ORCHESTRATOR");
+      const ragResults = await this?.ragSystem?.search(query.text, 3);
+      if (ragResults?.length || 0 > 0) {
+        ragContext = `
+      
+      Relevant Knowledge Base Context:
+      ${ragResults?.map((r, i) => `
+      ${i + 1}. [Score: ${r?.score?.toFixed(3)}] 
+         Category: ${r?.metadata?.category || "general"}
+         Title: ${r?.metadata?.title || r?.metadata?.fileName}
+         Content: ${r?.content?.substring(0, 300)}...
+      `).join("\n")}
+      `;
+        logger.info(`Found ${ragResults?.length || 0} relevant knowledge base entries`, "ORCHESTRATOR");
+      }
+    } catch (error) {
+      logger.warn(`Failed to retrieve RAG context: ${error instanceof Error ? error.message : "Unknown error"}`, "ORCHESTRATOR");
+    }
+    
     const analysisContext = analysis
       ? `
       
       Query Analysis Context:
       - Intent: ${analysis.intent}
       - Complexity: ${analysis.complexity}/10
-      - Required domains: ${analysis.domains.join(", ")}
+      - Required domains: ${analysis?.domains?.join(", ")}
       - Priority: ${analysis.priority}
       - Estimated duration: ${analysis.estimatedDuration} seconds
       - Resource requirements: ${JSON.stringify(analysis.resourceRequirements)}
@@ -396,20 +419,20 @@ export class MasterOrchestrator {
       ? `
       
       Agent Routing Plan:
-      - Selected agents: ${routingPlan.selectedAgents.map((a) => `${a.agentType} (priority: ${a.priority}, confidence: ${a.confidence})`).join(", ")}
+      - Selected agents: ${routingPlan?.selectedAgents?.map((a: any) => `${a.agentType} (priority: ${a.priority}, confidence: ${a.confidence})`).join(", ")}
       - Execution strategy: ${routingPlan.executionStrategy}
       - Overall confidence: ${routingPlan.confidence}
-      - Risk level: ${routingPlan.riskAssessment.level}
-      - Risk factors: ${routingPlan.riskAssessment.factors.join(", ")}
-      - Fallback agents available: ${routingPlan.fallbackAgents.join(", ")}
+      - Risk level: ${routingPlan?.riskAssessment?.level}
+      - Risk factors: ${routingPlan?.riskAssessment?.factors.join(", ")}
+      - Fallback agents available: ${routingPlan?.fallbackAgents?.join(", ")}
     `
       : "";
 
     const prompt = `
       You are the Master Orchestrator. Create a detailed plan to address this query:
-      "${query.text}"${analysisContext}${routingContext}
+      "${query.text}"${analysisContext}${routingContext}${ragContext}
       
-      Break down the task into clear, actionable steps considering the analysis and routing context.
+      Break down the task into clear, actionable steps considering the analysis, routing context, and relevant knowledge base information.
       For each step, determine:
       1. What information is needed (RAG query)
       2. Which agent should handle it - PRIORITIZE agents from the routing plan
@@ -448,7 +471,7 @@ export class MasterOrchestrator {
     }
 
     const llamaResponse = await withTimeout(
-      this.llm.generate(prompt, {
+      this?.llm?.generate(prompt, {
         format: "json",
         temperature: 0.3,
         maxTokens: 2000,
@@ -488,7 +511,7 @@ export class MasterOrchestrator {
     }
 
     const llamaResponse = await withTimeout(
-      this.llm.generate(prompt, {
+      this?.llm?.generate(prompt, {
         format: "json",
         temperature: 0.3,
         maxTokens: 2000,
@@ -516,7 +539,7 @@ export class MasterOrchestrator {
 
       return {
         id: `plan-${Date.now()}`,
-        steps: parsed.steps.map((step: any) => ({
+        steps: parsed?.steps?.map((step: any) => ({
           id: step.id || `step-${Date.now()}-${Math.random()}`,
           task: step.task || step.description,
           description: step.description,
@@ -553,16 +576,16 @@ export class MasterOrchestrator {
   private formatResponse(executionResult: ExecutionResult): ExecutionResult {
     // Consolidate results into a coherent response
     const summary = executionResult.results
-      .map((result) => result.output)
-      .filter((output) => output)
+      .map((result: any) => result.output)
+      .filter((output: any) => output)
       .join("\n\n");
 
     return {
       ...executionResult,
       summary,
       metadata: {
-        totalSteps: executionResult.results.length,
-        successfulSteps: executionResult.results.filter((r) => r.success)
+        totalSteps: executionResult?.results?.length,
+        successfulSteps: executionResult?.results?.filter((r: any) => r.success)
           .length,
         timestamp: new Date().toISOString(),
       },

@@ -86,12 +86,12 @@ class Semaphore {
 
     return new Promise((resolve, reject) => {
       const timestamp = Date.now();
-      this.queue.push({ resolve, reject, timestamp });
+      this?.queue?.push({ resolve, reject, timestamp });
 
       const timeout = setTimeout(() => {
-        const index = this.queue.findIndex(item => item.timestamp === timestamp);
+        const index = this?.queue?.findIndex(item => item.timestamp === timestamp);
         if (index !== -1) {
-          this.queue.splice(index, 1);
+          this?.queue?.splice(index, 1);
           reject(new Error('Semaphore acquisition timeout'));
         }
       }, timeoutMs);
@@ -104,7 +104,7 @@ class Semaphore {
         originalResolve();
       };
 
-      this.queue[this.queue.length - 1].resolve = wrappedResolve;
+      this.queue[this?.queue?.length - 1].resolve = wrappedResolve;
     });
   }
 
@@ -112,8 +112,8 @@ class Semaphore {
     this.active--;
     this.permits++;
 
-    if (this.queue.length > 0) {
-      const next = this.queue.shift();
+    if (this?.queue?.length > 0) {
+      const next = this?.queue?.shift();
       if (next) {
         next.resolve();
       }
@@ -123,7 +123,7 @@ class Semaphore {
   getStats(): { active: number; queued: number; available: number } {
     return {
       active: this.active,
-      queued: this.queue.length,
+      queued: this?.queue?.length,
       available: this.permits,
     };
   }
@@ -153,13 +153,13 @@ class DeadLetterQueue {
       timestamp: new Date(),
     };
 
-    this.items.set(id, dlqItem);
+    this?.items?.set(id, dlqItem);
 
     // Prevent memory leaks
-    if (this.items.size > this.maxSize) {
-      const oldest = Array.from(this.items.entries())
+    if (this?.items?.size > this.maxSize) {
+      const oldest = Array.from(this?.items?.entries())
         .sort((a, b) => a[1].timestamp.getTime() - b[1].timestamp.getTime())[0];
-      this.items.delete(oldest[0]);
+      this?.items?.delete(oldest[0]);
     }
 
     logger.warn('Operation added to dead letter queue', 'CIRCUIT_BREAKER', {
@@ -171,29 +171,29 @@ class DeadLetterQueue {
   }
 
   getAll(): DeadLetterItem[] {
-    return Array.from(this.items.values());
+    return Array.from(this?.items?.values());
   }
 
   get(id: string): DeadLetterItem | undefined {
-    return this.items.get(id);
+    return this?.items?.get(id);
   }
 
   remove(id: string): boolean {
-    return this.items.delete(id);
+    return this?.items?.delete(id);
   }
 
   clear(): void {
-    this.items.clear();
+    this?.items?.clear();
   }
 
   getStats(): { total: number; byService: Record<string, number> } {
-    const items = Array.from(this.items.values());
-    const byService = items.reduce((acc, item) => {
+    const items = Array.from(this?.items?.values());
+    const byService = items.reduce((acc: any, item: any) => {
       acc[item.service] = (acc[item.service] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    return { total: items.length, byService };
+    return { total: items?.length || 0, byService };
   }
 }
 
@@ -237,7 +237,7 @@ export class CircuitBreakerService extends EventEmitter {
     this.initialized = true;
 
     logger.info('Circuit Breaker Service initialized successfully', 'CIRCUIT_BREAKER', {
-      services: Array.from(this.serviceConfigs.keys()),
+      services: Array.from(this?.serviceConfigs?.keys()),
     });
 
     this.emit('initialized');
@@ -256,7 +256,7 @@ export class CircuitBreakerService extends EventEmitter {
       timeout?: number;
     } = {}
   ): Promise<T> {
-    const serviceConfig = this.serviceConfigs.get(service);
+    const serviceConfig = this?.serviceConfigs?.get(service);
     if (!serviceConfig) {
       throw new Error(`No circuit breaker configuration found for service: ${service}`);
     }
@@ -271,11 +271,11 @@ export class CircuitBreakerService extends EventEmitter {
 
       try {
         // Execute with circuit breaker
-        const result = await this.circuitBreakerManager.execute(
+        const result = await this?.circuitBreakerManager?.execute(
           circuitBreakerName,
           async () => {
             // Add operation timeout
-            const timeoutMs = options.timeout || serviceConfig.config.timeout;
+            const timeoutMs = options.timeout || serviceConfig?.config?.timeout;
             return this.withTimeout(fn(), timeoutMs);
           },
           this.buildFallbackOptions(service, options.fallbackOptions),
@@ -296,13 +296,13 @@ export class CircuitBreakerService extends EventEmitter {
       // Add to dead letter queue if max retries exceeded
       const errorMsg = error instanceof Error ? error.message : String(error);
       if (errorMsg.includes('Circuit breaker') || errorMsg.includes('Maximum retry')) {
-        this.deadLetterQueue.add({
+        this?.deadLetterQueue?.add({
           service,
           operation,
           payload: options,
           error: errorMsg,
-          retryCount: serviceConfig.retryPolicy.maxAttempts,
-          maxRetries: serviceConfig.retryPolicy.maxAttempts,
+          retryCount: serviceConfig?.retryPolicy?.maxAttempts,
+          maxRetries: serviceConfig?.retryPolicy?.maxAttempts,
         });
       }
 
@@ -390,7 +390,7 @@ export class CircuitBreakerService extends EventEmitter {
       fallbackOptions: queueFallback ? {
         fallbackFunction: async () => {
           // Queue message for later delivery
-          this.deadLetterQueue.add({
+          this?.deadLetterQueue?.add({
             service: 'websocket',
             operation,
             payload: { queued: true },
@@ -426,7 +426,7 @@ export class CircuitBreakerService extends EventEmitter {
    * Get circuit breaker state for monitoring
    */
   getCircuitBreakerState(service?: string): Record<string, any> {
-    const allStats = this.circuitBreakerManager.getAllStats();
+    const allStats = this?.circuitBreakerManager?.getAllStats();
     
     if (service) {
       return Object.fromEntries(
@@ -446,12 +446,12 @@ export class CircuitBreakerService extends EventEmitter {
     bulkheads: Record<string, BulkheadStats>;
     deadLetterQueue: any;
   } {
-    const overallHealth = this.circuitBreakerManager.getOverallHealth();
+    const overallHealth = this?.circuitBreakerManager?.getOverallHealth();
     const services: Record<string, any> = {};
 
     // Get service-specific health
     for (const [serviceName] of this.serviceConfigs) {
-      const serviceStats = Object.entries(this.circuitBreakerManager.getAllStats())
+      const serviceStats = Object.entries(this?.circuitBreakerManager?.getAllStats())
         .filter(([name]) => name.startsWith(serviceName))
         .reduce((acc, [name, stats]) => {
           acc[name] = stats;
@@ -468,7 +468,7 @@ export class CircuitBreakerService extends EventEmitter {
       overall: overallHealth.status,
       services,
       bulkheads: this.getAllBulkheadStats(),
-      deadLetterQueue: this.deadLetterQueue.getStats(),
+      deadLetterQueue: this?.deadLetterQueue?.getStats(),
     };
   }
 
@@ -476,7 +476,7 @@ export class CircuitBreakerService extends EventEmitter {
    * Update service configuration
    */
   updateServiceConfig(service: string, config: Partial<ServiceCircuitBreakerConfig>): void {
-    const currentConfig = this.serviceConfigs.get(service);
+    const currentConfig = this?.serviceConfigs?.get(service);
     if (!currentConfig) {
       throw new Error(`Service ${service} not found`);
     }
@@ -486,11 +486,11 @@ export class CircuitBreakerService extends EventEmitter {
       ...config,
     });
 
-    this.serviceConfigs.set(service, updatedConfig);
+    this?.serviceConfigs?.set(service, updatedConfig);
 
     // Update bulkhead if configuration changed
     if (config.bulkhead) {
-      this.bulkheads.set(service, new Semaphore(config.bulkhead.maxConcurrent || 10));
+      this?.bulkheads?.set(service, new Semaphore(config?.bulkhead?.maxConcurrent || 10));
     }
 
     logger.info('Service configuration updated', 'CIRCUIT_BREAKER', {
@@ -507,15 +507,15 @@ export class CircuitBreakerService extends EventEmitter {
   resetCircuitBreaker(service: string, operation?: string): void {
     if (operation) {
       const breakerName = `${service}_${operation}`;
-      const breaker = this.circuitBreakerManager.getCircuitBreaker(breakerName);
+      const breaker = this?.circuitBreakerManager?.getCircuitBreaker(breakerName);
       breaker.reset();
     } else {
       // Reset all circuit breakers for the service
-      const allStats = this.circuitBreakerManager.getAllStats();
+      const allStats = this?.circuitBreakerManager?.getAllStats();
       Object.keys(allStats)
         .filter(name => name.startsWith(service))
         .forEach(name => {
-          const breaker = this.circuitBreakerManager.getCircuitBreaker(name);
+          const breaker = this?.circuitBreakerManager?.getCircuitBreaker(name);
           breaker.reset();
         });
     }
@@ -530,15 +530,15 @@ export class CircuitBreakerService extends EventEmitter {
   forceCircuitBreakerOpen(service: string, operation?: string): void {
     if (operation) {
       const breakerName = `${service}_${operation}`;
-      const breaker = this.circuitBreakerManager.getCircuitBreaker(breakerName);
+      const breaker = this?.circuitBreakerManager?.getCircuitBreaker(breakerName);
       breaker.forceOpen();
     } else {
       // Force open all circuit breakers for the service
-      const allStats = this.circuitBreakerManager.getAllStats();
+      const allStats = this?.circuitBreakerManager?.getAllStats();
       Object.keys(allStats)
         .filter(name => name.startsWith(service))
         .forEach(name => {
-          const breaker = this.circuitBreakerManager.getCircuitBreaker(name);
+          const breaker = this?.circuitBreakerManager?.getCircuitBreaker(name);
           breaker.forceOpen();
         });
     }
@@ -551,14 +551,14 @@ export class CircuitBreakerService extends EventEmitter {
    * Get dead letter queue items
    */
   getDeadLetterQueue(): DeadLetterItem[] {
-    return this.deadLetterQueue.getAll();
+    return this?.deadLetterQueue?.getAll();
   }
 
   /**
    * Retry dead letter queue item
    */
   async retryDeadLetterItem(id: string): Promise<boolean> {
-    const item = this.deadLetterQueue.get(id);
+    const item = this?.deadLetterQueue?.get(id);
     if (!item) {
       return false;
     }
@@ -566,7 +566,7 @@ export class CircuitBreakerService extends EventEmitter {
     try {
       // This would need to be implemented based on the specific operation
       // For now, we just remove it from the dead letter queue
-      this.deadLetterQueue.remove(id);
+      this?.deadLetterQueue?.remove(id);
       logger.info('Dead letter queue item retried', 'CIRCUIT_BREAKER', { id, item });
       return true;
     } catch (error) {
@@ -579,7 +579,7 @@ export class CircuitBreakerService extends EventEmitter {
 
   private setupDefaultConfigurations(): void {
     // Ollama configuration - higher timeout, more retries
-    this.serviceConfigs.set('ollama', {
+    this?.serviceConfigs?.set('ollama', {
       service: 'ollama',
       config: {
         failureThreshold: 3,
@@ -610,7 +610,7 @@ export class CircuitBreakerService extends EventEmitter {
     });
 
     // Redis configuration - fast fail, quick recovery
-    this.serviceConfigs.set('redis', {
+    this?.serviceConfigs?.set('redis', {
       service: 'redis',
       config: {
         failureThreshold: 5,
@@ -641,7 +641,7 @@ export class CircuitBreakerService extends EventEmitter {
     });
 
     // SQLite configuration - medium tolerance
-    this.serviceConfigs.set('sqlite', {
+    this?.serviceConfigs?.set('sqlite', {
       service: 'sqlite',
       config: {
         failureThreshold: 5,
@@ -672,7 +672,7 @@ export class CircuitBreakerService extends EventEmitter {
     });
 
     // External API configuration - conservative approach
-    this.serviceConfigs.set('external_api', {
+    this?.serviceConfigs?.set('external_api', {
       service: 'external_api',
       config: {
         failureThreshold: 3,
@@ -703,7 +703,7 @@ export class CircuitBreakerService extends EventEmitter {
     });
 
     // WebSocket configuration - queue failed messages
-    this.serviceConfigs.set('websocket', {
+    this?.serviceConfigs?.set('websocket', {
       service: 'websocket',
       config: {
         failureThreshold: 5,
@@ -734,7 +734,7 @@ export class CircuitBreakerService extends EventEmitter {
     });
 
     // Service mesh configuration - internal service calls
-    this.serviceConfigs.set('service_mesh', {
+    this?.serviceConfigs?.set('service_mesh', {
       service: 'service_mesh',
       config: {
         failureThreshold: 5,
@@ -767,18 +767,18 @@ export class CircuitBreakerService extends EventEmitter {
     // Initialize bulkheads
     for (const [service, config] of this.serviceConfigs) {
       if (config.bulkhead) {
-        this.bulkheads.set(service, new Semaphore(config.bulkhead.maxConcurrent));
+        this?.bulkheads?.set(service, new Semaphore(config?.bulkhead?.maxConcurrent));
       }
     }
   }
 
   private getBulkhead(service: string): Semaphore {
-    let bulkhead = this.bulkheads.get(service);
+    let bulkhead = this?.bulkheads?.get(service);
     if (!bulkhead) {
-      const config = this.serviceConfigs.get(service);
+      const config = this?.serviceConfigs?.get(service);
       const maxConcurrent = config?.bulkhead?.maxConcurrent || 10;
       bulkhead = new Semaphore(maxConcurrent);
-      this.bulkheads.set(service, bulkhead);
+      this?.bulkheads?.set(service, bulkhead);
     }
     return bulkhead;
   }
@@ -786,7 +786,7 @@ export class CircuitBreakerService extends EventEmitter {
   private getBulkheadStats(service: string): BulkheadStats {
     const bulkhead = this.getBulkhead(service);
     const stats = bulkhead.getStats();
-    const config = this.serviceConfigs.get(service);
+    const config = this?.serviceConfigs?.get(service);
 
     return {
       service,
@@ -801,25 +801,25 @@ export class CircuitBreakerService extends EventEmitter {
 
   private getAllBulkheadStats(): Record<string, BulkheadStats> {
     const stats: Record<string, BulkheadStats> = {};
-    for (const service of this.serviceConfigs.keys()) {
+    for (const service of this?.serviceConfigs?.keys()) {
       stats[service] = this.getBulkheadStats(service);
     }
     return stats;
   }
 
   private buildFallbackOptions<T>(service: string, customOptions?: FallbackOptions<T>): FallbackOptions<T> | undefined {
-    const config = this.serviceConfigs.get(service);
+    const config = this?.serviceConfigs?.get(service);
     if (!config?.fallback) return customOptions;
 
     const fallbackOptions: FallbackOptions<T> = { ...customOptions };
 
-    switch (config.fallback.type) {
+    switch (config?.fallback?.type) {
       case 'cache':
         fallbackOptions.useCache = true;
-        fallbackOptions.cacheKey = config.fallback.cacheKey;
+        fallbackOptions.cacheKey = config?.fallback?.cacheKey;
         break;
       case 'default':
-        fallbackOptions.fallbackValue = config.fallback.defaultValue as T;
+        fallbackOptions.fallbackValue = config?.fallback?.defaultValue as T;
         break;
       case 'queue':
         fallbackOptions.fallbackFunction = async () => {
@@ -860,7 +860,7 @@ export class CircuitBreakerService extends EventEmitter {
 
   private recordMetrics(service: string, operation: string, result: 'success' | 'failure', duration: number): void {
     const key = `${service}_${operation}`;
-    const existing = this.metrics.get(key) || { 
+    const existing = this?.metrics?.get(key) || { 
       successCount: 0, 
       failureCount: 0, 
       totalDuration: 0, 
@@ -876,13 +876,13 @@ export class CircuitBreakerService extends EventEmitter {
     existing.totalDuration += duration;
     existing.lastUpdated = Date.now();
     
-    this.metrics.set(key, existing);
+    this?.metrics?.set(key, existing);
   }
 
   private setupMonitoringIntegration(): void {
     // Send circuit breaker metrics to monitoring system
     setInterval(() => {
-      const allStats = this.circuitBreakerManager.getAllStats();
+      const allStats = this?.circuitBreakerManager?.getAllStats();
       const systemHealth = this.getSystemHealth();
 
       for (const [name, stats] of Object.entries(allStats)) {
@@ -910,7 +910,7 @@ export class CircuitBreakerService extends EventEmitter {
       logger.debug('Circuit breaker metrics', 'CIRCUIT_BREAKER', {
         overall: stats.overall,
         servicesCount: Object.keys(stats.services).length,
-        deadLetterQueueSize: stats.deadLetterQueue.total,
+        deadLetterQueueSize: stats?.deadLetterQueue?.total,
       });
     }, 60000); // Every minute
   }
@@ -920,11 +920,11 @@ export class CircuitBreakerService extends EventEmitter {
       logger.info('Shutting down Circuit Breaker Service', 'CIRCUIT_BREAKER');
       
       // Reset all circuit breakers
-      this.circuitBreakerManager.resetAll();
+      this?.circuitBreakerManager?.resetAll();
       
       // Clear metrics
-      this.metrics.clear();
-      this.deadLetterQueue.clear();
+      this?.metrics?.clear();
+      this?.deadLetterQueue?.clear();
       
       logger.info('Circuit Breaker Service shutdown complete', 'CIRCUIT_BREAKER');
     };

@@ -8,7 +8,7 @@ import type { ProcessedDocument, QueryResult, Document, VectorStoreConfig } from
 import { ResilientChromaDBManager, StorageMode } from "../../database/vector/ResilientChromaDBManager.js";
 import { logger } from "../../utils/logger.js";
 import { EmbeddingService } from "./EmbeddingService.js";
-import { MODEL_CONFIG } from "../../config/models.config.js";
+import { MODEL_CONFIG } from "../../config/models?.config.js";
 
 export class ResilientVectorStore implements IVectorStore {
   private manager: ResilientChromaDBManager;
@@ -42,7 +42,7 @@ export class ResilientVectorStore implements IVectorStore {
 
     // Initialize embedding service
     this.embeddingService = new EmbeddingService({
-      model: MODEL_CONFIG.models.embedding,
+      model: MODEL_CONFIG?.models?.embedding,
       baseUrl: config.baseUrl || "http://localhost:11434",
     });
   }
@@ -77,10 +77,10 @@ export class ResilientVectorStore implements IVectorStore {
     }
 
     try {
-      await this.manager.initialize();
+      await this?.manager?.initialize();
       this.isInitialized = true;
       
-      const status = await this.manager.getHealthStatus();
+      const status = await this?.manager?.getHealthStatus();
       logger.info(
         `ResilientVectorStore initialized - Mode: ${status.mode}, Message: ${status.message}`,
         "RESILIENT_VECTOR_STORE"
@@ -99,17 +99,17 @@ export class ResilientVectorStore implements IVectorStore {
       await this.initialize();
     }
 
-    if (documents.length === 0) return;
+    if (documents?.length || 0 === 0) return;
 
     try {
       // Generate embeddings if we're in ChromaDB mode
-      const mode = this.manager.getStorageMode();
+      const mode = this?.manager?.getStorageMode();
       let embeddings: number[][] | undefined;
       
       if (mode === StorageMode.CHROMADB) {
         try {
-          embeddings = await this.embeddingService.embedBatch(
-            documents.map(d => d.content)
+          embeddings = await this?.embeddingService?.embedBatch(
+            documents?.map(d => d.content)
           );
         } catch (error) {
           logger.warn(
@@ -120,24 +120,24 @@ export class ResilientVectorStore implements IVectorStore {
       }
 
       // Convert to ChromaDocument format
-      const chromaDocs = documents.map(doc => ({
+      const chromaDocs = documents?.map(doc => ({
         id: doc.id,
         content: doc.content,
         metadata: {
           ...doc.metadata,
           indexed_at: new Date().toISOString(),
-          content_length: doc.content.length,
+          content_length: doc?.content?.length,
         },
       }));
 
-      await this.manager.addDocuments(
-        this.config.collectionName || "knowledge_base",
+      await this?.manager?.addDocuments(
+        this?.config?.collectionName || "knowledge_base",
         chromaDocs,
         embeddings
       );
 
       logger.info(
-        `Added ${documents.length} documents to resilient store`,
+        `Added ${documents?.length || 0} documents to resilient store`,
         "RESILIENT_VECTOR_STORE"
       );
     } catch (error) {
@@ -156,19 +156,19 @@ export class ResilientVectorStore implements IVectorStore {
 
     try {
       // Generate query embedding if in ChromaDB mode
-      const mode = this.manager.getStorageMode();
+      const mode = this?.manager?.getStorageMode();
       
       if (mode === StorageMode.CHROMADB) {
         try {
-          const queryEmbedding = await this.embeddingService.embed(query);
+          const queryEmbedding = await this?.embeddingService?.embed(query);
           
-          const results = await this.manager.queryDocuments(
-            this.config.collectionName || "knowledge_base",
+          const results = await this?.manager?.queryDocuments(
+            this?.config?.collectionName || "knowledge_base",
             queryEmbedding,
             { nResults: limit }
           );
 
-          return results.map(r => ({
+          return results?.map(r => ({
             id: r.id,
             content: r.content,
             metadata: r.metadata,
@@ -183,13 +183,13 @@ export class ResilientVectorStore implements IVectorStore {
       }
 
       // Fallback to text-based search (in-memory mode)
-      const results = await this.manager.queryDocuments(
-        this.config.collectionName || "knowledge_base",
+      const results = await this?.manager?.queryDocuments(
+        this?.config?.collectionName || "knowledge_base",
         [], // Empty embedding for text search
         { nResults: limit }
       );
 
-      return results.map(r => ({
+      return results?.map(r => ({
         id: r.id,
         content: r.content,
         metadata: r.metadata,
@@ -214,19 +214,19 @@ export class ResilientVectorStore implements IVectorStore {
     }
 
     try {
-      const mode = this.manager.getStorageMode();
+      const mode = this?.manager?.getStorageMode();
       
       if (mode === StorageMode.CHROMADB) {
         try {
-          const queryEmbedding = await this.embeddingService.embed(query);
+          const queryEmbedding = await this?.embeddingService?.embed(query);
           
-          const results = await this.manager.queryDocuments(
-            this.config.collectionName || "knowledge_base",
+          const results = await this?.manager?.queryDocuments(
+            this?.config?.collectionName || "knowledge_base",
             queryEmbedding,
             { nResults: limit, where: filter }
           );
 
-          return results.map(r => ({
+          return results?.map(r => ({
             id: r.id,
             content: r.content,
             metadata: r.metadata,
@@ -291,17 +291,17 @@ export class ResilientVectorStore implements IVectorStore {
   }
 
   async getDocumentCount(): Promise<number> {
-    const status = await this.manager.getHealthStatus();
-    return status.inMemory.documentCount;
+    const status = await this?.manager?.getHealthStatus();
+    return status?.inMemory?.documentCount;
   }
 
   async getChunkCount(): Promise<number> {
-    const status = await this.manager.getHealthStatus();
-    return status.inMemory.documentCount; // Same as document count for now
+    const status = await this?.manager?.getHealthStatus();
+    return status?.inMemory?.documentCount; // Same as document count for now
   }
 
   async getCollections(): Promise<string[]> {
-    return [this.config.collectionName || "knowledge_base"];
+    return [this?.config?.collectionName || "knowledge_base"];
   }
 
   async clear(): Promise<void> {
@@ -325,7 +325,7 @@ export class ResilientVectorStore implements IVectorStore {
     message: string;
     details: any;
   }> {
-    const health = await this.manager.getHealthStatus();
+    const health = await this?.manager?.getHealthStatus();
     
     return {
       status: health.status,
@@ -343,7 +343,7 @@ export class ResilientVectorStore implements IVectorStore {
    */
   async reconnect(): Promise<boolean> {
     logger.info("Forcing ChromaDB reconnection", "RESILIENT_VECTOR_STORE");
-    return await this.manager.reconnect();
+    return await this?.manager?.reconnect();
   }
 
   /**
@@ -351,7 +351,7 @@ export class ResilientVectorStore implements IVectorStore {
    */
   async switchToInMemory(): Promise<void> {
     logger.info("Switching to in-memory mode", "RESILIENT_VECTOR_STORE");
-    await this.manager.switchToInMemory();
+    await this?.manager?.switchToInMemory();
   }
 
   /**
@@ -359,6 +359,6 @@ export class ResilientVectorStore implements IVectorStore {
    */
   async shutdown(): Promise<void> {
     logger.info("Shutting down resilient vector store", "RESILIENT_VECTOR_STORE");
-    await this.manager.shutdown();
+    await this?.manager?.shutdown();
   }
 }

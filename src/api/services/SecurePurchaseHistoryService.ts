@@ -64,11 +64,11 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
       const encryptedPurchase = {
         ...purchase,
         paymentMethod: purchase.paymentMethod 
-          ? this.encryption.encryptPaymentMethod(purchase.paymentMethod)
+          ? this?.encryption?.encryptPaymentMethod(purchase.paymentMethod)
           : undefined,
         // Tokenize rather than encrypt for better security
         sessionId: purchase.sessionId 
-          ? this.encryption.tokenize(purchase.sessionId, "sess")
+          ? this?.encryption?.tokenize(purchase.sessionId, "sess")
           : undefined,
       };
 
@@ -155,7 +155,7 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
       // Decrypt and mask sensitive fields
       const secureResult = {
         ...result,
-        purchases: result.purchases.map(purchase => this.sanitizePurchaseRecord(purchase)),
+        purchases: result?.purchases?.map(purchase => this.sanitizePurchaseRecord(purchase)),
       };
 
       return secureResult;
@@ -199,7 +199,7 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
     const patterns = await super.analyzePurchasePatterns(userId);
 
     // Remove or aggregate sensitive patterns
-    return patterns.map(pattern => ({
+    return patterns?.map(pattern => ({
       ...pattern,
       // Aggregate store information for privacy
       preferredStore: pattern.preferredStore ? "***" : undefined,
@@ -228,7 +228,7 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
       userId: requesterId,
       result: "SUCCESS",
       metadata: {
-        suggestionCount: suggestions.length,
+        suggestionCount: suggestions?.length || 0,
         daysAhead,
       },
     });
@@ -319,7 +319,7 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
   private maskLocation(location: string): string {
     // Keep only city/state, remove specific addresses
     const parts = location.split(",");
-    if (parts.length >= 2) {
+    if (parts?.length || 0 >= 2) {
       return parts.slice(-2).join(",").trim();
     }
     return "***";
@@ -351,14 +351,14 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
       });
 
       // Execute deletion
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         DELETE FROM purchase_records WHERE user_id = ?
       `);
       
       const result = stmt.run(userId);
 
       // Also delete from receipts
-      const receiptStmt = this.db.prepare(`
+      const receiptStmt = this?.db?.prepare(`
         DELETE FROM purchase_receipts WHERE user_id = ?
       `);
       
@@ -421,8 +421,8 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
       const exportData = {
         exportDate: new Date().toISOString(),
         userId,
-        purchases: purchases.purchases.map(p => PIIRedactor.redact(p)),
-        patterns: patterns.map(p => PIIRedactor.redact(p)),
+        purchases: purchases?.purchases?.map(p => PIIRedactor.redact(p)),
+        patterns: patterns?.map(p => PIIRedactor.redact(p)),
         analytics: PIIRedactor.redact(analytics),
       };
 
@@ -455,7 +455,7 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
       const cutoffDate = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
 
       // Update records to remove PII but keep aggregate data
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         UPDATE purchase_records 
         SET 
           notes = NULL,

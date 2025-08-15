@@ -109,7 +109,7 @@ async function validateDatabaseSchema() {
     );
 
     logger.info("Select operation result:", "SCHEMA_VALIDATION", {
-      dataCount: selectOperationResult.data.length,
+      dataCount: selectOperationResult?.data?.length,
       missingColumns: selectOperationResult.missingColumns,
       warnings: selectOperationResult.warnings
     });
@@ -167,7 +167,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log("✅ Database schema validation completed successfully");
       process.exit(0);
     })
-    .catch((error) => {
+    .catch((error: any) => {
       console.error("❌ Database schema validation failed:", error);
       process.exit(1);
     });

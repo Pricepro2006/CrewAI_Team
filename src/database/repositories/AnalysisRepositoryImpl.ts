@@ -96,7 +96,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
    * Find analysis by email ID
    */
   async findByEmailId(emailId: string): Promise<EmailAnalysis | null> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE email_id = ?
@@ -112,14 +112,14 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
    * Find analyses by version
    */
   async findByVersion(version: string): Promise<EmailAnalysis[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE analysis_version = ?
         ORDER BY created_at DESC
       `);
       const rows = stmt.all(version);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -127,14 +127,14 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
    * Find analyses by workflow type
    */
   async findByWorkflowType(workflowType: string): Promise<EmailAnalysis[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE workflow_type = ?
         ORDER BY created_at DESC
       `);
       const rows = stmt.all(workflowType);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -145,14 +145,14 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
     minConfidence: number,
     maxConfidence: number,
   ): Promise<EmailAnalysis[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE confidence_score BETWEEN ? AND ?
         ORDER BY confidence_score DESC
       `);
       const rows = stmt.all(minConfidence, maxConfidence);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -162,8 +162,8 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
   async findByPhaseCompletion(
     phases: AnalysisPhase[],
   ): Promise<EmailAnalysis[]> {
-    return executeQuery((db) => {
-      const conditions = phases.map((phase) => {
+    return executeQuery((db: any) => {
+      const conditions = phases?.map((phase: any) => {
         switch (phase) {
           case AnalysisPhase.PHASE_1:
             return "phase1_results IS NOT NULL";
@@ -182,7 +182,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
 
       const stmt = db.prepare(query);
       const rows = stmt.all();
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -194,7 +194,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
     phase: AnalysisPhase,
     results: any,
   ): Promise<void> {
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       const columnMap = {
         [AnalysisPhase.PHASE_1]: "phase1_results",
         [AnalysisPhase.PHASE_2]: "phase2_results",
@@ -225,7 +225,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
    * Update final summary
    */
   async updateSummary(analysisId: string, summary: any): Promise<void> {
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       const stmt = db.prepare(`
         UPDATE ${this.tableName}
         SET final_summary = ?, updated_at = datetime('now')
@@ -247,7 +247,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
     phase2Completed: number;
     phase3Completed: number;
   }> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       // Total and phase counts
       const statsStmt = db.prepare(`
         SELECT 
@@ -268,7 +268,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
       `);
       const versionCounts = versionStmt.all() as any[];
       const byVersion: Record<string, number> = {};
-      versionCounts.forEach((v) => {
+      versionCounts.forEach((v: any) => {
         byVersion[v.analysis_version] = v.count;
       });
 
@@ -280,7 +280,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
       `);
       const workflowCounts = workflowStmt.all() as any[];
       const byWorkflowType: Record<string, number> = {};
-      workflowCounts.forEach((w) => {
+      workflowCounts.forEach((w: any) => {
         byWorkflowType[w.workflow_type] = w.count;
       });
 
@@ -300,14 +300,14 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
    * Find analyses for complete chains
    */
   async findForCompleteChains(): Promise<EmailAnalysis[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE is_complete_chain = 1
         ORDER BY created_at DESC
       `);
       const rows = stmt.all();
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -317,7 +317,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
   async batchCreate(
     analyses: Omit<EmailAnalysis, "id">[],
   ): Promise<EmailAnalysis[]> {
-    return executeTransaction((db) => {
+    return executeTransaction((db: any) => {
       const insertStmt = db.prepare(`
         INSERT INTO ${this.tableName} (
           id, email_id, analysis_version, phase1_results, phase2_results,
@@ -358,7 +358,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
       }
 
       logger.info(
-        `Batch created ${createdAnalyses.length} analyses`,
+        `Batch created ${createdAnalyses?.length || 0} analyses`,
         "ANALYSIS_REPOSITORY",
       );
       return createdAnalyses;
@@ -369,14 +369,14 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
    * Find recent analyses
    */
   async findRecent(limit: number): Promise<EmailAnalysis[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         ORDER BY created_at DESC
         LIMIT ?
       `);
       const rows = stmt.all(limit);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -384,7 +384,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
    * Delete old analyses
    */
   async deleteOlderThan(date: Date): Promise<number> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         DELETE FROM ${this.tableName}
         WHERE created_at < ?
@@ -408,7 +408,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
   async findNeedingPhaseUpgrade(
     currentPhase: AnalysisPhase,
   ): Promise<EmailAnalysis[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       let condition: string;
 
       switch (currentPhase) {
@@ -428,7 +428,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
         ORDER BY confidence_score ASC, created_at ASC
       `);
       const rows = stmt.all();
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -436,12 +436,12 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
    * Adapter method to match IRepository interface
    */
   async findAll(filter?: Partial<EmailAnalysis>): Promise<EmailAnalysis[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       let query = `SELECT * FROM ${this.tableName}`;
       const params: any[] = [];
 
       if (filter && Object.keys(filter).length > 0) {
-        const conditions = Object.keys(filter).map((key) => {
+        const conditions = Object.keys(filter).map((key: any) => {
           params.push(filter[key as keyof EmailAnalysis]);
           return `${key} = ?`;
         });
@@ -452,7 +452,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
 
       const stmt = db.prepare(query);
       const rows = stmt.all(...params) as any[];
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -460,7 +460,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
    * Override methods to use connection pool
    */
   async create(data: Omit<EmailAnalysis, "id">): Promise<EmailAnalysis> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const id = this.generateId();
       const analysisData: EmailAnalysis = {
         ...data,
@@ -471,8 +471,8 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
 
       const row = this.mapEntityToRow(analysisData);
       const columns = Object.keys(row);
-      const values = columns.map((col) => row[col]);
-      const placeholders = columns.map(() => "?").join(", ");
+      const values = columns?.map((col: any) => row[col]);
+      const placeholders = columns?.map(() => "?").join(", ");
 
       const query = `INSERT INTO ${this.tableName} (id, ${columns.join(", ")}, created_at) VALUES (?, ${placeholders}, datetime('now'))`;
       const stmt = db.prepare(query);
@@ -490,7 +490,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
    * Find analysis by ID
    */
   async findById(id: string): Promise<EmailAnalysis | null> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(
         `SELECT * FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
       );
@@ -506,18 +506,18 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
     id: string,
     data: Partial<Omit<EmailAnalysis, "id" | "created_at">>,
   ): Promise<EmailAnalysis | null> {
-    return executeQuery(async (db) => {
+    return executeQuery(async (db: any) => {
       const row = this.mapEntityToRow(data);
       const columns = Object.keys(row);
 
-      if (columns.length === 0) {
+      if (columns?.length || 0 === 0) {
         return await this.findById(id);
       }
 
-      const values = columns.map((col) => row[col]);
+      const values = columns?.map((col: any) => row[col]);
       values.push(id);
 
-      const setClause = columns.map((col) => `${col} = ?`).join(", ");
+      const setClause = columns?.map((col: any) => `${col} = ?`).join(", ");
       const query = `UPDATE ${this.tableName} SET ${setClause}, updated_at = datetime('now') WHERE ${this.primaryKey} = ?`;
 
       const stmt = db.prepare(query);
@@ -536,12 +536,12 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
    * Count analyses with optional filtering
    */
   async count(filter?: Partial<EmailAnalysis>): Promise<number> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       let query = `SELECT COUNT(*) as count FROM ${this.tableName}`;
       const params: any[] = [];
 
       if (filter && Object.keys(filter).length > 0) {
-        const conditions = Object.keys(filter).map((key) => {
+        const conditions = Object.keys(filter).map((key: any) => {
           params.push(filter[key as keyof EmailAnalysis]);
           return `${key} = ?`;
         });
@@ -566,7 +566,7 @@ export class AnalysisRepositoryImpl implements IAnalysisRepository {
    * Delete an analysis
    */
   async delete(id: string): Promise<boolean> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(
         `DELETE FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
       );

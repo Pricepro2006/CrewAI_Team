@@ -242,12 +242,12 @@ describe('EmailIngestionService Performance Tests', () => {
     });
 
     // Mock unified email service with realistic processing time
-    vi.mocked(mockUnifiedEmailService.processIncomingEmail).mockImplementation(async (email) => {
+    vi.mocked(mockUnifiedEmailService.processIncomingEmail).mockImplementation(async (email: any) => {
       await new Promise(resolve => setTimeout(resolve, Math.random() * 20 + 5)); // 5-25ms delay
       return {
         id: `processed-${email.messageId}`,
         subject: email.subject,
-        from: email.from.address
+        from: email?.from?.address
       } as any;
     });
 
@@ -289,8 +289,8 @@ describe('EmailIngestionService Performance Tests', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.metrics.throughputPerMinute).toBeGreaterThan(60);
-      expect(result.metrics.avgTimePerEmail).toBeLessThan(1000); // Less than 1 second per email
+      expect(result?.metrics?.throughputPerMinute).toBeGreaterThan(60);
+      expect(result?.metrics?.avgTimePerEmail).toBeLessThan(1000); // Less than 1 second per email
     }, 30000);
 
     it('should meet 60+ emails/minute requirement - Large Batch', async () => {
@@ -310,8 +310,8 @@ describe('EmailIngestionService Performance Tests', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.metrics.throughputPerMinute).toBeGreaterThan(60);
-      expect(result.metrics.avgTimePerEmail).toBeLessThan(500); // Less than 500ms per email
+      expect(result?.metrics?.throughputPerMinute).toBeGreaterThan(60);
+      expect(result?.metrics?.avgTimePerEmail).toBeLessThan(500); // Less than 500ms per email
     }, 60000);
 
     it('should handle high-concurrency processing', async () => {
@@ -329,7 +329,7 @@ describe('EmailIngestionService Performance Tests', () => {
             )
           );
 
-          const promises = batches.map(batch => 
+          const promises = batches?.map(batch => 
             service.ingestBatch(batch, IngestionSource.JSON_FILE)
           );
 
@@ -339,7 +339,7 @@ describe('EmailIngestionService Performance Tests', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.metrics.throughputPerMinute).toBeGreaterThan(100); // Should be higher with concurrency
+      expect(result?.metrics?.throughputPerMinute).toBeGreaterThan(100); // Should be higher with concurrency
     }, 45000);
   });
 
@@ -372,9 +372,9 @@ describe('EmailIngestionService Performance Tests', () => {
       }
 
       // Check that throughput remains consistent across different scales
-      const throughputs = results.map(r => r.metrics.throughputPerMinute);
-      const avgThroughput = throughputs.reduce((a, b) => a + b, 0) / throughputs.length;
-      const maxVariation = Math.max(...throughputs.map(t => Math.abs(t - avgThroughput))) / avgThroughput;
+      const throughputs = results?.map(r => r?.metrics?.throughputPerMinute);
+      const avgThroughput = throughputs.reduce((a: any, b: any) => a + b, 0) / throughputs?.length || 0;
+      const maxVariation = Math.max(...throughputs?.map(t => Math.abs(t - avgThroughput))) / avgThroughput;
 
       expect(maxVariation).toBeLessThan(0.5); // Less than 50% variation
     }, 120000);
@@ -404,8 +404,8 @@ describe('EmailIngestionService Performance Tests', () => {
       }
 
       // Memory usage should not continuously increase
-      const firstHalfAvg = memoryUsageOverTime.slice(0, 10).reduce((a, b) => a + b, 0) / 10;
-      const secondHalfAvg = memoryUsageOverTime.slice(-10).reduce((a, b) => a + b, 0) / 10;
+      const firstHalfAvg = memoryUsageOverTime.slice(0, 10).reduce((a: any, b: any) => a + b, 0) / 10;
+      const secondHalfAvg = memoryUsageOverTime.slice(-10).reduce((a: any, b: any) => a + b, 0) / 10;
       const memoryGrowthRatio = secondHalfAvg / firstHalfAvg;
 
       expect(memoryGrowthRatio).toBeLessThan(2.0); // Memory usage should not double
@@ -451,7 +451,7 @@ describe('EmailIngestionService Performance Tests', () => {
         );
 
         expect(result.success).toBe(true);
-        expect(result.metrics.throughputPerMinute).toBeGreaterThan(60);
+        expect(result?.metrics?.throughputPerMinute).toBeGreaterThan(60);
       } finally {
         await stressService.shutdown();
       }
@@ -488,7 +488,7 @@ describe('EmailIngestionService Performance Tests', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.metrics.throughputPerMinute).toBeGreaterThan(30); // Lower due to large emails
+      expect(result?.metrics?.throughputPerMinute).toBeGreaterThan(30); // Lower due to large emails
     }, 90000);
 
     it('should maintain performance under continuous load', async () => {
@@ -515,8 +515,8 @@ describe('EmailIngestionService Performance Tests', () => {
       }
 
       // Performance should remain consistent
-      const avgTime = performanceOverTime.reduce((a, b) => a + b, 0) / performanceOverTime.length;
-      const maxVariation = Math.max(...performanceOverTime.map(t => Math.abs(t - avgTime))) / avgTime;
+      const avgTime = performanceOverTime.reduce((a: any, b: any) => a + b, 0) / performanceOverTime?.length || 0;
+      const maxVariation = Math.max(...performanceOverTime?.map(t => Math.abs(t - avgTime))) / avgTime;
 
       expect(maxVariation).toBeLessThan(1.0); // Less than 100% variation
     }, 120000);
@@ -538,9 +538,9 @@ describe('EmailIngestionService Performance Tests', () => {
         latencies.push(endTime - startTime);
       }
 
-      const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-      const p95Latency = latencies.sort((a, b) => a - b)[Math.floor(latencies.length * 0.95)];
-      const p99Latency = latencies.sort((a, b) => a - b)[Math.floor(latencies.length * 0.99)];
+      const avgLatency = latencies.reduce((a: any, b: any) => a + b, 0) / latencies?.length || 0;
+      const p95Latency = latencies.sort((a, b) => a - b)[Math.floor(latencies?.length || 0 * 0.95)];
+      const p99Latency = latencies.sort((a, b) => a - b)[Math.floor(latencies?.length || 0 * 0.99)];
 
       expect(avgLatency).toBeLessThan(100); // Less than 100ms average
       expect(p95Latency).toBeLessThan(200); // Less than 200ms for 95th percentile
@@ -569,7 +569,7 @@ describe('EmailIngestionService Performance Tests', () => {
         emailCount,
         async () => {
           // Process all emails individually to test priority handling
-          const promises = emails.map(email => 
+          const promises = emails?.map(email => 
             service.ingestEmail(email, IngestionSource.JSON_FILE)
           );
           const results = await Promise.all(promises);
@@ -578,7 +578,7 @@ describe('EmailIngestionService Performance Tests', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.metrics.throughputPerMinute).toBeGreaterThan(60);
+      expect(result?.metrics?.throughputPerMinute).toBeGreaterThan(60);
     }, 90000);
   });
 
@@ -592,23 +592,23 @@ describe('EmailIngestionService Performance Tests', () => {
       console.log(`  Emails: ${result.emailCount}`);
       console.log(`  Success: ${result.success}`);
       if (result.success) {
-        console.log(`  Total Time: ${result.metrics.totalTime.toFixed(2)}ms`);
-        console.log(`  Avg Time/Email: ${result.metrics.avgTimePerEmail.toFixed(2)}ms`);
-        console.log(`  Throughput: ${result.metrics.throughputPerMinute.toFixed(2)} emails/min`);
-        console.log(`  Memory Used: ${(result.metrics.memoryUsed / 1024 / 1024).toFixed(2)}MB`);
-        console.log(`  Peak Memory: ${(result.metrics.peakMemory / 1024 / 1024).toFixed(2)}MB`);
-        console.log(`  ✅ Meets Requirement: ${result.metrics.throughputPerMinute > 60 ? 'YES' : 'NO'}`);
+        console.log(`  Total Time: ${result?.metrics?.totalTime.toFixed(2)}ms`);
+        console.log(`  Avg Time/Email: ${result?.metrics?.avgTimePerEmail.toFixed(2)}ms`);
+        console.log(`  Throughput: ${result?.metrics?.throughputPerMinute.toFixed(2)} emails/min`);
+        console.log(`  Memory Used: ${(result?.metrics?.memoryUsed / 1024 / 1024).toFixed(2)}MB`);
+        console.log(`  Peak Memory: ${(result?.metrics?.peakMemory / 1024 / 1024).toFixed(2)}MB`);
+        console.log(`  ✅ Meets Requirement: ${result?.metrics?.throughputPerMinute > 60 ? 'YES' : 'NO'}`);
       } else {
         console.log(`  ❌ Errors: ${result.errors?.join(', ')}`);
       }
       console.log('');
     });
 
-    const successfulTests = benchmarkResults.filter(r => r.success);
-    const avgThroughput = successfulTests.reduce((sum, r) => sum + r.metrics.throughputPerMinute, 0) / successfulTests.length;
+    const successfulTests = benchmarkResults?.filter(r => r.success);
+    const avgThroughput = successfulTests.reduce((sum: any, r: any) => sum + r?.metrics?.throughputPerMinute, 0) / successfulTests?.length || 0;
     
     console.log(`Overall Average Throughput: ${avgThroughput.toFixed(2)} emails/min`);
-    console.log(`Tests Passed: ${successfulTests.length}/${benchmarkResults.length}`);
+    console.log(`Tests Passed: ${successfulTests?.length || 0}/${benchmarkResults?.length || 0}`);
     console.log(`Requirement Met: ${avgThroughput > 60 ? '✅ YES' : '❌ NO'}`);
     console.log('=============================================================\n');
   });

@@ -138,65 +138,65 @@ export class GroceryDataPipeline extends EventEmitter {
   }
 
   private setupEventHandlers(): void {
-    this.messageQueue.on('message:completed', (data) => {
+    this?.messageQueue?.on('message:completed', (data: any) => {
       this.emit('job:completed', data);
       this.updateProcessingStats(data.queueName, 'completed', data.processingTime);
     });
 
-    this.messageQueue.on('message:error', (data) => {
+    this?.messageQueue?.on('message:error', (data: any) => {
       this.emit('job:failed', data);
       this.updateProcessingStats(data.queueName, 'failed');
     });
 
-    this.messageQueue.on('message:retry', (data) => {
+    this?.messageQueue?.on('message:retry', (data: any) => {
       this.emit('job:retry', data);
       this.updateProcessingStats(data.queueName, 'retry');
     });
 
-    this.cacheManager.on('cache:hit', (data) => {
+    this?.cacheManager?.on('cache:hit', (data: any) => {
       this.emit('cache:hit', data);
     });
   }
 
   private initializeConsumers(): void {
     // Price Updates Consumer
-    this.consumers.set('price_updates', {
+    this?.consumers?.set('price_updates', {
       name: 'price_processor',
-      concurrency: this.config.processing.concurrency,
+      concurrency: this?.config?.processing.concurrency,
       process: ((message: any) => this.processPriceUpdate(message as GroceryMessage)),
       onError: ((error: Error, message: any) => this.handleProcessingError(error, message as GroceryMessage)),
       onRetry: ((message: any, retryCount: number) => this.shouldRetryJob(message as GroceryMessage, retryCount))
     });
 
     // Inventory Sync Consumer
-    this.consumers.set('inventory_sync', {
+    this?.consumers?.set('inventory_sync', {
       name: 'inventory_processor',
-      concurrency: this.config.processing.concurrency,
+      concurrency: this?.config?.processing.concurrency,
       process: ((message: any) => this.processInventoryUpdate(message as GroceryMessage)),
       onError: ((error: Error, message: any) => this.handleProcessingError(error, message as GroceryMessage)),
       onRetry: ((message: any, retryCount: number) => this.shouldRetryJob(message as GroceryMessage, retryCount))
     });
 
     // Product Matching Consumer
-    this.consumers.set('product_matching', {
+    this?.consumers?.set('product_matching', {
       name: 'matching_processor',
-      concurrency: Math.floor(this.config.processing.concurrency / 2), // CPU intensive
+      concurrency: Math.floor(this?.config?.processing.concurrency / 2), // CPU intensive
       process: ((message: any) => this.processProductMatch(message as GroceryMessage)),
       onError: ((error: Error, message: any) => this.handleProcessingError(error, message as GroceryMessage)),
       onRetry: ((message: any, retryCount: number) => this.shouldRetryJob(message as GroceryMessage, retryCount))
     });
 
     // Deal Analysis Consumer
-    this.consumers.set('deal_analysis', {
+    this?.consumers?.set('deal_analysis', {
       name: 'deal_processor',
-      concurrency: this.config.processing.concurrency,
+      concurrency: this?.config?.processing.concurrency,
       process: ((message: any) => this.processDealAnalysis(message as GroceryMessage)),
       onError: ((error: Error, message: any) => this.handleProcessingError(error, message as GroceryMessage)),
       onRetry: ((message: any, retryCount: number) => this.shouldRetryJob(message as GroceryMessage, retryCount))
     });
 
     // Nutrition Fetch Consumer
-    this.consumers.set('nutrition_fetch', {
+    this?.consumers?.set('nutrition_fetch', {
       name: 'nutrition_processor',
       concurrency: 2, // Limited by external API
       process: ((message: any) => this.processNutritionFetch(message as GroceryMessage)),
@@ -205,16 +205,16 @@ export class GroceryDataPipeline extends EventEmitter {
     });
 
     // Review Analysis Consumer
-    this.consumers.set('review_analysis', {
+    this?.consumers?.set('review_analysis', {
       name: 'review_processor',
-      concurrency: this.config.processing.concurrency,
+      concurrency: this?.config?.processing.concurrency,
       process: ((message: any) => this.processReviewAnalysis(message as GroceryMessage)),
       onError: ((error: Error, message: any) => this.handleProcessingError(error, message as GroceryMessage)),
       onRetry: ((message: any, retryCount: number) => this.shouldRetryJob(message as GroceryMessage, retryCount))
     });
 
     // Recommendation Generation Consumer
-    this.consumers.set('recommendations', {
+    this?.consumers?.set('recommendations', {
       name: 'recommendation_processor',
       concurrency: 1, // Sequential processing for consistency
       process: ((message: any) => this.processRecommendationGeneration(message as GroceryMessage)),
@@ -228,7 +228,7 @@ export class GroceryDataPipeline extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const priceData = PriceUpdateSchema.parse(message.payload.data);
+      const priceData = PriceUpdateSchema.parse(message?.payload?.data);
       
       this.emit('job:processing', {
         type: 'price_update',
@@ -243,7 +243,7 @@ export class GroceryDataPipeline extends EventEmitter {
         : 0;
 
       // Update pricing service cache
-      if (this.config.processing.enableCaching) {
+      if (this?.config?.processing.enableCaching) {
         await this.updatePriceCache(priceData);
       }
 
@@ -289,7 +289,7 @@ export class GroceryDataPipeline extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const inventoryData = InventoryUpdateSchema.parse(message.payload.data);
+      const inventoryData = InventoryUpdateSchema.parse(message?.payload?.data);
       
       this.emit('job:processing', {
         type: 'inventory_sync',
@@ -299,7 +299,7 @@ export class GroceryDataPipeline extends EventEmitter {
       });
 
       // Update inventory cache
-      if (this.config.processing.enableCaching) {
+      if (this?.config?.processing.enableCaching) {
         await this.updateInventoryCache(inventoryData);
       }
 
@@ -343,7 +343,7 @@ export class GroceryDataPipeline extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const matchData = ProductMatchSchema.parse(message.payload.data);
+      const matchData = ProductMatchSchema.parse(message?.payload?.data);
       
       this.emit('job:processing', {
         type: 'product_match',
@@ -356,7 +356,7 @@ export class GroceryDataPipeline extends EventEmitter {
       const matchResult = await this.performProductMatching(matchData);
       
       // Update product relationship cache
-      if (this.config.processing.enableCaching && matchResult.confidence > 0.8) {
+      if (this?.config?.processing.enableCaching && matchResult.confidence > 0.8) {
         await this.updateProductMatchCache(matchData, matchResult);
       }
 
@@ -387,7 +387,7 @@ export class GroceryDataPipeline extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const dealData = DealAnalysisSchema.parse(message.payload.data);
+      const dealData = DealAnalysisSchema.parse(message?.payload?.data);
       
       this.emit('job:processing', {
         type: 'deal_analysis',
@@ -400,7 +400,7 @@ export class GroceryDataPipeline extends EventEmitter {
       const analysisResult = await this.analyzeDeal(dealData);
       
       // Update deals cache
-      if (this.config.processing.enableCaching) {
+      if (this?.config?.processing.enableCaching) {
         await this.updateDealCache(dealData, analysisResult);
       }
 
@@ -438,7 +438,7 @@ export class GroceryDataPipeline extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const productId = message.payload.productId;
+      const productId = message?.payload?.productId;
       if (!productId) {
         throw new Error('Product ID required for nutrition fetch');
       }
@@ -456,7 +456,7 @@ export class GroceryDataPipeline extends EventEmitter {
       const validatedData = NutritionDataSchema.parse(nutritionData);
       
       // Update nutrition cache
-      if (this.config.processing.enableCaching) {
+      if (this?.config?.processing.enableCaching) {
         await this.updateNutritionCache(productId, validatedData);
       }
 
@@ -487,7 +487,7 @@ export class GroceryDataPipeline extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const { productId, reviews } = message.payload.data;
+      const { productId, reviews } = message?.payload?.data;
       
       this.emit('job:processing', {
         type: 'review_analysis',
@@ -500,7 +500,7 @@ export class GroceryDataPipeline extends EventEmitter {
       const analysisResult = await this.analyzeReviews(productId, reviews);
       
       // Update review sentiment cache
-      if (this.config.processing.enableCaching) {
+      if (this?.config?.processing.enableCaching) {
         await this.updateReviewCache(productId, analysisResult);
       }
 
@@ -531,7 +531,8 @@ export class GroceryDataPipeline extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const { userId, context } = message.payload;
+      const { userId } = message.payload;
+      const context = 'context' in message.payload ? message?.payload?.context : undefined;
       
       this.emit('job:processing', {
         type: 'recommendation_generation',
@@ -541,11 +542,11 @@ export class GroceryDataPipeline extends EventEmitter {
       });
 
       // Generate personalized recommendations
-      const recommendations = await this.generateRecommendations(userId, context);
+      const recommendations = await this.generateRecommendations(userId || '', context);
       
       // Update user recommendations cache
-      if (this.config.processing.enableCaching) {
-        await this.updateRecommendationCache(userId, recommendations);
+      if (this?.config?.processing.enableCaching) {
+        await this.updateRecommendationCache(userId || '', recommendations);
       }
 
       const result = {
@@ -578,7 +579,7 @@ export class GroceryDataPipeline extends EventEmitter {
   // Helper methods for processing
   private async updatePriceCache(priceData: PriceUpdate): Promise<void> {
     const cacheKey = `price:${priceData.productId}:${priceData.storeId}`;
-    await this.cacheManager.getCentralCache().set(cacheKey, priceData, {
+    await this?.cacheManager?.getCentralCache().set(cacheKey, priceData, {
       ttl: 3600, // 1 hour
       tags: [`pricing`, `product:${priceData.productId}`, `store:${priceData.storeId}`]
     });
@@ -586,7 +587,7 @@ export class GroceryDataPipeline extends EventEmitter {
 
   private async updateInventoryCache(inventoryData: InventoryUpdate): Promise<void> {
     const cacheKey = `inventory:${inventoryData.productId}:${inventoryData.storeId}`;
-    await this.cacheManager.getCentralCache().set(cacheKey, inventoryData, {
+    await this?.cacheManager?.getCentralCache().set(cacheKey, inventoryData, {
       ttl: 1800, // 30 minutes
       tags: [`inventory`, `product:${inventoryData.productId}`, `store:${inventoryData.storeId}`]
     });
@@ -594,7 +595,7 @@ export class GroceryDataPipeline extends EventEmitter {
 
   private async updateProductMatchCache(matchData: ProductMatch, result: any): Promise<void> {
     const cacheKey = `match:${matchData.sourceProductId}:${matchData.targetProductId}`;
-    await this.cacheManager.getCentralCache().set(cacheKey, { ...matchData, ...result }, {
+    await this?.cacheManager?.getCentralCache().set(cacheKey, { ...matchData, ...result }, {
       ttl: 86400, // 24 hours
       tags: [`product_match`, `product:${matchData.sourceProductId}`, `product:${matchData.targetProductId}`]
     });
@@ -602,7 +603,7 @@ export class GroceryDataPipeline extends EventEmitter {
 
   private async updateDealCache(dealData: DealAnalysis, analysisResult: any): Promise<void> {
     const cacheKey = `deal:${dealData.dealId}`;
-    await this.cacheManager.getCentralCache().set(cacheKey, { ...dealData, analysis: analysisResult }, {
+    await this?.cacheManager?.getCentralCache().set(cacheKey, { ...dealData, analysis: analysisResult }, {
       ttl: 7200, // 2 hours
       tags: [`deal`, `product:${dealData.productId}`, `store:${dealData.storeId}`]
     });
@@ -610,7 +611,7 @@ export class GroceryDataPipeline extends EventEmitter {
 
   private async updateNutritionCache(productId: string, nutritionData: NutritionData): Promise<void> {
     const cacheKey = `nutrition:${productId}`;
-    await this.cacheManager.getCentralCache().set(cacheKey, nutritionData, {
+    await this?.cacheManager?.getCentralCache().set(cacheKey, nutritionData, {
       ttl: 604800, // 7 days (nutrition data changes rarely)
       tags: [`nutrition`, `product:${productId}`]
     });
@@ -618,7 +619,7 @@ export class GroceryDataPipeline extends EventEmitter {
 
   private async updateReviewCache(productId: string, analysisResult: any): Promise<void> {
     const cacheKey = `reviews:${productId}`;
-    await this.cacheManager.getCentralCache().set(cacheKey, analysisResult, {
+    await this?.cacheManager?.getCentralCache().set(cacheKey, analysisResult, {
       ttl: 14400, // 4 hours
       tags: [`reviews`, `product:${productId}`]
     });
@@ -626,7 +627,7 @@ export class GroceryDataPipeline extends EventEmitter {
 
   private async updateRecommendationCache(userId: string, recommendations: any[]): Promise<void> {
     const cacheKey = `recommendations:${userId}`;
-    await this.cacheManager.getCentralCache().set(cacheKey, recommendations, {
+    await this?.cacheManager?.getCentralCache().set(cacheKey, recommendations, {
       ttl: 3600, // 1 hour
       tags: [`recommendations`, `user:${userId}`]
     });
@@ -737,7 +738,7 @@ export class GroceryDataPipeline extends EventEmitter {
       tags: ['deal_analysis', 'price_triggered']
     };
 
-    return await this.messageQueue.enqueue(this.config.queues.dealAnalysis, dealMessage);
+    return await this?.messageQueue?.enqueue(this?.config?.queues.dealAnalysis, dealMessage);
   }
 
   private async enqueueRecommendationGeneration(dealData: DealAnalysis): Promise<string> {
@@ -761,7 +762,7 @@ export class GroceryDataPipeline extends EventEmitter {
       tags: ['recommendation', 'deal_triggered']
     };
 
-    return await this.messageQueue.enqueue(this.config.queues.recommendations, recMessage);
+    return await this?.messageQueue?.enqueue(this?.config?.queues.recommendations, recMessage);
   }
 
   // Error handling and retry logic
@@ -799,8 +800,8 @@ export class GroceryDataPipeline extends EventEmitter {
   }
 
   private updateProcessingStats(queueName: string, operation: string, processingTime?: number): void {
-    if (!this.processingStats.has(queueName)) {
-      this.processingStats.set(queueName, {
+    if (!this?.processingStats?.has(queueName)) {
+      this?.processingStats?.set(queueName, {
         completed: 0,
         failed: 0,
         retry: 0,
@@ -809,7 +810,7 @@ export class GroceryDataPipeline extends EventEmitter {
       });
     }
 
-    const stats = this.processingStats.get(queueName)!;
+    const stats = this?.processingStats?.get(queueName)!;
     stats[operation]++;
 
     if (processingTime && operation === 'completed') {
@@ -817,7 +818,7 @@ export class GroceryDataPipeline extends EventEmitter {
       stats.avgProcessingTime = stats.totalProcessingTime / stats.completed;
     }
 
-    this.processingStats.set(queueName, stats);
+    this?.processingStats?.set(queueName, stats);
   }
 
   // Public API methods
@@ -827,14 +828,14 @@ export class GroceryDataPipeline extends EventEmitter {
     this.emit('pipeline:starting');
 
     // Connect message queue
-    await this.messageQueue.connect();
+    await this?.messageQueue?.connect();
 
     // Register and start all consumers
     for (const [queueType, consumer] of this.consumers) {
-      const queueName = (this.config.queues as any)[queueType];
+      const queueName = (this?.config?.queues as any)[queueType];
       if (queueName) {
-        await this.messageQueue.registerConsumer(queueName, consumer);
-        await this.messageQueue.startConsumer(queueName, consumer.name);
+        await this?.messageQueue?.registerConsumer(queueName, consumer);
+        await this?.messageQueue?.startConsumer(queueName, consumer.name);
       }
     }
 
@@ -870,7 +871,7 @@ export class GroceryDataPipeline extends EventEmitter {
       tags: ['price_update']
     };
 
-    return await this.messageQueue.enqueue(this.config.queues.priceUpdates, message);
+    return await this?.messageQueue?.enqueue(this?.config?.queues.priceUpdates, message);
   }
 
   public async submitInventorySync(inventoryData: InventoryUpdate): Promise<string> {
@@ -889,7 +890,7 @@ export class GroceryDataPipeline extends EventEmitter {
       tags: ['inventory_sync']
     };
 
-    return await this.messageQueue.enqueue(this.config.queues.inventorySync, message);
+    return await this?.messageQueue?.enqueue(this?.config?.queues.inventorySync, message);
   }
 
   public async submitProductMatch(matchData: ProductMatch): Promise<string> {
@@ -906,7 +907,7 @@ export class GroceryDataPipeline extends EventEmitter {
       tags: ['product_match']
     };
 
-    return await this.messageQueue.enqueue(this.config.queues.productMatching, message);
+    return await this?.messageQueue?.enqueue(this?.config?.queues.productMatching, message);
   }
 
   public async submitNutritionFetch(productId: string): Promise<string> {
@@ -924,7 +925,7 @@ export class GroceryDataPipeline extends EventEmitter {
       tags: ['nutrition_fetch']
     };
 
-    return await this.messageQueue.enqueue(this.config.queues.nutritionFetch, message);
+    return await this?.messageQueue?.enqueue(this?.config?.queues.nutritionFetch, message);
   }
 
   public getProcessingStats(): Map<string, any> {
@@ -932,7 +933,7 @@ export class GroceryDataPipeline extends EventEmitter {
   }
 
   public async getQueueStats(): Promise<any[]> {
-    return await this.messageQueue.getAllQueueStats();
+    return await this?.messageQueue?.getAllQueueStats();
   }
 
   public isActive(): boolean {
@@ -941,7 +942,7 @@ export class GroceryDataPipeline extends EventEmitter {
 
   public async shutdown(): Promise<void> {
     await this.stop();
-    await this.messageQueue.shutdown();
+    await this?.messageQueue?.shutdown();
     this.removeAllListeners();
   }
 }

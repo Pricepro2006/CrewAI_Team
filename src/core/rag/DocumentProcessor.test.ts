@@ -46,7 +46,7 @@ const x = 5;
       });
 
       expect(result).toBeDefined();
-      expect(result.length).toBeGreaterThan(0);
+      expect(result?.length || 0).toBeGreaterThan(0);
       expect(result[0]?.metadata.contentType).toBe("text/markdown");
     });
 
@@ -57,10 +57,10 @@ const x = 5;
         contentType: "text/plain",
       });
 
-      expect(result.length).toBeGreaterThan(1);
+      expect(result?.length || 0).toBeGreaterThan(1);
       result.forEach((chunk, index) => {
-        expect(chunk.metadata.chunkIndex).toBe(index);
-        expect(chunk.metadata.sourceId).toBe("test-long-1");
+        expect(chunk?.metadata?.chunkIndex).toBe(index);
+        expect(chunk?.metadata?.sourceId).toBe("test-long-1");
       });
     });
   });
@@ -124,11 +124,11 @@ const x = 5;
         sourceId: "test-chunk-1",
       });
 
-      expect(result.length).toBeGreaterThan(1);
+      expect(result?.length || 0).toBeGreaterThan(1);
       // Verify metadata is correct
       result.forEach((chunk, i) => {
-        expect(chunk.metadata.chunkIndex).toBe(i);
-        expect(chunk.metadata.totalChunks).toBe(result.length);
+        expect(chunk?.metadata?.chunkIndex).toBe(i);
+        expect(chunk?.metadata?.totalChunks).toBe(result?.length || 0);
       });
     });
 
@@ -143,10 +143,10 @@ const x = 5;
         sourceId: "test-separator",
       });
 
-      expect(result.length).toBeGreaterThan(1);
-      result.forEach((chunk) => {
+      expect(result?.length || 0).toBeGreaterThan(1);
+      result.forEach((chunk: any) => {
         // Each chunk should contain sentences
-        expect(chunk.content.length).toBeGreaterThan(0);
+        expect(chunk?.content?.length).toBeGreaterThan(0);
       });
     });
 
@@ -175,9 +175,9 @@ const x = 5;
         contentType: "text/plain",
       });
 
-      expect(result.length).toBeGreaterThan(3);
-      result.forEach((chunk) => {
-        expect(chunk.content.length).toBeLessThanOrEqual(50);
+      expect(result?.length || 0).toBeGreaterThan(3);
+      result.forEach((chunk: any) => {
+        expect(chunk?.content?.length).toBeLessThanOrEqual(50);
       });
     });
 
@@ -195,9 +195,9 @@ const x = 5;
         contentType: "text/plain",
       });
 
-      result.forEach((chunk) => {
+      result.forEach((chunk: any) => {
         // Each chunk should contain text
-        expect(chunk.content.length).toBeGreaterThan(0);
+        expect(chunk?.content?.length).toBeGreaterThan(0);
       });
     });
   });
@@ -229,7 +229,7 @@ const x = 5;
       });
 
       expect(result[0]?.metadata.chunkIndex).toBe(0);
-      expect(result[0]?.metadata.chunkSize).toBe(result[0]?.content.length);
+      expect(result[0]?.metadata.chunkSize).toBe(result[0]?.content?.length || 0);
     });
   });
 
@@ -256,7 +256,7 @@ const x = 5;
       });
 
       expect(result).toBeDefined();
-      expect(result.length).toBeGreaterThan(1);
+      expect(result?.length || 0).toBeGreaterThan(1);
     });
 
     it("should handle special characters", async () => {

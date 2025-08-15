@@ -81,7 +81,7 @@ export class MemoryIntegrationManager {
 
     return {
       success: true,
-      entitiesCreated: systemEntities.length,
+      entitiesCreated: systemEntities?.length || 0,
       timestamp: new Date(),
     };
   }
@@ -152,7 +152,7 @@ export class MemoryIntegrationManager {
         `Steps: ${JSON.stringify(plan.steps)}`,
         `Created: ${new Date().toISOString()}`,
         `Estimated time: ${plan.estimatedTime}`,
-        `Required agents: ${plan.steps.map((s: any) => s.agent).join(", ")}`,
+        `Required agents: ${plan?.steps?.map((s: any) => s.agent).join(", ")}`,
       ],
     };
 
@@ -259,16 +259,16 @@ export class MemoryIntegrationManager {
     const graph = await this.readGraph();
 
     // Analyze execution patterns
-    const executionPlans = graph.entities.filter(
+    const executionPlans = graph?.entities?.filter(
       (e: any) => e.entityType === "Plan",
     );
-    const conversations = graph.entities.filter(
+    const conversations = graph?.entities?.filter(
       (e: any) => e.entityType === "Conversation",
     );
 
     const metrics = {
-      totalPlans: executionPlans.length,
-      totalConversations: conversations.length,
+      totalPlans: executionPlans?.length || 0,
+      totalConversations: conversations?.length || 0,
       agentUsage: this.calculateAgentUsage(graph),
       averageConfidence: this.calculateAverageConfidence(graph),
       commonPatterns: this.identifyCommonPatterns(executionPlans),
@@ -335,19 +335,19 @@ export class MemoryIntegrationManager {
     return `
 Agent: ${agent.name}
 Recent Activity: ${recentObservations.join("\n")}
-Relevant History: ${relevantHistory.map((h: any) => h.name).join(", ")}
+Relevant History: ${relevantHistory?.map((h: any) => h.name).join(", ")}
     `.trim();
   }
 
   // Missing method implementations to fix TypeScript errors
   private async createEntities(entities: any[]): Promise<void> {
     // Mock implementation for legacy file
-    console.log("Creating entities:", entities.map((e) => e.name).join(", "));
+    console.log("Creating entities:", entities?.map((e: any) => e.name).join(", "));
   }
 
   private async createRelations(relations: any[]): Promise<void> {
     // Mock implementation for legacy file
-    console.log("Creating relations:", relations.length);
+    console.log("Creating relations:", relations?.length || 0);
   }
 
   private async readGraph(): Promise<any> {

@@ -21,7 +21,7 @@ export class DatabaseSecurityViews {
       logger.info("Creating security views", "DB_SECURITY");
 
       // View for email summaries (no sensitive content)
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE VIEW IF NOT EXISTS v_email_summaries AS
         SELECT 
           e.id,
@@ -43,7 +43,7 @@ export class DatabaseSecurityViews {
       `);
 
       // View for user workload analysis
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE VIEW IF NOT EXISTS v_user_workload AS
         SELECT 
           assigned_to as user_id,
@@ -63,7 +63,7 @@ export class DatabaseSecurityViews {
       `);
 
       // View for workflow performance metrics
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE VIEW IF NOT EXISTS v_workflow_metrics AS
         SELECT 
           workflow_type,
@@ -82,7 +82,7 @@ export class DatabaseSecurityViews {
       `);
 
       // View for entity statistics (no actual entity values)
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE VIEW IF NOT EXISTS v_entity_statistics AS
         SELECT 
           entity_type,
@@ -96,7 +96,7 @@ export class DatabaseSecurityViews {
       `);
 
       // View for daily email analytics
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE VIEW IF NOT EXISTS v_daily_email_stats AS
         SELECT 
           DATE(received_at) as email_date,
@@ -115,7 +115,7 @@ export class DatabaseSecurityViews {
       `);
 
       // View for conversation threads (limited info)
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE VIEW IF NOT EXISTS v_conversation_threads AS
         SELECT 
           conversation_id_ref,
@@ -132,7 +132,7 @@ export class DatabaseSecurityViews {
       `);
 
       // View for SLA monitoring
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE VIEW IF NOT EXISTS v_sla_monitoring AS
         SELECT 
           e.id,
@@ -159,7 +159,7 @@ export class DatabaseSecurityViews {
       `);
 
       // View for attachment analysis (no content)
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE VIEW IF NOT EXISTS v_attachment_analysis AS
         SELECT 
           content_type,
@@ -190,7 +190,7 @@ export class DatabaseSecurityViews {
       logger.info("Creating audit triggers", "DB_SECURITY");
 
       // Ensure audit_logs table exists
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS audit_logs (
           id TEXT PRIMARY KEY,
           entity_type TEXT NOT NULL,
@@ -206,7 +206,7 @@ export class DatabaseSecurityViews {
       `);
 
       // Trigger for email updates
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TRIGGER IF NOT EXISTS tr_audit_email_update
         AFTER UPDATE ON emails_enhanced
         FOR EACH ROW
@@ -239,7 +239,7 @@ export class DatabaseSecurityViews {
       `);
 
       // Trigger for user login attempts
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS login_attempts (
           id TEXT PRIMARY KEY,
           email TEXT NOT NULL,
@@ -255,7 +255,7 @@ export class DatabaseSecurityViews {
       `);
 
       // Trigger to monitor failed login attempts
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TRIGGER IF NOT EXISTS tr_monitor_failed_logins
         AFTER INSERT ON login_attempts
         FOR EACH ROW
@@ -291,7 +291,7 @@ export class DatabaseSecurityViews {
       logger.info("Creating RBAC tables", "DB_SECURITY");
 
       // Permissions table
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS permissions (
           id TEXT PRIMARY KEY,
           resource TEXT NOT NULL,
@@ -306,7 +306,7 @@ export class DatabaseSecurityViews {
       `);
 
       // Role permissions mapping
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS role_permissions (
           id TEXT PRIMARY KEY,
           role TEXT NOT NULL,
@@ -321,7 +321,7 @@ export class DatabaseSecurityViews {
       `);
 
       // User permissions (for specific overrides)
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS user_permissions (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
@@ -382,7 +382,7 @@ export class DatabaseSecurityViews {
         },
       ];
 
-      const insertPermission = this.db.prepare(`
+      const insertPermission = this?.db?.prepare(`
         INSERT OR IGNORE INTO permissions (id, resource, action, description)
         VALUES (?, ?, ?, ?)
       `);
@@ -409,7 +409,7 @@ export class DatabaseSecurityViews {
       logger.info("Creating data masking views", "DB_SECURITY");
 
       // Masked email view for non-privileged users
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE VIEW IF NOT EXISTS v_emails_masked AS
         SELECT 
           e.id,
@@ -432,7 +432,7 @@ export class DatabaseSecurityViews {
       `);
 
       // Masked user view
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE VIEW IF NOT EXISTS v_users_masked AS
         SELECT 
           id,

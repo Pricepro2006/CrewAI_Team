@@ -99,30 +99,30 @@ export class WalmartGroceryService {
       logger.info("Searching products", "WALMART_SERVICE", { options });
 
       // First check local database
-      let localResults = await this.productRepo.searchProducts(options.query, options.limit || 20);
+      let localResults = await this?.productRepo?.searchProducts(options.query, options.limit || 20);
 
       // Apply filters
       if (options.category) {
-        localResults = localResults.filter(p => 
+        localResults = localResults?.filter(p => 
           p.category_path?.includes(options.category!) || 
           p.department?.includes(options.category!)
         );
       }
 
       if (options.inStockOnly) {
-        localResults = localResults.filter(p => p.in_stock);
+        localResults = localResults?.filter(p => p.in_stock);
       }
 
       if (options.priceRange) {
-        localResults = localResults.filter(p => {
+        localResults = localResults?.filter(p => {
           const price = p.current_price || 0;
           return price >= options.priceRange!.min && price <= options.priceRange!.max;
         });
       }
 
       // If not enough local results, fetch from web
-      if (localResults.length < (options.limit || 20)) {
-        const webResults = await this.scraper.searchWalmartProducts({
+      if (localResults?.length || 0 < (options.limit || 20)) {
+        const webResults = await this?.scraper?.searchWalmartProducts({
           query: options.query,
           limit: options.limit,
           filters: {
@@ -133,20 +133,20 @@ export class WalmartGroceryService {
         });
 
         // Convert local results to WalmartProduct format
-        const localWalmartProducts = localResults.map(entity => this.transformEntityToProduct(entity));
+        const localWalmartProducts = localResults?.map(entity => this.transformEntityToProduct(entity));
         
         // Merge and deduplicate results
         const mergedResults = this.mergeProductResults(localWalmartProducts, webResults);
         
         // Update local database with new products
         for (const product of webResults) {
-          await this.productRepo.upsertProduct(this.convertToRepoProduct(product));
+          await this?.productRepo?.upsertProduct(this.convertToRepoProduct(product));
         }
 
         return mergedResults;
       }
 
-      return localResults.map(entity => this.transformEntityToProduct(entity));
+      return localResults?.map(entity => this.transformEntityToProduct(entity));
     } catch (error) {
       logger.error("Product search failed", "WALMART_SERVICE", { error });
       throw error;
@@ -159,14 +159,14 @@ export class WalmartGroceryService {
   async getProductDetails(productId: string, includeRealTime: boolean = true): Promise<WalmartProduct | null> {
     try {
       // Get from database first
-      const productEntity = await this.productRepo.findById(productId);
+      const productEntity = await this?.productRepo?.findById(productId);
       const product = productEntity ? this.transformEntityToProduct(productEntity) : null;
       
       if (!product) {
         // Try to fetch from web
-        const webProduct = await this.scraper.getProductDetails(productId);
+        const webProduct = await this?.scraper?.getProductDetails(productId);
         if (webProduct) {
-          await this.productRepo.upsertProduct(this.convertToRepoProduct(webProduct));
+          await this?.productRepo?.upsertProduct(this.convertToRepoProduct(webProduct));
           return webProduct;
         }
         return null;
@@ -174,17 +174,17 @@ export class WalmartGroceryService {
 
       // Check if we need real-time update
       if (includeRealTime && this.needsPriceUpdate(product)) {
-        const updatedProduct = await this.scraper.getProductDetails(productId);
+        const updatedProduct = await this?.scraper?.getProductDetails(productId);
         if (updatedProduct) {
-          await this.productRepo.upsertProduct(this.convertToRepoProduct(updatedProduct));
+          await this?.productRepo?.upsertProduct(this.convertToRepoProduct(updatedProduct));
           
           // Record price history if price changed
           const updatedPrice = typeof updatedProduct.price === 'object' 
-            ? updatedProduct.price.regular 
+            ? updatedProduct?.price?.regular 
             : updatedProduct.price;
           if (updatedPrice !== (product as any).current_price) {
             // TODO: Implement recordPriceHistory method in repository
-            // await this.productRepo.recordPriceHistory(
+            // await this?.productRepo?.recordPriceHistory(
             //   productId, 
             //   updatedProduct.price!,
             //   updatedProduct.price! < (updatedProduct.originalPrice || updatedProduct.price)!
@@ -207,7 +207,7 @@ export class WalmartGroceryService {
    */
   async createGroceryList(userId: string, name: string, description?: string): Promise<RepoGroceryList> {
     try {
-      const list = await this.listRepo.createList({
+      const list = await this?.listRepo?.createList({
         id: uuidv4(),  // Generate ID here
         user_id: userId,
         list_name: name,
@@ -235,15 +235,15 @@ export class WalmartGroceryService {
    */
   async addItemsToList(listId: string, items: CartItem[]): Promise<RepoGroceryItem[]> {
     try {
-      if (items.length === 0) return [];
+      if (items?.length || 0 === 0) return [];
 
       // OPTIMIZATION: Batch fetch all products at once instead of N queries
-      const productIds = items.map(item => item.productId);
-      const products = await this.productRepo.findByIds(productIds);
-      const productMap = new Map(products.map(p => [p.product_id, p]));
+      const productIds = items?.map(item => item.productId);
+      const products = await this?.productRepo?.findByIds(productIds);
+      const productMap = new Map(products?.map(p => [p.product_id, p]));
 
       // Use database transaction for consistency
-      return await this.productRepo.transaction(async () => {
+      return await this?.productRepo?.transaction(async () => {
         const addedItems: RepoGroceryItem[] = [];
 
         for (const item of items) {
@@ -257,9 +257,9 @@ export class WalmartGroceryService {
           }
 
           // Convert entity to product format
-          const product = this.productRepo.entityToProduct(productEntity);
+          const product = this?.productRepo?.entityToProduct(productEntity);
 
-          const groceryItem = await this.itemRepo.addItem({
+          const groceryItem = await this?.itemRepo?.addItem({
             id: uuidv4(),  // Generate ID here
             list_id: listId,
             item_name: product.name,
@@ -275,8 +275,8 @@ export class WalmartGroceryService {
 
         logger.info("Added items to list with batch optimization", "WALMART_SERVICE", { 
           listId, 
-          itemCount: addedItems.length,
-          batchSize: productIds.length
+          itemCount: addedItems?.length || 0,
+          batchSize: productIds?.length || 0
         });
 
         return addedItems;
@@ -303,7 +303,7 @@ export class WalmartGroceryService {
   ): Promise<WalmartProduct[]> {
     try {
       // Get user preferences
-      const preferences = await this.preferencesRepo.getPreferences(userId);
+      const preferences = await this?.preferencesRepo?.getPreferences(userId);
       
       // Get original product
       const originalProduct = await this.getProductDetails(productId);
@@ -313,10 +313,10 @@ export class WalmartGroceryService {
 
       // Find similar products
       // Use searchProducts as fallback since findSimilarProducts doesn't exist
-      const substituteEntities = await this.productRepo.searchProducts(`similar to ${productId}`, 10);
+      const substituteEntities = await this?.productRepo?.searchProducts(`similar to ${productId}`, 10);
 
       // Convert ProductEntity[] to WalmartProduct[]
-      let substitutes = substituteEntities.map(entity => this.transformEntityToProduct(entity));
+      let substitutes = substituteEntities?.map(entity => this.transformEntityToProduct(entity));
 
       // Apply user preferences
       if (preferences) {
@@ -332,7 +332,7 @@ export class WalmartGroceryService {
 
       // Record substitution suggestions
       for (const substitute of scoredSubstitutes.slice(0, 3)) {
-        await this.substitutionRepo.recordSubstitution({
+        await this?.substitutionRepo?.recordSubstitution({
           id: '', // Will be generated by recordSubstitution
           original_product_id: productId,
           substitute_product_id: substitute.id,
@@ -358,7 +358,7 @@ export class WalmartGroceryService {
     type: "online" | "in_store" | "pickup" | "delivery" = "online"
   ): Promise<RepoShoppingSession> {
     try {
-      const session = await this.sessionRepo.createSession({
+      const session = await this?.sessionRepo?.createSession({
         id: uuidv4(),  // Generate ID here
         user_id: userId,
         list_id: listId,
@@ -385,13 +385,13 @@ export class WalmartGroceryService {
    */
   async processCheckout(sessionId: string): Promise<RepoShoppingSession> {
     try {
-      const session = await this.sessionRepo.getSession(sessionId);
+      const session = await this?.sessionRepo?.getSession(sessionId);
       if (!session) {
         throw new Error(`Session not found: ${sessionId}`);
       }
 
       // Calculate totals
-      const items = await this.itemRepo.getListItems(session.list_id!);
+      const items = await this?.itemRepo?.getListItems(session.list_id!);
       let subtotal = 0;
       let itemsFound = 0;
       let itemsSubstituted = 0;
@@ -406,8 +406,8 @@ export class WalmartGroceryService {
       }
 
       // Update session with totals
-      const updatedSession = await this.sessionRepo.updateSession(sessionId, {
-        items_total: items.length,
+      const updatedSession = await this?.sessionRepo?.updateSession(sessionId, {
+        items_total: items?.length || 0,
         items_found: itemsFound,
         items_substituted: itemsSubstituted,
         subtotal,
@@ -434,9 +434,9 @@ export class WalmartGroceryService {
   async getRecommendations(userId: string, context?: any): Promise<WalmartProduct[]> {
     try {
       // Get user preferences and history
-      const preferences = await this.preferencesRepo.getPreferences(userId);
+      const preferences = await this?.preferencesRepo?.getPreferences(userId);
       // Get recent sessions - using available methods
-      const activeSession = await this.sessionRepo.getActiveSession(userId);
+      const activeSession = await this?.sessionRepo?.getActiveSession(userId);
       const recentSessions = activeSession ? [activeSession] : [];
       
       // Build recommendation context
@@ -448,14 +448,14 @@ export class WalmartGroceryService {
       };
 
       // Use vector search for recommendations
-      const recommendations = await this.lookupService.getPersonalizedRecommendations(
+      const recommendations = await this?.lookupService?.getPersonalizedRecommendations(
         userId,
         recommendationContext
       );
 
       logger.info("Generated recommendations", "WALMART_SERVICE", { 
         userId,
-        count: recommendations.length 
+        count: recommendations?.length || 0 
       });
 
       return recommendations;
@@ -508,12 +508,12 @@ export class WalmartGroceryService {
     const preferredBrands = options?.preferredBrands || preferences.preferred_brands || [];
     const avoidBrands = options?.avoidBrands || preferences.avoided_brands || [];
 
-    if (avoidBrands.length > 0) {
-      filtered = filtered.filter(p => !avoidBrands.includes(p.brand || ""));
+    if (avoidBrands?.length || 0 > 0) {
+      filtered = filtered?.filter(p => !avoidBrands.includes(p.brand || ""));
     }
 
     // Sort by preferred brands
-    if (preferredBrands.length > 0) {
+    if (preferredBrands?.length || 0 > 0) {
       filtered.sort((a, b) => {
         const aPreferred = preferredBrands.includes(a.brand || "");
         const bPreferred = preferredBrands.includes(b.brand || "");
@@ -543,7 +543,7 @@ export class WalmartGroceryService {
     // Simple scoring based on price and rating
     // In production, this would use ML models and vector similarity
     
-    const scored = substitutes.map(sub => {
+    const scored = substitutes?.map(sub => {
       let score = 0;
       
       // Price similarity (max 0.4)
@@ -553,7 +553,7 @@ export class WalmartGroceryService {
       
       // Rating score (max 0.3)
       if (sub.ratings?.average) {
-        score += (sub.ratings.average / 5) * 0.3;
+        score += (sub?.ratings?.average / 5) * 0.3;
       }
       
       // Category match (max 0.3)
@@ -570,32 +570,32 @@ export class WalmartGroceryService {
       .sort((a, b) => b.similarity_score - a.similarity_score);
     
     // Remove similarity_score property before returning
-    return filtered.map(({ similarity_score, ...product }) => product);
+    return filtered?.map(({ similarity_score, ...product }) => product);
   }
 
   /**
    * Helper: Update list estimated total
    */
   private async updateListTotal(listId: string): Promise<void> {
-    const items = await this.itemRepo.getListItems(listId);
-    const total = items.reduce((sum, item) => {
+    const items = await this?.itemRepo?.getListItems(listId);
+    const total = items.reduce((sum: any, item: any) => {
       return sum + Number(item.estimated_price || 0) * Number(item.quantity || 1);
     }, 0);
     
-    await this.listRepo.updateList(listId, { estimated_total: total });
+    await this?.listRepo?.updateList(listId, { estimated_total: total });
   }
 
   /**
    * Helper: Get recent purchases for user
    */
   private async getRecentPurchases(userId: string): Promise<WalmartProduct[]> {
-    const session = await this.sessionRepo.getSession(userId);
+    const session = await this?.sessionRepo?.getSession(userId);
     const products: WalmartProduct[] = [];
     
     if (session && session.list_id) {
-        const items = await this.itemRepo.getListItems(session.list_id);
-        for (const item of items.filter(i => i.status === "purchased" && i.product_id)) {
-          const productEntity = await this.productRepo.findById(item.product_id!);
+        const items = await this?.itemRepo?.getListItems(session.list_id);
+        for (const item of items?.filter(i => i.status === "purchased" && i.product_id)) {
+          const productEntity = await this?.productRepo?.findById(item.product_id!);
           if (productEntity) {
             const product = this.transformEntityToProduct(productEntity);
             products.push(product);
@@ -684,23 +684,23 @@ export class WalmartGroceryService {
       name: product.name,
       brand: product.brand,
       description: product.description,
-      category_path: typeof product.category === 'object' ? product.category.name : product.category,
-      department: typeof product.category === 'object' && product.category.path ? product.category.path[0] : undefined,
-      current_price: typeof product.price === 'object' ? product.price.regular : product.price,
-      regular_price: typeof product.price === 'object' ? product.price.wasPrice : undefined,
-      unit_price: typeof product.price === 'object' ? product.price.unit : undefined,
-      unit_measure: typeof product.price === 'object' ? product.price.unitOfMeasure : undefined,
-      in_stock: product.availability.inStock,
-      stock_level: product.availability.quantity,
-      online_only: product.availability.onlineOnly,
-      store_only: product.availability.instoreOnly,
+      category_path: typeof product.category === 'object' ? product?.category?.name : product.category,
+      department: typeof product.category === 'object' && product?.category?.path ? product?.category?.path[0] : undefined,
+      current_price: typeof product.price === 'object' ? product?.price?.regular : product.price,
+      regular_price: typeof product.price === 'object' ? product?.price?.wasPrice : undefined,
+      unit_price: typeof product.price === 'object' ? product?.price?.unit : undefined,
+      unit_measure: typeof product.price === 'object' ? product?.price?.unitOfMeasure : undefined,
+      in_stock: product?.availability?.inStock,
+      stock_level: product?.availability?.quantity,
+      online_only: product?.availability?.onlineOnly,
+      store_only: product?.availability?.instoreOnly,
       upc: product.upc,
       large_image_url: product.images[0]?.url,
       thumbnail_url: product.images[0]?.url,
       average_rating: product.ratings?.average,
       review_count: product.ratings?.count,
       nutritional_info: product.nutritionFacts,
-      ingredients: Array.isArray(product.ingredients) ? product.ingredients.join(', ') : product.ingredients,
+      ingredients: Array.isArray(product.ingredients) ? product?.ingredients?.join(', ') : product.ingredients,
       allergens: product.allergens?.map(a => typeof a === 'string' ? a : a.type),
       first_seen_at: product.createdAt,
       last_updated_at: product.updatedAt,

@@ -20,7 +20,7 @@ router.use((req, res, next) => {
     metricsCollector.increment("api_requests_total", 1, {
       method: req.method,
       path: req.path,
-      status: res.statusCode.toString(),
+      status: res?.statusCode?.toString(),
     });
   });
 
@@ -114,12 +114,12 @@ router.get("/metrics/json", requireAuth, async (req, res) => {
 // Error tracking endpoints (requires auth)
 router.get("/errors", requireAuth, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 100;
+    const limit = parseInt(req?.query?.limit as string) || 100;
     const errors = errorTracker.getRecentErrors(limit);
 
     res.json({
       errors,
-      count: errors.length,
+      count: errors?.length || 0,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -133,7 +133,7 @@ router.get("/errors", requireAuth, async (req, res) => {
 // Error statistics (requires auth)
 router.get("/errors/stats", requireAuth, async (req, res) => {
   try {
-    const windowMs = parseInt(req.query.window as string) || 3600000; // 1 hour default
+    const windowMs = parseInt(req?.query?.window as string) || 3600000; // 1 hour default
     const stats = errorTracker.getStatistics(windowMs);
     const aggregations = errorTracker.getAggregations();
 
@@ -161,7 +161,7 @@ router.post("/errors/search", requireAuth, async (req, res) => {
 
     res.json({
       results,
-      count: results.length,
+      count: results?.length || 0,
       query: req.body,
       timestamp: new Date().toISOString(),
     });
@@ -176,8 +176,8 @@ router.post("/errors/search", requireAuth, async (req, res) => {
 // Performance monitoring endpoints (requires auth)
 router.get("/performance", requireAuth, async (req, res) => {
   try {
-    const name = req.query.name as string;
-    const windowMs = parseInt(req.query.window as string) || 300000; // 5 minutes default
+    const name = req?.query?.name as string;
+    const windowMs = parseInt(req?.query?.window as string) || 300000; // 5 minutes default
     const stats = performanceMonitor.getStatistics(name, windowMs);
 
     res.json({
@@ -199,12 +199,12 @@ router.get("/performance", requireAuth, async (req, res) => {
 // Slow operations (requires auth)
 router.get("/performance/slow", requireAuth, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = parseInt(req?.query?.limit as string) || 10;
     const slowOps = performanceMonitor.getSlowOperations(limit);
 
     res.json({
       operations: slowOps,
-      count: slowOps.length,
+      count: slowOps?.length || 0,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -222,7 +222,7 @@ router.get("/performance/violations", requireAuth, async (req, res) => {
 
     res.json({
       violations,
-      count: violations.length,
+      count: violations?.length || 0,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

@@ -68,7 +68,7 @@ import { errorTracker } from "../monitoring/ErrorTracker.js";
 
 const app: Express = express();
 const gracefulShutdown = new GracefulShutdown();
-const PORT = appConfig.api.port;
+const PORT = appConfig?.api?.port;
 
 // Add error listener to prevent crashes
 errorTracker.on("error", () => {
@@ -85,8 +85,8 @@ app.use(cookieParser()); // Enable cookie parsing for CSRF tokens
 // Apply comprehensive security headers (includes CORS)
 applySecurityHeaders(app, {
   cors: {
-    origins: appConfig.api.cors.origin as string[],
-    credentials: appConfig.api.cors.credentials,
+    origins: appConfig?.api?.cors.origin as string[],
+    credentials: appConfig?.api?.cors.credentials,
   },
 });
 
@@ -103,7 +103,7 @@ app.use(compression({
       return false;
     }
     // Compress all responses by default for JSON/text content
-    return compression.filter(req, res);
+    return compression?.filter(req, res);
   },
   threshold: 1024, // Only compress responses larger than 1KB
   level: 6 // Balanced compression level (1=fast, 9=best compression)
@@ -189,7 +189,7 @@ app.get("/health", async (_req, res) => {
   };
   
   const overallStatus = Object.values(criticalServices).every(
-    (s) => s === "running" || s === "connected",
+    (s: any) => s === "running" || s === "connected",
   )
     ? "healthy"
     : "degraded";
@@ -212,7 +212,7 @@ app.get("/api/rate-limit-status", async (req: AuthenticatedRequest, res) => {
     const authReq = req as AuthenticatedRequest;
 
     // Only allow admins to check rate limit status
-    if (!authReq.user || authReq.user.role !== "admin") {
+    if (!authReq.user || authReq?.user?.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -258,11 +258,11 @@ app.use("/api/email-analysis", emailAnalysisRouter);
 app.use("/api/email-assignment", emailAssignmentRouter);
 
 // Analyzed emails routes (simple direct database access)
-import analyzedEmailsRouter from "./routes/analyzed-emails.router.js";
+import analyzedEmailsRouter from "./routes/analyzed-emails?.router.js";
 app.use("/", analyzedEmailsRouter);
 
 // NLP routes for Walmart Grocery (Qwen3:0.6b)
-import nlpRouter from "./routes/nlp.router.js";
+import nlpRouter from "./routes/nlp?.router.js";
 app.use("/api/nlp", nlpRouter);
 
 // WebSocket monitoring routes (authenticated)
@@ -320,7 +320,7 @@ registerDefaultCleanupTasks();
 // Register graceful shutdown handlers
 gracefulShutdown.register(async () => {
   logger.info("Shutting down HTTP server...");
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve: any) => {
     server.close(() => resolve());
   });
 });
@@ -377,7 +377,7 @@ const wss = new WebSocketServer({
   path: "/trpc-ws",
   // Add origin validation and rate limiting
   verifyClient: (info: { origin?: string; req: any }) => {
-    const origin = info.origin;
+    const origin = info?.origin;
 
     // Get allowed origins from environment or use defaults
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") ||
@@ -421,7 +421,7 @@ wss.on("connection", async (ws, req) => {
   try {
     // Create a mock Express request for rate limiting
     const mockReq = {
-      ip: req.socket.remoteAddress,
+      ip: req?.socket?.remoteAddress,
       path: "/ws",
       method: "GET",
       headers: req.headers,
@@ -447,13 +447,13 @@ wss.on("connection", async (ws, req) => {
     });
 
     console.log("WebSocket connection established:", {
-      ip: req.socket.remoteAddress,
+      ip: req?.socket?.remoteAddress,
       userAgent: req.headers["user-agent"],
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.warn("WebSocket rate limit exceeded:", {
-      ip: req.socket.remoteAddress,
+      ip: req?.socket?.remoteAddress,
       error: error instanceof Error ? error.message : "Unknown error",
     });
 
@@ -481,7 +481,7 @@ server.on('upgrade', (request, socket, head) => {
   const pathname = request.url || '';
   
   if (pathname === '/trpc-ws') {
-    wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.handleUpgrade(request, socket, head, (ws: any) => {
       wss.emit('connection', ws, request);
     });
   } else {

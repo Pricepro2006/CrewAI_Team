@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { getDatabaseConnection } from "../../../database/connection.js";
 import { PipelineOrchestrator } from "../PipelineOrchestrator.js";
-import { logger } from "../../../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 import type { Email } from "../types.js";
 
 // Mock emails for testing
@@ -66,7 +66,7 @@ describe("Pipeline Database Persistence", () => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    TEST_EMAILS.forEach((email) => {
+    TEST_EMAILS.forEach((email: any) => {
       insertEmail.run(
         email.id,
         email.message_id,
@@ -114,7 +114,7 @@ describe("Pipeline Database Persistence", () => {
 
       // Manually call consolidateResults with just Stage 1 data
       await orchestrator["saveConsolidatedResults"](
-        triageResults.all.map((result) => ({
+        triageResults?.all?.map((result: any) => ({
           emailId: result.emailId,
           stage1: result,
           stage2: null,
@@ -134,7 +134,7 @@ describe("Pipeline Database Persistence", () => {
         .all("1001", "1002");
 
       // Critical assertions
-      expect(savedAnalysis.length).toBe(2);
+      expect(savedAnalysis?.length || 0).toBe(2);
       expect(savedAnalysis).not.toBeNull();
 
       // Verify each email has analysis data
@@ -165,7 +165,7 @@ describe("Pipeline Database Persistence", () => {
         .all("1001", "1002");
 
       // Stage results might not be saved without executionId, but email_analysis is critical
-      logger.info(`Saved ${savedAnalysis.length} analysis records`, "TEST");
+      logger.info(`Saved ${savedAnalysis?.length || 0} analysis records`, "TEST");
     } finally {
       // Restore original method
       orchestrator["getAllEmails"] = originalGetAllEmails;
@@ -216,7 +216,7 @@ describe("Pipeline Database Persistence", () => {
       const after = db
         .prepare("SELECT * FROM email_analysis WHERE email_id = ?")
         .all("1001");
-      expect(after.length).toBe(1); // Should still be only one record
+      expect(after?.length || 0).toBe(1); // Should still be only one record
       expect((after[0] as any).final_model_used).toBe("pattern"); // Should be updated
       expect((after[0] as any).pipeline_stage).toBe(1);
     } finally {

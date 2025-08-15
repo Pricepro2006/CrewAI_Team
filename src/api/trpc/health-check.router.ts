@@ -101,7 +101,7 @@ export const healthCheckRouter = router({
           throw new Error("No health data available");
         }
 
-        const serviceHealth = currentHealth.services.find(
+        const serviceHealth = currentHealth?.services?.find(
           s => s.name === input.serviceName
         );
 
@@ -179,23 +179,23 @@ export const healthCheckRouter = router({
         const history = service.getHealthHistory(100);
         const hoursAgo = new Date(Date.now() - (input?.hours || 1) * 60 * 60 * 1000);
         
-        const recentHistory = history.filter(h => 
+        const recentHistory = history?.filter(h => 
           new Date(h.timestamp) >= hoursAgo
         );
 
         // Calculate trends
         const trends = {
-          totalChecks: recentHistory.length,
-          healthyPercentage: (recentHistory.filter(h => h.status === "healthy").length / recentHistory.length) * 100,
-          degradedPercentage: (recentHistory.filter(h => h.status === "degraded").length / recentHistory.length) * 100,
-          unhealthyPercentage: (recentHistory.filter(h => h.status === "unhealthy").length / recentHistory.length) * 100,
-          averageResponseTime: recentHistory.reduce((sum, h) => sum + (h.metrics?.responseTime || 0), 0) / recentHistory.length,
+          totalChecks: recentHistory?.length || 0,
+          healthyPercentage: (recentHistory?.filter(h => h.status === "healthy").length / recentHistory?.length || 0) * 100,
+          degradedPercentage: (recentHistory?.filter(h => h.status === "degraded").length / recentHistory?.length || 0) * 100,
+          unhealthyPercentage: (recentHistory?.filter(h => h.status === "unhealthy").length / recentHistory?.length || 0) * 100,
+          averageResponseTime: recentHistory.reduce((sum: any, h: any) => sum + (h.metrics?.responseTime || 0), 0) / recentHistory?.length || 0,
           serviceFailures: {} as Record<string, number>,
         };
 
         // Count service failures
         recentHistory.forEach(h => {
-          h.services.forEach(s => {
+          h?.services?.forEach(s => {
             if (s.status === "unhealthy") {
               trends.serviceFailures[s.name] = (trends.serviceFailures[s.name] || 0) + 1;
             }

@@ -119,7 +119,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
 
   const modeConfig = getModeConfig(connection.mode);
   const qualityConfig = getQualityConfig(connection.quality);
-  const ModeIcon = modeConfig.icon;
+  const ModeIcon = modeConfig?.icon;
 
   // Format uptime
   const formatUptime = (ms: number) => {
@@ -171,7 +171,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
         
         {/* Quality Bars */}
         <div className="flex gap-0.5">
-          {[1, 2, 3, 4].map((bar) => (
+          {[1, 2, 3, 4].map((bar: any) => (
             <div
               key={bar}
               className={clsx(
@@ -192,9 +192,9 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
         </span>
 
         {/* Latency Badge */}
-        {connection.metrics.latency > 0 && (
+        {connection?.metrics?.latency > 0 && (
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            {connection.metrics.latency}ms
+            {connection?.metrics?.latency}ms
           </span>
         )}
 
@@ -222,7 +222,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">{qualityConfig.label}</span>
                 <div className="flex gap-0.5">
-                  {[1, 2, 3, 4].map((bar) => (
+                  {[1, 2, 3, 4].map((bar: any) => (
                     <div
                       key={bar}
                       className={clsx(
@@ -239,7 +239,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Latency</span>
               <span className="text-sm font-medium">
-                {connection.metrics.latency}ms
+                {connection?.metrics?.latency}ms
               </span>
             </div>
 
@@ -247,7 +247,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Uptime</span>
               <span className="text-sm font-medium">
-                {formatUptime(connection.metrics.uptime)}
+                {formatUptime(connection?.metrics?.uptime)}
               </span>
             </div>
 
@@ -255,7 +255,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Updates</span>
               <span className="text-sm font-medium">
-                {connection.metrics.dataUpdates}
+                {connection?.metrics?.dataUpdates}
               </span>
             </div>
 
@@ -263,16 +263,16 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Mode Changes</span>
               <span className="text-sm font-medium">
-                {connection.metrics.modeChanges}
+                {connection?.metrics?.modeChanges}
               </span>
             </div>
 
             {/* WebSocket Status */}
-            {connection.websocket.isConnected && (
+            {connection?.websocket?.isConnected && (
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Session</span>
                 <span className="text-xs font-mono">
-                  {connection.websocket.sessionId?.substring(0, 8)}...
+                  {connection?.websocket?.sessionId?.substring(0, 8)}...
                 </span>
               </div>
             )}
@@ -354,8 +354,8 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
                   dataVersion: connection.dataVersion,
                   metrics: connection.metrics,
                   websocket: {
-                    connected: connection.websocket.isConnected,
-                    connecting: connection.websocket.isConnecting
+                    connected: connection?.websocket?.isConnected,
+                    connecting: connection?.websocket?.isConnecting
                   }
                 }, null, 2)}
               </pre>

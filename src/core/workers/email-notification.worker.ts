@@ -49,13 +49,13 @@ async function processEmailNotification(job: any) {
 
   try {
     // Extract email ID from resource path
-    const emailIdMatch = notification.resource.match(/messages\/(.+)$/);
+    const emailIdMatch = notification?.resource?.match(/messages\/(.+)$/);
     if (!emailIdMatch) {
       throw new Error("Invalid resource format - cannot extract email ID");
     }
 
     const emailId = emailIdMatch[1];
-    const userIdMatch = notification.resource.match(
+    const userIdMatch = notification?.resource?.match(
       /users\/(.+?)\/mailFolders/,
     );
     if (!userIdMatch) {

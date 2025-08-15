@@ -224,21 +224,21 @@ router.post("/metrics/reset", async (req: Request, res: Response) => {
 });
 
 // Event listeners for monitoring
-businessSearchMiddleware.on("rate_limited", (event) => {
+businessSearchMiddleware.on("rate_limited", (event: any) => {
   logger.warn("Rate limit triggered", event);
 });
 
-businessSearchMiddleware.on("high_latency", (event) => {
+businessSearchMiddleware.on("high_latency", (event: any) => {
   logger.warn("High latency detected", event);
 });
 
-businessSearchMiddleware.on("validation_failed", (event) => {
+businessSearchMiddleware.on("validation_failed", (event: any) => {
   logger.warn(
     "Response validation failed",
     JSON.stringify({
       prompt:
         typeof event.prompt === "string"
-          ? event.prompt.slice(0, 100)
+          ? event?.prompt?.slice(0, 100)
           : String(event.prompt),
       confidence: event.validation?.confidence || "unknown",
     }),

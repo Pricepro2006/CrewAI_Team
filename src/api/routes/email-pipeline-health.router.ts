@@ -56,7 +56,7 @@ router.use((req, res, next) => {
     metrics.increment("email_pipeline_health.api_requests_total", 1, {
       endpoint: req.path,
       method: req.method,
-      status: res.statusCode.toString(),
+      status: res?.statusCode?.toString(),
     });
   });
 
@@ -89,20 +89,20 @@ router.get("/email-pipeline", async (req, res) => {
       timestamp: healthStatus.timestamp,
       services: {
         critical: {
-          database: healthStatus.services.database.status,
-          ollama: healthStatus.services.ollama.status,
-          pipeline: healthStatus.services.pipeline.status,
+          database: healthStatus?.services?.database.status,
+          ollama: healthStatus?.services?.ollama.status,
+          pipeline: healthStatus?.services?.pipeline.status,
         },
         optional: {
-          redis: healthStatus.services.redis.status,
-          processingQueue: healthStatus.services.processingQueue.status,
+          redis: healthStatus?.services?.redis.status,
+          processingQueue: healthStatus?.services?.processingQueue.status,
         },
       },
       metrics: {
-        totalEmails: healthStatus.metrics.totalEmails,
-        todaysEmails: healthStatus.metrics.todaysEmails,
-        queueDepth: healthStatus.metrics.queueDepth,
-        averageProcessingTime: healthStatus.metrics.averageProcessingTime,
+        totalEmails: healthStatus?.metrics?.totalEmails,
+        todaysEmails: healthStatus?.metrics?.todaysEmails,
+        queueDepth: healthStatus?.metrics?.queueDepth,
+        averageProcessingTime: healthStatus?.metrics?.averageProcessingTime,
       },
       responseTime: Date.now() - startTime,
     };
@@ -216,9 +216,9 @@ router.get("/email-pipeline", requireAuth, async (req, res) => {
         status: healthStatus.status,
         timestamp: healthStatus.timestamp,
         criticalServices: {
-          database: healthStatus.services.database.status,
-          ollama: healthStatus.services.ollama.status,
-          pipeline: healthStatus.services.pipeline.status,
+          database: healthStatus?.services?.database.status,
+          ollama: healthStatus?.services?.ollama.status,
+          pipeline: healthStatus?.services?.pipeline.status,
         },
       },
       query: {
@@ -407,8 +407,8 @@ router.get("/email-pipeline/history", requireAuth, async (req, res) => {
   const startTime = Date.now();
 
   try {
-    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limit = Math.min(parseInt(req?.query?.limit as string) || 50, 200);
+    const offset = parseInt(req?.query?.offset as string) || 0;
 
     // This would require storing health check history in the database
     // For now, return current status with note about implementation

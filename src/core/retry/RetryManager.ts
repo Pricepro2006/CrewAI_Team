@@ -103,7 +103,7 @@ export class RetryManager extends EventEmitter {
       maxAttempts: 5,
       initialDelay: 100,
       maxDelay: 5000,
-      retryIf: (error) => this.isDatabaseRetryable(error),
+      retryIf: (error: any) => this.isDatabaseRetryable(error),
     });
 
     // LLM API calls
@@ -112,7 +112,7 @@ export class RetryManager extends EventEmitter {
       initialDelay: 2000,
       maxDelay: 20000,
       timeout: 120000,
-      retryIf: (error) => this.isLLMRetryable(error),
+      retryIf: (error: any) => this.isLLMRetryable(error),
     });
 
     // External API calls
@@ -120,7 +120,7 @@ export class RetryManager extends EventEmitter {
       maxAttempts: 4,
       initialDelay: 1000,
       maxDelay: 15000,
-      retryIf: (error) => this.isNetworkRetryable(error),
+      retryIf: (error: any) => this.isNetworkRetryable(error),
     });
 
     // File operations
@@ -128,7 +128,7 @@ export class RetryManager extends EventEmitter {
       maxAttempts: 3,
       initialDelay: 500,
       maxDelay: 5000,
-      retryIf: (error) => this.isFileRetryable(error),
+      retryIf: (error: any) => this.isFileRetryable(error),
     });
   }
 
@@ -136,13 +136,13 @@ export class RetryManager extends EventEmitter {
    * Register a named retry policy
    */
   registerPolicy(name: string, options: RetryOptions): void {
-    this.policies.set(name, {
+    this?.policies?.set(name, {
       name,
       options: { ...this.DEFAULT_OPTIONS, ...options },
     });
 
     // Initialize metrics for this policy
-    this.metrics.set(name, {
+    this?.metrics?.set(name, {
       totalAttempts: 0,
       successfulOperations: 0,
       failedOperations: 0,
@@ -228,7 +228,7 @@ export class RetryManager extends EventEmitter {
     options: RetryOptions | string = {},
   ): Promise<T[]> {
     const results = await Promise.allSettled(
-      operations.map((op) => this.retry(op, options)),
+      operations?.map((op: any) => this.retry(op, options)),
     );
 
     const values: T[] = [];
@@ -245,9 +245,9 @@ export class RetryManager extends EventEmitter {
       }
     });
 
-    if (errors.length > 0) {
+    if (errors?.length || 0 > 0) {
       throw new Error(
-        `Batch operation failed: ${errors.length} out of ${operations.length} operations failed`,
+        `Batch operation failed: ${errors?.length || 0} out of ${operations?.length || 0} operations failed`,
       );
     }
 
@@ -263,7 +263,7 @@ export class RetryManager extends EventEmitter {
   ): void {
     const circuitOptions = { ...this.DEFAULT_CIRCUIT_OPTIONS, ...options };
 
-    this.circuitBreakers.set(policyName, {
+    this?.circuitBreakers?.set(policyName, {
       state: CircuitState.CLOSED,
       failures: 0,
       lastFailureTime: 0,
@@ -281,7 +281,7 @@ export class RetryManager extends EventEmitter {
    */
   getMetrics(policyName?: string): RetryMetrics | Map<string, RetryMetrics> {
     if (policyName) {
-      return this.metrics.get(policyName) || this.createEmptyMetrics();
+      return this?.metrics?.get(policyName) || this.createEmptyMetrics();
     }
     return new Map(this.metrics);
   }
@@ -291,11 +291,11 @@ export class RetryManager extends EventEmitter {
    */
   resetMetrics(policyName?: string): void {
     if (policyName) {
-      this.metrics.set(policyName, this.createEmptyMetrics());
+      this?.metrics?.set(policyName, this.createEmptyMetrics());
     } else {
-      this.metrics.clear();
-      this.policies.forEach((_, name) => {
-        this.metrics.set(name, this.createEmptyMetrics());
+      this?.metrics?.clear();
+      this?.policies?.forEach((_, name) => {
+        this?.metrics?.set(name, this.createEmptyMetrics());
       });
     }
   }
@@ -304,7 +304,7 @@ export class RetryManager extends EventEmitter {
    * Check circuit breaker state
    */
   private checkCircuitBreaker(policyName: string): boolean {
-    const breaker = this.circuitBreakers.get(policyName);
+    const breaker = this?.circuitBreakers?.get(policyName);
     if (!breaker) return true; // No circuit breaker configured
 
     const now = Date.now();
@@ -335,7 +335,7 @@ export class RetryManager extends EventEmitter {
    * Handle successful operation
    */
   private handleSuccess(policyName: string, attempts: number): void {
-    const metrics = this.metrics.get(policyName);
+    const metrics = this?.metrics?.get(policyName);
     if (metrics) {
       metrics.successfulOperations++;
       if (attempts > 1) {
@@ -345,7 +345,7 @@ export class RetryManager extends EventEmitter {
     }
 
     // Reset circuit breaker if in HALF_OPEN state
-    const breaker = this.circuitBreakers.get(policyName);
+    const breaker = this?.circuitBreakers?.get(policyName);
     if (breaker && breaker.state === CircuitState.HALF_OPEN) {
       breaker.state = CircuitState.CLOSED;
       breaker.failures = 0;
@@ -363,14 +363,14 @@ export class RetryManager extends EventEmitter {
     attempts: number,
     error: unknown,
   ): void {
-    const metrics = this.metrics.get(policyName);
+    const metrics = this?.metrics?.get(policyName);
     if (metrics) {
       metrics.failedOperations++;
       this.updateAverageAttempts(metrics, attempts);
     }
 
     // Update circuit breaker
-    const breaker = this.circuitBreakers.get(policyName);
+    const breaker = this?.circuitBreakers?.get(policyName);
     if (breaker) {
       breaker.failures++;
       breaker.lastFailureTime = Date.now();
@@ -379,7 +379,7 @@ export class RetryManager extends EventEmitter {
         // Failed in HALF_OPEN state, go back to OPEN
         breaker.state = CircuitState.OPEN;
         breaker.nextAttemptTime =
-          Date.now() + this.DEFAULT_CIRCUIT_OPTIONS.resetTimeout;
+          Date.now() + this?.DEFAULT_CIRCUIT_OPTIONS?.resetTimeout;
 
         if (metrics) {
           metrics.circuitBreakerTrips++;
@@ -388,12 +388,12 @@ export class RetryManager extends EventEmitter {
         logger.warn(`Circuit breaker opened for: ${policyName}`);
       } else if (
         breaker.state === CircuitState.CLOSED &&
-        breaker.failures >= this.DEFAULT_CIRCUIT_OPTIONS.failureThreshold
+        breaker.failures >= this?.DEFAULT_CIRCUIT_OPTIONS?.failureThreshold
       ) {
         // Too many failures, open the circuit
         breaker.state = CircuitState.OPEN;
         breaker.nextAttemptTime =
-          Date.now() + this.DEFAULT_CIRCUIT_OPTIONS.resetTimeout;
+          Date.now() + this?.DEFAULT_CIRCUIT_OPTIONS?.resetTimeout;
 
         if (metrics) {
           metrics.circuitBreakerTrips++;
@@ -415,7 +415,7 @@ export class RetryManager extends EventEmitter {
     options: RetryOptions | string,
   ): Required<RetryOptions> {
     if (typeof options === "string") {
-      const policy = this.policies.get(options);
+      const policy = this?.policies?.get(options);
       return policy ? policy.options : this.DEFAULT_OPTIONS;
     }
 
@@ -435,9 +435,9 @@ export class RetryManager extends EventEmitter {
     }
 
     // Check retryable errors
-    if (options.retryableErrors.length > 0) {
-      const isRetryableError = options.retryableErrors.some(
-        (ErrorClass) => error instanceof ErrorClass,
+    if (options?.retryableErrors?.length > 0) {
+      const isRetryableError = options?.retryableErrors?.some(
+        (ErrorClass: any) => error instanceof ErrorClass,
       );
       if (!isRetryableError) return false;
     }
@@ -488,7 +488,7 @@ export class RetryManager extends EventEmitter {
    */
   private isDatabaseRetryable(error: unknown): boolean {
     if (error instanceof Error) {
-      const message = error.message.toLowerCase();
+      const message = error?.message?.toLowerCase();
       return (
         message.includes("sqlite_busy") ||
         message.includes("database is locked") ||
@@ -501,7 +501,7 @@ export class RetryManager extends EventEmitter {
 
   private isLLMRetryable(error: unknown): boolean {
     if (error instanceof Error) {
-      const message = error.message.toLowerCase();
+      const message = error?.message?.toLowerCase();
       return (
         message.includes("rate limit") ||
         message.includes("timeout") ||
@@ -515,7 +515,7 @@ export class RetryManager extends EventEmitter {
 
   private isNetworkRetryable(error: unknown): boolean {
     if (error instanceof Error) {
-      const message = error.message.toLowerCase();
+      const message = error?.message?.toLowerCase();
       return (
         message.includes("econnrefused") ||
         message.includes("etimedout") ||
@@ -529,7 +529,7 @@ export class RetryManager extends EventEmitter {
 
   private isFileRetryable(error: unknown): boolean {
     if (error instanceof Error) {
-      const message = error.message.toLowerCase();
+      const message = error?.message?.toLowerCase();
       return (
         message.includes("eacces") ||
         message.includes("ebusy") ||
@@ -544,7 +544,7 @@ export class RetryManager extends EventEmitter {
    * Update metrics
    */
   private updateMetrics(policyName: string, type: "attempt"): void {
-    const metrics = this.metrics.get(policyName);
+    const metrics = this?.metrics?.get(policyName);
     if (metrics && type === "attempt") {
       metrics.totalAttempts++;
     }
@@ -576,7 +576,7 @@ export class RetryManager extends EventEmitter {
    * Delay helper
    */
   private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve: any) => setTimeout(resolve, ms));
   }
 }
 

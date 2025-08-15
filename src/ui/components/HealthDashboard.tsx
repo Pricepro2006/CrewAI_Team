@@ -50,7 +50,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service }) => {
   return (
     <div className={`p-4 rounded-lg border-2 ${getStatusColor(service.status)}`}>
       <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold capitalize">{service.name.replace("-", " ")}</h3>
+        <h3 className="font-semibold capitalize">{service?.name?.replace("-", " ")}</h3>
         {getStatusIcon(service.status)}
       </div>
       
@@ -87,7 +87,7 @@ export const HealthDashboard: React.FC = () => {
   const [checkLevel, setCheckLevel] = useState<"basic" | "deep" | "full">("basic");
 
   // Get current health
-  const { data: healthData, refetch: refetchHealth } = api.healthCheck.getCurrentHealth.useQuery(
+  const { data: healthData, refetch: refetchHealth } = api?.healthCheck?.getCurrentHealth.useQuery(
     { level: checkLevel },
     {
       enabled: true,
@@ -96,7 +96,7 @@ export const HealthDashboard: React.FC = () => {
   );
 
   // Get health history
-  const { data: historyData } = api.healthCheck.getHealthHistory.useQuery(
+  const { data: historyData } = api?.healthCheck?.getHealthHistory.useQuery(
     { limit: 20 },
     {
       enabled: true,
@@ -105,7 +105,7 @@ export const HealthDashboard: React.FC = () => {
   );
 
   // Get health trends
-  const { data: trendsData } = api.healthCheck.getHealthTrends.useQuery(
+  const { data: trendsData } = api?.healthCheck?.getHealthTrends.useQuery(
     { hours: 1 },
     {
       enabled: true,
@@ -114,7 +114,7 @@ export const HealthDashboard: React.FC = () => {
   );
 
   // Trigger manual health check
-  const triggerCheckMutation = api.healthCheck.triggerHealthCheck.useMutation({
+  const triggerCheckMutation = api?.healthCheck?.triggerHealthCheck.useMutation({
     onSuccess: () => {
       refetchHealth();
     },
@@ -166,7 +166,7 @@ export const HealthDashboard: React.FC = () => {
               {/* Check Level Selector */}
               <select
                 value={checkLevel}
-                onChange={(e) => setCheckLevel(e.target.value as any)}
+                onChange={(e: any) => setCheckLevel(e?.target?.value as any)}
                 className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="basic">Basic Check</option>
@@ -179,7 +179,7 @@ export const HealthDashboard: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={autoRefresh}
-                  onChange={(e) => setAutoRefresh(e.target.checked)}
+                  onChange={(e: any) => setAutoRefresh(e?.target?.checked)}
                   className="w-4 h-4"
                 />
                 <span className="text-sm">Auto-refresh</span>
@@ -221,7 +221,7 @@ export const HealthDashboard: React.FC = () => {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="text-sm text-gray-600 mb-1">Memory Usage</div>
                 <div className="text-xl font-semibold">
-                  {health.metrics?.memory ? `${health.metrics.memory.toFixed(1)} MB` : "N/A"}
+                  {health.metrics?.memory ? `${health?.metrics?.memory.toFixed(1)} MB` : "N/A"}
                 </div>
               </div>
             </div>
@@ -237,7 +237,7 @@ export const HealthDashboard: React.FC = () => {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {health.services.map((service) => (
+              {health?.services?.map((service: any) => (
                 <ServiceCard key={service.name} service={service} />
               ))}
             </div>
@@ -253,21 +253,21 @@ export const HealthDashboard: React.FC = () => {
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                 <div className="text-sm text-green-600 mb-1">Healthy</div>
                 <div className="text-2xl font-bold text-green-800">
-                  {trends.healthyPercentage.toFixed(1)}%
+                  {trends?.healthyPercentage?.toFixed(1)}%
                 </div>
               </div>
               
               <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                 <div className="text-sm text-yellow-600 mb-1">Degraded</div>
                 <div className="text-2xl font-bold text-yellow-800">
-                  {trends.degradedPercentage.toFixed(1)}%
+                  {trends?.degradedPercentage?.toFixed(1)}%
                 </div>
               </div>
               
               <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                 <div className="text-sm text-red-600 mb-1">Unhealthy</div>
                 <div className="text-2xl font-bold text-red-800">
-                  {trends.unhealthyPercentage.toFixed(1)}%
+                  {trends?.unhealthyPercentage?.toFixed(1)}%
                 </div>
               </div>
             </div>
@@ -288,7 +288,7 @@ export const HealthDashboard: React.FC = () => {
         )}
 
         {/* Health History */}
-        {history.length > 0 && (
+        {history?.length || 0 > 0 && (
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold mb-4">Recent Health Checks</h2>
             
@@ -323,15 +323,15 @@ export const HealthDashboard: React.FC = () => {
                       <td className="px-4 py-2 text-sm">
                         <div className="flex gap-1">
                           <span className="text-green-600">
-                            {check.services.filter(s => s.status === "healthy").length}
+                            {check?.services?.filter(s => s.status === "healthy").length}
                           </span>
                           /
                           <span className="text-yellow-600">
-                            {check.services.filter(s => s.status === "degraded").length}
+                            {check?.services?.filter(s => s.status === "degraded").length}
                           </span>
                           /
                           <span className="text-red-600">
-                            {check.services.filter(s => s.status === "unhealthy").length}
+                            {check?.services?.filter(s => s.status === "unhealthy").length}
                           </span>
                         </div>
                       </td>

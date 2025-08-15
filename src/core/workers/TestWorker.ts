@@ -13,7 +13,7 @@ log("Test worker starting up...", { workerData });
 
 // Set up message handlers
 if (parentPort) {
-  parentPort.on("message", (message) => {
+  parentPort.on("message", (message: any) => {
     log("Received message", { type: message.type });
     
     switch (message.type) {

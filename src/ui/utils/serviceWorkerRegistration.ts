@@ -4,9 +4,9 @@
 import React from 'react';
 
 const isLocalhost = Boolean(
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '[::1]' ||
-  window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
+  window?.location?.hostname === 'localhost' ||
+  window?.location?.hostname === '[::1]' ||
+  window?.location?.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
 );
 
 type Config = {
@@ -19,8 +19,8 @@ export function register(config?: Config) {
   if ('serviceWorker' in navigator) {
     // Only register in production or localhost
     if (process.env.NODE_ENV === 'production' || isLocalhost) {
-      const publicUrl = new URL(process.env.PUBLIC_URL || '', window.location.href);
-      if (publicUrl.origin !== window.location.origin) {
+      const publicUrl = new URL(process.env.PUBLIC_URL || '', window?.location?.href);
+      if (publicUrl.origin !== window?.location?.origin) {
         return;
       }
 
@@ -30,7 +30,7 @@ export function register(config?: Config) {
         if (isLocalhost) {
           // In localhost, check if service worker exists
           checkValidServiceWorker(swUrl, config);
-          navigator.serviceWorker.ready.then(() => {
+          navigator?.serviceWorker?.ready.then(() => {
             console.log('Service worker is running in development mode.');
           });
         } else {
@@ -45,18 +45,18 @@ export function register(config?: Config) {
 function registerValidSW(swUrl: string, config?: Config) {
   navigator.serviceWorker
     .register(swUrl)
-    .then((registration) => {
+    .then((registration: any) => {
       console.log('Service Worker registered successfully');
       
       registration.onupdatefound = () => {
-        const installingWorker = registration.installing;
+        const installingWorker = registration?.installing;
         if (installingWorker == null) {
           return;
         }
 
         installingWorker.onstatechange = () => {
           if (installingWorker.state === 'installed') {
-            if (navigator.serviceWorker.controller) {
+            if (navigator?.serviceWorker?.controller) {
               // New content is available; please refresh
               console.log('New content is available and will be used when all tabs for this page are closed.');
               if (config && config.onUpdate) {
@@ -76,7 +76,7 @@ function registerValidSW(swUrl: string, config?: Config) {
         };
       };
     })
-    .catch((error) => {
+    .catch((error: any) => {
       console.error('Service Worker registration failed:', error);
     });
 }
@@ -86,16 +86,16 @@ function checkValidServiceWorker(swUrl: string, config?: Config) {
   fetch(swUrl, {
     headers: { 'Service-Worker': 'script' },
   })
-    .then((response) => {
-      const contentType = response.headers.get('content-type');
+    .then((response: any) => {
+      const contentType = response?.headers?.get('content-type');
       if (
         response.status === 404 ||
         (contentType != null && contentType.indexOf('javascript') === -1)
       ) {
         // Service worker not found; reload the page
-        navigator.serviceWorker.ready.then((registration) => {
+        navigator?.serviceWorker?.ready.then((registration: any) => {
           registration.unregister().then(() => {
-            window.location.reload();
+            window?.location?.reload();
           });
         });
       } else {
@@ -110,12 +110,12 @@ function checkValidServiceWorker(swUrl: string, config?: Config) {
 
 export function unregister() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.ready
-      .then((registration) => {
+    navigator?.serviceWorker?.ready
+      .then((registration: any) => {
         registration.unregister();
         console.log('Service Worker unregistered');
       })
-      .catch((error) => {
+      .catch((error: any) => {
         console.error('Service Worker unregistration failed:', error);
       });
   }
@@ -123,19 +123,19 @@ export function unregister() {
 
 // Get performance metrics from service worker
 export async function getServiceWorkerMetrics(): Promise<any> {
-  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+  if (!('serviceWorker' in navigator) || !navigator?.serviceWorker?.controller) {
     return null;
   }
 
-  return new Promise((resolve) => {
+  return new Promise((resolve: any) => {
     const messageChannel = new MessageChannel();
     
-    messageChannel.port1.onmessage = (event) => {
+    messageChannel?.port1?.onmessage = (event: any) => {
       resolve(event.data);
     };
 
-    if (navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage(
+    if (navigator?.serviceWorker?.controller) {
+      navigator?.serviceWorker?.controller.postMessage(
         { type: 'GET_METRICS' },
         [messageChannel.port2]
       );
@@ -150,9 +150,9 @@ export async function getServiceWorkerMetrics(): Promise<any> {
 
 // Update service worker
 export function updateServiceWorker() {
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
-    window.location.reload();
+  if ('serviceWorker' in navigator && navigator?.serviceWorker?.controller) {
+    navigator?.serviceWorker?.controller.postMessage({ type: 'SKIP_WAITING' });
+    window?.location?.reload();
   }
 }
 

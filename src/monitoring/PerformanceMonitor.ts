@@ -32,7 +32,7 @@ export class PerformanceMonitor extends EventEmitter {
   mark(name: string): void {
     const markName = `${name}_start`;
     performance.mark(markName);
-    this.marks.set(name, performance.now());
+    this?.marks?.set(name, performance.now());
   }
 
   // Measure the duration between mark and now
@@ -40,7 +40,7 @@ export class PerformanceMonitor extends EventEmitter {
     name: string,
     metadata?: Record<string, any>,
   ): PerformanceMetric | null {
-    const startTime = this.marks.get(name);
+    const startTime = this?.marks?.get(name);
     if (!startTime) {
       console.warn(`No mark found for: ${name}`);
       return null;
@@ -58,9 +58,9 @@ export class PerformanceMonitor extends EventEmitter {
     };
 
     // Store measure
-    const measures = this.measures.get(name) || [];
+    const measures = this?.measures?.get(name) || [];
     measures.push(metric);
-    this.measures.set(name, measures);
+    this?.measures?.set(name, measures);
 
     // Record in metrics collector
     metricsCollector.histogram(
@@ -73,7 +73,7 @@ export class PerformanceMonitor extends EventEmitter {
     this.checkThreshold(name, duration);
 
     // Clean up mark
-    this.marks.delete(name);
+    this?.marks?.delete(name);
 
     // Emit event
     this.emit("measure", metric);
@@ -121,7 +121,7 @@ export class PerformanceMonitor extends EventEmitter {
 
   // Set performance threshold
   setThreshold(name: string, warningMs: number, criticalMs: number): void {
-    this.thresholds.set(name, { name, warningMs, criticalMs });
+    this?.thresholds?.set(name, { name, warningMs, criticalMs });
   }
 
   // Get performance statistics
@@ -132,27 +132,27 @@ export class PerformanceMonitor extends EventEmitter {
     const cutoff = Date.now() - timeWindowMs;
     const stats: Record<string, any> = {};
 
-    const measureNames = name ? [name] : Array.from(this.measures.keys());
+    const measureNames = name ? [name] : Array.from(this?.measures?.keys());
 
-    measureNames.forEach((measureName) => {
-      const measures = this.measures.get(measureName) || [];
-      const recent = measures.filter((m) => m.startTime > cutoff);
+    measureNames.forEach((measureName: any) => {
+      const measures = this?.measures?.get(measureName) || [];
+      const recent = measures?.filter((m: any) => m.startTime > cutoff);
 
-      if (recent.length === 0) return;
+      if (recent?.length || 0 === 0) return;
 
-      const durations = recent.map((m) => m.duration);
+      const durations = recent?.map((m: any) => m.duration);
       durations.sort((a, b) => a - b);
 
       stats[measureName] = {
-        count: recent.length,
+        count: recent?.length || 0,
         min: durations[0],
-        max: durations[durations.length - 1],
-        avg: durations.reduce((sum, d) => sum + d, 0) / durations.length,
+        max: durations[durations?.length || 0 - 1],
+        avg: durations.reduce((sum: any, d: any) => sum + d, 0) / durations?.length || 0,
         p50: this.percentile(durations, 0.5),
         p75: this.percentile(durations, 0.75),
         p95: this.percentile(durations, 0.95),
         p99: this.percentile(durations, 0.99),
-        threshold: this.thresholds.get(measureName),
+        threshold: this?.thresholds?.get(measureName),
       };
     });
 
@@ -163,7 +163,7 @@ export class PerformanceMonitor extends EventEmitter {
   getSlowOperations(limit: number = 10): PerformanceMetric[] {
     const allMeasures: PerformanceMetric[] = [];
 
-    this.measures.forEach((measures) => {
+    this?.measures?.forEach((measures: any) => {
       allMeasures.push(...measures);
     });
 
@@ -174,11 +174,11 @@ export class PerformanceMonitor extends EventEmitter {
   getThresholdViolations(): PerformanceMetric[] {
     const violations: PerformanceMetric[] = [];
 
-    this.measures.forEach((measures, name) => {
-      const threshold = this.thresholds.get(name);
+    this?.measures?.forEach((measures, name) => {
+      const threshold = this?.thresholds?.get(name);
       if (!threshold) return;
 
-      measures.forEach((measure) => {
+      measures.forEach((measure: any) => {
         if (measure.duration > threshold.warningMs) {
           violations.push(measure);
         }
@@ -190,8 +190,8 @@ export class PerformanceMonitor extends EventEmitter {
 
   // Clear all measurements
   clearMeasurements(): void {
-    this.marks.clear();
-    this.measures.clear();
+    this?.marks?.clear();
+    this?.measures?.clear();
   }
 
   // Resource usage monitoring
@@ -214,19 +214,19 @@ export class PerformanceMonitor extends EventEmitter {
     };
 
     // Record in metrics collector
-    metricsCollector.gauge("memory_heap_used_mb", metrics.memory.heapUsed);
-    metricsCollector.gauge("memory_rss_mb", metrics.memory.rss);
-    metricsCollector.gauge("cpu_user_ms", metrics.cpu.user);
-    metricsCollector.gauge("cpu_system_ms", metrics.cpu.system);
+    metricsCollector.gauge("memory_heap_used_mb", metrics?.memory?.heapUsed);
+    metricsCollector.gauge("memory_rss_mb", metrics?.memory?.rss);
+    metricsCollector.gauge("cpu_user_ms", metrics?.cpu?.user);
+    metricsCollector.gauge("cpu_system_ms", metrics?.cpu?.system);
 
     return metrics;
   }
 
   // Private methods
   private setupObserver(): void {
-    this.observer = new PerformanceObserver((list) => {
+    this.observer = new PerformanceObserver((list: any) => {
       const entries = list.getEntries();
-      entries.forEach((entry) => {
+      entries.forEach((entry: any) => {
         if (entry.entryType === "measure") {
           this.emit("performance-entry", {
             name: entry.name,
@@ -237,7 +237,7 @@ export class PerformanceMonitor extends EventEmitter {
       });
     });
 
-    this.observer.observe({ entryTypes: ["measure"] });
+    this?.observer?.observe({ entryTypes: ["measure"] });
   }
 
   private setupDefaultThresholds(): void {
@@ -261,7 +261,7 @@ export class PerformanceMonitor extends EventEmitter {
   }
 
   private checkThreshold(name: string, duration: number): void {
-    const threshold = this.thresholds.get(name);
+    const threshold = this?.thresholds?.get(name);
     if (!threshold) return;
 
     if (duration > threshold.criticalMs) {
@@ -288,14 +288,14 @@ export class PerformanceMonitor extends EventEmitter {
   }
 
   private percentile(values: number[], p: number): number {
-    if (values.length === 0) return 0;
-    const index = Math.ceil(values.length * p) - 1;
-    return values[Math.max(0, Math.min(index, values.length - 1))];
+    if (values?.length || 0 === 0) return 0;
+    const index = Math.ceil(values?.length || 0 * p) - 1;
+    return values[Math.max(0, Math.min(index, values?.length || 0 - 1))];
   }
 
   shutdown(): void {
     if (this.observer) {
-      this.observer.disconnect();
+      this?.observer?.disconnect();
       this.observer = null;
     }
     this.removeAllListeners();

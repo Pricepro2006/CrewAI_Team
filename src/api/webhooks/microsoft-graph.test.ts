@@ -67,7 +67,7 @@ describe("Microsoft Graph Webhook Handler", () => {
             resource:
               "/users/user@tdsynnex.com/mailFolders/inbox/messages/msg-123",
             resourceData: {
-              "@odata.type": "#microsoft.graph.message",
+              "@odata.type": "#microsoft?.graph?.message",
               "@odata.id": "messages/msg-123",
               "@odata.etag": 'W/"etag123"',
               id: "msg-123",

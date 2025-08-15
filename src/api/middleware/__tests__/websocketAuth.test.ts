@@ -290,7 +290,7 @@ describe("WebSocketAuthManager", () => {
         { clientId: "c4", userId: "u3", userRole: "user" },
       ];
 
-      clients.forEach((client) => {
+      clients.forEach((client: any) => {
         (authManager as any).authenticatedClients.set(client.clientId, {
           userId: client.userId,
           userRole: client.userRole,
@@ -322,7 +322,7 @@ describe("WebSocketAuthManager", () => {
 
       authManager.updateActivity(mockWs);
 
-      expect(mockWs.lastActivity.getTime()).toBeGreaterThan(
+      expect(mockWs?.lastActivity?.getTime()).toBeGreaterThan(
         initialActivity.getTime(),
       );
     });
@@ -346,7 +346,7 @@ describe("WebSocketAuthManager", () => {
       };
 
       // Add multiple clients for the same user
-      ["c1", "c2", "c3"].forEach((clientId) => {
+      ["c1", "c2", "c3"].forEach((clientId: any) => {
         (authManager as any).authenticatedClients.set(clientId, {
           userId,
           userRole: "user",

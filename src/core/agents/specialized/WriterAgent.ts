@@ -66,7 +66,7 @@ export class WriterAgent extends BaseAgent {
     const prompt = `
       Analyze this writing task: "${task}"
       
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Determine:
       1. Content type: article, report, email, creative, technical, or general
@@ -85,8 +85,8 @@ export class WriterAgent extends BaseAgent {
       }
     `;
 
-    const responseResponse = await this.llm.generate(prompt, { format: "json" });
-    const response = responseResponse.response;
+    const responseResponse = await this?.llm?.generate(prompt, { format: "json" });
+    const response = responseResponse?.response;
     return this.parseWritingTaskAnalysis(response);
   }
 
@@ -98,7 +98,7 @@ export class WriterAgent extends BaseAgent {
         style: parsed.style || "informative",
         audience: parsed.audience || "general audience",
         requirements: parsed.requirements || [],
-        length: parsed.length || "medium",
+        length: parsed?.length || 0 || "medium",
       };
     } catch {
       return {
@@ -119,10 +119,10 @@ export class WriterAgent extends BaseAgent {
       Write an article with these specifications:
       Style: ${analysis.style}
       Audience: ${analysis.audience}
-      Length: ${analysis.length}
-      Requirements: ${analysis.requirements.join(", ")}
+      Length: ${analysis?.length || 0}
+      Requirements: ${analysis?.requirements?.join(", ")}
       
-      ${context.ragDocuments ? `Reference material:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Reference material:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Create a well-structured article with:
       1. Engaging headline
@@ -134,8 +134,8 @@ export class WriterAgent extends BaseAgent {
       Use appropriate tone and style for the target audience.
     `;
 
-    const contentResponse = await this.llm.generate(prompt);
-    const content = contentResponse.response;
+    const contentResponse = await this?.llm?.generate(prompt);
+    const content = contentResponse?.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -155,9 +155,9 @@ export class WriterAgent extends BaseAgent {
       Write a professional report with these specifications:
       Style: ${analysis.style}
       Audience: ${analysis.audience}
-      Requirements: ${analysis.requirements.join(", ")}
+      Requirements: ${analysis?.requirements?.join(", ")}
       
-      ${context.ragDocuments ? `Data/Research:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Data/Research:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Structure the report with:
       1. Executive Summary
@@ -170,8 +170,8 @@ export class WriterAgent extends BaseAgent {
       Use clear, professional language with proper formatting.
     `;
 
-    const contentResponse = await this.llm.generate(prompt);
-    const content = contentResponse.response;
+    const contentResponse = await this?.llm?.generate(prompt);
+    const content = contentResponse?.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -193,9 +193,9 @@ export class WriterAgent extends BaseAgent {
       Write an email with these specifications:
       Style: ${analysis.style}
       Audience: ${analysis.audience}
-      Purpose: ${analysis.requirements.join(", ")}
+      Purpose: ${analysis?.requirements?.join(", ")}
       
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Create a professional email with:
       1. Appropriate subject line
@@ -208,8 +208,8 @@ export class WriterAgent extends BaseAgent {
       Keep it concise and action-oriented.
     `;
 
-    const contentResponse = await this.llm.generate(prompt);
-    const content = contentResponse.response;
+    const contentResponse = await this?.llm?.generate(prompt);
+    const content = contentResponse?.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -229,9 +229,9 @@ export class WriterAgent extends BaseAgent {
       Write creative content with these specifications:
       Style: ${analysis.style}
       Audience: ${analysis.audience}
-      Requirements: ${analysis.requirements.join(", ")}
+      Requirements: ${analysis?.requirements?.join(", ")}
       
-      ${context.ragDocuments ? `Inspiration/Context:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Inspiration/Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Create engaging creative content with:
       1. Vivid descriptions
@@ -243,8 +243,8 @@ export class WriterAgent extends BaseAgent {
       Be imaginative and captivating.
     `;
 
-    const contentResponse = await this.llm.generate(prompt);
-    const content = contentResponse.response;
+    const contentResponse = await this?.llm?.generate(prompt);
+    const content = contentResponse?.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -263,9 +263,9 @@ export class WriterAgent extends BaseAgent {
     const prompt = `
       Write technical documentation with these specifications:
       Audience: ${analysis.audience}
-      Requirements: ${analysis.requirements.join(", ")}
+      Requirements: ${analysis?.requirements?.join(", ")}
       
-      ${context.ragDocuments ? `Technical details:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Technical details:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Create clear technical content with:
       1. Precise terminology
@@ -277,8 +277,8 @@ export class WriterAgent extends BaseAgent {
       Be accurate and comprehensive.
     `;
 
-    const contentResponse = await this.llm.generate(prompt);
-    const content = contentResponse.response;
+    const contentResponse = await this?.llm?.generate(prompt);
+    const content = contentResponse?.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -297,13 +297,13 @@ export class WriterAgent extends BaseAgent {
     const prompt = `
       Complete this writing task: ${task}
       
-      ${context.ragDocuments ? `Reference material:\n${context.ragDocuments.map((d) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Reference material:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       
       Create well-written content that addresses all requirements.
     `;
 
-    const contentResponse = await this.llm.generate(prompt);
-    const content = contentResponse.response;
+    const contentResponse = await this?.llm?.generate(prompt);
+    const content = contentResponse?.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -354,7 +354,7 @@ export class WriterAgent extends BaseAgent {
       "urgent",
     ];
     const lowerContent = content.toLowerCase();
-    return actionKeywords.some((keyword) => lowerContent.includes(keyword));
+    return actionKeywords.some((keyword: any) => lowerContent.includes(keyword));
   }
 
   private detectGenre(content: string): string {
@@ -371,10 +371,10 @@ export class WriterAgent extends BaseAgent {
     const negativeWords = ["sad", "dark", "fear", "angry", "terrible"];
 
     const lowerContent = content.toLowerCase();
-    const positiveCount = positiveWords.filter((w) =>
+    const positiveCount = positiveWords?.filter((w: any) =>
       lowerContent.includes(w),
     ).length;
-    const negativeCount = negativeWords.filter((w) =>
+    const negativeCount = negativeWords?.filter((w: any) =>
       lowerContent.includes(w),
     ).length;
 
@@ -391,7 +391,7 @@ export class WriterAgent extends BaseAgent {
       "optimization",
       "complexity",
     ];
-    const count = advancedTerms.filter((term) =>
+    const count = advancedTerms?.filter((term: any) =>
       content.toLowerCase().includes(term),
     ).length;
 

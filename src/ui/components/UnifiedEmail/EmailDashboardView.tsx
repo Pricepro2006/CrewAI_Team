@@ -9,7 +9,7 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
 } from "@heroicons/react/24/outline";
-import type { DashboardMetrics } from "../../../types/unified-email.types.js";
+import type { DashboardMetrics } from "../../../types/unified-email?.types.js";
 import "./EmailDashboardView.css";
 
 interface EmailDashboardViewProps {
@@ -70,7 +70,7 @@ export const EmailDashboardView: React.FC<EmailDashboardViewProps> = ({
           </div>
           <div className="metric-content">
             <h3 className="metric-value">
-              {data.totalEmails.toLocaleString()}
+              {data?.totalEmails?.toLocaleString()}
             </h3>
             <p className="metric-label">Total Emails</p>
             <div className="metric-trend positive">
@@ -161,7 +161,7 @@ export const EmailDashboardView: React.FC<EmailDashboardViewProps> = ({
           </div>
           <div className="chart-content">
             <div className="bar-chart">
-              {weeklyData.map((day) => (
+              {weeklyData?.map((day: any) => (
                 <div key={day.day} className="bar-group">
                   <div className="bar-container">
                     <div
@@ -192,7 +192,7 @@ export const EmailDashboardView: React.FC<EmailDashboardViewProps> = ({
           </div>
           <div className="chart-content">
             <div className="category-list">
-              {categoryData.map((category) => (
+              {categoryData?.map((category: any) => (
                 <div key={category.category} className="category-item">
                   <div className="category-info">
                     <span className="category-name">{category.category}</span>
@@ -232,13 +232,13 @@ export const EmailDashboardView: React.FC<EmailDashboardViewProps> = ({
               </tr>
             </thead>
             <tbody>
-              {agentPerformance.map((agent) => (
+              {agentPerformance?.map((agent: any) => (
                 <tr key={agent.name}>
                   <td className="agent-name">
                     <div className="agent-avatar">
                       {agent.name
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: any) => n[0])
                         .join("")}
                     </div>
                     {agent.name}

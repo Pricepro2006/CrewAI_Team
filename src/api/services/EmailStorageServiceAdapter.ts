@@ -29,13 +29,13 @@ export class EmailStorageServiceAdapter {
   private createCompatibilityViews() {
     try {
       // Drop existing views if they exist
-      this.db.exec(`
+      this?.db?.exec(`
         DROP VIEW IF EXISTS emails;
         DROP VIEW IF EXISTS email_analysis;
       `);
       
       // Create emails view that maps enhanced schema to original schema
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE VIEW emails AS
         SELECT 
           id,
@@ -58,7 +58,7 @@ export class EmailStorageServiceAdapter {
       `);
       
       // Create email_analysis view that maps phase data to analysis structure
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE VIEW email_analysis AS
         SELECT
           id,
@@ -146,7 +146,7 @@ export class EmailStorageServiceAdapter {
   }
   
   close() {
-    this.db.close();
+    this?.db?.close();
   }
 }
 

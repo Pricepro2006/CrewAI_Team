@@ -52,7 +52,7 @@ describe("EmailStorageService", () => {
     mockDb = {
       prepare: vi.fn().mockReturnValue(mockStmt),
       exec: vi.fn(),
-      transaction: vi.fn().mockImplementation((fn) => (param) => fn(param)),
+      transaction: vi.fn().mockImplementation((fn: any) => (param: any) => fn(param)),
       close: vi.fn(),
     };
 
@@ -336,7 +336,7 @@ describe("EmailStorageService", () => {
       const changedBy = "user@example.com";
 
       // Mock current state query
-      mockStmt.get.mockReturnValueOnce({ workflow_state: "In Progress" });
+      mockStmt?.get?.mockReturnValueOnce({ workflow_state: "In Progress" });
 
       await emailStorageService.updateWorkflowState(
         emailId,
@@ -375,7 +375,7 @@ describe("EmailStorageService", () => {
       const newState = "Archived";
 
       // Mock empty current state query
-      mockStmt.get.mockReturnValueOnce(undefined);
+      mockStmt?.get?.mockReturnValueOnce(undefined);
 
       await emailStorageService.updateWorkflowState(emailId, newState);
 
@@ -412,7 +412,7 @@ describe("EmailStorageService", () => {
         },
       ];
 
-      mockStmt.all.mockReturnValueOnce(mockViolations);
+      mockStmt?.all?.mockReturnValueOnce(mockViolations);
 
       await emailStorageService.checkSLAStatus();
 
@@ -465,7 +465,7 @@ describe("EmailStorageService", () => {
         },
       ];
 
-      mockStmt.all.mockReturnValueOnce(mockViolations);
+      mockStmt?.all?.mockReturnValueOnce(mockViolations);
 
       await emailStorageService.checkSLAStatus();
 
@@ -528,7 +528,7 @@ describe("EmailStorageService", () => {
       });
 
       // Verify correct SQL queries were prepared (order may vary)
-      const prepareCalls = (mockDb.prepare as any).mock.calls.map((call: any) => call[0]);
+      const prepareCalls = (mockDb.prepare as any).mock?.calls?.map((call: any) => call[0]);
       
       expect(prepareCalls.some((call: string) => 
         call.includes("SELECT COUNT(*) as count FROM emails")
@@ -574,7 +574,7 @@ describe("EmailStorageService", () => {
         .mockImplementation(() => {});
 
       // Mock SLA check to throw error
-      mockStmt.all.mockImplementationOnce(() => {
+      mockStmt?.all?.mockImplementationOnce(() => {
         throw new Error("Database error");
       });
 

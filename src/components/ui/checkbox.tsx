@@ -11,7 +11,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     const handleChange = React.useCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
         // Call the custom onCheckedChange handler if provided
-        onCheckedChange?.(event.target.checked);
+        onCheckedChange?.(event?.target?.checked);
       },
       [onCheckedChange],
     );

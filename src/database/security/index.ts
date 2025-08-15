@@ -88,33 +88,33 @@ class SecurityViolationCounter {
 
   increment(type: string, identifier: string = "global"): number {
     const key = `${type}:${identifier}`;
-    const current = this.violations.get(key) || {
+    const current = this?.violations?.get(key) || {
       count: 0,
       lastViolation: new Date(),
     };
     current.count++;
     current.lastViolation = new Date();
-    this.violations.set(key, current);
+    this?.violations?.set(key, current);
     return current.count;
   }
 
   getCount(type: string, identifier: string = "global"): number {
     const key = `${type}:${identifier}`;
-    return this.violations.get(key)?.count || 0;
+    return this?.violations?.get(key)?.count || 0;
   }
 
   reset(type?: string, identifier?: string): void {
     if (type && identifier) {
-      this.violations.delete(`${type}:${identifier}`);
+      this?.violations?.delete(`${type}:${identifier}`);
     } else if (type) {
       // Reset all violations of this type
-      for (const key of this.violations.keys()) {
+      for (const key of this?.violations?.keys()) {
         if (key.startsWith(`${type}:`)) {
-          this.violations.delete(key);
+          this?.violations?.delete(key);
         }
       }
     } else {
-      this.violations.clear();
+      this?.violations?.clear();
     }
   }
 
@@ -134,11 +134,11 @@ export class DatabaseSecurityManager {
   constructor(config: Partial<DatabaseSecurityConfig> = {}) {
     this.config = { ...DEFAULT_SECURITY_CONFIG, ...config };
     this.sqlSecurity = createSqlInjectionProtection({
-      enableStrictValidation: this.config.sqlInjection.strictValidation,
-      enableQueryLogging: this.config.sqlInjection.enableQueryLogging,
-      enableBlacklist: this.config.sqlInjection.enableBlacklist,
-      maxQueryLength: this.config.sqlInjection.maxQueryLength,
-      maxParameterCount: this.config.sqlInjection.maxParameterCount,
+      enableStrictValidation: this?.config?.sqlInjection.strictValidation,
+      enableQueryLogging: this?.config?.sqlInjection.enableQueryLogging,
+      enableBlacklist: this?.config?.sqlInjection.enableBlacklist,
+      maxQueryLength: this?.config?.sqlInjection.maxQueryLength,
+      maxParameterCount: this?.config?.sqlInjection.maxParameterCount,
     });
     this.violationCounter = new SecurityViolationCounter();
   }
@@ -154,12 +154,12 @@ export class DatabaseSecurityManager {
     query: string;
     params: any[];
   } {
-    if (!this.config.sqlInjection.enabled) {
+    if (!this?.config?.sqlInjection.enabled) {
       return { query, params };
     }
 
     try {
-      return this.sqlSecurity.validateQueryExecution(query, params);
+      return this?.sqlSecurity?.validateQueryExecution(query, params);
     } catch (error) {
       if (error instanceof SqlInjectionError) {
         this.recordSecurityViolation("sql_injection", context);
@@ -173,20 +173,20 @@ export class DatabaseSecurityManager {
    * Validate input data
    */
   validateInput(input: any, context: any = {}): any {
-    if (!this.config.validation.enforceInputValidation) {
+    if (!this?.config?.validation.enforceInputValidation) {
       return input;
     }
 
     // Check input size
     const inputSize = JSON.stringify(input).length;
-    if (inputSize > this.config.validation.maxInputSize) {
+    if (inputSize > this?.config?.validation.maxInputSize) {
       this.recordSecurityViolation("input_size_exceeded", context);
       throw new Error("Input size exceeds maximum allowed limit");
     }
 
     // Check nesting depth
     const depth = this.getObjectDepth(input);
-    if (depth > this.config.validation.maxNestingDepth) {
+    if (depth > this?.config?.validation.maxNestingDepth) {
       this.recordSecurityViolation("nesting_depth_exceeded", context);
       throw new Error("Input nesting depth exceeds maximum allowed limit");
     }
@@ -219,7 +219,7 @@ export class DatabaseSecurityManager {
     config: DatabaseSecurityConfig;
   } {
     return {
-      violations: this.violationCounter.getStatistics(),
+      violations: this?.violationCounter?.getStatistics(),
       config: this.config,
     };
   }
@@ -228,7 +228,7 @@ export class DatabaseSecurityManager {
    * Reset security violation counters
    */
   resetViolationCounters(type?: string): void {
-    this.violationCounter.reset(type);
+    this?.violationCounter?.reset(type);
   }
 
   /**
@@ -239,11 +239,11 @@ export class DatabaseSecurityManager {
 
     // Recreate SQL injection protection with new config
     this.sqlSecurity = createSqlInjectionProtection({
-      enableStrictValidation: this.config.sqlInjection.strictValidation,
-      enableQueryLogging: this.config.sqlInjection.enableQueryLogging,
-      enableBlacklist: this.config.sqlInjection.enableBlacklist,
-      maxQueryLength: this.config.sqlInjection.maxQueryLength,
-      maxParameterCount: this.config.sqlInjection.maxParameterCount,
+      enableStrictValidation: this?.config?.sqlInjection.strictValidation,
+      enableQueryLogging: this?.config?.sqlInjection.enableQueryLogging,
+      enableBlacklist: this?.config?.sqlInjection.enableBlacklist,
+      maxQueryLength: this?.config?.sqlInjection.maxQueryLength,
+      maxParameterCount: this?.config?.sqlInjection.maxParameterCount,
     });
   }
 
@@ -251,10 +251,10 @@ export class DatabaseSecurityManager {
    * Record security violation
    */
   private recordSecurityViolation(type: string, context: any = {}): void {
-    const identifier = context.userId || context.ip || "anonymous";
-    const violationCount = this.violationCounter.increment(type, identifier);
+    const identifier = context.userId || "" || context.ip || "anonymous";
+    const violationCount = this?.violationCounter?.increment(type, identifier);
 
-    if (this.config.monitoring.logSecurityEvents) {
+    if (this?.config?.monitoring.logSecurityEvents) {
       import("../../utils/logger.js").then(({ logger }) => {
         logger.warn("Database Security Violation", "DATABASE_SECURITY", {
           violationType: type,
@@ -266,7 +266,7 @@ export class DatabaseSecurityManager {
     }
 
     // Check if we need to alert
-    if (violationCount >= this.config.monitoring.alertThreshold) {
+    if (violationCount >= this?.config?.monitoring.alertThreshold) {
       this.alertSecurityViolation(type, identifier, violationCount, context);
     }
   }
@@ -288,7 +288,7 @@ export class DatabaseSecurityManager {
           violationType: type,
           identifier,
           violationCount: count,
-          threshold: this.config.monitoring.alertThreshold,
+          threshold: this?.config?.monitoring.alertThreshold,
           context,
           timestamp: new Date().toISOString(),
         },
@@ -311,14 +311,14 @@ export class DatabaseSecurityManager {
     }
 
     if (Array.isArray(obj)) {
-      return 1 + Math.max(0, ...obj.map((item) => this.getObjectDepth(item)));
+      return 1 + Math.max(0, ...obj?.map((item: any) => this.getObjectDepth(item)));
     }
 
     return (
       1 +
       Math.max(
         0,
-        ...Object.values(obj).map((value) => this.getObjectDepth(value)),
+        ...Object.values(obj).map((value: any) => this.getObjectDepth(value)),
       )
     );
   }
@@ -328,12 +328,12 @@ export class DatabaseSecurityManager {
    */
   private validateInputRecursively(input: any): void {
     if (typeof input === "string") {
-      this.sqlSecurity.validateQueryParameters([input]);
+      this?.sqlSecurity?.validateQueryParameters([input]);
     } else if (Array.isArray(input)) {
-      input.forEach((item) => this.validateInputRecursively(item));
+      input.forEach((item: any) => this.validateInputRecursively(item));
     } else if (input && typeof input === "object") {
       Object.entries(input).forEach(([key, value]) => {
-        this.sqlSecurity.validateQueryParameters([key]);
+        this?.sqlSecurity?.validateQueryParameters([key]);
         this.validateInputRecursively(value);
       });
     }

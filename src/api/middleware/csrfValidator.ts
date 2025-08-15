@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import { getStoredCSRFToken, getRequestCSRFToken, validateCSRFToken } from "./security/csrf";
-import { logger } from "../../utils/logger";
+import { getStoredCSRFToken, getRequestCSRFToken, validateCSRFToken } from "./security/csrf.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Express middleware to validate CSRF tokens for state-changing operations
@@ -14,7 +14,7 @@ export function csrfValidator(skipPaths: string[] = []) {
     }
 
     // Skip specific paths
-    const path = req.path;
+    const path = req?.path;
     if (skipPaths.some(skipPath => path.startsWith(skipPath))) {
       logger.debug("Skipping CSRF check for path", "CSRF_VALIDATOR", { path });
       return next();

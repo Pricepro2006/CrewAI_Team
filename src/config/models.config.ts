@@ -10,7 +10,7 @@ export const MODEL_CONFIG = {
     primary: "llama3.2:3b",
     fallback: "llama3.2:3b", // Same model for consistency
     critical: "doomgrave/phi-4:14b-tools-Q3_K_S",
-    embedding: "llama3.2:3b", // Use same model for embeddings
+    embedding: process.env.OLLAMA_MODEL_EMBEDDING || "nomic-embed-text", // Optimized embedding model
     pattern: "iteration-script", // Local pattern matching
   },
 
@@ -104,7 +104,7 @@ export function getModelConfig(modelType: keyof typeof MODEL_CONFIG.models) {
 export function getModelTimeout(modelType: keyof typeof MODEL_CONFIG.models) {
   return (
     MODEL_CONFIG.timeouts[modelType as keyof typeof MODEL_CONFIG.timeouts] ||
-    MODEL_CONFIG.timeouts.primary
+    MODEL_CONFIG?.timeouts?.primary
   );
 }
 
@@ -113,18 +113,18 @@ export function getModelBatchSize(modelType: keyof typeof MODEL_CONFIG.models) {
   return (
     MODEL_CONFIG.batchSizes[
       modelType as keyof typeof MODEL_CONFIG.batchSizes
-    ] || MODEL_CONFIG.batchSizes.primary
+    ] || MODEL_CONFIG?.batchSizes?.primary
   );
 }
 
 // Helper function to check if we have enough memory for a model
 export function canRunModel(modelName: string): boolean {
   const modelSize =
-    MODEL_CONFIG.memory.modelSizes[
+    MODEL_CONFIG?.memory?.modelSizes[
       modelName as keyof typeof MODEL_CONFIG.memory.modelSizes
     ] || 4 * 1024 * 1024 * 1024; // Default 4GB
   const availableMemory =
-    MODEL_CONFIG.memory.maxMemoryUsage - MODEL_CONFIG.memory.reservedMemory;
+    MODEL_CONFIG?.memory?.maxMemoryUsage - MODEL_CONFIG?.memory?.reservedMemory;
   return modelSize <= availableMemory;
 }
 

@@ -13,7 +13,7 @@ import type {
   IEMSMailbox,
   IEMSDistributionList,
   CategorizedEmails,
-} from "../../types/iems-email.types.js";
+} from "../../types/iems-email?.types.js";
 import { logger } from "../../utils/logger.js";
 import { EmailAnalysisAgent } from "../../core/agents/specialized/EmailAnalysisAgent.js";
 
@@ -74,7 +74,7 @@ export class IEMSDataService {
         const mailboxesData = await fs.readFile(this.MAILBOXES_FILE, "utf-8");
         this.mailboxes = JSON.parse(mailboxesData);
         logger.info("Loaded mailboxes", "IEMS_DATA", {
-          count: this.mailboxes.length,
+          count: this?.mailboxes?.length,
         });
       } catch (error) {
         logger.warn("Could not load mailboxes file", "IEMS_DATA", {
@@ -91,7 +91,7 @@ export class IEMSDataService {
         );
         this.distributionLists = JSON.parse(distListData);
         logger.info("Loaded distribution lists", "IEMS_DATA", {
-          count: this.distributionLists.length,
+          count: this?.distributionLists?.length,
         });
       } catch (error) {
         logger.warn("Could not load distribution lists file", "IEMS_DATA", {
@@ -101,7 +101,7 @@ export class IEMSDataService {
       }
 
       // Initialize email analysis agent
-      await this.emailAnalysisAgent.initialize?.();
+      await this?.emailAnalysisAgent?.initialize?.();
     } catch (error) {
       logger.error(
         "Failed to initialize IEMS Data Service",
@@ -121,9 +121,9 @@ export class IEMSDataService {
     try {
       const files = await fs.readdir(this.EMAIL_BATCHES_PATH);
       const emailFiles = files
-        .filter((f) => f.startsWith("emails_batch_") && f.endsWith(".json"))
-        .filter((f) => {
-          if (!batchNumbers || batchNumbers.length === 0) return true;
+        .filter((f: any) => f.startsWith("emails_batch_") && f.endsWith(".json"))
+        .filter((f: any) => {
+          if (!batchNumbers || batchNumbers?.length || 0 === 0) return true;
           const batchNum = parseInt(
             f.match(/emails_batch_(\d+)\.json/)?.[1] || "0",
           );
@@ -139,7 +139,7 @@ export class IEMSDataService {
 
           logger.debug("Loaded email batch", "IEMS_DATA", {
             file,
-            emailCount: batchEmails.length,
+            emailCount: batchEmails?.length || 0,
           });
         } catch (error) {
           logger.error("Failed to load email batch", "IEMS_DATA", {
@@ -150,8 +150,8 @@ export class IEMSDataService {
       }
 
       logger.info("Loaded email batches", "IEMS_DATA", {
-        totalEmails: emails.length,
-        filesProcessed: emailFiles.length,
+        totalEmails: emails?.length || 0,
+        filesProcessed: emailFiles?.length || 0,
       });
 
       return emails;
@@ -173,13 +173,13 @@ export class IEMSDataService {
     const primaryRecipient = recipients.to[0]?.toLowerCase() || "";
 
     // Check mailboxes for email aliases
-    const isMailboxEmail = this.mailboxes.some(
-      (m) => m.email.toLowerCase() === primaryRecipient,
+    const isMailboxEmail = this?.mailboxes?.some(
+      (m: any) => m?.email?.toLowerCase() === primaryRecipient,
     );
 
     // Check distribution lists
-    const isDistListEmail = this.distributionLists.some(
-      (d) => d.email.toLowerCase() === primaryRecipient,
+    const isDistListEmail = this?.distributionLists?.some(
+      (d: any) => d?.email?.toLowerCase() === primaryRecipient,
     );
 
     // Categorize based on recipient patterns
@@ -254,12 +254,12 @@ export class IEMSDataService {
   async generateSummary(email: RawIEMSEmail): Promise<string> {
     // First check if we have a pre-generated summary
     if (email.FullAnalysis?.quick_summary) {
-      return email.FullAnalysis.quick_summary;
+      return email?.FullAnalysis?.quick_summary;
     }
 
     // Use AI to generate summary
     try {
-      const analysis = await this.emailAnalysisAgent.analyzeEmail({
+      const analysis = await this?.emailAnalysisAgent?.analyzeEmail({
         id: email.MessageID,
         subject: email.Subject,
         sender: email.SenderEmail,
@@ -298,11 +298,11 @@ export class IEMSDataService {
     const textContent = this.extractTextContent(email.BodyText);
     const firstLines = textContent
       .split("\n")
-      .filter((line) => line.trim().length > 0)
+      .filter((line: any) => line.trim().length > 0)
       .slice(0, 2)
       .join(" ");
 
-    return firstLines.length > 100
+    return firstLines?.length || 0 > 100
       ? firstLines.substring(0, 97) + "..."
       : firstLines;
   }
@@ -341,7 +341,7 @@ export class IEMSDataService {
     for (const rawEmail of rawEmails) {
       try {
         // Check cache first
-        const cachedEmail = this.emailCache.get(rawEmail.MessageID);
+        const cachedEmail = this?.emailCache?.get(rawEmail.MessageID);
         if (cachedEmail) {
           processedEmails.push(cachedEmail);
           continue;
@@ -370,7 +370,7 @@ export class IEMSDataService {
         };
 
         // Cache the processed email
-        this.emailCache.set(rawEmail.MessageID, processedEmail);
+        this?.emailCache?.set(rawEmail.MessageID, processedEmail);
         processedEmails.push(processedEmail);
       } catch (error) {
         logger.error("Failed to process email", "IEMS_DATA", {
@@ -391,16 +391,16 @@ export class IEMSDataService {
     const primaryRecipient = recipients.to[0] || "";
 
     // Find matching mailbox or distribution list
-    const mailbox = this.mailboxes.find(
-      (m) => m.email.toLowerCase() === primaryRecipient.toLowerCase(),
+    const mailbox = this?.mailboxes?.find(
+      (m: any) => m?.email?.toLowerCase() === primaryRecipient.toLowerCase(),
     );
 
     if (mailbox) {
       return mailbox.name;
     }
 
-    const distList = this.distributionLists.find(
-      (d) => d.email.toLowerCase() === primaryRecipient.toLowerCase(),
+    const distList = this?.distributionLists?.find(
+      (d: any) => d?.email?.toLowerCase() === primaryRecipient.toLowerCase(),
     );
 
     if (distList) {
@@ -469,8 +469,8 @@ export class IEMSDataService {
     const recipients = this.parseRecipients(email.Recipients);
     const primaryRecipient = recipients.to[0]?.toLowerCase() || "";
 
-    const mailbox = this.mailboxes.find(
-      (m) => m.email.toLowerCase() === primaryRecipient,
+    const mailbox = this?.mailboxes?.find(
+      (m: any) => m?.email?.toLowerCase() === primaryRecipient,
     );
 
     if (mailbox) {
@@ -493,35 +493,35 @@ export class IEMSDataService {
       emailAlias: [],
       marketingSplunk: [],
       vmwareTDSynnex: [],
-      totalCount: processedEmails.length,
+      totalCount: processedEmails?.length || 0,
       lastUpdated: new Date(),
     };
 
     for (const email of processedEmails) {
       switch (email.category) {
         case "email-alias":
-          categorized.emailAlias.push(email);
+          categorized?.emailAlias?.push(email);
           break;
         case "marketing-splunk":
-          categorized.marketingSplunk.push(email);
+          categorized?.marketingSplunk?.push(email);
           break;
         case "vmware-tdsynnex":
-          categorized.vmwareTDSynnex.push(email);
+          categorized?.vmwareTDSynnex?.push(email);
           break;
       }
     }
 
     // Apply limit if specified
     if (limit) {
-      categorized.emailAlias = categorized.emailAlias.slice(0, limit);
-      categorized.marketingSplunk = categorized.marketingSplunk.slice(0, limit);
-      categorized.vmwareTDSynnex = categorized.vmwareTDSynnex.slice(0, limit);
+      categorized.emailAlias = categorized?.emailAlias?.slice(0, limit);
+      categorized.marketingSplunk = categorized?.marketingSplunk?.slice(0, limit);
+      categorized.vmwareTDSynnex = categorized?.vmwareTDSynnex?.slice(0, limit);
     }
 
     logger.info("Categorized emails", "IEMS_DATA", {
-      emailAlias: categorized.emailAlias.length,
-      marketingSplunk: categorized.marketingSplunk.length,
-      vmwareTDSynnex: categorized.vmwareTDSynnex.length,
+      emailAlias: categorized?.emailAlias?.length,
+      marketingSplunk: categorized?.marketingSplunk?.length,
+      vmwareTDSynnex: categorized?.vmwareTDSynnex?.length,
       total: categorized.totalCount,
     });
 

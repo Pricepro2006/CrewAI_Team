@@ -100,19 +100,19 @@ export class StructuredLogger {
 
   private createWinstonLogger(): winston.Logger {
     const formats = [
-      winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
-      winston.format.errors({ stack: true }),
-      winston.format.metadata({ 
+      winston?.format?.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+      winston?.format?.errors({ stack: true }),
+      winston?.format?.metadata({ 
         fillExcept: ['message', 'level', 'timestamp', 'label'] 
       }),
     ];
 
     // Add JSON format for structured logging
     if (process.env.LOG_FORMAT === 'json') {
-      formats.push(winston.format.json());
+      formats.push(winston?.format.json());
     } else {
       formats.push(
-        winston.format.printf((info) => {
+        winston?.format?.printf((info: any) => {
           const { timestamp, level, message, component, operation, traceId, ...meta } = info;
           let log = `${timestamp} [${level.toUpperCase()}] ${component || 'UNKNOWN'}`;
           
@@ -137,8 +137,8 @@ export class StructuredLogger {
     transports.push(
       new winston.transports.Console({
         level: process.env.LOG_LEVEL || 'info',
-        format: winston.format.combine(
-          winston.format.colorize(),
+        format: winston?.format?.combine(
+          winston?.format?.colorize(),
           ...formats
         ),
       })
@@ -156,7 +156,7 @@ export class StructuredLogger {
         maxSize: '20m',
         maxFiles: '14d',
         level: 'info',
-        format: winston.format.combine(...formats),
+        format: winston?.format?.combine(...formats),
       })
     );
 
@@ -169,7 +169,7 @@ export class StructuredLogger {
         maxSize: '20m',
         maxFiles: '30d',
         level: 'error',
-        format: winston.format.combine(...formats),
+        format: winston?.format?.combine(...formats),
       })
     );
 
@@ -183,7 +183,7 @@ export class StructuredLogger {
           maxSize: '50m',
           maxFiles: '7d',
           level: 'debug',
-          format: winston.format.combine(...formats),
+          format: winston?.format?.combine(...formats),
         })
       );
     }
@@ -201,7 +201,7 @@ export class StructuredLogger {
             } : undefined,
           },
           index: `grocery-agent-logs-${this.environment}`,
-          transformer: (logData) => {
+          transformer: (logData: any) => {
             return {
               '@timestamp': new Date().toISOString(),
               level: logData.level,
@@ -293,24 +293,24 @@ export class StructuredLogger {
       } : undefined,
       context: redactedContext?.data,
       error: redactedContext?.error ? {
-        name: redactedContext.error.name,
-        message: piiRedactor.redact(redactedContext.error.message),
-        stack: redactedContext.error.stack ? piiRedactor.redact(redactedContext.error.stack) : undefined,
+        name: redactedContext?.error?.name,
+        message: piiRedactor.redact(redactedContext?.error?.message),
+        stack: redactedContext?.error?.stack ? piiRedactor.redact(redactedContext?.error?.stack) : undefined,
         code: (redactedContext.error as any).code,
       } : undefined,
       tags: redactedContext?.tags,
     };
 
     // Add to buffer for aggregation
-    this.logBuffer.push(logEntry);
+    this?.logBuffer?.push(logEntry);
 
     // Flush buffer if it's getting too large
-    if (this.logBuffer.length >= this.maxBufferSize) {
+    if (this?.logBuffer?.length >= this.maxBufferSize) {
       this.flushBuffer();
     }
 
     // Send to Winston
-    this.winston.log(level, redactedMessage, {
+    this?.winston?.log(level, redactedMessage, {
       component,
       operation: redactedContext?.operation,
       traceId: redactedContext?.traceId,
@@ -552,7 +552,7 @@ export class StructuredLogger {
 
   // Log aggregation and analysis
   private flushBuffer(): void {
-    if (this.logBuffer.length === 0) return;
+    if (this?.logBuffer?.length === 0) return;
 
     // Send buffer to external log aggregation service if configured
     if (process.env.LOG_AGGREGATION_URL) {
@@ -592,27 +592,27 @@ export class StructuredLogger {
     const now = new Date();
     const timeWindow = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${Math.floor(now.getMinutes() / 5)}`;
 
-    this.logBuffer.forEach(log => {
+    this?.logBuffer?.forEach(log => {
       const key = `${timeWindow}_${log.component}_${log.level}`;
-      const existing = this.aggregations.get(key);
+      const existing = this?.aggregations?.get(key);
 
       if (existing) {
         existing.count++;
         existing.lastSeen = new Date(log.timestamp);
-        existing.uniqueMessages.add(log.message);
-        if (log.operation) existing.uniqueOperations.add(log.operation);
+        existing?.uniqueMessages?.add(log.message);
+        if (log.operation) existing?.uniqueOperations?.add(log.operation);
         
-        if (existing.samples.length < 5) {
-          existing.samples.push(log);
+        if (existing?.samples?.length < 5) {
+          existing?.samples?.push(log);
         }
 
         if (log.performance?.duration) {
           existing.averageDuration = existing.averageDuration 
-            ? (existing.averageDuration + log.performance.duration) / 2
-            : log.performance.duration;
+            ? (existing.averageDuration + log?.performance?.duration) / 2
+            : log?.performance?.duration;
         }
       } else {
-        this.aggregations.set(key, {
+        this?.aggregations?.set(key, {
           timeWindow,
           component: log.component,
           level: log.level,
@@ -624,9 +624,9 @@ export class StructuredLogger {
           uniqueOperations: new Set(log.operation ? [log.operation] : []),
           averageDuration: log.performance?.duration,
           memoryTrend: log.memory ? {
-            min: log.memory.heapUsed,
-            max: log.memory.heapUsed,
-            avg: log.memory.heapUsed,
+            min: log?.memory?.heapUsed,
+            max: log?.memory?.heapUsed,
+            avg: log?.memory?.heapUsed,
           } : undefined,
         });
       }
@@ -636,9 +636,9 @@ export class StructuredLogger {
   private cleanupAggregations(): void {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
 
-    this.aggregations.forEach((agg, key) => {
+    this?.aggregations?.forEach((agg, key) => {
       if (agg.lastSeen < cutoff) {
-        this.aggregations.delete(key);
+        this?.aggregations?.delete(key);
       }
     });
   }
@@ -659,31 +659,31 @@ export class StructuredLogger {
     level?: LogLevel;
     timeWindow?: string;
   }): LogAggregation[] {
-    let aggregations = Array.from(this.aggregations.values());
+    let aggregations = Array.from(this?.aggregations?.values());
 
     if (filter) {
       if (filter.component) {
-        aggregations = aggregations.filter(a => a.component === filter.component);
+        aggregations = aggregations?.filter(a => a.component === filter.component);
       }
       if (filter.level) {
-        aggregations = aggregations.filter(a => a.level === filter.level);
+        aggregations = aggregations?.filter(a => a.level === filter.level);
       }
       if (filter.timeWindow) {
-        aggregations = aggregations.filter(a => a.timeWindow === filter.timeWindow);
+        aggregations = aggregations?.filter(a => a.timeWindow === filter.timeWindow);
       }
     }
 
-    return aggregations.sort((a, b) => b.lastSeen.getTime() - a.lastSeen.getTime());
+    return aggregations.sort((a, b) => b?.lastSeen?.getTime() - a?.lastSeen?.getTime());
   }
 
   getLogStats(hours = 1): Record<string, any> {
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
-    const recentAggregations = Array.from(this.aggregations.values())
+    const recentAggregations = Array.from(this?.aggregations?.values())
       .filter(a => a.lastSeen >= cutoff);
 
     const stats = {
-      totalLogs: recentAggregations.reduce((sum, a) => sum + a.count, 0),
-      uniqueComponents: new Set(recentAggregations.map(a => a.component)).size,
+      totalLogs: recentAggregations.reduce((sum: any, a: any) => sum + a.count, 0),
+      uniqueComponents: new Set(recentAggregations?.map(a => a.component)).size,
       logsByLevel: {} as Record<string, number>,
       logsByComponent: {} as Record<string, number>,
       errorRate: 0,
@@ -709,14 +709,14 @@ export class StructuredLogger {
 
       // Track memory usage
       if (agg.memoryTrend) {
-        memorySum += agg.memoryTrend.avg;
+        memorySum += agg?.memoryTrend?.avg;
         memoryCount++;
       }
 
       // Track slow operations
       if (agg.averageDuration && agg.averageDuration > 1000) { // > 1 second
-        agg.uniqueOperations.forEach(op => {
-          stats.slowOperations.push({
+        agg?.uniqueOperations?.forEach(op => {
+          stats?.slowOperations?.push({
             component: agg.component,
             operation: op,
             duration: agg.averageDuration!,
@@ -727,7 +727,7 @@ export class StructuredLogger {
 
     stats.errorRate = stats.totalLogs > 0 ? errorCount / stats.totalLogs : 0;
     stats.averageMemoryUsage = memoryCount > 0 ? memorySum / memoryCount : 0;
-    stats.slowOperations.sort((a, b) => b.duration - a.duration);
+    stats?.slowOperations?.sort((a, b) => b.duration - a.duration);
 
     return stats;
   }
@@ -741,12 +741,12 @@ export class StructuredLogger {
     const results: StructuredLogEntry[] = [];
     const limit = options?.limit || 100;
 
-    this.aggregations.forEach(agg => {
+    this?.aggregations?.forEach(agg => {
       if (options?.component && agg.component !== options.component) return;
       if (options?.level && agg.level !== options.level) return;
 
-      agg.samples.forEach(log => {
-        if (results.length >= limit) return;
+      agg?.samples?.forEach(log => {
+        if (results?.length || 0 >= limit) return;
 
         const searchIn = `${log.message} ${log.operation || ''} ${JSON.stringify(log.context || {})}`;
         if (searchIn.toLowerCase().includes(query.toLowerCase())) {
@@ -771,16 +771,16 @@ export class StructuredLogger {
     } else {
       // CSV export implementation
       const headers = ['timestamp', 'component', 'level', 'count', 'uniqueMessages', 'uniqueOperations'];
-      const rows = aggregations.map(agg => [
-        agg.lastSeen.toISOString(),
+      const rows = aggregations?.map(agg => [
+        agg?.lastSeen?.toISOString(),
         agg.component,
         agg.level,
         agg.count,
-        agg.uniqueMessages.size,
-        agg.uniqueOperations.size,
+        agg?.uniqueMessages?.size,
+        agg?.uniqueOperations?.size,
       ]);
 
-      return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+      return [headers.join(','), ...rows?.map(row => row.join(','))].join('\n');
     }
   }
 
@@ -790,9 +790,9 @@ export class StructuredLogger {
     clearInterval(this.bufferFlushInterval);
     
     // Wait for Winston to finish writing
-    await new Promise<void>((resolve) => {
-      this.winston.on('finish', resolve);
-      this.winston.end();
+    await new Promise<void>((resolve: any) => {
+      this?.winston?.on('finish', resolve);
+      this?.winston?.end();
     });
   }
 }
