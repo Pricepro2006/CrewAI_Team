@@ -6,7 +6,7 @@ import type {
   ToolExecutionParams,
 } from "./AgentTypes.js";
 import { logger } from "../../utils/logger.js";
-import { LlamaCppProvider } from "../../llm/LlamaCppProvider.js";
+import { LLMProviderFactory, LLMProviderInterface } from "../../llm/LLMProviderFactory.js";
 import {
   MODEL_CONFIG,
   getModelConfig,
@@ -17,7 +17,7 @@ export abstract class BaseAgent {
   protected tools: Map<string, BaseTool> = new Map();
   protected capabilities: Set<string> = new Set();
   protected initialized = false;
-  protected llm: LlamaCppProvider;
+  protected llm: LLMProviderInterface;
   protected timeout: number;
 
   constructor(
@@ -30,15 +30,8 @@ export abstract class BaseAgent {
     // Get timeout for this model
     this.timeout = getModelTimeout("primary");
 
-    // Initialize LLM provider with LlamaCpp
-    this.llm = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
-      contextSize: parseInt(process.env.LLAMA_CONTEXT_SIZE || "8192"),
-      threads: parseInt(process.env.LLAMA_THREADS || "8"),
-      temperature: parseFloat(process.env.LLAMA_TEMPERATURE || "0.7"),
-      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-      maxTokens: 4096,
-    });
+    // Initialize LLM provider using factory for standardization
+    this.llm = null as any; // Will be initialized in initialize() method
   }
 
   abstract execute(task: string, context: AgentContext): Promise<AgentResult>;
@@ -99,14 +92,18 @@ export abstract class BaseAgent {
 
     logger.info(`Initializing agent ${this.name}`, "AGENT");
 
-    // Initialize LLM provider (LlamaCpp doesn't need explicit initialization)
+    // Initialize LLM provider using factory
     try {
-      logger.debug(`LlamaCpp LLM provider ready for ${this.name}`, "AGENT");
+      const llmConfig = LLMProviderFactory.getDefaultConfig();
+      this.llm = await LLMProviderFactory.createProvider(llmConfig);
+      logger.debug(`LLM provider initialized successfully for ${this.name}`, "AGENT");
     } catch (error) {
       logger.warn(
         `LLM initialization failed for ${this.name}: ${error instanceof Error ? error.message : 'Unknown error'}. Continuing with fallback responses.`,
         "AGENT"
       );
+      // Create a fallback LLM that provides basic responses
+      this.llm = this.createFallbackLLM();
     }
 
     // Register default tools first
@@ -130,6 +127,38 @@ export abstract class BaseAgent {
       `Agent ${this.name} initialized successfully with ${this?.tools?.size} tools`,
       "AGENT",
     );
+  }
+
+  private createFallbackLLM(): LLMProviderInterface {
+    return {
+      async generate(prompt: string, options?: any): Promise<{ response: string; [key: string]: any }> {
+        logger.warn(`Fallback LLM used for agent ${this.name}`, "AGENT");
+        return {
+          response: "I apologize, but I'm experiencing technical difficulties with the AI models. Please try again later or contact support.",
+          model: "fallback",
+          timestamp: new Date().toISOString()
+        };
+      },
+      async initialize(): Promise<void> {
+        // No-op for fallback
+      },
+      isReady(): boolean {
+        return true; // Fallback is always ready
+      }
+    };
+  }
+
+  protected async generateLLMResponse(prompt: string, options?: any): Promise<{ response: string; [key: string]: any }> {
+    if (!this.llm) {
+      throw new Error(`LLM not initialized for agent ${this.name}`);
+    }
+    
+    try {
+      return await this.llm.generate(prompt, options);
+    } catch (error) {
+      logger.error(`LLM generation failed for agent ${this.name}`, "AGENT", { error });
+      throw error;
+    }
   }
 
   protected handleError(error: Error): AgentResult {

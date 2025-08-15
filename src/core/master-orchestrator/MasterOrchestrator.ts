@@ -1,5 +1,5 @@
-import { LlamaCppProvider } from "../llm/LlamaCppProvider.js";
 import { LLMProviderFactory, LLMProviderInterface } from "../llm/LLMProviderFactory.js";
+import type { EmailAnalysisResult } from "../../api/services/EmailStorageService.js";
 import { AgentRegistry } from "../agents/registry/AgentRegistry.js";
 import { RAGSystem } from "../rag/RAGSystem.js";
 import { PlanExecutor } from "./PlanExecutor.js";
@@ -40,23 +40,26 @@ export class MasterOrchestrator {
     this.config = config;
     this.agentRegistry = new AgentRegistry();
 
-    // Use default RAG config if not provided (for testing)
+    // Use default RAG config if not provided (optimized for email processing)
     const ragConfig = config.rag || {
       vectorStore: {
-        type: "chromadb" as const,
-        path: "./test-data/chroma-test",
-        collectionName: "test-collection",
-        dimension: 384,
+        type: "adaptive" as const, // Use adaptive store for better fallback handling
+        baseUrl: process.env.CHROMADB_URL || "http://localhost:8001",
+        collectionName: process.env.CHROMADB_COLLECTION || "email-rag-collection",
+        dimension: 4096, // Match Llama 3.2:3b embedding dimensions
       },
       chunking: {
-        size: 500,
-        overlap: 50,
+        size: 1000, // Larger chunks for email content
+        overlap: 100, // More overlap for context preservation
         method: "sentence" as const,
+        trimWhitespace: true,
+        preserveFormatting: false,
       },
       retrieval: {
-        topK: 5,
-        minScore: 0.5,
+        topK: 10, // More results for email context
+        minScore: 0.3, // Lower threshold for email similarity
         reranking: false,
+        boostRecent: true, // Prefer recent emails
       },
     };
 
@@ -166,6 +169,118 @@ export class MasterOrchestrator {
 
   async isInitialized(): Promise<boolean> {
     return true; // For health checks
+  }
+
+  async processEmail(email: any): Promise<EmailAnalysisResult> {
+    const perf = this.perfMonitor.start("processEmail");
+
+    logger.info("Processing email through agent system", "ORCHESTRATOR", {
+      emailId: email.id,
+      subject: email.subject?.substring(0, 100),
+    });
+
+    try {
+      // Create email analysis query
+      const query: Query = {
+        text: `Analyze this email for business intelligence:\n\nSubject: ${email.subject}\nFrom: ${email.from?.emailAddress?.address}\nBody: ${(email.body || email.bodyPreview || '').substring(0, 2000)}`,
+        conversationId: email.id,
+        metadata: { email, task: 'email_analysis' }
+      };
+
+      // Process through standard agent pipeline
+      const result = await this.processQuery(query);
+
+      // Convert ExecutionResult to EmailAnalysisResult
+      return this.convertToEmailAnalysis(result, email);
+    } catch (error) {
+      logger.error("Email processing failed", "ORCHESTRATOR", { emailId: email.id }, error as Error);
+      perf.end({ success: false });
+      throw error;
+    }
+  }
+
+  private convertToEmailAnalysis(result: ExecutionResult, email: any): EmailAnalysisResult {
+    // Extract analysis data from agent results
+    const agentData = result.results.find((r: any) => r.agent === 'EmailAnalysisAgent')?.data;
+    
+    return {
+      quick: {
+        workflow: {
+          primary: agentData?.categories?.workflow?.[0] || 'General Support',
+          secondary: agentData?.categories?.workflow?.slice(1) || []
+        },
+        priority: agentData?.priority || 'Medium',
+        intent: agentData?.categories?.intent || 'FYI',
+        urgency: agentData?.categories?.urgency || 'No Rush',
+        confidence: agentData?.confidence || 0.5,
+        suggestedState: agentData?.workflowState || 'New'
+      },
+      deep: {
+        detailedWorkflow: {
+          primary: agentData?.categories?.workflow?.[0] || 'General Support',
+          secondary: agentData?.categories?.workflow?.slice(1) || [],
+          relatedCategories: [],
+          confidence: agentData?.confidence || 0.5
+        },
+        entities: {
+          poNumbers: agentData?.entities?.poNumbers || [],
+          quoteNumbers: agentData?.entities?.quoteNumbers || [],
+          caseNumbers: agentData?.entities?.caseNumbers || [],
+          partNumbers: agentData?.entities?.products || [],
+          orderReferences: agentData?.entities?.orderNumbers || [],
+          contacts: agentData?.entities?.customers?.map((c: string) => ({ name: c, type: 'external' as const })) || []
+        },
+        actionItems: agentData?.suggestedActions?.map((action: string) => ({
+          type: 'action',
+          description: action,
+          priority: agentData?.priority || 'Medium',
+          slaHours: this.getSlaHours(agentData?.priority || 'Medium'),
+          slaStatus: 'on-track' as const
+        })) || [],
+        workflowState: {
+          current: agentData?.workflowState || 'New',
+          suggestedNext: this.getNextState(agentData?.workflowState || 'New'),
+          blockers: []
+        },
+        businessImpact: {
+          customerSatisfaction: 'medium' as const,
+          urgencyReason: agentData?.categories?.urgency !== 'No Rush' ? `Priority: ${agentData?.priority}` : undefined
+        },
+        contextualSummary: agentData?.summary || result.summary || '',
+        suggestedResponse: agentData?.suggestedResponse,
+        relatedEmails: []
+      },
+      actionSummary: agentData?.suggestedActions?.join('; ') || 'Email processed and categorized',
+      processingMetadata: {
+        stage1Time: Date.now() - (result.metadata?.timestamp ? new Date(result.metadata.timestamp).getTime() : Date.now()),
+        stage2Time: 0,
+        totalTime: Date.now() - (result.metadata?.timestamp ? new Date(result.metadata.timestamp).getTime() : Date.now()),
+        models: {
+          stage1: 'MasterOrchestrator',
+          stage2: 'EmailAnalysisAgent'
+        }
+      }
+    };
+  }
+
+  private getSlaHours(priority: string): number {
+    switch (priority) {
+      case 'Critical': return 4;
+      case 'High': return 24;
+      case 'Medium': return 72;
+      case 'Low': return 168;
+      default: return 72;
+    }
+  }
+
+  private getNextState(currentState: string): string {
+    const stateTransitions: Record<string, string> = {
+      'New': 'In Review',
+      'In Review': 'In Progress', 
+      'In Progress': 'Pending External',
+      'Pending External': 'Completed'
+    };
+    return stateTransitions[currentState] || 'In Review';
   }
 
   async processQuery(query: Query): Promise<ExecutionResult> {

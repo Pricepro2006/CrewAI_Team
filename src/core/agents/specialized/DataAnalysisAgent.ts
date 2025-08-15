@@ -4,7 +4,7 @@ import type {
   AgentContext,
   AgentResult,
 } from "../base/AgentTypes.js";
-import type { LlamaCppResponse } from "../../llm/LlamaCppProvider.js";
+
 
 export class DataAnalysisAgent extends BaseAgent {
   constructor() {
@@ -79,7 +79,7 @@ export class DataAnalysisAgent extends BaseAgent {
       }
     `;
 
-    const llmResponse: LlamaCppResponse = await this?.llm?.generate(prompt, { format: "json" });
+    const llmResponse = await this.generateLLMResponse(prompt, { format: "json" });
     const response = llmResponse?.response;
     return this.parseDataTaskAnalysis(response);
   }
@@ -125,7 +125,7 @@ export class DataAnalysisAgent extends BaseAgent {
       Format as a structured analysis report.
     `;
 
-    const llmResponse: LlamaCppResponse = await this?.llm?.generate(prompt);
+    const llmResponse = await this.generateLLMResponse(prompt);
     const analysisReport = llmResponse?.response;
 
     return {
@@ -156,7 +156,7 @@ export class DataAnalysisAgent extends BaseAgent {
       Return as visualization configuration in JSON format.
     `;
 
-    const llmResponse: LlamaCppResponse = await this?.llm?.generate(prompt);
+    const llmResponse = await this.generateLLMResponse(prompt);
     const vizConfig = llmResponse?.response;
 
     return {
@@ -187,7 +187,7 @@ export class DataAnalysisAgent extends BaseAgent {
       Provide transformed data and transformation steps.
     `;
 
-    const llmResponse: LlamaCppResponse = await this?.llm?.generate(prompt);
+    const llmResponse = await this.generateLLMResponse(prompt);
     const transformation = llmResponse?.response;
 
     return {
@@ -221,7 +221,7 @@ export class DataAnalysisAgent extends BaseAgent {
       Format as an exploratory data analysis report.
     `;
 
-    const llmResponse: LlamaCppResponse = await this?.llm?.generate(prompt);
+    const llmResponse = await this.generateLLMResponse(prompt);
     const exploration = llmResponse?.response;
 
     return {
@@ -245,7 +245,7 @@ export class DataAnalysisAgent extends BaseAgent {
       patterns, insights, and recommendations.
     `;
 
-    const llmResponse: LlamaCppResponse = await this?.llm?.generate(prompt);
+    const llmResponse = await this.generateLLMResponse(prompt);
     const analysis = llmResponse?.response;
 
     return {

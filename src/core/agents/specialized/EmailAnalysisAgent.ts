@@ -1,6 +1,5 @@
 import { BaseAgent } from "../base/BaseAgent.js";
 import type { AgentContext, AgentResult } from "../base/AgentTypes.js";
-import { LlamaCppProvider } from "../../llm/LlamaCppProvider.js";
 import { logger } from "../../utils/logger.js";
 // Re-export types for backward compatibility
 export * from "./EmailAnalysisTypes.js";
@@ -17,7 +16,6 @@ import {
 } from "./EmailAnalysisConfig.js";
 
 export class EmailAnalysisAgent extends BaseAgent {
-  private llamaCppProvider: LlamaCppProvider;
   private cache: any; // Will be initialized later to avoid circular import
 
   // TD SYNNEX specific categories
@@ -80,13 +78,7 @@ export class EmailAnalysisAgent extends BaseAgent {
       PRODUCTION_EMAIL_CONFIG.primaryModel, // Use production-tested model
     );
 
-    this.llamaCppProvider = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
-      contextSize: 8192,
-      threads: 8,
-      temperature: 0.7,
-      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-    });
+    // LLM provider will be initialized by BaseAgent
 
     // Cache will be initialized lazily to avoid circular import
     this.cache = null;
@@ -238,7 +230,7 @@ Response format:
 }`;
 
     try {
-      const response = await this?.llamaCppProvider?.generate(prompt, {
+      const response = await this.generateLLMResponse(prompt, {
         temperature: 0.1,
         format: "json",
       });
@@ -270,16 +262,7 @@ Analyze:
 Provide detailed categorization with high confidence.`;
 
     try {
-      // Create a new provider instance with quality-focused model
-      const deepProvider = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/ANALYSIS_SCENARIOS?.qualityFocus?.primaryModel.gguf`,
-      contextSize: 8192,
-      threads: 8,
-      temperature: 0.7,
-      gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-    });
-
-      const response = await deepProvider.generate(prompt, {
+      const response = await this.generateLLMResponse(prompt, {
         temperature: 0.2,
       });
 
@@ -489,7 +472,7 @@ Preview: ${email.bodyPreview || email.body?.substring(0, 300)}
 Summary:`;
 
     try {
-      const summary = await this?.llamaCppProvider?.generate(prompt, {
+      const summary = await this.generateLLMResponse(prompt, {
         temperature: 0.3,
         maxTokens: 100,
       });
