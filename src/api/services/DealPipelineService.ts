@@ -3,7 +3,8 @@
  * Orchestrates continuous price monitoring, deal detection, and notification delivery
  */
 
-import { logger } from "../../utils/logger.js";
+import { Logger } from "../../utils/logger.js";
+const logger = Logger.getInstance();
 import { WalmartPriceFetcher } from "./WalmartPriceFetcher.js";
 import { PriceHistoryService } from "./PriceHistoryService.js";
 import { DealDetectionEngine } from "./DealDetectionEngine.js";
@@ -252,8 +253,9 @@ export class DealPipelineService extends EventEmitter {
     const existingIndex = this.processingQueue.findIndex(item => item.productId === productId);
     if (existingIndex >= 0) {
       // Update priority if higher
-      if (this.getPriorityValue(priority) > this.getPriorityValue(this.processingQueue[existingIndex].priority)) {
-        this.processingQueue[existingIndex].priority = priority;
+      const existingItem = this.processingQueue[existingIndex];
+      if (existingItem && this.getPriorityValue(priority) > this.getPriorityValue(existingItem.priority)) {
+        existingItem.priority = priority;
       }
       return;
     }
@@ -342,8 +344,7 @@ export class DealPipelineService extends EventEmitter {
         price: livePrice.price,
         images: [],
         inStock: livePrice.inStock,
-        rating: 0,
-        reviewCount: 0,
+        ratings: undefined,
         size: '',
         unit: '',
         searchKeywords: [],
@@ -517,7 +518,7 @@ export class DealPipelineService extends EventEmitter {
                 price: livePrice.price,
                 images: [],
                 inStock: livePrice.inStock,
-                rating: 0,
+                ratings: undefined,
                 reviewCount: 0,
                 size: '',
                 unit: '',
@@ -625,7 +626,7 @@ export class DealPipelineService extends EventEmitter {
             price: candidate.currentPrice,
             images: [],
             inStock: true,
-            rating: 0,
+            ratings: undefined,
             reviewCount: 0,
             size: '',
             unit: '',
@@ -634,7 +635,6 @@ export class DealPipelineService extends EventEmitter {
             dateAdded: new Date().toISOString(),
             lastUpdated: new Date().toISOString(),
             livePrice: {
-              productId: candidate.productId,
               price: candidate.currentPrice,
               salePrice: candidate.salePrice,
               wasPrice: candidate.wasPrice,
