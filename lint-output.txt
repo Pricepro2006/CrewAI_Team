@@ -1,4 +1,0 @@
-> ai-agent-team@1.0.0 lint /home/pricepro2006/CrewAI_Team
-> eslint src --ext .ts,.tsx
-
-All TypeScript compilation issues have been resolved.
