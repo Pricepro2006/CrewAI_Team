@@ -31,12 +31,12 @@ const testWebSocket = async () => {
     }, 3000);
   });
 
-  ws.on("message", (data) => {
+  ws.on("message", (data: any) => {
     const message = JSON.parse(data.toString());
     console.log("📨 Received:", message);
   });
 
-  ws.on("error", (error) => {
+  ws.on("error", (error: any) => {
     console.error("❌ WebSocket error:", error.message);
     process.exit(1);
   });

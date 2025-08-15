@@ -100,12 +100,12 @@ export class WalmartServiceMesh {
       for (const service of manifest.services) {
         const success = await this.deployService(service);
         if (!success) {
-          this.deploymentErrors.push(`Failed to deploy ${service.name}`);
+          this?.deploymentErrors?.push(`Failed to deploy ${service.name}`);
           logger.error('Service deployment failed', 'SERVICE_MESH', {
             serviceName: service.name,
           });
         } else {
-          this.runningServices.add(service.name);
+          this?.runningServices?.add(service.name);
           logger.info('Service deployed successfully', 'SERVICE_MESH', {
             serviceName: service.name,
             endpoint: `${service.protocol}://${service.host}:${service.port}`,
@@ -115,14 +115,14 @@ export class WalmartServiceMesh {
 
       // Check if we have critical services running
       const criticalServices = ['walmart-api-server'];
-      const criticalRunning = criticalServices.every(name => this.runningServices.has(name));
+      const criticalRunning = criticalServices.every(name => this?.runningServices?.has(name));
 
       if (criticalRunning) {
         this.status = 'running';
         logger.info('Walmart service mesh deployment completed', 'SERVICE_MESH', {
-          runningServices: this.runningServices.size,
+          runningServices: this?.runningServices?.size,
           totalServices: manifest.total_services,
-          errors: this.deploymentErrors.length,
+          errors: this?.deploymentErrors?.length,
         });
         
         // Start auto-scaling if enabled
@@ -141,7 +141,7 @@ export class WalmartServiceMesh {
     } catch (error) {
       this.status = 'error';
       const errorMessage = error instanceof Error ? error.message : String(error);
-      this.deploymentErrors.push(errorMessage);
+      this?.deploymentErrors?.push(errorMessage);
       
       logger.error('Service mesh deployment failed', 'SERVICE_MESH', {
         error: errorMessage,
@@ -159,7 +159,7 @@ export class WalmartServiceMesh {
     try {
       // Validate configuration
       const validationErrors = validateServiceConfig(service);
-      if (validationErrors.length > 0) {
+      if (validationErrors?.length || 0 > 0) {
         logger.error('Service configuration validation failed', 'SERVICE_MESH', {
           serviceName: service.name,
           errors: validationErrors,
@@ -178,7 +178,7 @@ export class WalmartServiceMesh {
       }
 
       // Deploy minimum instances
-      for (let i = 0; i < service.scaling.min_instances; i++) {
+      for (let i = 0; i < service?.scaling?.min_instances; i++) {
         const instanceConfig = {
           ...service,
           port: service.port + i,
@@ -218,13 +218,13 @@ export class WalmartServiceMesh {
       }
 
       // Check scaling limits
-      if (targetInstances < config.scaling.min_instances || 
-          targetInstances > config.scaling.max_instances) {
+      if (targetInstances < config?.scaling?.min_instances || 
+          targetInstances > config?.scaling?.max_instances) {
         logger.error('Target instances outside allowed range', 'SERVICE_MESH', {
           serviceName,
           targetInstances,
-          minInstances: config.scaling.min_instances,
-          maxInstances: config.scaling.max_instances,
+          minInstances: config?.scaling?.min_instances,
+          maxInstances: config?.scaling?.max_instances,
         });
         return false;
       }
@@ -311,7 +311,7 @@ export class WalmartServiceMesh {
       const services = await serviceRegistry.getAll();
       res.json({
         services,
-        count: services.length,
+        count: services?.length || 0,
         timestamp: new Date().toISOString(),
       });
     });
@@ -331,9 +331,9 @@ export class WalmartServiceMesh {
   setupWebSocketProxy(server: Server): void {
     this.wsServer = new WebSocket.Server({ server });
     
-    this.wsServer.on('connection', async (ws, req) => {
-      const url = new URL(req.url!, `ws://${req.headers.host}`);
-      const serviceName = url.pathname.split('/')[1];
+    this?.wsServer?.on('connection', async (ws, req) => {
+      const url = new URL(req.url!, `ws://${req?.headers?.host}`);
+      const serviceName = url?.pathname?.split('/')[1];
       
       const proxy = this.getServiceProxy(serviceName);
       if (proxy) {
@@ -351,11 +351,11 @@ export class WalmartServiceMesh {
    * Check if service dependencies are ready
    */
   private async checkDependencies(dependencies: string[]): Promise<boolean> {
-    if (dependencies.length === 0) return true;
+    if (dependencies?.length || 0 === 0) return true;
 
-    const dependencyChecks = dependencies.map(async (dep) => {
+    const dependencyChecks = dependencies?.map(async (dep: any) => {
       const services = await serviceDiscovery.discoverServices(dep);
-      return services.length > 0;
+      return services?.length || 0 > 0;
     });
 
     const results = await Promise.all(dependencyChecks);
@@ -367,9 +367,9 @@ export class WalmartServiceMesh {
    */
   private startAutoScaling(): void {
     const scalableServices = Object.values(WALMART_SERVICES)
-      .filter(service => service.scaling.auto_scale);
+      .filter(service => service?.scaling?.auto_scale);
 
-    if (scalableServices.length === 0) return;
+    if (scalableServices?.length || 0 === 0) return;
 
     setInterval(async () => {
       for (const service of scalableServices) {
@@ -380,22 +380,22 @@ export class WalmartServiceMesh {
           // Simple scaling logic based on CPU threshold (would be more sophisticated in production)
           const avgCpu = 50; // This would come from actual metrics
           
-          if (avgCpu > service.scaling.cpu_threshold! && 
-              currentInstances.length < service.scaling.max_instances) {
+          if (avgCpu > service?.scaling?.cpu_threshold! && 
+              currentInstances?.length || 0 < service?.scaling?.max_instances) {
             logger.info('Auto-scaling up service', 'SERVICE_MESH', {
               serviceName: service.name,
-              currentInstances: currentInstances.length,
+              currentInstances: currentInstances?.length || 0,
               avgCpu,
             });
-            await this.scaleService(service.name, currentInstances.length + 1);
+            await this.scaleService(service.name, currentInstances?.length || 0 + 1);
           } else if (avgCpu < 30 && 
-                     currentInstances.length > service.scaling.min_instances) {
+                     currentInstances?.length || 0 > service?.scaling?.min_instances) {
             logger.info('Auto-scaling down service', 'SERVICE_MESH', {
               serviceName: service.name,
-              currentInstances: currentInstances.length,
+              currentInstances: currentInstances?.length || 0,
               avgCpu,
             });
-            await this.scaleService(service.name, currentInstances.length - 1);
+            await this.scaleService(service.name, currentInstances?.length || 0 - 1);
           }
         } catch (error) {
           logger.warn('Auto-scaling check failed', 'SERVICE_MESH', {
@@ -413,26 +413,26 @@ export class WalmartServiceMesh {
   private setupEventHandlers(): void {
     // Service discovery events
     serviceDiscovery.on('service:started', (serviceId, config) => {
-      metrics.increment('service_mesh.service.started', {
+      metrics.increment('service_mesh?.service?.started', {
         service_name: config.name,
       });
     });
 
     serviceDiscovery.on('service:stopped', (serviceId, config) => {
-      this.runningServices.delete(config.name);
-      metrics.increment('service_mesh.service.stopped', {
+      this?.runningServices?.delete(config.name);
+      metrics.increment('service_mesh?.service?.stopped', {
         service_name: config.name,
       });
     });
 
-    serviceDiscovery.on('service:health_degraded', (result) => {
-      metrics.increment('service_mesh.service.health_degraded', {
+    serviceDiscovery.on('service:health_degraded', (result: any) => {
+      metrics.increment('service_mesh?.service?.health_degraded', {
         service_name: result.serviceName,
       });
     });
 
-    serviceDiscovery.on('service:recovered', (result) => {
-      metrics.increment('service_mesh.service.recovered', {
+    serviceDiscovery.on('service:recovered', (result: any) => {
+      metrics.increment('service_mesh?.service?.recovered', {
         service_name: result.serviceName,
       });
     });
@@ -443,15 +443,15 @@ export class WalmartServiceMesh {
    */
   async getStatus(): Promise<ServiceMeshStatus> {
     const stats = await serviceDiscovery.getStats();
-    const uptime = this.startTime ? Date.now() - this.startTime.getTime() : 0;
+    const uptime = this.startTime ? Date.now() - this?.startTime?.getTime() : 0;
 
     return {
       status: this.status,
       services: {
-        total: stats.registry.total_services,
-        running: this.runningServices.size,
-        healthy: stats.registry.healthy_services,
-        unhealthy: stats.registry.unhealthy_services,
+        total: stats?.registry?.total_services,
+        running: this?.runningServices?.size,
+        healthy: stats?.registry?.healthy_services,
+        unhealthy: stats?.registry?.unhealthy_services,
       },
       uptime,
       last_deployment: this.startTime || new Date(),
@@ -470,7 +470,7 @@ export class WalmartServiceMesh {
 
       // Close WebSocket server
       if (this.wsServer) {
-        this.wsServer.close();
+        this?.wsServer?.close();
       }
 
       // Deregister all services
@@ -483,7 +483,7 @@ export class WalmartServiceMesh {
       await serviceDiscovery.shutdown();
 
       this.status = 'stopped';
-      this.runningServices.clear();
+      this?.runningServices?.clear();
       this.startTime = null;
       
       WalmartServiceMesh.instance = null;
@@ -509,8 +509,8 @@ export class WalmartServiceMesh {
     const stats = await serviceDiscovery.getStats();
     
     const healthy = status.status === 'running' && 
-                   status.services.healthy > 0 &&
-                   status.errors.length === 0;
+                   status?.services?.healthy > 0 &&
+                   status?.errors?.length === 0;
 
     return {
       healthy,

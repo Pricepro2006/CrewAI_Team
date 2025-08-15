@@ -20,7 +20,7 @@ const getEmailAgent = async (): Promise<EmailAnalysisAgent> => {
 // Analyze a single email
 emailAnalysisRouter.post("/analyze", async (req, res): Promise<any> => {
   try {
-    const email = req.body;
+    const email = req?.body;
 
     // Validate email data
     if (!email || !email.id || !email.subject || !email.from) {
@@ -58,7 +58,7 @@ emailAnalysisRouter.post("/batch", async (req, res): Promise<any> => {
   try {
     const { emails } = req.body;
 
-    if (!Array.isArray(emails) || emails.length === 0) {
+    if (!Array.isArray(emails) || emails?.length || 0 === 0) {
       return res.status(400).json({
         error: "Invalid request. Expected array of emails",
       });
@@ -84,16 +84,16 @@ emailAnalysisRouter.post("/batch", async (req, res): Promise<any> => {
       }
     }
 
-    const successCount = results.filter((r) => r.success).length;
+    const successCount = results?.filter((r: any) => r.success).length;
     logger.info("Batch email analysis completed", "API", {
-      total: emails.length,
+      total: emails?.length || 0,
       successful: successCount,
-      failed: emails.length - successCount,
+      failed: emails?.length || 0 - successCount,
     });
 
     return res.json({
       success: true,
-      total: emails.length,
+      total: emails?.length || 0,
       successful: successCount,
       results,
     });

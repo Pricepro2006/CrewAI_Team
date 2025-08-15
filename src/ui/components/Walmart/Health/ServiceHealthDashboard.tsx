@@ -78,15 +78,15 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   
   // Health check mutation
-  const healthCheckMutation = api.health.checkSystem.useMutation({
-    onSuccess: (data) => {
+  const healthCheckMutation = api?.health?.checkSystem.useMutation({
+    onSuccess: (data: any) => {
       setSystemHealth(data);
       setServices(data.services);
       checkAlerts(data.services);
       setIsRefreshing(false);
       setLastRefresh(new Date());
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Health check failed:', error);
       setIsRefreshing(false);
     }
@@ -165,7 +165,7 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
       });
     });
     
-    if (newAlerts.length > 0) {
+    if (newAlerts?.length || 0 > 0) {
       setAlerts(prev => [...prev, ...newAlerts]);
     }
   }, [alertRules, alerts]);
@@ -174,7 +174,7 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
    * Acknowledge alert
    */
   const acknowledgeAlert = useCallback((alertId: string) => {
-    setAlerts(prev => prev.map(alert => 
+    setAlerts(prev => prev?.map(alert => 
       alert.id === alertId 
         ? { ...alert, acknowledged: true }
         : alert
@@ -185,7 +185,7 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
    * Resolve alert
    */
   const resolveAlert = useCallback((alertId: string) => {
-    setAlerts(prev => prev.map(alert => 
+    setAlerts(prev => prev?.map(alert => 
       alert.id === alertId 
         ? { ...alert, resolvedAt: new Date() }
         : alert
@@ -228,14 +228,14 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
    * Get active alerts
    */
   const activeAlerts = useMemo(() => {
-    return alerts.filter(alert => !alert.resolvedAt);
+    return alerts?.filter(alert => !alert.resolvedAt);
   }, [alerts]);
   
   /**
    * Group alerts by severity
    */
   const alertsBySeverity = useMemo(() => {
-    const grouped = activeAlerts.reduce((acc, alert) => {
+    const grouped = activeAlerts.reduce((acc: any, alert: any) => {
       if (!acc[alert.severity]) acc[alert.severity] = [];
       acc[alert.severity].push(alert);
       return acc;
@@ -348,7 +348,7 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
             <p className="status-text">{overallStatus.toUpperCase()}</p>
             {systemHealth && (
               <p className="status-subtitle">
-                {services.filter(s => s.status === 'healthy').length} of {services.length} services healthy
+                {services?.filter(s => s.status === 'healthy').length} of {services?.length || 0} services healthy
               </p>
             )}
           </div>
@@ -357,11 +357,11 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
         <div className="metrics-summary">
           <div className="metric-card">
             <h3>Active Alerts</h3>
-            <div className="metric-value">{activeAlerts.length}</div>
+            <div className="metric-value">{activeAlerts?.length || 0}</div>
             <div className="metric-breakdown">
               {Object.entries(alertsBySeverity).map(([severity, alerts]) => (
                 <span key={severity} className={`severity-count severity-${severity}`}>
-                  {alerts.length} {severity}
+                  {alerts?.length || 0} {severity}
                 </span>
               ))}
             </div>
@@ -370,8 +370,8 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
           <div className="metric-card">
             <h3>Avg Response Time</h3>
             <div className="metric-value">
-              {services.length > 0 
-                ? Math.round(services.reduce((sum, s) => sum + s.latency, 0) / services.length)
+              {services?.length || 0 > 0 
+                ? Math.round(services.reduce((sum: any, s: any) => sum + s.latency, 0) / services?.length || 0)
                 : 0
               }ms
             </div>
@@ -384,8 +384,8 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
           <div className="metric-card">
             <h3>Overall Uptime</h3>
             <div className="metric-value">
-              {services.length > 0 
-                ? (services.reduce((sum, s) => sum + s.uptime, 0) / services.length).toFixed(1)
+              {services?.length || 0 > 0 
+                ? (services.reduce((sum: any, s: any) => sum + s.uptime, 0) / services?.length || 0).toFixed(1)
                 : 0
               }%
             </div>
@@ -398,11 +398,11 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
       </div>
       
       {/* Active Alerts */}
-      {activeAlerts.length > 0 && (
+      {activeAlerts?.length || 0 > 0 && (
         <div className="alerts-section">
-          <h2>Active Alerts ({activeAlerts.length})</h2>
+          <h2>Active Alerts ({activeAlerts?.length || 0})</h2>
           <div className="alerts-list">
-            {activeAlerts.map(alert => (
+            {activeAlerts?.map(alert => (
               <div key={alert.id} className={`alert-item severity-${alert.severity}`}>
                 <div className="alert-icon">
                   <AlertTriangle size={16} />
@@ -410,7 +410,7 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
                 <div className="alert-content">
                   <div className="alert-header">
                     <h4>{alert.service}</h4>
-                    <span className="alert-time">{alert.timestamp.toLocaleTimeString()}</span>
+                    <span className="alert-time">{alert?.timestamp?.toLocaleTimeString()}</span>
                   </div>
                   <p className="alert-message">{alert.message}</p>
                 </div>
@@ -438,9 +438,9 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
       
       {/* Services Grid */}
       <div className="services-section">
-        <h2>Services ({services.length})</h2>
+        <h2>Services ({services?.length || 0})</h2>
         <div className="services-grid">
-          {services.map(service => (
+          {services?.map(service => (
             <div
               key={service.service}
               className={`service-card status-${service.status} ${
@@ -480,11 +480,11 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
                 </div>
               </div>
               
-              {service.errors && service.errors.length > 0 && (
+              {service.errors && service?.errors?.length > 0 && (
                 <div className="service-errors">
                   <h4>Recent Errors:</h4>
                   <ul>
-                    {service.errors.slice(0, 3).map((error, index) => (
+                    {service?.errors?.slice(0, 3).map((error, index) => (
                       <li key={index}>{error}</li>
                     ))}
                   </ul>
@@ -555,7 +555,7 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
                 <input
                   type="checkbox"
                   checked={autoRefresh}
-                  onChange={(e) => setAutoRefresh(e.target.checked)}
+                  onChange={(e: any) => setAutoRefresh(e?.target?.checked)}
                 />
                 <span>Enable auto refresh</span>
               </label>
@@ -564,7 +564,7 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
                 <input
                   type="number"
                   value={refreshInterval / 1000}
-                  onChange={(e) => setRefreshInterval(Number(e.target.value) * 1000)}
+                  onChange={(e: any) => setRefreshInterval(Number(e?.target?.value) * 1000)}
                   min="5"
                   max="300"
                 />
@@ -577,7 +577,7 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
                 <input
                   type="checkbox"
                   checked={showDetails}
-                  onChange={(e) => setShowDetails(e.target.checked)}
+                  onChange={(e: any) => setShowDetails(e?.target?.checked)}
                 />
                 <span>Show service details</span>
               </label>
@@ -586,15 +586,15 @@ export const ServiceHealthDashboard: React.FC<ServiceHealthDashboardProps> = ({
             <div className="setting-group">
               <h4>Alert Rules</h4>
               <div className="alert-rules-list">
-                {alertRules.map(rule => (
+                {alertRules?.map(rule => (
                   <div key={rule.id} className="alert-rule-item">
                     <label className="setting-item">
                       <input
                         type="checkbox"
                         checked={rule.enabled}
-                        onChange={(e) => {
-                          setAlertRules(prev => prev.map(r => 
-                            r.id === rule.id ? { ...r, enabled: e.target.checked } : r
+                        onChange={(e: any) => {
+                          setAlertRules(prev => prev?.map(r => 
+                            r.id === rule.id ? { ...r, enabled: e?.target?.checked } : r
                           ));
                         }}
                       />

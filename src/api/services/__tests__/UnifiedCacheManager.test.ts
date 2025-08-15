@@ -168,13 +168,13 @@ describe('UnifiedCacheManager', () => {
         cacheManager.invalidateCache({
           pricing: { productId: 'PROD1' }
         })
-      ).resolves.not.toThrow();
+      ).resolves?.not?.toThrow();
     });
 
     it('should invalidate all caches', async () => {
       await expect(
         cacheManager.invalidateCache({ all: true })
-      ).resolves.not.toThrow();
+      ).resolves?.not?.toThrow();
     });
   });
 
@@ -260,7 +260,7 @@ describe('UnifiedCacheManager', () => {
       middleware(req, res, next);
       
       expect(res.setHeader).toHaveBeenCalledWith('X-Cache-System', 'unified-3tier');
-      expect(res.locals.cacheManager).toBe(cacheManager);
+      expect(res?.locals?.cacheManager).toBe(cacheManager);
       expect(next).toHaveBeenCalled();
     });
   });

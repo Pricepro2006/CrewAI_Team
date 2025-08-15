@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { createTRPCProxyClient, createWSClient, wsLink } from "@trpc/client";
 import superjson from "superjson";
 import type { AppRouter } from "../../api/trpc/router.js";
-import { getReconnectionDelay } from "../../config/websocket.config.js";
+import { getReconnectionDelay } from "../../config/websocket?.config.js";
 import { logger } from "../../utils/logger.js";
 
 // Event types specific to grocery operations
@@ -53,7 +53,7 @@ export interface UseGroceryWebSocketReturn extends GroceryWebSocketState {
 }
 
 const WS_URL = process.env.NODE_ENV === 'production' 
-  ? `wss://${window.location.hostname}:3002/trpc-ws`
+  ? `wss://${window?.location?.hostname}:3002/trpc-ws`
   : `ws://localhost:3002/trpc-ws`;
 const MAX_EVENT_HISTORY = 50;
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 10;
@@ -155,13 +155,13 @@ export function useGroceryWebSocket(
               channels: [
                 `grocery.conversation.${conversationId}`,
                 `grocery.user.${userId || 'anonymous'}`,
-                "grocery.global.deals",
-                "grocery.global.prices"
+                "grocery?.global?.deals",
+                "grocery?.global?.prices"
               ]
             }));
           }
         },
-        onClose: (event) => {
+        onClose: (event: any) => {
           if (!isMountedRef.current) return;
 
           log("WebSocket disconnected", 'warn', { code: event?.code, reason: event?.reason });
@@ -195,10 +195,10 @@ export function useGroceryWebSocket(
             onError?.(error);
           }
         },
-        onMessage: (message) => {
+        onMessage: (message: any) => {
           try {
             const parsed = JSON.parse(message.data);
-            if (parsed.type && subscriptionsRef.current.has(parsed.type)) {
+            if (parsed.type && subscriptionsRef?.current?.has(parsed.type)) {
               handleEvent({
                 type: parsed.type,
                 data: parsed.data,
@@ -260,12 +260,12 @@ export function useGroceryWebSocket(
     }
 
     if (wsClientRef.current) {
-      wsClientRef.current.close();
+      wsClientRef?.current?.close();
       wsClientRef.current = null;
     }
 
     clientRef.current = null;
-    subscriptionsRef.current.clear();
+    subscriptionsRef?.current?.clear();
 
     updateState({
       isConnected: false,
@@ -277,10 +277,10 @@ export function useGroceryWebSocket(
 
   // Subscribe to specific events
   const subscribe = useCallback((events: GroceryWebSocketEventType[]) => {
-    events.forEach(event => subscriptionsRef.current.add(event));
+    events.forEach(event => subscriptionsRef?.current?.add(event));
     
     if (wsClientRef.current && state.isConnected) {
-      wsClientRef.current.send(JSON.stringify({
+      wsClientRef?.current?.send(JSON.stringify({
         type: "subscribe",
         events: events
       }));
@@ -291,10 +291,10 @@ export function useGroceryWebSocket(
 
   // Unsubscribe from specific events
   const unsubscribe = useCallback((events: GroceryWebSocketEventType[]) => {
-    events.forEach(event => subscriptionsRef.current.delete(event));
+    events.forEach(event => subscriptionsRef?.current?.delete(event));
     
     if (wsClientRef.current && state.isConnected) {
-      wsClientRef.current.send(JSON.stringify({
+      wsClientRef?.current?.send(JSON.stringify({
         type: "unsubscribe",
         events: events
       }));
@@ -334,13 +334,13 @@ export function useGroceryWebSocket(
   useEffect(() => {
     if (state.isConnected && wsClientRef.current) {
       // Re-subscribe with new context
-      wsClientRef.current.send(JSON.stringify({
+      wsClientRef?.current?.send(JSON.stringify({
         type: "subscribe",
         channels: [
           `grocery.conversation.${conversationId || 'default'}`,
           `grocery.user.${userId || 'anonymous'}`,
-          "grocery.global.deals",
-          "grocery.global.prices"
+          "grocery?.global?.deals",
+          "grocery?.global?.prices"
         ]
       }));
     }

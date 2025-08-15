@@ -43,7 +43,7 @@ describe("RetrievalService", () => {
       const enhanced = await service.enhance("query", results);
 
       expect(enhanced).toHaveLength(2);
-      expect(enhanced.every((r) => r.score >= config.minScore)).toBe(true);
+      expect(enhanced.every((r: any) => r.score >= config.minScore)).toBe(true);
     });
 
     it("should rerank results when enabled", async () => {
@@ -207,7 +207,7 @@ describe("RetrievalService", () => {
       });
 
       expect(filtered).toHaveLength(2);
-      expect(filtered.every((r) => r.metadata.category === "tech")).toBe(true);
+      expect(filtered.every((r: any) => r?.metadata?.category === "tech")).toBe(true);
     });
 
     it("should handle array values in filters", async () => {
@@ -237,7 +237,7 @@ describe("RetrievalService", () => {
       });
 
       expect(filtered).toHaveLength(2);
-      expect(filtered.every((r) => r.metadata.status === "published")).toBe(
+      expect(filtered.every((r: any) => r?.metadata?.status === "published")).toBe(
         true,
       );
     });
@@ -261,7 +261,7 @@ describe("RetrievalService", () => {
       expect(highlighted[0]?.highlights?.length).toBeGreaterThan(0);
       expect(
         highlighted[0]?.highlights?.every(
-          (h) =>
+          (h: any) =>
             h.toLowerCase().includes("machine") ||
             h.toLowerCase().includes("learning"),
         ),

@@ -123,34 +123,34 @@ export class RedisCacheManager {
       let serializedValue = JSON.stringify(value);
 
       // Compress large values
-      if (validatedConfig.compress && serializedValue.length > this.compressionThreshold) {
+      if (validatedConfig.compress && serializedValue?.length || 0 > this.compressionThreshold) {
         const compressed = await gzip(Buffer.from(serializedValue));
         serializedValue = `compressed:${compressed.toString('base64')}`;
       }
 
-      const result = await this.circuitBreaker.execute(async () => {
+      const result = await this?.circuitBreaker?.execute(async () => {
         if (validatedConfig.ttl > 0) {
-          return await this.redis.setex(fullKey, validatedConfig.ttl, serializedValue);
+          return await this?.redis.setex(fullKey, validatedConfig.ttl, serializedValue);
         } else {
-          return await this.redis.set(fullKey, serializedValue);
+          return await this?.redis.set(fullKey, serializedValue);
         }
       });
 
       // Store tags for invalidation
-      if (validatedConfig.tags.length > 0) {
+      if (validatedConfig?.tags?.length > 0) {
         await this.storeTags(fullKey, validatedConfig.tags);
       }
 
       // Update metrics
       this.updateMetrics(key, 'set', Date.now() - startTime);
-      metrics.increment('cache.set.success');
-      metrics.histogram('cache.set.duration', Date.now() - startTime);
+      metrics.increment('cache?.set?.success');
+      metrics.histogram('cache?.set?.duration', Date.now() - startTime);
 
       logger.debug('Cache set successful', 'CACHE_MANAGER', {
         key: fullKey,
         ttl: validatedConfig.ttl,
         compressed: validatedConfig.compress,
-        size: serializedValue.length,
+        size: serializedValue?.length || 0,
       });
 
       return result === 'OK';
@@ -159,7 +159,7 @@ export class RedisCacheManager {
         error: error instanceof Error ? error.message : String(error),
         key,
       });
-      metrics.increment('cache.set.error');
+      metrics.increment('cache?.set?.error');
       return false;
     }
   }
@@ -173,8 +173,8 @@ export class RedisCacheManager {
     try {
       const fullKey = this.buildKey(key, namespace);
       
-      const result = await this.circuitBreaker.execute(async () => {
-        return await this.redis.get(fullKey);
+      const result = await this?.circuitBreaker?.execute(async () => {
+        return await this?.redis.get(fullKey);
       });
 
       if (result === null) {
@@ -197,11 +197,11 @@ export class RedisCacheManager {
       // Update metrics
       this.updateMetrics(key, 'hit', Date.now() - startTime);
       metrics.increment('cache.hit');
-      metrics.histogram('cache.get.duration', Date.now() - startTime);
+      metrics.histogram('cache?.get?.duration', Date.now() - startTime);
 
       logger.debug('Cache hit', 'CACHE_MANAGER', {
         key: fullKey,
-        size: value.length,
+        size: value?.length || 0,
       });
 
       return parsedValue;
@@ -210,7 +210,7 @@ export class RedisCacheManager {
         error: error instanceof Error ? error.message : String(error),
         key,
       });
-      metrics.increment('cache.get.error');
+      metrics.increment('cache?.get?.error');
       return null;
     }
   }
@@ -223,13 +223,13 @@ export class RedisCacheManager {
     const results = new Map<string, T>();
     
     try {
-      const fullKeys = keys.map(key => this.buildKey(key, namespace));
+      const fullKeys = keys?.map(key => this.buildKey(key, namespace));
       
-      const values = await this.circuitBreaker.execute(async () => {
-        return await this.redis.mget(...fullKeys);
+      const values = await this?.circuitBreaker?.execute(async () => {
+        return await this?.redis.mget(...fullKeys);
       });
 
-      for (let i = 0; i < keys.length; i++) {
+      for (let i = 0; i < keys?.length || 0; i++) {
         const key = keys[i];
         const value = values[i];
 
@@ -258,8 +258,8 @@ export class RedisCacheManager {
         }
       }
 
-      metrics.increment('cache.mget.success');
-      metrics.histogram('cache.mget.duration', Date.now() - startTime);
+      metrics.increment('cache?.mget?.success');
+      metrics.histogram('cache?.mget?.duration', Date.now() - startTime);
 
       return results;
     } catch (error) {
@@ -267,7 +267,7 @@ export class RedisCacheManager {
         error: error instanceof Error ? error.message : String(error),
         keys,
       });
-      metrics.increment('cache.mget.error');
+      metrics.increment('cache?.mget?.error');
       return results;
     }
   }
@@ -279,14 +279,14 @@ export class RedisCacheManager {
     try {
       const fullKey = this.buildKey(key, namespace);
       
-      const result = await this.circuitBreaker.execute(async () => {
-        return await this.redis.del(fullKey);
+      const result = await this?.circuitBreaker?.execute(async () => {
+        return await this?.redis.del(fullKey);
       });
 
       // Remove from tags
       await this.removeFromTags(fullKey);
 
-      metrics.increment('cache.del.success');
+      metrics.increment('cache?.del?.success');
       logger.debug('Cache key deleted', 'CACHE_MANAGER', { key: fullKey });
 
       return result > 0;
@@ -295,7 +295,7 @@ export class RedisCacheManager {
         error: error instanceof Error ? error.message : String(error),
         key,
       });
-      metrics.increment('cache.del.error');
+      metrics.increment('cache?.del?.error');
       return false;
     }
   }
@@ -308,19 +308,19 @@ export class RedisCacheManager {
     
     try {
       for (const tag of tags) {
-        const tagKey = `${this.keyPrefixes.tags}${tag}`;
-        const keys = await this.redis.smembers(tagKey);
+        const tagKey = `${this?.keyPrefixes?.tags}${tag}`;
+        const keys = await this?.redis.smembers(tagKey);
         
-        if (keys.length > 0) {
-          const deleted = await this.redis.del(...keys);
+        if (keys?.length || 0 > 0) {
+          const deleted = await this?.redis.del(...keys);
           deletedCount += deleted;
           
           // Remove the tag set
-          await this.redis.del(tagKey);
+          await this?.redis.del(tagKey);
         }
       }
 
-      metrics.increment('cache.invalidate.success');
+      metrics.increment('cache?.invalidate?.success');
       logger.info('Cache invalidated by tags', 'CACHE_MANAGER', {
         tags,
         deletedCount,
@@ -332,7 +332,7 @@ export class RedisCacheManager {
         error: error instanceof Error ? error.message : String(error),
         tags,
       });
-      metrics.increment('cache.invalidate.error');
+      metrics.increment('cache?.invalidate?.error');
       return 0;
     }
   }
@@ -343,18 +343,18 @@ export class RedisCacheManager {
   async invalidateByPattern(pattern: string, namespace: string = 'default'): Promise<number> {
     try {
       const fullPattern = this.buildKey(pattern, namespace);
-      const keys = await this.redis.keys(fullPattern);
+      const keys = await this?.redis.keys(fullPattern);
       
-      if (keys.length === 0) {
+      if (keys?.length || 0 === 0) {
         return 0;
       }
 
-      const deletedCount = await this.redis.del(...keys);
+      const deletedCount = await this?.redis.del(...keys);
 
       // Remove from tags
-      await Promise.all(keys.map(key => this.removeFromTags(key)));
+      await Promise.all(keys?.map(key => this.removeFromTags(key)));
 
-      metrics.increment('cache.invalidate_pattern.success');
+      metrics.increment('cache?.invalidate_pattern?.success');
       logger.info('Cache invalidated by pattern', 'CACHE_MANAGER', {
         pattern: fullPattern,
         deletedCount,
@@ -366,7 +366,7 @@ export class RedisCacheManager {
         error: error instanceof Error ? error.message : String(error),
         pattern,
       });
-      metrics.increment('cache.invalidate_pattern.error');
+      metrics.increment('cache?.invalidate_pattern?.error');
       return 0;
     }
   }
@@ -377,16 +377,16 @@ export class RedisCacheManager {
   async expire(key: string, ttl: number, namespace: string = 'default'): Promise<boolean> {
     try {
       const fullKey = this.buildKey(key, namespace);
-      const result = await this.redis.expire(fullKey, ttl);
+      const result = await this?.redis.expire(fullKey, ttl);
       
-      metrics.increment('cache.expire.success');
+      metrics.increment('cache?.expire?.success');
       return result === 1;
     } catch (error) {
       logger.error('Cache expire failed', 'CACHE_MANAGER', {
         error: error instanceof Error ? error.message : String(error),
         key,
       });
-      metrics.increment('cache.expire.error');
+      metrics.increment('cache?.expire?.error');
       return false;
     }
   }
@@ -397,7 +397,7 @@ export class RedisCacheManager {
   async exists(key: string, namespace: string = 'default'): Promise<boolean> {
     try {
       const fullKey = this.buildKey(key, namespace);
-      const result = await this.redis.exists(fullKey);
+      const result = await this?.redis.exists(fullKey);
       return result === 1;
     } catch (error) {
       logger.error('Cache exists check failed', 'CACHE_MANAGER', {
@@ -413,8 +413,8 @@ export class RedisCacheManager {
    */
   async getStats(): Promise<CacheStats> {
     try {
-      const info = await this.redis.info('stats');
-      const memory = await this.redis.info('memory');
+      const info = await this?.redis.info('stats');
+      const memory = await this?.redis.info('memory');
       
       // Parse Redis stats
       const statsMatch = info.match(/keyspace_hits:(\d+)/);
@@ -426,16 +426,16 @@ export class RedisCacheManager {
       const total = hits + misses;
       
       // Calculate metrics from our collector
-      const totalResponseTime = Array.from(this.metricsCollector.values())
-        .reduce((sum, metric) => sum + (metric.hits + metric.misses), 0);
+      const totalResponseTime = Array.from(this?.metricsCollector?.values())
+        .reduce((sum: any, metric: any) => sum + (metric.hits + metric.misses), 0);
       
       const avgResponseTime = totalResponseTime > 0 
-        ? Array.from(this.metricsCollector.values())
-            .reduce((sum, metric) => sum + metric.lastAccessed.getTime(), 0) / totalResponseTime
+        ? Array.from(this?.metricsCollector?.values())
+            .reduce((sum: any, metric: any) => sum + metric?.lastAccessed?.getTime(), 0) / totalResponseTime
         : 0;
 
       return {
-        totalKeys: await this.redis.dbsize(),
+        totalKeys: await this?.redis.dbsize(),
         hitRate: total > 0 ? (hits / total) * 100 : 0,
         missRate: total > 0 ? (misses / total) * 100 : 0,
         totalHits: hits,
@@ -468,8 +468,8 @@ export class RedisCacheManager {
     
     try {
       // Process keys in batches
-      for (let i = 0; i < config.keys.length; i += config.batchSize) {
-        const batch = config.keys.slice(i, i + config.batchSize);
+      for (let i = 0; i < config?.keys?.length; i += config.batchSize) {
+        const batch = config?.keys?.slice(i, i + config.batchSize);
         
         try {
           const data = await dataProvider(batch);
@@ -490,9 +490,9 @@ export class RedisCacheManager {
       }
 
       logger.info('Cache warming completed', 'CACHE_MANAGER', {
-        totalKeys: config.keys.length,
+        totalKeys: config?.keys?.length,
         warmedCount,
-        successRate: (warmedCount / config.keys.length) * 100,
+        successRate: (warmedCount / config?.keys?.length) * 100,
       });
 
       return warmedCount;
@@ -513,12 +513,12 @@ export class RedisCacheManager {
     timeout: number = 10000
   ): Promise<string | null> {
     const lockValue = crypto.randomUUID();
-    const fullKey = `${this.keyPrefixes.locks}${lockKey}`;
+    const fullKey = `${this?.keyPrefixes?.locks}${lockKey}`;
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout) {
       try {
-        const result = await this.redis.set(fullKey, lockValue, 'PX', ttl * 1000, 'NX');
+        const result = await this?.redis.set(fullKey, lockValue, 'PX', ttl * 1000, 'NX');
         
         if (result === 'OK') {
           logger.debug('Lock acquired', 'CACHE_MANAGER', {
@@ -547,7 +547,7 @@ export class RedisCacheManager {
    * Release distributed lock
    */
   async releaseLock(lockKey: string, lockValue: string): Promise<boolean> {
-    const fullKey = `${this.keyPrefixes.locks}${lockKey}`;
+    const fullKey = `${this?.keyPrefixes?.locks}${lockKey}`;
     
     try {
       // Lua script to atomically check and delete
@@ -559,7 +559,7 @@ export class RedisCacheManager {
         end
       `;
 
-      const result = await this.redis.eval(luaScript, 1, fullKey, lockValue);
+      const result = await this?.redis.eval(luaScript, 1, fullKey, lockValue);
       
       logger.debug('Lock released', 'CACHE_MANAGER', {
         lockKey: fullKey,
@@ -584,23 +584,23 @@ export class RedisCacheManager {
     try {
       if (namespace) {
         const pattern = this.buildKey('*', namespace);
-        const keys = await this.redis.keys(pattern);
+        const keys = await this?.redis.keys(pattern);
         
-        if (keys.length > 0) {
-          await this.redis.del(...keys);
+        if (keys?.length || 0 > 0) {
+          await this?.redis.del(...keys);
         }
         
         logger.info('Cache namespace cleared', 'CACHE_MANAGER', {
           namespace,
-          keysDeleted: keys.length,
+          keysDeleted: keys?.length || 0,
         });
       } else {
-        await this.redis.flushdb();
+        await this?.redis.flushdb();
         logger.info('All cache cleared', 'CACHE_MANAGER');
       }
 
-      this.metricsCollector.clear();
-      metrics.increment('cache.clear.success');
+      this?.metricsCollector?.clear();
+      metrics.increment('cache?.clear?.success');
       
       return true;
     } catch (error) {
@@ -608,7 +608,7 @@ export class RedisCacheManager {
         error: error instanceof Error ? error.message : String(error),
         namespace,
       });
-      metrics.increment('cache.clear.error');
+      metrics.increment('cache?.clear?.error');
       return false;
     }
   }
@@ -616,14 +616,14 @@ export class RedisCacheManager {
   // Private helper methods
 
   private buildKey(key: string, namespace: string): string {
-    return `${this.keyPrefixes.data}${namespace}:${key}`;
+    return `${this?.keyPrefixes?.data}${namespace}:${key}`;
   }
 
   private async storeTags(key: string, tags: string[]): Promise<void> {
     try {
       for (const tag of tags) {
-        const tagKey = `${this.keyPrefixes.tags}${tag}`;
-        await this.redis.sadd(tagKey, key);
+        const tagKey = `${this?.keyPrefixes?.tags}${tag}`;
+        await this?.redis.sadd(tagKey, key);
       }
     } catch (error) {
       logger.warn('Failed to store cache tags', 'CACHE_MANAGER', {
@@ -637,10 +637,10 @@ export class RedisCacheManager {
   private async removeFromTags(key: string): Promise<void> {
     try {
       // Find all tag sets containing this key
-      const tagKeys = await this.redis.keys(`${this.keyPrefixes.tags}*`);
+      const tagKeys = await this?.redis.keys(`${this?.keyPrefixes?.tags}*`);
       
       for (const tagKey of tagKeys) {
-        await this.redis.srem(tagKey, key);
+        await this?.redis.srem(tagKey, key);
       }
     } catch (error) {
       logger.warn('Failed to remove key from tags', 'CACHE_MANAGER', {
@@ -651,7 +651,7 @@ export class RedisCacheManager {
   }
 
   private updateMetrics(key: string, operation: 'hit' | 'miss' | 'set', duration: number): void {
-    const metric = this.metricsCollector.get(key) || {
+    const metric = this?.metricsCollector?.get(key) || {
       key,
       hits: 0,
       misses: 0,
@@ -667,31 +667,31 @@ export class RedisCacheManager {
     }
 
     metric.lastAccessed = new Date();
-    this.metricsCollector.set(key, metric);
+    this?.metricsCollector?.set(key, metric);
 
     // Limit metrics collection to prevent memory leaks
-    if (this.metricsCollector.size > 10000) {
-      const oldestKeys = Array.from(this.metricsCollector.entries())
+    if (this?.metricsCollector?.size > 10000) {
+      const oldestKeys = Array.from(this?.metricsCollector?.entries())
         .sort((a, b) => a[1].lastAccessed.getTime() - b[1].lastAccessed.getTime())
         .slice(0, 1000)
         .map(([key]) => key);
       
-      oldestKeys.forEach(key => this.metricsCollector.delete(key));
+      oldestKeys.forEach(key => this?.metricsCollector?.delete(key));
     }
   }
 
   private setupErrorHandling(): void {
-    this.redis.on('error', (error) => {
+    this?.redis.on('error', (error: any) => {
       logger.error('Redis cache error', 'CACHE_MANAGER', {
         error: error.message,
         stack: error.stack,
       });
-      metrics.increment('cache.redis.error');
+      metrics.increment('cache?.redis.error');
     });
 
-    this.redis.on('reconnecting', () => {
+    this?.redis.on('reconnecting', () => {
       logger.info('Redis cache reconnecting', 'CACHE_MANAGER');
-      metrics.increment('cache.redis.reconnecting');
+      metrics.increment('cache?.redis.reconnecting');
     });
   }
 
@@ -719,7 +719,7 @@ export class RedisCacheManager {
    */
   async shutdown(): Promise<void> {
     try {
-      await this.redis.quit();
+      await this?.redis.quit();
       RedisCacheManager.instance = null;
       logger.info('Cache manager shutdown complete', 'CACHE_MANAGER');
     } catch (error) {

@@ -53,7 +53,7 @@ export class WebScraperTool extends BaseTool {
   }): Promise<ToolResult> {
     const validation = this.validateParameters(params);
     if (!validation.valid) {
-      return this.error(validation.errors.join(", "));
+      return this.error(validation?.errors?.join(", "));
     }
 
     try {
@@ -98,16 +98,16 @@ export class WebScraperTool extends BaseTool {
         images,
         links,
         stats: {
-          contentLength: content.length,
-          imageCount: images.length,
-          linkCount: links.length,
+          contentLength: content?.length || 0,
+          imageCount: images?.length || 0,
+          linkCount: links?.length || 0,
         },
       });
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response) {
           return this.error(
-            `HTTP ${error.response.status}: ${error.response.statusText}`,
+            `HTTP ${error?.response?.status}: ${error?.response?.statusText}`,
           );
         } else if (error.request) {
           return this.error("No response received from server");
@@ -126,7 +126,7 @@ export class WebScraperTool extends BaseTool {
     $("script, style, noscript").remove();
 
     const element = $(selector);
-    if (element.length === 0) {
+    if (element?.length || 0 === 0) {
       return "";
     }
 
@@ -222,7 +222,7 @@ export class WebScraperTool extends BaseTool {
       "";
 
     // Clean up empty values
-    Object.keys(metadata).forEach((key) => {
+    Object.keys(metadata).forEach((key: any) => {
       if (!metadata[key]) {
         delete metadata[key];
       }

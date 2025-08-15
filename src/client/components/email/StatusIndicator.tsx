@@ -6,7 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../../../components/ui/tooltip.js";
-import type { EmailStatus } from "../../../types/email-dashboard.interfaces.js";
+import type { EmailStatus } from "../../../types/email-dashboard?.interfaces.js";
 
 interface StatusIndicatorProps {
   status: EmailStatus;

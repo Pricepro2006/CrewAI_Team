@@ -210,21 +210,21 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
     // Apply global search
     if (globalFilter) {
       const searchTerm = globalFilter.toLowerCase();
-      filtered = filtered.filter(
-        (email) =>
-          email.emailAlias.toLowerCase().includes(searchTerm) ||
-          email.requestedBy.toLowerCase().includes(searchTerm) ||
-          email.subject.toLowerCase().includes(searchTerm) ||
-          email.summary.toLowerCase().includes(searchTerm) ||
-          email.status.toLowerCase().includes(searchTerm),
+      filtered = filtered?.filter(
+        (email: any) =>
+          email?.emailAlias?.toLowerCase().includes(searchTerm) ||
+          email?.requestedBy?.toLowerCase().includes(searchTerm) ||
+          email?.subject?.toLowerCase().includes(searchTerm) ||
+          email?.summary?.toLowerCase().includes(searchTerm) ||
+          email?.status?.toLowerCase().includes(searchTerm),
       );
     }
 
     // Apply advanced filter rules
     filterRules
-      .filter((rule) => rule.enabled)
-      .forEach((rule) => {
-        filtered = filtered.filter((email) => {
+      .filter((rule: any) => rule.enabled)
+      .forEach((rule: any) => {
+        filtered = filtered?.filter((email: any) => {
           const value = email[rule.column as keyof EmailRecord];
           const stringValue = String(value || "").toLowerCase();
 
@@ -251,11 +251,11 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
               );
             case "in":
               return (
-                Array.isArray(rule.value) && rule.value.includes(String(value))
+                Array.isArray(rule.value) && rule?.value?.includes(String(value))
               );
             case "notIn":
               return (
-                Array.isArray(rule.value) && !rule.value.includes(String(value))
+                Array.isArray(rule.value) && !rule?.value?.includes(String(value))
               );
             default:
               return true;
@@ -292,7 +292,7 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
       (statusCounts.approved || 0) + (statusCounts.completed || 0);
 
     return {
-      total: filteredEmails.length,
+      total: filteredEmails?.length || 0,
       statusDistribution: {
         red: redCount,
         yellow: yellowCount,
@@ -300,8 +300,8 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
       },
       statusCounts,
       priorityCounts,
-      overdue: filteredEmails.filter(
-        (email) => email.dueDate && new Date(email.dueDate) < new Date(),
+      overdue: filteredEmails?.filter(
+        (email: any) => email.dueDate && new Date(email.dueDate) < new Date(),
       ).length,
     };
   }, [filteredEmails]);
@@ -370,7 +370,7 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
           "bulk",
           {
             format: exportData.format,
-            recordCount: exportData.data.length,
+            recordCount: exportData?.data?.length,
             filename: exportData.filename,
           },
           "low",
@@ -393,19 +393,19 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
       return date.toISOString().split("T")[0];
     }).reverse();
 
-    return last30Days.map((date) => {
-      const dayEmails = emails.filter(
-        (email) => email.createdAt?.split("T")[0] === date,
+    return last30Days?.map((date: any) => {
+      const dayEmails = emails?.filter(
+        (email: any) => email.createdAt?.split("T")[0] === date,
       );
 
       return {
         timestamp: date as string, // date is always defined from the array generation above
-        totalEmails: dayEmails.length,
-        completedEmails: dayEmails.filter((e) => e.status === "completed")
+        totalEmails: dayEmails?.length || 0,
+        completedEmails: dayEmails?.filter((e: any) => e.status === "completed")
           .length,
-        criticalEmails: dayEmails.filter((e) => e.priority === "critical")
+        criticalEmails: dayEmails?.filter((e: any) => e.priority === "critical")
           .length,
-        averageProcessingTime: dayEmails.length > 0 ? 2 * 60 * 60 * 1000 : 0, // Mock 2 hours
+        averageProcessingTime: dayEmails?.length || 0 > 0 ? 2 * 60 * 60 * 1000 : 0, // Mock 2 hours
       };
     });
   }, [emails]);
@@ -413,24 +413,24 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
   // Generate SLA data
   const slaData = useMemo(() => {
     const overallSLA = {
-      onTrack: dashboardMetrics.statusCounts.completed || 0,
-      atRisk: dashboardMetrics.statusCounts.under_review || 0,
+      onTrack: dashboardMetrics?.statusCounts?.completed || 0,
+      atRisk: dashboardMetrics?.statusCounts?.under_review || 0,
       overdue: dashboardMetrics.overdue,
-      totalItems: filteredEmails.length,
+      totalItems: filteredEmails?.length || 0,
     };
 
     const priorityBreakdown = [
       {
         priority: "Critical" as const,
         slaThreshold: 4,
-        onTrack: filteredEmails.filter(
-          (e) => e.priority === "critical" && e.status === "completed",
+        onTrack: filteredEmails?.filter(
+          (e: any) => e.priority === "critical" && e.status === "completed",
         ).length,
-        atRisk: filteredEmails.filter(
-          (e) => e.priority === "critical" && e.status === "under_review",
+        atRisk: filteredEmails?.filter(
+          (e: any) => e.priority === "critical" && e.status === "under_review",
         ).length,
-        overdue: filteredEmails.filter(
-          (e) =>
+        overdue: filteredEmails?.filter(
+          (e: any) =>
             e.priority === "critical" &&
             e.dueDate &&
             new Date(e.dueDate) < new Date(),
@@ -440,14 +440,14 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
       {
         priority: "High" as const,
         slaThreshold: 8,
-        onTrack: filteredEmails.filter(
-          (e) => e.priority === "high" && e.status === "completed",
+        onTrack: filteredEmails?.filter(
+          (e: any) => e.priority === "high" && e.status === "completed",
         ).length,
-        atRisk: filteredEmails.filter(
-          (e) => e.priority === "high" && e.status === "under_review",
+        atRisk: filteredEmails?.filter(
+          (e: any) => e.priority === "high" && e.status === "under_review",
         ).length,
-        overdue: filteredEmails.filter(
-          (e) =>
+        overdue: filteredEmails?.filter(
+          (e: any) =>
             e.priority === "high" &&
             e.dueDate &&
             new Date(e.dueDate) < new Date(),
@@ -457,14 +457,14 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
       {
         priority: "Medium" as const,
         slaThreshold: 24,
-        onTrack: filteredEmails.filter(
-          (e) => e.priority === "medium" && e.status === "completed",
+        onTrack: filteredEmails?.filter(
+          (e: any) => e.priority === "medium" && e.status === "completed",
         ).length,
-        atRisk: filteredEmails.filter(
-          (e) => e.priority === "medium" && e.status === "under_review",
+        atRisk: filteredEmails?.filter(
+          (e: any) => e.priority === "medium" && e.status === "under_review",
         ).length,
-        overdue: filteredEmails.filter(
-          (e) =>
+        overdue: filteredEmails?.filter(
+          (e: any) =>
             e.priority === "medium" &&
             e.dueDate &&
             new Date(e.dueDate) < new Date(),
@@ -474,14 +474,14 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
       {
         priority: "Low" as const,
         slaThreshold: 72,
-        onTrack: filteredEmails.filter(
-          (e) => e.priority === "low" && e.status === "completed",
+        onTrack: filteredEmails?.filter(
+          (e: any) => e.priority === "low" && e.status === "completed",
         ).length,
-        atRisk: filteredEmails.filter(
-          (e) => e.priority === "low" && e.status === "under_review",
+        atRisk: filteredEmails?.filter(
+          (e: any) => e.priority === "low" && e.status === "under_review",
         ).length,
-        overdue: filteredEmails.filter(
-          (e) =>
+        overdue: filteredEmails?.filter(
+          (e: any) =>
             e.priority === "low" &&
             e.dueDate &&
             new Date(e.dueDate) < new Date(),
@@ -576,7 +576,7 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
               <div>
                 <p className="text-sm text-green-600 font-medium">Completed</p>
                 <p className="text-3xl font-bold text-green-700">
-                  {dashboardMetrics.statusCounts.completed || 0}
+                  {dashboardMetrics?.statusCounts?.completed || 0}
                 </p>
               </div>
               <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -592,8 +592,8 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
                   In Progress
                 </p>
                 <p className="text-3xl font-bold text-yellow-700">
-                  {(dashboardMetrics.statusCounts.in_progress || 0) +
-                    (dashboardMetrics.statusCounts.under_review || 0)}
+                  {(dashboardMetrics?.statusCounts?.in_progress || 0) +
+                    (dashboardMetrics?.statusCounts?.under_review || 0)}
                 </p>
               </div>
               <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
@@ -622,17 +622,17 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
       {showFilters && (
         <AdvancedFilterPanel
           columns={columns}
-          onFilterChange={(rules) => {
+          onFilterChange={(rules: any) => {
             // Update filter rules
-            rules.forEach((rule) => addFilterRule(rule));
+            rules.forEach((rule: any) => addFilterRule(rule));
           }}
-          onPresetSave={(preset) => {
+          onPresetSave={(preset: any) => {
             console.log("Save preset:", preset);
           }}
-          onPresetLoad={(preset) => {
+          onPresetLoad={(preset: any) => {
             console.log("Load preset:", preset);
           }}
-          onPresetDelete={(presetId) => {
+          onPresetDelete={(presetId: any) => {
             console.log("Delete preset:", presetId);
           }}
           presets={[]}
@@ -655,7 +655,7 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
                   Email Records
                 </h2>
                 <p className="text-sm text-gray-600">
-                  {filteredEmails.length} of {emails.length} emails
+                  {filteredEmails?.length || 0} of {emails?.length || 0} emails
                 </p>
               </div>
 
@@ -684,7 +684,7 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredEmails.slice(0, 10).map((email) => (
+                    {filteredEmails.slice(0, 10).map((email: any) => (
                       <tr key={email.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {email.emailAlias}
@@ -707,7 +707,7 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
                                     : "bg-gray-100 text-gray-800"
                             }`}
                           >
-                            {email.status.replace("_", " ")}
+                            {email?.status?.replace("_", " ")}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -784,7 +784,7 @@ export const AdvancedEmailDashboard: React.FC<AdvancedEmailDashboardProps> = ({
               }}
               currentUser={currentUser}
               onStatusUpdate={handleStatusUpdate}
-              onHistoryView={(emailId) => {
+              onHistoryView={(emailId: any) => {
                 console.log("View history for:", emailId);
               }}
             />

@@ -100,7 +100,7 @@ class GroceryDatabaseAdmin {
     const passwordHash = await this.hashPassword(userData.password);
     const permissions = userData.permissions || this.getDefaultPermissions(userData.role);
     
-    this.db.prepare(`
+    this?.db?.prepare(`
       INSERT INTO database_users (id, username, email, password_hash, role, permissions, is_active, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
@@ -130,7 +130,7 @@ class GroceryDatabaseAdmin {
     const currentPermissions = new Set(user.permissions);
     permissions.forEach(permission => currentPermissions.add(permission));
     
-    this.db.prepare(`
+    this?.db?.prepare(`
       UPDATE database_users 
       SET permissions = ?, updated_at = ?
       WHERE id = ?
@@ -155,7 +155,7 @@ class GroceryDatabaseAdmin {
     const currentPermissions = new Set(user.permissions);
     permissions.forEach(permission => currentPermissions.delete(permission));
     
-    this.db.prepare(`
+    this?.db?.prepare(`
       UPDATE database_users 
       SET permissions = ?, updated_at = ?
       WHERE id = ?
@@ -172,13 +172,13 @@ class GroceryDatabaseAdmin {
    * List all database users with their permissions
    */
   listUsers(): DatabaseUser[] {
-    const users = this.db.prepare(`
+    const users = this?.db?.prepare(`
       SELECT id, username, email, role, permissions, is_active, last_login, created_at
       FROM database_users
       ORDER BY created_at DESC
     `).all();
     
-    return users.map((user: any) => ({
+    return users?.map((user: any) => ({
       ...user,
       permissions: JSON.parse(user.permissions || '[]'),
       isActive: Boolean(user.is_active)
@@ -291,7 +291,7 @@ class GroceryDatabaseAdmin {
       // Use SQLite online backup API
       const backupDb = new Database(backupPath);
       
-      const backup = this.db.backup(backupDb);
+      const backup = this?.db?.backup(backupDb);
       
       // Perform backup in chunks to avoid blocking
       let remaining = backup.remaining;
@@ -340,12 +340,12 @@ class GroceryDatabaseAdmin {
     
     try {
       // Test basic connection
-      const connected = this.db.open;
+      const connected = this?.db?.open;
       
       // Test read operation
       let readTest = false;
       try {
-        this.db.prepare('SELECT 1').get();
+        this?.db?.prepare('SELECT 1').get();
         readTest = true;
       } catch (error) {
         issues.push('Read operation failed');
@@ -355,9 +355,9 @@ class GroceryDatabaseAdmin {
       let writeTest = false;
       try {
         const testTable = `test_connectivity_${Date.now()}`;
-        this.db.prepare(`CREATE TEMP TABLE ${testTable} (id INTEGER PRIMARY KEY)`).run();
-        this.db.prepare(`INSERT INTO ${testTable} (id) VALUES (1)`).run();
-        this.db.prepare(`DROP TABLE ${testTable}`).run();
+        this?.db?.prepare(`CREATE TEMP TABLE ${testTable} (id INTEGER PRIMARY KEY)`).run();
+        this?.db?.prepare(`INSERT INTO ${testTable} (id) VALUES (1)`).run();
+        this?.db?.prepare(`DROP TABLE ${testTable}`).run();
         writeTest = true;
       } catch (error) {
         issues.push('Write operation failed');
@@ -395,11 +395,11 @@ class GroceryDatabaseAdmin {
     this.connectionPoolConfig = { ...this.connectionPoolConfig, ...config };
     
     // Apply SQLite-specific optimizations
-    this.db.pragma(`cache_size = ${Math.max(1000, this.connectionPoolConfig.maxConnections * 100)}`);
-    this.db.pragma('temp_store = MEMORY');
-    this.db.pragma('journal_mode = WAL');
-    this.db.pragma('synchronous = NORMAL');
-    this.db.pragma(`busy_timeout = ${this.connectionPoolConfig.connectionTimeoutSeconds * 1000}`);
+    this?.db?.pragma(`cache_size = ${Math.max(1000, this?.connectionPoolConfig?.maxConnections * 100)}`);
+    this?.db?.pragma('temp_store = MEMORY');
+    this?.db?.pragma('journal_mode = WAL');
+    this?.db?.pragma('synchronous = NORMAL');
+    this?.db?.pragma(`busy_timeout = ${this?.connectionPoolConfig?.connectionTimeoutSeconds * 1000}`);
     
     console.log('✅ Connection pool configured:', this.connectionPoolConfig);
   }
@@ -416,8 +416,8 @@ class GroceryDatabaseAdmin {
     pragmaSettings: Record<string, any>;
   }> {
     const cacheHitRatio = this.calculateCacheHitRatio();
-    const pageCount = this.db.pragma('page_count')[0] as any;
-    const freelistCount = this.db.pragma('freelist_count')[0] as any;
+    const pageCount = this?.db?.pragma('page_count')[0] as any;
+    const freelistCount = this?.db?.pragma('freelist_count')[0] as any;
     
     // Get WAL file size
     const walPath = `${this.dbPath}-wal`;
@@ -430,14 +430,14 @@ class GroceryDatabaseAdmin {
       // WAL file might not exist
     }
     
-    const busyTimeout = this.db.pragma('busy_timeout')[0] as any;
+    const busyTimeout = this?.db?.pragma('busy_timeout')[0] as any;
     
     const pragmaSettings = {
-      journal_mode: this.db.pragma('journal_mode')[0],
-      synchronous: this.db.pragma('synchronous')[0],
-      cache_size: this.db.pragma('cache_size')[0],
-      temp_store: this.db.pragma('temp_store')[0],
-      mmap_size: this.db.pragma('mmap_size')[0]
+      journal_mode: this?.db?.pragma('journal_mode')[0],
+      synchronous: this?.db?.pragma('synchronous')[0],
+      cache_size: this?.db?.pragma('cache_size')[0],
+      temp_store: this?.db?.pragma('temp_store')[0],
+      mmap_size: this?.db?.pragma('mmap_size')[0]
     };
     
     return {
@@ -467,11 +467,11 @@ Database: ${this.dbPath}
 ## System Status
 **Overall Health**: ${connectivity.connected && connectivity.readTest && connectivity.writeTest ? '🟢 Healthy' : '🔴 Issues Detected'}
 **Connectivity**: ${connectivity.connected ? '✅ Connected' : '❌ Disconnected'}
-**Latency**: ${connectivity.latency.toFixed(2)}ms
+**Latency**: ${connectivity?.latency?.toFixed(2)}ms
 **Read Operations**: ${connectivity.readTest ? '✅ Working' : '❌ Failed'}
 **Write Operations**: ${connectivity.writeTest ? '✅ Working' : '❌ Failed'}
 
-${connectivity.issues.length > 0 ? `### Issues Detected\n${connectivity.issues.map(issue => `- ❌ ${issue}`).join('\n')}` : ''}
+${connectivity?.issues?.length > 0 ? `### Issues Detected\n${connectivity?.issues?.map(issue => `- ❌ ${issue}`).join('\n')}` : ''}
 
 ## Performance Metrics
 - **Cache Hit Ratio**: ${(performance.cacheHitRatio * 100).toFixed(2)}%
@@ -481,16 +481,16 @@ ${connectivity.issues.length > 0 ? `### Issues Detected\n${connectivity.issues.m
 - **Busy Timeout**: ${performance.busyTimeout}ms
 
 ## Database Configuration
-- **Journal Mode**: ${performance.pragmaSettings.journal_mode}
-- **Synchronous**: ${performance.pragmaSettings.synchronous}
-- **Cache Size**: ${performance.pragmaSettings.cache_size} pages
-- **Temp Store**: ${performance.pragmaSettings.temp_store}
-- **Memory Map**: ${this.formatBytes(performance.pragmaSettings.mmap_size)}
+- **Journal Mode**: ${performance?.pragmaSettings?.journal_mode}
+- **Synchronous**: ${performance?.pragmaSettings?.synchronous}
+- **Cache Size**: ${performance?.pragmaSettings?.cache_size} pages
+- **Temp Store**: ${performance?.pragmaSettings?.temp_store}
+- **Memory Map**: ${this.formatBytes(performance?.pragmaSettings?.mmap_size)}
 
 ## User Management
-**Total Users**: ${users.length}
-**Active Users**: ${users.filter(u => u.isActive).length}
-**Administrators**: ${users.filter(u => u.role === 'admin').length}
+**Total Users**: ${users?.length || 0}
+**Active Users**: ${users?.filter(u => u.isActive).length}
+**Administrators**: ${users?.filter(u => u.role === 'admin').length}
 
 ### User Breakdown by Role
 ${Object.entries(this.groupUsersByRole(users)).map(([role, count]) => `- ${role}: ${count}`).join('\n')}
@@ -502,10 +502,10 @@ ${maintenanceHistory.slice(0, 5).map(op => `- ${op.timestamp}: ${op.operation} (
 ${this.generateRecommendations(performance, connectivity)}
 
 ## Connection Pool Configuration
-- **Max Connections**: ${this.connectionPoolConfig.maxConnections}
-- **Idle Timeout**: ${this.connectionPoolConfig.idleTimeoutSeconds}s
-- **Connection Timeout**: ${this.connectionPoolConfig.connectionTimeoutSeconds}s
-- **Retry Attempts**: ${this.connectionPoolConfig.retryAttempts}
+- **Max Connections**: ${this?.connectionPoolConfig?.maxConnections}
+- **Idle Timeout**: ${this?.connectionPoolConfig?.idleTimeoutSeconds}s
+- **Connection Timeout**: ${this?.connectionPoolConfig?.connectionTimeoutSeconds}s
+- **Retry Attempts**: ${this?.connectionPoolConfig?.retryAttempts}
 `;
     
     return report;
@@ -514,26 +514,26 @@ ${this.generateRecommendations(performance, connectivity)}
   // Private utility methods
   private setupPragmas(): void {
     // Enable foreign keys
-    this.db.pragma('foreign_keys = ON');
+    this?.db?.pragma('foreign_keys = ON');
     
     // Set WAL mode for better concurrency
-    this.db.pragma('journal_mode = WAL');
+    this?.db?.pragma('journal_mode = WAL');
     
     // Set normal synchronous mode for better performance
-    this.db.pragma('synchronous = NORMAL');
+    this?.db?.pragma('synchronous = NORMAL');
     
     // Increase cache size
-    this.db.pragma('cache_size = 10000');
+    this?.db?.pragma('cache_size = 10000');
     
     // Use memory for temporary tables
-    this.db.pragma('temp_store = MEMORY');
+    this?.db?.pragma('temp_store = MEMORY');
     
     // Enable memory mapping
-    this.db.pragma('mmap_size = 268435456'); // 256MB
+    this?.db?.pragma('mmap_size = 268435456'); // 256MB
   }
 
   private createAdminTables(): void {
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE TABLE IF NOT EXISTS database_users (
         id TEXT PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
@@ -581,7 +581,7 @@ ${this.generateRecommendations(performance, connectivity)}
   }
 
   private getUser(userId: string): DatabaseUser | null {
-    const user = this.db.prepare(`
+    const user = this?.db?.prepare(`
       SELECT id, username, email, role, permissions, is_active, last_login, created_at
       FROM database_users WHERE id = ?
     `).get(userId) as any;
@@ -599,7 +599,7 @@ ${this.generateRecommendations(performance, connectivity)}
     const startTime = performance.now();
     const beforeSize = fs.statSync(this.dbPath).size;
     
-    this.db.exec('VACUUM');
+    this?.db?.exec('VACUUM');
     
     const afterSize = fs.statSync(this.dbPath).size;
     const duration = performance.now() - startTime;
@@ -613,7 +613,7 @@ ${this.generateRecommendations(performance, connectivity)}
   private async performAnalyze(): Promise<{ duration: number }> {
     const startTime = performance.now();
     
-    this.db.exec('ANALYZE');
+    this?.db?.exec('ANALYZE');
     
     const duration = performance.now() - startTime;
     
@@ -625,7 +625,7 @@ ${this.generateRecommendations(performance, connectivity)}
   private async performReindex(): Promise<{ duration: number }> {
     const startTime = performance.now();
     
-    this.db.exec('REINDEX');
+    this?.db?.exec('REINDEX');
     
     const duration = performance.now() - startTime;
     
@@ -637,7 +637,7 @@ ${this.generateRecommendations(performance, connectivity)}
   private async performCheckpoint(): Promise<{ pages: number; duration: number }> {
     const startTime = performance.now();
     
-    const result = this.db.pragma('wal_checkpoint(TRUNCATE)');
+    const result = this?.db?.pragma('wal_checkpoint(TRUNCATE)');
     
     const duration = performance.now() - startTime;
     const pages = result[0] || 0;
@@ -648,7 +648,7 @@ ${this.generateRecommendations(performance, connectivity)}
   }
 
   private async performIntegrityCheck(): Promise<{ passed: boolean; issues: string[] }> {
-    const result = this.db.pragma('integrity_check');
+    const result = this?.db?.pragma('integrity_check');
     const issues: string[] = [];
     
     result.forEach((row: any) => {
@@ -657,7 +657,7 @@ ${this.generateRecommendations(performance, connectivity)}
       }
     });
     
-    const passed = issues.length === 0;
+    const passed = issues?.length || 0 === 0;
     
     console.log(`🔍 Integrity check: ${passed ? 'PASSED' : 'FAILED'}`);
     if (!passed) {
@@ -672,11 +672,11 @@ ${this.generateRecommendations(performance, connectivity)}
     const applied: string[] = [];
     
     // Optimize pragma settings
-    this.db.pragma('optimize');
+    this?.db?.pragma('optimize');
     applied.push('optimize pragma');
     
     // Update table statistics
-    this.db.exec('ANALYZE sqlite_master');
+    this?.db?.exec('ANALYZE sqlite_master');
     applied.push('analyze sqlite_master');
     
     const duration = performance.now() - startTime;
@@ -717,7 +717,7 @@ ${this.generateRecommendations(performance, connectivity)}
   }
 
   private logMaintenanceOperation(status: string, details: any): void {
-    this.db.prepare(`
+    this?.db?.prepare(`
       INSERT INTO maintenance_log (operation, status, details)
       VALUES (?, ?, ?)
     `).run(
@@ -728,7 +728,7 @@ ${this.generateRecommendations(performance, connectivity)}
   }
 
   private getMaintenanceHistory(): Array<{ timestamp: string; operation: string; status: string }> {
-    return this.db.prepare(`
+    return this?.db?.prepare(`
       SELECT timestamp, operation, status
       FROM maintenance_log
       ORDER BY timestamp DESC
@@ -751,21 +751,21 @@ ${this.generateRecommendations(performance, connectivity)}
       recommendations.push('🔄 WAL file is large - consider more frequent checkpoints');
     }
     
-    if (connectivity.issues.length > 0) {
+    if (connectivity?.issues?.length > 0) {
       recommendations.push('🚨 Address connectivity issues immediately');
     }
     
-    if (recommendations.length === 0) {
+    if (recommendations?.length || 0 === 0) {
       recommendations.push('✅ System is operating optimally');
     }
     
-    return recommendations.map(rec => `- ${rec}`).join('\n');
+    return recommendations?.map(rec => `- ${rec}`).join('\n');
   }
 }
 
 // CLI interface
 async function main() {
-  const args = process.argv.slice(2);
+  const args = process?.argv?.slice(2);
   const command = args[0];
   
   const dbPath = process.env.DB_PATH || '/home/pricepro2006/CrewAI_Team/data/crewai_enhanced.db';
@@ -774,7 +774,7 @@ async function main() {
   try {
     switch (command) {
       case 'create-user':
-        if (args.length < 5) {
+        if (args?.length || 0 < 5) {
           console.error('Usage: create-user <username> <email> <password> <role>');
           process.exit(1);
         }
@@ -806,7 +806,7 @@ async function main() {
         break;
         
       case 'backup':
-        if (args.length < 2) {
+        if (args?.length || 0 < 2) {
           console.error('Usage: backup <backup-path>');
           process.exit(1);
         }

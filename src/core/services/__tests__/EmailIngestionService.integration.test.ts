@@ -94,7 +94,7 @@ describe('EmailIngestionService Integration Tests', () => {
     if (redis) {
       // Clean up test queues
       const keys = await redis.keys(`bull:${testQueueName}*`);
-      if (keys.length > 0) {
+      if (keys?.length || 0 > 0) {
         await redis.del(...keys);
       }
       await redis.quit();
@@ -145,10 +145,10 @@ describe('EmailIngestionService Integration Tests', () => {
     });
 
     // Mock unified email service
-    vi.mocked(mockUnifiedEmailService.processIncomingEmail).mockImplementation(async (email) => ({
+    vi.mocked(mockUnifiedEmailService.processIncomingEmail).mockImplementation(async (email: any) => ({
       id: `processed-${email.messageId}`,
       subject: email.subject,
-      from: email.from.address,
+      from: email?.from?.address,
       status: 'processed',
       createdAt: new Date(),
       updatedAt: new Date()
@@ -174,7 +174,7 @@ describe('EmailIngestionService Integration Tests', () => {
     // Clean up test data from Redis
     if (redis && redis.status === 'ready') {
       const keys = await redis.keys(`email:dedup:*`);
-      if (keys.length > 0) {
+      if (keys?.length || 0 > 0) {
         await redis.del(...keys);
       }
     }
@@ -280,7 +280,7 @@ describe('EmailIngestionService Integration Tests', () => {
         expect(result.success).toBeTruthy();
       } finally {
         // Cleanup test keys
-        if (testKeys.length > 0) {
+        if (testKeys?.length || 0 > 0) {
           await serviceRedis.del(...testKeys);
         }
       }
@@ -480,9 +480,9 @@ describe('EmailIngestionService Integration Tests', () => {
 
       expect(health.healthy).toBe(true);
       expect(health.status).toBe('operational');
-      expect(health.components.redis.healthy).toBe(true);
-      expect(health.components.queue.healthy).toBe(true);
-      expect(health.components.database.healthy).toBe(true);
+      expect(health?.components?.redis.healthy).toBe(true);
+      expect(health?.components?.queue.healthy).toBe(true);
+      expect(health?.components?.database.healthy).toBe(true);
       expect(health.uptime).toBeGreaterThan(0);
     });
 
@@ -500,7 +500,7 @@ describe('EmailIngestionService Integration Tests', () => {
 
       const health = await service.healthCheck();
 
-      expect(health.components.redis.healthy).toBe(false);
+      expect(health?.components?.redis.healthy).toBe(false);
       expect(health.healthy).toBe(false);
       expect(health.status).toBe('degraded');
     });
@@ -535,7 +535,7 @@ describe('EmailIngestionService Integration Tests', () => {
       }
 
       // Performance should be consistent across iterations
-      const avgTime = performanceResults.reduce((a, b) => a + b, 0) / performanceResults.length;
+      const avgTime = performanceResults.reduce((a: any, b: any) => a + b, 0) / performanceResults?.length || 0;
       const maxTime = Math.max(...performanceResults);
       const minTime = Math.min(...performanceResults);
 
@@ -567,7 +567,7 @@ describe('EmailIngestionService Integration Tests', () => {
       expect(results.every(r => r.success)).toBe(true);
       expect(results.every(r => r.data?.processed === emailsPerOperation)).toBe(true);
 
-      const totalProcessed = results.reduce((sum, r) => sum + (r.data?.processed || 0), 0);
+      const totalProcessed = results.reduce((sum: any, r: any) => sum + (r.data?.processed || 0), 0);
       expect(totalProcessed).toBe(concurrentOperations * emailsPerOperation);
     }, 30000);
   });

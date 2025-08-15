@@ -104,7 +104,7 @@ class EmailProcessingWorker {
       this.db = new Database("./data/crewai_enhanced.db", { readonly: false });
       this.initialize();
     } catch (error) {
-      logger.error("Failed to initialize worker:", error);
+      logger.error("Failed to initialize worker:", error as string);
 
       // Send error to parent
       if (parentPort) {
@@ -130,10 +130,10 @@ class EmailProcessingWorker {
     logger.info("Worker initializing...");
 
     // Configure SQLite for better performance
-    this.db.pragma("journal_mode = WAL");
-    this.db.pragma("synchronous = NORMAL");
-    this.db.pragma("cache_size = 10000");
-    this.db.pragma("temp_store = MEMORY");
+    this?.db?.pragma("journal_mode = WAL");
+    this?.db?.pragma("synchronous = NORMAL");
+    this?.db?.pragma("cache_size = 10000");
+    this?.db?.pragma("temp_store = MEMORY");
 
     // Create Ollama connection pool
     this.initializeOllamaPool();
@@ -163,7 +163,7 @@ class EmailProcessingWorker {
   private initializeOllamaPool(): void {
     for (let i = 0; i < this.maxOllamaConnections; i++) {
       const connectionId = `conn_${i}`;
-      this.ollamaPool.set(connectionId, {
+      this?.ollamaPool?.set(connectionId, {
         instance: new Ollama({
           host: "http://localhost:11434",
           // Enable keep-alive for connection reuse
@@ -193,7 +193,7 @@ class EmailProcessingWorker {
     const connectionId = `conn_${this.connectionIndex % this.maxOllamaConnections}`;
     this.connectionIndex++;
 
-    const connection = this.ollamaPool.get(connectionId)!;
+    const connection = this?.ollamaPool?.get(connectionId)!;
     connection.lastUsed = Date.now();
     connection.requestCount++;
 
@@ -206,7 +206,7 @@ class EmailProcessingWorker {
   private setupMessageHandlers(): void {
     if (!parentPort) return;
 
-    parentPort.on("message", async (message) => {
+    parentPort.on("message", async (message: any) => {
       switch (message.type) {
         case "processJob":
           await this.processJob(message.job, message.jobId);
@@ -247,14 +247,14 @@ class EmailProcessingWorker {
     const startTime = Date.now();
 
     try {
-      logger.info(`Processing job ${jobId} with ${job.emails.length} emails`);
+      logger.info(`Processing job ${jobId} with ${job?.emails?.length} emails`);
 
       // Process emails in batches for efficiency
       const batchSize = 5;
       const results = [];
 
-      for (let i = 0; i < job.emails.length; i += batchSize) {
-        const batch = job.emails.slice(i, i + batchSize);
+      for (let i = 0; i < job?.emails?.length; i += batchSize) {
+        const batch = job?.emails?.slice(i, i + batchSize);
         const batchResults = await this.processBatch(batch, job.options);
         results.push(...batchResults);
       }
@@ -263,16 +263,16 @@ class EmailProcessingWorker {
       await this.saveResults(results);
 
       const processingTime = Date.now() - startTime;
-      this.processedCount += job.emails.length;
+      this.processedCount += job?.emails?.length;
 
       // Send completion message
       parentPort?.postMessage({
         type: "jobComplete",
         jobId,
         data: {
-          emailCount: job.emails.length,
+          emailCount: job?.emails?.length,
           processingTime,
-          results: results.map((r) => ({
+          results: results?.map((r: any) => ({
             emailId: r.emailId,
             phases: r.phases,
             priority: r.priority,
@@ -280,8 +280,8 @@ class EmailProcessingWorker {
         },
       });
     } catch (error) {
-      logger.error(`Job ${jobId} failed:`, error);
-      this.failedCount += job.emails.length;
+      logger.error(`Job ${jobId} failed:`, error as string);
+      this.failedCount += job?.emails?.length;
 
       parentPort?.postMessage({
         type: "jobFailed",
@@ -302,7 +302,7 @@ class EmailProcessingWorker {
 
     // Phase 1: Rule-based analysis (parallel)
     const phase1Results = await Promise.all(
-      emails.map((email) => this.runPhase1(email)),
+      emails?.map((email: any) => this.runPhase1(email)),
     );
 
     // Phase 2: LLM enhancement (batched)
@@ -313,29 +313,29 @@ class EmailProcessingWorker {
     );
 
     // Determine which emails need Phase 3
-    const phase3Candidates = emails.filter((email, index) => {
+    const phase3Candidates = emails?.filter((email, index) => {
       const chainAnalysis = phase1Results[index].chain_analysis;
       return chainAnalysis?.is_complete_chain || options.forceAllPhases;
     });
 
     // Phase 3: Strategic analysis (batched for complete chains)
     let phase3Results: any[] = [];
-    if (phase3Candidates.length > 0) {
+    if (phase3Candidates?.length || 0 > 0) {
       const phase3Indices = emails
         .map((email, index) => (phase3Candidates.includes(email) ? index : -1))
-        .filter((i) => i >= 0);
+        .filter((i: any) => i >= 0);
 
       phase3Results = await this.runPhase3Batch(
         phase3Candidates,
-        phase3Indices.map((i) => phase1Results[i]),
-        phase3Indices.map((i) => phase2Results[i]),
+        phase3Indices?.map((i: any) => phase1Results[i]),
+        phase3Indices?.map((i: any) => phase2Results[i]),
         options,
       );
     }
 
     // Combine results
     let phase3Index = 0;
-    for (let i = 0; i < emails.length; i++) {
+    for (let i = 0; i < emails?.length || 0; i++) {
       const email = emails[i];
       const phase1 = phase1Results[i];
       const phase2 = phase2Results[i];
@@ -428,7 +428,7 @@ class EmailProcessingWorker {
     const results = [];
 
     // Create batch prompts
-    const prompts: BatchPrompt[] = emails.map((email, index) => ({
+    const prompts: BatchPrompt[] = emails?.map((email, index) => ({
       id: `${email.id}_phase2`,
       emailId: email.id,
       prompt: this.buildPhase2Prompt(email, phase1Results[index]),
@@ -436,7 +436,7 @@ class EmailProcessingWorker {
 
     // Process in smaller batches to avoid overwhelming Ollama
     const llmBatchSize = 3;
-    for (let i = 0; i < prompts.length; i += llmBatchSize) {
+    for (let i = 0; i < prompts?.length || 0; i += llmBatchSize) {
       const batch = prompts.slice(i, i + llmBatchSize);
       const batchResults = await this.callLlamaBatch(connection, batch, {
         temperature: 0.1,
@@ -445,7 +445,7 @@ class EmailProcessingWorker {
       });
 
       // Parse and validate results
-      for (let j = 0; j < batchResults.length; j++) {
+      for (let j = 0; j < batchResults?.length || 0; j++) {
         const promptIndex = i + j;
         const response = batchResults[j];
 
@@ -486,7 +486,7 @@ class EmailProcessingWorker {
     const results = [];
 
     // Create batch prompts
-    const prompts: BatchPrompt[] = emails.map((email, index) => ({
+    const prompts: BatchPrompt[] = emails?.map((email, index) => ({
       id: `${email.id}_phase3`,
       emailId: email.id,
       prompt: this.buildPhase3Prompt(
@@ -498,7 +498,7 @@ class EmailProcessingWorker {
 
     // Process with Phi-4
     const llmBatchSize = 2; // Smaller batch for larger model
-    for (let i = 0; i < prompts.length; i += llmBatchSize) {
+    for (let i = 0; i < prompts?.length || 0; i += llmBatchSize) {
       const batch = prompts.slice(i, i + llmBatchSize);
       const batchResults = await this.callPhiBatch(connection, batch, {
         temperature: 0.3,
@@ -507,7 +507,7 @@ class EmailProcessingWorker {
       });
 
       // Parse and validate results
-      for (let j = 0; j < batchResults.length; j++) {
+      for (let j = 0; j < batchResults?.length || 0; j++) {
         const promptIndex = i + j;
         const response = batchResults[j];
 
@@ -543,9 +543,9 @@ class EmailProcessingWorker {
     options: any,
   ): Promise<string[]> {
     const results = await Promise.all(
-      prompts.map(async (prompt) => {
+      prompts?.map(async (prompt: any) => {
         try {
-          const response = await connection.instance.generate({
+          const response = await connection?.instance?.generate({
             model: "llama3.2:3b",
             prompt: prompt.prompt,
             stream: false,
@@ -557,7 +557,7 @@ class EmailProcessingWorker {
           });
           return response.response;
         } catch (error) {
-          logger.error(`Llama call failed for ${prompt.id}:`, error);
+          logger.error(`Llama call failed for ${prompt.id}:`, error as string);
           return "{}"; // Return empty JSON on error
         }
       }),
@@ -575,9 +575,9 @@ class EmailProcessingWorker {
     options: any,
   ): Promise<string[]> {
     const results = await Promise.all(
-      prompts.map(async (prompt) => {
+      prompts?.map(async (prompt: any) => {
         try {
-          const response = await connection.instance.generate({
+          const response = await connection?.instance?.generate({
             model: "doomgrave/phi-4:14b-tools-Q3_K_S",
             prompt: prompt.prompt,
             stream: false,
@@ -589,7 +589,7 @@ class EmailProcessingWorker {
           });
           return response.response;
         } catch (error) {
-          logger.error(`Phi call failed for ${prompt.id}:`, error);
+          logger.error(`Phi call failed for ${prompt.id}:`, error as string);
           return "{}"; // Return empty JSON on error
         }
       }),
@@ -608,7 +608,7 @@ Email:
 Subject: ${email.subject}
 From: ${email.sender_email}
 Date: ${email.received_at}
-Body: ${email.body.substring(0, 1000)}...
+Body: ${email?.body?.substring(0, 1000)}...
 
 Initial Analysis:
 ${JSON.stringify(phase1Results, null, 2)}
@@ -696,9 +696,9 @@ Provide strategic insights in this exact JSON format:
     const results = new Set<string>();
     const upperText = text.toUpperCase();
 
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = upperText.match(pattern) || [];
-      matches.forEach((m) => {
+      matches.forEach((m: any) => {
         if (!m.match(/^(THE|AND|FOR|WITH|FROM|THIS|THAT|HAVE|WILL|BEEN)$/)) {
           results.add(m);
         }
@@ -716,9 +716,9 @@ Provide strategic insights in this exact JSON format:
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = text.match(pattern) || [];
-      matches.forEach((m) => results.add(m));
+      matches.forEach((m: any) => results.add(m));
     });
 
     return Array.from(results);
@@ -733,7 +733,7 @@ Provide strategic insights in this exact JSON format:
     const emails = text.match(emailPattern) || [];
     const phones = text.match(phonePattern) || [];
 
-    [...emails, ...phones].forEach((contact) => results.add(contact));
+    [...emails, ...phones].forEach((contact: any) => results.add(contact));
     return Array.from(results).slice(0, 10);
   }
 
@@ -751,7 +751,7 @@ Provide strategic insights in this exact JSON format:
     };
 
     for (const [state, keywords] of Object.entries(stateKeywords)) {
-      if (keywords.some((keyword) => content.includes(keyword))) {
+      if (keywords.some((keyword: any) => content.includes(keyword))) {
         return state;
       }
     }
@@ -788,9 +788,9 @@ Provide strategic insights in this exact JSON format:
    */
   private calculateFinancialImpact(amounts: string[]): number {
     return amounts
-      .map((amt) => parseFloat(amt.replace(/[$,]/g, "")))
-      .filter((amt) => !isNaN(amt))
-      .reduce((sum, amt) => sum + amt, 0);
+      .map((amt: any) => parseFloat(amt.replace(/[$,]/g, "")))
+      .filter((amt: any) => !isNaN(amt))
+      .reduce((sum: any, amt: any) => sum + amt, 0);
   }
 
   /**
@@ -805,9 +805,9 @@ Provide strategic insights in this exact JSON format:
     ];
 
     const phrases = new Set<string>();
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = content.match(pattern) || [];
-      matches.forEach((m) => phrases.add(m));
+      matches.forEach((m: any) => phrases.add(m));
     });
 
     return Array.from(phrases).slice(0, 10);
@@ -826,7 +826,7 @@ Provide strategic insights in this exact JSON format:
     };
 
     for (const [category, patterns] of Object.entries(categories)) {
-      if (patterns.some((pattern) => lowerEmail.includes(pattern))) {
+      if (patterns.some((pattern: any) => lowerEmail.includes(pattern))) {
         return category;
       }
     }
@@ -840,7 +840,7 @@ Provide strategic insights in this exact JSON format:
   private detectPatterns(content: string, entities: any): string[] {
     const patterns = [];
 
-    if (entities.part_numbers.length > 5) patterns.push("bulk_order");
+    if (entities?.part_numbers?.length > 5) patterns.push("bulk_order");
     if ((content.match(/urgent|asap|critical/gi) || []).length > 2)
       patterns.push("high_urgency");
     if (this.calculateFinancialImpact(entities.dollar_amounts) > 50000)
@@ -858,7 +858,7 @@ Provide strategic insights in this exact JSON format:
    */
   private async getChainAnalysis(conversationId: string): Promise<any> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT 
           conversation_id as chain_id,
           COUNT(*) as chain_length,
@@ -896,7 +896,7 @@ Provide strategic insights in this exact JSON format:
           : ["Additional correspondence needed"],
       };
     } catch (error) {
-      logger.error("Chain analysis failed:", error);
+      logger.error("Chain analysis failed:", error as string);
       return null;
     }
   }
@@ -955,8 +955,8 @@ Provide strategic insights in this exact JSON format:
    * Save results to database
    */
   private async saveResults(results: any[]): Promise<void> {
-    const transaction = this.db.transaction((results: any[]) => {
-      const stmt = this.db.prepare(`
+    const transaction = this?.db?.transaction((results: any[]) => {
+      const stmt = this?.db?.prepare(`
         UPDATE emails_enhanced SET
           workflow_state = ?,
           priority = ?,
@@ -1050,10 +1050,10 @@ Provide strategic insights in this exact JSON format:
     if (this.metricsInterval) clearInterval(this.metricsInterval);
 
     // Close database
-    this.db.close();
+    this?.db?.close();
 
     // Clear connection pool
-    this.ollamaPool.clear();
+    this?.ollamaPool?.clear();
 
     logger.info("Worker shutdown complete");
     process.exit(0);

@@ -10,17 +10,17 @@ export class RetrievalService {
     enhanced = this.filterByScore(enhanced);
 
     // Apply reranking if enabled
-    if (this.config.reranking) {
+    if (this?.config?.reranking) {
       enhanced = await this.rerank(query, enhanced);
     }
 
     // Apply diversity if configured
-    if (this.config.diversityFactor && this.config.diversityFactor > 0) {
+    if (this?.config?.diversityFactor && this?.config?.diversityFactor > 0) {
       enhanced = this.diversify(enhanced);
     }
 
     // Boost recent documents if enabled
-    if (this.config.boostRecent) {
+    if (this?.config?.boostRecent) {
       enhanced = this.boostRecentDocuments(enhanced);
       // Re-sort after boosting to maintain score order
       enhanced = enhanced.sort((a, b) => b.score - a.score);
@@ -30,7 +30,7 @@ export class RetrievalService {
   }
 
   private filterByScore(results: QueryResult[]): QueryResult[] {
-    return results.filter((r) => r.score >= this.config.minScore);
+    return results?.filter((r: any) => r.score >= this?.config?.minScore);
   }
 
   private async rerank(
@@ -42,7 +42,7 @@ export class RetrievalService {
 
     const queryTerms = this.extractTerms(query);
 
-    const reranked = results.map((result) => {
+    const reranked = results?.map((result: any) => {
       let boost = 0;
       const contentTerms = this.extractTerms(result.content);
 
@@ -54,8 +54,8 @@ export class RetrievalService {
       }
 
       // Boost if query terms appear in metadata
-      if (result.metadata.title) {
-        const titleTerms = this.extractTerms(result.metadata.title);
+      if (result?.metadata?.title) {
+        const titleTerms = this.extractTerms(result?.metadata?.title);
         for (const term of queryTerms) {
           if (titleTerms.has(term)) {
             boost += 0.2;
@@ -74,7 +74,7 @@ export class RetrievalService {
   }
 
   private diversify(results: QueryResult[]): QueryResult[] {
-    if (results.length <= 1) return results;
+    if (results?.length || 0 <= 1) return results;
 
     const diversified: QueryResult[] = [];
     const used = new Set<number>();
@@ -88,13 +88,13 @@ export class RetrievalService {
 
     // Add diverse results
     while (
-      diversified.length < results.length &&
-      diversified.length < this.config.topK
+      diversified?.length || 0 < results?.length || 0 &&
+      diversified?.length || 0 < this?.config?.topK
     ) {
       let bestIndex = -1;
       let bestDiversity = -1;
 
-      for (let i = 1; i < results.length; i++) {
+      for (let i = 1; i < results?.length || 0; i++) {
         if (used.has(i)) continue;
 
         const result = results[i];
@@ -135,7 +135,7 @@ export class RetrievalService {
     }
 
     // Higher score means more diverse (less overlap)
-    return 1 - totalOverlap / selected.length;
+    return 1 - totalOverlap / selected?.length || 0;
   }
 
   private calculateOverlap(set1: Set<string>, set2: Set<string>): number {
@@ -155,12 +155,12 @@ export class RetrievalService {
     const now = Date.now();
     const dayInMs = 24 * 60 * 60 * 1000;
 
-    return results.map((result) => {
-      if (!result.metadata.createdAt && !result.metadata.updatedAt) {
+    return results?.map((result: any) => {
+      if (!result?.metadata?.createdAt && !result?.metadata?.updatedAt) {
         return result;
       }
 
-      const dateStr = result.metadata.updatedAt || result.metadata.createdAt;
+      const dateStr = result?.metadata?.updatedAt || result?.metadata?.createdAt;
       if (!dateStr) return result;
 
       const docDate = new Date(dateStr).getTime();
@@ -190,7 +190,7 @@ export class RetrievalService {
       .toLowerCase()
       .replace(/[^\w\s]/g, " ")
       .split(/\s+/)
-      .filter((term) => term.length > 2); // Filter out short words
+      .filter((term: any) => term?.length || 0 > 2); // Filter out short words
 
     return new Set(terms);
   }
@@ -199,7 +199,7 @@ export class RetrievalService {
     results: QueryResult[],
     filters: Record<string, any>,
   ): Promise<QueryResult[]> {
-    return results.filter((result) => {
+    return results?.filter((result: any) => {
       for (const [key, value] of Object.entries(filters)) {
         if (!(key in result.metadata)) {
           return false;
@@ -222,9 +222,9 @@ export class RetrievalService {
   highlightMatches(query: string, results: QueryResult[]): QueryResult[] {
     const queryTerms = this.extractTerms(query);
 
-    return results.map((result) => {
+    return results?.map((result: any) => {
       const highlights: string[] = [];
-      const sentences = result.content.split(/[.!?]+/);
+      const sentences = result?.content?.split(/[.!?]+/);
 
       for (const sentence of sentences) {
         const sentenceTerms = this.extractTerms(sentence);

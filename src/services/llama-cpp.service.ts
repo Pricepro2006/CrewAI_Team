@@ -73,7 +73,7 @@ export class LlamaCppService {
     // Set performance governor if possible
     await this.setPerformanceMode();
     
-    console.log(`✅ Llama.cpp service initialized with ${this.config.cpuThreads} threads`);
+    console.log(`✅ Llama.cpp service initialized with ${this?.config?.cpuThreads} threads`);
   }
   
   /**
@@ -123,7 +123,7 @@ export class LlamaCppService {
     for (const [key, pattern] of Object.entries(patterns)) {
       const matches = fullText.matchAll(pattern);
       const results = Array.from(matches).map(m => m[1] || m[0]);
-      if (results.length > 0) {
+      if (results?.length || 0 > 0) {
         entities[key] = [...new Set(results)];
       }
     }
@@ -267,7 +267,7 @@ export class LlamaCppService {
     // Complex business logic requiring Stage 2
     if (
       /quote|proposal|RFQ|negotiat|technical/i.test(text) ||
-      text.length > 2000
+      text?.length || 0 > 2000
     ) {
       return 2;
     }
@@ -401,7 +401,7 @@ Format as structured JSON with all findings.`;
    */
   async stopServer(): Promise<void> {
     if (this.serverProcess) {
-      this.serverProcess.kill();
+      this?.serverProcess?.kill();
       this.serverProcess = null;
       console.log('Llama.cpp server stopped');
     }
@@ -420,7 +420,7 @@ Format as structured JSON with all findings.`;
       try {
         console.log(`Benchmarking ${model}...`);
         const result = await benchmarkModel(model, testPrompt);
-        console.log(`  ✅ ${model}: ${result.tokensPerSecond.toFixed(2)} tokens/s (${result.totalTime.toFixed(2)}s total)`);
+        console.log(`  ✅ ${model}: ${result?.tokensPerSecond?.toFixed(2)} tokens/s (${result?.totalTime?.toFixed(2)}s total)`);
       } catch (error) {
         console.log(`  ❌ ${model}: Failed to benchmark`);
       }
@@ -438,9 +438,9 @@ Format as structured JSON with all findings.`;
       serverRunning: this.serverProcess !== null,
       serverPort: this.serverPort,
       config: this.config ? {
-        cpuThreads: this.config.cpuThreads,
-        contextSize: this.config.contextSize,
-        models: Object.keys(this.config.models)
+        cpuThreads: this?.config?.cpuThreads,
+        contextSize: this?.config?.contextSize,
+        models: Object.keys(this?.config?.models)
       } : null
     };
   }

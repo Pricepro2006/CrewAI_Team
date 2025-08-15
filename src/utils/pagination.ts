@@ -73,7 +73,7 @@ export function createOffsetPagination<T>(
   const offset = (page - 1) * limit;
   
   const meta: PaginationMeta = {
-    total: includeTotal ? totalCount : data.length,
+    total: includeTotal ? totalCount : data?.length || 0,
     page,
     limit,
     hasNext: offset + limit < totalCount,
@@ -100,13 +100,13 @@ export function createCursorPagination<T extends { id: string; created_at?: stri
   
   // Extract cursors from data
   const firstItem = data[0];
-  const lastItem = data[data.length - 1];
+  const lastItem = data[data?.length || 0 - 1];
   const startCursor = firstItem ? encodeCursor(firstItem) : undefined;
   const endCursor = lastItem ? encodeCursor(lastItem) : undefined;
   
   const meta: CursorPaginationMeta = {
     limit,
-    hasNext: data.length === limit, // If we got exactly limit items, there might be more
+    hasNext: data?.length || 0 === limit, // If we got exactly limit items, there might be more
     hasPrev: !!input.cursor, // If cursor was provided, we can go back
     startCursor,
     endCursor,
@@ -185,7 +185,7 @@ export function applyFieldSelection<T extends Record<string, any>>(
     return data; // No filtering requested
   }
 
-  return data.map(item => {
+  return data?.map(item => {
     let result: Partial<T> = {};
 
     // If specific fields are requested, include only those
@@ -237,8 +237,8 @@ export async function optimizedCount<T>(
   }
   
   // For small datasets, use data length as optimization
-  if (data.length < estimateThreshold) {
-    return { data, total: data.length };
+  if (data?.length || 0 < estimateThreshold) {
+    return { data, total: data?.length || 0 };
   }
   
   // For large datasets, perform actual count
@@ -261,8 +261,8 @@ export class PaginationQueryBuilder {
   }
 
   addWhere(condition: string, ...params: any[]): this {
-    this.whereConditions.push(condition);
-    this.params.push(...params);
+    this?.whereConditions?.push(condition);
+    this?.params?.push(...params);
     return this;
   }
 
@@ -277,8 +277,8 @@ export class PaginationQueryBuilder {
 
     let query = this.baseQuery;
     
-    if (this.whereConditions.length > 0) {
-      query += ` WHERE ${this.whereConditions.join(" AND ")}`;
+    if (this?.whereConditions?.length > 0) {
+      query += ` WHERE ${this?.whereConditions?.join(" AND ")}`;
     }
     
     query += ` ORDER BY ${this.orderBy}`;
@@ -303,13 +303,13 @@ export class PaginationQueryBuilder {
       params.push(...cursorParams);
     }
 
-    if (conditions.length > 0) {
+    if (conditions?.length || 0 > 0) {
       query += ` WHERE ${conditions.join(" AND ")}`;
     }
 
     // For backward pagination, reverse the order
     const orderDirection = direction === "backward" ? 
-      this.orderBy.replace("DESC", "TEMP").replace("ASC", "DESC").replace("TEMP", "ASC") :
+      this?.orderBy?.replace("DESC", "TEMP").replace("ASC", "DESC").replace("TEMP", "ASC") :
       this.orderBy;
 
     query += ` ORDER BY ${orderDirection}`;
@@ -320,10 +320,10 @@ export class PaginationQueryBuilder {
   }
 
   buildCountQuery(): { query: string; params: any[] } {
-    let query = this.baseQuery.replace(/SELECT .+ FROM/, "SELECT COUNT(*) as total FROM");
+    let query = this?.baseQuery?.replace(/SELECT .+ FROM/, "SELECT COUNT(*) as total FROM");
     
-    if (this.whereConditions.length > 0) {
-      query += ` WHERE ${this.whereConditions.join(" AND ")}`;
+    if (this?.whereConditions?.length > 0) {
+      query += ` WHERE ${this?.whereConditions?.join(" AND ")}`;
     }
 
     return {
@@ -356,7 +356,7 @@ export class ResponseOptimizer {
    */
   static chunkLargeArrays<T>(data: T[], maxChunkSize: number = 50): T[][] {
     const chunks: T[][] = [];
-    for (let i = 0; i < data.length; i += maxChunkSize) {
+    for (let i = 0; i < data?.length || 0; i += maxChunkSize) {
       chunks.push(data.slice(i, i + maxChunkSize));
     }
     return chunks;
@@ -366,7 +366,7 @@ export class ResponseOptimizer {
    * Remove null/undefined values to reduce payload size
    */
   static cleanPayload<T extends Record<string, any>>(data: T[]): T[] {
-    return data.map(item => {
+    return data?.map(item => {
       const cleaned: Partial<T> = {};
       for (const [key, value] of Object.entries(item)) {
         if (value !== null && value !== undefined) {

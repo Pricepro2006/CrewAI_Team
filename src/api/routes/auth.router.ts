@@ -111,7 +111,7 @@ export const authRouter = router({
       } catch (error) {
         if (
           error instanceof Error &&
-          error.message.includes("already exists")
+          error?.message?.includes("already exists")
         ) {
           throw new TRPCError({
             code: "CONFLICT",
@@ -287,10 +287,10 @@ export const authRouter = router({
         userService.revokeRefreshToken(payload.tokenId);
 
         // Also revoke all user sessions for security
-        userService.revokeAllUserSessions(ctx.user.id);
+        userService.revokeAllUserSessions(ctx?.user?.id);
 
         logger.info("User logged out successfully", "AUTH", {
-          userId: ctx.user.id,
+          userId: ctx?.user?.id,
           tokenId: payload.tokenId,
         });
 
@@ -300,7 +300,7 @@ export const authRouter = router({
       } catch (error) {
         // Even if token verification fails, we should still log the logout attempt
         logger.info("Logout attempted with invalid token", "AUTH", {
-          userId: ctx.user.id,
+          userId: ctx?.user?.id,
         });
 
         return {
@@ -321,11 +321,11 @@ export const authRouter = router({
 
       try {
         // Revoke all refresh tokens and sessions
-        userService.revokeAllUserRefreshTokens(ctx.user.id);
-        userService.revokeAllUserSessions(ctx.user.id);
+        userService.revokeAllUserRefreshTokens(ctx?.user?.id);
+        userService.revokeAllUserSessions(ctx?.user?.id);
 
         logger.info("User logged out from all devices", "AUTH", {
-          userId: ctx.user.id,
+          userId: ctx?.user?.id,
         });
 
         return {
@@ -356,10 +356,10 @@ export const authRouter = router({
       const userService = new UserService();
 
       try {
-        const updatedUser = await userService.updateUser(ctx.user.id, input);
+        const updatedUser = await userService.updateUser(ctx?.user?.id, input);
 
         logger.info("User profile updated", "AUTH", {
-          userId: ctx.user.id,
+          userId: ctx?.user?.id,
           updatedFields: Object.keys(input),
         });
 
@@ -382,10 +382,10 @@ export const authRouter = router({
       const userService = new UserService();
 
       try {
-        await userService.changePassword(ctx.user.id, input);
+        await userService.changePassword(ctx?.user?.id, input);
 
         logger.info("Password changed successfully", "AUTH", {
-          userId: ctx.user.id,
+          userId: ctx?.user?.id,
         });
 
         return {
@@ -417,7 +417,7 @@ export const authRouter = router({
         entropy,
         isCompromised,
         recommendations:
-          validation.errors.length > 0
+          validation?.errors?.length > 0
             ? validation.errors
             : ["Your password meets all security requirements!"],
       };
@@ -433,7 +433,7 @@ export const authRouter = router({
       // This would implement email verification logic
       // For now, return a placeholder response
       logger.info("Email verification attempted", "AUTH", {
-        token: input.token.substring(0, 10) + "...",
+        token: input?.token?.substring(0, 10) + "...",
       });
 
       return {
@@ -466,7 +466,7 @@ export const authRouter = router({
     .use(authErrorHandler)
     .mutation(async ({ ctx }) => {
       // Check if user is admin
-      if (ctx.user.role !== "admin") {
+      if (ctx?.user?.role !== "admin") {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Admin access required",
@@ -479,7 +479,7 @@ export const authRouter = router({
         userService.cleanupExpiredTokens();
 
         logger.info("Expired tokens cleaned up", "AUTH", {
-          adminUserId: ctx.user.id,
+          adminUserId: ctx?.user?.id,
         });
 
         return {

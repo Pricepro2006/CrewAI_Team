@@ -17,7 +17,7 @@ import { EmailRepository } from '../../../database/repositories/EmailRepository.
 import { UnifiedEmailService } from '../../../api/services/UnifiedEmailService.js';
 
 // Mock crypto for uuid
-vi.mock('crypto', async (importOriginal) => {
+vi.mock('crypto', async (importOriginal: any) => {
   const actual = await importOriginal<typeof import('crypto')>();
   return {
     ...actual,
@@ -26,14 +26,14 @@ vi.mock('crypto', async (importOriginal) => {
 });
 
 // Mock fs for database connection
-vi.mock('fs', async (importOriginal) => {
+vi.mock('fs', async (importOriginal: any) => {
   const actual = await importOriginal<typeof import('fs')>();
   return {
     ...actual,
     default: actual,
     existsSync: vi.fn().mockReturnValue(true),
     mkdirSync: vi.fn(),
-    readFileSync: vi.fn().mockImplementation((path) => {
+    readFileSync: vi.fn().mockImplementation((path: any) => {
       if (path.includes('emails.json')) {
         return JSON.stringify([
           { messageId: 'email-1', subject: 'Test 1' },
@@ -47,7 +47,7 @@ vi.mock('fs', async (importOriginal) => {
 
 // Mock fs/promises for async file operations
 vi.mock('fs/promises', () => ({
-  readFile: vi.fn().mockImplementation(async (path) => {
+  readFile: vi.fn().mockImplementation(async (path: any) => {
     if (path.includes('emails.json')) {
       return JSON.stringify([
         {
@@ -230,7 +230,7 @@ describe('EmailIngestionService', () => {
     mockUnifiedEmailService = new UnifiedEmailService();
 
     // Mock repository methods
-    mockEmailRepository.getStatistics.mockResolvedValue({
+    mockEmailRepository?.getStatistics?.mockResolvedValue({
       total: 0,
       pending: 0,
       analyzed: 0,
@@ -244,7 +244,7 @@ describe('EmailIngestionService', () => {
     });
 
     // Mock unified email service
-    mockUnifiedEmailService.processIncomingEmail.mockResolvedValue({
+    mockUnifiedEmailService?.processIncomingEmail?.mockResolvedValue({
       id: 'processed-email-id',
       subject: 'Test Email',
       from: 'sender@example.com'
@@ -270,7 +270,7 @@ describe('EmailIngestionService', () => {
 
   describe('Initialization', () => {
     it('should initialize successfully with valid configuration', async () => {
-      await expect(service.initialize()).resolves.not.toThrow();
+      await expect(service.initialize()).resolves?.not?.toThrow();
     });
 
     it('should validate required configuration', () => {
@@ -304,7 +304,7 @@ describe('EmailIngestionService', () => {
       
       // Mock Redis to return duplicate
       const mockRedis = vi.mocked(service as any).redis;
-      mockRedis.exists.mockResolvedValueOnce(1);
+      mockRedis?.exists?.mockResolvedValueOnce(1);
 
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
 
@@ -317,7 +317,7 @@ describe('EmailIngestionService', () => {
       
       // Mock the queue to throw an error
       const mockQueue = (service as any).ingestionQueue;
-      mockQueue.add.mockRejectedValueOnce(new Error('Processing failed'));
+      mockQueue?.add?.mockRejectedValueOnce(new Error('Processing failed'));
 
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
 
@@ -374,7 +374,7 @@ describe('EmailIngestionService', () => {
       const mockQueue = (service as any).ingestionQueue;
       let callCount = 0;
       
-      mockQueue.add.mockImplementation(async (name, data) => {
+      mockQueue?.add?.mockImplementation(async (name, data) => {
         callCount++;
         if (callCount === 2) {
           throw new Error('Processing failed');
@@ -459,8 +459,8 @@ describe('EmailIngestionService', () => {
     });
 
     it('should pause and resume ingestion', async () => {
-      await expect(service.pauseIngestion()).resolves.not.toThrow();
-      await expect(service.resumeIngestion()).resolves.not.toThrow();
+      await expect(service.pauseIngestion()).resolves?.not?.toThrow();
+      await expect(service.resumeIngestion()).resolves?.not?.toThrow();
     });
 
     it('should get queue status', async () => {
@@ -495,7 +495,7 @@ describe('EmailIngestionService', () => {
 
       // Mock Redis to return exists = 1 for subsequent checks
       const mockRedis = vi.mocked(service as any).redis;
-      mockRedis.exists.mockResolvedValue(1);
+      mockRedis?.exists?.mockResolvedValue(1);
 
       // Second check should return true (duplicate)
       const secondCheck = await service.checkDuplicate(messageId);
@@ -503,7 +503,7 @@ describe('EmailIngestionService', () => {
     });
 
     it('should clear deduplication cache', async () => {
-      await expect(service.clearDeduplicationCache()).resolves.not.toThrow();
+      await expect(service.clearDeduplicationCache()).resolves?.not?.toThrow();
     });
   });
 
@@ -556,7 +556,7 @@ describe('EmailIngestionService', () => {
         maxEmailsPerPull: 100
       };
       
-      await expect(manualService.startAutoPull()).resolves.not.toThrow();
+      await expect(manualService.startAutoPull()).resolves?.not?.toThrow();
       expect(manualService.isAutoPullActive()).toBe(true);
       
       await manualService.shutdown();
@@ -567,7 +567,7 @@ describe('EmailIngestionService', () => {
       // Auto-pull should already be started
       expect(autoPullService.isAutoPullActive()).toBe(true);
       
-      await expect(autoPullService.stopAutoPull()).resolves.not.toThrow();
+      await expect(autoPullService.stopAutoPull()).resolves?.not?.toThrow();
       expect(autoPullService.isAutoPullActive()).toBe(false);
     });
   });
@@ -619,10 +619,10 @@ describe('EmailIngestionService', () => {
     it('should handle Redis connection failures gracefully', async () => {
       // Mock Redis to throw connection error
       const mockRedis = vi.mocked(service as any).redis;
-      mockRedis.ping.mockRejectedValueOnce(new Error('Redis connection failed'));
+      mockRedis?.ping?.mockRejectedValueOnce(new Error('Redis connection failed'));
 
       const health = await service.healthCheck();
-      expect(health.components.redis.healthy).toBe(false);
+      expect(health?.components?.redis.healthy).toBe(false);
     });
 
     it('should handle database connection failures gracefully', async () => {
@@ -632,16 +632,16 @@ describe('EmailIngestionService', () => {
       );
 
       const health = await service.healthCheck();
-      expect(health.components.database.healthy).toBe(false);
+      expect(health?.components?.database.healthy).toBe(false);
     });
 
     it('should handle queue overflow scenarios', async () => {
       const mockQueue = (service as any).ingestionQueue;
-      mockQueue.getWaitingCount.mockResolvedValue(50000); // High queue count
-      mockQueue.getFailedCount.mockResolvedValue(5000); // High failure count
+      mockQueue?.getWaitingCount?.mockResolvedValue(50000); // High queue count
+      mockQueue?.getFailedCount?.mockResolvedValue(5000); // High failure count
 
       const health = await service.healthCheck();
-      expect(health.components.queue.healthy).toBe(false);
+      expect(health?.components?.queue.healthy).toBe(false);
       expect(health.status).toBe('degraded');
     });
 
@@ -650,7 +650,7 @@ describe('EmailIngestionService', () => {
       
       // Mock network timeout
       const mockQueue = (service as any).ingestionQueue;
-      mockQueue.add.mockRejectedValueOnce(new Error('ETIMEDOUT'));
+      mockQueue?.add?.mockRejectedValueOnce(new Error('ETIMEDOUT'));
 
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
       expect(result.success).toBe(false);
@@ -674,7 +674,7 @@ describe('EmailIngestionService', () => {
 
     it('should handle Redis memory pressure', async () => {
       const mockRedis = vi.mocked(service as any).redis;
-      mockRedis.setex.mockRejectedValueOnce(new Error('OOM command not allowed when used memory > maxmemory'));
+      mockRedis?.setex?.mockRejectedValueOnce(new Error('OOM command not allowed when used memory > maxmemory'));
 
       const testEmail = createTestEmail();
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
@@ -686,10 +686,10 @@ describe('EmailIngestionService', () => {
 
     it('should handle worker crash scenarios', async () => {
       const mockWorker = (service as any).worker;
-      mockWorker.close.mockRejectedValueOnce(new Error('Worker crashed unexpectedly'));
+      mockWorker?.close?.mockRejectedValueOnce(new Error('Worker crashed unexpectedly'));
 
       // Should handle shutdown gracefully even with worker errors
-      await expect(service.shutdown()).resolves.not.toThrow();
+      await expect(service.shutdown()).resolves?.not?.toThrow();
     });
 
     it('should handle concurrent duplicate detection race conditions', async () => {
@@ -697,8 +697,8 @@ describe('EmailIngestionService', () => {
       const mockRedis = vi.mocked(service as any).redis;
       
       // Simulate race condition where exists check passes but setex fails
-      mockRedis.exists.mockResolvedValueOnce(0);
-      mockRedis.setex.mockRejectedValueOnce(new Error('Connection lost'));
+      mockRedis?.exists?.mockResolvedValueOnce(0);
+      mockRedis?.setex?.mockRejectedValueOnce(new Error('Connection lost'));
 
       const result = await service.ingestEmail(testEmail, IngestionSource.JSON_FILE);
       expect(result.success).toBe(false);
@@ -753,7 +753,7 @@ describe('EmailIngestionService', () => {
       );
 
       const startTime = performance.now();
-      const promises = batches.map(batch => 
+      const promises = batches?.map(batch => 
         service.ingestBatch(batch, IngestionSource.JSON_FILE)
       );
       
@@ -816,7 +816,7 @@ describe('EmailIngestionService', () => {
       }
 
       // Performance should remain consistent (within 50% variance)
-      const avgTime = results.reduce((a, b) => a + b, 0) / results.length;
+      const avgTime = results.reduce((a: any, b: any) => a + b, 0) / results?.length || 0;
       const maxVariance = avgTime * 0.5;
       
       expect(results.every(time => Math.abs(time - avgTime) < maxVariance)).toBe(true);
@@ -969,7 +969,7 @@ describe('EmailIngestionService', () => {
 
     it('should handle connection cleanup on errors', async () => {
       const mockRedis = vi.mocked(service as any).redis;
-      mockRedis.quit.mockRejectedValueOnce(new Error('Connection already closed'));
+      mockRedis?.quit?.mockRejectedValueOnce(new Error('Connection already closed'));
 
       // Should not throw even if cleanup fails
       await expect(service.shutdown()).rejects.toThrow();
@@ -1008,13 +1008,13 @@ describe('EmailIngestionService', () => {
   describe('Shutdown', () => {
     it('should shutdown gracefully', async () => {
       await service.initialize();
-      await expect(service.shutdown()).resolves.not.toThrow();
+      await expect(service.shutdown()).resolves?.not?.toThrow();
     });
 
     it('should handle multiple shutdown calls', async () => {
       await service.initialize();
       await service.shutdown();
-      await expect(service.shutdown()).resolves.not.toThrow();
+      await expect(service.shutdown()).resolves?.not?.toThrow();
     });
   });
 });

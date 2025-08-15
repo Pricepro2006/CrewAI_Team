@@ -25,7 +25,7 @@ export async function createApp(): Promise<Express> {
 
   // Middleware
   app.use(helmet());
-  app.use(cors(appConfig.api.cors));
+  app.use(cors(appConfig?.api?.cors));
   app.use(express.json());
 
   // Apply metrics middleware to track all requests
@@ -72,7 +72,7 @@ export async function createApp(): Promise<Express> {
         const timeoutId = setTimeout(() => controller.abort(), 5000);
 
         const chromaResponse = await fetch(
-          `${appConfig.rag.vectorStore.baseUrl}/api/v1/heartbeat`,
+          `${appConfig?.rag?.vectorStore.baseUrl}/api/v1/heartbeat`,
           {
             signal: controller.signal,
           },
@@ -109,7 +109,7 @@ export async function createApp(): Promise<Express> {
     }
 
     const overallStatus = Object.values(services).every(
-      (s) => s === "running" || s === "connected" || s === "not_configured",
+      (s: any) => s === "running" || s === "connected" || s === "not_configured",
     )
       ? "healthy"
       : "degraded";

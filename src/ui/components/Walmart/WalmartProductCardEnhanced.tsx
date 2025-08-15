@@ -62,10 +62,10 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
   } = useGroceryStore();
 
   // Track product view
-  const trackView = api.cart.trackView.useMutation();
+  const trackView = api?.cart?.trackView.useMutation();
   
   // Price alert mutation
-  const setPriceAlert = api.priceAlerts.createAlert.useMutation({
+  const setPriceAlert = api?.priceAlerts?.createAlert.useMutation({
     onSuccess: () => {
       showNotification("Price alert set successfully!");
       setShowPriceAlert(false);
@@ -133,7 +133,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
     
     switch (method) {
       case "copy":
-        navigator.clipboard.writeText(shareUrl);
+        navigator?.clipboard?.writeText(shareUrl);
         showNotification("Link copied to clipboard!");
         break;
       case "email":
@@ -156,7 +156,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
     const target = Number(targetPrice);
     const currentPrice = typeof product.price === "number" 
       ? product.price 
-      : product.price.sale || product.price.regular;
+      : product?.price?.sale || product?.price?.regular;
     
     if (target >= currentPrice) {
       showNotification("Target price should be lower than current price");
@@ -197,10 +197,10 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
 
   const currentPrice = typeof product.price === "number" 
     ? product.price 
-    : product.price.sale || product.price.regular;
+    : product?.price?.sale || product?.price?.regular;
     
-  const originalPrice = typeof product.price === "object" && product.price.wasPrice
-    ? product.price.wasPrice
+  const originalPrice = typeof product.price === "object" && product?.price?.wasPrice
+    ? product?.price?.wasPrice
     : product.originalPrice;
     
   const savings = originalPrice && originalPrice > currentPrice 
@@ -310,7 +310,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
           {product.brand && <span>{product.brand}</span>}
           {product.brand && product.category && <span>•</span>}
           {product.category && (
-            <span>{typeof product.category === "string" ? product.category : product.category.name}</span>
+            <span>{typeof product.category === "string" ? product.category : product?.category?.name}</span>
           )}
         </div>
 
@@ -466,7 +466,7 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
                 type="number"
                 step="0.01"
                 value={targetPrice}
-                onChange={(e) => setTargetPrice(e.target.value)}
+                onChange={(e: any) => setTargetPrice(e?.target?.value)}
                 placeholder={`Below $${currentPrice.toFixed(2)}`}
                 className="flex-1 px-2 py-1 border rounded text-sm"
               />
@@ -511,10 +511,10 @@ export const WalmartProductCardEnhanced: React.FC<WalmartProductCardEnhancedProp
               </div>
             )}
             
-            {product.allergens && product.allergens.length > 0 && (
+            {product.allergens && product?.allergens?.length > 0 && (
               <div>
                 <p className="font-medium text-red-600">Allergens:</p>
-                <p className="text-xs">{product.allergens.join(", ")}</p>
+                <p className="text-xs">{product?.allergens?.join(", ")}</p>
               </div>
             )}
           </div>

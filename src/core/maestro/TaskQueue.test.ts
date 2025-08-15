@@ -119,7 +119,7 @@ describe("TaskQueue", () => {
         { id: "3", type: "tool", priority: 5, data: {} },
       ];
 
-      tasks.forEach((task) => priorityQueue.enqueue(task));
+      tasks.forEach((task: any) => priorityQueue.enqueue(task));
 
       const dequeued = priorityQueue.dequeue();
       expect(dequeued?.id).toBe("2");
@@ -186,7 +186,7 @@ describe("TaskQueue", () => {
         { id: "3", type: "tool", data: {} },
       ];
 
-      tasks.forEach((task) => queue.enqueue(task));
+      tasks.forEach((task: any) => queue.enqueue(task));
       expect(queue.size()).toBe(3);
 
       queue.clear();
@@ -257,7 +257,7 @@ describe("TaskQueue", () => {
         },
       ];
 
-      tasks.forEach((task) => priorityQueue.enqueue(task));
+      tasks.forEach((task: any) => priorityQueue.enqueue(task));
 
       const array = priorityQueue.toArray();
       expect(array).toHaveLength(3);
@@ -371,7 +371,7 @@ describe("TaskQueue", () => {
       ];
 
       // Execute all operations
-      operations.forEach((op) => op());
+      operations.forEach((op: any) => op());
 
       // Verify final state
       expect(queue.size()).toBe(1);

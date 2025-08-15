@@ -57,7 +57,7 @@ export class ChainAnalysisQueries {
    */
   private initializePreparedStatements(): void {
     // Fast chain completeness analysis with single scan
-    this.preparedStatements.set('analyzeChainCompleteness', this.db.prepare(`
+    this?.preparedStatements?.set('analyzeChainCompleteness', this?.db?.prepare(`
       WITH chain_metrics AS (
         SELECT 
           COALESCE(e.chain_id, 'orphan_' || e.id) as chain_id,
@@ -117,7 +117,7 @@ export class ChainAnalysisQueries {
     `));
 
     // Fast chain statistics aggregation
-    this.preparedStatements.set('getChainStatistics', this.db.prepare(`
+    this?.preparedStatements?.set('getChainStatistics', this?.db?.prepare(`
       WITH chain_summary AS (
         SELECT 
           COALESCE(e.chain_id, 'orphan_' || e.id) as chain_id,
@@ -154,7 +154,7 @@ export class ChainAnalysisQueries {
     `));
 
     // Optimized chain-based batch selection
-    this.preparedStatements.set('selectChainBatch', this.db.prepare(`
+    this?.preparedStatements?.set('selectChainBatch', this?.db?.prepare(`
       WITH priority_chains AS (
         SELECT 
           COALESCE(e.chain_id, 'orphan_' || e.id) as chain_id,
@@ -193,7 +193,7 @@ export class ChainAnalysisQueries {
     `));
 
     // Update chain completeness scores efficiently
-    this.preparedStatements.set('updateChainCompleteness', this.db.prepare(`
+    this?.preparedStatements?.set('updateChainCompleteness', this?.db?.prepare(`
       UPDATE emails_enhanced 
       SET 
         completeness_score = ?,
@@ -203,7 +203,7 @@ export class ChainAnalysisQueries {
     `));
 
     // Bulk chain creation for orphaned emails
-    this.preparedStatements.set('createChainForOrphans', this.db.prepare(`
+    this?.preparedStatements?.set('createChainForOrphans', this?.db?.prepare(`
       UPDATE emails_enhanced 
       SET 
         chain_id = ?,
@@ -226,7 +226,7 @@ export class ChainAnalysisQueries {
     const startTime = performance.now();
     
     try {
-      const stmt = this.preparedStatements.get('analyzeChainCompleteness')!;
+      const stmt = this?.preparedStatements?.get('analyzeChainCompleteness')!;
       const results = stmt.all(
         statusFilter || null, 
         statusFilter || null, 
@@ -237,7 +237,7 @@ export class ChainAnalysisQueries {
       const executionTime = performance.now() - startTime;
       
       logger.info(
-        `Chain analysis completed: ${results.length} chains in ${executionTime.toFixed(2)}ms`,
+        `Chain analysis completed: ${results?.length || 0} chains in ${executionTime.toFixed(2)}ms`,
         "CHAIN_QUERIES"
       );
 
@@ -256,7 +256,7 @@ export class ChainAnalysisQueries {
     const startTime = performance.now();
     
     try {
-      const stmt = this.preparedStatements.get('getChainStatistics')!;
+      const stmt = this?.preparedStatements?.get('getChainStatistics')!;
       const result = stmt.get() as any;
 
       const executionTime = performance.now() - startTime;
@@ -299,11 +299,11 @@ export class ChainAnalysisQueries {
     const batchId = `chain_batch_${Date.now()}_p${phase}`;
     
     try {
-      const stmt = this.preparedStatements.get('selectChainBatch')!;
+      const stmt = this?.preparedStatements?.get('selectChainBatch')!;
       const chains = stmt.all(phase, maxChains, phase) as ChainCompletenessResult[];
 
       // Calculate total emails in batch
-      const totalEmails = chains.reduce((sum, chain) => sum + chain.emailCount, 0);
+      const totalEmails = chains.reduce((sum: any, chain: any) => sum + chain.emailCount, 0);
       
       // Estimate processing time based on phase and chain complexity
       const baseTimePerEmail = {
@@ -312,7 +312,7 @@ export class ChainAnalysisQueries {
         3: 4000   // Phi-4
       };
       
-      const avgComplexity = chains.reduce((sum, chain) => sum + chain.completenessScore, 0) / chains.length || 1;
+      const avgComplexity = chains.reduce((sum: any, chain: any) => sum + chain.completenessScore, 0) / chains?.length || 0 || 1;
       const estimatedProcessingTime = totalEmails * baseTimePerEmail[phase] * avgComplexity;
 
       const executionTime = performance.now() - startTime;
@@ -325,7 +325,7 @@ export class ChainAnalysisQueries {
       };
 
       logger.info(
-        `Chain batch selected: ${chains.length} chains (${totalEmails} emails) in ${executionTime.toFixed(2)}ms`,
+        `Chain batch selected: ${chains?.length || 0} chains (${totalEmails} emails) in ${executionTime.toFixed(2)}ms`,
         "CHAIN_QUERIES"
       );
 
@@ -349,8 +349,8 @@ export class ChainAnalysisQueries {
   ): Promise<void> {
     const startTime = performance.now();
     
-    return this.db.transaction(() => {
-      const stmt = this.preparedStatements.get('updateChainCompleteness')!;
+    return this?.db?.transaction(() => {
+      const stmt = this?.preparedStatements?.get('updateChainCompleteness')!;
       
       for (const update of updates) {
         stmt.run(
@@ -362,7 +362,7 @@ export class ChainAnalysisQueries {
       
       const executionTime = performance.now() - startTime;
       logger.info(
-        `Updated ${updates.length} chain completeness scores in ${executionTime.toFixed(2)}ms`,
+        `Updated ${updates?.length || 0} chain completeness scores in ${executionTime.toFixed(2)}ms`,
         "CHAIN_QUERIES"
       );
     })();
@@ -377,7 +377,7 @@ export class ChainAnalysisQueries {
     
     try {
       // Find orphaned emails (no chain_id)
-      const orphanStmt = this.db.prepare(`
+      const orphanStmt = this?.db?.prepare(`
         SELECT 
           id, subject, from_address, received_at,
           substr(subject, 1, 50) as subject_prefix
@@ -390,7 +390,7 @@ export class ChainAnalysisQueries {
       
       const orphans = orphanStmt.all(limit) as any[];
       
-      if (orphans.length === 0) {
+      if (orphans?.length || 0 === 0) {
         return 0;
       }
 
@@ -398,17 +398,17 @@ export class ChainAnalysisQueries {
       const chainGroups = this.groupOrphansBySubject(orphans);
       let chainsCreated = 0;
       
-      return this.db.transaction(() => {
+      return this?.db?.transaction(() => {
         for (const group of chainGroups) {
-          if (group.emails.length >= 2) {
+          if (group?.emails?.length >= 2) {
             const chainId = `chain_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             
             // Update emails in batches of 50
-            const batches = this.chunkArray(group.emails.map(e => e.id), 50);
+            const batches = this.chunkArray(group?.emails?.map(e => e.id), 50);
             
             for (const batch of batches) {
-              const placeholders = Array(batch.length).fill('?').join(',');
-              const updateStmt = this.db.prepare(`
+              const placeholders = Array(batch?.length || 0).fill('?').join(',');
+              const updateStmt = this?.db?.prepare(`
                 UPDATE emails_enhanced 
                 SET 
                   chain_id = ?,
@@ -425,7 +425,7 @@ export class ChainAnalysisQueries {
         
         const executionTime = performance.now() - startTime;
         logger.info(
-          `Created ${chainsCreated} chains for ${orphans.length} orphaned emails in ${executionTime.toFixed(2)}ms`,
+          `Created ${chainsCreated} chains for ${orphans?.length || 0} orphaned emails in ${executionTime.toFixed(2)}ms`,
           "CHAIN_QUERIES"
         );
         
@@ -459,8 +459,8 @@ export class ChainAnalysisQueries {
         emails,
         subjectPattern: pattern
       }))
-      .filter(group => group.emails.length >= 2) // Only create chains for 2+ emails
-      .sort((a, b) => b.emails.length - a.emails.length); // Process larger groups first
+      .filter(group => group?.emails?.length >= 2) // Only create chains for 2+ emails
+      .sort((a, b) => b?.emails?.length - a?.emails?.length); // Process larger groups first
   }
 
   /**
@@ -482,7 +482,7 @@ export class ChainAnalysisQueries {
    */
   private chunkArray<T>(array: T[], chunkSize: number): T[][] {
     const chunks: T[][] = [];
-    for (let i = 0; i < array.length; i += chunkSize) {
+    for (let i = 0; i < array?.length || 0; i += chunkSize) {
       chunks.push(array.slice(i, i + chunkSize));
     }
     return chunks;
@@ -492,7 +492,7 @@ export class ChainAnalysisQueries {
    * Cleanup prepared statements
    */
   close(): void {
-    this.preparedStatements.clear();
+    this?.preparedStatements?.clear();
     logger.info("Chain analysis queries cleaned up", "CHAIN_QUERIES");
   }
 }

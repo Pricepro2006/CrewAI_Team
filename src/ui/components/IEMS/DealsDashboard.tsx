@@ -19,24 +19,24 @@ export const DealsDashboard: React.FC<DealsDashboardProps> = ({
     isLoading,
     error,
     refetch,
-  } = trpc.deals.getDeal.useQuery(
+  } = trpc?.deals?.getDeal.useQuery(
     { dealId: selectedDealId },
     {
       enabled: !!selectedDealId,
       retry: false,
-      onError: (error) => {
+      onError: (error: any) => {
         setSearchError(error.message);
       },
     },
   );
 
   // Fetch deal analytics
-  const { data: analytics } = trpc.deals.getDealAnalytics.useQuery();
+  const { data: analytics } = trpc?.deals?.getDealAnalytics.useQuery();
 
   // Handle deal search
   const handleDealSearch = () => {
     const trimmedId = inputDealId.trim();
-    if (trimmedId.length !== 8 || !/^\d+$/.test(trimmedId)) {
+    if (trimmedId?.length || 0 !== 8 || !/^\d+$/.test(trimmedId)) {
       setSearchError("Deal ID must be exactly 8 digits");
       return;
     }
@@ -78,8 +78,8 @@ export const DealsDashboard: React.FC<DealsDashboardProps> = ({
             type="text"
             placeholder="Enter 8-digit Deal ID (e.g., 45791720)"
             value={inputDealId}
-            onChange={(e) => setInputDealId(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleDealSearch()}
+            onChange={(e: any) => setInputDealId(e?.target?.value)}
+            onKeyPress={(e: any) => e.key === "Enter" && handleDealSearch()}
             className="deal-search__input"
             maxLength={8}
           />
@@ -146,7 +146,7 @@ export const DealsDashboard: React.FC<DealsDashboardProps> = ({
           </div>
           <div className="analytics-card">
             <div className="analytics-card__value analytics-card__value--warning">
-              {analytics.expirationAlerts.length}
+              {analytics?.expirationAlerts?.length}
             </div>
             <div className="analytics-card__label">Expiring Soon</div>
           </div>
@@ -165,18 +165,18 @@ export const DealsDashboard: React.FC<DealsDashboardProps> = ({
           <div className="deal-details__header">
             <div className="deal-details__info">
               <h3 className="deal-details__title">
-                Deal {dealData.deal.dealId} v.{dealData.deal.version}
+                Deal {dealData?.deal?.dealId} v.{dealData?.deal?.version}
               </h3>
-              <p className="deal-details__customer">{dealData.deal.customer}</p>
+              <p className="deal-details__customer">{dealData?.deal?.customer}</p>
               <p className="deal-details__metadata">
-                Expires: {formatDate(dealData.deal.endDate)}
-                {dealData.metadata.isExpired ? (
+                Expires: {formatDate(dealData?.deal?.endDate)}
+                {dealData?.metadata?.isExpired ? (
                   <span className="deal-status deal-status--expired">
                     EXPIRED
                   </span>
                 ) : (
                   <span className="deal-status deal-status--active">
-                    {dealData.metadata.daysUntilExpiration} days remaining
+                    {dealData?.metadata?.daysUntilExpiration} days remaining
                   </span>
                 )}
               </p>
@@ -186,13 +186,13 @@ export const DealsDashboard: React.FC<DealsDashboardProps> = ({
                 <div className="deal-summary__item">
                   <span className="deal-summary__label">Total Items:</span>
                   <span className="deal-summary__value">
-                    {dealData.metadata.totalItems}
+                    {dealData?.metadata?.totalItems}
                   </span>
                 </div>
                 <div className="deal-summary__item">
                   <span className="deal-summary__label">Total Value:</span>
                   <span className="deal-summary__value">
-                    {formatCurrency(dealData.metadata.totalValue)}
+                    {formatCurrency(dealData?.metadata?.totalValue)}
                   </span>
                 </div>
               </div>
@@ -215,13 +215,13 @@ export const DealsDashboard: React.FC<DealsDashboardProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {dealData.items.map((item) => (
+                {dealData?.items?.map((item: any) => (
                   <tr key={item.id}>
                     <td className="product-number">{item.productNumber}</td>
                     <td>{item.description || "N/A"}</td>
                     <td>
                       <span
-                        className={`product-family product-family--${item.productFamily.toLowerCase()}`}
+                        className={`product-family product-family--${item?.productFamily?.toLowerCase()}`}
                       >
                         {item.productFamily}
                       </span>
@@ -271,7 +271,7 @@ export const DealsDashboard: React.FC<DealsDashboardProps> = ({
         <div className="top-customers">
           <h4 className="top-customers__title">Top Customers by Value</h4>
           <div className="top-customers__list">
-            {analytics.topCustomers.map((customer, index) => (
+            {analytics?.topCustomers?.map((customer, index) => (
               <div key={index} className="customer-card">
                 <div className="customer-card__name">{customer.name}</div>
                 <div className="customer-card__stats">

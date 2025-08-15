@@ -1,7 +1,7 @@
 import { BaseAgent } from "../base/BaseAgent.js";
 import type { AgentContext, AgentResult } from "../base/AgentTypes.js";
 import { LlamaCppProvider } from "../../llm/LlamaCppProvider.js";
-import { logger } from "../../../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 import { EmailAnalysisCache } from "../../cache/EmailAnalysisCache.js";
 import type { EmailAnalysis } from "./EmailAnalysisTypes.js";
 
@@ -277,9 +277,9 @@ export class EmailAnalysisAgentEnhanced extends BaseAgent {
         metadata: {
           agent: this.name,
           timestamp: new Date().toISOString(),
-          confidence: analysis.deep.confidence,
+          confidence: analysis?.deep?.confidence,
           emailId: email.id,
-          processingTime: analysis.processingMetadata.totalTime,
+          processingTime: analysis?.processingMetadata?.totalTime,
         },
       };
     } catch (error) {
@@ -292,7 +292,7 @@ export class EmailAnalysisAgentEnhanced extends BaseAgent {
     logger.info(`Analyzing email: ${email.subject}`, "EMAIL_AGENT_ENHANCED");
 
     // Check cache first
-    const cached = this.cache.get(email.id);
+    const cached = this?.cache?.get(email.id);
     if (cached) {
       logger.debug(
         `Using cached analysis for email: ${email.id}`,
@@ -302,7 +302,7 @@ export class EmailAnalysisAgentEnhanced extends BaseAgent {
       return {
         quick: {
           workflow: {
-            primary: cached.categories.workflow[0] || "Unknown",
+            primary: cached?.categories?.workflow[0] || "Unknown",
             confidence: cached.confidence,
           },
           priority: cached.priority,
@@ -313,7 +313,7 @@ export class EmailAnalysisAgentEnhanced extends BaseAgent {
         },
         deep: {
           workflow: {
-            primary: cached.categories.workflow[0] || "Unknown",
+            primary: cached?.categories?.workflow[0] || "Unknown",
             confidence: cached.confidence,
           },
           priority: cached.priority,
@@ -322,8 +322,8 @@ export class EmailAnalysisAgentEnhanced extends BaseAgent {
           suggestedState: "New" as const,
           confidence: cached.confidence,
           detailedWorkflow: {
-            primary: cached.categories.workflow[0] || "Unknown",
-            secondary: cached.categories.workflow.slice(1),
+            primary: cached?.categories?.workflow[0] || "Unknown",
+            secondary: cached?.categories?.workflow.slice(1),
             relatedCategories: [],
             confidence: cached.confidence,
           },
@@ -390,36 +390,36 @@ export class EmailAnalysisAgentEnhanced extends BaseAgent {
     // Cache the result - convert to EmailAnalysis format for cache
     const cacheAnalysis: EmailAnalysis = {
       categories: {
-        workflow: result.deep.detailedWorkflow
-          ? [result.deep.detailedWorkflow.primary]
+        workflow: result?.deep?.detailedWorkflow
+          ? [result?.deep?.detailedWorkflow.primary]
           : [],
-        priority: result.deep.priority,
-        intent: result.deep.intent,
-        urgency: result.deep.urgency,
+        priority: result?.deep?.priority,
+        intent: result?.deep?.intent,
+        urgency: result?.deep?.urgency,
       },
-      priority: result.deep.priority,
+      priority: result?.deep?.priority,
       entities: {
-        poNumbers: result.deep.entities.poNumbers?.map((p) => p.value) || [],
+        poNumbers: result?.deep?.entities.poNumbers?.map((p: any) => p.value) || [],
         quoteNumbers:
-          result.deep.entities.quoteNumbers?.map((q) => q.value) || [],
-        orderNumbers: result.deep.entities.orderReferences || [],
+          result?.deep?.entities.quoteNumbers?.map((q: any) => q.value) || [],
+        orderNumbers: result?.deep?.entities.orderReferences || [],
         trackingNumbers: [],
         caseNumbers:
-          result.deep.entities.caseNumbers?.map((c) => c.value) || [],
+          result?.deep?.entities.caseNumbers?.map((c: any) => c.value) || [],
         customers:
-          result.deep.entities.contacts?.external?.map(
-            (c) => c.company || c.name,
+          result?.deep?.entities.contacts?.external?.map(
+            (c: any) => c.company || c.name,
           ) || [],
-        products: result.deep.entities.partNumbers || [],
-        amounts: result.deep.entities.amounts || [],
-        dates: result.deep.entities.dates || [],
+        products: result?.deep?.entities.partNumbers || [],
+        amounts: result?.deep?.entities.amounts || [],
+        dates: result?.deep?.entities.dates || [],
       },
-      workflowState: result.deep.workflowState.current,
-      suggestedActions: result.deep.actionItems?.map((a) => a.action) || [],
-      confidence: result.deep.confidence,
-      summary: result.deep.contextualSummary,
+      workflowState: result?.deep?.workflowState.current,
+      suggestedActions: result?.deep?.actionItems?.map((a: any) => a.action) || [],
+      confidence: result?.deep?.confidence,
+      summary: result?.deep?.contextualSummary,
     };
-    this.cache.set(email.id, cacheAnalysis);
+    this?.cache?.set(email.id, cacheAnalysis);
 
     // Track pattern for learning
     await this.trackWorkflowPattern(email, result);
@@ -431,7 +431,7 @@ export class EmailAnalysisAgentEnhanced extends BaseAgent {
     const prompt = `Analyze this TD SYNNEX email for quick categorization. You must respond with ONLY a valid JSON object.
 
 Subject: ${email.subject}
-From: ${email.from.emailAddress.address}
+From: ${email?.from?.emailAddress.address}
 Preview: ${email.bodyPreview || email.body?.substring(0, 500)}
 Has Attachments: ${email.hasAttachments ? "Yes" : "No"}
 
@@ -465,7 +465,7 @@ Response format:
 }`;
 
     try {
-      const response = await this.quickProvider.generate(prompt, {
+      const response = await this?.quickProvider?.generate(prompt, {
         temperature: 0.1,
         format: "json",
       });
@@ -504,8 +504,8 @@ Response format:
     const prompt = `Perform deep TD SYNNEX workflow analysis of this email.
 
 Subject: ${email.subject}
-From: ${email.from.emailAddress.address}
-To: ${email.to?.map((t) => t.emailAddress.address).join(", ") || "N/A"}
+From: ${email?.from?.emailAddress.address}
+To: ${email.to?.map((t: any) => t?.emailAddress?.address).join(", ") || "N/A"}
 Body: ${email.body || email.bodyPreview}
 Quick Analysis: ${JSON.stringify(quickAnalysis)}
 Extracted Entities: ${JSON.stringify(entities)}
@@ -522,7 +522,7 @@ Analyze and provide:
 Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approvals, renewals, vendors.`;
 
     try {
-      const response = await this.deepProvider.generate(prompt, {
+      const response = await this?.deepProvider?.generate(prompt, {
         temperature: 0.2,
         maxTokens: 1000,
       });
@@ -568,11 +568,11 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
     };
 
     // Extract PO Numbers with format detection
-    for (const pattern of this.patterns.poNumber) {
+    for (const pattern of this?.patterns?.poNumber) {
       const matches = this.extractMatchesWithContext(text, pattern);
-      matches.forEach((match) => {
+      matches.forEach((match: any) => {
         const format = this.detectPOFormat(match.value);
-        entities.poNumbers.push({
+        entities?.poNumbers?.push({
           value: match.value,
           format,
           context: match.context,
@@ -581,11 +581,11 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
     }
 
     // Extract Quote Numbers with type detection
-    for (const [index, pattern] of this.patterns.quoteNumber.entries()) {
+    for (const [index, pattern] of this?.patterns?.quoteNumber.entries()) {
       const matches = this.extractMatchesWithContext(text, pattern);
       const types = ["CAS", "TS", "WQ", "other"];
-      matches.forEach((match) => {
-        entities.quoteNumbers.push({
+      matches.forEach((match: any) => {
+        entities?.quoteNumbers?.push({
           value: match.value,
           type: types[index] as any,
           context: match.context,
@@ -594,11 +594,11 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
     }
 
     // Extract Case Numbers with type detection
-    for (const [index, pattern] of this.patterns.caseNumber.entries()) {
+    for (const [index, pattern] of this?.patterns?.caseNumber.entries()) {
       const matches = this.extractMatchesWithContext(text, pattern);
       const types = ["INC", "order", "tracking"];
-      matches.forEach((match) => {
-        entities.caseNumbers.push({
+      matches.forEach((match: any) => {
+        entities?.caseNumbers?.push({
           value: match.value,
           type: (types[index] || "other") as any,
           context: match.context,
@@ -607,31 +607,31 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
     }
 
     // Extract other entities
-    entities.partNumbers = this.extractMatches(text, this.patterns.partNumber);
+    entities.partNumbers = this.extractMatches(text, this?.patterns?.partNumber);
     entities.orderReferences = this.extractMatches(
       text,
-      this.patterns.orderReference,
+      this?.patterns?.orderReference,
     );
 
     // Extract amounts with context
     const amountMatches = this.extractMatchesWithContext(
       text,
-      this.patterns.amount,
+      this?.patterns?.amount,
     );
-    entities.amounts = amountMatches.map((match) => {
+    entities.amounts = amountMatches?.map((match: any) => {
       const value = parseFloat(
-        match.value.replace(/[$,]/g, "").replace(/\s*[A-Z]{3}$/, ""),
+        match?.value?.replace(/[$,]/g, "").replace(/\s*[A-Z]{3}$/, ""),
       );
-      const currency = match.value.match(/[A-Z]{3}$/)?.[0] || "USD";
+      const currency = match?.value?.match(/[A-Z]{3}$/)?.[0] || "USD";
       return { value, currency, context: match.context };
     });
 
     // Extract dates with type detection
     const dateMatches = this.extractMatchesWithContext(
       text,
-      this.patterns.date,
+      this?.patterns?.date,
     );
-    entities.dates = dateMatches.map((match) => ({
+    entities.dates = dateMatches?.map((match: any) => ({
       date: match.value,
       type: this.detectDateType(match.context),
       context: match.context,
@@ -652,9 +652,9 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
 
     while ((match = pattern.exec(text)) !== null) {
       const value = match[1] || match[0];
-      const index = match.index;
+      const index = match?.index;
       const contextStart = Math.max(0, index - 50);
-      const contextEnd = Math.min(text.length, index + match[0].length + 50);
+      const contextEnd = Math.min(text?.length || 0, index + match[0].length + 50);
       const context = text.substring(contextStart, contextEnd).trim();
 
       matches.push({ value, context });
@@ -712,19 +712,19 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
 
     // Extract from email metadata
     const sender = {
-      name: email.from.emailAddress.name,
-      email: email.from.emailAddress.address,
+      name: email?.from?.emailAddress.name,
+      email: email?.from?.emailAddress.address,
       role: "sender",
     };
 
-    if (internalDomains.some((domain) => sender.email.includes(domain))) {
-      contacts.internal.push({
+    if (internalDomains.some((domain: any) => sender?.email?.includes(domain))) {
+      contacts?.internal?.push({
         name: sender.name,
         role: sender.role,
         email: sender.email,
       });
     } else {
-      contacts.external.push({
+      contacts?.external?.push({
         name: sender.name,
         company: this.extractCompanyFromEmail(sender.email),
         email: sender.email,
@@ -735,9 +735,9 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
     const emailPattern = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
     const emailMatches = text.match(emailPattern) || [];
 
-    emailMatches.forEach((email) => {
+    emailMatches.forEach((email: any) => {
       if (!email.includes(sender.email)) {
-        const isInternal = internalDomains.some((domain) =>
+        const isInternal = internalDomains.some((domain: any) =>
           email.includes(domain),
         );
         const contact = {
@@ -746,13 +746,13 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
         };
 
         if (isInternal) {
-          contacts.internal.push({
+          contacts?.internal?.push({
             name: contact.name,
             role: "mentioned",
             email: contact.email,
           });
         } else {
-          contacts.external.push({
+          contacts?.external?.push({
             name: contact.name,
             company: this.extractCompanyFromEmail(email),
             email: contact.email,
@@ -797,7 +797,7 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
     const elapsed = now - received;
     const slaMillis = sla.hours * 3600000;
 
-    return actionItems.map((item) => {
+    return actionItems?.map((item: any) => {
       const remaining = slaMillis - elapsed;
 
       if (remaining < 0) {
@@ -826,7 +826,7 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
     const analysis: DeepWorkflowAnalysis = {
       ...quickAnalysis,
       detailedWorkflow: {
-        primary: quickAnalysis.workflow.primary,
+        primary: quickAnalysis?.workflow?.primary,
         secondary: [],
         relatedCategories: [],
         confidence: 0.9,
@@ -853,7 +853,7 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
     while ((actionMatch = actionPattern.exec(response)) !== null) {
       const actionText = actionMatch[1]?.trim();
       if (actionText) {
-        analysis.actionItems.push({
+        analysis?.actionItems?.push({
           action: actionText,
           type: this.detectActionType(actionText),
           priority: this.mapPriorityToNumber(quickAnalysis.priority),
@@ -877,10 +877,10 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
 
     // Detect business impact
     if (/urgent|critical|immediate|asap/i.test(response)) {
-      analysis.businessImpact.customerSatisfaction = "negative";
-      analysis.businessImpact.urgencyReason = "Customer escalation detected";
+      analysis?.businessImpact?.customerSatisfaction = "negative";
+      analysis?.businessImpact?.urgencyReason = "Customer escalation detected";
     } else if (/thank|appreciate|great|excellent/i.test(response)) {
-      analysis.businessImpact.customerSatisfaction = "positive";
+      analysis?.businessImpact?.customerSatisfaction = "positive";
     }
 
     // Extract revenue if mentioned
@@ -888,7 +888,7 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
       /(?:revenue|value|worth).*?\$?([\d,]+(?:\.\d{2})?)/i,
     );
     if (revenueMatch?.[1]) {
-      analysis.businessImpact.revenue = parseFloat(
+      analysis?.businessImpact?.revenue = parseFloat(
         revenueMatch[1].replace(/,/g, ""),
       );
     }
@@ -926,31 +926,31 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
   ): string {
     const parts = [];
 
-    if (entities.poNumbers.length > 0 && entities.poNumbers[0]) {
+    if (entities?.poNumbers?.length > 0 && entities.poNumbers[0]) {
       parts.push(`PO ${entities.poNumbers[0].value}`);
     }
-    if (entities.quoteNumbers.length > 0 && entities.quoteNumbers[0]) {
+    if (entities?.quoteNumbers?.length > 0 && entities.quoteNumbers[0]) {
       parts.push(`Quote ${entities.quoteNumbers[0].value}`);
     }
-    if (entities.caseNumbers.length > 0 && entities.caseNumbers[0]) {
+    if (entities?.caseNumbers?.length > 0 && entities.caseNumbers[0]) {
       parts.push(`Case ${entities.caseNumbers[0].value}`);
     }
 
     const entityString =
-      parts.length > 0 ? `regarding ${parts.join(", ")}` : "";
+      parts?.length || 0 > 0 ? `regarding ${parts.join(", ")}` : "";
 
-    return `${analysis.workflow.primary} ${analysis.intent.toLowerCase()} ${entityString}. Priority: ${analysis.priority}, Action needed within ${analysis.urgency}.`.trim();
+    return `${analysis?.workflow?.primary} ${analysis?.intent?.toLowerCase()} ${entityString}. Priority: ${analysis.priority}, Action needed within ${analysis.urgency}.`.trim();
   }
 
   private async extractActionSummary(
     email: Email,
     analysis: DeepWorkflowAnalysis,
   ): Promise<string> {
-    if (analysis.actionItems.length === 0) {
+    if (analysis?.actionItems?.length === 0) {
       return "No specific action required";
     }
 
-    const primaryAction = analysis.actionItems.sort(
+    const primaryAction = analysis?.actionItems?.sort(
       (a, b) => a.priority - b.priority,
     )[0];
 
@@ -962,26 +962,26 @@ Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approva
     const prompt = `Create a concise action summary (max 100 characters) for this email action:
 Action: ${primaryAction.action}
 Type: ${primaryAction.type}
-Workflow: ${analysis.detailedWorkflow.primary}
+Workflow: ${analysis?.detailedWorkflow?.primary}
 Priority: ${analysis.priority}
 
 Summary:`;
 
     try {
-      const summary = await this.quickProvider.generate(prompt, {
+      const summary = await this?.quickProvider?.generate(prompt, {
         temperature: 0.3,
         maxTokens: 50,
       });
 
-      return summary.response.trim().substring(0, 100);
+      return summary?.response?.trim().substring(0, 100);
     } catch (error) {
       // Fallback to truncated action
-      return primaryAction.action.substring(0, 100);
+      return primaryAction?.action?.substring(0, 100);
     }
   }
 
   private fallbackQuickCategorization(email: Email): QuickAnalysis {
-    const subject = email.subject.toLowerCase();
+    const subject = email?.subject?.toLowerCase();
     const preview = (email.bodyPreview || "").toLowerCase();
     const content = subject + " " + preview;
 
@@ -1066,9 +1066,9 @@ Summary:`;
     return {
       ...quickAnalysis,
       detailedWorkflow: {
-        primary: quickAnalysis.workflow.primary,
+        primary: quickAnalysis?.workflow?.primary,
         secondary: this.inferSecondaryWorkflows(
-          quickAnalysis.workflow.primary,
+          quickAnalysis?.workflow?.primary,
           entities,
         ),
         relatedCategories: [],
@@ -1102,17 +1102,17 @@ Summary:`;
 
     // Based on entity presence
     if (
-      entities.orderReferences.some((ref) =>
+      entities?.orderReferences?.some((ref: any) =>
         /track|ship|fedex|ups|1z/i.test(ref),
       ) &&
       primary !== "Shipping/Logistics"
     ) {
       secondary.push("Shipping/Logistics");
     }
-    if (entities.quoteNumbers.length > 0 && primary !== "Quote Processing") {
+    if (entities?.quoteNumbers?.length > 0 && primary !== "Quote Processing") {
       secondary.push("Quote Processing");
     }
-    if (entities.poNumbers.length > 0 && primary !== "Order Management") {
+    if (entities?.poNumbers?.length > 0 && primary !== "Order Management") {
       secondary.push("Order Management");
     }
 
@@ -1133,7 +1133,7 @@ Summary:`;
       });
     }
 
-    if (entities.poNumbers.length > 0 && entities.poNumbers[0]) {
+    if (entities?.poNumbers?.length > 0 && entities.poNumbers[0]) {
       actions.push({
         action: `Process PO ${entities.poNumbers[0].value}`,
         type: "task",
@@ -1141,7 +1141,7 @@ Summary:`;
       });
     }
 
-    if (entities.quoteNumbers.length > 0 && entities.quoteNumbers[0]) {
+    if (entities?.quoteNumbers?.length > 0 && entities.quoteNumbers[0]) {
       actions.push({
         action: `Review quote ${entities.quoteNumbers[0].value}`,
         type: "task",
@@ -1158,17 +1158,17 @@ Summary:`;
   ): Promise<void> {
     // Track patterns for future learning (would typically write to database)
     logger.debug("Tracking workflow pattern", "EMAIL_AGENT_ENHANCED", {
-      workflow: analysis.deep.detailedWorkflow.primary,
-      entities: Object.keys(analysis.deep.entities).reduce(
+      workflow: analysis?.deep?.detailedWorkflow.primary,
+      entities: Object.keys(analysis?.deep?.entities).reduce(
         (acc, key) => {
-          const entityValue = (analysis.deep.entities as any)[key];
-          acc[key] = Array.isArray(entityValue) ? entityValue.length : 0;
+          const entityValue = (analysis?.deep?.entities as any)[key];
+          acc[key] = Array.isArray(entityValue) ? entityValue?.length || 0 : 0;
           return acc;
         },
         {} as Record<string, number>,
       ),
-      confidence: analysis.deep.confidence,
-      processingTime: analysis.processingMetadata.totalTime,
+      confidence: analysis?.deep?.confidence,
+      processingTime: analysis?.processingMetadata?.totalTime,
     });
   }
 
@@ -1178,21 +1178,21 @@ Summary:`;
     return `=== TD SYNNEX Email Analysis Complete ===
 
 QUICK ANALYSIS (${processingMetadata.stage1Time}ms):
-- Workflow: ${quick.workflow.primary} (${(quick.workflow.confidence * 100).toFixed(1)}% confidence)
+- Workflow: ${quick?.workflow?.primary} (${(quick?.workflow?.confidence * 100).toFixed(1)}% confidence)
 - Priority: ${quick.priority}
 - Intent: ${quick.intent}
 - Urgency: ${quick.urgency}
 - Suggested State: ${quick.suggestedState}
 
 DEEP ANALYSIS (${processingMetadata.stage2Time}ms):
-- Primary Workflow: ${deep.detailedWorkflow.primary}
-- Secondary Workflows: ${deep.detailedWorkflow.secondary.join(", ") || "None"}
-- Confidence: ${(deep.detailedWorkflow.confidence * 100).toFixed(1)}%
+- Primary Workflow: ${deep?.detailedWorkflow?.primary}
+- Secondary Workflows: ${deep?.detailedWorkflow?.secondary.join(", ") || "None"}
+- Confidence: ${(deep?.detailedWorkflow?.confidence * 100).toFixed(1)}%
 
 WORKFLOW STATE:
-- Current: ${deep.workflowState.current}
-- Next: ${deep.workflowState.suggestedNext}
-${deep.workflowState.blockers && deep.workflowState.blockers.length > 0 ? `- Blockers: ${deep.workflowState.blockers.join(", ")}` : ""}
+- Current: ${deep?.workflowState?.current}
+- Next: ${deep?.workflowState?.suggestedNext}
+${deep?.workflowState?.blockers && deep?.workflowState?.blockers?.length || 0 > 0 ? `- Blockers: ${deep?.workflowState?.blockers.join(", ")}` : ""}
 
 ACTION SUMMARY: ${actionSummary}
 
@@ -1209,22 +1209,22 @@ ${deep.actionItems
   .join("\n")}
 
 EXTRACTED ENTITIES:
-- PO Numbers: ${deep.entities.poNumbers.map((po) => `${po.value} (${po.format})`).join(", ") || "None"}
-- Quote Numbers: ${deep.entities.quoteNumbers.map((q) => `${q.value} (${q.type})`).join(", ") || "None"}
-- Case Numbers: ${deep.entities.caseNumbers.map((c) => `${c.value} (${c.type})`).join(", ") || "None"}
-- Part Numbers: ${deep.entities.partNumbers.join(", ") || "None"}
-- Order References: ${deep.entities.orderReferences.join(", ") || "None"}
-- Internal Contacts: ${deep.entities.contacts.internal.map((c) => c.name).join(", ") || "None"}
-- External Contacts: ${deep.entities.contacts.external.map((c) => `${c.name} (${c.company})`).join(", ") || "None"}
+- PO Numbers: ${deep?.entities?.poNumbers?.map((po: any) => `${po.value} (${po.format})`).join(", ") || "None"}
+- Quote Numbers: ${deep?.entities?.quoteNumbers?.map((q: any) => `${q.value} (${q.type})`).join(", ") || "None"}
+- Case Numbers: ${deep?.entities?.caseNumbers?.map((c: any) => `${c.value} (${c.type})`).join(", ") || "None"}
+- Part Numbers: ${deep?.entities?.partNumbers.join(", ") || "None"}
+- Order References: ${deep?.entities?.orderReferences.join(", ") || "None"}
+- Internal Contacts: ${deep?.entities?.contacts.internal?.map((c: any) => c.name).join(", ") || "None"}
+- External Contacts: ${deep?.entities?.contacts.external?.map((c: any) => `${c.name} (${c.company})`).join(", ") || "None"}
 
 BUSINESS IMPACT:
-- Customer Satisfaction: ${deep.businessImpact.customerSatisfaction}
-${deep.businessImpact.revenue ? `- Revenue Impact: $${deep.businessImpact.revenue.toLocaleString()}` : ""}
-${deep.businessImpact.urgencyReason ? `- Urgency Reason: ${deep.businessImpact.urgencyReason}` : ""}
+- Customer Satisfaction: ${deep?.businessImpact?.customerSatisfaction}
+${deep?.businessImpact?.revenue ? `- Revenue Impact: $${deep?.businessImpact?.revenue.toLocaleString()}` : ""}
+${deep?.businessImpact?.urgencyReason ? `- Urgency Reason: ${deep?.businessImpact?.urgencyReason}` : ""}
 
 SUMMARY: ${deep.contextualSummary}
 
 Total Processing Time: ${processingMetadata.totalTime}ms
-Models Used: ${processingMetadata.models.stage1} → ${processingMetadata.models.stage2}`;
+Models Used: ${processingMetadata?.models?.stage1} → ${processingMetadata?.models?.stage2}`;
   }
 }

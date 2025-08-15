@@ -1,6 +1,6 @@
 import { ChromaClient, type Collection } from "chromadb";
 import { EmbeddingService } from "./EmbeddingService.js";
-import { MODEL_CONFIG } from "../../config/models.config.js";
+import { MODEL_CONFIG } from "../../config/models?.config.js";
 import type {
   Document,
   QueryResult,
@@ -36,7 +36,7 @@ export class VectorStore {
     this.client = new ChromaClient(clientConfig);
 
     this.embeddingService = new EmbeddingService({
-      model: MODEL_CONFIG.models.embedding,
+      model: MODEL_CONFIG?.models?.embedding,
       baseUrl: config.baseUrl || "http://localhost:11434",
     });
   }
@@ -44,17 +44,17 @@ export class VectorStore {
   async initialize(): Promise<void> {
     try {
       // First check if ChromaDB is running using v2 API
-      await this.client.version();
+      await this?.client?.version();
 
       // Try to get existing collection first
       try {
-        this.collection = await this.client.getCollection({
-          name: this.config.collectionName,
+        this.collection = await this?.client?.getCollection({
+          name: this?.config?.collectionName,
         } as any);
       } catch (getError) {
         // Collection doesn't exist, create it
-        this.collection = await this.client.createCollection({
-          name: this.config.collectionName,
+        this.collection = await this?.client?.createCollection({
+          name: this?.config?.collectionName,
           metadata: {
             description: "Knowledge base for AI agents",
             created_at: new Date().toISOString(),
@@ -85,24 +85,24 @@ export class VectorStore {
       throw new Error("Vector store not initialized");
     }
 
-    if (documents.length === 0) return;
+    if (documents?.length || 0 === 0) return;
 
     // Generate embeddings
-    const embeddings = await this.embeddingService.embedBatch(
-      documents.map((d) => d.content),
+    const embeddings = await this?.embeddingService?.embedBatch(
+      documents?.map((d: any) => d.content),
     );
 
     // Prepare data for ChromaDB
-    const ids = documents.map((d) => d.id);
-    const metadatas = documents.map((d) => ({
+    const ids = documents?.map((d: any) => d.id);
+    const metadatas = documents?.map((d: any) => ({
       ...d.metadata,
-      content_length: d.content.length,
+      content_length: d?.content?.length,
       indexed_at: new Date().toISOString(),
     }));
-    const contents = documents.map((d) => d.content);
+    const contents = documents?.map((d: any) => d.content);
 
     // Add to collection
-    await this.collection.add({
+    await this?.collection?.add({
       ids,
       embeddings,
       metadatas: metadatas as any[], // ChromaDB type mismatch
@@ -116,10 +116,10 @@ export class VectorStore {
     }
 
     // Generate query embedding
-    const queryEmbedding = await this.embeddingService.embed(query);
+    const queryEmbedding = await this?.embeddingService?.embed(query);
 
     // Search in collection
-    const results = await this.collection.query({
+    const results = await this?.collection?.query({
       queryEmbeddings: [queryEmbedding],
       nResults: limit,
       include: ["metadatas", "documents", "distances"] as any,
@@ -137,12 +137,12 @@ export class VectorStore {
       throw new Error("Vector store not initialized");
     }
 
-    const queryEmbedding = await this.embeddingService.embed(query);
+    const queryEmbedding = await this?.embeddingService?.embed(query);
 
     // Convert filter to ChromaDB where clause
     const whereClause = this.buildWhereClause(filter);
 
-    const results = await this.collection.query({
+    const results = await this?.collection?.query({
       queryEmbeddings: [queryEmbedding],
       nResults: limit,
       where: whereClause,
@@ -158,12 +158,12 @@ export class VectorStore {
     }
 
     try {
-      const result = await this.collection.get({
+      const result = await this?.collection?.get({
         ids: [documentId],
         include: ["metadatas", "documents"] as any,
       });
 
-      if (result.ids.length === 0) {
+      if (result?.ids?.length === 0) {
         return null;
       }
 
@@ -188,13 +188,13 @@ export class VectorStore {
     }
 
     // Find all chunks for this source
-    const results = await this.collection.get({
+    const results = await this?.collection?.get({
       where: { sourceId },
       include: ["ids"] as any,
     });
 
-    if (results.ids.length > 0) {
-      await this.collection.delete({
+    if (results?.ids?.length > 0) {
+      await this?.collection?.delete({
         ids: results.ids,
       });
     }
@@ -209,12 +209,12 @@ export class VectorStore {
     }
 
     // Note: ChromaDB doesn't have native pagination, so we get all and slice
-    const results = await this.collection.get({
+    const results = await this?.collection?.get({
       include: ["metadatas", "documents"] as any,
     });
 
     const documents: Document[] = [];
-    for (let i = 0; i < results.ids.length; i++) {
+    for (let i = 0; i < results?.ids?.length; i++) {
       const metadata = results.metadatas?.[i] || {};
       documents.push({
         id: results.ids[i] || "",
@@ -235,13 +235,13 @@ export class VectorStore {
       throw new Error("Vector store not initialized");
     }
 
-    const results = await this.collection.get({
+    const results = await this?.collection?.get({
       include: [],
     });
 
     // Get unique source IDs
     const sourceIds = new Set(
-      results.metadatas?.map((m) => m?.sourceId).filter(Boolean) || [],
+      results.metadatas?.map((m: any) => m?.sourceId).filter(Boolean) || [],
     );
 
     return sourceIds.size;
@@ -252,16 +252,16 @@ export class VectorStore {
       throw new Error("Vector store not initialized");
     }
 
-    const results = await this.collection.get({
+    const results = await this?.collection?.get({
       include: [],
     });
 
-    return results.ids.length;
+    return results?.ids?.length;
   }
 
   async getCollections(): Promise<string[]> {
-    const collections = await this.client.listCollections();
-    return collections.map((c: any) => c.name);
+    const collections = await this?.client?.listCollections();
+    return collections?.map((c: any) => c.name);
   }
 
   async clear(): Promise<void> {
@@ -270,8 +270,8 @@ export class VectorStore {
     }
 
     // Delete the collection
-    await this.client.deleteCollection({
-      name: this.config.collectionName,
+    await this?.client?.deleteCollection({
+      name: this?.config?.collectionName,
     });
 
     // Recreate it
@@ -281,7 +281,7 @@ export class VectorStore {
   private formatResults(chromaResults: any): QueryResult[] {
     const results: QueryResult[] = [];
 
-    if (!chromaResults.ids || chromaResults.ids.length === 0) {
+    if (!chromaResults.ids || chromaResults?.ids?.length === 0) {
       return results;
     }
 

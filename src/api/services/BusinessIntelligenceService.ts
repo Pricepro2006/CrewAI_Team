@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { logger } from '../../utils/logger.js';
-import type { EmailRow, EmailWithAnalysis } from '../../types/unified-email.types.js';
+import type { EmailRow, EmailWithAnalysis } from '../../types/unified-email?.types.js';
 
 export interface BusinessIntelligenceSummary {
   totalEmailsAnalyzed: number;
@@ -162,10 +162,10 @@ export class BusinessIntelligenceService {
 
     if (options.timeRange) {
       query += ' AND analyzed_at BETWEEN ? AND ?';
-      params.push(options.timeRange.start.toISOString(), options.timeRange.end.toISOString());
+      params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
-    const summaryRow = this.db.prepare(query).get(...params) as any;
+    const summaryRow = this?.db?.prepare(query).get(...params) as any;
 
     // Get unique entities
     const entitiesQuery = `
@@ -178,7 +178,7 @@ export class BusinessIntelligenceService {
       ${options.timeRange ? 'AND analyzed_at BETWEEN ? AND ?' : ''}
     `;
 
-    const emails = this.db.prepare(entitiesQuery).all(...params) as any[];
+    const emails = this?.db?.prepare(entitiesQuery).all(...params) as any[];
 
     const uniquePOs = new Set<string>();
     const uniqueQuotes = new Set<string>();
@@ -193,14 +193,14 @@ export class BusinessIntelligenceService {
         
         // PO numbers
         if (entities.po_numbers?.length) {
-          entities.po_numbers.forEach((po: string) => {
+          entities?.po_numbers?.forEach((po: string) => {
             if (po && po !== 'None') uniquePOs.add(po);
           });
         }
 
         // Quote numbers
         if (entities.quote_numbers?.length) {
-          entities.quote_numbers.forEach((quote: string) => {
+          entities?.quote_numbers?.forEach((quote: string) => {
             if (quote && quote !== 'None') uniqueQuotes.add(quote);
           });
         }
@@ -208,12 +208,12 @@ export class BusinessIntelligenceService {
         // Customers
         if (entities.customers) {
           if (Array.isArray(entities.customers)) {
-            entities.customers.forEach((customer: any) => {
+            entities?.customers?.forEach((customer: any) => {
               const name = typeof customer === 'string' ? customer : customer?.name;
               if (name) uniqueCustomers.add(name);
             });
-          } else if (entities.customers.name) {
-            uniqueCustomers.add(entities.customers.name);
+          } else if (entities?.customers?.name) {
+            uniqueCustomers.add(entities?.customers?.name);
           }
         }
 
@@ -226,7 +226,7 @@ export class BusinessIntelligenceService {
         // Try to extract value from phase2_result
         const phase2 = JSON.parse(email.phase2_result || '{}');
         if (phase2.business_intelligence?.estimated_value) {
-          totalValue += phase2.business_intelligence.estimated_value;
+          totalValue += phase2?.business_intelligence?.estimated_value;
         }
 
       } catch (e) {
@@ -240,7 +240,7 @@ export class BusinessIntelligenceService {
       uniquePOCount: uniquePOs.size,
       uniqueQuoteCount: uniqueQuotes.size,
       uniqueCustomerCount: uniqueCustomers.size,
-      highPriorityRate: emails.length > 0 ? (highPriorityCount / emails.length) * 100 : 0,
+      highPriorityRate: emails?.length || 0 > 0 ? (highPriorityCount / emails?.length || 0) * 100 : 0,
       avgConfidenceScore: summaryRow.avgConfidence || 0,
       processingTimeRange: {
         start: summaryRow.firstProcessed || new Date().toISOString(),
@@ -265,12 +265,12 @@ export class BusinessIntelligenceService {
 
     if (options.timeRange) {
       query += ' AND analyzed_at BETWEEN ? AND ?';
-      params.push(options.timeRange.start.toISOString(), options.timeRange.end.toISOString());
+      params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
     query += ' GROUP BY workflow_state';
 
-    const rows = this.db.prepare(query).all(...params) as any[];
+    const rows = this?.db?.prepare(query).all(...params) as any[];
     
     const workflowMap = new Map<string, { count: number; totalValue: number }>();
     let totalCount = 0;
@@ -290,7 +290,7 @@ export class BusinessIntelligenceService {
         
         // Extract value if available
         if (workflow.business_intelligence?.estimated_value) {
-          data.totalValue += workflow.business_intelligence.estimated_value * row.count;
+          data.totalValue += workflow?.business_intelligence?.estimated_value * row.count;
         }
       } catch (e) {
         // Handle invalid JSON
@@ -330,10 +330,10 @@ export class BusinessIntelligenceService {
 
     if (options.timeRange) {
       query += ' AND analyzed_at BETWEEN ? AND ?';
-      params.push(options.timeRange.start.toISOString(), options.timeRange.end.toISOString());
+      params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
-    const rows = this.db.prepare(query).all(...params) as any[];
+    const rows = this?.db?.prepare(query).all(...params) as any[];
     
     const priorityMap = new Map<string, number>([
       ['Critical', 0],
@@ -363,7 +363,7 @@ export class BusinessIntelligenceService {
     }
 
     const priorityOrder = ['Critical', 'High', 'Medium', 'Low', 'Unknown'];
-    return priorityOrder.map(level => ({
+    return priorityOrder?.map(level => ({
       level: level as any,
       count: priorityMap.get(level) || 0,
       percentage: totalCount > 0 ? ((priorityMap.get(level) || 0) / totalCount) * 100 : 0,
@@ -390,10 +390,10 @@ export class BusinessIntelligenceService {
 
     if (options.timeRange) {
       query += ' AND analyzed_at BETWEEN ? AND ?';
-      params.push(options.timeRange.start.toISOString(), options.timeRange.end.toISOString());
+      params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
-    const emails = this.db.prepare(query).all(...params) as any[];
+    const emails = this?.db?.prepare(query).all(...params) as any[];
     
     const customerMap = new Map<string, {
       emailCount: number;
@@ -413,12 +413,12 @@ export class BusinessIntelligenceService {
         const customers: string[] = [];
         if (entities.customers) {
           if (Array.isArray(entities.customers)) {
-            entities.customers.forEach((c: any) => {
+            entities?.customers?.forEach((c: any) => {
               const name = typeof c === 'string' ? c : c?.name;
               if (name) customers.push(name);
             });
-          } else if (entities.customers.name) {
-            customers.push(entities.customers.name);
+          } else if (entities?.customers?.name) {
+            customers.push(entities?.customers?.name);
           }
         }
 
@@ -438,15 +438,15 @@ export class BusinessIntelligenceService {
           data.emailCount++;
           
           if (workflow.type) {
-            data.workflowTypes.add(workflow.type);
+            data?.workflowTypes?.add(workflow.type);
           }
           
           if (phase2.business_intelligence?.estimated_value) {
-            data.totalValue += phase2.business_intelligence.estimated_value;
+            data.totalValue += phase2?.business_intelligence?.estimated_value;
           }
           
           if (phase2.processing_time) {
-            data.processingTimes.push(phase2.processing_time);
+            data?.processingTimes?.push(phase2.processing_time);
           }
           
           if (email.analyzed_at > data.lastInteraction) {
@@ -464,8 +464,8 @@ export class BusinessIntelligenceService {
         name,
         emailCount: data.emailCount,
         totalValue: data.totalValue,
-        avgResponseTime: data.processingTimes.length > 0
-          ? data.processingTimes.reduce((a, b) => a + b, 0) / data.processingTimes.length
+        avgResponseTime: data?.processingTimes?.length > 0
+          ? data?.processingTimes?.reduce((a: any, b: any) => a + b, 0) / data?.processingTimes?.length
           : 0,
         workflowTypes: Array.from(data.workflowTypes),
         lastInteraction: data.lastInteraction,
@@ -494,12 +494,12 @@ export class BusinessIntelligenceService {
 
     if (options.timeRange) {
       query += ' AND analyzed_at BETWEEN ? AND ?';
-      params.push(options.timeRange.start.toISOString(), options.timeRange.end.toISOString());
+      params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
     query += ' ORDER BY analyzed_at DESC LIMIT 500';
 
-    const emails = this.db.prepare(query).all(...params) as any[];
+    const emails = this?.db?.prepare(query).all(...params) as any[];
     
     const poNumbers = new Set<string>();
     const quoteNumbers = new Set<string>();
@@ -513,8 +513,8 @@ export class BusinessIntelligenceService {
         
         // Extract PO numbers
         if (entities.po_numbers?.length) {
-          entities.po_numbers.forEach((po: string) => {
-            if (po && po !== 'None' && po.length > 3) {
+          entities?.po_numbers?.forEach((po: string) => {
+            if (po && po !== 'None' && po?.length || 0 > 3) {
               poNumbers.add(po);
             }
           });
@@ -522,8 +522,8 @@ export class BusinessIntelligenceService {
 
         // Extract quote numbers
         if (entities.quote_numbers?.length) {
-          entities.quote_numbers.forEach((quote: string) => {
-            if (quote && quote !== 'None' && quote.length > 3) {
+          entities?.quote_numbers?.forEach((quote: string) => {
+            if (quote && quote !== 'None' && quote?.length || 0 > 3) {
               quoteNumbers.add(quote);
             }
           });
@@ -537,7 +537,7 @@ export class BusinessIntelligenceService {
             
           highValueItems.push({
             type: workflow.type || 'Unknown',
-            value: phase2.business_intelligence.estimated_value,
+            value: phase2?.business_intelligence?.estimated_value,
             customer: typeof customer === 'string' ? customer : customer?.name || 'Unknown',
             date: email.analyzed_at,
             emailId: email.id,
@@ -585,10 +585,10 @@ export class BusinessIntelligenceService {
 
     if (options.timeRange) {
       query += ' AND analyzed_at BETWEEN ? AND ?';
-      params.push(options.timeRange.start.toISOString(), options.timeRange.end.toISOString());
+      params.push(options?.timeRange?.start.toISOString(), options?.timeRange?.end.toISOString());
     }
 
-    const metrics = this.db.prepare(query).get(...params) as any;
+    const metrics = this?.db?.prepare(query).get(...params) as any;
 
     return {
       avgConfidence: metrics.avgConfidence || 0,
@@ -608,7 +608,7 @@ export class BusinessIntelligenceService {
    * Get cached data if not expired
    */
   private getCached(key: string): any | null {
-    const cached = this.cache.get(key);
+    const cached = this?.cache?.get(key);
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
       logger.debug('Returning cached BI data', 'BI_SERVICE', { key });
       return cached.data;
@@ -620,15 +620,15 @@ export class BusinessIntelligenceService {
    * Set cache data
    */
   private setCache(key: string, data: any): void {
-    this.cache.set(key, { data, timestamp: Date.now() });
+    this?.cache?.set(key, { data, timestamp: Date.now() });
     
     // Clean old cache entries
-    if (this.cache.size > 100) {
-      const entries = Array.from(this.cache.entries())
+    if (this?.cache?.size > 100) {
+      const entries = Array.from(this?.cache?.entries())
         .sort((a, b) => a[1].timestamp - b[1].timestamp);
-      if (entries.length > 0 && entries[0]) {
+      if (entries?.length || 0 > 0 && entries[0]) {
         const oldestKey = entries[0][0];
-        this.cache.delete(oldestKey);
+        this?.cache?.delete(oldestKey);
       }
     }
   }
@@ -637,7 +637,7 @@ export class BusinessIntelligenceService {
    * Clear cache
    */
   clearCache(): void {
-    this.cache.clear();
+    this?.cache?.clear();
     logger.info('BI cache cleared', 'BI_SERVICE');
   }
 
@@ -645,7 +645,7 @@ export class BusinessIntelligenceService {
    * Close database connection
    */
   close(): void {
-    this.db.close();
+    this?.db?.close();
     logger.info('BusinessIntelligenceService closed', 'BI_SERVICE');
   }
 }

@@ -22,7 +22,7 @@ export abstract class ValidatedTool extends BaseTool {
     const validation = this.validateParameters(params);
     return {
       valid: validation.valid,
-      errors: validation.errors.length > 0 ? validation.errors : undefined,
+      errors: validation?.errors?.length > 0 ? validation.errors : undefined,
     };
   }
 

@@ -5,14 +5,14 @@
 
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { Context } from "../../trpc/context";
-import { logger } from "../../../utils/logger";
+import type { Context } from "../../trpc/context.js";
+import { logger } from "../../../utils/logger.js";
 import {
   SqlInjectionProtection,
   SqlInjectionError,
   DatabaseInputSchemas,
   createSqlInjectionProtection,
-} from "../../../database/security/SqlInjectionProtection";
+} from "../../../database/security/SqlInjectionProtection.js";
 
 // Create SQL injection protection instance for middleware
 const sqlSecurity = createSqlInjectionProtection({
@@ -31,7 +31,7 @@ export const enhancedSanitizationSchemas = {
   string: z.string().max(1000).trim(),
 
   // SQL-safe string with comprehensive validation
-  sqlSafe: DatabaseInputSchemas.shortText.refine((val) => {
+  sqlSafe: DatabaseInputSchemas?.shortText?.refine((val: any) => {
     try {
       sqlSecurity.validateQueryParameters([val]);
       return true;
@@ -43,7 +43,7 @@ export const enhancedSanitizationSchemas = {
   // HTML-safe string with encoding
   htmlSafe: z
     .string()
-    .transform((str) =>
+    .transform((str: any) =>
       str
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -325,7 +325,7 @@ function getObjectDepth(obj: any): number {
   }
 
   if (Array.isArray(obj)) {
-    return 1 + Math.max(0, ...obj.map(getObjectDepth));
+    return 1 + Math.max(0, ...obj?.map(getObjectDepth));
   }
 
   return 1 + Math.max(0, ...Object.values(obj).map(getObjectDepth));
@@ -424,7 +424,7 @@ export function createEnhancedAuthMiddleware() {
     const { ctx, next } = opts;
 
     // Check if user is authenticated
-    if (!ctx.user || ctx.user.username === "guest") {
+    if (!ctx.user || ctx?.user?.username === "guest") {
       logger.warn("Unauthenticated Access Attempt", "SECURITY", {
         ip: ctx.req?.ip,
         userAgent: ctx.req?.headers?.["user-agent"],
@@ -438,10 +438,10 @@ export function createEnhancedAuthMiddleware() {
     }
 
     // Check if user is active
-    if (!ctx.user.is_active) {
+    if (!ctx?.user?.is_active) {
       logger.warn("Inactive User Access Attempt", "SECURITY", {
-        userId: ctx.user.id,
-        username: ctx.user.username,
+        userId: ctx?.user?.id,
+        username: ctx?.user?.username,
         requestId: ctx.requestId,
       });
 
@@ -452,7 +452,7 @@ export function createEnhancedAuthMiddleware() {
     }
 
     // Update last activity
-    ctx.user.lastActivity = new Date();
+    ctx?.user?.lastActivity = new Date();
 
     return next();
   };
@@ -570,7 +570,7 @@ export class PIIRedactor {
     }
     
     if (Array.isArray(data)) {
-      return data.map(item => this.redact(item));
+      return data?.map(item => this.redact(item));
     }
     
     if (data && typeof data === 'object') {
@@ -588,16 +588,16 @@ export class PIIRedactor {
     let result = str;
     
     // Redact email addresses
-    result = result.replace(this.PII_PATTERNS.email, '[EMAIL_REDACTED]');
+    result = result.replace(this?.PII_PATTERNS?.email, '[EMAIL_REDACTED]');
     
     // Redact phone numbers
-    result = result.replace(this.PII_PATTERNS.phone, '[PHONE_REDACTED]');
+    result = result.replace(this?.PII_PATTERNS?.phone, '[PHONE_REDACTED]');
     
     // Redact SSNs
-    result = result.replace(this.PII_PATTERNS.ssn, '[SSN_REDACTED]');
+    result = result.replace(this?.PII_PATTERNS?.ssn, '[SSN_REDACTED]');
     
     // Redact credit card numbers
-    result = result.replace(this.PII_PATTERNS.creditCard, '[CARD_REDACTED]');
+    result = result.replace(this?.PII_PATTERNS?.creditCard, '[CARD_REDACTED]');
     
     return result;
   }
@@ -609,4 +609,4 @@ export {
   SqlInjectionError,
   DatabaseInputSchemas,
   createSqlInjectionProtection,
-} from "../../../database/security/SqlInjectionProtection";
+} from "../../../database/security/SqlInjectionProtection.js";

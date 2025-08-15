@@ -45,15 +45,15 @@ async function testCSRFTokenFetch(): Promise<{ token: string; cookies: string[] 
     }
     
     const data = await response.json() as CSRFTokenResponse;
-    const cookies = response.headers.get('set-cookie')?.split(', ') || [];
+    const cookies = response?.headers?.get('set-cookie')?.split(', ') || [];
     
     console.log(`✅ CSRF token fetched successfully`);
-    console.log(`   Token length: ${data.token.length} characters`);
+    console.log(`   Token length: ${data?.token?.length} characters`);
     console.log(`   Expires in: ${data.expiresIn}ms`);
-    console.log(`   Cookies set: ${cookies.length}`);
+    console.log(`   Cookies set: ${cookies?.length || 0}`);
     
-    if (data.token.length !== 64) {
-      throw new Error(`Invalid token length: expected 64, got ${data.token.length}`);
+    if (data?.token?.length !== 64) {
+      throw new Error(`Invalid token length: expected 64, got ${data?.token?.length}`);
     }
     
     if (!cookies.some(cookie => cookie.includes('csrf-token'))) {
@@ -322,7 +322,7 @@ async function main(): Promise<void> {
 
 // Run the tests if this script is executed directly
 if (require.main === module) {
-  main().catch((error) => {
+  main().catch((error: any) => {
     console.error('Fatal error:', error);
     process.exit(1);
   });

@@ -23,7 +23,7 @@ function ErrorProneComponent({ shouldError }: { shouldError: boolean }) {
 
 // Wrapped with error boundary HOC
 const SafeErrorProneComponent = withErrorBoundary(ErrorProneComponent, {
-  onError: (error) => console.log("HOC Error caught:", error),
+  onError: (error: any) => console.log("HOC Error caught:", error),
 });
 
 export function ErrorHandlingDemo() {
@@ -88,7 +88,7 @@ export function ErrorHandlingDemo() {
       message: "Click to refresh and get the latest features",
       action: {
         label: "Refresh",
-        onClick: () => window.location.reload(),
+        onClick: () => window?.location?.reload(),
       },
     });
   };
@@ -146,7 +146,7 @@ export function ErrorHandlingDemo() {
         <div className="demo-content">
           <ErrorBoundary
             isolate
-            onError={(error) => console.log("Isolated error:", error)}
+            onError={(error: any) => console.log("Isolated error:", error)}
           >
             <div className="error-boundary-demo">
               <p>This component is wrapped in an error boundary</p>
@@ -181,7 +181,7 @@ export function ErrorHandlingDemo() {
             {errorRecovery.error && (
               <Alert variant="destructive" className="mt-4">
                 <AlertDescription>
-                  {errorRecovery.error.message}
+                  {errorRecovery?.error?.message}
                 </AlertDescription>
               </Alert>
             )}
@@ -284,7 +284,7 @@ export function ErrorHandlingDemo() {
           {
             label: "Contact Support",
             onClick: () => {
-              window.location.href = "mailto:support@example.com";
+              window?.location?.href = "mailto:support@example.com";
             },
             variant: "outline",
           },

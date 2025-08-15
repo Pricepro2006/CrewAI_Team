@@ -91,7 +91,7 @@ export function createServiceHealthRoutes(serviceId: string, serviceName?: strin
         responseTime,
         healthCheck: healthResult ? {
           status: healthResult.status,
-          lastCheck: healthResult.timestamp.toISOString(),
+          lastCheck: healthResult?.timestamp?.toISOString(),
           error: healthResult.error
         } : null
       };
@@ -152,33 +152,33 @@ export function createServiceHealthRoutes(serviceId: string, serviceName?: strin
         status: healthResult.status,
         service: healthResult.serviceName,
         serviceId: healthResult.serviceId,
-        timestamp: healthResult.timestamp.toISOString(),
+        timestamp: healthResult?.timestamp?.toISOString(),
         uptime: healthResult.uptime,
         version: healthResult.version,
         responseTime,
         checks: {
           liveness: {
-            status: healthResult.checks.liveness.status,
-            responseTime: healthResult.checks.liveness.responseTime
+            status: healthResult?.checks?.liveness.status,
+            responseTime: healthResult?.checks?.liveness.responseTime
           },
           readiness: {
-            status: healthResult.checks.readiness.status,
-            message: healthResult.checks.readiness.message
+            status: healthResult?.checks?.readiness.status,
+            message: healthResult?.checks?.readiness.message
           },
-          dependencies: healthResult.checks.dependencies.map(dep => ({
+          dependencies: healthResult?.checks?.dependencies?.map(dep => ({
             name: dep.name,
             status: dep.status,
             message: dep.message
           })),
           resources: {
             cpu: {
-              usage: healthResult.checks.resources.cpu.usage,
-              status: healthResult.checks.resources.cpu.status
+              usage: healthResult?.checks?.resources.cpu.usage,
+              status: healthResult?.checks?.resources.cpu.status
             },
             memory: {
-              usage: Math.round((healthResult.checks.resources.memory.usage || 0) / 1024 / 1024),
-              percentage: healthResult.checks.resources.memory.percentage,
-              status: healthResult.checks.resources.memory.status
+              usage: Math.round((healthResult?.checks?.resources.memory.usage || 0) / 1024 / 1024),
+              percentage: healthResult?.checks?.resources.memory.percentage,
+              status: healthResult?.checks?.resources.memory.status
             }
           }
         },
@@ -224,30 +224,30 @@ export function createServiceHealthRoutes(serviceId: string, serviceName?: strin
 
       const detailedResponse = {
         ...healthResult,
-        timestamp: healthResult.timestamp.toISOString(),
+        timestamp: healthResult?.timestamp?.toISOString(),
         checks: {
           liveness: {
-            ...healthResult.checks.liveness,
-            details: healthResult.checks.liveness.details
+            ...healthResult?.checks?.liveness,
+            details: healthResult?.checks?.liveness.details
           },
           readiness: {
-            ...healthResult.checks.readiness,
-            details: healthResult.checks.readiness.details
+            ...healthResult?.checks?.readiness,
+            details: healthResult?.checks?.readiness.details
           },
-          dependencies: healthResult.checks.dependencies.map(dep => ({
+          dependencies: healthResult?.checks?.dependencies?.map(dep => ({
             ...dep,
             details: dep.details
           })),
           resources: {
-            cpu: healthResult.checks.resources.cpu,
+            cpu: healthResult?.checks?.resources.cpu,
             memory: {
-              usage: Math.round((healthResult.checks.resources.memory.usage || 0) / 1024 / 1024),
-              total: Math.round((healthResult.checks.resources.memory.total || 0) / 1024 / 1024),
-              percentage: healthResult.checks.resources.memory.percentage,
-              status: healthResult.checks.resources.memory.status
+              usage: Math.round((healthResult?.checks?.resources.memory.usage || 0) / 1024 / 1024),
+              total: Math.round((healthResult?.checks?.resources.memory.total || 0) / 1024 / 1024),
+              percentage: healthResult?.checks?.resources.memory.percentage,
+              status: healthResult?.checks?.resources.memory.status
             },
-            connections: healthResult.checks.resources.connections,
-            diskSpace: healthResult.checks.resources.diskSpace
+            connections: healthResult?.checks?.resources.connections,
+            diskSpace: healthResult?.checks?.resources.diskSpace
           }
         }
       };
@@ -289,27 +289,27 @@ export function createAggregatedHealthRoutes(): RouterType {
       const httpStatus =
         aggregatedHealth.overall === 'healthy' ? 200 :
         aggregatedHealth.overall === 'degraded' ? 200 :
-        aggregatedHealth.summary.critical_down.length > 0 ? 503 :
+        aggregatedHealth?.summary?.critical_down?.length || 0 > 0 ? 503 :
         200;
 
       const response = {
         status: aggregatedHealth.overall,
-        timestamp: aggregatedHealth.lastCheck.toISOString(),
+        timestamp: aggregatedHealth?.lastCheck?.toISOString(),
         uptime: Math.floor(aggregatedHealth.uptime / 1000),
         version: aggregatedHealth.version,
         environment: aggregatedHealth.environment,
         responseTime,
         summary: aggregatedHealth.summary,
-        services: aggregatedHealth.services.map(service => ({
+        services: aggregatedHealth?.services?.map(service => ({
           id: service.serviceId,
           name: service.serviceName,
           status: service.status,
           responseTime: service.responseTime,
-          lastCheck: service.timestamp.toISOString(),
+          lastCheck: service?.timestamp?.toISOString(),
           type: service.metadata?.type,
           critical: service.metadata?.critical
         })),
-        criticalServices: aggregatedHealth.summary.critical_down
+        criticalServices: aggregatedHealth?.summary?.critical_down
       };
 
       res.status(httpStatus).json(response);
@@ -331,13 +331,13 @@ export function createAggregatedHealthRoutes(): RouterType {
   router.get('/services', async (req, res) => {
     try {
       const services = healthCheckService.getServiceConfigurations();
-      const healthResults = services.map(service => 
+      const healthResults = services?.map(service => 
         healthCheckService.getServiceHealth(service.id)
       );
 
       const response = {
         timestamp: new Date().toISOString(),
-        services: services.map((service, index) => ({
+        services: services?.map((service, index) => ({
           id: service.id,
           name: service.name,
           type: service.type,
@@ -445,19 +445,19 @@ export function createAggregatedHealthRoutes(): RouterType {
         results = await healthCheckService.checkServicesNow(serviceIds);
       } else {
         const configs = healthCheckService.getServiceConfigurations();
-        const allServiceIds = configs.map(c => c.id);
+        const allServiceIds = configs?.map(c => c.id);
         results = await healthCheckService.checkServicesNow(allServiceIds);
       }
 
       const response = {
         timestamp: new Date().toISOString(),
         message: 'Health checks triggered',
-        results: results.map(result => ({
+        results: results?.map(result => ({
           serviceId: result.serviceId,
           serviceName: result.serviceName,
           status: result.status,
           responseTime: result.responseTime,
-          timestamp: result.timestamp.toISOString(),
+          timestamp: result?.timestamp?.toISOString(),
           error: result.error
         }))
       };
@@ -481,7 +481,7 @@ export function createAggregatedHealthRoutes(): RouterType {
     try {
       const services = healthCheckService.getServiceConfigurations();
       
-      const dependencyGraph = services.map(service => ({
+      const dependencyGraph = services?.map(service => ({
         id: service.id,
         name: service.name,
         type: service.type,
@@ -516,7 +516,7 @@ export function createAggregatedHealthRoutes(): RouterType {
       
       const response = {
         timestamp: new Date().toISOString(),
-        services: configs.map(config => ({
+        services: configs?.map(config => ({
           id: config.id,
           name: config.name,
           type: config.type,

@@ -65,7 +65,7 @@ export class WebSearchTool extends BaseTool {
           topK: 5,
         },
       });
-      await this.searchKnowledgeService.initialize();
+      await this?.searchKnowledgeService?.initialize();
     } catch (error) {
       console.warn("Failed to initialize SearchKnowledgeService:", error);
       // Continue without knowledge service
@@ -79,14 +79,14 @@ export class WebSearchTool extends BaseTool {
   }): Promise<ToolResult> {
     const validation = this.validateParameters(params);
     if (!validation.valid) {
-      return this.error(validation.errors.join(", "));
+      return this.error(validation?.errors?.join(", "));
     }
 
     try {
       const limit = params.limit || 10;
       const engineName = params.engine || "duckduckgo";
 
-      const engine = this.searchEngines.find((e) => e.name === engineName);
+      const engine = this?.searchEngines?.find((e: any) => e.name === engineName);
       if (!engine) {
         return this.error(`Search engine ${engineName} not found`);
       }
@@ -94,11 +94,11 @@ export class WebSearchTool extends BaseTool {
       const results = await engine.search(params.query, limit);
 
       // Save search results to knowledge base
-      if (this.searchKnowledgeService && results.length > 0) {
+      if (this.searchKnowledgeService && results?.length || 0 > 0) {
         try {
-          await this.searchKnowledgeService.saveSearchResults(
+          await this?.searchKnowledgeService?.saveSearchResults(
             params.query,
-            results.map((r) => ({
+            results?.map((r: any) => ({
               title: r.title,
               url: r.url,
               snippet: r.snippet,
@@ -121,7 +121,7 @@ export class WebSearchTool extends BaseTool {
         results,
         query: params.query,
         engine: engineName,
-        count: results.length,
+        count: results?.length || 0,
       });
     } catch (error) {
       return this.error(error as Error);
@@ -148,7 +148,7 @@ class DuckDuckGoEngineFixed extends SearchEngine {
     try {
       // Use DuckDuckGo's HTML search interface and scrape results
       // This is more reliable than the Instant Answer API for actual web search
-      const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+      const searchUrl = `https://html?.duckduckgo?.com/html/?q=${encodeURIComponent(query)}`;
 
       const response = await axios.get(searchUrl, {
         headers: {
@@ -166,7 +166,7 @@ class DuckDuckGoEngineFixed extends SearchEngine {
 
       // Parse search results from DuckDuckGo HTML
       $(".result").each((index, element) => {
-        if (results.length >= limit) return false;
+        if (results?.length || 0 >= limit) return false;
 
         const $result = $(element);
         const $title = $result.find(".result__title");
@@ -189,7 +189,7 @@ class DuckDuckGoEngineFixed extends SearchEngine {
       });
 
       // If no results from scraping, try the Instant Answer API as fallback
-      if (results.length === 0) {
+      if (results?.length || 0 === 0) {
         return await this.fallbackToInstantAnswerAPI(query, limit);
       }
 
@@ -206,7 +206,7 @@ class DuckDuckGoEngineFixed extends SearchEngine {
     limit: number,
   ): Promise<SearchResult[]> {
     try {
-      const response = await axios.get("https://api.duckduckgo.com/", {
+      const response = await axios.get("https://api?.duckduckgo?.com/", {
         params: {
           q: query,
           format: "json",
@@ -217,7 +217,7 @@ class DuckDuckGoEngineFixed extends SearchEngine {
       });
 
       const results: SearchResult[] = [];
-      const data = response.data;
+      const data = response?.data;
 
       // Add main result if available
       if (data.Abstract && data.AbstractURL) {
@@ -230,13 +230,13 @@ class DuckDuckGoEngineFixed extends SearchEngine {
 
       // Add related topics
       if (data.RelatedTopics && Array.isArray(data.RelatedTopics)) {
-        for (const topic of data.RelatedTopics.slice(
+        for (const topic of data?.RelatedTopics?.slice(
           0,
-          limit - results.length,
+          limit - results?.length || 0,
         )) {
           if (topic.FirstURL && topic.Text) {
             results.push({
-              title: topic.Text.split(" - ")[0] || topic.Text.substring(0, 60),
+              title: topic?.Text?.split(" - ")[0] || topic?.Text?.substring(0, 60),
               url: topic.FirstURL,
               snippet: topic.Text,
             });
@@ -245,7 +245,7 @@ class DuckDuckGoEngineFixed extends SearchEngine {
       }
 
       // Always return at least some mock results for testing
-      if (results.length === 0) {
+      if (results?.length || 0 === 0) {
         // Generate realistic mock results for the query
         const mockResults = this.generateMockResults(query, limit);
         return mockResults;
@@ -324,8 +324,8 @@ class SearxEngine extends SearchEngine {
       });
 
       const results: SearchResult[] = [];
-      if (response.data.results && Array.isArray(response.data.results)) {
-        for (const result of response.data.results.slice(0, limit)) {
+      if (response?.data?.results && Array.isArray(response?.data?.results)) {
+        for (const result of response?.data?.results.slice(0, limit)) {
           results.push({
             title: result.title || "No title",
             url: result.url || "",

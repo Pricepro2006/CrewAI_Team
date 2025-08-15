@@ -44,7 +44,7 @@ export class ConfidenceCalibrator {
   trainCalibration(dataPoints: CalibrationDataPoint[], method: string): void {
     // Placeholder implementation
     this.calibrationParameters[method] = {
-      trainingPoints: dataPoints.length,
+      trainingPoints: dataPoints?.length || 0,
       lastTrained: new Date().toISOString(),
     };
   }
@@ -57,7 +57,7 @@ export class ConfidenceCalibrator {
       calibrated: true,
       methods: Object.keys(this.calibrationParameters),
       lastCalibration:
-        this.calibrationParameters.temperature_scaling?.lastTrained || null,
+        this?.calibrationParameters?.temperature_scaling?.lastTrained || null,
     };
   }
 

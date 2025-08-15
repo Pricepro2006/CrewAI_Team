@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { websocketConfig, getReconnectionDelay, WebSocketEventType } from '../../shared/config/websocket.config.js';
+import { websocketConfig, getReconnectionDelay, WebSocketEventType } from '../../shared/config/websocket?.config.js';
 
 export interface WebSocketMessage {
   type: string;
@@ -76,7 +76,7 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
   const startHeartbeat = useCallback(() => {
     clearHeartbeat();
     
-    if (websocketConfig.heartbeat.enabled) {
+    if (websocketConfig?.heartbeat?.enabled) {
       heartbeatIntervalRef.current = setInterval(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           sendMessage({
@@ -85,7 +85,7 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
             timestamp: new Date().toISOString()
           });
         }
-      }, websocketConfig.heartbeat.interval);
+      }, websocketConfig?.heartbeat?.interval);
     }
   }, []);
 
@@ -99,7 +99,7 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
     try {
       wsRef.current = new WebSocket(url, protocols);
 
-      wsRef.current.onopen = () => {
+      wsRef?.current?.onopen = () => {
         console.log('✅ WebSocket connected to:', url);
         setState(prev => ({
           ...prev,
@@ -115,7 +115,7 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
         onConnect?.();
       };
 
-      wsRef.current.onmessage = (event) => {
+      wsRef?.current?.onmessage = (event: any) => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
           setState(prev => ({ ...prev, lastMessage: message }));
@@ -125,7 +125,7 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
         }
       };
 
-      wsRef.current.onclose = (event) => {
+      wsRef?.current?.onclose = (event: any) => {
         console.log('🔚 WebSocket disconnected:', event.code, event.reason);
         setState(prev => ({ ...prev, connected: false, connecting: false }));
         
@@ -145,7 +145,7 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
         }
       };
 
-      wsRef.current.onerror = (error) => {
+      wsRef?.current?.onerror = (error: any) => {
         console.error('❌ WebSocket error:', error);
         setState(prev => ({ 
           ...prev, 
@@ -170,7 +170,7 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
     clearHeartbeat();
     
     if (wsRef.current) {
-      wsRef.current.close(1000, 'Manual disconnect');
+      wsRef?.current?.close(1000, 'Manual disconnect');
       wsRef.current = null;
     }
     
@@ -191,7 +191,7 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
         ...message
       };
       
-      wsRef.current.send(JSON.stringify(fullMessage));
+      wsRef?.current?.send(JSON.stringify(fullMessage));
       return true;
     } else {
       console.warn('❌ Cannot send message - WebSocket not connected');

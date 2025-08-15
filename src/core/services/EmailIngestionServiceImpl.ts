@@ -95,10 +95,10 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
     
     // Initialize Redis connection
     this.redis = new Redis({
-      host: this.config.redis.host,
-      port: this.config.redis.port,
-      password: this.config.redis.password,
-      maxRetriesPerRequest: this.config.redis.maxRetriesPerRequest || 3,
+      host: this?.config?.redis.host,
+      port: this?.config?.redis.port,
+      password: this?.config?.redis.password,
+      maxRetriesPerRequest: this?.config?.redis.maxRetriesPerRequest || 3,
       retryDelayOnFailover: 100,
       enableReadyCheck: true,
       lazyConnect: true
@@ -118,13 +118,13 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
     try {
       logger.info('Initializing EmailIngestionService', 'EMAIL_INGESTION', {
-        mode: this.config.mode,
-        batchSize: this.config.processing.batchSize,
-        concurrency: this.config.processing.concurrency
+        mode: this?.config?.mode,
+        batchSize: this?.config?.processing.batchSize,
+        concurrency: this?.config?.processing.concurrency
       });
 
       // Connect to Redis
-      await this.redis.connect();
+      await this?.redis.connect();
       logger.info('Redis connection established', 'EMAIL_INGESTION');
 
       // Initialize queues
@@ -134,7 +134,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
       this.startHealthMonitoring();
 
       // Start auto-pull if configured
-      if (this.config.mode === IngestionMode.AUTO_PULL || this.config.mode === IngestionMode.HYBRID) {
+      if (this?.config?.mode === IngestionMode.AUTO_PULL || this?.config?.mode === IngestionMode.HYBRID) {
         await this.startAutoPull();
       }
 
@@ -151,19 +151,19 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
   private async initializeQueues(): Promise<void> {
     const redisConfig = {
-      host: this.config.redis.host,
-      port: this.config.redis.port,
-      password: this.config.redis.password
+      host: this?.config?.redis.host,
+      port: this?.config?.redis.port,
+      password: this?.config?.redis.password
     };
 
     // Main ingestion queue
     this.ingestionQueue = new Queue<IngestionJob>('email-ingestion', {
       connection: redisConfig,
       defaultJobOptions: {
-        attempts: this.config.processing.maxRetries,
+        attempts: this?.config?.processing.maxRetries,
         backoff: {
           type: 'exponential',
-          delay: this.config.processing.retryDelay
+          delay: this?.config?.processing.retryDelay
         },
         removeOnComplete: 100,
         removeOnFail: 50
@@ -185,7 +185,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
       async (job: Job<IngestionJob>) => this.processIngestionJob(job),
       {
         connection: redisConfig,
-        concurrency: this.config.processing.concurrency,
+        concurrency: this?.config?.processing.concurrency,
         maxStalledCount: 3,
         stalledInterval: 30000
       }
@@ -200,13 +200,13 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
   }
 
   private setupQueueEventHandlers(): void {
-    this.worker.on('completed', (job: Job<IngestionJob>, result: IngestionResult) => {
-      this.processingMetrics.totalProcessed++;
-      this.processingMetrics.processingTimes.push(result.processingTime);
-      this.updateSourceMetrics(job.data.source);
+    this?.worker?.on('completed', (job: Job<IngestionJob>, result: IngestionResult) => {
+      this?.processingMetrics?.totalProcessed++;
+      this?.processingMetrics?.processingTimes.push(result.processingTime);
+      this.updateSourceMetrics(job?.data?.source);
       
-      metrics.increment('email.ingestion.completed');
-      metrics.histogram('email.ingestion.processing_time', result.processingTime);
+      metrics.increment('email?.ingestion?.completed');
+      metrics.histogram('email?.ingestion?.processing_time', result.processingTime);
       
       logger.debug('Email ingestion job completed', 'EMAIL_INGESTION', {
         jobId: job.id,
@@ -215,33 +215,33 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
       });
     });
 
-    this.worker.on('failed', async (job: Job<IngestionJob> | undefined, error: Error) => {
+    this?.worker?.on('failed', async (job: Job<IngestionJob> | undefined, error: Error) => {
       if (!job) return;
       
-      this.processingMetrics.failedIngestions++;
-      this.recordError(job.data.source, error.message);
+      this?.processingMetrics?.failedIngestions++;
+      this.recordError(job?.data?.source, error.message);
       
-      metrics.increment('email.ingestion.failed');
+      metrics.increment('email?.ingestion?.failed');
       
       logger.error('Email ingestion job failed', 'EMAIL_INGESTION', {
         jobId: job.id,
-        messageId: job.data.email.messageId,
+        messageId: job?.data?.email.messageId,
         attempt: job.attemptsMade,
         error: error.message
       });
 
       // Move to dead letter queue if max retries reached
-      if (job.attemptsMade >= this.config.processing.maxRetries) {
+      if (job.attemptsMade >= this?.config?.processing.maxRetries) {
         await this.moveToDeadLetterQueue(job.data, error);
       }
     });
 
-    this.worker.on('stalled', (jobId: string) => {
-      metrics.increment('email.ingestion.stalled');
+    this?.worker?.on('stalled', (jobId: string) => {
+      metrics.increment('email?.ingestion?.stalled');
       logger.warn('Email ingestion job stalled', 'EMAIL_INGESTION', { jobId });
     });
 
-    this.queueEvents.on('progress', (jobId: string, progress: object) => {
+    this?.queueEvents?.on('progress', (jobId: string, progress: object) => {
       io?.emit('ingestion:progress', { jobId, progress });
     });
   }
@@ -255,7 +255,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
       // Check for duplicates
       const isDuplicate = await this.checkDuplicate(email.messageId);
       if (isDuplicate) {
-        this.processingMetrics.duplicatesDetected++;
+        this?.processingMetrics?.duplicatesDetected++;
         return {
           success: true,
           data: {
@@ -279,7 +279,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
       };
 
       // Add to queue
-      const queueJob = await this.ingestionQueue.add('ingest', job, {
+      const queueJob = await this?.ingestionQueue?.add('ingest', job, {
         priority: job.priority
       });
 
@@ -291,7 +291,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
       });
 
       // For manual mode, wait for processing completion
-      if (this.config.mode === IngestionMode.MANUAL) {
+      if (this?.config?.mode === IngestionMode.MANUAL) {
         const result = await queueJob.waitUntilFinished(this.queueEvents);
         return { success: true, data: result };
       }
@@ -332,18 +332,18 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
     try {
       logger.info('Starting batch ingestion', 'EMAIL_INGESTION', {
         batchId,
-        emailCount: emails.length,
+        emailCount: emails?.length || 0,
         source
       });
 
       // Process emails in configurable batch sizes
-      const batchSize = this.config.processing.batchSize;
-      for (let i = 0; i < emails.length; i += batchSize) {
+      const batchSize = this?.config?.processing.batchSize;
+      for (let i = 0; i < emails?.length || 0; i += batchSize) {
         const batch = emails.slice(i, i + batchSize);
-        const batchPromises = batch.map(async (email) => {
+        const batchPromises = batch?.map(async (email: any) => {
           const result = await this.ingestEmail(email, source);
           if (result.success) {
-            if (result.data.status === 'duplicate') {
+            if (result?.data?.status === 'duplicate') {
               duplicates++;
             } else {
               processed++;
@@ -365,23 +365,23 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
         await Promise.all(batchPromises);
 
         // Update progress
-        const progress = Math.round(((i + batch.length) / emails.length) * 100);
+        const progress = Math.round(((i + batch?.length || 0) / emails?.length || 0) * 100);
         io?.emit('ingestion:batch_progress', {
           batchId,
           progress,
           processed: processed + duplicates + failed,
-          total: emails.length
+          total: emails?.length || 0
         });
       }
 
       const endTime = new Date();
       const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-      const throughput = emails.length / durationMinutes;
+      const throughput = emails?.length || 0 / durationMinutes;
 
       const batchResult: IngestionBatchResult = {
         batchId,
         source,
-        totalEmails: emails.length,
+        totalEmails: emails?.length || 0,
         processed,
         duplicates,
         failed,
@@ -393,7 +393,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
       logger.info('Batch ingestion completed', 'EMAIL_INGESTION', {
         batchId,
-        totalEmails: emails.length,
+        totalEmails: emails?.length || 0,
         processed,
         duplicates,
         failed,
@@ -511,7 +511,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
   // =====================================================
 
   async startAutoPull(): Promise<void> {
-    if (!this.config.autoPull) {
+    if (!this?.config?.autoPull) {
       throw new Error('Auto-pull configuration not provided');
     }
 
@@ -519,7 +519,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
       throw new Error('Auto-pull already active');
     }
 
-    const intervalMs = this.config.autoPull.interval * 60 * 1000; // Convert minutes to ms
+    const intervalMs = this?.config?.autoPull.interval * 60 * 1000; // Convert minutes to ms
     
     this.autoPullInterval = setInterval(async () => {
       try {
@@ -532,8 +532,8 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
     }, intervalMs);
 
     logger.info('Auto-pull started', 'EMAIL_INGESTION', {
-      interval: this.config.autoPull.interval,
-      sources: this.config.autoPull.sources
+      interval: this?.config?.autoPull.interval,
+      sources: this?.config?.autoPull.sources
     });
   }
 
@@ -550,9 +550,9 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
   }
 
   private async performAutoPull(): Promise<void> {
-    if (!this.config.autoPull) return;
+    if (!this?.config?.autoPull) return;
 
-    for (const source of this.config.autoPull.sources) {
+    for (const source of this?.config?.autoPull.sources) {
       try {
         let result: Result<IngestionBatchResult>;
         
@@ -571,9 +571,9 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
         if (result.success) {
           logger.debug('Auto-pull completed for source', 'EMAIL_INGESTION', {
             source,
-            processed: result.data.processed,
-            duplicates: result.data.duplicates,
-            failed: result.data.failed
+            processed: result?.data?.processed,
+            duplicates: result?.data?.duplicates,
+            failed: result?.data?.failed
           });
         } else {
           logger.error('Auto-pull failed for source', 'EMAIL_INGESTION', {
@@ -595,23 +595,23 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
   // =====================================================
 
   async pauseIngestion(): Promise<void> {
-    await this.ingestionQueue.pause();
+    await this?.ingestionQueue?.pause();
     logger.info('Email ingestion paused', 'EMAIL_INGESTION');
   }
 
   async resumeIngestion(): Promise<void> {
-    await this.ingestionQueue.resume();
+    await this?.ingestionQueue?.resume();
     logger.info('Email ingestion resumed', 'EMAIL_INGESTION');
   }
 
   async getQueueStatus(): Promise<QueueStatus> {
     const [waiting, active, completed, failed, delayed, paused] = await Promise.all([
-      this.ingestionQueue.getWaitingCount(),
-      this.ingestionQueue.getActiveCount(),
-      this.ingestionQueue.getCompletedCount(),
-      this.ingestionQueue.getFailedCount(),
-      this.ingestionQueue.getDelayedCount(),
-      this.ingestionQueue.isPaused()
+      this?.ingestionQueue?.getWaitingCount(),
+      this?.ingestionQueue?.getActiveCount(),
+      this?.ingestionQueue?.getCompletedCount(),
+      this?.ingestionQueue?.getFailedCount(),
+      this?.ingestionQueue?.getDelayedCount(),
+      this?.ingestionQueue?.isPaused()
     ]);
 
     return {
@@ -625,7 +625,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
   }
 
   async retryFailedJobs(limit = 100): Promise<number> {
-    const failedJobs = await this.ingestionQueue.getFailed(0, limit - 1);
+    const failedJobs = await this?.ingestionQueue?.getFailed(0, limit - 1);
     let retriedCount = 0;
 
     for (const job of failedJobs) {
@@ -642,7 +642,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
     logger.info('Retried failed jobs', 'EMAIL_INGESTION', {
       retriedCount,
-      totalFailed: failedJobs.length
+      totalFailed: failedJobs?.length || 0
     });
 
     return retriedCount;
@@ -655,12 +655,12 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
   async checkDuplicate(messageId: string): Promise<boolean> {
     const hash = this.hashMessageId(messageId);
     const key = `email:dedup:${hash}`;
-    const exists = await this.redis.exists(key);
+    const exists = await this?.redis.exists(key);
     
     if (!exists) {
       // Set with TTL based on deduplication window
-      const ttl = this.config.processing.deduplicationWindow * 3600; // hours to seconds
-      await this.redis.setex(key, ttl, Date.now().toString());
+      const ttl = this?.config?.processing.deduplicationWindow * 3600; // hours to seconds
+      await this?.redis.setex(key, ttl, Date.now().toString());
       return false;
     }
     
@@ -669,12 +669,12 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
   async clearDeduplicationCache(): Promise<void> {
     const pattern = 'email:dedup:*';
-    const keys = await this.redis.keys(pattern);
+    const keys = await this?.redis.keys(pattern);
     
-    if (keys.length > 0) {
-      await this.redis.del(...keys);
+    if (keys?.length || 0 > 0) {
+      await this?.redis.del(...keys);
       logger.info('Deduplication cache cleared', 'EMAIL_INGESTION', {
-        keysRemoved: keys.length
+        keysRemoved: keys?.length || 0
       });
     }
   }
@@ -698,8 +698,8 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
     }
 
     // Boost for priority keywords
-    const content = `${email.subject} ${email.body.content}`.toLowerCase();
-    for (const keyword of this.config.processing.priorityBoostKeywords) {
+    const content = `${email.subject} ${email?.body?.content}`.toLowerCase();
+    for (const keyword of this?.config?.processing.priorityBoostKeywords) {
       if (content.includes(keyword.toLowerCase())) {
         priority += 2;
         break;
@@ -744,7 +744,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
       await job.updateProgress(30);
 
       // Process through unified email service
-      const processedEmail = await this.unifiedEmailService.processIncomingEmail(email);
+      const processedEmail = await this?.unifiedEmailService?.processIncomingEmail(email);
 
       await job.updateProgress(80);
 
@@ -791,7 +791,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
   private async moveToDeadLetterQueue(jobData: IngestionJob, error: Error): Promise<void> {
     try {
-      await this.deadLetterQueue.add('failed', {
+      await this?.deadLetterQueue?.add('failed', {
         ...jobData,
         error: {
           message: error.message,
@@ -808,11 +808,11 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
   }
 
   private updateSourceMetrics(source: IngestionSource): void {
-    this.processingMetrics.bySource[source] = (this.processingMetrics.bySource[source] || 0) + 1;
+    this?.processingMetrics?.bySource[source] = (this?.processingMetrics?.bySource[source] || 0) + 1;
   }
 
   private recordError(source: IngestionSource, error: string): void {
-    const existingError = this.processingMetrics.errors.find(e => 
+    const existingError = this?.processingMetrics?.errors.find(e => 
       e.source === source && e.error === error
     );
 
@@ -820,7 +820,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
       existingError.count++;
       existingError.timestamp = new Date();
     } else {
-      this.processingMetrics.errors.push({
+      this?.processingMetrics?.errors.push({
         timestamp: new Date(),
         source,
         error,
@@ -829,13 +829,13 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
     }
 
     // Keep only last 1000 errors
-    if (this.processingMetrics.errors.length > 1000) {
-      this.processingMetrics.errors = this.processingMetrics.errors.slice(-1000);
+    if (this?.processingMetrics?.errors?.length || 0 > 1000) {
+      this?.processingMetrics?.errors = this?.processingMetrics?.errors.slice(-1000);
     }
   }
 
   private setupEventListeners(): void {
-    this.eventEmitter.on('health_check', async () => {
+    this?.eventEmitter?.on('health_check', async () => {
       const health = await this.healthCheck();
       io?.emit('ingestion:health', health);
     });
@@ -843,7 +843,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
   private startHealthMonitoring(): void {
     this.healthCheckInterval = setInterval(() => {
-      this.eventEmitter.emit('health_check');
+      this?.eventEmitter?.emit('health_check');
     }, 30000); // Every 30 seconds
   }
 
@@ -852,30 +852,30 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
   // =====================================================
 
   async getMetrics(): Promise<IngestionMetrics> {
-    const avgProcessingTime = this.processingMetrics.processingTimes.length > 0
-      ? this.processingMetrics.processingTimes.reduce((a, b) => a + b, 0) / this.processingMetrics.processingTimes.length
+    const avgProcessingTime = this?.processingMetrics?.processingTimes?.length || 0 > 0
+      ? this?.processingMetrics?.processingTimes.reduce((a: any, b: any) => a + b, 0) / this?.processingMetrics?.processingTimes?.length || 0
       : 0;
 
     const queueStatus = await this.getQueueStatus();
 
     return {
-      totalIngested: this.processingMetrics.totalProcessed,
-      duplicatesDetected: this.processingMetrics.duplicatesDetected,
-      failedIngestions: this.processingMetrics.failedIngestions,
+      totalIngested: this?.processingMetrics?.totalProcessed,
+      duplicatesDetected: this?.processingMetrics?.duplicatesDetected,
+      failedIngestions: this?.processingMetrics?.failedIngestions,
       averageProcessingTime: avgProcessingTime,
       currentQueueSize: queueStatus.waiting + queueStatus.active,
       throughput: {
-        lastMinute: this.processingMetrics.lastMinuteCount,
-        lastHour: this.processingMetrics.lastHourCount,
-        last24Hours: this.processingMetrics.last24HourCount
+        lastMinute: this?.processingMetrics?.lastMinuteCount,
+        lastHour: this?.processingMetrics?.lastHourCount,
+        last24Hours: this?.processingMetrics?.last24HourCount
       },
-      bySource: { ...this.processingMetrics.bySource },
-      errors: [...this.processingMetrics.errors.slice(-10)] // Last 10 errors
+      bySource: { ...this?.processingMetrics?.bySource },
+      errors: [...this?.processingMetrics?.errors.slice(-10)] // Last 10 errors
     };
   }
 
   async getRecentErrors(limit = 50): Promise<IngestionError[]> {
-    return this.processingMetrics.errors.slice(-limit);
+    return this?.processingMetrics?.errors.slice(-limit);
   }
 
   async healthCheck(): Promise<HealthStatus> {
@@ -924,7 +924,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
   private async checkRedisHealth(): Promise<ComponentHealth> {
     try {
-      await this.redis.ping();
+      await this?.redis.ping();
       return {
         healthy: true,
         message: 'Redis connection healthy'
@@ -941,7 +941,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
   private async checkDatabaseHealth(): Promise<ComponentHealth> {
     try {
       // Simple database health check - could be enhanced
-      await this.emailRepository.getStatistics();
+      await this?.emailRepository?.getStatistics();
       return {
         healthy: true,
         message: 'Database connection healthy'
@@ -956,7 +956,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
   }
 
   private checkAutoPullHealth(): ComponentHealth {
-    if (this.config.mode === IngestionMode.MANUAL) {
+    if (this?.config?.mode === IngestionMode.MANUAL) {
       return {
         healthy: true,
         message: 'Auto-pull not required in manual mode'
@@ -991,22 +991,22 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
       // Close worker and wait for jobs to complete
       if (this.worker) {
-        await this.worker.close();
+        await this?.worker?.close();
       }
 
       // Close queues
       if (this.ingestionQueue) {
-        await this.ingestionQueue.close();
+        await this?.ingestionQueue?.close();
       }
       if (this.deadLetterQueue) {
-        await this.deadLetterQueue.close();
+        await this?.deadLetterQueue?.close();
       }
       if (this.queueEvents) {
-        await this.queueEvents.close();
+        await this?.queueEvents?.close();
       }
 
       // Close Redis connection
-      await this.redis.quit();
+      await this?.redis.quit();
 
       logger.info('EmailIngestionService shutdown complete', 'EMAIL_INGESTION');
     } catch (error) {

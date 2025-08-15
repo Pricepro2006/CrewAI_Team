@@ -264,48 +264,48 @@ async function importSampleData(dbManager: any): Promise<void> {
     logger.info("Importing sample data...", "DB_INIT");
 
     // Import users (skip if already exist)
-    const existingUsersCount = await dbManager.users.count();
+    const existingUsersCount = await dbManager?.users?.count();
     if (existingUsersCount === 0) {
       for (const userData of sampleData.users) {
-        await dbManager.users.createUser({
+        await dbManager?.users?.createUser({
           ...userData,
           permissions: userData.role === "admin" ? ["*"] : ["read", "write"],
         });
       }
-      logger.info(`Imported ${sampleData.users.length} users`, "DB_INIT");
+      logger.info(`Imported ${sampleData?.users?.length} users`, "DB_INIT");
     }
 
     // Import deals
-    const existingDealsCount = await dbManager.deals.count();
+    const existingDealsCount = await dbManager?.deals?.count();
     if (existingDealsCount === 0) {
       for (const dealData of sampleData.deals) {
-        await dbManager.deals.createDeal(dealData);
+        await dbManager?.deals?.createDeal(dealData);
       }
-      logger.info(`Imported ${sampleData.deals.length} deals`, "DB_INIT");
+      logger.info(`Imported ${sampleData?.deals?.length} deals`, "DB_INIT");
     }
 
     // Import deal items
-    const existingItemsCount = await dbManager.dealItems.count();
+    const existingItemsCount = await dbManager?.dealItems?.count();
     if (existingItemsCount === 0) {
       for (const itemData of sampleData.dealItems) {
-        await dbManager.dealItems.createDealItem({
+        await dbManager?.dealItems?.createDealItem({
           ...itemData,
           original_quantity: itemData.remaining_quantity,
         });
       }
       logger.info(
-        `Imported ${sampleData.dealItems.length} deal items`,
+        `Imported ${sampleData?.dealItems?.length} deal items`,
         "DB_INIT",
       );
     }
 
     // Import emails
-    const existingEmailsCount = await dbManager.emails.count();
+    const existingEmailsCount = await dbManager?.emails?.count();
     if (existingEmailsCount === 0) {
       for (const emailData of sampleData.emails) {
-        await dbManager.emails.createEmail(emailData);
+        await dbManager?.emails?.createEmail(emailData);
       }
-      logger.info(`Imported ${sampleData.emails.length} emails`, "DB_INIT");
+      logger.info(`Imported ${sampleData?.emails?.length} emails`, "DB_INIT");
     }
 
     logger.info("Sample data import completed", "DB_INIT");
@@ -326,13 +326,13 @@ async function verifySetup(dbManager: any): Promise<void> {
     const stats = await dbManager.getStatistics();
     logger.info(`Database statistics:`, "DB_INIT");
     logger.info(
-      `  SQLite - Tables: ${stats.sqlite.tables}, Users: ${stats.sqlite.users}, Emails: ${stats.sqlite.emails}, Deals: ${stats.sqlite.deals}`,
+      `  SQLite - Tables: ${stats?.sqlite?.tables}, Users: ${stats?.sqlite?.users}, Emails: ${stats?.sqlite?.emails}, Deals: ${stats?.sqlite?.deals}`,
       "DB_INIT",
     );
 
     if (stats.chromadb) {
       logger.info(
-        `  ChromaDB - Connected: ${stats.chromadb.connected}, Collections: ${stats.chromadb.collections}`,
+        `  ChromaDB - Connected: ${stats?.chromadb?.connected}, Collections: ${stats?.chromadb?.collections}`,
         "DB_INIT",
       );
     }
@@ -344,10 +344,10 @@ async function verifySetup(dbManager: any): Promise<void> {
     }
 
     // Test a few queries
-    const activeDeals = await dbManager.deals.findActiveDeals();
-    logger.info(`Found ${activeDeals.length} active deals`, "DB_INIT");
+    const activeDeals = await dbManager?.deals?.findActiveDeals();
+    logger.info(`Found ${activeDeals?.length || 0} active deals`, "DB_INIT");
 
-    const unassignedEmails = await dbManager.emails.findUnassignedEmails();
+    const unassignedEmails = await dbManager?.emails?.findUnassignedEmails();
     logger.info(`Found ${unassignedEmails.total} unassigned emails`, "DB_INIT");
 
     logger.info("Database verification completed successfully", "DB_INIT");
@@ -392,7 +392,7 @@ if (require.main === module) {
     case "init":
       initializeDatabase()
         .then(() => process.exit(0))
-        .catch((error) => {
+        .catch((error: any) => {
           logger.error(`Initialization failed: ${error}`, "DB_INIT");
           process.exit(1);
         });
@@ -401,7 +401,7 @@ if (require.main === module) {
     case "reset":
       resetDatabase()
         .then(() => process.exit(0))
-        .catch((error) => {
+        .catch((error: any) => {
           logger.error(`Reset failed: ${error}`, "DB_INIT");
           process.exit(1);
         });

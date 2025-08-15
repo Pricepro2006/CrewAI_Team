@@ -6,7 +6,7 @@
 import Database from "better-sqlite3";
 import { existsSync, mkdirSync } from "fs";
 import { dirname, join } from "path";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 import { walmartConfig, type WalmartDatabaseConfig } from "../config/walmart.config.js";
 
 // Repository imports
@@ -41,7 +41,7 @@ export class WalmartDatabaseManager {
     };
 
     // Ensure data directory exists
-    const dbPath = dbConfig.sqlite.path;
+    const dbPath = dbConfig?.sqlite?.path;
     const dataDir = dirname(dbPath);
     if (!existsSync(dataDir)) {
       mkdirSync(dataDir, { recursive: true });
@@ -52,11 +52,11 @@ export class WalmartDatabaseManager {
     this.db = new Database(dbPath);
     
     // Configure database settings
-    this.db.pragma(`journal_mode = ${dbConfig.sqlite.enableWAL ? 'WAL' : 'DELETE'}`);
-    this.db.pragma(`foreign_keys = ${dbConfig.sqlite.enableForeignKeys ? 'ON' : 'OFF'}`);
-    this.db.pragma(`cache_size = ${dbConfig.sqlite.cacheSize}`);
-    this.db.pragma(`mmap_size = ${dbConfig.sqlite.memoryMap}`);
-    this.db.pragma(`busy_timeout = ${dbConfig.sqlite.busyTimeout}`);
+    this?.db?.pragma(`journal_mode = ${dbConfig?.sqlite?.enableWAL ? 'WAL' : 'DELETE'}`);
+    this?.db?.pragma(`foreign_keys = ${dbConfig?.sqlite?.enableForeignKeys ? 'ON' : 'OFF'}`);
+    this?.db?.pragma(`cache_size = ${dbConfig?.sqlite?.cacheSize}`);
+    this?.db?.pragma(`mmap_size = ${dbConfig?.sqlite?.memoryMap}`);
+    this?.db?.pragma(`busy_timeout = ${dbConfig?.sqlite?.busyTimeout}`);
 
     // Initialize repositories
     this.walmartProducts = new WalmartProductRepository(this.db);
@@ -316,7 +316,7 @@ export class WalmartDatabaseManager {
     `;
 
     try {
-      this.db.exec(createTablesSql);
+      this?.db?.exec(createTablesSql);
       logger.info("Walmart database tables created successfully", "WALMART_DB");
     } catch (error) {
       logger.error(`Failed to create Walmart database tables: ${error}`, "WALMART_DB");
@@ -329,7 +329,7 @@ export class WalmartDatabaseManager {
    */
   private async seedSampleData(): Promise<void> {
     // Check if data already exists
-    const productCount = this.db.prepare("SELECT COUNT(*) as count FROM walmart_products").get() as { count: number };
+    const productCount = this?.db?.prepare("SELECT COUNT(*) as count FROM walmart_products").get() as { count: number };
     
     if (productCount.count > 0) {
       logger.info(`Walmart database already has ${productCount.count} products`, "WALMART_DB");
@@ -414,7 +414,7 @@ export class WalmartDatabaseManager {
       }
     ];
 
-    const insertStmt = this.db.prepare(`
+    const insertStmt = this?.db?.prepare(`
       INSERT INTO walmart_products (
         product_id, name, brand, description, category_path, department,
         current_price, regular_price, unit_price, unit_measure,
@@ -423,7 +423,7 @@ export class WalmartDatabaseManager {
     `);
 
     try {
-      const insertMany = this.db.transaction((products) => {
+      const insertMany = this?.db?.transaction((products: any) => {
         for (const product of products) {
           insertStmt.run(
             product.product_id,
@@ -444,7 +444,7 @@ export class WalmartDatabaseManager {
       });
 
       insertMany(sampleProducts);
-      logger.info(`Inserted ${sampleProducts.length} sample products into Walmart database`, "WALMART_DB");
+      logger.info(`Inserted ${sampleProducts?.length || 0} sample products into Walmart database`, "WALMART_DB");
     } catch (error) {
       logger.error(`Failed to seed sample data: ${error}`, "WALMART_DB");
       throw error;
@@ -456,7 +456,7 @@ export class WalmartDatabaseManager {
    */
   close(): void {
     if (this.db) {
-      this.db.close();
+      this?.db?.close();
       logger.info("Walmart database connection closed", "WALMART_DB");
     }
   }

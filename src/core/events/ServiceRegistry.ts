@@ -116,10 +116,10 @@ export class ServiceRegistry extends EventEmitter {
 
   private initializeRedisClient(): void {
     this.client = new Redis({
-      host: this.config.redis.host,
-      port: this.config.redis.port,
-      password: this.config.redis.password,
-      db: this.config.redis.db,
+      host: this?.config?.redis.host,
+      port: this?.config?.redis.port,
+      password: this?.config?.redis.password,
+      db: this?.config?.redis.db,
       maxRetriesPerRequest: 3,
       retryStrategy: (times: number) => {
         if (times > 3) return null;
@@ -128,19 +128,19 @@ export class ServiceRegistry extends EventEmitter {
       lazyConnect: true
     });
 
-    this.client.on('connect', () => {
+    this?.client?.on('connect', () => {
       this.isConnected = true;
       this.emit('connected');
       this.loadServicesFromRedis();
     });
 
-    this.client.on('error', (error) => {
+    this?.client?.on('error', (error: any) => {
       this.isConnected = false;
       this.emit('error', error);
     });
 
     // Subscribe to service notifications
-    this.client.on('message', (channel, message) => {
+    this?.client?.on('message', (channel, message) => {
       this.handleServiceNotification(channel, message);
     });
   }
@@ -149,12 +149,12 @@ export class ServiceRegistry extends EventEmitter {
     // Health check timer
     this.healthCheckTimer = setInterval(() => {
       this.performHealthChecks();
-    }, this.config.discovery.healthCheckInterval);
+    }, this?.config?.discovery.healthCheckInterval);
 
     // Cleanup timer
     this.cleanupTimer = setInterval(() => {
       this.cleanupStaleServices();
-    }, this.config.discovery.cleanupInterval);
+    }, this?.config?.discovery.cleanupInterval);
   }
 
   // Core service registry operations
@@ -162,7 +162,7 @@ export class ServiceRegistry extends EventEmitter {
     if (this.isConnected) return;
 
     try {
-      await this.client.connect();
+      await this?.client?.connect();
       console.log('ServiceRegistry connected to Redis');
     } catch (error) {
       this.emit('connection_error', error);
@@ -191,54 +191,54 @@ export class ServiceRegistry extends EventEmitter {
       const serviceData = this.serializeService(service);
 
       // Store service in Redis
-      await this.client.hset(serviceKey, serviceData);
-      await this.client.expire(serviceKey, 300); // 5 minutes TTL
+      await this?.client?.hset(serviceKey, serviceData);
+      await this?.client?.expire(serviceKey, 300); // 5 minutes TTL
 
       // Add to service name index
-      await this.client.sadd(
-        `${this.config.redis.keyPrefix}by_name:${service.name}`,
+      await this?.client?.sadd(
+        `${this?.config?.redis.keyPrefix}by_name:${service.name}`,
         service.id
       );
 
       // Add to service type index
-      await this.client.sadd(
-        `${this.config.redis.keyPrefix}by_type:${service.type}`,
+      await this?.client?.sadd(
+        `${this?.config?.redis.keyPrefix}by_type:${service.type}`,
         service.id
       );
 
       // Add to capability indexes
       for (const capability of service.capabilities) {
-        await this.client.sadd(
-          `${this.config.redis.keyPrefix}by_capability:${capability}`,
+        await this?.client?.sadd(
+          `${this?.config?.redis.keyPrefix}by_capability:${capability}`,
           service.id
         );
       }
 
       // Add to event type indexes
-      for (const eventType of service.eventTypes.publishes) {
-        await this.client.sadd(
-          `${this.config.redis.keyPrefix}publishers:${eventType}`,
+      for (const eventType of service?.eventTypes?.publishes) {
+        await this?.client?.sadd(
+          `${this?.config?.redis.keyPrefix}publishers:${eventType}`,
           service.id
         );
       }
 
-      for (const eventType of service.eventTypes.subscribes) {
-        await this.client.sadd(
-          `${this.config.redis.keyPrefix}subscribers:${eventType}`,
+      for (const eventType of service?.eventTypes?.subscribes) {
+        await this?.client?.sadd(
+          `${this?.config?.redis.keyPrefix}subscribers:${eventType}`,
           service.id
         );
       }
 
       // Cache locally
-      this.services.set(service.id, service);
+      this?.services?.set(service.id, service);
       this.localServiceId = service.id;
 
       // Start heartbeat for this service
       this.startHeartbeat(service.id);
 
       // Notify about service registration
-      if (this.config.notifications.enableNotifications && 
-          this.config.notifications.notifyOnServiceUp) {
+      if (this?.config?.notifications.enableNotifications && 
+          this?.config?.notifications.notifyOnServiceUp) {
         await this.publishServiceNotification('service:registered', service);
       }
 
@@ -280,15 +280,15 @@ export class ServiceRegistry extends EventEmitter {
       const serviceKey = this.getServiceKey(serviceId);
       const serviceData = this.serializeService(updatedService);
 
-      await this.client.hset(serviceKey, serviceData);
+      await this?.client?.hset(serviceKey, serviceData);
 
       // Update local cache
-      this.services.set(serviceId, updatedService);
+      this?.services?.set(serviceId, updatedService);
 
       // Notify about status change if applicable
       if (updates.status && updates.status !== existingService.status &&
-          this.config.notifications.enableNotifications &&
-          this.config.notifications.notifyOnHealthChange) {
+          this?.config?.notifications.enableNotifications &&
+          this?.config?.notifications.notifyOnHealthChange) {
         await this.publishServiceNotification('service:status_changed', updatedService);
       }
 
@@ -317,35 +317,35 @@ export class ServiceRegistry extends EventEmitter {
       const serviceKey = this.getServiceKey(serviceId);
       
       // Remove from Redis
-      await this.client.del(serviceKey);
+      await this?.client?.del(serviceKey);
 
       // Remove from indexes
-      await this.client.srem(`${this.config.redis.keyPrefix}by_name:${service.name}`, serviceId);
-      await this.client.srem(`${this.config.redis.keyPrefix}by_type:${service.type}`, serviceId);
+      await this?.client?.srem(`${this?.config?.redis.keyPrefix}by_name:${service.name}`, serviceId);
+      await this?.client?.srem(`${this?.config?.redis.keyPrefix}by_type:${service.type}`, serviceId);
 
       for (const capability of service.capabilities) {
-        await this.client.srem(
-          `${this.config.redis.keyPrefix}by_capability:${capability}`,
+        await this?.client?.srem(
+          `${this?.config?.redis.keyPrefix}by_capability:${capability}`,
           serviceId
         );
       }
 
-      for (const eventType of service.eventTypes.publishes) {
-        await this.client.srem(
-          `${this.config.redis.keyPrefix}publishers:${eventType}`,
+      for (const eventType of service?.eventTypes?.publishes) {
+        await this?.client?.srem(
+          `${this?.config?.redis.keyPrefix}publishers:${eventType}`,
           serviceId
         );
       }
 
-      for (const eventType of service.eventTypes.subscribes) {
-        await this.client.srem(
-          `${this.config.redis.keyPrefix}subscribers:${eventType}`,
+      for (const eventType of service?.eventTypes?.subscribes) {
+        await this?.client?.srem(
+          `${this?.config?.redis.keyPrefix}subscribers:${eventType}`,
           serviceId
         );
       }
 
       // Remove from local cache
-      this.services.delete(serviceId);
+      this?.services?.delete(serviceId);
 
       // Stop heartbeat if this is our local service
       if (this.localServiceId === serviceId) {
@@ -354,8 +354,8 @@ export class ServiceRegistry extends EventEmitter {
       }
 
       // Notify about service unregistration
-      if (this.config.notifications.enableNotifications && 
-          this.config.notifications.notifyOnServiceDown) {
+      if (this?.config?.notifications.enableNotifications && 
+          this?.config?.notifications.notifyOnServiceDown) {
         await this.publishServiceNotification('service:unregistered', service);
       }
 
@@ -382,15 +382,15 @@ export class ServiceRegistry extends EventEmitter {
       let serviceIds: Set<string> = new Set();
 
       if (query.name) {
-        const nameMembers = await this.client.smembers(
-          `${this.config.redis.keyPrefix}by_name:${query.name}`
+        const nameMembers = await this?.client?.smembers(
+          `${this?.config?.redis.keyPrefix}by_name:${query.name}`
         );
         serviceIds = new Set(nameMembers);
       }
 
       if (query.type) {
-        const typeMembers = await this.client.smembers(
-          `${this.config.redis.keyPrefix}by_type:${query.type}`
+        const typeMembers = await this?.client?.smembers(
+          `${this?.config?.redis.keyPrefix}by_type:${query.type}`
         );
         if (serviceIds.size === 0) {
           serviceIds = new Set(typeMembers);
@@ -400,8 +400,8 @@ export class ServiceRegistry extends EventEmitter {
       }
 
       if (query.capability) {
-        const capabilityMembers = await this.client.smembers(
-          `${this.config.redis.keyPrefix}by_capability:${query.capability}`
+        const capabilityMembers = await this?.client?.smembers(
+          `${this?.config?.redis.keyPrefix}by_capability:${query.capability}`
         );
         if (serviceIds.size === 0) {
           serviceIds = new Set(capabilityMembers);
@@ -411,11 +411,11 @@ export class ServiceRegistry extends EventEmitter {
       }
 
       if (query.eventType) {
-        const publishers = await this.client.smembers(
-          `${this.config.redis.keyPrefix}publishers:${query.eventType}`
+        const publishers = await this?.client?.smembers(
+          `${this?.config?.redis.keyPrefix}publishers:${query.eventType}`
         );
-        const subscribers = await this.client.smembers(
-          `${this.config.redis.keyPrefix}subscribers:${query.eventType}`
+        const subscribers = await this?.client?.smembers(
+          `${this?.config?.redis.keyPrefix}subscribers:${query.eventType}`
         );
         const eventMembers = [...publishers, ...subscribers];
         
@@ -428,8 +428,8 @@ export class ServiceRegistry extends EventEmitter {
 
       // If no specific query, get all services
       if (serviceIds.size === 0 && Object.keys(query).length === 0) {
-        const allKeys = await this.client.keys(`${this.config.redis.keyPrefix}service:*`);
-        serviceIds = new Set(allKeys.map(key => key.split(':').pop()!));
+        const allKeys = await this?.client?.keys(`${this?.config?.redis.keyPrefix}service:*`);
+        serviceIds = new Set(allKeys?.map(key => key.split(':').pop()!));
       }
 
       // Fetch service details
@@ -450,7 +450,7 @@ export class ServiceRegistry extends EventEmitter {
 
       this.emit('services_discovered', {
         query,
-        resultCount: services.length
+        resultCount: services?.length || 0
       });
 
       return services;
@@ -463,8 +463,8 @@ export class ServiceRegistry extends EventEmitter {
 
   public async getService(serviceId: string): Promise<ServiceInfo | null> {
     // Check local cache first
-    if (this.services.has(serviceId)) {
-      return this.services.get(serviceId)!;
+    if (this?.services?.has(serviceId)) {
+      return this?.services?.get(serviceId)!;
     }
 
     if (!this.isConnected) {
@@ -473,7 +473,7 @@ export class ServiceRegistry extends EventEmitter {
 
     try {
       const serviceKey = this.getServiceKey(serviceId);
-      const serviceData = await this.client.hgetall(serviceKey);
+      const serviceData = await this?.client?.hgetall(serviceKey);
 
       if (Object.keys(serviceData).length === 0) {
         return null;
@@ -482,7 +482,7 @@ export class ServiceRegistry extends EventEmitter {
       const service = this.deserializeService(serviceData);
       
       // Cache locally
-      this.services.set(serviceId, service);
+      this?.services?.set(serviceId, service);
       
       return service;
 
@@ -498,9 +498,9 @@ export class ServiceRegistry extends EventEmitter {
 
   public async getHealthyService(serviceName: string): Promise<ServiceInfo | null> {
     const services = await this.getServiceByName(serviceName);
-    const healthyServices = services.filter(s => s.status === 'healthy');
+    const healthyServices = services?.filter(s => s.status === 'healthy');
     
-    if (healthyServices.length === 0) {
+    if (healthyServices?.length || 0 === 0) {
       return null;
     }
 
@@ -509,7 +509,7 @@ export class ServiceRegistry extends EventEmitter {
 
   // Load balancing
   private selectServiceByLoadBalancing(serviceName: string, services: ServiceInfo[]): ServiceInfo {
-    const strategy = this.config.discovery.loadBalancingStrategy;
+    const strategy = this?.config?.discovery.loadBalancingStrategy;
 
     switch (strategy) {
       case 'round_robin':
@@ -519,7 +519,7 @@ export class ServiceRegistry extends EventEmitter {
         return this.selectLeastConnections(services);
       
       case 'random':
-        return services[Math.floor(Math.random() * services.length)];
+        return services[Math.floor(Math.random() * services?.length || 0)];
       
       case 'weighted':
         return this.selectWeighted(services);
@@ -530,14 +530,14 @@ export class ServiceRegistry extends EventEmitter {
   }
 
   private selectRoundRobin(serviceName: string, services: ServiceInfo[]): ServiceInfo {
-    if (!this.loadBalancerState.roundRobinIndex.has(serviceName)) {
-      this.loadBalancerState.roundRobinIndex.set(serviceName, 0);
+    if (!this?.loadBalancerState?.roundRobinIndex.has(serviceName)) {
+      this?.loadBalancerState?.roundRobinIndex.set(serviceName, 0);
     }
 
-    const currentIndex = this.loadBalancerState.roundRobinIndex.get(serviceName)!;
-    const selectedService = services[currentIndex % services.length];
+    const currentIndex = this?.loadBalancerState?.roundRobinIndex.get(serviceName)!;
+    const selectedService = services[currentIndex % services?.length || 0];
     
-    this.loadBalancerState.roundRobinIndex.set(serviceName, currentIndex + 1);
+    this?.loadBalancerState?.roundRobinIndex.set(serviceName, currentIndex + 1);
     
     return selectedService;
   }
@@ -547,7 +547,7 @@ export class ServiceRegistry extends EventEmitter {
     let selectedService = services[0];
 
     for (const service of services) {
-      const connections = this.loadBalancerState.connectionCounts.get(service.id) || 0;
+      const connections = this?.loadBalancerState?.connectionCounts.get(service.id) || 0;
       if (connections < minConnections) {
         minConnections = connections;
         selectedService = service;
@@ -558,35 +558,35 @@ export class ServiceRegistry extends EventEmitter {
   }
 
   private selectWeighted(services: ServiceInfo[]): ServiceInfo {
-    const totalWeight = services.reduce((sum, service) => {
-      return sum + (this.loadBalancerState.weights.get(service.id) || 1);
+    const totalWeight = services.reduce((sum: any, service: any) => {
+      return sum + (this?.loadBalancerState?.weights.get(service.id) || 1);
     }, 0);
 
     const random = Math.random() * totalWeight;
     let weightSum = 0;
 
     for (const service of services) {
-      weightSum += this.loadBalancerState.weights.get(service.id) || 1;
+      weightSum += this?.loadBalancerState?.weights.get(service.id) || 1;
       if (random <= weightSum) {
         return service;
       }
     }
 
-    return services[services.length - 1];
+    return services[services?.length || 0 - 1];
   }
 
   public incrementConnectionCount(serviceId: string): void {
-    const current = this.loadBalancerState.connectionCounts.get(serviceId) || 0;
-    this.loadBalancerState.connectionCounts.set(serviceId, current + 1);
+    const current = this?.loadBalancerState?.connectionCounts.get(serviceId) || 0;
+    this?.loadBalancerState?.connectionCounts.set(serviceId, current + 1);
   }
 
   public decrementConnectionCount(serviceId: string): void {
-    const current = this.loadBalancerState.connectionCounts.get(serviceId) || 0;
-    this.loadBalancerState.connectionCounts.set(serviceId, Math.max(0, current - 1));
+    const current = this?.loadBalancerState?.connectionCounts.get(serviceId) || 0;
+    this?.loadBalancerState?.connectionCounts.set(serviceId, Math.max(0, current - 1));
   }
 
   public setServiceWeight(serviceId: string, weight: number): void {
-    this.loadBalancerState.weights.set(serviceId, weight);
+    this?.loadBalancerState?.weights.set(serviceId, weight);
   }
 
   // Heartbeat and health checking
@@ -615,30 +615,30 @@ export class ServiceRegistry extends EventEmitter {
     const serviceKey = this.getServiceKey(serviceId);
     const now = Date.now();
 
-    await this.client.hset(serviceKey, 'lastSeen', now.toString());
-    await this.client.expire(serviceKey, 300); // Refresh TTL
+    await this?.client?.hset(serviceKey, 'lastSeen', now.toString());
+    await this?.client?.expire(serviceKey, 300); // Refresh TTL
 
     // Update local cache
-    const service = this.services.get(serviceId);
+    const service = this?.services?.get(serviceId);
     if (service) {
       service.lastSeen = now;
     }
   }
 
   private async performHealthChecks(): Promise<void> {
-    const services = Array.from(this.services.values());
-    const healthCheckPromises = services.map(service => this.checkServiceHealth(service));
+    const services = Array.from(this?.services?.values());
+    const healthCheckPromises = services?.map(service => this.checkServiceHealth(service));
     
     await Promise.allSettled(healthCheckPromises);
   }
 
   private async checkServiceHealth(service: ServiceInfo): Promise<void> {
     try {
-      const healthUrl = `${service.address.protocol}://${service.address.host}:${service.address.port}${service.health.endpoint}`;
+      const healthUrl = `${service?.address?.protocol}://${service?.address?.host}:${service?.address?.port}${service?.health?.endpoint}`;
       
       // Simplified health check - in production, use proper HTTP client
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), service.health.timeout);
+      const timeoutId = setTimeout(() => controller.abort(), service?.health?.timeout);
 
       try {
         const response = await fetch(healthUrl, {
@@ -649,7 +649,7 @@ export class ServiceRegistry extends EventEmitter {
 
         clearTimeout(timeoutId);
 
-        const isHealthy = response.ok;
+        const isHealthy = response?.ok;
         const newStatus: ServiceInfo['status'] = isHealthy ? 'healthy' : 'unhealthy';
 
         if (service.status !== newStatus) {
@@ -668,7 +668,7 @@ export class ServiceRegistry extends EventEmitter {
 
   private async cleanupStaleServices(): Promise<void> {
     const now = Date.now();
-    const staleThreshold = now - this.config.discovery.serviceTimeout;
+    const staleThreshold = now - this?.config?.discovery.serviceTimeout;
 
     for (const [serviceId, service] of this.services) {
       if (service.lastSeen < staleThreshold && service.id !== this.localServiceId) {
@@ -680,7 +680,7 @@ export class ServiceRegistry extends EventEmitter {
 
   // Notification system
   private async publishServiceNotification(type: string, service: ServiceInfo): Promise<void> {
-    const notificationChannel = `${this.config.redis.keyPrefix}notifications`;
+    const notificationChannel = `${this?.config?.redis.keyPrefix}notifications`;
     const notification = {
       type,
       service: {
@@ -693,7 +693,7 @@ export class ServiceRegistry extends EventEmitter {
       timestamp: Date.now()
     };
 
-    await this.client.publish(notificationChannel, JSON.stringify(notification));
+    await this?.client?.publish(notificationChannel, JSON.stringify(notification));
   }
 
   private handleServiceNotification(channel: string, message: string): void {
@@ -708,17 +708,17 @@ export class ServiceRegistry extends EventEmitter {
   // Utility methods
   private async loadServicesFromRedis(): Promise<void> {
     try {
-      const serviceKeys = await this.client.keys(`${this.config.redis.keyPrefix}service:*`);
+      const serviceKeys = await this?.client?.keys(`${this?.config?.redis.keyPrefix}service:*`);
       
       for (const key of serviceKeys) {
-        const serviceData = await this.client.hgetall(key);
+        const serviceData = await this?.client?.hgetall(key);
         if (Object.keys(serviceData).length > 0) {
           const service = this.deserializeService(serviceData);
-          this.services.set(service.id, service);
+          this?.services?.set(service.id, service);
         }
       }
 
-      console.log(`Loaded ${this.services.size} services from Redis`);
+      console.log(`Loaded ${this?.services?.size} services from Redis`);
 
     } catch (error) {
       console.error('Failed to load services from Redis:', error);
@@ -726,7 +726,7 @@ export class ServiceRegistry extends EventEmitter {
   }
 
   private getServiceKey(serviceId: string): string {
-    return `${this.config.redis.keyPrefix}service:${serviceId}`;
+    return `${this?.config?.redis.keyPrefix}service:${serviceId}`;
   }
 
   private serializeService(service: ServiceInfo): Record<string, string> {
@@ -742,9 +742,9 @@ export class ServiceRegistry extends EventEmitter {
       eventTypes: JSON.stringify(service.eventTypes),
       metadata: JSON.stringify(service.metadata),
       health: JSON.stringify(service.health),
-      registeredAt: service.registeredAt.toString(),
-      lastSeen: service.lastSeen.toString(),
-      heartbeatInterval: service.heartbeatInterval.toString()
+      registeredAt: service?.registeredAt?.toString(),
+      lastSeen: service?.lastSeen?.toString(),
+      heartbeatInterval: service?.heartbeatInterval?.toString()
     };
   }
 
@@ -775,17 +775,17 @@ export class ServiceRegistry extends EventEmitter {
     servicesByType: Record<string, number>;
     loadBalancerStats: LoadBalancerState;
   } {
-    const services = Array.from(this.services.values());
-    const healthyCount = services.filter(s => s.status === 'healthy').length;
+    const services = Array.from(this?.services?.values());
+    const healthyCount = services?.filter(s => s.status === 'healthy').length;
     
-    const servicesByType = services.reduce((acc, service) => {
+    const servicesByType = services.reduce((acc: any, service: any) => {
       acc[service.type] = (acc[service.type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
     return {
       connected: this.isConnected,
-      totalServices: services.length,
+      totalServices: services?.length || 0,
       healthyServices: healthyCount,
       servicesByType,
       loadBalancerStats: this.loadBalancerState
@@ -793,7 +793,7 @@ export class ServiceRegistry extends EventEmitter {
   }
 
   public listServices(): ServiceInfo[] {
-    return Array.from(this.services.values());
+    return Array.from(this?.services?.values());
   }
 
   public async shutdown(): Promise<void> {
@@ -813,7 +813,7 @@ export class ServiceRegistry extends EventEmitter {
 
     // Close Redis connection
     try {
-      await this.client.quit();
+      await this?.client?.quit();
       this.isConnected = false;
       this.emit('shutdown');
     } catch (error) {

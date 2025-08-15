@@ -55,7 +55,7 @@ describe("DatabaseConnectionPool", () => {
     });
 
     // Get connection and perform some queries
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       db.prepare("SELECT 1 as test").get();
       return true;
     });
@@ -71,7 +71,7 @@ describe("DatabaseConnectionPool", () => {
     });
 
     // Create test table
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       db.exec(
         "CREATE TABLE IF NOT EXISTS test_table (id INTEGER PRIMARY KEY, value TEXT)",
       );
@@ -79,7 +79,7 @@ describe("DatabaseConnectionPool", () => {
     });
 
     // Test transaction
-    const result = await executeTransaction((db) => {
+    const result = await executeTransaction((db: any) => {
       const insert = db.prepare("INSERT INTO test_table (value) VALUES (?)");
       insert.run("test1");
       insert.run("test2");
@@ -115,7 +115,7 @@ describe("DatabaseConnectionPool", () => {
     const initialStats = pool.getStats();
 
     // Wait for cleanup
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve: any) => setTimeout(resolve, 200));
 
     // Connection should still exist since it's the main thread connection
     const finalStats = pool.getStats();
@@ -128,7 +128,7 @@ describe("DatabaseConnectionPool", () => {
     });
 
     try {
-      await executeQuery((db) => {
+      await executeQuery((db: any) => {
         // This should throw an error
         db.prepare("SELECT * FROM non_existent_table").get();
         return true;
@@ -145,7 +145,7 @@ describe("DatabaseConnectionPool", () => {
     });
 
     // Create test table
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       db.exec(
         "CREATE TABLE IF NOT EXISTS concurrent_test (id INTEGER PRIMARY KEY, thread_id INTEGER)",
       );
@@ -154,7 +154,7 @@ describe("DatabaseConnectionPool", () => {
 
     // Run multiple concurrent operations
     const operations = Array.from({ length: 5 }, (_, i) =>
-      executeQuery((db) => {
+      executeQuery((db: any) => {
         const stmt = db.prepare(
           "INSERT INTO concurrent_test (thread_id) VALUES (?)",
         );
@@ -174,13 +174,13 @@ describe("DatabaseConnectionPool", () => {
     });
 
     // Perform some operations to generate metrics
-    await executeQuery((db) => db.prepare("SELECT 1").get());
-    await executeQuery((db) => db.prepare("SELECT 2").get());
+    await executeQuery((db: any) => db.prepare("SELECT 1").get());
+    await executeQuery((db: any) => db.prepare("SELECT 2").get());
 
     const metrics = pool.getConnectionMetrics();
     expect(metrics).toBeInstanceOf(Array);
 
-    if (metrics.length > 0) {
+    if (metrics?.length || 0 > 0) {
       const metric = metrics[0];
       expect(metric).toHaveProperty("id");
       expect(metric).toHaveProperty("threadId");
@@ -197,10 +197,10 @@ describe("DatabaseConnectionPool", () => {
     });
 
     // Perform some operations
-    await executeQuery((db) => db.prepare("SELECT 1").get());
+    await executeQuery((db: any) => db.prepare("SELECT 1").get());
 
     // Should shutdown without errors
-    await expect(pool.shutdown()).resolves.not.toThrow();
+    await expect(pool.shutdown()).resolves?.not?.toThrow();
   });
 });
 
@@ -277,7 +277,7 @@ describe("ConnectionPool Performance", () => {
     });
 
     // Create test table
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       db.exec(
         "CREATE TABLE IF NOT EXISTS perf_test (id INTEGER PRIMARY KEY, value TEXT)",
       );
@@ -289,7 +289,7 @@ describe("ConnectionPool Performance", () => {
 
     // Run many queries
     const promises = Array.from({ length: numQueries }, (_, i) =>
-      executeQuery((db) => {
+      executeQuery((db: any) => {
         const stmt = db.prepare("INSERT INTO perf_test (value) VALUES (?)");
         stmt.run(`value_${i}`);
         return i;
@@ -315,7 +315,7 @@ describe("ConnectionPool Performance", () => {
 
     // Perform many operations
     for (let i = 0; i < 100; i++) {
-      await executeQuery((db) => {
+      await executeQuery((db: any) => {
         db.prepare("SELECT ? as iteration").get(i);
         return i;
       });

@@ -51,7 +51,7 @@ export class DealDataService {
   private static instance: DealDataService;
 
   constructor(dbPath?: string) {
-    const databasePath = dbPath || appConfig.database.path;
+    const databasePath = dbPath || appConfig?.database?.path;
     this.db = new Database(databasePath);
     this.initializeDatabase();
   }
@@ -60,14 +60,14 @@ export class DealDataService {
     logger.info("Initializing deal data database", "DEAL_DATA");
 
     // Enable performance optimizations
-    this.db.pragma("journal_mode = WAL");
-    this.db.pragma("synchronous = NORMAL");
-    this.db.pragma("cache_size = 10000");
-    this.db.pragma("temp_store = MEMORY");
-    this.db.pragma("foreign_keys = ON");
+    this?.db?.pragma("journal_mode = WAL");
+    this?.db?.pragma("synchronous = NORMAL");
+    this?.db?.pragma("cache_size = 10000");
+    this?.db?.pragma("temp_store = MEMORY");
+    this?.db?.pragma("foreign_keys = ON");
 
     // Create deals table
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE TABLE IF NOT EXISTS deals (
         id TEXT PRIMARY KEY,
         deal_id TEXT UNIQUE NOT NULL,
@@ -83,7 +83,7 @@ export class DealDataService {
     `);
 
     // Create deal items table
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE TABLE IF NOT EXISTS deal_items (
         id TEXT PRIMARY KEY,
         deal_id TEXT NOT NULL,
@@ -100,7 +100,7 @@ export class DealDataService {
     `);
 
     // Create indexes for performance
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE INDEX IF NOT EXISTS idx_deals_deal_id ON deals(deal_id);
       CREATE INDEX IF NOT EXISTS idx_deals_customer ON deals(customer);
       CREATE INDEX IF NOT EXISTS idx_deals_end_date ON deals(end_date);
@@ -117,7 +117,7 @@ export class DealDataService {
   }
 
   private seedSampleData(): void {
-    const countStmt = this.db.prepare("SELECT COUNT(*) as count FROM deals");
+    const countStmt = this?.db?.prepare("SELECT COUNT(*) as count FROM deals");
     const count = (countStmt.get() as any).count;
 
     if (count === 0) {
@@ -216,7 +216,7 @@ export class DealDataService {
       ];
 
       // Insert deals
-      const insertDeal = this.db.prepare(`
+      const insertDeal = this?.db?.prepare(`
         INSERT INTO deals (id, deal_id, customer, end_date, total_value)
         VALUES (?, ?, ?, ?, ?)
       `);
@@ -232,7 +232,7 @@ export class DealDataService {
       }
 
       // Insert deal items
-      const insertItem = this.db.prepare(`
+      const insertItem = this?.db?.prepare(`
         INSERT INTO deal_items (id, deal_id, product_number, product_family, remaining_quantity, dealer_net_price, list_price, description)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
@@ -260,7 +260,7 @@ export class DealDataService {
   async getDeal(dealId: string): Promise<DealResponse | null> {
     try {
       // Get deal information
-      const dealStmt = this.db.prepare(`
+      const dealStmt = this?.db?.prepare(`
         SELECT * FROM deals WHERE deal_id = ?
       `);
       const dealResult = dealStmt.get(dealId) as any;
@@ -270,7 +270,7 @@ export class DealDataService {
       }
 
       // Get deal items
-      const itemsStmt = this.db.prepare(`
+      const itemsStmt = this?.db?.prepare(`
         SELECT * FROM deal_items WHERE deal_id = ?
         ORDER BY product_number
       `);
@@ -297,7 +297,7 @@ export class DealDataService {
         updatedAt: dealResult.updated_at,
       };
 
-      const items: DealItem[] = itemsResults.map((item) => ({
+      const items: DealItem[] = itemsResults?.map((item: any) => ({
         id: item.id,
         dealId: item.deal_id,
         productNumber: item.product_number,
@@ -319,7 +319,7 @@ export class DealDataService {
         deal,
         items,
         metadata: {
-          totalItems: items.length,
+          totalItems: items?.length || 0,
           totalValue,
           daysUntilExpiration,
           isExpired,
@@ -339,7 +339,7 @@ export class DealDataService {
     productNumber: string,
   ): Promise<DealItem | null> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT * FROM deal_items 
         WHERE deal_id = ? AND product_number = ?
       `);
@@ -398,7 +398,7 @@ export class DealDataService {
       let totalSavings = 0;
 
       // Find deals containing these products
-      const placeholders = productIds.map(() => "?").join(",");
+      const placeholders = productIds?.map(() => "?").join(",");
       let query = `
         SELECT DISTINCT d.*, di.* 
         FROM deals d
@@ -415,13 +415,13 @@ export class DealDataService {
         params.push(customerId);
       }
 
-      const stmt = this.db.prepare(query);
+      const stmt = this?.db?.prepare(query);
       const results = stmt.all(...params) as any[];
 
       // Group by deal
       const dealMap = new Map<string, any>();
 
-      results.forEach((row) => {
+      results.forEach((row: any) => {
         if (!dealMap.has(row.deal_id)) {
           dealMap.set(row.deal_id, {
             dealId: row.deal_id,
@@ -439,7 +439,7 @@ export class DealDataService {
         );
         const savings = (row.list_price || 0) - discountPrice;
 
-        deal.items.push({
+        deal?.items?.push({
           productNumber: row.product_number,
           dealerNetPrice: row.dealer_net_price,
           discountPrice,
@@ -479,7 +479,7 @@ export class DealDataService {
         );
       }
 
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT * FROM deals 
         WHERE datetime(created_at) >= datetime('now', ? || ' hours')
         ORDER BY created_at DESC
@@ -487,7 +487,7 @@ export class DealDataService {
 
       const results = stmt.all(`-${hoursAgo}`) as any[];
 
-      return results.map((deal) => ({
+      return results?.map((deal: any) => ({
         id: deal.deal_id,
         customer: deal.customer,
         endDate: deal.end_date,
@@ -506,11 +506,11 @@ export class DealDataService {
    */
   private getDealProducts(dealId: string): string[] {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT product_number FROM deal_items WHERE deal_id = ?
       `);
       const results = stmt.all(dealId) as any[];
-      return results.map((r) => r.product_number);
+      return results?.map((r: any) => r.product_number);
     } catch (error) {
       logger.error("Failed to get deal products", "DEAL_DATA", { error });
       return [];
@@ -525,13 +525,13 @@ export class DealDataService {
     if (!dealResponse) return null;
 
     return {
-      dealId: dealResponse.deal.dealId,
-      customer: dealResponse.deal.customer,
-      endDate: dealResponse.deal.endDate,
-      totalValue: dealResponse.metadata.totalValue,
-      itemCount: dealResponse.metadata.totalItems,
-      daysUntilExpiration: dealResponse.metadata.daysUntilExpiration,
-      products: dealResponse.items.map((item) => ({
+      dealId: dealResponse?.deal?.dealId,
+      customer: dealResponse?.deal?.customer,
+      endDate: dealResponse?.deal?.endDate,
+      totalValue: dealResponse?.metadata?.totalValue,
+      itemCount: dealResponse?.metadata?.totalItems,
+      daysUntilExpiration: dealResponse?.metadata?.daysUntilExpiration,
+      products: dealResponse?.items?.map((item: any) => ({
         sku: item.productNumber,
         price: this.calculatePrice(item.dealerNetPrice, item.productFamily),
         quantity: item.remainingQuantity,
@@ -551,7 +551,7 @@ export class DealDataService {
 
   async close(): Promise<void> {
     try {
-      this.db.close();
+      this?.db?.close();
       logger.info("Deal data database connection closed", "DEAL_DATA");
     } catch (error) {
       logger.error(`Failed to close deal data database: ${error}`, "DEAL_DATA");

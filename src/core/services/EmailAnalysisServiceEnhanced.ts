@@ -50,9 +50,9 @@ export class EmailAnalysisServiceEnhanced {
 
   constructor(dbPath: string = "./data/crewai_enhanced.db") {
     this.db = new Database(dbPath);
-    this.db.pragma("foreign_keys = OFF"); // Disable for now to avoid issues
-    this.db.pragma("journal_mode = WAL");
-    this.db.pragma("synchronous = NORMAL");
+    this?.db?.pragma("foreign_keys = OFF"); // Disable for now to avoid issues
+    this?.db?.pragma("journal_mode = WAL");
+    this?.db?.pragma("synchronous = NORMAL");
   }
 
   /**
@@ -74,7 +74,7 @@ export class EmailAnalysisServiceEnhanced {
       const phase2Result = await this.runPhase2(email, phase1Result);
       return phase2Result;
     } catch (error) {
-      logger.error("Email analysis failed:", error);
+      logger.error("Email analysis failed:", error as string);
       // Return Phase 1 results as fallback
       return this.runPhase1(email);
     }
@@ -84,7 +84,7 @@ export class EmailAnalysisServiceEnhanced {
    * Phase 1: Rule-based analysis
    */
   private runPhase1(email: EmailInput): AnalysisResult {
-    const subject = email.subject.toLowerCase();
+    const subject = email?.subject?.toLowerCase();
     const body = (email.body_content || email.body_preview || "").toLowerCase();
     const combined = subject + " " + body;
 
@@ -152,7 +152,7 @@ export class EmailAnalysisServiceEnhanced {
   ): Promise<AnalysisResult> {
     try {
       // Check rate limit
-      const rateLimitResult = await this.rateLimiter.checkAndConsume(
+      const rateLimitResult = await this?.rateLimiter?.checkAndConsume(
         "email-analysis",
         "llama3.2:3b",
         0.001
@@ -167,7 +167,7 @@ export class EmailAnalysisServiceEnhanced {
       const prompt = this.buildPhase2Prompt(email, phase1Result);
 
       // Call Ollama through NLP queue to prevent bottlenecks
-      const llmResponse = await this.nlpQueue.enqueue(
+      const llmResponse = await this?.nlpQueue?.enqueue(
         async () => {
           const response = await axios.post(
             "http://localhost:11434/api/generate",
@@ -183,7 +183,7 @@ export class EmailAnalysisServiceEnhanced {
             },
             {
               timeout: 30000,
-              validateStatus: (status) => status < 500,
+              validateStatus: (status: any) => status < 500,
             }
           );
 
@@ -191,7 +191,7 @@ export class EmailAnalysisServiceEnhanced {
             throw new Error(`LLM request failed with status ${response.status}`);
           }
 
-          return response.data.response;
+          return response?.data?.response;
         },
         "normal", // priority
         30000, // timeout
@@ -205,7 +205,7 @@ export class EmailAnalysisServiceEnhanced {
         phase_completed: 2,
       };
     } catch (error) {
-      logger.error("Phase 2 failed:", error);
+      logger.error("Phase 2 failed:", error as string);
       return phase1Result;
     }
   }
@@ -317,7 +317,7 @@ Format your response as a brief analysis (max 200 words).`;
    */
   async saveAnalysis(email: EmailInput, result: AnalysisResult): Promise<void> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         UPDATE emails_enhanced SET
           workflow_state = ?,
           priority = ?,
@@ -339,7 +339,7 @@ Format your response as a brief analysis (max 200 words).`;
         email.id
       );
     } catch (error) {
-      logger.error("Failed to save analysis:", error);
+      logger.error("Failed to save analysis:", error as string);
       throw error;
     }
   }
@@ -356,20 +356,20 @@ Format your response as a brief analysis (max 200 words).`;
         await this.saveAnalysis(email, result);
         results.push({ email: email.id, success: true });
       } catch (error) {
-        logger.error(`Failed to process email ${email.id}:`, error);
+        logger.error(`Failed to process email ${email.id}:`, error as string);
         results.push({ email: email.id, success: false, error });
       }
     }
 
-    const successful = results.filter(r => r.success).length;
-    logger.info(`Batch processing complete: ${successful}/${emails.length} successful`);
+    const successful = results?.filter(r => r.success).length;
+    logger.info(`Batch processing complete: ${successful}/${emails?.length || 0} successful`);
   }
 
   /**
    * Close database connection
    */
   close(): void {
-    this.db.close();
+    this?.db?.close();
   }
 }
 

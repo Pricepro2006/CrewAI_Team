@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import { TRPCError } from "@trpc/server";
-import { jwtManager, JWTError } from "../../utils/jwt";
-import { UserService } from "../services/UserService";
-import type { PublicUser } from "../../database/models/User";
+import { jwtManager, JWTError } from "../../utils/jwt.js";
+import { UserService } from "../services/UserService.js";
+import type { PublicUser } from "../../database/models/User.js";
 
 /**
  * Authentication Middleware
@@ -34,7 +34,7 @@ export function authenticateJWT(
   next: NextFunction,
 ): void {
   try {
-    const token = jwtManager.extractTokenFromHeader(req.headers.authorization);
+    const token = jwtManager.extractTokenFromHeader(req?.headers?.authorization);
 
     if (!token) {
       res.status(401).json({
@@ -102,7 +102,7 @@ export function optionalAuthenticateJWT(
   next: NextFunction,
 ): void {
   try {
-    const token = jwtManager.extractTokenFromHeader(req.headers.authorization);
+    const token = jwtManager.extractTokenFromHeader(req?.headers?.authorization);
 
     if (!token) {
       req.user = undefined;
@@ -150,12 +150,12 @@ export function requireRole(...roles: ("user" | "admin" | "moderator")[]) {
       return;
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(req?.user?.role)) {
       res.status(403).json({
         error: "Insufficient permissions",
         code: "INSUFFICIENT_PERMISSIONS",
         required: roles,
-        current: req.user.role,
+        current: req?.user?.role,
       });
       return;
     }
@@ -246,13 +246,13 @@ export function createTRPCRoleMiddleware(
       });
     }
 
-    if (!roles.includes(ctx.user.role)) {
+    if (!roles.includes(ctx?.user?.role)) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Insufficient permissions",
         cause: {
           required: roles,
-          current: ctx.user.role,
+          current: ctx?.user?.role,
         },
       });
     }
@@ -276,7 +276,7 @@ export function getUserIdFromContext(ctx: { user?: { id?: string } }): string {
       message: "User ID not found in context",
     });
   }
-  return ctx.user.id;
+  return ctx?.user?.id;
 }
 
 /**

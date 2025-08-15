@@ -182,7 +182,7 @@ export const useReportGeneration = (
         },
       };
 
-      setTemplates((prev) => [...prev, template]);
+      setTemplates((prev: any) => [...prev, template]);
       return template;
     },
     [generateId],
@@ -191,8 +191,8 @@ export const useReportGeneration = (
   // Update template
   const updateTemplate = useCallback(
     (templateId: string, updates: Partial<ReportTemplate>) => {
-      setTemplates((prev) =>
-        prev.map((template) =>
+      setTemplates((prev: any) =>
+        prev?.map((template: any) =>
           template.id === templateId
             ? {
                 ...template,
@@ -200,7 +200,7 @@ export const useReportGeneration = (
                 metadata: {
                   ...template.metadata,
                   updatedAt: new Date().toISOString(),
-                  version: incrementVersion(template.metadata.version),
+                  version: incrementVersion(template?.metadata?.version),
                 },
               }
             : template,
@@ -212,20 +212,20 @@ export const useReportGeneration = (
 
   // Delete template
   const deleteTemplate = useCallback((templateId: string) => {
-    setTemplates((prev) =>
-      prev.filter((template) => template.id !== templateId),
+    setTemplates((prev: any) =>
+      prev?.filter((template: any) => template.id !== templateId),
     );
 
     // Also remove associated schedules
-    setSchedules((prev) =>
-      prev.filter((schedule) => schedule.reportId !== templateId),
+    setSchedules((prev: any) =>
+      prev?.filter((schedule: any) => schedule.reportId !== templateId),
     );
   }, []);
 
   // Clone template
   const cloneTemplate = useCallback(
     (templateId: string, newName?: string) => {
-      const original = templates.find((t) => t.id === templateId);
+      const original = templates.find((t: any) => t.id === templateId);
       if (!original) return null;
 
       const cloned: ReportTemplate = {
@@ -241,7 +241,7 @@ export const useReportGeneration = (
         isDefault: false,
       };
 
-      setTemplates((prev) => [...prev, cloned]);
+      setTemplates((prev: any) => [...prev, cloned]);
       return cloned;
     },
     [templates, generateId],
@@ -250,12 +250,12 @@ export const useReportGeneration = (
   // Add section to template
   const addSection = useCallback(
     (templateId: string, section: Omit<ReportSection, "id" | "order">) => {
-      setTemplates((prev) =>
-        prev.map((template) => {
+      setTemplates((prev: any) =>
+        prev?.map((template: any) => {
           if (template.id !== templateId) return template;
 
           const maxOrder = Math.max(
-            ...template.sections.map((s) => s.order),
+            ...template?.sections?.map((s: any) => s.order),
             0,
           );
           const newSection: ReportSection = {
@@ -285,13 +285,13 @@ export const useReportGeneration = (
       sectionId: string,
       updates: Partial<ReportSection>,
     ) => {
-      setTemplates((prev) =>
-        prev.map((template) => {
+      setTemplates((prev: any) =>
+        prev?.map((template: any) => {
           if (template.id !== templateId) return template;
 
           return {
             ...template,
-            sections: template.sections.map((section) =>
+            sections: template?.sections?.map((section: any) =>
               section.id === sectionId ? { ...section, ...updates } : section,
             ),
             metadata: {
@@ -307,14 +307,14 @@ export const useReportGeneration = (
 
   // Remove section
   const removeSection = useCallback((templateId: string, sectionId: string) => {
-    setTemplates((prev) =>
-      prev.map((template) => {
+    setTemplates((prev: any) =>
+      prev?.map((template: any) => {
         if (template.id !== templateId) return template;
 
         return {
           ...template,
-          sections: template.sections.filter(
-            (section) => section.id !== sectionId,
+          sections: template?.sections?.filter(
+            (section: any) => section.id !== sectionId,
           ),
           metadata: {
             ...template.metadata,
@@ -328,13 +328,13 @@ export const useReportGeneration = (
   // Reorder sections
   const reorderSections = useCallback(
     (templateId: string, sectionIds: string[]) => {
-      setTemplates((prev) =>
-        prev.map((template) => {
+      setTemplates((prev: any) =>
+        prev?.map((template: any) => {
           if (template.id !== templateId) return template;
 
           const reorderedSections = sectionIds
             .map((id, index) => {
-              const section = template.sections.find((s) => s.id === id);
+              const section = template?.sections?.find((s: any) => s.id === id);
               return section ? { ...section, order: index } : null;
             })
             .filter(Boolean) as ReportSection[];
@@ -365,7 +365,7 @@ export const useReportGeneration = (
         includeMetadata?: boolean;
       } = {},
     ) => {
-      const template = templates.find((t) => t.id === templateId);
+      const template = templates.find((t: any) => t.id === templateId);
       if (!template) {
         throw new Error("Template not found");
       }
@@ -386,19 +386,19 @@ export const useReportGeneration = (
         metadata: {
           dataSnapshot: new Date().toISOString(),
           filters: options.filters || [],
-          recordCount: data.length,
+          recordCount: data?.length || 0,
         },
       };
 
-      setGeneratedReports((prev) => [report, ...prev.slice(0, maxHistory - 1)]);
+      setGeneratedReports((prev: any) => [report, ...prev.slice(0, maxHistory - 1)]);
 
       try {
         // Process each section
         const processedSections = await Promise.all(
           template.sections
-            .filter((section) => section.visible)
+            .filter((section: any) => section.visible)
             .sort((a, b) => a.order - b.order)
-            .map(async (section) => {
+            .map(async (section: any) => {
               let sectionData = [...data];
 
               // Apply section-specific filters
@@ -476,16 +476,16 @@ export const useReportGeneration = (
           fileSize,
         };
 
-        setGeneratedReports((prev) =>
-          prev.map((r) => (r.id === report.id ? completedReport : r)),
+        setGeneratedReports((prev: any) =>
+          prev?.map((r: any) => (r.id === report.id ? completedReport : r)),
         );
 
         return completedReport;
       } catch (error) {
         console.error("Report generation failed:", error);
 
-        setGeneratedReports((prev) =>
-          prev.map((r) =>
+        setGeneratedReports((prev: any) =>
+          prev?.map((r: any) =>
             r.id === report.id
               ? {
                   ...r,
@@ -522,7 +522,7 @@ export const useReportGeneration = (
         updatedAt: new Date().toISOString(),
       };
 
-      setSchedules((prev) => [...prev, schedule]);
+      setSchedules((prev: any) => [...prev, schedule]);
       return schedule;
     },
     [enableScheduling, generateId],
@@ -531,8 +531,8 @@ export const useReportGeneration = (
   // Update schedule
   const updateSchedule = useCallback(
     (scheduleId: string, updates: Partial<ReportSchedule>) => {
-      setSchedules((prev) =>
-        prev.map((schedule) =>
+      setSchedules((prev: any) =>
+        prev?.map((schedule: any) =>
           schedule.id === scheduleId
             ? { ...schedule, ...updates, updatedAt: new Date().toISOString() }
             : schedule,
@@ -544,16 +544,16 @@ export const useReportGeneration = (
 
   // Delete schedule
   const deleteSchedule = useCallback((scheduleId: string) => {
-    setSchedules((prev) =>
-      prev.filter((schedule) => schedule.id !== scheduleId),
+    setSchedules((prev: any) =>
+      prev?.filter((schedule: any) => schedule.id !== scheduleId),
     );
   }, []);
 
   // Get reports by template
   const getReportsByTemplate = useCallback(
     (templateId: string) => {
-      return generatedReports.filter(
-        (report) => report.templateId === templateId,
+      return generatedReports?.filter(
+        (report: any) => report.templateId === templateId,
       );
     },
     [generatedReports],
@@ -562,7 +562,7 @@ export const useReportGeneration = (
   // Export template
   const exportTemplate = useCallback(
     (templateId: string) => {
-      const template = templates.find((t) => t.id === templateId);
+      const template = templates.find((t: any) => t.id === templateId);
       if (!template) return;
 
       const exportData = {
@@ -578,10 +578,10 @@ export const useReportGeneration = (
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${template.name.replace(/\s+/g, "_")}_template.json`;
-      document.body.appendChild(link);
+      link.download = `${template?.name?.replace(/\s+/g, "_")}_template.json`;
+      document?.body?.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      document?.body?.removeChild(link);
       URL.revokeObjectURL(url);
     },
     [templates],
@@ -602,7 +602,7 @@ export const useReportGeneration = (
           },
         };
 
-        setTemplates((prev) => [...prev, template]);
+        setTemplates((prev: any) => [...prev, template]);
         return template;
       } catch (error) {
         console.error("Template import failed:", error);
@@ -614,10 +614,10 @@ export const useReportGeneration = (
 
   // Statistics
   const statistics = useMemo(() => {
-    const totalTemplates = templates.length;
-    const totalReports = generatedReports.length;
-    const activeSchedules = schedules.filter((s) => s.enabled).length;
-    const recentReports = generatedReports.filter((r) => {
+    const totalTemplates = templates?.length || 0;
+    const totalReports = generatedReports?.length || 0;
+    const activeSchedules = schedules?.filter((s: any) => s.enabled).length;
+    const recentReports = generatedReports?.filter((r: any) => {
       const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
       return new Date(r.generatedAt) > dayAgo;
     }).length;

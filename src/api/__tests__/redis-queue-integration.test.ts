@@ -43,7 +43,7 @@ describe('Redis Queue Integration Tests', () => {
 
   afterAll(async () => {
     if (queueSystem) {
-      await queueSystem.groceryPipeline.shutdown();
+      await queueSystem?.groceryPipeline?.shutdown();
     }
   });
 
@@ -56,7 +56,7 @@ describe('Redis Queue Integration Tests', () => {
     });
 
     it('should have active pipeline', () => {
-      expect(queueSystem.groceryPipeline.isActive()).toBe(true);
+      expect(queueSystem?.groceryPipeline?.isActive()).toBe(true);
     });
   });
 
@@ -325,8 +325,8 @@ describe('Redis Queue Integration Tests', () => {
           limit: expect.any(Number)
         });
 
-        if (response.body.logs.length > 0) {
-          expect(response.body.logs[0]).toMatchObject({
+        if (response?.body?.logs?.length || 0 > 0) {
+          expect(response?.body?.logs[0]).toMatchObject({
             timestamp: expect.any(String),
             level: expect.any(String),
             message: expect.any(String),
@@ -527,8 +527,8 @@ describe('Redis Queue Integration Tests', () => {
       const responses = await Promise.all(requests);
       
       // At least one should succeed
-      const successfulResponses = responses.filter(r => r.status === 200);
-      expect(successfulResponses.length).toBeGreaterThan(0);
+      const successfulResponses = responses?.filter(r => r.status === 200);
+      expect(successfulResponses?.length || 0).toBeGreaterThan(0);
     });
   });
 
@@ -604,7 +604,7 @@ describe('Redis Queue Integration Tests', () => {
         })
         .expect(201);
 
-      const jobId = priceUpdateResponse.body.jobId;
+      const jobId = priceUpdateResponse?.body?.jobId;
       expect(jobId).toBeDefined();
 
       // 2. Check job status
@@ -612,14 +612,14 @@ describe('Redis Queue Integration Tests', () => {
         .get(`/api/grocery-queue/jobs/${jobId}`)
         .expect(200);
 
-      expect(statusResponse.body.jobId).toBe(jobId);
+      expect(statusResponse?.body?.jobId).toBe(jobId);
 
       // 3. Check system stats were updated
       const statsResponse = await request(app)
         .get('/api/grocery-queue/stats')
         .expect(200);
 
-      expect(statsResponse.body.overview).toBeDefined();
+      expect(statsResponse?.body?.overview).toBeDefined();
     });
 
     it('should handle batch processing workflow', async () => {
@@ -655,15 +655,15 @@ describe('Redis Queue Integration Tests', () => {
         })
         .expect(201);
 
-      expect(batchResponse.body.batch.total).toBe(2);
-      expect(batchResponse.body.jobs).toHaveLength(2);
+      expect(batchResponse?.body?.batch.total).toBe(2);
+      expect(batchResponse?.body?.jobs).toHaveLength(2);
 
       // Check that processing metrics reflect the batch
       const metricsResponse = await request(app)
         .get('/api/grocery-queue/metrics/processing')
         .expect(200);
 
-      expect(metricsResponse.body.metrics).toBeDefined();
+      expect(metricsResponse?.body?.metrics).toBeDefined();
     });
   });
 });

@@ -19,7 +19,7 @@ export class AdaptiveVectorStore implements IVectorStore {
 
   async initialize(): Promise<void> {
     try {
-      await this.store.initialize();
+      await this?.store?.initialize();
       logger.info("ChromaDB vector store initialized successfully", "ADAPTIVE_VECTOR_STORE");
     } catch (error) {
       logger.warn(
@@ -29,7 +29,7 @@ export class AdaptiveVectorStore implements IVectorStore {
 
       // Switch to in-memory fallback
       this.store = new InMemoryVectorStore(this.config);
-      await this.store.initialize();
+      await this?.store?.initialize();
       this.fallbackUsed = true;
 
       logger.info("In-memory vector store fallback initialized", "ADAPTIVE_VECTOR_STORE");
@@ -38,7 +38,7 @@ export class AdaptiveVectorStore implements IVectorStore {
 
   async addDocuments(documents: ProcessedDocument[]): Promise<void> {
     try {
-      await this.store.addDocuments(documents);
+      await this?.store?.addDocuments(documents);
     } catch (error) {
       if (!this.fallbackUsed) {
         logger.warn(
@@ -47,7 +47,7 @@ export class AdaptiveVectorStore implements IVectorStore {
         );
         
         await this.switchToFallback();
-        await this.store.addDocuments(documents);
+        await this?.store?.addDocuments(documents);
       } else {
         throw error; // Re-throw if already using fallback
       }
@@ -56,7 +56,7 @@ export class AdaptiveVectorStore implements IVectorStore {
 
   async search(query: string, limit?: number): Promise<QueryResult[]> {
     try {
-      return await this.store.search(query, limit);
+      return await this?.store?.search(query, limit);
     } catch (error) {
       if (!this.fallbackUsed) {
         logger.warn(
@@ -65,7 +65,7 @@ export class AdaptiveVectorStore implements IVectorStore {
         );
         
         await this.switchToFallback();
-        return await this.store.search(query, limit);
+        return await this?.store?.search(query, limit);
       } else {
         throw error; // Re-throw if already using fallback
       }
@@ -78,7 +78,7 @@ export class AdaptiveVectorStore implements IVectorStore {
     limit?: number
   ): Promise<QueryResult[]> {
     try {
-      return await this.store.searchWithFilter(query, filter, limit);
+      return await this?.store?.searchWithFilter(query, filter, limit);
     } catch (error) {
       if (!this.fallbackUsed) {
         logger.warn(
@@ -87,7 +87,7 @@ export class AdaptiveVectorStore implements IVectorStore {
         );
         
         await this.switchToFallback();
-        return await this.store.searchWithFilter(query, filter, limit);
+        return await this?.store?.searchWithFilter(query, filter, limit);
       } else {
         throw error; // Re-throw if already using fallback
       }
@@ -96,7 +96,7 @@ export class AdaptiveVectorStore implements IVectorStore {
 
   async getDocument(documentId: string): Promise<Document | null> {
     try {
-      return await this.store.getDocument(documentId);
+      return await this?.store?.getDocument(documentId);
     } catch (error) {
       if (!this.fallbackUsed) {
         logger.warn(
@@ -105,7 +105,7 @@ export class AdaptiveVectorStore implements IVectorStore {
         );
         
         await this.switchToFallback();
-        return await this.store.getDocument(documentId);
+        return await this?.store?.getDocument(documentId);
       } else {
         throw error; // Re-throw if already using fallback
       }
@@ -114,7 +114,7 @@ export class AdaptiveVectorStore implements IVectorStore {
 
   async deleteBySourceId(sourceId: string): Promise<void> {
     try {
-      await this.store.deleteBySourceId(sourceId);
+      await this?.store?.deleteBySourceId(sourceId);
     } catch (error) {
       if (!this.fallbackUsed) {
         logger.warn(
@@ -123,7 +123,7 @@ export class AdaptiveVectorStore implements IVectorStore {
         );
         
         await this.switchToFallback();
-        await this.store.deleteBySourceId(sourceId);
+        await this?.store?.deleteBySourceId(sourceId);
       } else {
         throw error; // Re-throw if already using fallback
       }
@@ -132,7 +132,7 @@ export class AdaptiveVectorStore implements IVectorStore {
 
   async getAllDocuments(limit?: number, offset?: number): Promise<Document[]> {
     try {
-      return await this.store.getAllDocuments(limit, offset);
+      return await this?.store?.getAllDocuments(limit, offset);
     } catch (error) {
       if (!this.fallbackUsed) {
         logger.warn(
@@ -141,7 +141,7 @@ export class AdaptiveVectorStore implements IVectorStore {
         );
         
         await this.switchToFallback();
-        return await this.store.getAllDocuments(limit, offset);
+        return await this?.store?.getAllDocuments(limit, offset);
       } else {
         throw error; // Re-throw if already using fallback
       }
@@ -157,28 +157,28 @@ export class AdaptiveVectorStore implements IVectorStore {
     // Try to preserve existing data if possible
     let existingDocuments: Document[] = [];
     try {
-      existingDocuments = await this.store.getAllDocuments(10000); // Get up to 10k docs
+      existingDocuments = await this?.store?.getAllDocuments(10000); // Get up to 10k docs
     } catch (error) {
       logger.warn("Could not retrieve existing documents during fallback switch", "ADAPTIVE_VECTOR_STORE");
     }
 
     // Create new in-memory store
     this.store = new InMemoryVectorStore(this.config);
-    await this.store.initialize();
+    await this?.store?.initialize();
     this.fallbackUsed = true;
 
     // Restore documents if we managed to retrieve them
-    if (existingDocuments.length > 0) {
-      logger.info(`Restoring ${existingDocuments.length} documents to in-memory fallback`, "ADAPTIVE_VECTOR_STORE");
+    if (existingDocuments?.length || 0 > 0) {
+      logger.info(`Restoring ${existingDocuments?.length || 0} documents to in-memory fallback`, "ADAPTIVE_VECTOR_STORE");
       
-      const processedDocs: ProcessedDocument[] = existingDocuments.map(doc => ({
+      const processedDocs: ProcessedDocument[] = existingDocuments?.map(doc => ({
         id: doc.id,
         content: doc.content,
         metadata: doc.metadata,
       }));
       
       try {
-        await this.store.addDocuments(processedDocs);
+        await this?.store?.addDocuments(processedDocs);
         logger.info("Successfully restored documents to in-memory fallback", "ADAPTIVE_VECTOR_STORE");
       } catch (error) {
         logger.error("Failed to restore documents to in-memory fallback", "ADAPTIVE_VECTOR_STORE", { error });

@@ -20,19 +20,19 @@ export class PineconeVectorStore implements IVectorStore {
 
   async initialize(): Promise<void> {
     try {
-      if (!this.config.apiKey) {
+      if (!this?.config?.apiKey) {
         throw new Error("Pinecone API key is required");
       }
 
       // In a real implementation:
       // this.client = new Pinecone({
-      //   apiKey: this.config.apiKey,
+      //   apiKey: this?.config?.apiKey,
       // });
       //
-      // this.index = this.client.index(this.config.indexName || 'crewai-knowledge');
+      // this.index = this?.client?.index(this?.config?.indexName || 'crewai-knowledge');
 
       console.log("Initializing Pinecone Vector Store...");
-      console.log("Index:", this.config.indexName || "crewai-knowledge");
+      console.log("Index:", this?.config?.indexName || "crewai-knowledge");
 
       this.initialized = true;
     } catch (error) {
@@ -46,10 +46,10 @@ export class PineconeVectorStore implements IVectorStore {
       await this.initialize();
     }
 
-    console.log(`Adding ${documents.length} documents to Pinecone`);
+    console.log(`Adding ${documents?.length || 0} documents to Pinecone`);
 
     // Prepare vectors for Pinecone
-    const vectors = documents.map((doc) => ({
+    const vectors = documents?.map((doc: any) => ({
       id: doc.id,
       values: doc.embedding || [], // Embeddings would be generated
       metadata: {
@@ -59,7 +59,7 @@ export class PineconeVectorStore implements IVectorStore {
     }));
 
     // In a real implementation:
-    // await this.index.upsert(vectors);
+    // await this?.index?.upsert(vectors);
 
     console.log(`Documents prepared for Pinecone upload`);
   }
@@ -74,13 +74,13 @@ export class PineconeVectorStore implements IVectorStore {
     // In a real implementation:
     // const queryEmbedding = await this.generateEmbedding(query);
     //
-    // const results = await this.index.query({
+    // const results = await this?.index?.query({
     //   vector: queryEmbedding,
     //   topK: limit,
     //   includeMetadata: true
     // });
     //
-    // return results.matches.map(match => ({
+    // return results?.matches?.map(match => ({
     //   id: match.id,
     //   content: match.metadata?.content || '',
     //   metadata: match.metadata || {},
@@ -104,7 +104,7 @@ export class PineconeVectorStore implements IVectorStore {
     // In a real implementation:
     // const queryEmbedding = await this.generateEmbedding(query);
     //
-    // const results = await this.index.query({
+    // const results = await this?.index?.query({
     //   vector: queryEmbedding,
     //   topK: limit,
     //   filter: filter,
@@ -120,7 +120,7 @@ export class PineconeVectorStore implements IVectorStore {
     }
 
     // In a real implementation:
-    // const result = await this.index.fetch([documentId]);
+    // const result = await this?.index?.fetch([documentId]);
     //
     // if (result.records && result.records[documentId]) {
     //   const record = result.records[documentId];
@@ -144,15 +144,15 @@ export class PineconeVectorStore implements IVectorStore {
     console.log(`Deleting documents with sourceId: ${sourceId}`);
 
     // In a real implementation:
-    // const results = await this.index.query({
+    // const results = await this?.index?.query({
     //   filter: { sourceId },
     //   topK: 10000,
     //   includeValues: false
     // });
     //
-    // const idsToDelete = results.matches.map(m => m.id);
-    // if (idsToDelete.length > 0) {
-    //   await this.index.deleteMany(idsToDelete);
+    // const idsToDelete = results?.matches?.map(m => m.id);
+    // if (idsToDelete?.length || 0 > 0) {
+    //   await this?.index?.deleteMany(idsToDelete);
     // }
   }
 
@@ -171,7 +171,7 @@ export class PineconeVectorStore implements IVectorStore {
     }
 
     // In a real implementation:
-    // const stats = await this.index.describeIndexStats();
+    // const stats = await this?.index?.describeIndexStats();
     // return stats.totalRecordCount || 0;
 
     return 0;
@@ -190,7 +190,7 @@ export class PineconeVectorStore implements IVectorStore {
     console.warn("Clearing all vectors from Pinecone index");
 
     // In a real implementation:
-    // await this.index.deleteAll();
+    // await this?.index?.deleteAll();
   }
 
   private async generateEmbedding(text: string): Promise<number[]> {

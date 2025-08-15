@@ -68,9 +68,9 @@ describe("Composite Index Performance Tests", () => {
         "idx_analysis_confidence_workflow",
       ];
 
-      const indexNames = indexes.map((idx) => idx.name);
+      const indexNames = indexes?.map((idx: any) => idx.name);
 
-      expectedIndexes.forEach((expectedIndex) => {
+      expectedIndexes.forEach((expectedIndex: any) => {
         expect(indexNames).toContain(expectedIndex);
       });
     });
@@ -91,7 +91,7 @@ describe("Composite Index Performance Tests", () => {
 
       // The plan should show index usage
       const usesIndex = planBefore.some(
-        (step) =>
+        (step: any) =>
           step.detail?.includes("idx_emails_received_sender_subject") ||
           step.detail?.includes("USING INDEX"),
       );
@@ -109,7 +109,7 @@ describe("Composite Index Performance Tests", () => {
       const plan = getQueryPlan(db, query, ["IN_PROGRESS", "High"]);
 
       // Should use composite index
-      const usesCompositeIndex = plan.some((step) =>
+      const usesCompositeIndex = plan.some((step: any) =>
         step.detail?.includes("idx_analysis_workflow_priority"),
       );
 
@@ -128,7 +128,7 @@ describe("Composite Index Performance Tests", () => {
       const plan = getQueryPlan(db, query, []);
 
       // Should use SLA composite index
-      const usesSLAIndex = plan.some((step) =>
+      const usesSLAIndex = plan.some((step: any) =>
         step.detail?.includes("idx_analysis_sla_workflow"),
       );
 
@@ -171,7 +171,7 @@ describe("Composite Index Performance Tests", () => {
       const results = stmt.all();
       const executionTime = Date.now() - startTime;
 
-      expect(results.length).toBeGreaterThan(0);
+      expect(results?.length || 0).toBeGreaterThan(0);
       expect(executionTime).toBeLessThan(30); // Should execute in under 30ms
     });
 
@@ -210,7 +210,7 @@ describe("Composite Index Performance Tests", () => {
       ]);
 
       // Should use the date range status index
-      const usesIndex = plan.some((step) =>
+      const usesIndex = plan.some((step: any) =>
         step.detail?.includes("idx_emails_enhanced_date_range_status"),
       );
 
@@ -228,7 +228,7 @@ describe("Composite Index Performance Tests", () => {
       const plan = getQueryPlan(db, query, ["user123"]);
 
       // Should use the user expiry index
-      const usesIndex = plan.some((step) =>
+      const usesIndex = plan.some((step: any) =>
         step.detail?.includes("idx_refresh_tokens_user_expiry"),
       );
 
@@ -245,7 +245,7 @@ describe("Composite Index Performance Tests", () => {
       const plan = getQueryPlan(db, query, ["email123", "PO_NUMBER"]);
 
       // Should use the email type index
-      const usesIndex = plan.some((step) =>
+      const usesIndex = plan.some((step: any) =>
         step.detail?.includes("idx_email_entities_email_type"),
       );
 
@@ -262,7 +262,7 @@ describe("Composite Index Performance Tests", () => {
       const plan = getQueryPlan(db, query, ["email123"]);
 
       // Should use the workflow chain email index
-      const usesIndex = plan.some((step) =>
+      const usesIndex = plan.some((step: any) =>
         step.detail?.includes("idx_workflow_chain_emails_email"),
       );
 
@@ -583,11 +583,11 @@ async function insertTestData(db: Database.Database): Promise<void> {
     analysisStmt.run(
       `analysis_${i}`,
       `email_${i}`,
-      workflows[i % workflows.length],
-      priorities[i % priorities.length],
-      states[i % states.length],
-      workflows[i % workflows.length],
-      slaStatuses[i % slaStatuses.length],
+      workflows[i % workflows?.length || 0],
+      priorities[i % priorities?.length || 0],
+      states[i % states?.length || 0],
+      workflows[i % workflows?.length || 0],
+      slaStatuses[i % slaStatuses?.length || 0],
       Math.floor(Math.random() * 5000), // Random processing time
     );
   }
@@ -614,9 +614,9 @@ async function insertTestData(db: Database.Database): Promise<void> {
       `sender${i % 5}@company.com`,
       `Sender ${i % 5}`,
       receivedAt.toISOString(),
-      statuses[i % statuses.length],
-      priorities[i % priorities.length].toLowerCase(),
-      users[i % users.length],
+      statuses[i % statuses?.length || 0],
+      priorities[i % priorities?.length || 0].toLowerCase(),
+      users[i % users?.length || 0],
     );
   }
 }

@@ -83,14 +83,14 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
 
     try {
       // Initialize monitoring system
-      this.monitoring = WalmartMonitoringSystem.create(this.config.monitoring);
-      this.services.register("monitoring", this.monitoring);
+      this.monitoring = WalmartMonitoringSystem.create(this?.config?.monitoring);
+      this?.services?.register("monitoring", this.monitoring);
 
       // Register error handlers
       this.setupErrorHandling();
 
       // Initialize WebSocket event system
-      await this.eventBus.initialize();
+      await this?.eventBus?.initialize();
 
       // Register default services
       await this.registerDefaultServices();
@@ -101,7 +101,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       // Start periodic tasks
       this.startPeriodicTasks();
 
-      this.healthStatus.status = "healthy";
+      this?.healthStatus?.status = "healthy";
       this.initialized = true;
 
       logger.info(
@@ -112,7 +112,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       // Emit initialization complete event
       this.emit("initialized", { timestamp: new Date().toISOString() });
     } catch (error) {
-      this.healthStatus.status = "unhealthy";
+      this?.healthStatus?.status = "unhealthy";
       logger.error(
         "Failed to initialize Walmart Integration Coordinator",
         "WALMART_INTEGRATION",
@@ -133,13 +133,13 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       this.stopPeriodicTasks();
 
       // Shutdown services
-      await this.services.shutdownAll();
+      await this?.services?.shutdownAll();
 
       // Close event bus
-      await this.eventBus.shutdown();
+      await this?.eventBus?.shutdown();
 
       this.initialized = false;
-      this.healthStatus.status = "stopped";
+      this?.healthStatus?.status = "stopped";
 
       logger.info(
         "Walmart Integration Coordinator shutdown complete",
@@ -156,10 +156,10 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
   // =====================================================
 
   registerService<T extends WalmartService>(name: string, service: T): void {
-    this.services.register(name, service);
+    this?.services?.register(name, service);
 
     // Set up service monitoring
-    this.monitoring.registerHealthCheck(`service_${name}`, async () => {
+    this?.monitoring?.registerHealthCheck(`service_${name}`, async () => {
       if (
         "healthCheck" in service &&
         typeof service.healthCheck === "function"
@@ -174,7 +174,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
   }
 
   getService<T extends WalmartService>(name: string): T {
-    const service = this.services.get<T>(name);
+    const service = this?.services?.get<T>(name);
     if (!service) {
       throw new Error(`Service '${name}' not found`);
     }
@@ -188,11 +188,11 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
   async subscribeToEvents(
     subscription: WalmartEventSubscription,
   ): Promise<string> {
-    return this.eventBus.subscribe(subscription);
+    return this?.eventBus?.subscribe(subscription);
   }
 
   async unsubscribeFromEvents(subscriptionId: string): Promise<void> {
-    return this.eventBus.unsubscribe(subscriptionId);
+    return this?.eventBus?.unsubscribe(subscriptionId);
   }
 
   async publishEvent<T>(
@@ -200,21 +200,21 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     data: T,
     metadata?: EventMetadata,
   ): Promise<void> {
-    return this.eventBus.publish(eventType, data, metadata);
+    return this?.eventBus?.publish(eventType, data, metadata);
   }
 
   onEvent<T>(
     eventType: WalmartWebSocketEventType,
     handler: WalmartEventHandler<T>,
   ): void {
-    this.eventBus.on(eventType, handler);
+    this?.eventBus?.on(eventType, handler);
   }
 
   offEvent<T>(
     eventType: WalmartWebSocketEventType,
     handler?: WalmartEventHandler<T>,
   ): void {
-    this.eventBus.off(eventType, handler);
+    this?.eventBus?.off(eventType, handler);
   }
 
   // =====================================================
@@ -229,7 +229,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     const startTime = Date.now();
 
     try {
-      this.monitoring.increment("walmart.search.requests", 1, {
+      this?.monitoring?.increment("walmart.search?.requests", 1, {
         operation: "search",
         userId: _context?.userId || "anonymous",
       });
@@ -238,14 +238,14 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       const searchService = this.getService<WalmartSearchService>("search");
 
       // Execute search with monitoring
-      const result = await this.monitoring.timer(
-        "walmart.search.execution_time",
+      const result = await this?.monitoring?.timer(
+        "walmart.search?.execution_time",
         () => searchService.search(query),
         { userId: _context?.userId || "anonymous" },
       );
 
       // Publish search event
-      await this.publishEvent("walmart.search.completed", {
+      await this.publishEvent("walmart.search?.completed", {
         operationId,
         query,
         results: result,
@@ -253,7 +253,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       });
 
       // Update metrics
-      this.monitoring.increment("walmart.search.success", 1);
+      this?.monitoring?.increment("walmart.search?.success", 1);
 
       return {
         success: true,
@@ -262,7 +262,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
         executionTime: Date.now() - startTime,
         metadata: {
           cached: result.metadata?.cached || false,
-          totalResults: result.data.length,
+          totalResults: result?.data?.length,
         },
       };
     } catch (error) {
@@ -279,7 +279,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
         errorContext,
       );
 
-      this.monitoring.increment("walmart.search.errors", 1, {
+      this?.monitoring?.increment("walmart.search?.errors", 1, {
         error: (error as WalmartBaseError).code || "unknown",
       });
 
@@ -302,7 +302,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     const startTime = Date.now();
 
     try {
-      this.monitoring.increment("walmart.cart.operations", 1, {
+      this?.monitoring?.increment("walmart.cart?.operations", 1, {
         operation: operation.operation,
         userId: operation.userId,
       });
@@ -311,21 +311,21 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       const cartService = this.getService<WalmartCartService>("cart");
 
       // Execute cart operation
-      const result = await this.monitoring.timer(
-        "walmart.cart.execution_time",
+      const result = await this?.monitoring?.timer(
+        "walmart.cart?.execution_time",
         () => cartService.updateCart(operation),
         { userId: operation.userId, operation: operation.operation },
       );
 
       // Publish cart event
-      await this.publishEvent("walmart.cart.item_updated", {
+      await this.publishEvent("walmart.cart?.item_updated", {
         operationId,
         operation,
         cart: result,
         userId: operation.userId,
       });
 
-      this.monitoring.increment("walmart.cart.success", 1);
+      this?.monitoring?.increment("walmart.cart?.success", 1);
 
       return {
         success: true,
@@ -346,7 +346,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
         errorContext,
       );
 
-      this.monitoring.increment("walmart.cart.errors", 1);
+      this?.monitoring?.increment("walmart.cart?.errors", 1);
 
       return {
         success: false,
@@ -366,9 +366,9 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     const startTime = Date.now();
 
     try {
-      this.monitoring.increment("walmart.order.attempts", 1, {
+      this?.monitoring?.increment("walmart.order?.attempts", 1, {
         userId: orderRequest.userId,
-        fulfillmentMethod: orderRequest.fulfillment.method,
+        fulfillmentMethod: orderRequest?.fulfillment?.method,
       });
 
       // Get order service
@@ -379,8 +379,8 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
 
       try {
         // Place order
-        const order = await this.monitoring.timer(
-          "walmart.order.execution_time",
+        const order = await this?.monitoring?.timer(
+          "walmart.order?.execution_time",
           () => orderService.placeOrder(orderRequest, transaction),
           { userId: orderRequest.userId },
         );
@@ -389,13 +389,13 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
         await transaction.commit();
 
         // Publish order events
-        await this.publishEvent("walmart.order.placed", {
+        await this.publishEvent("walmart.order?.placed", {
           operationId,
           order,
           userId: orderRequest.userId,
         });
 
-        this.monitoring.increment("walmart.order.success", 1);
+        this?.monitoring?.increment("walmart.order?.success", 1);
 
         return {
           success: true,
@@ -420,7 +420,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
         errorContext,
       );
 
-      this.monitoring.increment("walmart.order.errors", 1);
+      this?.monitoring?.increment("walmart.order?.errors", 1);
 
       return {
         success: false,
@@ -437,8 +437,8 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
   // =====================================================
 
   async getHealthStatus(): Promise<IntegrationHealth> {
-    const systemHealth = this.monitoring.getHealthStatus();
-    const serviceStatuses = await this.services.getHealthStatuses();
+    const systemHealth = this?.monitoring?.getHealthStatus();
+    const serviceStatuses = await this?.services?.getHealthStatuses();
 
     this.healthStatus = {
       status: systemHealth.status,
@@ -447,10 +447,10 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       metrics: {
         totalServices: Object.keys(serviceStatuses).length,
         healthyServices: Object.values(serviceStatuses).filter(
-          (s) => s.status === "healthy",
+          (s: any) => s.status === "healthy",
         ).length,
         unhealthyServices: Object.values(serviceStatuses).filter(
-          (s) => s.status === "unhealthy",
+          (s: any) => s.status === "unhealthy",
         ).length,
       },
     };
@@ -459,20 +459,20 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
   }
 
   async getMetrics(): Promise<IntegrationMetrics> {
-    const dashboardData = await this.monitoring.getDashboardData();
+    const dashboardData = await this?.monitoring?.getDashboardData();
 
     return {
       timestamp: new Date().toISOString(),
       systemHealth: dashboardData.health,
-      activeAlerts: dashboardData.alerts.length,
+      activeAlerts: dashboardData?.alerts?.length,
       operationMetrics: {
-        searches: dashboardData.summary.totalSearches,
-        cartOperations: dashboardData.summary.totalCartOps,
-        orders: dashboardData.summary.totalOrders,
-        errors: dashboardData.summary.totalErrors,
+        searches: dashboardData?.summary?.totalSearches,
+        cartOperations: dashboardData?.summary?.totalCartOps,
+        orders: dashboardData?.summary?.totalOrders,
+        errors: dashboardData?.summary?.totalErrors,
       },
       performanceMetrics: {
-        averageResponseTime: dashboardData.summary.avgResponseTime,
+        averageResponseTime: dashboardData?.summary?.avgResponseTime,
         throughput: this.calculateThroughput(dashboardData),
         errorRate: this.calculateErrorRate(dashboardData),
       },
@@ -488,7 +488,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     walmartErrorHandler.registerGlobalHandler(
       async (error, context, result) => {
         // Log to monitoring system
-        this.monitoring.increment("walmart.errors", 1, {
+        this?.monitoring?.increment("walmart.errors", 1, {
           code: error.code,
           operation: context?.operation || "unknown",
         });
@@ -504,16 +504,16 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     );
 
     // Set up process error handlers
-    process.on("unhandledRejection", (error) => {
+    process.on("unhandledRejection", (error: any) => {
       logger.error("Unhandled promise rejection", "WALMART_INTEGRATION", {
         error,
       });
-      this.monitoring.increment("walmart.unhandled_errors", 1);
+      this?.monitoring?.increment("walmart.unhandled_errors", 1);
     });
 
-    process.on("uncaughtException", (error) => {
+    process.on("uncaughtException", (error: any) => {
       logger.error("Uncaught exception", "WALMART_INTEGRATION", { error });
-      this.monitoring.increment("walmart.uncaught_errors", 1);
+      this?.monitoring?.increment("walmart.uncaught_errors", 1);
     });
   }
 
@@ -521,18 +521,18 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     // Note: Actual service implementations would be injected
     // This shows the expected service registration pattern
 
-    if (this.config.services.search?.enabled) {
-      // const searchService = new WalmartSearchService(this.config.services.search);
+    if (this?.config?.services.search?.enabled) {
+      // const searchService = new WalmartSearchService(this?.config?.services.search);
       // this.registerService('search', searchService);
     }
 
-    if (this.config.services.cart?.enabled) {
-      // const cartService = new WalmartCartService(this.config.services.cart);
+    if (this?.config?.services.cart?.enabled) {
+      // const cartService = new WalmartCartService(this?.config?.services.cart);
       // this.registerService('cart', cartService);
     }
 
-    if (this.config.services.order?.enabled) {
-      // const orderService = new WalmartOrderService(this.config.services.order);
+    if (this?.config?.services.order?.enabled) {
+      // const orderService = new WalmartOrderService(this?.config?.services.order);
       // this.registerService('order', orderService);
     }
 
@@ -540,7 +540,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
   }
 
   private setupHealthChecks(): void {
-    this.monitoring.registerHealthCheck("integration_coordinator", async () => {
+    this?.monitoring?.registerHealthCheck("integration_coordinator", async () => {
       if (!this.initialized) {
         throw new Error("Integration coordinator not initialized");
       }
@@ -548,7 +548,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       // Check if all critical services are healthy
       const criticalServices = ["search", "cart", "order"];
       for (const serviceName of criticalServices) {
-        const service = this.services.get(serviceName);
+        const service = this?.services?.get(serviceName);
         if (service && "healthCheck" in service) {
           await (service as any).healthCheck();
         }
@@ -559,7 +559,7 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
   private startPeriodicTasks(): void {
     // Update health status every 30 seconds
     setInterval(() => {
-      this.getHealthStatus().catch((error) => {
+      this.getHealthStatus().catch((error: any) => {
         logger.error("Health check failed", "WALMART_INTEGRATION", { error });
       });
     }, 30000);
@@ -567,10 +567,10 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
     // Emit metrics every minute
     setInterval(() => {
       this.getMetrics()
-        .then((metrics) => {
+        .then((metrics: any) => {
           this.emit("metrics", metrics);
         })
-        .catch((error) => {
+        .catch((error: any) => {
           logger.error("Metrics collection failed", "WALMART_INTEGRATION", {
             error,
           });
@@ -601,18 +601,18 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
 
   private calculateThroughput(dashboardData: any): number {
     const totalOperations =
-      dashboardData.summary.totalSearches +
-      dashboardData.summary.totalCartOps +
-      dashboardData.summary.totalOrders;
+      dashboardData?.summary?.totalSearches +
+      dashboardData?.summary?.totalCartOps +
+      dashboardData?.summary?.totalOrders;
     return totalOperations / 60; // operations per minute
   }
 
   private calculateErrorRate(dashboardData: any): number {
     const totalOperations =
-      dashboardData.summary.totalSearches +
-      dashboardData.summary.totalCartOps +
-      dashboardData.summary.totalOrders;
-    const totalErrors = dashboardData.summary.totalErrors;
+      dashboardData?.summary?.totalSearches +
+      dashboardData?.summary?.totalCartOps +
+      dashboardData?.summary?.totalOrders;
+    const totalErrors = dashboardData?.summary?.totalErrors;
     return totalOperations > 0 ? (totalErrors / totalOperations) * 100 : 0;
   }
 }
@@ -625,16 +625,16 @@ class WalmartServiceRegistry {
   private services: Map<string, WalmartService> = new Map();
 
   register<T extends WalmartService>(name: string, service: T): void {
-    this.services.set(name, service);
+    this?.services?.set(name, service);
   }
 
   get<T extends WalmartService>(name: string): T | undefined {
-    return this.services.get(name) as T | undefined;
+    return this?.services?.get(name) as T | undefined;
   }
 
   async shutdownAll(): Promise<void> {
-    const shutdownPromises = Array.from(this.services.values()).map(
-      (service) => {
+    const shutdownPromises = Array.from(this?.services?.values()).map(
+      (service: any) => {
         if ("shutdown" in service && typeof service.shutdown === "function") {
           return (service as any).shutdown();
         }
@@ -643,13 +643,13 @@ class WalmartServiceRegistry {
     );
 
     await Promise.allSettled(shutdownPromises);
-    this.services.clear();
+    this?.services?.clear();
   }
 
   async getHealthStatuses(): Promise<Record<string, ServiceHealth>> {
     const statuses: Record<string, ServiceHealth> = {};
 
-    const healthPromises = Array.from(this.services.entries()).map(
+    const healthPromises = Array.from(this?.services?.entries()).map(
       async ([name, service]) => {
         try {
           if (
@@ -696,7 +696,7 @@ class WalmartEventBus extends EventEmitter {
   }
 
   async shutdown(): Promise<void> {
-    this.subscriptions.clear();
+    this?.subscriptions?.clear();
     this.removeAllListeners();
     logger.info("Event bus shutdown", "WALMART_INTEGRATION");
   }
@@ -709,16 +709,16 @@ class WalmartEventBus extends EventEmitter {
       channels: subscription.channels,
       events: subscription.events,
       filters: subscription.filters,
-      handler: (event) => {
+      handler: (event: any) => {
         this.emit(event.type, event);
       },
     };
 
-    this.subscriptions.set(subscriptionId, eventSub);
+    this?.subscriptions?.set(subscriptionId, eventSub);
 
     logger.debug("Event subscription created", "WALMART_INTEGRATION", {
       subscriptionId,
-      channels: subscription.channels.length,
+      channels: subscription?.channels?.length,
       events: subscription.events?.length || 0,
     });
 
@@ -726,9 +726,9 @@ class WalmartEventBus extends EventEmitter {
   }
 
   async unsubscribe(subscriptionId: string): Promise<void> {
-    const subscription = this.subscriptions.get(subscriptionId);
+    const subscription = this?.subscriptions?.get(subscriptionId);
     if (subscription) {
-      this.subscriptions.delete(subscriptionId);
+      this?.subscriptions?.delete(subscriptionId);
       logger.debug("Event subscription removed", "WALMART_INTEGRATION", {
         subscriptionId,
       });
@@ -753,7 +753,7 @@ class WalmartEventBus extends EventEmitter {
 
     // Publish via WebSocket if available
     if (this.wsService) {
-      await this.wsService.broadcast(eventType, event);
+      await this?.wsService?.broadcast(eventType, event);
     }
 
     logger.debug("Event published", "WALMART_INTEGRATION", {

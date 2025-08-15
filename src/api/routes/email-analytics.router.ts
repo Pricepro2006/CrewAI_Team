@@ -106,10 +106,10 @@ export const emailAnalyticsRouter = router({
 
       return {
         entities: results,
-        totalExtractions: results.reduce((sum, r) => sum + r.count, 0),
+        totalExtractions: results.reduce((sum: any, r: any) => sum + r.count, 0),
         avgConfidence:
-          results.reduce((sum, r) => sum + r.avg_confidence, 0) /
-            results.length || 0,
+          results.reduce((sum: any, r: any) => sum + r.avg_confidence, 0) /
+            results?.length || 0 || 0,
       };
     } catch (error) {
       console.error("Error getting entity metrics:", error);
@@ -147,10 +147,10 @@ export const emailAnalyticsRouter = router({
         avg_processing_time: number;
       }[];
 
-      const total = results.reduce((sum, r) => sum + r.count, 0);
+      const total = results.reduce((sum: any, r: any) => sum + r.count, 0);
 
       return {
-        workflows: results.map((r) => ({
+        workflows: results?.map((r: any) => ({
           ...r,
           percentage: (r.count / total) * 100,
         })),
@@ -211,7 +211,7 @@ export const emailAnalyticsRouter = router({
         return {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
-          data: results.map((r) => ({
+          data: results?.map((r: any) => ({
             ...r,
             success_rate:
               ((r.processed_count - r.error_count) / r.processed_count) * 100,
@@ -257,10 +257,10 @@ export const emailAnalyticsRouter = router({
         count: number;
       }[];
 
-      const total = results.reduce((sum, r) => sum + r.count, 0);
+      const total = results.reduce((sum: any, r: any) => sum + r.count, 0);
 
       return {
-        distribution: results.map((r) => ({
+        distribution: results?.map((r: any) => ({
           level: r.urgency_level,
           count: r.count,
           percentage: (r.count / total) * 100,

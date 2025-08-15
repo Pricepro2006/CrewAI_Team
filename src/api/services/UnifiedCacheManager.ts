@@ -87,10 +87,10 @@ export class UnifiedCacheManager extends EventEmitter {
     this.config = UnifiedCacheManagerConfigSchema.parse(config);
     
     // Initialize core services
-    this.centralCache = new CentralizedCacheService(this.config.cache);
+    this.centralCache = new CentralizedCacheService(this?.config?.cache);
     this.integration = new CacheIntegrationService(
       this.centralCache, 
-      this.config.integration
+      this?.config?.integration
     );
 
     this.setupEventHandlers();
@@ -98,28 +98,28 @@ export class UnifiedCacheManager extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Central cache events
-    this.centralCache.on('cache:hit', (data) => {
+    this?.centralCache?.on('cache:hit', (data: any) => {
       this.emit('cache:hit', { ...data, source: 'central' });
     });
 
-    this.centralCache.on('error', (error) => {
+    this?.centralCache?.on('error', (error: any) => {
       this.emit('cache:error', { ...error, source: 'central' });
     });
 
     // Integration service events
-    this.integration.on('cache:pricing:hit', (data) => {
+    this?.integration?.on('cache:pricing:hit', (data: any) => {
       this.emit('cache:hit', { ...data, source: 'pricing' });
     });
 
-    this.integration.on('cache:list:hit', (data) => {
+    this?.integration?.on('cache:list:hit', (data: any) => {
       this.emit('cache:hit', { ...data, source: 'lists' });
     });
 
-    this.integration.on('service:registered', (data) => {
+    this?.integration?.on('service:registered', (data: any) => {
       this.emit('service:registered', data);
     });
 
-    this.integration.on('cache:error', (error) => {
+    this?.integration?.on('cache:error', (error: any) => {
       this.emit('cache:error', { ...error, source: 'integration' });
     });
   }
@@ -132,10 +132,10 @@ export class UnifiedCacheManager extends EventEmitter {
       this.emit('initialization:start');
 
       // Start integration service
-      await this.integration.startup();
+      await this?.integration?.startup();
 
       // Start monitoring if enabled
-      if (this.config.monitoring.enableMetrics) {
+      if (this?.config?.monitoring.enableMetrics) {
         this.startMonitoring();
       }
 
@@ -150,7 +150,7 @@ export class UnifiedCacheManager extends EventEmitter {
 
   public registerPricingService(pricingService: PricingService): void {
     this.pricingService = pricingService;
-    this.integration.registerPricingService(pricingService);
+    this?.integration?.registerPricingService(pricingService);
     
     this.emit('service:registered', { 
       type: 'pricing', 
@@ -160,7 +160,7 @@ export class UnifiedCacheManager extends EventEmitter {
 
   public registerListService(listService: ListManagementService): void {
     this.listService = listService;
-    this.integration.registerListService(listService);
+    this?.integration?.registerListService(listService);
     
     this.emit('service:registered', { 
       type: 'lists', 
@@ -179,14 +179,14 @@ export class UnifiedCacheManager extends EventEmitter {
     const results: any = {};
 
     if (options.pricing) {
-      results.pricing = await this.integration.warmPricingCache(
-        options.pricing.productIds,
-        options.pricing.storeIds
+      results.pricing = await this?.integration?.warmPricingCache(
+        options?.pricing?.productIds,
+        options?.pricing?.storeIds
       );
     }
 
     if (options.lists) {
-      results.lists = await this.integration.warmListCache(options.lists.listIds);
+      results.lists = await this?.integration?.warmListCache(options?.lists?.listIds);
     }
 
     this.emit('cache:warm:complete', results);
@@ -199,20 +199,20 @@ export class UnifiedCacheManager extends EventEmitter {
     all?: boolean;
   }): Promise<void> {
     if (options.all) {
-      await this.integration.invalidateAllCaches();
+      await this?.integration?.invalidateAllCaches();
       this.emit('cache:invalidate:all');
       return;
     }
 
     if (options.pricing) {
-      await this.integration.invalidatePricingCache(
-        options.pricing.productId,
-        options.pricing.storeId
+      await this?.integration?.invalidatePricingCache(
+        options?.pricing?.productId,
+        options?.pricing?.storeId
       );
     }
 
     if (options.lists) {
-      await this.integration.invalidateListCache(options.lists.listId);
+      await this?.integration?.invalidateListCache(options?.lists?.listId);
     }
 
     this.emit('cache:invalidate:complete', options);
@@ -223,18 +223,18 @@ export class UnifiedCacheManager extends EventEmitter {
     // Periodic metrics collection
     this.monitoringInterval = setInterval(() => {
       this.collectAndEmitMetrics();
-    }, this.config.monitoring.metricsInterval);
+    }, this?.config?.monitoring.metricsInterval);
 
     // Health checks
     this.healthCheckInterval = setInterval(() => {
       this.performHealthCheck();
-    }, this.config.monitoring.healthCheckInterval);
+    }, this?.config?.monitoring.healthCheckInterval);
   }
 
   private collectAndEmitMetrics(): void {
     try {
-      const centralStats = this.centralCache.getStats();
-      const integrationStats = this.integration.getStats();
+      const centralStats = this?.centralCache?.getStats();
+      const integrationStats = this?.integration?.getStats();
       
       const metrics = {
         timestamp: Date.now(),
@@ -242,9 +242,9 @@ export class UnifiedCacheManager extends EventEmitter {
         central: centralStats,
         integration: integrationStats,
         combined: {
-          totalHits: centralStats.hits.memory + centralStats.hits.redis + centralStats.hits.sqlite,
-          totalMisses: centralStats.misses.memory + centralStats.misses.redis + centralStats.misses.sqlite,
-          overallHitRatio: integrationStats.unified.overallHitRatio
+          totalHits: centralStats?.hits?.memory + centralStats?.hits?.redis + centralStats?.hits?.sqlite,
+          totalMisses: centralStats?.misses?.memory + centralStats?.misses?.redis + centralStats?.misses?.sqlite,
+          overallHitRatio: integrationStats?.unified?.overallHitRatio
         }
       };
 
@@ -269,41 +269,41 @@ export class UnifiedCacheManager extends EventEmitter {
 
   // Status and statistics
   public async getStatus(): Promise<UnifiedCacheStatus> {
-    const integrationHealth = await this.integration.healthCheck();
-    const centralStats = this.centralCache.getStats();
-    const integrationStats = this.integration.getStats();
+    const integrationHealth = await this?.integration?.healthCheck();
+    const centralStats = this?.centralCache?.getStats();
+    const integrationStats = this?.integration?.getStats();
 
-    const totalRequests = integrationStats.unified.totalHits + integrationStats.unified.totalMisses;
-    const errorCount = Object.values(centralStats.errors).reduce((sum, errors) => sum + errors, 0);
+    const totalRequests = integrationStats?.unified?.totalHits + integrationStats?.unified?.totalMisses;
+    const errorCount = Object.values(centralStats.errors).reduce((sum: any, errors: any) => sum + errors, 0);
 
     return {
       status: integrationHealth.status,
       uptime: Date.now() - this.startTime,
       services: {
-        central: integrationHealth.cache.status !== 'unhealthy',
+        central: integrationHealth?.cache?.status !== 'unhealthy',
         integration: Object.keys(integrationHealth.services).length > 0,
         pricing: !!this.pricingService,
         lists: !!this.listService
       },
       performance: {
         totalRequests,
-        cacheHitRatio: integrationStats.unified.overallHitRatio,
-        averageLatency: Object.values(centralStats.averageLatency).reduce((sum, lat) => sum + lat, 0) / 3,
+        cacheHitRatio: integrationStats?.unified?.overallHitRatio,
+        averageLatency: Object.values(centralStats.averageLatency).reduce((sum: any, lat: any) => sum + lat, 0) / 3,
         errorRate: totalRequests > 0 ? (errorCount / totalRequests) * 100 : 0
       },
       tiers: {
         memory: {
-          status: integrationHealth.cache.tiers.memory,
-          size: centralStats.sizes.memory,
-          hitRatio: centralStats.hitRatio.memory
+          status: integrationHealth?.cache?.tiers.memory,
+          size: centralStats?.sizes?.memory,
+          hitRatio: centralStats?.hitRatio?.memory
         },
         redis: {
-          status: integrationHealth.cache.tiers.redis,
-          hitRatio: centralStats.hitRatio.redis
+          status: integrationHealth?.cache?.tiers.redis,
+          hitRatio: centralStats?.hitRatio?.redis
         },
         sqlite: {
-          status: integrationHealth.cache.tiers.sqlite,
-          hitRatio: centralStats.hitRatio.sqlite
+          status: integrationHealth?.cache?.tiers.sqlite,
+          hitRatio: centralStats?.hitRatio?.sqlite
         }
       }
     };
@@ -311,8 +311,8 @@ export class UnifiedCacheManager extends EventEmitter {
 
   public getMetrics() {
     return {
-      central: this.centralCache.getStats(),
-      integration: this.integration.getStats(),
+      central: this?.centralCache?.getStats(),
+      integration: this?.integration?.getStats(),
       uptime: Date.now() - this.startTime,
       initialized: this.isInitialized
     };
@@ -350,8 +350,8 @@ export class UnifiedCacheManager extends EventEmitter {
     }
 
     // Shutdown services
-    await this.integration.shutdown();
-    await this.centralCache.shutdown();
+    await this?.integration?.shutdown();
+    await this?.centralCache?.shutdown();
 
     this.isInitialized = false;
     this.removeAllListeners();
@@ -381,7 +381,7 @@ export class UnifiedCacheManager extends EventEmitter {
       res.setHeader('X-Cache-Uptime', Math.floor((Date.now() - this.startTime) / 1000));
       
       // Add cache status to response locals
-      res.locals.cacheManager = this;
+      res?.locals?.cacheManager = this;
       
       next();
     };

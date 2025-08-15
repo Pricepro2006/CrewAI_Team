@@ -43,8 +43,8 @@ export class EmailIngestionServiceFactory {
     
     logger.info('EmailIngestionService created and initialized', 'EMAIL_INGESTION_FACTORY', {
       mode: config.mode,
-      concurrency: config.processing.concurrency,
-      batchSize: config.processing.batchSize
+      concurrency: config?.processing?.concurrency,
+      batchSize: config?.processing?.batchSize
     });
     
     return service;
@@ -158,7 +158,7 @@ export class EmailIngestionServiceFactory {
       }
     }
 
-    return sources.length > 0 ? sources : [IngestionSource.MICROSOFT_GRAPH];
+    return sources?.length || 0 > 0 ? sources : [IngestionSource.MICROSOFT_GRAPH];
   }
 
   /**
@@ -182,7 +182,7 @@ export class EmailIngestionServiceFactory {
       ];
     }
 
-    return keywordsEnv.split(',').map(k => k.trim()).filter(k => k.length > 0);
+    return keywordsEnv.split(',').map(k => k.trim()).filter(k => k?.length || 0 > 0);
   }
 
   /**
@@ -192,7 +192,7 @@ export class EmailIngestionServiceFactory {
     const result = { ...target };
 
     for (const key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
+      if (Object?.prototype?.hasOwnProperty.call(source, key)) {
         const sourceValue = source[key];
         const targetValue = result[key];
 
@@ -365,7 +365,7 @@ export class EmailIngestionEnvironmentValidator {
     }
 
     return {
-      valid: errors.length === 0,
+      valid: errors?.length || 0 === 0,
       errors
     };
   }

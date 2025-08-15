@@ -107,8 +107,8 @@ export class CircuitBreaker extends EventEmitter {
 
     // Clean up response times buffer
     setInterval(() => {
-      if (this.responseTimes.length > 1000) {
-        this.responseTimes = this.responseTimes.slice(-500);
+      if (this?.responseTimes?.length > 1000) {
+        this.responseTimes = this?.responseTimes?.slice(-500);
       }
     }, 60 * 1000); // Every minute
   }
@@ -121,20 +121,20 @@ export class CircuitBreaker extends EventEmitter {
     fallbackOptions?: FallbackOptions<T>
   ): Promise<T> {
     const startTime = Date.now();
-    this.stats.totalRequests++;
+    this?.stats?.totalRequests++;
 
     try {
       // Check circuit state
-      if (this.state.state === 'open') {
+      if (this?.state?.state === 'open') {
         if (this.shouldAttemptReset()) {
-          this.state.state = 'half-open';
+          this?.state?.state = 'half-open';
           this.emit('state_changed', { 
             from: 'open', 
             to: 'half-open',
             reason: 'timeout_reached' 
           });
         } else {
-          this.stats.rejectedRequests++;
+          this?.stats?.rejectedRequests++;
           return await this.handleRejection(fallbackOptions);
         }
       }
@@ -179,7 +179,7 @@ export class CircuitBreaker extends EventEmitter {
     } catch (error) {
       const errorObj = error as Error;
       
-      if (attempt >= this.retryPolicy.maxAttempts || 
+      if (attempt >= this?.retryPolicy?.maxAttempts || 
           !this.shouldRetry(errorObj)) {
         throw error;
       }
@@ -188,7 +188,7 @@ export class CircuitBreaker extends EventEmitter {
       
       this.emit('retry_attempt', {
         attempt,
-        maxAttempts: this.retryPolicy.maxAttempts,
+        maxAttempts: this?.retryPolicy?.maxAttempts,
         delay,
         error: errorObj.message
       });
@@ -202,22 +202,22 @@ export class CircuitBreaker extends EventEmitter {
    * Record successful execution
    */
   private recordSuccess(responseTime: number): void {
-    this.responseTimes.push(responseTime);
-    this.stats.successfulRequests++;
-    this.stats.averageResponseTime = this.calculateAverageResponseTime();
+    this?.responseTimes?.push(responseTime);
+    this?.stats?.successfulRequests++;
+    this?.stats?.averageResponseTime = this.calculateAverageResponseTime();
 
-    if (this.config.resetOnSuccess) {
-      this.state.failureCount = 0;
+    if (this?.config?.resetOnSuccess) {
+      this?.state?.failureCount = 0;
     }
 
-    this.state.successCount++;
-    this.state.lastSuccessTime = Date.now();
+    this?.state?.successCount++;
+    this?.state?.lastSuccessTime = Date.now();
 
     // Transition from half-open to closed if success threshold reached
-    if (this.state.state === 'half-open' && 
-        this.state.successCount >= this.config.successThreshold) {
-      this.state.state = 'closed';
-      this.state.successCount = 0;
+    if (this?.state?.state === 'half-open' && 
+        this?.state?.successCount >= this?.config?.successThreshold) {
+      this?.state?.state = 'closed';
+      this?.state?.successCount = 0;
       this.emit('state_changed', { 
         from: 'half-open', 
         to: 'closed',
@@ -225,13 +225,13 @@ export class CircuitBreaker extends EventEmitter {
       });
     }
 
-    this.stats.state = this.state.state;
+    this?.stats?.state = this?.state?.state;
     
-    if (this.config.monitor) {
+    if (this?.config?.monitor) {
       this.emit('success_recorded', {
         responseTime,
-        state: this.state.state,
-        successCount: this.state.successCount
+        state: this?.state?.state,
+        successCount: this?.state?.successCount
       });
     }
   }
@@ -240,36 +240,36 @@ export class CircuitBreaker extends EventEmitter {
    * Record failed execution
    */
   private recordFailure(error: Error, responseTime: number): void {
-    this.responseTimes.push(responseTime);
-    this.stats.failedRequests++;
-    this.stats.averageResponseTime = this.calculateAverageResponseTime();
-    this.stats.lastError = error.message;
+    this?.responseTimes?.push(responseTime);
+    this?.stats?.failedRequests++;
+    this?.stats?.averageResponseTime = this.calculateAverageResponseTime();
+    this?.stats?.lastError = error.message;
 
-    this.state.failureCount++;
-    this.state.lastFailureTime = Date.now();
-    this.state.successCount = 0; // Reset success count on failure
+    this?.state?.failureCount++;
+    this?.state?.lastFailureTime = Date.now();
+    this?.state?.successCount = 0; // Reset success count on failure
 
     // Transition to open if failure threshold reached
-    if ((this.state.state === 'closed' || this.state.state === 'half-open') &&
-        this.state.failureCount >= this.config.failureThreshold) {
-      this.state.state = 'open';
-      this.state.nextAttemptTime = Date.now() + this.config.timeout;
+    if ((this?.state?.state === 'closed' || this?.state?.state === 'half-open') &&
+        this?.state?.failureCount >= this?.config?.failureThreshold) {
+      this?.state?.state = 'open';
+      this?.state?.nextAttemptTime = Date.now() + this?.config?.timeout;
       
       this.emit('state_changed', { 
-        from: this.state.state === 'half-open' ? 'half-open' : 'closed', 
+        from: this?.state?.state === 'half-open' ? 'half-open' : 'closed', 
         to: 'open',
         reason: 'failure_threshold_reached' 
       });
     }
 
-    this.stats.state = this.state.state;
+    this?.stats?.state = this?.state?.state;
     
-    if (this.config.monitor) {
+    if (this?.config?.monitor) {
       this.emit('failure_recorded', {
         error: error.message,
         responseTime,
-        state: this.state.state,
-        failureCount: this.state.failureCount
+        state: this?.state?.state,
+        failureCount: this?.state?.failureCount
       });
     }
   }
@@ -279,8 +279,8 @@ export class CircuitBreaker extends EventEmitter {
    */
   private async handleRejection<T>(fallbackOptions?: FallbackOptions<T>): Promise<T> {
     this.emit('request_rejected', { 
-      state: this.state.state,
-      nextAttemptTime: this.state.nextAttemptTime 
+      state: this?.state?.state,
+      nextAttemptTime: this?.state?.nextAttemptTime 
     });
 
     if (fallbackOptions) {
@@ -288,7 +288,7 @@ export class CircuitBreaker extends EventEmitter {
     }
 
     throw new Error(
-      `Circuit breaker is ${this.state.state}. Next attempt at ${new Date(this.state.nextAttemptTime!).toISOString()}`
+      `Circuit breaker is ${this?.state?.state}. Next attempt at ${new Date(this?.state?.nextAttemptTime!).toISOString()}`
     );
   }
 
@@ -324,28 +324,28 @@ export class CircuitBreaker extends EventEmitter {
    * Check if circuit breaker should attempt to reset
    */
   private shouldAttemptReset(): boolean {
-    return this.state.nextAttemptTime !== undefined && 
-           Date.now() >= this.state.nextAttemptTime;
+    return this?.state?.nextAttemptTime !== undefined && 
+           Date.now() >= this?.state?.nextAttemptTime;
   }
 
   /**
    * Determine if error should be retried
    */
   private shouldRetry(error: Error): boolean {
-    const errorType = error.constructor.name;
-    const errorMessage = error.message.toLowerCase();
+    const errorType = error?.constructor?.name;
+    const errorMessage = error?.message?.toLowerCase();
 
     // Check non-retryable errors first
-    if (this.retryPolicy.nonRetryableErrors.length > 0) {
-      const isNonRetryable = this.retryPolicy.nonRetryableErrors.some(pattern =>
+    if (this?.retryPolicy?.nonRetryableErrors?.length || 0 > 0) {
+      const isNonRetryable = this?.retryPolicy?.nonRetryableErrors.some(pattern =>
         errorType.includes(pattern) || errorMessage.includes(pattern.toLowerCase())
       );
       if (isNonRetryable) return false;
     }
 
     // Check retryable errors
-    if (this.retryPolicy.retryableErrors.length > 0) {
-      return this.retryPolicy.retryableErrors.some(pattern =>
+    if (this?.retryPolicy?.retryableErrors?.length || 0 > 0) {
+      return this?.retryPolicy?.retryableErrors.some(pattern =>
         errorType.includes(pattern) || errorMessage.includes(pattern.toLowerCase())
       );
     }
@@ -365,12 +365,12 @@ export class CircuitBreaker extends EventEmitter {
    * Calculate retry delay with exponential backoff
    */
   private calculateDelay(attempt: number): number {
-    let delay = this.retryPolicy.baseDelay * 
-                Math.pow(this.retryPolicy.backoffMultiplier, attempt - 1);
+    let delay = this?.retryPolicy?.baseDelay * 
+                Math.pow(this?.retryPolicy?.backoffMultiplier, attempt - 1);
     
-    delay = Math.min(delay, this.retryPolicy.maxDelay);
+    delay = Math.min(delay, this?.retryPolicy?.maxDelay);
     
-    if (this.retryPolicy.jitter) {
+    if (this?.retryPolicy?.jitter) {
       delay = delay + (Math.random() * delay * 0.1); // Add 10% jitter
     }
     
@@ -381,17 +381,17 @@ export class CircuitBreaker extends EventEmitter {
    * Calculate average response time
    */
   private calculateAverageResponseTime(): number {
-    if (this.responseTimes.length === 0) return 0;
+    if (this?.responseTimes?.length === 0) return 0;
     
-    const sum = this.responseTimes.reduce((total, time) => total + time, 0);
-    return Math.round(sum / this.responseTimes.length);
+    const sum = this?.responseTimes?.reduce((total: any, time: any) => total + time, 0);
+    return Math.round(sum / this?.responseTimes?.length);
   }
 
   /**
    * Cache management
    */
   public setCachedValue<T>(key: string, value: T, ttlMs: number = 5 * 60 * 1000): void {
-    this.cache.set(key, {
+    this?.cache?.set(key, {
       value,
       timestamp: Date.now(),
       ttl: ttlMs
@@ -399,11 +399,11 @@ export class CircuitBreaker extends EventEmitter {
   }
 
   public getCachedValue<T>(key: string): T | null {
-    const cached = this.cache.get(key);
+    const cached = this?.cache?.get(key);
     if (!cached) return null;
     
     if (Date.now() - cached.timestamp > cached.ttl) {
-      this.cache.delete(key);
+      this?.cache?.delete(key);
       return null;
     }
     
@@ -412,9 +412,9 @@ export class CircuitBreaker extends EventEmitter {
 
   private cleanupCache(): void {
     const now = Date.now();
-    for (const [key, cached] of this.cache.entries()) {
+    for (const [key, cached] of this?.cache?.entries()) {
       if (now - cached.timestamp > cached.ttl) {
-        this.cache.delete(key);
+        this?.cache?.delete(key);
       }
     }
   }
@@ -441,7 +441,7 @@ export class CircuitBreaker extends EventEmitter {
   public getStats(): CircuitBreakerStats {
     return { 
       ...this.stats,
-      uptime: Date.now() - this.stats.uptime
+      uptime: Date.now() - this?.stats?.uptime
     };
   }
 
@@ -455,24 +455,24 @@ export class CircuitBreaker extends EventEmitter {
     avgResponseTime: number;
     message?: string;
   } {
-    const errorRate = this.stats.totalRequests > 0 
-      ? this.stats.failedRequests / this.stats.totalRequests 
+    const errorRate = this?.stats?.totalRequests > 0 
+      ? this?.stats?.failedRequests / this?.stats?.totalRequests 
       : 0;
     
-    const isHealthy = this.state.state === 'closed' && errorRate < 0.1;
+    const isHealthy = this?.state?.state === 'closed' && errorRate < 0.1;
     
     let message;
-    if (this.state.state === 'open') {
-      message = `Circuit open until ${new Date(this.state.nextAttemptTime!).toISOString()}`;
+    if (this?.state?.state === 'open') {
+      message = `Circuit open until ${new Date(this?.state?.nextAttemptTime!).toISOString()}`;
     } else if (errorRate > 0.1) {
       message = `High error rate: ${Math.round(errorRate * 100)}%`;
     }
 
     return {
       isHealthy,
-      state: this.state.state,
+      state: this?.state?.state,
       errorRate,
-      avgResponseTime: this.stats.averageResponseTime,
+      avgResponseTime: this?.stats?.averageResponseTime,
       message
     };
   }
@@ -481,7 +481,7 @@ export class CircuitBreaker extends EventEmitter {
    * Manually reset circuit breaker
    */
   public reset(): void {
-    const previousState = this.state.state;
+    const previousState = this?.state?.state;
     
     this.state = {
       state: 'closed',
@@ -492,7 +492,7 @@ export class CircuitBreaker extends EventEmitter {
       nextAttemptTime: undefined
     };
 
-    this.stats.state = 'closed';
+    this?.stats?.state = 'closed';
 
     this.emit('manual_reset', { previousState });
     
@@ -509,11 +509,11 @@ export class CircuitBreaker extends EventEmitter {
    * Force circuit breaker to open state
    */
   public forceOpen(): void {
-    const previousState = this.state.state;
+    const previousState = this?.state?.state;
     
-    this.state.state = 'open';
-    this.state.nextAttemptTime = Date.now() + this.config.timeout;
-    this.stats.state = 'open';
+    this?.state?.state = 'open';
+    this?.state?.nextAttemptTime = Date.now() + this?.config?.timeout;
+    this?.stats?.state = 'open';
 
     this.emit('forced_open', { previousState });
     
@@ -557,7 +557,7 @@ export class CircuitBreaker extends EventEmitter {
    */
   public clearStats(): void {
     this.stats = {
-      state: this.state.state,
+      state: this?.state?.state,
       totalRequests: 0,
       successfulRequests: 0,
       failedRequests: 0,
@@ -595,16 +595,16 @@ export class CircuitBreakerManager {
     config?: Partial<CircuitBreakerConfig>,
     retryPolicy?: Partial<RetryPolicy>
   ): CircuitBreaker {
-    if (!this.breakers.has(name)) {
+    if (!this?.breakers?.has(name)) {
       const breaker = new CircuitBreaker(
         { ...this.defaultConfig, ...config },
         { ...this.defaultRetryPolicy, ...retryPolicy }
       );
       
-      this.breakers.set(name, breaker);
+      this?.breakers?.set(name, breaker);
     }
     
-    return this.breakers.get(name)!;
+    return this?.breakers?.get(name)!;
   }
 
   /**
@@ -645,7 +645,7 @@ export class CircuitBreakerManager {
     let healthy = 0;
     let unhealthy = 0;
     
-    for (const breaker of this.breakers.values()) {
+    for (const breaker of this?.breakers?.values()) {
       if (breaker.getHealth().isHealthy) {
         healthy++;
       } else {
@@ -653,7 +653,7 @@ export class CircuitBreakerManager {
       }
     }
     
-    const total = this.breakers.size;
+    const total = this?.breakers?.size;
     let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
     
     if (unhealthy > 0) {
@@ -667,14 +667,14 @@ export class CircuitBreakerManager {
    * Remove circuit breaker
    */
   public removeCircuitBreaker(name: string): boolean {
-    return this.breakers.delete(name);
+    return this?.breakers?.delete(name);
   }
 
   /**
    * Reset all circuit breakers
    */
   public resetAll(): void {
-    for (const breaker of this.breakers.values()) {
+    for (const breaker of this?.breakers?.values()) {
       breaker.reset();
     }
   }

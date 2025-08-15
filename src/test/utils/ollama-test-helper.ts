@@ -127,7 +127,7 @@ async function startOllamaService(): Promise<void> {
 
       let isResolved = false;
 
-      ollamaProcess.stdout?.on('data', (data) => {
+      ollamaProcess.stdout?.on('data', (data: any) => {
         const output = data.toString();
         logger.debug('Ollama stdout:', output);
         
@@ -140,24 +140,24 @@ async function startOllamaService(): Promise<void> {
         }
       });
 
-      ollamaProcess.stderr?.on('data', (data) => {
+      ollamaProcess.stderr?.on('data', (data: any) => {
         const error = data.toString();
         logger.debug('Ollama stderr:', error);
         
         // Don't treat all stderr as errors, some are just info logs
         if (error.includes('error') || error.includes('failed')) {
-          logger.warn('Ollama error output:', error);
+          logger.warn('Ollama error output:', error as string);
         }
       });
 
-      ollamaProcess.on('error', (error) => {
+      ollamaProcess.on('error', (error: any) => {
         if (!isResolved) {
           isResolved = true;
           reject(new Error(`Failed to start Ollama: ${error.message}`));
         }
       });
 
-      ollamaProcess.on('exit', (code) => {
+      ollamaProcess.on('exit', (code: any) => {
         if (!isResolved && code !== 0) {
           isResolved = true;
           reject(new Error(`Ollama exited with code ${code}`));
@@ -213,7 +213,7 @@ async function ensureTestModelsAvailable(): Promise<void> {
     // Check available models
     const response = await fetch(`${ollamaUrl}/api/tags`);
     const data = await response.json() as { models?: Array<{ name: string }> };
-    const availableModels = data.models?.map((m) => m.name) || [];
+    const availableModels = data.models?.map((m: any) => m.name) || [];
     
     logger.info('Available models:', availableModels.join(', '));
     
@@ -265,7 +265,7 @@ export async function ensureModelAvailable(modelName: string): Promise<boolean> 
     // Check if model is already available
     const response = await fetch(`${ollamaUrl}/api/tags`);
     const data = await response.json() as { models?: Array<{ name: string }> };
-    const availableModels = data.models?.map((m) => m.name) || [];
+    const availableModels = data.models?.map((m: any) => m.name) || [];
     
     const isAvailable = availableModels.some((name: string) => 
       name === modelName || name.startsWith(modelName ? modelName.split(':')[0] : '')

@@ -220,7 +220,7 @@ export class BusinessContextManager {
     const contextMetadata = this.calculateContextMetadata(optimizedContext, availableTokens, options);
     
     const processingTime = Date.now() - startTime;
-    logger.info(`Business context built in ${processingTime}ms with ${contextMetadata.tokenUsage.used} tokens`);
+    logger.info(`Business context built in ${processingTime}ms with ${contextMetadata?.tokenUsage?.used} tokens`);
     
     return {
       ...optimizedContext,
@@ -298,27 +298,27 @@ export class BusinessContextManager {
     const context: Partial<BusinessContext> = {};
 
     // Financial Context Extraction
-    if (options.focusAreas.includes("financial")) {
+    if (options?.focusAreas?.includes("financial")) {
       context.financialContext = await this.extractFinancialContext(email, chainData);
     }
 
     // Technical Context Extraction
-    if (options.focusAreas.includes("technical")) {
+    if (options?.focusAreas?.includes("technical")) {
       context.technicalContext = await this.extractTechnicalContext(email, chainData);
     }
 
     // Relationship Context Extraction
-    if (options.focusAreas.includes("relationship")) {
+    if (options?.focusAreas?.includes("relationship")) {
       context.relationshipContext = await this.extractRelationshipContext(email, chainData, historicalData);
     }
 
     // Temporal Context Extraction
-    if (options.focusAreas.includes("temporal")) {
+    if (options?.focusAreas?.includes("temporal")) {
       context.temporalContext = await this.extractTemporalContext(email, chainData);
     }
 
     // Workflow Context Extraction
-    if (options.focusAreas.includes("workflow")) {
+    if (options?.focusAreas?.includes("workflow")) {
       context.workflowContext = await this.extractWorkflowContext(email, chainData);
     }
 
@@ -342,7 +342,7 @@ export class BusinessContextManager {
     
     // Extract dollar amounts
     const dollarMatches = emailText.match(/\$[\d,]+(?:\.\d{2})?/g) || [];
-    const totalValue = dollarMatches.reduce((sum, amount) => {
+    const totalValue = dollarMatches.reduce((sum: any, amount: any) => {
       const numValue = parseFloat(amount.replace(/[$,]/g, ''));
       return sum + (isNaN(numValue) ? 0 : numValue);
     }, 0);
@@ -556,15 +556,15 @@ export class BusinessContextManager {
     const sections = [];
     
     if (context.financialContext) {
-      sections.push(`FINANCIAL: $${context.financialContext.totalValue} value, ${context.financialContext.poNumbers.length} POs, Risk: ${context.financialContext.riskLevel}`);
+      sections.push(`FINANCIAL: $${context?.financialContext?.totalValue} value, ${context?.financialContext?.poNumbers?.length || 0} POs, Risk: ${context?.financialContext?.riskLevel}`);
     }
     
     if (context.workflowContext) {
-      sections.push(`WORKFLOW: Stage=${context.workflowContext.currentStage}, Actions=${context.workflowContext.nextActions.length}`);
+      sections.push(`WORKFLOW: Stage=${context?.workflowContext?.currentStage}, Actions=${context?.workflowContext?.nextActions?.length || 0}`);
     }
     
-    if (context.temporalContext && context.temporalContext.deadlines.length > 0) {
-      const urgentDeadlines = context.temporalContext.deadlines.filter(d => d.criticality === 'critical').length;
+    if (context.temporalContext && context?.temporalContext?.deadlines?.length || 0 > 0) {
+      const urgentDeadlines = context?.temporalContext?.deadlines?.filter(d => d.criticality === 'critical').length;
       sections.push(`TEMPORAL: ${urgentDeadlines} critical deadlines`);
     }
     
@@ -582,21 +582,21 @@ export class BusinessContextManager {
     // Executive summary section
     sections.push("=== EXECUTIVE CONTEXT ===");
     if (context.financialContext) {
-      sections.push(`Revenue Impact: $${context.financialContext.totalValue}`);
-      sections.push(`Financial Risk: ${context.financialContext.riskLevel}`);
+      sections.push(`Revenue Impact: $${context?.financialContext?.totalValue}`);
+      sections.push(`Financial Risk: ${context?.financialContext?.riskLevel}`);
     }
     
     if (context.relationshipContext) {
-      sections.push(`Relationship Status: ${context.relationshipContext.sentimentTrend}`);
-      sections.push(`Stakeholders: ${context.relationshipContext.stakeholders.length}`);
+      sections.push(`Relationship Status: ${context?.relationshipContext?.sentimentTrend}`);
+      sections.push(`Stakeholders: ${context?.relationshipContext?.stakeholders?.length || 0}`);
     }
     
     // Detailed analysis sections...
     if (context.workflowContext) {
       sections.push("\n=== WORKFLOW INTELLIGENCE ===");
-      sections.push(`Current Stage: ${context.workflowContext.currentStage}`);
-      sections.push(`Bottlenecks: ${context.workflowContext.bottlenecks.join(', ')}`);
-      sections.push(`Automation Opportunities: ${context.workflowContext.automationOpportunities.join(', ')}`);
+      sections.push(`Current Stage: ${context?.workflowContext?.currentStage}`);
+      sections.push(`Bottlenecks: ${context?.workflowContext?.bottlenecks.join(', ')}`);
+      sections.push(`Automation Opportunities: ${context?.workflowContext?.automationOpportunities.join(', ')}`);
     }
     
     return sections.join('\n');
@@ -612,8 +612,8 @@ export class BusinessContextManager {
     const positive = ["thank", "great", "excellent", "happy", "pleased", "satisfied"];
     const negative = ["issue", "problem", "urgent", "complaint", "disappointed", "frustrated"];
     
-    const posCount = positive.filter(word => text.includes(word)).length;
-    const negCount = negative.filter(word => text.includes(word)).length;
+    const posCount = positive?.filter(word => text.includes(word)).length;
+    const negCount = negative?.filter(word => text.includes(word)).length;
     
     if (posCount > negCount) return "positive";
     if (negCount > posCount) return "negative";
@@ -622,7 +622,7 @@ export class BusinessContextManager {
 
   private estimateTokenUsage(context: any): number {
     const text = JSON.stringify(context);
-    return Math.ceil(text.length / 4); // Rough token estimation
+    return Math.ceil(text?.length || 0 / 4); // Rough token estimation
   }
 
   private calculateEfficiency(context: any, tokens: number): number {
@@ -726,7 +726,7 @@ export class BusinessContextManager {
   private async extractStakeholders(email: EmailRecord, chainData?: EmailChain): Promise<Stakeholder[]> {
     // Extract stakeholders from email addresses and signatures
     return [{
-      name: email.from_address.split('@')[0],
+      name: email?.from_address?.split('@')[0],
       role: "unknown",
       influence: "medium",
       decisionMaker: false,

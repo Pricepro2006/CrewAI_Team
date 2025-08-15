@@ -6,10 +6,10 @@ import { getAgentModel } from "../../config/model-selection.config.js";
 export const agentRouter: Router<any> = router({
   // List all registered agents
   list: publicProcedure.query(async ({ ctx }) => {
-    const types = ctx.agentRegistry.getRegisteredTypes();
-    const activeAgents = ctx.agentRegistry.getActiveAgents();
+    const types = ctx?.agentRegistry?.getRegisteredTypes();
+    const activeAgents = ctx?.agentRegistry?.getActiveAgents();
 
-    const agents = types.map((type: string) => {
+    const agents = types?.map((type: string) => {
       const modelConfig = getAgentModel(type, "general");
       const toolSelectionModel = getAgentModel(type, "tool_selection");
       const isActive = activeAgents.some((agent: any) => agent.type === type);
@@ -37,8 +37,8 @@ export const agentRouter: Router<any> = router({
     // Return both the array and the summary stats
     return {
       agents,
-      totalAgents: agents.length,
-      activeAgents: agents.filter((a: any) => a.status === "active").length,
+      totalAgents: agents?.length || 0,
+      activeAgents: agents?.filter((a: any) => a.status === "active").length,
       // Backward compatibility - also return the array directly
       ...agents,
     };
@@ -46,7 +46,7 @@ export const agentRouter: Router<any> = router({
 
   // Get agent status
   status: publicProcedure.query(async ({ ctx }) => {
-    return ctx.agentRegistry.getActiveAgents();
+    return ctx?.agentRegistry?.getActiveAgents();
   }),
 
   // Execute a task with a specific agent
@@ -65,30 +65,30 @@ export const agentRouter: Router<any> = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const agent = await ctx.agentRegistry.getAgent(input.agentType);
+      const agent = await ctx?.agentRegistry?.getAgent(input.agentType);
 
       const result = await agent.execute(input.task, {
         task: input.task,
         ...(input.context?.ragDocuments && {
-          ragDocuments: input.context.ragDocuments,
+          ragDocuments: input?.context?.ragDocuments,
         }),
         ...(input.context?.previousResults && {
-          previousResults: input.context.previousResults,
+          previousResults: input?.context?.previousResults,
         }),
         ...(input.context?.userPreferences && {
-          userPreferences: input.context.userPreferences,
+          userPreferences: input?.context?.userPreferences,
         }),
       });
 
       // Release agent back to pool
-      ctx.agentRegistry.releaseAgent(input.agentType, agent);
+      ctx?.agentRegistry?.releaseAgent(input.agentType, agent);
 
       return result;
     }),
 
   // Get agent pool status
   poolStatus: publicProcedure.query(async ({ ctx }) => {
-    return ctx.agentRegistry.getPoolStatus();
+    return ctx?.agentRegistry?.getPoolStatus();
   }),
 
   // Get agent configuration
@@ -102,11 +102,11 @@ export const agentRouter: Router<any> = router({
     )
     .query(async ({ input, ctx }) => {
       // Get pool configuration
-      const poolConfig = ctx.agentRegistry.getConfig();
+      const poolConfig = ctx?.agentRegistry?.getConfig();
 
       // Get agent-specific configurations
       const agentConfigs: Record<string, any> = {};
-      const types = ctx.agentRegistry.getRegisteredTypes();
+      const types = ctx?.agentRegistry?.getRegisteredTypes();
 
       for (const type of types) {
         const modelConfig = getAgentModel(type, "general");
@@ -162,7 +162,7 @@ export const agentRouter: Router<any> = router({
 
       // Update pool configuration
       if (input.pool) {
-        ctx.agentRegistry.updateConfig(input.pool);
+        ctx?.agentRegistry?.updateConfig(input.pool);
         updates.push("Pool configuration updated");
       }
 
@@ -171,7 +171,7 @@ export const agentRouter: Router<any> = router({
         // This would need to be implemented in the registry
         // For now, we'll just log the intent
         updates.push(
-          `Agent ${input.agent.type} configuration queued for update`,
+          `Agent ${input?.agent?.type} configuration queued for update`,
         );
       }
 

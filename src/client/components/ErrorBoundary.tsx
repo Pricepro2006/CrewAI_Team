@@ -53,14 +53,14 @@ export class ErrorBoundary extends Component<Props, State> {
       {
         component: `react_boundary_${component}`,
         operation: 'component_render',
-        sessionId: this.state.errorBoundaryId,
+        sessionId: this?.state?.errorBoundaryId,
       },
       'error',
       {
         boundary_component: component,
         component_stack: errorInfo.componentStack || '',
-        error_boundary_id: this.state.errorBoundaryId,
-        retry_count: this.state.retryCount.toString(),
+        error_boundary_id: this?.state?.errorBoundaryId,
+        retry_count: this?.state?.retryCount.toString(),
       }
     );
 
@@ -72,7 +72,7 @@ export class ErrorBoundary extends Component<Props, State> {
       {
         errorId,
         componentStack: errorInfo.componentStack,
-        errorBoundaryId: this.state.errorBoundaryId,
+        errorBoundaryId: this?.state?.errorBoundaryId,
       }
     );
 
@@ -95,29 +95,29 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
-    if (this.state.retryCount >= this.maxRetries) {
+    if (this?.state?.retryCount >= this.maxRetries) {
       sentryErrorTracker.addBreadcrumb(
-        `Max retries exceeded for error boundary ${this.props.component}`,
+        `Max retries exceeded for error boundary ${this?.props?.component}`,
         'ui',
         'warning',
         {
-          errorId: this.state.errorId,
-          retryCount: this.state.retryCount,
+          errorId: this?.state?.errorId,
+          retryCount: this?.state?.retryCount,
           maxRetries: this.maxRetries,
         }
       );
       return;
     }
 
-    const retryDelay = Math.min(1000 * Math.pow(2, this.state.retryCount), 10000);
+    const retryDelay = Math.min(1000 * Math.pow(2, this?.state?.retryCount), 10000);
     
     sentryErrorTracker.addBreadcrumb(
-      `Retrying error boundary ${this.props.component} in ${retryDelay}ms`,
+      `Retrying error boundary ${this?.props?.component} in ${retryDelay}ms`,
       'ui',
       'info',
       {
-        errorId: this.state.errorId,
-        retryCount: this.state.retryCount + 1,
+        errorId: this?.state?.errorId,
+        retryCount: this?.state?.retryCount + 1,
         retryDelay,
       }
     );
@@ -127,52 +127,52 @@ export class ErrorBoundary extends Component<Props, State> {
         hasError: false,
         error: null,
         errorId: null,
-        retryCount: this.state.retryCount + 1,
+        retryCount: this?.state?.retryCount + 1,
       });
       
-      this.retryTimeouts.delete(timeout);
+      this?.retryTimeouts?.delete(timeout);
     }, retryDelay);
 
-    this.retryTimeouts.add(timeout);
+    this?.retryTimeouts?.add(timeout);
   };
 
   handleReload = () => {
     sentryErrorTracker.addBreadcrumb(
-      `User triggered page reload from error boundary ${this.props.component}`,
+      `User triggered page reload from error boundary ${this?.props?.component}`,
       'ui',
       'info',
       {
-        errorId: this.state.errorId,
-        component: this.props.component,
+        errorId: this?.state?.errorId,
+        component: this?.props?.component,
       }
     );
     
-    window.location.reload();
+    window?.location?.reload();
   };
 
   handleGoHome = () => {
     sentryErrorTracker.addBreadcrumb(
-      `User navigated home from error boundary ${this.props.component}`,
+      `User navigated home from error boundary ${this?.props?.component}`,
       'ui',
       'info',
       {
-        errorId: this.state.errorId,
-        component: this.props.component,
+        errorId: this?.state?.errorId,
+        component: this?.props?.component,
       }
     );
     
-    window.location.href = '/';
+    window?.location?.href = '/';
   };
 
   handleReportBug = () => {
-    const subject = encodeURIComponent(`Bug Report: Error in ${this.props.component || 'Component'}`);
+    const subject = encodeURIComponent(`Bug Report: Error in ${this?.props?.component || 'Component'}`);
     const body = encodeURIComponent(`
-Error ID: ${this.state.errorId}
-Component: ${this.props.component || 'Unknown'}
-Error Message: ${this.state.error?.message || 'Unknown error'}
+Error ID: ${this?.state?.errorId}
+Component: ${this?.props?.component || 'Unknown'}
+Error Message: ${this?.state?.error?.message || 'Unknown error'}
 Timestamp: ${new Date().toISOString()}
 User Agent: ${navigator.userAgent}
-URL: ${window.location.href}
+URL: ${window?.location?.href}
 
 Please describe what you were doing when this error occurred:
 
@@ -185,22 +185,22 @@ Please describe what you were doing when this error occurred:
       'ui',
       'info',
       {
-        errorId: this.state.errorId,
-        component: this.props.component,
+        errorId: this?.state?.errorId,
+        component: this?.props?.component,
       }
     );
   };
 
   override componentWillUnmount() {
     // Clean up retry timeouts
-    this.retryTimeouts.forEach(timeout => clearTimeout(timeout));
-    this.retryTimeouts.clear();
+    this?.retryTimeouts?.forEach(timeout => clearTimeout(timeout));
+    this?.retryTimeouts?.clear();
   }
 
   override render() {
-    if (this.state.hasError) {
+    if (this?.state?.hasError) {
       const { fallback, component = 'Component', isolate = false } = this.props;
-      const canRetry = this.state.retryCount < this.maxRetries;
+      const canRetry = this?.state?.retryCount < this.maxRetries;
 
       // Use custom fallback if provided
       if (fallback) {
@@ -246,15 +246,15 @@ Please describe what you were doing when this error occurred:
                 We're sorry for the inconvenience. An unexpected error occurred in the {component.toLowerCase()}.
               </p>
 
-              {process.env.NODE_ENV === 'development' && this.state.error && (
+              {process.env.NODE_ENV === 'development' && this?.state?.error && (
                 <Alert className="mb-6 text-left">
                   <Bug className="h-4 w-4" />
                   <AlertDescription className="font-mono text-xs">
-                    <strong>Error:</strong> {this.state.error.message}
-                    {this.state.errorId && (
+                    <strong>Error:</strong> {this?.state?.error.message}
+                    {this?.state?.errorId && (
                       <>
                         <br />
-                        <strong>ID:</strong> {this.state.errorId}
+                        <strong>ID:</strong> {this?.state?.errorId}
                       </>
                     )}
                   </AlertDescription>
@@ -301,9 +301,9 @@ Please describe what you were doing when this error occurred:
                 </Button>
               </div>
 
-              {this.state.errorId && (
+              {this?.state?.errorId && (
                 <p className="text-xs text-gray-500 mt-4">
-                  Error ID: {this.state.errorId}
+                  Error ID: {this?.state?.errorId}
                 </p>
               )}
             </div>
@@ -312,7 +312,7 @@ Please describe what you were doing when this error occurred:
       );
     }
 
-    return this.props.children;
+    return this?.props?.children;
   }
 }
 

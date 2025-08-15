@@ -34,7 +34,7 @@ export const useWalmartDeals = (productIds: string[]): UseWalmartDealsResult => 
   const lastProductIds = useRef<string>('');
 
   const fetchDeals = async (ids: string[]) => {
-    if (ids.length === 0) {
+    if (ids?.length || 0 === 0) {
       setDeals({});
       setTotalSavings(0);
       return;
@@ -60,7 +60,7 @@ export const useWalmartDeals = (productIds: string[]): UseWalmartDealsResult => 
       // Fetch uncached deals
       const newDeals = { ...cachedDeals };
       
-      if (uncachedIds.length > 0) {
+      if (uncachedIds?.length || 0 > 0) {
         // TODO: Replace with proper tRPC vanilla client call
         // For now, simulate the response to fix TypeScript errors
         const response = {
@@ -86,7 +86,7 @@ export const useWalmartDeals = (productIds: string[]): UseWalmartDealsResult => 
       }
 
       // Calculate total savings
-      const savings = Object.values(newDeals).reduce((total, productDeals) => {
+      const savings = Object.values(newDeals).reduce((total: any, productDeals: any) => {
         const bestDeal = productDeals.sort((a, b) => b.savings - a.savings)[0];
         return total + (bestDeal?.savings || 0);
       }, 0);

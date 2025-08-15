@@ -128,7 +128,7 @@ export class WebSocketCache {
             'connections',
             ...(connectionData.userId ? [`user:${connectionData.userId}`] : []),
             ...(connectionData.sessionId ? [`session:${connectionData.sessionId}`] : []),
-            ...connectionData.rooms.map(room => `room:${room}`),
+            ...connectionData?.rooms?.map(room => `room:${room}`),
           ],
         }
       );
@@ -285,7 +285,7 @@ export class WebSocketCache {
           tags: [
             'rooms',
             `room:${roomData.roomId}`,
-            ...roomData.connectionIds.map(id => `connection:${id}`),
+            ...roomData?.connectionIds?.map(id => `connection:${id}`),
           ],
         }
       );
@@ -296,7 +296,7 @@ export class WebSocketCache {
 
         logger.debug('WebSocket room cached', 'WEBSOCKET_CACHE', {
           roomId: roomData.roomId,
-          connectionCount: roomData.connectionIds.length,
+          connectionCount: roomData?.connectionIds?.length,
         });
       }
 
@@ -327,7 +327,7 @@ export class WebSocketCache {
 
         logger.debug('WebSocket room cache hit', 'WEBSOCKET_CACHE', {
           roomId,
-          connectionCount: room.connectionIds.length,
+          connectionCount: room?.connectionIds?.length,
         });
 
         return room;
@@ -362,8 +362,8 @@ export class WebSocketCache {
         };
       }
 
-      if (!room.connectionIds.includes(connectionId)) {
-        room.connectionIds.push(connectionId);
+      if (!room?.connectionIds?.includes(connectionId)) {
+        room?.connectionIds?.push(connectionId);
         room.updatedAt = new Date();
 
         const success = await this.cacheRoom(room);
@@ -371,8 +371,8 @@ export class WebSocketCache {
         if (success) {
           // Update connection's room list
           const connection = await this.getConnection(connectionId);
-          if (connection && !connection.rooms.includes(roomId)) {
-            connection.rooms.push(roomId);
+          if (connection && !connection?.rooms?.includes(roomId)) {
+            connection?.rooms?.push(roomId);
             await this.cacheConnection(connection);
           }
 
@@ -381,7 +381,7 @@ export class WebSocketCache {
           logger.debug('Connection added to room', 'WEBSOCKET_CACHE', {
             roomId,
             connectionId,
-            roomSize: room.connectionIds.length,
+            roomSize: room?.connectionIds?.length,
           });
         }
 
@@ -409,9 +409,9 @@ export class WebSocketCache {
         return false;
       }
 
-      const index = room.connectionIds.indexOf(connectionId);
+      const index = room?.connectionIds?.indexOf(connectionId);
       if (index > -1) {
-        room.connectionIds.splice(index, 1);
+        room?.connectionIds?.splice(index, 1);
         room.updatedAt = new Date();
 
         const success = await this.cacheRoom(room);
@@ -420,9 +420,9 @@ export class WebSocketCache {
           // Update connection's room list
           const connection = await this.getConnection(connectionId);
           if (connection) {
-            const roomIndex = connection.rooms.indexOf(roomId);
+            const roomIndex = connection?.rooms?.indexOf(roomId);
             if (roomIndex > -1) {
-              connection.rooms.splice(roomIndex, 1);
+              connection?.rooms?.splice(roomIndex, 1);
               await this.cacheConnection(connection);
             }
           }
@@ -432,7 +432,7 @@ export class WebSocketCache {
           logger.debug('Connection removed from room', 'WEBSOCKET_CACHE', {
             roomId,
             connectionId,
-            roomSize: room.connectionIds.length,
+            roomSize: room?.connectionIds?.length,
           });
         }
 
@@ -528,7 +528,7 @@ export class WebSocketCache {
 
         logger.debug('Realtime data cache hit', 'WEBSOCKET_CACHE', {
           key,
-          age: Date.now() - data.timestamp.getTime(),
+          age: Date.now() - data?.timestamp?.getTime(),
         });
 
         return data;
@@ -565,16 +565,16 @@ export class WebSocketCache {
       };
 
       if (isOnline) {
-        if (!presence.connections.includes(connectionId)) {
-          presence.connections.push(connectionId);
+        if (!presence?.connections?.includes(connectionId)) {
+          presence?.connections?.push(connectionId);
         }
         presence.isOnline = true;
       } else {
-        const index = presence.connections.indexOf(connectionId);
+        const index = presence?.connections?.indexOf(connectionId);
         if (index > -1) {
-          presence.connections.splice(index, 1);
+          presence?.connections?.splice(index, 1);
         }
-        presence.isOnline = presence.connections.length > 0;
+        presence.isOnline = presence?.connections?.length > 0;
         if (!presence.isOnline) {
           presence.lastSeen = new Date();
         }
@@ -597,7 +597,7 @@ export class WebSocketCache {
           userId,
           connectionId,
           isOnline,
-          connectionCount: presence.connections.length,
+          connectionCount: presence?.connections?.length,
         });
       }
 

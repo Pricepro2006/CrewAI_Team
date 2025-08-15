@@ -50,7 +50,7 @@ export function createHTTPMonitoringMiddleware() {
       userId: (req as any).user?.id,
       sessionId: (req as any).session?.id,
       userAgent: req.get('User-Agent'),
-      ip: req.ip || req.connection.remoteAddress,
+      ip: req.ip || req?.connection?.remoteAddress,
     } as MonitoringContext;
 
     // Set Sentry context
@@ -98,10 +98,10 @@ export function createHTTPMonitoringMiddleware() {
     );
 
     // Monitor response
-    const originalSend = res.send;
+    const originalSend = res?.send;
     res.send = function(body) {
       const duration = Date.now() - startTime;
-      const statusCode = res.statusCode;
+      const statusCode = res?.statusCode;
 
       // Log response
       structuredLogger.apiRequest(
@@ -135,7 +135,7 @@ export function createHTTPMonitoringMiddleware() {
       );
 
       // Record metrics
-      if (req.path.includes('/api/')) {
+      if (req?.path?.includes('/api/')) {
         groceryAgentMetrics.recordUserSession(
           duration,
           1, // queryCount - simplified for HTTP
@@ -194,8 +194,8 @@ export function createErrorMonitoringMiddleware() {
       {
         http_method: req.method,
         http_path: req.path,
-        http_status: res.statusCode.toString(),
-        error_type: error.constructor.name,
+        http_status: res?.statusCode?.toString(),
+        error_type: error?.constructor?.name,
       }
     );
 

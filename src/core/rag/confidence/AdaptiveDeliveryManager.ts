@@ -91,7 +91,7 @@ export class AdaptiveDeliveryManager {
     };
 
     // Store in history
-    this.deliveryHistory.push({
+    this?.deliveryHistory?.push({
       ...delivered,
       timestamp: new Date().toISOString(),
       evaluation,
@@ -172,8 +172,8 @@ export class AdaptiveDeliveryManager {
     if (evaluation.recommendedAction === ActionType.REGENERATE) {
       content = "Low Confidence Response\n\n" + content;
       
-      if (evaluation.uncertaintyAreas && evaluation.uncertaintyAreas.length > 0) {
-        content += "\n\nAreas of Uncertainty: " + evaluation.uncertaintyAreas.join(", ");
+      if (evaluation.uncertaintyAreas && evaluation?.uncertaintyAreas?.length > 0) {
+        content += "\n\nAreas of Uncertainty: " + evaluation?.uncertaintyAreas?.join(", ");
       }
       
       content += "\n\nRecommended Actions: Consider seeking additional sources or expert consultation for this topic.";
@@ -211,14 +211,14 @@ export class AdaptiveDeliveryManager {
    * Capture user feedback
    */
   captureFeedback(feedbackId: string, feedback: UserFeedback): void {
-    this.feedbackStore.set(feedbackId, {
+    this?.feedbackStore?.set(feedbackId, {
       ...feedback,
       timestamp: new Date().toISOString(),
     });
 
     // Update delivery history
-    const delivery = this.deliveryHistory.find(
-      (d) => d.feedbackId === feedbackId,
+    const delivery = this?.deliveryHistory?.find(
+      (d: any) => d.feedbackId === feedbackId,
     );
     if (delivery) {
       delivery.feedback = feedback;
@@ -230,14 +230,14 @@ export class AdaptiveDeliveryManager {
    * Get feedback by ID
    */
   getFeedback(feedbackId: string): UserFeedback | undefined {
-    return this.feedbackStore.get(feedbackId);
+    return this?.feedbackStore?.get(feedbackId);
   }
 
   /**
    * Get all feedback
    */
   getAllFeedback(): UserFeedback[] {
-    return Array.from(this.feedbackStore.values());
+    return Array.from(this?.feedbackStore?.values());
   }
 
   /**
@@ -252,14 +252,14 @@ export class AdaptiveDeliveryManager {
    */
   clearHistory(): void {
     this.deliveryHistory = [];
-    this.feedbackStore.clear();
+    this?.feedbackStore?.clear();
   }
 
   /**
    * Get delivery statistics
    */
   getDeliveryStats(): DeliveryStats {
-    const total = this.deliveryHistory.length;
+    const total = this?.deliveryHistory?.length;
     const byAction: Record<ActionType, number> = {
       [ActionType.ACCEPT]: 0,
       [ActionType.REVIEW]: 0,
@@ -272,10 +272,10 @@ export class AdaptiveDeliveryManager {
     let feedbackCount = 0;
 
     for (const delivery of this.deliveryHistory) {
-      const action = delivery.metadata.action as ActionType;
+      const action = delivery?.metadata?.action as ActionType;
       byAction[action] = (byAction[action] || 0) + 1;
       // Use original confidence if available, otherwise use current confidence score
-      const confScore = delivery.originalConfidence !== undefined ? delivery.originalConfidence : delivery.confidence.score;
+      const confScore = delivery.originalConfidence !== undefined ? delivery.originalConfidence : delivery?.confidence?.score;
       totalConfidence += confScore;
       
       if (delivery.feedback) {
@@ -355,7 +355,7 @@ export class AdaptiveDeliveryManager {
     }
 
     // Uncertainty markers warnings
-    if (evaluation.uncertaintyAreas && evaluation.uncertaintyAreas.length >= 3) {
+    if (evaluation.uncertaintyAreas && evaluation?.uncertaintyAreas?.length >= 3) {
       warnings.push("This response contains multiple uncertain or qualified statements");
     }
 

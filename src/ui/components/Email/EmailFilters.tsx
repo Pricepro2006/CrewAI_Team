@@ -53,7 +53,7 @@ export const EmailFilters: React.FC<EmailFiltersProps> = ({
 
   const slaStatusOptions = ["on-track", "at-risk", "overdue"];
 
-  const hasActiveFilters = Object.keys(filters).some((key) => {
+  const hasActiveFilters = Object.keys(filters).some((key: any) => {
     const value = filters[key as keyof typeof filters];
     return value !== undefined && value !== "" && value !== null;
   });
@@ -101,13 +101,13 @@ export const EmailFilters: React.FC<EmailFiltersProps> = ({
           </label>
           <select
             value={filters.workflow || ""}
-            onChange={(e) =>
-              onFilterChange({ workflow: e.target.value || undefined })
+            onChange={(e: any) =>
+              onFilterChange({ workflow: e?.target?.value || undefined })
             }
             className="email-filters__select"
           >
             <option value="">All Workflows</option>
-            {workflowOptions.map((workflow) => (
+            {workflowOptions?.map((workflow: any) => (
               <option key={workflow} value={workflow}>
                 {workflow}
               </option>
@@ -123,13 +123,13 @@ export const EmailFilters: React.FC<EmailFiltersProps> = ({
           </label>
           <select
             value={filters.priority || ""}
-            onChange={(e) =>
-              onFilterChange({ priority: e.target.value || undefined })
+            onChange={(e: any) =>
+              onFilterChange({ priority: e?.target?.value || undefined })
             }
             className="email-filters__select"
           >
             <option value="">All Priorities</option>
-            {priorityOptions.map((priority) => (
+            {priorityOptions?.map((priority: any) => (
               <option key={priority} value={priority}>
                 {priority}
               </option>
@@ -145,13 +145,13 @@ export const EmailFilters: React.FC<EmailFiltersProps> = ({
           </label>
           <select
             value={filters.status || ""}
-            onChange={(e) =>
-              onFilterChange({ status: e.target.value || undefined })
+            onChange={(e: any) =>
+              onFilterChange({ status: e?.target?.value || undefined })
             }
             className="email-filters__select"
           >
             <option value="">All Statuses</option>
-            {statusOptions.map((status) => (
+            {statusOptions?.map((status: any) => (
               <option key={status} value={status}>
                 {status}
               </option>
@@ -167,13 +167,13 @@ export const EmailFilters: React.FC<EmailFiltersProps> = ({
           </label>
           <select
             value={filters.slaStatus || ""}
-            onChange={(e) =>
-              onFilterChange({ slaStatus: e.target.value || undefined })
+            onChange={(e: any) =>
+              onFilterChange({ slaStatus: e?.target?.value || undefined })
             }
             className="email-filters__select"
           >
             <option value="">All SLA Status</option>
-            {slaStatusOptions.map((status) => (
+            {slaStatusOptions?.map((status: any) => (
               <option key={status} value={status}>
                 {status === "on-track"
                   ? "On Track"
@@ -203,10 +203,10 @@ export const EmailFilters: React.FC<EmailFiltersProps> = ({
                 type="date"
                 value={
                   filters.dateRange?.start
-                    ? formatDateForInput(filters.dateRange.start)
+                    ? formatDateForInput(filters?.dateRange?.start)
                     : ""
                 }
-                onChange={(e) => handleDateRangeChange("start", e.target.value)}
+                onChange={(e: any) => handleDateRangeChange("start", e?.target?.value)}
                 className="email-filters__date-field"
               />
             </div>
@@ -219,10 +219,10 @@ export const EmailFilters: React.FC<EmailFiltersProps> = ({
                 type="date"
                 value={
                   filters.dateRange?.end
-                    ? formatDateForInput(filters.dateRange.end)
+                    ? formatDateForInput(filters?.dateRange?.end)
                     : ""
                 }
-                onChange={(e) => handleDateRangeChange("end", e.target.value)}
+                onChange={(e: any) => handleDateRangeChange("end", e?.target?.value)}
                 className="email-filters__date-field"
               />
             </div>
@@ -335,8 +335,8 @@ export const EmailFilters: React.FC<EmailFiltersProps> = ({
             {filters.dateRange && (
               <div className="email-filters__active-item">
                 <span>
-                  Date Range: {filters.dateRange.start.toLocaleDateString()} -{" "}
-                  {filters.dateRange.end.toLocaleDateString()}
+                  Date Range: {filters?.dateRange?.start.toLocaleDateString()} -{" "}
+                  {filters?.dateRange?.end.toLocaleDateString()}
                 </span>
                 <button
                   onClick={() => onFilterChange({ dateRange: undefined })}

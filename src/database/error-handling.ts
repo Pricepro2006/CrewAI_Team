@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 import {
   AppError,
   DatabaseError,
@@ -68,7 +68,7 @@ function mapDatabaseError(error: unknown): AppError {
     });
   }
 
-  const message = error.message.toLowerCase();
+  const message = error?.message?.toLowerCase();
 
   // Connection errors
   if (message.includes("enoent") || message.includes("no such file")) {
@@ -159,7 +159,7 @@ export function withDatabaseErrorHandling<
     retries: options.retries ?? 3,
     retryDelay: options.retryDelay ?? 500,
     context: options.context ?? operation.name,
-    onError: (error) => {
+    onError: (error: any) => {
       // Convert to database-specific error
       throw mapDatabaseError(error);
     },
@@ -251,11 +251,11 @@ export class DatabaseHealthChecker {
   }
 
   async check(): Promise<boolean> {
-    return this.circuitBreaker.execute(
+    return this?.circuitBreaker?.execute(
       async () => {
         try {
           // Simple health check query
-          const result = this.db.prepare("SELECT 1 as health").get() as Record<string, unknown>;
+          const result = this?.db?.prepare("SELECT 1 as health").get() as Record<string, unknown>;
           return result?.health === 1;
         } catch (error) {
           throw mapDatabaseError(error);
@@ -267,11 +267,11 @@ export class DatabaseHealthChecker {
   }
 
   getCircuitState(): string {
-    return this.circuitBreaker.getState();
+    return this?.circuitBreaker?.getState();
   }
 
   reset(): void {
-    this.circuitBreaker.reset();
+    this?.circuitBreaker?.reset();
   }
 }
 
@@ -294,7 +294,7 @@ export class DatabaseConnectionManager {
       if (this.db) {
         // Check if connection is still valid
         try {
-          this.db.prepare("SELECT 1").get();
+          this?.db?.prepare("SELECT 1").get();
           return this.db;
         } catch {
           // Connection is dead, close it
@@ -306,10 +306,10 @@ export class DatabaseConnectionManager {
       this.db = new Database(this.databasePath, this.options);
 
       // Configure for better concurrency
-      this.db.pragma("journal_mode = WAL");
-      this.db.pragma("synchronous = NORMAL");
-      this.db.pragma("foreign_keys = ON");
-      this.db.pragma("busy_timeout = 5000");
+      this?.db?.pragma("journal_mode = WAL");
+      this?.db?.pragma("synchronous = NORMAL");
+      this?.db?.pragma("foreign_keys = ON");
+      this?.db?.pragma("busy_timeout = 5000");
 
       this.connectionAttempts = 0;
       logger.info("Database connected successfully", "DB_CONNECTION");
@@ -336,7 +336,7 @@ export class DatabaseConnectionManager {
       );
 
       // Wait before retrying
-      await new Promise((resolve) => setTimeout(resolve, this.reconnectDelay));
+      await new Promise((resolve: any) => setTimeout(resolve, this.reconnectDelay));
       this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000); // Cap at 30 seconds
 
       return this.connect();
@@ -359,7 +359,7 @@ export class DatabaseConnectionManager {
   close(): void {
     if (this.db) {
       try {
-        this.db.close();
+        this?.db?.close();
         logger.info("Database connection closed", "DB_CONNECTION");
       } catch (error) {
         logger.error("Error closing database connection", "DB_CONNECTION", {
@@ -375,7 +375,7 @@ export class DatabaseConnectionManager {
     if (!this.db) return false;
 
     try {
-      this.db.prepare("SELECT 1").get();
+      this?.db?.prepare("SELECT 1").get();
       return true;
     } catch {
       return false;
@@ -393,11 +393,11 @@ export class PreparedStatementCache {
 
   get<T extends Record<string, unknown> | unknown[] = Record<string, unknown>>(query: string): Database.Statement<T> {
     try {
-      let stmt = this.cache.get(query);
+      let stmt = this?.cache?.get(query);
 
       if (!stmt) {
-        stmt = this.db.prepare(query);
-        this.cache.set(query, stmt);
+        stmt = this?.db?.prepare(query);
+        this?.cache?.set(query, stmt);
       }
 
       return stmt as Database.Statement<T>;
@@ -411,10 +411,10 @@ export class PreparedStatementCache {
   }
 
   clear(): void {
-    this.cache.clear();
+    this?.cache?.clear();
   }
 
   remove(query: string): void {
-    this.cache.delete(query);
+    this?.cache?.delete(query);
   }
 }

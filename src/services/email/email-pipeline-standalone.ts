@@ -23,7 +23,7 @@ const PORT = process.env.EMAIL_PIPELINE_PORT || 3456;
 const HOST = process.env.EMAIL_PIPELINE_HOST || '0.0.0.0';
 
 // Global error handlers
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', (error: any) => {
   logger.error('Uncaught Exception', 'PROCESS', { error: error.message, stack: error.stack });
   process.exit(1);
 });
@@ -86,14 +86,14 @@ app.get('/health', async (req, res) => {
     try {
       const db = await createConnection();
       await db.get('SELECT 1');
-      health.checks.database = true;
+      health?.checks?.database = true;
     } catch (error) {
       logger.warn('Database health check failed', 'HEALTH', { error });
     }
 
     // Check queue processor
     if (queueProcessor) {
-      health.checks.queue = queueProcessor.isHealthy();
+      health?.checks?.queue = queueProcessor.isHealthy();
     }
 
     // Check Ollama (basic connectivity)
@@ -103,7 +103,7 @@ app.get('/health', async (req, res) => {
         method: 'GET',
         timeout: 5000,
       });
-      health.checks.ollama = response.ok;
+      health?.checks?.ollama = response.ok;
     } catch (error) {
       logger.warn('Ollama health check failed', 'HEALTH', { error });
     }
@@ -344,7 +344,7 @@ async function startServer() {
       });
     });
 
-    server.on('error', (error) => {
+    server.on('error', (error: any) => {
       logger.error('Server error', 'SERVER', { error });
       process.exit(1);
     });

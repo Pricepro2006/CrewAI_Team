@@ -198,17 +198,17 @@ export class ErrorHandlerRegistry {
   }
 
   registerHandler(handler: ErrorHandler): void {
-    this.handlers.set(handler.name, handler);
+    this?.handlers?.set(handler.name, handler);
 
     // Sort global handlers by priority
-    this.globalHandlers = Array.from(this.handlers.values()).sort(
+    this.globalHandlers = Array.from(this?.handlers?.values()).sort(
       (a, b) => b.priority - a.priority,
     );
   }
 
   unregisterHandler(name: string): void {
-    this.handlers.delete(name);
-    this.globalHandlers = Array.from(this.handlers.values()).sort(
+    this?.handlers?.delete(name);
+    this.globalHandlers = Array.from(this?.handlers?.values()).sort(
       (a, b) => b.priority - a.priority,
     );
   }
@@ -258,31 +258,31 @@ export class ErrorHandlerRegistry {
   }
 
   private updateMetrics(error: BaseError): void {
-    this.metrics.totalErrors++;
+    this?.metrics?.totalErrors++;
 
     // Update error counts by code
-    if (!this.metrics.errorsByCode[error.code]) {
-      this.metrics.errorsByCode[error.code] = 0;
+    if (!this?.metrics?.errorsByCode[error.code]) {
+      this?.metrics?.errorsByCode[error.code] = 0;
     }
-    this.metrics.errorsByCode[error.code] =
-      (this.metrics.errorsByCode[error.code] || 0) + 1;
+    this?.metrics?.errorsByCode[error.code] =
+      (this?.metrics?.errorsByCode[error.code] || 0) + 1;
 
     // Update error counts by category
     const category = this.categorizeError(error);
-    if (!this.metrics.errorsByCategory[category]) {
-      this.metrics.errorsByCategory[category] = 0;
+    if (!this?.metrics?.errorsByCategory[category]) {
+      this?.metrics?.errorsByCategory[category] = 0;
     }
-    this.metrics.errorsByCategory[category]++;
+    this?.metrics?.errorsByCategory[category]++;
   }
 
   private updateErrorReport(error: BaseError, context: ErrorContext): void {
     const fingerprint = this.generateFingerprint(error);
-    const existingReport = this.reports.get(fingerprint);
+    const existingReport = this?.reports?.get(fingerprint);
 
     if (existingReport) {
       existingReport.frequency++;
       existingReport.lastOccurrence = new Date().toISOString();
-      existingReport.affectedUsers = context.userId
+      existingReport.affectedUsers = context.userId || ""
         ? existingReport.affectedUsers + 1
         : existingReport.affectedUsers;
     } else {
@@ -300,7 +300,7 @@ export class ErrorHandlerRegistry {
         status: "new",
       };
 
-      this.reports.set(fingerprint, newReport);
+      this?.reports?.set(fingerprint, newReport);
     }
   }
 
@@ -317,18 +317,18 @@ export class ErrorHandlerRegistry {
 
   private categorizeError(error: BaseError): ErrorCategory {
     // Categorize error based on code prefix or type
-    if (error.code.startsWith("1001") || error.code.startsWith("1002"))
+    if (error?.code?.startsWith("1001") || error?.code?.startsWith("1002"))
       return "authentication";
-    if (error.code.startsWith("1100")) return "authorization";
-    if (error.code.startsWith("1200")) return "validation";
-    if (error.code.startsWith("1300")) return "business";
-    if (error.code.startsWith("1400")) return "system";
-    if (error.code.startsWith("1500")) return "network";
-    if (error.code.startsWith("1600")) return "database";
-    if (error.code.startsWith("1700")) return "external_service";
-    if (error.code.startsWith("1800")) return "rate_limit";
-    if (error.code.startsWith("1900")) return "resource";
-    if (error.code.startsWith("2000")) return "security";
+    if (error?.code?.startsWith("1100")) return "authorization";
+    if (error?.code?.startsWith("1200")) return "validation";
+    if (error?.code?.startsWith("1300")) return "business";
+    if (error?.code?.startsWith("1400")) return "system";
+    if (error?.code?.startsWith("1500")) return "network";
+    if (error?.code?.startsWith("1600")) return "database";
+    if (error?.code?.startsWith("1700")) return "external_service";
+    if (error?.code?.startsWith("1800")) return "rate_limit";
+    if (error?.code?.startsWith("1900")) return "resource";
+    if (error?.code?.startsWith("2000")) return "security";
 
     return "system"; // Default category
   }
@@ -341,11 +341,11 @@ export class ErrorHandlerRegistry {
     }
 
     // Determine severity based on error code
-    if (error.code.startsWith("2000")) return "critical"; // Security errors
-    if (error.code.startsWith("1400")) return "high"; // System errors
-    if (error.code.startsWith("1600")) return "high"; // Database errors
-    if (error.code.startsWith("1300")) return "medium"; // Business errors
-    if (error.code.startsWith("1200")) return "low"; // Validation errors
+    if (error?.code?.startsWith("2000")) return "critical"; // Security errors
+    if (error?.code?.startsWith("1400")) return "high"; // System errors
+    if (error?.code?.startsWith("1600")) return "high"; // Database errors
+    if (error?.code?.startsWith("1300")) return "medium"; // Business errors
+    if (error?.code?.startsWith("1200")) return "low"; // Validation errors
 
     return "medium"; // Default severity
   }
@@ -357,8 +357,8 @@ export class ErrorHandlerRegistry {
 
   private updateResolutionTime(resolutionTime: number): void {
     // Update average resolution time (simplified calculation)
-    this.metrics.averageResolutionTime =
-      (this.metrics.averageResolutionTime + resolutionTime) / 2;
+    this?.metrics?.averageResolutionTime =
+      (this?.metrics?.averageResolutionTime + resolutionTime) / 2;
   }
 
   getMetrics(): ErrorMetrics {
@@ -366,11 +366,11 @@ export class ErrorHandlerRegistry {
   }
 
   getReports(): ErrorReport[] {
-    return Array.from(this.reports.values());
+    return Array.from(this?.reports?.values());
   }
 
   getReport(fingerprint: string): ErrorReport | undefined {
-    return this.reports.get(fingerprint);
+    return this?.reports?.get(fingerprint);
   }
 }
 
@@ -423,14 +423,14 @@ export class CircuitBreaker {
 
   private shouldAttemptReset(): boolean {
     if (!this.lastFailureTime) return false;
-    return Date.now() - this.lastFailureTime > this.config.resetTimeoutMs;
+    return Date.now() - this.lastFailureTime > this?.config?.resetTimeoutMs;
   }
 
   private recordFailure(): void {
     this.failures++;
     this.lastFailureTime = Date.now();
 
-    if (this.failures >= this.config.failureThreshold) {
+    if (this.failures >= this?.config?.failureThreshold) {
       this.state = "open";
     }
   }
@@ -464,7 +464,7 @@ export class RetryHandler {
   ): Promise<T> {
     let lastError: Error;
 
-    for (let attempt = 0; attempt < this.strategy.maxAttempts; attempt++) {
+    for (let attempt = 0; attempt < this?.strategy?.maxAttempts; attempt++) {
       try {
         return await operation();
       } catch (error) {
@@ -482,11 +482,11 @@ export class RetryHandler {
           ...context,
         };
 
-        if (!this.strategy.retryCondition(baseError, attempt)) {
+        if (!this?.strategy?.retryCondition(baseError, attempt)) {
           throw error;
         }
 
-        if (attempt < this.strategy.maxAttempts - 1) {
+        if (attempt < this?.strategy?.maxAttempts - 1) {
           const delay = this.calculateDelay(attempt);
           await this.sleep(delay);
         }
@@ -498,11 +498,11 @@ export class RetryHandler {
 
   private calculateDelay(attempt: number): number {
     let delay =
-      this.strategy.initialDelayMs *
-      Math.pow(this.strategy.backoffMultiplier, attempt);
-    delay = Math.min(delay, this.strategy.maxDelayMs);
+      this?.strategy?.initialDelayMs *
+      Math.pow(this?.strategy?.backoffMultiplier, attempt);
+    delay = Math.min(delay, this?.strategy?.maxDelayMs);
 
-    if (this.strategy.jitter) {
+    if (this?.strategy?.jitter) {
       delay = delay * (0.5 + Math.random() * 0.5); // Add jitter (50-100% of calculated delay)
     }
 
@@ -510,7 +510,7 @@ export class RetryHandler {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve: any) => setTimeout(resolve, ms));
   }
 }
 
@@ -546,7 +546,7 @@ export const defaultErrorHandlers: ErrorHandler[] = [
   {
     name: "validation-handler",
     priority: 80,
-    canHandle: (error: BaseError) => error.code.startsWith("1200"), // Validation error codes
+    canHandle: (error: BaseError) => error?.code?.startsWith("1200"), // Validation error codes
     handle: async (
       error: BaseError,
       context: ErrorContext,
@@ -589,7 +589,7 @@ export const defaultErrorHandlers: ErrorHandler[] = [
   {
     name: "network-handler",
     priority: 85,
-    canHandle: (error: BaseError) => error.code.startsWith("1500"), // Network error codes
+    canHandle: (error: BaseError) => error?.code?.startsWith("1500"), // Network error codes
     handle: async (
       error: BaseError,
       context: ErrorContext,
@@ -610,7 +610,7 @@ export const defaultErrorHandlers: ErrorHandler[] = [
   {
     name: "system-handler",
     priority: 70,
-    canHandle: (error: BaseError) => error.code.startsWith("1400"), // System error codes
+    canHandle: (error: BaseError) => error?.code?.startsWith("1400"), // System error codes
     handle: async (
       error: BaseError,
       context: ErrorContext,
@@ -637,7 +637,7 @@ export const defaultErrorHandlers: ErrorHandler[] = [
 export const globalErrorHandler = new ErrorHandlerRegistry();
 
 // Register default handlers
-defaultErrorHandlers.forEach((handler) => {
+defaultErrorHandlers.forEach((handler: any) => {
   globalErrorHandler.registerHandler(handler);
 });
 
@@ -650,7 +650,7 @@ export const defaultRetryStrategy: RetryStrategy = {
   jitter: true,
   retryCondition: (error: BaseError, attempt: number) => {
     // Don't retry validation or authentication errors
-    if (error.code.startsWith("1200") || error.code.startsWith("1001")) {
+    if (error?.code?.startsWith("1200") || error?.code?.startsWith("1001")) {
       return false;
     }
 

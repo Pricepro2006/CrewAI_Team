@@ -119,7 +119,7 @@ describe("Card Component", () => {
   it("should render different variants", () => {
     const variants = ["default", "elevated", "outlined"] as const;
 
-    variants.forEach((variant) => {
+    variants.forEach((variant: any) => {
       const { rerender } = render(
         <Card variant={variant} data-testid="test-card">
           {variant} content

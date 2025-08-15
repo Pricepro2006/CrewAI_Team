@@ -89,7 +89,7 @@ export class GroceryFileStorage {
     },
   ): Promise<FileMetadata> {
     // Validate file size
-    if (buffer.length > this.maxFileSize) {
+    if (buffer?.length || 0 > this.maxFileSize) {
       throw new Error(
         `File size exceeds maximum allowed size of ${this.maxFileSize} bytes`,
       );
@@ -127,7 +127,7 @@ export class GroceryFileStorage {
       filename,
       originalName,
       mimeType,
-      size: buffer.length,
+      size: buffer?.length || 0,
       category,
       userId: metadata?.userId,
       relatedId: metadata?.relatedId,
@@ -156,7 +156,7 @@ export class GroceryFileStorage {
     const files = await fs.readdir(
       path.join(this.baseStoragePath, this.getCategoryPath(category)),
     );
-    const matchingFile = files.find((f) => f.startsWith(fileId));
+    const matchingFile = files.find((f: any) => f.startsWith(fileId));
 
     if (!matchingFile) {
       throw new Error(`File not found: ${fileId}`);
@@ -307,14 +307,14 @@ export class GroceryFileStorage {
 
       for (const item of items) {
         const price = item.estimatedPrice
-          ? `$${item.estimatedPrice.toFixed(2)}`
+          ? `$${item?.estimatedPrice?.toFixed(2)}`
           : "";
         content += `[ ] ${item.name} - ${item.quantity} ${item.unit} ${price}\n`;
       }
     }
 
     if (listData.totalEstimate) {
-      content += `\nESTIMATED TOTAL: $${listData.totalEstimate.toFixed(2)}\n`;
+      content += `\nESTIMATED TOTAL: $${listData?.totalEstimate?.toFixed(2)}\n`;
     }
 
     const buffer = Buffer.from(content, "utf-8");

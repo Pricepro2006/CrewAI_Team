@@ -126,7 +126,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    * Initialize WebSocket server with best practices
    */
   initialize(server: Server, path: string = "/ws/enhanced") {
-    const perMessageDeflate = this.config.messageCompression ? {
+    const perMessageDeflate = this?.config?.messageCompression ? {
       zlibDeflateOptions: {
         chunkSize: 1024,
         memLevel: 7,
@@ -139,21 +139,21 @@ export class BestPracticeWebSocketServer extends EventEmitter {
       serverNoContextTakeover: true,
       serverMaxWindowBits: 10,
       concurrencyLimit: 10,
-      threshold: this.config.compressionThreshold
+      threshold: this?.config?.compressionThreshold
     } : false;
 
     this.wss = new WebSocketServer({ 
       server,
       path,
       perMessageDeflate,
-      verifyClient: this.verifyClient.bind(this),
-      handleProtocols: this.handleProtocols.bind(this),
+      verifyClient: this?.verifyClient?.bind(this),
+      handleProtocols: this?.handleProtocols?.bind(this),
       clientTracking: true,
       maxPayload: 100 * 1024 * 1024 // 100MB max message size
     });
 
-    this.wss.on("connection", this.handleConnection.bind(this));
-    this.wss.on("error", this.handleServerError.bind(this));
+    this?.wss?.on("connection", this?.handleConnection?.bind(this));
+    this?.wss?.on("error", this?.handleServerError?.bind(this));
 
     // Start maintenance tasks
     this.startHeartbeat();
@@ -167,12 +167,12 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    * Verify client with authentication and rate limiting
    */
   private verifyClient(info: any, callback: (result: boolean, code?: number, message?: string) => void) {
-    const url = new URL(info.req.url, `http://${info.req.headers.host}`);
-    const reconnectToken = url.searchParams.get("reconnectToken");
-    const authToken = info.req.headers.authorization;
+    const url = new URL(info?.req?.url, `http://${info?.req?.headers.host}`);
+    const reconnectToken = url?.searchParams?.get("reconnectToken");
+    const authToken = info?.req?.headers.authorization;
     
     // Check reconnection token
-    if (reconnectToken && this.reconnectTokens.has(reconnectToken)) {
+    if (reconnectToken && this?.reconnectTokens?.has(reconnectToken)) {
       callback(true);
       return;
     }
@@ -186,7 +186,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
     }
     
     // Rate limiting check
-    const clientIp = info.req.connection.remoteAddress;
+    const clientIp = info?.req?.connection.remoteAddress;
     if (this.isRateLimited(clientIp)) {
       callback(false, 429, "Too Many Requests");
       return;
@@ -219,12 +219,12 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    * Handle new connection with session recovery
    */
   private handleConnection(ws: WebSocket, req: any) {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const reconnectToken = url.searchParams.get("reconnectToken");
+    const url = new URL(req.url, `http://${req?.headers?.host}`);
+    const reconnectToken = url?.searchParams?.get("reconnectToken");
     
     let client: WSClient;
     
-    if (reconnectToken && this.reconnectTokens.has(reconnectToken)) {
+    if (reconnectToken && this?.reconnectTokens?.has(reconnectToken)) {
       // Session recovery
       client = this.recoverSession(ws, reconnectToken);
     } else {
@@ -240,8 +240,8 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    * Recover existing session
    */
   private recoverSession(ws: WebSocket, reconnectToken: string): WSClient {
-    const clientId = this.reconnectTokens.get(reconnectToken)!;
-    const existingClient = this.clients.get(clientId);
+    const clientId = this?.reconnectTokens?.get(reconnectToken)!;
+    const existingClient = this?.clients?.get(clientId);
     
     if (existingClient) {
       logger.info(`Client ${clientId} session recovered`, "WS_SERVER");
@@ -252,7 +252,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
       existingClient.isAlive = true;
       existingClient.lastActivity = new Date();
       existingClient.reconnectCount++;
-      existingClient.metrics.reconnections++;
+      existingClient?.metrics?.reconnections++;
       
       // Send queued messages
       this.flushMessageQueue(existingClient);
@@ -262,7 +262,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
         type: "session_recovered",
         payload: { 
           reconnectCount: existingClient.reconnectCount,
-          queuedMessages: existingClient.messageQueue.length,
+          queuedMessages: existingClient?.messageQueue?.length,
           lastSequence: existingClient.lastReceivedSequence
         },
         timestamp: new Date().toISOString()
@@ -307,8 +307,8 @@ export class BestPracticeWebSocketServer extends EventEmitter {
       }
     };
     
-    this.clients.set(clientId, client);
-    this.reconnectTokens.set(reconnectToken, clientId);
+    this?.clients?.set(clientId, client);
+    this?.reconnectTokens?.set(reconnectToken, clientId);
     
     logger.info(`New client created: ${clientId}`, "WS_SERVER");
     
@@ -326,8 +326,8 @@ export class BestPracticeWebSocketServer extends EventEmitter {
       try {
         const data = this.parseMessage(message);
         client.lastActivity = new Date();
-        client.metrics.messagesReceived++;
-        client.metrics.bytesReceived += message.length;
+        client?.metrics?.messagesReceived++;
+        client?.metrics?.bytesReceived += message?.length || 0;
         
         // Validate message
         if (!this.validateMessage(data)) {
@@ -341,15 +341,15 @@ export class BestPracticeWebSocketServer extends EventEmitter {
         
         // Calculate latency
         const latency = Date.now() - startTime;
-        client.metrics.lastLatency = latency;
-        client.metrics.avgLatency = 
-          (client.metrics.avgLatency * (client.metrics.messagesReceived - 1) + latency) / 
-          client.metrics.messagesReceived;
+        client?.metrics?.lastLatency = latency;
+        client?.metrics?.avgLatency = 
+          (client?.metrics?.avgLatency * (client?.metrics?.messagesReceived - 1) + latency) / 
+          client?.metrics?.messagesReceived;
         
         this.handleClientMessage(client, data);
         
       } catch (error) {
-        client.metrics.errorsCount++;
+        client?.metrics?.errorsCount++;
         logger.error(`Message error from client ${client.id}: ${error}`, "WS_SERVER");
         this.sendError(client, "Invalid message", true);
       }
@@ -361,10 +361,10 @@ export class BestPracticeWebSocketServer extends EventEmitter {
       client.lastActivity = new Date();
       
       // Calculate round-trip time if ping included timestamp
-      if (data.length === 8) {
+      if (data?.length || 0 === 8) {
         const pingTime = data.readBigInt64BE();
         const rtt = Date.now() - Number(pingTime);
-        client.metrics.lastLatency = rtt;
+        client?.metrics?.lastLatency = rtt;
       }
     });
 
@@ -385,7 +385,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
 
     // Error handler
     ws.on("error", (error: Error) => {
-      client.metrics.errorsCount++;
+      client?.metrics?.errorsCount++;
       logger.error(`WebSocket error for client ${client.id}: ${error.message}`, "WS_SERVER");
       this.handleClientError(client, error);
     });
@@ -478,7 +478,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
   private handleAuth(client: WSClient, message: any) {
     // Validate token
     // For now, accept all auth attempts
-    client.userId = message.userId;
+    client.userId = message.userId || "";
     client.sessionId = message.sessionId || this.generateSessionId();
     
     logger.info(`Client ${client.id} authenticated as user ${client.userId}`, "WS_SERVER");
@@ -519,8 +519,8 @@ export class BestPracticeWebSocketServer extends EventEmitter {
       type: "metrics",
       payload: {
         ...client.metrics,
-        connectionUptime: Date.now() - client.lastActivity.getTime(),
-        queueSize: client.messageQueue.length
+        connectionUptime: Date.now() - client?.lastActivity?.getTime(),
+        queueSize: client?.messageQueue?.length
       },
       timestamp: new Date().toISOString()
     });
@@ -535,21 +535,21 @@ export class BestPracticeWebSocketServer extends EventEmitter {
     message.sequenceNumber = ++client.sequenceNumber;
     message.timestamp = message.timestamp || new Date().toISOString();
     
-    if (client.ws.readyState === WebSocket.OPEN) {
+    if (client?.ws?.readyState === WebSocket.OPEN) {
       try {
         const data = JSON.stringify(message);
-        client.ws.send(data);
+        client?.ws?.send(data);
         
-        client.metrics.messagesSent++;
-        client.metrics.bytesSent += data.length;
+        client?.metrics?.messagesSent++;
+        client?.metrics?.bytesSent += data?.length || 0;
         
         // Set up acknowledgment timeout if required
         if (message.requiresAck) {
           const timeout = setTimeout(() => {
             this.handleAckTimeout(client, message);
-          }, this.config.ackTimeout);
+          }, this?.config?.ackTimeout);
           
-          client.pendingAcks.set(message.id!, timeout);
+          client?.pendingAcks?.set(message.id!, timeout);
         }
         
         // Store in history for important messages
@@ -579,7 +579,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    * Handle acknowledgment timeout
    */
   private handleAckTimeout(client: WSClient, message: WSMessage) {
-    client.pendingAcks.delete(message.id!);
+    client?.pendingAcks?.delete(message.id!);
     
     logger.warn(`Acknowledgment timeout for message ${message.id} to client ${client.id}`, "WS_SERVER");
     
@@ -597,19 +597,19 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    */
   private queueMessage(client: WSClient, message: WSMessage) {
     // Remove old messages if queue is full
-    if (client.messageQueue.length >= this.config.messageQueueSize) {
+    if (client?.messageQueue?.length >= this?.config?.messageQueueSize) {
       // Remove lowest priority message
-      const lowestPriorityIndex = client.messageQueue.reduce((minIdx, msg, idx, arr) => 
+      const lowestPriorityIndex = client?.messageQueue?.reduce((minIdx, msg, idx, arr) => 
         (msg.priority || 0) < (arr[minIdx].priority || 0) ? idx : minIdx, 0);
       
-      client.messageQueue.splice(lowestPriorityIndex, 1);
+      client?.messageQueue?.splice(lowestPriorityIndex, 1);
     }
     
     // Add message to queue
-    client.messageQueue.push(message);
+    client?.messageQueue?.push(message);
     
     // Sort by priority
-    client.messageQueue.sort((a, b) => 
+    client?.messageQueue?.sort((a, b) => 
       (b.priority || MessagePriority.NORMAL) - (a.priority || MessagePriority.NORMAL)
     );
   }
@@ -639,15 +639,15 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    * Add message to session history
    */
   private addToHistory(sessionId: string, message: WSMessage) {
-    if (!this.messageHistory.has(sessionId)) {
-      this.messageHistory.set(sessionId, []);
+    if (!this?.messageHistory?.has(sessionId)) {
+      this?.messageHistory?.set(sessionId, []);
     }
     
-    const history = this.messageHistory.get(sessionId)!;
+    const history = this?.messageHistory?.get(sessionId)!;
     history.push(message);
     
     // Keep only last 100 messages
-    if (history.length > 100) {
+    if (history?.length || 0 > 100) {
       history.shift();
     }
   }
@@ -674,24 +674,24 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    */
   private removeClient(client: WSClient) {
     // Clear pending acknowledgments
-    client.pendingAcks.forEach(timeout => clearTimeout(timeout));
-    client.pendingAcks.clear();
+    client?.pendingAcks?.forEach(timeout => clearTimeout(timeout));
+    client?.pendingAcks?.clear();
     
     // Remove reconnect token
     if (client.reconnectToken) {
-      this.reconnectTokens.delete(client.reconnectToken);
+      this?.reconnectTokens?.delete(client.reconnectToken);
     }
     
     // Remove from clients map
-    this.clients.delete(client.id);
+    this?.clients?.delete(client.id);
     
     // Clean up message history if no other clients in session
     if (client.sessionId) {
-      const otherClientsInSession = Array.from(this.clients.values())
+      const otherClientsInSession = Array.from(this?.clients?.values())
         .filter(c => c.id !== client.id && c.sessionId === client.sessionId);
       
-      if (otherClientsInSession.length === 0) {
-        this.messageHistory.delete(client.sessionId);
+      if (otherClientsInSession?.length || 0 === 0) {
+        this?.messageHistory?.delete(client.sessionId);
       }
     }
     
@@ -703,7 +703,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    */
   private handleClientError(client: WSClient, error: Error) {
     // Try to send error notification
-    if (client.ws.readyState === WebSocket.OPEN) {
+    if (client?.ws?.readyState === WebSocket.OPEN) {
       this.sendError(client, error.message, true);
     }
     
@@ -741,8 +741,8 @@ export class BestPracticeWebSocketServer extends EventEmitter {
         reconnectToken: client.reconnectToken,
         sessionId: client.sessionId,
         config: {
-          heartbeatInterval: this.config.heartbeatInterval,
-          maxReconnectAttempts: this.config.maxReconnectAttempts,
+          heartbeatInterval: this?.config?.heartbeatInterval,
+          maxReconnectAttempts: this?.config?.maxReconnectAttempts,
           features: ["reconnection", "message_queue", "heartbeat", "compression", "metrics"]
         }
       },
@@ -755,7 +755,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    * Handle subscription
    */
   private handleSubscription(client: WSClient, events: string[]) {
-    events.forEach(event => client.subscriptions.add(event));
+    events.forEach(event => client?.subscriptions?.add(event));
     logger.info(`Client ${client.id} subscribed to: ${events.join(", ")}`, "WS_SERVER");
     
     this.sendToClient(client, {
@@ -769,7 +769,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    * Handle unsubscription
    */
   private handleUnsubscription(client: WSClient, events: string[]) {
-    events.forEach(event => client.subscriptions.delete(event));
+    events.forEach(event => client?.subscriptions?.delete(event));
     logger.info(`Client ${client.id} unsubscribed from: ${events.join(", ")}`, "WS_SERVER");
     
     this.sendToClient(client, {
@@ -783,7 +783,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    * Broadcast to all clients
    */
   broadcast(message: WSMessage, filter?: (client: WSClient) => boolean) {
-    this.clients.forEach(client => {
+    this?.clients?.forEach(client => {
       if (!filter || filter(client)) {
         this.sendToClient(client, message);
       }
@@ -794,7 +794,7 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    * Send to subscribers of specific event
    */
   sendToSubscribers(event: string, message: WSMessage) {
-    this.broadcast(message, client => client.subscriptions.has(event));
+    this.broadcast(message, client => client?.subscriptions?.has(event));
   }
 
   /**
@@ -806,23 +806,23 @@ export class BestPracticeWebSocketServer extends EventEmitter {
       const pingData = Buffer.allocUnsafe(8);
       pingData.writeBigInt64BE(BigInt(now));
       
-      this.clients.forEach((client, id) => {
+      this?.clients?.forEach((client, id) => {
         if (client.state !== ConnectionState.CONNECTED) return;
         
-        if (!client.isAlive && client.ws.readyState === WebSocket.OPEN) {
+        if (!client.isAlive && client?.ws?.readyState === WebSocket.OPEN) {
           // Client didn't respond to last ping
           logger.info(`Client ${id} failed heartbeat check`, "WS_SERVER");
-          client.ws.terminate();
+          client?.ws?.terminate();
           return;
         }
         
         // Send ping with timestamp
-        if (client.ws.readyState === WebSocket.OPEN) {
+        if (client?.ws?.readyState === WebSocket.OPEN) {
           client.isAlive = false;
-          client.ws.ping(pingData);
+          client?.ws?.ping(pingData);
         }
       });
-    }, this.config.heartbeatInterval);
+    }, this?.config?.heartbeatInterval);
   }
 
   /**
@@ -831,10 +831,10 @@ export class BestPracticeWebSocketServer extends EventEmitter {
   private startCleanup() {
     this.cleanupInterval = setInterval(() => {
       const now = Date.now();
-      const timeout = this.config.sessionTimeout;
+      const timeout = this?.config?.sessionTimeout;
       
-      this.clients.forEach((client, id) => {
-        const lastActivityTime = client.lastActivity.getTime();
+      this?.clients?.forEach((client, id) => {
+        const lastActivityTime = client?.lastActivity?.getTime();
         
         // Remove disconnected clients after timeout
         if (client.state === ConnectionState.DISCONNECTED && 
@@ -845,12 +845,12 @@ export class BestPracticeWebSocketServer extends EventEmitter {
       });
       
       // Clean up old message history
-      this.messageHistory.forEach((history, sessionId) => {
-        const hasActiveClient = Array.from(this.clients.values())
+      this?.messageHistory?.forEach((history, sessionId) => {
+        const hasActiveClient = Array.from(this?.clients?.values())
           .some(client => client.sessionId === sessionId);
         
         if (!hasActiveClient) {
-          this.messageHistory.delete(sessionId);
+          this?.messageHistory?.delete(sessionId);
         }
       });
     }, 60000); // Run every minute
@@ -921,27 +921,27 @@ export class BestPracticeWebSocketServer extends EventEmitter {
    * Get server metrics
    */
   getServerMetrics() {
-    const connected = Array.from(this.clients.values())
+    const connected = Array.from(this?.clients?.values())
       .filter(c => c.state === ConnectionState.CONNECTED).length;
     
-    const disconnected = Array.from(this.clients.values())
+    const disconnected = Array.from(this?.clients?.values())
       .filter(c => c.state === ConnectionState.DISCONNECTED).length;
     
-    const totalMessages = Array.from(this.clients.values())
-      .reduce((sum, c) => sum + c.metrics.messagesSent + c.metrics.messagesReceived, 0);
+    const totalMessages = Array.from(this?.clients?.values())
+      .reduce((sum: any, c: any) => sum + c?.metrics?.messagesSent + c?.metrics?.messagesReceived, 0);
     
-    const totalBytes = Array.from(this.clients.values())
-      .reduce((sum, c) => sum + c.metrics.bytesSent + c.metrics.bytesReceived, 0);
+    const totalBytes = Array.from(this?.clients?.values())
+      .reduce((sum: any, c: any) => sum + c?.metrics?.bytesSent + c?.metrics?.bytesReceived, 0);
     
-    const avgLatency = Array.from(this.clients.values())
-      .reduce((sum, c) => sum + c.metrics.avgLatency, 0) / Math.max(this.clients.size, 1);
+    const avgLatency = Array.from(this?.clients?.values())
+      .reduce((sum: any, c: any) => sum + c?.metrics?.avgLatency, 0) / Math.max(this?.clients?.size, 1);
     
     return {
       connected,
       disconnected,
-      total: this.clients.size,
-      sessions: this.messageHistory.size,
-      reconnectTokens: this.reconnectTokens.size,
+      total: this?.clients?.size,
+      sessions: this?.messageHistory?.size,
+      reconnectTokens: this?.reconnectTokens?.size,
       totalMessages,
       totalBytes,
       avgLatency: Math.round(avgLatency * 100) / 100
@@ -968,17 +968,17 @@ export class BestPracticeWebSocketServer extends EventEmitter {
     });
     
     // Close all connections
-    this.clients.forEach(client => {
-      client.ws.close(1001, "Server shutting down");
+    this?.clients?.forEach(client => {
+      client?.ws?.close(1001, "Server shutting down");
     });
     
     // Clear data
-    this.clients.clear();
-    this.reconnectTokens.clear();
-    this.messageHistory.clear();
+    this?.clients?.clear();
+    this?.reconnectTokens?.clear();
+    this?.messageHistory?.clear();
     
     if (this.wss) {
-      this.wss.close();
+      this?.wss?.close();
       this.wss = null;
     }
     

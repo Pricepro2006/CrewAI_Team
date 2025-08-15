@@ -76,7 +76,7 @@ describe("BusinessSearchMiddleware", () => {
 
   describe("Provider Wrapping", () => {
     it("should return original provider when feature is disabled", () => {
-      mockFeatureFlags.isEnabled.mockReturnValue(false);
+      mockFeatureFlags?.isEnabled?.mockReturnValue(false);
 
       const wrappedProvider = middleware.wrapProvider(mockProvider);
 
@@ -109,7 +109,7 @@ describe("BusinessSearchMiddleware", () => {
 
       // Should call original with enhanced prompt
       expect(originalGenerate).toHaveBeenCalled();
-      const enhancedPrompt = originalGenerate.mock.calls[0][0];
+      const enhancedPrompt = originalGenerate?.mock?.calls[0][0];
       expect(enhancedPrompt).toContain("[BUSINESS_SEARCH_ENHANCED]");
       expect(enhancedPrompt).toContain("WebSearch");
     });
@@ -186,7 +186,7 @@ describe("BusinessSearchMiddleware", () => {
       // Mock slow response
       originalGenerate.mockImplementation(
         () =>
-          new Promise((resolve) =>
+          new Promise((resolve: any) =>
             setTimeout(() => resolve("Slow response"), 3000),
           ),
       );
@@ -245,7 +245,7 @@ describe("BusinessSearchMiddleware", () => {
 
   describe("A/B Testing", () => {
     it("should respect rollout percentage", async () => {
-      mockFeatureFlags.getUserPercentage.mockReturnValue(50);
+      mockFeatureFlags?.getUserPercentage?.mockReturnValue(50);
       const wrappedProvider = middleware.wrapProvider(mockProvider);
 
       // Make multiple requests
@@ -254,7 +254,7 @@ describe("BusinessSearchMiddleware", () => {
 
       for (let i = 0; i < requests; i++) {
         await wrappedProvider.generate("Find a restaurant");
-        const lastCall = originalGenerate.mock.calls[i][0];
+        const lastCall = originalGenerate?.mock?.calls[i][0];
         if (lastCall.includes("[BUSINESS_SEARCH_ENHANCED]")) {
           enhanced++;
         }
@@ -273,7 +273,7 @@ describe("BusinessSearchMiddleware", () => {
 
       await wrappedProvider.generateWithLogProbs(businessQuery);
 
-      const enhancedPrompt = originalGenerateWithLogProbs.mock.calls[0][0];
+      const enhancedPrompt = originalGenerateWithLogProbs?.mock?.calls[0][0];
       expect(enhancedPrompt).toContain("[BUSINESS_SEARCH_ENHANCED]");
     });
 
@@ -294,7 +294,7 @@ describe("BusinessSearchMiddleware", () => {
 
       await wrappedProvider.generateStream(businessQuery);
 
-      const enhancedPrompt = originalGenerateStream.mock.calls[0][0];
+      const enhancedPrompt = originalGenerateStream?.mock?.calls[0][0];
       expect(enhancedPrompt).toContain("[BUSINESS_SEARCH_ENHANCED]");
     });
 
@@ -308,7 +308,7 @@ describe("BusinessSearchMiddleware", () => {
       await wrappedProvider.generateStream(
         "Find auto repair",
         undefined,
-        (chunk) => chunks.push(chunk),
+        (chunk: any) => chunks.push(chunk),
       );
 
       const metrics = middleware.getMetrics();
@@ -380,7 +380,7 @@ describe("BusinessSearchMiddleware", () => {
       await wrappedProvider.generate("enhance this: what is coding?");
 
       // Should enhance even non-business query
-      const enhancedPrompt = originalGenerate.mock.calls[0][0];
+      const enhancedPrompt = originalGenerate?.mock?.calls[0][0];
       expect(enhancedPrompt).toContain("[BUSINESS_SEARCH_ENHANCED]");
     });
   });

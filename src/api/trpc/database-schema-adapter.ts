@@ -49,13 +49,13 @@ export class DatabaseSchemaAdapter {
   getTableColumns(tableName: string): string[] {
     const sanitizedTableName = this.sanitizeTableName(tableName);
     const cacheKey = sanitizedTableName;
-    if (this.columnCache.has(cacheKey)) {
-      return this.columnCache.get(cacheKey)!;
+    if (this?.columnCache?.has(cacheKey)) {
+      return this?.columnCache?.get(cacheKey)!;
     }
 
     try {
       // Use parameterized query with double quotes for identifier
-      const pragma = this.db.prepare(`PRAGMA table_info("${sanitizedTableName}")`).all() as Array<{
+      const pragma = this?.db?.prepare(`PRAGMA table_info("${sanitizedTableName}")`).all() as Array<{
         cid: number;
         name: string;
         type: string;
@@ -64,12 +64,12 @@ export class DatabaseSchemaAdapter {
         pk: number;
       }>;
 
-      const columns = pragma.map(col => col.name);
-      this.columnCache.set(cacheKey, columns);
+      const columns = pragma?.map(col => col.name);
+      this?.columnCache?.set(cacheKey, columns);
       
       logger.debug(`Cached columns for table ${sanitizedTableName}`, "SCHEMA_ADAPTER", {
         table: sanitizedTableName,
-        columnCount: columns.length,
+        columnCount: columns?.length || 0,
         columns: columns.join(', ')
       });
 
@@ -93,13 +93,13 @@ export class DatabaseSchemaAdapter {
    */
   validateTableSchema(tableName: string, expectedColumns: SchemaColumn[]): SchemaValidationResult {
     const actualColumns = this.getTableColumns(tableName);
-    const expectedColumnNames = expectedColumns.map(col => col.name);
+    const expectedColumnNames = expectedColumns?.map(col => col.name);
 
-    const missingColumns = expectedColumnNames.filter(col => !actualColumns.includes(col));
-    const extraColumns = actualColumns.filter(col => !expectedColumnNames.includes(col));
+    const missingColumns = expectedColumnNames?.filter(col => !actualColumns.includes(col));
+    const extraColumns = actualColumns?.filter(col => !expectedColumnNames.includes(col));
 
     const result: SchemaValidationResult = {
-      valid: missingColumns.length === 0,
+      valid: missingColumns?.length || 0 === 0,
       missingColumns,
       extraColumns,
       typeConflicts: []
@@ -126,10 +126,10 @@ export class DatabaseSchemaAdapter {
     options: SafeQueryOptions = {}
   ): { query: string; availableColumns: string[]; missingColumns: string[] } {
     const actualColumns = this.getTableColumns(tableName);
-    const availableColumns = requestedColumns.filter(col => actualColumns.includes(col));
-    const missingColumns = requestedColumns.filter(col => !actualColumns.includes(col));
+    const availableColumns = requestedColumns?.filter(col => actualColumns.includes(col));
+    const missingColumns = requestedColumns?.filter(col => !actualColumns.includes(col));
 
-    if (missingColumns.length > 0 && options.logMissingColumns !== false) {
+    if (missingColumns?.length || 0 > 0 && options.logMissingColumns !== false) {
       logger.warn(`Missing columns in safe SELECT query`, "SCHEMA_ADAPTER", {
         table: tableName,
         requested: requestedColumns,
@@ -139,7 +139,7 @@ export class DatabaseSchemaAdapter {
     }
 
     const sanitizedTableName = this.sanitizeTableName(tableName);
-    const columnsToSelect = availableColumns.length > 0 ? availableColumns.join(', ') : '*';
+    const columnsToSelect = availableColumns?.length || 0 > 0 ? availableColumns.join(', ') : '*';
     const query = `SELECT ${columnsToSelect} FROM "${sanitizedTableName}"${whereClause ? ` WHERE ${whereClause}` : ''}`;
 
     return {
@@ -158,10 +158,10 @@ export class DatabaseSchemaAdapter {
   ): { query: string; values: any[]; skippedColumns: string[] } {
     const actualColumns = this.getTableColumns(tableName);
     const dataColumns = Object.keys(data);
-    const validColumns = dataColumns.filter(col => actualColumns.includes(col));
-    const skippedColumns = dataColumns.filter(col => !actualColumns.includes(col));
+    const validColumns = dataColumns?.filter(col => actualColumns.includes(col));
+    const skippedColumns = dataColumns?.filter(col => !actualColumns.includes(col));
 
-    if (skippedColumns.length > 0) {
+    if (skippedColumns?.length || 0 > 0) {
       logger.warn(`Skipping invalid columns in INSERT query`, "SCHEMA_ADAPTER", {
         table: tableName,
         skipped: skippedColumns,
@@ -170,9 +170,9 @@ export class DatabaseSchemaAdapter {
     }
 
     const sanitizedTableName = this.sanitizeTableName(tableName);
-    const placeholders = validColumns.map(() => '?').join(', ');
+    const placeholders = validColumns?.map(() => '?').join(', ');
     const query = `INSERT INTO "${sanitizedTableName}" (${validColumns.join(', ')}) VALUES (${placeholders})`;
-    const values = validColumns.map(col => data[col]);
+    const values = validColumns?.map(col => data[col]);
 
     return {
       query,
@@ -191,10 +191,10 @@ export class DatabaseSchemaAdapter {
   ): { query: string; values: any[]; skippedColumns: string[] } {
     const actualColumns = this.getTableColumns(tableName);
     const dataColumns = Object.keys(data);
-    const validColumns = dataColumns.filter(col => actualColumns.includes(col));
-    const skippedColumns = dataColumns.filter(col => !actualColumns.includes(col));
+    const validColumns = dataColumns?.filter(col => actualColumns.includes(col));
+    const skippedColumns = dataColumns?.filter(col => !actualColumns.includes(col));
 
-    if (skippedColumns.length > 0) {
+    if (skippedColumns?.length || 0 > 0) {
       logger.warn(`Skipping invalid columns in UPDATE query`, "SCHEMA_ADAPTER", {
         table: tableName,
         skipped: skippedColumns,
@@ -204,13 +204,13 @@ export class DatabaseSchemaAdapter {
 
     const sanitizedTableName = this.sanitizeTableName(tableName);
     
-    if (validColumns.length === 0) {
+    if (validColumns?.length || 0 === 0) {
       throw new Error(`No valid columns found for UPDATE query on table ${sanitizedTableName}`);
     }
 
-    const setClause = validColumns.map(col => `${col} = ?`).join(', ');
+    const setClause = validColumns?.map(col => `${col} = ?`).join(', ');
     const query = `UPDATE "${sanitizedTableName}" SET ${setClause} WHERE ${whereClause}`;
-    const values = validColumns.map(col => data[col]);
+    const values = validColumns?.map(col => data[col]);
 
     return {
       query,
@@ -228,12 +228,12 @@ export class DatabaseSchemaAdapter {
     options: SafeQueryOptions = {}
   ): T[] {
     try {
-      const stmt = this.db.prepare(query);
+      const stmt = this?.db?.prepare(query);
       const results = stmt.all(...params) as T[];
       
       logger.debug(`Safe query executed successfully`, "SCHEMA_ADAPTER", {
         query: query.substring(0, 100),
-        resultCount: results.length
+        resultCount: results?.length || 0
       });
 
       return results;
@@ -272,10 +272,10 @@ export class DatabaseSchemaAdapter {
         alterQuery += ` DEFAULT ${typeof defaultValue === 'string' ? `'${defaultValue}'` : defaultValue}`;
       }
 
-      this.db.prepare(alterQuery).run();
+      this?.db?.prepare(alterQuery).run();
       
       // Clear cache for this table
-      this.columnCache.delete(sanitizedTableName);
+      this?.columnCache?.delete(sanitizedTableName);
       
       logger.info(`Added column ${columnName} to table ${tableName}`, "SCHEMA_ADAPTER", {
         table: tableName,
@@ -320,8 +320,8 @@ export class DatabaseSchemaAdapter {
    * Clear all caches (useful for testing or schema changes)
    */
   clearCache(): void {
-    this.columnCache.clear();
-    this.schemaCache.clear();
+    this?.columnCache?.clear();
+    this?.schemaCache?.clear();
     logger.debug("Schema adapter caches cleared", "SCHEMA_ADAPTER");
   }
 
@@ -330,7 +330,7 @@ export class DatabaseSchemaAdapter {
    */
   getDatabaseInfo(): Record<string, any> {
     try {
-      const tables = this.db.prepare(`
+      const tables = this?.db?.prepare(`
         SELECT name FROM sqlite_master 
         WHERE type='table' AND name NOT LIKE 'sqlite_%'
       `).all() as Array<{ name: string }>;
@@ -340,19 +340,19 @@ export class DatabaseSchemaAdapter {
       for (const table of tables) {
         const columns = this.getTableColumns(table.name);
         const sanitizedTableName = this.sanitizeTableName(table.name);
-        const rowCount = this.db.prepare(`SELECT COUNT(*) as count FROM "${sanitizedTableName}"`).get() as { count: number };
+        const rowCount = this?.db?.prepare(`SELECT COUNT(*) as count FROM "${sanitizedTableName}"`).get() as { count: number };
         
         schemaInfo[table.name] = {
           columns,
-          columnCount: columns.length,
+          columnCount: columns?.length || 0,
           rowCount: rowCount.count
         };
       }
 
       return {
         tables: schemaInfo,
-        totalTables: tables.length,
-        cacheSize: this.columnCache.size
+        totalTables: tables?.length || 0,
+        cacheSize: this?.columnCache?.size
       };
     } catch (error) {
       logger.error("Failed to get database info", "SCHEMA_ADAPTER", { error });

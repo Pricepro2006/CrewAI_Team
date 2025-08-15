@@ -90,7 +90,7 @@ export class EmailIngestionIntegrationService {
       // Start monitoring and scheduling
       await this.startMonitoring();
       
-      if (this.config.autoStartScheduler) {
+      if (this?.config?.autoStartScheduler) {
         await this.startScheduler();
       }
 
@@ -116,7 +116,7 @@ export class EmailIngestionIntegrationService {
   private async initializeCoreServices(): Promise<void> {
     // Create EmailIngestionService with production configuration
     this.ingestionService = await EmailIngestionServiceFactory.create({
-      mode: this.config.mode,
+      mode: this?.config?.mode,
       processing: {
         batchSize: parseInt(process.env.EMAIL_PROCESSING_BATCH_SIZE || '50'),
         concurrency: parseInt(process.env.EMAIL_PROCESSING_CONCURRENCY || '10'),
@@ -152,12 +152,12 @@ export class EmailIngestionIntegrationService {
    * Set up integrations between services
    */
   private async setupIntegrations(): Promise<void> {
-    if (this.config.enableAnalysisIntegration) {
+    if (this?.config?.enableAnalysisIntegration) {
       // Connect ingestion completion to analysis pipeline
       this.setupAnalysisIntegration();
     }
 
-    if (this.config.enableWebSocketUpdates) {
+    if (this?.config?.enableWebSocketUpdates) {
       // Connect to WebSocket for real-time updates
       this.setupWebSocketIntegration();
     }
@@ -170,17 +170,17 @@ export class EmailIngestionIntegrationService {
    */
   private setupAnalysisIntegration(): void {
     // Override ingestion completion handler to trigger analysis
-    const originalIngestBatch = this.ingestionService.ingestBatch.bind(this.ingestionService);
+    const originalIngestBatch = this?.ingestionService?.ingestBatch.bind(this.ingestionService);
     
-    this.ingestionService.ingestBatch = async (emails, source) => {
+    this?.ingestionService?.ingestBatch = async (emails, source) => {
       const result = await originalIngestBatch(emails, source);
       
-      if (result.success && this.config.enableAnalysisIntegration) {
+      if (result.success && this?.config?.enableAnalysisIntegration) {
         // Trigger adaptive 3-phase analysis for newly ingested emails
-        this.triggerAnalysisForNewEmails(result.data.processed).catch(error => {
+        this.triggerAnalysisForNewEmails(result?.data?.processed).catch(error => {
           logger.error('Failed to trigger analysis for new emails', {
             error: error instanceof Error ? error.message : 'Unknown error',
-            processed: result.data.processed
+            processed: result?.data?.processed
           });
         });
       }
@@ -219,7 +219,7 @@ export class EmailIngestionIntegrationService {
       });
 
       // Use existing EmailThreePhaseAnalysisService for adaptive analysis
-      await this.analysisService.processEmailsByConversation({
+      await this?.analysisService?.processEmailsByConversation({
         limit: emailCount,
         onlyUnprocessed: true,
         enableAdaptivePhasing: true
@@ -240,11 +240,11 @@ export class EmailIngestionIntegrationService {
    * Start health monitoring
    */
   private async startMonitoring(): Promise<void> {
-    if (!this.config.enableHealthMonitoring) {
+    if (!this?.config?.enableHealthMonitoring) {
       return;
     }
 
-    const checkInterval = this.config.enableHealthMonitoring ? 30000 : 60000;
+    const checkInterval = this?.config?.enableHealthMonitoring ? 30000 : 60000;
     
     this.healthCheckInterval = setInterval(async () => {
       try {
@@ -256,7 +256,7 @@ export class EmailIngestionIntegrationService {
           });
           
           // Emit health status via WebSocket if enabled
-          if (this.config.enableWebSocketUpdates && io) {
+          if (this?.config?.enableWebSocketUpdates && io) {
             io.emit('email:ingestion:health', {
               ...health,
               timestamp: new Date().toISOString()
@@ -277,18 +277,18 @@ export class EmailIngestionIntegrationService {
    * Start auto-pull scheduler
    */
   private async startScheduler(): Promise<void> {
-    if (this.config.mode === (IngestionMode.MANUAL_LOAD as IngestionMode)) {
+    if (this?.config?.mode === (IngestionMode.MANUAL_LOAD as IngestionMode)) {
       logger.info('Scheduler not started - running in manual mode only');
       return;
     }
 
-    const intervalMs = this.config.schedulerIntervalMinutes * 60 * 1000;
+    const intervalMs = this?.config?.schedulerIntervalMinutes * 60 * 1000;
     
     this.schedulerInterval = setInterval(async () => {
-      if (this.operationSemaphore >= this.config.maxConcurrentOperations) {
+      if (this.operationSemaphore >= this?.config?.maxConcurrentOperations) {
         logger.warn('Skipping scheduled auto-pull - too many concurrent operations', {
           current: this.operationSemaphore,
-          max: this.config.maxConcurrentOperations
+          max: this?.config?.maxConcurrentOperations
         });
         return;
       }
@@ -312,7 +312,7 @@ export class EmailIngestionIntegrationService {
     }, intervalMs);
 
     logger.info('Auto-pull scheduler started', { 
-      intervalMinutes: this.config.schedulerIntervalMinutes 
+      intervalMinutes: this?.config?.schedulerIntervalMinutes 
     });
   }
 
@@ -338,7 +338,7 @@ export class EmailIngestionIntegrationService {
       });
     }
 
-    if (sources.length === 0) {
+    if (sources?.length || 0 === 0) {
       logger.warn('No external email sources configured for auto-pull');
       return;
     }
@@ -353,9 +353,9 @@ export class EmailIngestionIntegrationService {
         
         if (result.success) {
           logger.info(`Auto-pull from ${source.description} completed`, {
-            processed: result.data.processed,
-            duplicate: result.data.duplicate,
-            failed: result.data.failed
+            processed: result?.data?.processed,
+            duplicate: result?.data?.duplicate,
+            failed: result?.data?.failed
           });
         } else {
           logger.error(`Auto-pull from ${source.description} failed`, {
@@ -385,13 +385,13 @@ export class EmailIngestionIntegrationService {
       logger.info('Starting manual batch loading', {
         filePaths,
         source,
-        fileCount: filePaths.length
+        fileCount: filePaths?.length || 0
       });
 
       const results: IngestionBatchResult[] = [];
       
       for (const filePath of filePaths) {
-        const result = await this.ingestionService.ingestFromJsonFile(filePath);
+        const result = await this?.ingestionService?.ingestFromJsonFile(filePath);
         
         if (result.success) {
           results.push(result.data);
@@ -405,10 +405,10 @@ export class EmailIngestionIntegrationService {
 
       // Aggregate results
       const aggregatedResult: IngestionBatchResult = {
-        processed: results.reduce((sum, r) => sum + r.processed, 0),
-        duplicate: results.reduce((sum, r) => sum + r.duplicate, 0),
-        failed: results.reduce((sum, r) => sum + r.failed, 0),
-        throughput: results.reduce((sum, r) => sum + (r.throughput || 0), 0) / results.length,
+        processed: results.reduce((sum: any, r: any) => sum + r.processed, 0),
+        duplicate: results.reduce((sum: any, r: any) => sum + r.duplicate, 0),
+        failed: results.reduce((sum: any, r: any) => sum + r.failed, 0),
+        throughput: results.reduce((sum: any, r: any) => sum + (r.throughput || 0), 0) / results?.length || 0,
         startTime: new Date(),
         endTime: new Date(),
         source,
@@ -436,7 +436,7 @@ export class EmailIngestionIntegrationService {
    */
   async getMetrics(): Promise<IngestionMetrics> {
     this.ensureInitialized();
-    return await this.ingestionService.getMetrics();
+    return await this?.ingestionService?.getMetrics();
   }
 
   /**
@@ -444,7 +444,7 @@ export class EmailIngestionIntegrationService {
    */
   async getQueueStatus(): Promise<QueueStatus> {
     this.ensureInitialized();
-    return await this.ingestionService.getQueueStatus();
+    return await this?.ingestionService?.getQueueStatus();
   }
 
   /**
@@ -452,7 +452,7 @@ export class EmailIngestionIntegrationService {
    */
   async getHealthStatus(): Promise<HealthStatus> {
     this.ensureInitialized();
-    return await this.ingestionService.healthCheck();
+    return await this?.ingestionService?.healthCheck();
   }
 
   /**
@@ -460,7 +460,7 @@ export class EmailIngestionIntegrationService {
    */
   async pause(): Promise<Result<void>> {
     this.ensureInitialized();
-    return await this.ingestionService.pauseQueue();
+    return await this?.ingestionService?.pauseQueue();
   }
 
   /**
@@ -468,7 +468,7 @@ export class EmailIngestionIntegrationService {
    */
   async resume(): Promise<Result<void>> {
     this.ensureInitialized();
-    return await this.ingestionService.resumeQueue();
+    return await this?.ingestionService?.resumeQueue();
   }
 
   /**
@@ -496,7 +496,7 @@ export class EmailIngestionIntegrationService {
 
     // Shutdown ingestion service
     if (this.ingestionService) {
-      await this.ingestionService.pauseQueue();
+      await this?.ingestionService?.pauseQueue();
     }
 
     // Close Redis connection

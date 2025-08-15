@@ -97,11 +97,11 @@ export const useRealtimeUpdates = (options: UseRealtimeUpdatesOptions = {}) => {
       lastError: isOnline ? null : prev.lastError
     }));
     
-    if (isOnline && pendingUpdates.length > 0) {
+    if (isOnline && pendingUpdates?.length || 0 > 0) {
       // Process pending updates when back online
       processPendingUpdates();
     }
-  }, [isConnected, pendingUpdates.length]);
+  }, [isConnected, pendingUpdates?.length || 0]);
   
   /**
    * Add pending update to queue
@@ -116,7 +116,7 @@ export const useRealtimeUpdates = (options: UseRealtimeUpdatesOptions = {}) => {
     
     setPendingUpdates(prev => {
       const newUpdates = [...prev, pendingUpdate];
-      setSyncStatus(current => ({ ...current, pendingUpdates: newUpdates.length }));
+      setSyncStatus(current => ({ ...current, pendingUpdates: newUpdates?.length || 0 }));
       return newUpdates;
     });
     
@@ -131,8 +131,8 @@ export const useRealtimeUpdates = (options: UseRealtimeUpdatesOptions = {}) => {
    */
   const removePendingUpdate = useCallback((updateId: string) => {
     setPendingUpdates(prev => {
-      const newUpdates = prev.filter(update => update.id !== updateId);
-      setSyncStatus(current => ({ ...current, pendingUpdates: newUpdates.length }));
+      const newUpdates = prev?.filter(update => update.id !== updateId);
+      setSyncStatus(current => ({ ...current, pendingUpdates: newUpdates?.length || 0 }));
       return newUpdates;
     });
     
@@ -144,14 +144,14 @@ export const useRealtimeUpdates = (options: UseRealtimeUpdatesOptions = {}) => {
    * Process pending updates
    */
   const processPendingUpdates = useCallback(async () => {
-    if (!syncStatus.isOnline || syncStatus.syncInProgress || pendingUpdates.length === 0) {
+    if (!syncStatus.isOnline || syncStatus.syncInProgress || pendingUpdates?.length || 0 === 0) {
       return;
     }
     
     setSyncStatus(prev => ({ ...prev, syncInProgress: true, lastError: null }));
     
     try {
-      const updatePromises = pendingUpdates.map(async (update) => {
+      const updatePromises = pendingUpdates?.map(async (update: any) => {
         try {
           await processUpdate(update);
           removePendingUpdate(update.id);
@@ -275,7 +275,7 @@ export const useRealtimeUpdates = (options: UseRealtimeUpdatesOptions = {}) => {
    * Handle conflicts
    */
   const handleConflict = useCallback((conflictData: any) => {
-    const resolver = conflictResolvers.current.get(conflictData.type);
+    const resolver = conflictResolvers?.current?.get(conflictData.type);
     
     if (resolver) {
       switch (resolver.strategy) {
@@ -360,7 +360,7 @@ export const useRealtimeUpdates = (options: UseRealtimeUpdatesOptions = {}) => {
    * Subscribe to product updates
    */
   const subscribeToProducts = useCallback((ids: string[]) => {
-    if (isConnected && ids.length > 0) {
+    if (isConnected && ids?.length || 0 > 0) {
       sendMessage({
         type: 'subscribe_products',
         data: { productIds: ids },
@@ -373,7 +373,7 @@ export const useRealtimeUpdates = (options: UseRealtimeUpdatesOptions = {}) => {
    * Subscribe to category updates
    */
   const subscribeToCategories = useCallback((cats: string[]) => {
-    if (isConnected && cats.length > 0) {
+    if (isConnected && cats?.length || 0 > 0) {
       sendMessage({
         type: 'subscribe_categories',
         data: { categories: cats },
@@ -412,7 +412,7 @@ export const useRealtimeUpdates = (options: UseRealtimeUpdatesOptions = {}) => {
    * Set conflict resolver
    */
   const setConflictResolver = useCallback((type: string, resolver: ConflictResolution) => {
-    conflictResolvers.current.set(type, resolver);
+    conflictResolvers?.current?.set(type, resolver);
   }, []);
   
   /**
@@ -432,7 +432,7 @@ export const useRealtimeUpdates = (options: UseRealtimeUpdatesOptions = {}) => {
         applyMergedData(conflict.type, resolution);
       }
       
-      return prev.filter(c => c.id !== conflictId);
+      return prev?.filter(c => c.id !== conflictId);
     });
   }, [applyServerData, applyMergedData]);
   

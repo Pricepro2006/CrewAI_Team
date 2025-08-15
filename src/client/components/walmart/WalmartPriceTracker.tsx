@@ -94,8 +94,8 @@ const generatePriceHistory = (currentPrice: number): PricePoint[] => {
     if (Math.random() < 0.1) {
       if (price < currentPrice * 0.85) event = 'sale';
       else if (price > currentPrice * 1.1) event = 'increase';
-      else if (i > 0 && points.length > 0) {
-        const lastPoint = points[points.length - 1];
+      else if (i > 0 && points?.length || 0 > 0) {
+        const lastPoint = points[points?.length || 0 - 1];
         if (lastPoint && price < lastPoint.price) {
           event = 'decrease';
         }
@@ -106,8 +106,8 @@ const generatePriceHistory = (currentPrice: number): PricePoint[] => {
   }
   
   // Ensure last point is current price
-  if (points.length > 0) {
-    const lastPoint = points[points.length - 1];
+  if (points?.length || 0 > 0) {
+    const lastPoint = points[points?.length || 0 - 1];
     if (lastPoint) {
       lastPoint.price = currentPrice;
     }
@@ -121,12 +121,12 @@ const PriceChart: React.FC<{
   height?: number;
   showEvents?: boolean;
 }> = ({ data, height = 200, showEvents = true }) => {
-  const maxPrice = Math.max(...data.map(d => d.price));
-  const minPrice = Math.min(...data.map(d => d.price));
+  const maxPrice = Math.max(...data?.map(d => d.price));
+  const minPrice = Math.min(...data?.map(d => d.price));
   const priceRange = maxPrice - minPrice || 1;
   
-  const points = data.map((point, index) => {
-    const x = (index / (data.length - 1)) * 100;
+  const points = data?.map((point, index) => {
+    const x = (index / (data?.length || 0 - 1)) * 100;
     const y = ((maxPrice - point.price) / priceRange) * (height - 40) + 20;
     return { x, y, point };
   });
@@ -173,8 +173,8 @@ const PriceChart: React.FC<{
         />
         
         {/* Event markers */}
-        {showEvents && points.map((p, i) => {
-          if (!p.point.event) return null;
+        {showEvents && points?.map((p, i) => {
+          if (!p?.point?.event) return null;
           
           return (
             <g key={i}>
@@ -183,12 +183,12 @@ const PriceChart: React.FC<{
                 cy={p.y}
                 r="3"
                 fill={
-                  p.point.event === 'sale' ? 'hsl(var(--success))' :
-                  p.point.event === 'increase' ? 'hsl(var(--destructive))' :
+                  p?.point?.event === 'sale' ? 'hsl(var(--success))' :
+                  p?.point?.event === 'increase' ? 'hsl(var(--destructive))' :
                   'hsl(var(--warning))'
                 }
               />
-              {p.point.event === 'sale' && (
+              {p?.point?.event === 'sale' && (
                 <text
                   x={p.x}
                   y={p.y - 5}
@@ -257,16 +257,16 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
         return priceHistory;
     }
     
-    return priceHistory.filter(p => p.date >= cutoff);
+    return priceHistory?.filter(p => p.date >= cutoff);
   }, [priceHistory, selectedTimeRange]);
   
   const stats = useMemo(() => {
-    const prices = filteredHistory.map(p => p.price);
-    const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+    const prices = filteredHistory?.map(p => p.price);
+    const avg = prices.reduce((a: any, b: any) => a + b, 0) / prices?.length || 0;
     const min = Math.min(...prices);
     const max = Math.max(...prices);
-    const current = prices[prices.length - 1] ?? 0;
-    const previous = prices[prices.length - 2] ?? current;
+    const current = prices[prices?.length || 0 - 1] ?? 0;
+    const previous = prices[prices?.length || 0 - 2] ?? current;
     const change = current - previous;
     const changePercent = previous > 0 ? (change / previous) * 100 : 0;
     
@@ -295,8 +295,8 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
   };
   
   const handleExport = (format: 'csv' | 'json') => {
-    const data = filteredHistory.map(p => ({
-      date: p.date.toISOString(),
+    const data = filteredHistory?.map(p => ({
+      date: p?.date?.toISOString(),
       price: p.price,
       event: p.event || '',
     }));
@@ -307,7 +307,7 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
     
     if (format === 'csv') {
       content = 'Date,Price,Event\n' + 
-        data.map(d => `${d.date},${d.price},${d.event}`).join('\n');
+        data?.map(d => `${d.date},${d.price},${d.event}`).join('\n');
       filename = `price-history-${product?.name || 'product'}.csv`;
       type = 'text/csv';
     } else {
@@ -559,7 +559,7 @@ export const WalmartPriceTracker: React.FC<WalmartPriceTrackerProps> = ({
                 <Input
                   type="number"
                   value={targetPrice}
-                  onChange={(e) => setTargetPrice(e.target.value)}
+                  onChange={(e: any) => setTargetPrice(e?.target?.value)}
                   placeholder="0.00"
                   step="0.01"
                   min="0"

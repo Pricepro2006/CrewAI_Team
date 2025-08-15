@@ -69,13 +69,13 @@ export class AgentPool {
     this.initializePools();
 
     // Start health check if configured
-    if (this.config.healthCheckInterval > 0) {
+    if (this?.config?.healthCheckInterval > 0) {
       this.startHealthCheck();
     }
 
     logger.info("Agent pool initialized", "AGENT_POOL", {
-      maxAgentsPerType: this.config.maxAgentsPerType,
-      initializeOnStartup: this.config.initializeOnStartup,
+      maxAgentsPerType: this?.config?.maxAgentsPerType,
+      initializeOnStartup: this?.config?.initializeOnStartup,
     });
   }
 
@@ -99,7 +99,7 @@ export class AgentPool {
         logger.debug("Agent retrieved from pool", "AGENT_POOL", {
           type,
           usageCount: pooledAgent.usageCount,
-          poolSize: this.pools.get(type)?.length || 0,
+          poolSize: this?.pools?.get(type)?.length || 0,
         });
       } else {
         // Create new agent if pool is empty
@@ -111,7 +111,7 @@ export class AgentPool {
         });
       }
 
-      this.stats.requestsServed++;
+      this?.stats?.requestsServed++;
       this.updateStats();
 
       return agent;
@@ -131,10 +131,10 @@ export class AgentPool {
    * Return an agent to the pool
    */
   async returnAgent(agent: BaseAgent, type: AgentType): Promise<void> {
-    const pool = this.pools.get(type) || [];
+    const pool = this?.pools?.get(type) || [];
 
     // Find the pooled agent
-    const pooledAgent = pool.find((p) => p.agent === agent);
+    const pooledAgent = pool.find((p: any) => p.agent === agent);
 
     if (pooledAgent) {
       pooledAgent.isActive = false;
@@ -143,11 +143,11 @@ export class AgentPool {
       logger.debug("Agent returned to pool", "AGENT_POOL", {
         type,
         usageCount: pooledAgent.usageCount,
-        poolSize: pool.length,
+        poolSize: pool?.length || 0,
       });
     } else {
       // Agent not from pool, add it if pool has space
-      if (pool.length < this.config.maxAgentsPerType) {
+      if (pool?.length || 0 < this?.config?.maxAgentsPerType) {
         const newPooledAgent: PooledAgent = {
           agent,
           type,
@@ -158,11 +158,11 @@ export class AgentPool {
         };
 
         pool.push(newPooledAgent);
-        this.pools.set(type, pool);
+        this?.pools?.set(type, pool);
 
         logger.debug("Agent added to pool", "AGENT_POOL", {
           type,
-          poolSize: pool.length,
+          poolSize: pool?.length || 0,
         });
       } else {
         // Pool is full, cleanup the agent
@@ -170,7 +170,7 @@ export class AgentPool {
 
         logger.debug("Agent cleaned up (pool full)", "AGENT_POOL", {
           type,
-          poolSize: pool.length,
+          poolSize: pool?.length || 0,
         });
       }
     }
@@ -197,7 +197,7 @@ export class AgentPool {
     try {
       await Promise.all(warmupPromises);
       logger.info("Agent pool pre-warming completed", "AGENT_POOL", {
-        totalAgents: this.stats.totalAgents,
+        totalAgents: this?.stats?.totalAgents,
       });
     } catch (error) {
       logger.error(
@@ -223,7 +223,7 @@ export class AgentPool {
   async clearPools(): Promise<void> {
     const cleanupPromises: Promise<void>[] = [];
 
-    for (const [type, pool] of this.pools.entries()) {
+    for (const [type, pool] of this?.pools?.entries()) {
       for (const pooledAgent of pool) {
         cleanupPromises.push(this.cleanupAgent(pooledAgent.agent));
       }
@@ -232,7 +232,7 @@ export class AgentPool {
 
     try {
       await Promise.all(cleanupPromises);
-      this.pools.clear();
+      this?.pools?.clear();
       this.updateStats();
 
       logger.info("All agent pools cleared", "AGENT_POOL");
@@ -275,13 +275,13 @@ export class AgentPool {
     ];
 
     for (const type of agentTypes) {
-      this.pools.set(type, []);
+      this?.pools?.set(type, []);
     }
 
     // Pre-warm if configured
-    if (this.config.initializeOnStartup) {
+    if (this?.config?.initializeOnStartup) {
       // Don't await - let it run in background
-      this.preWarmPool().catch((error) => {
+      this.preWarmPool().catch((error: any) => {
         logger.error(
           "Background pre-warming failed",
           "AGENT_POOL",
@@ -296,17 +296,17 @@ export class AgentPool {
    * Get agent from specific pool
    */
   private async getFromPool(type: AgentType): Promise<PooledAgent | null> {
-    const pool = this.pools.get(type) || [];
+    const pool = this?.pools?.get(type) || [];
 
     // Find first available (non-active) agent
-    const availableAgent = pool.find((pooled) => !pooled.isActive);
+    const availableAgent = pool.find((pooled: any) => !pooled.isActive);
 
     if (availableAgent) {
       return availableAgent;
     }
 
     // If no available agents and pool not full, create new one
-    if (pool.length < this.config.maxAgentsPerType) {
+    if (pool?.length || 0 < this?.config?.maxAgentsPerType) {
       const newAgent = await this.createAgent(type);
       const pooledAgent: PooledAgent = {
         agent: newAgent,
@@ -318,7 +318,7 @@ export class AgentPool {
       };
 
       pool.push(pooledAgent);
-      this.pools.set(type, pool);
+      this?.pools?.set(type, pool);
 
       return pooledAgent;
     }
@@ -379,7 +379,7 @@ export class AgentPool {
    * Pre-warm agents for specific type
    */
   private async preWarmAgentType(type: AgentType): Promise<void> {
-    const targetCount = Math.min(2, this.config.maxAgentsPerType); // Pre-warm 2 agents per type
+    const targetCount = Math.min(2, this?.config?.maxAgentsPerType); // Pre-warm 2 agents per type
     const promises: Promise<BaseAgent>[] = [];
 
     for (let i = 0; i < targetCount; i++) {
@@ -401,11 +401,11 @@ export class AgentPool {
         });
       }
 
-      this.pools.set(type, pool);
+      this?.pools?.set(type, pool);
 
       logger.debug("Agent type pre-warmed", "AGENT_POOL", {
         type,
-        count: agents.length,
+        count: agents?.length || 0,
       });
     } catch (error) {
       logger.error(
@@ -445,10 +445,10 @@ export class AgentPool {
   private startHealthCheck(): void {
     this.healthCheckTimer = setInterval(() => {
       this.performHealthCheck();
-    }, this.config.healthCheckInterval);
+    }, this?.config?.healthCheckInterval);
 
     logger.debug("Agent pool health check started", "AGENT_POOL", {
-      interval: this.config.healthCheckInterval,
+      interval: this?.config?.healthCheckInterval,
     });
   }
 
@@ -459,23 +459,23 @@ export class AgentPool {
     const now = Date.now();
     let cleanedUp = 0;
 
-    for (const [type, pool] of this.pools.entries()) {
+    for (const [type, pool] of this?.pools?.entries()) {
       const toRemove: number[] = [];
 
-      for (let i = 0; i < pool.length; i++) {
+      for (let i = 0; i < pool?.length || 0; i++) {
         const pooledAgent = pool[i];
         if (!pooledAgent) continue;
 
-        const idleTime = now - pooledAgent.lastUsed.getTime();
+        const idleTime = now - pooledAgent?.lastUsed?.getTime();
 
         // Mark idle agents for removal
-        if (!pooledAgent.isActive && idleTime > this.config.idleTimeout) {
+        if (!pooledAgent.isActive && idleTime > this?.config?.idleTimeout) {
           toRemove.push(i);
         }
       }
 
       // Remove idle agents (in reverse order to maintain indices)
-      for (let i = toRemove.length - 1; i >= 0; i--) {
+      for (let i = toRemove?.length || 0 - 1; i >= 0; i--) {
         const index = toRemove[i];
         if (index === undefined) continue;
 
@@ -483,7 +483,7 @@ export class AgentPool {
         if (!pooledAgent) continue;
 
         // Cleanup agent
-        this.cleanupAgent(pooledAgent.agent).catch((error) => {
+        this.cleanupAgent(pooledAgent.agent).catch((error: any) => {
           logger.warn("Health check cleanup failed", "AGENT_POOL", {
             error: (error as Error).message,
           });
@@ -497,7 +497,7 @@ export class AgentPool {
     if (cleanedUp > 0) {
       logger.debug("Health check completed", "AGENT_POOL", {
         agentsCleanedUp: cleanedUp,
-        remainingAgents: this.stats.totalAgents - cleanedUp,
+        remainingAgents: this?.stats?.totalAgents - cleanedUp,
       });
     }
 
@@ -508,25 +508,25 @@ export class AgentPool {
    * Update pool statistics
    */
   private updateStats(): void {
-    this.stats.totalAgents = 0;
-    this.stats.activeAgents = 0;
-    this.stats.idleAgents = 0;
+    this?.stats?.totalAgents = 0;
+    this?.stats?.activeAgents = 0;
+    this?.stats?.idleAgents = 0;
 
     // Reset type counts
-    for (const type of Object.keys(this.stats.agentsByType) as AgentType[]) {
-      this.stats.agentsByType[type] = 0;
+    for (const type of Object.keys(this?.stats?.agentsByType) as AgentType[]) {
+      this?.stats?.agentsByType[type] = 0;
     }
 
     // Count agents by pool
-    for (const [type, pool] of this.pools.entries()) {
-      this.stats.agentsByType[type] = pool.length;
-      this.stats.totalAgents += pool.length;
+    for (const [type, pool] of this?.pools?.entries()) {
+      this?.stats?.agentsByType[type] = pool?.length || 0;
+      this?.stats?.totalAgents += pool?.length || 0;
 
       for (const pooledAgent of pool) {
         if (pooledAgent.isActive) {
-          this.stats.activeAgents++;
+          this?.stats?.activeAgents++;
         } else {
-          this.stats.idleAgents++;
+          this?.stats?.idleAgents++;
         }
       }
     }
@@ -538,8 +538,8 @@ export class AgentPool {
   private updateAvgInitTime(newTime: number): void {
     // Simple moving average calculation
     const alpha = 0.1; // Smoothing factor
-    this.stats.avgInitTime =
-      this.stats.avgInitTime * (1 - alpha) + newTime * alpha;
+    this?.stats?.avgInitTime =
+      this?.stats?.avgInitTime * (1 - alpha) + newTime * alpha;
   }
 }
 

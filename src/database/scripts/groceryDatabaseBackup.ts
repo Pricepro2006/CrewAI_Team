@@ -62,13 +62,13 @@ class GroceryDatabaseBackup {
   } = {}): Promise<BackupMetadata> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupName = `grocery_backup_${timestamp}`;
-    const backupPath = path.join(this.config.backupDir, `${backupName}.db`);
+    const backupPath = path.join(this?.config?.backupDir, `${backupName}.db`);
     
-    this.logger.log(`Starting backup: ${backupName}`);
+    this?.logger?.log(`Starting backup: ${backupName}`);
     
     try {
       // Create database backup using SQLite backup API
-      const sourceDb = new Database(this.config.sourceDbPath, { readonly: true });
+      const sourceDb = new Database(this?.config?.sourceDbPath, { readonly: true });
       const backupDb = new Database(backupPath);
       
       await this.performBackup(sourceDb, backupDb);
@@ -89,14 +89,14 @@ class GroceryDatabaseBackup {
         fs.unlinkSync(backupPath); // Remove uncompressed version
       }
       
-      if (options.encrypt && this.config.encryptionKey) {
+      if (options.encrypt && this?.config?.encryptionKey) {
         finalPath = await this.encryptBackup(finalPath);
         if (finalPath !== backupPath) {
           fs.unlinkSync(options.compress ? backupPath.replace('.db', '.db.gz') : backupPath);
         }
       }
       
-      if (options.uploadToS3 && this.config.s3Bucket) {
+      if (options.uploadToS3 && this?.config?.s3Bucket) {
         await this.uploadToS3(finalPath);
       }
       
@@ -113,16 +113,16 @@ class GroceryDatabaseBackup {
       // Save metadata
       await this.saveBackupMetadata(finalMetadata);
       
-      this.logger.log(`Backup completed successfully: ${finalMetadata.filename}`);
-      this.logger.log(`Size: ${(finalMetadata.size / 1024 / 1024).toFixed(2)} MB`);
+      this?.logger?.log(`Backup completed successfully: ${finalMetadata.filename}`);
+      this?.logger?.log(`Size: ${(finalMetadata.size / 1024 / 1024).toFixed(2)} MB`);
       if (compressionRatio) {
-        this.logger.log(`Compression ratio: ${(compressionRatio * 100).toFixed(1)}%`);
+        this?.logger?.log(`Compression ratio: ${(compressionRatio * 100).toFixed(1)}%`);
       }
       
       return finalMetadata;
       
     } catch (error) {
-      this.logger.error(`Backup failed: ${error instanceof Error ? error.message : error}`);
+      this?.logger?.error(`Backup failed: ${error instanceof Error ? error.message : error}`);
       throw error;
     }
   }
@@ -135,14 +135,14 @@ class GroceryDatabaseBackup {
     createPreRestoreBackup?: boolean;
     testRestore?: boolean;
   } = {}): Promise<boolean> {
-    this.logger.log(`Starting restore from: ${backupPath}`);
+    this?.logger?.log(`Starting restore from: ${backupPath}`);
     
     try {
       // Create pre-restore backup if requested
       if (options.createPreRestoreBackup && fs.existsSync(targetPath)) {
         const preRestoreBackup = `${targetPath}.pre-restore.${Date.now()}.db`;
         fs.copyFileSync(targetPath, preRestoreBackup);
-        this.logger.log(`Pre-restore backup created: ${preRestoreBackup}`);
+        this?.logger?.log(`Pre-restore backup created: ${preRestoreBackup}`);
       }
       
       let workingBackupPath = backupPath;
@@ -177,7 +177,7 @@ class GroceryDatabaseBackup {
         testDb.close();
         
         fs.unlinkSync(testPath);
-        this.logger.log('Test restore completed successfully');
+        this?.logger?.log('Test restore completed successfully');
       } else {
         // Actual restore
         fs.copyFileSync(workingBackupPath, targetPath);
@@ -193,11 +193,11 @@ class GroceryDatabaseBackup {
         fs.unlinkSync(workingBackupPath);
       }
       
-      this.logger.log('Restore completed successfully');
+      this?.logger?.log('Restore completed successfully');
       return true;
       
     } catch (error) {
-      this.logger.error(`Restore failed: ${error instanceof Error ? error.message : error}`);
+      this?.logger?.error(`Restore failed: ${error instanceof Error ? error.message : error}`);
       return false;
     }
   }
@@ -207,25 +207,25 @@ class GroceryDatabaseBackup {
    */
   async cleanupOldBackups(): Promise<number> {
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - this.config.retentionDays);
+    cutoffDate.setDate(cutoffDate.getDate() - this?.config?.retentionDays);
     
-    const files = fs.readdirSync(this.config.backupDir);
+    const files = fs.readdirSync(this?.config?.backupDir);
     let deletedCount = 0;
     
     for (const file of files) {
       if (!file.startsWith('grocery_backup_')) continue;
       
-      const filePath = path.join(this.config.backupDir, file);
+      const filePath = path.join(this?.config?.backupDir, file);
       const stats = fs.statSync(filePath);
       
       if (stats.mtime < cutoffDate) {
         fs.unlinkSync(filePath);
         deletedCount++;
-        this.logger.log(`Deleted old backup: ${file}`);
+        this?.logger?.log(`Deleted old backup: ${file}`);
       }
     }
     
-    this.logger.log(`Cleanup completed. Deleted ${deletedCount} old backups.`);
+    this?.logger?.log(`Cleanup completed. Deleted ${deletedCount} old backups.`);
     return deletedCount;
   }
 
@@ -239,10 +239,10 @@ class GroceryDatabaseBackup {
     integrityCheck: boolean;
     recommendations: string[];
   }> {
-    const db = new Database(this.config.sourceDbPath, { readonly: true });
+    const db = new Database(this?.config?.sourceDbPath, { readonly: true });
     
     try {
-      const stats = fs.statSync(this.config.sourceDbPath);
+      const stats = fs.statSync(this?.config?.sourceDbPath);
       const recommendations: string[] = [];
       
       // Get table statistics
@@ -296,12 +296,12 @@ Generated: ${new Date().toISOString()}
 
 ## Database Health
 - Size: ${(health.size / 1024 / 1024).toFixed(2)} MB
-- Last Modified: ${health.lastModified.toISOString()}
+- Last Modified: ${health?.lastModified?.toISOString()}
 - Integrity Check: ${health.integrityCheck ? '✅ PASSED' : '❌ FAILED'}
 
 ## Table Statistics
-${health.tableStats.map(table => 
-  `- ${table.table}: ${table.rows.toLocaleString()} rows, ${(table.size / 1024).toFixed(2)} KB`
+${health?.tableStats?.map(table => 
+  `- ${table.table}: ${table?.rows?.toLocaleString()} rows, ${(table.size / 1024).toFixed(2)} KB`
 ).join('\n')}
 
 ## Recent Backups
@@ -310,18 +310,18 @@ ${backupHistory.slice(0, 10).map(backup =>
 ).join('\n')}
 
 ## Recommendations
-${health.recommendations.map(rec => `- ${rec}`).join('\n')}
+${health?.recommendations?.map(rec => `- ${rec}`).join('\n')}
 
 ## Backup Configuration
-- Retention Days: ${this.config.retentionDays}
-- Compression: ${this.config.compressionLevel ? 'Enabled' : 'Disabled'}
-- Encryption: ${this.config.encryptionKey ? 'Enabled' : 'Disabled'}
-- S3 Upload: ${this.config.s3Bucket ? 'Enabled' : 'Disabled'}
+- Retention Days: ${this?.config?.retentionDays}
+- Compression: ${this?.config?.compressionLevel ? 'Enabled' : 'Disabled'}
+- Encryption: ${this?.config?.encryptionKey ? 'Enabled' : 'Disabled'}
+- S3 Upload: ${this?.config?.s3Bucket ? 'Enabled' : 'Disabled'}
 `;
 
     if (outputPath) {
       fs.writeFileSync(outputPath, report);
-      this.logger.log(`Report saved to: ${outputPath}`);
+      this?.logger?.log(`Report saved to: ${outputPath}`);
     }
     
     return report;
@@ -329,8 +329,8 @@ ${health.recommendations.map(rec => `- ${rec}`).join('\n')}
 
   // Private helper methods
   private ensureBackupDirectory(): void {
-    if (!fs.existsSync(this.config.backupDir)) {
-      fs.mkdirSync(this.config.backupDir, { recursive: true });
+    if (!fs.existsSync(this?.config?.backupDir)) {
+      fs.mkdirSync(this?.config?.backupDir, { recursive: true });
     }
   }
 
@@ -353,7 +353,7 @@ ${health.recommendations.map(rec => `- ${rec}`).join('\n')}
     
     // Get table and record counts
     const tables = sourceDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
-    const tableCount = tables.length;
+    const tableCount = tables?.length || 0;
     
     let recordCount = 0;
     for (const table of tables) {
@@ -379,7 +379,7 @@ ${health.recommendations.map(rec => `- ${rec}`).join('\n')}
 
   private async compressBackup(backupPath: string): Promise<string> {
     const compressedPath = `${backupPath}.gz`;
-    await execAsync(`gzip -${this.config.compressionLevel} -c "${backupPath}" > "${compressedPath}"`);
+    await execAsync(`gzip -${this?.config?.compressionLevel} -c "${backupPath}" > "${compressedPath}"`);
     return compressedPath;
   }
 
@@ -396,12 +396,12 @@ ${health.recommendations.map(rec => `- ${rec}`).join('\n')}
   }
 
   private async encryptBackup(backupPath: string): Promise<string> {
-    if (!this.config.encryptionKey) {
+    if (!this?.config?.encryptionKey) {
       throw new Error('Encryption key not provided');
     }
     
     const encryptedPath = `${backupPath}.enc`;
-    const cipher = crypto.createCipher('aes-256-cbc', this.config.encryptionKey);
+    const cipher = crypto.createCipher('aes-256-cbc', this?.config?.encryptionKey);
     const input = fs.createReadStream(backupPath);
     const output = fs.createWriteStream(encryptedPath);
     
@@ -413,12 +413,12 @@ ${health.recommendations.map(rec => `- ${rec}`).join('\n')}
   }
 
   private async decryptBackup(encryptedPath: string): Promise<string> {
-    if (!this.config.encryptionKey) {
+    if (!this?.config?.encryptionKey) {
       throw new Error('Encryption key not provided');
     }
     
     const decryptedPath = encryptedPath.replace('.enc', '');
-    const decipher = crypto.createDecipher('aes-256-cbc', this.config.encryptionKey);
+    const decipher = crypto.createDecipher('aes-256-cbc', this?.config?.encryptionKey);
     const input = fs.createReadStream(encryptedPath);
     const output = fs.createWriteStream(decryptedPath);
     
@@ -431,7 +431,7 @@ ${health.recommendations.map(rec => `- ${rec}`).join('\n')}
 
   private async uploadToS3(backupPath: string): Promise<void> {
     // Implementation would require AWS SDK
-    this.logger.log('S3 upload not implemented - would require AWS SDK integration');
+    this?.logger?.log('S3 upload not implemented - would require AWS SDK integration');
   }
 
   private async verifyBackupIntegrity(backupPath: string): Promise<boolean> {
@@ -448,7 +448,7 @@ ${health.recommendations.map(rec => `- ${rec}`).join('\n')}
   private async performRestoreTests(db: Database): Promise<void> {
     // Test basic table access
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
-    if (tables.length === 0) {
+    if (tables?.length || 0 === 0) {
       throw new Error('No tables found in restored database');
     }
     
@@ -458,7 +458,7 @@ ${health.recommendations.map(rec => `- ${rec}`).join('\n')}
       try {
         db.prepare(`SELECT COUNT(*) FROM ${tableName}`).get();
       } catch (error) {
-        this.logger.warn(`Table ${tableName} not accessible: ${error instanceof Error ? error.message : error}`);
+        this?.logger?.warn(`Table ${tableName} not accessible: ${error instanceof Error ? error.message : error}`);
       }
     }
   }
@@ -478,7 +478,7 @@ ${health.recommendations.map(rec => `- ${rec}`).join('\n')}
           size: size.size || 0
         });
       } catch (error) {
-        this.logger.warn(`Could not get stats for table ${table.name}: ${error instanceof Error ? error.message : error}`);
+        this?.logger?.warn(`Could not get stats for table ${table.name}: ${error instanceof Error ? error.message : error}`);
       }
     }
     
@@ -487,19 +487,19 @@ ${health.recommendations.map(rec => `- ${rec}`).join('\n')}
 
   private getLastBackupTime(): Date | null {
     try {
-      const files = fs.readdirSync(this.config.backupDir)
+      const files = fs.readdirSync(this?.config?.backupDir)
         .filter(f => f.startsWith('grocery_backup_'))
-        .map(f => ({ name: f, mtime: fs.statSync(path.join(this.config.backupDir, f)).mtime }))
-        .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
+        .map(f => ({ name: f, mtime: fs.statSync(path.join(this?.config?.backupDir, f)).mtime }))
+        .sort((a, b) => b?.mtime?.getTime() - a?.mtime?.getTime());
       
-      return files.length > 0 ? files[0].mtime : null;
+      return files?.length || 0 > 0 ? files[0].mtime : null;
     } catch {
       return null;
     }
   }
 
   private async getBackupHistory(): Promise<BackupMetadata[]> {
-    const metadataPath = path.join(this.config.backupDir, 'backup_metadata.json');
+    const metadataPath = path.join(this?.config?.backupDir, 'backup_metadata.json');
     
     try {
       if (fs.existsSync(metadataPath)) {
@@ -507,14 +507,14 @@ ${health.recommendations.map(rec => `- ${rec}`).join('\n')}
         return JSON.parse(data);
       }
     } catch (error) {
-      this.logger.warn(`Could not load backup metadata: ${error instanceof Error ? error.message : error}`);
+      this?.logger?.warn(`Could not load backup metadata: ${error instanceof Error ? error.message : error}`);
     }
     
     return [];
   }
 
   private async saveBackupMetadata(metadata: BackupMetadata): Promise<void> {
-    const metadataPath = path.join(this.config.backupDir, 'backup_metadata.json');
+    const metadataPath = path.join(this?.config?.backupDir, 'backup_metadata.json');
     
     try {
       const history = await this.getBackupHistory();
@@ -525,14 +525,14 @@ ${health.recommendations.map(rec => `- ${rec}`).join('\n')}
       
       fs.writeFileSync(metadataPath, JSON.stringify(trimmedHistory, null, 2));
     } catch (error) {
-      this.logger.warn(`Could not save backup metadata: ${error instanceof Error ? error.message : error}`);
+      this?.logger?.warn(`Could not save backup metadata: ${error instanceof Error ? error.message : error}`);
     }
   }
 }
 
 // CLI interface
 async function main() {
-  const args = process.argv.slice(2);
+  const args = process?.argv?.slice(2);
   const command = args[0];
   
   const config: BackupConfig = {
@@ -559,7 +559,7 @@ async function main() {
         break;
         
       case 'restore':
-        if (args.length < 3) {
+        if (args?.length || 0 < 3) {
           console.error('Usage: restore <backup-path> <target-path>');
           process.exit(1);
         }

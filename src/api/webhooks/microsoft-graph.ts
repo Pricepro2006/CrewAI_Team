@@ -51,7 +51,7 @@ interface ChangeNotification {
 export const graphWebhookHandler = async (req: Request, res: Response) => {
   try {
     // Handle validation token for new subscriptions
-    const validationToken = req.query.validationToken as string;
+    const validationToken = req?.query?.validationToken as string;
     if (validationToken) {
       logger.info(
         "Validating Microsoft Graph webhook subscription",
@@ -75,7 +75,7 @@ export const graphWebhookHandler = async (req: Request, res: Response) => {
       return res.status(400).send("Invalid notification format");
     }
 
-    logger.info(`Received ${notifications.value.length} notifications`);
+    logger.info(`Received ${notifications?.value?.length} notifications`);
 
     // Queue each notification for processing
     for (const notification of notifications.value) {

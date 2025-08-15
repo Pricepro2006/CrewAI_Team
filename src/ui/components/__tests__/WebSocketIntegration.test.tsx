@@ -39,7 +39,7 @@ describe('WebSocket Integration Tests', () => {
 
       // Wait for connection
       await waitFor(() => {
-        expect(result.current.state.isConnecting).toBe(true);
+        expect(result?.current?.state.isConnecting).toBe(true);
       });
 
       // Accept connection on server
@@ -47,8 +47,8 @@ describe('WebSocket Integration Tests', () => {
 
       // Verify connected state
       await waitFor(() => {
-        expect(result.current.state.isConnected).toBe(true);
-        expect(result.current.state.connectionStatus).toBe('connected');
+        expect(result?.current?.state.isConnected).toBe(true);
+        expect(result?.current?.state.connectionStatus).toBe('connected');
       });
     });
 
@@ -62,8 +62,8 @@ describe('WebSocket Integration Tests', () => {
       server.error();
 
       await waitFor(() => {
-        expect(result.current.state.connectionStatus).toBe('error');
-        expect(result.current.state.lastError).toBeDefined();
+        expect(result?.current?.state.connectionStatus).toBe('error');
+        expect(result?.current?.state.lastError).toBeDefined();
       });
     });
 
@@ -78,20 +78,20 @@ describe('WebSocket Integration Tests', () => {
       await server.connected;
 
       await waitFor(() => {
-        expect(result.current.state.isConnected).toBe(true);
+        expect(result?.current?.state.isConnected).toBe(true);
       });
 
       // Disconnect
       server.close();
 
       await waitFor(() => {
-        expect(result.current.state.isConnected).toBe(false);
-        expect(result.current.state.isReconnecting).toBe(true);
+        expect(result?.current?.state.isConnected).toBe(false);
+        expect(result?.current?.state.isReconnecting).toBe(true);
       });
 
       // Should attempt to reconnect
       await waitFor(() => {
-        expect(result.current.state.reconnectAttempts).toBeGreaterThan(0);
+        expect(result?.current?.state.reconnectAttempts).toBeGreaterThan(0);
       }, { timeout: 5000 });
     });
   });
@@ -159,12 +159,12 @@ describe('WebSocket Integration Tests', () => {
       };
 
       await expect(
-        result.current.send(event as any)
+        result?.current?.send(event as any)
       ).rejects.toThrow('WebSocket is not connected');
 
       // Connect
       act(() => {
-        result.current.connect();
+        result?.current?.connect();
       });
 
       await server.connected;
@@ -198,12 +198,12 @@ describe('WebSocket Integration Tests', () => {
 
       // Process events
       await Promise.all(
-        events.map(event => stateManager.processEvent(event.id))
+        events?.map(event => stateManager.processEvent(event.id))
       );
 
       // Check that only the latest update is in cache
-      const cache = stateManager.emailCache.get(emailId);
-      expect(cache?.data.updates.status).toBe('status-4');
+      const cache = stateManager?.emailCache?.get(emailId);
+      expect(cache?.data?.updates?.status).toBe('status-4');
     });
 
     it('should handle optimistic updates correctly', async () => {
@@ -238,15 +238,15 @@ describe('WebSocket Integration Tests', () => {
 
       // Subscribe to channel
       await act(async () => {
-        await result.current.subscribe('email:stats');
+        await result?.current?.subscribe('email:stats');
       });
 
       // Verify subscription message sent
       await waitFor(() => {
-        const messages = server.messages;
+        const messages = server?.messages;
         const subscribeMsg = messages.find((msg: any) => {
           const parsed = JSON.parse(msg as string);
-          return parsed.type === 'subscribe' && parsed.data.channel === 'email:stats';
+          return parsed.type === 'subscribe' && parsed?.data?.channel === 'email:stats';
         });
         expect(subscribeMsg).toBeDefined();
       });
@@ -258,19 +258,19 @@ describe('WebSocket Integration Tests', () => {
       await server.connected;
 
       // Subscribe first
-      await result.current.subscribe('email:stats');
+      await result?.current?.subscribe('email:stats');
       
       // Then unsubscribe
       await act(async () => {
-        await result.current.unsubscribe('email:stats');
+        await result?.current?.unsubscribe('email:stats');
       });
 
       // Verify unsubscribe message sent
       await waitFor(() => {
-        const messages = server.messages;
+        const messages = server?.messages;
         const unsubscribeMsg = messages.find((msg: any) => {
           const parsed = JSON.parse(msg as string);
-          return parsed.type === 'unsubscribe' && parsed.data.channel === 'email:stats';
+          return parsed.type === 'unsubscribe' && parsed?.data?.channel === 'email:stats';
         });
         expect(unsubscribeMsg).toBeDefined();
       });
@@ -298,7 +298,7 @@ describe('WebSocket Integration Tests', () => {
 
       // Process all events
       await Promise.all(
-        events.map(event => stateManager.processEvent(event.id))
+        events?.map(event => stateManager.processEvent(event.id))
       );
 
       const duration = Date.now() - startTime;
@@ -334,7 +334,7 @@ describe('WebSocket Integration Tests', () => {
 
       // Should only have one event for this email in queue
       const queue = stateManager.getEventQueue();
-      const emailEvents = queue.filter(e => 
+      const emailEvents = queue?.filter(e => 
         e.type === 'email:updated' && 
         (e as any).data.emailId === 'email-123'
       );

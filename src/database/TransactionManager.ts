@@ -10,7 +10,7 @@
  */
 
 import Database from "better-sqlite3";
-import { Logger } from "../utils/logger.js";
+import { Logger } from "../../utils/logger.js";
 import {
   getDatabaseConnection,
   type DatabaseConnection,
@@ -100,7 +100,7 @@ export class TransactionManager extends EventEmitter {
         // Check if error is retryable (SQLITE_BUSY or SQLITE_LOCKED)
         if (this.isRetryableError(error) && attempts < retries) {
           attempts++;
-          this.metrics.deadlockRetries++;
+          this?.metrics?.deadlockRetries++;
 
           const backoffTime = Math.min(1000 * Math.pow(2, attempts), 5000);
           logger.warn(
@@ -141,9 +141,9 @@ export class TransactionManager extends EventEmitter {
       savepoints: [],
     };
 
-    this.activeTransactions.set(transactionId, context);
-    this.metrics.totalTransactions++;
-    this.metrics.activeTransactions++;
+    this?.activeTransactions?.set(transactionId, context);
+    this?.metrics?.totalTransactions++;
+    this?.metrics?.activeTransactions++;
 
     let timeoutHandle: NodeJS.Timeout | null = null;
     let completed = false;
@@ -177,14 +177,14 @@ export class TransactionManager extends EventEmitter {
       completed = true;
 
       // Update metrics
-      this.metrics.successfulTransactions++;
+      this?.metrics?.successfulTransactions++;
       const duration = Date.now() - context.startTime;
       this.updateAverageDuration(duration);
 
       this.emit("transaction:success", {
         transactionId,
         duration,
-        savepoints: context.savepoints.length,
+        savepoints: context?.savepoints?.length,
       });
 
       return result;
@@ -198,10 +198,10 @@ export class TransactionManager extends EventEmitter {
         }
       }
 
-      this.metrics.failedTransactions++;
+      this?.metrics?.failedTransactions++;
 
-      if (error instanceof Error && error.message.includes("timed out")) {
-        this.metrics.timeouts++;
+      if (error instanceof Error && error?.message?.includes("timed out")) {
+        this?.metrics?.timeouts++;
       }
 
       this.emit("transaction:failure", {
@@ -218,8 +218,8 @@ export class TransactionManager extends EventEmitter {
       }
 
       // Clean up
-      this.activeTransactions.delete(transactionId);
-      this.metrics.activeTransactions--;
+      this?.activeTransactions?.delete(transactionId);
+      this?.metrics?.activeTransactions--;
     }
   }
 
@@ -234,13 +234,13 @@ export class TransactionManager extends EventEmitter {
       name || `sp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     try {
-      context.db.prepare(`SAVEPOINT ${savepointName}`).run();
-      context.savepoints.push(savepointName);
+      context?.db?.prepare(`SAVEPOINT ${savepointName}`).run();
+      context?.savepoints?.push(savepointName);
 
       logger.debug(`Created savepoint: ${savepointName}`);
       return savepointName;
     } catch (error) {
-      logger.error(`Failed to create savepoint: ${savepointName}`, error);
+      logger.error(`Failed to create savepoint: ${savepointName}`, error as string);
       throw error;
     }
   }
@@ -253,14 +253,14 @@ export class TransactionManager extends EventEmitter {
     savepointName: string,
   ): Promise<void> {
     try {
-      context.db.prepare(`RELEASE SAVEPOINT ${savepointName}`).run();
-      context.savepoints = context.savepoints.filter(
-        (sp) => sp !== savepointName,
+      context?.db?.prepare(`RELEASE SAVEPOINT ${savepointName}`).run();
+      context.savepoints = context?.savepoints?.filter(
+        (sp: any) => sp !== savepointName,
       );
 
       logger.debug(`Released savepoint: ${savepointName}`);
     } catch (error) {
-      logger.error(`Failed to release savepoint: ${savepointName}`, error);
+      logger.error(`Failed to release savepoint: ${savepointName}`, error as string);
       throw error;
     }
   }
@@ -273,17 +273,17 @@ export class TransactionManager extends EventEmitter {
     savepointName: string,
   ): Promise<void> {
     try {
-      context.db.prepare(`ROLLBACK TO SAVEPOINT ${savepointName}`).run();
+      context?.db?.prepare(`ROLLBACK TO SAVEPOINT ${savepointName}`).run();
 
       // Remove all savepoints after this one
-      const index = context.savepoints.indexOf(savepointName);
+      const index = context?.savepoints?.indexOf(savepointName);
       if (index !== -1) {
-        context.savepoints = context.savepoints.slice(0, index + 1);
+        context.savepoints = context?.savepoints?.slice(0, index + 1);
       }
 
       logger.debug(`Rolled back to savepoint: ${savepointName}`);
     } catch (error) {
-      logger.error(`Failed to rollback to savepoint: ${savepointName}`, error);
+      logger.error(`Failed to rollback to savepoint: ${savepointName}`, error as string);
       throw error;
     }
   }
@@ -295,10 +295,10 @@ export class TransactionManager extends EventEmitter {
     operations: Array<(tx: TransactionContext) => Promise<unknown>>,
     options: TransactionOptions = {},
   ): Promise<T[]> {
-    return this.executeTransaction(async (tx) => {
+    return this.executeTransaction(async (tx: any) => {
       const results: T[] = [];
 
-      for (let i = 0; i < operations.length; i++) {
+      for (let i = 0; i < operations?.length || 0; i++) {
         const savepoint = await this.createSavepoint(tx, `batch_op_${i}`);
 
         try {
@@ -331,7 +331,7 @@ export class TransactionManager extends EventEmitter {
       successfulTransactions: 0,
       failedTransactions: 0,
       averageDuration: 0,
-      activeTransactions: this.activeTransactions.size,
+      activeTransactions: this?.activeTransactions?.size,
       deadlockRetries: 0,
       timeouts: 0,
     };
@@ -341,14 +341,14 @@ export class TransactionManager extends EventEmitter {
    * Check if a transaction is currently active
    */
   isTransactionActive(transactionId: string): boolean {
-    return this.activeTransactions.has(transactionId);
+    return this?.activeTransactions?.has(transactionId);
   }
 
   /**
    * Get all active transaction IDs
    */
   getActiveTransactionIds(): string[] {
-    return Array.from(this.activeTransactions.keys());
+    return Array.from(this?.activeTransactions?.keys());
   }
 
   /**
@@ -358,10 +358,10 @@ export class TransactionManager extends EventEmitter {
     const transactionIds = this.getActiveTransactionIds();
 
     for (const transactionId of transactionIds) {
-      const context = this.activeTransactions.get(transactionId);
+      const context = this?.activeTransactions?.get(transactionId);
       if (context) {
         try {
-          context.db.prepare("ROLLBACK").run();
+          context?.db?.prepare("ROLLBACK").run();
           logger.warn(`Force rolled back transaction: ${transactionId}`);
         } catch (error) {
           logger.error(
@@ -372,8 +372,8 @@ export class TransactionManager extends EventEmitter {
       }
     }
 
-    this.activeTransactions.clear();
-    this.metrics.activeTransactions = 0;
+    this?.activeTransactions?.clear();
+    this?.metrics?.activeTransactions = 0;
   }
 
   /**
@@ -381,7 +381,7 @@ export class TransactionManager extends EventEmitter {
    */
   private isRetryableError(error: unknown): boolean {
     if (error instanceof Error) {
-      const message = error.message.toLowerCase();
+      const message = error?.message?.toLowerCase();
       return (
         message.includes("sqlite_busy") ||
         message.includes("database is locked") ||
@@ -403,17 +403,17 @@ export class TransactionManager extends EventEmitter {
    */
   private updateAverageDuration(duration: number): void {
     const totalDuration =
-      this.metrics.averageDuration * (this.metrics.successfulTransactions - 1) +
+      this?.metrics?.averageDuration * (this?.metrics?.successfulTransactions - 1) +
       duration;
-    this.metrics.averageDuration =
-      totalDuration / this.metrics.successfulTransactions;
+    this?.metrics?.averageDuration =
+      totalDuration / this?.metrics?.successfulTransactions;
   }
 
   /**
    * Delay helper for retry backoff
    */
   private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve: any) => setTimeout(resolve, ms));
   }
 }
 

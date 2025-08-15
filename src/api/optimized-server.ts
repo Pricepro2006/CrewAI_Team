@@ -22,7 +22,7 @@ import { circuitBreakerManager } from './services/CircuitBreakerService.js';
 import appConfig from '../config/app.config.js';
 
 const app = express();
-const PORT = appConfig.api.port || 3001;
+const PORT = appConfig?.api?.port || 3001;
 
 // Performance monitoring
 const startTime = Date.now();
@@ -39,7 +39,7 @@ initService.register(createInitTask('core-middleware', async () => {
   app.use(compression({
     filter: (req, res) => {
       if (req.headers['x-no-compression']) return false;
-      return compression.filter(req, res);
+      return compression?.filter(req, res);
     },
     threshold: 1024,
     level: 1 // Fast compression (1=fastest, 9=best)
@@ -51,8 +51,8 @@ initService.register(createInitTask('security', async () => {
   const { applySecurityHeaders } = await import('./middleware/security/headers.js');
   applySecurityHeaders(app, {
     cors: {
-      origins: appConfig.api.cors.origin as string[],
-      credentials: appConfig.api.cors.credentials,
+      origins: appConfig?.api?.cors.origin as string[],
+      credentials: appConfig?.api?.cors.credentials,
     },
   });
 }, { dependencies: ['core-middleware'] }));
@@ -91,7 +91,7 @@ initService.register(createInitTask('cache-warming', async () => {
   
   await Promise.all([
     // Warm product cache
-    ...criticalProducts.map(id => 
+    ...criticalProducts?.map(id => 
       walmartPriceCache.set(`product:${id}`, { 
         id, 
         name: 'Cached Product',
@@ -257,7 +257,7 @@ async function startServer() {
     
     if (!initResult.success) {
       logger.error('Critical initialization tasks failed', "SERVER", {
-        failed: initResult.failed.map(f => ({ name: f.name, error: f.error?.message }))
+        failed: initResult?.failed?.map(f => ({ name: f.name, error: f.error?.message }))
       });
       process.exit(1);
     }
@@ -275,7 +275,7 @@ async function startServer() {
       const metrics = initService.getMetrics();
       logger.info('Initialization metrics', "SERVER", {
         totalDuration: `${metrics.totalDuration}ms`,
-        parallelizationFactor: metrics.parallelizationFactor.toFixed(2),
+        parallelizationFactor: metrics?.parallelizationFactor?.toFixed(2),
         taskCount: metrics.taskCount,
         bottlenecks: metrics.bottlenecks
       });

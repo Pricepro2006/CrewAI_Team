@@ -149,7 +149,7 @@ describe("MasterOrchestrator Integration Tests", () => {
       expect(plan.id).toMatch(/^plan-/);
       expect(plan.metadata?.goal).toBe(userInput);
       expect(plan.steps).toBeInstanceOf(Array);
-      expect(plan.steps.length).toBeGreaterThan(0);
+      expect(plan?.steps?.length).toBeGreaterThan(0);
 
       // Verify task structure
       const firstTask = plan.steps[0];
@@ -182,15 +182,15 @@ describe("MasterOrchestrator Integration Tests", () => {
 
       expect(response.success).toBe(true);
       expect(response.summary).toBeDefined();
-      expect(response.summary.length).toBeGreaterThan(0);
+      expect(response?.summary?.length).toBeGreaterThan(0);
       expect(response.plan).toBeDefined();
 
       // Should create a research-focused plan
       const researchTasks =
-        response.plan?.steps.filter(
+        response.plan?.steps?.filter(
           (t: any) => t.agent === "research" || t.agentType === "research",
         ) || [];
-      expect(researchTasks.length).toBeGreaterThan(0);
+      expect(researchTasks?.length || 0).toBeGreaterThan(0);
     });
 
     it("should handle code generation requests", async () => {
@@ -218,10 +218,10 @@ describe("MasterOrchestrator Integration Tests", () => {
 
       // Should create a code-focused plan
       const codeTasks =
-        response.plan?.steps.filter(
+        response.plan?.steps?.filter(
           (t: any) => t.agent === "code" || t.agentType === "code",
         ) || [];
-      expect(codeTasks.length).toBeGreaterThan(0);
+      expect(codeTasks?.length || 0).toBeGreaterThan(0);
     });
 
     it("should execute a complete plan with real agents", async () => {
@@ -249,10 +249,10 @@ describe("MasterOrchestrator Integration Tests", () => {
 
       // Verify all tasks completed
       const completedTasks =
-        response.plan?.steps.filter(
+        response.plan?.steps?.filter(
           (t: any) => t.metadata?.status === "completed",
         ) || [];
-      expect(completedTasks.length).toBe(response.plan?.steps.length || 0);
+      expect(completedTasks?.length || 0).toBe(response.plan?.steps?.length || 0 || 0);
 
       // Verify output contains a number
       expect(response.summary).toMatch(/\d+/);
@@ -279,7 +279,7 @@ describe("MasterOrchestrator Integration Tests", () => {
       });
 
       expect(response.success).toBe(true);
-      expect(response.plan?.steps.length || 0).toBeGreaterThanOrEqual(2);
+      expect(response.plan?.steps?.length || 0 || 0).toBeGreaterThanOrEqual(2);
 
       // Verify dependency chain
       const hasDependencies =
@@ -348,9 +348,9 @@ describe("MasterOrchestrator Integration Tests", () => {
 
       // Should acknowledge the error in response
       const containsErrorInfo =
-        response.summary.toLowerCase().includes("error") ||
-        response.summary.toLowerCase().includes("invalid") ||
-        response.summary.toLowerCase().includes("parse");
+        response?.summary?.toLowerCase().includes("error") ||
+        response?.summary?.toLowerCase().includes("invalid") ||
+        response?.summary?.toLowerCase().includes("parse");
       expect(containsErrorInfo).toBe(true);
     });
 
@@ -382,7 +382,7 @@ describe("MasterOrchestrator Integration Tests", () => {
       expect(response.summary).toBeDefined();
 
       // Should produce a summary much shorter than input
-      expect(response.summary.length).toBeLessThan(longText.length / 10);
+      expect(response?.summary?.length).toBeLessThan(longText?.length || 0 / 10);
     });
 
     it("should handle concurrent requests", async () => {
@@ -426,7 +426,7 @@ describe("MasterOrchestrator Integration Tests", () => {
       const responses = await Promise.all(queries);
 
       // All should succeed
-      responses.forEach((response) => {
+      responses.forEach((response: any) => {
         expect(response.success).toBe(true);
         expect(response.summary).toBeDefined();
       });
@@ -464,8 +464,8 @@ describe("MasterOrchestrator Integration Tests", () => {
 
       // Check if replanning occurred
       if (response.metadata?.replanCount) {
-        expect(response.metadata.replanCount).toBeGreaterThanOrEqual(0);
-        expect(response.metadata.replanCount).toBeLessThanOrEqual(3);
+        expect(response?.metadata?.replanCount).toBeGreaterThanOrEqual(0);
+        expect(response?.metadata?.replanCount).toBeLessThanOrEqual(3);
       }
     });
   });
@@ -516,7 +516,7 @@ describe("MasterOrchestrator Integration Tests", () => {
       );
       const messages = messagesResult.rows || [];
 
-      expect(messages.length).toBeGreaterThan(0);
+      expect(messages?.length || 0).toBeGreaterThan(0);
       expect(messages.some((m: any) => m.content === query)).toBe(true);
     });
   });

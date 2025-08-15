@@ -158,7 +158,7 @@ export class ProductMatchingMetrics extends EventEmitter {
     const timestamp = new Date();
     
     // Get algorithm stats
-    const algorithmStats = this.optimizedAlgorithm.getPerformanceStats();
+    const algorithmStats = this?.optimizedAlgorithm?.getPerformanceStats();
     
     // Record metrics
     this.recordMetric({
@@ -190,7 +190,7 @@ export class ProductMatchingMetrics extends EventEmitter {
     });
     
     // Calculate derived metrics
-    if (this.responseTimes.length > 0) {
+    if (this?.responseTimes?.length > 0) {
       const sorted = [...this.responseTimes].sort((a, b) => a - b);
       
       this.recordMetric({
@@ -246,7 +246,7 @@ export class ProductMatchingMetrics extends EventEmitter {
    * Record a metric
    */
   recordMetric(metric: PerformanceMetric): void {
-    this.metrics.push(metric);
+    this?.metrics?.push(metric);
     this.emit('metric', metric);
   }
   
@@ -255,7 +255,7 @@ export class ProductMatchingMetrics extends EventEmitter {
    */
   recordRequest(responseTime: number, success: boolean = true): void {
     this.requestCount++;
-    this.responseTimes.push(responseTime);
+    this?.responseTimes?.push(responseTime);
     
     if (!success) {
       this.errorCount++;
@@ -292,13 +292,13 @@ export class ProductMatchingMetrics extends EventEmitter {
       const windowStart = new Date(now.getTime() - rule.windowSize * 1000);
       const windowMetrics = this.getMetricsInWindow(rule.metric, windowStart, now);
       
-      if (windowMetrics.length === 0) continue;
+      if (windowMetrics?.length || 0 === 0) continue;
       
-      const avgValue = windowMetrics.reduce((sum, m) => sum + m.value, 0) / windowMetrics.length;
+      const avgValue = windowMetrics.reduce((sum: any, m: any) => sum + m.value, 0) / windowMetrics?.length || 0;
       const shouldAlert = this.evaluateRule(avgValue, rule);
       
       const alertId = `${rule.name}-${rule.metric}`;
-      const existingAlert = this.activeAlerts.get(alertId);
+      const existingAlert = this?.activeAlerts?.get(alertId);
       
       if (shouldAlert && !existingAlert) {
         // Create new alert
@@ -311,7 +311,7 @@ export class ProductMatchingMetrics extends EventEmitter {
           resolved: false
         };
         
-        this.activeAlerts.set(alertId, alert);
+        this?.activeAlerts?.set(alertId, alert);
         this.emit('alert', alert);
         
         logger.warn("Performance alert triggered", "METRICS", {
@@ -352,7 +352,7 @@ export class ProductMatchingMetrics extends EventEmitter {
     start: Date,
     end: Date
   ): PerformanceMetric[] {
-    return this.metrics.filter(m => 
+    return this?.metrics?.filter(m => 
       m.name === metricName &&
       m.timestamp >= start &&
       m.timestamp <= end
@@ -363,9 +363,9 @@ export class ProductMatchingMetrics extends EventEmitter {
    * Calculate percentile
    */
   private percentile(sorted: number[], p: number): number {
-    if (sorted.length === 0) return 0;
+    if (sorted?.length || 0 === 0) return 0;
     
-    const index = Math.ceil(sorted.length * p) - 1;
+    const index = Math.ceil(sorted?.length || 0 * p) - 1;
     return sorted[Math.max(0, index)] ?? 0;
   }
   
@@ -376,7 +376,7 @@ export class ProductMatchingMetrics extends EventEmitter {
     const now = new Date();
     const startTime = new Date(now.getTime() - periodMinutes * 60 * 1000);
     
-    const periodMetrics = this.metrics.filter(m => 
+    const periodMetrics = this?.metrics?.filter(m => 
       m.timestamp >= startTime && m.timestamp <= now
     );
     
@@ -404,21 +404,21 @@ export class ProductMatchingMetrics extends EventEmitter {
       startTime,
       endTime: now,
       metrics: {
-        avgResponseTime: responseTimes.length > 0
-          ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+        avgResponseTime: responseTimes?.length || 0 > 0
+          ? responseTimes.reduce((a: any, b: any) => a + b, 0) / responseTimes?.length || 0
           : 0,
         p50ResponseTime: this.percentile(sorted, 0.5),
         p95ResponseTime: this.percentile(sorted, 0.95),
         p99ResponseTime: this.percentile(sorted, 0.99),
-        totalRequests: responseTimes.length,
-        cacheHitRate: cacheHitRates.length > 0
-          ? cacheHitRates.reduce((a, b) => a + b, 0) / cacheHitRates.length
+        totalRequests: responseTimes?.length || 0,
+        cacheHitRate: cacheHitRates?.length || 0 > 0
+          ? cacheHitRates.reduce((a: any, b: any) => a + b, 0) / cacheHitRates?.length || 0
           : 0,
-        errorRate: errorRates.length > 0
-          ? errorRates.reduce((a, b) => a + b, 0) / errorRates.length
+        errorRate: errorRates?.length || 0 > 0
+          ? errorRates.reduce((a: any, b: any) => a + b, 0) / errorRates?.length || 0
           : 0,
-        throughput: throughputs.length > 0
-          ? throughputs.reduce((a, b) => a + b, 0) / throughputs.length
+        throughput: throughputs?.length || 0 > 0
+          ? throughputs.reduce((a: any, b: any) => a + b, 0) / throughputs?.length || 0
           : 0
       }
     };
@@ -436,27 +436,27 @@ export class ProductMatchingMetrics extends EventEmitter {
     const issues: string[] = [];
     
     // Check health criteria
-    if (metrics.metrics.avgResponseTime > 500) {
-      issues.push(`High average response time: ${metrics.metrics.avgResponseTime.toFixed(0)}ms`);
+    if (metrics?.metrics?.avgResponseTime > 500) {
+      issues.push(`High average response time: ${metrics?.metrics?.avgResponseTime.toFixed(0)}ms`);
     }
     
-    if (metrics.metrics.p99ResponseTime > 1000) {
-      issues.push(`High P99 response time: ${metrics.metrics.p99ResponseTime.toFixed(0)}ms`);
+    if (metrics?.metrics?.p99ResponseTime > 1000) {
+      issues.push(`High P99 response time: ${metrics?.metrics?.p99ResponseTime.toFixed(0)}ms`);
     }
     
-    if (metrics.metrics.cacheHitRate < 0.5) {
-      issues.push(`Low cache hit rate: ${(metrics.metrics.cacheHitRate * 100).toFixed(1)}%`);
+    if (metrics?.metrics?.cacheHitRate < 0.5) {
+      issues.push(`Low cache hit rate: ${(metrics?.metrics?.cacheHitRate * 100).toFixed(1)}%`);
     }
     
-    if (metrics.metrics.errorRate > 0.05) {
-      issues.push(`High error rate: ${(metrics.metrics.errorRate * 100).toFixed(1)}%`);
+    if (metrics?.metrics?.errorRate > 0.05) {
+      issues.push(`High error rate: ${(metrics?.metrics?.errorRate * 100).toFixed(1)}%`);
     }
     
     // Determine overall status
     let status: 'healthy' | 'degraded' | 'unhealthy';
-    if (issues.length === 0) {
+    if (issues?.length || 0 === 0) {
       status = 'healthy';
-    } else if (issues.length <= 2) {
+    } else if (issues?.length || 0 <= 2) {
       status = 'degraded';
     } else {
       status = 'unhealthy';
@@ -489,16 +489,16 @@ export class ProductMatchingMetrics extends EventEmitter {
     const timestamp = Date.now();
     
     // Get current stats
-    const stats = this.optimizedAlgorithm.getPerformanceStats();
+    const stats = this?.optimizedAlgorithm?.getPerformanceStats();
     const aggregated = this.getAggregatedMetrics(5);
     
     // Format metrics
     lines.push('# HELP product_matching_response_time Response time in milliseconds');
     lines.push('# TYPE product_matching_response_time histogram');
-    lines.push(`product_matching_response_time_avg ${aggregated.metrics.avgResponseTime} ${timestamp}`);
-    lines.push(`product_matching_response_time_p50 ${aggregated.metrics.p50ResponseTime} ${timestamp}`);
-    lines.push(`product_matching_response_time_p95 ${aggregated.metrics.p95ResponseTime} ${timestamp}`);
-    lines.push(`product_matching_response_time_p99 ${aggregated.metrics.p99ResponseTime} ${timestamp}`);
+    lines.push(`product_matching_response_time_avg ${aggregated?.metrics?.avgResponseTime} ${timestamp}`);
+    lines.push(`product_matching_response_time_p50 ${aggregated?.metrics?.p50ResponseTime} ${timestamp}`);
+    lines.push(`product_matching_response_time_p95 ${aggregated?.metrics?.p95ResponseTime} ${timestamp}`);
+    lines.push(`product_matching_response_time_p99 ${aggregated?.metrics?.p99ResponseTime} ${timestamp}`);
     
     lines.push('# HELP product_matching_cache_hit_rate Cache hit rate');
     lines.push('# TYPE product_matching_cache_hit_rate gauge');
@@ -506,15 +506,15 @@ export class ProductMatchingMetrics extends EventEmitter {
     
     lines.push('# HELP product_matching_requests_total Total number of requests');
     lines.push('# TYPE product_matching_requests_total counter');
-    lines.push(`product_matching_requests_total ${aggregated.metrics.totalRequests} ${timestamp}`);
+    lines.push(`product_matching_requests_total ${aggregated?.metrics?.totalRequests} ${timestamp}`);
     
     lines.push('# HELP product_matching_error_rate Error rate');
     lines.push('# TYPE product_matching_error_rate gauge');
-    lines.push(`product_matching_error_rate ${aggregated.metrics.errorRate} ${timestamp}`);
+    lines.push(`product_matching_error_rate ${aggregated?.metrics?.errorRate} ${timestamp}`);
     
     lines.push('# HELP product_matching_throughput Requests per second');
     lines.push('# TYPE product_matching_throughput gauge');
-    lines.push(`product_matching_throughput ${aggregated.metrics.throughput} ${timestamp}`);
+    lines.push(`product_matching_throughput ${aggregated?.metrics?.throughput} ${timestamp}`);
     
     return lines.join('\n');
   }
@@ -526,15 +526,15 @@ export class ProductMatchingMetrics extends EventEmitter {
     // Clean up old metrics every hour
     setInterval(() => {
       const cutoff = new Date(Date.now() - this.metricsRetentionHours * 60 * 60 * 1000);
-      const beforeCount = this.metrics.length;
+      const beforeCount = this?.metrics?.length;
       
-      this.metrics = this.metrics.filter(m => m.timestamp > cutoff);
+      this.metrics = this?.metrics?.filter(m => m.timestamp > cutoff);
       
-      const removed = beforeCount - this.metrics.length;
+      const removed = beforeCount - this?.metrics?.length;
       if (removed > 0) {
         logger.info("Cleaned up old metrics", "METRICS", {
           removed,
-          remaining: this.metrics.length
+          remaining: this?.metrics?.length
         });
       }
     }, 60 * 60 * 1000); // Every hour
@@ -544,7 +544,7 @@ export class ProductMatchingMetrics extends EventEmitter {
    * Add custom alert rule
    */
   addAlertRule(rule: AlertRule): void {
-    this.alertRules.push(rule);
+    this?.alertRules?.push(rule);
     logger.info("Alert rule added", "METRICS", { rule });
   }
   
@@ -552,7 +552,7 @@ export class ProductMatchingMetrics extends EventEmitter {
    * Remove alert rule
    */
   removeAlertRule(name: string): void {
-    this.alertRules = this.alertRules.filter(r => r.name !== name);
+    this.alertRules = this?.alertRules?.filter(r => r.name !== name);
     logger.info("Alert rule removed", "METRICS", { name });
   }
   
@@ -560,7 +560,7 @@ export class ProductMatchingMetrics extends EventEmitter {
    * Get active alerts
    */
   getActiveAlerts(): Alert[] {
-    return Array.from(this.activeAlerts.values()).filter(a => !a.resolved);
+    return Array.from(this?.activeAlerts?.values()).filter(a => !a.resolved);
   }
   
   /**

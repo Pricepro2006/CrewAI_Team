@@ -44,24 +44,24 @@ const maliciousQueries = [
   "electrician " + "X".repeat(50),
 ];
 
-console.log("Testing " + maliciousQueries.length + " malicious queries...\n");
+console.log("Testing " + maliciousQueries?.length || 0 + " malicious queries...\n");
 
 let blockedCount = 0;
 let passedCount = 0;
 
 maliciousQueries.forEach((query, index) => {
   console.log(
-    `Test ${index + 1}: "${query.substring(0, 50)}${query.length > 50 ? "..." : ""}"`,
+    `Test ${index + 1}: "${query.substring(0, 50)}${query?.length || 0 > 50 ? "..." : ""}"`,
   );
 
   const result = BusinessQueryOptimizer.optimize(query);
 
-  if (result.securityFlags.length > 0) {
+  if (result?.securityFlags?.length > 0) {
     blockedCount++;
     console.log("✅ BLOCKED - Security issues detected:");
-    result.securityFlags.forEach((flag) => {
+    result?.securityFlags?.forEach((flag: any) => {
       console.log(
-        `   - [${flag.severity.toUpperCase()}] ${flag.type}: ${flag.detail}`,
+        `   - [${flag?.severity?.toUpperCase()}] ${flag.type}: ${flag.detail}`,
       );
     });
   } else {
@@ -75,15 +75,15 @@ maliciousQueries.forEach((query, index) => {
 });
 
 console.log("\n=== Security Test Summary ===");
-console.log(`Total tests: ${maliciousQueries.length}`);
+console.log(`Total tests: ${maliciousQueries?.length || 0}`);
 console.log(
-  `Blocked: ${blockedCount} (${((blockedCount / maliciousQueries.length) * 100).toFixed(1)}%)`,
+  `Blocked: ${blockedCount} (${((blockedCount / maliciousQueries?.length || 0) * 100).toFixed(1)}%)`,
 );
 console.log(
-  `Passed: ${passedCount} (${((passedCount / maliciousQueries.length) * 100).toFixed(1)}%)`,
+  `Passed: ${passedCount} (${((passedCount / maliciousQueries?.length || 0) * 100).toFixed(1)}%)`,
 );
 
-if (blockedCount === maliciousQueries.length) {
+if (blockedCount === maliciousQueries?.length || 0) {
   console.log("\n✅ All malicious queries were successfully blocked!");
 } else {
   console.log(
@@ -110,12 +110,12 @@ legitimateQueries.forEach((query, index) => {
 
   const result = BusinessQueryOptimizer.optimize(query);
 
-  if (result.securityFlags.length > 0) {
+  if (result?.securityFlags?.length > 0) {
     legitBlocked++;
     console.log("❌ BLOCKED (false positive):");
-    result.securityFlags.forEach((flag) => {
+    result?.securityFlags?.forEach((flag: any) => {
       console.log(
-        `   - [${flag.severity.toUpperCase()}] ${flag.type}: ${flag.detail}`,
+        `   - [${flag?.severity?.toUpperCase()}] ${flag.type}: ${flag.detail}`,
       );
     });
   } else {
@@ -127,15 +127,15 @@ legitimateQueries.forEach((query, index) => {
 });
 
 console.log("\n=== Legitimate Query Summary ===");
-console.log(`Total tests: ${legitimateQueries.length}`);
+console.log(`Total tests: ${legitimateQueries?.length || 0}`);
 console.log(
-  `Passed: ${legitPassed} (${((legitPassed / legitimateQueries.length) * 100).toFixed(1)}%)`,
+  `Passed: ${legitPassed} (${((legitPassed / legitimateQueries?.length || 0) * 100).toFixed(1)}%)`,
 );
 console.log(
-  `Blocked: ${legitBlocked} (${((legitBlocked / legitimateQueries.length) * 100).toFixed(1)}%)`,
+  `Blocked: ${legitBlocked} (${((legitBlocked / legitimateQueries?.length || 0) * 100).toFixed(1)}%)`,
 );
 
-if (legitPassed === legitimateQueries.length) {
+if (legitPassed === legitimateQueries?.length || 0) {
   console.log("\n✅ All legitimate queries were processed successfully!");
 } else {
   console.log(

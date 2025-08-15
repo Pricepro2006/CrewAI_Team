@@ -47,20 +47,20 @@ export class ErrorHandlingOllamaProvider {
       async () => {
         try {
           await withTimeout(
-            this.provider.initialize(),
-            this.options.timeout ?? 10000,
+            this?.provider?.initialize(),
+            this?.options?.timeout ?? 10000,
             "Ollama initialization timed out",
           );
         } catch (error) {
           if (error instanceof Error) {
-            if (error.message.includes("ECONNREFUSED")) {
+            if (error?.message?.includes("ECONNREFUSED")) {
               throw OllamaConnectionError({
                 originalError: error.message,
                 suggestion: "Ensure Ollama is running: ollama serve",
               });
             }
-            if (error.message.includes("not found")) {
-              const modelMatch = error.message.match(/Model (\S+) not found/);
+            if (error?.message?.includes("not found")) {
+              const modelMatch = error?.message?.match(/Model (\S+) not found/);
               const model = modelMatch ? modelMatch[1] : "unknown";
               throw OllamaModelNotFoundError(model ?? "unknown", {
                 suggestion: `Pull the model first: ollama pull ${model}`,
@@ -74,7 +74,7 @@ export class ErrorHandlingOllamaProvider {
         retries: this.maxRetries,
         retryDelay: 1000,
         context: "OllamaProvider.initialize",
-        onError: (error) => {
+        onError: (error: any) => {
           logger.error("Failed to initialize Ollama provider", "OLLAMA", {
             error: error instanceof Error ? error.message : String(error),
           });
@@ -92,14 +92,14 @@ export class ErrorHandlingOllamaProvider {
     prompt: string,
     options?: OllamaGenerateOptions,
   ): Promise<string> {
-    return this.circuitBreaker.execute(
+    return this?.circuitBreaker?.execute(
       async () => {
         const generateWithErrorHandling = withAsyncErrorHandler(
           async () => {
             try {
               const response = await withTimeout(
-                this.provider.generate(prompt, options),
-                this.options.timeout ?? 30000,
+                this?.provider?.generate(prompt, options),
+                this?.options?.timeout ?? 30000,
                 "Ollama generation timed out",
               );
 
@@ -116,14 +116,14 @@ export class ErrorHandlingOllamaProvider {
             retries: this.maxRetries,
             retryDelay: 2000,
             context: "OllamaProvider.generate",
-            onError: (error) => {
+            onError: (error: any) => {
               this.retryAttempts++;
               logger.warn(
                 `Ollama generation retry ${this.retryAttempts}/${this.maxRetries}`,
                 "OLLAMA",
                 {
                   error: error instanceof Error ? error.message : String(error),
-                  model: this.provider.getModel(),
+                  model: this?.provider?.getModel(),
                 },
               );
             },
@@ -147,14 +147,14 @@ export class ErrorHandlingOllamaProvider {
     prompt: string,
     options?: OllamaGenerateOptions,
   ): Promise<OllamaGenerateWithLogProbsResponse> {
-    return this.circuitBreaker.execute(
+    return this?.circuitBreaker?.execute(
       async () => {
         const generateWithErrorHandling = withAsyncErrorHandler(
           async () => {
             try {
               const response = await withTimeout(
-                this.provider.generateWithLogProbs(prompt, options),
-                this.options.timeout ?? 30000,
+                this?.provider?.generateWithLogProbs(prompt, options),
+                this?.options?.timeout ?? 30000,
                 "Ollama generation with log probs timed out",
               );
 
@@ -177,7 +177,7 @@ export class ErrorHandlingOllamaProvider {
       async () => ({
         text: "Service temporarily unavailable.",
         metadata: {
-          model: this.provider.getModel(),
+          model: this?.provider?.getModel(),
           duration: 0,
           tokenCount: 0,
         },
@@ -193,14 +193,14 @@ export class ErrorHandlingOllamaProvider {
       async () => {
         try {
           return await withTimeout(
-            this.provider.listModels(),
-            this.options.timeout ?? 5000,
+            this?.provider?.listModels(),
+            this?.options?.timeout ?? 5000,
             "Listing models timed out",
           );
         } catch (error) {
           if (
             error instanceof Error &&
-            error.message.includes("ECONNREFUSED")
+            error?.message?.includes("ECONNREFUSED")
           ) {
             throw OllamaConnectionError({
               action: "list models",
@@ -231,16 +231,16 @@ export class ErrorHandlingOllamaProvider {
     const pullWithErrorHandling = withAsyncErrorHandler(
       async () => {
         try {
-          await this.provider.pullModel(modelName, onProgress);
+          await this?.provider?.pullModel(modelName, onProgress);
         } catch (error) {
           if (error instanceof Error) {
-            if (error.message.includes("ECONNREFUSED")) {
+            if (error?.message?.includes("ECONNREFUSED")) {
               throw OllamaConnectionError({
                 action: "pull model",
                 model: modelName,
               });
             }
-            if (error.message.includes("manifest unknown")) {
+            if (error?.message?.includes("manifest unknown")) {
               throw OllamaModelNotFoundError(modelName, {
                 suggestion: "Check the model name and try again",
               });
@@ -266,7 +266,7 @@ export class ErrorHandlingOllamaProvider {
   async healthCheck(): Promise<boolean> {
     try {
       await withTimeout(
-        this.provider.listModels(),
+        this?.provider?.listModels(),
         3000,
         "Health check timed out",
       );
@@ -283,14 +283,14 @@ export class ErrorHandlingOllamaProvider {
    * Get circuit breaker state
    */
   getCircuitState(): string {
-    return this.circuitBreaker.getState();
+    return this?.circuitBreaker?.getState();
   }
 
   /**
    * Reset circuit breaker
    */
   resetCircuit(): void {
-    this.circuitBreaker.reset();
+    this?.circuitBreaker?.reset();
     this.retryAttempts = 0;
   }
 
@@ -313,14 +313,14 @@ export class ErrorHandlingOllamaProvider {
 
     const errorContext = {
       prompt: prompt.substring(0, 100) + "...",
-      model: this.provider.getModel(),
+      model: this?.provider?.getModel(),
       options,
     };
 
     // Connection errors
     if (
-      error.message.includes("ECONNREFUSED") ||
-      error.message.includes("ENOTFOUND")
+      error?.message?.includes("ECONNREFUSED") ||
+      error?.message?.includes("ENOTFOUND")
     ) {
       throw OllamaConnectionError({
         ...errorContext,
@@ -330,16 +330,16 @@ export class ErrorHandlingOllamaProvider {
 
     // Model not loaded
     if (
-      error.message.includes("model not found") ||
-      error.message.includes("no such model")
+      error?.message?.includes("model not found") ||
+      error?.message?.includes("no such model")
     ) {
-      throw OllamaModelNotFoundError(this.provider.getModel(), errorContext);
+      throw OllamaModelNotFoundError(this?.provider?.getModel(), errorContext);
     }
 
     // Out of memory
     if (
-      error.message.includes("out of memory") ||
-      error.message.includes("OOM")
+      error?.message?.includes("out of memory") ||
+      error?.message?.includes("OOM")
     ) {
       throw ServiceUnavailableError("Ollama", {
         ...errorContext,
@@ -350,8 +350,8 @@ export class ErrorHandlingOllamaProvider {
 
     // Context length exceeded
     if (
-      error.message.includes("context length") ||
-      error.message.includes("token limit")
+      error?.message?.includes("context length") ||
+      error?.message?.includes("token limit")
     ) {
       throw new AppError(
         "VALIDATION_ERROR" as ErrorCode,
@@ -366,8 +366,8 @@ export class ErrorHandlingOllamaProvider {
 
     // Rate limiting (if implemented by Ollama)
     if (
-      error.message.includes("rate limit") ||
-      error.message.includes("too many requests")
+      error?.message?.includes("rate limit") ||
+      error?.message?.includes("too many requests")
     ) {
       throw new AppError(
         "RATE_LIMIT_EXCEEDED" as ErrorCode,

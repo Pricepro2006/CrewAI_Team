@@ -6,7 +6,7 @@
 import Database, { type Database as DatabaseType } from "better-sqlite3";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 import appConfig from "../config/app.config.js";
 import { fileURLToPath } from "url";
 import {
@@ -103,7 +103,7 @@ export class DatabaseManager {
   constructor(config?: Partial<DatabaseConfig>) {
     const dbConfig: DatabaseConfig = {
       sqlite: {
-        path: config?.sqlite?.path || appConfig.database.path,
+        path: config?.sqlite?.path || appConfig?.database?.path,
         enableWAL: config?.sqlite?.enableWAL !== false,
         enableForeignKeys: config?.sqlite?.enableForeignKeys !== false,
         cacheSize: config?.sqlite?.cacheSize || 20000, // Increased for better performance
@@ -124,35 +124,35 @@ export class DatabaseManager {
 
     // Initialize connection pool
     this.connectionPool = DatabaseConnectionPool.getInstance({
-      databasePath: dbConfig.sqlite.path,
-      maxConnections: dbConfig.sqlite.maxConnections,
-      connectionTimeout: dbConfig.sqlite.connectionTimeout,
-      idleTimeout: dbConfig.sqlite.idleTimeout,
-      enableWAL: dbConfig.sqlite.enableWAL,
-      enableForeignKeys: dbConfig.sqlite.enableForeignKeys,
-      cacheSize: dbConfig.sqlite.cacheSize,
-      memoryMap: dbConfig.sqlite.memoryMap,
-      busyTimeout: dbConfig.sqlite.busyTimeout,
+      databasePath: dbConfig?.sqlite?.path,
+      maxConnections: dbConfig?.sqlite?.maxConnections,
+      connectionTimeout: dbConfig?.sqlite?.connectionTimeout,
+      idleTimeout: dbConfig?.sqlite?.idleTimeout,
+      enableWAL: dbConfig?.sqlite?.enableWAL,
+      enableForeignKeys: dbConfig?.sqlite?.enableForeignKeys,
+      cacheSize: dbConfig?.sqlite?.cacheSize,
+      memoryMap: dbConfig?.sqlite?.memoryMap,
+      busyTimeout: dbConfig?.sqlite?.busyTimeout,
     });
 
     // Initialize ChromaDB manager
     this.chromaManager = new ChromaDBManager(dbConfig.chromadb);
 
     // Initialize migration system with pooled connection
-    const migrationConnection = this.connectionPool.getConnection();
+    const migrationConnection = this?.connectionPool?.getConnection();
     this.migrator = new DatabaseMigrator(migrationConnection.getDatabase());
 
     // Get shared database instance for all repositories (optimized approach)
-    this.sharedDbInstance = this.connectionPool.getConnection().getDatabase();
+    this.sharedDbInstance = this?.connectionPool?.getConnection().getDatabase();
 
     logger.info(
       "DatabaseManager initialized with optimized connection pooling",
       "DB_MANAGER",
       {
         poolConfig: {
-          maxConnections: dbConfig.sqlite.maxConnections,
-          connectionTimeout: dbConfig.sqlite.connectionTimeout,
-          idleTimeout: dbConfig.sqlite.idleTimeout,
+          maxConnections: dbConfig?.sqlite?.maxConnections,
+          connectionTimeout: dbConfig?.sqlite?.connectionTimeout,
+          idleTimeout: dbConfig?.sqlite?.idleTimeout,
         }
       }
     );
@@ -204,19 +204,19 @@ export class DatabaseManager {
       // Split schema into individual statements and execute
       const statements = schemaSql
         .split(";")
-        .map((stmt) => stmt.trim())
-        .filter((stmt) => stmt.length > 0 && !stmt.startsWith("--"));
+        .map((stmt: any) => stmt.trim())
+        .filter((stmt: any) => stmt?.length || 0 > 0 && !stmt.startsWith("--"));
 
       for (const statement of statements) {
         try {
-          await this.connectionPool.executeQuery((db) => {
+          await this?.connectionPool?.executeQuery((db: any) => {
             db.exec(statement + ";");
           });
         } catch (error) {
           // Log warning for statements that might already exist
           if (
             !(error instanceof Error) ||
-            !error.message.includes("already exists")
+            !error?.message?.includes("already exists")
           ) {
             logger.warn(
               `Migration statement warning: ${error instanceof Error ? error.message : String(error)}`,
@@ -227,7 +227,7 @@ export class DatabaseManager {
       }
 
       // Apply Walmart Grocery Agent migration
-      const db = this.connectionPool.getConnection().getDatabase();
+      const db = this?.connectionPool?.getConnection().getDatabase();
       const groceryMigration = new WalmartGroceryAgentMigration(db);
       try {
         await groceryMigration.up();
@@ -238,7 +238,7 @@ export class DatabaseManager {
       } catch (error) {
         if (
           !(error instanceof Error) ||
-          !error.message.includes("already exists")
+          !error?.message?.includes("already exists")
         ) {
           logger.warn(
             `Grocery migration warning: ${error instanceof Error ? error.message : String(error)}`,
@@ -261,8 +261,8 @@ export class DatabaseManager {
     try {
       logger.info("Initializing ChromaDB...", "DB_MANAGER");
 
-      await this.chromaManager.initialize();
-      await this.chromaManager.createSystemCollections();
+      await this?.chromaManager?.initialize();
+      await this?.chromaManager?.createSystemCollections();
 
       logger.info("ChromaDB initialized successfully", "DB_MANAGER");
     } catch (error) {
@@ -276,11 +276,11 @@ export class DatabaseManager {
    */
   private async verifyDatabaseIntegrity(): Promise<void> {
     try {
-      const integrity = await this.migrator.validateIntegrity();
+      const integrity = await this?.migrator?.validateIntegrity();
 
       if (!integrity.valid) {
         logger.error(
-          `Database integrity check failed: ${integrity.errors.join(", ")}`,
+          `Database integrity check failed: ${integrity?.errors?.join(", ")}`,
           "DB_MANAGER",
         );
         throw new Error("Database integrity validation failed");
@@ -299,15 +299,15 @@ export class DatabaseManager {
   private async seedInitialData(): Promise<void> {
     try {
       // Check if we need to seed data
-      const userCount = await this.users.count();
-      const productFamilyCount = await this.productFamilies.count();
+      const userCount = await this?.users?.count();
+      const productFamilyCount = await this?.productFamilies?.count();
 
       if (userCount === 0 || productFamilyCount === 0) {
         logger.info("Seeding initial data...", "DB_MANAGER");
 
         // Create default admin user
         if (userCount === 0) {
-          await this.users.createUser({
+          await this?.users?.createUser({
             email: "admin@crewai-team.local",
             name: "System Administrator",
             role: "admin",
@@ -319,14 +319,14 @@ export class DatabaseManager {
 
         // Create product families
         if (productFamilyCount === 0) {
-          await this.productFamilies.createProductFamily({
+          await this?.productFamilies?.createProductFamily({
             family_code: "IPG",
             family_name: "Infrastructure Products Group",
             pricing_multiplier: 1.04,
             description: "Infrastructure products with 4% markup",
           });
 
-          await this.productFamilies.createProductFamily({
+          await this?.productFamilies?.createProductFamily({
             family_code: "PSG",
             family_name: "Personal Systems Group",
             pricing_multiplier: 1.0,
@@ -366,7 +366,7 @@ export class DatabaseManager {
     try {
       // SQLite statistics using connection pool
       const { tableCount, indexCount, size } =
-        await this.connectionPool.executeQuery((db) => {
+        await this?.connectionPool?.executeQuery((db: any) => {
           const tableCountResult = db
             .prepare(
               `
@@ -407,22 +407,22 @@ export class DatabaseManager {
         size,
         tables: tableCount,
         indexes: indexCount,
-        users: await this.users.count(),
-        emails: this.emails.count ? await this.emails.count() : 0,
-        deals: await this.deals.count(),
-        dealItems: await this.dealItems.count(),
+        users: await this?.users?.count(),
+        emails: this?.emails?.count ? await this?.emails?.count() : 0,
+        deals: await this?.deals?.count(),
+        dealItems: await this?.dealItems?.count(),
       };
 
       // ChromaDB statistics
       let chromaStats;
       try {
-        const health = await this.chromaManager.healthCheck();
+        const health = await this?.chromaManager?.healthCheck();
         if (health.connected) {
-          const collections = await this.chromaManager.listCollections();
+          const collections = await this?.chromaManager?.listCollections();
           let totalDocuments = 0;
 
           for (const collection of collections) {
-            const stats = await this.chromaManager.getCollectionStats(
+            const stats = await this?.chromaManager?.getCollectionStats(
               collection.name,
             );
             totalDocuments += stats.count;
@@ -430,7 +430,7 @@ export class DatabaseManager {
 
           chromaStats = {
             connected: true,
-            collections: collections.length,
+            collections: collections?.length || 0,
             documents: totalDocuments,
           };
         } else {
@@ -464,7 +464,7 @@ export class DatabaseManager {
   async transaction<T>(
     callback: (db: DatabaseType) => Promise<T>,
   ): Promise<T> {
-    return this.connectionPool.executeTransaction(async (db) => {
+    return this?.connectionPool?.executeTransaction(async (db: any) => {
       return await callback(db);
     });
   }
@@ -481,7 +481,7 @@ export class DatabaseManager {
    */
   getSQLiteDatabase(): DatabaseType {
     if (!this.sharedDbInstance) {
-      const connection = this.connectionPool.getConnection();
+      const connection = this?.connectionPool?.getConnection();
       this.sharedDbInstance = connection.getDatabase();
     }
     return this.sharedDbInstance;
@@ -578,7 +578,7 @@ export class DatabaseManager {
    * Execute query using connection pool
    */
   async executeQuery<T>(queryFn: (db: DatabaseType) => T): Promise<T> {
-    return this.connectionPool.executeQuery(queryFn);
+    return this?.connectionPool?.executeQuery(queryFn);
   }
 
   /**
@@ -607,14 +607,14 @@ export class DatabaseManager {
 
       try {
         // Test write operation using connection pool
-        await this.connectionPool.executeQuery((db) => {
+        await this?.connectionPool?.executeQuery((db: any) => {
           db.prepare("SELECT 1").get();
           return true;
         });
         sqliteHealth.writable = true;
 
         // Test integrity
-        const integrity = await this.migrator.validateIntegrity();
+        const integrity = await this?.migrator?.validateIntegrity();
         sqliteHealth.integrity = integrity.valid;
       } catch (error) {
         logger.warn(`SQLite health check warning: ${error}`, "DB_MANAGER");
@@ -622,7 +622,7 @@ export class DatabaseManager {
       }
 
       // ChromaDB health check
-      const chromaHealth = await this.chromaManager.healthCheck();
+      const chromaHealth = await this?.chromaManager?.healthCheck();
 
       const overall =
         sqliteHealth.connected &&
@@ -654,10 +654,10 @@ export class DatabaseManager {
   async close(): Promise<void> {
     try {
       // Close ChromaDB connections
-      await this.chromaManager.close();
+      await this?.chromaManager?.close();
 
       // Shutdown connection pool
-      await this.connectionPool.shutdown();
+      await this?.connectionPool?.shutdown();
 
       this.isInitialized = false;
       logger.info("Database connections closed", "DB_MANAGER");

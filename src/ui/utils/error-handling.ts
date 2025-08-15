@@ -150,9 +150,9 @@ export function sanitizeError(error: Error): any {
         "authorization",
         "cookie",
       ];
-      sanitized.details = Object.keys(appError.details).reduce((acc, key) => {
+      sanitized.details = Object.keys(appError.details).reduce((acc: any, key: any) => {
         if (
-          sensitiveFields.some((field) => key.toLowerCase().includes(field))
+          sensitiveFields.some((field: any) => key.toLowerCase().includes(field))
         ) {
           acc[key] = "[REDACTED]";
         } else {
@@ -263,7 +263,7 @@ export const errorRecovery = {
           },
         );
 
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise((resolve: any) => setTimeout(resolve, delay));
       }
     }
 

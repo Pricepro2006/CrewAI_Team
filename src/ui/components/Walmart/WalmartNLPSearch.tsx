@@ -39,13 +39,13 @@ export const WalmartNLPSearch: React.FC = () => {
     error: wsError
   } = useWalmartWebSocket();
 
-  const searchProducts = api.walmartGrocery.searchProducts.useMutation({
-    onSuccess: (data) => {
+  const searchProducts = api?.walmartGrocery?.searchProducts.useMutation({
+    onSuccess: (data: any) => {
       setSearchResults(data.products || []);
     },
   });
 
-  const addToCart = api.walmartGrocery.addToCart.useMutation({
+  const addToCart = api?.walmartGrocery?.addToCart.useMutation({
     onSuccess: () => {
       // Refresh cart or show success message
     },
@@ -72,8 +72,8 @@ export const WalmartNLPSearch: React.FC = () => {
       switch (nlpData.intent) {
         case "add_items":
           // For add_items, we get products directly from NLP
-          if (nlpData.products && nlpData.products.length > 0) {
-            const walmartProducts: WalmartProduct[] = nlpData.products.map(p => ({
+          if (nlpData.products && nlpData?.products?.length > 0) {
+            const walmartProducts: WalmartProduct[] = nlpData?.products?.map(p => ({
               id: p.id,
               name: p.name,
               brand: p.brand,
@@ -87,10 +87,10 @@ export const WalmartNLPSearch: React.FC = () => {
               size: "",
             }));
             setSearchResults(walmartProducts);
-          } else if (nlpData.items.length > 0) {
+          } else if (nlpData?.items?.length > 0) {
             // Fallback to regular search for items
             searchProducts.mutate({
-              query: nlpData.items.join(" "),
+              query: nlpData?.items?.join(" "),
               limit: 20,
             });
           }
@@ -98,9 +98,9 @@ export const WalmartNLPSearch: React.FC = () => {
 
         case "search_products":
           // Search for products
-          if (nlpData.items.length > 0) {
+          if (nlpData?.items?.length > 0) {
             searchProducts.mutate({
-              query: nlpData.items.join(" "),
+              query: nlpData?.items?.join(" "),
               limit: 20,
             });
           }
@@ -128,7 +128,7 @@ export const WalmartNLPSearch: React.FC = () => {
         case "remove_items":
           // Remove items from cart
           // TODO: Implement item removal
-          alert(`Removing items: ${nlpData.items.join(", ")}`);
+          alert(`Removing items: ${nlpData?.items?.join(", ")}`);
           break;
 
         default:
@@ -184,8 +184,8 @@ export const WalmartNLPSearch: React.FC = () => {
 
   // Update product matches from WebSocket
   useEffect(() => {
-    if (productMatches && productMatches.length > 0) {
-      const walmartProducts: WalmartProduct[] = productMatches.map(p => ({
+    if (productMatches && productMatches?.length || 0 > 0) {
+      const walmartProducts: WalmartProduct[] = productMatches?.map(p => ({
         id: p.id || p.product_id,
         name: p.name,
         brand: p.brand,
@@ -223,8 +223,8 @@ export const WalmartNLPSearch: React.FC = () => {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleNLPSearch()}
+                onChange={(e: any) => setSearchQuery(e?.target?.value)}
+                onKeyPress={(e: any) => e.key === "Enter" && handleNLPSearch()}
                 placeholder='Try "add milk and bread to cart" or "show me organic vegetables"'
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
@@ -256,17 +256,17 @@ export const WalmartNLPSearch: React.FC = () => {
                 <h3 className="font-semibold text-gray-800 mb-1">AI Understanding</h3>
                 <div className="space-y-1 text-sm">
                   <p className="text-gray-600">
-                    Intent: <span className="font-medium text-blue-600">{nlpResult.intent.replace(/_/g, " ")}</span>
+                    Intent: <span className="font-medium text-blue-600">{nlpResult?.intent?.replace(/_/g, " ")}</span>
                     <span className="ml-2 text-gray-500">({(nlpResult.confidence * 100).toFixed(0)}% confident)</span>
                   </p>
-                  {nlpResult.items.length > 0 && (
+                  {nlpResult?.items?.length > 0 && (
                     <p className="text-gray-600">
-                      Items detected: <span className="font-medium">{nlpResult.items.join(", ")}</span>
+                      Items detected: <span className="font-medium">{nlpResult?.items?.join(", ")}</span>
                     </p>
                   )}
-                  {nlpResult.quantities.length > 0 && (
+                  {nlpResult?.quantities?.length > 0 && (
                     <p className="text-gray-600">
-                      Quantities: <span className="font-medium">{nlpResult.quantities.join(", ")}</span>
+                      Quantities: <span className="font-medium">{nlpResult?.quantities?.join(", ")}</span>
                     </p>
                   )}
                 </div>
@@ -292,7 +292,7 @@ export const WalmartNLPSearch: React.FC = () => {
               "remove bread from cart",
               "checkout",
               "clear my shopping list"
-            ].map((example) => (
+            ].map((example: any) => (
               <button
                 key={example}
                 onClick={() => {
@@ -338,18 +338,18 @@ export const WalmartNLPSearch: React.FC = () => {
       )}
 
       {/* Search Results */}
-      {searchResults.length > 0 && (
+      {searchResults?.length || 0 > 0 && (
         <div>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-gray-800">
               {nlpResult?.intent === "add_items" ? "Products to Add" : "Search Results"}
             </h2>
             <span className="text-sm text-gray-500">
-              {searchResults.length} products found
+              {searchResults?.length || 0} products found
             </span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {searchResults.map((product) => (
+            {searchResults?.map((product: any) => (
               <div key={product.id} className="relative">
                 <WalmartProductCard product={product} />
                 {nlpResult?.intent === "add_items" && (
@@ -372,7 +372,7 @@ export const WalmartNLPSearch: React.FC = () => {
       )}
 
       {/* No Results */}
-      {searchResults.length === 0 && searchProducts.isSuccess && !isProcessing && (
+      {searchResults?.length || 0 === 0 && searchProducts.isSuccess && !isProcessing && (
         <div className="text-center py-12">
           <p className="text-gray-500">No products found. Try adjusting your search.</p>
         </div>

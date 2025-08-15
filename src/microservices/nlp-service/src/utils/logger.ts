@@ -18,11 +18,11 @@ const pinoLogger = pino({
   name: 'nlp-service',
   level: process.env.LOG_LEVEL || 'info',
   formatters: {
-    level: (label) => {
+    level: (label: any) => {
       return { level: label.toUpperCase() };
     },
   },
-  timestamp: pino.stdTimeFunctions.isoTime,
+  timestamp: pino?.stdTimeFunctions?.isoTime,
   // Pretty print in development
   transport: process.env.NODE_ENV !== 'production' ? {
     target: 'pino-pretty',
@@ -44,7 +44,7 @@ class Logger {
    * Debug level logging
    */
   debug(message: string, component?: string, context?: LogContext): void {
-    this.pino.debug({
+    this?.pino?.debug({
       component,
       ...context
     }, message);
@@ -54,7 +54,7 @@ class Logger {
    * Info level logging
    */
   info(message: string, component?: string, context?: LogContext): void {
-    this.pino.info({
+    this?.pino?.info({
       component,
       ...context
     }, message);
@@ -64,7 +64,7 @@ class Logger {
    * Warning level logging
    */
   warn(message: string, component?: string, context?: LogContext): void {
-    this.pino.warn({
+    this?.pino?.warn({
       component,
       ...context
     }, message);
@@ -74,7 +74,7 @@ class Logger {
    * Error level logging
    */
   error(message: string, component?: string, context?: LogContext): void {
-    this.pino.error({
+    this?.pino?.error({
       component,
       ...context
     }, message);
@@ -84,7 +84,7 @@ class Logger {
    * Fatal level logging
    */
   fatal(message: string, component?: string, context?: LogContext): void {
-    this.pino.fatal({
+    this?.pino?.fatal({
       component,
       ...context
     }, message);
@@ -95,7 +95,7 @@ class Logger {
    */
   child(defaultContext: LogContext): Logger {
     const childLogger = new Logger();
-    childLogger.pino = this.pino.child(defaultContext);
+    childLogger.pino = this?.pino?.child(defaultContext);
     return childLogger;
   }
 
@@ -110,8 +110,8 @@ class Logger {
    * Flush logs (useful for graceful shutdown)
    */
   async flush(): Promise<void> {
-    return new Promise((resolve) => {
-      this.pino.flush(() => {
+    return new Promise((resolve: any) => {
+      this?.pino?.flush(() => {
         resolve();
       });
     });
@@ -161,8 +161,8 @@ class Logger {
     const level = success ? 'info' : 'error';
     this[level]('NLP operation completed', 'NLP_OPERATION', {
       operation,
-      query: query.length > 100 ? query.substring(0, 100) + '...' : query,
-      queryLength: query.length,
+      query: query?.length || 0 > 100 ? query.substring(0, 100) + '...' : query,
+      queryLength: query?.length || 0,
       duration,
       success,
       ...context

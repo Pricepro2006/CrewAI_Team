@@ -251,7 +251,7 @@ describe("Foreign Key Enforcement", () => {
 
       // Run foreign key check
       const fkCheck = db.pragma("foreign_key_check");
-      expect(fkCheck.length).toBeGreaterThan(0);
+      expect(fkCheck?.length || 0).toBeGreaterThan(0);
       expect(fkCheck[0]).toMatchObject({
         table: "conversations",
         rowid: expect.any(Number),

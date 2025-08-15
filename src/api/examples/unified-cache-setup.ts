@@ -53,19 +53,19 @@ export async function setupUnifiedCacheSystem(app?: Express): Promise<UnifiedCac
     console.log('✅ Unified cache system initialized successfully');
   });
 
-  cacheManager.on('cache:hit', (data) => {
+  cacheManager.on('cache:hit', (data: any) => {
     console.log(`🎯 Cache HIT: ${data.source} - ${data.tier} (${data.latency}ms)`);
   });
 
-  cacheManager.on('service:registered', (data) => {
+  cacheManager.on('service:registered', (data: any) => {
     console.log(`📋 Service registered: ${data.type}`);
   });
 
-  cacheManager.on('health:alert', (status) => {
+  cacheManager.on('health:alert', (status: any) => {
     console.warn('⚠️  Cache system health alert:', status.status);
   });
 
-  cacheManager.on('cache:error', (error) => {
+  cacheManager.on('cache:error', (error: any) => {
     console.error('❌ Cache error:', error.source, error.error?.message || error);
   });
 
@@ -83,7 +83,7 @@ export async function setupUnifiedCacheSystem(app?: Express): Promise<UnifiedCac
       sqlite: { ttl: 86400, tableName: 'pricing_cache' }
     },
     api: {
-      baseUrl: process.env.WALMART_API_URL || 'https://api.walmart.com',
+      baseUrl: process.env.WALMART_API_URL || 'https://api?.walmart.com',
       apiKey: process.env.WALMART_API_KEY || 'demo-key',
       rateLimit: 10,
       timeout: 5000,
@@ -139,7 +139,7 @@ export async function setupUnifiedCacheSystem(app?: Express): Promise<UnifiedCac
 
     app.post('/api/cache/invalidate', async (req, res) => {
       try {
-        const options = req.body;
+        const options = req?.body;
         await cacheManager.invalidateCache(options);
         res.json({ message: 'Cache invalidation completed' });
       } catch (error) {
@@ -166,7 +166,7 @@ export async function demonstrateUnifiedCache(cacheManager: UnifiedCacheManager)
     const initialStatus = await cacheManager.getStatus();
     console.log(`  System: ${initialStatus.status}`);
     console.log(`  Services: ${Object.keys(initialStatus.services).filter(k => initialStatus.services[k as keyof typeof initialStatus.services]).join(', ')}`);
-    console.log(`  Hit Ratio: ${initialStatus.performance.cacheHitRatio.toFixed(1)}%`);
+    console.log(`  Hit Ratio: ${initialStatus?.performance?.cacheHitRatio.toFixed(1)}%`);
 
     // Cache warming demonstration
     console.log('\n🔥 Cache Warming:');
@@ -181,8 +181,8 @@ export async function demonstrateUnifiedCache(cacheManager: UnifiedCacheManager)
     // Show metrics after warming
     console.log('\n📊 Metrics after warming:');
     const metrics = cacheManager.getMetrics();
-    console.log(`  Memory cache size: ${metrics.central.sizes.memory}`);
-    console.log(`  Total operations: ${metrics.central.hits.memory + metrics.central.misses.memory}`);
+    console.log(`  Memory cache size: ${metrics?.central?.sizes.memory}`);
+    console.log(`  Total operations: ${metrics?.central?.hits.memory + metrics?.central?.misses.memory}`);
 
     // Cache invalidation demonstration
     console.log('\n🗑️  Cache Invalidation:');
@@ -196,9 +196,9 @@ export async function demonstrateUnifiedCache(cacheManager: UnifiedCacheManager)
     const finalStatus = await cacheManager.getStatus();
     console.log(`  System: ${finalStatus.status}`);
     console.log(`  Uptime: ${Math.floor(finalStatus.uptime / 1000)}s`);
-    console.log(`  Total Requests: ${finalStatus.performance.totalRequests}`);
-    console.log(`  Hit Ratio: ${finalStatus.performance.cacheHitRatio.toFixed(1)}%`);
-    console.log(`  Avg Latency: ${finalStatus.performance.averageLatency.toFixed(1)}ms`);
+    console.log(`  Total Requests: ${finalStatus?.performance?.totalRequests}`);
+    console.log(`  Hit Ratio: ${finalStatus?.performance?.cacheHitRatio.toFixed(1)}%`);
+    console.log(`  Avg Latency: ${finalStatus?.performance?.averageLatency.toFixed(1)}ms`);
 
   } catch (error) {
     console.error('❌ Demo failed:', error);
@@ -212,12 +212,12 @@ export async function setupProductionCache(): Promise<UnifiedCacheManager> {
   const cacheManager = await setupUnifiedCacheSystem();
   
   // Add production-specific configurations
-  cacheManager.on('metrics:collected', (metrics) => {
+  cacheManager.on('metrics:collected', (metrics: any) => {
     // Log metrics to your monitoring system
     // console.log('Metrics:', metrics);
   });
 
-  cacheManager.on('health:alert', (status) => {
+  cacheManager.on('health:alert', (status: any) => {
     // Send alerts to your monitoring system
     console.warn('Cache health alert:', status);
   });

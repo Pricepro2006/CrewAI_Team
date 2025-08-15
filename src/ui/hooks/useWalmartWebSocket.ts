@@ -133,8 +133,8 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
     );
     setError(null);
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.hostname;
+    const protocol = window?.location?.protocol === "https:" ? "wss:" : "ws:";
+    const host = window?.location?.hostname;
     const port = process.env.NODE_ENV === "production" ? "" : ":3001";
     const wsUrl = `${protocol}//${host}${port}/ws/walmart`;
 
@@ -176,7 +176,7 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
         startHeartbeat(ws);
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = (event: any) => {
         try {
           const message: WSMessage = JSON.parse(event.data);
           
@@ -192,13 +192,13 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
         }
       };
 
-      ws.onerror = (event) => {
+      ws.onerror = (event: any) => {
         clearTimeout(connectionTimeout);
         console.error("WebSocket: Error occurred:", event);
         setError("WebSocket connection error");
       };
 
-      ws.onclose = (event) => {
+      ws.onclose = (event: any) => {
         clearTimeout(connectionTimeout);
         console.log(`WebSocket: Closed (code: ${event.code}, reason: ${event.reason || 'No reason'})`);
         
@@ -280,8 +280,8 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
     cleanupTimers();
 
     if (wsRef.current) {
-      if (wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.close(1000, "User disconnect");
+      if (wsRef?.current?.readyState === WebSocket.OPEN) {
+        wsRef?.current?.close(1000, "User disconnect");
       }
       wsRef.current = null;
     }
@@ -295,7 +295,7 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
    */
   const sendMessage = useCallback((message: any) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
+      wsRef?.current?.send(JSON.stringify(message));
       return true;
     } else {
       console.warn("WebSocket: Cannot send message - not connected");
@@ -311,7 +311,7 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
 
     switch (message.type) {
       case "nlp_processing":
-        if (message.data.status === "started") {
+        if (message?.data?.status === "started") {
           setNlpProcessing(true);
           setNlpResult(null);
         }
@@ -323,7 +323,7 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
         break;
 
       case "product_match":
-        setProductMatches(message.data.products || []);
+        setProductMatches(message?.data?.products || []);
         break;
 
       case "cart_update":
@@ -335,7 +335,7 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
         break;
 
       case "error":
-        setError(message.data.error || "Unknown error");
+        setError(message?.data?.error || "Unknown error");
         setNlpProcessing(false);
         break;
 
@@ -383,7 +383,7 @@ export const useWalmartWebSocket = (options: UseWalmartWebSocketOptions = {}) =>
       isIntentionalDisconnectRef.current = true;
       cleanupTimers();
       if (wsRef.current) {
-        wsRef.current.close(1000, "Component unmount");
+        wsRef?.current?.close(1000, "Component unmount");
       }
     };
   }, []); // Empty deps to only run on mount/unmount

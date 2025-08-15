@@ -30,10 +30,10 @@ export function ToastContainer({
   React.useEffect(() => {
     addToastFn = (toast: Omit<ToastData, "id">) => {
       const id = `toast-${++toastId}`;
-      setToasts((prev) => {
+      setToasts((prev: any) => {
         const newToasts = [...prev, { ...toast, id }];
         // Remove oldest toast if exceeding maxToasts
-        if (newToasts.length > maxToasts) {
+        if (newToasts?.length || 0 > maxToasts) {
           return newToasts.slice(-maxToasts);
         }
         return newToasts;
@@ -46,12 +46,12 @@ export function ToastContainer({
   }, [maxToasts]);
 
   const handleClose = (id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    setToasts((prev: any) => prev?.filter((toast: any) => toast.id !== id));
   };
 
   return (
     <div className={`toast-container toast-container-${position}`}>
-      {toasts.map((toast) => (
+      {toasts?.map((toast: any) => (
         <Toast key={toast.id} {...toast} onClose={handleClose} />
       ))}
     </div>

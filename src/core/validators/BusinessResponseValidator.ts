@@ -130,10 +130,10 @@ export class BusinessResponseValidator {
 
     // Try each phone pattern
     const patterns = [
-      { pattern: ContactPatterns.phone.tollFree, type: "tollFree" as const },
-      { pattern: ContactPatterns.phone.usStandard, type: "us" as const },
+      { pattern: ContactPatterns?.phone?.tollFree, type: "tollFree" as const },
+      { pattern: ContactPatterns?.phone?.usStandard, type: "us" as const },
       {
-        pattern: ContactPatterns.phone.international,
+        pattern: ContactPatterns?.phone?.international,
         type: "international" as const,
       },
     ];
@@ -142,7 +142,7 @@ export class BusinessResponseValidator {
       const matches = PatternHelpers.extractMatches(
         text,
         pattern,
-        ContactPatterns.phone.getConfidence,
+        ContactPatterns?.phone?.getConfidence,
       );
 
       for (const match of matches) {
@@ -153,7 +153,7 @@ export class BusinessResponseValidator {
         seen.add(normalized);
 
         // Validate phone number
-        if (normalized.length < ValidationRules.phone.minLength) continue;
+        if (normalized?.length || 0 < ValidationRules?.phone?.minLength) continue;
 
         phones.push({
           value: this.privacyMode ? this.maskPhone(match.value) : match.value,
@@ -181,7 +181,7 @@ export class BusinessResponseValidator {
     // Try full address pattern first
     const fullMatches = PatternHelpers.extractMatches(
       text,
-      ContactPatterns.address.fullAddress,
+      ContactPatterns?.address?.fullAddress,
     );
 
     for (const match of fullMatches) {
@@ -202,7 +202,7 @@ export class BusinessResponseValidator {
     // Try PO Box pattern
     const poBoxMatches = PatternHelpers.extractMatches(
       text,
-      ContactPatterns.address.poBox,
+      ContactPatterns?.address?.poBox,
     );
     for (const match of poBoxMatches) {
       const normalized = PatternHelpers.normalizeAddress(match.value);
@@ -230,11 +230,11 @@ export class BusinessResponseValidator {
     // Try business names with entity types first
     const entityMatches = PatternHelpers.extractMatches(
       text,
-      ContactPatterns.businessName.withEntity,
+      ContactPatterns?.businessName?.withEntity,
     );
 
     for (const match of entityMatches) {
-      const normalized = match.value.trim();
+      const normalized = match?.value?.trim();
       if (seen.has(normalized)) continue;
       seen.add(normalized);
 
@@ -250,16 +250,16 @@ export class BusinessResponseValidator {
     }
 
     // If we don't have enough high-confidence names, try standalone pattern
-    if (names.filter((n) => n.confidence >= 0.7).length < 2) {
+    if (names?.filter((n: any) => n.confidence >= 0.7).length < 2) {
       const standaloneMatches = PatternHelpers.extractMatches(
         text,
-        ContactPatterns.businessName.standalone,
+        ContactPatterns?.businessName?.standalone,
       );
 
       for (const match of standaloneMatches) {
-        const normalized = match.value.trim();
+        const normalized = match?.value?.trim();
         if (seen.has(normalized)) continue;
-        if (match.value.length < ValidationRules.businessName.minLength)
+        if (match?.value?.length < ValidationRules?.businessName?.minLength)
           continue;
         seen.add(normalized);
 
@@ -287,10 +287,10 @@ export class BusinessResponseValidator {
     // Check for 24/7
     const twentyFourSevenMatches = PatternHelpers.extractMatches(
       text,
-      ContactPatterns.hours.twentyFourSeven,
+      ContactPatterns?.hours?.twentyFourSeven,
     );
 
-    if (twentyFourSevenMatches.length > 0 && twentyFourSevenMatches[0]) {
+    if (twentyFourSevenMatches?.length || 0 > 0 && twentyFourSevenMatches[0]) {
       hours.push({
         value: twentyFourSevenMatches[0].value,
         type: "24/7",
@@ -302,7 +302,7 @@ export class BusinessResponseValidator {
     // Extract standard hours
     const standardMatches = PatternHelpers.extractMatches(
       text,
-      ContactPatterns.hours.fullHours,
+      ContactPatterns?.hours?.fullHours,
     );
 
     for (const match of standardMatches) {
@@ -322,7 +322,7 @@ export class BusinessResponseValidator {
     // Extract day ranges
     const dayRangeMatches = PatternHelpers.extractMatches(
       text,
-      ContactPatterns.hours.dayRange,
+      ContactPatterns?.hours?.dayRange,
     );
 
     for (const match of dayRangeMatches) {
@@ -345,11 +345,11 @@ export class BusinessResponseValidator {
     const emails: EmailInfo[] = [];
     const matches = PatternHelpers.extractMatches(
       text,
-      ContactPatterns.email.standard,
+      ContactPatterns?.email?.standard,
     );
 
     for (const match of matches) {
-      const domain = match.value.split("@")[1] || "";
+      const domain = match?.value?.split("@")[1] || "";
       emails.push({
         value: match.value,
         domain,
@@ -368,7 +368,7 @@ export class BusinessResponseValidator {
     const websites: WebsiteInfo[] = [];
     const matches = PatternHelpers.extractMatches(
       text,
-      ContactPatterns.website.url,
+      ContactPatterns?.website?.url,
     );
 
     for (const match of matches) {
@@ -389,9 +389,9 @@ export class BusinessResponseValidator {
    * Helper methods
    */
   private maskPhone(phone: string): string {
-    if (phone.length <= 4) return phone;
+    if (phone?.length || 0 <= 4) return phone;
     const lastFour = phone.slice(-4);
-    const masked = "X".repeat(phone.length - 4);
+    const masked = "X".repeat(phone?.length || 0 - 4);
     return masked + lastFour;
   }
 
@@ -400,7 +400,7 @@ export class BusinessResponseValidator {
 
     // Extract city, state, zip
     const cityStateZipMatch = address.match(
-      ContactPatterns.address.cityStateZip,
+      ContactPatterns?.address?.cityStateZip,
     );
     if (cityStateZipMatch) {
       components.city = cityStateZipMatch[1];
@@ -409,7 +409,7 @@ export class BusinessResponseValidator {
     }
 
     // Extract street
-    const streetMatch = address.match(ContactPatterns.address.streetAddress);
+    const streetMatch = address.match(ContactPatterns?.address?.streetAddress);
     if (streetMatch) {
       components.street = streetMatch[0];
     }
@@ -443,10 +443,10 @@ export class BusinessResponseValidator {
       const startDay = match[1]?.substring(0, 3) || "";
       const endDay = match[2]?.substring(0, 3) || "";
       const startIdx = days.findIndex(
-        (d) => d.toLowerCase() === startDay.toLowerCase(),
+        (d: any) => d.toLowerCase() === startDay.toLowerCase(),
       );
       const endIdx = days.findIndex(
-        (d) => d.toLowerCase() === endDay.toLowerCase(),
+        (d: any) => d.toLowerCase() === endDay.toLowerCase(),
       );
 
       if (startIdx !== -1 && endIdx !== -1) {
@@ -470,43 +470,43 @@ export class BusinessResponseValidator {
     let totalWeight = 0;
 
     // Calculate weighted average
-    if (contactInfo.phones.length > 0) {
+    if (contactInfo?.phones?.length > 0) {
       totalScore +=
-        Math.max(...contactInfo.phones.map((p) => p.confidence)) *
+        Math.max(...contactInfo?.phones?.map((p: any) => p.confidence)) *
         weights.phones;
       totalWeight += weights.phones;
     }
 
-    if (contactInfo.addresses.length > 0) {
+    if (contactInfo?.addresses?.length > 0) {
       totalScore +=
-        Math.max(...contactInfo.addresses.map((a) => a.confidence)) *
+        Math.max(...contactInfo?.addresses?.map((a: any) => a.confidence)) *
         weights.addresses;
       totalWeight += weights.addresses;
     }
 
-    if (contactInfo.businessNames.length > 0) {
+    if (contactInfo?.businessNames?.length > 0) {
       totalScore +=
-        Math.max(...contactInfo.businessNames.map((b) => b.confidence)) *
+        Math.max(...contactInfo?.businessNames?.map((b: any) => b.confidence)) *
         weights.businessNames;
       totalWeight += weights.businessNames;
     }
 
-    if (contactInfo.hours.length > 0) {
+    if (contactInfo?.hours?.length > 0) {
       totalScore +=
-        Math.max(...contactInfo.hours.map((h) => h.confidence)) * weights.hours;
+        Math.max(...contactInfo?.hours?.map((h: any) => h.confidence)) * weights.hours;
       totalWeight += weights.hours;
     }
 
-    if (contactInfo.emails.length > 0) {
+    if (contactInfo?.emails?.length > 0) {
       totalScore +=
-        Math.max(...contactInfo.emails.map((e) => e.confidence)) *
+        Math.max(...contactInfo?.emails?.map((e: any) => e.confidence)) *
         weights.emails;
       totalWeight += weights.emails;
     }
 
-    if (contactInfo.websites.length > 0) {
+    if (contactInfo?.websites?.length > 0) {
       totalScore +=
-        Math.max(...contactInfo.websites.map((w) => w.confidence)) *
+        Math.max(...contactInfo?.websites?.map((w: any) => w.confidence)) *
         weights.websites;
       totalWeight += weights.websites;
     }
@@ -516,21 +516,21 @@ export class BusinessResponseValidator {
 
   private hasActionableContactInfo(contactInfo: ContactInfo): boolean {
     return (
-      contactInfo.phones.length > 0 ||
-      contactInfo.addresses.length > 0 ||
-      contactInfo.emails.length > 0 ||
-      contactInfo.websites.length > 0
+      contactInfo?.phones?.length > 0 ||
+      contactInfo?.addresses?.length > 0 ||
+      contactInfo?.emails?.length > 0 ||
+      contactInfo?.websites?.length > 0
     );
   }
 
   private identifyMissingInfo(contactInfo: ContactInfo): string[] {
     const missing: string[] = [];
 
-    if (contactInfo.phones.length === 0) missing.push("phone");
-    if (contactInfo.addresses.length === 0) missing.push("address");
-    if (contactInfo.businessNames.length === 0) missing.push("business name");
-    if (contactInfo.hours.length === 0) missing.push("hours");
-    if (contactInfo.emails.length === 0 && contactInfo.websites.length === 0) {
+    if (contactInfo?.phones?.length === 0) missing.push("phone");
+    if (contactInfo?.addresses?.length === 0) missing.push("address");
+    if (contactInfo?.businessNames?.length === 0) missing.push("business name");
+    if (contactInfo?.hours?.length === 0) missing.push("hours");
+    if (contactInfo?.emails?.length === 0 && contactInfo?.websites?.length === 0) {
       missing.push("online contact");
     }
 
@@ -555,13 +555,13 @@ export class BusinessResponseValidator {
       );
     }
 
-    if (contactInfo.phones.filter((p) => p.confidence >= 0.8).length === 0) {
+    if (contactInfo?.phones?.filter((p: any) => p.confidence >= 0.8).length === 0) {
       suggestions.push(
         "Phone numbers found have low confidence - verify before use",
       );
     }
 
-    if (contactInfo.addresses.filter((a) => a.confidence >= 0.8).length === 0) {
+    if (contactInfo?.addresses?.filter((a: any) => a.confidence >= 0.8).length === 0) {
       suggestions.push(
         "Addresses found may be incomplete - consider additional verification",
       );

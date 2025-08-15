@@ -41,7 +41,7 @@ export class ResearchAgent extends BaseAgent {
           topK: 5,
         },
       });
-      await this.searchKnowledgeService.initialize();
+      await this?.searchKnowledgeService?.initialize();
     } catch (error) {
       console.warn("Failed to initialize SearchKnowledgeService:", error);
     }
@@ -69,8 +69,8 @@ export class ResearchAgent extends BaseAgent {
         metadata: {
           agent: this.name,
           toolsUsed: researchPlan.tools,
-          queriesExecuted: researchPlan.queries.length,
-          sourcesFound: results.length,
+          queriesExecuted: researchPlan?.queries?.length,
+          sourcesFound: results?.length || 0,
           timestamp: new Date().toISOString(),
         },
       };
@@ -114,7 +114,7 @@ export class ResearchAgent extends BaseAgent {
       // and go directly to search execution
       // Get whichever search tool is registered (SearXNG or WebSearchTool)
       const searchTool =
-        this.tools.get("searxng_search") || this.tools.get("web_search");
+        this?.tools?.get("searxng_search") || this?.tools?.get("web_search");
 
       if (!searchTool) {
         return {
@@ -135,10 +135,10 @@ export class ResearchAgent extends BaseAgent {
       if (this.searchKnowledgeService) {
         try {
           cachedResults =
-            await this.searchKnowledgeService.searchPreviousResults(query, 3);
-          if (cachedResults.length > 0) {
+            await this?.searchKnowledgeService?.searchPreviousResults(query, 3);
+          if (cachedResults?.length || 0 > 0) {
             console.log(
-              `[ResearchAgent] Found ${cachedResults.length} cached results for similar queries`,
+              `[ResearchAgent] Found ${cachedResults?.length || 0} cached results for similar queries`,
             );
           }
         } catch (error) {
@@ -169,7 +169,7 @@ export class ResearchAgent extends BaseAgent {
       }
 
       // Convert search results to research results
-      const results: ResearchResult[] = searchResult.data.results.map(
+      const results: ResearchResult[] = searchResult?.data?.results?.map(
         (item: any) => ({
           source: item.url,
           title: item.title,
@@ -181,7 +181,7 @@ export class ResearchAgent extends BaseAgent {
 
       console.log(
         "[ResearchAgent] Found",
-        results.length,
+        results?.length || 0,
         "results, synthesizing...",
       );
 
@@ -205,7 +205,7 @@ export class ResearchAgent extends BaseAgent {
           agent: this.name,
           tool: tool.name,
           queriesExecuted: 1,
-          sourcesFound: results.length,
+          sourcesFound: results?.length || 0,
           timestamp: new Date().toISOString(),
         },
       };
@@ -223,7 +223,7 @@ export class ResearchAgent extends BaseAgent {
       You are a research specialist. Create a research plan for the following task:
       "${task}"
       
-      ${context.ragDocuments ? `Existing knowledge base context:\n${context.ragDocuments.map((d) => d.content).join("\n\n")}` : ""}
+      ${context.ragDocuments ? `Existing knowledge base context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n\n")}` : ""}
       
       Create a research plan that includes:
       1. Key search queries to execute
@@ -240,8 +240,8 @@ export class ResearchAgent extends BaseAgent {
       }
     `;
 
-    const responseResponse = await this.llm.generate(prompt);
-    const response = responseResponse.response;
+    const responseResponse = await this?.llm?.generate(prompt);
+    const response = responseResponse?.response;
     return this.parseResearchPlan(response);
   }
 
@@ -277,12 +277,12 @@ export class ResearchAgent extends BaseAgent {
     const results: ResearchResult[] = [];
     // Get whichever search tool is registered (SearXNG or WebSearchTool)
     const searchTool =
-      this.tools.get("searxng_search") || this.tools.get("web_search");
-    const scraperTool = this.tools.get("web_scraper") as WebScraperTool;
+      this?.tools?.get("searxng_search") || this?.tools?.get("web_search");
+    const scraperTool = this?.tools?.get("web_scraper") as WebScraperTool;
 
     // Check if we have existing context that might reduce search needs
     const hasExistingContext =
-      context.ragDocuments && context.ragDocuments.length > 0;
+      context.ragDocuments && context?.ragDocuments?.length > 0;
 
     // If we have existing context, limit the search scope
     const searchLimit = hasExistingContext ? 3 : 5;
@@ -297,7 +297,7 @@ export class ResearchAgent extends BaseAgent {
 
         if (searchResult.success && searchResult.data) {
           // For each search result, potentially scrape the content
-          for (const item of searchResult.data.results) {
+          for (const item of searchResult?.data?.results) {
             const relevance = this.calculateRelevance(item, plan);
             results.push({
               source: item.url,
@@ -317,7 +317,7 @@ export class ResearchAgent extends BaseAgent {
                 results.push({
                   source: item.url,
                   title: item.title,
-                  content: scraped.data.content,
+                  content: scraped?.data?.content,
                   type: "scraped_content",
                   relevance: item.relevance,
                 });
@@ -339,15 +339,15 @@ export class ResearchAgent extends BaseAgent {
     const text = `${item.title} ${item.snippet}`.toLowerCase();
 
     // Check for extraction focus keywords
-    plan.extractionFocus.forEach((focus) => {
+    plan?.extractionFocus?.forEach((focus: any) => {
       if (text.includes(focus.toLowerCase())) {
         score += 0.1;
       }
     });
 
     // Check for source type indicators
-    const url = item.url.toLowerCase();
-    plan.sourceTypes.forEach((type) => {
+    const url = item?.url?.toLowerCase();
+    plan?.sourceTypes?.forEach((type: any) => {
       if (url.includes(type) || text.includes(type)) {
         score += 0.1;
       }
@@ -360,7 +360,7 @@ export class ResearchAgent extends BaseAgent {
     results: ResearchResult[],
     task: string,
   ): Promise<string> {
-    if (results.length === 0) {
+    if (results?.length || 0 === 0) {
       return "No relevant information found for the given task.";
     }
 
@@ -371,10 +371,10 @@ export class ResearchAgent extends BaseAgent {
     if (this.searchKnowledgeService) {
       try {
         const cachedResults =
-          await this.searchKnowledgeService.searchPreviousResults(task, 2);
-        if (cachedResults.length > 0) {
+          await this?.searchKnowledgeService?.searchPreviousResults(task, 2);
+        if (cachedResults?.length || 0 > 0) {
           cachedContext = `\n\nPreviously cached relevant information:\n${cachedResults
-            .map((r) => r.content)
+            .map((r: any) => r.content)
             .join("\n\n")}\n\n`;
         }
       } catch (error) {
@@ -397,7 +397,7 @@ export class ResearchAgent extends BaseAgent {
           (r, i) => `
         ${i + 1}. Source: ${r.source}
         Title: ${r.title}
-        Content: ${r.content.substring(0, contentLength)}...
+        Content: ${r?.content?.substring(0, contentLength)}...
         Relevance: ${r.relevance}
       `,
         )
@@ -427,7 +427,7 @@ export class ResearchAgent extends BaseAgent {
         "immediately",
         "now",
       ];
-      const hasUrgency = urgentKeywords.some((keyword) =>
+      const hasUrgency = urgentKeywords.some((keyword: any) =>
         task.toLowerCase().includes(keyword),
       );
 
@@ -467,7 +467,7 @@ export class ResearchAgent extends BaseAgent {
     }
 
     const llmResponse = await withTimeout(
-      this.llm.generate(basePrompt),
+      this?.llm?.generate(basePrompt),
       DEFAULT_TIMEOUTS.LLM_GENERATION,
       "LLM synthesis timed out",
     );
@@ -478,7 +478,7 @@ export class ResearchAgent extends BaseAgent {
   private extractSources(results: ResearchResult[]): Source[] {
     const uniqueSources = new Map<string, Source>();
 
-    results.forEach((result) => {
+    results.forEach((result: any) => {
       if (!uniqueSources.has(result.source)) {
         uniqueSources.set(result.source, {
           url: result.source,
@@ -522,7 +522,7 @@ export class ResearchAgent extends BaseAgent {
     const searxng = new SearXNGSearchTool();
     searxng
       .isAvailable()
-      .then((available) => {
+      .then((available: any) => {
         if (available) {
           console.log(
             "[ResearchAgent] Using SearXNG for search (unlimited, better results)",

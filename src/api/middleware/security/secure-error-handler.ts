@@ -15,7 +15,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { TRPCError } from "@trpc/server";
 import { randomBytes } from "crypto";
-import { logger } from "../../../utils/logger";
+import { logger } from "../../../utils/logger.js";
 import { ZodError } from "zod";
 
 // Error categories for classification
@@ -119,12 +119,12 @@ function maskSensitiveData(str: string): string {
   let masked = str;
   
   for (const pattern of SENSITIVE_PATTERNS) {
-    masked = masked.replace(pattern, (match) => {
+    masked = masked.replace(pattern, (match: any) => {
       // Keep first and last few characters for debugging
-      if (match.length > 8) {
-        return match.substring(0, 3) + "*".repeat(match.length - 6) + match.substring(match.length - 3);
+      if (match?.length || 0 > 8) {
+        return match.substring(0, 3) + "*".repeat(match?.length || 0 - 6) + match.substring(match?.length || 0 - 3);
       }
-      return "*".repeat(match.length);
+      return "*".repeat(match?.length || 0);
     });
   }
   
@@ -166,8 +166,8 @@ function sanitizeErrorForClient(
     
     if (isDevelopment) {
       details = {
-        validation: error.errors.map(e => ({
-          field: e.path.join("."),
+        validation: error?.errors?.map(e => ({
+          field: e?.path?.join("."),
           message: e.message,
         })),
       };
@@ -454,7 +454,7 @@ export function payloadTooLargeHandler(
   res: Response,
   next: NextFunction
 ): void {
-  if (error.type === "entity.too.large") {
+  if (error.type === "entity?.too?.large") {
     const correlationId = generateCorrelationId();
     
     logger.warn("Payload too large", "ERROR_HANDLER", {
@@ -489,7 +489,7 @@ class ErrorMetrics {
   }> = new Map();
   
   record(code: string, severity: ErrorSeverity): void {
-    const existing = this.metrics.get(code) || {
+    const existing = this?.metrics?.get(code) || {
       count: 0,
       lastOccurred: new Date(),
       severity,
@@ -498,7 +498,7 @@ class ErrorMetrics {
     existing.count++;
     existing.lastOccurred = new Date();
     
-    this.metrics.set(code, existing);
+    this?.metrics?.set(code, existing);
     
     // Alert on error spikes
     if (existing.count > 100 && (severity === (ErrorSeverity.HIGH as ErrorSeverity) || severity === (ErrorSeverity.CRITICAL as ErrorSeverity))) {
@@ -514,10 +514,10 @@ class ErrorMetrics {
   getMetrics(): Record<string, any> {
     const result: Record<string, any> = {};
     
-    this.metrics.forEach((data, code) => {
+    this?.metrics?.forEach((data, code) => {
       result[code] = {
         count: data.count,
-        lastOccurred: data.lastOccurred.toISOString(),
+        lastOccurred: data?.lastOccurred?.toISOString(),
         severity: data.severity,
       };
     });
@@ -526,7 +526,7 @@ class ErrorMetrics {
   }
   
   reset(): void {
-    this.metrics.clear();
+    this?.metrics?.clear();
   }
 }
 

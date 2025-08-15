@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from "react";
-import { useRetryMechanism, useCircuitBreaker } from "./useRetryMechanism";
-import { useErrorReporter } from "../contexts/ErrorContext";
-import { toast } from "../components/Toast/useToast";
-import { translateError, isRecoverableError } from "../utils/errorTranslator";
+import { useRetryMechanism, useCircuitBreaker } from "./useRetryMechanism.js";
+import { useErrorReporter } from "../contexts/ErrorContext.js";
+import { toast } from "../components/Toast/useToast.js";
+import { translateError, isRecoverableError } from "../utils/errorTranslator.js";
 
 export interface ApiErrorRecoveryOptions {
   enableCircuitBreaker?: boolean;
@@ -242,7 +242,7 @@ export function useTRPCErrorRecovery() {
     if (isAuthError) {
       // Redirect to login after a delay
       setTimeout(() => {
-        window.location.href = "/login";
+        window?.location?.href = "/login";
       }, 2000);
     }
 

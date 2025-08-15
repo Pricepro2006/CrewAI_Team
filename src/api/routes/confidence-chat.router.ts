@@ -63,28 +63,28 @@ export const confidenceChatRouter = createFeatureRouter(
           "CONFIDENCE_CHAT",
           {
             userId: ctx.user?.id,
-            messageLength: input.message.length,
+            messageLength: input?.message?.length,
             priority: input.priority,
             includeConfidence: input.includeConfidence,
             requestId: ctx.requestId,
           },
         );
 
-        const conversation = await ctx.conversationService.create();
+        const conversation = await ctx?.conversationService?.create();
 
         // Ensure we have confidence orchestrator
         const orchestrator =
           ctx.masterOrchestrator as unknown as unknown as ConfidenceMasterOrchestrator;
 
         // Set up event listeners for real-time updates
-        orchestrator.on("confidence:update", (data) => {
+        orchestrator.on("confidence:update", (data: any) => {
           confidenceChatEvents.emit("confidence-update", {
             conversationId: conversation.id,
             ...data,
           });
         });
 
-        orchestrator.on("evaluation:complete", (data) => {
+        orchestrator.on("evaluation:complete", (data: any) => {
           confidenceChatEvents.emit("evaluation-complete", {
             conversationId: conversation.id,
             ...data,
@@ -98,21 +98,21 @@ export const confidenceChatRouter = createFeatureRouter(
         });
 
         // Add messages to conversation with confidence metadata
-        await ctx.conversationService.addMessage(conversation.id, {
+        await ctx?.conversationService?.addMessage(conversation.id, {
           role: "user",
           content: input.message,
         });
 
-        await ctx.conversationService.addMessage(conversation.id, {
+        await ctx?.conversationService?.addMessage(conversation.id, {
           role: "assistant",
-          content: result.deliveredResponse.content,
+          content: result?.deliveredResponse?.content,
           metadata: {
             confidence: result.confidence,
             processingPath: result.processingPath,
             feedbackId: result.feedbackId,
-            action: result.deliveredResponse.metadata.action,
+            action: result?.deliveredResponse?.metadata.action,
             humanReviewNeeded:
-              result.deliveredResponse.metadata.humanReviewNeeded,
+              result?.deliveredResponse?.metadata.humanReviewNeeded,
           },
         });
 
@@ -121,7 +121,7 @@ export const confidenceChatRouter = createFeatureRouter(
           conversationId: conversation.id,
           message: {
             role: "assistant",
-            content: result.deliveredResponse.content,
+            content: result?.deliveredResponse?.content,
             confidence: result.confidence,
             feedbackId: result.feedbackId,
           },
@@ -131,29 +131,29 @@ export const confidenceChatRouter = createFeatureRouter(
           conversationId: conversation.id,
           confidence: result.confidence,
           processingPath: result.processingPath,
-          action: result.deliveredResponse.metadata.action,
+          action: result?.deliveredResponse?.metadata.action,
         });
 
         return {
           conversationId: conversation.id,
-          response: result.deliveredResponse.content,
+          response: result?.deliveredResponse?.content,
           confidence: input.includeConfidence
             ? {
                 score: result.confidence,
-                category: result.deliveredResponse.confidence.category,
-                display: result.deliveredResponse.confidence.display,
+                category: result?.deliveredResponse?.confidence.category,
+                display: result?.deliveredResponse?.confidence.display,
               }
             : undefined,
-          evidence: result.deliveredResponse.evidence,
-          warnings: result.deliveredResponse.warnings,
+          evidence: result?.deliveredResponse?.evidence,
+          warnings: result?.deliveredResponse?.warnings,
           feedbackId: result.feedbackId,
           metadata: {
             processingPath: result.processingPath,
             humanReviewNeeded:
-              result.deliveredResponse.metadata.humanReviewNeeded,
+              result?.deliveredResponse?.metadata.humanReviewNeeded,
             uncertaintyAreas:
-              result.deliveredResponse.metadata.uncertaintyAreas,
-            processingTime: result.deliveredResponse.metadata.processingTime,
+              result?.deliveredResponse?.metadata.uncertaintyAreas,
+            processingTime: result?.deliveredResponse?.metadata.processingTime,
             requestId: ctx.requestId,
             timestamp: ctx.timestamp,
           },
@@ -167,18 +167,18 @@ export const confidenceChatRouter = createFeatureRouter(
           conversationId: commonSchemas.id,
           message: z.string().min(1).max(5000),
           includeConfidence: z.boolean().default(true),
-          deliveryOptions: confidenceChatSchemas.message.shape.deliveryOptions,
+          deliveryOptions: confidenceChatSchemas?.message?.shape.deliveryOptions,
         }),
       )
       .mutation(async ({ input, ctx }) => {
         logger.info("Processing confidence chat message", "CONFIDENCE_CHAT", {
           conversationId: input.conversationId,
           userId: ctx.user?.id,
-          messageLength: input.message.length,
+          messageLength: input?.message?.length,
           requestId: ctx.requestId,
         });
 
-        const conversation = await ctx.conversationService.get(
+        const conversation = await ctx?.conversationService?.get(
           input.conversationId,
         );
         if (!conversation) {
@@ -189,7 +189,7 @@ export const confidenceChatRouter = createFeatureRouter(
           ctx.masterOrchestrator as unknown as ConfidenceMasterOrchestrator;
 
         // Add user message
-        await ctx.conversationService.addMessage(input.conversationId, {
+        await ctx?.conversationService?.addMessage(input.conversationId, {
           role: "user",
           content: input.message,
         });
@@ -202,14 +202,14 @@ export const confidenceChatRouter = createFeatureRouter(
         });
 
         // Add assistant response with confidence
-        await ctx.conversationService.addMessage(input.conversationId, {
+        await ctx?.conversationService?.addMessage(input.conversationId, {
           role: "assistant",
-          content: result.deliveredResponse.content,
+          content: result?.deliveredResponse?.content,
           metadata: {
             confidence: result.confidence,
             processingPath: result.processingPath,
             feedbackId: result.feedbackId,
-            action: result.deliveredResponse.metadata.action,
+            action: result?.deliveredResponse?.metadata.action,
           },
         });
 
@@ -218,28 +218,28 @@ export const confidenceChatRouter = createFeatureRouter(
           conversationId: input.conversationId,
           message: {
             role: "assistant",
-            content: result.deliveredResponse.content,
+            content: result?.deliveredResponse?.content,
             confidence: result.confidence,
             feedbackId: result.feedbackId,
           },
         });
 
         return {
-          response: result.deliveredResponse.content,
+          response: result?.deliveredResponse?.content,
           confidence: input.includeConfidence
             ? {
                 score: result.confidence,
-                category: result.deliveredResponse.confidence.category,
-                display: result.deliveredResponse.confidence.display,
+                category: result?.deliveredResponse?.confidence.category,
+                display: result?.deliveredResponse?.confidence.display,
               }
             : undefined,
-          evidence: result.deliveredResponse.evidence,
-          warnings: result.deliveredResponse.warnings,
+          evidence: result?.deliveredResponse?.evidence,
+          warnings: result?.deliveredResponse?.warnings,
           feedbackId: result.feedbackId,
           metadata: {
             processingPath: result.processingPath,
             humanReviewNeeded:
-              result.deliveredResponse.metadata.humanReviewNeeded,
+              result?.deliveredResponse?.metadata.humanReviewNeeded,
           },
         };
       }),
@@ -310,7 +310,7 @@ export const confidenceChatRouter = createFeatureRouter(
         }),
       )
       .subscription(({ input }) => {
-        return observable((observer) => {
+        return observable((observer: any) => {
           const handler = (data: {
             conversationId: string;
             stage: string;
@@ -343,7 +343,7 @@ export const confidenceChatRouter = createFeatureRouter(
         }),
       )
       .subscription(({ input }) => {
-        return observable((observer) => {
+        return observable((observer: any) => {
           const handler = (data: {
             conversationId: string;
             factuality: number;
@@ -381,7 +381,7 @@ export const confidenceChatRouter = createFeatureRouter(
         }),
       )
       .query(async ({ input, ctx }) => {
-        const conversation = await ctx.conversationService.get(
+        const conversation = await ctx?.conversationService?.get(
           input.conversationId,
         );
         if (!conversation) {
@@ -422,7 +422,7 @@ export const confidenceChatRouter = createFeatureRouter(
           },
         );
 
-        const conversation = await ctx.conversationService.get(
+        const conversation = await ctx?.conversationService?.get(
           input.conversationId,
         );
         if (!conversation) {
@@ -479,7 +479,7 @@ export const confidenceChatRouter = createFeatureRouter(
           },
         );
 
-        const conversation = await ctx.conversationService.get(
+        const conversation = await ctx?.conversationService?.get(
           input.conversationId,
         );
         if (!conversation) {
@@ -499,13 +499,13 @@ export const confidenceChatRouter = createFeatureRouter(
         const result = await orchestrator.processQuery({
           text: userMessage.content,
           conversationId: input.conversationId,
-          history: conversation.messages.slice(0, input.messageIndex - 1),
+          history: conversation?.messages?.slice(0, input.messageIndex - 1),
         });
 
         // Replace the assistant message
         conversation.messages[input.messageIndex] = {
           role: "assistant",
-          content: result.deliveredResponse.content,
+          content: result?.deliveredResponse?.content,
           metadata: {
             confidence: result.confidence,
             processingPath: result.processingPath,
@@ -517,20 +517,20 @@ export const confidenceChatRouter = createFeatureRouter(
 
         // Add the new message to the conversation
         const lastMessage =
-          conversation.messages[conversation.messages.length - 1];
+          conversation.messages[conversation?.messages?.length - 1];
         if (lastMessage) {
-          await ctx.conversationService.addMessage(
+          await ctx?.conversationService?.addMessage(
             input.conversationId,
             lastMessage,
           );
         }
 
         return {
-          response: result.deliveredResponse.content,
+          response: result?.deliveredResponse?.content,
           confidence: {
             score: result.confidence,
-            category: result.deliveredResponse.confidence.category,
-            display: result.deliveredResponse.confidence.display,
+            category: result?.deliveredResponse?.confidence.category,
+            display: result?.deliveredResponse?.confidence.display,
           },
           feedbackId: result.feedbackId,
           regenerated: true,
@@ -560,14 +560,14 @@ function formatConversationAsMarkdown(
   let markdown = `# Conversation: ${conversation.title || conversation.id}\n\n`;
   markdown += `Date: ${conversation.createdAt}\n\n`;
 
-  conversation.messages.forEach((msg, _idx) => {
+  conversation?.messages?.forEach((msg, _idx) => {
     markdown += `## ${msg.role === "user" ? "User" : "Assistant"}\n`;
     markdown += `${msg.content}\n\n`;
 
     if (includeEvaluations && msg.metadata?.confidence) {
-      markdown += `*Confidence: ${(msg.metadata.confidence * 100).toFixed(1)}% | `;
-      markdown += `Processing: ${msg.metadata.processingPath} | `;
-      markdown += `Action: ${msg.metadata.action}*\n\n`;
+      markdown += `*Confidence: ${(msg?.metadata?.confidence * 100).toFixed(1)}% | `;
+      markdown += `Processing: ${msg?.metadata?.processingPath} | `;
+      markdown += `Action: ${msg?.metadata?.action}*\n\n`;
     }
   });
 
@@ -596,11 +596,11 @@ function formatConversationAsCSV(
 
   const rows = [headers.join(",")];
 
-  conversation.messages.forEach((msg, idx) => {
+  conversation?.messages?.forEach((msg, idx) => {
     const row = [
       idx.toString(),
       msg.role,
-      `"${msg.content.replace(/"/g, '""')}"`,
+      `"${msg?.content?.replace(/"/g, '""')}"`,
     ];
 
     if (includeEvaluations) {

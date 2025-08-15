@@ -226,7 +226,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
       expect(afterCloseCount).toBe(0);
     });
 
-    it("should clean up health check timers", (done) => {
+    it("should clean up health check timers", (done: any) => {
       const clientId = "test-client";
       const ws = new MockWebSocket() as AuthenticatedWebSocket;
       ws.clientId = clientId;
@@ -320,7 +320,7 @@ describe("WebSocketService - Memory Leak Prevention", () => {
       // Wait for cleanup to run
       setTimeout(() => {
         const queue = messageQueue.get(clientId);
-        expect(queue.length).toBeLessThanOrEqual(50); // MAX_MESSAGE_HISTORY
+        expect(queue?.length || 0).toBeLessThanOrEqual(50); // MAX_MESSAGE_HISTORY
       }, 31000); // Just after cleanup interval
     });
   });
@@ -448,10 +448,10 @@ describe.skip("WebSocketService - Memory Usage Over Time", () => {
       }
 
       // Disconnect all clients
-      clients.forEach((ws) => ws.close());
+      clients.forEach((ws: any) => ws.close());
 
       // Wait for cleanup
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve: any) => setTimeout(resolve, 100));
 
       // Force garbage collection if available
       if (global.gc) {

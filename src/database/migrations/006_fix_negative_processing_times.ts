@@ -141,7 +141,7 @@ export function up(db: Database.Database): void {
       );
     })();
   } catch (error) {
-    logger.error("Failed to fix negative processing times", error);
+    logger.error("Failed to fix negative processing times", error as string);
     throw error;
   }
 }
@@ -183,7 +183,7 @@ export function down(db: Database.Database): void {
       db.exec(`DROP INDEX IF EXISTS idx_email_analysis_processing_time`);
     })();
   } catch (error) {
-    logger.error("Failed to rollback negative processing times fix", error);
+    logger.error("Failed to rollback negative processing times fix", error as string);
     throw error;
   }
 }

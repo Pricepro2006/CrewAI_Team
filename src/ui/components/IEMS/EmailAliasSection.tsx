@@ -7,7 +7,7 @@ import {
 import type {
   IEMSEmail,
   EmailStatus,
-} from "../../../types/iems-email.types.js";
+} from "../../../types/iems-email?.types.js";
 import "./EmailAliasSection.css";
 
 interface EmailAliasSectionProps {
@@ -54,7 +54,7 @@ export const EmailAliasSection: React.FC<EmailAliasSectionProps> = ({
     <div className="email-alias-section">
       <div className="section-header">
         <h2 className="section-title">Email Alias</h2>
-        <span className="section-count">{emails.length} emails</span>
+        <span className="section-count">{emails?.length || 0} emails</span>
       </div>
 
       <div className="section-table">
@@ -77,12 +77,12 @@ export const EmailAliasSection: React.FC<EmailAliasSectionProps> = ({
         </div>
 
         <div className="table-body">
-          {emails.length === 0 ? (
+          {emails?.length || 0 === 0 ? (
             <div className="table-empty">
               <p>No emails in this category</p>
             </div>
           ) : (
-            emails.map((email) => (
+            emails?.map((email: any) => (
               <div key={email.id} className="table-row">
                 <div className="table-cell table-cell--alias">
                   <div className="email-alias-name">{email.emailAlias}</div>

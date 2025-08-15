@@ -63,20 +63,20 @@ export class OptimizedWebSocketService extends EventEmitter {
     this.wss = new WebSocketServer({
       server,
       path,
-      maxPayload: this.config.maxMessageSize,
+      maxPayload: this?.config?.maxMessageSize,
       perMessageDeflate: {
         zlibDeflateOptions: {
           level: 1, // Fast compression
           memLevel: 4,
           strategy: 0
         },
-        threshold: this.config.compressionThreshold
+        threshold: this?.config?.compressionThreshold
       },
       clientTracking: false // We manage connections ourselves
     });
 
-    this.wss.on('connection', (ws, req) => this.handleConnection(ws, req));
-    this.wss.on('error', (error) => this.handleServerError(error));
+    this?.wss?.on('connection', (ws, req) => this.handleConnection(ws, req));
+    this?.wss?.on('error', (error: any) => this.handleServerError(error));
 
     logger.info(`WebSocket server initialized on path ${path}`, "WS_OPTIMIZED");
   }
@@ -85,7 +85,7 @@ export class OptimizedWebSocketService extends EventEmitter {
     const connectionId = this.generateConnectionId();
     const metadata: ConnectionMetadata = {
       id: connectionId,
-      ip: req.socket.remoteAddress || 'unknown',
+      ip: req?.socket?.remoteAddress || 'unknown',
       userAgent: req.headers['user-agent'],
       connectedAt: new Date(),
       lastActivity: new Date(),
@@ -94,13 +94,13 @@ export class OptimizedWebSocketService extends EventEmitter {
     };
 
     // Store connection with O(1) lookup
-    this.connections.set(connectionId, ws);
-    this.connectionMetadata.set(connectionId, metadata);
+    this?.connections?.set(connectionId, ws);
+    this?.connectionMetadata?.set(connectionId, metadata);
 
     // Set up event handlers
-    ws.on('message', (data) => this.handleMessage(connectionId, data));
+    ws.on('message', (data: any) => this.handleMessage(connectionId, data));
     ws.on('close', () => this.handleClose(connectionId));
-    ws.on('error', (error) => this.handleError(connectionId, error));
+    ws.on('error', (error: any) => this.handleError(connectionId, error));
     ws.on('pong', () => this.handlePong(connectionId));
 
     // Send welcome message
@@ -115,7 +115,7 @@ export class OptimizedWebSocketService extends EventEmitter {
   }
 
   private async handleMessage(connectionId: string, data: any): Promise<void> {
-    const metadata = this.connectionMetadata.get(connectionId);
+    const metadata = this?.connectionMetadata?.get(connectionId);
     if (!metadata) return;
 
     metadata.lastActivity = new Date();
@@ -160,18 +160,18 @@ export class OptimizedWebSocketService extends EventEmitter {
 
   private async handleSubscribe(connectionId: string, payload: any): Promise<void> {
     const { topics } = payload;
-    const metadata = this.connectionMetadata.get(connectionId);
+    const metadata = this?.connectionMetadata?.get(connectionId);
     if (!metadata) return;
 
     for (const topic of topics) {
       // Add to connection's subscriptions
-      metadata.subscriptions.add(topic);
+      metadata?.subscriptions?.add(topic);
 
       // Add to topic index for O(1) broadcast
-      if (!this.topicSubscriptions.has(topic)) {
-        this.topicSubscriptions.set(topic, new Set());
+      if (!this?.topicSubscriptions?.has(topic)) {
+        this?.topicSubscriptions?.set(topic, new Set());
       }
-      this.topicSubscriptions.get(topic)!.add(connectionId);
+      this?.topicSubscriptions?.get(topic)!.add(connectionId);
     }
 
     this.sendDirect(connectionId, {
@@ -183,19 +183,19 @@ export class OptimizedWebSocketService extends EventEmitter {
 
   private async handleUnsubscribe(connectionId: string, payload: any): Promise<void> {
     const { topics } = payload;
-    const metadata = this.connectionMetadata.get(connectionId);
+    const metadata = this?.connectionMetadata?.get(connectionId);
     if (!metadata) return;
 
     for (const topic of topics) {
       // Remove from connection's subscriptions
-      metadata.subscriptions.delete(topic);
+      metadata?.subscriptions?.delete(topic);
 
       // Remove from topic index
-      const subscribers = this.topicSubscriptions.get(topic);
+      const subscribers = this?.topicSubscriptions?.get(topic);
       if (subscribers) {
         subscribers.delete(connectionId);
         if (subscribers.size === 0) {
-          this.topicSubscriptions.delete(topic);
+          this?.topicSubscriptions?.delete(topic);
         }
       }
     }
@@ -209,7 +209,7 @@ export class OptimizedWebSocketService extends EventEmitter {
 
   private async handleAuthenticate(connectionId: string, payload: any): Promise<void> {
     const { userId, token } = payload;
-    const metadata = this.connectionMetadata.get(connectionId);
+    const metadata = this?.connectionMetadata?.get(connectionId);
     if (!metadata) return;
 
     // Validate token (simplified)
@@ -217,13 +217,13 @@ export class OptimizedWebSocketService extends EventEmitter {
       metadata.userId = userId;
 
       // Track user connections
-      if (!this.userConnections.has(userId)) {
-        this.userConnections.set(userId, new Set());
+      if (!this?.userConnections?.has(userId)) {
+        this?.userConnections?.set(userId, new Set());
       }
-      const userConns = this.userConnections.get(userId)!;
+      const userConns = this?.userConnections?.get(userId)!;
       
       // Enforce connection limit per user
-      if (userConns.size >= this.config.maxConnectionsPerUser) {
+      if (userConns.size >= this?.config?.maxConnectionsPerUser) {
         const oldestConn = Array.from(userConns)[0];
         this.closeConnection(oldestConn, 'max_connections_exceeded');
         userConns.delete(oldestConn);
@@ -251,7 +251,7 @@ export class OptimizedWebSocketService extends EventEmitter {
   }
 
   private handlePong(connectionId: string): void {
-    const metadata = this.connectionMetadata.get(connectionId);
+    const metadata = this?.connectionMetadata?.get(connectionId);
     if (metadata) {
       metadata.lastActivity = new Date();
     }
@@ -264,53 +264,53 @@ export class OptimizedWebSocketService extends EventEmitter {
 
   private cleanupConnection(connectionId: string): void {
     // Get metadata before cleanup
-    const metadata = this.connectionMetadata.get(connectionId);
+    const metadata = this?.connectionMetadata?.get(connectionId);
     
     // Remove from all indexes
     if (metadata) {
       // Remove from user connections
       if (metadata.userId) {
-        const userConns = this.userConnections.get(metadata.userId);
+        const userConns = this?.userConnections?.get(metadata.userId);
         if (userConns) {
           userConns.delete(connectionId);
           if (userConns.size === 0) {
-            this.userConnections.delete(metadata.userId);
+            this?.userConnections?.delete(metadata.userId);
           }
         }
       }
 
       // Remove from topic subscriptions
       for (const topic of metadata.subscriptions) {
-        const subscribers = this.topicSubscriptions.get(topic);
+        const subscribers = this?.topicSubscriptions?.get(topic);
         if (subscribers) {
           subscribers.delete(connectionId);
           if (subscribers.size === 0) {
-            this.topicSubscriptions.delete(topic);
+            this?.topicSubscriptions?.delete(topic);
           }
         }
       }
     }
 
     // Clear batch timer
-    const timer = this.batchTimers.get(connectionId);
+    const timer = this?.batchTimers?.get(connectionId);
     if (timer) {
       clearTimeout(timer);
-      this.batchTimers.delete(connectionId);
+      this?.batchTimers?.delete(connectionId);
     }
 
     // Clear message queue
-    this.messageQueue.delete(connectionId);
+    this?.messageQueue?.delete(connectionId);
 
     // Remove connection and metadata
-    this.connections.delete(connectionId);
-    this.connectionMetadata.delete(connectionId);
+    this?.connections?.delete(connectionId);
+    this?.connectionMetadata?.delete(connectionId);
   }
 
   /**
    * Send message directly (no batching)
    */
   sendDirect(connectionId: string, message: any): boolean {
-    const ws = this.connections.get(connectionId);
+    const ws = this?.connections?.get(connectionId);
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       return false;
     }
@@ -329,45 +329,45 @@ export class OptimizedWebSocketService extends EventEmitter {
    * Queue message for batching
    */
   send(connectionId: string, message: any): void {
-    if (!this.connections.has(connectionId)) return;
+    if (!this?.connections?.has(connectionId)) return;
 
     // Add to queue
-    if (!this.messageQueue.has(connectionId)) {
-      this.messageQueue.set(connectionId, []);
+    if (!this?.messageQueue?.has(connectionId)) {
+      this?.messageQueue?.set(connectionId, []);
     }
-    this.messageQueue.get(connectionId)!.push(message);
+    this?.messageQueue?.get(connectionId)!.push(message);
 
     // Schedule batch send
-    if (!this.batchTimers.has(connectionId)) {
+    if (!this?.batchTimers?.has(connectionId)) {
       const timer = setTimeout(() => {
         this.flushMessageQueue(connectionId);
-      }, this.config.batchDelay);
-      this.batchTimers.set(connectionId, timer);
+      }, this?.config?.batchDelay);
+      this?.batchTimers?.set(connectionId, timer);
     }
 
     // Flush immediately if batch size reached
-    const queue = this.messageQueue.get(connectionId)!;
-    if (queue.length >= this.config.batchSize) {
+    const queue = this?.messageQueue?.get(connectionId)!;
+    if (queue?.length || 0 >= this?.config?.batchSize) {
       this.flushMessageQueue(connectionId);
     }
   }
 
   private flushMessageQueue(connectionId: string): void {
-    const queue = this.messageQueue.get(connectionId);
-    if (!queue || queue.length === 0) return;
+    const queue = this?.messageQueue?.get(connectionId);
+    if (!queue || queue?.length || 0 === 0) return;
 
     // Clear timer
-    const timer = this.batchTimers.get(connectionId);
+    const timer = this?.batchTimers?.get(connectionId);
     if (timer) {
       clearTimeout(timer);
-      this.batchTimers.delete(connectionId);
+      this?.batchTimers?.delete(connectionId);
     }
 
     // Send batch
     const batch: MessageBatch = {
       messages: queue,
       timestamp: Date.now(),
-      compressed: queue.length > 3
+      compressed: queue?.length || 0 > 3
     };
 
     this.sendDirect(connectionId, {
@@ -376,28 +376,28 @@ export class OptimizedWebSocketService extends EventEmitter {
     });
 
     // Clear queue
-    this.messageQueue.set(connectionId, []);
+    this?.messageQueue?.set(connectionId, []);
   }
 
   /**
    * Broadcast to topic subscribers (optimized)
    */
   async broadcast(topic: string, message: any): Promise<number> {
-    const subscribers = this.topicSubscriptions.get(topic);
+    const subscribers = this?.topicSubscriptions?.get(topic);
     if (!subscribers || subscribers.size === 0) {
       return 0;
     }
 
     // Check cache for duplicate broadcasts
     const cacheKey = `broadcast:${topic}:${JSON.stringify(message)}`;
-    const cached = await this.cache.get(cacheKey);
+    const cached = await this?.cache?.get(cacheKey);
     if (cached) {
       logger.debug(`Skipping duplicate broadcast to ${topic}`, "WS_OPTIMIZED");
       return 0;
     }
 
     // Mark as sent
-    await this.cache.set(cacheKey, true, 1000); // 1 second deduplication
+    await this?.cache?.set(cacheKey, true, 1000); // 1 second deduplication
 
     // Send to all subscribers
     let sent = 0;
@@ -415,7 +415,7 @@ export class OptimizedWebSocketService extends EventEmitter {
    * Broadcast to specific user
    */
   broadcastToUser(userId: string, message: any): number {
-    const connections = this.userConnections.get(userId);
+    const connections = this?.userConnections?.get(userId);
     if (!connections || connections.size === 0) {
       return 0;
     }
@@ -448,7 +448,7 @@ export class OptimizedWebSocketService extends EventEmitter {
           this.cleanupConnection(connectionId);
         }
       }
-    }, this.config.heartbeatInterval);
+    }, this?.config?.heartbeatInterval);
 
     // Cleanup inactive connections
     this.cleanupInterval = setInterval(() => {
@@ -456,17 +456,17 @@ export class OptimizedWebSocketService extends EventEmitter {
       const timeout = 5 * 60 * 1000; // 5 minutes
 
       for (const [connectionId, metadata] of this.connectionMetadata) {
-        const inactive = now - metadata.lastActivity.getTime();
+        const inactive = now - metadata?.lastActivity?.getTime();
         if (inactive > timeout) {
           logger.info(`Closing inactive connection: ${connectionId}`, "WS_OPTIMIZED");
           this.closeConnection(connectionId, 'inactive');
         }
       }
-    }, this.config.cleanupInterval);
+    }, this?.config?.cleanupInterval);
   }
 
   closeConnection(connectionId: string, reason: string): void {
-    const ws = this.connections.get(connectionId);
+    const ws = this?.connections?.get(connectionId);
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.close(1000, reason);
     }
@@ -488,16 +488,16 @@ export class OptimizedWebSocketService extends EventEmitter {
     metadata: ConnectionMetadata[];
   } {
     let queuedMessages = 0;
-    for (const queue of this.messageQueue.values()) {
-      queuedMessages += queue.length;
+    for (const queue of this?.messageQueue?.values()) {
+      queuedMessages += queue?.length || 0;
     }
 
     return {
-      connections: this.connections.size,
-      users: this.userConnections.size,
-      topics: this.topicSubscriptions.size,
+      connections: this?.connections?.size,
+      users: this?.userConnections?.size,
+      topics: this?.topicSubscriptions?.size,
       queued: queuedMessages,
-      metadata: Array.from(this.connectionMetadata.values())
+      metadata: Array.from(this?.connectionMetadata?.values())
     };
   }
 
@@ -514,7 +514,7 @@ export class OptimizedWebSocketService extends EventEmitter {
     }
 
     // Flush all message queues
-    for (const connectionId of this.messageQueue.keys()) {
+    for (const connectionId of this?.messageQueue?.keys()) {
       this.flushMessageQueue(connectionId);
     }
 
@@ -526,16 +526,16 @@ export class OptimizedWebSocketService extends EventEmitter {
     }
 
     // Clear all data structures
-    this.connections.clear();
-    this.connectionMetadata.clear();
-    this.userConnections.clear();
-    this.topicSubscriptions.clear();
-    this.messageQueue.clear();
-    this.batchTimers.clear();
+    this?.connections?.clear();
+    this?.connectionMetadata?.clear();
+    this?.userConnections?.clear();
+    this?.topicSubscriptions?.clear();
+    this?.messageQueue?.clear();
+    this?.batchTimers?.clear();
 
     // Close WebSocket server
     if (this.wss) {
-      await new Promise<void>((resolve) => {
+      await new Promise<void>((resolve: any) => {
         this.wss!.close(() => resolve());
       });
     }

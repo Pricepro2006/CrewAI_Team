@@ -43,15 +43,15 @@ export class EmailBatchProcessor {
     };
 
     this.queue = new PQueue({
-      concurrency: this.options.concurrency,
-      timeout: this.options.timeout,
+      concurrency: this?.options?.concurrency,
+      timeout: this?.options?.timeout,
       throwOnTimeout: true,
     });
 
     logger.info("Email batch processor initialized", "BATCH_PROCESSOR", {
-      concurrency: this.options.concurrency,
-      timeout: this.options.timeout,
-      caching: this.options.useCaching,
+      concurrency: this?.options?.concurrency,
+      timeout: this?.options?.timeout,
+      caching: this?.options?.useCaching,
     });
   }
 
@@ -63,13 +63,13 @@ export class EmailBatchProcessor {
     const results: BatchResult[] = [];
 
     logger.info(
-      `Starting batch processing of ${emails.length} emails`,
+      `Starting batch processing of ${emails?.length || 0} emails`,
       "BATCH_PROCESSOR",
     );
 
     // Add all emails to the queue
-    const promises = emails.map((email) =>
-      this.queue.add(async () => {
+    const promises = emails?.map((email: any) =>
+      this?.queue?.add(async () => {
         const result = await this.processEmail(email);
         results.push(result);
         return result;
@@ -80,16 +80,16 @@ export class EmailBatchProcessor {
     await Promise.all(promises);
 
     const totalTime = Date.now() - startTime;
-    const successCount = results.filter((r) => r.success).length;
-    const cacheHits = results.filter((r) => r.fromCache).length;
+    const successCount = results?.filter((r: any) => r.success).length;
+    const cacheHits = results?.filter((r: any) => r.fromCache).length;
 
     logger.info("Batch processing completed", "BATCH_PROCESSOR", {
-      total: emails.length,
+      total: emails?.length || 0,
       successful: successCount,
-      failed: emails.length - successCount,
+      failed: emails?.length || 0 - successCount,
       cacheHits,
       totalTime: totalTime + "ms",
-      avgTime: Math.round(totalTime / emails.length) + "ms",
+      avgTime: Math.round(totalTime / emails?.length || 0) + "ms",
     });
 
     return results;
@@ -103,8 +103,8 @@ export class EmailBatchProcessor {
 
     try {
       // Check cache first
-      if (this.options.useCaching) {
-        const cached = this.cache.get(email.id);
+      if (this?.options?.useCaching) {
+        const cached = this?.cache?.get(email.id);
         if (cached) {
           return {
             emailId: email.id,
@@ -117,11 +117,11 @@ export class EmailBatchProcessor {
       }
 
       // Process email
-      const analysis = await this.agent.analyzeEmail(email);
+      const analysis = await this?.agent?.analyzeEmail(email);
 
       // Cache the result
-      if (this.options.useCaching) {
-        this.cache.set(email.id, analysis);
+      if (this?.options?.useCaching) {
+        this?.cache?.set(email.id, analysis);
       }
 
       return {
@@ -136,7 +136,7 @@ export class EmailBatchProcessor {
         error instanceof Error ? error.message : String(error);
 
       // Retry logic
-      if (attempt < this.options.retryAttempts) {
+      if (attempt < this?.options?.retryAttempts) {
         logger.warn(
           `Retrying email ${email.id} (attempt ${attempt + 1})`,
           "BATCH_PROCESSOR",
@@ -163,11 +163,11 @@ export class EmailBatchProcessor {
   getStats() {
     return {
       queue: {
-        size: this.queue.size,
-        pending: this.queue.pending,
-        isPaused: this.queue.isPaused,
+        size: this?.queue?.size,
+        pending: this?.queue?.pending,
+        isPaused: this?.queue?.isPaused,
       },
-      cache: this.cache.getStats(),
+      cache: this?.cache?.getStats(),
     };
   }
 
@@ -175,7 +175,7 @@ export class EmailBatchProcessor {
    * Pause processing
    */
   pause() {
-    this.queue.pause();
+    this?.queue?.pause();
     logger.info("Batch processor paused", "BATCH_PROCESSOR");
   }
 
@@ -183,7 +183,7 @@ export class EmailBatchProcessor {
    * Resume processing
    */
   resume() {
-    this.queue.start();
+    this?.queue?.start();
     logger.info("Batch processor resumed", "BATCH_PROCESSOR");
   }
 
@@ -191,7 +191,7 @@ export class EmailBatchProcessor {
    * Clear the queue
    */
   clear() {
-    this.queue.clear();
+    this?.queue?.clear();
     logger.info("Batch processor queue cleared", "BATCH_PROCESSOR");
   }
 
@@ -205,7 +205,7 @@ export class EmailBatchProcessor {
     // Group emails by mailbox for batch fetching
     const emailsByMailbox = new Map<string, any[]>();
 
-    emails.forEach((email) => {
+    emails.forEach((email: any) => {
       const mailbox = email.from?.emailAddress?.address || "unknown";
       if (!emailsByMailbox.has(mailbox)) {
         emailsByMailbox.set(mailbox, []);
@@ -224,12 +224,12 @@ export class EmailBatchProcessor {
           .select(
             "id,subject,body,bodyPreview,from,to,receivedDateTime,isRead,categories,importance",
           )
-          .filter(`id in (${mailboxEmails.map((e) => `'${e.id}'`).join(",")})`)
-          .top(mailboxEmails.length)
+          .filter(`id in (${mailboxEmails?.map((e: any) => `'${e.id}'`).join(",")})`)
+          .top(mailboxEmails?.length || 0)
           .get();
 
         // Process the batch
-        const enrichedEmails = batchResponse.value;
+        const enrichedEmails = batchResponse?.value;
         const batchResults = await this.processBatch(enrichedEmails);
         allResults.push(...batchResults);
       } catch (error) {

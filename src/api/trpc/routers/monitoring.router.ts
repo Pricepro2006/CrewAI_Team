@@ -120,7 +120,7 @@ export const monitoringRouter = router({
 
       return {
         errors,
-        count: errors.length,
+        count: errors?.length || 0,
         timestamp: new Date().toISOString(),
       };
     }),
@@ -149,7 +149,7 @@ export const monitoringRouter = router({
 
       return {
         results,
-        count: results.length,
+        count: results?.length || 0,
         query: input,
         timestamp: new Date().toISOString(),
       };
@@ -202,7 +202,7 @@ export const monitoringRouter = router({
 
       return {
         operations: slowOps,
-        count: slowOps.length,
+        count: slowOps?.length || 0,
         timestamp: new Date().toISOString(),
       };
     }),
@@ -220,7 +220,7 @@ export const monitoringRouter = router({
 
     return {
       violations,
-      count: violations.length,
+      count: violations?.length || 0,
       timestamp: new Date().toISOString(),
     };
   }),

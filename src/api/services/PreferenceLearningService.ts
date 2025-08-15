@@ -112,7 +112,7 @@ export class PreferenceLearningService {
   private initializeTables(): void {
     try {
       // User preferences table
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS user_preferences (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
@@ -131,7 +131,7 @@ export class PreferenceLearningService {
       `);
 
       // Learning events table
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS learning_events (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
@@ -152,7 +152,7 @@ export class PreferenceLearningService {
       `);
 
       // Preference evolution history
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS preference_evolution (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
@@ -169,17 +169,17 @@ export class PreferenceLearningService {
       `);
 
       // Create indexes
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE INDEX IF NOT EXISTS idx_user_preferences_user_category 
         ON user_preferences(user_id, category)
       `);
 
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE INDEX IF NOT EXISTS idx_learning_events_user_timestamp 
         ON learning_events(user_id, timestamp DESC)
       `);
 
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE INDEX IF NOT EXISTS idx_preference_evolution_user 
         ON preference_evolution(user_id, changed_at DESC)
       `);
@@ -231,13 +231,13 @@ export class PreferenceLearningService {
     try {
       // Get all user preferences
       const preferences = await this.getUserPreferences(userId);
-      if (preferences.length === 0) {
+      if (preferences?.length || 0 === 0) {
         return null;
       }
 
       // Get purchase history for additional insights
-      const purchaseHistory = await this.historyService.getUserHistory({ userId, limit: 100 });
-      const purchases = purchaseHistory.purchases;
+      const purchaseHistory = await this?.historyService?.getUserHistory({ userId, limit: 100 });
+      const purchases = purchaseHistory?.purchases;
 
       // Calculate brand preferences
       const brandPreferences = this.calculateBrandPreferences(preferences, purchases);
@@ -322,8 +322,8 @@ export class PreferenceLearningService {
     if (selectedProduct) {
       await this.learnFromAction(userId, {
         eventType: 'recommendation_click',
-        productId: selectedProduct.product.walmartId || selectedProduct.product.id,
-        productName: selectedProduct.product.name,
+        productId: selectedProduct?.product?.walmartId || selectedProduct?.product?.id,
+        productName: selectedProduct?.product?.name,
         searchQuery,
         feedback: 'positive',
         metadata: {
@@ -339,8 +339,8 @@ export class PreferenceLearningService {
       for (const dismissed of dismissedProducts) {
         await this.learnFromAction(userId, {
           eventType: 'recommendation_dismiss',
-          productId: dismissed.product.walmartId || dismissed.product.id,
-          productName: dismissed.product.name,
+          productId: dismissed?.product?.walmartId || dismissed?.product?.id,
+          productName: dismissed?.product?.name,
           searchQuery,
           feedback: 'negative',
           metadata: {
@@ -368,7 +368,7 @@ export class PreferenceLearningService {
     await this.learnFromAction(userId, {
       eventType,
       productId: deal.productId,
-      productName: deal.product.name,
+      productName: deal?.product?.name,
       dealId: deal.id,
       price: deal.currentPrice,
       feedback,
@@ -439,23 +439,23 @@ export class PreferenceLearningService {
     const preferences = await this.getUserPreferences(userId);
     const now = Date.now();
 
-    return preferences.map(pref => {
+    return preferences?.map(pref => {
       // Apply time decay to preferences
       const daysSinceReinforced = (now - new Date(pref.lastReinforced).getTime()) / (1000 * 60 * 60 * 24);
-      const decayFactor = Math.exp(-daysSinceReinforced * this.config.decayRate / 30);
+      const decayFactor = Math.exp(-daysSinceReinforced * this?.config?.decayRate / 30);
       const adjustedConfidence = Math.max(0.1, pref.confidence * decayFactor);
 
       return {
         ...pref,
         confidence: adjustedConfidence
       };
-    }).filter(pref => pref.confidence >= this.config.minConfidenceThreshold);
+    }).filter(pref => pref.confidence >= this?.config?.minConfidenceThreshold);
   }
 
   // Private helper methods
 
   private async recordLearningEvent(event: LearningEvent): Promise<void> {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO learning_events (
         id, user_id, event_type, product_id, product_name, category, brand,
         price, search_query, recommendation_id, deal_id, feedback, metadata, timestamp
@@ -517,7 +517,7 @@ export class PreferenceLearningService {
 
     // Extract intent from search query
     const intent = this.extractSearchIntent(event.searchQuery);
-    if (intent.dietaryKeywords.length > 0) {
+    if (intent?.dietaryKeywords?.length > 0) {
       for (const keyword of intent.dietaryKeywords) {
         await this.reinforcePreference(event.userId, 'dietary', keyword, 'general');
       }
@@ -557,7 +557,7 @@ export class PreferenceLearningService {
   private async processExplicitFeedback(event: LearningEvent): Promise<void> {
     const feedbackType = event.metadata?.feedbackType;
     const value = event.metadata?.value;
-    const sentiment = event.feedback;
+    const sentiment = event?.feedback;
 
     if (feedbackType && value) {
       if (sentiment === 'positive') {
@@ -578,8 +578,8 @@ export class PreferenceLearningService {
 
     if (existing) {
       // Strengthen existing preference
-      const newConfidence = Math.min(1.0, existing.confidence + this.config.learningRate);
-      const newStrength = Math.min(1.0, existing.strength + this.config.learningRate * 0.5);
+      const newConfidence = Math.min(1.0, existing.confidence + this?.config?.learningRate);
+      const newStrength = Math.min(1.0, existing.strength + this?.config?.learningRate * 0.5);
       
       await this.updatePreference(existing.id, {
         confidence: newConfidence,
@@ -594,8 +594,8 @@ export class PreferenceLearningService {
         category,
         preferenceType,
         value,
-        confidence: this.config.learningRate * 2,
-        strength: this.config.learningRate,
+        confidence: this?.config?.learningRate * 2,
+        strength: this?.config?.learningRate,
         source: 'implicit'
       });
     }
@@ -610,8 +610,8 @@ export class PreferenceLearningService {
     const existing = await this.findPreference(userId, preferenceType, value, category);
 
     if (existing) {
-      const newConfidence = Math.max(0.0, existing.confidence - this.config.learningRate);
-      const newStrength = Math.max(0.0, existing.strength - this.config.learningRate * 0.5);
+      const newConfidence = Math.max(0.0, existing.confidence - this?.config?.learningRate);
+      const newStrength = Math.max(0.0, existing.strength - this?.config?.learningRate * 0.5);
       
       await this.updatePreference(existing.id, {
         confidence: newConfidence,
@@ -659,7 +659,7 @@ export class PreferenceLearningService {
   }
 
   private async getUserPreferences(userId: string): Promise<UserPreference[]> {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT * FROM user_preferences 
       WHERE user_id = ?
       ORDER BY confidence DESC, strength DESC
@@ -687,7 +687,7 @@ export class PreferenceLearningService {
     value: string,
     category: string
   ): Promise<UserPreference | null> {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT * FROM user_preferences 
       WHERE user_id = ? AND preference_type = ? AND value = ? AND category = ?
     `);
@@ -715,7 +715,7 @@ export class PreferenceLearningService {
     const now = new Date().toISOString();
     const id = `pref_${data.userId}_${Date.now()}`;
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO user_preferences (
         id, user_id, category, preference_type, value, confidence, strength,
         source, created_at, updated_at, last_reinforced, reinforcement_count
@@ -737,7 +737,7 @@ export class PreferenceLearningService {
     values.push(new Date().toISOString()); // updated_at
     values.push(preferenceId);
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE user_preferences 
       SET ${fields}, updated_at = ?
       WHERE id = ?
@@ -828,11 +828,11 @@ export class PreferenceLearningService {
     const priceRanges: Record<string, { min: number; max: number; preferred: number }> = {};
     
     Object.entries(categoryPrices).forEach(([category, prices]) => {
-      if (prices.length > 0) {
+      if (prices?.length || 0 > 0) {
         const sorted = prices.sort((a, b) => a - b);
         priceRanges[category] = {
           min: sorted[0],
-          max: sorted[sorted.length - 1],
+          max: sorted[sorted?.length || 0 - 1],
           preferred: this.calculateMedian(sorted)
         };
       }
@@ -842,8 +842,8 @@ export class PreferenceLearningService {
   }
 
   private analyzeShoppingPatterns(purchases: PurchaseRecord[]): PreferenceSummary['shoppingPatterns'] {
-    const totalSpent = purchases.reduce((sum, p) => sum + p.totalPrice, 0);
-    const averageBasketSize = totalSpent / Math.max(1, purchases.length);
+    const totalSpent = purchases.reduce((sum: any, p: any) => sum + p.totalPrice, 0);
+    const averageBasketSize = totalSpent / Math.max(1, purchases?.length || 0);
     
     // Analyze shopping days
     const dayFrequency: Record<string, number> = {};
@@ -858,8 +858,8 @@ export class PreferenceLearningService {
       .map(([day]) => day);
     
     // Determine budget consciousness
-    const prices = purchases.map(p => p.unitPrice);
-    const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length;
+    const prices = purchases?.map(p => p.unitPrice);
+    const avgPrice = prices.reduce((sum: any, p: any) => sum + p, 0) / prices?.length || 0;
     
     let budgetConsciousness: 'high' | 'medium' | 'low' = 'medium';
     if (avgPrice < 10) budgetConsciousness = 'high';
@@ -908,23 +908,23 @@ export class PreferenceLearningService {
       .map(p => p.value);
     
     // Determine brand loyalty
-    const brandLoyalty: 'high' | 'medium' | 'low' = preferredBrands.length > 3 ? 'high' : 
-                                                     preferredBrands.length > 1 ? 'medium' : 'low';
+    const brandLoyalty: 'high' | 'medium' | 'low' = preferredBrands?.length || 0 > 3 ? 'high' : 
+                                                     preferredBrands?.length || 0 > 1 ? 'medium' : 'low';
     
     return {
       preferredBrands,
       avoidBrands,
       dietaryRestrictions,
       brandLoyalty,
-      prioritizeHistory: purchases.length > 5
+      prioritizeHistory: purchases?.length || 0 > 5
     };
   }
 
   private calculateMedian(numbers: number[]): number {
     const sorted = numbers.sort((a, b) => a - b);
-    const middle = Math.floor(sorted.length / 2);
+    const middle = Math.floor(sorted?.length || 0 / 2);
     
-    if (sorted.length % 2 === 0) {
+    if (sorted?.length || 0 % 2 === 0) {
       return (sorted[middle - 1] + sorted[middle]) / 2;
     }
     

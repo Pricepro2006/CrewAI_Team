@@ -47,7 +47,7 @@ export const useWalmartFilters = () => {
       return results;
     }
 
-    return results.filter(product => {
+    return results?.filter(product => {
       // Check each active filter
       for (const filter of filters) {
         if (filter === 'On Sale') {
@@ -88,7 +88,7 @@ export const useWalmartFilters = () => {
       }
     });
 
-    if (categories.length > 0) {
+    if (categories?.length || 0 > 0) {
       params.categories = categories;
     }
 

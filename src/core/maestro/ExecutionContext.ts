@@ -37,9 +37,9 @@ export class ExecutionContext {
 
     // Initialize metadata
     this.metadata = {
-      startTime: this.startTime.toISOString(),
-      taskType: this.task.type,
-      priority: this.task.priority || 0,
+      startTime: this?.startTime?.toISOString(),
+      taskType: this?.task?.type,
+      priority: this?.task?.priority || 0,
     };
   }
 
@@ -50,7 +50,7 @@ export class ExecutionContext {
     }
 
     // Run cleanup callbacks
-    this.cleanupCallbacks.forEach((callback) => {
+    this?.cleanupCallbacks?.forEach((callback: any) => {
       try {
         callback();
       } catch (error) {
@@ -62,7 +62,7 @@ export class ExecutionContext {
   }
 
   addCleanupCallback(callback: () => void): void {
-    this.cleanupCallbacks.push(callback);
+    this?.cleanupCallbacks?.push(callback);
   }
 
   updateMetadata(key: string, value: any): void {
@@ -71,7 +71,7 @@ export class ExecutionContext {
 
   getElapsedTime(): number {
     if (!this.startTime) return 0;
-    return Date.now() - this.startTime.getTime();
+    return Date.now() - this?.startTime?.getTime();
   }
 
   isTimedOut(): boolean {
@@ -102,7 +102,7 @@ export class ExecutionContext {
   getState(): ExecutionState {
     return {
       taskId: this.taskId,
-      taskType: this.task.type,
+      taskType: this?.task?.type,
       ...(this.startTime && { startTime: this.startTime }),
       elapsedTime: this.getElapsedTime(),
       progress: this.getProgress(),

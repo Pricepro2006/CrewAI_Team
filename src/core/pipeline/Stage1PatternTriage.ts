@@ -4,7 +4,7 @@
  */
 
 import { logger } from "../../utils/logger.js";
-import { MODEL_CONFIG } from "../../config/models.config.js";
+import { MODEL_CONFIG } from "../../config/models?.config.js";
 import type { Email, TriageResult, TriageResults } from "./types.js";
 
 export class Stage1PatternTriage {
@@ -75,25 +75,25 @@ export class Stage1PatternTriage {
    */
   async process(emails: Email[]): Promise<TriageResults> {
     const startTime = Date.now();
-    const batchSize = MODEL_CONFIG.batchSizes.pattern;
+    const batchSize = MODEL_CONFIG?.batchSizes?.pattern;
     const results: TriageResult[] = [];
 
     logger.info(
-      `Starting pattern triage for ${emails.length} emails`,
+      `Starting pattern triage for ${emails?.length || 0} emails`,
       "STAGE1",
     );
 
     // Process in batches
-    for (let i = 0; i < emails.length; i += batchSize) {
+    for (let i = 0; i < emails?.length || 0; i += batchSize) {
       const batch = emails.slice(i, i + batchSize);
       const batchResults = await this.processBatch(batch);
       results.push(...batchResults);
 
       // Progress logging
-      const processed = Math.min(i + batchSize, emails.length);
-      const progress = ((processed / emails.length) * 100).toFixed(1);
+      const processed = Math.min(i + batchSize, emails?.length || 0);
+      const progress = ((processed / emails?.length || 0) * 100).toFixed(1);
       logger.info(
-        `Stage 1 Progress: ${processed}/${emails.length} (${progress}%)`,
+        `Stage 1 Progress: ${processed}/${emails?.length || 0} (${progress}%)`,
         "STAGE1",
       );
     }
@@ -112,7 +112,7 @@ export class Stage1PatternTriage {
    * Process a batch of emails
    */
   private async processBatch(emails: Email[]): Promise<TriageResult[]> {
-    return emails.map((email) => this.analyzeEmail(email));
+    return emails?.map((email: any) => this.analyzeEmail(email));
   }
 
   /**
@@ -189,13 +189,13 @@ export class Stage1PatternTriage {
     for (const match of matches) {
       const part = match[0];
       // Filter out common false positives
-      if (part.length >= 5 && !this.isCommonWord(part)) {
+      if (part?.length || 0 >= 5 && !this.isCommonWord(part)) {
         parts.add(part);
       }
     }
 
     // SKU and PN patterns
-    this.extractPatterns(text, this.PART_PATTERNS.slice(1)).forEach((p) =>
+    this.extractPatterns(text, this?.PART_PATTERNS?.slice(1)).forEach((p: any) =>
       parts.add(p),
     );
 
@@ -248,7 +248,7 @@ export class Stage1PatternTriage {
     const lowerText = text.toLowerCase();
 
     for (const [level, keywords] of Object.entries(this.URGENCY_KEYWORDS)) {
-      if (keywords.some((keyword) => lowerText.includes(keyword))) {
+      if (keywords.some((keyword: any) => lowerText.includes(keyword))) {
         return level as any;
       }
     }
@@ -263,7 +263,7 @@ export class Stage1PatternTriage {
     const lowerText = text.toLowerCase();
 
     for (const [state, patterns] of Object.entries(this.WORKFLOW_PATTERNS)) {
-      if (patterns.some((pattern) => lowerText.includes(pattern))) {
+      if (patterns.some((pattern: any) => lowerText.includes(pattern))) {
         return state;
       }
     }
@@ -275,13 +275,13 @@ export class Stage1PatternTriage {
    * Determine business process
    */
   private determineBusinessProcess(entities: any, text: string): string {
-    if (entities.po_numbers.length > 0) {
+    if (entities?.po_numbers?.length > 0) {
       return "Order Management";
     }
-    if (entities.quote_numbers.length > 0) {
+    if (entities?.quote_numbers?.length > 0) {
       return "Quote Processing";
     }
-    if (entities.case_numbers.length > 0) {
+    if (entities?.case_numbers?.length > 0) {
       return "Support Case";
     }
     if (
@@ -310,9 +310,9 @@ export class Stage1PatternTriage {
 
     // Entity weight (0-30)
     const entityCount =
-      entities.po_numbers.length +
-      entities.quote_numbers.length +
-      entities.case_numbers.length;
+      entities?.po_numbers?.length +
+      entities?.quote_numbers?.length +
+      entities?.case_numbers?.length;
     score += Math.min(entityCount * 10, 30);
 
     // Workflow weight (0-20)
@@ -325,9 +325,9 @@ export class Stage1PatternTriage {
     score += workflowScores[workflow as keyof typeof workflowScores] || 10;
 
     // Business value weight (0-10)
-    if (entities.po_numbers.length > 0) score += 10;
-    else if (entities.quote_numbers.length > 0) score += 8;
-    else if (entities.case_numbers.length > 0) score += 6;
+    if (entities?.po_numbers?.length > 0) score += 10;
+    else if (entities?.quote_numbers?.length > 0) score += 8;
+    else if (entities?.case_numbers?.length > 0) score += 6;
 
     return Math.min(score, 100);
   }
@@ -351,16 +351,16 @@ export class Stage1PatternTriage {
     const sorted = results.sort((a, b) => b.priorityScore - a.priorityScore);
 
     // Create email map for quick lookup
-    const emailMap = new Map(emails.map((e) => [e.id, e]));
+    const emailMap = new Map(emails?.map((e: any) => [e.id, e]));
 
     // Get top emails (adjusted for CPU inference practicality)
-    const top5000Ids = sorted.slice(0, 1000).map((r) => r.emailId); // Now top 1000
-    const top500Ids = sorted.slice(0, 100).map((r) => r.emailId); // Now top 100
+    const top5000Ids = sorted.slice(0, 1000).map((r: any) => r.emailId); // Now top 1000
+    const top500Ids = sorted.slice(0, 100).map((r: any) => r.emailId); // Now top 100
 
     return {
       all: sorted,
-      top5000: top5000Ids.map((id) => emailMap.get(id)!).filter(Boolean), // Actually top 1000
-      top500: top500Ids.map((id) => emailMap.get(id)!).filter(Boolean), // Actually top 100
+      top5000: top5000Ids?.map((id: any) => emailMap.get(id)!).filter(Boolean), // Actually top 1000
+      top500: top500Ids?.map((id: any) => emailMap.get(id)!).filter(Boolean), // Actually top 100
     };
   }
 }

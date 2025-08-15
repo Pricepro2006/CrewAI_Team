@@ -1,8 +1,8 @@
 import React, { Component } from "react";
 import type { ReactNode, ErrorInfo } from "react";
-import { ErrorFallback } from "./ErrorFallback";
-import { errorLogger } from "../../utils/errorLogger";
-import { translateError, getErrorSeverity } from "../../utils/errorTranslator";
+import { ErrorFallback } from "./ErrorFallback.js";
+import { errorLogger } from "../../utils/errorLogger.js";
+import { translateError, getErrorSeverity } from "../../utils/errorTranslator.js";
 
 export interface SectionErrorBoundaryProps {
   children: ReactNode;
@@ -68,7 +68,7 @@ export class SectionErrorBoundary extends Component<
     errorLogger.logError(error, `Section: ${sectionName}`, "Component Error");
 
     // Update error count
-    this.setState((prevState) => ({
+    this.setState((prevState: any) => ({
       errorInfo,
       errorCount: prevState.errorCount + 1,
     }));
@@ -93,7 +93,7 @@ export class SectionErrorBoundary extends Component<
     const { resetKeys, resetOnPropsChange } = this.props;
     const { hasError } = this.state;
 
-    if (hasError && prevProps.children !== this.props.children && resetOnPropsChange) {
+    if (hasError && prevProps.children !== this?.props?.children && resetOnPropsChange) {
       this.resetError();
     }
 
@@ -193,7 +193,7 @@ export class SectionErrorBoundary extends Component<
                 Try Again
               </button>
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => window?.location?.reload()}
                 className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
               >
                 Refresh Page

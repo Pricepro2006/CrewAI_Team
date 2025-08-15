@@ -90,7 +90,7 @@ const StatusDistributionChart = ({ data, totalEmails, title, showPercentages, ch
       },
     },
     onClick: (event: any, elements: any) => {
-      if (elements.length > 0 && onClick) {
+      if (elements?.length || 0 > 0 && onClick) {
         const index = elements[0].index;
         const label = chartData.labels[index];
         const value = chartData.datasets[0].data[index];
@@ -113,11 +113,11 @@ const StatusDistributionChart = ({ data, totalEmails, title, showPercentages, ch
 
 const WorkflowTimelineChart = ({ data, timeRange, title, showProcessingTime, chartType, onClick, refreshKey, className }: any) => {
   const chartData = {
-    labels: data.map((d: any) => new Date(d.timestamp).toLocaleDateString('en-US', { weekday: 'short' })),
+    labels: data?.map((d: any) => new Date(d.timestamp).toLocaleDateString('en-US', { weekday: 'short' })),
     datasets: [
       {
         label: 'Total Emails',
-        data: data.map((d: any) => d.totalEmails),
+        data: data?.map((d: any) => d.totalEmails),
         borderColor: 'rgba(59, 130, 246, 1)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         fill: true,
@@ -125,7 +125,7 @@ const WorkflowTimelineChart = ({ data, timeRange, title, showProcessingTime, cha
       },
       {
         label: 'Completed',
-        data: data.map((d: any) => d.completedEmails),
+        data: data?.map((d: any) => d.completedEmails),
         borderColor: 'rgba(34, 197, 94, 1)',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
         fill: true,
@@ -133,7 +133,7 @@ const WorkflowTimelineChart = ({ data, timeRange, title, showProcessingTime, cha
       },
       {
         label: 'Critical',
-        data: data.map((d: any) => d.criticalEmails),
+        data: data?.map((d: any) => d.criticalEmails),
         borderColor: 'rgba(239, 68, 68, 1)',
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         fill: false,
@@ -182,7 +182,7 @@ const WorkflowTimelineChart = ({ data, timeRange, title, showProcessingTime, cha
       },
     },
     onClick: (event: any, elements: any) => {
-      if (elements.length > 0 && onClick) {
+      if (elements?.length || 0 > 0 && onClick) {
         const index = elements[0].index;
         onClick(data[index]);
       }
@@ -213,7 +213,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Fetch business intelligence data
-  const { data: biData, isLoading, error } = trpc.emails.getBusinessIntelligence.useQuery({
+  const { data: biData, isLoading, error } = trpc?.emails?.getBusinessIntelligence.useQuery({
     timeRange,
     useCache: true,
   });
@@ -235,7 +235,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
   const priorityChartData = useMemo(() => {
     if (!biData?.data?.priorityDistribution) return { red: 0, yellow: 0, green: 0 };
     
-    const dist = biData.data.priorityDistribution;
+    const dist = biData?.data?.priorityDistribution;
     return {
       red: (dist.find((d: any) => d.level === "Critical")?.count || 0) + 
            (dist.find((d: any) => d.level === "High")?.count || 0),
@@ -257,15 +257,15 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       
-      const totalEmails = biData.data.summary.totalEmailsAnalyzed / 7;
-      const completedRatio = biData.data.processingMetrics.successRate / 100;
+      const totalEmails = biData?.data?.summary.totalEmailsAnalyzed / 7;
+      const completedRatio = biData?.data?.processingMetrics.successRate / 100;
       
       data.push({
         timestamp: date.toISOString(),
         totalEmails: Math.floor(totalEmails + Math.random() * 20),
         completedEmails: Math.floor(totalEmails * completedRatio + Math.random() * 10),
         criticalEmails: Math.floor(priorityChartData.red / 7 + Math.random() * 5),
-        averageProcessingTime: biData.data.processingMetrics.avgProcessingTime * 1000,
+        averageProcessingTime: biData?.data?.processingMetrics.avgProcessingTime * 1000,
       });
     }
     
@@ -317,7 +317,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
           Business Intelligence Dashboard
         </h3>
         <p className="bi-subtitle">
-          Preliminary insights from {summary.totalEmailsAnalyzed.toLocaleString()} emails ({(summary.totalEmailsAnalyzed < 100 ? 'very limited' : 'partial')} LLM analysis)
+          Preliminary insights from {summary?.totalEmailsAnalyzed?.toLocaleString()} emails ({(summary.totalEmailsAnalyzed < 100 ? 'very limited' : 'partial')} LLM analysis)
         </p>
       </div>
 
@@ -486,14 +486,14 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
               </div>
               <div className="bi-table-cell">
                 <div className="bi-workflow-tags">
-                  {customer.workflowTypes.slice(0, 2).map((type: any) => (
+                  {customer?.workflowTypes?.slice(0, 2).map((type: any) => (
                     <span key={type} className="bi-workflow-tag">
                       {type}
                     </span>
                   ))}
-                  {customer.workflowTypes.length > 2 && (
+                  {customer?.workflowTypes?.length > 2 && (
                     <span className="bi-workflow-tag">
-                      +{customer.workflowTypes.length - 2}
+                      +{customer?.workflowTypes?.length - 2}
                     </span>
                   )}
                 </div>
@@ -507,11 +507,11 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
       </div>
 
       {/* Recent High-Value Items */}
-      {entityExtracts.recentHighValueItems.length > 0 && (
+      {entityExtracts?.recentHighValueItems?.length > 0 && (
         <div className="bi-section">
           <h4 className="bi-section-title">Recent High-Value Transactions</h4>
           <div className="bi-transactions-grid">
-            {entityExtracts.recentHighValueItems.slice(0, 6).map((item: any, index: number) => (
+            {entityExtracts?.recentHighValueItems?.slice(0, 6).map((item: any, index: number) => (
               <div key={index} className="bi-transaction-card">
                 <div className="bi-transaction-header">
                   <ShoppingCartIcon className="bi-transaction-icon" />
@@ -534,14 +534,14 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
       <div className="bi-entities-summary">
         <div className="bi-entity-card">
           <h5>Purchase Orders</h5>
-          <div className="bi-entity-count">{entityExtracts.poNumbers.length}</div>
+          <div className="bi-entity-count">{entityExtracts?.poNumbers?.length}</div>
           <div className="bi-entity-samples">
-            {entityExtracts.poNumbers.slice(0, 3).map((po: any) => (
+            {entityExtracts?.poNumbers?.slice(0, 3).map((po: any) => (
               <span key={po} className="bi-entity-tag">{po}</span>
             ))}
-            {entityExtracts.poNumbers.length > 3 && (
+            {entityExtracts?.poNumbers?.length > 3 && (
               <span className="bi-entity-more">
-                +{entityExtracts.poNumbers.length - 3} more
+                +{entityExtracts?.poNumbers?.length - 3} more
               </span>
             )}
           </div>
@@ -549,14 +549,14 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
 
         <div className="bi-entity-card">
           <h5>Quote Numbers</h5>
-          <div className="bi-entity-count">{entityExtracts.quoteNumbers.length}</div>
+          <div className="bi-entity-count">{entityExtracts?.quoteNumbers?.length}</div>
           <div className="bi-entity-samples">
-            {entityExtracts.quoteNumbers.slice(0, 3).map((quote: any) => (
+            {entityExtracts?.quoteNumbers?.slice(0, 3).map((quote: any) => (
               <span key={quote} className="bi-entity-tag">{quote}</span>
             ))}
-            {entityExtracts.quoteNumbers.length > 3 && (
+            {entityExtracts?.quoteNumbers?.length > 3 && (
               <span className="bi-entity-more">
-                +{entityExtracts.quoteNumbers.length - 3} more
+                +{entityExtracts?.quoteNumbers?.length - 3} more
               </span>
             )}
           </div>
@@ -567,8 +567,8 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
       <div className="bi-footer">
         <div className="bi-processing-info">
           <span>
-            Data from {new Date(summary.processingTimeRange.start).toLocaleDateString()} to{" "}
-            {new Date(summary.processingTimeRange.end).toLocaleDateString()}
+            Data from {new Date(summary?.processingTimeRange?.start).toLocaleDateString()} to{" "}
+            {new Date(summary?.processingTimeRange?.end).toLocaleDateString()}
           </span>
           {summary.totalEmailsAnalyzed < 100 && (
             <div style={{marginTop: '8px', fontSize: '12px', color: '#f59e0b'}}>
@@ -577,7 +577,7 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
           )}
         </div>
         <button
-          onClick={() => setRefreshKey((prev) => prev + 1)}
+          onClick={() => setRefreshKey((prev: any) => prev + 1)}
           className="bi-refresh-btn"
         >
           🔄 Refresh Dashboard

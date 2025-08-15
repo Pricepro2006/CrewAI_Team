@@ -65,7 +65,7 @@ export const Settings: React.FC = () => {
 
     try {
       // TODO: Implement actual settings save
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve: any) => setTimeout(resolve, 1000));
       setSaveMessage("Settings saved successfully!");
 
       // Store in localStorage for now
@@ -83,7 +83,7 @@ export const Settings: React.FC = () => {
     key: string,
     value: any,
   ) => {
-    setSettings((prev) => ({
+    setSettings((prev: any) => ({
       ...prev,
       [section]: {
         ...prev[section],
@@ -113,7 +113,7 @@ export const Settings: React.FC = () => {
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+              xmlns="http://www?.w3?.org/2000/svg"
             >
               <circle
                 cx="12"
@@ -139,7 +139,7 @@ export const Settings: React.FC = () => {
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+              xmlns="http://www?.w3?.org/2000/svg"
             >
               <path
                 d="M12 2L2 7V12C2 16.5 4.23 20.68 12 22C19.77 20.68 22 16.5 22 12V7L12 2Z"
@@ -158,7 +158,7 @@ export const Settings: React.FC = () => {
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+              xmlns="http://www?.w3?.org/2000/svg"
             >
               <path
                 d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
@@ -194,7 +194,7 @@ export const Settings: React.FC = () => {
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+              xmlns="http://www?.w3?.org/2000/svg"
             >
               <path d="M4 7H20" stroke="currentColor" strokeWidth="2" />
               <path d="M4 12H20" stroke="currentColor" strokeWidth="2" />
@@ -213,9 +213,9 @@ export const Settings: React.FC = () => {
                 <label htmlFor="theme">Theme</label>
                 <select
                   id="theme"
-                  value={settings.general.theme}
-                  onChange={(e) =>
-                    updateSetting("general", "theme", e.target.value)
+                  value={settings?.general?.theme}
+                  onChange={(e: any) =>
+                    updateSetting("general", "theme", e?.target?.value)
                   }
                 >
                   <option value="dark">Dark</option>
@@ -227,9 +227,9 @@ export const Settings: React.FC = () => {
                 <label htmlFor="language">Language</label>
                 <select
                   id="language"
-                  value={settings.general.language}
-                  onChange={(e) =>
-                    updateSetting("general", "language", e.target.value)
+                  value={settings?.general?.language}
+                  onChange={(e: any) =>
+                    updateSetting("general", "language", e?.target?.value)
                   }
                 >
                   <option value="en">English</option>
@@ -243,12 +243,12 @@ export const Settings: React.FC = () => {
                 <label className="toggle-label">
                   <input
                     type="checkbox"
-                    checked={settings.general.notifications}
-                    onChange={(e) =>
+                    checked={settings?.general?.notifications}
+                    onChange={(e: any) =>
                       updateSetting(
                         "general",
                         "notifications",
-                        e.target.checked,
+                        e?.target?.checked,
                       )
                     }
                   />
@@ -267,9 +267,9 @@ export const Settings: React.FC = () => {
                 <label htmlFor="provider">Provider</label>
                 <select
                   id="provider"
-                  value={settings.llm.provider}
-                  onChange={(e) =>
-                    updateSetting("llm", "provider", e.target.value)
+                  value={settings?.llm?.provider}
+                  onChange={(e: any) =>
+                    updateSetting("llm", "provider", e?.target?.value)
                   }
                 >
                   <option value="ollama">Ollama (Local)</option>
@@ -279,15 +279,15 @@ export const Settings: React.FC = () => {
                 </select>
               </div>
 
-              {settings.llm.provider === "ollama" && (
+              {settings?.llm?.provider === "ollama" && (
                 <>
                   <div className="setting-group">
                     <label htmlFor="model">Model</label>
                     <select
                       id="model"
-                      value={settings.llm.model}
-                      onChange={(e) =>
-                        updateSetting("llm", "model", e.target.value)
+                      value={settings?.llm?.model}
+                      onChange={(e: any) =>
+                        updateSetting("llm", "model", e?.target?.value)
                       }
                     >
                       <option value="llama3.2:3b">
@@ -308,9 +308,9 @@ export const Settings: React.FC = () => {
                     <input
                       id="endpoint"
                       type="text"
-                      value={settings.llm.endpoint}
-                      onChange={(e) =>
-                        updateSetting("llm", "endpoint", e.target.value)
+                      value={settings?.llm?.endpoint}
+                      onChange={(e: any) =>
+                        updateSetting("llm", "endpoint", e?.target?.value)
                       }
                       placeholder="http://localhost:11434"
                     />
@@ -320,7 +320,7 @@ export const Settings: React.FC = () => {
 
               <div className="setting-group">
                 <label htmlFor="temperature">
-                  Temperature: {settings.llm.temperature}
+                  Temperature: {settings?.llm?.temperature}
                 </label>
                 <input
                   id="temperature"
@@ -328,12 +328,12 @@ export const Settings: React.FC = () => {
                   min="0"
                   max="1"
                   step="0.1"
-                  value={settings.llm.temperature}
-                  onChange={(e) =>
+                  value={settings?.llm?.temperature}
+                  onChange={(e: any) =>
                     updateSetting(
                       "llm",
                       "temperature",
-                      parseFloat(e.target.value),
+                      parseFloat(e?.target?.value),
                     )
                   }
                 />
@@ -346,9 +346,9 @@ export const Settings: React.FC = () => {
                   type="number"
                   min="100"
                   max="32000"
-                  value={settings.llm.maxTokens}
-                  onChange={(e) =>
-                    updateSetting("llm", "maxTokens", parseInt(e.target.value))
+                  value={settings?.llm?.maxTokens}
+                  onChange={(e: any) =>
+                    updateSetting("llm", "maxTokens", parseInt(e?.target?.value))
                   }
                 />
               </div>
@@ -363,9 +363,9 @@ export const Settings: React.FC = () => {
                 <label className="toggle-label">
                   <input
                     type="checkbox"
-                    checked={settings.agents.autoRoute}
-                    onChange={(e) =>
-                      updateSetting("agents", "autoRoute", e.target.checked)
+                    checked={settings?.agents?.autoRoute}
+                    onChange={(e: any) =>
+                      updateSetting("agents", "autoRoute", e?.target?.checked)
                     }
                   />
                   <span className="toggle-slider"></span>
@@ -375,19 +375,19 @@ export const Settings: React.FC = () => {
 
               <div className="setting-group">
                 <label htmlFor="maxConcurrent">
-                  Max Concurrent Agents: {settings.agents.maxConcurrent}
+                  Max Concurrent Agents: {settings?.agents?.maxConcurrent}
                 </label>
                 <input
                   id="maxConcurrent"
                   type="range"
                   min="1"
                   max="10"
-                  value={settings.agents.maxConcurrent}
-                  onChange={(e) =>
+                  value={settings?.agents?.maxConcurrent}
+                  onChange={(e: any) =>
                     updateSetting(
                       "agents",
                       "maxConcurrent",
-                      parseInt(e.target.value),
+                      parseInt(e?.target?.value),
                     )
                   }
                 />
@@ -400,9 +400,9 @@ export const Settings: React.FC = () => {
                   type="number"
                   min="30"
                   max="600"
-                  value={settings.agents.timeout}
-                  onChange={(e) =>
-                    updateSetting("agents", "timeout", parseInt(e.target.value))
+                  value={settings?.agents?.timeout}
+                  onChange={(e: any) =>
+                    updateSetting("agents", "timeout", parseInt(e?.target?.value))
                   }
                 />
               </div>
@@ -420,9 +420,9 @@ export const Settings: React.FC = () => {
                   type="number"
                   min="100"
                   max="4000"
-                  value={settings.rag.chunkSize}
-                  onChange={(e) =>
-                    updateSetting("rag", "chunkSize", parseInt(e.target.value))
+                  value={settings?.rag?.chunkSize}
+                  onChange={(e: any) =>
+                    updateSetting("rag", "chunkSize", parseInt(e?.target?.value))
                   }
                 />
               </div>
@@ -434,12 +434,12 @@ export const Settings: React.FC = () => {
                   type="number"
                   min="0"
                   max="500"
-                  value={settings.rag.chunkOverlap}
-                  onChange={(e) =>
+                  value={settings?.rag?.chunkOverlap}
+                  onChange={(e: any) =>
                     updateSetting(
                       "rag",
                       "chunkOverlap",
-                      parseInt(e.target.value),
+                      parseInt(e?.target?.value),
                     )
                   }
                 />
@@ -449,9 +449,9 @@ export const Settings: React.FC = () => {
                 <label htmlFor="embeddingModel">Embedding Model</label>
                 <select
                   id="embeddingModel"
-                  value={settings.rag.embeddingModel}
-                  onChange={(e) =>
-                    updateSetting("rag", "embeddingModel", e.target.value)
+                  value={settings?.rag?.embeddingModel}
+                  onChange={(e: any) =>
+                    updateSetting("rag", "embeddingModel", e?.target?.value)
                   }
                 >
                   <option value="llama3.2:3b">Llama 3.2 (3B) - Embedding</option>
@@ -464,9 +464,9 @@ export const Settings: React.FC = () => {
                 <label htmlFor="vectorStore">Vector Store</label>
                 <select
                   id="vectorStore"
-                  value={settings.rag.vectorStore}
-                  onChange={(e) =>
-                    updateSetting("rag", "vectorStore", e.target.value)
+                  value={settings?.rag?.vectorStore}
+                  onChange={(e: any) =>
+                    updateSetting("rag", "vectorStore", e?.target?.value)
                   }
                 >
                   <option value="chromadb">ChromaDB</option>

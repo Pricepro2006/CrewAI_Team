@@ -238,7 +238,7 @@ export const MonitoringDashboard: React.FC = () => {
 
   // Filter alerts
   const filteredAlerts = useMemo(() => {
-    return alerts.filter(alert => {
+    return alerts?.filter(alert => {
       if (hideResolvedAlerts && alert.resolved) return false;
       if (selectedComponent !== 'all' && alert.component !== selectedComponent) return false;
       return true;
@@ -246,11 +246,11 @@ export const MonitoringDashboard: React.FC = () => {
   }, [alerts, hideResolvedAlerts, selectedComponent]);
 
   // Calculate metrics
-  const criticalAlerts = alerts.filter(a => a.severity === 'critical' && !a.resolved).length;
-  const errorAlerts = alerts.filter(a => a.severity === 'error' && !a.resolved).length;
-  const warningAlerts = alerts.filter(a => a.severity === 'warning' && !a.resolved).length;
-  const healthyComponents = componentStatuses.filter(c => c.status === 'healthy').length;
-  const totalComponents = componentStatuses.length;
+  const criticalAlerts = alerts?.filter(a => a.severity === 'critical' && !a.resolved).length;
+  const errorAlerts = alerts?.filter(a => a.severity === 'error' && !a.resolved).length;
+  const warningAlerts = alerts?.filter(a => a.severity === 'warning' && !a.resolved).length;
+  const healthyComponents = componentStatuses?.filter(c => c.status === 'healthy').length;
+  const totalComponents = componentStatuses?.length || 0;
 
   // Render methods
   const renderMetricCard = (
@@ -463,12 +463,12 @@ export const MonitoringDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {filteredAlerts.length === 0 ? (
+            {filteredAlerts?.length || 0 === 0 ? (
               <p className="text-center text-muted-foreground py-8">
                 No alerts matching current filters
               </p>
             ) : (
-              filteredAlerts.map((alert) => (
+              filteredAlerts?.map((alert: any) => (
                 <div
                   key={alert.id}
                   className={`p-4 border-l-4 rounded-lg ${
@@ -537,11 +537,11 @@ export const MonitoringDashboard: React.FC = () => {
                     <XAxis 
                       dataKey="timestamp" 
                       tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => new Date(value).toLocaleTimeString()}
+                      tickFormatter={(value: any) => new Date(value).toLocaleTimeString()}
                     />
                     <YAxis />
                     <Tooltip 
-                      labelFormatter={(value) => new Date(value).toLocaleString()}
+                      labelFormatter={(value: any) => new Date(value).toLocaleString()}
                       formatter={(value: number) => [`${value.toFixed(0)}ms`, 'Response Time']}
                     />
                     <Line 
@@ -569,11 +569,11 @@ export const MonitoringDashboard: React.FC = () => {
                     <XAxis 
                       dataKey="timestamp" 
                       tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => new Date(value).toLocaleTimeString()}
+                      tickFormatter={(value: any) => new Date(value).toLocaleTimeString()}
                     />
                     <YAxis />
                     <Tooltip 
-                      labelFormatter={(value) => new Date(value).toLocaleString()}
+                      labelFormatter={(value: any) => new Date(value).toLocaleString()}
                       formatter={(value: number) => [`${value.toFixed(1)}%`, 'Error Rate']}
                     />
                     <Area 
@@ -601,11 +601,11 @@ export const MonitoringDashboard: React.FC = () => {
                     <XAxis 
                       dataKey="timestamp" 
                       tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => new Date(value).toLocaleTimeString()}
+                      tickFormatter={(value: any) => new Date(value).toLocaleTimeString()}
                     />
                     <YAxis />
                     <Tooltip 
-                      labelFormatter={(value) => new Date(value).toLocaleString()}
+                      labelFormatter={(value: any) => new Date(value).toLocaleString()}
                       formatter={(value: number) => [`${value.toFixed(0)} req/min`, 'Throughput']}
                     />
                     <Bar dataKey="throughput" fill={COLORS.success} />
@@ -627,11 +627,11 @@ export const MonitoringDashboard: React.FC = () => {
                     <XAxis 
                       dataKey="timestamp" 
                       tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => new Date(value).toLocaleTimeString()}
+                      tickFormatter={(value: any) => new Date(value).toLocaleTimeString()}
                     />
                     <YAxis />
                     <Tooltip 
-                      labelFormatter={(value) => new Date(value).toLocaleString()}
+                      labelFormatter={(value: any) => new Date(value).toLocaleString()}
                     />
                     <Line 
                       type="monotone" 
@@ -796,7 +796,7 @@ export const MonitoringDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {componentStatuses.map(renderComponentStatus)}
+                {componentStatuses?.map(renderComponentStatus)}
               </div>
             </CardContent>
           </Card>

@@ -78,7 +78,7 @@ export class OllamaProvider extends EventEmitter {
     };
 
     this.client = axios.create({
-      baseURL: this.config.baseUrl || "http://localhost:11434",
+      baseURL: this?.config?.baseUrl || "http://localhost:11434",
       timeout: 300000, // 5 minutes timeout for large models
       headers: {
         "Content-Type": "application/json",
@@ -89,19 +89,19 @@ export class OllamaProvider extends EventEmitter {
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
-    const tracker = trackOllamaRequest(this.config.model, "initialize");
+    const tracker = trackOllamaRequest(this?.config?.model, "initialize");
 
     try {
       // Check if Ollama is running
-      await this.client.get("/api/tags", { timeout: 5000 });
+      await this?.client?.get("/api/tags", { timeout: 5000 });
 
       // Check if the model is available
       const models = await this.listModels();
-      const modelExists = models.some((m) => m.name === this.config.model);
+      const modelExists = models.some((m: any) => m.name === this?.config?.model);
 
       if (!modelExists) {
         throw new Error(
-          `Model ${this.config.model} not found. Please pull it first.`,
+          `Model ${this?.config?.model} not found. Please pull it first.`,
         );
       }
 
@@ -132,7 +132,7 @@ export class OllamaProvider extends EventEmitter {
     };
 
     const payload = {
-      model: this.config.model,
+      model: this?.config?.model,
       prompt: this.buildPrompt(prompt, requestOptions.systemPrompt),
       stream: false,
       keep_alive: "15m", // Keep model loaded for 15 minutes
@@ -148,11 +148,11 @@ export class OllamaProvider extends EventEmitter {
       context: requestOptions.context || this.context,
     };
 
-    const tracker = trackOllamaRequest(this.config.model, "generate");
+    const tracker = trackOllamaRequest(this?.config?.model, "generate");
     const perfTracker = performanceMonitor.mark("ollama_generate");
 
     try {
-      const response = await this.client.post<OllamaResponse>(
+      const response = await this?.client?.post<OllamaResponse>(
         "/api/generate",
         payload,
         {
@@ -161,36 +161,36 @@ export class OllamaProvider extends EventEmitter {
       );
 
       // Store context for conversation continuity
-      if (response.data.context) {
-        this.context = response.data.context;
+      if (response?.data?.context) {
+        this.context = response?.data?.context;
       }
 
-      const sanitizedResponse = sanitizeLLMOutput(response.data.response);
+      const sanitizedResponse = sanitizeLLMOutput(response?.data?.response);
 
       // Track successful generation
-      const tokensUsed = response.data.eval_count || 0;
+      const tokensUsed = response?.data?.eval_count || 0;
       tracker.success(tokensUsed);
       performanceMonitor.measure("ollama_generate", {
-        model: this.config.model,
-        promptLength: prompt.length,
-        responseLength: sanitizedResponse.content.length,
+        model: this?.config?.model,
+        promptLength: prompt?.length || 0,
+        responseLength: sanitizedResponse?.content?.length,
         tokensUsed,
-        duration: response.data.total_duration,
+        duration: response?.data?.total_duration,
       });
 
       this.emit("generation", {
         prompt,
         response: sanitizedResponse.content,
-        duration: response.data.total_duration,
-        tokens: response.data.tokens,
-        logprobs: response.data.token_logprobs,
+        duration: response?.data?.total_duration,
+        tokens: response?.data?.tokens,
+        logprobs: response?.data?.token_logprobs,
       });
 
       return sanitizedResponse.content;
     } catch (error: any) {
       tracker.error(error);
       performanceMonitor.measure("ollama_generate", {
-        model: this.config.model,
+        model: this?.config?.model,
         error: error.message,
         status: "error",
       });
@@ -203,7 +203,7 @@ export class OllamaProvider extends EventEmitter {
         },
         "medium",
         false,
-        ["ollama", "llm", this.config.model],
+        ["ollama", "llm", this?.config?.model],
       );
 
       this.emit("error", error);
@@ -211,7 +211,7 @@ export class OllamaProvider extends EventEmitter {
       // If timeout or connection error, provide a fallback response
       if (error.code === "ECONNABORTED" || error.code === "ECONNREFUSED") {
         console.warn(
-          `Ollama timeout/connection error for model ${this.config.model}. Providing fallback response.`,
+          `Ollama timeout/connection error for model ${this?.config?.model}. Providing fallback response.`,
         );
         return this.generateFallbackResponse(prompt, options);
       }
@@ -233,7 +233,7 @@ export class OllamaProvider extends EventEmitter {
     }
 
     const tracker = trackOllamaRequest(
-      this.config.model,
+      this?.config?.model,
       "generateWithLogProbs",
     );
 
@@ -244,15 +244,15 @@ export class OllamaProvider extends EventEmitter {
     };
 
     const payload = {
-      model: this.config.model,
+      model: this?.config?.model,
       prompt: this.buildPrompt(prompt, requestOptions.systemPrompt),
       stream: false,
       keep_alive: "15m",
       options: {
-        temperature: requestOptions.temperature || this.config.temperature,
-        top_p: requestOptions.topP || this.config.topP,
-        top_k: requestOptions.topK || this.config.topK,
-        num_predict: requestOptions.maxTokens || this.config.maxTokens,
+        temperature: requestOptions.temperature || this?.config?.temperature,
+        top_p: requestOptions.topP || this?.config?.topP,
+        top_k: requestOptions.topK || this?.config?.topK,
+        num_predict: requestOptions.maxTokens || this?.config?.maxTokens,
         // Request log probabilities
         logits_all: true,
         num_ctx: 8192, // Ensure sufficient context for Phi-2
@@ -262,7 +262,7 @@ export class OllamaProvider extends EventEmitter {
     };
 
     try {
-      const response = await this.client.post<OllamaResponse>(
+      const response = await this?.client?.post<OllamaResponse>(
         "/api/generate",
         payload,
         {
@@ -271,31 +271,31 @@ export class OllamaProvider extends EventEmitter {
       );
 
       // Store context for conversation continuity
-      if (response.data.context) {
-        this.context = response.data.context;
+      if (response?.data?.context) {
+        this.context = response?.data?.context;
       }
 
       // Extract log probabilities if available
       let logProbs: number[] | undefined;
-      if (response.data.token_logprobs) {
-        logProbs = response.data.token_logprobs;
-      } else if (response.data.logprobs && response.data.logprobs.length > 0) {
+      if (response?.data?.token_logprobs) {
+        logProbs = response?.data?.token_logprobs;
+      } else if (response?.data?.logprobs && response?.data?.logprobs?.length || 0 > 0) {
         // Take the top log prob for each token
-        logProbs = response.data.logprobs.map((probs) => probs[0] || -10);
+        logProbs = response?.data?.logprobs?.map((probs: any) => probs[0] || -10);
       }
 
       const result: OllamaGenerateWithLogProbsResponse = {
-        text: sanitizeLLMOutput(response.data.response).content,
-        tokens: response.data.tokens,
+        text: sanitizeLLMOutput(response?.data?.response).content,
+        tokens: response?.data?.tokens,
         logProbs: logProbs,
         metadata: {
-          model: response.data.model,
-          duration: response.data.total_duration || 0,
-          tokenCount: response.data.eval_count || 0,
+          model: response?.data?.model,
+          duration: response?.data?.total_duration || 0,
+          tokenCount: response?.data?.eval_count || 0,
           tokensPerSecond:
-            response.data.eval_count && response.data.eval_duration
-              ? response.data.eval_count /
-                (response.data.eval_duration / 1_000_000_000)
+            response?.data?.eval_count && response?.data?.eval_duration
+              ? response?.data?.eval_count /
+                (response?.data?.eval_duration / 1_000_000_000)
               : undefined,
         },
       };
@@ -322,7 +322,7 @@ export class OllamaProvider extends EventEmitter {
           tokens: undefined,
           logProbs: undefined,
           metadata: {
-            model: this.config.model,
+            model: this?.config?.model,
             duration: 0,
             tokenCount: text.split(/\s+/).length, // Rough estimate
           },
@@ -379,7 +379,7 @@ export class OllamaProvider extends EventEmitter {
     };
 
     const payload = {
-      model: this.config.model,
+      model: this?.config?.model,
       prompt: this.buildPrompt(prompt, requestOptions.systemPrompt),
       stream: true,
       keep_alive: "15m", // Keep model loaded for 15 minutes
@@ -394,7 +394,7 @@ export class OllamaProvider extends EventEmitter {
     };
 
     try {
-      const response = await this.client.post("/api/generate", payload, {
+      const response = await this?.client?.post("/api/generate", payload, {
         responseType: "stream",
         timeout: 300000, // 5 minutes timeout for streaming
       });
@@ -402,12 +402,12 @@ export class OllamaProvider extends EventEmitter {
       let fullResponse = "";
 
       return new Promise((resolve, reject) => {
-        response.data.on("data", (chunk: Buffer) => {
+        response?.data?.on("data", (chunk: Buffer) => {
           try {
             const lines = chunk
               .toString()
               .split("\n")
-              .filter((line) => line.trim());
+              .filter((line: any) => line.trim());
 
             for (const line of lines) {
               const parsed = JSON.parse(line) as OllamaResponse;
@@ -431,7 +431,7 @@ export class OllamaProvider extends EventEmitter {
           }
         });
 
-        response.data.on("error", reject);
+        response?.data?.on("error", reject);
       });
     } catch (error) {
       this.emit("error", error);
@@ -445,10 +445,10 @@ export class OllamaProvider extends EventEmitter {
     }
 
     try {
-      const response = await this.client.post(
+      const response = await this?.client?.post(
         "/api/embeddings",
         {
-          model: this.config.model,
+          model: this?.config?.model,
           prompt: text,
         },
         {
@@ -456,7 +456,7 @@ export class OllamaProvider extends EventEmitter {
         },
       );
 
-      return response.data.embedding;
+      return response?.data?.embedding;
     } catch (error) {
       this.emit("error", error);
       throw error;
@@ -465,8 +465,8 @@ export class OllamaProvider extends EventEmitter {
 
   async listModels(): Promise<ModelInfo[]> {
     try {
-      const response = await this.client.get("/api/tags", { timeout: 5000 });
-      return response.data.models || [];
+      const response = await this?.client?.get("/api/tags", { timeout: 5000 });
+      return response?.data?.models || [];
     } catch (error) {
       this.emit("error", error);
       throw error;
@@ -480,7 +480,7 @@ export class OllamaProvider extends EventEmitter {
     try {
       // If onProgress is provided, use streaming to report progress
       if (onProgress) {
-        const response = await this.client.post(
+        const response = await this?.client?.post(
           "/api/pull",
           {
             name: modelName,
@@ -493,12 +493,12 @@ export class OllamaProvider extends EventEmitter {
         );
 
         return new Promise((resolve, reject) => {
-          response.data.on("data", (chunk: Buffer) => {
+          response?.data?.on("data", (chunk: Buffer) => {
             try {
               const lines = chunk
                 .toString()
                 .split("\n")
-                .filter((line) => line.trim());
+                .filter((line: any) => line.trim());
               for (const line of lines) {
                 const parsed = JSON.parse(line);
                 if (
@@ -517,12 +517,12 @@ export class OllamaProvider extends EventEmitter {
               // Ignore parsing errors
             }
           });
-          response.data.on("error", reject);
-          response.data.on("end", resolve);
+          response?.data?.on("error", reject);
+          response?.data?.on("end", resolve);
         });
       } else {
         // Non-streaming pull
-        await this.client.post(
+        await this?.client?.post(
           "/api/pull",
           {
             name: modelName,
@@ -540,8 +540,8 @@ export class OllamaProvider extends EventEmitter {
   }
 
   private buildPrompt(prompt: string, systemPrompt?: string): string {
-    if (systemPrompt || this.config.systemPrompt) {
-      return `${systemPrompt || this.config.systemPrompt}
+    if (systemPrompt || this?.config?.systemPrompt) {
+      return `${systemPrompt || this?.config?.systemPrompt}
 
 ${prompt}`;
     }
@@ -557,12 +557,12 @@ ${prompt}`;
   }
 
   setModel(model: string): void {
-    this.config.model = model;
+    this?.config?.model = model;
     this.clearContext();
   }
 
   getModel(): string {
-    return this.config.model;
+    return this?.config?.model;
   }
 
   getConfig(): OllamaConfig {

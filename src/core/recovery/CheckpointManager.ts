@@ -91,9 +91,9 @@ export class CheckpointManager extends EventEmitter {
    */
   private initializeCheckpointStorage(): void {
     // Create checkpoints directory if using file storage
-    if (!this.DEFAULT_OPTIONS.useDatabase) {
-      if (!existsSync(this.DEFAULT_OPTIONS.directory)) {
-        mkdirSync(this.DEFAULT_OPTIONS.directory, { recursive: true });
+    if (!this?.DEFAULT_OPTIONS?.useDatabase) {
+      if (!existsSync(this?.DEFAULT_OPTIONS?.directory)) {
+        mkdirSync(this?.DEFAULT_OPTIONS?.directory, { recursive: true });
       }
     } else {
       // Create checkpoints table if using database
@@ -105,7 +105,7 @@ export class CheckpointManager extends EventEmitter {
    * Create checkpoint table in database
    */
   private createCheckpointTable(): void {
-    executeTransaction((db) => {
+    executeTransaction((db: any) => {
       db.prepare(
         `
         CREATE TABLE IF NOT EXISTS checkpoints (
@@ -180,7 +180,7 @@ export class CheckpointManager extends EventEmitter {
     }
 
     // Keep in memory
-    this.checkpoints.set(checkpointId, checkpoint);
+    this?.checkpoints?.set(checkpointId, checkpoint);
 
     // Clean up old checkpoints
     await this.cleanupOldCheckpoints(operationId, operationType, mergedOptions);
@@ -207,7 +207,7 @@ export class CheckpointManager extends EventEmitter {
       progress?: Partial<CheckpointData["progress"]>;
     },
   ): Promise<void> {
-    const checkpoint = this.checkpoints.get(checkpointId);
+    const checkpoint = this?.checkpoints?.get(checkpointId);
     if (!checkpoint) {
       throw new Error(`Checkpoint not found: ${checkpointId}`);
     }
@@ -219,20 +219,20 @@ export class CheckpointManager extends EventEmitter {
 
     if (updates.progress) {
       checkpoint.progress = { ...checkpoint.progress, ...updates.progress };
-      if (checkpoint.progress.total > 0) {
-        checkpoint.progress.percentage =
+      if (checkpoint?.progress?.total > 0) {
+        checkpoint?.progress?.percentage =
           Math.round(
-            (checkpoint.progress.completed / checkpoint.progress.total) *
+            (checkpoint?.progress?.completed / checkpoint?.progress?.total) *
               100 *
               100,
           ) / 100;
       }
     }
 
-    checkpoint.metadata.updatedAt = new Date();
+    checkpoint?.metadata?.updatedAt = new Date();
 
     // Persist updates
-    if (this.DEFAULT_OPTIONS.useDatabase) {
+    if (this?.DEFAULT_OPTIONS?.useDatabase) {
       await this.saveCheckpointToDatabase(checkpoint);
     } else {
       await this.saveCheckpointToFile(checkpoint, this.DEFAULT_OPTIONS);
@@ -252,7 +252,7 @@ export class CheckpointManager extends EventEmitter {
     logger.info(`Attempting recovery for ${operationType}:${operationId}`);
 
     // Load checkpoint
-    const checkpoint = this.DEFAULT_OPTIONS.useDatabase
+    const checkpoint = this?.DEFAULT_OPTIONS?.useDatabase
       ? await this.loadCheckpointFromDatabase(operationId, operationType)
       : await this.loadCheckpointFromFile(operationId, operationType);
 
@@ -263,7 +263,7 @@ export class CheckpointManager extends EventEmitter {
 
     // Check checkpoint age
     if (options.maxAge) {
-      const age = Date.now() - checkpoint.metadata.updatedAt.getTime();
+      const age = Date.now() - checkpoint?.metadata?.updatedAt.getTime();
       if (age > options.maxAge) {
         logger.warn(`Checkpoint is too old (${age}ms > ${options.maxAge}ms)`);
         return null;
@@ -277,7 +277,7 @@ export class CheckpointManager extends EventEmitter {
     }
 
     // Check if resumable
-    if (!checkpoint.metadata.resumable) {
+    if (!checkpoint?.metadata?.resumable) {
       logger.warn("Checkpoint is marked as non-resumable");
       return null;
     }
@@ -300,20 +300,20 @@ export class CheckpointManager extends EventEmitter {
    * Mark a checkpoint as complete
    */
   async completeCheckpoint(checkpointId: string): Promise<void> {
-    const checkpoint = this.checkpoints.get(checkpointId);
+    const checkpoint = this?.checkpoints?.get(checkpointId);
     if (!checkpoint) {
       throw new Error(`Checkpoint not found: ${checkpointId}`);
     }
 
-    checkpoint.metadata.resumable = false;
-    checkpoint.progress.percentage = 100;
-    checkpoint.metadata.updatedAt = new Date();
+    checkpoint?.metadata?.resumable = false;
+    checkpoint?.progress?.percentage = 100;
+    checkpoint?.metadata?.updatedAt = new Date();
 
     // Remove from active checkpoints
-    this.checkpoints.delete(checkpointId);
+    this?.checkpoints?.delete(checkpointId);
 
     // Delete from storage
-    if (this.DEFAULT_OPTIONS.useDatabase) {
+    if (this?.DEFAULT_OPTIONS?.useDatabase) {
       await this.deleteCheckpointFromDatabase(checkpointId);
     } else {
       await this.deleteCheckpointFile(checkpointId);
@@ -330,7 +330,7 @@ export class CheckpointManager extends EventEmitter {
     operationId?: string,
     operationType?: string,
   ): Promise<CheckpointData[]> {
-    if (this.DEFAULT_OPTIONS.useDatabase) {
+    if (this?.DEFAULT_OPTIONS?.useDatabase) {
       return this.getCheckpointsFromDatabase(operationId, operationType);
     } else {
       return this.getCheckpointsFromFiles(operationId, operationType);
@@ -347,9 +347,9 @@ export class CheckpointManager extends EventEmitter {
     const checkpoints = await this.getCheckpoints(operationId, operationType);
 
     for (const checkpoint of checkpoints) {
-      this.checkpoints.delete(checkpoint.id);
+      this?.checkpoints?.delete(checkpoint.id);
 
-      if (this.DEFAULT_OPTIONS.useDatabase) {
+      if (this?.DEFAULT_OPTIONS?.useDatabase) {
         await this.deleteCheckpointFromDatabase(checkpoint.id);
       } else {
         await this.deleteCheckpointFile(checkpoint.id);
@@ -357,7 +357,7 @@ export class CheckpointManager extends EventEmitter {
     }
 
     logger.info(
-      `Cleared ${checkpoints.length} checkpoints for ${operationType}:${operationId}`,
+      `Cleared ${checkpoints?.length || 0} checkpoints for ${operationType}:${operationId}`,
     );
   }
 
@@ -398,15 +398,15 @@ export class CheckpointManager extends EventEmitter {
         let failed = 0;
 
         if (checkpoint) {
-          startIndex = checkpoint.progress.completed;
+          startIndex = checkpoint?.progress?.completed;
           state = checkpoint.state;
-          completed = checkpoint.progress.completed;
-          failed = checkpoint.progress.failed;
+          completed = checkpoint?.progress?.completed;
+          failed = checkpoint?.progress?.failed;
           logger.info(`Resuming from checkpoint at index ${startIndex}`);
         }
 
         // Process items
-        for (let i = startIndex; i < items.length; i++) {
+        for (let i = startIndex; i < items?.length || 0; i++) {
           try {
             await processor(items[i], i, checkpoint || undefined);
             completed++;
@@ -418,14 +418,14 @@ export class CheckpointManager extends EventEmitter {
                 operationId,
                 operationType,
                 state,
-                { total: items.length, completed, failed },
+                { total: items?.length || 0, completed, failed },
                 mergedOptions,
               );
               lastCheckpointAt = itemsProcessed;
             }
           } catch (error) {
             failed++;
-            logger.error(`Error processing item ${i}:`, error);
+            logger.error(`Error processing item ${i}:`, error as string);
 
             // Update checkpoint with failure
             if (checkpoint) {
@@ -452,7 +452,7 @@ export class CheckpointManager extends EventEmitter {
           operationId,
           operationType,
         );
-        if (checkpoints.length > 0) {
+        if (checkpoints?.length || 0 > 0) {
           const latest = checkpoints[0];
           await this.updateCheckpoint(latest.id, { state: updates });
         }
@@ -466,7 +466,7 @@ export class CheckpointManager extends EventEmitter {
   private async saveCheckpointToDatabase(
     checkpoint: CheckpointData,
   ): Promise<void> {
-    await executeTransaction((db) => {
+    await executeTransaction((db: any) => {
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO checkpoints (
           id, operation_id, operation_type, state,
@@ -480,14 +480,14 @@ export class CheckpointManager extends EventEmitter {
         checkpoint.operationId,
         checkpoint.operationType,
         JSON.stringify(checkpoint.state),
-        checkpoint.progress.total,
-        checkpoint.progress.completed,
-        checkpoint.progress.failed,
-        checkpoint.progress.percentage,
-        checkpoint.metadata.createdAt.toISOString(),
-        checkpoint.metadata.updatedAt.toISOString(),
-        checkpoint.metadata.version,
-        checkpoint.metadata.resumable ? 1 : 0,
+        checkpoint?.progress?.total,
+        checkpoint?.progress?.completed,
+        checkpoint?.progress?.failed,
+        checkpoint?.progress?.percentage,
+        checkpoint?.metadata?.createdAt.toISOString(),
+        checkpoint?.metadata?.updatedAt.toISOString(),
+        checkpoint?.metadata?.version,
+        checkpoint?.metadata?.resumable ? 1 : 0,
       );
 
       return true;
@@ -498,7 +498,7 @@ export class CheckpointManager extends EventEmitter {
     operationId: string,
     operationType: string,
   ): Promise<CheckpointData | null> {
-    const result = await executeTransaction((db) => {
+    const result = await executeTransaction((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM checkpoints 
         WHERE operation_id = ? AND operation_type = ? AND resumable = 1
@@ -518,7 +518,7 @@ export class CheckpointManager extends EventEmitter {
     operationId?: string,
     operationType?: string,
   ): Promise<CheckpointData[]> {
-    const results = await executeTransaction((db) => {
+    const results = await executeTransaction((db: any) => {
       let query = "SELECT * FROM checkpoints WHERE 1=1";
       const params: unknown[] = [];
 
@@ -538,13 +538,13 @@ export class CheckpointManager extends EventEmitter {
       return stmt.all(...params);
     });
 
-    return results.map((row) => this.parseCheckpointRow(row));
+    return results?.map((row: any) => this.parseCheckpointRow(row));
   }
 
   private async deleteCheckpointFromDatabase(
     checkpointId: string,
   ): Promise<void> {
-    await executeTransaction((db) => {
+    await executeTransaction((db: any) => {
       const stmt = db.prepare("DELETE FROM checkpoints WHERE id = ?");
       stmt.run(checkpointId);
       return true;
@@ -593,27 +593,27 @@ export class CheckpointManager extends EventEmitter {
     operationId: string,
     operationType: string,
   ): Promise<CheckpointData | null> {
-    const files = readdirSync(this.DEFAULT_OPTIONS.directory);
+    const files = readdirSync(this?.DEFAULT_OPTIONS?.directory);
     const pattern = new RegExp(
       `checkpoint_${operationId}_${operationType}_.*\\.json`,
     );
 
     const matchingFiles = files
-      .filter((f) => pattern.test(f))
+      .filter((f: any) => pattern.test(f))
       .sort((a, b) => b.localeCompare(a)); // Sort by timestamp desc
 
-    if (matchingFiles.length === 0) return null;
+    if (matchingFiles?.length || 0 === 0) return null;
 
-    const filepath = join(this.DEFAULT_OPTIONS.directory, matchingFiles[0]);
+    const filepath = join(this?.DEFAULT_OPTIONS?.directory, matchingFiles[0]);
     const data = readFileSync(filepath, "utf-8");
 
-    const checkpoint = this.DEFAULT_OPTIONS.compress
+    const checkpoint = this?.DEFAULT_OPTIONS?.compress
       ? JSON.parse(this.decompressData(data))
       : JSON.parse(data);
 
     // Convert dates back to Date objects
-    checkpoint.metadata.createdAt = new Date(checkpoint.metadata.createdAt);
-    checkpoint.metadata.updatedAt = new Date(checkpoint.metadata.updatedAt);
+    checkpoint?.metadata?.createdAt = new Date(checkpoint?.metadata?.createdAt);
+    checkpoint?.metadata?.updatedAt = new Date(checkpoint?.metadata?.updatedAt);
 
     return checkpoint;
   }
@@ -622,16 +622,16 @@ export class CheckpointManager extends EventEmitter {
     operationId?: string,
     operationType?: string,
   ): Promise<CheckpointData[]> {
-    const files = readdirSync(this.DEFAULT_OPTIONS.directory);
+    const files = readdirSync(this?.DEFAULT_OPTIONS?.directory);
     const checkpoints: CheckpointData[] = [];
 
     for (const file of files) {
       if (!file.endsWith(".json")) continue;
 
-      const filepath = join(this.DEFAULT_OPTIONS.directory, file);
+      const filepath = join(this?.DEFAULT_OPTIONS?.directory, file);
       const data = readFileSync(filepath, "utf-8");
 
-      const checkpoint = this.DEFAULT_OPTIONS.compress
+      const checkpoint = this?.DEFAULT_OPTIONS?.compress
         ? JSON.parse(this.decompressData(data))
         : JSON.parse(data);
 
@@ -640,24 +640,24 @@ export class CheckpointManager extends EventEmitter {
       if (operationType && checkpoint.operationType !== operationType) continue;
 
       // Convert dates
-      checkpoint.metadata.createdAt = new Date(checkpoint.metadata.createdAt);
-      checkpoint.metadata.updatedAt = new Date(checkpoint.metadata.updatedAt);
+      checkpoint?.metadata?.createdAt = new Date(checkpoint?.metadata?.createdAt);
+      checkpoint?.metadata?.updatedAt = new Date(checkpoint?.metadata?.updatedAt);
 
       checkpoints.push(checkpoint);
     }
 
     return checkpoints.sort(
-      (a, b) => b.metadata.updatedAt.getTime() - a.metadata.updatedAt.getTime(),
+      (a, b) => b?.metadata?.updatedAt.getTime() - a?.metadata?.updatedAt.getTime(),
     );
   }
 
   private async deleteCheckpointFile(checkpointId: string): Promise<void> {
-    const files = readdirSync(this.DEFAULT_OPTIONS.directory);
+    const files = readdirSync(this?.DEFAULT_OPTIONS?.directory);
     const pattern = new RegExp(`checkpoint_.*_${checkpointId}\\.json`);
 
     for (const file of files) {
       if (pattern.test(file)) {
-        unlinkSync(join(this.DEFAULT_OPTIONS.directory, file));
+        unlinkSync(join(this?.DEFAULT_OPTIONS?.directory, file));
         break;
       }
     }
@@ -673,11 +673,11 @@ export class CheckpointManager extends EventEmitter {
   ): Promise<void> {
     const checkpoints = await this.getCheckpoints(operationId, operationType);
 
-    if (checkpoints.length > options.maxCheckpoints) {
+    if (checkpoints?.length || 0 > options.maxCheckpoints) {
       const toDelete = checkpoints.slice(options.maxCheckpoints);
 
       for (const checkpoint of toDelete) {
-        this.checkpoints.delete(checkpoint.id);
+        this?.checkpoints?.delete(checkpoint.id);
 
         if (options.useDatabase) {
           await this.deleteCheckpointFromDatabase(checkpoint.id);
@@ -686,7 +686,7 @@ export class CheckpointManager extends EventEmitter {
         }
       }
 
-      logger.info(`Cleaned up ${toDelete.length} old checkpoints`);
+      logger.info(`Cleaned up ${toDelete?.length || 0} old checkpoints`);
     }
   }
 

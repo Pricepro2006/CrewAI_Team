@@ -108,7 +108,7 @@ export const GroceryListEnhanced: React.FC = () => {
   
   // Get current product IDs for price monitoring
   const currentProductIds = useMemo(() => 
-    groceryList?.items.map(item => item.productId) || [], 
+    groceryList?.items?.map(item => item.productId) || [], 
     [groceryList]
   );
   
@@ -126,11 +126,11 @@ export const GroceryListEnhanced: React.FC = () => {
     productIds: currentProductIds,
     conversationId,
     userId,
-    onPriceChange: (update) => {
+    onPriceChange: (update: any) => {
       // Update grocery list with new prices
       if (groceryList) {
-        const updatedItems = groceryList.items.map(item => 
-          item.productId === update.productId 
+        const updatedItems = groceryList?.items?.map(item => 
+          item.productId === update.productId || "" 
             ? { ...item, price: update.newPrice, originalPrice: update.oldPrice }
             : item
         );
@@ -141,7 +141,7 @@ export const GroceryListEnhanced: React.FC = () => {
           const notification = {
             id: `price-${update.productId}-${Date.now()}`,
             type: 'price_drop' as const,
-            message: `💰 Price dropped! Save $${update.savings.toFixed(2)} on an item`,
+            message: `💰 Price dropped! Save $${update?.savings?.toFixed(2)} on an item`,
             timestamp: Date.now(),
             show: true,
           };
@@ -150,13 +150,13 @@ export const GroceryListEnhanced: React.FC = () => {
           
           setTimeout(() => {
             setNotifications(prev => 
-              prev.map(n => n.id === notification.id ? { ...n, show: false } : n)
+              prev?.map(n => n.id === notification.id ? { ...n, show: false } : n)
             );
           }, 4000);
         }
       }
     },
-    onDealDetected: (dealInfo) => {
+    onDealDetected: (dealInfo: any) => {
       // Flash savings indicator
       setSavingsFlash(true);
       setTimeout(() => setSavingsFlash(false), 2000);
@@ -175,7 +175,7 @@ export const GroceryListEnhanced: React.FC = () => {
       // Auto-hide notification
       setTimeout(() => {
         setNotifications(prev => 
-          prev.map(n => n.id === notification.id ? { ...n, show: false } : n)
+          prev?.map(n => n.id === notification.id ? { ...n, show: false } : n)
         );
       }, 5000);
     },
@@ -189,8 +189,8 @@ export const GroceryListEnhanced: React.FC = () => {
   });
 
   // tRPC hooks
-  const processGroceryInputMutation = api.walmartGrocery.processGroceryInput.useMutation({
-    onSuccess: (data) => {
+  const processGroceryInputMutation = api?.walmartGrocery?.processGroceryInput.useMutation({
+    onSuccess: (data: any) => {
       if (data.groceryList) {
         setGroceryList(data.groceryList);
       }
@@ -205,25 +205,25 @@ export const GroceryListEnhanced: React.FC = () => {
       // Clear any errors
       setInputError(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to process grocery input:', error);
       setInputError(error.message || 'Failed to process your request');
       setInputSuccess(false);
     }
   });
 
-  const calculateTotalsMutation = api.walmartGrocery.calculateListTotals.useMutation({
-    onSuccess: (data) => {
+  const calculateTotalsMutation = api?.walmartGrocery?.calculateListTotals.useMutation({
+    onSuccess: (data: any) => {
       if (data.success) {
         setTotals(data.calculation);
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to calculate totals:', error);
     }
   });
 
-  const getSmartRecommendationsQuery = api.walmartGrocery.getSmartRecommendations.useQuery(
+  const getSmartRecommendationsQuery = api?.walmartGrocery?.getSmartRecommendations.useQuery(
     {
       userId,
       context: 'personalized',
@@ -231,7 +231,7 @@ export const GroceryListEnhanced: React.FC = () => {
     },
     {
       enabled: true,
-      onSuccess: (data) => {
+      onSuccess: (data: any) => {
         if (data.recommendations) {
           setSuggestions(data.recommendations);
         }
@@ -247,8 +247,8 @@ export const GroceryListEnhanced: React.FC = () => {
 
   // Calculate totals when grocery list changes
   useEffect(() => {
-    if (groceryList && groceryList.items.length > 0) {
-      const listItems = groceryList.items.map(item => ({
+    if (groceryList && groceryList?.items?.length > 0) {
+      const listItems = groceryList?.items?.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
         price: item.price,
@@ -296,21 +296,21 @@ export const GroceryListEnhanced: React.FC = () => {
       const executionTime = Date.now() - startTime;
       
       // Update command history with success
-      setCommandHistory(prev => prev.map(cmd => 
+      setCommandHistory(prev => prev?.map(cmd => 
         cmd.id === commandId
           ? {
               ...cmd,
               status: 'success' as const,
               result: getSuccessMessage(result),
               executionTime,
-              itemsAffected: result.groceryList?.items.length || 0,
+              itemsAffected: result.groceryList?.items?.length || 0 || 0,
             }
           : cmd
       ));
       
     } catch (error) {
       // Update command history with error
-      setCommandHistory(prev => prev.map(cmd => 
+      setCommandHistory(prev => prev?.map(cmd => 
         cmd.id === commandId
           ? {
               ...cmd,
@@ -345,10 +345,10 @@ export const GroceryListEnhanced: React.FC = () => {
 
   // Generate success message from API result
   const getSuccessMessage = (result: any): string => {
-    if (result.groceryList && result.groceryList.items.length > 0) {
-      return `Updated list with ${result.groceryList.items.length} items`;
-    } else if (result.suggestions && result.suggestions.length > 0) {
-      return `Found ${result.suggestions.length} suggestions`;
+    if (result.groceryList && result?.groceryList?.items?.length || 0 > 0) {
+      return `Updated list with ${result?.groceryList?.items?.length || 0} items`;
+    } else if (result.suggestions && result?.suggestions?.length > 0) {
+      return `Found ${result?.suggestions?.length} suggestions`;
     }
     return 'Command processed successfully';
   };
@@ -365,7 +365,7 @@ export const GroceryListEnhanced: React.FC = () => {
 
   // Handle command deletion
   const handleCommandDelete = (commandId: string) => {
-    setCommandHistory(prev => prev.filter(cmd => cmd.id !== commandId));
+    setCommandHistory(prev => prev?.filter(cmd => cmd.id !== commandId));
   };
 
   // Handle clearing all command history
@@ -389,7 +389,7 @@ export const GroceryListEnhanced: React.FC = () => {
   const updateItemQuantity = (itemId: string, newQuantity: number) => {
     if (!groceryList) return;
     
-    const updatedItems = groceryList.items.map(item =>
+    const updatedItems = groceryList?.items?.map(item =>
       item.id === itemId
         ? { ...item, quantity: Math.max(0, newQuantity) }
         : item
@@ -398,18 +398,18 @@ export const GroceryListEnhanced: React.FC = () => {
     setGroceryList({
       ...groceryList,
       items: updatedItems,
-      itemCount: updatedItems.length,
+      itemCount: updatedItems?.length || 0,
     });
   };
 
   const removeItem = (itemId: string) => {
     if (!groceryList) return;
     
-    const updatedItems = groceryList.items.filter(item => item.id !== itemId);
+    const updatedItems = groceryList?.items?.filter(item => item.id !== itemId);
     setGroceryList({
       ...groceryList,
       items: updatedItems,
-      itemCount: updatedItems.length,
+      itemCount: updatedItems?.length || 0,
     });
   };
 
@@ -432,18 +432,18 @@ export const GroceryListEnhanced: React.FC = () => {
     
     setGroceryList({
       items: updatedItems,
-      subtotal: updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+      subtotal: updatedItems.reduce((sum: any, item: any) => sum + (item.price * item.quantity), 0),
       estimatedTax: 0,
       total: 0,
       savings: 0,
-      itemCount: updatedItems.length,
+      itemCount: updatedItems?.length || 0,
       deliveryEligible: false,
       deliveryThreshold: 35,
     });
   };
 
   const groupItemsByCategory = (items: GroceryItem[]) => {
-    return items.reduce((groups, item) => {
+    return items.reduce((groups: any, item: any) => {
       const category = item.category || 'Other';
       if (!groups[category]) {
         groups[category] = [];
@@ -490,7 +490,7 @@ export const GroceryListEnhanced: React.FC = () => {
       
       {/* Real-time Notifications */}
       <div className="notifications-container fixed top-20 right-4 z-50 space-y-2">
-        {notifications.map((notification) => (
+        {notifications?.map((notification: any) => (
           <div
             key={notification.id}
             className={`notification-toast p-3 bg-white border-l-4 rounded-lg shadow-lg transition-all duration-300 max-w-sm ${
@@ -508,7 +508,7 @@ export const GroceryListEnhanced: React.FC = () => {
               <button
                 onClick={() => {
                   setNotifications(prev => 
-                    prev.map(n => n.id === notification.id ? { ...n, show: false } : n)
+                    prev?.map(n => n.id === notification.id ? { ...n, show: false } : n)
                   );
                 }}
                 className="ml-2 text-gray-400 hover:text-gray-600"
@@ -577,7 +577,7 @@ export const GroceryListEnhanced: React.FC = () => {
                 />
               </div>
               <div className="progress-text">
-                Add ${totals.amountForFreeDelivery.toFixed(2)} more for free delivery
+                Add ${totals?.amountForFreeDelivery?.toFixed(2)} more for free delivery
               </div>
             </div>
           )}
@@ -610,7 +610,7 @@ export const GroceryListEnhanced: React.FC = () => {
           onVoiceStart={handleVoiceStart}
           onVoiceEnd={handleVoiceEnd}
           onVoiceError={handleVoiceError}
-          onSuggestionSelected={(suggestion) => {
+          onSuggestionSelected={(suggestion: any) => {
             // Auto-submit if it's a complete command
             if (suggestion.toLowerCase().includes('total') || 
                 suggestion.toLowerCase().includes('clear')) {
@@ -629,7 +629,7 @@ export const GroceryListEnhanced: React.FC = () => {
       </div>
 
       {/* Command History Panel */}
-      {commandHistory.length > 0 && (
+      {commandHistory?.length || 0 > 0 && (
         <div className="command-history-section">
           <CommandHistory
             commands={commandHistory}
@@ -664,7 +664,7 @@ export const GroceryListEnhanced: React.FC = () => {
           </div>
         </div>
 
-        {!groceryList || groceryList.items.length === 0 ? (
+        {!groceryList || groceryList?.items?.length === 0 ? (
           <div className="empty-list">
             <div className="empty-icon">
               <ShoppingCart size={64} />
@@ -678,11 +678,11 @@ export const GroceryListEnhanced: React.FC = () => {
               <div key={category} className="category-section">
                 <div className="category-header">
                   <h3>{category}</h3>
-                  <span className="item-count">{items.length} items</span>
+                  <span className="item-count">{items?.length || 0} items</span>
                 </div>
                 
                 <div className="category-items">
-                  {items.map((item) => (
+                  {items?.map((item: any) => (
                     <div key={item.id} className="list-item">
                       <div className="item-image">
                         <img src={item.imageUrl} alt={item.name} />
@@ -698,10 +698,10 @@ export const GroceryListEnhanced: React.FC = () => {
                         <p className="item-meta">{item.category} • {item.unit}</p>
                         <div className="item-pricing">
                           <span className={`current-price ${getPriceAnimationClasses(item.productId)}`}>
-                            ${item.price.toFixed(2)}
+                            ${item?.price?.toFixed(2)}
                           </span>
                           {item.originalPrice && (
-                            <span className="original-price">${item.originalPrice.toFixed(2)}</span>
+                            <span className="original-price">${item?.originalPrice?.toFixed(2)}</span>
                           )}
                           {/* Price change indicator */}
                           {(() => {
@@ -717,7 +717,7 @@ export const GroceryListEnhanced: React.FC = () => {
                                   {Math.abs(priceUpdate.percentageChange).toFixed(1)}%
                                   {priceUpdate.savings && priceUpdate.savings > 0 && (
                                     <span className="savings-amount ml-1">
-                                      Save ${priceUpdate.savings.toFixed(2)}
+                                      Save ${priceUpdate?.savings?.toFixed(2)}
                                     </span>
                                   )}
                                 </div>
@@ -779,7 +779,7 @@ export const GroceryListEnhanced: React.FC = () => {
         </div>
         
         <div className="suggestions-grid">
-          {suggestions.map((suggestion) => (
+          {suggestions?.map((suggestion: any) => (
             <div key={suggestion.id} className="suggestion-card">
               <div className="suggestion-image">
                 <img src={suggestion.imageUrl} alt={suggestion.name} />
@@ -796,9 +796,9 @@ export const GroceryListEnhanced: React.FC = () => {
                 <p className="suggestion-category">{suggestion.category}</p>
                 
                 <div className="suggestion-pricing">
-                  <span className="price">${suggestion.price.toFixed(2)}</span>
+                  <span className="price">${suggestion?.price?.toFixed(2)}</span>
                   {suggestion.originalPrice && (
-                    <span className="original-price">${suggestion.originalPrice.toFixed(2)}</span>
+                    <span className="original-price">${suggestion?.originalPrice?.toFixed(2)}</span>
                   )}
                 </div>
                 
@@ -831,7 +831,7 @@ export const GroceryListEnhanced: React.FC = () => {
           ))}
         </div>
         
-        {suggestions.length === 0 && !getSmartRecommendationsQuery.isLoading && (
+        {suggestions?.length || 0 === 0 && !getSmartRecommendationsQuery.isLoading && (
           <div className="no-suggestions">
             <Target size={48} />
             <h3>Building your preferences...</h3>

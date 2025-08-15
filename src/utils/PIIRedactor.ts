@@ -75,44 +75,44 @@ export class PIIRedactor {
     let redacted = text;
 
     // Apply standard PII patterns
-    if (this.config.redactEmails) {
-      redacted = this.redactPattern(redacted, PIIRedactor.PII_PATTERNS.email, 'EMAIL');
+    if (this?.config?.redactEmails) {
+      redacted = this.redactPattern(redacted, PIIRedactor?.PII_PATTERNS?.email, 'EMAIL');
     }
 
-    if (this.config.redactPhones) {
-      redacted = this.redactPattern(redacted, PIIRedactor.PII_PATTERNS.phoneUS, 'PHONE');
-      redacted = this.redactPattern(redacted, PIIRedactor.PII_PATTERNS.phoneIntl, 'PHONE');
+    if (this?.config?.redactPhones) {
+      redacted = this.redactPattern(redacted, PIIRedactor?.PII_PATTERNS?.phoneUS, 'PHONE');
+      redacted = this.redactPattern(redacted, PIIRedactor?.PII_PATTERNS?.phoneIntl, 'PHONE');
     }
 
-    if (this.config.redactSSN) {
-      redacted = this.redactPattern(redacted, PIIRedactor.PII_PATTERNS.ssn, 'SSN');
+    if (this?.config?.redactSSN) {
+      redacted = this.redactPattern(redacted, PIIRedactor?.PII_PATTERNS?.ssn, 'SSN');
     }
 
-    if (this.config.redactCreditCards) {
-      redacted = this.redactPattern(redacted, PIIRedactor.PII_PATTERNS.creditCard, 'CC');
+    if (this?.config?.redactCreditCards) {
+      redacted = this.redactPattern(redacted, PIIRedactor?.PII_PATTERNS?.creditCard, 'CC');
     }
 
-    if (this.config.redactIPs) {
-      redacted = this.redactPattern(redacted, PIIRedactor.PII_PATTERNS.ipv4, 'IP');
-      redacted = this.redactPattern(redacted, PIIRedactor.PII_PATTERNS.ipv6, 'IP');
+    if (this?.config?.redactIPs) {
+      redacted = this.redactPattern(redacted, PIIRedactor?.PII_PATTERNS?.ipv4, 'IP');
+      redacted = this.redactPattern(redacted, PIIRedactor?.PII_PATTERNS?.ipv6, 'IP');
     }
 
-    if (this.config.redactAddresses) {
-      redacted = this.redactPattern(redacted, PIIRedactor.PII_PATTERNS.streetAddress, 'ADDRESS');
-      redacted = this.redactPattern(redacted, PIIRedactor.PII_PATTERNS.zipCode, 'ZIP');
+    if (this?.config?.redactAddresses) {
+      redacted = this.redactPattern(redacted, PIIRedactor?.PII_PATTERNS?.streetAddress, 'ADDRESS');
+      redacted = this.redactPattern(redacted, PIIRedactor?.PII_PATTERNS?.zipCode, 'ZIP');
     }
 
-    if (this.config.redactAPIKeys) {
-      redacted = this.redactPattern(redacted, PIIRedactor.PII_PATTERNS.apiKey, 'API_KEY');
-      redacted = this.redactPattern(redacted, PIIRedactor.PII_PATTERNS.bearerToken, 'TOKEN');
+    if (this?.config?.redactAPIKeys) {
+      redacted = this.redactPattern(redacted, PIIRedactor?.PII_PATTERNS?.apiKey, 'API_KEY');
+      redacted = this.redactPattern(redacted, PIIRedactor?.PII_PATTERNS?.bearerToken, 'TOKEN');
     }
 
-    if (this.config.redactBankInfo) {
-      redacted = this.redactPattern(redacted, PIIRedactor.PII_PATTERNS.bankAccount, 'BANK_ACCOUNT');
+    if (this?.config?.redactBankInfo) {
+      redacted = this.redactPattern(redacted, PIIRedactor?.PII_PATTERNS?.bankAccount, 'BANK_ACCOUNT');
     }
 
     // Apply custom patterns
-    for (const pattern of this.config.customPatterns) {
+    for (const pattern of this?.config?.customPatterns) {
       redacted = this.redactPattern(redacted, pattern.regex, pattern.label);
     }
 
@@ -132,7 +132,7 @@ export class PIIRedactor {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this.redactObject(item));
+      return obj?.map(item => this.redactObject(item));
     }
 
     if (typeof obj === 'object') {
@@ -177,12 +177,12 @@ export class PIIRedactor {
    * Apply a redaction pattern to text
    */
   private redactPattern(text: string, pattern: RegExp, label: string): string {
-    return text.replace(pattern, (match) => {
-      if (this.config.preservePartial && match.length > 4) {
+    return text.replace(pattern, (match: any) => {
+      if (this?.config?.preservePartial && match?.length || 0 > 4) {
         // Preserve first and last few characters
-        const preserveLength = Math.min(2, Math.floor(match.length / 4));
+        const preserveLength = Math.min(2, Math.floor(match?.length || 0 / 4));
         const start = match.substring(0, preserveLength);
-        const end = match.substring(match.length - preserveLength);
+        const end = match.substring(match?.length || 0 - preserveLength);
         return `${start}[${label}]${end}`;
       }
       return `[${label}]`;
@@ -217,19 +217,19 @@ export class PIIRedactor {
     const detectedTypes: string[] = [];
 
     const checks = [
-      { pattern: PIIRedactor.PII_PATTERNS.email, type: 'email' },
-      { pattern: PIIRedactor.PII_PATTERNS.phoneUS, type: 'phone' },
-      { pattern: PIIRedactor.PII_PATTERNS.phoneIntl, type: 'phone' },
-      { pattern: PIIRedactor.PII_PATTERNS.ssn, type: 'ssn' },
-      { pattern: PIIRedactor.PII_PATTERNS.creditCard, type: 'credit_card' },
-      { pattern: PIIRedactor.PII_PATTERNS.ipv4, type: 'ip_address' },
-      { pattern: PIIRedactor.PII_PATTERNS.ipv6, type: 'ip_address' },
-      { pattern: PIIRedactor.PII_PATTERNS.streetAddress, type: 'address' },
-      { pattern: PIIRedactor.PII_PATTERNS.apiKey, type: 'api_key' },
+      { pattern: PIIRedactor?.PII_PATTERNS?.email, type: 'email' },
+      { pattern: PIIRedactor?.PII_PATTERNS?.phoneUS, type: 'phone' },
+      { pattern: PIIRedactor?.PII_PATTERNS?.phoneIntl, type: 'phone' },
+      { pattern: PIIRedactor?.PII_PATTERNS?.ssn, type: 'ssn' },
+      { pattern: PIIRedactor?.PII_PATTERNS?.creditCard, type: 'credit_card' },
+      { pattern: PIIRedactor?.PII_PATTERNS?.ipv4, type: 'ip_address' },
+      { pattern: PIIRedactor?.PII_PATTERNS?.ipv6, type: 'ip_address' },
+      { pattern: PIIRedactor?.PII_PATTERNS?.streetAddress, type: 'address' },
+      { pattern: PIIRedactor?.PII_PATTERNS?.apiKey, type: 'api_key' },
     ];
 
     for (const check of checks) {
-      if (check.pattern.test(text)) {
+      if (check?.pattern?.test(text)) {
         if (!detectedTypes.includes(check.type)) {
           detectedTypes.push(check.type);
         }

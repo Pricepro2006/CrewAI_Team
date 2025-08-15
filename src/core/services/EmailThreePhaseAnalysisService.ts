@@ -309,8 +309,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         // Track performance with defensive programming
         const totalTime = Date.now() - startTime;
         try {
-          if (this.performanceMonitor && typeof this.performanceMonitor.trackOperation === 'function') {
-            this.performanceMonitor.trackOperation(
+          if (this.performanceMonitor && typeof this?.performanceMonitor?.trackOperation === 'function') {
+            this?.performanceMonitor?.trackOperation(
               "three_phase_analysis",
               totalTime,
               true,
@@ -369,8 +369,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         // Track performance with defensive programming
         const totalTime = Date.now() - startTime;
         try {
-          if (this.performanceMonitor && typeof this.performanceMonitor.trackOperation === 'function') {
-            this.performanceMonitor.trackOperation(
+          if (this.performanceMonitor && typeof this?.performanceMonitor?.trackOperation === 'function') {
+            this?.performanceMonitor?.trackOperation(
               "two_phase_analysis",
               totalTime,
               true,
@@ -397,8 +397,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       
       // Track performance with defensive programming
       try {
-        if (this.performanceMonitor && typeof this.performanceMonitor.trackOperation === 'function') {
-          this.performanceMonitor.trackOperation(
+        if (this.performanceMonitor && typeof this?.performanceMonitor?.trackOperation === 'function') {
+          this?.performanceMonitor?.trackOperation(
             "email_analysis",
             Date.now() - startTime,
             false,
@@ -429,9 +429,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     const startTime = Date.now();
 
     // Check cache first
-    if (!options.skipCache && this.phase1Cache.has(email.id)) {
+    if (!options.skipCache && this?.phase1Cache?.has(email.id)) {
       logger.debug("Phase 1 cache hit", COMPONENT);
-      return this.phase1Cache.get(email.id)!;
+      return this?.phase1Cache?.get(email.id)!;
     }
 
     const subject = (email.subject || "").toLowerCase();
@@ -480,7 +480,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     } else {
       // Fall back to analyzing chain if not provided
       try {
-        const chain = await this.chainAnalyzer.analyzeChain(email.id);
+        const chain = await this?.chainAnalyzer?.analyzeChain(email.id);
         chainAnalysis = {
           chain_id: chain.chain_id,
           is_complete_chain: chain.is_complete,
@@ -509,7 +509,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     };
 
     // Cache results
-    this.phase1Cache.set(email.id, results);
+    this?.phase1Cache?.set(email.id, results);
 
     return results;
   }
@@ -528,8 +528,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
     // Determine email characteristics for prompt enhancement
     const emailCharacteristics = {
-      hasOrderReferences: phase1Results.entities.po_numbers.length > 0,
-      hasQuoteRequests: phase1Results.workflow_state.includes("QUOTE"),
+      hasOrderReferences: phase1Results?.entities?.po_numbers?.length || 0 > 0,
+      hasQuoteRequests: phase1Results?.workflow_state?.includes("QUOTE"),
       isEscalation: phase1Results.priority === "critical",
       isFromKeyCustomer: phase1Results.sender_category === "key_customer",
       hasTechnicalIssues: false, // Could be enhanced with keyword detection
@@ -611,13 +611,13 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         // Log quality decision if enabled
         if (
           options.enableQualityLogging ??
-          this.qualityConfig.enableQualityLogging
+          this?.qualityConfig?.enableQualityLogging
         ) {
           logger.info(
             `Quality assessment: Score=${qualityAssessment.score}/10, UseFallback=${qualityAssessment.useFallback}, UseHybrid=${qualityAssessment.useHybrid}`,
           );
           logger.debug(
-            `Quality reasons: ${qualityAssessment.reasons.join(", ")}`,
+            `Quality reasons: ${qualityAssessment?.reasons?.join(", ")}`,
           );
         }
 
@@ -671,7 +671,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         }
 
         // Brief delay before retry
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve: any) => setTimeout(resolve, 1000));
       }
     }
 
@@ -768,7 +768,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // Check rate limit before making the call with defensive programming
     let rateLimitResult;
     try {
-      rateLimitResult = await llmRateLimiters.modelSpecific.checkAndConsume(
+      rateLimitResult = await llmRateLimiters?.modelSpecific?.checkAndConsume(
         'email-analysis', // identifier
         'llama3.2:3b',    // model
         0.001             // estimated cost (very low for local model)
@@ -795,7 +795,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     }
 
     // Use NLP queue to prevent bottlenecks from concurrent requests
-    const responseData = await this.nlpQueue.enqueue(
+    const responseData = await this?.nlpQueue?.enqueue(
       async () => {
         const response = await axios.post(
           "http://localhost:11434/api/generate",
@@ -813,7 +813,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           },
           {
             timeout,
-            validateStatus: (status) => status < 500,
+            validateStatus: (status: any) => status < 500,
           },
         );
 
@@ -827,7 +827,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           throw new Error("Empty response from LLM");
         }
 
-        return response.data.response;
+        return response?.data?.response;
       },
       "normal", // priority
       timeout,
@@ -996,7 +996,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       // Check rate limit for Phi-4 with defensive programming
       let rateLimitResult;
       try {
-        rateLimitResult = await llmRateLimiters.modelSpecific.checkAndConsume(
+        rateLimitResult = await llmRateLimiters?.modelSpecific?.checkAndConsume(
           'email-analysis', // identifier
           'doomgrave/phi-4:14b-tools-Q3_K_S', // model
           0.005 // estimated cost (higher for larger model)
@@ -1016,7 +1016,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       }
 
       // Call Phi-4 through NLP queue to prevent bottlenecks
-      const responseData = await this.nlpQueue.enqueue(
+      const responseData = await this?.nlpQueue?.enqueue(
         async () => {
           const response = await axios.post(
             "http://localhost:11434/api/generate",
@@ -1037,7 +1037,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
             },
             {
               timeout: options.timeout || 60000, // Reduced from 180000 (3 min to 1 min)
-              validateStatus: (status) => status < 500,
+              validateStatus: (status: any) => status < 500,
             },
           );
 
@@ -1045,7 +1045,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
             throw new Error(`LLM request failed with status ${response.status}`);
           }
 
-          return response.data.response;
+          return response?.data?.response;
         },
         "high", // priority - phase 3 is highest quality so high priority
         options.timeout || 60000,
@@ -1157,9 +1157,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = [...text.matchAll(pattern)];
-      matches.forEach((m) => { if (m[1]) results.add(m[1]); });
+      matches.forEach((m: any) => { if (m[1]) results.add(m[1]); });
     });
 
     return Array.from(results);
@@ -1173,9 +1173,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = [...text.matchAll(pattern)];
-      matches.forEach((m) => { if (m[1]) results.add(m[1]); });
+      matches.forEach((m: any) => { if (m[1]) results.add(m[1]); });
     });
 
     return Array.from(results);
@@ -1190,9 +1190,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = [...text.matchAll(pattern)];
-      matches.forEach((m) => { if (m[1]) results.add(m[1]); });
+      matches.forEach((m: any) => { if (m[1]) results.add(m[1]); });
     });
 
     return Array.from(results);
@@ -1208,9 +1208,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     const results = new Set<string>();
     const upperText = text.toUpperCase();
 
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = upperText.match(pattern) || [];
-      matches.forEach((m) => {
+      matches.forEach((m: any) => {
         // Filter out common false positives
         if (
           !m.match(
@@ -1239,9 +1239,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = text.match(pattern) || [];
-      matches.forEach((m) => results.add(m));
+      matches.forEach((m: any) => results.add(m));
     });
 
     return Array.from(results);
@@ -1254,9 +1254,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     ];
 
     const results = new Set<string>();
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = text.match(pattern) || [];
-      matches.forEach((m) => results.add(m));
+      matches.forEach((m: any) => results.add(m));
     });
 
     return Array.from(results).slice(0, 10);
@@ -1338,9 +1338,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // High priority conditions
     if (
       urgencyScore >= 3 ||
-      entities.po_numbers.length > 0 ||
+      entities?.po_numbers?.length > 0 ||
       (entities.dollar_amounts &&
-        entities.dollar_amounts.some((amt) => {
+        entities?.dollar_amounts?.some((amt: any) => {
           if (!amt || typeof amt !== "string") return false;
           const value = parseFloat(amt.replace(/[$,]/g, ""));
           return value > 10000;
@@ -1352,9 +1352,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // Low priority conditions
     if (
       urgencyScore === 0 &&
-      !entities.po_numbers.length &&
-      !entities.quote_numbers.length &&
-      !entities.case_numbers.length
+      !entities?.po_numbers?.length &&
+      !entities?.quote_numbers?.length &&
+      !entities?.case_numbers?.length
     ) {
       return "low";
     }
@@ -1375,7 +1375,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       /waiting\s+for\s+\w+/gi,
     ];
 
-    patterns.forEach((pattern) => {
+    patterns.forEach((pattern: any) => {
       const matches = content.match(pattern) || [];
       phrases.push(...matches);
     });
@@ -1398,12 +1398,12 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       "executive@",
     ];
 
-    if (keyCustomers.some((key) => email.includes(key))) {
+    if (keyCustomers.some((key: any) => email.includes(key))) {
       return "key_customer";
     }
 
     const internalDomains = ["@tdsynnex.com", "@synnex.com", "@techdata.com"];
-    if (internalDomains.some((domain) => email.includes(domain))) {
+    if (internalDomains.some((domain: any) => email.includes(domain))) {
       return "internal";
     }
 
@@ -1413,7 +1413,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       "@microsoft.com",
       "@cisco.com",
     ];
-    if (partnerDomains.some((domain) => email.includes(domain))) {
+    if (partnerDomains.some((domain: any) => email.includes(domain))) {
       return "partner";
     }
 
@@ -1426,10 +1426,10 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     }
 
     return dollarAmounts
-      .filter((amt) => amt && typeof amt === "string")
-      .map((amt) => parseFloat(amt.replace(/[$,]/g, "")))
-      .filter((amt) => !isNaN(amt))
-      .reduce((sum, amt) => sum + amt, 0);
+      .filter((amt: any) => amt && typeof amt === "string")
+      .map((amt: any) => parseFloat(amt.replace(/[$,]/g, "")))
+      .filter((amt: any) => !isNaN(amt))
+      .reduce((sum: any, amt: any) => sum + amt, 0);
   }
 
   private detectPatterns(
@@ -1439,7 +1439,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     const patterns: string[] = [];
 
     // Multi-item patterns
-    if (entities.part_numbers.length > 5) {
+    if (entities?.part_numbers?.length > 5) {
       patterns.push("bulk_order");
     }
 
@@ -1449,7 +1449,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     }
 
     // Financial patterns
-    if (entities.dollar_amounts.length > 0) {
+    if (entities?.dollar_amounts?.length > 0) {
       const total = this.calculateFinancialImpact(entities.dollar_amounts);
       if (total > 50000) patterns.push("high_value");
       if (total > 100000) patterns.push("enterprise_deal");
@@ -1490,7 +1490,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
    */
   private parseJsonResponse(response: string, attemptNumber: number = 0, maxRetries: number = 2): Record<string, unknown> {
     try {
-      logger.info(`Parsing JSON response (${response.length} chars):`, response.substring(0, 200) + '...');
+      logger.info(`Parsing JSON response (${response?.length || 0} chars):`, response.substring(0, 200) + '...');
       
       // Clean and normalize the response
       const cleaned = this.extractJsonFromResponse(response, attemptNumber > 0);
@@ -1500,7 +1500,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         throw new Error("No JSON content found in response");
       }
 
-      logger.info(`Cleaned JSON (${cleaned.length} chars):`, cleaned.substring(0, 200) + '...');
+      logger.info(`Cleaned JSON (${cleaned?.length || 0} chars):`, cleaned.substring(0, 200) + '...');
       
       // Parse and validate JSON
       const parsed = JSON.parse(cleaned);
@@ -1551,7 +1551,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
   private extractJsonFromResponse(response: string, isRetryAttempt: boolean = false): string | null {
     let cleaned = response.trim();
     
-    logger.info(`Original response length: ${response.length}`);
+    logger.info(`Original response length: ${response?.length || 0}`);
     
     // First, try a quick comment removal in case it's just comments blocking parsing
     const quickCleaned = cleaned.replace(/\s*\/\/[^\n\r]*/g, "");
@@ -1598,9 +1598,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     cleaned = cleaned.replace(/\}[^}]*$/s, "}");
 
     // Step 4: Remove inline comments (// comments) - already tried above but do again after other processing
-    logger.info(`Before comment removal: ${cleaned.length} chars`);
+    logger.info(`Before comment removal: ${cleaned?.length || 0} chars`);
     cleaned = cleaned.replace(/\s*\/\/[^\n\r]*/g, "");
-    logger.info(`After comment removal: ${cleaned.length} chars`);
+    logger.info(`After comment removal: ${cleaned?.length || 0} chars`);
     
     // Step 5: Fix common JSON formatting issues (only if needed)
     // First try to parse as-is to see if it's already valid JSON
@@ -1636,7 +1636,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       let depth = 0;
       let endIndex = -1;
       
-      for (let i = firstBrace; i < cleaned.length; i++) {
+      for (let i = firstBrace; i < cleaned?.length || 0; i++) {
         if (cleaned[i] === '{') {
           depth++;
         } else if (cleaned[i] === '}') {
@@ -1749,7 +1749,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
               // Remove quotes if present
               cleaned = cleaned.replace(/^["']+|["']+$/g, '');
               return cleaned;
-            }).filter(item => item.length > 0);
+            }).filter(item => item?.length || 0 > 0);
             result[key] = items;
           }
         }
@@ -1912,8 +1912,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       "business_process",
     ];
 
-    return requiredFields.every((field) =>
-      Object.prototype.hasOwnProperty.call(response, field),
+    return requiredFields.every((field: any) =>
+      Object?.prototype?.hasOwnProperty.call(response, field),
     );
   }
 
@@ -1929,7 +1929,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       results.phase2_processing_time +
       results.phase3_processing_time;
 
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO email_analysis (
           id, email_id,
@@ -1950,7 +1950,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         id,
         email.id || email.message_id,
         results.workflow_state,
-        results.priority.toUpperCase(),
+        results?.priority?.toUpperCase(),
         "REQUEST",
         results.urgency_score > 0 ? "HIGH" : "MEDIUM",
         results.confidence,
@@ -1959,17 +1959,17 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         results.processing_time,
         results.business_process,
         results.confidence,
-        results.entities.po_numbers.join(",") || null,
-        results.entities.quote_numbers.join(",") || null,
-        results.entities.case_numbers.join(",") || null,
-        results.entities.part_numbers.join(",") || null,
-        results.entities.dollar_amounts.join(",") || null,
-        JSON.stringify(results.entities.contacts),
-        results.action_items.map((a) => a.task).join("; ") || null,
+        results?.entities?.po_numbers.join(",") || null,
+        results?.entities?.quote_numbers.join(",") || null,
+        results?.entities?.case_numbers.join(",") || null,
+        results?.entities?.part_numbers.join(",") || null,
+        results?.entities?.dollar_amounts.join(",") || null,
+        JSON.stringify(results?.entities?.contacts),
+        results?.action_items?.map((a: any) => a.task).join("; ") || null,
         JSON.stringify(results.action_items),
         results.escalation_needed ? "ESCALATED" : "ON_TRACK",
         results.revenue_impact,
-        results.strategic_insights.relationship,
+        results?.strategic_insights?.relationship,
         results.executive_summary,
         results.initial_response,
         "three-phase-phi4",
@@ -1982,8 +1982,8 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
     // Cache in Redis for quick retrieval with defensive programming
     try {
-      if (this.redisService && typeof this.redisService.set === 'function') {
-        await this.redisService.set(
+      if (this.redisService && typeof this?.redisService?.set === 'function') {
+        await this?.redisService?.set(
           `email_analysis:${email.id}`,
           JSON.stringify(results),
           86400, // 24 hour TTL
@@ -2002,7 +2002,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
   private initializeTables(): void {
     // Ensure email_analysis table exists with all required columns
-    executeQuery((db) => {
+    executeQuery((db: any) => {
       db.exec(`
       CREATE TABLE IF NOT EXISTS email_analysis (
         id TEXT PRIMARY KEY,
@@ -2051,27 +2051,27 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     emails: EmailInput[],
     options: AnalysisOptions = {},
   ): Promise<Phase3Results[]> {
-    logger.info(`Starting batch analysis for ${emails.length} emails`);
+    logger.info(`Starting batch analysis for ${emails?.length || 0} emails`);
 
     const results: Phase3Results[] = [];
     const batchSize = 5; // Process 5 emails concurrently
 
-    for (let i = 0; i < emails.length; i += batchSize) {
+    for (let i = 0; i < emails?.length || 0; i += batchSize) {
       const batch = emails.slice(i, i + batchSize);
       const batchResults = await Promise.all(
-        batch.map((email) => this.analyzeEmail(email, options)),
+        batch?.map((email: any) => this.analyzeEmail(email, options)),
       );
       results.push(...(batchResults as Phase3Results[]));
 
       // Emit progress
       this.emit("batch:progress", {
-        processed: i + batch.length,
-        total: emails.length,
-        percentage: ((i + batch.length) / emails.length) * 100,
+        processed: i + batch?.length || 0,
+        total: emails?.length || 0,
+        percentage: ((i + batch?.length || 0) / emails?.length || 0) * 100,
       });
     }
 
-    logger.info(`Batch analysis complete for ${emails.length} emails`);
+    logger.info(`Batch analysis complete for ${emails?.length || 0} emails`);
     return results;
   }
 
@@ -2087,7 +2087,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         ? `WHERE created_at BETWEEN '${startDate.toISOString()}' AND '${endDate.toISOString()}'`
         : "";
 
-    const stats = (await executeQuery((db) => {
+    const stats = (await executeQuery((db: any) => {
       return db
         .prepare(
           `
@@ -2107,9 +2107,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
     // Add parsing metrics
     const successRate =
-      this.parsingMetrics.totalAttempts > 0
-        ? this.parsingMetrics.successfulParses /
-          this.parsingMetrics.totalAttempts
+      this?.parsingMetrics?.totalAttempts > 0
+        ? this?.parsingMetrics?.successfulParses /
+          this?.parsingMetrics?.totalAttempts
         : 0;
 
     return {
@@ -2118,18 +2118,18 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         ...this.parsingMetrics,
         successRate: Math.round(successRate * 10000) / 100, // Percentage with 2 decimal places
         retryRate:
-          this.parsingMetrics.totalAttempts > 0
+          this?.parsingMetrics?.totalAttempts > 0
             ? Math.round(
-                (this.parsingMetrics.retrySuccesses /
-                  this.parsingMetrics.totalAttempts) *
+                (this?.parsingMetrics?.retrySuccesses /
+                  this?.parsingMetrics?.totalAttempts) *
                   10000,
               ) / 100
             : 0,
         fallbackRate:
-          this.parsingMetrics.totalAttempts > 0
+          this?.parsingMetrics?.totalAttempts > 0
             ? Math.round(
-                (this.parsingMetrics.fallbackUses /
-                  this.parsingMetrics.totalAttempts) *
+                (this?.parsingMetrics?.fallbackUses /
+                  this?.parsingMetrics?.totalAttempts) *
                   10000,
               ) / 100
             : 0,
@@ -2145,33 +2145,33 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     attempt: number,
     usedFallback: boolean = false,
   ): void {
-    this.parsingMetrics.totalAttempts++;
+    this?.parsingMetrics?.totalAttempts++;
 
     if (success) {
-      this.parsingMetrics.successfulParses++;
+      this?.parsingMetrics?.successfulParses++;
       if (attempt > 1) {
-        this.parsingMetrics.retrySuccesses++;
+        this?.parsingMetrics?.retrySuccesses++;
       }
     }
 
     if (usedFallback) {
-      this.parsingMetrics.fallbackUses++;
+      this?.parsingMetrics?.fallbackUses++;
     }
 
     // Update average attempts
-    this.parsingMetrics.averageAttempts =
-      (this.parsingMetrics.averageAttempts *
-        (this.parsingMetrics.totalAttempts - 1) +
+    this?.parsingMetrics?.averageAttempts =
+      (this?.parsingMetrics?.averageAttempts *
+        (this?.parsingMetrics?.totalAttempts - 1) +
         attempt) /
-      this.parsingMetrics.totalAttempts;
+      this?.parsingMetrics?.totalAttempts;
 
     // Log metrics periodically
-    if (this.parsingMetrics.totalAttempts % 10 === 0) {
+    if (this?.parsingMetrics?.totalAttempts % 10 === 0) {
       const successRate =
-        this.parsingMetrics.successfulParses /
-        this.parsingMetrics.totalAttempts;
+        this?.parsingMetrics?.successfulParses /
+        this?.parsingMetrics?.totalAttempts;
       logger.info(
-        `Parsing metrics: ${Math.round(successRate * 100)}% success rate, ${Math.round(this.parsingMetrics.averageAttempts * 100) / 100} avg attempts`,
+        `Parsing metrics: ${Math.round(successRate * 100)}% success rate, ${Math.round(this?.parsingMetrics?.averageAttempts * 100) / 100} avg attempts`,
       );
     }
   }
@@ -2186,9 +2186,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     options: AnalysisOptions,
   ): QualityAssessment {
     const qualityThreshold =
-      options.qualityThreshold ?? this.qualityConfig.minimumQualityThreshold;
+      options.qualityThreshold ?? this?.qualityConfig?.minimumQualityThreshold;
     const useHybrid =
-      options.useHybridApproach ?? this.qualityConfig.enableHybridByDefault;
+      options.useHybridApproach ?? this?.qualityConfig?.enableHybridByDefault;
 
     let score = 10; // Start with perfect score and deduct
     const reasons: string[] = [];
@@ -2197,16 +2197,16 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // 1. Workflow validation quality check (0-3 points)
     if (
       !llmResponse.workflow_validation ||
-      llmResponse.workflow_validation.length <
-        this.qualityConfig.workflowValidationMinLength
+      llmResponse?.workflow_validation?.length <
+        this?.qualityConfig?.workflowValidationMinLength
     ) {
       score -= 2;
       reasons.push("Workflow validation too short or missing");
     } else if (
-      llmResponse.workflow_validation.includes("unable to") ||
-      llmResponse.workflow_validation.includes("cannot assess") ||
-      llmResponse.workflow_validation.includes("parsing failed") ||
-      llmResponse.workflow_validation.includes("JSON parsing failed")
+      llmResponse?.workflow_validation?.includes("unable to") ||
+      llmResponse?.workflow_validation?.includes("cannot assess") ||
+      llmResponse?.workflow_validation?.includes("parsing failed") ||
+      llmResponse?.workflow_validation?.includes("JSON parsing failed")
     ) {
       score -= 3;
       reasons.push("Workflow validation indicates LLM failure");
@@ -2227,9 +2227,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // 2. Entity extraction completeness (0-2 points)
     const totalMissedEntities = Object.values(
       llmResponse.missed_entities,
-    ).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+    ).reduce((sum: any, arr: any) => sum + (Array.isArray(arr) ? arr?.length || 0 : 0), 0);
     const totalPhase1Entities = Object.values(phase1Results.entities).reduce(
-      (sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0),
+      (sum, arr) => sum + (Array.isArray(arr) ? arr?.length || 0 : 0),
       0,
     );
 
@@ -2239,7 +2239,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
         "No additional entities found despite Phase 1 entities present",
       );
     } else if (
-      totalMissedEntities < this.qualityConfig.entityExtractionMinCount &&
+      totalMissedEntities < this?.qualityConfig?.entityExtractionMinCount &&
       totalPhase1Entities === 0
     ) {
       // Only penalize if both Phase 1 and LLM found no entities at all
@@ -2253,7 +2253,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
     // 3. Confidence level assessment (0-2 points)
     if (
-      llmResponse.confidence > this.qualityConfig.suspiciousConfidenceThreshold
+      llmResponse.confidence > this?.qualityConfig?.suspiciousConfidenceThreshold
     ) {
       score -= 2;
       reasons.push(`Suspiciously high confidence: ${llmResponse.confidence}`);
@@ -2269,27 +2269,27 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // 4. Risk assessment quality (0-1.5 points)
     if (
       !llmResponse.risk_assessment ||
-      llmResponse.risk_assessment.includes("Unable to assess") ||
+      llmResponse?.risk_assessment?.includes("Unable to assess") ||
       llmResponse.risk_assessment === "Standard risk level"
     ) {
       score -= 1.5;
       reasons.push("Generic or missing risk assessment");
-    } else if (llmResponse.risk_assessment.length < 10) {
+    } else if (llmResponse?.risk_assessment?.length < 10) {
       score -= 0.5;
       reasons.push("Risk assessment too brief");
     }
 
     // 5. Action items quality (0-1 point)
-    if (llmResponse.action_items.length === 0) {
+    if (llmResponse?.action_items?.length === 0) {
       if (phase1Results.urgency_score > 3 || phase1Results.priority !== "low") {
         score -= 1;
         reasons.push("No action items for high-priority email");
       }
     } else {
       // Check action item quality
-      const hasValidActionItems = llmResponse.action_items.some(
-        (item) =>
-          item.task && item.task.length > 10 && item.owner && item.deadline,
+      const hasValidActionItems = llmResponse?.action_items?.some(
+        (item: any) =>
+          item.task && item?.task?.length > 10 && item.owner && item.deadline,
       );
       if (!hasValidActionItems) {
         score -= 0.5;
@@ -2355,7 +2355,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       workflow_validation: this.selectBestField(
         llmResponse.workflow_validation,
         fallback.workflow_validation,
-        (field) => field.length > 20 && !field.includes("unable to"),
+        (field: any) => field?.length || 0 > 20 && !field.includes("unable to"),
       ),
 
       missed_entities: {
@@ -2365,29 +2365,29 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
           Object.entries(llmResponse.missed_entities).filter(
             ([_, entities]) =>
               Array.isArray(entities) &&
-              entities.length > 0 &&
-              entities.length < 10,
+              entities?.length || 0 > 0 &&
+              entities?.length || 0 < 10,
           ),
         ),
       },
 
       action_items:
-        llmResponse.action_items.length > 0 &&
-        llmResponse.action_items.every((item) => item.task && item.owner)
+        llmResponse?.action_items?.length > 0 &&
+        llmResponse?.action_items?.every((item: any) => item.task && item.owner)
           ? llmResponse.action_items
           : fallback.action_items,
 
       risk_assessment: this.selectBestField(
         llmResponse.risk_assessment,
         fallback.risk_assessment,
-        (field) => field.length > 15 && !field.includes("Unable to assess"),
+        (field: any) => field?.length || 0 > 15 && !field.includes("Unable to assess"),
       ),
 
       initial_response: this.selectBestField(
         llmResponse.initial_response,
         fallback.initial_response,
-        (field) =>
-          field.length > 30 && !field.includes("reviewing your request"),
+        (field: any) =>
+          field?.length || 0 > 30 && !field.includes("reviewing your request"),
       ),
 
       // Use conservative confidence - average of LLM and fallback
@@ -2401,9 +2401,9 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
 
       extracted_requirements: [
         ...fallback.extracted_requirements,
-        ...llmResponse.extracted_requirements.filter(
-          (req) =>
-            req.length > 5 && !fallback.extracted_requirements.includes(req),
+        ...llmResponse?.extracted_requirements?.filter(
+          (req: any) =>
+            req?.length || 0 > 5 && !fallback?.extracted_requirements?.includes(req),
         ),
       ],
     };
@@ -2430,38 +2430,38 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     assessment: QualityAssessment,
     options: AnalysisOptions,
   ): void {
-    this.qualityMetrics.totalResponses++;
+    this?.qualityMetrics?.totalResponses++;
 
     const qualityThreshold =
-      options.qualityThreshold ?? this.qualityConfig.minimumQualityThreshold;
+      options.qualityThreshold ?? this?.qualityConfig?.minimumQualityThreshold;
 
     if (assessment.score >= qualityThreshold) {
-      this.qualityMetrics.highQualityResponses++;
+      this?.qualityMetrics?.highQualityResponses++;
     } else {
-      this.qualityMetrics.lowQualityResponses++;
+      this?.qualityMetrics?.lowQualityResponses++;
     }
 
     if (assessment.useFallback) {
-      this.qualityMetrics.fallbackUsed++;
+      this?.qualityMetrics?.fallbackUsed++;
     }
 
     if (assessment.useHybrid) {
-      this.qualityMetrics.hybridUsed++;
+      this?.qualityMetrics?.hybridUsed++;
     }
 
     if (assessment.score < qualityThreshold) {
-      this.qualityMetrics.qualityThresholdMisses++;
+      this?.qualityMetrics?.qualityThresholdMisses++;
     }
 
     // Update rolling average
-    this.qualityMetrics.averageQualityScore =
-      (this.qualityMetrics.averageQualityScore *
-        (this.qualityMetrics.totalResponses - 1) +
+    this?.qualityMetrics?.averageQualityScore =
+      (this?.qualityMetrics?.averageQualityScore *
+        (this?.qualityMetrics?.totalResponses - 1) +
         assessment.score) /
-      this.qualityMetrics.totalResponses;
+      this?.qualityMetrics?.totalResponses;
 
     // Log quality metrics periodically
-    if (this.qualityMetrics.totalResponses % 20 === 0) {
+    if (this?.qualityMetrics?.totalResponses % 20 === 0) {
       this.logQualityMetrics();
     }
   }
@@ -2470,7 +2470,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
    * Log quality metrics for monitoring
    */
   private logQualityMetrics(): void {
-    const metrics = this.qualityMetrics;
+    const metrics = this?.qualityMetrics;
     const highQualityRate =
       (metrics.highQualityResponses / metrics.totalResponses) * 100;
     const fallbackRate = (metrics.fallbackUsed / metrics.totalResponses) * 100;
@@ -2480,7 +2480,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     logger.info(`  Total Responses: ${metrics.totalResponses}`);
     logger.info(`  High Quality Rate: ${highQualityRate.toFixed(1)}%`);
     logger.info(
-      `  Average Quality Score: ${metrics.averageQualityScore.toFixed(2)}/10`,
+      `  Average Quality Score: ${metrics?.averageQualityScore?.toFixed(2)}/10`,
     );
     logger.info(`  Fallback Usage: ${fallbackRate.toFixed(1)}%`);
     logger.info(`  Hybrid Usage: ${hybridRate.toFixed(1)}%`);
@@ -2498,21 +2498,21 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     hybridRate: number;
   } {
     const highQualityRate =
-      this.qualityMetrics.totalResponses > 0
-        ? (this.qualityMetrics.highQualityResponses /
-            this.qualityMetrics.totalResponses) *
+      this?.qualityMetrics?.totalResponses > 0
+        ? (this?.qualityMetrics?.highQualityResponses /
+            this?.qualityMetrics?.totalResponses) *
           100
         : 0;
     const fallbackRate =
-      this.qualityMetrics.totalResponses > 0
-        ? (this.qualityMetrics.fallbackUsed /
-            this.qualityMetrics.totalResponses) *
+      this?.qualityMetrics?.totalResponses > 0
+        ? (this?.qualityMetrics?.fallbackUsed /
+            this?.qualityMetrics?.totalResponses) *
           100
         : 0;
     const hybridRate =
-      this.qualityMetrics.totalResponses > 0
-        ? (this.qualityMetrics.hybridUsed /
-            this.qualityMetrics.totalResponses) *
+      this?.qualityMetrics?.totalResponses > 0
+        ? (this?.qualityMetrics?.hybridUsed /
+            this?.qualityMetrics?.totalResponses) *
           100
         : 0;
 
@@ -2542,12 +2542,12 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     this.logQualityMetrics();
 
     // Clear caches
-    this.phase1Cache.clear();
+    this?.phase1Cache?.clear();
 
     // Connection pool will handle database cleanup automatically
 
     // Close Redis connection
-    await this.redisService.close();
+    await this?.redisService?.close();
 
     // Remove all listeners
     this.removeAllListeners();

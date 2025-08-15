@@ -29,7 +29,7 @@ export class EmailAnalyticsService {
    */
   getTotalEmailsCount(): number {
     try {
-      const stmt = this.db.prepare("SELECT COUNT(*) as total FROM emails");
+      const stmt = this?.db?.prepare("SELECT COUNT(*) as total FROM emails");
       const result = stmt.get() as { total: number };
       return result.total;
     } catch (error) {
@@ -45,7 +45,7 @@ export class EmailAnalyticsService {
    */
   getProcessedEmailsCount(): number {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT COUNT(*) as total 
         FROM email_analysis 
         WHERE workflow_state = 'COMPLETE'
@@ -65,7 +65,7 @@ export class EmailAnalyticsService {
    */
   getPendingEmailsCount(): number {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT COUNT(*) as total 
         FROM emails e 
         LEFT JOIN email_analysis ea ON e.id = ea.email_id 
@@ -86,7 +86,7 @@ export class EmailAnalyticsService {
    */
   getAverageProcessingTime(): number {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT AVG(processing_time_ms) as avg_time 
         FROM email_analysis 
         WHERE processing_time_ms IS NOT NULL
@@ -138,7 +138,7 @@ export class EmailAnalyticsService {
    */
   close(): void {
     try {
-      this.db.close();
+      this?.db?.close();
       logger.info("Database connection closed", "EMAIL_ANALYTICS");
     } catch (error) {
       logger.error("Error closing database connection", "EMAIL_ANALYTICS", {

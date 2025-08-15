@@ -24,7 +24,7 @@ describe("EmailStorageService N+1 Query Tests", () => {
     // Track query count by wrapping db.prepare
     queryCount = 0;
     const db = (service as any).db;
-    originalPrepare = db.prepare.bind(db);
+    originalPrepare = db?.prepare?.bind(db);
 
     db.prepare = (sql: string) => {
       queryCount++;
@@ -146,10 +146,10 @@ describe("EmailStorageService N+1 Query Tests", () => {
       const firstEmail = emails[0];
       expect(firstEmail).toBeDefined();
       expect(firstEmail!.subject).toMatch(/Test Email/);
-      expect(firstEmail!.analysis.quick.workflow.primary).toBe(
+      expect(firstEmail!.analysis?.quick?.workflow.primary).toBe(
         "Order Processing",
       );
-      expect(firstEmail!.analysis.deep.entities.poNumbers).toHaveLength(1);
+      expect(firstEmail!.analysis?.deep?.entities.poNumbers).toHaveLength(1);
     });
 
     it("should handle large result sets efficiently", async () => {
@@ -216,7 +216,7 @@ describe("EmailStorageService N+1 Query Tests", () => {
 
       // Should still execute only 1 query
       expect(queryCount).toBe(1);
-      expect(emails.length).toBeLessThanOrEqual(50);
+      expect(emails?.length || 0).toBeLessThanOrEqual(50);
     });
   });
 
@@ -284,7 +284,7 @@ describe("EmailStorageService N+1 Query Tests", () => {
       const db = (service as any).db;
       const priorities = ["Critical", "High", "Medium", "Low"];
 
-      for (let i = 0; i < priorities.length; i++) {
+      for (let i = 0; i < priorities?.length || 0; i++) {
         const emailId = `sla-email-${i}`;
         const priority = priorities[i];
 
@@ -433,7 +433,7 @@ describe("EmailStorageService N+1 Query Tests", () => {
       const optimizedTime = endOptimized - startOptimized;
 
       // Verify results
-      expect(optimizedEmails.length).toBe(100);
+      expect(optimizedEmails?.length || 0).toBe(100);
       expect(optimizedQueries).toBe(1); // Only 1 query
 
       console.log(

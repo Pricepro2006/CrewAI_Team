@@ -68,7 +68,7 @@ export async function saveAnalysisResults(
   try {
     saveAll(analyses);
     logger.info(
-      `Saved analysis results for ${analyses.length} emails`,
+      `Saved analysis results for ${analyses?.length || 0} emails`,
       "SAVE_ANALYSIS",
     );
   } catch (error) {

@@ -6,7 +6,7 @@
 
 import { program } from "commander";
 import { performance } from "perf_hooks";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 import { executeQuery } from "../database/ConnectionPool.js";
 import { OllamaOptimizer } from "../core/services/OllamaOptimizer.js";
 import { OptimizedEmailProcessor } from "../core/services/OptimizedEmailProcessor.js";
@@ -56,7 +56,7 @@ class OptimizedEmailProcessingScript {
       await redisService.connect();
 
       // Update processor mode
-      this.processor.updateMode(options.mode);
+      this?.processor?.updateMode(options.mode);
 
       // Start monitoring if requested
       if (options.monitor) {
@@ -66,12 +66,12 @@ class OptimizedEmailProcessingScript {
       // Fetch emails to process
       const emails = await this.fetchEmails(options);
       
-      if (emails.length === 0) {
+      if (emails?.length || 0 === 0) {
         logger.info("No emails to process");
         return;
       }
 
-      logger.info(`Found ${emails.length} emails to process`);
+      logger.info(`Found ${emails?.length || 0} emails to process`);
 
       if (options.dryRun) {
         logger.info("DRY RUN - Not processing emails");
@@ -83,24 +83,24 @@ class OptimizedEmailProcessingScript {
       this.setupEventListeners();
 
       // Process emails
-      await this.processor.processEmails(emails);
+      await this?.processor?.processEmails(emails);
 
       // Get final metrics
-      const metrics = this.processor.getMetrics();
+      const metrics = this?.processor?.getMetrics();
       const totalTime = (performance.now() - startTime) / 1000;
 
       // Print results
       this.printResults(metrics, totalTime);
 
     } catch (error) {
-      logger.error("Processing failed:", error);
+      logger.error("Processing failed:", error as string);
       process.exit(1);
     } finally {
       // Cleanup
       if (this.monitorInterval) {
         clearInterval(this.monitorInterval);
       }
-      await this.optimizer.shutdown();
+      await this?.optimizer?.shutdown();
       await redisService.close();
     }
   }
@@ -144,7 +144,7 @@ class OptimizedEmailProcessingScript {
       WHERE 1=1
     `;
 
-    if (conditions.length > 0) {
+    if (conditions?.length || 0 > 0) {
       query += " AND " + conditions.join(" AND ");
     }
 
@@ -155,27 +155,27 @@ class OptimizedEmailProcessingScript {
       query += ` LIMIT ${options.limit}`;
     }
 
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(query);
       return stmt.all(...params);
     });
   }
 
   private setupEventListeners(): void {
-    this.processor.on("processing:start", (data) => {
+    this?.processor?.on("processing:start", (data: any) => {
       logger.info(`Processing started: ${data.total} emails`);
     });
 
-    this.processor.on("processing:progress", (data) => {
-      const percentage = data.percentage.toFixed(1);
+    this?.processor?.on("processing:progress", (data: any) => {
+      const percentage = data?.percentage?.toFixed(1);
       logger.info(`Progress: ${data.processed}/${data.total} (${percentage}%)`);
     });
 
-    this.processor.on("email:complete", (data) => {
-      logger.debug(`Email ${data.emailId} completed in ${data.processingTime.toFixed(0)}ms`);
+    this?.processor?.on("email:complete", (data: any) => {
+      logger.debug(`Email ${data.emailId} completed in ${data?.processingTime?.toFixed(0)}ms`);
     });
 
-    this.processor.on("email:error", (data) => {
+    this?.processor?.on("email:error", (data: any) => {
       logger.error(`Email ${data.emailId} failed:`, data.error);
     });
   }
@@ -184,32 +184,32 @@ class OptimizedEmailProcessingScript {
     logger.info("Starting performance monitoring...");
     
     this.monitorInterval = setInterval(() => {
-      const metrics = this.processor.getMetrics();
-      const ollamaMetrics = metrics.ollamaMetrics;
+      const metrics = this?.processor?.getMetrics();
+      const ollamaMetrics = metrics?.ollamaMetrics;
       
       console.log("\n📊 Performance Monitor:");
       console.log("=======================");
-      console.log(`Throughput: ${metrics.throughput.toFixed(2)} emails/second`);
+      console.log(`Throughput: ${metrics?.throughput?.toFixed(2)} emails/second`);
       console.log(`Success Rate: ${((metrics.successfulEmails / metrics.processedEmails) * 100).toFixed(1)}%`);
       console.log(`Cache Hit Rate: ${((metrics.cacheHits / metrics.processedEmails) * 100).toFixed(1)}%`);
-      console.log(`Average Latency: ${metrics.averageLatency.toFixed(0)}ms`);
+      console.log(`Average Latency: ${metrics?.averageLatency?.toFixed(0)}ms`);
       console.log(`\nPhase Times:`);
-      console.log(`  Phase 1: ${metrics.phase1AvgTime.toFixed(0)}ms`);
-      console.log(`  Phase 2: ${metrics.phase2AvgTime.toFixed(0)}ms`);
-      console.log(`  Phase 3: ${metrics.phase3AvgTime.toFixed(0)}ms`);
+      console.log(`  Phase 1: ${metrics?.phase1AvgTime?.toFixed(0)}ms`);
+      console.log(`  Phase 2: ${metrics?.phase2AvgTime?.toFixed(0)}ms`);
+      console.log(`  Phase 3: ${metrics?.phase3AvgTime?.toFixed(0)}ms`);
       console.log(`\nOllama Stats:`);
       console.log(`  Queue Size: ${ollamaMetrics.queueSize}`);
       console.log(`  Pending Batches: ${ollamaMetrics.pendingBatches}`);
-      console.log(`  Total Throughput: ${ollamaMetrics.totalThroughput.toFixed(2)} req/s`);
+      console.log(`  Total Throughput: ${ollamaMetrics?.totalThroughput?.toFixed(2)} req/s`);
       
-      if (ollamaMetrics.modelMetrics.length > 0) {
+      if (ollamaMetrics?.modelMetrics?.length > 0) {
         console.log(`\nModel Performance:`);
-        ollamaMetrics.modelMetrics.forEach((m: any) => {
+        ollamaMetrics?.modelMetrics?.forEach((m: any) => {
           console.log(`  ${m.model}:`);
-          console.log(`    Requests: ${m.stats.totalRequests}`);
-          console.log(`    Avg Latency: ${m.stats.averageLatency.toFixed(0)}ms`);
-          console.log(`    P95 Latency: ${m.stats.p95Latency.toFixed(0)}ms`);
-          console.log(`    Throughput: ${m.stats.throughput.toFixed(2)} req/s`);
+          console.log(`    Requests: ${m?.stats?.totalRequests}`);
+          console.log(`    Avg Latency: ${m?.stats?.averageLatency.toFixed(0)}ms`);
+          console.log(`    P95 Latency: ${m?.stats?.p95Latency.toFixed(0)}ms`);
+          console.log(`    Throughput: ${m?.stats?.throughput.toFixed(2)} req/s`);
         });
       }
     }, 5000); // Every 5 seconds
@@ -219,7 +219,7 @@ class OptimizedEmailProcessingScript {
     console.log("\nEmail Summary:");
     console.log("=============");
     
-    const priorities = emails.reduce((acc, email) => {
+    const priorities = emails.reduce((acc: any, email: any) => {
       const priority = email.importance || "normal";
       acc[priority] = (acc[priority] || 0) + 1;
       return acc;
@@ -230,8 +230,8 @@ class OptimizedEmailProcessingScript {
       console.log(`  ${priority}: ${count}`);
     });
 
-    const complete = emails.filter(e => e.is_complete_chain).length;
-    console.log(`\nComplete chains: ${complete}/${emails.length}`);
+    const complete = emails?.filter(e => e.is_complete_chain).length;
+    console.log(`\nComplete chains: ${complete}/${emails?.length || 0}`);
   }
 
   private printResults(metrics: any, totalTime: number): void {
@@ -243,12 +243,12 @@ class OptimizedEmailProcessingScript {
     console.log(`Cache Hits: ${metrics.cacheHits}`);
     console.log(`\nPerformance:`);
     console.log(`Total Time: ${totalTime.toFixed(2)} seconds`);
-    console.log(`Throughput: ${metrics.throughput.toFixed(2)} emails/second`);
+    console.log(`Throughput: ${metrics?.throughput?.toFixed(2)} emails/second`);
     console.log(`           (${(metrics.throughput * 60).toFixed(0)} emails/minute)`);
     console.log(`\nPhase Breakdown:`);
-    console.log(`Phase 1 Avg: ${metrics.phase1AvgTime.toFixed(0)}ms`);
-    console.log(`Phase 2 Avg: ${metrics.phase2AvgTime.toFixed(0)}ms`);
-    console.log(`Phase 3 Avg: ${metrics.phase3AvgTime.toFixed(0)}ms`);
+    console.log(`Phase 1 Avg: ${metrics?.phase1AvgTime?.toFixed(0)}ms`);
+    console.log(`Phase 2 Avg: ${metrics?.phase2AvgTime?.toFixed(0)}ms`);
+    console.log(`Phase 3 Avg: ${metrics?.phase3AvgTime?.toFixed(0)}ms`);
     
     // Check if we met the target
     const emailsPerMinute = metrics.throughput * 60;
@@ -271,7 +271,7 @@ program
   .option("-p, --priority <level>", "Filter by priority: low, normal, high")
   .option("--dry-run", "Show what would be processed without actually processing")
   .option("--monitor", "Enable real-time performance monitoring")
-  .action(async (options) => {
+  .action(async (options: any) => {
     const script = new OptimizedEmailProcessingScript();
     
     const processOptions: ProcessingOptions = {

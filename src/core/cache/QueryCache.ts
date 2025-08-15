@@ -65,32 +65,32 @@ export class QueryCache {
   private async initialize(): Promise<void> {
     try {
       this.redis = new Redis({
-        host: this.config.host,
-        port: this.config.port,
-        password: this.config.password || undefined,
-        db: this.config.db,
-        maxRetriesPerRequest: this.config.maxRetries,
+        host: this?.config?.host,
+        port: this?.config?.port,
+        password: this?.config?.password || undefined,
+        db: this?.config?.db,
+        maxRetriesPerRequest: this?.config?.maxRetries,
         lazyConnect: true,
-        reconnectOnError: (err) => {
+        reconnectOnError: (err: any) => {
           const targetError = "READONLY";
-          return err.message.includes(targetError);
+          return err?.message?.includes(targetError);
         },
       });
 
       // Test connection
-      await this.redis.connect();
-      await this.redis.ping();
+      await this?.redis.connect();
+      await this?.redis.ping();
 
       this.enabled = true;
       logger.info("Query cache initialized successfully", "QUERY_CACHE", {
-        host: this.config.host,
-        port: this.config.port,
-        db: this.config.db,
+        host: this?.config?.host,
+        port: this?.config?.port,
+        db: this?.config?.db,
       });
 
       // Set up event handlers
-      this.redis.on("error", (error) => {
-        this.stats.errors++;
+      this?.redis.on("error", (error: any) => {
+        this?.stats?.errors++;
         logger.error(
           "Redis connection error",
           "QUERY_CACHE",
@@ -100,12 +100,12 @@ export class QueryCache {
         this.enabled = false;
       });
 
-      this.redis.on("connect", () => {
+      this?.redis.on("connect", () => {
         logger.info("Redis cache connected", "QUERY_CACHE");
         this.enabled = true;
       });
 
-      this.redis.on("close", () => {
+      this?.redis.on("close", () => {
         logger.warn("Redis cache disconnected", "QUERY_CACHE");
         this.enabled = false;
       });
@@ -132,10 +132,10 @@ export class QueryCache {
 
     try {
       const key = this.generateKey(query, context);
-      const cached = await this.redis.get(key);
+      const cached = await this?.redis.get(key);
 
       if (!cached) {
-        this.stats.misses++;
+        this?.stats?.misses++;
         this.updateHitRate();
         return null;
       }
@@ -144,13 +144,13 @@ export class QueryCache {
 
       // Check if entry has expired (additional check)
       if (Date.now() > entry.timestamp + entry.ttl * 1000) {
-        await this.redis.del(key);
-        this.stats.misses++;
+        await this?.redis.del(key);
+        this?.stats?.misses++;
         this.updateHitRate();
         return null;
       }
 
-      this.stats.hits++;
+      this?.stats?.hits++;
       this.updateHitRate();
 
       logger.debug("Cache hit", "QUERY_CACHE", {
@@ -160,7 +160,7 @@ export class QueryCache {
 
       return entry.data;
     } catch (error) {
-      this.stats.errors++;
+      this?.stats?.errors++;
       logger.error("Cache get error", "QUERY_CACHE", undefined, error as Error);
       return null;
     }
@@ -181,7 +181,7 @@ export class QueryCache {
 
     try {
       const key = this.generateKey(query, context);
-      const effectiveTTL = ttl || this.config.defaultTTL;
+      const effectiveTTL = ttl || this?.config?.defaultTTL;
 
       const entry: CacheEntry = {
         data,
@@ -190,8 +190,8 @@ export class QueryCache {
         key,
       };
 
-      await this.redis.setex(key, effectiveTTL, JSON.stringify(entry));
-      this.stats.sets++;
+      await this?.redis.setex(key, effectiveTTL, JSON.stringify(entry));
+      this?.stats?.sets++;
 
       logger.debug("Cache set", "QUERY_CACHE", {
         key: key.substring(0, 20) + "...",
@@ -199,7 +199,7 @@ export class QueryCache {
         dataSize: JSON.stringify(data).length,
       });
     } catch (error) {
-      this.stats.errors++;
+      this?.stats?.errors++;
       logger.error("Cache set error", "QUERY_CACHE", undefined, error as Error);
     }
   }
@@ -214,13 +214,13 @@ export class QueryCache {
 
     try {
       const key = this.generateKey(query, context);
-      await this.redis.del(key);
+      await this?.redis.del(key);
 
       logger.debug("Cache cleared", "QUERY_CACHE", {
         key: key.substring(0, 20) + "...",
       });
     } catch (error) {
-      this.stats.errors++;
+      this?.stats?.errors++;
       logger.error(
         "Cache clear error",
         "QUERY_CACHE",
@@ -239,17 +239,17 @@ export class QueryCache {
     }
 
     try {
-      const pattern = this.config.keyPrefix + "*";
-      const keys = await this.redis.keys(pattern);
+      const pattern = this?.config?.keyPrefix + "*";
+      const keys = await this?.redis.keys(pattern);
 
-      if (keys.length > 0) {
-        await this.redis.del(...keys);
+      if (keys?.length || 0 > 0) {
+        await this?.redis.del(...keys);
         logger.info("All query cache cleared", "QUERY_CACHE", {
-          keysDeleted: keys.length,
+          keysDeleted: keys?.length || 0,
         });
       }
     } catch (error) {
-      this.stats.errors++;
+      this?.stats?.errors++;
       logger.error(
         "Cache clear all error",
         "QUERY_CACHE",
@@ -287,7 +287,7 @@ export class QueryCache {
 
     try {
       const start = Date.now();
-      await this.redis.ping();
+      await this?.redis.ping();
       const latency = Date.now() - start;
 
       return {
@@ -311,15 +311,15 @@ export class QueryCache {
       : "";
     const combined = query + contextStr;
     const hash = crypto.createHash("md5").update(combined).digest("hex");
-    return this.config.keyPrefix + hash;
+    return this?.config?.keyPrefix + hash;
   }
 
   /**
    * Update hit rate calculation
    */
   private updateHitRate(): void {
-    const total = this.stats.hits + this.stats.misses;
-    this.stats.hitRate = total > 0 ? (this.stats.hits / total) * 100 : 0;
+    const total = this?.stats?.hits + this?.stats?.misses;
+    this?.stats?.hitRate = total > 0 ? (this?.stats?.hits / total) * 100 : 0;
   }
 
   /**
@@ -327,7 +327,7 @@ export class QueryCache {
    */
   async close(): Promise<void> {
     if (this.redis) {
-      await this.redis.quit();
+      await this?.redis.quit();
       this.redis = null;
       this.enabled = false;
       logger.info("Query cache closed", "QUERY_CACHE");

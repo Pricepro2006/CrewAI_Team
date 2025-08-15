@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import type { TRPCClientErrorLike } from "@trpc/client";
 import { useCSRF, handleCSRFError } from "./useCSRF.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Enhanced mutation hook with automatic CSRF protection and retry logic
@@ -9,12 +9,12 @@ import { logger } from "../utils/logger.js";
  * @example
  * ```tsx
  * const createUserMutation = useCSRFProtectedMutation(
- *   api.user.create,
+ *   api?.user?.create,
  *   {
- *     onSuccess: (data) => {
+ *     onSuccess: (data: any) => {
  *       console.log('User created:', data);
  *     },
- *     onError: (error) => {
+ *     onError: (error: any) => {
  *       console.error('Failed to create user:', error);
  *     },
  *   }
@@ -55,7 +55,7 @@ export function useCSRFProtectedMutation<
           },
           {
             onTokenRefresh: async () => {
-              setRetryCount((prev) => prev + 1);
+              setRetryCount((prev: any) => prev + 1);
               await refreshToken();
             },
             maxRetries: options?.maxRetries ?? 2,
@@ -68,7 +68,7 @@ export function useCSRFProtectedMutation<
 
         // Check if it's specifically a CSRF error
         if (
-          csrfError.message.toLowerCase().includes("csrf") ||
+          csrfError?.message?.toLowerCase().includes("csrf") ||
           (error as any)?.code === "FORBIDDEN"
         ) {
           logger.error("CSRF error in protected mutation", "CSRF", {
@@ -107,11 +107,11 @@ export function useCSRFProtectedMutation<
  * const batchDelete = useCSRFBatchOperation(
  *   async (ids: string[]) => {
  *     return Promise.all(
- *       ids.map(id => api.item.delete.mutateAsync({ id }))
+ *       ids?.map(id => api?.item?.delete.mutateAsync({ id }))
  *     );
  *   },
  *   {
- *     onSuccess: (results) => {
+ *     onSuccess: (results: any) => {
  *       console.log('Deleted items:', results);
  *     },
  *   }
@@ -157,7 +157,7 @@ export function useCSRFBatchOperation<TInput, TOutput>(
         setError(error);
 
         if (
-          error.message.toLowerCase().includes("csrf") ||
+          error?.message?.toLowerCase().includes("csrf") ||
           (err as any)?.code === "FORBIDDEN"
         ) {
           if (options?.onCSRFError) {
@@ -190,7 +190,7 @@ export function useCSRFBatchOperation<TInput, TOutput>(
  * @example
  * ```tsx
  * const submitForm = useCSRFFormSubmit({
- *   onSuccess: (data) => {
+ *   onSuccess: (data: any) => {
  *     console.log('Form submitted:', data);
  *   },
  * });

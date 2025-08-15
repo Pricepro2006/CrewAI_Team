@@ -211,7 +211,7 @@ export class DealDetectionEngine {
       const minSavings = options.minSavingsPercentage || 10;
 
       // Get price comparison data
-      const comparisons = await this.priceHistory.comparePriceWithHistory(productId, comparisonPeriods);
+      const comparisons = await this?.priceHistory?.comparePriceWithHistory(productId, comparisonPeriods);
       
       for (const comparison of comparisons) {
         if (Math.abs(comparison.priceChangePercentage) >= minSavings && comparison.isSignificantDrop) {
@@ -252,7 +252,7 @@ export class DealDetectionEngine {
 
       logger.info("Deal detection completed", "DEAL_DETECTION", {
         productId,
-        dealsFound: scoredDeals.length,
+        dealsFound: scoredDeals?.length || 0,
         topScore: scoredDeals[0]?.dealScore
       });
 
@@ -280,10 +280,10 @@ export class DealDetectionEngine {
     const allDeals: DetectedDeal[] = [];
 
     // Process in batches to avoid overwhelming the system
-    for (let i = 0; i < products.length; i += maxConcurrent) {
+    for (let i = 0; i < products?.length || 0; i += maxConcurrent) {
       const batch = products.slice(i, i + maxConcurrent);
       
-      const batchPromises = batch.map(({ productId, product }) =>
+      const batchPromises = batch?.map(({ productId, product }) =>
         this.detectDeals(productId, product, options).catch(error => {
           logger.warn("Failed to detect deals for product", "DEAL_DETECTION", { error, productId });
           return [];
@@ -294,14 +294,14 @@ export class DealDetectionEngine {
       allDeals.push(...batchResults.flat());
 
       // Add delay between batches
-      if (i + maxConcurrent < products.length) {
+      if (i + maxConcurrent < products?.length || 0) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
 
     logger.info("Batch deal detection completed", "DEAL_DETECTION", {
-      productsProcessed: products.length,
-      totalDealsFound: allDeals.length
+      productsProcessed: products?.length || 0,
+      totalDealsFound: allDeals?.length || 0
     });
 
     return allDeals;
@@ -315,7 +315,7 @@ export class DealDetectionEngine {
       const alertId = `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date().toISOString();
 
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT INTO deal_alerts_enhanced (
           id, user_id, product_id, walmart_id, category, search_query,
           price_drop_percentage, price_drop_absolute, target_price, deal_type,
@@ -355,7 +355,7 @@ export class DealDetectionEngine {
    */
   async checkDealAlerts(): Promise<void> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT * FROM deal_alerts_enhanced 
         WHERE is_active = 1 
         AND (last_checked_at IS NULL OR last_checked_at < datetime('now', '-1 hour'))
@@ -389,7 +389,7 @@ export class DealDetectionEngine {
           await this.checkSingleAlert(alert);
 
           // Update last checked time
-          const updateStmt = this.db.prepare(`
+          const updateStmt = this?.db?.prepare(`
             UPDATE deal_alerts_enhanced 
             SET last_checked_at = CURRENT_TIMESTAMP 
             WHERE id = ?
@@ -451,10 +451,10 @@ export class DealDetectionEngine {
       query += ` ORDER BY deal_score DESC, detected_at DESC LIMIT ?`;
       params.push(filters.limit || 50);
 
-      const stmt = this.db.prepare(query);
+      const stmt = this?.db?.prepare(query);
       const rows = stmt.all(...params) as any[];
 
-      return rows.map(this.mapRowToDeal);
+      return rows?.map(this.mapRowToDeal);
 
     } catch (error) {
       logger.error("Failed to get active deals", "DEAL_DETECTION", { error });
@@ -475,7 +475,7 @@ export class DealDetectionEngine {
     try {
       const periodHours = period === '24h' ? 24 : period === '7d' ? 168 : 720;
       
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT 
           deal_type,
           category,
@@ -491,7 +491,7 @@ export class DealDetectionEngine {
 
       const data = stmt.all() as any[];
 
-      const totalDeals = data.reduce((sum, row) => sum + row.count, 0);
+      const totalDeals = data.reduce((sum: any, row: any) => sum + row.count, 0);
       const dealsByType: Record<string, number> = {};
       const categoryStats: Record<string, { count: number; totalSavings: number }> = {};
       const trendData: Record<string, { deals: number; totalScore: number; count: number }> = {};
@@ -513,7 +513,7 @@ export class DealDetectionEngine {
         trendData[row.date]!.count += row.count;
       }
 
-      const averageSavings = data.reduce((sum, row) => sum + row.avg_savings * row.count, 0) / totalDeals || 0;
+      const averageSavings = data.reduce((sum: any, row: any) => sum + row.avg_savings * row.count, 0) / totalDeals || 0;
       
       const topCategories = Object.entries(categoryStats)
         .map(([category, stats]) => ({
@@ -530,7 +530,7 @@ export class DealDetectionEngine {
           deals: stats.deals,
           avgScore: stats.totalScore / stats.count
         }))
-        .sort((a, b) => a.date.localeCompare(b.date));
+        .sort((a, b) => a?.date?.localeCompare(b.date));
 
       return {
         totalDeals,
@@ -605,7 +605,7 @@ export class DealDetectionEngine {
 
   private async checkHistoricalLow(product: WalmartProduct): Promise<DetectedDeal | null> {
     try {
-      const stats = await this.priceHistory.getPriceStatistics(product.walmartId || product.id);
+      const stats = await this?.priceHistory?.getPriceStatistics(product.walmartId || product.id);
       if (!stats) return null;
 
       const currentPrice = product.livePrice?.price || extractNumericPrice(product.price);
@@ -659,9 +659,9 @@ export class DealDetectionEngine {
 
       for (const [seasonalCategory, pattern] of Object.entries(this.SEASONAL_PATTERNS)) {
         if (category.includes(seasonalCategory) || 
-            pattern.items.some(item => category.includes(item) || product.name.toLowerCase().includes(item))) {
+            pattern?.items?.some(item => category.includes(item) || product?.name?.toLowerCase().includes(item))) {
           
-          if (pattern.offPeakMonths.includes(currentMonth)) {
+          if (pattern?.offPeakMonths?.includes(currentMonth)) {
             // This is off-peak season - likely good deals
             const currentPrice = product.livePrice?.price || extractNumericPrice(product.price);
             const seasonalDiscount = 0.15; // Assume 15% seasonal discount
@@ -716,7 +716,7 @@ export class DealDetectionEngine {
 
       // For demonstration, assume bulk discount if product name suggests larger size
       const currentPrice = product.livePrice?.price || extractNumericPrice(product.price);
-      const name = product.name.toLowerCase();
+      const name = product?.name?.toLowerCase();
 
       if (name.includes('bulk') || name.includes('family') || name.includes('value') || 
           name.match(/\b\d+\s*(pack|count|lb|oz|gallon)\b/)) {
@@ -768,17 +768,17 @@ export class DealDetectionEngine {
       let score = 0;
 
       // Base score from savings percentage
-      const savingsPercent = deal.savingsPercentage;
-      if (savingsPercent >= this.DEAL_THRESHOLDS.exceptional.percentage) {
-        score = this.DEAL_THRESHOLDS.exceptional.score;
-      } else if (savingsPercent >= this.DEAL_THRESHOLDS.excellent.percentage) {
-        score = this.DEAL_THRESHOLDS.excellent.score;
-      } else if (savingsPercent >= this.DEAL_THRESHOLDS.good.percentage) {
-        score = this.DEAL_THRESHOLDS.good.score;
-      } else if (savingsPercent >= this.DEAL_THRESHOLDS.moderate.percentage) {
-        score = this.DEAL_THRESHOLDS.moderate.score;
+      const savingsPercent = deal?.savingsPercentage;
+      if (savingsPercent >= this?.DEAL_THRESHOLDS?.exceptional.percentage) {
+        score = this?.DEAL_THRESHOLDS?.exceptional.score;
+      } else if (savingsPercent >= this?.DEAL_THRESHOLDS?.excellent.percentage) {
+        score = this?.DEAL_THRESHOLDS?.excellent.score;
+      } else if (savingsPercent >= this?.DEAL_THRESHOLDS?.good.percentage) {
+        score = this?.DEAL_THRESHOLDS?.good.score;
+      } else if (savingsPercent >= this?.DEAL_THRESHOLDS?.moderate.percentage) {
+        score = this?.DEAL_THRESHOLDS?.moderate.score;
       } else {
-        score = this.DEAL_THRESHOLDS.minimal.score;
+        score = this?.DEAL_THRESHOLDS?.minimal.score;
       }
 
       // Boost for historical lows
@@ -817,7 +817,7 @@ export class DealDetectionEngine {
 
   private async storeDeal(deal: DetectedDeal): Promise<void> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT OR REPLACE INTO detected_deals (
           id, product_id, walmart_id, product_name, category,
           deal_type, current_price, original_price, reference_price,

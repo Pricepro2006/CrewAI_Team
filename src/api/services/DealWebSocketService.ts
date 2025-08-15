@@ -191,20 +191,20 @@ export class DealWebSocketService extends EventEmitter {
     const connectionId = `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     // Store connection mappings
-    this.connections.set(connectionId, ws);
-    this.connectionUsers.set(connectionId, userId);
+    this?.connections?.set(connectionId, ws);
+    this?.connectionUsers?.set(connectionId, userId);
     
-    if (!this.userConnections.has(userId)) {
-      this.userConnections.set(userId, new Set());
+    if (!this?.userConnections?.has(userId)) {
+      this?.userConnections?.set(userId, new Set());
     }
-    this.userConnections.get(userId)!.add(connectionId);
+    this?.userConnections?.get(userId)!.add(connectionId);
     
     // Load user preferences
     this.loadUserPreference(userId);
     
     // Set up connection event handlers
     ws.on('close', () => this.unregisterConnection(connectionId));
-    ws.on('error', (error) => {
+    ws.on('error', (error: any) => {
       logger.warn("WebSocket error", "DEAL_WEBSOCKET", { error, connectionId, userId });
       this.unregisterConnection(connectionId);
     });
@@ -212,13 +212,13 @@ export class DealWebSocketService extends EventEmitter {
     // Send initial data
     this.sendWelcomeMessage(ws, userId);
     
-    this.stats.totalConnections++;
-    this.stats.activeConnections = this.connections.size;
+    this?.stats?.totalConnections++;
+    this?.stats?.activeConnections = this?.connections?.size;
     
     logger.info("Deal WebSocket connection registered", "DEAL_WEBSOCKET", { 
       connectionId, 
       userId,
-      activeConnections: this.stats.activeConnections
+      activeConnections: this?.stats?.activeConnections
     });
     
     this.emit('connection_registered', { connectionId, userId });
@@ -228,27 +228,27 @@ export class DealWebSocketService extends EventEmitter {
    * Unregister a WebSocket connection
    */
   private unregisterConnection(connectionId: string): void {
-    const userId = this.connectionUsers.get(connectionId);
+    const userId = this?.connectionUsers?.get(connectionId);
     
-    this.connections.delete(connectionId);
-    this.connectionUsers.delete(connectionId);
+    this?.connections?.delete(connectionId);
+    this?.connectionUsers?.delete(connectionId);
     
     if (userId) {
-      const userConnections = this.userConnections.get(userId);
+      const userConnections = this?.userConnections?.get(userId);
       if (userConnections) {
         userConnections.delete(connectionId);
         if (userConnections.size === 0) {
-          this.userConnections.delete(userId);
+          this?.userConnections?.delete(userId);
         }
       }
     }
     
-    this.stats.activeConnections = this.connections.size;
+    this?.stats?.activeConnections = this?.connections?.size;
     
     logger.info("Deal WebSocket connection unregistered", "DEAL_WEBSOCKET", { 
       connectionId, 
       userId,
-      activeConnections: this.stats.activeConnections
+      activeConnections: this?.stats?.activeConnections
     });
     
     this.emit('connection_unregistered', { connectionId, userId });
@@ -289,8 +289,8 @@ export class DealWebSocketService extends EventEmitter {
     logger.info("Deal notification broadcasted", "DEAL_WEBSOCKET", {
       dealId: deal.id,
       productName: deal.productName,
-      savings: `${deal.savingsPercentage.toFixed(1)}%`,
-      interestedUsers: interestedUsers.length
+      savings: `${deal?.savingsPercentage?.toFixed(1)}%`,
+      interestedUsers: interestedUsers?.length || 0
     });
   }
 
@@ -379,7 +379,7 @@ export class DealWebSocketService extends EventEmitter {
   async updateUserPreferences(userId: string, preferences: Partial<UserPreferences>): Promise<void> {
     try {
       const now = new Date().toISOString();
-      const existing = this.userPreferences.get(userId);
+      const existing = this?.userPreferences?.get(userId);
       
       const updated: UserPreferences = {
         userId,
@@ -394,7 +394,7 @@ export class DealWebSocketService extends EventEmitter {
       };
 
       // Save to database
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT OR REPLACE INTO deal_user_preferences (
           user_id, categories, min_savings_percentage, max_price,
           notification_frequency, deal_types, is_active, created_at, updated_at
@@ -413,7 +413,7 @@ export class DealWebSocketService extends EventEmitter {
         updated.updatedAt
       );
 
-      this.userPreferences.set(userId, updated);
+      this?.userPreferences?.set(userId, updated);
 
       // Notify user of preference update
       const message: DealWebSocketMessage = {
@@ -447,14 +447,14 @@ export class DealWebSocketService extends EventEmitter {
     queuedNotifications: number;
   } {
     const connectionsByUser: Record<string, number> = {};
-    for (const [userId, connections] of this.userConnections.entries()) {
+    for (const [userId, connections] of this?.userConnections?.entries()) {
       connectionsByUser[userId] = connections.size;
     }
 
     return {
       ...this.stats,
       connectionsByUser,
-      queuedNotifications: this.notificationQueue.length,
+      queuedNotifications: this?.notificationQueue?.length,
     };
   }
 
@@ -463,7 +463,7 @@ export class DealWebSocketService extends EventEmitter {
   private initializeTables(): void {
     try {
       // User preferences table
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS deal_user_preferences (
           user_id TEXT PRIMARY KEY,
           categories TEXT NOT NULL, -- JSON array
@@ -478,7 +478,7 @@ export class DealWebSocketService extends EventEmitter {
       `);
 
       // Notification queue table
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS deal_notification_queue (
           id TEXT PRIMARY KEY,
           user_id TEXT NOT NULL,
@@ -495,7 +495,7 @@ export class DealWebSocketService extends EventEmitter {
       `);
 
       // Indexes
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE INDEX IF NOT EXISTS idx_deal_notification_queue_user_status 
         ON deal_notification_queue(user_id, status, scheduled_for)
       `);
@@ -510,7 +510,7 @@ export class DealWebSocketService extends EventEmitter {
 
   private loadUserPreferences(): void {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT * FROM deal_user_preferences WHERE is_active = 1
       `);
 
@@ -529,11 +529,11 @@ export class DealWebSocketService extends EventEmitter {
           updatedAt: row.updated_at,
         };
 
-        this.userPreferences.set(preferences.userId, preferences);
+        this?.userPreferences?.set(preferences.userId, preferences);
       }
 
       logger.info("User preferences loaded", "DEAL_WEBSOCKET", { 
-        count: this.userPreferences.size 
+        count: this?.userPreferences?.size 
       });
 
     } catch (error) {
@@ -543,7 +543,7 @@ export class DealWebSocketService extends EventEmitter {
 
   private loadUserPreference(userId: string): void {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT * FROM deal_user_preferences WHERE user_id = ? AND is_active = 1
       `);
 
@@ -562,7 +562,7 @@ export class DealWebSocketService extends EventEmitter {
           updatedAt: row.updated_at,
         };
 
-        this.userPreferences.set(userId, preferences);
+        this?.userPreferences?.set(userId, preferences);
       }
 
     } catch (error) {
@@ -573,11 +573,11 @@ export class DealWebSocketService extends EventEmitter {
   private getInterestedUsers(deal: DetectedDeal): string[] {
     const interestedUsers: string[] = [];
 
-    for (const [userId, preferences] of this.userPreferences.entries()) {
+    for (const [userId, preferences] of this?.userPreferences?.entries()) {
       if (!preferences.isActive) continue;
 
       // Check if user is connected
-      if (!this.userConnections.has(userId)) continue;
+      if (!this?.userConnections?.has(userId)) continue;
 
       // Check savings threshold
       if (deal.savingsPercentage < preferences.minSavingsPercentage) continue;
@@ -586,16 +586,16 @@ export class DealWebSocketService extends EventEmitter {
       if (preferences.maxPrice && deal.currentPrice > preferences.maxPrice) continue;
 
       // Check category preference
-      if (preferences.categories.length > 0 && deal.category) {
-        const categoryMatch = preferences.categories.some(cat => 
+      if (preferences?.categories?.length > 0 && deal.category) {
+        const categoryMatch = preferences?.categories?.some(cat => 
           deal.category!.toLowerCase().includes(cat.toLowerCase())
         );
         if (!categoryMatch) continue;
       }
 
       // Check deal type preference
-      if (preferences.dealTypes.length > 0) {
-        if (!preferences.dealTypes.includes(deal.dealType)) continue;
+      if (preferences?.dealTypes?.length > 0) {
+        if (!preferences?.dealTypes?.includes(deal.dealType)) continue;
       }
 
       // Check rate limiting
@@ -614,7 +614,7 @@ export class DealWebSocketService extends EventEmitter {
   }
 
   private sendToUser(userId: string, message: DealWebSocketMessage, priority: 'low' | 'normal' | 'high' | 'urgent' = 'normal'): void {
-    const userConnections = this.userConnections.get(userId);
+    const userConnections = this?.userConnections?.get(userId);
     if (!userConnections || userConnections.size === 0) {
       // Queue message for later delivery
       this.queueMessage(userId, message, priority);
@@ -630,12 +630,12 @@ export class DealWebSocketService extends EventEmitter {
     // Send to all user connections
     let sent = false;
     for (const connectionId of userConnections) {
-      const ws = this.connections.get(connectionId);
+      const ws = this?.connections?.get(connectionId);
       if (ws && ws.readyState === ws.OPEN) {
         try {
           ws.send(JSON.stringify(message));
           sent = true;
-          this.stats.messagesSent++;
+          this?.stats?.messagesSent++;
         } catch (error) {
           logger.warn("Failed to send message to WebSocket", "DEAL_WEBSOCKET", { 
             error, 
@@ -648,19 +648,19 @@ export class DealWebSocketService extends EventEmitter {
 
     if (sent) {
       this.incrementUserNotificationCount(userId);
-      this.stats.messagesDelivered++;
+      this?.stats?.messagesDelivered++;
     } else {
       this.queueMessage(userId, message, priority);
-      this.stats.messagesFailed++;
+      this?.stats?.messagesFailed++;
     }
   }
 
   private broadcast(message: DealWebSocketMessage): void {
-    for (const [connectionId, ws] of this.connections.entries()) {
+    for (const [connectionId, ws] of this?.connections?.entries()) {
       if (ws.readyState === ws.OPEN) {
         try {
           ws.send(JSON.stringify(message));
-          this.stats.messagesSent++;
+          this?.stats?.messagesSent++;
         } catch (error) {
           logger.warn("Failed to broadcast message to WebSocket", "DEAL_WEBSOCKET", { 
             error, 
@@ -670,7 +670,7 @@ export class DealWebSocketService extends EventEmitter {
       }
     }
     
-    this.stats.messagesDelivered += this.connections.size;
+    this?.stats?.messagesDelivered += this?.connections?.size;
   }
 
   private queueMessage(userId: string, message: DealWebSocketMessage, priority: 'low' | 'normal' | 'high' | 'urgent'): void {
@@ -686,11 +686,11 @@ export class DealWebSocketService extends EventEmitter {
       createdAt: new Date().toISOString(),
     };
 
-    this.notificationQueue.push(queueItem);
-    this.stats.messagesQueued++;
+    this?.notificationQueue?.push(queueItem);
+    this?.stats?.messagesQueued++;
 
     // Sort by priority
-    this.notificationQueue.sort((a, b) => {
+    this?.notificationQueue?.sort((a, b) => {
       const priorityOrder = { urgent: 4, high: 3, normal: 2, low: 1 };
       return priorityOrder[b.priority as keyof typeof priorityOrder] - priorityOrder[a.priority as keyof typeof priorityOrder];
     });
@@ -703,10 +703,10 @@ export class DealWebSocketService extends EventEmitter {
   }
 
   private processBatchNotifications(): void {
-    if (this.notificationQueue.length === 0) return;
+    if (this?.notificationQueue?.length === 0) return;
 
     const now = new Date();
-    const toProcess = this.notificationQueue.filter(item => 
+    const toProcess = this?.notificationQueue?.filter(item => 
       item.status === 'pending' && new Date(item.scheduledFor) <= now
     ).slice(0, 50); // Process up to 50 at a time
 
@@ -728,9 +728,9 @@ export class DealWebSocketService extends EventEmitter {
       }
 
       // Remove from queue
-      const index = this.notificationQueue.findIndex(q => q.id === item.id);
+      const index = this?.notificationQueue?.findIndex(q => q.id === item.id);
       if (index >= 0) {
-        this.notificationQueue.splice(index, 1);
+        this?.notificationQueue?.splice(index, 1);
       }
     }
   }
@@ -739,24 +739,24 @@ export class DealWebSocketService extends EventEmitter {
     const now = Date.now();
     const hourInMs = 60 * 60 * 1000;
     
-    let userCount = this.userNotificationCounts.get(userId);
+    let userCount = this?.userNotificationCounts?.get(userId);
     if (!userCount || userCount.resetAt <= now) {
       userCount = { count: 0, resetAt: now + hourInMs };
-      this.userNotificationCounts.set(userId, userCount);
+      this?.userNotificationCounts?.set(userId, userCount);
     }
 
     return userCount.count >= this.MAX_NOTIFICATIONS_PER_HOUR;
   }
 
   private incrementUserNotificationCount(userId: string): void {
-    const userCount = this.userNotificationCounts.get(userId);
+    const userCount = this?.userNotificationCounts?.get(userId);
     if (userCount) {
       userCount.count++;
     }
   }
 
   private sendWelcomeMessage(ws: AuthenticatedWebSocket, userId: string): void {
-    const preferences = this.userPreferences.get(userId);
+    const preferences = this?.userPreferences?.get(userId);
     if (preferences) {
       const welcomeMessage: DealWebSocketMessage = {
         type: 'deal.user_preferences_updated',

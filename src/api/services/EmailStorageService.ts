@@ -249,7 +249,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       );
     } else {
       // Fallback to direct connection (not recommended for production)
-      const databasePath = dbPath || appConfig.database.path;
+      const databasePath = dbPath || appConfig?.database?.path;
       this.db = new Database(databasePath);
       logger.info(
         "EmailStorageService initialized with single connection (fallback mode)",
@@ -276,16 +276,16 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             // Return a statement-like object that uses the DatabaseManager
             return {
               run: async (...params: any[]) => {
-                return databaseManager.execute('main', (db) => db.prepare(sql).run(...params));
+                return databaseManager.execute('main', (db: any) => db.prepare(sql).run(...params));
               },
               get: async (...params: any[]) => {
-                return databaseManager.execute('main', (db) => db.prepare(sql).get(...params));
+                return databaseManager.execute('main', (db: any) => db.prepare(sql).get(...params));
               },
               all: async (...params: any[]) => {
-                return databaseManager.execute('main', (db) => db.prepare(sql).all(...params));
+                return databaseManager.execute('main', (db: any) => db.prepare(sql).all(...params));
               },
               iterate: async (...params: any[]) => {
-                return databaseManager.execute('main', (db) => db.prepare(sql).iterate(...params));
+                return databaseManager.execute('main', (db: any) => db.prepare(sql).iterate(...params));
               },
             };
           };
@@ -303,14 +303,14 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         // For pragma method
         if (prop === "pragma") {
           return async (pragma: string, options?: any) => {
-            return databaseManager.execute('main', (db) => db.pragma(pragma, options));
+            return databaseManager.execute('main', (db: any) => db.pragma(pragma, options));
           };
         }
 
         // For exec method
         if (prop === "exec") {
           return async (sql: string) => {
-            return databaseManager.execute('main', (db) => db.exec(sql));
+            return databaseManager.execute('main', (db: any) => db.exec(sql));
           };
         }
 
@@ -323,7 +323,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
         // For other methods, delegate to DatabaseManager
         return async (...args: any[]) => {
-          return databaseManager.execute('main', (db) => (db as any)[prop](...args));
+          return databaseManager.execute('main', (db: any) => (db as any)[prop](...args));
         };
       }
     };
@@ -347,17 +347,17 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             // Return a statement-like object that uses the pool
             return {
               run: (...params: any[]) => {
-                return pool.execute((db) => db.prepare(sql).run(...params));
+                return pool.execute((db: any) => db.prepare(sql).run(...params));
               },
               get: (...params: any[]) => {
-                return pool.execute((db) => db.prepare(sql).get(...params));
+                return pool.execute((db: any) => db.prepare(sql).get(...params));
               },
               all: (...params: any[]) => {
-                return pool.execute((db) => db.prepare(sql).all(...params));
+                return pool.execute((db: any) => db.prepare(sql).all(...params));
               },
               iterate: (...params: any[]) => {
                 // For iterate, we need special handling as it returns an iterator
-                return pool.execute((db) => db.prepare(sql).iterate(...params));
+                return pool.execute((db: any) => db.prepare(sql).iterate(...params));
               },
             };
           };
@@ -367,8 +367,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         if (prop === "transaction") {
           return <T>(fn: (trx: DatabaseInstance) => T) => {
             return async (): Promise<T> => {
-              return pool.execute((db) => {
-                const transaction = db.transaction((trx) => fn(trx));
+              return pool.execute((db: any) => {
+                const transaction = db.transaction((trx: any) => fn(trx));
                 return transaction(db);
               });
             };
@@ -378,14 +378,14 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         // For pragma method
         if (prop === "pragma") {
           return (pragma: string) => {
-            return pool.execute((db) => db.pragma(pragma));
+            return pool.execute((db: any) => db.pragma(pragma));
           };
         }
 
         // For exec method
         if (prop === "exec") {
           return (sql: string) => {
-            return pool.execute((db) => db.exec(sql));
+            return pool.execute((db: any) => db.exec(sql));
           };
         }
 
@@ -469,7 +469,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         );
 
         // Execute the optimized query with prepared statement
-        const stmt = this.db.prepare(optimizedQuery.optimizedQuery);
+        const stmt = this?.db?.prepare(optimizedQuery.optimizedQuery);
         result =
           method === "get"
             ? (stmt.get(...params) as T)
@@ -494,7 +494,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             `Database query failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms: ${error}`,
             "EMAIL_STORAGE",
           );
-          await new Promise((resolve) => setTimeout(resolve, delay));
+          await new Promise((resolve: any) => setTimeout(resolve, delay));
           continue;
         }
 
@@ -564,13 +564,13 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     // (Connection pool handles this internally)
     if (!this.useConnectionPool) {
       try {
-        this.db.pragma("journal_mode = WAL");
-        this.db.pragma("synchronous = NORMAL");
-        this.db.pragma("cache_size = 10000"); // 10MB cache
-        this.db.pragma("temp_store = MEMORY");
-        this.db.pragma("mmap_size = 268435456"); // 256MB memory map
-        this.db.pragma("foreign_keys = ON");
-        this.db.pragma("busy_timeout = 30000"); // 30 seconds
+        this?.db?.pragma("journal_mode = WAL");
+        this?.db?.pragma("synchronous = NORMAL");
+        this?.db?.pragma("cache_size = 10000"); // 10MB cache
+        this?.db?.pragma("temp_store = MEMORY");
+        this?.db?.pragma("mmap_size = 268435456"); // 256MB memory map
+        this?.db?.pragma("foreign_keys = ON");
+        this?.db?.pragma("busy_timeout = 30000"); // 30 seconds
 
         logger.info(
           "WAL mode enabled with performance optimizations",
@@ -585,7 +585,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     }
 
     // Create emails table
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE TABLE IF NOT EXISTS emails (
         id TEXT PRIMARY KEY,
         graph_id TEXT UNIQUE,
@@ -607,7 +607,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     `);
 
     // Create enhanced email analysis table
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE TABLE IF NOT EXISTS email_analysis (
         id TEXT PRIMARY KEY,
         email_id TEXT NOT NULL,
@@ -673,7 +673,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     `);
 
     // Create workflow patterns table
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE TABLE IF NOT EXISTS workflow_patterns (
         id TEXT PRIMARY KEY,
         pattern_name TEXT NOT NULL,
@@ -688,7 +688,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     `);
 
     // Create indexes for performance
-    this.db.exec(`
+    this?.db?.exec(`
       CREATE INDEX IF NOT EXISTS idx_emails_graph_id ON emails(graph_id);
       CREATE INDEX IF NOT EXISTS idx_emails_received_time ON emails(received_time);
       CREATE INDEX IF NOT EXISTS idx_emails_from_address ON emails(from_address);
@@ -776,7 +776,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       },
     ];
 
-    const insertPattern = this.db.prepare(`
+    const insertPattern = this?.db?.prepare(`
       INSERT OR IGNORE INTO workflow_patterns (
         id, pattern_name, workflow_category, success_rate, 
         average_completion_time, trigger_keywords, typical_entities
@@ -814,9 +814,9 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           analysis.processingMetadata,
         );
 
-        const transaction = this.db.transaction(() => {
+        const transaction = this?.db?.transaction(() => {
           // Store email
-          const emailStmt = this.db.prepare(`
+          const emailStmt = this?.db?.prepare(`
         INSERT OR REPLACE INTO emails (
           id, graph_id, subject, sender_email, sender_name, to_addresses,
           received_at, is_read, has_attachments, body_preview, body,
@@ -828,9 +828,9 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             email.id,
             email.graphId,
             email.subject,
-            email.from.emailAddress.address,
-            email.from.emailAddress.name,
-            JSON.stringify(email.to?.map((t) => t.emailAddress) || []),
+            email?.from?.emailAddress.address,
+            email?.from?.emailAddress.name,
+            JSON.stringify(email.to?.map((t: any) => t.emailAddress) || []),
             email.receivedDateTime,
             email.isRead ? 1 : 0,
             email.hasAttachments ? 1 : 0,
@@ -843,7 +843,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           );
 
           // Store enhanced analysis
-          const analysisStmt = this.db.prepare(`
+          const analysisStmt = this?.db?.prepare(`
         INSERT OR REPLACE INTO email_analysis (
           id, email_id,
           quick_workflow, quick_priority, quick_intent, quick_urgency,
@@ -867,46 +867,46 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             uuidv4(),
             email.id,
             // Quick analysis
-            analysis.quick.workflow.primary,
-            analysis.quick.priority,
-            analysis.quick.intent,
-            analysis.quick.urgency,
-            analysis.quick.confidence,
-            analysis.quick.suggestedState,
-            analysis.processingMetadata.models.stage1,
+            analysis?.quick?.workflow.primary,
+            analysis?.quick?.priority,
+            analysis?.quick?.intent,
+            analysis?.quick?.urgency,
+            analysis?.quick?.confidence,
+            analysis?.quick?.suggestedState,
+            analysis?.processingMetadata?.models.stage1,
             validatedProcessingTimes.stage1Time,
             // Deep analysis
-            analysis.deep.detailedWorkflow.primary,
-            JSON.stringify(analysis.deep.detailedWorkflow.secondary || []),
+            analysis?.deep?.detailedWorkflow.primary,
+            JSON.stringify(analysis?.deep?.detailedWorkflow.secondary || []),
             JSON.stringify(
-              analysis.deep.detailedWorkflow.relatedCategories || [],
+              analysis?.deep?.detailedWorkflow.relatedCategories || [],
             ),
-            analysis.deep.detailedWorkflow.confidence,
+            analysis?.deep?.detailedWorkflow.confidence,
             // Entities
-            JSON.stringify(analysis.deep.entities.poNumbers),
-            JSON.stringify(analysis.deep.entities.quoteNumbers),
-            JSON.stringify(analysis.deep.entities.caseNumbers),
-            JSON.stringify(analysis.deep.entities.partNumbers),
-            JSON.stringify(analysis.deep.entities.orderReferences),
-            JSON.stringify(analysis.deep.entities.contacts),
+            JSON.stringify(analysis?.deep?.entities.poNumbers),
+            JSON.stringify(analysis?.deep?.entities.quoteNumbers),
+            JSON.stringify(analysis?.deep?.entities.caseNumbers),
+            JSON.stringify(analysis?.deep?.entities.partNumbers),
+            JSON.stringify(analysis?.deep?.entities.orderReferences),
+            JSON.stringify(analysis?.deep?.entities.contacts),
             // Actions
             analysis.actionSummary,
-            JSON.stringify(analysis.deep.actionItems),
-            analysis.deep.actionItems[0]?.slaStatus || "on-track",
+            JSON.stringify(analysis?.deep?.actionItems),
+            analysis?.deep?.actionItems[0]?.slaStatus || "on-track",
             // Workflow state
-            analysis.deep.workflowState.current,
-            analysis.deep.workflowState.suggestedNext,
-            JSON.stringify(analysis.deep.workflowState.blockers || []),
+            analysis?.deep?.workflowState.current,
+            analysis?.deep?.workflowState.suggestedNext,
+            JSON.stringify(analysis?.deep?.workflowState.blockers || []),
             // Business impact
-            analysis.deep.businessImpact.revenue,
-            analysis.deep.businessImpact.customerSatisfaction,
-            analysis.deep.businessImpact.urgencyReason,
+            analysis?.deep?.businessImpact.revenue,
+            analysis?.deep?.businessImpact.customerSatisfaction,
+            analysis?.deep?.businessImpact.urgencyReason,
             // Context
-            analysis.deep.contextualSummary,
-            analysis.deep.suggestedResponse,
-            JSON.stringify(analysis.deep.relatedEmails || []),
+            analysis?.deep?.contextualSummary,
+            analysis?.deep?.suggestedResponse,
+            JSON.stringify(analysis?.deep?.relatedEmails || []),
             // Metadata
-            analysis.processingMetadata.models.stage2,
+            analysis?.processingMetadata?.models.stage2,
             validatedProcessingTimes.stage2Time,
             validatedProcessingTimes.totalTime,
             new Date().toISOString(),
@@ -923,12 +923,12 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         try {
           wsService.broadcastEmailAnalyzed(
             email.id,
-            analysis.deep.detailedWorkflow.primary,
-            analysis.quick.priority,
+            analysis?.deep?.detailedWorkflow.primary,
+            analysis?.quick?.priority,
             analysis.actionSummary,
-            analysis.deep.detailedWorkflow.confidence,
-            analysis.deep.actionItems[0]?.slaStatus || "on-track",
-            analysis.deep.workflowState.current,
+            analysis?.deep?.detailedWorkflow.confidence,
+            analysis?.deep?.actionItems[0]?.slaStatus || "on-track",
+            analysis?.deep?.workflowState.current,
           );
           logger.debug(
             `WebSocket broadcast sent for email analysis: ${email.id}`,
@@ -981,7 +981,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           `Email storage failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms: ${errorMessage}`,
           "EMAIL_STORAGE",
         );
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise((resolve: any) => setTimeout(resolve, delay));
       }
     }
   }
@@ -1004,9 +1004,9 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         analysis.processingMetadata,
       );
 
-      const transaction = this.db.transaction(() => {
+      const transaction = this?.db?.transaction(() => {
         // Store enhanced analysis
-        const analysisStmt = this.db.prepare(`
+        const analysisStmt = this?.db?.prepare(`
           INSERT OR REPLACE INTO email_analysis (
             id, email_id, 
             quick_workflow, quick_priority, quick_intent, quick_urgency,
@@ -1024,25 +1024,25 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         analysisStmt.run(
           analysisId,
           messageId, // Use messageId as email_id reference
-          analysis.quick.workflow.primary,
-          analysis.quick.priority,
-          analysis.quick.intent,
-          analysis.quick.urgency,
-          analysis.quick.confidence,
-          analysis.quick.suggestedState,
-          validatedProcessingTimes.models.stage1,
+          analysis?.quick?.workflow.primary,
+          analysis?.quick?.priority,
+          analysis?.quick?.intent,
+          analysis?.quick?.urgency,
+          analysis?.quick?.confidence,
+          analysis?.quick?.suggestedState,
+          validatedProcessingTimes?.models?.stage1,
           validatedProcessingTimes.stage1Time,
-          analysis.deep.detailedWorkflow.primary,
-          JSON.stringify(analysis.deep.detailedWorkflow.secondary || []),
+          analysis?.deep?.detailedWorkflow.primary,
+          JSON.stringify(analysis?.deep?.detailedWorkflow.secondary || []),
           JSON.stringify(
-            analysis.deep.detailedWorkflow.relatedCategories || [],
+            analysis?.deep?.detailedWorkflow.relatedCategories || [],
           ),
-          analysis.deep.detailedWorkflow.confidence,
-          JSON.stringify(analysis.deep.entities),
-          JSON.stringify(analysis.deep.actionItems),
-          JSON.stringify(analysis.deep.workflowState),
-          JSON.stringify(analysis.deep.businessImpact),
-          analysis.deep.contextualSummary || "",
+          analysis?.deep?.detailedWorkflow.confidence,
+          JSON.stringify(analysis?.deep?.entities),
+          JSON.stringify(analysis?.deep?.actionItems),
+          JSON.stringify(analysis?.deep?.workflowState),
+          JSON.stringify(analysis?.deep?.businessImpact),
+          analysis?.deep?.contextualSummary || "",
           analysis.actionSummary,
           validatedProcessingTimes.stage1Time,
           validatedProcessingTimes.stage2Time,
@@ -1073,7 +1073,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   async getEmailWithAnalysis(
     emailId: string,
   ): Promise<EmailWithAnalysis | null> {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT 
         e.*,
         a.quick_workflow, a.quick_priority, a.quick_intent, a.quick_urgency,
@@ -1205,7 +1205,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     offset: number = 0,
   ): Promise<EmailWithAnalysis[]> {
     // Use a single optimized query with all necessary joins to avoid N+1 queries
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT 
         e.*,
         a.quick_workflow, a.quick_priority, a.quick_intent, a.quick_urgency,
@@ -1229,7 +1229,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     const results = stmt.all(workflow, limit, offset) as any[];
 
     // Process all results in memory without additional queries
-    const emails: EmailWithAnalysis[] = results.map((result) => ({
+    const emails: EmailWithAnalysis[] = results?.map((result: any) => ({
       id: result.id,
       graphId: result.graph_id,
       subject: result.subject,
@@ -1386,11 +1386,11 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
     return {
       totalEmails,
-      workflowDistribution: workflowDistribution.reduce((acc, item) => {
+      workflowDistribution: workflowDistribution.reduce((acc: any, item: any) => {
         acc[item.workflow] = item.count;
         return acc;
       }, {}),
-      slaCompliance: slaCompliance.reduce((acc, item) => {
+      slaCompliance: slaCompliance.reduce((acc: any, item: any) => {
         acc[item.status] = item.count;
         return acc;
       }, {}),
@@ -1404,14 +1404,14 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     changedBy?: string,
   ): Promise<void> {
     // Get current state first
-    const currentStateStmt = this.db.prepare(`
+    const currentStateStmt = this?.db?.prepare(`
       SELECT workflow_state FROM email_analysis WHERE email_id = ?
     `);
     const currentResult = currentStateStmt.get(emailId) as any;
     const oldState = currentResult?.workflow_state || "unknown";
 
     // Update the state
-    const updateStmt = this.db.prepare(`
+    const updateStmt = this?.db?.prepare(`
       UPDATE email_analysis
       SET workflow_state = ?, workflow_state_updated_at = ?, updated_at = ?
       WHERE email_id = ?
@@ -1446,7 +1446,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   }
 
   async getWorkflowPatterns(): Promise<any[]> {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT * FROM workflow_patterns
       ORDER BY success_rate DESC
     `);
@@ -1455,7 +1455,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   }
 
   async checkSLAStatus(): Promise<void> {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT 
         e.id,
         e.subject,
@@ -1550,14 +1550,14 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     }
 
     // Perform batch updates using a transaction for better performance
-    if (updates.length > 0) {
-      const updateStmt = this.db.prepare(`
+    if (updates?.length || 0 > 0) {
+      const updateStmt = this?.db?.prepare(`
         UPDATE email_analysis 
         SET action_sla_status = ?
         WHERE email_id = ?
       `);
 
-      const transaction = this.db.transaction(
+      const transaction = this?.db?.transaction(
         (updates: Array<{ emailId: string; status: string }>) => {
           for (const update of updates) {
             updateStmt.run(update.status, update.emailId);
@@ -1599,7 +1599,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     }
 
     this.slaMonitoringInterval = setInterval(() => {
-      this.checkSLAStatus().catch((error) => {
+      this.checkSLAStatus().catch((error: any) => {
         logger.error(`SLA monitoring failed: ${error}`, "EMAIL_STORAGE");
       });
     }, intervalMs);
@@ -1628,10 +1628,10 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       this.validateEmailData(emailData);
 
       const emailId = uuidv4();
-      const receivedAt = emailData.receivedDate.toISOString();
+      const receivedAt = emailData?.receivedDate?.toISOString();
 
       // Insert email record
-      const insertEmailStmt = this.db.prepare(`
+      const insertEmailStmt = this?.db?.prepare(`
         INSERT INTO emails (
           id, graph_id, subject, sender_email, sender_name, to_addresses,
           received_at, is_read, has_attachments, body_preview, body,
@@ -1657,7 +1657,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       );
 
       // Insert analysis record with IEMS data
-      const insertAnalysisStmt = this.db.prepare(`
+      const insertAnalysisStmt = this?.db?.prepare(`
         INSERT INTO email_analysis (
           id, email_id, quick_workflow, quick_priority, quick_intent,
           quick_urgency, quick_confidence, quick_suggested_state,
@@ -1740,7 +1740,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       const oldStatus = this.mapWorkflowToStatus(currentEmail.workflow_state);
 
       // Update status in email_analysis table
-      const updateStmt = this.db.prepare(`
+      const updateStmt = this?.db?.prepare(`
         UPDATE email_analysis 
         SET workflow_state = ?, updated_at = ?
         WHERE email_id = ?
@@ -1795,7 +1795,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     daysBack: number = 7,
   ): Promise<any[]> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT 
           e.id,
           e.subject,
@@ -1820,7 +1820,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       const userPattern = `%${userId}%`;
       const results = stmt.all(userPattern, userPattern) as any[];
 
-      return results.map((row) => ({
+      return results?.map((row: any) => ({
         id: row.id,
         subject: row.subject,
         sender: row.sender,
@@ -1830,7 +1830,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         intent: row.intent,
         sentiment: row.sentiment || "neutral",
         urgency: row.urgency,
-        entities: row.entities ? row.entities.split(",") : [],
+        entities: row.entities ? row?.entities?.split(",") : [],
       }));
     } catch (error) {
       logger.error("Failed to get recent emails for user", "EMAIL_STORAGE", {
@@ -1855,7 +1855,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   }): Promise<void> {
     try {
       // Create audit_logs table if it doesn't exist
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS audit_logs (
           id TEXT PRIMARY KEY,
           entity_type TEXT NOT NULL,
@@ -1868,7 +1868,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         )
       `);
 
-      const insertStmt = this.db.prepare(`
+      const insertStmt = this?.db?.prepare(`
         INSERT INTO audit_logs (
           id, entity_type, entity_id, action, old_values, new_values, performed_by, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -1902,14 +1902,14 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   async batchLoadEmailsWithAnalysis(
     emailIds: string[],
   ): Promise<Map<string, EmailWithAnalysis>> {
-    if (emailIds.length === 0) {
+    if (emailIds?.length || 0 === 0) {
       return new Map();
     }
 
     // Create placeholders for the IN clause
-    const placeholders = emailIds.map(() => "?").join(",");
+    const placeholders = emailIds?.map(() => "?").join(",");
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT 
         e.*,
         a.quick_workflow, a.quick_priority, a.quick_intent, a.quick_urgency,
@@ -2097,12 +2097,12 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
       // Status filter - using parameterized placeholders
       if (options.filters?.status?.length) {
-        const statusPlaceholders = options.filters.status
+        const statusPlaceholders = options?.filters?.status
           .map(() => "?")
           .join(",");
         whereClauses.push(`ea.workflow_state IN (${statusPlaceholders})`);
         params.push(
-          ...options.filters.status.map((s) =>
+          ...options?.filters?.status?.map((s: any) =>
             this.mapStatusToWorkflowState(s as any),
           ),
         );
@@ -2110,34 +2110,34 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
       // Email alias filter - using parameterized placeholders
       if (options.filters?.emailAlias?.length) {
-        const aliasPlaceholders = options.filters.emailAlias
+        const aliasPlaceholders = options?.filters?.emailAlias
           .map(() => "?")
           .join(",");
         whereClauses.push(`e.sender_email IN (${aliasPlaceholders})`);
-        params.push(...options.filters.emailAlias.map(alias => alias));
+        params.push(...options?.filters?.emailAlias?.map(alias => alias));
       }
 
       // Priority filter - using parameterized placeholders
       if (options.filters?.priority?.length) {
-        const priorityPlaceholders = options.filters.priority
+        const priorityPlaceholders = options?.filters?.priority
           .map(() => "?")
           .join(",");
         whereClauses.push(`ea.quick_priority IN (${priorityPlaceholders})`);
-        params.push(...options.filters.priority.map(priority => priority));
+        params.push(...options?.filters?.priority?.map(priority => priority));
       }
 
       // Date range filter
       if (options.filters?.dateRange) {
         whereClauses.push("e.received_at BETWEEN ? AND ?");
         params.push(
-          options.filters.dateRange.start,
-          options.filters.dateRange.end,
+          options?.filters?.dateRange.start,
+          options?.filters?.dateRange.end,
         );
       }
 
       // Build WHERE clause
       const whereClause =
-        whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+        whereClauses?.length || 0 > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
       // Sanitize and validate sort column
       const sortColumn = this.getSortColumn(options.sortBy);
@@ -2186,8 +2186,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         countQueryCacheKey: `${cacheKey}_count`,
         dataQuery: dataQuery.replace(/\s+/g, " ").trim(),
         countQuery: countQuery.replace(/\s+/g, " ").trim(),
-        dataParamsLength: dataParams.length,
-        countParamsLength: params.length,
+        dataParamsLength: dataParams?.length || 0,
+        countParamsLength: params?.length || 0,
       });
 
       const [emailsResult, countResult] = await Promise.all([
@@ -2210,7 +2210,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         emailsResultType: typeof emailsResult,
         emailsResultIsArray: Array.isArray(emailsResult),
         emailsResultLength: Array.isArray(emailsResult)
-          ? emailsResult.length
+          ? emailsResult?.length || 0
           : "N/A",
         countResultType: typeof countResult,
         countResultKeys: countResult ? Object.keys(countResult) : "N/A",
@@ -2232,7 +2232,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       const totalPages = Math.ceil(totalCount / pageSize);
 
       // Transform emails to include proper status mapping
-      const transformedEmails = emails.map((email) => ({
+      const transformedEmails = emails?.map((email: any) => ({
         ...email,
         status: this.mapWorkflowToStatus(email.workflow_state),
         status_text: this.getStatusText(email.workflow_state),
@@ -2316,44 +2316,44 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         }
 
         if (options.filters?.status?.length) {
-          const statusPlaceholders = options.filters.status
+          const statusPlaceholders = options?.filters?.status
             .map(() => "?")
             .join(",");
           whereClauses.push(`ea.workflow_state IN (${statusPlaceholders})`);
           params.push(
-            ...options.filters.status.map((s) =>
+            ...options?.filters?.status?.map((s: any) =>
               this.mapStatusToWorkflowState(s as any),
             ),
           );
         }
 
         if (options.filters?.emailAlias?.length) {
-          const aliasPlaceholders = options.filters.emailAlias
+          const aliasPlaceholders = options?.filters?.emailAlias
             .map(() => "?")
             .join(",");
           whereClauses.push(`e.sender_email IN (${aliasPlaceholders})`);
-          params.push(...options.filters.emailAlias.map(alias => alias));
+          params.push(...options?.filters?.emailAlias?.map(alias => alias));
         }
 
         if (options.filters?.priority?.length) {
-          const priorityPlaceholders = options.filters.priority
+          const priorityPlaceholders = options?.filters?.priority
             .map(() => "?")
             .join(",");
           whereClauses.push(`ea.quick_priority IN (${priorityPlaceholders})`);
-          params.push(...options.filters.priority.map(priority => priority));
+          params.push(...options?.filters?.priority?.map(priority => priority));
         }
 
         if (options.filters?.dateRange) {
           whereClauses.push("e.received_at BETWEEN ? AND ?");
           params.push(
-            options.filters.dateRange.start,
-            options.filters.dateRange.end,
+            options?.filters?.dateRange.start,
+            options?.filters?.dateRange.end,
           );
         }
 
         // Build WHERE clause
         const whereClause =
-          whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+          whereClauses?.length || 0 > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
         // Sanitize sort column and direction
         const sortColumn = this.getSortColumn(options.sortBy);
@@ -2389,7 +2389,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         );
 
         // Transform emails
-        return emails.map((email) => ({
+        return emails?.map((email: any) => ({
           ...email,
           status: this.mapWorkflowToStatus(email.workflow_state),
           status_text: this.getStatusText(email.workflow_state),
@@ -2399,7 +2399,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       };
 
       // Use lazy loader to get chunk
-      const result = await this.lazyLoader.loadChunk(startIndex, loadFn);
+      const result = await this?.lazyLoader?.loadChunk(startIndex, loadFn);
 
       return result;
     } catch (error) {
@@ -2432,7 +2432,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         LEFT JOIN email_analysis ea ON e.id = ea.email_id
       `;
 
-      const stats = this.db.prepare(statsQuery).get() as any;
+      const stats = this?.db?.prepare(statsQuery).get() as any;
 
       return {
         totalEmails: stats.total,
@@ -2577,8 +2577,8 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   }
 
   private extractEntitiesOfType(entities: EmailEntity[] = [], type: string): string {
-    const filtered = entities.filter((e) => e.type === type);
-    return JSON.stringify(filtered.map((e) => e.value));
+    const filtered = entities?.filter((e: any) => e.type === type);
+    return JSON.stringify(filtered?.map((e: any) => e.value));
   }
 
   // =====================================================
@@ -2597,7 +2597,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     try {
       const [dbMetrics, lazyLoaderStats] = await Promise.all([
         queryPerformanceMonitor.getPerformanceStatistics(),
-        Promise.resolve(this.lazyLoader.getStats()),
+        Promise.resolve(this?.lazyLoader?.getStats()),
       ]);
 
       const cacheMetrics = performanceOptimizer.getPerformanceMetrics();
@@ -2641,7 +2641,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   async clearPerformanceCaches(): Promise<void> {
     try {
       performanceOptimizer.clearCache();
-      this.lazyLoader.clearCache();
+      this?.lazyLoader?.clearCache();
       queryPerformanceMonitor.clearHistory();
 
       logger.info("All performance caches cleared", "EMAIL_STORAGE");
@@ -2672,10 +2672,10 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           startIndex: offset,
           chunkSize: limit,
           ...options,
-        }).then((result) => result.data);
+        }).then((result: any) => result.data);
       };
 
-      await this.lazyLoader.preloadAdjacentChunks(currentIndex, loadFn);
+      await this?.lazyLoader?.preloadAdjacentChunks(currentIndex, loadFn);
       logger.debug(
         `Preloaded adjacent chunks for index ${currentIndex}`,
         "EMAIL_STORAGE",
@@ -2710,7 +2710,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       let indexesRebuilt = 0;
       for (const indexQuery of indexQueries) {
         try {
-          this.db.exec(indexQuery);
+          this?.db?.exec(indexQuery);
           indexesRebuilt++;
         } catch (indexError) {
           logger.warn(
@@ -2723,7 +2723,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       // Run VACUUM to optimize database file
       let vacuumCompleted = false;
       try {
-        this.db.exec("VACUUM");
+        this?.db?.exec("VACUUM");
         vacuumCompleted = true;
       } catch (vacuumError) {
         logger.warn(`Database VACUUM failed: ${vacuumError}`, "EMAIL_STORAGE");
@@ -2766,10 +2766,10 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
     // Close database or connection pool
     if (this.useConnectionPool && this.connectionPool) {
-      this.connectionPool.close();
+      this?.connectionPool?.close();
       logger.info("Connection pool closed", "EMAIL_STORAGE");
     } else {
-      this.db.close();
+      this?.db?.close();
       logger.info("Database connection closed", "EMAIL_STORAGE");
     }
 
@@ -2781,7 +2781,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
    */
   getPoolStats(): PoolStatistics | null {
     if (this.useConnectionPool && this.connectionPool) {
-      const stats = this.connectionPool.getStats();
+      const stats = this?.connectionPool?.getStats();
       return {
         total_connections: stats.poolSize,
         active_connections: stats.activeConnections,
@@ -2810,7 +2810,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
    */
   async getEmail(emailId: string): Promise<EmailRecord | null> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT * FROM emails 
         WHERE id = ?
       `);
@@ -2828,11 +2828,11 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   async updateEmail(emailId: string, updates: Partial<any>): Promise<void> {
     try {
       const updateFields = Object.keys(updates)
-        .filter((key) => key !== "id")
-        .map((key) => `${key} = @${key}`)
+        .filter((key: any) => key !== "id")
+        .map((key: any) => `${key} = @${key}`)
         .join(", ");
 
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         UPDATE emails 
         SET ${updateFields}
         WHERE id = @id
@@ -2860,7 +2860,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     timestamp: string;
   }): Promise<void> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT INTO activity_logs (id, email_id, action, user_id, details, timestamp)
         VALUES (?, ?, ?, ?, ?, ?)
       `);
@@ -2886,7 +2886,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
    */
   async getAssignmentWorkload(): Promise<Record<string, number>> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT assignedTo, COUNT(*) as count
         FROM emails
         WHERE assignedTo IS NOT NULL
@@ -2899,7 +2899,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       }>;
       const workload: Record<string, number> = {};
 
-      results.forEach((row) => {
+      results.forEach((row: any) => {
         workload[row.assignedTo] = row.count;
       });
 
@@ -2918,7 +2918,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
    */
   async getUnassignedCount(): Promise<number> {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT COUNT(*) as count
         FROM emails
         WHERE assignedTo IS NULL OR assignedTo = ''
@@ -2956,7 +2956,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       logger.warn("Negative stage1Time detected", "EMAIL_STORAGE", {
         original: metadata.stage1Time,
         corrected: validated.stage1Time,
-        model: metadata.models.stage1,
+        model: metadata?.models?.stage1,
         timestamp: new Date().toISOString(),
       });
     }
@@ -2969,7 +2969,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       logger.warn("Negative stage2Time detected", "EMAIL_STORAGE", {
         original: metadata.stage2Time,
         corrected: validated.stage2Time,
-        model: metadata.models.stage2,
+        model: metadata?.models?.stage2,
         timestamp: new Date().toISOString(),
       });
     }
@@ -3005,7 +3005,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     }
 
     // Log summary if any issues were found
-    if (issues.length > 0) {
+    if (issues?.length || 0 > 0) {
       logger.error(
         "Processing time validation issues detected",
         "EMAIL_STORAGE",
@@ -3049,7 +3049,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   }): void {
     try {
       // Create table if it doesn't exist
-      this.db.exec(`
+      this?.db?.exec(`
         CREATE TABLE IF NOT EXISTS processing_time_anomalies (
           id TEXT PRIMARY KEY,
           type TEXT NOT NULL,
@@ -3062,7 +3062,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       `);
 
       // Insert anomaly record
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT INTO processing_time_anomalies (id, type, issues, original_values, corrected_values, timestamp)
         VALUES (?, ?, ?, ?, ?, ?)
       `);

@@ -5,13 +5,13 @@ import type {
   AgentResult,
   ToolExecutionParams,
 } from "./AgentTypes.js";
-import { logger } from "../../../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 import { LlamaCppProvider } from "../../llm/LlamaCppProvider.js";
 import {
   MODEL_CONFIG,
   getModelConfig,
   getModelTimeout,
-} from "../../../config/models.config.js";
+} from "../../../config/models?.config.js";
 
 export abstract class BaseAgent {
   protected tools: Map<string, BaseTool> = new Map();
@@ -71,24 +71,24 @@ export abstract class BaseAgent {
   }
 
   registerTool(tool: BaseTool): void {
-    this.tools.set(tool.name, tool);
+    this?.tools?.set(tool.name, tool);
     logger.debug(`Registered tool ${tool.name} with ${this.name}`, "AGENT");
   }
 
   getTools(): BaseTool[] {
-    return Array.from(this.tools.values());
+    return Array.from(this?.tools?.values());
   }
 
   getTool(name: string): BaseTool | undefined {
-    return this.tools.get(name);
+    return this?.tools?.get(name);
   }
 
   hasTool(name: string): boolean {
-    return this.tools.has(name);
+    return this?.tools?.has(name);
   }
 
   hasCapability(capability: string): boolean {
-    return this.capabilities.has(capability);
+    return this?.capabilities?.has(capability);
   }
 
   async initialize(): Promise<void> {
@@ -116,7 +116,7 @@ export abstract class BaseAgent {
     }
 
     // Initialize any tools (if they have initialization method)
-    for (const tool of this.tools.values()) {
+    for (const tool of this?.tools?.values()) {
       if (
         "initialize" in tool &&
         typeof (tool as any).initialize === "function"
@@ -127,7 +127,7 @@ export abstract class BaseAgent {
 
     this.initialized = true;
     logger.info(
-      `Agent ${this.name} initialized successfully with ${this.tools.size} tools`,
+      `Agent ${this.name} initialized successfully with ${this?.tools?.size} tools`,
       "AGENT",
     );
   }
@@ -149,6 +149,6 @@ export abstract class BaseAgent {
   }
 
   protected addCapability(capability: string): void {
-    this.capabilities.add(capability);
+    this?.capabilities?.add(capability);
   }
 }

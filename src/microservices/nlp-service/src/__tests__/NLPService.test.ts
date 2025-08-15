@@ -124,7 +124,7 @@ describe('NLPService', () => {
     });
 
     it('should start successfully', async () => {
-      await expect(nlpService.start()).resolves.not.toThrow();
+      await expect(nlpService.start()).resolves?.not?.toThrow();
       const status = nlpService.getStatus();
       expect(status.status).toBe('healthy');
     });
@@ -174,7 +174,7 @@ describe('NLPService', () => {
     it('should handle processing timeouts', async () => {
       // Mock queue timeout
       const mockQueue = (nlpService as any).queue;
-      mockQueue.enqueue.mockRejectedValue(new Error('Request timeout after 1000ms'));
+      mockQueue?.enqueue?.mockRejectedValue(new Error('Request timeout after 1000ms'));
       
       await expect(nlpService.processQuery('test query', 'normal', 1000))
         .rejects.toThrow('Query processing timeout');
@@ -183,7 +183,7 @@ describe('NLPService', () => {
     it('should handle queue overflow', async () => {
       // Mock queue overflow
       const mockQueue = (nlpService as any).queue;
-      mockQueue.enqueue.mockRejectedValue(new Error('Queue overflow'));
+      mockQueue?.enqueue?.mockRejectedValue(new Error('Queue overflow'));
       
       await expect(nlpService.processQuery('test query'))
         .rejects.toThrow('Queue is at capacity');
@@ -226,7 +226,7 @@ describe('NLPService', () => {
     it('should handle mixed success/failure in batch', async () => {
       // Mock some failures in batch processing
       const mockQueue = (nlpService as any).queue;
-      mockQueue.enqueueBatch.mockResolvedValue([
+      mockQueue?.enqueueBatch?.mockResolvedValue([
         { entities: [], intent: { action: 'add', confidence: 0.8 }, normalizedItems: [] },
         null, // Failed query
         { entities: [], intent: { action: 'add', confidence: 0.7 }, normalizedItems: [] }
@@ -332,7 +332,7 @@ describe('NLPService', () => {
     it('should handle processing errors gracefully', async () => {
       // Mock processing error
       const mockQueue = (nlpService as any).queue;
-      mockQueue.enqueue.mockRejectedValue(new Error('Processing error'));
+      mockQueue?.enqueue?.mockRejectedValue(new Error('Processing error'));
       
       await expect(nlpService.processQuery('test query'))
         .rejects.toThrow('Failed to process query');
@@ -360,12 +360,12 @@ describe('NLPService', () => {
       const status = nlpService.getStatus();
       const queueStatus = nlpService.getQueueStatus();
       
-      expect(queueStatus.maxConcurrent).toBe(mockConfig.queue.maxConcurrent);
+      expect(queueStatus.maxConcurrent).toBe(mockConfig?.queue?.maxConcurrent);
     });
 
     it('should handle monitoring configuration', () => {
       const newConfig = { ...mockConfig };
-      newConfig.monitoring.enabled = false;
+      newConfig?.monitoring?.enabled = false;
       
       const service = new NLPService(newConfig);
       expect(service).toBeDefined();

@@ -48,7 +48,7 @@ app.get('/api/analyzed-emails', (req, res) => {
     `).all();
     
     // Transform emails to match frontend expectations
-    const transformedEmails = emails.map(email => ({
+    const transformedEmails = emails?.map(email => ({
       id: email.id,
       subject: email.subject || 'No Subject',
       from: email.sender_email || 'unknown@email.com',
@@ -67,7 +67,7 @@ app.get('/api/analyzed-emails', (req, res) => {
     
     res.json({
       success: true,
-      count: transformedEmails.length,
+      count: transformedEmails?.length || 0,
       emails: transformedEmails
     });
     

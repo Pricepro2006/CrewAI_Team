@@ -52,7 +52,7 @@ export class BatchProcessingQueries {
    */
   private initializePreparedStatements(): void {
     // Batch selection optimized for each phase
-    this.preparedStatements.set('selectPhase1Batch', this.db.prepare(`
+    this?.preparedStatements?.set('selectPhase1Batch', this?.db?.prepare(`
       SELECT 
         id, chain_id, subject, from_address, received_at,
         processing_status, recommended_phase, completeness_score,
@@ -69,7 +69,7 @@ export class BatchProcessingQueries {
       LIMIT ?
     `));
 
-    this.preparedStatements.set('selectPhase2Batch', this.db.prepare(`
+    this?.preparedStatements?.set('selectPhase2Batch', this?.db?.prepare(`
       SELECT 
         id, chain_id, subject, from_address, received_at,
         processing_status, recommended_phase, completeness_score,
@@ -86,7 +86,7 @@ export class BatchProcessingQueries {
       LIMIT ?
     `));
 
-    this.preparedStatements.set('selectPhase3Batch', this.db.prepare(`
+    this?.preparedStatements?.set('selectPhase3Batch', this?.db?.prepare(`
       SELECT 
         id, chain_id, subject, from_address, received_at,
         processing_status, recommended_phase, completeness_score,
@@ -103,7 +103,7 @@ export class BatchProcessingQueries {
     `));
 
     // Optimized chain-aware batch selection
-    this.preparedStatements.set('selectChainAwareBatch', this.db.prepare(`
+    this?.preparedStatements?.set('selectChainAwareBatch', this?.db?.prepare(`
       WITH chain_priorities AS (
         SELECT 
           ec.id as chain_id,
@@ -136,7 +136,7 @@ export class BatchProcessingQueries {
     `));
 
     // Bulk status update optimization
-    this.preparedStatements.set('updateProcessingStatus', this.db.prepare(`
+    this?.preparedStatements?.set('updateProcessingStatus', this?.db?.prepare(`
       UPDATE emails_enhanced 
       SET 
         processing_status = ?,
@@ -145,7 +145,7 @@ export class BatchProcessingQueries {
     `));
 
     // Batch completion tracking
-    this.preparedStatements.set('markBatchCompleted', this.db.prepare(`
+    this?.preparedStatements?.set('markBatchCompleted', this?.db?.prepare(`
       UPDATE emails_enhanced 
       SET 
         processing_status = 'completed',
@@ -186,12 +186,12 @@ export class BatchProcessingQueries {
       const batch: EmailBatch = {
         emails,
         batchId,
-        totalSelected: emails.length,
+        totalSelected: emails?.length || 0,
         estimatedProcessingTime
       };
 
       logger.info(
-        `Batch selected: ${emails.length} emails in ${executionTime.toFixed(2)}ms`,
+        `Batch selected: ${emails?.length || 0} emails in ${executionTime.toFixed(2)}ms`,
         "BATCH_QUERIES"
       );
 
@@ -213,15 +213,15 @@ export class BatchProcessingQueries {
 
     switch (phase) {
       case 1:
-        stmt = this.preparedStatements.get('selectPhase1Batch')!;
+        stmt = this?.preparedStatements?.get('selectPhase1Batch')!;
         params = [minCompleteness, maxCompleteness, batchSize];
         break;
       case 2:
-        stmt = this.preparedStatements.get('selectPhase2Batch')!;
+        stmt = this?.preparedStatements?.get('selectPhase2Batch')!;
         params = [minCompleteness, maxCompleteness, batchSize];
         break;
       case 3:
-        stmt = this.preparedStatements.get('selectPhase3Batch')!;
+        stmt = this?.preparedStatements?.get('selectPhase3Batch')!;
         params = [minCompleteness, batchSize];
         break;
       default:
@@ -254,7 +254,7 @@ export class BatchProcessingQueries {
    * Get chain-aware batch for complex processing phases
    */
   private getChainAwareBatch(phase: 2 | 3, batchSize: number): EmailForProcessing[] {
-    const stmt = this.preparedStatements.get('selectChainAwareBatch')!;
+    const stmt = this?.preparedStatements?.get('selectChainAwareBatch')!;
     const maxChains = Math.ceil(batchSize / 10); // Limit chains to avoid overwhelming
     
     return stmt.all(phase, maxChains, batchSize) as EmailForProcessing[];
@@ -264,7 +264,7 @@ export class BatchProcessingQueries {
    * Get current workload distribution for adaptive selection
    */
   private getWorkloadDistribution(): WorkloadStats {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT 
         recommended_phase,
         COUNT(*) as count,
@@ -282,7 +282,7 @@ export class BatchProcessingQueries {
       phase1: results.find(r => r.recommended_phase === 1) || { count: 0, avg_completeness: 0, avg_priority: 0 },
       phase2: results.find(r => r.recommended_phase === 2) || { count: 0, avg_completeness: 0, avg_priority: 0 },
       phase3: results.find(r => r.recommended_phase === 3) || { count: 0, avg_completeness: 0, avg_priority: 0 },
-      total: results.reduce((sum, r) => sum + r.count, 0)
+      total: results.reduce((sum: any, r: any) => sum + r.count, 0)
     };
   }
 
@@ -291,17 +291,17 @@ export class BatchProcessingQueries {
    */
   private determineOptimalPhase(stats: WorkloadStats): 1 | 2 | 3 {
     // Prioritize Phase 1 for high-throughput processing
-    if (stats.phase1.count > 5000) return 1;
+    if (stats?.phase1?.count > 5000) return 1;
     
     // Prioritize Phase 3 for high-value chains
-    if (stats.phase3.count > 0 && stats.phase3.avg_priority > 0.7) return 3;
+    if (stats?.phase3?.count > 0 && stats?.phase3?.avg_priority > 0.7) return 3;
     
     // Default to Phase 2 for balanced processing
-    if (stats.phase2.count > 0) return 2;
+    if (stats?.phase2?.count > 0) return 2;
     
     // Fall back to available phase
-    if (stats.phase1.count > 0) return 1;
-    if (stats.phase3.count > 0) return 3;
+    if (stats?.phase1?.count > 0) return 1;
+    if (stats?.phase3?.count > 0) return 3;
     
     return 1; // Default fallback
   }
@@ -316,13 +316,13 @@ export class BatchProcessingQueries {
       3: 4000   // Phi-4: ~4s per email
     };
 
-    const avgPhase = phase || emails.reduce((sum, e) => sum + e.recommended_phase, 0) / emails.length;
+    const avgPhase = phase || emails.reduce((sum: any, e: any) => sum + e.recommended_phase, 0) / emails?.length || 0;
     const timePerEmail = baseTimePerEmail[Math.round(avgPhase) as keyof typeof baseTimePerEmail] || baseTimePerEmail[2];
     
     // Factor in complexity score
-    const complexityMultiplier = emails.reduce((sum, e) => sum + (1 + e.completeness_score), 0) / emails.length;
+    const complexityMultiplier = emails.reduce((sum: any, e: any) => sum + (1 + e.completeness_score), 0) / emails?.length || 0;
     
-    return Math.round(emails.length * timePerEmail * complexityMultiplier);
+    return Math.round(emails?.length || 0 * timePerEmail * complexityMultiplier);
   }
 
   /**
@@ -341,10 +341,10 @@ export class BatchProcessingQueries {
   ): Promise<void> {
     const startTime = performance.now();
     
-    return this.db.transaction(() => {
+    return this?.db?.transaction(() => {
       const updateStmt = additionalData?.phase 
-        ? this.preparedStatements.get('markBatchCompleted')!
-        : this.preparedStatements.get('updateProcessingStatus')!;
+        ? this?.preparedStatements?.get('markBatchCompleted')!
+        : this?.preparedStatements?.get('updateProcessingStatus')!;
 
       for (const emailId of emailIds) {
         if (additionalData?.phase) {
@@ -362,7 +362,7 @@ export class BatchProcessingQueries {
       
       const executionTime = performance.now() - startTime;
       logger.info(
-        `Bulk updated ${emailIds.length} emails in ${executionTime.toFixed(2)}ms`,
+        `Bulk updated ${emailIds?.length || 0} emails in ${executionTime.toFixed(2)}ms`,
         "BATCH_QUERIES"
       );
     })();
@@ -372,7 +372,7 @@ export class BatchProcessingQueries {
    * Get processing statistics for monitoring
    */
   getProcessingStatistics(): ProcessingStatistics {
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       SELECT 
         processing_status,
         recommended_phase,
@@ -388,16 +388,16 @@ export class BatchProcessingQueries {
     const results = stmt.all() as any[];
     
     return {
-      totalEmails: results.reduce((sum, r) => sum + r.count, 0),
+      totalEmails: results.reduce((sum: any, r: any) => sum + r.count, 0),
       byStatus: this.groupBy(results, 'processing_status'),
       byPhase: this.groupBy(results, 'recommended_phase'),
-      overallAvgTime: results.reduce((sum, r) => sum + (r.avg_time_ms || 0) * r.count, 0) / 
-                     results.reduce((sum, r) => sum + r.count, 0) || 0
+      overallAvgTime: results.reduce((sum: any, r: any) => sum + (r.avg_time_ms || 0) * r.count, 0) / 
+                     results.reduce((sum: any, r: any) => sum + r.count, 0) || 0
     };
   }
 
   private groupBy(array: any[], key: string): Record<string, any> {
-    return array.reduce((groups, item) => {
+    return array.reduce((groups: any, item: any) => {
       const groupKey = item[key];
       if (!groups[groupKey]) {
         groups[groupKey] = [];
@@ -411,7 +411,7 @@ export class BatchProcessingQueries {
    * Cleanup prepared statements
    */
   close(): void {
-    this.preparedStatements.clear();
+    this?.preparedStatements?.clear();
     logger.info("Batch processing queries cleaned up", "BATCH_QUERIES");
   }
 }

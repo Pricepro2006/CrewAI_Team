@@ -135,7 +135,7 @@ export class GroceryNLPQueue extends EventEmitter {
       // Check for duplicate request
       if (this.deduplicationEnabled && query) {
         const fingerprint = this.generateFingerprint(query, metadata);
-        const existingFingerprint = this.requestFingerprints.get(fingerprint);
+        const existingFingerprint = this?.requestFingerprints?.get(fingerprint);
         
         if (existingFingerprint && (Date.now() - existingFingerprint.lastSeen) < this.deduplicationTTL) {
           logger.debug("Duplicate request detected", "NLP_QUEUE", {
@@ -147,11 +147,11 @@ export class GroceryNLPQueue extends EventEmitter {
           existingFingerprint.lastSeen = Date.now();
           
           // Find existing request in queue or processing
-          const existingRequest = this.queue.find(r => r.metadata?.fingerprint === fingerprint);
+          const existingRequest = this?.queue?.find(r => r.metadata?.fingerprint === fingerprint);
           if (existingRequest) {
             // Attach to existing request
-            const originalResolve = existingRequest.resolve;
-            const originalReject = existingRequest.reject;
+            const originalResolve = existingRequest?.resolve;
+            const originalReject = existingRequest?.reject;
             
             existingRequest.resolve = (value: T) => {
               originalResolve(value);
@@ -167,7 +167,7 @@ export class GroceryNLPQueue extends EventEmitter {
           }
         } else {
           // Create new fingerprint
-          this.requestFingerprints.set(fingerprint, {
+          this?.requestFingerprints?.set(fingerprint, {
             hash: fingerprint,
             query,
             metadata,
@@ -196,35 +196,35 @@ export class GroceryNLPQueue extends EventEmitter {
       };
       
       // Add to queue
-      this.queue.push(request);
+      this?.queue?.push(request);
       this.sortQueue();
       
       // Update metrics
-      this.metrics.totalRequests++;
-      this.metrics.currentQueueSize = this.queue.length;
-      this.metrics.peakQueueSize = Math.max(this.metrics.peakQueueSize, this.queue.length);
+      this?.metrics?.totalRequests++;
+      this?.metrics?.currentQueueSize = this?.queue?.length;
+      this?.metrics?.peakQueueSize = Math.max(this?.metrics?.peakQueueSize, this?.queue?.length);
       
       // Emit queue update event
       this.emitQueueUpdate();
       
       // Check for queue overflow and reject if necessary
-      if (this.queue.length > this.configuration.healthCheck.maxQueueSize * 1.5) {
+      if (this?.queue?.length > this?.configuration?.healthCheck.maxQueueSize * 1.5) {
         logger.error("NLP queue overflow - rejecting request", "NLP_QUEUE", {
-          queueSize: this.queue.length,
+          queueSize: this?.queue?.length,
           activeRequests: this.activeRequests,
-          threshold: this.configuration.healthCheck.maxQueueSize,
+          threshold: this?.configuration?.healthCheck.maxQueueSize,
           requestId: requestId
         });
         
-        throw new Error(`Queue overflow: ${this.queue.length} items in queue (max: ${this.configuration.healthCheck.maxQueueSize})`);
+        throw new Error(`Queue overflow: ${this?.queue?.length} items in queue (max: ${this?.configuration?.healthCheck.maxQueueSize})`);
       }
       
       // Log warning if queue is getting large
-      if (this.queue.length > this.configuration.healthCheck.maxQueueSize) {
+      if (this?.queue?.length > this?.configuration?.healthCheck.maxQueueSize) {
         logger.warn("NLP queue growing large", "NLP_QUEUE", {
-          queueSize: this.queue.length,
+          queueSize: this?.queue?.length,
           activeRequests: this.activeRequests,
-          threshold: this.configuration.healthCheck.maxQueueSize,
+          threshold: this?.configuration?.healthCheck.maxQueueSize,
           requestId: requestId
         });
       }
@@ -242,12 +242,12 @@ export class GroceryNLPQueue extends EventEmitter {
       // Set timeout for this request
       if (request.timeout) {
         setTimeout(() => {
-          const index = this.queue.findIndex(r => r.id === requestId);
+          const index = this?.queue?.findIndex(r => r.id === requestId);
           if (index !== -1) {
-            this.queue.splice(index, 1);
+            this?.queue?.splice(index, 1);
             request.status = "timeout";
             reject(new Error(`Request timeout after ${request.timeout}ms`));
-            this.metrics.timeoutRequests++;
+            this?.metrics?.timeoutRequests++;
             this.emitRequestStatus(requestId, "timeout", undefined, "Request timeout");
           }
         }, request.timeout);
@@ -274,26 +274,26 @@ export class GroceryNLPQueue extends EventEmitter {
     const maxConcurrency = Math.min(
       batchOptions?.maxConcurrency || this.maxConcurrent,
       this.maxConcurrent,
-      operations.length
+      operations?.length || 0
     );
     
     // Check if batch operation would cause overflow
-    const projectedQueueSize = this.queue.length + operations.length;
-    if (projectedQueueSize > this.configuration.healthCheck.maxQueueSize * 1.5) {
+    const projectedQueueSize = this?.queue?.length + operations?.length || 0;
+    if (projectedQueueSize > this?.configuration?.healthCheck.maxQueueSize * 1.5) {
       logger.error("Batch operation would cause queue overflow - rejecting", "NLP_QUEUE", {
         batchId,
-        currentQueueSize: this.queue.length,
-        operationCount: operations.length,
+        currentQueueSize: this?.queue?.length,
+        operationCount: operations?.length || 0,
         projectedSize: projectedQueueSize,
-        maxSize: this.configuration.healthCheck.maxQueueSize
+        maxSize: this?.configuration?.healthCheck.maxQueueSize
       });
       
-      throw new Error(`Batch overflow: Would add ${operations.length} items to queue of ${this.queue.length} (max: ${this.configuration.healthCheck.maxQueueSize})`);
+      throw new Error(`Batch overflow: Would add ${operations?.length || 0} items to queue of ${this?.queue?.length} (max: ${this?.configuration?.healthCheck.maxQueueSize})`);
     }
     
     logger.info("Processing batch operation", "NLP_QUEUE", {
       batchId,
-      operationCount: operations.length,
+      operationCount: operations?.length || 0,
       priority,
       maxConcurrency,
       failFast
@@ -308,7 +308,7 @@ export class GroceryNLPQueue extends EventEmitter {
       if (failFast) {
         // Fail fast mode: if any operation fails, cancel all
         const batchResults = await Promise.all(
-          operations.map((op, index) => 
+          operations?.map((op, index) => 
             this.enqueue(
               op,
               priority,
@@ -322,25 +322,25 @@ export class GroceryNLPQueue extends EventEmitter {
           )
         );
         results.push(...batchResults);
-        completedCount = batchResults.length;
+        completedCount = batchResults?.length || 0;
       } else {
         // Process in chunks with error tolerance
         const chunks = this.chunkArray(operations, maxConcurrency);
         
         for (const chunk of chunks) {
-          const chunkPromises = chunk.map((op, index) => 
+          const chunkPromises = chunk?.map((op, index) => 
             this.enqueue(
               op,
               priority,
               timeout,
-              `batch-operation-${results.length + index}`,
-              { batchId, batchIndex: results.length + index }
+              `batch-operation-${results?.length || 0 + index}`,
+              { batchId, batchIndex: results?.length || 0 + index }
             ).then(result => {
               completedCount++;
               return result;
             }).catch(error => {
               failedCount++;
-              errors[results.length + index] = error;
+              errors[results?.length || 0 + index] = error;
               return null;
             })
           );
@@ -361,8 +361,8 @@ export class GroceryNLPQueue extends EventEmitter {
         batchId,
         completedCount,
         failedCount,
-        totalOperations: operations.length,
-        successRate: completedCount / operations.length
+        totalOperations: operations?.length || 0,
+        successRate: completedCount / operations?.length || 0
       });
 
       // Emit batch completion event
@@ -370,11 +370,11 @@ export class GroceryNLPQueue extends EventEmitter {
         batchId,
         completedCount,
         failedCount,
-        results: results.filter(r => r !== null),
-        errors: errors.filter(e => e !== null)
+        results: results?.filter(r => r !== null),
+        errors: errors?.filter(e => e !== null)
       });
 
-      return results.filter((result): result is T => result !== null);
+      return results?.filter((result: any): result is T => result !== null);
 
     } catch (error) {
       logger.error("Batch operation failed", "NLP_QUEUE", {
@@ -382,7 +382,7 @@ export class GroceryNLPQueue extends EventEmitter {
         error,
         completedCount,
         failedCount,
-        totalOperations: operations.length
+        totalOperations: operations?.length || 0
       });
 
       this.emit('batchFailed', {
@@ -390,7 +390,7 @@ export class GroceryNLPQueue extends EventEmitter {
         error,
         completedCount,
         failedCount,
-        totalOperations: operations.length
+        totalOperations: operations?.length || 0
       });
 
       throw error;
@@ -402,7 +402,7 @@ export class GroceryNLPQueue extends EventEmitter {
    */
   private chunkArray<T>(array: T[], chunkSize: number): T[][] {
     const chunks: T[][] = [];
-    for (let i = 0; i < array.length; i += chunkSize) {
+    for (let i = 0; i < array?.length || 0; i += chunkSize) {
       chunks.push(array.slice(i, i + chunkSize));
     }
     return chunks;
@@ -415,13 +415,13 @@ export class GroceryNLPQueue extends EventEmitter {
     if (this.isProcessing) return;
     this.isProcessing = true;
     
-    while (this.queue.length > 0 && this.activeRequests < this.maxConcurrent) {
-      const request = this.queue.shift();
+    while (this?.queue?.length > 0 && this.activeRequests < this.maxConcurrent) {
+      const request = this?.queue?.shift();
       if (!request) break;
       
       this.activeRequests++;
-      this.metrics.activeRequests = this.activeRequests;
-      this.metrics.currentQueueSize = this.queue.length;
+      this?.metrics?.activeRequests = this.activeRequests;
+      this?.metrics?.currentQueueSize = this?.queue?.length;
       
       // Track wait time
       const waitTime = Date.now() - request.timestamp;
@@ -451,7 +451,7 @@ export class GroceryNLPQueue extends EventEmitter {
         id: request.id,
         priority: request.priority,
         activeRequests: this.activeRequests,
-        queueSize: this.queue.length
+        queueSize: this?.queue?.length
       });
       
       const result = await request.operation();
@@ -465,7 +465,7 @@ export class GroceryNLPQueue extends EventEmitter {
       this.updateAverageProcessingTime(processingTime);
       
       request.resolve(result);
-      this.metrics.completedRequests++;
+      this?.metrics?.completedRequests++;
       this.updateSuccessRate();
       
       // Emit status update
@@ -495,14 +495,14 @@ export class GroceryNLPQueue extends EventEmitter {
         request.startedAt = undefined;
         request.completedAt = undefined;
         request.error = undefined;
-        this.queue.unshift(request); // Add back to front of queue
+        this?.queue?.unshift(request); // Add back to front of queue
         this.sortQueue();
         
         // Emit retry status
         this.emitRequestStatus(request.id, "pending");
       } else {
         request.reject(error);
-        this.metrics.failedRequests++;
+        this?.metrics?.failedRequests++;
         this.updateSuccessRate();
         
         // Emit failure status
@@ -510,13 +510,13 @@ export class GroceryNLPQueue extends EventEmitter {
       }
     } finally {
       this.activeRequests--;
-      this.metrics.activeRequests = this.activeRequests;
+      this?.metrics?.activeRequests = this.activeRequests;
       
       // Emit queue update
       this.emitQueueUpdate();
       
       // Continue processing queue
-      if (this.queue.length > 0) {
+      if (this?.queue?.length > 0) {
         setImmediate(() => this.processQueue());
       }
     }
@@ -542,7 +542,7 @@ export class GroceryNLPQueue extends EventEmitter {
    * Sort queue by priority (higher priority first)
    */
   private sortQueue(): void {
-    this.queue.sort((a, b) => {
+    this?.queue?.sort((a, b) => {
       // First by priority
       if (b.priority !== a.priority) {
         return b.priority - a.priority;
@@ -563,30 +563,30 @@ export class GroceryNLPQueue extends EventEmitter {
    * Update average wait time metric
    */
   private updateAverageWaitTime(waitTime: number): void {
-    const totalWaitTime = this.metrics.averageWaitTime * (this.metrics.completedRequests + this.metrics.failedRequests);
-    const newTotal = this.metrics.completedRequests + this.metrics.failedRequests + 1;
-    this.metrics.averageWaitTime = (totalWaitTime + waitTime) / newTotal;
+    const totalWaitTime = this?.metrics?.averageWaitTime * (this?.metrics?.completedRequests + this?.metrics?.failedRequests);
+    const newTotal = this?.metrics?.completedRequests + this?.metrics?.failedRequests + 1;
+    this?.metrics?.averageWaitTime = (totalWaitTime + waitTime) / newTotal;
   }
 
   /**
    * Update average processing time metric
    */
   private updateAverageProcessingTime(processingTime: number): void {
-    const totalProcessingTime = this.metrics.averageProcessingTime * this.metrics.completedRequests;
-    const newTotal = this.metrics.completedRequests + 1;
-    this.metrics.averageProcessingTime = (totalProcessingTime + processingTime) / newTotal;
+    const totalProcessingTime = this?.metrics?.averageProcessingTime * this?.metrics?.completedRequests;
+    const newTotal = this?.metrics?.completedRequests + 1;
+    this?.metrics?.averageProcessingTime = (totalProcessingTime + processingTime) / newTotal;
   }
 
   /**
    * Update success rate metric
    */
   private updateSuccessRate(): void {
-    if (this.metrics.totalRequests === 0) {
-      this.metrics.successRate = 0;
+    if (this?.metrics?.totalRequests === 0) {
+      this?.metrics?.successRate = 0;
       return;
     }
     
-    this.metrics.successRate = this.metrics.completedRequests / this.metrics.totalRequests;
+    this?.metrics?.successRate = this?.metrics?.completedRequests / this?.metrics?.totalRequests;
   }
 
   /**
@@ -600,15 +600,15 @@ export class GroceryNLPQueue extends EventEmitter {
    * Clear the queue (emergency use only)
    */
   clearQueue(): void {
-    const clearedCount = this.queue.length;
+    const clearedCount = this?.queue?.length;
     
     // Reject all pending requests
-    this.queue.forEach(request => {
+    this?.queue?.forEach(request => {
       request.reject(new Error("Queue cleared"));
     });
     
     this.queue = [];
-    this.metrics.currentQueueSize = 0;
+    this?.metrics?.currentQueueSize = 0;
     
     logger.warn("NLP queue cleared", "NLP_QUEUE", {
       clearedCount,
@@ -620,17 +620,17 @@ export class GroceryNLPQueue extends EventEmitter {
    * Check if queue has capacity for new requests
    */
   hasCapacity(additionalItems: number = 1): boolean {
-    return (this.queue.length + additionalItems) <= this.configuration.healthCheck.maxQueueSize;
+    return (this?.queue?.length + additionalItems) <= this?.configuration?.healthCheck.maxQueueSize;
   }
 
   /**
    * Check if queue is healthy
    */
   isHealthy(): boolean {
-    const queueSizeHealthy = this.queue.length < this.configuration.healthCheck.maxQueueSize;
-    const errorRateHealthy = this.metrics.totalRequests === 0 || 
-      (this.metrics.failedRequests / this.metrics.totalRequests) < this.configuration.healthCheck.maxErrorRate;
-    const processingTimeHealthy = this.metrics.averageProcessingTime < this.configuration.healthCheck.maxProcessingTime;
+    const queueSizeHealthy = this?.queue?.length < this?.configuration?.healthCheck.maxQueueSize;
+    const errorRateHealthy = this?.metrics?.totalRequests === 0 || 
+      (this?.metrics?.failedRequests / this?.metrics?.totalRequests) < this?.configuration?.healthCheck.maxErrorRate;
+    const processingTimeHealthy = this?.metrics?.averageProcessingTime < this?.configuration?.healthCheck.maxProcessingTime;
     
     return queueSizeHealthy && errorRateHealthy && processingTimeHealthy;
   }
@@ -650,7 +650,7 @@ export class GroceryNLPQueue extends EventEmitter {
     
     return {
       healthy: this.isHealthy(),
-      queueSize: this.queue.length,
+      queueSize: this?.queue?.length,
       activeRequests: this.activeRequests,
       maxConcurrent: this.maxConcurrent,
       metrics: this.getMetrics(),
@@ -690,7 +690,7 @@ export class GroceryNLPQueue extends EventEmitter {
       const snapshot: QueueSnapshot = {
         timestamp: Date.now(),
         version: "1.0.0",
-        items: this.queue.map(item => ({
+        items: this?.queue?.map(item => ({
           id: item.id,
           priority: item.priority,
           status: item.status,
@@ -713,7 +713,7 @@ export class GroceryNLPQueue extends EventEmitter {
       await fs.writeFile(snapshotPath, JSON.stringify(snapshot, null, 2));
       
       logger.debug("Queue state persisted", "NLP_QUEUE", {
-        itemCount: snapshot.items.length,
+        itemCount: snapshot?.items?.length,
         timestamp: snapshot.timestamp
       });
     } catch (error) {
@@ -746,7 +746,7 @@ export class GroceryNLPQueue extends EventEmitter {
       
       logger.info("Recovered from persistence", "NLP_QUEUE", {
         snapshotAge: Date.now() - snapshot.timestamp,
-        itemCount: snapshot.items.length
+        itemCount: snapshot?.items?.length
       });
     } catch (error) {
       if ((error as any).code !== 'ENOENT') {
@@ -777,13 +777,13 @@ export class GroceryNLPQueue extends EventEmitter {
     }
 
     toDelete.forEach(fingerprint => {
-      this.requestFingerprints.delete(fingerprint);
+      this?.requestFingerprints?.delete(fingerprint);
     });
 
-    if (toDelete.length > 0) {
+    if (toDelete?.length || 0 > 0) {
       logger.debug("Cleaned up fingerprints", "NLP_QUEUE", {
-        cleaned: toDelete.length,
-        remaining: this.requestFingerprints.size
+        cleaned: toDelete?.length || 0,
+        remaining: this?.requestFingerprints?.size
       });
     }
   }
@@ -792,12 +792,12 @@ export class GroceryNLPQueue extends EventEmitter {
    * Calculate estimated wait time for new requests
    */
   private calculateEstimatedWaitTime(): number {
-    if (this.queue.length === 0) return 0;
+    if (this?.queue?.length === 0) return 0;
     
     const availableSlots = Math.max(0, this.maxConcurrent - this.activeRequests);
-    const queuePosition = Math.max(0, this.queue.length - availableSlots);
+    const queuePosition = Math.max(0, this?.queue?.length - availableSlots);
     
-    return queuePosition * (this.metrics.averageProcessingTime || 1000);
+    return queuePosition * (this?.metrics?.averageProcessingTime || 1000);
   }
 
   /**
@@ -807,7 +807,7 @@ export class GroceryNLPQueue extends EventEmitter {
     const event: WebSocketEvent = {
       type: "queue_update",
       data: {
-        queueSize: this.queue.length,
+        queueSize: this?.queue?.length,
         activeRequests: this.activeRequests,
         estimatedWaitTime: this.calculateEstimatedWaitTime()
       }
@@ -854,16 +854,18 @@ export class GroceryNLPQueue extends EventEmitter {
    * Cancel a queued request
    */
   cancelRequest(requestId: string): boolean {
-    const index = this.queue.findIndex(r => r.id === requestId);
+    const index = this?.queue?.findIndex(r => r.id === requestId);
     
     if (index !== -1) {
       const request = this.queue[index];
-      this.queue.splice(index, 1);
+      this?.queue?.splice(index, 1);
       
-      request.reject(new Error("Request cancelled"));
-      request.status = "failed";
+      if (request) {
+        request.reject(new Error("Request cancelled"));
+        request.status = "failed";
+      }
       
-      this.metrics.currentQueueSize = this.queue.length;
+      this?.metrics?.currentQueueSize = this?.queue?.length;
       this.emitQueueUpdate();
       this.emitRequestStatus(requestId, "failed", undefined, "Request cancelled");
       
@@ -907,7 +909,7 @@ export class GroceryNLPQueue extends EventEmitter {
    * Get request by ID
    */
   getRequest(requestId: string): QueueItem | undefined {
-    const request = this.queue.find(r => r.id === requestId);
+    const request = this?.queue?.find(r => r.id === requestId);
     if (!request) return undefined;
 
     return {
@@ -931,7 +933,7 @@ export class GroceryNLPQueue extends EventEmitter {
    * Get all queue items
    */
   getQueueItems(): QueueItem[] {
-    return this.queue.map(request => ({
+    return this?.queue?.map(request => ({
       id: request.id,
       priority: request.priority,
       status: request.status,

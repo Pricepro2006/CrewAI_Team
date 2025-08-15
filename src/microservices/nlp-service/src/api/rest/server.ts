@@ -43,14 +43,14 @@ export class RestAPIServer {
    */
   async start(): Promise<void> {
     try {
-      await this.fastify.listen({
-        port: this.config.port,
-        host: this.config.host
+      await this?.fastify?.listen({
+        port: this?.config?.port,
+        host: this?.config?.host
       });
       
       logger.info('REST API server started', 'REST_SERVER', {
-        port: this.config.port,
-        host: this.config.host
+        port: this?.config?.port,
+        host: this?.config?.host
       });
       
     } catch (error) {
@@ -64,7 +64,7 @@ export class RestAPIServer {
    */
   async stop(): Promise<void> {
     try {
-      await this.fastify.close();
+      await this?.fastify?.close();
       logger.info('REST API server stopped', 'REST_SERVER');
     } catch (error) {
       logger.error('Error stopping REST server', 'REST_SERVER', { error });
@@ -77,23 +77,23 @@ export class RestAPIServer {
    */
   private setupMiddleware(): void {
     // Security headers
-    this.fastify.register(fastifyHelmet, {
+    this?.fastify?.register(fastifyHelmet, {
       contentSecurityPolicy: false // Disable CSP for API
     });
 
     // CORS
-    if (this.config.security.cors.enabled) {
-      this.fastify.register(fastifyCors, {
-        origin: this.config.security.cors.origins,
+    if (this?.config?.security.cors.enabled) {
+      this?.fastify?.register(fastifyCors, {
+        origin: this?.config?.security.cors.origins,
         credentials: true
       });
     }
 
     // Rate limiting
-    if (this.config.security.rateLimiting.enabled) {
-      this.fastify.register(fastifyRateLimit, {
-        max: this.config.security.rateLimiting.max,
-        timeWindow: this.config.security.rateLimiting.timeWindow,
+    if (this?.config?.security.rateLimiting.enabled) {
+      this?.fastify?.register(fastifyRateLimit, {
+        max: this?.config?.security.rateLimiting.max,
+        timeWindow: this?.config?.security.rateLimiting.timeWindow,
         errorResponseBuilder: (request: FastifyRequest, context: any) => ({
           error: 'Rate limit exceeded',
           message: `Too many requests, please try again later`,
@@ -104,17 +104,17 @@ export class RestAPIServer {
     }
 
     // Request ID middleware
-    this.fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
+    this?.fastify?.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
       request.id = request.headers['x-request-id'] as string || this.generateRequestId();
       reply.header('x-request-id', request.id);
     });
 
     // API Key authentication (if enabled)
-    if (this.config.security.apiKeys.enabled) {
-      this.fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (this?.config?.security.apiKeys.enabled) {
+      this?.fastify?.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
         const apiKey = request.headers['x-api-key'] as string;
         
-        if (this.config.security.apiKeys.required && !apiKey) {
+        if (this?.config?.security.apiKeys.required && !apiKey) {
           reply.status(401).send({
             error: 'Unauthorized',
             message: 'API key required',
@@ -141,8 +141,8 @@ export class RestAPIServer {
    */
   private setupRoutes(): void {
     // Health check
-    this.fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
-      const status = this.nlpService.getStatus();
+    this?.fastify?.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
+      const status = this?.nlpService?.getStatus();
       const httpStatus = status.status === 'healthy' ? 200 : 
                         status.status === 'degraded' ? 200 : 503;
       
@@ -154,18 +154,18 @@ export class RestAPIServer {
         version: status.version,
         dependencies: status.dependencies,
         queue: {
-          size: status.queue.size,
-          activeRequests: status.queue.activeRequests,
-          health: status.queue.health
+          size: status?.queue?.size,
+          activeRequests: status?.queue?.activeRequests,
+          health: status?.queue?.health
         }
       });
     });
 
     // Detailed health check
-    this.fastify.get('/health/detailed', async (request: FastifyRequest, reply: FastifyReply) => {
-      const status = this.nlpService.getStatus();
-      const metrics = this.nlpService.getMetrics();
-      const queueStatus = this.nlpService.getQueueStatus();
+    this?.fastify?.get('/health/detailed', async (request: FastifyRequest, reply: FastifyReply) => {
+      const status = this?.nlpService?.getStatus();
+      const metrics = this?.nlpService?.getMetrics();
+      const queueStatus = this?.nlpService?.getQueueStatus();
       
       reply.send({
         service: status,
@@ -175,13 +175,13 @@ export class RestAPIServer {
     });
 
     // Service metrics
-    this.fastify.get('/metrics', async (request: FastifyRequest, reply: FastifyReply) => {
-      const metrics = this.nlpService.getMetrics();
+    this?.fastify?.get('/metrics', async (request: FastifyRequest, reply: FastifyReply) => {
+      const metrics = this?.nlpService?.getMetrics();
       reply.send(metrics);
     });
 
     // Process single query
-    this.fastify.post<{
+    this?.fastify?.post<{
       Body: NLPServiceAPI.REST.ProcessRequest,
       Reply: NLPServiceAPI.REST.ProcessResponse
     }>('/api/v1/process', {
@@ -202,11 +202,11 @@ export class RestAPIServer {
       Reply: NLPServiceAPI.REST.ProcessResponse
     }>, reply: FastifyReply) => {
       const { query, priority = 'normal', timeout, metadata } = request.body;
-      const requestId = request.id;
+      const requestId = request?.id;
       
       try {
         const startTime = Date.now();
-        const result = await this.nlpService.processQuery(query, priority, timeout, {
+        const result = await this?.nlpService?.processQuery(query, priority, timeout, {
           ...metadata,
           requestId,
           userAgent: request.headers['user-agent'],
@@ -219,7 +219,7 @@ export class RestAPIServer {
           success: true,
           requestId,
           result: {
-            entities: result.entities.map(e => ({
+            entities: result?.entities?.map(e => ({
               type: e.type,
               value: e.value,
               confidence: e.confidence,
@@ -227,20 +227,20 @@ export class RestAPIServer {
               endIndex: e.endIndex
             })),
             intent: {
-              action: result.intent.action,
-              confidence: result.intent.confidence
+              action: result?.intent?.action,
+              confidence: result?.intent?.confidence
             },
             normalized: {
-              products: result.normalizedItems.map(item => ({
+              products: result?.normalizedItems?.map(item => ({
                 name: item.name,
                 quantity: item.quantity,
                 unit: item.unit
               }))
             },
             metadata: {
-              processingTime: result.processingMetadata.processingTime,
-              model: result.processingMetadata.model,
-              version: result.processingMetadata.version
+              processingTime: result?.processingMetadata?.processingTime,
+              model: result?.processingMetadata?.model,
+              version: result?.processingMetadata?.version
             }
           },
           processingTime,
@@ -265,7 +265,7 @@ export class RestAPIServer {
     });
 
     // Process batch queries
-    this.fastify.post<{
+    this?.fastify?.post<{
       Body: NLPServiceAPI.REST.BatchRequest,
       Reply: NLPServiceAPI.REST.BatchResponse
     }>('/api/v1/batch', {
@@ -297,11 +297,11 @@ export class RestAPIServer {
       Reply: NLPServiceAPI.REST.BatchResponse
     }>, reply: FastifyReply) => {
       const { queries, priority = 'normal', timeout } = request.body;
-      const requestId = request.id;
+      const requestId = request?.id;
       
       try {
-        const result = await this.nlpService.processBatch(
-          queries.map((q: any) => ({
+        const result = await this?.nlpService?.processBatch(
+          queries?.map((q: any) => ({
             ...q,
             metadata: {
               ...q.metadata,
@@ -318,7 +318,7 @@ export class RestAPIServer {
         reply.send({
           success: true,
           batchId: result.batchId,
-          results: result.results.map((r, index) => {
+          results: result?.results?.map((r, index) => {
             if (!r) {
               return {
                 success: false,
@@ -333,7 +333,7 @@ export class RestAPIServer {
               success: true,
               requestId: `${requestId}-${index}`,
               result: {
-                entities: r.entities.map(e => ({
+                entities: r?.entities?.map(e => ({
                   type: e.type,
                   value: e.value,
                   confidence: e.confidence,
@@ -341,23 +341,23 @@ export class RestAPIServer {
                   endIndex: e.endIndex
                 })),
                 intent: {
-                  action: r.intent.action,
-                  confidence: r.intent.confidence
+                  action: r?.intent?.action,
+                  confidence: r?.intent?.confidence
                 },
                 normalized: {
-                  products: r.normalizedItems.map(item => ({
+                  products: r?.normalizedItems?.map(item => ({
                     name: item.name,
                     quantity: item.quantity,
                     unit: item.unit
                   }))
                 },
                 metadata: {
-                  processingTime: r.processingMetadata.processingTime,
-                  model: r.processingMetadata.model,
-                  version: r.processingMetadata.version
+                  processingTime: r?.processingMetadata?.processingTime,
+                  model: r?.processingMetadata?.model,
+                  version: r?.processingMetadata?.version
                 }
               },
-              processingTime: r.processingMetadata.processingTime,
+              processingTime: r?.processingMetadata?.processingTime,
               queueTime: 0
             };
           }),
@@ -370,7 +370,7 @@ export class RestAPIServer {
         logger.error('Batch process failed', 'REST_API', {
           requestId,
           error: error.message,
-          queryCount: queries.length
+          queryCount: queries?.length || 0
         });
         
         reply.status(error.statusCode || 500).send({
@@ -379,18 +379,18 @@ export class RestAPIServer {
           results: [],
           totalProcessingTime: 0,
           completedCount: 0,
-          failedCount: queries.length
+          failedCount: queries?.length || 0
         });
       }
     });
 
     // Queue management endpoints
-    this.fastify.get('/api/v1/queue/status', async (request: FastifyRequest, reply: FastifyReply) => {
-      const status = this.nlpService.getQueueStatus();
+    this?.fastify?.get('/api/v1/queue/status', async (request: FastifyRequest, reply: FastifyReply) => {
+      const status = this?.nlpService?.getQueueStatus();
       reply.send(status);
     });
 
-    this.fastify.delete('/api/v1/queue/clear', async (request: FastifyRequest, reply: FastifyReply) => {
+    this?.fastify?.delete('/api/v1/queue/clear', async (request: FastifyRequest, reply: FastifyReply) => {
       // Require admin privileges for this operation
       const apiKey = request.headers['x-api-key'] as string;
       if (!this.isAdminApiKey(apiKey)) {
@@ -401,18 +401,18 @@ export class RestAPIServer {
         return;
       }
       
-      this.nlpService.clearQueue();
+      this?.nlpService?.clearQueue();
       reply.send({ message: 'Queue cleared' });
     });
 
     // Service control endpoints
-    this.fastify.get('/api/v1/status', async (request: FastifyRequest, reply: FastifyReply) => {
-      const status = this.nlpService.getStatus();
+    this?.fastify?.get('/api/v1/status', async (request: FastifyRequest, reply: FastifyReply) => {
+      const status = this?.nlpService?.getStatus();
       reply.send(status);
     });
 
     // API documentation
-    this.fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    this?.fastify?.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
       reply.type('text/html').send(`
         <!DOCTYPE html>
         <html>
@@ -427,7 +427,7 @@ export class RestAPIServer {
         </head>
         <body>
           <h1>NLP Microservice API</h1>
-          <p>Version: ${this.nlpService.getStatus().version}</p>
+          <p>Version: ${this?.nlpService?.getStatus().version}</p>
           
           <div class="endpoint">
             <div class="method">GET /health</div>
@@ -468,7 +468,7 @@ export class RestAPIServer {
    * Set up error handling
    */
   private setupErrorHandling(): void {
-    this.fastify.setErrorHandler((error: any, request: FastifyRequest, reply: FastifyReply) => {
+    this?.fastify?.setErrorHandler((error: any, request: FastifyRequest, reply: FastifyReply) => {
       logger.error('REST API error', 'REST_SERVER', {
         error: error.message,
         stack: error.stack,
@@ -489,7 +489,7 @@ export class RestAPIServer {
       });
     });
 
-    this.fastify.setNotFoundHandler((request: FastifyRequest, reply: FastifyReply) => {
+    this?.fastify?.setNotFoundHandler((request: FastifyRequest, reply: FastifyReply) => {
       reply.status(404).send({
         error: 'Not found',
         message: `Route ${request.method} ${request.url} not found`,
@@ -511,7 +511,7 @@ export class RestAPIServer {
    */
   private validateApiKey(apiKey: string): boolean {
     // Implement your API key validation logic
-    return apiKey.length >= 32; // Simple example
+    return apiKey?.length || 0 >= 32; // Simple example
   }
 
   /**

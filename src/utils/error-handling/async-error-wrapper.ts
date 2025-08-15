@@ -46,7 +46,7 @@ export function withAsyncErrorHandler<
           {
             error: lastError.message,
             stack: lastError.stack,
-            args: args.length > 0 ? args : undefined,
+            args: args?.length || 0 > 0 ? args : undefined,
             attempt,
           },
         );
@@ -82,7 +82,7 @@ export function withAsyncErrorHandler<
         }
 
         // Wait before retrying
-        await new Promise((resolve) =>
+        await new Promise((resolve: any) =>
           setTimeout(resolve, retryDelay * Math.pow(2, attempt)),
         );
       }
@@ -193,7 +193,7 @@ export class GracefulShutdown {
   private signalHandlersRegistered = false;
 
   register(handler: () => Promise<void>): void {
-    this.shutdownHandlers.push(handler);
+    this?.shutdownHandlers?.push(handler);
   }
 
   async shutdown(signal: string): Promise<void> {
@@ -212,8 +212,8 @@ export class GracefulShutdown {
 
     try {
       await Promise.all(
-        this.shutdownHandlers.map((handler) =>
-          handler().catch((error) =>
+        this?.shutdownHandlers?.map((handler: any) =>
+          handler().catch((error: any) =>
             logger.error(
               "Error during shutdown handler",
               "GRACEFUL_SHUTDOWN",
@@ -251,7 +251,7 @@ export class GracefulShutdown {
 
     process.on("SIGTERM", () => this.shutdown("SIGTERM"));
     process.on("SIGINT", () => this.shutdown("SIGINT"));
-    process.on("uncaughtException", (error) => {
+    process.on("uncaughtException", (error: any) => {
       logger.error("Uncaught exception", "GRACEFUL_SHUTDOWN", undefined, error);
       this.shutdown("uncaughtException");
     });

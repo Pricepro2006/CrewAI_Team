@@ -4,7 +4,7 @@
  */
 
 import { logger } from "../../utils/logger.js";
-import { MODEL_CONFIG } from "../../config/models.config.js";
+import { MODEL_CONFIG } from "../../config/models?.config.js";
 import type {
   Email,
   CriticalAnalysisResult,
@@ -13,11 +13,11 @@ import type {
 import axios from "axios";
 
 export class Stage3CriticalAnalysis {
-  private primaryModel = MODEL_CONFIG.models.critical;
-  private fallbackModel = MODEL_CONFIG.models.primary;
-  private apiUrl = `${MODEL_CONFIG.api.ollamaUrl}${MODEL_CONFIG.api.endpoints.generate}`;
-  private primaryTimeout = MODEL_CONFIG.timeouts.critical;
-  private fallbackTimeout = MODEL_CONFIG.timeouts.fallback;
+  private primaryModel = MODEL_CONFIG?.models?.critical;
+  private fallbackModel = MODEL_CONFIG?.models?.primary;
+  private apiUrl = `${MODEL_CONFIG?.api?.ollamaUrl}${MODEL_CONFIG?.api?.endpoints.generate}`;
+  private primaryTimeout = MODEL_CONFIG?.timeouts?.critical;
+  private fallbackTimeout = MODEL_CONFIG?.timeouts?.fallback;
   private progressCallback?: (count: number) => Promise<void>;
   private lastProgressUpdate = 0;
   private readonly PROGRESS_THROTTLE_MS = 2000; // Update every 2 seconds
@@ -49,12 +49,12 @@ export class Stage3CriticalAnalysis {
     const results: CriticalAnalysisResult[] = [];
 
     logger.info(
-      `Starting critical analysis for ${emails.length} high-priority emails`,
+      `Starting critical analysis for ${emails?.length || 0} high-priority emails`,
       "STAGE3",
     );
 
     // Process one at a time for critical emails
-    for (let i = 0; i < emails.length; i++) {
+    for (let i = 0; i < emails?.length || 0; i++) {
       const email = emails[i]!;
 
       try {
@@ -76,9 +76,9 @@ export class Stage3CriticalAnalysis {
       }
 
       // Progress logging
-      const progress = (((i + 1) / emails.length) * 100).toFixed(1);
+      const progress = (((i + 1) / emails?.length || 0) * 100).toFixed(1);
       logger.info(
-        `Stage 3 Progress: ${i + 1}/${emails.length} (${progress}%)`,
+        `Stage 3 Progress: ${i + 1}/${emails?.length || 0} (${progress}%)`,
         "STAGE3",
       );
 
@@ -128,8 +128,8 @@ export class Stage3CriticalAnalysis {
           options: {
             temperature: 0.2, // Lower temperature for critical analysis
             num_predict: 1500, // More tokens for detailed analysis
-            top_k: MODEL_CONFIG.generation.topK,
-            top_p: MODEL_CONFIG.generation.topP,
+            top_k: MODEL_CONFIG?.generation?.topK,
+            top_p: MODEL_CONFIG?.generation?.topP,
           },
         },
         {
@@ -140,7 +140,7 @@ export class Stage3CriticalAnalysis {
 
       clearTimeout(timeoutId);
 
-      const responseText = response.data.response;
+      const responseText = response?.data?.response;
       const analysis = this.parseCriticalResponse(responseText);
       const processingTime = (Date.now() - startTime) / 1000;
 
@@ -202,8 +202,8 @@ export class Stage3CriticalAnalysis {
           options: {
             temperature: 0.2,
             num_predict: 1200,
-            top_k: MODEL_CONFIG.generation.topK,
-            top_p: MODEL_CONFIG.generation.topP,
+            top_k: MODEL_CONFIG?.generation?.topK,
+            top_p: MODEL_CONFIG?.generation?.topP,
           },
         },
         {
@@ -211,7 +211,7 @@ export class Stage3CriticalAnalysis {
         },
       );
 
-      const responseText = response.data.response;
+      const responseText = response?.data?.response;
       const analysis = this.parseCriticalResponse(responseText);
       const processingTime = (Date.now() - startTime) / 1000;
 
@@ -338,16 +338,16 @@ Respond ONLY with valid JSON, no additional text.`;
       const jsonSplit = responseText.split("```json");
       const codeSplit = responseText.split("```");
 
-      if (jsonSplit.length > 1 && jsonSplit[1]) {
+      if (jsonSplit?.length || 0 > 1 && jsonSplit[1]) {
         const afterJson = jsonSplit[1];
         const endSplit = afterJson.split("```");
         cleanedText =
-          endSplit.length > 0 && endSplit[0] ? endSplit[0] : afterJson;
-      } else if (codeSplit.length > 1 && codeSplit[1]) {
+          endSplit?.length || 0 > 0 && endSplit[0] ? endSplit[0] : afterJson;
+      } else if (codeSplit?.length || 0 > 1 && codeSplit[1]) {
         const afterCode = codeSplit[1];
         const endSplit = afterCode.split("```");
         cleanedText =
-          endSplit.length > 0 && endSplit[0] ? endSplit[0] : afterCode;
+          endSplit?.length || 0 > 0 && endSplit[0] ? endSplit[0] : afterCode;
       }
 
       return JSON.parse(cleanedText.trim());
@@ -383,20 +383,20 @@ Respond ONLY with valid JSON, no additional text.`;
     };
 
     // Executive summary quality
-    if (analysis.executive_summary && analysis.executive_summary.length > 100) {
+    if (analysis.executive_summary && analysis?.executive_summary?.length > 100) {
       score += weights.executiveSummary * 10;
     }
 
     // Business impact assessment
     const impactKeys = Object.keys(analysis.business_impact || {});
-    if (impactKeys.length >= 2) {
+    if (impactKeys?.length || 0 >= 2) {
       score += weights.businessImpact * 10;
     }
 
     // Recommended actions
     if (
       analysis.recommended_actions &&
-      analysis.recommended_actions.length > 0
+      analysis?.recommended_actions?.length > 0
     ) {
       const actionQuality = (analysis.recommended_actions as unknown[]).every(
         (a: unknown) => {
@@ -412,7 +412,7 @@ Respond ONLY with valid JSON, no additional text.`;
     // Strategic insights
     if (
       analysis.strategic_insights &&
-      analysis.strategic_insights.length > 100
+      analysis?.strategic_insights?.length > 100
     ) {
       score += weights.strategicInsights * 10;
     }

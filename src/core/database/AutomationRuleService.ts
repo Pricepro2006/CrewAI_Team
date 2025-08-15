@@ -64,7 +64,7 @@ export class AutomationRuleService {
    */
   getAllRules(): AutomationRule[] {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT * FROM automation_rules 
         ORDER BY priority DESC, rule_name ASC
       `);
@@ -82,7 +82,7 @@ export class AutomationRuleService {
    */
   getActiveRules(): AutomationRule[] {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT * FROM automation_rules 
         WHERE is_active = 1
         ORDER BY priority DESC, rule_name ASC
@@ -99,7 +99,7 @@ export class AutomationRuleService {
    */
   getRulePerformance(): RulePerformance[] {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT 
           ar.id as rule_id,
           ar.rule_name,
@@ -117,7 +117,7 @@ export class AutomationRuleService {
       `);
 
       const results = stmt.all() as RulePerformance[];
-      return results.map((r) => ({
+      return results?.map((r: any) => ({
         ...r,
         success_rate: r.success_rate || 0,
         avg_execution_time: r.avg_execution_time || 0,
@@ -135,7 +135,7 @@ export class AutomationRuleService {
    */
   getRuleActivity(days: number = 7): RuleActivity[] {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT 
           DATE(re.executed_at) as date,
           ar.id as rule_id,
@@ -164,7 +164,7 @@ export class AutomationRuleService {
    */
   updateRuleStatus(ruleId: number, isActive: boolean): boolean {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         UPDATE automation_rules 
         SET is_active = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
@@ -204,7 +204,7 @@ export class AutomationRuleService {
     >,
   ): number | null {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         INSERT INTO automation_rules (
           rule_name, rule_type, conditions, actions, priority, is_active
         ) VALUES (?, ?, ?, ?, ?, ?)
@@ -274,12 +274,12 @@ export class AutomationRuleService {
         values.push(updates.is_active ? 1 : 0);
       }
 
-      if (fields.length === 0) return false;
+      if (fields?.length || 0 === 0) return false;
 
       fields.push("updated_at = CURRENT_TIMESTAMP");
       values.push(ruleId);
 
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         UPDATE automation_rules 
         SET ${fields.join(", ")}
         WHERE id = ?
@@ -306,7 +306,7 @@ export class AutomationRuleService {
    */
   deleteRule(ruleId: number): boolean {
     try {
-      const stmt = this.db.prepare("DELETE FROM automation_rules WHERE id = ?");
+      const stmt = this?.db?.prepare("DELETE FROM automation_rules WHERE id = ?");
       const result = stmt.run(ruleId);
 
       if (result.changes > 0) {
@@ -328,7 +328,7 @@ export class AutomationRuleService {
    */
   getRuleExecutionHistory(ruleId: number, limit: number = 100): any[] {
     try {
-      const stmt = this.db.prepare(`
+      const stmt = this?.db?.prepare(`
         SELECT 
           re.*,
           e.subject as email_subject,
@@ -355,7 +355,7 @@ export class AutomationRuleService {
    */
   close(): void {
     try {
-      this.db.close();
+      this?.db?.close();
       logger.info("Database connection closed", "AUTOMATION_RULES");
     } catch (error) {
       logger.error("Error closing database connection", "AUTOMATION_RULES", {

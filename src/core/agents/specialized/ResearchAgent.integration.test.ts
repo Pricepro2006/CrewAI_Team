@@ -20,7 +20,7 @@ vi.mock("../../../utils/webSearch.js", () => ({
     results: [
       {
         title: "TypeScript - JavaScript with syntax for types",
-        url: "https://www.typescriptlang.org/",
+        url: "https://www?.typescriptlang?.org/",
         snippet: "TypeScript is a strongly typed programming language that builds on JavaScript..."
       }
     ],
@@ -34,7 +34,7 @@ vi.mock("../../../utils/webFetch.js", () => ({
   fetchWebContent: vi.fn().mockResolvedValue({
     title: "TypeScript Official Website",
     content: "TypeScript is a programming language developed by Microsoft. It is a strict syntactical superset of JavaScript and adds optional static type checking to the language.",
-    url: "https://www.typescriptlang.org/"
+    url: "https://www?.typescriptlang?.org/"
   })
 }));
 
@@ -85,7 +85,7 @@ describe("ResearchAgent Integration Tests", () => {
               "Compiles to plain JavaScript"
             ],
             sources: [
-              { url: "https://www.typescriptlang.org/", title: "TypeScript Official Site" }
+              { url: "https://www?.typescriptlang?.org/", title: "TypeScript Official Site" }
             ]
           }
         })
@@ -118,20 +118,20 @@ describe("ResearchAgent Integration Tests", () => {
 
         assertSuccessResponse(result);
         expect(result.data?.synthesis).toBeDefined();
-        expect(result.data.synthesis.length).toBeGreaterThan(
-          testConfig.expectations.minResponseLength,
+        expect(result?.data?.synthesis?.length || 0).toBeGreaterThan(
+          testConfig?.expectations?.minResponseLength,
         );
         expect(result.data?.sources).toBeInstanceOf(Array);
 
         // Real LLM should provide relevant information about TypeScript
-        const summaryLower = result.data.synthesis.toLowerCase();
+        const summaryLower = result?.data?.synthesis.toLowerCase();
         const hasRelevantContent = [
           "typescript",
           "javascript",
           "programming",
           "language",
           "microsoft",
-        ].some((term) => summaryLower.includes(term));
+        ].some((term: any) => summaryLower.includes(term));
 
         expect(hasRelevantContent).toBe(true);
       });
@@ -146,19 +146,19 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task?.input?.query, {
+        task: task?.input?.query,
         ragDocuments: [],
       });
 
       expect(result.data?.findings).toBeDefined();
-      expect(result.data.findings).toBeInstanceOf(Array);
-      expect(result.data.findings.length).toBeGreaterThan(0);
+      expect(result?.data?.findings).toBeInstanceOf(Array);
+      expect(result?.data?.findings?.length || 0).toBeGreaterThan(0);
 
       // Each finding should be a meaningful statement
-      result.data.findings.forEach((finding: any) => {
+      result?.data?.findings.forEach((finding: any) => {
         expect(finding).toBeDefined();
-        expect(finding.content?.length || finding.length || 0).toBeGreaterThan(
+        expect(finding.content?.length || finding?.length || 0 || 0).toBeGreaterThan(
           10,
         );
       });
@@ -173,40 +173,40 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task.input.claim, {
-        task: task.input.claim,
+      const result = await agent.execute(task?.input?.claim, {
+        task: task?.input?.claim,
         ragDocuments: [],
       });
 
       expect(result.success).toBe(true);
       expect(result.data?.synthesis).toBeDefined();
-      expect(result.data.synthesis.length).toBeGreaterThan(10);
+      expect(result?.data?.synthesis?.length || 0).toBeGreaterThan(10);
       expect(result.data?.sources).toBeInstanceOf(Array);
-      expect(result.data.sources.length).toBeGreaterThan(0);
+      expect(result?.data?.sources?.length || 0).toBeGreaterThan(0);
     });
 
     it("should analyze a real URL", async () => {
       const task = {
         type: "analyze-url",
         input: {
-          url: "https://www.typescriptlang.org/",
+          url: "https://www?.typescriptlang?.org/",
           extractKey: true,
         },
       };
 
-      const result = await agent.execute(task.input.url, {
-        task: task.input.url,
+      const result = await agent.execute(task?.input?.url, {
+        task: task?.input?.url,
         ragDocuments: [],
       });
 
       expect(result.success).toBe(true);
       expect(result.data?.synthesis).toBeDefined();
-      expect(result.data.synthesis.length).toBeGreaterThan(100);
+      expect(result?.data?.synthesis?.length || 0).toBeGreaterThan(100);
       expect(result.data?.findings).toBeInstanceOf(Array);
       expect(result.metadata).toBeDefined();
 
       // Should extract TypeScript-related content
-      const analysisLower = result.data.synthesis.toLowerCase();
+      const analysisLower = result?.data?.synthesis.toLowerCase();
       expect(analysisLower.includes("typescript")).toBe(true);
     });
 
@@ -220,15 +220,15 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task?.input?.query, {
+        task: task?.input?.query,
         ragDocuments: [],
       });
 
       expect(result.data?.synthesis).toBeDefined();
 
       // Should cover multiple perspectives
-      const summaryLower = result.data.synthesis.toLowerCase();
+      const summaryLower = result?.data?.synthesis.toLowerCase();
       expect(
         summaryLower.includes("benefit") ||
           summaryLower.includes("advantage") ||
@@ -251,8 +251,8 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task?.input?.query, {
+        task: task?.input?.query,
         ragDocuments: [],
       });
 
@@ -272,8 +272,8 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task?.input?.query, {
+        task: task?.input?.query,
         ragDocuments: [],
       });
 
@@ -281,7 +281,7 @@ describe("ResearchAgent Integration Tests", () => {
       expect(result.data?.sources?.length || 0).toBeGreaterThanOrEqual(3);
 
       // Should identify differences
-      const comparisonLower = result.data.synthesis.toLowerCase();
+      const comparisonLower = result?.data?.synthesis.toLowerCase();
       expect(
         comparisonLower.includes("rest") && comparisonLower.includes("graphql"),
       ).toBe(true);
@@ -297,20 +297,20 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task?.input?.query, {
+        task: task?.input?.query,
         ragDocuments: [],
       });
 
       expect(result.data?.findings).toBeDefined();
-      expect(Array.isArray(result.data.findings)).toBe(true);
+      expect(Array.isArray(result?.data?.findings)).toBe(true);
 
       // Should extract method names from findings content
-      const methods = result.data.findings
+      const methods = result?.data?.findings
         .map((f: any) => f.content || f)
         .flat();
       const hasArrayMethods = methods.some((item: any) =>
-        ["map", "filter", "reduce", "forEach", "find"].some((method) =>
+        ["map", "filter", "reduce", "forEach", "find"].some((method: any) =>
           item.toLowerCase().includes(method),
         ),
       );
@@ -330,15 +330,15 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task?.input?.query, {
+        task: task?.input?.query,
         ragDocuments: [],
       });
 
       expect(result.data?.synthesis).toBeDefined();
 
       // Should respect constraints
-      const summaryLower = result.data.synthesis.toLowerCase();
+      const summaryLower = result?.data?.synthesis.toLowerCase();
       expect(
         summaryLower.includes("performance") ||
           summaryLower.includes("scalability"),
@@ -354,16 +354,16 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task.input.query, {
-        task: task.input.query,
+      const result = await agent.execute(task?.input?.query, {
+        task: task?.input?.query,
         ragDocuments: [],
       });
 
       expect(result.data?.sources).toBeDefined();
-      expect(result.data.sources).toBeInstanceOf(Array);
+      expect(result?.data?.sources).toBeInstanceOf(Array);
 
       // Each source should have required fields
-      result.data.sources?.forEach((source: any) => {
+      result?.data?.sources?.forEach((source: any) => {
         expect(source).toHaveProperty("url");
         expect(source).toHaveProperty("title");
         expect(source.url).toBeDefined();
@@ -381,8 +381,8 @@ describe("ResearchAgent Integration Tests", () => {
         },
       };
 
-      const result = await agent.execute(task.input.url, {
-        task: task.input.url,
+      const result = await agent.execute(task?.input?.url, {
+        task: task?.input?.url,
         ragDocuments: [],
       });
 

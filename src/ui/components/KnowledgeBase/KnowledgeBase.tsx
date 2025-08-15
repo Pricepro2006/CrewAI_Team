@@ -29,7 +29,7 @@ export const KnowledgeBase: React.FC = () => {
 
   useEffect(() => {
     if (documentsQuery.data) {
-      const transformedDocs = documentsQuery.data.map((doc: any) => ({
+      const transformedDocs = documentsQuery?.data?.map((doc: any) => ({
         id: doc.id || doc.metadata?.id || "unknown",
         name: doc.metadata?.title || doc.title || "Untitled Document",
         type: doc.metadata?.mimeType || "text/plain",
@@ -58,8 +58,8 @@ export const KnowledgeBase: React.FC = () => {
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+    const files = event?.target?.files;
+    if (!files || files?.length || 0 === 0) return;
 
     setIsUploading(true);
     setError(null);
@@ -84,7 +84,7 @@ export const KnowledgeBase: React.FC = () => {
     } finally {
       setIsUploading(false);
       // Clear the input
-      event.target.value = "";
+      event?.target?.value = "";
     }
   };
 
@@ -102,7 +102,7 @@ export const KnowledgeBase: React.FC = () => {
           reject(new Error("Failed to extract base64 data from file"));
         }
       };
-      reader.onerror = (error) => reject(error);
+      reader.onerror = (error: any) => reject(error);
     });
   };
 
@@ -134,7 +134,7 @@ export const KnowledgeBase: React.FC = () => {
       const response = await searchMutation.refetch();
 
       if (response.data) {
-        const transformedResults = response.data.map(
+        const transformedResults = response?.data?.map(
           (item: any, index: number) => ({
             id: item.metadata?.id || `result-${index}`,
             documentName:
@@ -230,7 +230,7 @@ export const KnowledgeBase: React.FC = () => {
               height="48"
               viewBox="0 0 24 24"
               fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+              xmlns="http://www?.w3?.org/2000/svg"
             >
               <path
                 d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
@@ -279,8 +279,8 @@ export const KnowledgeBase: React.FC = () => {
             className="search-input"
             placeholder="Search your documents..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+            onChange={(e: any) => setSearchQuery(e?.target?.value)}
+            onKeyPress={(e: any) => e.key === "Enter" && handleSearch()}
           />
           <button className="search-button" onClick={handleSearch}>
             <svg
@@ -288,7 +288,7 @@ export const KnowledgeBase: React.FC = () => {
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+              xmlns="http://www?.w3?.org/2000/svg"
             >
               <circle
                 cx="11"
@@ -307,10 +307,10 @@ export const KnowledgeBase: React.FC = () => {
           </button>
         </div>
 
-        {searchResults.length > 0 && (
+        {searchResults?.length || 0 > 0 && (
           <div className="search-results">
             <h3>Search Results</h3>
-            {searchResults.map((result) => (
+            {searchResults?.map((result: any) => (
               <div key={result.id} className="search-result-item">
                 <div className="result-header">
                   <span className="document-name">{result.documentName}</span>
@@ -324,7 +324,7 @@ export const KnowledgeBase: React.FC = () => {
       </div>
 
       <div className="documents-section">
-        <h2>Indexed Documents ({documents.length})</h2>
+        <h2>Indexed Documents ({documents?.length || 0})</h2>
         <div className="documents-table">
           <div className="table-header">
             <div className="th-name">Name</div>
@@ -334,7 +334,7 @@ export const KnowledgeBase: React.FC = () => {
             <div className="th-date">Uploaded</div>
             <div className="th-actions">Actions</div>
           </div>
-          {documents.map((doc) => (
+          {documents?.map((doc: any) => (
             <div key={doc.id} className="table-row">
               <div className="td-name">
                 <svg
@@ -342,7 +342,7 @@ export const KnowledgeBase: React.FC = () => {
                   height="20"
                   viewBox="0 0 24 24"
                   fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+                  xmlns="http://www?.w3?.org/2000/svg"
                 >
                   <path
                     d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
@@ -372,7 +372,7 @@ export const KnowledgeBase: React.FC = () => {
                 </span>
               </div>
               <div className="td-date">
-                {doc.uploadedAt.toLocaleDateString()}
+                {doc?.uploadedAt?.toLocaleDateString()}
               </div>
               <div className="td-actions">
                 <button
@@ -386,7 +386,7 @@ export const KnowledgeBase: React.FC = () => {
                     height="16"
                     viewBox="0 0 24 24"
                     fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+                    xmlns="http://www?.w3?.org/2000/svg"
                   >
                     <polyline
                       points="3 6 5 6 21 6"
@@ -414,7 +414,7 @@ export const KnowledgeBase: React.FC = () => {
         <div className="stat-card">
           <h3>Total Documents</h3>
           <div className="stat-value">
-            {documentsQuery.isLoading ? "..." : documents.length}
+            {documentsQuery.isLoading ? "..." : documents?.length || 0}
           </div>
         </div>
         <div className="stat-card">
@@ -422,7 +422,7 @@ export const KnowledgeBase: React.FC = () => {
           <div className="stat-value">
             {documentsQuery.isLoading
               ? "..."
-              : documents.reduce((sum, doc) => sum + (doc.chunks || 0), 0)}
+              : documents.reduce((sum: any, doc: any) => sum + (doc.chunks || 0), 0)}
           </div>
         </div>
         <div className="stat-card">
@@ -431,7 +431,7 @@ export const KnowledgeBase: React.FC = () => {
             {documentsQuery.isLoading
               ? "..."
               : formatFileSize(
-                  documents.reduce((sum, doc) => sum + doc.size, 0),
+                  documents.reduce((sum: any, doc: any) => sum + doc.size, 0),
                 )}
           </div>
         </div>
@@ -440,7 +440,7 @@ export const KnowledgeBase: React.FC = () => {
           <div className="stat-value">
             {documentsQuery.isLoading
               ? "..."
-              : documents.filter((doc) => doc.status === "processing").length}
+              : documents?.filter((doc: any) => doc.status === "processing").length}
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { EmailDashboardMultiPanel } from "../EmailDashboardMultiPanel.js";
 import type {
   EmailRecord,
   EmailStatus,
-} from "../../../../types/email-dashboard.interfaces.js";
+} from "../../../../types/email-dashboard?.interfaces.js";
 import { vi } from "vitest";
 
 // Mock the UI components
@@ -46,8 +46,8 @@ vi.mock("../../email/EmailTable", () => ({
     onStatusChange,
   }: any) => (
     <div data-testid="email-table">
-      <div data-testid="email-table-count">{emails.length}</div>
-      {emails.map((email: any) => (
+      <div data-testid="email-table-count">{emails?.length || 0}</div>
+      {emails?.map((email: any) => (
         <div key={email.id} data-testid={`email-row-${email.id}`}>
           <span>{email.subject}</span>
           <button onClick={() => onEmailSelect(email)}>
@@ -191,7 +191,7 @@ describe("EmailDashboardMultiPanel Component", () => {
 
       // Should show loading badges for each panel
       const loadingBadges = screen.getAllByText("Loading...");
-      expect(loadingBadges.length).toBeGreaterThan(0);
+      expect(loadingBadges?.length || 0).toBeGreaterThan(0);
     });
 
     it("should disable interactions when loading", () => {
@@ -199,7 +199,7 @@ describe("EmailDashboardMultiPanel Component", () => {
 
       // All buttons should be disabled during loading
       const buttons = screen.getAllByRole("button");
-      buttons.forEach((button) => {
+      buttons.forEach((button: any) => {
         expect(button).toBeDisabled();
       });
     });
@@ -346,9 +346,9 @@ describe("EmailDashboardMultiPanel Component", () => {
       const inProgressBadges = screen.getAllByText("In Progress");
       const completedBadges = screen.getAllByText("Completed");
 
-      expect(criticalBadges.length).toBeGreaterThan(0);
-      expect(inProgressBadges.length).toBeGreaterThan(0);
-      expect(completedBadges.length).toBeGreaterThan(0);
+      expect(criticalBadges?.length || 0).toBeGreaterThan(0);
+      expect(inProgressBadges?.length || 0).toBeGreaterThan(0);
+      expect(completedBadges?.length || 0).toBeGreaterThan(0);
     });
   });
 
@@ -360,7 +360,7 @@ describe("EmailDashboardMultiPanel Component", () => {
 
       // Should have responsive grid classes
       const gridElements = container.querySelectorAll(".grid");
-      expect(gridElements.length).toBeGreaterThan(0);
+      expect(gridElements?.length || 0).toBeGreaterThan(0);
     });
   });
 

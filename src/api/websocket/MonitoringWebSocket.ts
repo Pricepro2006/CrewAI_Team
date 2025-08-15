@@ -42,7 +42,7 @@ export class MonitoringWebSocketServer {
 
   private setupEventHandlers(): void {
     // Handle new connections
-    this.wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
+    this?.wss?.on('connection', (ws: WebSocket, request: IncomingMessage) => {
       const clientId = this.generateClientId();
       const client: MonitoringWebSocketClient = {
         ws,
@@ -52,13 +52,13 @@ export class MonitoringWebSocketServer {
         isAlive: true
       };
 
-      this.clients.set(clientId, client);
+      this?.clients?.set(clientId, client);
 
       // Track connection in monitoring service
       monitoringService.trackConnection(clientId, 'websocket', {
         path: request.url,
         headers: request.headers,
-        remoteAddress: request.socket.remoteAddress
+        remoteAddress: request?.socket?.remoteAddress
       });
 
       logger.info(`Monitoring client connected: ${clientId}`, 'MONITOR_WS');
@@ -114,7 +114,7 @@ export class MonitoringWebSocketServer {
       });
       
       monitoringService.disconnectConnection(id);
-      this.clients.delete(id);
+      this?.clients?.delete(id);
     });
 
     // Handle errors
@@ -136,7 +136,7 @@ export class MonitoringWebSocketServer {
     switch (type) {
       case 'subscribe':
         if (data?.subscription && typeof data.subscription === 'string') {
-          client.subscriptions.add(data.subscription);
+          client?.subscriptions?.add(data.subscription);
           logger.debug(`Client ${client.id} subscribed to ${data.subscription}`, 'MONITOR_WS');
           
           // Send initial data for the subscription
@@ -146,7 +146,7 @@ export class MonitoringWebSocketServer {
 
       case 'unsubscribe':
         if (data?.subscription && typeof data.subscription === 'string') {
-          client.subscriptions.delete(data.subscription);
+          client?.subscriptions?.delete(data.subscription);
           logger.debug(`Client ${client.id} unsubscribed from ${data.subscription}`, 'MONITOR_WS');
         }
         break;
@@ -175,42 +175,42 @@ export class MonitoringWebSocketServer {
   private setupMonitoringEventHandlers(): void {
     // Forward monitoring service events to subscribed clients
     
-    monitoringService.on('metric', (metric) => {
+    monitoringService.on('metric', (metric: any) => {
       this.broadcastToSubscribed('metrics', {
         type: 'metric',
         data: metric
       });
     });
 
-    monitoringService.on('alert', (alert) => {
+    monitoringService.on('alert', (alert: any) => {
       this.broadcastToSubscribed('alerts', {
         type: 'alert',
         data: alert
       });
     });
 
-    monitoringService.on('performance', (performance) => {
+    monitoringService.on('performance', (performance: any) => {
       this.broadcastToSubscribed('performance', {
         type: 'performance',
         data: performance
       });
     });
 
-    monitoringService.on('database_query', (query) => {
+    monitoringService.on('database_query', (query: any) => {
       this.broadcastToSubscribed('database_queries', {
         type: 'database_query',
         data: query
       });
     });
 
-    monitoringService.on('connection_change', (connection) => {
+    monitoringService.on('connection_change', (connection: any) => {
       this.broadcastToSubscribed('connections', {
         type: 'connection_change',
         data: connection
       });
     });
 
-    monitoringService.on('health_check', (health) => {
+    monitoringService.on('health_check', (health: any) => {
       this.broadcastToSubscribed('health_status', {
         type: 'health_status',
         data: health
@@ -293,14 +293,14 @@ export class MonitoringWebSocketServer {
   }
 
   private sendToClient(client: MonitoringWebSocketClient, message: WebSocketMessage): void {
-    if (client.ws.readyState === WebSocket.OPEN) {
+    if (client?.ws?.readyState === WebSocket.OPEN) {
       try {
         const messageWithTimestamp = {
           ...message,
           timestamp: new Date().toISOString()
         };
         
-        client.ws.send(JSON.stringify(messageWithTimestamp));
+        client?.ws?.send(JSON.stringify(messageWithTimestamp));
       } catch (error) {
         logger.error(`Failed to send message to client ${client.id}`, 'MONITOR_WS', { error });
       }
@@ -309,7 +309,7 @@ export class MonitoringWebSocketServer {
 
   private broadcastToSubscribed(subscription: string, message: WebSocketMessage): void {
     for (const [clientId, client] of this.clients) {
-      if (client.subscriptions.has(subscription)) {
+      if (client?.subscriptions?.has(subscription)) {
         this.sendToClient(client, message);
       }
     }
@@ -331,8 +331,8 @@ export class MonitoringWebSocketServer {
         if (!client.isAlive) {
           // Client didn't respond to previous ping, terminate
           logger.info(`Terminating unresponsive client: ${clientId}`, 'MONITOR_WS');
-          client.ws.terminate();
-          this.clients.delete(clientId);
+          client?.ws?.terminate();
+          this?.clients?.delete(clientId);
           monitoringService.disconnectConnection(clientId, 'Heartbeat timeout');
           continue;
         }
@@ -340,16 +340,16 @@ export class MonitoringWebSocketServer {
         // Mark client as potentially dead and send ping
         client.isAlive = false;
         try {
-          client.ws.ping();
+          client?.ws?.ping();
         } catch (error) {
           logger.error(`Failed to ping client ${clientId}`, 'MONITOR_WS', { error });
-          this.clients.delete(clientId);
+          this?.clients?.delete(clientId);
           monitoringService.disconnectConnection(clientId, 'Ping failed');
         }
       }
 
       // Update monitoring metrics
-      monitoringService.gauge('websocket.clients', this.clients.size, { server: 'monitoring' });
+      monitoringService.gauge('websocket.clients', this?.clients?.size, { server: 'monitoring' });
     }, 30000); // 30 second heartbeat
   }
 
@@ -357,7 +357,7 @@ export class MonitoringWebSocketServer {
    * Get connected clients information
    */
   getClientsInfo(): any[] {
-    return Array.from(this.clients.values()).map(client => ({
+    return Array.from(this?.clients?.values()).map(client => ({
       id: client.id,
       connectedAt: client.connectedAt,
       subscriptions: Array.from(client.subscriptions),
@@ -370,8 +370,8 @@ export class MonitoringWebSocketServer {
    */
   getServerStats(): any {
     return {
-      totalClients: this.clients.size,
-      activeClients: Array.from(this.clients.values()).filter(c => c.isAlive).length,
+      totalClients: this?.clients?.size,
+      activeClients: Array.from(this?.clients?.values()).filter(c => c.isAlive).length,
       subscriptions: this.getSubscriptionStats(),
       uptime: process.uptime()
     };
@@ -380,7 +380,7 @@ export class MonitoringWebSocketServer {
   private getSubscriptionStats(): Record<string, number> {
     const stats: Record<string, number> = {};
     
-    for (const client of this.clients.values()) {
+    for (const client of this?.clients?.values()) {
       for (const subscription of client.subscriptions) {
         stats[subscription] = (stats[subscription] || 0) + 1;
       }
@@ -399,12 +399,12 @@ export class MonitoringWebSocketServer {
 
     // Close all client connections
     for (const [clientId, client] of this.clients) {
-      client.ws.close(1001, 'Server shutting down');
+      client?.ws?.close(1001, 'Server shutting down');
       monitoringService.disconnectConnection(clientId, 'Server shutdown');
     }
 
     // Close the server
-    this.wss.close(() => {
+    this?.wss?.close(() => {
       logger.info('Monitoring WebSocket server closed', 'MONITOR_WS');
     });
   }

@@ -185,28 +185,28 @@ export class GroceryAgentMetrics extends EventEmitter {
     query?: string,
     failureReason?: string
   ): void {
-    this.nlpMetrics.totalQueries++;
+    this?.nlpMetrics?.totalQueries++;
     
     if (success) {
-      this.nlpMetrics.successfulParses++;
+      this?.nlpMetrics?.successfulParses++;
       this.updateMovingAverage(
         'nlpMetrics.averageConfidence',
         confidence,
-        this.nlpMetrics.successfulParses
+        this?.nlpMetrics?.successfulParses
       );
     } else {
-      this.nlpMetrics.failedParses++;
+      this?.nlpMetrics?.failedParses++;
       if (failureReason) {
-        this.nlpMetrics.commonFailureReasons[failureReason] = 
-          (this.nlpMetrics.commonFailureReasons[failureReason] || 0) + 1;
+        this?.nlpMetrics?.commonFailureReasons[failureReason] = 
+          (this?.nlpMetrics?.commonFailureReasons[failureReason] || 0) + 1;
       }
     }
 
-    this.updateMovingAverage('nlpMetrics.parseTimeMs', parseTime, this.nlpMetrics.totalQueries);
+    this.updateMovingAverage('nlpMetrics.parseTimeMs', parseTime, this?.nlpMetrics?.totalQueries);
 
     // Send to Sentry
     sentryErrorTracker.recordCustomMetric('nlp_parsing_success_rate', 
-      this.nlpMetrics.successfulParses / this.nlpMetrics.totalQueries, {
+      this?.nlpMetrics?.successfulParses / this?.nlpMetrics?.totalQueries, {
         component: 'nlp_processor',
       });
 
@@ -236,44 +236,44 @@ export class GroceryAgentMetrics extends EventEmitter {
     searchTerm: string,
     category?: string
   ): void {
-    this.productMetrics.totalSearches++;
+    this?.productMetrics?.totalSearches++;
 
     switch (matchType) {
       case 'exact':
-        this.productMetrics.exactMatches++;
+        this?.productMetrics?.exactMatches++;
         break;
       case 'fuzzy':
-        this.productMetrics.fuzzyMatches++;
+        this?.productMetrics?.fuzzyMatches++;
         break;
       case 'none':
-        this.productMetrics.noMatches++;
+        this?.productMetrics?.noMatches++;
         break;
     }
 
     this.updateMovingAverage(
       'productMetrics.averageConfidence',
       confidence,
-      this.productMetrics.totalSearches - this.productMetrics.noMatches
+      this?.productMetrics?.totalSearches - this?.productMetrics?.noMatches
     );
 
     this.updateMovingAverage(
       'productMetrics.averageSearchTimeMs',
       searchTime,
-      this.productMetrics.totalSearches
+      this?.productMetrics?.totalSearches
     );
 
     // Track search terms
-    this.updateTopList(this.productMetrics.topSearchTerms, searchTerm, 50);
+    this.updateTopList(this?.productMetrics?.topSearchTerms, searchTerm, 50);
 
     // Track categories
     if (category) {
-      this.productMetrics.categoryDistribution[category] = 
-        (this.productMetrics.categoryDistribution[category] || 0) + 1;
+      this?.productMetrics?.categoryDistribution[category] = 
+        (this?.productMetrics?.categoryDistribution[category] || 0) + 1;
     }
 
     // Send to Sentry
-    const matchRate = (this.productMetrics.exactMatches + this.productMetrics.fuzzyMatches) / 
-      this.productMetrics.totalSearches;
+    const matchRate = (this?.productMetrics?.exactMatches + this?.productMetrics?.fuzzyMatches) / 
+      this?.productMetrics?.totalSearches;
 
     sentryErrorTracker.recordCustomMetric('product_matching_rate', matchRate, {
       match_type: matchType,
@@ -307,35 +307,35 @@ export class GroceryAgentMetrics extends EventEmitter {
     errorType?: string,
     priceUnavailable = false
   ): void {
-    this.priceMetrics.totalRequests++;
+    this?.priceMetrics?.totalRequests++;
 
     if (success) {
-      this.priceMetrics.successfulFetches++;
+      this?.priceMetrics?.successfulFetches++;
     } else {
-      this.priceMetrics.failedFetches++;
+      this?.priceMetrics?.failedFetches++;
       if (errorType) {
-        this.priceMetrics.apiErrorTypes[errorType] = 
-          (this.priceMetrics.apiErrorTypes[errorType] || 0) + 1;
+        this?.priceMetrics?.apiErrorTypes[errorType] = 
+          (this?.priceMetrics?.apiErrorTypes[errorType] || 0) + 1;
       }
     }
 
     if (priceUnavailable) {
-      this.priceMetrics.priceUnavailableCount++;
+      this?.priceMetrics?.priceUnavailableCount++;
     }
 
     if (storeId) {
-      this.priceMetrics.storeAvailability[storeId] = 
-        (this.priceMetrics.storeAvailability[storeId] || 0) + (success ? 1 : 0);
+      this?.priceMetrics?.storeAvailability[storeId] = 
+        (this?.priceMetrics?.storeAvailability[storeId] || 0) + (success ? 1 : 0);
     }
 
     this.updateMovingAverage(
       'priceMetrics.averageResponseTimeMs',
       responseTime,
-      this.priceMetrics.totalRequests
+      this?.priceMetrics?.totalRequests
     );
 
     // Send to Sentry
-    const successRate = this.priceMetrics.successfulFetches / this.priceMetrics.totalRequests;
+    const successRate = this?.priceMetrics?.successfulFetches / this?.priceMetrics?.totalRequests;
     
     sentryErrorTracker.recordCustomMetric('price_fetch_success_rate', successRate, {
       store_id: storeId,
@@ -371,29 +371,29 @@ export class GroceryAgentMetrics extends EventEmitter {
     falsePositives = 0,
     missedDeals = 0
   ): void {
-    this.dealMetrics.totalProducts++;
-    this.dealMetrics.dealsFound += dealsFound;
-    this.dealMetrics.falsePositives += falsePositives;
-    this.dealMetrics.missedDeals += missedDeals;
+    this?.dealMetrics?.totalProducts++;
+    this?.dealMetrics?.dealsFound += dealsFound;
+    this?.dealMetrics?.falsePositives += falsePositives;
+    this?.dealMetrics?.missedDeals += missedDeals;
 
     dealTypes.forEach(type => {
-      this.dealMetrics.dealTypes[type] = (this.dealMetrics.dealTypes[type] || 0) + 1;
+      this?.dealMetrics?.dealTypes[type] = (this?.dealMetrics?.dealTypes[type] || 0) + 1;
     });
 
     this.updateMovingAverage(
       'dealMetrics.averageSavings',
       averageSavings,
-      this.dealMetrics.dealsFound || 1
+      this?.dealMetrics?.dealsFound || 1
     );
 
     this.updateMovingAverage(
       'dealMetrics.detectionTimeMs',
       detectionTime,
-      this.dealMetrics.totalProducts
+      this?.dealMetrics?.totalProducts
     );
 
     // Send to Sentry
-    const detectionRate = this.dealMetrics.dealsFound / this.dealMetrics.totalProducts;
+    const detectionRate = this?.dealMetrics?.dealsFound / this?.dealMetrics?.totalProducts;
     
     sentryErrorTracker.recordCustomMetric('deal_detection_rate', detectionRate, {
       component: 'deal_detector',
@@ -426,42 +426,42 @@ export class GroceryAgentMetrics extends EventEmitter {
     featuresUsed: string[],
     deviceType?: string
   ): void {
-    this.sessionMetrics.totalSessions++;
+    this?.sessionMetrics?.totalSessions++;
 
     this.updateMovingAverage(
       'sessionMetrics.averageSessionDuration',
       sessionDuration,
-      this.sessionMetrics.totalSessions
+      this?.sessionMetrics?.totalSessions
     );
 
     this.updateMovingAverage(
       'sessionMetrics.queriesPerSession',
       queryCount,
-      this.sessionMetrics.totalSessions
+      this?.sessionMetrics?.totalSessions
     );
 
     if (bounced) {
-      this.sessionMetrics.bounceRate = this.calculateRate(
-        this.sessionMetrics.bounceRate * (this.sessionMetrics.totalSessions - 1) + 1,
-        this.sessionMetrics.totalSessions
+      this?.sessionMetrics?.bounceRate = this.calculateRate(
+        this?.sessionMetrics?.bounceRate * (this?.sessionMetrics?.totalSessions - 1) + 1,
+        this?.sessionMetrics?.totalSessions
       );
     }
 
     if (converted) {
-      this.sessionMetrics.conversionRate = this.calculateRate(
-        this.sessionMetrics.conversionRate * (this.sessionMetrics.totalSessions - 1) + 1,
-        this.sessionMetrics.totalSessions
+      this?.sessionMetrics?.conversionRate = this.calculateRate(
+        this?.sessionMetrics?.conversionRate * (this?.sessionMetrics?.totalSessions - 1) + 1,
+        this?.sessionMetrics?.totalSessions
       );
     }
 
     featuresUsed.forEach(feature => {
-      this.sessionMetrics.topFeatures[feature] = 
-        (this.sessionMetrics.topFeatures[feature] || 0) + 1;
+      this?.sessionMetrics?.topFeatures[feature] = 
+        (this?.sessionMetrics?.topFeatures[feature] || 0) + 1;
     });
 
     if (deviceType) {
-      this.sessionMetrics.deviceTypes[deviceType] = 
-        (this.sessionMetrics.deviceTypes[deviceType] || 0) + 1;
+      this?.sessionMetrics?.deviceTypes[deviceType] = 
+        (this?.sessionMetrics?.deviceTypes[deviceType] || 0) + 1;
     }
 
     // Send to Sentry
@@ -470,7 +470,7 @@ export class GroceryAgentMetrics extends EventEmitter {
       component: 'session_tracker',
     });
 
-    sentryErrorTracker.recordCustomMetric('session_bounce_rate', this.sessionMetrics.bounceRate, {
+    sentryErrorTracker.recordCustomMetric('session_bounce_rate', this?.sessionMetrics?.bounceRate, {
       component: 'session_tracker',
     });
 
@@ -496,44 +496,44 @@ export class GroceryAgentMetrics extends EventEmitter {
   ): void {
     switch (eventType) {
       case 'connect':
-        this.websocketMetrics.totalConnections++;
-        this.websocketMetrics.activeConnections++;
+        this?.websocketMetrics?.totalConnections++;
+        this?.websocketMetrics?.activeConnections++;
         break;
       case 'disconnect':
-        this.websocketMetrics.activeConnections = Math.max(0, this.websocketMetrics.activeConnections - 1);
+        this?.websocketMetrics?.activeConnections = Math.max(0, this?.websocketMetrics?.activeConnections - 1);
         if (duration) {
           this.updateMovingAverage(
             'websocketMetrics.averageConnectionDuration',
             duration,
-            this.websocketMetrics.totalConnections
+            this?.websocketMetrics?.totalConnections
           );
         }
         break;
       case 'error':
-        this.websocketMetrics.connectionErrors++;
-        this.websocketMetrics.reconnectionRate = this.calculateRate(
-          this.websocketMetrics.connectionErrors,
-          this.websocketMetrics.totalConnections
+        this?.websocketMetrics?.connectionErrors++;
+        this?.websocketMetrics?.reconnectionRate = this.calculateRate(
+          this?.websocketMetrics?.connectionErrors,
+          this?.websocketMetrics?.totalConnections
         );
         break;
       case 'message_sent':
-        this.websocketMetrics.messagesSent++;
+        this?.websocketMetrics?.messagesSent++;
         break;
       case 'message_received':
-        this.websocketMetrics.messagesReceived++;
+        this?.websocketMetrics?.messagesReceived++;
         break;
     }
 
     // Send to Sentry
-    const errorRate = this.websocketMetrics.connectionErrors / 
-      (this.websocketMetrics.totalConnections || 1);
+    const errorRate = this?.websocketMetrics?.connectionErrors / 
+      (this?.websocketMetrics?.totalConnections || 1);
 
     sentryErrorTracker.recordCustomMetric('websocket_error_rate', errorRate, {
       component: 'websocket',
     });
 
     sentryErrorTracker.recordCustomMetric('websocket_active_connections', 
-      this.websocketMetrics.activeConnections, {
+      this?.websocketMetrics?.activeConnections, {
         component: 'websocket',
       });
 
@@ -541,7 +541,7 @@ export class GroceryAgentMetrics extends EventEmitter {
       type: eventType,
       connectionId,
       duration,
-      activeConnections: this.websocketMetrics.activeConnections,
+      activeConnections: this?.websocketMetrics?.activeConnections,
     });
 
     this.checkWebSocketAlerts();
@@ -567,91 +567,91 @@ export class GroceryAgentMetrics extends EventEmitter {
   // === Alert System ===
 
   private checkNLPAlerts(): void {
-    const successRate = this.nlpMetrics.successfulParses / this.nlpMetrics.totalQueries;
-    if (successRate < this.alertThresholds.nlpSuccessRate) {
+    const successRate = this?.nlpMetrics?.successfulParses / this?.nlpMetrics?.totalQueries;
+    if (successRate < this?.alertThresholds?.nlpSuccessRate) {
       this.emit('alert', {
         type: 'nlp_success_rate_low',
         severity: 'warning',
         current: successRate,
-        threshold: this.alertThresholds.nlpSuccessRate,
+        threshold: this?.alertThresholds?.nlpSuccessRate,
         message: `NLP success rate (${(successRate * 100).toFixed(1)}%) is below threshold`,
       });
     }
   }
 
   private checkProductMatchingAlerts(): void {
-    const matchRate = (this.productMetrics.exactMatches + this.productMetrics.fuzzyMatches) / 
-      this.productMetrics.totalSearches;
+    const matchRate = (this?.productMetrics?.exactMatches + this?.productMetrics?.fuzzyMatches) / 
+      this?.productMetrics?.totalSearches;
     
-    if (matchRate < this.alertThresholds.productMatchRate) {
+    if (matchRate < this?.alertThresholds?.productMatchRate) {
       this.emit('alert', {
         type: 'product_match_rate_low',
         severity: 'warning',
         current: matchRate,
-        threshold: this.alertThresholds.productMatchRate,
+        threshold: this?.alertThresholds?.productMatchRate,
         message: `Product match rate (${(matchRate * 100).toFixed(1)}%) is below threshold`,
       });
     }
   }
 
   private checkPriceAlerts(): void {
-    const successRate = this.priceMetrics.successfulFetches / this.priceMetrics.totalRequests;
-    if (successRate < this.alertThresholds.priceSuccessRate) {
+    const successRate = this?.priceMetrics?.successfulFetches / this?.priceMetrics?.totalRequests;
+    if (successRate < this?.alertThresholds?.priceSuccessRate) {
       this.emit('alert', {
         type: 'price_success_rate_low',
         severity: 'critical',
         current: successRate,
-        threshold: this.alertThresholds.priceSuccessRate,
+        threshold: this?.alertThresholds?.priceSuccessRate,
         message: `Price fetch success rate (${(successRate * 100).toFixed(1)}%) is below threshold`,
       });
     }
 
-    if (this.priceMetrics.averageResponseTimeMs > this.alertThresholds.responseTimeMs) {
+    if (this?.priceMetrics?.averageResponseTimeMs > this?.alertThresholds?.responseTimeMs) {
       this.emit('alert', {
         type: 'price_response_time_high',
         severity: 'warning',
-        current: this.priceMetrics.averageResponseTimeMs,
-        threshold: this.alertThresholds.responseTimeMs,
-        message: `Price fetch response time (${this.priceMetrics.averageResponseTimeMs}ms) exceeds threshold`,
+        current: this?.priceMetrics?.averageResponseTimeMs,
+        threshold: this?.alertThresholds?.responseTimeMs,
+        message: `Price fetch response time (${this?.priceMetrics?.averageResponseTimeMs}ms) exceeds threshold`,
       });
     }
   }
 
   private checkDealDetectionAlerts(): void {
-    const detectionRate = this.dealMetrics.dealsFound / this.dealMetrics.totalProducts;
-    if (detectionRate < this.alertThresholds.dealDetectionRate) {
+    const detectionRate = this?.dealMetrics?.dealsFound / this?.dealMetrics?.totalProducts;
+    if (detectionRate < this?.alertThresholds?.dealDetectionRate) {
       this.emit('alert', {
         type: 'deal_detection_rate_low',
         severity: 'warning',
         current: detectionRate,
-        threshold: this.alertThresholds.dealDetectionRate,
+        threshold: this?.alertThresholds?.dealDetectionRate,
         message: `Deal detection rate (${(detectionRate * 100).toFixed(1)}%) is below threshold`,
       });
     }
   }
 
   private checkSessionAlerts(): void {
-    if (this.sessionMetrics.bounceRate > this.alertThresholds.sessionBounceRate) {
+    if (this?.sessionMetrics?.bounceRate > this?.alertThresholds?.sessionBounceRate) {
       this.emit('alert', {
         type: 'session_bounce_rate_high',
         severity: 'warning',
-        current: this.sessionMetrics.bounceRate,
-        threshold: this.alertThresholds.sessionBounceRate,
-        message: `Session bounce rate (${(this.sessionMetrics.bounceRate * 100).toFixed(1)}%) exceeds threshold`,
+        current: this?.sessionMetrics?.bounceRate,
+        threshold: this?.alertThresholds?.sessionBounceRate,
+        message: `Session bounce rate (${(this?.sessionMetrics?.bounceRate * 100).toFixed(1)}%) exceeds threshold`,
       });
     }
   }
 
   private checkWebSocketAlerts(): void {
-    const errorRate = this.websocketMetrics.connectionErrors / 
-      (this.websocketMetrics.totalConnections || 1);
+    const errorRate = this?.websocketMetrics?.connectionErrors / 
+      (this?.websocketMetrics?.totalConnections || 1);
     
-    if (errorRate > this.alertThresholds.websocketErrorRate) {
+    if (errorRate > this?.alertThresholds?.websocketErrorRate) {
       this.emit('alert', {
         type: 'websocket_error_rate_high',
         severity: 'critical',
         current: errorRate,
-        threshold: this.alertThresholds.websocketErrorRate,
+        threshold: this?.alertThresholds?.websocketErrorRate,
         message: `WebSocket error rate (${(errorRate * 100).toFixed(1)}%) exceeds threshold`,
       });
     }
@@ -687,7 +687,7 @@ export class GroceryAgentMetrics extends EventEmitter {
 
     // Sort and trim
     list.sort((a, b) => b.count - a.count);
-    if (list.length > maxItems) {
+    if (list?.length || 0 > maxItems) {
       list.splice(maxItems);
     }
   }
@@ -700,14 +700,14 @@ export class GroceryAgentMetrics extends EventEmitter {
     // Take snapshots every 15 minutes
     setInterval(() => {
       const snapshot = this.exportAllMetrics();
-      this.metricSnapshots.push({
+      this?.metricSnapshots?.push({
         timestamp: new Date(),
         snapshot,
       });
 
       // Keep only last 96 snapshots (24 hours with 15min intervals)
-      if (this.metricSnapshots.length > 96) {
-        this.metricSnapshots.splice(0, this.metricSnapshots.length - 96);
+      if (this?.metricSnapshots?.length > 96) {
+        this?.metricSnapshots?.splice(0, this?.metricSnapshots?.length - 96);
       }
 
       logger.info('Metrics snapshot taken', 'GROCERY_METRICS', {
@@ -719,7 +719,7 @@ export class GroceryAgentMetrics extends EventEmitter {
 
   private setupAlertMonitoring(): void {
     // Listen for alerts and forward to external systems
-    this.on('alert', (alert) => {
+    this.on('alert', (alert: any) => {
       logger.warn(`Metric alert: ${alert.type}`, 'GROCERY_METRICS', alert);
       
       sentryErrorTracker.captureError(
@@ -755,7 +755,7 @@ export class GroceryAgentMetrics extends EventEmitter {
 
   getMetricSnapshots(hours = 24): Array<{ timestamp: Date; snapshot: Record<string, any> }> {
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
-    return this.metricSnapshots.filter(s => s.timestamp >= cutoff);
+    return this?.metricSnapshots?.filter(s => s.timestamp >= cutoff);
   }
 
   updateAlertThresholds(newThresholds: Partial<typeof this.alertThresholds>): void {

@@ -50,7 +50,7 @@ class LazyErrorBoundary extends React.Component<
   }
 
   render() {
-    if (this.state.hasError) {
+    if (this?.state?.hasError) {
       return (
         <div className="flex items-center justify-center p-8 min-h-[200px]">
           <div className="text-center">
@@ -66,7 +66,7 @@ class LazyErrorBoundary extends React.Component<
       );
     }
 
-    return this.props.children;
+    return this?.props?.children;
   }
 }
 

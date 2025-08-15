@@ -46,13 +46,13 @@ export class EmailStatusMigration {
     const allStatuses = this.db
       .prepare('SELECT id, status FROM emails_enhanced WHERE status IS NOT NULL')
       .all() as Array<{ id: string; status: string }>;
-    const invalidStatuses = allStatuses.filter(row => !isDatabaseEmailStatus(row.status));
+    const invalidStatuses = allStatuses?.filter(row => !isDatabaseEmailStatus(row.status));
 
     // Find invalid workflow states
     const allWorkflowStates = this.db
       .prepare('SELECT id, workflow_state FROM emails_enhanced WHERE workflow_state IS NOT NULL')
       .all() as Array<{ id: string; workflow_state: string }>;
-    const invalidWorkflowStates = allWorkflowStates.filter(row => !isDatabaseWorkflowState(row.workflow_state));
+    const invalidWorkflowStates = allWorkflowStates?.filter(row => !isDatabaseWorkflowState(row.workflow_state));
 
     // Create distribution maps
     const statusDistribution: Record<string, number> = {};
@@ -80,10 +80,10 @@ export class EmailStatusMigration {
     logger.info('Creating backup of emails_enhanced table...');
 
     // Drop backup table if exists
-    this.db.prepare('DROP TABLE IF EXISTS emails_enhanced_backup').run();
+    this?.db?.prepare('DROP TABLE IF EXISTS emails_enhanced_backup').run();
 
     // Create backup
-    this.db.prepare('CREATE TABLE emails_enhanced_backup AS SELECT * FROM emails_enhanced').run();
+    this?.db?.prepare('CREATE TABLE emails_enhanced_backup AS SELECT * FROM emails_enhanced').run();
 
     logger.info('Backup created successfully');
   }
@@ -121,7 +121,7 @@ export class EmailStatusMigration {
 
     for (const record of invalidRecords) {
       if (!isDatabaseEmailStatus(record.status)) {
-        const newStatus = statusMigrationRules[record.status.toLowerCase()] || 'pending';
+        const newStatus = statusMigrationRules[record?.status?.toLowerCase()] || 'pending';
         migrations.push({
           id: record.id,
           oldStatus: record.status,
@@ -136,10 +136,10 @@ export class EmailStatusMigration {
       }
     }
 
-    logger.info(`Migration ${dryRun ? 'would affect' : 'affected'} ${migrations.length} records`);
+    logger.info(`Migration ${dryRun ? 'would affect' : 'affected'} ${migrations?.length || 0} records`);
 
     return {
-      migratedCount: migrations.length,
+      migratedCount: migrations?.length || 0,
       migrations,
     };
   }
@@ -182,7 +182,7 @@ export class EmailStatusMigration {
 
     for (const record of records) {
       if (!isDatabaseWorkflowState(record.workflow_state)) {
-        const newState = workflowStateMigrationRules[record.workflow_state.toLowerCase()] || 'IN_PROGRESS';
+        const newState = workflowStateMigrationRules[record?.workflow_state?.toLowerCase()] || 'IN_PROGRESS';
         migrations.push({
           id: record.id,
           oldState: record.workflow_state,
@@ -197,10 +197,10 @@ export class EmailStatusMigration {
       }
     }
 
-    logger.info(`Workflow state migration ${dryRun ? 'would affect' : 'affected'} ${migrations.length} records`);
+    logger.info(`Workflow state migration ${dryRun ? 'would affect' : 'affected'} ${migrations?.length || 0} records`);
 
     return {
-      migratedCount: migrations.length,
+      migratedCount: migrations?.length || 0,
       migrations,
     };
   }
@@ -229,8 +229,8 @@ export class EmailStatusMigration {
       Example SQL:
       CREATE TABLE emails_enhanced_new (
         ... existing columns ...,
-        status TEXT CHECK (status IN (${validStatuses.map(s => `'${s}'`).join(', ')})),
-        workflow_state TEXT CHECK (workflow_state IN (${validWorkflowStates.map(s => `'${s}'`).join(', ')}))
+        status TEXT CHECK (status IN (${validStatuses?.map(s => `'${s}'`).join(', ')})),
+        workflow_state TEXT CHECK (workflow_state IN (${validWorkflowStates?.map(s => `'${s}'`).join(', ')}))
       );
     `);
   }
@@ -256,8 +256,8 @@ ${Object.entries(analysis.workflowStateDistribution)
   .join('\n')}
 
 ## Invalid Records
-- Invalid statuses: ${analysis.invalidStatuses.length} records
-- Invalid workflow states: ${analysis.invalidWorkflowStates.length} records
+- Invalid statuses: ${analysis?.invalidStatuses?.length} records
+- Invalid workflow states: ${analysis?.invalidWorkflowStates?.length} records
 
 ## Recommended Actions
 1. Create backup: \`await migration.createBackup()\`
@@ -268,10 +268,10 @@ ${Object.entries(analysis.workflowStateDistribution)
 
 ## Sample Invalid Records
 ### Invalid Statuses
-${analysis.invalidStatuses.slice(0, 5).map(r => `- ID: ${r.id}, Status: "${r.status}"`).join('\n')}
+${analysis?.invalidStatuses?.slice(0, 5).map(r => `- ID: ${r.id}, Status: "${r.status}"`).join('\n')}
 
 ### Invalid Workflow States
-${analysis.invalidWorkflowStates.slice(0, 5).map(r => `- ID: ${r.id}, State: "${r.workflow_state}"`).join('\n')}
+${analysis?.invalidWorkflowStates?.slice(0, 5).map(r => `- ID: ${r.id}, State: "${r.workflow_state}"`).join('\n')}
     `;
 
     return report;
@@ -281,7 +281,7 @@ ${analysis.invalidWorkflowStates.slice(0, 5).map(r => `- ID: ${r.id}, State: "${
    * Close database connection
    */
   close(): void {
-    this.db.close();
+    this?.db?.close();
   }
 }
 

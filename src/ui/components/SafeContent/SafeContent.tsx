@@ -127,7 +127,7 @@ export const SafeLink: React.FC<{
     
     // Validate URL
     try {
-      const url = new URL(href, window.location.origin);
+      const url = new URL(href, window?.location?.origin);
       // Only allow http(s) and relative URLs
       if (url.protocol !== 'http:' && url.protocol !== 'https:') {
         return '#';

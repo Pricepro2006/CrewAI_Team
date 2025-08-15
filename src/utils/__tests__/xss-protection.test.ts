@@ -105,7 +105,7 @@ describe('XSS Protection', () => {
         '<svg onload="alert(\'XSS\')"></svg>',
         '<svg><animate onbegin="alert(\'XSS\')" />',
         '<svg><set attributeName="onmouseover" to="alert(\'XSS\')"/>',
-        '<svg><handler xmlns:ev="http://www.w3.org/2001/xml-events" ev:event="load">alert(\'XSS\')</handler></svg>',
+        '<svg><handler xmlns:ev="http://www?.w3?.org/2001/xml-events" ev:event="load">alert(\'XSS\')</handler></svg>',
       ];
 
       vectors.forEach(vector => {
@@ -264,8 +264,8 @@ describe('XSS Protection', () => {
       const sanitized = xssProtection.sanitizeInput(input) as any;
       
       expect(sanitized.name).not.toContain('<script>');
-      expect(sanitized.nested.value).not.toContain('{{');
-      expect(sanitized.nested.array[0]).not.toContain('onerror');
+      expect(sanitized?.nested?.value).not.toContain('{{');
+      expect(sanitized?.nested?.array[0]).not.toContain('onerror');
     });
 
     it('should skip dangerous object keys', () => {
@@ -288,7 +288,7 @@ describe('XSS Protection', () => {
   describe('Zod Schema Integration', () => {
     it('should sanitize strings through schema', () => {
       const input = 'Hello <script>alert("XSS")</script> World';
-      const result = XSSSchemas.safeString.parse(input);
+      const result = XSSSchemas?.safeString?.parse(input);
       
       expect(result).not.toContain('<script>');
       expect(result).toBe('Hello <script>alert("XSS")</script> World');
@@ -296,7 +296,7 @@ describe('XSS Protection', () => {
 
     it('should sanitize HTML content through schema', () => {
       const input = '<p>Hello</p><script>alert("XSS")</script>';
-      const result = XSSSchemas.htmlContent.parse(input);
+      const result = XSSSchemas?.htmlContent?.parse(input);
       
       expect(result).toContain('<p>Hello</p>');
       expect(result).not.toContain('<script>');
@@ -306,14 +306,14 @@ describe('XSS Protection', () => {
       const safeURL = 'https://example.com';
       const dangerousURL = 'javascript:alert("XSS")';
       
-      expect(XSSSchemas.safeURL.parse(safeURL)).toBe(encodeURIComponent(safeURL));
-      expect(XSSSchemas.safeURL.parse(dangerousURL)).toBe('');
+      expect(XSSSchemas?.safeURL?.parse(safeURL)).toBe(encodeURIComponent(safeURL));
+      expect(XSSSchemas?.safeURL?.parse(dangerousURL)).toBe('');
     });
 
     it('should validate safe identifiers', () => {
-      expect(() => XSSSchemas.safeId.parse('valid-id_123')).not.toThrow();
-      expect(() => XSSSchemas.safeId.parse('invalid<id>')).toThrow();
-      expect(() => XSSSchemas.safeId.parse('../../etc/passwd')).toThrow();
+      expect(() => XSSSchemas?.safeId?.parse('valid-id_123')).not.toThrow();
+      expect(() => XSSSchemas?.safeId?.parse('invalid<id>')).toThrow();
+      expect(() => XSSSchemas?.safeId?.parse('../../etc/passwd')).toThrow();
     });
   });
 

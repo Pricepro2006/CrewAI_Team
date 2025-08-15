@@ -201,7 +201,7 @@ Here's my analysis:
 This analysis indicates a high-value opportunity that requires careful attention to technical specifications and competitive positioning.
       `;
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: problematicResponse },
       });
@@ -211,10 +211,10 @@ This analysis indicates a high-value opportunity that requires careful attention
       expect(analysis.workflow_validation).toBe(
         "QUOTE_PROCESSING confirmed - customer seeking pricing information",
       );
-      expect(analysis.missed_entities.project_names).toEqual([
+      expect(analysis?.missed_entities?.project_names).toEqual([
         "Data Center Upgrade",
       ]);
-      expect(analysis.missed_entities.company_names).toEqual([
+      expect(analysis?.missed_entities?.company_names).toEqual([
         "TechCorp Solutions",
       ]);
       expect(analysis.confidence).toBe(0.87);
@@ -269,7 +269,7 @@ The following analysis has been completed for the submitted email:
 This represents a straightforward order fulfillment scenario with clear next steps.
       `;
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: complexMarkdownResponse },
       });
@@ -315,7 +315,7 @@ This represents a straightforward order fulfillment scenario with clear next ste
 }
       `;
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: jsonWithComments },
       });
@@ -323,7 +323,7 @@ This represents a straightforward order fulfillment scenario with clear next ste
       const analysis = await service.analyzeEmail(sampleEmail);
 
       expect(analysis.workflow_validation).toBe("SUPPORT_TICKET confirmed");
-      expect(analysis.missed_entities.company_names).toEqual([
+      expect(analysis?.missed_entities?.company_names).toEqual([
         "Acme Corporation",
       ]);
       expect(analysis.confidence).toBe(0.88);
@@ -438,7 +438,7 @@ Based on my analysis, here's what I found:
       ];
 
       invalidResponses.forEach((response, index) => {
-        mockedAxios.post.mockResolvedValueOnce({
+        mockedAxios?.post?.mockResolvedValueOnce({
           status: 200,
           data: { response },
         });
@@ -453,7 +453,7 @@ Based on my analysis, here's what I found:
       expect(analysis.confidence).toBe(0.9);
 
       // Verify temperature progression: 0.1 -> 0.05 -> 0.05
-      const calls = mockedAxios.post.mock.calls;
+      const calls = mockedAxios?.post?.mock.calls;
       expect(calls[0][1].options.temperature).toBe(0.1);
       expect(calls[1][1].options.temperature).toBe(0.05);
       expect(calls[2][1].options.temperature).toBe(0.05);
@@ -492,7 +492,7 @@ Based on my analysis, here's what I found:
 
       const analysis = await service.analyzeEmail(sampleEmail);
 
-      const calls = mockedAxios.post.mock.calls;
+      const calls = mockedAxios?.post?.mock.calls;
       expect(calls[0][1].options.stop).toEqual(["\n\n", "```"]);
       expect(calls[1][1].options.stop).toEqual(["```", "END_JSON"]);
     });
@@ -529,7 +529,7 @@ Based on my analysis, here's what I found:
 
       await service.analyzeEmail(sampleEmail);
 
-      const calls = mockedAxios.post.mock.calls;
+      const calls = mockedAxios?.post?.mock.calls;
       const firstPrompt = calls[0][1].prompt;
       const retryPrompt = calls[1][1].prompt;
 
@@ -569,7 +569,7 @@ extracted_requirements: [Signature required, Handle with care]
 
       // All retry attempts fail, should trigger fallback
       Array.from({ length: 3 }, () => {
-        mockedAxios.post.mockResolvedValueOnce({
+        mockedAxios?.post?.mockResolvedValueOnce({
           status: 200,
           data: { response: structuredTextResponse },
         });
@@ -596,8 +596,8 @@ extracted_requirements: [Signature required, Handle with care]
         "Final attempt also completely unstructured",
       ];
 
-      unparseableResponses.forEach((response) => {
-        mockedAxios.post.mockResolvedValueOnce({
+      unparseableResponses.forEach((response: any) => {
+        mockedAxios?.post?.mockResolvedValueOnce({
           status: 200,
           data: { response },
         });
@@ -633,7 +633,7 @@ business_process: RETURNS_MANAGEMENT
       `;
 
       Array.from({ length: 3 }, () => {
-        mockedAxios.post.mockResolvedValueOnce({
+        mockedAxios?.post?.mockResolvedValueOnce({
           status: 200,
           data: { response: mixedContentResponse },
         });
@@ -668,7 +668,7 @@ business_process: RETURNS_MANAGEMENT
         extracted_requirements: [],
       };
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: JSON.stringify(incompleteEntitiesResponse) },
       });
@@ -676,15 +676,15 @@ business_process: RETURNS_MANAGEMENT
       const analysis = await service.analyzeEmail(sampleEmail);
 
       // Should fill in missing entity fields with empty arrays
-      expect(analysis.missed_entities.people).toEqual([]);
-      expect(analysis.missed_entities.products).toEqual([]);
-      expect(analysis.missed_entities.technical_specs).toEqual([]);
-      expect(analysis.missed_entities.locations).toEqual([]);
-      expect(analysis.missed_entities.other_references).toEqual([]);
+      expect(analysis?.missed_entities?.people).toEqual([]);
+      expect(analysis?.missed_entities?.products).toEqual([]);
+      expect(analysis?.missed_entities?.technical_specs).toEqual([]);
+      expect(analysis?.missed_entities?.locations).toEqual([]);
+      expect(analysis?.missed_entities?.other_references).toEqual([]);
 
       // Should preserve existing fields
-      expect(analysis.missed_entities.project_names).toEqual(["Project Alpha"]);
-      expect(analysis.missed_entities.company_names).toEqual(["Test Corp"]);
+      expect(analysis?.missed_entities?.project_names).toEqual(["Project Alpha"]);
+      expect(analysis?.missed_entities?.company_names).toEqual(["Test Corp"]);
     });
 
     it("should validate and normalize action items structure", async () => {
@@ -707,7 +707,7 @@ business_process: RETURNS_MANAGEMENT
         extracted_requirements: "Also should be array", // Invalid type
       };
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: JSON.stringify(invalidActionItemsResponse) },
       });
@@ -750,7 +750,7 @@ business_process: RETURNS_MANAGEMENT
           ...confResponse,
         };
 
-        mockedAxios.post.mockResolvedValueOnce({
+        mockedAxios?.post?.mockResolvedValueOnce({
           status: 200,
           data: { response: JSON.stringify(fullResponse) },
         });
@@ -785,7 +785,7 @@ business_process: RETURNS_MANAGEMENT
         extracted_requirements: [],
       };
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: JSON.stringify(validResponse) },
       });
@@ -793,13 +793,13 @@ business_process: RETURNS_MANAGEMENT
       await service.analyzeEmail(sampleEmail);
 
       const stats = await service.getAnalysisStats();
-      expect(stats.parsingMetrics.successRate).toBeGreaterThan(0);
-      expect(stats.parsingMetrics.totalAttempts).toBeGreaterThan(0);
-      expect(stats.parsingMetrics.averageAttempts).toBeGreaterThanOrEqual(1);
+      expect(stats?.parsingMetrics?.successRate).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics?.totalAttempts).toBeGreaterThan(0);
+      expect(stats?.parsingMetrics?.averageAttempts).toBeGreaterThanOrEqual(1);
     });
 
     it("should handle LLM service timeouts gracefully", async () => {
-      mockedAxios.post.mockRejectedValue(new Error("Request timeout"));
+      mockedAxios?.post?.mockRejectedValue(new Error("Request timeout"));
 
       const analysis = await service.analyzeEmail(sampleEmail);
 
@@ -810,7 +810,7 @@ business_process: RETURNS_MANAGEMENT
     });
 
     it("should handle LLM service 500 errors", async () => {
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 500,
         data: { error: "Internal server error" },
       });
@@ -874,8 +874,8 @@ business_process: RETURNS_MANAGEMENT
       ];
 
       for (const scenario of scenarios) {
-        scenario.forEach((response) => {
-          mockedAxios.post.mockResolvedValueOnce({
+        scenario.forEach((response: any) => {
+          mockedAxios?.post?.mockResolvedValueOnce({
             status: 200,
             data: { response },
           });
@@ -888,10 +888,10 @@ business_process: RETURNS_MANAGEMENT
       }
 
       const stats = await service.getAnalysisStats();
-      expect(stats.parsingMetrics.totalAttempts).toBeGreaterThan(3);
-      expect(stats.parsingMetrics.successfulParses).toBeGreaterThanOrEqual(2);
-      expect(stats.parsingMetrics.retrySuccesses).toBeGreaterThanOrEqual(1);
-      expect(stats.parsingMetrics.fallbackUses).toBeGreaterThanOrEqual(1);
+      expect(stats?.parsingMetrics?.totalAttempts).toBeGreaterThan(3);
+      expect(stats?.parsingMetrics?.successfulParses).toBeGreaterThanOrEqual(2);
+      expect(stats?.parsingMetrics?.retrySuccesses).toBeGreaterThanOrEqual(1);
+      expect(stats?.parsingMetrics?.fallbackUses).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -932,7 +932,7 @@ business_process: RETURNS_MANAGEMENT
       expect(analysis.workflow_validation).toContain("parsing failed");
       expect(analysis.confidence).toBe(0.3);
       expect(analysis.strategic_insights).toBeDefined(); // Should have Phase 2 fallback strategic insights
-      expect(analysis.strategic_insights.opportunity).toContain(
+      expect(analysis?.strategic_insights?.opportunity).toContain(
         "Incomplete chain",
       );
     });
@@ -987,13 +987,13 @@ business_process: RETURNS_MANAGEMENT
       };
 
       // Mock Phase 2 success
-      mockedAxios.post.mockResolvedValueOnce({
+      mockedAxios?.post?.mockResolvedValueOnce({
         status: 200,
         data: { response: JSON.stringify(phase2Response) },
       });
 
       // Mock Phase 3 success
-      mockedAxios.post.mockResolvedValueOnce({
+      mockedAxios?.post?.mockResolvedValueOnce({
         status: 200,
         data: { response: JSON.stringify(phase3Response) },
       });
@@ -1001,7 +1001,7 @@ business_process: RETURNS_MANAGEMENT
       const analysis = await service.analyzeEmail(emailWithCompleteChain);
 
       expect(mockedAxios.post).toHaveBeenCalledTimes(2); // Phase 2 + Phase 3
-      expect(analysis.strategic_insights.opportunity).toBe(
+      expect(analysis?.strategic_insights?.opportunity).toBe(
         "High-value complete workflow opportunity",
       );
       expect(analysis.executive_summary).toBe(

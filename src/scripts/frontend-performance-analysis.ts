@@ -80,14 +80,14 @@ class FrontendPerformanceAnalyzer {
   }
 
   private async getGzipSize(filePath: string): Promise<number> {
-    return new Promise((resolve) => {
+    return new Promise((resolve: any) => {
       const gzip = spawn('gzip', ['-c'], { stdio: ['pipe', 'pipe', 'pipe'] });
       const wc = spawn('wc', ['-c'], { stdio: ['pipe', 'pipe', 'pipe'] });
       
-      gzip.stdout.pipe(wc.stdin);
+      gzip?.stdout?.pipe(wc.stdin);
       
       let output = '';
-      wc.stdout.on('data', (data) => {
+      wc?.stdout?.on('data', (data: any) => {
         output += data.toString();
       });
       
@@ -101,8 +101,8 @@ class FrontendPerformanceAnalyzer {
       
       try {
         const content = readFileSync(filePath);
-        gzip.stdin.write(content);
-        gzip.stdin.end();
+        gzip?.stdin?.write(content);
+        gzip?.stdin?.end();
       } catch {
         resolve(0);
       }
@@ -201,7 +201,7 @@ class FrontendPerformanceAnalyzer {
     patterns.forEach(pattern => {
       const matches = content.match(pattern);
       if (matches) {
-        complexity += matches.length;
+        complexity += matches?.length || 0;
       }
     });
     
@@ -228,7 +228,7 @@ class FrontendPerformanceAnalyzer {
   }
 
   private calculateRenderPotential(complexity: number, loc: number, dependencies: string[]): 'low' | 'medium' | 'high' {
-    const score = complexity * 0.5 + loc * 0.01 + dependencies.length * 0.3;
+    const score = complexity * 0.5 + loc * 0.01 + dependencies?.length || 0 * 0.3;
     
     if (score > 50) return 'high';
     if (score > 20) return 'medium';
@@ -272,7 +272,7 @@ class FrontendPerformanceAnalyzer {
           file: relativePath,
           linesOfCode: loc,
           complexity,
-          dependencies: dependencies.filter(dep => !dep.startsWith('.')), // External deps only
+          dependencies: dependencies?.filter(dep => !dep.startsWith('.')), // External deps only
           renderPotential
         });
         
@@ -285,7 +285,7 @@ class FrontendPerformanceAnalyzer {
   }
 
   private async runLighthouse(url: string): Promise<any> {
-    return new Promise((resolve) => {
+    return new Promise((resolve: any) => {
       console.log(`🔍 Running Lighthouse analysis on ${url}...`);
       
       const lighthouse = spawn('npx', [
@@ -297,11 +297,11 @@ class FrontendPerformanceAnalyzer {
       ], { stdio: ['inherit', 'pipe', 'pipe'] });
       
       let output = '';
-      lighthouse.stdout.on('data', (data) => {
+      lighthouse?.stdout?.on('data', (data: any) => {
         output += data.toString();
       });
       
-      lighthouse.on('close', (code) => {
+      lighthouse.on('close', (code: any) => {
         if (code === 0) {
           try {
             const result = JSON.parse(output);
@@ -331,14 +331,14 @@ class FrontendPerformanceAnalyzer {
       return null;
     }
     
-    const audits = result.audits;
+    const audits = result?.audits;
     const webVitals = {
       lcp: audits['largest-contentful-paint']?.numericValue / 1000 || null,
       fid: audits['max-potential-fid']?.numericValue / 1000 || null,
       cls: audits['cumulative-layout-shift']?.numericValue || null,
       fcp: audits['first-contentful-paint']?.numericValue / 1000 || null,
       ttfb: audits['server-response-time']?.numericValue / 1000 || null,
-      performance: result.categories.performance?.score * 100 || null
+      performance: result?.categories?.performance?.score * 100 || null
     };
     
     return webVitals;
@@ -357,13 +357,13 @@ class FrontendPerformanceAnalyzer {
     console.log('\n📦 BUNDLE SIZE ANALYSIS');
     console.log('-'.repeat(50));
     
-    const totalSize = bundleAnalysis.reduce((sum, item) => sum + item.size, 0);
-    const jsFiles = bundleAnalysis.filter(item => item.type === 'js');
-    const cssFiles = bundleAnalysis.filter(item => item.type === 'css');
+    const totalSize = bundleAnalysis.reduce((sum: any, item: any) => sum + item.size, 0);
+    const jsFiles = bundleAnalysis?.filter(item => item.type === 'js');
+    const cssFiles = bundleAnalysis?.filter(item => item.type === 'css');
     
     console.log(`\nTotal Bundle Size: ${this.formatBytes(totalSize)}`);
-    console.log(`JavaScript: ${this.formatBytes(jsFiles.reduce((sum, item) => sum + item.size, 0))}`);
-    console.log(`CSS: ${this.formatBytes(cssFiles.reduce((sum, item) => sum + item.size, 0))}`);
+    console.log(`JavaScript: ${this.formatBytes(jsFiles.reduce((sum: any, item: any) => sum + item.size, 0))}`);
+    console.log(`CSS: ${this.formatBytes(cssFiles.reduce((sum: any, item: any) => sum + item.size, 0))}`);
     
     console.log('\nLargest Files:');
     bundleAnalysis.slice(0, 10).forEach((item, index) => {
@@ -372,8 +372,8 @@ class FrontendPerformanceAnalyzer {
     });
     
     // Bundle size recommendations
-    const largeBundles = bundleAnalysis.filter(item => item.size > 500 * 1024); // > 500KB
-    if (largeBundles.length > 0) {
+    const largeBundles = bundleAnalysis?.filter(item => item.size > 500 * 1024); // > 500KB
+    if (largeBundles?.length || 0 > 0) {
       console.log('\n⚠️ Large bundles detected (>500KB):');
       largeBundles.forEach(bundle => {
         console.log(`  • ${bundle.file}: ${bundle.sizeHuman}`);
@@ -385,21 +385,21 @@ class FrontendPerformanceAnalyzer {
     console.log('\n🧩 COMPONENT COMPLEXITY ANALYSIS');
     console.log('-'.repeat(50));
     
-    const highComplexity = componentMetrics.filter(c => c.renderPotential === 'high');
-    const mediumComplexity = componentMetrics.filter(c => c.renderPotential === 'medium');
+    const highComplexity = componentMetrics?.filter(c => c.renderPotential === 'high');
+    const mediumComplexity = componentMetrics?.filter(c => c.renderPotential === 'medium');
     
-    console.log(`\nTotal Components: ${componentMetrics.length}`);
-    console.log(`High Complexity: ${highComplexity.length}`);
-    console.log(`Medium Complexity: ${mediumComplexity.length}`);
-    console.log(`Low Complexity: ${componentMetrics.length - highComplexity.length - mediumComplexity.length}`);
+    console.log(`\nTotal Components: ${componentMetrics?.length || 0}`);
+    console.log(`High Complexity: ${highComplexity?.length || 0}`);
+    console.log(`Medium Complexity: ${mediumComplexity?.length || 0}`);
+    console.log(`Low Complexity: ${componentMetrics?.length || 0 - highComplexity?.length || 0 - mediumComplexity?.length || 0}`);
     
-    if (highComplexity.length > 0) {
+    if (highComplexity?.length || 0 > 0) {
       console.log('\n🔴 High Complexity Components (optimization candidates):');
       highComplexity.slice(0, 5).forEach((comp, index) => {
         console.log(`  ${index + 1}. ${comp.component}`);
         console.log(`     File: ${comp.file}`);
         console.log(`     Lines: ${comp.linesOfCode}, Complexity: ${comp.complexity}`);
-        console.log(`     External Dependencies: ${comp.dependencies.length}`);
+        console.log(`     External Dependencies: ${comp?.dependencies?.length}`);
       });
     }
     
@@ -421,8 +421,8 @@ class FrontendPerformanceAnalyzer {
       vitalsData.forEach(vital => {
         if (vital.value !== null) {
           const status = vital.value <= vital.target ? '✅' : '⚠️';
-          const valueStr = vital.unit ? `${vital.value.toFixed(2)}${vital.unit}` : vital.value.toFixed(3);
-          const targetStr = vital.unit ? `${vital.target}${vital.unit}` : vital.target.toString();
+          const valueStr = vital.unit ? `${vital?.value?.toFixed(2)}${vital.unit}` : vital?.value?.toFixed(3);
+          const targetStr = vital.unit ? `${vital.target}${vital.unit}` : vital?.target?.toString();
           console.log(`  ${status} ${vital.name}: ${valueStr} (target: ≤${targetStr})`);
         }
       });
@@ -431,7 +431,7 @@ class FrontendPerformanceAnalyzer {
     // Core Web Vitals Targets Reference
     console.log('\n📊 CORE WEB VITALS TARGETS');
     console.log('-'.repeat(50));
-    this.coreWebVitalsTargets.forEach(target => {
+    this?.coreWebVitalsTargets?.forEach(target => {
       console.log(`\n${target.metric}:`);
       console.log(`  Good: ${target.good}`);
       console.log(`  Needs Improvement: ${target.needsImprovement}`);
@@ -455,22 +455,22 @@ class FrontendPerformanceAnalyzer {
       });
     }
     
-    const largeJSFiles = jsFiles.filter(f => f.size > 1024 * 1024); // > 1MB
-    if (largeJSFiles.length > 0) {
+    const largeJSFiles = jsFiles?.filter(f => f.size > 1024 * 1024); // > 1MB
+    if (largeJSFiles?.length || 0 > 0) {
       recommendations.push({
         priority: 'HIGH',
         category: 'JavaScript',
-        issue: `Large JS files detected: ${largeJSFiles.map(f => f.file).join(', ')}`,
+        issue: `Large JS files detected: ${largeJSFiles?.map(f => f.file).join(', ')}`,
         solution: 'Split large files, implement dynamic imports, optimize vendor chunks'
       });
     }
     
     // Component recommendations
-    if (highComplexity.length > 5) {
+    if (highComplexity?.length || 0 > 5) {
       recommendations.push({
         priority: 'MEDIUM',
         category: 'Components',
-        issue: `${highComplexity.length} high-complexity components`,
+        issue: `${highComplexity?.length || 0} high-complexity components`,
         solution: 'Refactor complex components, implement React.memo, use useMemo/useCallback'
       });
     }
@@ -481,7 +481,7 @@ class FrontendPerformanceAnalyzer {
         recommendations.push({
           priority: 'HIGH',
           category: 'LCP',
-          issue: `LCP too slow: ${webVitals.lcp.toFixed(2)}s`,
+          issue: `LCP too slow: ${webVitals?.lcp?.toFixed(2)}s`,
           solution: 'Optimize images, implement preloading, reduce server response time'
         });
       }
@@ -490,7 +490,7 @@ class FrontendPerformanceAnalyzer {
         recommendations.push({
           priority: 'MEDIUM',
           category: 'CLS',
-          issue: `Layout shift detected: ${webVitals.cls.toFixed(3)}`,
+          issue: `Layout shift detected: ${webVitals?.cls?.toFixed(3)}`,
           solution: 'Reserve space for dynamic content, optimize font loading'
         });
       }
@@ -499,8 +499,8 @@ class FrontendPerformanceAnalyzer {
     // Display recommendations by priority
     const priorities = ['HIGH', 'MEDIUM', 'LOW'];
     priorities.forEach(priority => {
-      const priorityRecs = recommendations.filter(r => r.priority === priority);
-      if (priorityRecs.length === 0) return;
+      const priorityRecs = recommendations?.filter(r => r.priority === priority);
+      if (priorityRecs?.length || 0 === 0) return;
       
       console.log(`\n🔴 ${priority} PRIORITY:`);
       priorityRecs.forEach((rec, index) => {
@@ -509,7 +509,7 @@ class FrontendPerformanceAnalyzer {
       });
     });
     
-    if (recommendations.length === 0) {
+    if (recommendations?.length || 0 === 0) {
       console.log('\n✅ Frontend performance looks good! All metrics are within acceptable ranges.');
     }
   }
@@ -525,14 +525,14 @@ class FrontendPerformanceAnalyzer {
     const report = {
       timestamp: new Date().toISOString(),
       bundleAnalysis: {
-        totalFiles: bundleAnalysis.length,
-        totalSize: bundleAnalysis.reduce((sum, item) => sum + item.size, 0),
+        totalFiles: bundleAnalysis?.length || 0,
+        totalSize: bundleAnalysis.reduce((sum: any, item: any) => sum + item.size, 0),
         files: bundleAnalysis
       },
       componentMetrics: {
-        totalComponents: componentMetrics.length,
-        highComplexity: componentMetrics.filter(c => c.renderPotential === 'high').length,
-        mediumComplexity: componentMetrics.filter(c => c.renderPotential === 'medium').length,
+        totalComponents: componentMetrics?.length || 0,
+        highComplexity: componentMetrics?.filter(c => c.renderPotential === 'high').length,
+        mediumComplexity: componentMetrics?.filter(c => c.renderPotential === 'medium').length,
         components: componentMetrics
       },
       webVitals,

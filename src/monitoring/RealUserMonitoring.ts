@@ -112,7 +112,7 @@ class RealUserMonitoring extends EventEmitter {
 
   // Record user session metrics
   recordUserMetrics(metrics: Partial<UserMetrics> & { sessionId: string }): void {
-    const existing = this.userSessions.get(metrics.sessionId) || {
+    const existing = this?.userSessions?.get(metrics.sessionId) || {
       sessionId: metrics.sessionId,
       userAgent: '',
       timestamp: Date.now(),
@@ -125,7 +125,7 @@ class RealUserMonitoring extends EventEmitter {
     };
 
     const updated = { ...existing, ...metrics };
-    this.userSessions.set(metrics.sessionId, updated);
+    this?.userSessions?.set(metrics.sessionId, updated);
 
     // Check for performance alerts
     this.checkPerformanceAlerts(updated);
@@ -139,7 +139,7 @@ class RealUserMonitoring extends EventEmitter {
 
   // Record business-specific metrics
   recordBusinessMetrics(sessionId: string, metrics: Partial<BusinessMetrics>): void {
-    const existing = this.businessMetrics.get(sessionId) || {
+    const existing = this?.businessMetrics?.get(sessionId) || {
       sessionId,
       searchCount: 0,
       productViews: 0,
@@ -152,7 +152,7 @@ class RealUserMonitoring extends EventEmitter {
     };
 
     const updated = { ...existing, ...metrics };
-    this.businessMetrics.set(sessionId, updated);
+    this?.businessMetrics?.set(sessionId, updated);
 
     logger.debug('Business metrics recorded', 'RUM', {
       sessionId,
@@ -163,14 +163,14 @@ class RealUserMonitoring extends EventEmitter {
 
   // Record custom events
   recordCustomEvent(sessionId: string, eventName: string, data?: any): void {
-    const session = this.userSessions.get(sessionId);
+    const session = this?.userSessions?.get(sessionId);
     if (session) {
-      session.customEvents.push({
+      session?.customEvents?.push({
         name: eventName,
         timestamp: Date.now(),
         data,
       });
-      this.userSessions.set(sessionId, session);
+      this?.userSessions?.set(sessionId, session);
     }
 
     logger.debug('Custom event recorded', 'RUM', {
@@ -188,7 +188,7 @@ class RealUserMonitoring extends EventEmitter {
     fid?: number;
     inp?: number;
   }): void {
-    const session = this.userSessions.get(sessionId);
+    const session = this?.userSessions?.get(sessionId);
     if (session) {
       if (vitals.fcp) session.firstContentfulPaint = vitals.fcp;
       if (vitals.lcp) session.largestContentfulPaint = vitals.lcp;
@@ -196,7 +196,7 @@ class RealUserMonitoring extends EventEmitter {
       if (vitals.fid) session.firstInputDelay = vitals.fid;
       if (vitals.inp) session.interactionToNextPaint = vitals.inp;
       
-      this.userSessions.set(sessionId, session);
+      this?.userSessions?.set(sessionId, session);
     }
 
     logger.debug('Web vitals recorded', 'RUM', {
@@ -210,38 +210,38 @@ class RealUserMonitoring extends EventEmitter {
     const alerts: Array<{ type: string; message: string; severity: 'warning' | 'critical' }> = [];
 
     // Load time alerts
-    if (metrics.loadTime && metrics.loadTime > this.alertThresholds.loadTimeMs) {
+    if (metrics.loadTime && metrics.loadTime > this?.alertThresholds?.loadTimeMs) {
       alerts.push({
         type: 'slow_page_load',
-        message: `Slow page load detected: ${metrics.loadTime}ms (threshold: ${this.alertThresholds.loadTimeMs}ms)`,
-        severity: metrics.loadTime > this.alertThresholds.loadTimeMs * 2 ? 'critical' : 'warning',
+        message: `Slow page load detected: ${metrics.loadTime}ms (threshold: ${this?.alertThresholds?.loadTimeMs}ms)`,
+        severity: metrics.loadTime > this?.alertThresholds?.loadTimeMs * 2 ? 'critical' : 'warning',
       });
     }
 
     // Core Web Vitals alerts
-    if (metrics.cumulativeLayoutShift && metrics.cumulativeLayoutShift > this.alertThresholds.cumulativeLayoutShift) {
+    if (metrics.cumulativeLayoutShift && metrics.cumulativeLayoutShift > this?.alertThresholds?.cumulativeLayoutShift) {
       alerts.push({
         type: 'high_cls',
-        message: `High Cumulative Layout Shift: ${metrics.cumulativeLayoutShift} (threshold: ${this.alertThresholds.cumulativeLayoutShift})`,
+        message: `High Cumulative Layout Shift: ${metrics.cumulativeLayoutShift} (threshold: ${this?.alertThresholds?.cumulativeLayoutShift})`,
         severity: 'warning',
       });
     }
 
-    if (metrics.firstInputDelay && metrics.firstInputDelay > this.alertThresholds.firstInputDelayMs) {
+    if (metrics.firstInputDelay && metrics.firstInputDelay > this?.alertThresholds?.firstInputDelayMs) {
       alerts.push({
         type: 'high_fid',
-        message: `High First Input Delay: ${metrics.firstInputDelay}ms (threshold: ${this.alertThresholds.firstInputDelayMs}ms)`,
+        message: `High First Input Delay: ${metrics.firstInputDelay}ms (threshold: ${this?.alertThresholds?.firstInputDelayMs}ms)`,
         severity: 'warning',
       });
     }
 
     // Memory usage alerts
     if (metrics.memoryUsage) {
-      const usagePercent = (metrics.memoryUsage.usedJSHeapSize / metrics.memoryUsage.jsHeapSizeLimit) * 100;
-      if (usagePercent > this.alertThresholds.memoryUsagePercent) {
+      const usagePercent = (metrics?.memoryUsage?.usedJSHeapSize / metrics?.memoryUsage.jsHeapSizeLimit) * 100;
+      if (usagePercent > this?.alertThresholds?.memoryUsagePercent) {
         alerts.push({
           type: 'high_memory_usage',
-          message: `High memory usage: ${usagePercent.toFixed(1)}% (threshold: ${this.alertThresholds.memoryUsagePercent}%)`,
+          message: `High memory usage: ${usagePercent.toFixed(1)}% (threshold: ${this?.alertThresholds?.memoryUsagePercent}%)`,
           severity: 'critical',
         });
       }
@@ -265,25 +265,25 @@ class RealUserMonitoring extends EventEmitter {
     const fiveMinutesAgo = now - (5 * 60 * 1000);
     
     // Get recent sessions
-    const recentSessions = Array.from(this.userSessions.values())
+    const recentSessions = Array.from(this?.userSessions?.values())
       .filter(session => session.timestamp > fiveMinutesAgo);
 
-    if (recentSessions.length === 0) {
+    if (recentSessions?.length || 0 === 0) {
       return;
     }
 
     // Calculate aggregate metrics
     const aggregates = {
       timestamp: now,
-      totalSessions: recentSessions.length,
-      uniqueUsers: new Set(recentSessions.map(s => s.userId).filter(Boolean)).size,
-      avgLoadTime: this.calculateAverage(recentSessions.map(s => s.loadTime).filter(Boolean)),
-      avgFCP: this.calculateAverage(recentSessions.map(s => s.firstContentfulPaint).filter(Boolean)),
-      avgLCP: this.calculateAverage(recentSessions.map(s => s.largestContentfulPaint).filter(Boolean)),
-      avgFID: this.calculateAverage(recentSessions.map(s => s.firstInputDelay).filter(Boolean)),
-      avgCLS: this.calculateAverage(recentSessions.map(s => s.cumulativeLayoutShift).filter(Boolean)),
-      errorRate: recentSessions.reduce((sum, s) => sum + s.errorCount, 0) / recentSessions.length,
-      bounceRate: recentSessions.filter(s => s.timeOnPage < 10000).length / recentSessions.length * 100,
+      totalSessions: recentSessions?.length || 0,
+      uniqueUsers: new Set(recentSessions?.map(s => s.userId).filter(Boolean)).size,
+      avgLoadTime: this.calculateAverage(recentSessions?.map(s => s.loadTime).filter(Boolean)),
+      avgFCP: this.calculateAverage(recentSessions?.map(s => s.firstContentfulPaint).filter(Boolean)),
+      avgLCP: this.calculateAverage(recentSessions?.map(s => s.largestContentfulPaint).filter(Boolean)),
+      avgFID: this.calculateAverage(recentSessions?.map(s => s.firstInputDelay).filter(Boolean)),
+      avgCLS: this.calculateAverage(recentSessions?.map(s => s.cumulativeLayoutShift).filter(Boolean)),
+      errorRate: recentSessions.reduce((sum: any, s: any) => sum + s.errorCount, 0) / recentSessions?.length || 0,
+      bounceRate: recentSessions?.filter(s => s.timeOnPage < 10000).length / recentSessions?.length || 0 * 100,
       topPages: this.getTopPages(recentSessions),
       topErrors: this.getTopErrors(recentSessions),
       deviceTypes: this.getDeviceTypeDistribution(recentSessions),
@@ -305,8 +305,8 @@ class RealUserMonitoring extends EventEmitter {
   }
 
   private calculateAverage(values: number[]): number {
-    if (values.length === 0) return 0;
-    return values.reduce((sum, val) => sum + val, 0) / values.length;
+    if (values?.length || 0 === 0) return 0;
+    return values.reduce((sum: any, val: any) => sum + val, 0) / values?.length || 0;
   }
 
   private getTopPages(sessions: UserMetrics[]): Array<{ url: string; count: number; avgLoadTime: number }> {
@@ -317,7 +317,7 @@ class RealUserMonitoring extends EventEmitter {
       existing.count++;
       if (session.loadTime) {
         existing.totalLoadTime += session.loadTime;
-        existing.loadTimes.push(session.loadTime);
+        existing?.loadTimes?.push(session.loadTime);
       }
       pageStats.set(session.url, existing);
     });
@@ -326,7 +326,7 @@ class RealUserMonitoring extends EventEmitter {
       .map(([url, stats]) => ({
         url,
         count: stats.count,
-        avgLoadTime: stats.loadTimes.length > 0 ? stats.totalLoadTime / stats.loadTimes.length : 0,
+        avgLoadTime: stats?.loadTimes?.length > 0 ? stats.totalLoadTime / stats?.loadTimes?.length : 0,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
@@ -337,7 +337,7 @@ class RealUserMonitoring extends EventEmitter {
     
     sessions.forEach(session => {
       session.customEvents
-        .filter(event => event.name.includes('error'))
+        .filter(event => event?.name?.includes('error'))
         .forEach(error => {
           const count = errorTypes.get(error.name) || 0;
           errorTypes.set(error.name, count + 1);
@@ -351,7 +351,7 @@ class RealUserMonitoring extends EventEmitter {
   }
 
   private getDeviceTypeDistribution(sessions: UserMetrics[]): Record<string, number> {
-    const devices = sessions.reduce((acc, session) => {
+    const devices = sessions.reduce((acc: any, session: any) => {
       const isMobile = /Mobile|Android|iPhone|iPad/i.test(session.userAgent);
       const isTablet = /iPad|Android(?!.*Mobile)/i.test(session.userAgent);
       const deviceType = isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop';
@@ -363,7 +363,7 @@ class RealUserMonitoring extends EventEmitter {
   }
 
   private getNetworkTypeDistribution(sessions: UserMetrics[]): Record<string, number> {
-    const networks = sessions.reduce((acc, session) => {
+    const networks = sessions.reduce((acc: any, session: any) => {
       const networkType = session.networkInfo?.effectiveType || 'unknown';
       acc[networkType] = (acc[networkType] || 0) + 1;
       return acc;
@@ -376,28 +376,28 @@ class RealUserMonitoring extends EventEmitter {
     const alerts: Array<{ type: string; message: string; severity: 'warning' | 'critical' }> = [];
 
     // High error rate
-    if (aggregates.errorRate > this.alertThresholds.errorRatePercent / 100) {
+    if (aggregates.errorRate > this?.alertThresholds?.errorRatePercent / 100) {
       alerts.push({
         type: 'high_error_rate',
-        message: `High error rate detected: ${(aggregates.errorRate * 100).toFixed(1)}% (threshold: ${this.alertThresholds.errorRatePercent}%)`,
+        message: `High error rate detected: ${(aggregates.errorRate * 100).toFixed(1)}% (threshold: ${this?.alertThresholds?.errorRatePercent}%)`,
         severity: 'critical',
       });
     }
 
     // High bounce rate
-    if (aggregates.bounceRate > this.alertThresholds.bounceRatePercent) {
+    if (aggregates.bounceRate > this?.alertThresholds?.bounceRatePercent) {
       alerts.push({
         type: 'high_bounce_rate',
-        message: `High bounce rate detected: ${aggregates.bounceRate.toFixed(1)}% (threshold: ${this.alertThresholds.bounceRatePercent}%)`,
+        message: `High bounce rate detected: ${aggregates?.bounceRate?.toFixed(1)}% (threshold: ${this?.alertThresholds?.bounceRatePercent}%)`,
         severity: 'warning',
       });
     }
 
     // Slow average load time
-    if (aggregates.avgLoadTime > this.alertThresholds.loadTimeMs) {
+    if (aggregates.avgLoadTime > this?.alertThresholds?.loadTimeMs) {
       alerts.push({
         type: 'slow_avg_load_time',
-        message: `Slow average load time: ${aggregates.avgLoadTime.toFixed(0)}ms (threshold: ${this.alertThresholds.loadTimeMs}ms)`,
+        message: `Slow average load time: ${aggregates?.avgLoadTime?.toFixed(0)}ms (threshold: ${this?.alertThresholds?.loadTimeMs}ms)`,
         severity: 'warning',
       });
     }
@@ -415,34 +415,34 @@ class RealUserMonitoring extends EventEmitter {
   // Get current metrics summary
   getMetricsSummary(timeWindow: number = 3600000): any {
     const cutoff = Date.now() - timeWindow;
-    const sessions = Array.from(this.userSessions.values())
+    const sessions = Array.from(this?.userSessions?.values())
       .filter(session => session.timestamp > cutoff);
 
-    const businessData = Array.from(this.businessMetrics.values())
+    const businessData = Array.from(this?.businessMetrics?.values())
       .filter(metrics => {
-        const session = this.userSessions.get(metrics.sessionId);
+        const session = this?.userSessions?.get(metrics.sessionId);
         return session && session.timestamp > cutoff;
       });
 
     return {
       timeWindow,
       user_metrics: {
-        total_sessions: sessions.length,
-        unique_users: new Set(sessions.map(s => s.userId).filter(Boolean)).size,
-        avg_load_time: this.calculateAverage(sessions.map(s => s.loadTime).filter(Boolean)),
-        avg_fcp: this.calculateAverage(sessions.map(s => s.firstContentfulPaint).filter(Boolean)),
-        avg_lcp: this.calculateAverage(sessions.map(s => s.largestContentfulPaint).filter(Boolean)),
-        avg_fid: this.calculateAverage(sessions.map(s => s.firstInputDelay).filter(Boolean)),
-        avg_cls: this.calculateAverage(sessions.map(s => s.cumulativeLayoutShift).filter(Boolean)),
-        error_rate: sessions.reduce((sum, s) => sum + s.errorCount, 0) / Math.max(sessions.length, 1),
-        bounce_rate: sessions.filter(s => s.timeOnPage < 10000).length / Math.max(sessions.length, 1) * 100,
+        total_sessions: sessions?.length || 0,
+        unique_users: new Set(sessions?.map(s => s.userId).filter(Boolean)).size,
+        avg_load_time: this.calculateAverage(sessions?.map(s => s.loadTime).filter(Boolean)),
+        avg_fcp: this.calculateAverage(sessions?.map(s => s.firstContentfulPaint).filter(Boolean)),
+        avg_lcp: this.calculateAverage(sessions?.map(s => s.largestContentfulPaint).filter(Boolean)),
+        avg_fid: this.calculateAverage(sessions?.map(s => s.firstInputDelay).filter(Boolean)),
+        avg_cls: this.calculateAverage(sessions?.map(s => s.cumulativeLayoutShift).filter(Boolean)),
+        error_rate: sessions.reduce((sum: any, s: any) => sum + s.errorCount, 0) / Math.max(sessions?.length || 0, 1),
+        bounce_rate: sessions?.filter(s => s.timeOnPage < 10000).length / Math.max(sessions?.length || 0, 1) * 100,
       },
       business_metrics: {
-        total_searches: businessData.reduce((sum, b) => sum + b.searchCount, 0),
-        total_product_views: businessData.reduce((sum, b) => sum + b.productViews, 0),
-        total_cart_interactions: businessData.reduce((sum, b) => sum + b.cartInteractions, 0),
-        total_nlp_queries: businessData.reduce((sum, b) => sum + b.nlpQueries, 0),
-        total_price_checks: businessData.reduce((sum, b) => sum + b.priceChecks, 0),
+        total_searches: businessData.reduce((sum: any, b: any) => sum + b.searchCount, 0),
+        total_product_views: businessData.reduce((sum: any, b: any) => sum + b.productViews, 0),
+        total_cart_interactions: businessData.reduce((sum: any, b: any) => sum + b.cartInteractions, 0),
+        total_nlp_queries: businessData.reduce((sum: any, b: any) => sum + b.nlpQueries, 0),
+        total_price_checks: businessData.reduce((sum: any, b: any) => sum + b.priceChecks, 0),
         conversion_rate: this.calculateConversionRate(businessData),
       },
       top_pages: this.getTopPages(sessions),
@@ -452,11 +452,11 @@ class RealUserMonitoring extends EventEmitter {
   }
 
   private calculateConversionRate(businessData: BusinessMetrics[]): number {
-    const totalSessions = businessData.length;
+    const totalSessions = businessData?.length || 0;
     if (totalSessions === 0) return 0;
 
-    const conversions = businessData.filter(data => 
-      data.conversionEvents.some(event => event.type === 'purchase')
+    const conversions = businessData?.filter(data => 
+      data?.conversionEvents?.some(event => event.type === 'purchase')
     ).length;
 
     return (conversions / totalSessions) * 100;
@@ -472,15 +472,15 @@ class RealUserMonitoring extends EventEmitter {
   cleanup(maxAge: number = 24 * 60 * 60 * 1000): void {
     const cutoff = Date.now() - maxAge;
     
-    for (const [sessionId, session] of this.userSessions.entries()) {
+    for (const [sessionId, session] of this?.userSessions?.entries()) {
       if (session.timestamp < cutoff) {
-        this.userSessions.delete(sessionId);
-        this.businessMetrics.delete(sessionId);
+        this?.userSessions?.delete(sessionId);
+        this?.businessMetrics?.delete(sessionId);
       }
     }
 
     logger.debug('RUM cleanup completed', 'RUM', {
-      remaining_sessions: this.userSessions.size,
+      remaining_sessions: this?.userSessions?.size,
       cutoff_age_hours: maxAge / (60 * 60 * 1000),
     });
   }

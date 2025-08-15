@@ -52,7 +52,7 @@ describe("SqlInjectionProtection", () => {
         "'; UPDATE users SET password = 'hacked' WHERE 1=1; --",
       ];
 
-      maliciousParams.forEach((param) => {
+      maliciousParams.forEach((param: any) => {
         expect(() => {
           sqlSecurity.validateQueryParameters([param]);
         }).toThrow(SqlInjectionError);
@@ -85,7 +85,7 @@ describe("SqlInjectionProtection", () => {
         "DELETE FROM users WHERE id = ?",
       ];
 
-      safeQueries.forEach((query) => {
+      safeQueries.forEach((query: any) => {
         expect(() => {
           sqlSecurity.validateQuery(query);
         }).not.toThrow();
@@ -101,7 +101,7 @@ describe("SqlInjectionProtection", () => {
         "SELECT * FROM users; INSERT INTO logs VALUES ('hacked'); --",
       ];
 
-      maliciousQueries.forEach((query) => {
+      maliciousQueries.forEach((query: any) => {
         expect(() => {
           sqlSecurity.validateQuery(query);
         }).toThrow(SqlInjectionError);
@@ -128,7 +128,7 @@ describe("SqlInjectionProtection", () => {
         "is_active",
       ];
 
-      safeColumns.forEach((column) => {
+      safeColumns.forEach((column: any) => {
         expect(() => {
           sqlSecurity.sanitizeColumnName(column);
         }).not.toThrow();
@@ -147,7 +147,7 @@ describe("SqlInjectionProtection", () => {
         "union",
       ];
 
-      unsafeColumns.forEach((column) => {
+      unsafeColumns.forEach((column: any) => {
         expect(() => {
           sqlSecurity.sanitizeColumnName(column);
         }).toThrow(SqlInjectionError);
@@ -259,25 +259,25 @@ describe("DatabaseInputSchemas", () => {
   describe("Basic Input Validation", () => {
     it("should validate safe inputs", () => {
       expect(() => {
-        DatabaseInputSchemas.email.parse("user@example.com");
+        DatabaseInputSchemas?.email?.parse("user@example.com");
       }).not.toThrow();
 
       expect(() => {
-        DatabaseInputSchemas.id.parse("123e4567-e89b-12d3-a456-426614174000");
+        DatabaseInputSchemas?.id?.parse("123e4567-e89b-12d3-a456-426614174000");
       }).not.toThrow();
 
       expect(() => {
-        DatabaseInputSchemas.shortText.parse("Safe text content");
+        DatabaseInputSchemas?.shortText?.parse("Safe text content");
       }).not.toThrow();
     });
 
     it("should reject malicious inputs", () => {
       expect(() => {
-        DatabaseInputSchemas.shortText.parse("'; DROP TABLE users; --");
+        DatabaseInputSchemas?.shortText?.parse("'; DROP TABLE users; --");
       }).toThrow();
 
       expect(() => {
-        DatabaseInputSchemas.email.parse(
+        DatabaseInputSchemas?.email?.parse(
           "admin@example.com'; DROP TABLE users; --",
         );
       }).toThrow();
@@ -293,9 +293,9 @@ describe("DatabaseInputSchemas", () => {
         "normal search term",
       ];
 
-      safeQueries.forEach((query) => {
+      safeQueries.forEach((query: any) => {
         expect(() => {
-          DatabaseInputSchemas.searchQuery.parse(query);
+          DatabaseInputSchemas?.searchQuery?.parse(query);
         }).not.toThrow();
       });
     });
@@ -310,9 +310,9 @@ describe("DatabaseInputSchemas", () => {
         '<script>alert("xss")</script>',
       ];
 
-      maliciousQueries.forEach((query) => {
+      maliciousQueries.forEach((query: any) => {
         expect(() => {
-          DatabaseInputSchemas.searchQuery.parse(query);
+          DatabaseInputSchemas?.searchQuery?.parse(query);
         }).toThrow();
       });
     });
@@ -322,9 +322,9 @@ describe("DatabaseInputSchemas", () => {
     it("should allow valid column names", () => {
       const validNames = ["id", "user_name", "email_address", "created_at"];
 
-      validNames.forEach((name) => {
+      validNames.forEach((name: any) => {
         expect(() => {
-          DatabaseInputSchemas.columnName.parse(name);
+          DatabaseInputSchemas?.columnName?.parse(name);
         }).not.toThrow();
       });
     });
@@ -338,9 +338,9 @@ describe("DatabaseInputSchemas", () => {
         "from",
       ];
 
-      invalidNames.forEach((name) => {
+      invalidNames.forEach((name: any) => {
         expect(() => {
-          DatabaseInputSchemas.columnName.parse(name);
+          DatabaseInputSchemas?.columnName?.parse(name);
         }).toThrow();
       });
     });
@@ -356,9 +356,9 @@ describe("DatabaseInputSchemas", () => {
         "123",
       ];
 
-      validJson.forEach((json) => {
+      validJson.forEach((json: any) => {
         expect(() => {
-          DatabaseInputSchemas.jsonField.parse(json);
+          DatabaseInputSchemas.jsonField?.parse(json);
         }).not.toThrow();
       });
     });
@@ -372,9 +372,9 @@ describe("DatabaseInputSchemas", () => {
         "function() {}",
       ];
 
-      invalidJson.forEach((json) => {
+      invalidJson.forEach((json: any) => {
         expect(() => {
-          DatabaseInputSchemas.jsonField.parse(json);
+          DatabaseInputSchemas.jsonField?.parse(json);
         }).toThrow();
       });
     });

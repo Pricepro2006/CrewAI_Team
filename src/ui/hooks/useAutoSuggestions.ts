@@ -133,7 +133,7 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
     const suggestions: Suggestion[] = [];
 
     // Search in popular products
-    suggestionContext.popularProducts.forEach((product, index) => {
+    suggestionContext?.popularProducts?.forEach((product, index) => {
       if (product.toLowerCase().includes(lowerQuery)) {
         const confidence = product.toLowerCase().startsWith(lowerQuery) ? 0.9 : 0.7;
         suggestions.push({
@@ -152,7 +152,7 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
 
     // Add user preferences if available
     if (suggestionContext.userPreferences?.preferredBrands) {
-      suggestionContext.userPreferences.preferredBrands.forEach((brand, index) => {
+      suggestionContext?.userPreferences?.preferredBrands.forEach((brand, index) => {
         if (brand.toLowerCase().includes(lowerQuery)) {
           suggestions.push({
             id: `brand-${brand}-${index}`,
@@ -246,7 +246,7 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
     const lowerQuery = searchQuery.toLowerCase();
     const suggestions: Suggestion[] = [];
 
-    suggestionContext.groceryCategories.forEach((category, index) => {
+    suggestionContext?.groceryCategories?.forEach((category, index) => {
       if (category.toLowerCase().includes(lowerQuery)) {
         const confidence = category.toLowerCase().startsWith(lowerQuery) ? 0.8 : 0.6;
         suggestions.push({
@@ -269,7 +269,7 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
     const lowerQuery = searchQuery.toLowerCase();
     const suggestions: Suggestion[] = [];
 
-    suggestionContext.recentCommands.forEach((command, index) => {
+    suggestionContext?.recentCommands?.forEach((command, index) => {
       if (command.toLowerCase().includes(lowerQuery)) {
         const confidence = command.toLowerCase().startsWith(lowerQuery) ? 0.9 : 0.7;
         suggestions.push({
@@ -289,14 +289,14 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
   }, [suggestionContext.recentCommands]);
 
   const getSuggestions = useCallback(async (searchQuery: string) => {
-    if (searchQuery.length < minQueryLength) {
+    if (searchQuery?.length || 0 < minQueryLength) {
       setState(prev => ({ ...prev, suggestions: [], isLoading: false, selectedIndex: -1 }));
       return;
     }
 
     // Cancel previous request
     if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+      abortControllerRef?.current?.abort();
     }
 
     abortControllerRef.current = new AbortController();
@@ -318,8 +318,8 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
         ...generateQuantitySuggestions(searchQuery),
         ...generateCategorySuggestions(searchQuery),
         ...generateTemplateSuggestions(searchQuery),
-        ...customSuggestions.filter(s => 
-          s.text.toLowerCase().includes(searchQuery.toLowerCase())
+        ...customSuggestions?.filter(s => 
+          s?.text?.toLowerCase().includes(searchQuery.toLowerCase())
         ),
       ];
 
@@ -327,8 +327,8 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
       const sortedSuggestions = allSuggestions
         .sort((a, b) => {
           // Prioritize exact matches
-          const aExact = a.text.toLowerCase() === searchQuery.toLowerCase();
-          const bExact = b.text.toLowerCase() === searchQuery.toLowerCase();
+          const aExact = a?.text?.toLowerCase() === searchQuery.toLowerCase();
+          const bExact = b?.text?.toLowerCase() === searchQuery.toLowerCase();
           if (aExact && !bExact) return -1;
           if (!aExact && bExact) return 1;
 
@@ -348,7 +348,7 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
         suggestions: sortedSuggestions,
         isLoading: false,
         selectedIndex: -1,
-        totalSuggestions: sortedSuggestions.length,
+        totalSuggestions: sortedSuggestions?.length || 0,
       }));
     } catch (error) {
       if (abortControllerRef.current?.signal.aborted) {
@@ -381,7 +381,7 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
 
   const clearSuggestions = useCallback(() => {
     if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+      abortControllerRef?.current?.abort();
     }
     setState(prev => ({
       ...prev,
@@ -397,7 +397,7 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
   const selectNext = useCallback(() => {
     setState(prev => ({
       ...prev,
-      selectedIndex: Math.min(prev.selectedIndex + 1, prev.suggestions.length - 1),
+      selectedIndex: Math.min(prev.selectedIndex + 1, prev?.suggestions?.length - 1),
     }));
   }, []);
 
@@ -409,7 +409,7 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
   }, []);
 
   const selectSuggestion = useCallback((index: number): Suggestion | null => {
-    if (index < 0 || index >= state.suggestions.length) {
+    if (index < 0 || index >= state?.suggestions?.length) {
       return null;
     }
     
@@ -452,7 +452,7 @@ export const useAutoSuggestions = (config: AutoSuggestionsConfig = {}) => {
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+        abortControllerRef?.current?.abort();
       }
     };
   }, []);

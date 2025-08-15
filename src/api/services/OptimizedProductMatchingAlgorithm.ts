@@ -175,37 +175,37 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     const cacheKey = this.generateCacheKey(query, productName);
     
     // Check LRU cache first
-    const cachedScore = this.similarityCache.get(cacheKey);
+    const cachedScore = this?.similarityCache?.get(cacheKey);
     if (cachedScore !== undefined) {
-      this.performanceMetrics.cacheHits++;
+      this?.performanceMetrics?.cacheHits++;
       return cachedScore;
     }
     
     // Check Redis cache
     try {
-      const redisScore = await this.cacheManager.get<number>(`similarity:${cacheKey}`);
+      const redisScore = await this?.cacheManager?.get<number>(`similarity:${cacheKey}`);
       if (redisScore !== null) {
-        this.similarityCache.set(cacheKey, redisScore);
-        this.performanceMetrics.cacheHits++;
+        this?.similarityCache?.set(cacheKey, redisScore);
+        this?.performanceMetrics?.cacheHits++;
         return redisScore;
       }
     } catch (error) {
       logger.warn("Redis cache error", "OPTIMIZED_MATCHING", { error });
     }
     
-    this.performanceMetrics.cacheMisses++;
+    this?.performanceMetrics?.cacheMisses++;
     
     // Apply spell correction
     const correctedQuery = this.applySpellCorrection(query);
     
     // Calculate similarity with optimizations
     const metrics = await this.calculateOptimizedSimilarityMetrics(correctedQuery, productName);
-    const score = metrics.overallSimilarity;
+    const score = metrics?.overallSimilarity;
     
     // Store in both caches
-    this.similarityCache.set(cacheKey, score);
+    this?.similarityCache?.set(cacheKey, score);
     try {
-      await this.cacheManager.set(`similarity:${cacheKey}`, score, { ttl: 3600 });
+      await this?.cacheManager?.set(`similarity:${cacheKey}`, score, { ttl: 3600 });
     } catch (error) {
       logger.warn("Failed to cache similarity in Redis", "OPTIMIZED_MATCHING", { error });
     }
@@ -269,13 +269,13 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     const cacheKey = `features:${text}`;
     
     // Check LRU cache
-    const cached = this.featureCache.get(cacheKey);
+    const cached = this?.featureCache?.get(cacheKey);
     if (cached) {
       return cached;
     }
     
     // Check pre-computed features
-    const precomputed = this.precomputedFeatures.get(text);
+    const precomputed = this?.precomputedFeatures?.get(text);
     if (precomputed) {
       return precomputed.features;
     }
@@ -284,7 +284,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     const features = this.extractOptimizedFeatures(text);
     
     // Cache the result
-    this.featureCache.set(cacheKey, features);
+    this?.featureCache?.set(cacheKey, features);
     
     return features;
   }
@@ -339,11 +339,11 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     const reversed = `${s2}|${s1}`;
     
     // Check memoization
-    if (this.levenshteinMemo.has(memoKey)) {
-      return this.levenshteinMemo.get(memoKey)!;
+    if (this?.levenshteinMemo?.has(memoKey)) {
+      return this?.levenshteinMemo?.get(memoKey)!;
     }
-    if (this.levenshteinMemo.has(reversed)) {
-      return this.levenshteinMemo.get(reversed)!;
+    if (this?.levenshteinMemo?.has(reversed)) {
+      return this?.levenshteinMemo?.get(reversed)!;
     }
     
     // Use pre-computed n-grams for faster comparison
@@ -364,12 +364,12 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     const similarity = jaccard * 0.6 + levenshtein * 0.4;
     
     // Memoize result
-    this.levenshteinMemo.set(memoKey, similarity);
+    this?.levenshteinMemo?.set(memoKey, similarity);
     
     // Limit memoization size
-    if (this.levenshteinMemo.size > 10000) {
-      const firstKey = this.levenshteinMemo.keys().next().value;
-      this.levenshteinMemo.delete(firstKey);
+    if (this?.levenshteinMemo?.size > 10000) {
+      const firstKey = this?.levenshteinMemo?.keys().next().value;
+      this?.levenshteinMemo?.delete(firstKey);
     }
     
     return similarity;
@@ -415,8 +415,8 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
       return 0;
     }
     
-    const brand1 = features1.brand.toLowerCase();
-    const brand2 = features2.brand.toLowerCase();
+    const brand1 = features1?.brand?.toLowerCase();
+    const brand2 = features2?.brand?.toLowerCase();
     
     // Exact match
     if (brand1 === brand2) {
@@ -424,8 +424,8 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     }
     
     // Check brand synonyms
-    const synonyms1 = this.brandSynonyms.get(brand1);
-    const synonyms2 = this.brandSynonyms.get(brand2);
+    const synonyms1 = this?.brandSynonyms?.get(brand1);
+    const synonyms2 = this?.brandSynonyms?.get(brand2);
     
     if (synonyms1?.has(brand2) || synonyms2?.has(brand1)) {
       return 0.9;
@@ -451,8 +451,8 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
       return 0;
     }
     
-    const cat1 = features1.category.toLowerCase();
-    const cat2 = features2.category.toLowerCase();
+    const cat1 = features1?.category?.toLowerCase();
+    const cat2 = features2?.category?.toLowerCase();
     
     // Exact match
     if (cat1 === cat2) {
@@ -460,8 +460,8 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     }
     
     // Check category synonyms
-    const synonyms1 = this.categorySynonyms.get(cat1);
-    const synonyms2 = this.categorySynonyms.get(cat2);
+    const synonyms1 = this?.categorySynonyms?.get(cat1);
+    const synonyms2 = this?.categorySynonyms?.get(cat2);
     
     if (synonyms1?.has(cat2) || synonyms2?.has(cat1)) {
       return 0.8;
@@ -491,20 +491,20 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     const batchSize = 100;
     const batches = [];
     
-    for (let i = 0; i < request.queries.length; i += batchSize) {
-      const queryBatch = request.queries.slice(i, i + batchSize);
+    for (let i = 0; i < request?.queries?.length; i += batchSize) {
+      const queryBatch = request?.queries?.slice(i, i + batchSize);
       
       const batchPromise = Promise.all(
-        queryBatch.map(async (query) => {
+        queryBatch?.map(async (query: any) => {
           const productScores = new Map<string, number>();
           
           await Promise.all(
-            request.products.map(async (product) => {
+            request?.products?.map(async (product: any) => {
               totalRequests++;
               
               // Check cache first
               const cacheKey = this.generateCacheKey(query, product);
-              const cached = this.similarityCache.get(cacheKey);
+              const cached = this?.similarityCache?.get(cacheKey);
               
               if (cached !== undefined) {
                 cacheHits++;
@@ -539,17 +539,17 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
    * Pre-warm cache for frequently accessed products
    */
   private async prewarmProductFeatures(products: string[]): Promise<void> {
-    const uncachedProducts = products.filter(
-      product => !this.featureCache.has(`features:${product}`)
+    const uncachedProducts = products?.filter(
+      product => !this?.featureCache?.has(`features:${product}`)
     );
     
-    if (uncachedProducts.length === 0) {
+    if (uncachedProducts?.length || 0 === 0) {
       return;
     }
     
     // Extract features in parallel
     await Promise.all(
-      uncachedProducts.map(product => this.getOptimizedFeatures(product))
+      uncachedProducts?.map(product => this.getOptimizedFeatures(product))
     );
   }
 
@@ -581,11 +581,11 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
    * Update ML model based on user feedback
    */
   async updateModelWithFeedback(feedback: FeedbackData): Promise<void> {
-    this.feedbackHistory.push(feedback);
+    this?.feedbackHistory?.push(feedback);
     
     // Store feedback in Redis for persistence
     try {
-      await this.cacheManager.set(
+      await this?.cacheManager?.set(
         `feedback:${Date.now()}`,
         feedback,
         { ttl: 86400 * 30 } // Keep for 30 days
@@ -595,7 +595,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     }
     
     // Trigger model update if enough feedback collected
-    if (this.feedbackHistory.length >= 100) {
+    if (this?.feedbackHistory?.length >= 100) {
       await this.trainModel();
     }
   }
@@ -604,23 +604,23 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
    * Train ML model with collected feedback
    */
   private async trainModel(): Promise<void> {
-    if (this.feedbackHistory.length < 50) {
+    if (this?.feedbackHistory?.length < 50) {
       return;
     }
     
     logger.info("Training ML model with feedback", "OPTIMIZED_MATCHING", {
-      feedbackCount: this.feedbackHistory.length,
+      feedbackCount: this?.feedbackHistory?.length,
     });
     
     // Simple gradient descent update
-    const learningRate = this.mlModel.learningRate;
-    const newWeights = { ...this.mlModel.weights };
+    const learningRate = this?.mlModel?.learningRate;
+    const newWeights = { ...this?.mlModel?.weights };
     
     for (const feedback of this.feedbackHistory) {
       const expectedScore = feedback.userFeedback === 'positive' ? 1 : 
                           feedback.userFeedback === 'negative' ? 0 : 0.5;
       
-      const actualScore = feedback.score;
+      const actualScore = feedback?.score;
       const error = expectedScore - actualScore;
       
       // Update weights based on error
@@ -631,16 +631,16 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     }
     
     // Normalize weights
-    const sum = Object.values(newWeights).reduce((a, b) => a + b, 0);
+    const sum = Object.values(newWeights).reduce((a: any, b: any) => a + b, 0);
     Object.keys(newWeights).forEach(key => {
       const k = key as keyof typeof newWeights;
       newWeights[k] = newWeights[k] / sum;
     });
     
-    this.mlModel.weights = newWeights;
+    this?.mlModel?.weights = newWeights;
     
     // Clear old feedback
-    this.feedbackHistory = this.feedbackHistory.slice(-100);
+    this.feedbackHistory = this?.feedbackHistory?.slice(-100);
     
     logger.info("ML model updated", "OPTIMIZED_MATCHING", { newWeights });
   }
@@ -698,8 +698,8 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
    */
   private applySpellCorrection(text: string): string {
     const words = text.toLowerCase().split(/\s+/);
-    const corrected = words.map(word => {
-      return this.spellCorrections.get(word) || word;
+    const corrected = words?.map(word => {
+      return this?.spellCorrections?.get(word) || word;
     });
     return corrected.join(' ');
   }
@@ -708,8 +708,8 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
    * Get phonetic encoding for fuzzy matching
    */
   private getPhoneticEncoding(text: string): string {
-    if (this.phoneticMemo.has(text)) {
-      return this.phoneticMemo.get(text)!;
+    if (this?.phoneticMemo?.has(text)) {
+      return this?.phoneticMemo?.get(text)!;
     }
     
     // Simple phonetic encoding (Soundex-like)
@@ -718,7 +718,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
       .replace(/[aeiou]/g, '')
       .replace(/(.)\1+/g, '$1');
     
-    this.phoneticMemo.set(text, encoded);
+    this?.phoneticMemo?.set(text, encoded);
     return encoded;
   }
 
@@ -731,7 +731,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     
     // Split on whitespace and filter
     const tokens = cleaned.split(/\s+/)
-      .filter(token => token.length > 1)
+      .filter(token => token?.length || 0 > 1)
       .map(token => this.stemWord(token));
     
     return tokens;
@@ -845,7 +845,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     brand?: string,
     size?: string
   ): string[] {
-    return tokens.filter(token => {
+    return tokens?.filter(token => {
       // Filter out brand and size words
       if (brand && brand.toLowerCase().includes(token)) {
         return false;
@@ -854,7 +854,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
         return false;
       }
       // Filter out common words
-      return token.length > 2;
+      return token?.length || 0 > 2;
     });
   }
 
@@ -867,9 +867,9 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     size?: string
   ): Record<string, number> {
     const features: Record<string, number> = {
-      textLength: text.length,
-      wordCount: tokens.length,
-      avgWordLength: tokens.reduce((sum, t) => sum + t.length, 0) / Math.max(tokens.length, 1),
+      textLength: text?.length || 0,
+      wordCount: tokens?.length || 0,
+      avgWordLength: tokens.reduce((sum: any, t: any) => sum + t?.length || 0, 0) / Math.max(tokens?.length || 0, 1),
       uniqueWords: new Set(tokens).size,
       numericCount: (text.match(/\d+/g) || []).length,
     };
@@ -887,17 +887,17 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
   private getCachedNGrams(text: string, n: number): string[] {
     const key = `${text}:${n}`;
     
-    if (this.ngramMemo.has(key)) {
-      return this.ngramMemo.get(key)!;
+    if (this?.ngramMemo?.has(key)) {
+      return this?.ngramMemo?.get(key)!;
     }
     
     const ngrams = this.generateNGrams(text, n);
-    this.ngramMemo.set(key, ngrams);
+    this?.ngramMemo?.set(key, ngrams);
     
     // Limit cache size
-    if (this.ngramMemo.size > 5000) {
-      const firstKey = this.ngramMemo.keys().next().value;
-      this.ngramMemo.delete(firstKey);
+    if (this?.ngramMemo?.size > 5000) {
+      const firstKey = this?.ngramMemo?.keys().next().value;
+      this?.ngramMemo?.delete(firstKey);
     }
     
     return ngrams;
@@ -907,13 +907,13 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
    * Optimized Levenshtein with early termination
    */
   private calculateOptimizedLevenshtein(s1: string, s2: string): number {
-    if (Math.abs(s1.length - s2.length) > Math.max(s1.length, s2.length) * 0.5) {
+    if (Math.abs(s1?.length || 0 - s2?.length || 0) > Math.max(s1?.length || 0, s2?.length || 0) * 0.5) {
       // Early termination if strings are too different in length
       return 0;
     }
     
     const distance = this.levenshteinDistance(s1, s2);
-    const maxLength = Math.max(s1.length, s2.length);
+    const maxLength = Math.max(s1?.length || 0, s2?.length || 0);
     return maxLength === 0 ? 1 : 1 - distance / maxLength;
   }
 
@@ -921,7 +921,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
    * Fast keyword similarity calculation
    */
   private calculateFastKeywordSimilarity(keywords1: string[], keywords2: string[]): number {
-    if (keywords1.length === 0 || keywords2.length === 0) {
+    if (keywords1?.length || 0 === 0 || keywords2?.length || 0 === 0) {
       return 0;
     }
     
@@ -958,8 +958,8 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
       return 1.0;
     }
     
-    const synonyms1 = this.categorySynonyms.get(cat1);
-    const synonyms2 = this.categorySynonyms.get(cat2);
+    const synonyms1 = this?.categorySynonyms?.get(cat1);
+    const synonyms2 = this?.categorySynonyms?.get(cat2);
     
     if (synonyms1?.has(cat2) || synonyms2?.has(cat1)) {
       return 0.8;
@@ -1049,12 +1049,12 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
    * Update performance metrics
    */
   private updatePerformanceMetrics(executionTime: number): void {
-    this.performanceMetrics.totalCalculations++;
-    this.performanceMetrics.avgCalculationTime = 
-      (this.performanceMetrics.avgCalculationTime * 
-       (this.performanceMetrics.totalCalculations - 1) + 
+    this?.performanceMetrics?.totalCalculations++;
+    this?.performanceMetrics?.avgCalculationTime = 
+      (this?.performanceMetrics?.avgCalculationTime * 
+       (this?.performanceMetrics?.totalCalculations - 1) + 
        executionTime) / 
-      this.performanceMetrics.totalCalculations;
+      this?.performanceMetrics?.totalCalculations;
   }
 
   /**
@@ -1072,7 +1072,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     }
     
     logger.info("Cache warming completed", "OPTIMIZED_MATCHING", {
-      warmedProducts: commonProducts.length,
+      warmedProducts: commonProducts?.length || 0,
     });
   }
 
@@ -1082,7 +1082,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
   private startModelTraining(): void {
     // Train model every hour if feedback available
     setInterval(() => {
-      if (this.feedbackHistory.length >= 50) {
+      if (this?.feedbackHistory?.length >= 50) {
         this.trainModel().catch(error => {
           logger.error("Model training failed", "OPTIMIZED_MATCHING", { error });
         });
@@ -1099,16 +1099,16 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     totalCalculations: number;
     cacheSize: number;
   } {
-    const totalRequests = this.performanceMetrics.cacheHits + this.performanceMetrics.cacheMisses;
+    const totalRequests = this?.performanceMetrics?.cacheHits + this?.performanceMetrics?.cacheMisses;
     const cacheHitRate = totalRequests > 0 
-      ? this.performanceMetrics.cacheHits / totalRequests 
+      ? this?.performanceMetrics?.cacheHits / totalRequests 
       : 0;
     
     return {
       cacheHitRate,
-      avgCalculationTime: this.performanceMetrics.avgCalculationTime,
-      totalCalculations: this.performanceMetrics.totalCalculations,
-      cacheSize: this.similarityCache.size,
+      avgCalculationTime: this?.performanceMetrics?.avgCalculationTime,
+      totalCalculations: this?.performanceMetrics?.totalCalculations,
+      cacheSize: this?.similarityCache?.size,
     };
   }
 
@@ -1116,16 +1116,16 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
    * Clear all caches
    */
   async clearCaches(): Promise<void> {
-    this.similarityCache.clear();
-    this.featureCache.clear();
-    this.scoreCache.clear();
-    this.levenshteinMemo.clear();
-    this.ngramMemo.clear();
-    this.phoneticMemo.clear();
+    this?.similarityCache?.clear();
+    this?.featureCache?.clear();
+    this?.scoreCache?.clear();
+    this?.levenshteinMemo?.clear();
+    this?.ngramMemo?.clear();
+    this?.phoneticMemo?.clear();
     
     // Clear Redis caches
     try {
-      await this.cacheManager.clearNamespace('similarity');
+      await this?.cacheManager?.clearNamespace('similarity');
     } catch (error) {
       logger.warn("Failed to clear Redis cache", "OPTIMIZED_MATCHING", { error });
     }

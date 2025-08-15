@@ -154,7 +154,7 @@ export function rateLimitMiddleware(
   const store = new Map<string, { count: number; resetTime: number }>();
 
   return async ({ ctx, next }: { ctx: { user?: { id?: string; role?: string; isAdmin?: boolean }; req?: Request }; next: () => Promise<unknown> }) => {
-    const user = ctx.user;
+    const user = ctx?.user;
     const ip = ctx.req?.ip || "unknown";
     const identifier = user?.id ? `user:${user.id}` : `ip:${ip}`;
     const now = Date.now();

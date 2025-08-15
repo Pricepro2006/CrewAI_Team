@@ -198,9 +198,9 @@ describe('Output Sanitizer XSS Protection', () => {
       const result = sanitizeJSONOutput(jsonWithXSS);
       
       expect(result.valid).toBe(true);
-      expect(result.parsed.message).not.toContain('<script>');
-      expect(result.parsed.data.html).not.toContain('onerror=');
-      expect(result.parsed.data.template).not.toContain('{{user}}');
+      expect(result?.parsed?.message).not.toContain('<script>');
+      expect(result?.parsed?.data.html).not.toContain('onerror=');
+      expect(result?.parsed?.data.template).not.toContain('{{user}}');
     });
 
     it('should handle invalid JSON gracefully', () => {

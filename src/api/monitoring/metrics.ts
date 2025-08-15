@@ -22,8 +22,8 @@ class MetricsCollector {
     labels?: Record<string, string>,
   ): void {
     const key = this.getKey(name, labels);
-    const current = this.counters.get(key) || 0;
-    this.counters.set(key, current + value);
+    const current = this?.counters?.get(key) || 0;
+    this?.counters?.set(key, current + value);
   }
 
   /**
@@ -31,7 +31,7 @@ class MetricsCollector {
    */
   gauge(name: string, value: number, labels?: Record<string, string>): void {
     const key = this.getKey(name, labels);
-    this.gauges.set(key, value);
+    this?.gauges?.set(key, value);
   }
 
   /**
@@ -43,9 +43,9 @@ class MetricsCollector {
     labels?: Record<string, string>,
   ): void {
     const key = this.getKey(name, labels);
-    const values = this.histograms.get(key) || [];
+    const values = this?.histograms?.get(key) || [];
     values.push(value);
-    this.histograms.set(key, values);
+    this?.histograms?.set(key, values);
   }
 
   /**
@@ -67,13 +67,13 @@ class MetricsCollector {
       counters: Object.fromEntries(this.counters),
       gauges: Object.fromEntries(this.gauges),
       histograms: Object.fromEntries(
-        Array.from(this.histograms.entries()).map(([key, values]) => [
+        Array.from(this?.histograms?.entries()).map(([key, values]) => [
           key,
           {
-            count: values.length,
+            count: values?.length || 0,
             min: Math.min(...values),
             max: Math.max(...values),
-            avg: values.reduce((a, b) => a + b, 0) / values.length,
+            avg: values.reduce((a: any, b: any) => a + b, 0) / values?.length || 0,
             p50: this.percentile(values, 0.5),
             p95: this.percentile(values, 0.95),
             p99: this.percentile(values, 0.99),
@@ -87,9 +87,9 @@ class MetricsCollector {
    * Reset all metrics
    */
   reset(): void {
-    this.counters.clear();
-    this.gauges.clear();
-    this.histograms.clear();
+    this?.counters?.clear();
+    this?.gauges?.clear();
+    this?.histograms?.clear();
   }
 
   private getKey(name: string, labels?: Record<string, string>): string {
@@ -104,9 +104,9 @@ class MetricsCollector {
   }
 
   private percentile(values: number[], p: number): number {
-    if (values.length === 0) return 0;
+    if (values?.length || 0 === 0) return 0;
     const sorted = values.slice().sort((a, b) => a - b);
-    const index = Math.ceil(sorted.length * p) - 1;
+    const index = Math.ceil(sorted?.length || 0 * p) - 1;
     return sorted[index] || 0;
   }
 }

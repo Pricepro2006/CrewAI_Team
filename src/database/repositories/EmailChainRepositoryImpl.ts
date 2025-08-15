@@ -74,9 +74,9 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
     if (entity.missing_stages !== undefined)
       row.missing_stages = JSON.stringify(entity.missing_stages);
     if (entity.start_time !== undefined)
-      row.start_time = entity.start_time.toISOString();
+      row.start_time = entity?.start_time?.toISOString();
     if (entity.end_time !== undefined)
-      row.end_time = entity.end_time.toISOString();
+      row.end_time = entity?.end_time?.toISOString();
     if (entity.duration_hours !== undefined)
       row.duration_hours = entity.duration_hours;
     if (entity.participants !== undefined)
@@ -95,7 +95,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
    * Find complete chains
    */
   async findCompleteChains(limit?: number): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       let query = `
         SELECT * FROM ${this.tableName}
         WHERE is_complete = 1
@@ -110,7 +110,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
 
       const stmt = db.prepare(query);
       const rows = stmt.all(...params);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -118,7 +118,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
    * Find incomplete chains
    */
   async findIncompleteChains(limit?: number): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       let query = `
         SELECT * FROM ${this.tableName}
         WHERE is_complete = 0
@@ -133,7 +133,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
 
       const stmt = db.prepare(query);
       const rows = stmt.all(...params);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -141,14 +141,14 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
    * Find chains by type
    */
   async findByType(type: ChainType): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE chain_type = ?
         ORDER BY created_at DESC
       `);
       const rows = stmt.all(type);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -159,14 +159,14 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
     minScore: number,
     maxScore: number,
   ): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE completeness_score BETWEEN ? AND ?
         ORDER BY completeness_score DESC
       `);
       const rows = stmt.all(minScore, maxScore);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -177,7 +177,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
     chainId: string,
     completeness: ChainCompleteness,
   ): Promise<void> {
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       const stmt = db.prepare(`
         UPDATE ${this.tableName}
         SET completeness_score = ?,
@@ -199,7 +199,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
    * Add email to chain
    */
   async addEmailToChain(chainId: string, emailId: string): Promise<void> {
-    await executeTransaction((db) => {
+    await executeTransaction((db: any) => {
       // Get current chain
       const getStmt = db.prepare(
         `SELECT * FROM ${this.tableName} WHERE chain_id = ?`,
@@ -222,7 +222,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
               updated_at = datetime('now')
           WHERE chain_id = ?
         `);
-        updateStmt.run(JSON.stringify(emailIds), emailIds.length, chainId);
+        updateStmt.run(JSON.stringify(emailIds), emailIds?.length || 0, chainId);
       }
     });
   }
@@ -231,7 +231,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
    * Remove email from chain
    */
   async removeEmailFromChain(chainId: string, emailId: string): Promise<void> {
-    await executeTransaction((db) => {
+    await executeTransaction((db: any) => {
       // Get current chain
       const getStmt = db.prepare(
         `SELECT * FROM ${this.tableName} WHERE chain_id = ?`,
@@ -246,9 +246,9 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
       const emailIds: string[] = (chain as any).email_ids
         ? JSON.parse((chain as any).email_ids)
         : [];
-      const filteredIds = emailIds.filter((id) => id !== emailId);
+      const filteredIds = emailIds?.filter((id: any) => id !== emailId);
 
-      if (filteredIds.length !== emailIds.length) {
+      if (filteredIds?.length || 0 !== emailIds?.length || 0) {
         const updateStmt = db.prepare(`
           UPDATE ${this.tableName}
           SET email_ids = ?,
@@ -258,7 +258,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
         `);
         updateStmt.run(
           JSON.stringify(filteredIds),
-          filteredIds.length,
+          filteredIds?.length || 0,
           chainId,
         );
       }
@@ -276,7 +276,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
     avgCompleteness: number;
     avgEmailCount: number;
   }> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       // Basic counts
       const statsStmt = db.prepare(`
         SELECT 
@@ -306,7 +306,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
         [ChainType.UNKNOWN]: 0,
       };
 
-      typeCounts.forEach((t) => {
+      typeCounts.forEach((t: any) => {
         if (t.chain_type in byType) {
           byType[t.chain_type as ChainType] = t.count;
         }
@@ -327,14 +327,14 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
    * Find chains with minimum email count
    */
   async findByMinEmailCount(minCount: number): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE email_count >= ?
         ORDER BY email_count DESC, created_at DESC
       `);
       const rows = stmt.all(minCount);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -345,14 +345,14 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
     minHours: number,
     maxHours: number,
   ): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE duration_hours BETWEEN ? AND ?
         ORDER BY duration_hours DESC
       `);
       const rows = stmt.all(minHours, maxHours);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -360,7 +360,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
    * Create or update chain
    */
   async upsert(chain: EmailChain): Promise<EmailChain> {
-    return executeTransaction((db) => {
+    return executeTransaction((db: any) => {
       // Check if chain exists
       const existsStmt = db.prepare(`
         SELECT 1 FROM ${this.tableName} WHERE chain_id = ?
@@ -371,12 +371,12 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
         // Update existing
         const row = this.mapEntityToRow(chain);
         const columns = Object.keys(row).filter(
-          (col) => col !== "id" && col !== "chain_id" && col !== "created_at",
+          (col: any) => col !== "id" && col !== "chain_id" && col !== "created_at",
         );
-        const values = columns.map((col) => row[col]);
+        const values = columns?.map((col: any) => row[col]);
         values.push(chain.chain_id);
 
-        const setClause = columns.map((col) => `${col} = ?`).join(", ");
+        const setClause = columns?.map((col: any) => `${col} = ?`).join(", ");
         const updateStmt = db.prepare(`
           UPDATE ${this.tableName}
           SET ${setClause}, updated_at = datetime('now')
@@ -395,15 +395,15 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
           "id",
           "chain_id",
           ...Object.keys(row).filter(
-            (col) => col !== "id" && col !== "chain_id",
+            (col: any) => col !== "id" && col !== "chain_id",
           ),
         ];
         const values = [
           id,
           chain.chain_id,
-          ...columns.slice(2).map((col) => row[col]),
+          ...columns.slice(2).map((col: any) => row[col]),
         ];
-        const placeholders = columns.map(() => "?").join(", ");
+        const placeholders = columns?.map(() => "?").join(", ");
 
         const insertStmt = db.prepare(`
           INSERT INTO ${this.tableName} (${columns.join(", ")}, created_at)
@@ -429,7 +429,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
    * Get chain email IDs
    */
   async getChainEmailIds(chainId: string): Promise<string[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(
         `SELECT email_ids FROM ${this.tableName} WHERE chain_id = ?`,
       );
@@ -449,14 +449,14 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
   async findChainsNeedingReanalysis(
     lastAnalyzedBefore: Date,
   ): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE last_analyzed IS NULL OR last_analyzed < ?
         ORDER BY completeness_score ASC, created_at ASC
       `);
       const rows = stmt.all(lastAnalyzedBefore.toISOString());
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -464,12 +464,12 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
    * Adapter method to match IRepository interface
    */
   async findAll(filter?: Partial<EmailChain>): Promise<EmailChain[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       let query = `SELECT * FROM ${this.tableName}`;
       const params: any[] = [];
 
       if (filter && Object.keys(filter).length > 0) {
-        const conditions = Object.keys(filter).map((key) => {
+        const conditions = Object.keys(filter).map((key: any) => {
           params.push(filter[key as keyof EmailChain]);
           return `${key} = ?`;
         });
@@ -480,7 +480,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
 
       const stmt = db.prepare(query);
       const rows = stmt.all(...params) as any[];
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -488,7 +488,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
    * Override methods to use connection pool
    */
   async findById(id: string): Promise<EmailChain | null> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(
         `SELECT * FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
       );
@@ -498,7 +498,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
   }
 
   async create(data: Omit<EmailChain, "id">): Promise<EmailChain> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const id = this.generateId();
       const chainData: EmailChain = {
         ...data,
@@ -508,8 +508,8 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
 
       const row = this.mapEntityToRow(chainData);
       const columns = Object.keys(row);
-      const values = columns.map((col) => row[col]);
-      const placeholders = columns.map(() => "?").join(", ");
+      const values = columns?.map((col: any) => row[col]);
+      const placeholders = columns?.map(() => "?").join(", ");
 
       const query = `INSERT INTO ${this.tableName} (id, ${columns.join(", ")}, created_at) VALUES (?, ${placeholders}, datetime('now'))`;
       const stmt = db.prepare(query);
@@ -526,18 +526,18 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
     id: string,
     data: Partial<Omit<EmailChain, "id" | "created_at">>,
   ): Promise<EmailChain | null> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const row = this.mapEntityToRow(data);
       const columns = Object.keys(row);
 
-      if (columns.length === 0) {
+      if (columns?.length || 0 === 0) {
         return this.findById(id);
       }
 
-      const values = columns.map((col) => row[col]);
+      const values = columns?.map((col: any) => row[col]);
       values.push(id);
 
-      const setClause = columns.map((col) => `${col} = ?`).join(", ");
+      const setClause = columns?.map((col: any) => `${col} = ?`).join(", ");
       const query = `UPDATE ${this.tableName} SET ${setClause}, updated_at = datetime('now') WHERE ${this.primaryKey} = ?`;
 
       const stmt = db.prepare(query);
@@ -556,12 +556,12 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
    * Count chains with optional filtering
    */
   async count(filter?: Partial<EmailChain>): Promise<number> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       let query = `SELECT COUNT(*) as count FROM ${this.tableName}`;
       const params: any[] = [];
 
       if (filter && Object.keys(filter).length > 0) {
-        const conditions = Object.keys(filter).map((key) => {
+        const conditions = Object.keys(filter).map((key: any) => {
           params.push(filter[key as keyof EmailChain]);
           return `${key} = ?`;
         });
@@ -586,7 +586,7 @@ export class EmailChainRepositoryImpl implements IEmailChainRepository {
    * Delete a chain
    */
   async delete(id: string): Promise<boolean> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(
         `DELETE FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
       );

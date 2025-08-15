@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
-import { logger } from "../../utils/logger";
-import { AppError, ErrorCode } from "../../utils/error-handling/server";
+import { logger } from "../../utils/logger.js";
+import { AppError, ErrorCode } from "../../utils/error-handling/server.js";
 
 /**
  * Wraps async route handlers to properly catch errors with enhanced error handling
@@ -34,14 +34,14 @@ export const enhancedAsyncHandler = (fn: RequestHandler): RequestHandler => {
       let processedError = error;
       if (error instanceof Error && !(error instanceof AppError)) {
         // Check for common error patterns
-        if (error.message.includes("ECONNREFUSED")) {
+        if (error?.message?.includes("ECONNREFUSED")) {
           processedError = new AppError(
             ErrorCode.SERVICE_UNAVAILABLE,
             "Service connection refused",
             503,
             { originalError: error.message },
           );
-        } else if (error.message.includes("ETIMEDOUT")) {
+        } else if (error?.message?.includes("ETIMEDOUT")) {
           processedError = new AppError(
             ErrorCode.SERVICE_UNAVAILABLE,
             "Service request timed out",

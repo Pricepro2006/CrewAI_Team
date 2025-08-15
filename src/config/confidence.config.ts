@@ -146,31 +146,31 @@ export function mergeConfidenceConfigs(
 export function validateConfidenceConfig(config: ConfidenceConfig): boolean {
   // Ensure all values are between 0 and 1
   const allValues = [
-    config.retrieval.minimum,
-    config.retrieval.preferred,
-    config.generation.acceptable,
-    config.generation.review,
-    config.overall.high,
-    config.overall.medium,
-    config.overall.low,
+    config?.retrieval?.minimum,
+    config?.retrieval?.preferred,
+    config?.generation?.acceptable,
+    config?.generation?.review,
+    config?.overall?.high,
+    config?.overall?.medium,
+    config?.overall?.low,
   ];
 
-  if (!allValues.every((v) => v >= 0 && v <= 1)) {
+  if (!allValues.every((v: any) => v >= 0 && v <= 1)) {
     return false;
   }
 
   // Ensure logical ordering
-  if (config.retrieval.minimum > config.retrieval.preferred) {
+  if (config?.retrieval?.minimum > config?.retrieval?.preferred) {
     return false;
   }
 
-  if (config.generation.review > config.generation.acceptable) {
+  if (config?.generation?.review > config?.generation?.acceptable) {
     return false;
   }
 
   if (
-    config.overall.low > config.overall.medium ||
-    config.overall.medium > config.overall.high
+    config?.overall?.low > config?.overall?.medium ||
+    config?.overall?.medium > config?.overall?.high
   ) {
     return false;
   }
@@ -188,10 +188,10 @@ export function getConfidenceConfigFromEnv(): Partial<ConfidenceConfig> {
   if (process.env.CONFIDENCE_RETRIEVAL_MIN || process.env.CONFIDENCE_RETRIEVAL_PREFERRED) {
     config.retrieval = {};
     if (process.env.CONFIDENCE_RETRIEVAL_MIN) {
-      config.retrieval.minimum = parseFloat(process.env.CONFIDENCE_RETRIEVAL_MIN);
+      config?.retrieval?.minimum = parseFloat(process.env.CONFIDENCE_RETRIEVAL_MIN);
     }
     if (process.env.CONFIDENCE_RETRIEVAL_PREFERRED) {
-      config.retrieval.preferred = parseFloat(process.env.CONFIDENCE_RETRIEVAL_PREFERRED);
+      config?.retrieval?.preferred = parseFloat(process.env.CONFIDENCE_RETRIEVAL_PREFERRED);
     }
   }
 
@@ -199,10 +199,10 @@ export function getConfidenceConfigFromEnv(): Partial<ConfidenceConfig> {
   if (process.env.CONFIDENCE_GENERATION_ACCEPTABLE || process.env.CONFIDENCE_GENERATION_REVIEW) {
     config.generation = {};
     if (process.env.CONFIDENCE_GENERATION_ACCEPTABLE) {
-      config.generation.acceptable = parseFloat(process.env.CONFIDENCE_GENERATION_ACCEPTABLE);
+      config?.generation?.acceptable = parseFloat(process.env.CONFIDENCE_GENERATION_ACCEPTABLE);
     }
     if (process.env.CONFIDENCE_GENERATION_REVIEW) {
-      config.generation.review = parseFloat(process.env.CONFIDENCE_GENERATION_REVIEW);
+      config?.generation?.review = parseFloat(process.env.CONFIDENCE_GENERATION_REVIEW);
     }
   }
 
@@ -210,13 +210,13 @@ export function getConfidenceConfigFromEnv(): Partial<ConfidenceConfig> {
   if (process.env.CONFIDENCE_OVERALL_HIGH || process.env.CONFIDENCE_OVERALL_MEDIUM || process.env.CONFIDENCE_OVERALL_LOW) {
     config.overall = {};
     if (process.env.CONFIDENCE_OVERALL_HIGH) {
-      config.overall.high = parseFloat(process.env.CONFIDENCE_OVERALL_HIGH);
+      config?.overall?.high = parseFloat(process.env.CONFIDENCE_OVERALL_HIGH);
     }
     if (process.env.CONFIDENCE_OVERALL_MEDIUM) {
-      config.overall.medium = parseFloat(process.env.CONFIDENCE_OVERALL_MEDIUM);
+      config?.overall?.medium = parseFloat(process.env.CONFIDENCE_OVERALL_MEDIUM);
     }
     if (process.env.CONFIDENCE_OVERALL_LOW) {
-      config.overall.low = parseFloat(process.env.CONFIDENCE_OVERALL_LOW);
+      config?.overall?.low = parseFloat(process.env.CONFIDENCE_OVERALL_LOW);
     }
   }
 

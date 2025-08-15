@@ -19,7 +19,7 @@ const Collapsible = React.forwardRef<HTMLDivElement, CollapsibleProps>(
 
     return (
       <div ref={ref} className={cn("space-y-2", className)} {...props}>
-        {React.Children.map(children, (child) => {
+        {React?.Children?.map(children, (child: any) => {
           if (React.isValidElement(child)) {
             if (child.type === CollapsibleTrigger) {
               return React.cloneElement(child, {

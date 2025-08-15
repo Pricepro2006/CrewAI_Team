@@ -46,7 +46,7 @@ export const WalmartLivePricing: React.FC = () => {
   const stores = useNearbyWalmartStores(selectedZip);
   const searchResults = useWalmartSearch(searchQuery, {
     location: { zipCode: selectedZip },
-    enabled: searchQuery.length > 2,
+    enabled: searchQuery?.length || 0 > 2,
     limit: 6
   });
   
@@ -125,7 +125,7 @@ export const WalmartLivePricing: React.FC = () => {
             <Input
               placeholder="ZIP Code"
               value={selectedZip}
-              onChange={(e) => setSelectedZip(e.target.value)}
+              onChange={(e: any) => setSelectedZip(e?.target?.value)}
               className="w-32"
             />
             <span className="text-sm text-gray-600">
@@ -133,10 +133,10 @@ export const WalmartLivePricing: React.FC = () => {
             </span>
           </div>
           
-          {stores.data && stores.data.stores.length > 0 && (
+          {stores.data && stores?.data?.stores?.length || 0 > 0 && (
             <div className="mt-4 space-y-2">
               <p className="text-sm font-medium">Nearby Stores:</p>
-              {stores.data.stores.map((store, idx) => (
+              {stores?.data?.stores?.map((store, idx) => (
                 <div key={idx} className="flex items-center gap-2 text-sm">
                   <Store className="h-4 w-4 text-gray-400" />
                   <span>{store.name}</span>
@@ -161,8 +161,8 @@ export const WalmartLivePricing: React.FC = () => {
             <Input
               placeholder="Search for products..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && setSearchQuery(e.currentTarget.value)}
+              onChange={(e: any) => setSearchQuery(e?.target?.value)}
+              onKeyPress={(e: any) => e.key === 'Enter' && setSearchQuery(e?.currentTarget?.value)}
             />
             <Button disabled={searchResults.isLoading}>
               {searchResults.isLoading ? (
@@ -175,7 +175,7 @@ export const WalmartLivePricing: React.FC = () => {
 
           {searchResults.data && (
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {searchResults.data.products.map((product) => (
+              {searchResults?.data?.products?.map((product: any) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -189,7 +189,7 @@ export const WalmartLivePricing: React.FC = () => {
       </Card>
 
       {/* Price Monitoring */}
-      {monitoredProducts.length > 0 && (
+      {monitoredProducts?.length || 0 > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -218,7 +218,7 @@ export const WalmartLivePricing: React.FC = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setMonitoredProducts(prev => prev.filter(id => id !== productId))}
+                    onClick={() => setMonitoredProducts(prev => prev?.filter(id => id !== productId))}
                   >
                     Stop Monitoring
                   </Button>
@@ -228,7 +228,7 @@ export const WalmartLivePricing: React.FC = () => {
 
             {priceMonitor.lastFetch && (
               <p className="text-sm text-gray-500 mt-4">
-                Last updated: {priceMonitor.lastFetch.toLocaleTimeString()}
+                Last updated: {priceMonitor?.lastFetch?.toLocaleTimeString()}
               </p>
             )}
           </CardContent>
@@ -236,7 +236,7 @@ export const WalmartLivePricing: React.FC = () => {
       )}
 
       {/* Price Alerts */}
-      {priceAlerts.length > 0 && (
+      {priceAlerts?.length || 0 > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -246,7 +246,7 @@ export const WalmartLivePricing: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {priceAlerts.map((alert, idx) => (
+              {priceAlerts?.map((alert, idx) => (
                 <Alert key={idx} variant={alert.type === 'decrease' ? 'default' : 'destructive'}>
                   <div className="flex items-center gap-2">
                     {alert.type === 'decrease' ? (
@@ -257,7 +257,7 @@ export const WalmartLivePricing: React.FC = () => {
                     <AlertDescription>
                       <span className="font-medium">Product {alert.productId}:</span> {alert.message}
                       <span className="text-xs text-gray-500 ml-2">
-                        {alert.timestamp.toLocaleTimeString()}
+                        {alert?.timestamp?.toLocaleTimeString()}
                       </span>
                     </AlertDescription>
                   </div>
@@ -289,20 +289,20 @@ const ProductCard: React.FC<{
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-green-600" />
-              <span className="text-xl font-bold">${individualPrice.data.price}</span>
-              {individualPrice.data.wasPrice && (
+              <span className="text-xl font-bold">${individualPrice?.data?.price}</span>
+              {individualPrice?.data?.wasPrice && (
                 <span className="text-sm line-through text-gray-400">
-                  ${individualPrice.data.wasPrice}
+                  ${individualPrice?.data?.wasPrice}
                 </span>
               )}
             </div>
-            <Badge variant={individualPrice.data.source === 'cache' ? 'secondary' : 'default'}>
-              {individualPrice.data.source}
+            <Badge variant={individualPrice?.data?.source === 'cache' ? 'secondary' : 'default'}>
+              {individualPrice?.data?.source}
             </Badge>
           </div>
         ) : product.livePrice ? (
           <div className="flex items-center gap-2">
-            <span className="text-xl font-bold">${product.livePrice.price}</span>
+            <span className="text-xl font-bold">${product?.livePrice?.price}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2">

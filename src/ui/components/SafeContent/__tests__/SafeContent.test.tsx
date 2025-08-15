@@ -27,7 +27,7 @@ vi.mock('dompurify', () => ({
       
       // Apply tag restrictions based on config
       if (config.FORBID_TAGS) {
-        config.FORBID_TAGS.forEach((tag: string) => {
+        config?.FORBID_TAGS?.forEach((tag: string) => {
           const regex = new RegExp(`<${tag}[^>]*>.*?</${tag}>`, 'gi');
           result = result.replace(regex, '');
         });
@@ -289,7 +289,7 @@ describe('useSanitize Hook', () => {
       }
     );
     
-    const firstResult = result.current;
+    const firstResult = result?.current;
     
     // Re-render with same props
     rerender({ content: '<p>Test</p>', level: 'strict' });

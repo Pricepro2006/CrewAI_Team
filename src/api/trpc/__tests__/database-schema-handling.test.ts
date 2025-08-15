@@ -221,7 +221,7 @@ describe('Database Schema Handling', () => {
       const health = errorHandler.getDatabaseHealth();
       
       expect(health.status).toBe('healthy');
-      expect(health.details.connected).toBe(true);
+      expect(health?.details?.connected).toBe(true);
     });
   });
 
@@ -340,7 +340,7 @@ describe('Database Schema Handling', () => {
       const result = await safeDb.select('test_table', ['id', 'name', 'missing_column']);
 
       expect(result.missingColumns).toContain('missing_column');
-      expect(result.warnings.length).toBeGreaterThan(0);
+      expect(result?.warnings?.length).toBeGreaterThan(0);
     });
 
     it('should handle constraint violations', async () => {
@@ -394,7 +394,7 @@ describe('Database Schema Handling', () => {
       const result = await safeDb.select('tasks', ['id', 'title', 'due_date']);
 
       expect(result.missingColumns).toContain('due_date');
-      expect(result.warnings.length).toBeGreaterThan(0);
+      expect(result?.warnings?.length).toBeGreaterThan(0);
     });
 
     it('should handle mixed existing and missing columns', async () => {
@@ -409,7 +409,7 @@ describe('Database Schema Handling', () => {
 
       expect(result.success).toBe(true);
       expect(result.skippedColumns).toContain('description');
-      expect(result.warnings.length).toBeGreaterThan(0);
+      expect(result?.warnings?.length).toBeGreaterThan(0);
 
       // Verify only valid columns were inserted
       const selectResult = await safeDb.select('test_table', ['name', 'email'], 'id = ?', ['mixed-test']);

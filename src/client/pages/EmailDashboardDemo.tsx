@@ -9,7 +9,7 @@ import type {
   EmailRecord,
   EmailStatus,
   WorkflowState,
-} from "../../types/email-dashboard.interfaces.js";
+} from "../../types/email-dashboard?.interfaces.js";
 
 // Sample email data matching the screenshot
 const generateSampleEmails = (): EmailRecord[] => {
@@ -156,7 +156,7 @@ export function EmailDashboardDemo() {
   const emails: EmailRecord[] = React.useMemo(() => {
     if (!tableData?.data?.emails) return [];
 
-    return tableData.data.emails.map((email: any) => ({
+    return tableData?.data?.emails?.map((email: any) => ({
       id: email.id,
       email_alias: email.email_alias,
       requested_by: email.requested_by || "Unknown",
@@ -186,7 +186,7 @@ export function EmailDashboardDemo() {
       // Clear success message after 3 seconds
       setTimeout(() => setShowSuccessMessage(null), 3000);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Assignment failed:", error);
       // Error is handled in the error display logic below
     },
@@ -255,7 +255,7 @@ export function EmailDashboardDemo() {
 
   // Manual retry function
   const handleRetry = useCallback(async () => {
-    setRetryCount((prev) => prev + 1);
+    setRetryCount((prev: any) => prev + 1);
     try {
       await refetch();
       setShowSuccessMessage("Data refreshed successfully!");
@@ -378,7 +378,7 @@ export function EmailDashboardDemo() {
               {loading ? (
                 <div className="h-8 w-8 bg-muted animate-pulse rounded"></div>
               ) : (
-                emails.filter((e) => e.status === "red").length
+                emails?.filter((e: any) => e.status === "red").length
               )}
             </div>
             <div className="text-sm text-muted-foreground">Critical</div>
@@ -388,7 +388,7 @@ export function EmailDashboardDemo() {
               {loading ? (
                 <div className="h-8 w-8 bg-muted animate-pulse rounded"></div>
               ) : (
-                emails.filter((e) => e.status === "yellow").length
+                emails?.filter((e: any) => e.status === "yellow").length
               )}
             </div>
             <div className="text-sm text-muted-foreground">In Progress</div>
@@ -398,7 +398,7 @@ export function EmailDashboardDemo() {
               {loading ? (
                 <div className="h-8 w-8 bg-muted animate-pulse rounded"></div>
               ) : (
-                emails.filter((e) => e.status === "green").length
+                emails?.filter((e: any) => e.status === "green").length
               )}
             </div>
             <div className="text-sm text-muted-foreground">Completed</div>
@@ -408,7 +408,7 @@ export function EmailDashboardDemo() {
               {loading ? (
                 <div className="h-8 w-8 bg-muted animate-pulse rounded"></div>
               ) : (
-                emails.filter((e) => !e.assignedTo).length
+                emails?.filter((e: any) => !e.assignedTo).length
               )}
             </div>
             <div className="text-sm text-muted-foreground">Unassigned</div>

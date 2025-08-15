@@ -66,8 +66,8 @@ export class HealthMonitor extends EventEmitter {
     this.setupDefaultAlertRules();
     
     logger.info('Health Monitor initialized', 'HEALTH_MONITOR', {
-      alertRules: this.alertRules.size,
-      healthCheckInterval: this.config.monitoring.healthCheckInterval
+      alertRules: this?.alertRules?.size,
+      healthCheckInterval: this?.config?.monitoring.healthCheckInterval
     });
   }
 
@@ -83,7 +83,7 @@ export class HealthMonitor extends EventEmitter {
     // Start health check interval
     this.healthCheckInterval = setInterval(() => {
       this.performHealthCheck();
-    }, this.config.monitoring.healthCheckInterval);
+    }, this?.config?.monitoring.healthCheckInterval);
 
     // Start metrics collection
     this.metricsCollectionInterval = setInterval(() => {
@@ -147,7 +147,7 @@ export class HealthMonitor extends EventEmitter {
       this.lastHealthCheck = timestamp;
       
       logger.debug('Health check completed', 'HEALTH_MONITOR', {
-        resultCount: results.length,
+        resultCount: results?.length || 0,
         overallHealth: this.calculateOverallHealth(results)
       });
 
@@ -173,7 +173,7 @@ export class HealthMonitor extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const status = this.nlpService.getStatus();
+      const status = this?.nlpService?.getStatus();
       const responseTime = Date.now() - startTime;
       
       return {
@@ -207,19 +207,19 @@ export class HealthMonitor extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const queueStatus = this.nlpService.getQueueStatus();
+      const queueStatus = this?.nlpService?.getQueueStatus();
       const responseTime = Date.now() - startTime;
       
       // Determine queue health based on metrics
       let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
       let message = 'Queue is healthy';
       
-      if (queueStatus.queueSize >= this.config.monitoring.alertThresholds.queueSize) {
+      if (queueStatus.queueSize >= this?.config?.monitoring.alertThresholds.queueSize) {
         status = 'degraded';
         message = `Queue size high: ${queueStatus.queueSize}`;
       }
       
-      if (queueStatus.queueSize >= this.config.monitoring.alertThresholds.queueSize * 1.5) {
+      if (queueStatus.queueSize >= this?.config?.monitoring.alertThresholds.queueSize * 1.5) {
         status = 'unhealthy';
         message = `Queue size critical: ${queueStatus.queueSize}`;
       }
@@ -253,13 +253,13 @@ export class HealthMonitor extends EventEmitter {
    */
   private async checkDependencies(): Promise<HealthCheckResult[]> {
     const results: HealthCheckResult[] = [];
-    const status = this.nlpService.getStatus();
+    const status = this?.nlpService?.getStatus();
     
     // Check Ollama
     results.push({
       component: 'ollama',
-      status: status.dependencies.ollama === 'healthy' ? 'healthy' : 'unhealthy',
-      message: `Ollama status: ${status.dependencies.ollama}`,
+      status: status?.dependencies?.ollama === 'healthy' ? 'healthy' : 'unhealthy',
+      message: `Ollama status: ${status?.dependencies?.ollama}`,
       timestamp: Date.now(),
       metadata: {
         lastCheck: status.lastHealthCheck
@@ -269,8 +269,8 @@ export class HealthMonitor extends EventEmitter {
     // Check Redis
     results.push({
       component: 'redis',
-      status: status.dependencies.redis === 'healthy' ? 'healthy' : 'unhealthy',
-      message: `Redis status: ${status.dependencies.redis}`,
+      status: status?.dependencies?.redis === 'healthy' ? 'healthy' : 'unhealthy',
+      message: `Redis status: ${status?.dependencies?.redis}`,
       timestamp: Date.now(),
       metadata: {
         lastCheck: status.lastHealthCheck
@@ -287,20 +287,20 @@ export class HealthMonitor extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      const metrics = this.nlpService.getMetrics();
+      const metrics = this?.nlpService?.getMetrics();
       const responseTime = Date.now() - startTime;
       
-      const memoryPercentage = (metrics.resources.memory.used / metrics.resources.memory.total) * 100;
+      const memoryPercentage = (metrics?.resources?.memory.used / metrics?.resources?.memory.total) * 100;
       
       let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
       let message = 'Resource usage normal';
       
-      if (memoryPercentage >= this.config.monitoring.alertThresholds.memoryUsage) {
+      if (memoryPercentage >= this?.config?.monitoring.alertThresholds.memoryUsage) {
         status = 'degraded';
         message = `Memory usage high: ${memoryPercentage.toFixed(1)}%`;
       }
       
-      if (memoryPercentage >= this.config.monitoring.alertThresholds.memoryUsage * 1.2) {
+      if (memoryPercentage >= this?.config?.monitoring.alertThresholds.memoryUsage * 1.2) {
         status = 'unhealthy';
         message = `Memory usage critical: ${memoryPercentage.toFixed(1)}%`;
       }
@@ -312,10 +312,10 @@ export class HealthMonitor extends EventEmitter {
         timestamp: Date.now(),
         responseTime,
         metadata: {
-          memoryUsed: metrics.resources.memory.used,
-          memoryTotal: metrics.resources.memory.total,
+          memoryUsed: metrics?.resources?.memory.used,
+          memoryTotal: metrics?.resources?.memory.total,
           memoryPercentage,
-          cpuUsage: metrics.resources.cpu.usage
+          cpuUsage: metrics?.resources?.cpu.usage
         }
       };
     } catch (error) {
@@ -334,11 +334,11 @@ export class HealthMonitor extends EventEmitter {
    */
   private async collectAndAnalyzeMetrics(): Promise<void> {
     try {
-      const metrics = this.nlpService.getMetrics();
+      const metrics = this?.nlpService?.getMetrics();
       const timestamp = Date.now();
       
       // Check each alert rule
-      for (const rule of this.alertRules.values()) {
+      for (const rule of this?.alertRules?.values()) {
         if (!rule.enabled) continue;
         
         const value = this.extractMetricValue(metrics, rule.component, rule.metric);
@@ -365,35 +365,35 @@ export class HealthMonitor extends EventEmitter {
       case 'queue':
         switch (metric) {
           case 'size':
-            return metrics.queue.size;
+            return metrics?.queue?.size;
           case 'processing':
-            return metrics.queue.processing;
+            return metrics?.queue?.processing;
           case 'averageWaitTime':
-            return metrics.queue.averageWaitTime;
+            return metrics?.queue?.averageWaitTime;
           case 'averageProcessingTime':
-            return metrics.queue.averageProcessingTime;
+            return metrics?.queue?.averageProcessingTime;
           case 'throughput':
-            return metrics.queue.throughput;
+            return metrics?.queue?.throughput;
         }
         break;
       
       case 'requests':
         switch (metric) {
           case 'failed':
-            return metrics.requests.failed;
+            return metrics?.requests?.failed;
           case 'rate':
-            return metrics.requests.rate;
+            return metrics?.requests?.rate;
           case 'errorRate':
-            return metrics.requests.total > 0 ? metrics.requests.failed / metrics.requests.total : 0;
+            return metrics?.requests?.total > 0 ? metrics?.requests?.failed / metrics?.requests?.total : 0;
         }
         break;
         
       case 'resources':
         switch (metric) {
           case 'memoryUsage':
-            return (metrics.resources.memory.used / metrics.resources.memory.total) * 100;
+            return (metrics?.resources?.memory.used / metrics?.resources?.memory.total) * 100;
           case 'cpuUsage':
-            return metrics.resources.cpu.usage;
+            return metrics?.resources?.cpu.usage;
         }
         break;
     }
@@ -452,13 +452,13 @@ export class HealthMonitor extends EventEmitter {
    */
   private triggerAlert(alert: Alert): void {
     // Update rule last triggered time
-    const rule = this.alertRules.get(alert.ruleId);
+    const rule = this?.alertRules?.get(alert.ruleId);
     if (rule) {
       rule.lastTriggered = alert.timestamp;
     }
     
     // Store active alert
-    this.activeAlerts.set(alert.id, alert);
+    this?.activeAlerts?.set(alert.id, alert);
     
     // Emit alert event
     this.emit('alert', alert);
@@ -490,11 +490,11 @@ export class HealthMonitor extends EventEmitter {
    * Store health history
    */
   private storeHealthHistory(results: HealthCheckResult[]): void {
-    this.healthHistory.push(...results);
+    this?.healthHistory?.push(...results);
     
     // Keep only recent history
-    if (this.healthHistory.length > this.maxHistorySize) {
-      this.healthHistory = this.healthHistory.slice(-this.maxHistorySize);
+    if (this?.healthHistory?.length > this.maxHistorySize) {
+      this.healthHistory = this?.healthHistory?.slice(-this.maxHistorySize);
     }
   }
 
@@ -506,7 +506,7 @@ export class HealthMonitor extends EventEmitter {
       {
         component: 'queue',
         metric: 'size',
-        threshold: this.config.monitoring.alertThresholds.queueSize,
+        threshold: this?.config?.monitoring.alertThresholds.queueSize,
         operator: 'gte',
         severity: 'medium',
         enabled: true,
@@ -515,7 +515,7 @@ export class HealthMonitor extends EventEmitter {
       {
         component: 'queue',
         metric: 'averageProcessingTime',
-        threshold: this.config.monitoring.alertThresholds.processingTime,
+        threshold: this?.config?.monitoring.alertThresholds.processingTime,
         operator: 'gte',
         severity: 'medium',
         enabled: true,
@@ -524,7 +524,7 @@ export class HealthMonitor extends EventEmitter {
       {
         component: 'requests',
         metric: 'errorRate',
-        threshold: this.config.monitoring.alertThresholds.errorRate,
+        threshold: this?.config?.monitoring.alertThresholds.errorRate,
         operator: 'gte',
         severity: 'high',
         enabled: true,
@@ -533,7 +533,7 @@ export class HealthMonitor extends EventEmitter {
       {
         component: 'resources',
         metric: 'memoryUsage',
-        threshold: this.config.monitoring.alertThresholds.memoryUsage,
+        threshold: this?.config?.monitoring.alertThresholds.memoryUsage,
         operator: 'gte',
         severity: 'high',
         enabled: true,
@@ -543,7 +543,7 @@ export class HealthMonitor extends EventEmitter {
     
     defaultRules.forEach(rule => {
       const id = `default-${rule.component}-${rule.metric}`;
-      this.alertRules.set(id, { ...rule, id });
+      this?.alertRules?.set(id, { ...rule, id });
     });
   }
 
@@ -557,15 +557,15 @@ export class HealthMonitor extends EventEmitter {
     activeAlerts: Alert[];
     alertRules: AlertRule[];
   } {
-    const recentResults = this.healthHistory.slice(-10); // Last 10 results
+    const recentResults = this?.healthHistory?.slice(-10); // Last 10 results
     const componentResults = this.getLatestResultsByComponent(recentResults);
     
     return {
       lastCheck: this.lastHealthCheck,
       overallHealth: this.calculateOverallHealth(componentResults),
       components: componentResults,
-      activeAlerts: Array.from(this.activeAlerts.values()),
-      alertRules: Array.from(this.alertRules.values())
+      activeAlerts: Array.from(this?.activeAlerts?.values()),
+      alertRules: Array.from(this?.alertRules?.values())
     };
   }
 
@@ -589,7 +589,7 @@ export class HealthMonitor extends EventEmitter {
    * Acknowledge alert
    */
   acknowledgeAlert(alertId: string): boolean {
-    const alert = this.activeAlerts.get(alertId);
+    const alert = this?.activeAlerts?.get(alertId);
     if (!alert) return false;
     
     alert.acknowledged = true;
@@ -608,10 +608,10 @@ export class HealthMonitor extends EventEmitter {
    * Clear alert
    */
   clearAlert(alertId: string): boolean {
-    const alert = this.activeAlerts.get(alertId);
+    const alert = this?.activeAlerts?.get(alertId);
     if (!alert) return false;
     
-    this.activeAlerts.delete(alertId);
+    this?.activeAlerts?.delete(alertId);
     this.emit('alertCleared', alert);
     
     logger.info('Alert cleared', 'HEALTH_MONITOR', {
@@ -628,7 +628,7 @@ export class HealthMonitor extends EventEmitter {
    */
   addAlertRule(rule: Omit<AlertRule, 'id'>): string {
     const id = `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    this.alertRules.set(id, { ...rule, id });
+    this?.alertRules?.set(id, { ...rule, id });
     
     logger.info('Alert rule added', 'HEALTH_MONITOR', {
       id,
@@ -644,7 +644,7 @@ export class HealthMonitor extends EventEmitter {
    * Remove alert rule
    */
   removeAlertRule(ruleId: string): boolean {
-    const removed = this.alertRules.delete(ruleId);
+    const removed = this?.alertRules?.delete(ruleId);
     
     if (removed) {
       logger.info('Alert rule removed', 'HEALTH_MONITOR', { ruleId });
@@ -657,7 +657,7 @@ export class HealthMonitor extends EventEmitter {
    * Update alert rule
    */
   updateAlertRule(ruleId: string, updates: Partial<Omit<AlertRule, 'id'>>): boolean {
-    const rule = this.alertRules.get(ruleId);
+    const rule = this?.alertRules?.get(ruleId);
     if (!rule) return false;
     
     Object.assign(rule, updates);

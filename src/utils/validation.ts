@@ -74,7 +74,7 @@ export class OptimizedValidator {
     items: unknown[]
   ): Promise<Array<{ success: true; data: T; index: number } | { success: false; error: string; index: number }>> {
     const results = await Promise.all(
-      items.map(async (item, index) => {
+      items?.map(async (item, index) => {
         const result = await this.validateWithCache(schema, item, `batch_${index}_${Date.now()}`);
         return { ...result, index };
       })
@@ -100,7 +100,7 @@ export class OptimizedValidator {
 
   private simpleHash(str: string): string {
     let hash = 0;
-    for (let i = 0; i < str.length; i++) {
+    for (let i = 0; i < str?.length || 0; i++) {
       const char = str.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32-bit integer
@@ -132,7 +132,7 @@ export class OptimizedValidator {
 
   private formatZodError(error: z.ZodError): string {
     return error.errors
-      .map(e => `${e.path.join('.')}: ${e.message}`)
+      .map(e => `${e?.path?.join('.')}: ${e.message}`)
       .join('; ');
   }
 
@@ -258,7 +258,7 @@ export class OptimizedSanitizer {
   ): T[] {
     return items
       .map(sanitizer)
-      .filter((item): item is T => item !== null);
+      .filter((item: any): item is T => item !== null);
   }
 }
 
@@ -359,7 +359,7 @@ function sanitizeObjectInputs(obj: any): any {
   }
   
   if (Array.isArray(obj)) {
-    return obj.map(sanitizeObjectInputs);
+    return obj?.map(sanitizeObjectInputs);
   }
   
   const sanitized: any = {};
@@ -396,17 +396,17 @@ export class RequestValidator {
     const windowStart = now - windowMs;
     
     // Clean expired entries
-    const entries = Array.from(this.requestCounts.entries());
+    const entries = Array.from(this?.requestCounts?.entries());
     for (const [key, value] of entries) {
       if (value.resetTime < now) {
-        this.requestCounts.delete(key);
+        this?.requestCounts?.delete(key);
       }
     }
     
-    const existing = this.requestCounts.get(identifier);
+    const existing = this?.requestCounts?.get(identifier);
     
     if (!existing) {
-      this.requestCounts.set(identifier, { count: 1, resetTime: now + windowMs });
+      this?.requestCounts?.set(identifier, { count: 1, resetTime: now + windowMs });
       return true;
     }
     
@@ -422,7 +422,7 @@ export class RequestValidator {
    * Get current request count for identifier
    */
   static getRequestCount(identifier: string): number {
-    const existing = this.requestCounts.get(identifier);
+    const existing = this?.requestCounts?.get(identifier);
     return existing?.count || 0;
   }
   
@@ -430,7 +430,7 @@ export class RequestValidator {
    * Clear request counts
    */
   static clearCounts(): void {
-    this.requestCounts.clear();
+    this?.requestCounts?.clear();
   }
 }
 
@@ -449,7 +449,7 @@ export class ValidationErrorFormatter {
     const fields: Record<string, string[]> = {};
     
     for (const issue of error.issues) {
-      const path = issue.path.join('.');
+      const path = issue?.path?.join('.');
       if (!fields[path]) {
         fields[path] = [];
       }
@@ -497,7 +497,7 @@ export class ValidationPerformanceMonitor {
     success: boolean,
     fromCache: boolean
   ): void {
-    const existing = this.metrics.get(schemaType) || {
+    const existing = this?.metrics?.get(schemaType) || {
       totalValidations: 0,
       averageTime: 0,
       cacheHitRate: 0,
@@ -509,7 +509,7 @@ export class ValidationPerformanceMonitor {
     const newCacheHitRate = (existing.cacheHitRate * existing.totalValidations + (fromCache ? 1 : 0)) / newTotal;
     const newErrorRate = (existing.errorRate * existing.totalValidations + (success ? 0 : 1)) / newTotal;
     
-    this.metrics.set(schemaType, {
+    this?.metrics?.set(schemaType, {
       totalValidations: newTotal,
       averageTime: newAvgTime,
       cacheHitRate: newCacheHitRate,
@@ -528,7 +528,7 @@ export class ValidationPerformanceMonitor {
    * Clear metrics
    */
   static clearMetrics(): void {
-    this.metrics.clear();
+    this?.metrics?.clear();
   }
 }
 

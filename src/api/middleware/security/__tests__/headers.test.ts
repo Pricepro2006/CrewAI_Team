@@ -54,28 +54,28 @@ describe("Security Headers Middleware", () => {
       process.env.NODE_ENV = "development";
       const config = getSecurityHeadersConfig();
 
-      expect(config.cors.origins).toContain("http://localhost:3000");
-      expect(config.cors.credentials).toBe(true);
-      expect(config.csp.scriptSrc).toContain("'unsafe-inline'");
-      expect(config.hsts.maxAge).toBe(0);
+      expect(config?.cors?.origins).toContain("http://localhost:3000");
+      expect(config?.cors?.credentials).toBe(true);
+      expect(config?.csp?.scriptSrc).toContain("'unsafe-inline'");
+      expect(config?.hsts?.maxAge).toBe(0);
     });
 
     test("should return secure configuration for production", () => {
       process.env.NODE_ENV = "production";
       const config = getSecurityHeadersConfig();
 
-      expect(config.csp.scriptSrc).not.toContain("'unsafe-inline'");
-      expect(config.hsts.maxAge).toBe(31536000);
-      expect(config.hsts.preload).toBe(true);
+      expect(config?.csp?.scriptSrc).not.toContain("'unsafe-inline'");
+      expect(config?.hsts?.maxAge).toBe(31536000);
+      expect(config?.hsts?.preload).toBe(true);
     });
 
     test("should use environment variables for origins", () => {
       process.env.ALLOWED_ORIGINS =
-        "https://app.example.com,https://api.example.com";
+        "https://app.example?.com,https://api?.example?.com";
       const config = getSecurityHeadersConfig();
 
-      expect(config.cors.origins).toContain("https://app.example.com");
-      expect(config.cors.origins).toContain("https://api.example.com");
+      expect(config?.cors?.origins).toContain("https://app.example?.com");
+      expect(config?.cors?.origins).toContain("https://api?.example?.com");
     });
   });
 

@@ -65,7 +65,7 @@ export function AssignmentDropdown({
     lg: "h-11 text-base",
   };
 
-  const currentMember = teamMembers.find((m) => m.id === selectedMember);
+  const currentMember = teamMembers.find((m: any) => m.id === selectedMember);
 
   return (
     <Select value={selectedMember} onValueChange={handleAssign}>
@@ -96,7 +96,7 @@ export function AssignmentDropdown({
             <span>Unassigned</span>
           </div>
         </SelectItem>
-        {teamMembers.map((member) => (
+        {teamMembers?.map((member: any) => (
           <SelectItem key={member.id} value={member.id}>
             <div className="flex items-center gap-2">
               {member.avatar ? (
@@ -110,7 +110,7 @@ export function AssignmentDropdown({
                   <span className="text-xs font-medium">
                     {member.name
                       .split(" ")
-                      .map((n) => n[0])
+                      .map((n: any) => n[0])
                       .join("")}
                   </span>
                 </div>

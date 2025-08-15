@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('UserService JWT Security', () => {
-  const originalEnv = process.env;
+  const originalEnv = process?.env;
   
   beforeEach(() => {
     // Reset modules to ensure clean state

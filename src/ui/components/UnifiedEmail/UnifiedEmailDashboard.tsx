@@ -28,7 +28,7 @@ import type {
   WorkflowState,
   EmailPriority,
   EmailStatus,
-} from "../../../types/unified-email.types.js";
+} from "../../../types/unified-email?.types.js";
 import "./UnifiedEmailDashboard.css";
 
 interface UnifiedEmailDashboardProps {
@@ -83,7 +83,7 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
   const [showSettings, setShowSettings] = useState(false);
 
   // Fetch unified email data with all enrichments
-  const { data: emailData, refetch: refetchEmails } = api.emails.getTableData.useQuery({
+  const { data: emailData, refetch: refetchEmails } = api?.emails?.getTableData.useQuery({
     page: 1,
     pageSize: 50,
     sortBy: "received_date",
@@ -94,15 +94,15 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
       workflowState: filters.workflowStates as any[],
       priority: filters.priorities as any[],
       dateRange: filters.dateRange?.start && filters.dateRange?.end ? {
-        start: filters.dateRange.start.toISOString(),
-        end: filters.dateRange.end.toISOString(),
+        start: filters?.dateRange?.start.toISOString(),
+        end: filters?.dateRange?.end.toISOString(),
       } : undefined,
     },
     search: filters.search,
   });
 
   // Analytics data with workflow metrics
-  const { data: analytics, refetch: refetchAnalytics } = api.emails.getAnalytics.useQuery({
+  const { data: analytics, refetch: refetchAnalytics } = api?.emails?.getAnalytics.useQuery({
     refreshKey: Date.now(),
   });
 
@@ -114,7 +114,7 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
     onDisconnect: () => {
       console.log("WebSocket disconnected");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("WebSocket error:", error);
     },
   });
@@ -249,9 +249,9 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
         <div className="unified-dashboard__alert unified-dashboard__alert--critical">
           <ExclamationTriangleIcon className="unified-dashboard__alert-icon" />
           <span>
-            Critical: Only {metrics.workflowCompletion.toFixed(1)}% of workflows
+            Critical: Only {metrics?.workflowCompletion?.toFixed(1)}% of workflows
             have complete chains. This impacts visibility and tracking across{" "}
-            {metrics.totalEmails.toLocaleString()} emails.
+            {metrics?.totalEmails?.toLocaleString()} emails.
           </span>
         </div>
       )}
@@ -266,10 +266,10 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
         {viewMode === "list" && (
           <EmailListView
             emails={Array.isArray(emailData?.data?.emails) 
-              ? emailData.data.emails.map(convertToUnifiedEmailData) 
+              ? emailData?.data?.emails?.map(convertToUnifiedEmailData) 
               : []
             }
-            onEmailSelect={(email) => setSelectedEmails([email.id])}
+            onEmailSelect={(email: any) => setSelectedEmails([email.id])}
             selectedEmailId={selectedEmails[0]}
           />
         )}
@@ -286,7 +286,7 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
           <div className="workflow-view">
             <h2>Workflow Tracking</h2>
             <EmailListView
-              emails={(Array.isArray(emailData?.data?.emails) ? emailData.data.emails : [])
+              emails={(Array.isArray(emailData?.data?.emails) ? emailData?.data?.emails : [])
                 .filter((e: any) => e.workflow_state === "IN_PROGRESS")
                 .map(convertToUnifiedEmailData)
               }

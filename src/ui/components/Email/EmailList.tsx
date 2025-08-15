@@ -129,8 +129,8 @@ const EmailRow: React.FC<EmailRowProps> = ({
 
     if (email.analysis?.entities_po_numbers) {
       try {
-        const poNumbers = JSON.parse(email.analysis.entities_po_numbers);
-        if (poNumbers.length > 0) {
+        const poNumbers = JSON.parse(email?.analysis?.entities_po_numbers);
+        if (poNumbers?.length || 0 > 0) {
           entities.push({
             type: "PO",
             value: poNumbers[0].value || poNumbers[0],
@@ -143,8 +143,8 @@ const EmailRow: React.FC<EmailRowProps> = ({
 
     if (email.analysis?.entities_quote_numbers) {
       try {
-        const quoteNumbers = JSON.parse(email.analysis.entities_quote_numbers);
-        if (quoteNumbers.length > 0) {
+        const quoteNumbers = JSON.parse(email?.analysis?.entities_quote_numbers);
+        if (quoteNumbers?.length || 0 > 0) {
           entities.push({
             type: "Quote",
             value: quoteNumbers[0].value || quoteNumbers[0],
@@ -157,8 +157,8 @@ const EmailRow: React.FC<EmailRowProps> = ({
 
     if (email.analysis?.entities_case_numbers) {
       try {
-        const caseNumbers = JSON.parse(email.analysis.entities_case_numbers);
-        if (caseNumbers.length > 0) {
+        const caseNumbers = JSON.parse(email?.analysis?.entities_case_numbers);
+        if (caseNumbers?.length || 0 > 0) {
           entities.push({
             type: "Case",
             value: caseNumbers[0].value || caseNumbers[0],
@@ -183,9 +183,9 @@ const EmailRow: React.FC<EmailRowProps> = ({
           <input
             type="checkbox"
             checked={selected}
-            onChange={(e) => {
+            onChange={(e: any) => {
               e.stopPropagation();
-              onSelect(e.target.checked);
+              onSelect(e?.target?.checked);
             }}
             className="email-list__checkbox"
           />
@@ -196,8 +196,8 @@ const EmailRow: React.FC<EmailRowProps> = ({
             <div className="email-list__row-sender">
               <UserIcon className="email-list__row-sender-icon" />
               <span className="email-list__row-sender-name">
-                {email.from.emailAddress.name ||
-                  email.from.emailAddress.address}
+                {email?.from?.emailAddress.name ||
+                  email?.from?.emailAddress.address}
               </span>
               {email.hasAttachments && (
                 <PaperClipIcon className="email-list__row-attachment-icon" />
@@ -235,38 +235,38 @@ const EmailRow: React.FC<EmailRowProps> = ({
           <div className="email-list__row-tags">
             {email.analysis?.quick_priority && (
               <div
-                className={`email-list__tag email-list__tag--priority ${getPriorityColor(email.analysis.quick_priority)}`}
+                className={`email-list__tag email-list__tag--priority ${getPriorityColor(email?.analysis?.quick_priority)}`}
               >
-                {email.analysis.quick_priority}
+                {email?.analysis?.quick_priority}
               </div>
             )}
 
             {email.analysis?.deep_workflow_primary && (
               <div
-                className={`email-list__tag email-list__tag--workflow ${getWorkflowColor(email.analysis.deep_workflow_primary)}`}
+                className={`email-list__tag email-list__tag--workflow ${getWorkflowColor(email?.analysis?.deep_workflow_primary)}`}
               >
-                {email.analysis.deep_workflow_primary}
+                {email?.analysis?.deep_workflow_primary}
               </div>
             )}
 
             {email.analysis?.action_sla_status && (
               <div
-                className={`email-list__tag email-list__tag--sla ${getSLAStatusColor(email.analysis.action_sla_status)}`}
+                className={`email-list__tag email-list__tag--sla ${getSLAStatusColor(email?.analysis?.action_sla_status)}`}
               >
-                SLA: {email.analysis.action_sla_status}
+                SLA: {email?.analysis?.action_sla_status}
               </div>
             )}
 
             {email.analysis?.workflow_state && (
               <div className="email-list__tag email-list__tag--state">
-                {email.analysis.workflow_state}
+                {email?.analysis?.workflow_state}
               </div>
             )}
           </div>
 
-          {entities.length > 0 && (
+          {entities?.length || 0 > 0 && (
             <div className="email-list__row-entities">
-              {entities.map((entity, index) => (
+              {entities?.map((entity, index) => (
                 <div key={index} className="email-list__entity">
                   <TagIcon className="email-list__entity-icon" />
                   <span className="email-list__entity-type">
@@ -283,7 +283,7 @@ const EmailRow: React.FC<EmailRowProps> = ({
           {email.analysis?.action_summary && (
             <div className="email-list__row-action">
               <div className="email-list__row-action-summary">
-                {email.analysis.action_summary}
+                {email?.analysis?.action_summary}
               </div>
             </div>
           )}
@@ -303,7 +303,7 @@ const EmailRow: React.FC<EmailRowProps> = ({
             {email.analysis?.contextual_summary && (
               <div className="email-list__row-summary">
                 <h4>Analysis Summary</h4>
-                <p>{email.analysis.contextual_summary}</p>
+                <p>{email?.analysis?.contextual_summary}</p>
               </div>
             )}
 
@@ -314,12 +314,12 @@ const EmailRow: React.FC<EmailRowProps> = ({
                   <div
                     className="email-list__confidence-fill"
                     style={{
-                      width: `${email.analysis.quick_confidence * 100}%`,
+                      width: `${email?.analysis?.quick_confidence * 100}%`,
                     }}
                   />
                 </div>
                 <span className="email-list__confidence-value">
-                  {(email.analysis.quick_confidence * 100).toFixed(1)}%
+                  {(email?.analysis?.quick_confidence * 100).toFixed(1)}%
                 </span>
               </div>
             )}
@@ -342,7 +342,7 @@ export const EmailList: React.FC<EmailListProps> = ({
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      onEmailSelect(emails.map((email) => email.id));
+      onEmailSelect(emails?.map((email: any) => email.id));
     } else {
       onEmailSelect([]);
     }
@@ -352,7 +352,7 @@ export const EmailList: React.FC<EmailListProps> = ({
     if (selected) {
       onEmailSelect([...selectedEmails, emailId]);
     } else {
-      onEmailSelect(selectedEmails.filter((id) => id !== emailId));
+      onEmailSelect(selectedEmails?.filter((id: any) => id !== emailId));
     }
   };
 
@@ -383,7 +383,7 @@ export const EmailList: React.FC<EmailListProps> = ({
     );
   }
 
-  if (!emails || emails.length === 0) {
+  if (!emails || emails?.length || 0 === 0) {
     return (
       <div className="email-list">
         <div className="email-list__header">
@@ -395,9 +395,9 @@ export const EmailList: React.FC<EmailListProps> = ({
   }
 
   const isAllSelected =
-    emails.length > 0 && selectedEmails.length === emails.length;
+    emails?.length || 0 > 0 && selectedEmails?.length || 0 === emails?.length || 0;
   const isPartialSelected =
-    selectedEmails.length > 0 && selectedEmails.length < emails.length;
+    selectedEmails?.length || 0 > 0 && selectedEmails?.length || 0 < emails?.length || 0;
 
   return (
     <div className="email-list">
@@ -407,39 +407,39 @@ export const EmailList: React.FC<EmailListProps> = ({
             <input
               type="checkbox"
               checked={isAllSelected}
-              ref={(input) => {
+              ref={(input: any) => {
                 if (input) input.indeterminate = isPartialSelected;
               }}
-              onChange={(e) => handleSelectAll(e.target.checked)}
+              onChange={(e: any) => handleSelectAll(e?.target?.checked)}
               className="email-list__checkbox"
             />
             <label>
               {isAllSelected ? "Deselect All" : "Select All"}
-              {selectedEmails.length > 0 && ` (${selectedEmails.length})`}
+              {selectedEmails?.length || 0 > 0 && ` (${selectedEmails?.length || 0})`}
             </label>
           </div>
 
           <div className="email-list__count">
-            {emails.length} email{emails.length !== 1 ? "s" : ""}
+            {emails?.length || 0} email{emails?.length || 0 !== 1 ? "s" : ""}
             {filters && Object.keys(filters).length > 0 && " (filtered)"}
           </div>
         </div>
       </div>
 
       <div className="email-list__content">
-        {emails.map((email) => (
+        {emails?.map((email: any) => (
           <EmailRow
             key={email.id}
             email={email}
             selected={selectedEmails.includes(email.id)}
-            onSelect={(selected) => handleEmailSelect(email.id, selected)}
+            onSelect={(selected: any) => handleEmailSelect(email.id, selected)}
             onToggleDetail={() => handleToggleDetail(email.id)}
             showDetail={expandedEmails.has(email.id)}
           />
         ))}
       </div>
 
-      {emails.length >= 50 && (
+      {emails?.length || 0 >= 50 && (
         <div className="email-list__footer">
           <p>Showing first 50 emails. Use filters to narrow results.</p>
         </div>

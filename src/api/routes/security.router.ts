@@ -88,7 +88,7 @@ export const securityRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       // Verify it's actually a guest ID
-      if (!input.guestId.startsWith("guest-")) {
+      if (!input?.guestId?.startsWith("guest-")) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Invalid guest ID format",
@@ -100,7 +100,7 @@ export const securityRouter = router({
 
       // Log admin action
       logger.info("Admin revoked guest session", "ADMIN_ACTION", {
-        adminId: ctx.user.id,
+        adminId: ctx?.user?.id,
         guestId: input.guestId,
         reason: input.reason,
       });
@@ -136,7 +136,7 @@ export const securityRouter = router({
     try {
       // Keep connection alive with heartbeat
       while (true) {
-        await new Promise((resolve) => setTimeout(resolve, 30000)); // 30s heartbeat
+        await new Promise((resolve: any) => setTimeout(resolve, 30000)); // 30s heartbeat
         yield {
           type: "heartbeat",
           timestamp: new Date().toISOString(),
@@ -173,7 +173,7 @@ export const securityRouter = router({
     try {
       // Keep connection alive
       while (true) {
-        await new Promise((resolve) => setTimeout(resolve, 30000)); // 30s heartbeat
+        await new Promise((resolve: any) => setTimeout(resolve, 30000)); // 30s heartbeat
         yield {
           type: "heartbeat",
           timestamp: new Date().toISOString(),
@@ -194,7 +194,7 @@ export const securityRouter = router({
 
     // Log admin action
     logger.info("Admin triggered guest session cleanup", "ADMIN_ACTION", {
-      adminId: ctx.user.id,
+      adminId: ctx?.user?.id,
     });
 
     return {

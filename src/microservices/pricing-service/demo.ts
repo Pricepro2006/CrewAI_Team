@@ -27,7 +27,7 @@ async function demonstratePricingService() {
       }
     },
     api: {
-      baseUrl: 'https://api.walmart.com',
+      baseUrl: 'https://api?.walmart.com',
       apiKey: 'demo-key',
       rateLimit: 5,
       timeout: 5000,
@@ -36,11 +36,11 @@ async function demonstratePricingService() {
   });
 
   // Set up event listeners
-  pricingService.on('cache:hit', (data) => {
+  pricingService.on('cache:hit', (data: any) => {
     console.log(`✅ Cache HIT at ${data.level}: ${data.key} (${data.latency}ms)`);
   });
 
-  pricingService.on('api:fetch', (data) => {
+  pricingService.on('api:fetch', (data: any) => {
     console.log(`🌐 API fetch for ${data.productId} (${data.latency}ms)`);
   });
 
@@ -87,7 +87,7 @@ async function demonstratePricingService() {
 
     const startTime = Date.now();
     const batchResults = await Promise.all(
-      requests.map(req => pricingService.getPrice(req))
+      requests?.map(req => pricingService.getPrice(req))
     );
     const batchTime = Date.now() - startTime;
 
@@ -100,10 +100,10 @@ async function demonstratePricingService() {
     // Demo 5: Final metrics
     console.log('📈 Final Metrics:');
     const finalMetrics = pricingService.getMetrics();
-    console.log(`Memory Cache: ${finalMetrics.cacheSize.memory}/${finalMetrics.cacheSize.memoryMax} items`);
-    console.log(`Hit Rates: Memory ${finalMetrics.hitRate.memory.toFixed(1)}%, Overall ${finalMetrics.hitRate.overall.toFixed(1)}%`);
-    console.log(`API Calls: ${finalMetrics.hits.api}`);
-    console.log(`Avg Latency: Memory ${finalMetrics.avgLatency.memory.toFixed(1)}ms, API ${finalMetrics.avgLatency.api.toFixed(1)}ms`);
+    console.log(`Memory Cache: ${finalMetrics?.cacheSize?.memory}/${finalMetrics?.cacheSize?.memoryMax} items`);
+    console.log(`Hit Rates: Memory ${finalMetrics?.hitRate?.memory.toFixed(1)}%, Overall ${finalMetrics?.hitRate?.overall.toFixed(1)}%`);
+    console.log(`API Calls: ${finalMetrics?.hits?.api}`);
+    console.log(`Avg Latency: Memory ${finalMetrics?.avgLatency?.memory.toFixed(1)}ms, API ${finalMetrics?.avgLatency?.api.toFixed(1)}ms`);
     console.log('');
 
     // Demo 6: Cache invalidation

@@ -196,8 +196,8 @@ export const healthRouter = router({
     try {
       if (ctx.ragSystem) {
         // Get RAG health status including vector store details
-        const ragHealth = await ctx.ragSystem.getHealthStatus();
-        const documents = await ctx.ragSystem.getAllDocuments(1);
+        const ragHealth = await ctx?.ragSystem?.getHealthStatus();
+        const documents = await ctx?.ragSystem?.getAllDocuments(1);
         
         // RAG is always healthy if initialized, regardless of vector store backend
         const isUsingFallback = ragHealth.vectorStore?.fallbackUsed || 
@@ -211,7 +211,7 @@ export const healthRouter = router({
             : "RAG system operational with persistent vector storage",
           details: {
             initialized: true,
-            hasDocuments: documents.length > 0,
+            hasDocuments: documents?.length || 0 > 0,
             vectorStoreType: ragHealth.vectorStore?.type || "resilient",
             vectorStoreMode: ragHealth.vectorStore?.mode || "unknown",
             fallbackMode: isUsingFallback,
@@ -350,11 +350,11 @@ export const healthRouter = router({
       const models = data.models || [];
 
       // Check for required models
-      const requiredModels = [MODEL_CONFIG.models.primary, MODEL_CONFIG.models.critical, MODEL_CONFIG.models.embedding];
-      const availableModels = models.map((m) => m.name);
-      const missingModels = requiredModels.filter(
-        (m) =>
-          !availableModels.some((am) => am.startsWith(m.split(":")[0] || m)),
+      const requiredModels = [MODEL_CONFIG?.models?.primary, MODEL_CONFIG?.models?.critical, MODEL_CONFIG?.models?.embedding];
+      const availableModels = models?.map((m: any) => m.name);
+      const missingModels = requiredModels?.filter(
+        (m: any) =>
+          !availableModels.some((am: any) => am.startsWith(m.split(":")[0] || m)),
       );
 
       return {
@@ -362,7 +362,7 @@ export const healthRouter = router({
         baseUrl: ollamaConfig.baseUrl,
         models: availableModels,
         missingModels,
-        status: missingModels.length === 0 ? "ready" : "missing_models",
+        status: missingModels?.length || 0 === 0 ? "ready" : "missing_models",
       };
     } catch (error) {
       logger.error("Ollama health check failed", "HEALTH", { error });
@@ -407,7 +407,7 @@ export const healthRouter = router({
       return {
         connected: true,
         path: appConfig.database?.path,
-        tables: tables.map((t) => t.name),
+        tables: tables?.map((t: any) => t.name),
         stats,
         status: "healthy",
       };
@@ -430,14 +430,14 @@ export const healthRouter = router({
       }
 
       // Get basic RAG stats
-      const documents = await ctx.ragSystem.getAllDocuments(100);
+      const documents = await ctx?.ragSystem?.getAllDocuments(100);
 
       return {
         initialized: true,
-        documentCount: documents.length,
+        documentCount: documents?.length || 0,
         chromadbConnected:
           ctx.ragSystem["vectorStore"]?.["isConnected"] || false,
-        embeddingModel: MODEL_CONFIG.models.embedding,
+        embeddingModel: MODEL_CONFIG?.models?.embedding,
         status: "healthy",
       };
     } catch (error) {
@@ -487,24 +487,24 @@ export const healthRouter = router({
       
       return {
         status: aggregatedHealth.overall,
-        timestamp: aggregatedHealth.lastCheck.toISOString(),
+        timestamp: aggregatedHealth?.lastCheck?.toISOString(),
         uptime: Math.floor(aggregatedHealth.uptime / 1000),
         version: aggregatedHealth.version,
         environment: aggregatedHealth.environment,
         summary: aggregatedHealth.summary,
-        services: aggregatedHealth.services.map(service => ({
+        services: aggregatedHealth?.services?.map(service => ({
           id: service.serviceId,
           name: service.serviceName,
           status: service.status,
           responseTime: service.responseTime,
-          lastCheck: service.timestamp.toISOString(),
+          lastCheck: service?.timestamp?.toISOString(),
           type: service.metadata?.type,
           critical: service.metadata?.critical,
           uptime: service.uptime,
           version: service.version,
           error: service.error
         })),
-        criticalServicesDown: aggregatedHealth.summary.critical_down
+        criticalServicesDown: aggregatedHealth?.summary?.critical_down
       };
     } catch (error) {
       logger.error('Aggregated health check failed', 'HEALTH_ROUTER', { error });
@@ -521,7 +521,7 @@ export const healthRouter = router({
           // Return all service configurations
           const configs = healthCheckService.getServiceConfigurations();
           return {
-            services: configs.map(config => ({
+            services: configs?.map(config => ({
               id: config.id,
               name: config.name,
               type: config.type,
@@ -552,7 +552,7 @@ export const healthRouter = router({
           serviceName: healthResult.serviceName,
           status: healthResult.status,
           responseTime: healthResult.responseTime,
-          timestamp: healthResult.timestamp.toISOString(),
+          timestamp: healthResult?.timestamp?.toISOString(),
           uptime: healthResult.uptime,
           version: healthResult.version,
           error: healthResult.error,
@@ -564,18 +564,18 @@ export const healthRouter = router({
             ...response,
             checks: {
               liveness: {
-                status: healthResult.checks.liveness.status,
-                message: healthResult.checks.liveness.message,
-                responseTime: healthResult.checks.liveness.responseTime,
-                details: healthResult.checks.liveness.details
+                status: healthResult?.checks?.liveness.status,
+                message: healthResult?.checks?.liveness.message,
+                responseTime: healthResult?.checks?.liveness.responseTime,
+                details: healthResult?.checks?.liveness.details
               },
               readiness: {
-                status: healthResult.checks.readiness.status,
-                message: healthResult.checks.readiness.message,
-                responseTime: healthResult.checks.readiness.responseTime,
-                details: healthResult.checks.readiness.details
+                status: healthResult?.checks?.readiness.status,
+                message: healthResult?.checks?.readiness.message,
+                responseTime: healthResult?.checks?.readiness.responseTime,
+                details: healthResult?.checks?.readiness.details
               },
-              dependencies: healthResult.checks.dependencies.map(dep => ({
+              dependencies: healthResult?.checks?.dependencies?.map(dep => ({
                 name: dep.name,
                 status: dep.status,
                 message: dep.message,
@@ -583,14 +583,14 @@ export const healthRouter = router({
                 details: dep.details
               })),
               resources: {
-                cpu: healthResult.checks.resources.cpu,
+                cpu: healthResult?.checks?.resources.cpu,
                 memory: {
-                  usage: Math.round((healthResult.checks.resources.memory.usage || 0) / 1024 / 1024),
-                  total: Math.round((healthResult.checks.resources.memory.total || 0) / 1024 / 1024),
-                  percentage: healthResult.checks.resources.memory.percentage,
-                  status: healthResult.checks.resources.memory.status
+                  usage: Math.round((healthResult?.checks?.resources.memory.usage || 0) / 1024 / 1024),
+                  total: Math.round((healthResult?.checks?.resources.memory.total || 0) / 1024 / 1024),
+                  percentage: healthResult?.checks?.resources.memory.percentage,
+                  status: healthResult?.checks?.resources.memory.status
                 },
-                connections: healthResult.checks.resources.connections
+                connections: healthResult?.checks?.resources.connections
               }
             }
           };
@@ -617,25 +617,25 @@ export const healthRouter = router({
           // Single service check
           const result = await healthCheckService.checkServiceNow(input.serviceId);
           results = result ? [result] : [];
-        } else if (input.serviceIds && input.serviceIds.length > 0) {
+        } else if (input.serviceIds && input?.serviceIds?.length > 0) {
           // Multiple service check
           results = await healthCheckService.checkServicesNow(input.serviceIds);
         } else {
           // Check all services
           const configs = healthCheckService.getServiceConfigurations();
-          const allServiceIds = configs.map(c => c.id);
+          const allServiceIds = configs?.map(c => c.id);
           results = await healthCheckService.checkServicesNow(allServiceIds);
         }
 
         return {
           timestamp: new Date().toISOString(),
           message: 'Health checks completed',
-          results: results.map(result => ({
+          results: results?.map(result => ({
             serviceId: result.serviceId,
             serviceName: result.serviceName,
             status: result.status,
             responseTime: result.responseTime,
-            timestamp: result.timestamp.toISOString(),
+            timestamp: result?.timestamp?.toISOString(),
             error: result.error
           }))
         };
@@ -694,7 +694,7 @@ export const healthRouter = router({
     try {
       const services = healthCheckService.getServiceConfigurations();
       
-      const dependencyGraph = services.map(service => ({
+      const dependencyGraph = services?.map(service => ({
         id: service.id,
         name: service.name,
         type: service.type,
@@ -722,7 +722,7 @@ export const healthRouter = router({
       
       return {
         timestamp: new Date().toISOString(),
-        services: configs.map(config => ({
+        services: configs?.map(config => ({
           id: config.id,
           name: config.name,
           type: config.type,

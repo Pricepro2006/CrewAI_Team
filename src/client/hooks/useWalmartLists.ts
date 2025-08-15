@@ -6,7 +6,7 @@ import { trpc } from "../../utils/trpc.js";
 
 // Hook for getting user lists
 export function useWalmartLists(userId: string) {
-  return trpc.walmartGrocery.getLists.useQuery(
+  return trpc?.walmartGrocery?.getLists.useQuery(
     { userId },
     { enabled: !!userId }
   );
@@ -16,10 +16,10 @@ export function useWalmartLists(userId: string) {
 export function useCreateWalmartList() {
   const utils = trpc.useContext();
   
-  return trpc.walmartGrocery.createList.useMutation({
+  return trpc?.walmartGrocery?.createList.useMutation({
     onSuccess: (data, variables) => {
       // Invalidate lists cache after creation
-      utils.walmartGrocery.getLists.invalidate({ userId: variables.userId });
+      utils?.walmartGrocery?.getLists.invalidate({ userId: variables.userId });
     }
   });
 }
@@ -28,10 +28,10 @@ export function useCreateWalmartList() {
 export function useUpdateWalmartList() {
   const utils = trpc.useContext();
   
-  return trpc.walmartGrocery.updateList.useMutation({
+  return trpc?.walmartGrocery?.updateList.useMutation({
     onSuccess: () => {
       // Invalidate all lists cache
-      utils.walmartGrocery.getLists.invalidate();
+      utils?.walmartGrocery?.getLists.invalidate();
     }
   });
 }
@@ -40,10 +40,10 @@ export function useUpdateWalmartList() {
 export function useDeleteWalmartList() {
   const utils = trpc.useContext();
   
-  return trpc.walmartGrocery.deleteList.useMutation({
+  return trpc?.walmartGrocery?.deleteList.useMutation({
     onSuccess: () => {
       // Invalidate all lists cache
-      utils.walmartGrocery.getLists.invalidate();
+      utils?.walmartGrocery?.getLists.invalidate();
     }
   });
 }
@@ -52,10 +52,10 @@ export function useDeleteWalmartList() {
 export function useAddItemToWalmartList() {
   const utils = trpc.useContext();
   
-  return trpc.walmartGrocery.addItemToList.useMutation({
+  return trpc?.walmartGrocery?.addItemToList.useMutation({
     onSuccess: (_, variables) => {
       // Invalidate specific list
-      utils.walmartGrocery.getLists.invalidate();
+      utils?.walmartGrocery?.getLists.invalidate();
     }
   });
 }
@@ -64,10 +64,10 @@ export function useAddItemToWalmartList() {
 export function useRemoveItemFromWalmartList() {
   const utils = trpc.useContext();
   
-  return trpc.walmartGrocery.removeItemFromList.useMutation({
+  return trpc?.walmartGrocery?.removeItemFromList.useMutation({
     onSuccess: () => {
       // Invalidate lists cache
-      utils.walmartGrocery.getLists.invalidate();
+      utils?.walmartGrocery?.getLists.invalidate();
     }
   });
 }

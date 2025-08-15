@@ -55,9 +55,9 @@ export class WorkflowSLAMonitor {
 
     this.isRunning = true;
     logger.info("Starting SLA Monitor", "SLA_MONITOR", {
-      checkInterval: `${this.config.checkIntervalMinutes} minutes`,
-      warningThreshold: `${this.config.warningThresholdHours} hours`,
-      criticalThreshold: `${this.config.criticalThresholdHours} hours`,
+      checkInterval: `${this?.config?.checkIntervalMinutes} minutes`,
+      warningThreshold: `${this?.config?.warningThresholdHours} hours`,
+      criticalThreshold: `${this?.config?.criticalThresholdHours} hours`,
     });
 
     // Run initial check
@@ -66,7 +66,7 @@ export class WorkflowSLAMonitor {
     // Set up periodic checks
     this.checkInterval = setInterval(
       () => this.checkSLAs(),
-      this.config.checkIntervalMinutes * 60 * 1000,
+      this?.config?.checkIntervalMinutes * 60 * 1000,
     );
   }
 
@@ -92,7 +92,7 @@ export class WorkflowSLAMonitor {
    * Check all active tasks for SLA status
    */
   private async checkSLAs(): Promise<void> {
-    const db = new Database(this.config.dbPath);
+    const db = new Database(this?.config?.dbPath);
 
     try {
       const startTime = Date.now();
@@ -116,13 +116,13 @@ export class WorkflowSLAMonitor {
 
       const duration = Date.now() - startTime;
       logger.info("SLA check completed", "SLA_MONITOR", {
-        approaching: approachingTasks.length,
-        violated: violatedTasks.length,
+        approaching: approachingTasks?.length || 0,
+        violated: violatedTasks?.length || 0,
         duration: `${duration}ms`,
       });
 
       // Broadcast metrics update if there were any SLA issues
-      if (approachingTasks.length > 0 || violatedTasks.length > 0) {
+      if (approachingTasks?.length || 0 > 0 || violatedTasks?.length || 0 > 0) {
         await this.broadcastMetricsUpdate(db);
       }
     } catch (error) {
@@ -136,7 +136,7 @@ export class WorkflowSLAMonitor {
    * Get tasks approaching SLA deadline
    */
   private getApproachingSLATasks(db: Database.Database): SLATask[] {
-    const warningHours = this.config.warningThresholdHours;
+    const warningHours = this?.config?.warningThresholdHours;
 
     return db
       .prepare(
@@ -197,20 +197,20 @@ export class WorkflowSLAMonitor {
   ): Promise<void> {
     const hoursRemaining = Math.round(task.hours_remaining);
     const severity =
-      hoursRemaining <= this.config.criticalThresholdHours
+      hoursRemaining <= this?.config?.criticalThresholdHours
         ? "CRITICAL"
         : "WARNING";
 
     logger.warn(`Task approaching SLA`, "SLA_MONITOR", {
       taskId: task.task_id,
-      title: task.title.substring(0, 50),
+      title: task?.title?.substring(0, 50),
       hoursRemaining,
       severity,
     });
 
     // Broadcast SLA warning
     if (this.wsHandler) {
-      this.wsHandler.broadcastSLAWarning({
+      this?.wsHandler?.broadcastSLAWarning({
         taskId: task.task_id,
         title: task.title,
         owner: task.current_owner,
@@ -249,7 +249,7 @@ export class WorkflowSLAMonitor {
 
     logger.error(`Task violated SLA`, "SLA_MONITOR", {
       taskId: task.task_id,
-      title: task.title.substring(0, 50),
+      title: task?.title?.substring(0, 50),
       hoursOverdue,
       value: task.dollar_value,
     });
@@ -264,7 +264,7 @@ export class WorkflowSLAMonitor {
 
     // Broadcast SLA violation
     if (this.wsHandler) {
-      this.wsHandler.broadcastSLAViolated({
+      this?.wsHandler?.broadcastSLAViolated({
         taskId: task.task_id,
         title: task.title,
         owner: task.current_owner,
@@ -275,9 +275,9 @@ export class WorkflowSLAMonitor {
 
       // Also broadcast critical alert for high-value violations
       if (task.dollar_value > 50000) {
-        this.wsHandler.broadcastCriticalAlert(
+        this?.wsHandler?.broadcastCriticalAlert(
           task.task_id,
-          `High-value task SLA violated: $${task.dollar_value.toLocaleString()}`,
+          `High-value task SLA violated: $${task?.dollar_value?.toLocaleString()}`,
           {
             owner: task.current_owner,
             category: task.workflow_category,
@@ -327,7 +327,7 @@ export class WorkflowSLAMonitor {
 
       // Broadcast status change
       if (this.wsHandler) {
-        this.wsHandler.broadcastStatusChanged({
+        this?.wsHandler?.broadcastStatusChanged({
           taskId,
           oldStatus: currentTask.task_status,
           newStatus,
@@ -368,7 +368,7 @@ export class WorkflowSLAMonitor {
         )
         .get() as any;
 
-      this.wsHandler.broadcastMetricsUpdated({
+      this?.wsHandler?.broadcastMetricsUpdated({
         executive: metrics,
         timestamp: new Date().toISOString(),
       });
@@ -381,7 +381,7 @@ export class WorkflowSLAMonitor {
    * Get current SLA statistics
    */
   getSLAStats(): any {
-    const db = new Database(this.config.dbPath);
+    const db = new Database(this?.config?.dbPath);
 
     try {
       const stats = db
@@ -404,7 +404,7 @@ export class WorkflowSLAMonitor {
       return {
         ...stats,
         isMonitoring: this.isRunning,
-        checkInterval: this.config.checkIntervalMinutes,
+        checkInterval: this?.config?.checkIntervalMinutes,
         lastCheck: new Date().toISOString(),
       };
     } finally {

@@ -85,7 +85,7 @@ export const NaturalLanguageInputDemo: React.FC = () => {
       
       if (isError) {
         // Update with error
-        setCommandHistory(prev => prev.map(cmd => 
+        setCommandHistory(prev => prev?.map(cmd => 
           cmd.id === commandId
             ? {
                 ...cmd,
@@ -97,7 +97,7 @@ export const NaturalLanguageInputDemo: React.FC = () => {
         setError('This is a simulated error for demo purposes');
       } else {
         // Update with success
-        setCommandHistory(prev => prev.map(cmd => 
+        setCommandHistory(prev => prev?.map(cmd => 
           cmd.id === commandId
             ? {
                 ...cmd,
@@ -113,7 +113,7 @@ export const NaturalLanguageInputDemo: React.FC = () => {
       }
       
     } catch (err) {
-      setCommandHistory(prev => prev.map(cmd => 
+      setCommandHistory(prev => prev?.map(cmd => 
         cmd.id === commandId
           ? {
               ...cmd,
@@ -171,7 +171,7 @@ export const NaturalLanguageInputDemo: React.FC = () => {
   };
 
   const handleCommandDelete = (commandId: string) => {
-    setCommandHistory(prev => prev.filter(cmd => cmd.id !== commandId));
+    setCommandHistory(prev => prev?.filter(cmd => cmd.id !== commandId));
   };
 
   const handleClearHistory = () => {
@@ -258,12 +258,12 @@ export const NaturalLanguageInputDemo: React.FC = () => {
           autoFocus={true}
           onVoiceStart={() => setError(null)}
           onVoiceEnd={() => {}}
-          onVoiceError={(error) => setError(`Voice error: ${error}`)}
+          onVoiceError={(error: any) => setError(`Voice error: ${error}`)}
           onSuggestionSelected={() => {}}
         />
       </div>
 
-      {commandHistory.length > 0 && (
+      {commandHistory?.length || 0 > 0 && (
         <div>
           <CommandHistory
             commands={commandHistory}

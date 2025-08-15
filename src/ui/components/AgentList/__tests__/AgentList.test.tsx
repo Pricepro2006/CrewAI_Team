@@ -41,9 +41,9 @@ const AgentList: React.FC<AgentListProps> = ({
   const [localSearch, setLocalSearch] = React.useState(searchTerm || "");
   const [localFilter, setLocalFilter] = React.useState(filterStatus || "all");
 
-  const filteredAgents = agents.filter((agent) => {
-    const matchesSearch = agent.name.toLowerCase().includes(localSearch.toLowerCase()) ||
-                         agent.type.toLowerCase().includes(localSearch.toLowerCase());
+  const filteredAgents = agents?.filter((agent: any) => {
+    const matchesSearch = agent?.name?.toLowerCase().includes(localSearch.toLowerCase()) ||
+                         agent?.type?.toLowerCase().includes(localSearch.toLowerCase());
     const matchesFilter = localFilter === "all" || agent.status === localFilter;
     return matchesSearch && matchesFilter;
   });
@@ -71,12 +71,12 @@ const AgentList: React.FC<AgentListProps> = ({
           type="text"
           placeholder="Search agents..."
           value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
+          onChange={(e: any) => setLocalSearch(e?.target?.value)}
           data-testid="agent-search"
         />
         <select
           value={localFilter}
-          onChange={(e) => setLocalFilter(e.target.value)}
+          onChange={(e: any) => setLocalFilter(e?.target?.value)}
           data-testid="agent-filter"
         >
           <option value="all">All Status</option>
@@ -88,16 +88,16 @@ const AgentList: React.FC<AgentListProps> = ({
       </div>
 
       <div className="agent-count" data-testid="agent-count">
-        Showing {filteredAgents.length} of {agents.length} agents
+        Showing {filteredAgents?.length || 0} of {agents?.length || 0} agents
       </div>
 
-      {filteredAgents.length === 0 ? (
+      {filteredAgents?.length || 0 === 0 ? (
         <div data-testid="no-agents" className="no-agents">
           No agents found matching your criteria
         </div>
       ) : (
         <div className="agents-grid" data-testid="agents-grid">
-          {filteredAgents.map((agent) => (
+          {filteredAgents?.map((agent: any) => (
             <div
               key={agent.id}
               className="agent-item"
@@ -113,7 +113,7 @@ const AgentList: React.FC<AgentListProps> = ({
               <div className="agent-actions">
                 {agent.status === "offline" ? (
                   <button
-                    onClick={(e) => {
+                    onClick={(e: any) => {
                       e.stopPropagation();
                       onAgentConnect?.(agent.id);
                     }}
@@ -123,7 +123,7 @@ const AgentList: React.FC<AgentListProps> = ({
                   </button>
                 ) : (
                   <button
-                    onClick={(e) => {
+                    onClick={(e: any) => {
                       e.stopPropagation();
                       onAgentDisconnect?.(agent.id);
                     }}
@@ -179,7 +179,7 @@ describe("AgentList Component", () => {
     expect(screen.getByTestId("agent-count")).toHaveTextContent("Showing 4 of 4 agents");
 
     // Check if all agents are rendered
-    mockAgents.forEach((agent) => {
+    mockAgents.forEach((agent: any) => {
       expect(screen.getByTestId(`agent-item-${agent.id}`)).toBeInTheDocument();
       expect(screen.getByTestId(`agent-name-${agent.id}`)).toHaveTextContent(agent.name);
       expect(screen.getByTestId(`agent-status-${agent.id}`)).toHaveTextContent(`Status: ${agent.status}`);

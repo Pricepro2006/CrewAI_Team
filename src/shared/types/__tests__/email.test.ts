@@ -135,7 +135,7 @@ describe("Email Types", () => {
         { id: "3", status: "green", statusText: "Completed" },
       ];
 
-      statuses.forEach((status) => {
+      statuses.forEach((status: any) => {
         expect(validateEmailStatus(status)).toBe(true);
       });
     });
@@ -184,7 +184,7 @@ describe("Email Types", () => {
     it("should enforce correct priority types", () => {
       const priorities: EmailData["priority"][] = ["High", "Medium", "Low"];
 
-      priorities.forEach((priority) => {
+      priorities.forEach((priority: any) => {
         expect(["High", "Medium", "Low"]).toContain(priority);
       });
     });
@@ -192,7 +192,7 @@ describe("Email Types", () => {
     it("should enforce correct status types", () => {
       const statuses: EmailStatus["status"][] = ["red", "yellow", "green"];
 
-      statuses.forEach((status) => {
+      statuses.forEach((status: any) => {
         expect(["red", "yellow", "green"]).toContain(status);
       });
     });

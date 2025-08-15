@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { api } from "../../lib/trpc.js";
-import type { TeamMember } from "../../config/team-members.config.js";
+import type { TeamMember } from "../../config/team-members?.config.js";
 
 export interface UseEmailAssignmentOptions {
   onSuccess?: (data: any) => void;
@@ -25,7 +25,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
   ).assignEmail.useMutation({
     onSuccess: (data: any) => {
       // Invalidate relevant queries
-      utils.emails.invalidate();
+      utils?.emails?.invalidate();
       (utils.emailAssignment as any).getWorkloadDistribution.invalidate();
       options?.onSuccess?.(data);
     },
@@ -50,7 +50,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
     api.emailAssignment as any
   ).bulkAssignEmails.useMutation({
     onSuccess: (data: any) => {
-      utils.emails.invalidate();
+      utils?.emails?.invalidate();
       (utils.emailAssignment as any).getWorkloadDistribution.invalidate();
       options?.onSuccess?.(data);
     },
@@ -125,7 +125,7 @@ export function useEmailAssignment(options?: UseEmailAssignmentOptions) {
       console.log("Email update received:", data);
       // You could dispatch to a global state manager here
       // or invalidate queries as needed
-      utils.emails.invalidate();
+      utils?.emails?.invalidate();
     },
     onError: (error: any) => {
       console.error("Subscription error:", error);

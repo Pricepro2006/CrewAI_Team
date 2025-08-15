@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { AxiosInstance } from "axios";
 import type { EmbeddingConfig } from "./types.js";
-import { MODEL_CONFIG } from "../../config/models.config.js";
+import { MODEL_CONFIG } from "../../config/models?.config.js";
 
 export class EmbeddingService {
   private client: AxiosInstance;
@@ -11,15 +11,15 @@ export class EmbeddingService {
   constructor(config: EmbeddingConfig) {
     // Override to use Llama 3.2:3b for embeddings
     this.config = {
-      batchSize: MODEL_CONFIG.batchSizes.embedding,
+      batchSize: MODEL_CONFIG?.batchSizes?.embedding,
       dimensions: 4096, // Llama 3.2:3b embedding dimensions
       ...config,
-      model: config.model || MODEL_CONFIG.models.embedding, // Use llama3.2:3b as fallback
+      model: config.model || MODEL_CONFIG?.models?.embedding, // Use llama3.2:3b as fallback
     };
 
     this.client = axios.create({
-      baseURL: config.baseUrl || MODEL_CONFIG.api.ollamaUrl,
-      timeout: MODEL_CONFIG.timeouts.embedding,
+      baseURL: config.baseUrl || MODEL_CONFIG?.api?.ollamaUrl,
+      timeout: MODEL_CONFIG?.timeouts?.embedding,
       headers: {
         "Content-Type": "application/json",
       },
@@ -31,18 +31,18 @@ export class EmbeddingService {
 
     try {
       // Test connection
-      await this.client.get("/api/tags");
+      await this?.client?.get("/api/tags");
 
       // Verify embedding model is available
-      const response = await this.client.get("/api/tags");
-      const models = response.data.models || [];
+      const response = await this?.client?.get("/api/tags");
+      const models = response?.data?.models || [];
       const hasEmbeddingModel = models.some(
-        (m: any) => m.name === this.config.model || m.name.includes("embed"),
+        (m: any) => m.name === this?.config?.model || m?.name?.includes("embed"),
       );
 
       if (!hasEmbeddingModel) {
         console.warn(
-          `Embedding model ${this.config.model} not found. Please pull it first.`,
+          `Embedding model ${this?.config?.model} not found. Please pull it first.`,
         );
       }
 
@@ -58,16 +58,16 @@ export class EmbeddingService {
     }
 
     try {
-      const response = await this.client.post("/api/embeddings", {
-        model: this.config.model,
+      const response = await this?.client?.post("/api/embeddings", {
+        model: this?.config?.model,
         prompt: text,
       });
 
-      return response.data.embedding;
+      return response?.data?.embedding;
     } catch (error) {
       console.error("Embedding generation failed:", error);
       // Return a zero vector as fallback
-      return new Array(this.config.dimensions).fill(0);
+      return new Array(this?.config?.dimensions).fill(0);
     }
   }
 
@@ -77,21 +77,21 @@ export class EmbeddingService {
     }
 
     const embeddings: number[][] = [];
-    const batchSize = this.config.batchSize || 100;
+    const batchSize = this?.config?.batchSize || 100;
 
     // Process in batches to avoid overwhelming the service
-    for (let i = 0; i < texts.length; i += batchSize) {
+    for (let i = 0; i < texts?.length || 0; i += batchSize) {
       const batch = texts.slice(i, i + batchSize);
 
       // Process batch in parallel with rate limiting
       const batchEmbeddings = await Promise.all(
-        batch.map((text) => this.embedWithRetry(text)),
+        batch?.map((text: any) => this.embedWithRetry(text)),
       );
 
       embeddings.push(...batchEmbeddings);
 
       // Small delay between batches to avoid rate limiting
-      if (i + batchSize < texts.length) {
+      if (i + batchSize < texts?.length || 0) {
         await this.delay(100);
       }
     }
@@ -113,25 +113,25 @@ export class EmbeddingService {
             error,
           );
           // Return zero vector as fallback
-          return new Array(this.config.dimensions).fill(0);
+          return new Array(this?.config?.dimensions).fill(0);
         }
         // Exponential backoff
         await this.delay(Math.pow(2, i) * 1000);
       }
     }
 
-    return new Array(this.config.dimensions).fill(0);
+    return new Array(this?.config?.dimensions).fill(0);
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve: any) => setTimeout(resolve, ms));
   }
 
   async cosineSimilarity(
     embedding1: number[],
     embedding2: number[],
   ): Promise<number> {
-    if (embedding1.length !== embedding2.length) {
+    if (embedding1?.length || 0 !== embedding2?.length || 0) {
       throw new Error("Embeddings must have the same dimension");
     }
 
@@ -139,7 +139,7 @@ export class EmbeddingService {
     let norm1 = 0;
     let norm2 = 0;
 
-    for (let i = 0; i < embedding1.length; i++) {
+    for (let i = 0; i < embedding1?.length || 0; i++) {
       dotProduct += (embedding1[i] || 0) * (embedding2[i] || 0);
       norm1 += (embedding1[i] || 0) * (embedding1[i] || 0);
       norm2 += (embedding2[i] || 0) * (embedding2[i] || 0);
@@ -161,7 +161,7 @@ export class EmbeddingService {
     topK: number = 5,
   ): Promise<Array<{ index: number; score: number }>> {
     const similarities = await Promise.all(
-      embeddings.map(async (embedding, index) => ({
+      embeddings?.map(async (embedding, index) => ({
         index,
         score: await this.cosineSimilarity(queryEmbedding, embedding),
       })),
@@ -174,10 +174,10 @@ export class EmbeddingService {
   }
 
   getDimensions(): number {
-    return this.config.dimensions || 768;
+    return this?.config?.dimensions || 768;
   }
 
   getModel(): string {
-    return this.config.model;
+    return this?.config?.model;
   }
 }

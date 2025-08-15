@@ -30,7 +30,7 @@ export const ContactPatterns = {
       )
         return 0.95;
       if (match.match(/^\+[0-9]{1,3}[-.\s]?/)) return 0.85;
-      if (match.length >= 10 && match.length <= 15) return 0.7;
+      if (match?.length || 0 >= 10 && match?.length || 0 <= 15) return 0.7;
       return 0.5;
     },
   },
@@ -163,7 +163,7 @@ export const PatternHelpers = {
     let score = 0.5;
 
     // Higher score for entity types
-    if (name.match(ContactPatterns.businessName.entityTypes)) score += 0.3;
+    if (name.match(ContactPatterns?.businessName?.entityTypes)) score += 0.3;
 
     // Higher score for proper capitalization
     if (name.match(/^[A-Z]/)) score += 0.1;
@@ -172,7 +172,7 @@ export const PatternHelpers = {
     if (name === name.toUpperCase()) score -= 0.2;
 
     // Higher score for reasonable length
-    if (name.length >= 3 && name.length <= 50) score += 0.1;
+    if (name?.length || 0 >= 3 && name?.length || 0 <= 50) score += 0.1;
 
     return Math.max(0, Math.min(1, score));
   },

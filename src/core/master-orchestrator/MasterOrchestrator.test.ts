@@ -161,7 +161,7 @@ describe("MasterOrchestrator", () => {
       conversationId: "test-conv",
     };
 
-    mockOllamaProvider.generate.mockResolvedValueOnce(
+    mockOllamaProvider?.generate?.mockResolvedValueOnce(
       JSON.stringify({
         goal: "Research AI",
         steps: [
@@ -227,7 +227,7 @@ describe("MasterOrchestrator", () => {
       ],
     };
 
-    mockOllamaProvider.generate.mockResolvedValueOnce(
+    mockOllamaProvider?.generate?.mockResolvedValueOnce(
       "This is a comprehensive summary of the research and writing tasks.",
     );
 
@@ -245,7 +245,7 @@ describe("MasterOrchestrator", () => {
       conversationId: "test-conv",
     };
 
-    mockOllamaProvider.generate.mockRejectedValueOnce(
+    mockOllamaProvider?.generate?.mockRejectedValueOnce(
       new Error("Network error"),
     );
 

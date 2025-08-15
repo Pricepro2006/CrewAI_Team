@@ -79,13 +79,13 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
 
       const products = response.products || [];
       setResults(products);
-      setHasMore(products.length === (options.limit || 20));
+      setHasMore(products?.length || 0 === (options.limit || 20));
       
       // Update cache
       searchCache.current[cacheKey] = {
         results: products,
         timestamp: Date.now(),
-        hasMore: products.length === (options.limit || 20),
+        hasMore: products?.length || 0 === (options.limit || 20),
       };
     } catch (err) {
       
@@ -112,7 +112,7 @@ export const useWalmartSearch = (): UseWalmartSearchResult => {
 
       const newProducts = response.products || [];
       setResults(prev => [...prev, ...newProducts]);
-      setHasMore(newProducts.length === (currentSearchOptions.current?.pagination?.limit || 20));
+      setHasMore(newProducts?.length || 0 === (currentSearchOptions.current?.pagination?.limit || 20));
     } catch (err) {
       
       setError(err instanceof Error ? err.message : 'Failed to load more results');

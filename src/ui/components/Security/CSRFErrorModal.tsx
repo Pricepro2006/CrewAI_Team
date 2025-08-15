@@ -85,7 +85,7 @@ export const CSRFErrorModal: React.FC<CSRFErrorModalProps> = ({
           </button>
           {isMaxRetries ? (
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => window?.location?.reload()}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 
                        hover:bg-blue-700 rounded-md transition-colors flex items-center gap-2"
             >
@@ -126,7 +126,7 @@ export function useCSRFErrorModal() {
   }, []);
 
   const handleRetry = React.useCallback(() => {
-    setRetryCount((prev) => prev + 1);
+    setRetryCount((prev: any) => prev + 1);
     if (retryCallback) {
       retryCallback();
     }

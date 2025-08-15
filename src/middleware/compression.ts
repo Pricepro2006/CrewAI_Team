@@ -4,8 +4,8 @@
  */
 
 import { z } from "zod";
-import { logger } from "../utils/logger";
-import type { Context } from "../api/trpc/context";
+import { logger } from "../utils/logger.js";
+import type { Context } from "../api/trpc/context.js";
 import { TRPCError } from "@trpc/server";
 import LRU from "lru-cache";
 import { createHash } from "crypto";
@@ -161,7 +161,7 @@ export function setCacheHeaders(
   etag: string,
   maxAge: number = defaultConfig.cacheMaxAge / 1000
 ): void {
-  const response = ctx.res;
+  const response = ctx?.res;
   
   // Set ETag for conditional requests
   response.setHeader('ETag', `"${etag}"`);
@@ -195,18 +195,18 @@ export function createCompressionMiddleware(config: CompressionConfig = defaultC
         path,
         input,
         ctx.user?.id,
-        [ctx.req.method || 'unknown']
+        [ctx?.req?.method || 'unknown']
       );
       
       // Check for cached response
       const cached = getCachedResponse(cacheKey);
       if (cached) {
         // Check if client has valid cache using If-None-Match header
-        const clientETag = ctx.req.headers['if-none-match']?.replace(/"/g, '');
+        const clientETag = ctx?.req?.headers['if-none-match']?.replace(/"/g, '');
         
         if (isClientCacheValid(clientETag, cached.etag)) {
           // Client has valid cache, return 304 Not Modified
-          ctx.res.status(304);
+          ctx?.res?.status(304);
           setCacheHeaders(ctx, cached.etag);
           
           logger.debug("Cache hit - 304 Not Modified", "COMPRESSION", {
@@ -275,14 +275,14 @@ export class StreamingResponseHandler {
    * Add data chunk to stream
    */
   addChunk(data: any): void {
-    this.chunks.push(data);
+    this?.chunks?.push(data);
   }
   
   /**
    * Process and stream response chunks
    */
   async streamResponse(ctx: Context): Promise<void> {
-    const response = ctx.res;
+    const response = ctx?.res;
     
     // Set streaming headers
     response.setHeader('Content-Type', 'application/json');
@@ -291,7 +291,7 @@ export class StreamingResponseHandler {
     // Stream opening bracket
     response.write('[');
     
-    for (let i = 0; i < this.chunks.length; i++) {
+    for (let i = 0; i < this?.chunks?.length; i++) {
       const chunk = this.chunks[i];
       const chunkJson = JSON.stringify(chunk);
       
@@ -324,7 +324,7 @@ export class BatchResponseOptimizer {
    * Add response to batch
    */
   addResponse(key: string, data: any): void {
-    this.responses.set(key, data);
+    this?.responses?.set(key, data);
   }
   
   /**
@@ -336,7 +336,7 @@ export class BatchResponseOptimizer {
     // Apply compression if needed
     if (shouldCompress(batchData, this.config)) {
       logger.debug("Batch response will be compressed", "COMPRESSION", {
-        batchSize: this.responses.size,
+        batchSize: this?.responses?.size,
         totalSize: Buffer.byteLength(JSON.stringify(batchData), 'utf8'),
       });
     }
@@ -348,7 +348,7 @@ export class BatchResponseOptimizer {
    * Clear batch data
    */
   clear(): void {
-    this.responses.clear();
+    this?.responses?.clear();
   }
 }
 
@@ -376,7 +376,7 @@ export const ResponseOptimization = {
             .map(item => typeof item === 'object' ? this.cleanResponse(item) : item)
             .filter(item => item !== null && item !== undefined);
           
-          if (cleanedArray.length > 0) {
+          if (cleanedArray?.length || 0 > 0) {
             cleaned[key as keyof T] = cleanedArray as T[keyof T];
           }
         } else {
@@ -406,7 +406,7 @@ export const ResponseOptimization = {
     // Truncate long strings if specified
     if (truncateStrings) {
       for (const [key, value] of Object.entries(result)) {
-        if (typeof value === 'string' && value.length > truncateStrings) {
+        if (typeof value === 'string' && value?.length || 0 > truncateStrings) {
           (result as any)[key] = value.substring(0, truncateStrings) + '...';
         }
       }
@@ -415,7 +415,7 @@ export const ResponseOptimization = {
     // Limit array lengths if specified
     if (maxArrayLength) {
       for (const [key, value] of Object.entries(result)) {
-        if (Array.isArray(value) && value.length > maxArrayLength) {
+        if (Array.isArray(value) && value?.length || 0 > maxArrayLength) {
           (result as any)[key] = value.slice(0, maxArrayLength);
         }
       }

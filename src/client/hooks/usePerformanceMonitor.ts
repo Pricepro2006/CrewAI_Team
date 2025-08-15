@@ -12,21 +12,21 @@ class PerformanceTracker {
   private observers: ((metrics: PerformanceMetrics) => void)[] = [];
 
   addMetric(metric: PerformanceMetrics) {
-    this.metrics.push(metric);
+    this?.metrics?.push(metric);
     
     // Keep only last 100 metrics to prevent memory leaks
-    if (this.metrics.length > 100) {
-      this.metrics = this.metrics.slice(-100);
+    if (this?.metrics?.length > 100) {
+      this.metrics = this?.metrics?.slice(-100);
     }
 
     // Notify observers
-    this.observers.forEach(observer => observer(metric));
+    this?.observers?.forEach(observer => observer(metric));
   }
 
   subscribe(observer: (metrics: PerformanceMetrics) => void) {
-    this.observers.push(observer);
+    this?.observers?.push(observer);
     return () => {
-      this.observers = this.observers.filter(obs => obs !== observer);
+      this.observers = this?.observers?.filter(obs => obs !== observer);
     };
   }
 
@@ -36,19 +36,19 @@ class PerformanceTracker {
 
   getAverageRenderTime(componentName?: string): number {
     const relevantMetrics = componentName 
-      ? this.metrics.filter(m => m.componentName === componentName)
+      ? this?.metrics?.filter(m => m.componentName === componentName)
       : this.metrics;
     
-    if (relevantMetrics.length === 0) return 0;
+    if (relevantMetrics?.length || 0 === 0) return 0;
     
-    const total = relevantMetrics.reduce((sum, metric) => sum + metric.renderTime, 0);
-    return total / relevantMetrics.length;
+    const total = relevantMetrics.reduce((sum: any, metric: any) => sum + metric.renderTime, 0);
+    return total / relevantMetrics?.length || 0;
   }
 
   getSlowComponents(threshold = 16): string[] {
     const componentTimes: { [key: string]: number[] } = {};
     
-    this.metrics.forEach(metric => {
+    this?.metrics?.forEach(metric => {
       if (!componentTimes[metric.componentName]) {
         componentTimes[metric.componentName] = [];
       }
@@ -57,8 +57,8 @@ class PerformanceTracker {
 
     return Object.entries(componentTimes)
       .filter(([_, times]) => {
-        if (!times || times.length === 0) return false;
-        const avg = times.reduce((sum, time) => sum + time, 0) / times.length;
+        if (!times || times?.length || 0 === 0) return false;
+        const avg = times.reduce((sum: any, time: any) => sum + time, 0) / times?.length || 0;
         return avg > threshold;
       })
       .map(([name]) => name);
@@ -155,7 +155,7 @@ export function useRenderTracker(componentName: string, props?: any) {
           }
         });
 
-        if (changedProps.length > 0) {
+        if (changedProps?.length || 0 > 0) {
           console.log(
             `🔄 ${componentName} re-rendered due to props:`,
             changedProps

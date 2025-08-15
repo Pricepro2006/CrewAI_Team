@@ -36,7 +36,7 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
     const cutoffTime = now - timeWindow;
 
     // Filter recent data
-    const recentData = performanceData.filter(p => 
+    const recentData = performanceData?.filter(p => 
       new Date(p.timestamp).getTime() > cutoffTime
     );
 
@@ -53,17 +53,17 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
     // Calculate stats for each endpoint
     const stats: EndpointStats[] = [];
     for (const [endpointKey, requests] of grouped.entries()) {
-      const responseTimes = requests.map(r => r.responseTime);
-      const errorCount = requests.filter(r => r.error || r.statusCode >= 400).length;
+      const responseTimes = requests?.map(r => r.responseTime);
+      const errorCount = requests?.filter(r => r.error || r.statusCode >= 400).length;
 
       stats.push({
         endpoint: endpointKey,
-        totalRequests: requests.length,
-        averageResponseTime: responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length,
+        totalRequests: requests?.length || 0,
+        averageResponseTime: responseTimes.reduce((sum: any, time: any) => sum + time, 0) / responseTimes?.length || 0,
         minResponseTime: Math.min(...responseTimes),
         maxResponseTime: Math.max(...responseTimes),
         errorCount,
-        errorRate: requests.length > 0 ? (errorCount / requests.length) * 100 : 0,
+        errorRate: requests?.length || 0 > 0 ? (errorCount / requests?.length || 0) * 100 : 0,
         recentRequests: requests.slice(-10) // Last 10 requests
       });
     }
@@ -75,11 +75,11 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
   const overallStats = useMemo(() => {
     const now = Date.now();
     const cutoffTime = now - timeWindow;
-    const recentData = performanceData.filter(p => 
+    const recentData = performanceData?.filter(p => 
       new Date(p.timestamp).getTime() > cutoffTime
     );
 
-    if (recentData.length === 0) {
+    if (recentData?.length || 0 === 0) {
       return {
         totalRequests: 0,
         averageResponseTime: 0,
@@ -89,15 +89,15 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
       };
     }
 
-    const responseTimes = recentData.map(r => r.responseTime);
-    const errorCount = recentData.filter(r => r.error || r.statusCode >= 400).length;
-    const slowRequests = recentData.filter(r => r.responseTime > 1000).length;
+    const responseTimes = recentData?.map(r => r.responseTime);
+    const errorCount = recentData?.filter(r => r.error || r.statusCode >= 400).length;
+    const slowRequests = recentData?.filter(r => r.responseTime > 1000).length;
 
     return {
-      totalRequests: recentData.length,
-      averageResponseTime: responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length,
-      throughput: (recentData.length / (timeWindow / 1000)) * 60, // requests per minute
-      errorRate: (errorCount / recentData.length) * 100,
+      totalRequests: recentData?.length || 0,
+      averageResponseTime: responseTimes.reduce((sum: any, time: any) => sum + time, 0) / responseTimes?.length || 0,
+      throughput: (recentData?.length || 0 / (timeWindow / 1000)) * 60, // requests per minute
+      errorRate: (errorCount / recentData?.length || 0) * 100,
       slowRequests
     };
   }, [performanceData, timeWindow]);
@@ -105,12 +105,12 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
   // Filter data for selected endpoint
   const filteredData = useMemo(() => {
     if (selectedEndpoint === 'all') return performanceData;
-    return performanceData.filter(p => `${p.method} ${p.endpoint}` === selectedEndpoint);
+    return performanceData?.filter(p => `${p.method} ${p.endpoint}` === selectedEndpoint);
   }, [performanceData, selectedEndpoint]);
 
   // Convert performance data to metrics for charting
   const chartMetrics = useMemo(() => {
-    return filteredData.map((perf, index) => ({
+    return filteredData?.map((perf, index) => ({
       id: `${index}`,
       name: 'response_time',
       value: perf.responseTime,
@@ -118,7 +118,7 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
       tags: {
         endpoint: perf.endpoint,
         method: perf.method,
-        status: perf.statusCode.toString()
+        status: perf?.statusCode?.toString()
       },
       type: 'timer' as const,
       unit: 'ms'
@@ -165,7 +165,7 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
             <label>Time Window:</label>
             <select 
               value={timeWindow} 
-              onChange={(e) => setTimeWindow(Number(e.target.value))}
+              onChange={(e: any) => setTimeWindow(Number(e?.target?.value))}
             >
               <option value={60000}>1 minute</option>
               <option value={300000}>5 minutes</option>
@@ -178,10 +178,10 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
             <label>Endpoint:</label>
             <select 
               value={selectedEndpoint} 
-              onChange={(e) => setSelectedEndpoint(e.target.value)}
+              onChange={(e: any) => setSelectedEndpoint(e?.target?.value)}
             >
               <option value="all">All Endpoints</option>
-              {endpointStats.map(stat => (
+              {endpointStats?.map(stat => (
                 <option key={stat.endpoint} value={stat.endpoint}>
                   {stat.endpoint} ({stat.totalRequests})
                 </option>
@@ -220,7 +220,7 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
         <div className={`perf-stat-card ${overallStats.errorRate > 5 ? 'error' : ''}`}>
           <div className="perf-stat-icon">❌</div>
           <div className="perf-stat-content">
-            <div className="perf-stat-value">{overallStats.errorRate.toFixed(1)}%</div>
+            <div className="perf-stat-value">{overallStats?.errorRate?.toFixed(1)}%</div>
             <div className="perf-stat-label">Error Rate</div>
           </div>
         </div>
@@ -250,17 +250,17 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
         <div className="endpoint-stats">
           <h3>📈 Endpoint Statistics</h3>
           <div className="endpoint-list">
-            {endpointStats.length === 0 ? (
+            {endpointStats?.length || 0 === 0 ? (
               <div className="no-data">No performance data available</div>
             ) : (
-              endpointStats.map(stat => (
+              endpointStats?.map(stat => (
                 <div key={stat.endpoint} className="endpoint-item">
                   <div className="endpoint-header">
                     <span className="endpoint-name">{stat.endpoint}</span>
                     <div className="endpoint-badges">
                       <span className="request-count">{stat.totalRequests} requests</span>
                       {stat.errorRate > 0 && (
-                        <span className="error-badge">{stat.errorRate.toFixed(1)}% errors</span>
+                        <span className="error-badge">{stat?.errorRate?.toFixed(1)}% errors</span>
                       )}
                     </div>
                   </div>
@@ -288,7 +288,7 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
         <div className="recent-requests">
           <h3>📝 Recent Requests</h3>
           <div className="request-log">
-            {filteredData.length === 0 ? (
+            {filteredData?.length || 0 === 0 ? (
               <div className="no-data">No requests to display</div>
             ) : (
               filteredData.slice(-20).reverse().map((request, index) => (

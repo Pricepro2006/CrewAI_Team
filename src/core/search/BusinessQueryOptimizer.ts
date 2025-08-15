@@ -108,7 +108,7 @@ export class BusinessQueryOptimizer {
   public static optimize(query: string): QueryOptimizationResult {
     // Security validation first
     const securityFlags = this.validateSecurity(query);
-    if (securityFlags.some((f) => f.severity === "high")) {
+    if (securityFlags.some((f: any) => f.severity === "high")) {
       return {
         optimizedQuery: "",
         components: this.createEmptyComponents(query),
@@ -157,7 +157,7 @@ export class BusinessQueryOptimizer {
     }
 
     // Check for excessive length (potential buffer overflow)
-    if (query.length > 500) {
+    if (query?.length || 0 > 500) {
       flags.push({
         type: "suspicious_pattern",
         severity: "medium",
@@ -255,7 +255,7 @@ export class BusinessQueryOptimizer {
     };
 
     // Check for zip code
-    const zipMatch = query.match(this.LOCATION_PATTERNS.zipCode);
+    const zipMatch = query.match(this?.LOCATION_PATTERNS?.zipCode);
     if (zipMatch) {
       location.zipCode = zipMatch[0];
       location.rawLocation = zipMatch[0];
@@ -264,7 +264,7 @@ export class BusinessQueryOptimizer {
     }
 
     // Check for city, state pattern
-    const cityStateMatch = query.match(this.LOCATION_PATTERNS.cityState);
+    const cityStateMatch = query.match(this?.LOCATION_PATTERNS?.cityState);
     if (cityStateMatch && cityStateMatch[1] && cityStateMatch[2]) {
       location.city = cityStateMatch[1].trim();
       location.state = cityStateMatch[2].trim();
@@ -272,15 +272,15 @@ export class BusinessQueryOptimizer {
       location.confidence = 0.8;
 
       // Check if state is abbreviation
-      if (location.state.length === 2) {
-        location.stateAbbr = location.state.toUpperCase();
+      if (location?.state?.length === 2) {
+        location.stateAbbr = location?.state?.toUpperCase();
       }
 
       return location;
     }
 
     // Check for street address
-    const addressMatch = query.match(this.LOCATION_PATTERNS.streetAddress);
+    const addressMatch = query.match(this?.LOCATION_PATTERNS?.streetAddress);
     if (addressMatch) {
       location.address = addressMatch[0];
       location.rawLocation = addressMatch[0];
@@ -311,7 +311,7 @@ export class BusinessQueryOptimizer {
    * Extract urgency level
    */
   private static extractUrgency(query: string): UrgencyLevel {
-    if (this.TIME_PATTERNS.emergency.test(query)) {
+    if (this?.TIME_PATTERNS?.emergency.test(query)) {
       return UrgencyLevel.EMERGENCY;
     }
 
@@ -329,7 +329,7 @@ export class BusinessQueryOptimizer {
     const constraints: TimeConstraint[] = [];
 
     // Check availability patterns
-    const availMatch = query.match(this.TIME_PATTERNS.availability);
+    const availMatch = query.match(this?.TIME_PATTERNS?.availability);
     if (availMatch) {
       const constraint: TimeConstraint = {
         type: "availability",
@@ -351,7 +351,7 @@ export class BusinessQueryOptimizer {
     }
 
     // Check schedule patterns
-    const scheduleMatch = query.match(this.TIME_PATTERNS.schedule);
+    const scheduleMatch = query.match(this?.TIME_PATTERNS?.schedule);
     if (scheduleMatch) {
       constraints.push({
         type: "schedule",
@@ -361,7 +361,7 @@ export class BusinessQueryOptimizer {
     }
 
     // Check for immediate needs
-    if (this.TIME_PATTERNS.emergency.test(query)) {
+    if (this?.TIME_PATTERNS?.emergency.test(query)) {
       constraints.push({
         type: "immediate",
         value: "immediate",
@@ -389,10 +389,10 @@ export class BusinessQueryOptimizer {
       "saturday",
       "sunday",
     ];
-    const foundDays = days.filter((day) => lower.includes(day));
-    if (foundDays.length > 0) {
-      parsed.days = foundDays.map(
-        (d) => d.charAt(0).toUpperCase() + d.slice(1),
+    const foundDays = days?.filter((day: any) => lower.includes(day));
+    if (foundDays?.length || 0 > 0) {
+      parsed.days = foundDays?.map(
+        (d: any) => d.charAt(0).toUpperCase() + d.slice(1),
       );
     }
 
@@ -424,8 +424,8 @@ export class BusinessQueryOptimizer {
     const expanded: string[] = [];
     const serviceType = this.extractServiceType(query);
 
-    const mapping = this.SERVICE_MAPPINGS.find(
-      (m) => m.category === serviceType,
+    const mapping = this?.SERVICE_MAPPINGS?.find(
+      (m: any) => m.category === serviceType,
     );
     if (mapping) {
       expanded.push(...mapping.aliases);
@@ -512,11 +512,11 @@ export class BusinessQueryOptimizer {
     }
 
     // Location
-    if (components.location.rawLocation) {
-      if (components.location.rawLocation === "near me") {
+    if (components?.location?.rawLocation) {
+      if (components?.location?.rawLocation === "near me") {
         parts.push("near me");
       } else {
-        parts.push(components.location.rawLocation);
+        parts.push(components?.location?.rawLocation);
       }
     }
 
@@ -550,21 +550,21 @@ export class BusinessQueryOptimizer {
     suggestions.push(this.buildOptimizedQuery(components));
 
     // Alternative with expanded terms
-    if (components.expandedTerms.length > 0) {
-      const altQuery = `${components.expandedTerms[0]} ${components.location.rawLocation} ${components.businessIndicators.join(" ")}`;
+    if (components?.expandedTerms?.length > 0) {
+      const altQuery = `${components.expandedTerms[0]} ${components?.location?.rawLocation} ${components?.businessIndicators?.join(" ")}`;
       suggestions.push(altQuery.trim());
     }
 
     // Emergency variant
     if (components.urgency === UrgencyLevel.EMERGENCY) {
       suggestions.push(
-        `emergency ${components.serviceType} ${components.location.rawLocation} 24/7`,
+        `emergency ${components.serviceType} ${components?.location?.rawLocation} 24/7`,
       );
     }
 
     // Reviews focused
     suggestions.push(
-      `best ${components.serviceType} ${components.location.rawLocation} reviews ratings`,
+      `best ${components.serviceType} ${components?.location?.rawLocation} reviews ratings`,
     );
 
     return [...new Set(suggestions)].slice(0, 4);
@@ -585,15 +585,15 @@ export class BusinessQueryOptimizer {
     }
 
     // Location confidence
-    confidence += components.location.confidence * 0.4;
+    confidence += components?.location?.confidence * 0.4;
 
     // Business indicators
-    if (components.businessIndicators.length > 3) {
+    if (components?.businessIndicators?.length > 3) {
       confidence += 0.2;
     }
 
     // Time constraints
-    if (components.timeConstraints.length > 0) {
+    if (components?.timeConstraints?.length > 0) {
       confidence += 0.1;
     }
 

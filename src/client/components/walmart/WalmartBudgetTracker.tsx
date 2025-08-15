@@ -189,8 +189,8 @@ const CategoryBreakdown: React.FC<{
 }> = ({ categories, total }) => {
   return (
     <div className="space-y-3">
-      {categories.map((category) => {
-        const Icon = category.icon;
+      {categories?.map((category: any) => {
+        const Icon = category?.icon;
         
         return (
           <div key={category.name} className="space-y-2">
@@ -209,7 +209,7 @@ const CategoryBreakdown: React.FC<{
               <div className="text-right">
                 <p className="font-medium">{formatPrice(category.amount)}</p>
                 <p className="text-xs text-muted-foreground">
-                  {category.percentage.toFixed(1)}%
+                  {category?.percentage?.toFixed(1)}%
                 </p>
               </div>
             </div>
@@ -249,14 +249,14 @@ export const WalmartBudgetTracker: React.FC<WalmartBudgetTrackerProps> = ({
   const [showBudgetDialog, setShowBudgetDialog] = useState(false);
   const [editingBudget, setEditingBudget] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month'>('month');
-  const [tempBudget, setTempBudget] = useState(budgetConfig.monthly.toString());
+  const [tempBudget, setTempBudget] = useState(budgetConfig?.monthly?.toString());
   
   // Calculate spending from orders
   const spendingHistory = useMemo(() => {
-    if (orders.length > 0) {
-      return orders.map((order: Order) => ({
+    if (orders?.length || 0 > 0) {
+      return orders?.map((order: Order) => ({
         date: order.createdAt,
-        amount: order.totals.total,
+        amount: order?.totals?.total,
         category: 'Grocery',
       }));
     }
@@ -393,7 +393,7 @@ export const WalmartBudgetTracker: React.FC<WalmartBudgetTrackerProps> = ({
               variant={currentPeriod.percentage > 100 ? "destructive" : 
                        currentPeriod.percentage > 80 ? "warning" : "default"}
             >
-              {currentPeriod.percentage.toFixed(0)}%
+              {currentPeriod?.percentage?.toFixed(0)}%
             </Badge>
           </div>
         </CardHeader>
@@ -477,7 +477,7 @@ export const WalmartBudgetTracker: React.FC<WalmartBudgetTrackerProps> = ({
                             <Input
                               type="number"
                               value={tempBudget}
-                              onChange={(e) => setTempBudget(e.target.value)}
+                              onChange={(e: any) => setTempBudget(e?.target?.value)}
                               className="w-24 h-8"
                             />
                             <Button
@@ -494,7 +494,7 @@ export const WalmartBudgetTracker: React.FC<WalmartBudgetTrackerProps> = ({
                               className="h-8 w-8"
                               onClick={() => {
                                 setEditingBudget(false);
-                                setTempBudget(budgetConfig.monthly.toString());
+                                setTempBudget(budgetConfig?.monthly?.toString());
                               }}
                             >
                               <X className="h-4 w-4" />
@@ -561,14 +561,14 @@ export const WalmartBudgetTracker: React.FC<WalmartBudgetTrackerProps> = ({
                     </div>
                     
                     {/* Alert */}
-                    {budgetConfig.alerts.enabled && 
-                     currentPeriod.percentage >= budgetConfig.alerts.threshold && (
+                    {budgetConfig?.alerts?.enabled && 
+                     currentPeriod.percentage >= budgetConfig?.alerts?.threshold && (
                       <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950 rounded-lg">
                         <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
                         <div className="text-sm">
                           <p className="font-medium">Budget Alert</p>
                           <p className="text-muted-foreground">
-                            You've used {currentPeriod.percentage.toFixed(0)}% of your {selectedPeriod}ly budget
+                            You've used {currentPeriod?.percentage?.toFixed(0)}% of your {selectedPeriod}ly budget
                           </p>
                         </div>
                       </div>
@@ -701,8 +701,8 @@ export const WalmartBudgetTracker: React.FC<WalmartBudgetTrackerProps> = ({
                   value={budgetConfig.monthly}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBudgetConfig(prev => ({
                     ...prev,
-                    monthly: parseFloat(e.target.value) || 0,
-                    weekly: (parseFloat(e.target.value) || 0) / 4,
+                    monthly: parseFloat(e?.target?.value) || 0,
+                    weekly: (parseFloat(e?.target?.value) || 0) / 4,
                   }))}
                 />
               </div>
@@ -718,7 +718,7 @@ export const WalmartBudgetTracker: React.FC<WalmartBudgetTrackerProps> = ({
                   value={budgetConfig.savingsGoal || 0}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBudgetConfig(prev => ({
                     ...prev,
-                    savingsGoal: parseFloat(e.target.value) || 0,
+                    savingsGoal: parseFloat(e?.target?.value) || 0,
                   }))}
                 />
               </div>
@@ -730,7 +730,7 @@ export const WalmartBudgetTracker: React.FC<WalmartBudgetTrackerProps> = ({
                 <Label htmlFor="alerts">Budget Alerts</Label>
                 <Switch
                   id="alerts"
-                  checked={budgetConfig.alerts.enabled}
+                  checked={budgetConfig?.alerts?.enabled}
                   onCheckedChange={(checked: boolean) => setBudgetConfig(prev => ({
                     ...prev,
                     alerts: { ...prev.alerts, enabled: checked },
@@ -738,12 +738,12 @@ export const WalmartBudgetTracker: React.FC<WalmartBudgetTrackerProps> = ({
                 />
               </div>
               
-              {budgetConfig.alerts.enabled && (
+              {budgetConfig?.alerts?.enabled && (
                 <div className="space-y-2">
                   <Label>Alert Threshold</Label>
                   <div className="flex items-center gap-3">
                     <Slider
-                      value={[budgetConfig.alerts.threshold]}
+                      value={[budgetConfig?.alerts?.threshold]}
                       onValueChange={([value]: number[]) => setBudgetConfig(prev => ({
                         ...prev,
                         alerts: { ...prev.alerts, threshold: value || 80 },
@@ -754,7 +754,7 @@ export const WalmartBudgetTracker: React.FC<WalmartBudgetTrackerProps> = ({
                       className="flex-1"
                     />
                     <span className="w-12 text-sm font-medium">
-                      {budgetConfig.alerts.threshold}%
+                      {budgetConfig?.alerts?.threshold}%
                     </span>
                   </div>
                 </div>

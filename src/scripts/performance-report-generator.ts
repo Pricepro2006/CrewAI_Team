@@ -134,17 +134,17 @@ class PerformanceReportGenerator {
   }
 
   private async getSystemMetrics() {
-    const nodeVersion = process.version;
-    const platform = process.platform;
+    const nodeVersion = process?.version;
+    const platform = process?.platform;
     
     // Memory info
     let memoryInfo = { total: 0, used: 0, percentage: 0 };
     try {
       const memOutput = await this.executeCommand('free -m');
       const memLines = memOutput.split('\n');
-      if (memLines.length > 1) {
+      if (memLines?.length || 0 > 1) {
         const memData = memLines[1].split(/\s+/);
-        if (memData.length >= 3) {
+        if (memData?.length || 0 >= 3) {
           memoryInfo = {
             total: parseInt(memData[1]),
             used: parseInt(memData[2]),
@@ -191,7 +191,7 @@ class PerformanceReportGenerator {
     for (const db of databases) {
       if (existsSync(db.path)) {
         try {
-          const stats = await import('fs').then(fs => fs.promises.stat(db.path));
+          const stats = await import('fs').then(fs => fs?.promises?.stat(db.path));
           const sizeInMB = (stats.size / (1024 * 1024)).toFixed(2);
           
           metrics[db.name] = {
@@ -229,12 +229,12 @@ class PerformanceReportGenerator {
     const recommendations: OptimizationRecommendation[] = [];
     
     // Service availability recommendations
-    const downServices = metrics.services.filter(s => !s.healthy);
-    if (downServices.length > 0) {
+    const downServices = metrics?.services?.filter(s => !s.healthy);
+    if (downServices?.length || 0 > 0) {
       recommendations.push({
         category: 'Critical',
         area: 'Service Availability',
-        issue: `${downServices.length} services are down: ${downServices.map(s => s.name).join(', ')}`,
+        issue: `${downServices?.length || 0} services are down: ${downServices?.map(s => s.name).join(', ')}`,
         impact: 'System functionality severely impacted, user experience degraded',
         solution: 'Start missing services using the service startup script. Check logs for startup errors. Implement health checks and auto-restart mechanisms.',
         effort: 'Low',
@@ -243,11 +243,11 @@ class PerformanceReportGenerator {
     }
     
     // Database size recommendations
-    if (parseFloat(metrics.database.crewaiDb.size) > 500) {
+    if (parseFloat(metrics?.database?.crewaiDb.size) > 500) {
       recommendations.push({
         category: 'High',
         area: 'Database Performance',
-        issue: `CrewAI Enhanced database is very large: ${metrics.database.crewaiDb.size}`,
+        issue: `CrewAI Enhanced database is very large: ${metrics?.database?.crewaiDb.size}`,
         impact: 'Slower query performance, increased memory usage, longer backup times',
         solution: 'Archive old email analysis data, implement data retention policies, consider database partitioning, run VACUUM to reclaim space.',
         effort: 'Medium',
@@ -256,11 +256,11 @@ class PerformanceReportGenerator {
     }
     
     // Memory usage recommendations
-    if (metrics.environment.memory.percentage > 80) {
+    if (metrics?.environment?.memory.percentage > 80) {
       recommendations.push({
         category: 'High',
         area: 'Memory Management',
-        issue: `High memory usage: ${metrics.environment.memory.percentage.toFixed(1)}%`,
+        issue: `High memory usage: ${metrics?.environment?.memory.percentage.toFixed(1)}%`,
         impact: 'System slowdown, potential crashes, reduced concurrent user capacity',
         solution: 'Optimize memory usage in Node.js applications, implement memory profiling, consider increasing system RAM or implementing caching strategies.',
         effort: 'Medium',
@@ -269,11 +269,11 @@ class PerformanceReportGenerator {
     }
     
     // Frontend optimization recommendations
-    if (metrics.frontend.totalFiles > 2000) {
+    if (metrics?.frontend?.totalFiles > 2000) {
       recommendations.push({
         category: 'Medium',
         area: 'Frontend Performance',
-        issue: `Large number of build artifacts: ${metrics.frontend.totalFiles} files`,
+        issue: `Large number of build artifacts: ${metrics?.frontend?.totalFiles} files`,
         impact: 'Slower build times, larger deployment packages, increased CDN costs',
         solution: 'Implement more aggressive tree shaking, remove unused dependencies, enable gzip compression, exclude source maps from production builds.',
         effort: 'Low',
@@ -282,12 +282,12 @@ class PerformanceReportGenerator {
     }
     
     // Service response time recommendations
-    const slowServices = metrics.services.filter(s => s.responseTime && s.responseTime > 500);
-    if (slowServices.length > 0) {
+    const slowServices = metrics?.services?.filter(s => s.responseTime && s.responseTime > 500);
+    if (slowServices?.length || 0 > 0) {
       recommendations.push({
         category: 'Medium',
         area: 'API Performance',
-        issue: `Slow services detected: ${slowServices.map(s => `${s.name} (${s.responseTime}ms)`).join(', ')}`,
+        issue: `Slow services detected: ${slowServices?.map(s => `${s.name} (${s.responseTime}ms)`).join(', ')}`,
         impact: 'Poor user experience, timeout errors, reduced system throughput',
         solution: 'Implement query optimization, add caching layers, optimize database indexes, consider connection pooling.',
         effort: 'Medium',
@@ -296,7 +296,7 @@ class PerformanceReportGenerator {
     }
     
     // Ollama service recommendations
-    if (metrics.environment.processes.ollama === 0) {
+    if (metrics?.environment?.processes.ollama === 0) {
       recommendations.push({
         category: 'High',
         area: 'AI Services',
@@ -309,11 +309,11 @@ class PerformanceReportGenerator {
     }
     
     // Process count recommendations
-    if (metrics.environment.processes.node > 20) {
+    if (metrics?.environment?.processes.node > 20) {
       recommendations.push({
         category: 'Medium',
         area: 'Process Management',
-        issue: `High number of Node.js processes: ${metrics.environment.processes.node}`,
+        issue: `High number of Node.js processes: ${metrics?.environment?.processes.node}`,
         impact: 'Increased memory usage, potential resource conflicts, harder debugging',
         solution: 'Audit running processes, consolidate microservices where appropriate, implement proper process monitoring and cleanup.',
         effort: 'Medium',
@@ -327,8 +327,8 @@ class PerformanceReportGenerator {
   private async generateHTMLReport(metrics: PerformanceMetrics, recommendations: OptimizationRecommendation[]): Promise<string> {
     const timestamp = new Date().toISOString();
     
-    const healthyServices = metrics.services.filter(s => s.healthy).length;
-    const totalServices = metrics.services.length;
+    const healthyServices = metrics?.services?.filter(s => s.healthy).length;
+    const totalServices = metrics?.services?.length;
     const healthPercentage = (healthyServices / totalServices) * 100;
     
     const html = `
@@ -404,29 +404,29 @@ class PerformanceReportGenerator {
                 </div>
             </div>
             
-            <div class="metric-card ${metrics.environment.memory.percentage > 80 ? 'critical' : metrics.environment.memory.percentage > 60 ? 'warning' : 'success'}">
+            <div class="metric-card ${metrics?.environment?.memory.percentage > 80 ? 'critical' : metrics?.environment?.memory.percentage > 60 ? 'warning' : 'success'}">
                 <div class="metric-title">Memory Usage</div>
-                <div class="metric-value ${metrics.environment.memory.percentage > 80 ? 'critical' : metrics.environment.memory.percentage > 60 ? 'warning' : 'success'}">${metrics.environment.memory.percentage.toFixed(1)}%</div>
-                <div class="metric-subtitle">${metrics.environment.memory.used}MB / ${metrics.environment.memory.total}MB</div>
+                <div class="metric-value ${metrics?.environment?.memory.percentage > 80 ? 'critical' : metrics?.environment?.memory.percentage > 60 ? 'warning' : 'success'}">${metrics?.environment?.memory.percentage.toFixed(1)}%</div>
+                <div class="metric-subtitle">${metrics?.environment?.memory.used}MB / ${metrics?.environment?.memory.total}MB</div>
             </div>
             
             <div class="metric-card">
                 <div class="metric-title">Database Size</div>
-                <div class="metric-value">${(parseFloat(metrics.database.mainDb.size) + parseFloat(metrics.database.walmartDb.size) + parseFloat(metrics.database.crewaiDb.size)).toFixed(2)} MB</div>
-                <div class="metric-subtitle">Across ${metrics.database.mainDb.tables + metrics.database.walmartDb.tables + metrics.database.crewaiDb.tables} tables</div>
+                <div class="metric-value">${(parseFloat(metrics?.database?.mainDb.size) + parseFloat(metrics?.database?.walmartDb.size) + parseFloat(metrics?.database?.crewaiDb.size)).toFixed(2)} MB</div>
+                <div class="metric-subtitle">Across ${metrics?.database?.mainDb.tables + metrics?.database?.walmartDb.tables + metrics?.database?.crewaiDb.tables} tables</div>
             </div>
             
             <div class="metric-card">
                 <div class="metric-title">Frontend Bundle</div>
-                <div class="metric-value">${metrics.frontend.bundleSize}</div>
-                <div class="metric-subtitle">${metrics.frontend.totalFiles} files, ${metrics.frontend.components} components</div>
+                <div class="metric-value">${metrics?.frontend?.bundleSize}</div>
+                <div class="metric-subtitle">${metrics?.frontend?.totalFiles} files, ${metrics?.frontend?.components} components</div>
             </div>
         </div>
         
         <div class="section">
             <h2>🔧 Service Status</h2>
             <div class="service-list">
-                ${metrics.services.map(service => `
+                ${metrics?.services?.map(service => `
                     <div class="service-item ${service.healthy ? 'healthy' : 'unhealthy'}">
                         <div>
                             <div class="service-name">${service.name}</div>
@@ -446,17 +446,17 @@ class PerformanceReportGenerator {
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 6px;">
                     <strong>Platform</strong><br>
-                    ${metrics.environment.platform} (Node.js ${metrics.environment.nodeVersion})
+                    ${metrics?.environment?.platform} (Node.js ${metrics?.environment?.nodeVersion})
                 </div>
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 6px;">
                     <strong>Active Processes</strong><br>
-                    Node.js: ${metrics.environment.processes.node}<br>
-                    Ollama: ${metrics.environment.processes.ollama}
+                    Node.js: ${metrics?.environment?.processes.node}<br>
+                    Ollama: ${metrics?.environment?.processes.ollama}
                 </div>
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 6px;">
                     <strong>Database Indexes</strong><br>
-                    Total: ${metrics.database.mainDb.indexes + metrics.database.walmartDb.indexes + metrics.database.crewaiDb.indexes}<br>
-                    Avg per table: ${((metrics.database.mainDb.indexes + metrics.database.walmartDb.indexes + metrics.database.crewaiDb.indexes) / (metrics.database.mainDb.tables + metrics.database.walmartDb.tables + metrics.database.crewaiDb.tables)).toFixed(1)}
+                    Total: ${metrics?.database?.mainDb.indexes + metrics?.database?.walmartDb.indexes + metrics?.database?.crewaiDb.indexes}<br>
+                    Avg per table: ${((metrics?.database?.mainDb.indexes + metrics?.database?.walmartDb.indexes + metrics?.database?.crewaiDb.indexes) / (metrics?.database?.mainDb.tables + metrics?.database?.walmartDb.tables + metrics?.database?.crewaiDb.tables)).toFixed(1)}
                 </div>
             </div>
         </div>
@@ -464,7 +464,7 @@ class PerformanceReportGenerator {
         <div class="section">
             <h2>💡 Optimization Recommendations</h2>
             <div class="recommendations">
-                ${recommendations.map(rec => `
+                ${recommendations?.map(rec => `
                     <div class="recommendation ${rec.category}">
                         <div class="recommendation-header">
                             <h3 class="recommendation-title">
@@ -555,14 +555,14 @@ class PerformanceReportGenerator {
     
     // Display summary
     console.log('\n📊 SUMMARY:');
-    const healthyCount = services.filter(s => s.healthy).length;
-    console.log(`   Services: ${healthyCount}/${services.length} healthy`);
-    console.log(`   Memory: ${environment.memory.percentage.toFixed(1)}% used`);
-    console.log(`   Critical Issues: ${recommendations.filter(r => r.category === 'Critical').length}`);
-    console.log(`   High Priority: ${recommendations.filter(r => r.category === 'High').length}`);
-    console.log(`   Total Database Size: ${(parseFloat(database.mainDb.size) + parseFloat(database.walmartDb.size) + parseFloat(database.crewaiDb.size)).toFixed(2)} MB`);
+    const healthyCount = services?.filter(s => s.healthy).length;
+    console.log(`   Services: ${healthyCount}/${services?.length || 0} healthy`);
+    console.log(`   Memory: ${environment?.memory?.percentage.toFixed(1)}% used`);
+    console.log(`   Critical Issues: ${recommendations?.filter(r => r.category === 'Critical').length}`);
+    console.log(`   High Priority: ${recommendations?.filter(r => r.category === 'High').length}`);
+    console.log(`   Total Database Size: ${(parseFloat(database?.mainDb?.size) + parseFloat(database?.walmartDb?.size) + parseFloat(database?.crewaiDb?.size)).toFixed(2)} MB`);
     
-    if (recommendations.length > 0) {
+    if (recommendations?.length || 0 > 0) {
       console.log('\n🔧 TOP RECOMMENDATIONS:');
       recommendations.slice(0, 3).forEach((rec, index) => {
         console.log(`   ${index + 1}. [${rec.category}] ${rec.area}: ${rec.issue}`);

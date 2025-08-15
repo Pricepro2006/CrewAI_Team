@@ -97,8 +97,8 @@ router.get('/state/:service?/:operation?', asyncHandler(async (req, res) => {
     res.json(state);
   } catch (error) {
     logger.error('Failed to get circuit breaker state', 'CIRCUIT_BREAKER_API', {
-      service: req.params.service,
-      operation: req.params.operation,
+      service: req?.params?.service,
+      operation: req?.params?.operation,
     }, error as Error);
     
     res.status(500).json({
@@ -140,8 +140,8 @@ router.post('/reset/:service/:operation?', asyncHandler(async (req, res) => {
     });
   } catch (error) {
     logger.error('Failed to reset circuit breaker', 'CIRCUIT_BREAKER_API', {
-      service: req.params.service,
-      operation: req.params.operation,
+      service: req?.params?.service,
+      operation: req?.params?.operation,
     }, error as Error);
     
     res.status(500).json({
@@ -184,8 +184,8 @@ router.post('/force-open/:service/:operation?', asyncHandler(async (req, res) =>
     });
   } catch (error) {
     logger.error('Failed to force circuit breaker open', 'CIRCUIT_BREAKER_API', {
-      service: req.params.service,
-      operation: req.params.operation,
+      service: req?.params?.service,
+      operation: req?.params?.operation,
     }, error as Error);
     
     res.status(500).json({
@@ -252,7 +252,7 @@ router.post('/retry/:itemId', asyncHandler(async (req, res) => {
     }
   } catch (error) {
     logger.error('Failed to retry dead letter queue item', 'CIRCUIT_BREAKER_API', {
-      itemId: req.params.itemId,
+      itemId: req?.params?.itemId,
     }, error as Error);
     
     res.status(500).json({
@@ -319,7 +319,7 @@ router.put('/config/:service', asyncHandler(async (req, res) => {
     }
 
     logger.error('Failed to update circuit breaker configuration', 'CIRCUIT_BREAKER_API', {
-      service: req.params.service,
+      service: req?.params?.service,
     }, error as Error);
     
     res.status(500).json({
@@ -356,10 +356,10 @@ router.get('/metrics', asyncHandler(async (req, res) => {
           uptime: cb.uptime,
         })),
         bulkhead: {
-          max_concurrent: serviceData.bulkhead.maxConcurrent,
-          current_active: serviceData.bulkhead.currentActive,
-          queue_size: serviceData.bulkhead.queueSize,
-          utilization: (serviceData.bulkhead.currentActive / serviceData.bulkhead.maxConcurrent) * 100,
+          max_concurrent: serviceData?.bulkhead?.maxConcurrent,
+          current_active: serviceData?.bulkhead?.currentActive,
+          queue_size: serviceData?.bulkhead?.queueSize,
+          utilization: (serviceData?.bulkhead?.currentActive / serviceData?.bulkhead?.maxConcurrent) * 100,
         },
       })),
       dead_letter_queue: systemHealth.deadLetterQueue,
@@ -418,8 +418,8 @@ if (process.env.NODE_ENV === 'development') {
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        service: req.params.service,
-        operation: req.params.operation,
+        service: req?.params?.service,
+        operation: req?.params?.operation,
       });
     }
   }));

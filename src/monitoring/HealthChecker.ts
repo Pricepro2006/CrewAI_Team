@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { metricsCollector } from "./MetricsCollector.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 import fs from "fs";
 import appConfig from "../config/app.config.js";
 
@@ -42,7 +42,7 @@ export class HealthChecker extends EventEmitter {
 
   // Register a health check
   registerCheck(check: HealthCheck): void {
-    this.checks.set(check.name, check);
+    this?.checks?.set(check.name, check);
     logger.info(`Health check registered: ${check.name}`, "HEALTH_CHECKER");
   }
 
@@ -77,7 +77,7 @@ export class HealthChecker extends EventEmitter {
 
   // Run all health checks
   async runAllChecks(): Promise<void> {
-    const checkPromises = Array.from(this.checks.entries()).map(
+    const checkPromises = Array.from(this?.checks?.entries()).map(
       ([name, check]) => this.runCheck(name, check),
     );
 
@@ -98,7 +98,7 @@ export class HealthChecker extends EventEmitter {
       const latency = Date.now() - startTime;
 
       // Update health status
-      const previousHealth = this.healthStatus.get(name);
+      const previousHealth = this?.healthStatus?.get(name);
       const consecutiveFailures =
         result.status === "healthy"
           ? 0
@@ -117,7 +117,7 @@ export class HealthChecker extends EventEmitter {
         health.error = result.message;
       }
 
-      this.healthStatus.set(name, health);
+      this?.healthStatus?.set(name, health);
 
       // Record metrics
       metricsCollector.gauge(
@@ -163,7 +163,7 @@ export class HealthChecker extends EventEmitter {
         error instanceof Error ? error.message : "Unknown error";
 
       // Update health status for error
-      const previousHealth = this.healthStatus.get(name);
+      const previousHealth = this?.healthStatus?.get(name);
       const consecutiveFailures =
         (previousHealth?.consecutiveFailures || 0) + 1;
 
@@ -176,7 +176,7 @@ export class HealthChecker extends EventEmitter {
         error: errorMessage,
       };
 
-      this.healthStatus.set(name, health);
+      this?.healthStatus?.set(name, health);
 
       // Record metrics
       metricsCollector.gauge(`health_${name}_status`, 0);
@@ -195,7 +195,7 @@ export class HealthChecker extends EventEmitter {
   // Get current health status
   getHealthStatus(): Record<string, ServiceHealth> {
     const status: Record<string, ServiceHealth> = {};
-    this.healthStatus.forEach((health, service) => {
+    this?.healthStatus?.forEach((health, service) => {
       status[service] = health;
     });
     return status;
@@ -214,7 +214,7 @@ export class HealthChecker extends EventEmitter {
     let unhealthyCount = 0;
     const criticalDown: string[] = [];
 
-    this.healthStatus.forEach((health, service) => {
+    this?.healthStatus?.forEach((health, service) => {
       switch (health.status) {
         case "healthy":
           healthyCount++;
@@ -224,7 +224,7 @@ export class HealthChecker extends EventEmitter {
           break;
         case "unhealthy": {
           unhealthyCount++;
-          const check = this.checks.get(service);
+          const check = this?.checks?.get(service);
           if (check?.critical) {
             criticalDown.push(service);
           }
@@ -235,7 +235,7 @@ export class HealthChecker extends EventEmitter {
 
     // Determine overall status
     let overallStatus: "healthy" | "degraded" | "unhealthy";
-    if (criticalDown.length > 0 || unhealthyCount > 0) {
+    if (criticalDown?.length || 0 > 0 || unhealthyCount > 0) {
       overallStatus = "unhealthy";
     } else if (degradedCount > 0) {
       overallStatus = "degraded";
@@ -297,7 +297,7 @@ export class HealthChecker extends EventEmitter {
           const modelPath = process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf";
           
           // Check if model file exists and is accessible
-          const stats = await fs.promises.stat(modelPath);
+          const stats = await fs?.promises?.stat(modelPath);
           
           if (stats.isFile()) {
             return {
@@ -305,7 +305,7 @@ export class HealthChecker extends EventEmitter {
               metadata: { 
                 modelPath,
                 modelSize: Math.round(stats.size / 1024 / 1024) + "MB",
-                lastModified: stats.mtime.toISOString()
+                lastModified: stats?.mtime?.toISOString()
               },
             };
           } else {

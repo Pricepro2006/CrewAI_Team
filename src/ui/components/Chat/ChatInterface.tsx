@@ -38,7 +38,7 @@ export const ChatInterface: React.FC = () => {
       enabled: !!conversationId,
       onData: (data: unknown) => {
         const message = data as Message;
-        setMessages((prev) => [...prev, message]);
+        setMessages((prev: any) => [...prev, message]);
       },
     },
   );
@@ -61,7 +61,7 @@ export const ChatInterface: React.FC = () => {
         setConversationId(result.conversationId);
         navigate(`/chat/${result.conversationId}`);
 
-        setMessages((prev) => [
+        setMessages((prev: any) => [
           ...prev,
           {
             role: "assistant",
@@ -71,14 +71,14 @@ export const ChatInterface: React.FC = () => {
       } else {
         // Continue conversation
         const userMessage: Message = { role: "user", content: text };
-        setMessages((prev) => [...prev, userMessage]);
+        setMessages((prev: any) => [...prev, userMessage]);
 
         const result = await sendMessage.mutateAsync({
           conversationId,
           message: text,
         });
 
-        setMessages((prev) => [
+        setMessages((prev: any) => [
           ...prev,
           {
             role: "assistant",
@@ -88,7 +88,7 @@ export const ChatInterface: React.FC = () => {
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      setMessages((prev) => [
+      setMessages((prev: any) => [
         ...prev,
         {
           role: "system",

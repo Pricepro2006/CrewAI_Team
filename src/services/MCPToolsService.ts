@@ -1,4 +1,4 @@
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Service to manage MCP (Model Context Protocol) tools integration
@@ -205,7 +205,7 @@ export class MCPToolsService {
     health.sequentialThinking = !!this.sequentialThinkingTools;
     health.fileSystem = !!this.fileSystemTools;
 
-    const healthy = Object.values(health).every((v) => v);
+    const healthy = Object.values(health).every((v: any) => v);
 
     return {
       healthy,

@@ -86,8 +86,8 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
     };
 
     this.queue = new PQueue({
-      concurrency: this.options.concurrency,
-      timeout: this.options.timeout,
+      concurrency: this?.options?.concurrency,
+      timeout: this?.options?.timeout,
       throwOnTimeout: true,
     });
 
@@ -98,9 +98,9 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
       "Three-phase email batch processor initialized",
       "BATCH_PROCESSOR",
       {
-        concurrency: this.options.concurrency,
-        timeout: this.options.timeout,
-        caching: this.options.useCaching,
+        concurrency: this?.options?.concurrency,
+        timeout: this?.options?.timeout,
+        caching: this?.options?.useCaching,
       },
     );
   }
@@ -114,7 +114,7 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
 
     // Reset progress
     this.progress = {
-      total: emails.length,
+      total: emails?.length || 0,
       processed: 0,
       successful: 0,
       failed: 0,
@@ -123,38 +123,38 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
     };
 
     logger.info(
-      `Starting three-phase batch processing of ${emails.length} emails`,
+      `Starting three-phase batch processing of ${emails?.length || 0} emails`,
       "BATCH_PROCESSOR",
     );
 
     // Emit batch start event
-    this.emit("batch:start", { total: emails.length });
+    this.emit("batch:start", { total: emails?.length || 0 });
 
     // Add all emails to the queue
-    const promises = emails.map((email, index) =>
-      this.queue.add(async () => {
+    const promises = emails?.map((email, index) =>
+      this?.queue?.add(async () => {
         const result = await this.processEmail(email, index + 1);
         results.push(result);
 
         // Update progress
-        this.progress.processed++;
-        if (result.success) this.progress.successful++;
-        else this.progress.failed++;
-        if (result.fromCache) this.progress.cacheHits++;
+        this?.progress?.processed++;
+        if (result.success) this?.progress?.successful++;
+        else this?.progress?.failed++;
+        if (result.fromCache) this?.progress?.cacheHits++;
 
         // Calculate average time
         const totalProcessingTime = results.reduce(
           (sum, r) => sum + (r.processingTime || 0),
           0,
         );
-        this.progress.averageTime = Math.round(
-          totalProcessingTime / results.length,
+        this?.progress?.averageTime = Math.round(
+          totalProcessingTime / results?.length || 0,
         );
 
         // Emit progress event
         this.emit("batch:progress", {
           ...this.progress,
-          percentage: (this.progress.processed / this.progress.total) * 100,
+          percentage: (this?.progress?.processed / this?.progress?.total) * 100,
         });
 
         return result;
@@ -168,13 +168,13 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
 
     // Final statistics
     const stats = {
-      total: emails.length,
-      successful: this.progress.successful,
-      failed: this.progress.failed,
-      cacheHits: this.progress.cacheHits,
+      total: emails?.length || 0,
+      successful: this?.progress?.successful,
+      failed: this?.progress?.failed,
+      cacheHits: this?.progress?.cacheHits,
       totalTime: totalTime,
-      avgTime: Math.round(totalTime / emails.length),
-      throughput: Math.round((emails.length / totalTime) * 1000), // emails per second
+      avgTime: Math.round(totalTime / emails?.length || 0),
+      throughput: Math.round((emails?.length || 0 / totalTime) * 1000), // emails per second
     };
 
     logger.info(
@@ -201,12 +201,12 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
 
     try {
       logger.debug(
-        `Processing email ${position}/${this.progress.total}: ${email.subject?.substring(0, 50)}...`,
+        `Processing email ${position}/${this?.progress?.total}: ${email.subject?.substring(0, 50)}...`,
       );
 
       // Check cache first if enabled
-      if (this.options.useCaching && this.cache.has(email.id)) {
-        const cached = this.cache.get(email.id);
+      if (this?.options?.useCaching && this?.cache?.has(email.id)) {
+        const cached = this?.cache?.get(email.id);
         if (cached) {
           logger.debug(`Cache hit for email ${email.id}`);
           return {
@@ -221,10 +221,10 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
       }
 
       // Process email through three phases
-      const analysis = await this.analysisService.analyzeEmail(email, {
-        skipCache: !this.options.useCaching,
-        priority: this.options.priority,
-        timeout: this.options.timeout,
+      const analysis = await this?.analysisService?.analyzeEmail(email, {
+        skipCache: !this?.options?.useCaching,
+        priority: this?.options?.priority,
+        timeout: this?.options?.timeout,
       });
 
       // Calculate phases completed
@@ -233,8 +233,8 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
       if ('phase3_processing_time' in analysis && analysis.phase3_processing_time) phasesCompleted = 3;
 
       // Cache the complete analysis
-      if (this.options.useCaching && phasesCompleted === 3) {
-        this.cache.set(email.id, analysis);
+      if (this?.options?.useCaching && phasesCompleted === 3) {
+        this?.cache?.set(email.id, analysis);
       }
 
       return {
@@ -250,14 +250,14 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
         error instanceof Error ? error.message : String(error);
 
       // Retry logic
-      if (attempt < this.options.retryAttempts) {
+      if (attempt < this?.options?.retryAttempts) {
         logger.warn(
-          `Retrying email ${email.id} (attempt ${attempt + 1}/${this.options.retryAttempts})`,
+          `Retrying email ${email.id} (attempt ${attempt + 1}/${this?.options?.retryAttempts})`,
           "BATCH_PROCESSOR",
         );
 
         // Exponential backoff
-        await new Promise((resolve) =>
+        await new Promise((resolve: any) =>
           setTimeout(resolve, 1000 * Math.pow(2, attempt)),
         );
 
@@ -287,14 +287,14 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
     chunkSize = 100,
   ): Promise<BatchResult[]> {
     const allResults: BatchResult[] = [];
-    const totalChunks = Math.ceil(emails.length / chunkSize);
+    const totalChunks = Math.ceil(emails?.length || 0 / chunkSize);
 
     logger.info(
-      `Processing ${emails.length} emails in ${totalChunks} chunks`,
+      `Processing ${emails?.length || 0} emails in ${totalChunks} chunks`,
       "BATCH_PROCESSOR",
     );
 
-    for (let i = 0; i < emails.length; i += chunkSize) {
+    for (let i = 0; i < emails?.length || 0; i += chunkSize) {
       const chunk = emails.slice(i, i + chunkSize);
       const chunkNumber = Math.floor(i / chunkSize) + 1;
 
@@ -310,13 +310,13 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
       this.emit("chunk:complete", {
         chunkNumber,
         totalChunks,
-        chunkResults: chunkResults.length,
-        totalProcessed: allResults.length,
+        chunkResults: chunkResults?.length || 0,
+        totalProcessed: allResults?.length || 0,
       });
 
       // Small delay between chunks to avoid overwhelming the system
-      if (i + chunkSize < emails.length) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (i + chunkSize < emails?.length || 0) {
+        await new Promise((resolve: any) => setTimeout(resolve, 1000));
       }
     }
 
@@ -328,19 +328,19 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
    */
   private setupEventForwarding(): void {
     // Forward phase events
-    this.analysisService.on("phase:start", (data) => {
+    this?.analysisService?.on("phase:start", (data: any) => {
       this.emit("email:phase:start", data);
     });
 
-    this.analysisService.on("phase:complete", (data) => {
+    this?.analysisService?.on("phase:complete", (data: any) => {
       this.emit("email:phase:complete", data);
     });
 
-    this.analysisService.on("analysis:complete", (data) => {
+    this?.analysisService?.on("analysis:complete", (data: any) => {
       this.emit("email:complete", data);
     });
 
-    this.analysisService.on("analysis:error", (data) => {
+    this?.analysisService?.on("analysis:error", (data: any) => {
       this.emit("email:error", data);
     });
   }
@@ -350,11 +350,11 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
    */
   getQueueStats() {
     return {
-      size: this.queue.size,
-      pending: this.queue.pending,
-      isPaused: this.queue.isPaused,
-      concurrency: this.options.concurrency,
-      cacheStats: this.cache.getStats(),
+      size: this?.queue?.size,
+      pending: this?.queue?.pending,
+      isPaused: this?.queue?.isPaused,
+      concurrency: this?.options?.concurrency,
+      cacheStats: this?.cache?.getStats(),
     };
   }
 
@@ -362,7 +362,7 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
    * Pause processing
    */
   pause(): void {
-    this.queue.pause();
+    this?.queue?.pause();
     logger.info("Batch processing paused", "BATCH_PROCESSOR");
   }
 
@@ -370,7 +370,7 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
    * Resume processing
    */
   resume(): void {
-    this.queue.start();
+    this?.queue?.start();
     logger.info("Batch processing resumed", "BATCH_PROCESSOR");
   }
 
@@ -378,7 +378,7 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
    * Clear the processing queue
    */
   clear(): void {
-    this.queue.clear();
+    this?.queue?.clear();
     logger.info("Processing queue cleared", "BATCH_PROCESSOR");
   }
 
@@ -387,25 +387,25 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
    */
   updateOptions(options: Partial<BatchProcessingOptions>): void {
     if (options.concurrency !== undefined) {
-      this.options.concurrency = options.concurrency;
-      this.queue.concurrency = options.concurrency;
+      this?.options?.concurrency = options.concurrency;
+      this?.queue?.concurrency = options.concurrency;
     }
 
     if (options.timeout !== undefined) {
-      this.options.timeout = options.timeout;
-      this.queue.timeout = options.timeout;
+      this?.options?.timeout = options.timeout;
+      this?.queue?.timeout = options.timeout;
     }
 
     if (options.useCaching !== undefined) {
-      this.options.useCaching = options.useCaching;
+      this?.options?.useCaching = options.useCaching;
     }
 
     if (options.retryAttempts !== undefined) {
-      this.options.retryAttempts = options.retryAttempts;
+      this?.options?.retryAttempts = options.retryAttempts;
     }
 
     if (options.priority !== undefined) {
-      this.options.priority = options.priority;
+      this?.options?.priority = options.priority;
     }
 
     logger.info(
@@ -425,7 +425,7 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
     this.clear();
 
     // Shut down the analysis service
-    await this.analysisService.shutdown();
+    await this?.analysisService?.shutdown();
 
     // Remove all listeners
     this.removeAllListeners();

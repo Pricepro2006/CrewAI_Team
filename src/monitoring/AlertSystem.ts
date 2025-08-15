@@ -129,7 +129,7 @@ export class AlertSystem extends EventEmitter {
 
     // Check throttling
     const throttleKey = `${type}_${component}`;
-    const lastAlertTime = this.throttleCache.get(throttleKey) || 0;
+    const lastAlertTime = this?.throttleCache?.get(throttleKey) || 0;
     const rule = this.findMatchingRule(alert);
     
     if (rule?.throttleMinutes) {
@@ -144,8 +144,8 @@ export class AlertSystem extends EventEmitter {
     }
 
     // Store alert
-    this.alerts.set(alertId, alert);
-    this.throttleCache.set(throttleKey, Date.now());
+    this?.alerts?.set(alertId, alert);
+    this?.throttleCache?.set(throttleKey, Date.now());
 
     // Emit event
     this.emit('alert-created', alert);
@@ -187,7 +187,7 @@ export class AlertSystem extends EventEmitter {
   }
 
   resolveAlert(alertId: string, resolvedBy?: string): boolean {
-    const alert = this.alerts.get(alertId);
+    const alert = this?.alerts?.get(alertId);
     if (!alert || alert.resolved) {
       return false;
     }
@@ -196,10 +196,10 @@ export class AlertSystem extends EventEmitter {
     alert.resolvedAt = new Date();
 
     // Cancel escalation
-    const escalationTimer = this.escalationTimers.get(alertId);
+    const escalationTimer = this?.escalationTimers?.get(alertId);
     if (escalationTimer) {
       clearTimeout(escalationTimer);
-      this.escalationTimers.delete(alertId);
+      this?.escalationTimers?.delete(alertId);
     }
 
     this.emit('alert-resolved', alert);
@@ -213,14 +213,14 @@ export class AlertSystem extends EventEmitter {
     logger.info(`Alert resolved: ${alert.type}`, 'ALERT_SYSTEM', {
       alertId,
       resolvedBy,
-      duration: alert.resolvedAt.getTime() - alert.timestamp.getTime(),
+      duration: alert?.resolvedAt?.getTime() - alert?.timestamp?.getTime(),
     });
 
     return true;
   }
 
   acknowledgeAlert(alertId: string, acknowledgedBy: string): boolean {
-    const alert = this.alerts.get(alertId);
+    const alert = this?.alerts?.get(alertId);
     if (!alert || alert.resolved) {
       return false;
     }
@@ -241,7 +241,7 @@ export class AlertSystem extends EventEmitter {
   // === Alert Rules Management ===
 
   addRule(rule: AlertRule): void {
-    this.alertRules.set(rule.id, rule);
+    this?.alertRules?.set(rule.id, rule);
     logger.info(`Alert rule added: ${rule.name}`, 'ALERT_SYSTEM', {
       ruleId: rule.id,
       component: rule.component,
@@ -250,7 +250,7 @@ export class AlertSystem extends EventEmitter {
   }
 
   removeRule(ruleId: string): boolean {
-    const removed = this.alertRules.delete(ruleId);
+    const removed = this?.alertRules?.delete(ruleId);
     if (removed) {
       logger.info(`Alert rule removed: ${ruleId}`, 'ALERT_SYSTEM');
     }
@@ -258,7 +258,7 @@ export class AlertSystem extends EventEmitter {
   }
 
   updateRule(ruleId: string, updates: Partial<AlertRule>): boolean {
-    const rule = this.alertRules.get(ruleId);
+    const rule = this?.alertRules?.get(ruleId);
     if (!rule) {
       return false;
     }
@@ -275,7 +275,7 @@ export class AlertSystem extends EventEmitter {
   // === Notification Channels ===
 
   private async sendNotification(alert: Alert, channels: NotificationChannel[]): Promise<void> {
-    const promises = channels.map(async (channel) => {
+    const promises = channels?.map(async (channel: any) => {
       try {
         switch (channel) {
           case 'console':
@@ -321,9 +321,9 @@ export class AlertSystem extends EventEmitter {
     const icon = this.getSeverityIcon(alert.severity);
     const color = this.getSeverityColor(alert.severity);
     
-    console.log(`\n${color}${icon} ALERT [${alert.severity.toUpperCase()}] ${alert.component}${'\x1b[0m'}`);
+    console.log(`\n${color}${icon} ALERT [${alert?.severity?.toUpperCase()}] ${alert.component}${'\x1b[0m'}`);
     console.log(`  Message: ${alert.message}`);
-    console.log(`  Time: ${alert.timestamp.toISOString()}`);
+    console.log(`  Time: ${alert?.timestamp?.toISOString()}`);
     console.log(`  ID: ${alert.id}`);
     if (alert.data) {
       console.log(`  Data: ${JSON.stringify(alert.data, null, 2)}`);
@@ -332,32 +332,32 @@ export class AlertSystem extends EventEmitter {
   }
 
   private async sendEmailNotification(alert: Alert): Promise<void> {
-    if (!this.config.email?.enabled) return;
+    if (!this?.config?.email?.enabled) return;
 
     const nodemailer = await import('nodemailer');
-    const transporter = nodemailer.createTransporter(this.config.email.smtp);
+    const transporter = nodemailer.createTransporter(this?.config?.email.smtp);
 
-    const subject = `🚨 ${alert.severity.toUpperCase()} Alert: ${alert.component}`;
+    const subject = `🚨 ${alert?.severity?.toUpperCase()} Alert: ${alert.component}`;
     const html = this.generateEmailHTML(alert);
 
     await transporter.sendMail({
-      from: this.config.email.from,
-      to: this.config.email.to.join(', '),
+      from: this?.config?.email.from,
+      to: this?.config?.email.to.join(', '),
       subject,
       html,
     });
   }
 
   private async sendSlackNotification(alert: Alert): Promise<void> {
-    if (!this.config.slack?.enabled) return;
+    if (!this?.config?.slack?.enabled) return;
 
     const payload = {
-      channel: this.config.slack.channel,
-      username: this.config.slack.username || 'AlertBot',
+      channel: this?.config?.slack.channel,
+      username: this?.config?.slack.username || 'AlertBot',
       icon_emoji: this.getSlackIcon(alert.severity),
       attachments: [{
         color: this.getSlackColor(alert.severity),
-        title: `${alert.severity.toUpperCase()} Alert in ${alert.component}`,
+        title: `${alert?.severity?.toUpperCase()} Alert in ${alert.component}`,
         text: alert.message,
         fields: [
           {
@@ -367,21 +367,21 @@ export class AlertSystem extends EventEmitter {
           },
           {
             title: 'Severity',
-            value: alert.severity.toUpperCase(),
+            value: alert?.severity?.toUpperCase(),
             short: true,
           },
           {
             title: 'Time',
-            value: alert.timestamp.toISOString(),
+            value: alert?.timestamp?.toISOString(),
             short: false,
           },
         ],
         footer: `Alert ID: ${alert.id}`,
-        ts: Math.floor(alert.timestamp.getTime() / 1000),
+        ts: Math.floor(alert?.timestamp?.getTime() / 1000),
       }],
     };
 
-    const response = await fetch(this.config.slack.webhookUrl, {
+    const response = await fetch(this?.config?.slack.webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -393,13 +393,13 @@ export class AlertSystem extends EventEmitter {
   }
 
   private async sendWebhookNotification(alert: Alert): Promise<void> {
-    if (!this.config.webhook?.enabled) return;
+    if (!this?.config?.webhook?.enabled) return;
 
-    const response = await fetch(this.config.webhook.url, {
-      method: this.config.webhook.method,
+    const response = await fetch(this?.config?.webhook.url, {
+      method: this?.config?.webhook.method,
       headers: {
         'Content-Type': 'application/json',
-        ...this.config.webhook.headers,
+        ...this?.config?.webhook.headers,
       },
       body: JSON.stringify({
         alert,
@@ -413,10 +413,10 @@ export class AlertSystem extends EventEmitter {
   }
 
   private async sendDiscordNotification(alert: Alert): Promise<void> {
-    if (!this.config.discord?.enabled) return;
+    if (!this?.config?.discord?.enabled) return;
 
     const embed = {
-      title: `🚨 ${alert.severity.toUpperCase()} Alert`,
+      title: `🚨 ${alert?.severity?.toUpperCase()} Alert`,
       description: alert.message,
       color: this.getDiscordColor(alert.severity),
       fields: [
@@ -427,22 +427,22 @@ export class AlertSystem extends EventEmitter {
         },
         {
           name: 'Severity',
-          value: alert.severity.toUpperCase(),
+          value: alert?.severity?.toUpperCase(),
           inline: true,
         },
         {
           name: 'Time',
-          value: alert.timestamp.toISOString(),
+          value: alert?.timestamp?.toISOString(),
           inline: false,
         },
       ],
       footer: {
         text: `Alert ID: ${alert.id}`,
       },
-      timestamp: alert.timestamp.toISOString(),
+      timestamp: alert?.timestamp?.toISOString(),
     };
 
-    const response = await fetch(this.config.discord.webhookUrl, {
+    const response = await fetch(this?.config?.discord.webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ embeds: [embed] }),
@@ -454,21 +454,21 @@ export class AlertSystem extends EventEmitter {
   }
 
   private async sendTeamsNotification(alert: Alert): Promise<void> {
-    if (!this.config.teams?.enabled) return;
+    if (!this?.config?.teams?.enabled) return;
 
     const payload = {
       '@type': 'MessageCard',
       '@context': 'http://schema.org/extensions',
-      summary: `${alert.severity.toUpperCase()} Alert in ${alert.component}`,
+      summary: `${alert?.severity?.toUpperCase()} Alert in ${alert.component}`,
       themeColor: this.getTeamsColor(alert.severity),
       sections: [{
-        activityTitle: `🚨 ${alert.severity.toUpperCase()} Alert`,
+        activityTitle: `🚨 ${alert?.severity?.toUpperCase()} Alert`,
         activitySubtitle: alert.component,
         text: alert.message,
         facts: [
           {
             name: 'Severity',
-            value: alert.severity.toUpperCase(),
+            value: alert?.severity?.toUpperCase(),
           },
           {
             name: 'Component',
@@ -476,7 +476,7 @@ export class AlertSystem extends EventEmitter {
           },
           {
             name: 'Time',
-            value: alert.timestamp.toISOString(),
+            value: alert?.timestamp?.toISOString(),
           },
           {
             name: 'Alert ID',
@@ -486,7 +486,7 @@ export class AlertSystem extends EventEmitter {
       }],
     };
 
-    const response = await fetch(this.config.teams.webhookUrl, {
+    const response = await fetch(this?.config?.teams.webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -498,10 +498,10 @@ export class AlertSystem extends EventEmitter {
   }
 
   private async sendPagerDutyNotification(alert: Alert): Promise<void> {
-    if (!this.config.pagerduty?.enabled) return;
+    if (!this?.config?.pagerduty?.enabled) return;
 
     const payload = {
-      routing_key: this.config.pagerduty.integrationKey,
+      routing_key: this?.config?.pagerduty.integrationKey,
       event_action: 'trigger',
       dedup_key: `${alert.component}_${alert.type}`,
       payload: {
@@ -515,7 +515,7 @@ export class AlertSystem extends EventEmitter {
       },
     };
 
-    const response = await fetch('https://events.pagerduty.com/v2/enqueue', {
+    const response = await fetch('https://events?.pagerduty?.com/v2/enqueue', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -527,14 +527,14 @@ export class AlertSystem extends EventEmitter {
   }
 
   private async sendSMSNotification(alert: Alert): Promise<void> {
-    if (!this.config.sms?.enabled) return;
+    if (!this?.config?.sms?.enabled) return;
 
-    const message = `ALERT [${alert.severity.toUpperCase()}] ${alert.component}: ${alert.message}`;
+    const message = `ALERT [${alert?.severity?.toUpperCase()}] ${alert.component}: ${alert.message}`;
 
-    if (this.config.sms.provider === 'twilio') {
+    if (this?.config?.sms.provider === 'twilio') {
       // Implementation would depend on Twilio client
       logger.warn('Twilio SMS not implemented yet', 'ALERT_SYSTEM');
-    } else if (this.config.sms.provider === 'aws-sns') {
+    } else if (this?.config?.sms.provider === 'aws-sns') {
       // Implementation would depend on AWS SDK
       logger.warn('AWS SNS SMS not implemented yet', 'ALERT_SYSTEM');
     }
@@ -550,7 +550,7 @@ export class AlertSystem extends EventEmitter {
   }
 
   private findMatchingRule(alert: Alert): AlertRule | undefined {
-    return Array.from(this.alertRules.values()).find(rule => 
+    return Array.from(this?.alertRules?.values()).find(rule => 
       rule.enabled && 
       rule.component === alert.component &&
       rule.condition(alert)
@@ -561,7 +561,7 @@ export class AlertSystem extends EventEmitter {
     const rule = this.findMatchingRule(alert);
     if (!rule?.escalationLevels?.length) return;
 
-    rule.escalationLevels.forEach(level => {
+    rule?.escalationLevels?.forEach(level => {
       const timer = setTimeout(() => {
         if (!alert.resolved && !alert.acknowledgedBy) {
           logger.warn(`Escalating alert level ${level.level}: ${alert.type}`, 'ALERT_SYSTEM', {
@@ -576,7 +576,7 @@ export class AlertSystem extends EventEmitter {
         }
       }, level.delayMinutes * 60 * 1000);
 
-      this.escalationTimers.set(`${alert.id}_${level.level}`, timer);
+      this?.escalationTimers?.set(`${alert.id}_${level.level}`, timer);
     });
   }
 
@@ -612,7 +612,7 @@ export class AlertSystem extends EventEmitter {
       name: 'High Error Rate',
       description: 'Triggers when error rate exceeds threshold',
       condition: (alert: Alert) => 
-        alert.type.includes('error_rate') || alert.type.includes('failure_rate'),
+        alert?.type?.includes('error_rate') || alert?.type?.includes('failure_rate'),
       severity: 'warning',
       component: 'monitoring',
       enabled: true,
@@ -626,7 +626,7 @@ export class AlertSystem extends EventEmitter {
       name: 'Performance Issues',
       description: 'Triggers on performance threshold violations',
       condition: (alert: Alert) => 
-        alert.type.includes('response_time') || alert.type.includes('threshold'),
+        alert?.type?.includes('response_time') || alert?.type?.includes('threshold'),
       severity: 'warning',
       component: 'performance',
       enabled: true,
@@ -644,34 +644,34 @@ export class AlertSystem extends EventEmitter {
   }
 
   private cleanupOldAlerts(): void {
-    if (this.alerts.size <= this.maxAlertsRetention) return;
+    if (this?.alerts?.size <= this.maxAlertsRetention) return;
 
-    const sortedAlerts = Array.from(this.alerts.entries())
-      .sort(([, a], [, b]) => b.timestamp.getTime() - a.timestamp.getTime());
+    const sortedAlerts = Array.from(this?.alerts?.entries())
+      .sort(([, a], [, b]) => b?.timestamp?.getTime() - a?.timestamp?.getTime());
 
     const toDelete = sortedAlerts.slice(this.maxAlertsRetention);
     
     toDelete.forEach(([id]) => {
-      this.alerts.delete(id);
+      this?.alerts?.delete(id);
       
       // Clean up escalation timers
-      this.escalationTimers.forEach((timer, key) => {
+      this?.escalationTimers?.forEach((timer, key) => {
         if (key.startsWith(id)) {
           clearTimeout(timer);
-          this.escalationTimers.delete(key);
+          this?.escalationTimers?.delete(key);
         }
       });
     });
 
-    logger.info(`Cleaned up ${toDelete.length} old alerts`, 'ALERT_SYSTEM');
+    logger.info(`Cleaned up ${toDelete?.length || 0} old alerts`, 'ALERT_SYSTEM');
   }
 
   private cleanupThrottleCache(): void {
     const oneHourAgo = Date.now() - 60 * 60 * 1000;
     
-    this.throttleCache.forEach((timestamp, key) => {
+    this?.throttleCache?.forEach((timestamp, key) => {
       if (timestamp < oneHourAgo) {
-        this.throttleCache.delete(key);
+        this?.throttleCache?.delete(key);
       }
     });
   }
@@ -747,12 +747,12 @@ export class AlertSystem extends EventEmitter {
         <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px;">
           <div style="max-width: 600px; margin: 0 auto;">
             <h2 style="color: ${this.getEmailColor(alert.severity)};">
-              ${this.getSeverityIcon(alert.severity)} ${alert.severity.toUpperCase()} Alert
+              ${this.getSeverityIcon(alert.severity)} ${alert?.severity?.toUpperCase()} Alert
             </h2>
             <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
               <p><strong>Component:</strong> ${alert.component}</p>
               <p><strong>Message:</strong> ${alert.message}</p>
-              <p><strong>Time:</strong> ${alert.timestamp.toISOString()}</p>
+              <p><strong>Time:</strong> ${alert?.timestamp?.toISOString()}</p>
               <p><strong>Alert ID:</strong> ${alert.id}</p>
             </div>
             ${alert.data ? `
@@ -787,21 +787,21 @@ ${JSON.stringify(alert.data, null, 2)}
     resolved?: boolean;
     limit?: number;
   }): Alert[] {
-    let alerts = Array.from(this.alerts.values());
+    let alerts = Array.from(this?.alerts?.values());
 
     if (filter) {
       if (filter.severity) {
-        alerts = alerts.filter(a => a.severity === filter.severity);
+        alerts = alerts?.filter(a => a.severity === filter.severity);
       }
       if (filter.component) {
-        alerts = alerts.filter(a => a.component === filter.component);
+        alerts = alerts?.filter(a => a.component === filter.component);
       }
       if (filter.resolved !== undefined) {
-        alerts = alerts.filter(a => a.resolved === filter.resolved);
+        alerts = alerts?.filter(a => a.resolved === filter.resolved);
       }
     }
 
-    alerts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    alerts.sort((a, b) => b?.timestamp?.getTime() - a?.timestamp?.getTime());
 
     if (filter?.limit) {
       alerts = alerts.slice(0, filter.limit);
@@ -811,22 +811,22 @@ ${JSON.stringify(alert.data, null, 2)}
   }
 
   getAlertStats(): Record<string, any> {
-    const alerts = Array.from(this.alerts.values());
-    const last24h = alerts.filter(a => 
-      Date.now() - a.timestamp.getTime() < 24 * 60 * 60 * 1000
+    const alerts = Array.from(this?.alerts?.values());
+    const last24h = alerts?.filter(a => 
+      Date.now() - a?.timestamp?.getTime() < 24 * 60 * 60 * 1000
     );
 
     return {
-      total: alerts.length,
-      last24h: last24h.length,
-      unresolved: alerts.filter(a => !a.resolved).length,
+      total: alerts?.length || 0,
+      last24h: last24h?.length || 0,
+      unresolved: alerts?.filter(a => !a.resolved).length,
       bySeverity: {
-        critical: alerts.filter(a => a.severity === 'critical').length,
-        error: alerts.filter(a => a.severity === 'error').length,
-        warning: alerts.filter(a => a.severity === 'warning').length,
-        info: alerts.filter(a => a.severity === 'info').length,
+        critical: alerts?.filter(a => a.severity === 'critical').length,
+        error: alerts?.filter(a => a.severity === 'error').length,
+        warning: alerts?.filter(a => a.severity === 'warning').length,
+        info: alerts?.filter(a => a.severity === 'info').length,
       },
-      byComponent: alerts.reduce((acc, alert) => {
+      byComponent: alerts.reduce((acc: any, alert: any) => {
         acc[alert.component] = (acc[alert.component] || 0) + 1;
         return acc;
       }, {} as Record<string, number>),

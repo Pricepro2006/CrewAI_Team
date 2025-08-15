@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { GuestUserService } from "../GuestUserService";
-import { SecurityMonitoringService } from "../SecurityMonitoringService";
-import type { User } from "../../trpc/context";
+import { GuestUserService } from "../GuestUserService.js";
+import { SecurityMonitoringService } from "../SecurityMonitoringService.js";
+import type { User } from "../../trpc/context.js";
 
 describe("Guest User Security Implementation", () => {
   let guestUserService: GuestUserService;
@@ -30,7 +30,7 @@ describe("Guest User Security Implementation", () => {
       expect(guestUser?.role).toBe("guest");
       expect(guestUser?.permissions).toEqual([
         "chat.read",
-        "chat.create.limited",
+        "chat?.create?.limited",
         "health.read",
         "public.read",
       ]);
@@ -122,7 +122,7 @@ describe("Guest User Security Implementation", () => {
       
       // Guest should only have limited permissions
       expect(guestPermissions).toContain("chat.read");
-      expect(guestPermissions).toContain("chat.create.limited");
+      expect(guestPermissions).toContain("chat?.create?.limited");
       expect(guestPermissions).toContain("health.read");
       expect(guestPermissions).toContain("public.read");
     });
@@ -246,7 +246,7 @@ describe("Guest User Security Implementation", () => {
       
       // IDs should not follow a predictable pattern
       const idArray = Array.from(ids);
-      for (let i = 1; i < idArray.length; i++) {
+      for (let i = 1; i < idArray?.length || 0; i++) {
         // Extract the hash part of the ID
         const hash1 = idArray[i - 1].split('-')[1];
         const hash2 = idArray[i].split('-')[1];

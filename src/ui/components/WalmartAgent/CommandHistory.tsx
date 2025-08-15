@@ -80,20 +80,20 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
 
     // Apply search filter
     if (searchQuery.trim()) {
-      filtered = filtered.filter(cmd =>
-        cmd.command.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      filtered = filtered?.filter(cmd =>
+        cmd?.command?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         cmd.result?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     // Apply category filter
     if (selectedCategory) {
-      filtered = filtered.filter(cmd => cmd.category === selectedCategory);
+      filtered = filtered?.filter(cmd => cmd.category === selectedCategory);
     }
 
     // Apply status filter
     if (selectedStatus) {
-      filtered = filtered.filter(cmd => cmd.status === selectedStatus);
+      filtered = filtered?.filter(cmd => cmd.status === selectedStatus);
     }
 
     return filtered.sort((a, b) => b.timestamp - a.timestamp);
@@ -134,7 +134,7 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
 
   // Get unique categories from commands
   const availableCategories = useMemo(() => {
-    const categories = new Set(commands.map(cmd => cmd.category).filter(Boolean));
+    const categories = new Set(commands?.map(cmd => cmd.category).filter(Boolean));
     return Array.from(categories);
   }, [commands]);
 
@@ -172,7 +172,7 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
   // Handle copy to clipboard
   const handleCopy = useCallback(async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator?.clipboard?.writeText(text);
       // Could add a toast notification here
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
@@ -222,7 +222,7 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
     };
   }, []);
 
-  if (commands.length === 0) {
+  if (commands?.length || 0 === 0) {
     return (
       <div className={`command-history empty ${className}`}>
         <div className="empty-state">
@@ -242,11 +242,11 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
           <div className="title-section">
             <Clock size={20} />
             <h3>Recent Commands</h3>
-            <span className="command-count">({filteredCommands.length})</span>
+            <span className="command-count">({filteredCommands?.length || 0})</span>
           </div>
           
           <div className="header-actions">
-            {onClear && commands.length > 0 && (
+            {onClear && commands?.length || 0 > 0 && (
               <button
                 type="button"
                 onClick={onClear}
@@ -280,19 +280,19 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
                 type="text"
                 placeholder="Search commands..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e: any) => setSearchQuery(e?.target?.value)}
                 className="search-input"
               />
             </div>
             
-            {showCategories && availableCategories.length > 0 && (
+            {showCategories && availableCategories?.length || 0 > 0 && (
               <select
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={(e: any) => setSelectedCategory(e?.target?.value)}
                 className="category-filter"
               >
                 <option value="">All Categories</option>
-                {availableCategories.map(category => (
+                {availableCategories?.map(category => (
                   <option key={category} value={category}>
                     {getCategoryInfo(category)?.label || category}
                   </option>
@@ -302,7 +302,7 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
             
             <select
               value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
+              onChange={(e: any) => setSelectedStatus(e?.target?.value)}
               className="status-filter"
             >
               <option value="">All Status</option>
@@ -324,12 +324,12 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
                 <div className="group-header">
                   <Calendar size={16} />
                   <h4>{groupName}</h4>
-                  <span className="group-count">({groupCommands.length})</span>
+                  <span className="group-count">({groupCommands?.length || 0})</span>
                 </div>
               )}
               
               <div className="commands-list">
-                {groupCommands.map((cmd) => (
+                {groupCommands?.map((cmd: any) => (
                   <div key={cmd.id} className={`command-item status-${cmd.status}`}>
                     <div className="command-main">
                       <div className="command-header">
@@ -371,10 +371,10 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
                             <input
                               type="text"
                               value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
+                              onChange={(e: any) => setEditValue(e?.target?.value)}
                               className="edit-input"
                               autoFocus
-                              onKeyPress={(e) => {
+                              onKeyPress={(e: any) => {
                                 if (e.key === 'Enter') handleEditSave();
                                 if (e.key === 'Escape') handleEditCancel();
                               }}
@@ -473,7 +473,7 @@ const CommandHistory: React.FC<CommandHistoryProps> = ({
             </div>
           ))}
           
-          {filteredCommands.length === 0 && (
+          {filteredCommands?.length || 0 === 0 && (
             <div className="no-results">
               <Search size={32} />
               <h4>No commands found</h4>

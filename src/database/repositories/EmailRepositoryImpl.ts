@@ -122,9 +122,9 @@ export class EmailRepositoryImpl implements IEmailRepository {
     if (entity.bcc_addresses !== undefined)
       row.bcc_addresses = entity.bcc_addresses;
     if (entity.received_time !== undefined)
-      row.received_date_time = entity.received_time instanceof Date ? entity.received_time.toISOString() : entity.received_time;
+      row.received_date_time = entity.received_time instanceof Date ? entity?.received_time?.toISOString() : entity.received_time;
     if (entity.sent_time !== undefined)
-      row.sent_date_time = entity.sent_time ? (entity.sent_time instanceof Date ? entity.sent_time.toISOString() : entity.sent_time) : undefined;
+      row.sent_date_time = entity.sent_time ? (entity.sent_time instanceof Date ? entity?.sent_time?.toISOString() : entity.sent_time) : undefined;
     if (entity.conversation_id !== undefined)
       row.conversation_id = entity.conversation_id;
     if (entity.thread_id !== undefined) row.thread_id = entity.thread_id;
@@ -141,7 +141,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
     if (entity.confidence_score !== undefined)
       row.confidence_score = entity.confidence_score;
     if (entity.analyzed_at !== undefined)
-      row.analyzed_at = entity.analyzed_at ? (entity.analyzed_at instanceof Date ? entity.analyzed_at.toISOString() : entity.analyzed_at) : undefined;
+      row.analyzed_at = entity.analyzed_at ? (entity.analyzed_at instanceof Date ? entity?.analyzed_at?.toISOString() : entity.analyzed_at) : undefined;
     if (entity.error_message !== undefined)
       row.error_message = entity.error_message;
 
@@ -152,14 +152,14 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Find emails by conversation ID
    */
   async findByConversationId(conversationId: string): Promise<EmailRecord[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName} 
         WHERE conversation_id = ? 
         ORDER BY received_date_time ASC
       `);
       const rows = stmt.all(conversationId) as any[];
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -171,7 +171,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
     limit?: number,
     offset?: number,
   ): Promise<EmailRecord[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       let query = `SELECT * FROM ${this.tableName} WHERE status = ?`;
       const params: any[] = [status];
 
@@ -187,7 +187,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
 
       const stmt = db.prepare(query);
       const rows = stmt.all(...params) as any[];
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -198,7 +198,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
     limit: number,
     offset: number,
   ): Promise<EmailRecord[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName}
         WHERE status IN (?, ?)
@@ -211,7 +211,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
         limit,
         offset,
       ) as any[];
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -219,7 +219,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Find email by message ID
    */
   async findByMessageId(messageId: string): Promise<EmailRecord | null> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(
         `SELECT * FROM ${this.tableName} WHERE internet_message_id = ?`,  // Use correct DB column name
       );
@@ -232,14 +232,14 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Find emails by thread ID
    */
   async findByThreadId(threadId: string): Promise<EmailRecord[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(`
         SELECT * FROM ${this.tableName} 
         WHERE thread_id = ? 
         ORDER BY received_date_time ASC
       `);
       const rows = stmt.all(threadId) as any[];
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -251,7 +251,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
     endDate: Date,
     limit?: number,
   ): Promise<EmailRecord[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       let query = `
         SELECT * FROM ${this.tableName}
         WHERE received_date_time BETWEEN ? AND ?
@@ -266,7 +266,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
 
       const stmt = db.prepare(query);
       const rows = stmt.all(...params) as any[];
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -278,7 +278,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
     status: AnalysisStatus,
     error?: string,
   ): Promise<void> {
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       const stmt = db.prepare(`
         UPDATE ${this.tableName}
         SET status = ?, error_message = ?, updated_at = datetime('now')
@@ -292,7 +292,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Update email priority
    */
   async updatePriority(id: string, priority: EmailPriority): Promise<void> {
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       const stmt = db.prepare(`
         UPDATE ${this.tableName}
         SET priority = ?, updated_at = datetime('now')
@@ -310,7 +310,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
     workflowState: string,
     confidence?: number,
   ): Promise<void> {
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       let query = `
         UPDATE ${this.tableName}
         SET workflow_state = ?, updated_at = datetime('now')
@@ -337,7 +337,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Mark email as analyzed
    */
   async markAsAnalyzed(id: string, analyzedAt: Date): Promise<void> {
-    await executeQuery((db) => {
+    await executeQuery((db: any) => {
       const stmt = db.prepare(`
         UPDATE ${this.tableName}
         SET status = ?, analyzed_at = ?, updated_at = datetime('now')
@@ -357,7 +357,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
     failed: number;
     byPriority: Record<EmailPriority, number>;
   }> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       // Total count
       const totalStmt = db.prepare(
         `SELECT COUNT(*) as count FROM ${this.tableName}`,
@@ -373,13 +373,13 @@ export class EmailRepositoryImpl implements IEmailRepository {
       const statusCounts = statusStmt.all() as any[];
 
       const pending =
-        statusCounts.find((s) => s.status === AnalysisStatus.PENDING)?.count ||
+        statusCounts.find((s: any) => s.status === AnalysisStatus.PENDING)?.count ||
         0;
       const analyzed =
-        statusCounts.find((s) => s.status === AnalysisStatus.ANALYZED)?.count ||
+        statusCounts.find((s: any) => s.status === AnalysisStatus.ANALYZED)?.count ||
         0;
       const failed =
-        statusCounts.find((s) => s.status === AnalysisStatus.FAILED)?.count ||
+        statusCounts.find((s: any) => s.status === AnalysisStatus.FAILED)?.count ||
         0;
 
       // Priority counts
@@ -399,7 +399,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
         [EmailPriority.NONE]: 0,
       };
 
-      priorityCounts.forEach((p) => {
+      priorityCounts.forEach((p: any) => {
         if (p.priority in byPriority) {
           byPriority[p.priority as EmailPriority] = p.count;
         }
@@ -419,7 +419,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Batch create emails - adapter to handle EmailRecord type conversion
    */
   async batchCreate(emails: Omit<EmailRecord, "id">[]): Promise<EmailRecord[]> {
-    return executeTransaction((db) => {
+    return executeTransaction((db: any) => {
       const insertStmt = db.prepare(`
         INSERT INTO ${this.tableName} (
           id, internet_message_id, subject, body_text, body_html,
@@ -468,7 +468,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
       }
 
       logger.info(
-        `Batch created ${createdEmails.length} emails`,
+        `Batch created ${createdEmails?.length || 0} emails`,
         "EMAIL_REPOSITORY",
       );
       return createdEmails;
@@ -479,7 +479,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Find emails with attachments
    */
   async findWithAttachments(limit?: number): Promise<EmailRecord[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       let query = `
         SELECT * FROM ${this.tableName}
         WHERE has_attachments = 1
@@ -494,7 +494,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
 
       const stmt = db.prepare(query);
       const rows = stmt.all(...params) as any[];
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -506,7 +506,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
     fields: string[],
     limit?: number,
   ): Promise<EmailRecord[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       // Validate fields are actual columns
       const validFields = [
         "subject",
@@ -514,17 +514,17 @@ export class EmailRepositoryImpl implements IEmailRepository {
         "from_address",
         "to_addresses",
       ];
-      const searchFields = fields.filter((f) => validFields.includes(f));
+      const searchFields = fields?.filter((f: any) => validFields.includes(f));
 
-      if (searchFields.length === 0) {
+      if (searchFields?.length || 0 === 0) {
         return [];
       }
 
       const conditions = searchFields
-        .map((field) => `${field} LIKE ?`)
+        .map((field: any) => `${field} LIKE ?`)
         .join(" OR ");
       const searchPattern = `%${searchText}%`;
-      const params: any[] = searchFields.map(() => searchPattern);
+      const params: any[] = searchFields?.map(() => searchPattern);
 
       let query = `
         SELECT * FROM ${this.tableName}
@@ -539,7 +539,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
 
       const stmt = db.prepare(query);
       const rows = stmt.all(...params) as any[];
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -547,7 +547,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Find entity by ID
    */
   async findById(id: string): Promise<EmailRecord | null> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(
         `SELECT * FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
       );
@@ -560,12 +560,12 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Find all entities with optional filtering
    */
   async findAll(filter?: Partial<EmailRecord>): Promise<EmailRecord[]> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       let query = `SELECT * FROM ${this.tableName}`;
       const params: any[] = [];
 
       if (filter && Object.keys(filter).length > 0) {
-        const conditions = Object.keys(filter).map((key) => {
+        const conditions = Object.keys(filter).map((key: any) => {
           const columnName = this.toSnakeCase(key);
           params.push(filter[key as keyof EmailRecord]);
           return `${columnName} = ?`;
@@ -577,7 +577,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
 
       const stmt = db.prepare(query);
       const rows = stmt.all(...params);
-      return rows.map((row) => this.mapRowToEntity(row));
+      return rows?.map((row: any) => this.mapRowToEntity(row));
     });
   }
 
@@ -585,7 +585,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Create a new email record
    */
   async create(data: Omit<EmailRecord, "id">): Promise<EmailRecord> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const id = this.generateId();
       const now = new Date();
       const emailData: EmailRecord = {
@@ -597,8 +597,8 @@ export class EmailRepositoryImpl implements IEmailRepository {
 
       const row = this.mapEntityToRow(emailData);
       const columns = Object.keys(row);
-      const values = columns.map((col) => row[col]);
-      const placeholders = columns.map(() => "?").join(", ");
+      const values = columns?.map((col: any) => row[col]);
+      const placeholders = columns?.map(() => "?").join(", ");
 
       const query = `INSERT INTO ${this.tableName} (id, ${columns.join(", ")}, created_at) VALUES (?, ${placeholders}, datetime('now'))`;
       const stmt = db.prepare(query);
@@ -616,18 +616,18 @@ export class EmailRepositoryImpl implements IEmailRepository {
     id: string,
     data: Partial<EmailRecord>,
   ): Promise<EmailRecord | null> {
-    return executeQuery(async (db) => {
+    return executeQuery(async (db: any) => {
       const row = this.mapEntityToRow(data);
       const columns = Object.keys(row);
 
-      if (columns.length === 0) {
+      if (columns?.length || 0 === 0) {
         return await this.findById(id);
       }
 
-      const values = columns.map((col) => row[col]);
+      const values = columns?.map((col: any) => row[col]);
       values.push(id);
 
-      const setClause = columns.map((col) => `${col} = ?`).join(", ");
+      const setClause = columns?.map((col: any) => `${col} = ?`).join(", ");
       const query = `UPDATE ${this.tableName} SET ${setClause}, updated_at = datetime('now') WHERE ${this.primaryKey} = ?`;
 
       const stmt = db.prepare(query);
@@ -646,7 +646,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Delete an email record
    */
   async delete(id: string): Promise<boolean> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(
         `DELETE FROM ${this.tableName} WHERE ${this.primaryKey} = ?`,
       );
@@ -665,12 +665,12 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Count email records
    */
   async count(filter?: Partial<EmailRecord>): Promise<number> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       let query = `SELECT COUNT(*) as count FROM ${this.tableName}`;
       const params: any[] = [];
 
       if (filter && Object.keys(filter).length > 0) {
-        const conditions = Object.keys(filter).map((key) => {
+        const conditions = Object.keys(filter).map((key: any) => {
           const columnName = this.toSnakeCase(key);
           params.push(filter[key as keyof EmailRecord]);
           return `${columnName} = ?`;
@@ -695,7 +695,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Check if email exists by ID
    */
   async existsById(id: string): Promise<boolean> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const stmt = db.prepare(
         `SELECT EXISTS(SELECT 1 FROM ${this.tableName} WHERE ${this.primaryKey} = ?) as exists`,
       );
@@ -708,7 +708,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
    * Find emails with pagination
    */
   async findPaginated(options: PaginationOptions): Promise<PaginatedResult<EmailRecord>> {
-    return executeQuery((db) => {
+    return executeQuery((db: any) => {
       const { page, limit, orderBy, orderDirection, filter } = options;
       const offset = (page - 1) * limit;
       
@@ -717,7 +717,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
       const countParams: any[] = [];
       
       if (filter && Object.keys(filter).length > 0) {
-        const conditions = Object.keys(filter).map((key) => {
+        const conditions = Object.keys(filter).map((key: any) => {
           const columnName = this.toSnakeCase(key);
           countParams.push(filter[key]);
           return `${columnName} = ?`;
@@ -733,7 +733,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
       const dataParams: any[] = [];
       
       if (filter && Object.keys(filter).length > 0) {
-        const conditions = Object.keys(filter).map((key) => {
+        const conditions = Object.keys(filter).map((key: any) => {
           const columnName = this.toSnakeCase(key);
           dataParams.push(filter[key]);
           return `${columnName} = ?`;
@@ -748,7 +748,7 @@ export class EmailRepositoryImpl implements IEmailRepository {
       
       const dataStmt = db.prepare(dataQuery);
       const rows = dataStmt.all(...dataParams) as any[];
-      const data = rows.map((row) => this.mapRowToEntity(row));
+      const data = rows?.map((row: any) => this.mapRowToEntity(row));
       
       const totalPages = Math.ceil(total / limit);
       

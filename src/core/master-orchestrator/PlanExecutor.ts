@@ -31,7 +31,7 @@ export class PlanExecutor {
     // Broadcast plan execution start
     wsService.broadcastPlanUpdate(plan.id, "executing", {
       completed: 0,
-      total: sortedSteps.length,
+      total: sortedSteps?.length || 0,
     });
 
     for (const step of sortedSteps) {
@@ -50,7 +50,7 @@ export class PlanExecutor {
         // Broadcast step start
         wsService.broadcastPlanUpdate(plan.id, "executing", {
           completed: executedSteps.size,
-          total: sortedSteps.length,
+          total: sortedSteps?.length || 0,
           currentStep: step.task,
         });
         // Step 1: Gather context from RAG
@@ -92,19 +92,19 @@ export class PlanExecutor {
     }
 
     // Broadcast plan completion
-    const success = results.every((r) => r.success);
+    const success = results.every((r: any) => r.success);
     wsService.broadcastPlanUpdate(plan.id, success ? "completed" : "failed", {
       completed: executedSteps.size,
-      total: sortedSteps.length,
+      total: sortedSteps?.length || 0,
     });
 
     return {
       success,
       results,
       summary: this.summarizeResults(results),
-      completedSteps: results.filter((r) => r.success).length,
-      failedSteps: results.filter((r) => !r.success).length,
-      error: !success ? results.find((r) => !r.success)?.error : undefined,
+      completedSteps: results?.filter((r: any) => r.success).length,
+      failedSteps: results?.filter((r: any) => !r.success).length,
+      error: !success ? results.find((r: any) => !r.success)?.error : undefined,
     };
   }
 
@@ -123,7 +123,7 @@ export class PlanExecutor {
     for (const step of sortedSteps) {
       progressCallback({
         completedSteps: executedSteps.size,
-        totalSteps: sortedSteps.length,
+        totalSteps: sortedSteps?.length || 0,
         currentStep: step.id,
       });
 
@@ -156,7 +156,7 @@ export class PlanExecutor {
 
         progressCallback({
           completedSteps: executedSteps.size,
-          totalSteps: sortedSteps.length,
+          totalSteps: sortedSteps?.length || 0,
           currentStep: step.id,
         });
       }
@@ -165,23 +165,23 @@ export class PlanExecutor {
     // Final progress callback
     progressCallback({
       completedSteps: executedSteps.size,
-      totalSteps: sortedSteps.length,
+      totalSteps: sortedSteps?.length || 0,
     });
 
     // Broadcast plan completion
-    const success = results.every((r) => r.success);
+    const success = results.every((r: any) => r.success);
     wsService.broadcastPlanUpdate(plan.id, success ? "completed" : "failed", {
       completed: executedSteps.size,
-      total: sortedSteps.length,
+      total: sortedSteps?.length || 0,
     });
 
     return {
       success,
       results,
       summary: this.summarizeResults(results),
-      completedSteps: results.filter((r) => r.success).length,
-      failedSteps: results.filter((r) => !r.success).length,
-      error: !success ? results.find((r) => !r.success)?.error : undefined,
+      completedSteps: results?.filter((r: any) => r.success).length,
+      failedSteps: results?.filter((r: any) => !r.success).length,
+      error: !success ? results.find((r: any) => !r.success)?.error : undefined,
     };
   }
 
@@ -191,7 +191,7 @@ export class PlanExecutor {
 
     try {
       // Attempt to search RAG system with timeout
-      const searchPromise = this.ragSystem.search(step.ragQuery, 5);
+      const searchPromise = this?.ragSystem?.search(step.ragQuery, 5);
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("RAG search timeout")), 5000),
       );
@@ -217,7 +217,7 @@ export class PlanExecutor {
       metadata: {
         stepId: step.id,
         query: step.ragQuery,
-        ragAvailable: documents.length > 0,
+        ragAvailable: documents?.length || 0 > 0,
       },
     };
   }
@@ -232,7 +232,7 @@ export class PlanExecutor {
       );
     }
 
-    const agent = await this.agentRegistry.getAgent(step.agentType);
+    const agent = await this?.agentRegistry?.getAgent(step.agentType);
     const tool = agent.getTool(step.toolName);
 
     if (!tool) {
@@ -273,7 +273,7 @@ export class PlanExecutor {
     step: PlanStep,
     context: Context,
   ): Promise<StepResult> {
-    const agent = await this.agentRegistry.getAgent(step.agentType);
+    const agent = await this?.agentRegistry?.getAgent(step.agentType);
 
     const result = await withTimeout(
       agent.execute(step.description, {
@@ -298,18 +298,18 @@ export class PlanExecutor {
   }
 
   private calculateRelevance(documents: any[], _step: PlanStep): number {
-    if (documents.length === 0) return 0;
+    if (documents?.length || 0 === 0) return 0;
 
     // Average relevance score of top documents
-    const scores = documents.slice(0, 3).map((doc) => doc.score || 0);
+    const scores = documents.slice(0, 3).map((doc: any) => doc.score || 0);
 
-    return scores.reduce((a, b) => a + b, 0) / scores.length;
+    return scores.reduce((a: any, b: any) => a + b, 0) / scores?.length || 0;
   }
 
   private shouldContinue(results: StepResult[]): boolean {
     // Stop if too many failures
-    const failures = results.filter((r) => !r.success).length;
-    const total = results.length;
+    const failures = results?.filter((r: any) => !r.success).length;
+    const total = results?.length || 0;
 
     if (total > 0 && failures / total > 0.5) {
       return false;
@@ -317,30 +317,30 @@ export class PlanExecutor {
 
     // Stop if critical error
     const hasCriticalError = results.some(
-      (r) => r.metadata?.["errorType"] === "CriticalError",
+      (r: any) => r.metadata?.["errorType"] === "CriticalError",
     );
 
     return !hasCriticalError;
   }
 
   private summarizeResults(results: StepResult[]): string {
-    const successful = results.filter((r) => r.success);
-    const failed = results.filter((r) => !r.success);
+    const successful = results?.filter((r: any) => r.success);
+    const failed = results?.filter((r: any) => !r.success);
 
     const parts: string[] = [];
 
-    if (successful.length > 0) {
+    if (successful?.length || 0 > 0) {
       parts.push("Completed Steps:");
-      successful.forEach((r) => {
+      successful.forEach((r: any) => {
         if (r.output) {
           parts.push(r.output);
         }
       });
     }
 
-    if (failed.length > 0) {
+    if (failed?.length || 0 > 0) {
       parts.push("\nFailed Steps:");
-      failed.forEach((r) => {
+      failed.forEach((r: any) => {
         parts.push(`- ${r.stepId}: ${r.error || "Unknown error"}`);
       });
     }
@@ -354,16 +354,16 @@ export class PlanExecutor {
     const adjList = new Map<string, string[]>();
 
     // Build graph
-    steps.forEach((step) => {
+    steps.forEach((step: any) => {
       graph.set(step.id, step);
       inDegree.set(step.id, 0);
       adjList.set(step.id, []);
     });
 
     // Calculate in-degrees and adjacency list
-    steps.forEach((step) => {
+    steps.forEach((step: any) => {
       const dependencies = step.dependencies || [];
-      dependencies.forEach((dep) => {
+      dependencies.forEach((dep: any) => {
         if (graph.has(dep)) {
           inDegree.set(step.id, (inDegree.get(step.id) || 0) + 1);
           adjList.get(dep)?.push(step.id);
@@ -381,13 +381,13 @@ export class PlanExecutor {
 
     const sorted: PlanStep[] = [];
 
-    while (queue.length > 0) {
+    while (queue?.length || 0 > 0) {
       const current = queue.shift()!;
       const step = graph.get(current)!;
       sorted.push(step);
 
       // Update neighbors
-      adjList.get(current)?.forEach((neighbor) => {
+      adjList.get(current)?.forEach((neighbor: any) => {
         const newDegree = (inDegree.get(neighbor) || 0) - 1;
         inDegree.set(neighbor, newDegree);
 
@@ -398,7 +398,7 @@ export class PlanExecutor {
     }
 
     // Check for cycles
-    if (sorted.length !== steps.length) {
+    if (sorted?.length || 0 !== steps?.length || 0) {
       console.warn("Circular dependencies detected in plan");
       // Return original order as fallback
       return steps;
@@ -411,7 +411,7 @@ export class PlanExecutor {
     step: PlanStep,
     executedSteps: Set<string>,
   ): boolean {
-    return (step.dependencies || []).every((dep) => executedSteps.has(dep));
+    return (step.dependencies || []).every((dep: any) => executedSteps.has(dep));
   }
 
   buildRAGQuery(step: PlanStep): string {

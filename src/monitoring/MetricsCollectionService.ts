@@ -325,20 +325,20 @@ export class MetricsCollectionService extends EventEmitter {
    * Register a metric definition
    */
   private registerMetric(definition: MetricDefinition): void {
-    this.metricDefinitions.set(definition.name, definition);
+    this?.metricDefinitions?.set(definition.name, definition);
     
     switch (definition.type) {
       case 'counter':
-        this.counters.set(definition.name, new Map());
+        this?.counters?.set(definition.name, new Map());
         break;
       case 'gauge':
-        this.gauges.set(definition.name, new Map());
+        this?.gauges?.set(definition.name, new Map());
         break;
       case 'histogram':
-        this.histograms.set(definition.name, new Map());
+        this?.histograms?.set(definition.name, new Map());
         break;
       case 'summary':
-        this.summaries.set(definition.name, new Map());
+        this?.summaries?.set(definition.name, new Map());
         break;
     }
   }
@@ -348,27 +348,27 @@ export class MetricsCollectionService extends EventEmitter {
    */
   private startCollectors(): void {
     // Collect Ollama metrics every 5 seconds
-    this.collectionIntervals.push(
+    this?.collectionIntervals?.push(
       setInterval(() => this.collectOllamaMetrics(), 5000)
     );
     
     // Collect cache metrics every 10 seconds
-    this.collectionIntervals.push(
+    this?.collectionIntervals?.push(
       setInterval(() => this.collectCacheMetrics(), 10000)
     );
     
     // Collect system metrics every 30 seconds
-    this.collectionIntervals.push(
+    this?.collectionIntervals?.push(
       setInterval(() => this.collectSystemMetrics(), 30000)
     );
     
     // Aggregate metrics every minute
-    this.collectionIntervals.push(
+    this?.collectionIntervals?.push(
       setInterval(() => this.aggregateMetrics(), 60000)
     );
     
     // Check alert thresholds every 30 seconds
-    this.collectionIntervals.push(
+    this?.collectionIntervals?.push(
       setInterval(() => this.checkAlertThresholds(), 30000)
     );
     
@@ -382,7 +382,7 @@ export class MetricsCollectionService extends EventEmitter {
     try {
       const nlpQueue = getGroceryNLPQueue();
       const queueStatus = nlpQueue.getStatus();
-      const queueMetrics = queueStatus.metrics;
+      const queueMetrics = queueStatus?.metrics;
       
       // Queue depth metrics
       this.recordGauge('ollama_queue_depth', queueStatus.queueSize);
@@ -397,7 +397,7 @@ export class MetricsCollectionService extends EventEmitter {
       }
       
       // Throughput metrics
-      const throughput = queueMetrics.throughput;
+      const throughput = queueMetrics?.throughput;
       this.recordGauge('ollama_throughput_1min', throughput.last1min);
       this.recordGauge('ollama_throughput_5min', throughput.last5min);
       this.recordGauge('ollama_throughput_15min', throughput.last15min);
@@ -526,11 +526,11 @@ export class MetricsCollectionService extends EventEmitter {
       for (const type in cpu.times) {
         totalTick += (cpu.times as any)[type];
       }
-      totalIdle += cpu.times.idle;
+      totalIdle += cpu?.times?.idle;
     });
     
-    const idle = totalIdle / cpus.length;
-    const total = totalTick / cpus.length;
+    const idle = totalIdle / cpus?.length || 0;
+    const total = totalTick / cpus?.length || 0;
     const usage = 1 - (idle / total);
     
     return Math.min(1, Math.max(0, usage));
@@ -629,20 +629,20 @@ export class MetricsCollectionService extends EventEmitter {
       timestamp: Date.now()
     };
     
-    if (!this.correlationMap.has(correlationId)) {
-      this.correlationMap.set(correlationId, []);
+    if (!this?.correlationMap?.has(correlationId)) {
+      this?.correlationMap?.set(correlationId, []);
     }
     
-    this.correlationMap.get(correlationId)?.push(trace);
+    this?.correlationMap?.get(correlationId)?.push(trace);
     
     // Clean up old traces (older than 5 minutes)
     const cutoff = Date.now() - 5 * 60 * 1000;
     for (const [id, traces] of this.correlationMap) {
-      const recentTraces = traces.filter(t => t.timestamp > cutoff);
-      if (recentTraces.length === 0) {
-        this.correlationMap.delete(id);
+      const recentTraces = traces?.filter(t => t.timestamp > cutoff);
+      if (recentTraces?.length || 0 === 0) {
+        this?.correlationMap?.delete(id);
       } else {
-        this.correlationMap.set(id, recentTraces);
+        this?.correlationMap?.set(id, recentTraces);
       }
     }
   }
@@ -656,7 +656,7 @@ export class MetricsCollectionService extends EventEmitter {
     labels?: Record<string, string>
   ): void {
     const labelKey = this.getLabelKey(labels);
-    const counterMap = this.counters.get(name);
+    const counterMap = this?.counters?.get(name);
     
     if (counterMap) {
       const current = counterMap.get(labelKey) || 0;
@@ -673,7 +673,7 @@ export class MetricsCollectionService extends EventEmitter {
     labels?: Record<string, string>
   ): void {
     const labelKey = this.getLabelKey(labels);
-    const gaugeMap = this.gauges.get(name);
+    const gaugeMap = this?.gauges?.get(name);
     
     if (gaugeMap) {
       gaugeMap.set(labelKey, value);
@@ -689,7 +689,7 @@ export class MetricsCollectionService extends EventEmitter {
     labels?: Record<string, string>
   ): void {
     const labelKey = this.getLabelKey(labels);
-    const gaugeMap = this.gauges.get(name);
+    const gaugeMap = this?.gauges?.get(name);
     
     if (gaugeMap) {
       const current = gaugeMap.get(labelKey) || 0;
@@ -706,7 +706,7 @@ export class MetricsCollectionService extends EventEmitter {
     labels?: Record<string, string>
   ): void {
     const labelKey = this.getLabelKey(labels);
-    const histogramMap = this.histograms.get(name);
+    const histogramMap = this?.histograms?.get(name);
     
     if (histogramMap) {
       let data = histogramMap.get(labelKey);
@@ -767,16 +767,16 @@ export class MetricsCollectionService extends EventEmitter {
    * Add value to metric history
    */
   private addToHistory(metricName: string, value: number): void {
-    if (!this.metricHistory.has(metricName)) {
-      this.metricHistory.set(metricName, []);
+    if (!this?.metricHistory?.has(metricName)) {
+      this?.metricHistory?.set(metricName, []);
     }
     
-    const history = this.metricHistory.get(metricName)!;
+    const history = this?.metricHistory?.get(metricName)!;
     history.push({ timestamp: Date.now(), value });
     
     // Keep only recent history
-    if (history.length > this.maxHistorySize) {
-      history.splice(0, history.length - this.maxHistorySize);
+    if (history?.length || 0 > this.maxHistorySize) {
+      history.splice(0, history?.length || 0 - this.maxHistorySize);
     }
   }
 
@@ -787,13 +787,13 @@ export class MetricsCollectionService extends EventEmitter {
     for (const [metricName, history] of this.metricHistory) {
       for (const [windowName, windowSize] of Object.entries(this.aggregationWindows)) {
         const cutoff = Date.now() - windowSize;
-        const windowData = history.filter(h => h.timestamp > cutoff);
+        const windowData = history?.filter(h => h.timestamp > cutoff);
         
-        if (windowData.length > 0) {
-          const sum = windowData.reduce((acc, h) => acc + h.value, 0);
-          const avg = sum / windowData.length;
-          const min = Math.min(...windowData.map(h => h.value));
-          const max = Math.max(...windowData.map(h => h.value));
+        if (windowData?.length || 0 > 0) {
+          const sum = windowData.reduce((acc: any, h: any) => acc + h.value, 0);
+          const avg = sum / windowData?.length || 0;
+          const min = Math.min(...windowData?.map(h => h.value));
+          const max = Math.max(...windowData?.map(h => h.value));
           
           this.recordGauge(`${metricName}_avg_${windowName}`, avg);
           this.recordGauge(`${metricName}_min_${windowName}`, min);
@@ -808,49 +808,49 @@ export class MetricsCollectionService extends EventEmitter {
    */
   private checkAlertThresholds(): void {
     // Check Ollama queue depth
-    const queueDepth = this.gauges.get('ollama_queue_depth')?.get('') || 0;
-    if (queueDepth > this.alertThresholds.ollamaQueueDepth) {
+    const queueDepth = this?.gauges?.get('ollama_queue_depth')?.get('') || 0;
+    if (queueDepth > this?.alertThresholds?.ollamaQueueDepth) {
       this.emit('alert', {
         type: 'ollama_queue_high',
         severity: 'warning',
-        message: `Ollama queue depth (${queueDepth}) exceeds threshold (${this.alertThresholds.ollamaQueueDepth})`,
+        message: `Ollama queue depth (${queueDepth}) exceeds threshold (${this?.alertThresholds?.ollamaQueueDepth})`,
         value: queueDepth,
-        threshold: this.alertThresholds.ollamaQueueDepth
+        threshold: this?.alertThresholds?.ollamaQueueDepth
       });
     }
     
     // Check error rates
-    const errorRate = this.gauges.get('ollama_error_rate')?.get('') || 0;
-    if (errorRate > this.alertThresholds.errorRate) {
+    const errorRate = this?.gauges?.get('ollama_error_rate')?.get('') || 0;
+    if (errorRate > this?.alertThresholds?.errorRate) {
       this.emit('alert', {
         type: 'high_error_rate',
         severity: 'critical',
-        message: `Error rate (${(errorRate * 100).toFixed(2)}%) exceeds threshold (${(this.alertThresholds.errorRate * 100).toFixed(2)}%)`,
+        message: `Error rate (${(errorRate * 100).toFixed(2)}%) exceeds threshold (${(this?.alertThresholds?.errorRate * 100).toFixed(2)}%)`,
         value: errorRate,
-        threshold: this.alertThresholds.errorRate
+        threshold: this?.alertThresholds?.errorRate
       });
     }
     
     // Check system resources
-    const cpuUsage = this.gauges.get('system_cpu_usage_ratio')?.get('') || 0;
-    if (cpuUsage > this.alertThresholds.cpuUsage) {
+    const cpuUsage = this?.gauges?.get('system_cpu_usage_ratio')?.get('') || 0;
+    if (cpuUsage > this?.alertThresholds?.cpuUsage) {
       this.emit('alert', {
         type: 'high_cpu_usage',
         severity: 'warning',
-        message: `CPU usage (${(cpuUsage * 100).toFixed(2)}%) exceeds threshold (${(this.alertThresholds.cpuUsage * 100).toFixed(2)}%)`,
+        message: `CPU usage (${(cpuUsage * 100).toFixed(2)}%) exceeds threshold (${(this?.alertThresholds?.cpuUsage * 100).toFixed(2)}%)`,
         value: cpuUsage,
-        threshold: this.alertThresholds.cpuUsage
+        threshold: this?.alertThresholds?.cpuUsage
       });
     }
     
-    const memUsage = this.gauges.get('system_memory_usage_ratio')?.get('') || 0;
-    if (memUsage > this.alertThresholds.memoryUsage) {
+    const memUsage = this?.gauges?.get('system_memory_usage_ratio')?.get('') || 0;
+    if (memUsage > this?.alertThresholds?.memoryUsage) {
       this.emit('alert', {
         type: 'high_memory_usage',
         severity: 'critical',
-        message: `Memory usage (${(memUsage * 100).toFixed(2)}%) exceeds threshold (${(this.alertThresholds.memoryUsage * 100).toFixed(2)}%)`,
+        message: `Memory usage (${(memUsage * 100).toFixed(2)}%) exceeds threshold (${(this?.alertThresholds?.memoryUsage * 100).toFixed(2)}%)`,
         value: memUsage,
-        threshold: this.alertThresholds.memoryUsage
+        threshold: this?.alertThresholds?.memoryUsage
       });
     }
   }
@@ -863,7 +863,7 @@ export class MetricsCollectionService extends EventEmitter {
     
     // Export counters
     for (const [name, labelMap] of this.counters) {
-      const definition = this.metricDefinitions.get(name);
+      const definition = this?.metricDefinitions?.get(name);
       if (definition) {
         lines.push(`# HELP ${name} ${definition.help}`);
         lines.push(`# TYPE ${name} counter`);
@@ -877,7 +877,7 @@ export class MetricsCollectionService extends EventEmitter {
     
     // Export gauges
     for (const [name, labelMap] of this.gauges) {
-      const definition = this.metricDefinitions.get(name);
+      const definition = this?.metricDefinitions?.get(name);
       if (definition) {
         lines.push(`# HELP ${name} ${definition.help}`);
         lines.push(`# TYPE ${name} gauge`);
@@ -891,7 +891,7 @@ export class MetricsCollectionService extends EventEmitter {
     
     // Export histograms
     for (const [name, labelMap] of this.histograms) {
-      const definition = this.metricDefinitions.get(name);
+      const definition = this?.metricDefinitions?.get(name);
       if (definition) {
         lines.push(`# HELP ${name} ${definition.help}`);
         lines.push(`# TYPE ${name} histogram`);
@@ -941,7 +941,7 @@ export class MetricsCollectionService extends EventEmitter {
   private getOllamaMetrics(): OllamaMetrics {
     const nlpQueue = getGroceryNLPQueue();
     const queueStatus = nlpQueue.getStatus();
-    const queueMetrics = queueStatus.metrics;
+    const queueMetrics = queueStatus?.metrics;
     
     return {
       queueDepth: queueStatus.queueSize,
@@ -965,8 +965,8 @@ export class MetricsCollectionService extends EventEmitter {
     // Using placeholder calculations for now
     
     const getMetricsForCache = (cacheType: string) => {
-      const hits = this.counters.get('cache_hits_total')?.get(`cache_type="${cacheType}"`) || 0;
-      const misses = this.counters.get('cache_misses_total')?.get(`cache_type="${cacheType}"`) || 0;
+      const hits = this?.counters?.get('cache_hits_total')?.get(`cache_type="${cacheType}"`) || 0;
+      const misses = this?.counters?.get('cache_misses_total')?.get(`cache_type="${cacheType}"`) || 0;
       const total = hits + misses;
       
       return {
@@ -1007,7 +1007,7 @@ export class MetricsCollectionService extends EventEmitter {
     const statusCodes: Record<string, Record<number, number>> = {};
     
     // Calculate request rates per endpoint
-    for (const [labels, count] of this.counters.get('http_requests_total') || new Map()) {
+    for (const [labels, count] of this?.counters?.get('http_requests_total') || new Map()) {
       const labelMatch = labels.match(/endpoint="([^"]+)"/);
       if (labelMatch) {
         const endpoint = labelMatch[1];
@@ -1040,7 +1040,7 @@ export class MetricsCollectionService extends EventEmitter {
       responseTime,
       errorRate,
       statusCodes,
-      concurrentRequests: this.gauges.get('http_concurrent_requests')?.get('') || 0
+      concurrentRequests: this?.gauges?.get('http_concurrent_requests')?.get('') || 0
     };
   }
 
@@ -1049,14 +1049,14 @@ export class MetricsCollectionService extends EventEmitter {
    */
   private getDatabaseMetrics(): DatabaseMetrics {
     return {
-      queryCount: this.counters.get('db_queries_total')?.get('') || 0,
+      queryCount: this?.counters?.get('db_queries_total')?.get('') || 0,
       avgQueryTime: 0, // Would calculate from histogram data
-      slowQueries: this.counters.get('db_slow_queries_total')?.get('') || 0,
-      connectionPoolSize: this.gauges.get('db_connection_pool_size')?.get('') || 0,
-      activeConnections: this.gauges.get('db_connections_active')?.get('') || 0,
-      waitingConnections: this.gauges.get('db_connections_waiting')?.get('') || 0,
-      transactionCount: this.counters.get('db_transactions_total')?.get('') || 0,
-      rollbackCount: this.counters.get('db_rollbacks_total')?.get('') || 0
+      slowQueries: this?.counters?.get('db_slow_queries_total')?.get('') || 0,
+      connectionPoolSize: this?.gauges?.get('db_connection_pool_size')?.get('') || 0,
+      activeConnections: this?.gauges?.get('db_connections_active')?.get('') || 0,
+      waitingConnections: this?.gauges?.get('db_connections_waiting')?.get('') || 0,
+      transactionCount: this?.counters?.get('db_transactions_total')?.get('') || 0,
+      rollbackCount: this?.counters?.get('db_rollbacks_total')?.get('') || 0
     };
   }
 
@@ -1064,12 +1064,12 @@ export class MetricsCollectionService extends EventEmitter {
    * Get WebSocket metrics
    */
   private getWebSocketMetrics(): WebSocketMetrics {
-    const totalMessages = this.counters.get('websocket_messages_total')?.get('') || 0;
+    const totalMessages = this?.counters?.get('websocket_messages_total')?.get('') || 0;
     const uptime = process.uptime();
     
     return {
-      totalConnections: this.counters.get('websocket_connections_total')?.get('') || 0,
-      activeConnections: this.gauges.get('websocket_connections_active')?.get('') || 0,
+      totalConnections: this?.counters?.get('websocket_connections_total')?.get('') || 0,
+      activeConnections: this?.gauges?.get('websocket_connections_active')?.get('') || 0,
       messagesPerSecond: uptime > 0 ? totalMessages / uptime : 0,
       avgMessageSize: 0, // Would need message size tracking
       errorRate: 0, // Would calculate from error counters
@@ -1086,7 +1086,7 @@ export class MetricsCollectionService extends EventEmitter {
     const usedMem = totalMem - freeMem;
     
     return {
-      cpuUsage: this.gauges.get('system_cpu_usage_ratio')?.get('') || 0,
+      cpuUsage: this?.gauges?.get('system_cpu_usage_ratio')?.get('') || 0,
       memoryUsage: {
         total: totalMem,
         used: usedMem,
@@ -1117,8 +1117,8 @@ export class MetricsCollectionService extends EventEmitter {
     const traces: Record<string, any> = {};
     
     for (const [correlationId, serviceLatencies] of this.correlationMap) {
-      const totalLatency = serviceLatencies.reduce((sum, sl) => sum + sl.latency, 0);
-      const serviceBreakdown = serviceLatencies.map(sl => ({
+      const totalLatency = serviceLatencies.reduce((sum: any, sl: any) => sum + sl.latency, 0);
+      const serviceBreakdown = serviceLatencies?.map(sl => ({
         service: sl.serviceName,
         endpoint: sl.endpoint,
         latency: sl.latency,
@@ -1127,7 +1127,7 @@ export class MetricsCollectionService extends EventEmitter {
       
       traces[correlationId] = {
         totalLatency,
-        serviceCount: serviceLatencies.length,
+        serviceCount: serviceLatencies?.length || 0,
         breakdown: serviceBreakdown
       };
     }
@@ -1203,7 +1203,7 @@ export class MetricsCollectionService extends EventEmitter {
           rules: [
             {
               alert: 'OllamaQueueHigh',
-              expr: `ollama_queue_depth > ${this.alertThresholds.ollamaQueueDepth}`,
+              expr: `ollama_queue_depth > ${this?.alertThresholds?.ollamaQueueDepth}`,
               for: '2m',
               labels: { severity: 'warning' },
               annotations: {
@@ -1213,7 +1213,7 @@ export class MetricsCollectionService extends EventEmitter {
             },
             {
               alert: 'OllamaHighErrorRate',
-              expr: `ollama_error_rate > ${this.alertThresholds.errorRate}`,
+              expr: `ollama_error_rate > ${this?.alertThresholds?.errorRate}`,
               for: '5m',
               labels: { severity: 'critical' },
               annotations: {
@@ -1228,7 +1228,7 @@ export class MetricsCollectionService extends EventEmitter {
           rules: [
             {
               alert: 'LowCacheHitRate',
-              expr: `rate(cache_hits_total[5m]) / (rate(cache_hits_total[5m]) + rate(cache_misses_total[5m])) < ${this.alertThresholds.cacheHitRate}`,
+              expr: `rate(cache_hits_total[5m]) / (rate(cache_hits_total[5m]) + rate(cache_misses_total[5m])) < ${this?.alertThresholds?.cacheHitRate}`,
               for: '10m',
               labels: { severity: 'warning' },
               annotations: {
@@ -1243,7 +1243,7 @@ export class MetricsCollectionService extends EventEmitter {
           rules: [
             {
               alert: 'HighCPUUsage',
-              expr: `system_cpu_usage_ratio > ${this.alertThresholds.cpuUsage}`,
+              expr: `system_cpu_usage_ratio > ${this?.alertThresholds?.cpuUsage}`,
               for: '5m',
               labels: { severity: 'warning' },
               annotations: {
@@ -1253,7 +1253,7 @@ export class MetricsCollectionService extends EventEmitter {
             },
             {
               alert: 'HighMemoryUsage',
-              expr: `system_memory_usage_ratio > ${this.alertThresholds.memoryUsage}`,
+              expr: `system_memory_usage_ratio > ${this?.alertThresholds?.memoryUsage}`,
               for: '5m',
               labels: { severity: 'critical' },
               annotations: {

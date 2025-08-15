@@ -41,7 +41,7 @@ class MigrationTester {
    */
   private initDb(): Database.Database {
     this.db = new Database(this.dbPath);
-    this.db.pragma('foreign_keys = ON');
+    this?.db?.pragma('foreign_keys = ON');
     return this.db;
   }
 
@@ -49,7 +49,7 @@ class MigrationTester {
    * Add test result
    */
   private addResult(name: string, passed: boolean, message: string, details?: any, error?: string) {
-    this.results.push({ name, passed, message, details, error });
+    this?.results?.push({ name, passed, message, details, error });
     const status = passed ? '✅' : '❌';
     console.log(`${status} ${name}: ${message}`);
     if (details && passed) {
@@ -97,8 +97,8 @@ class MigrationTester {
         hasDueDate ? "due_date column already exists" : "Table ready for migration",
         {
           tableExists: true,
-          columnCount: columns.length,
-          existingColumns: columns.map(c => `${c.name} (${c.type})`),
+          columnCount: columns?.length || 0,
+          existingColumns: columns?.map(c => `${c.name} (${c.type})`),
           hasDueDate
         }
       );
@@ -236,14 +236,14 @@ class MigrationTester {
         'idx_grocery_lists_active_due_date'
       ];
 
-      const existingIndexNames = indexes.map(idx => idx.name);
-      const createdIndexes = expectedIndexes.filter(idx => existingIndexNames.includes(idx));
-      const missingIndexes = expectedIndexes.filter(idx => !existingIndexNames.includes(idx));
+      const existingIndexNames = indexes?.map(idx => idx.name);
+      const createdIndexes = expectedIndexes?.filter(idx => existingIndexNames.includes(idx));
+      const missingIndexes = expectedIndexes?.filter(idx => !existingIndexNames.includes(idx));
 
       this.addResult(
         "Verification: Indexes created",
-        missingIndexes.length === 0,
-        `${createdIndexes.length}/${expectedIndexes.length} indexes created`,
+        missingIndexes?.length || 0 === 0,
+        `${createdIndexes?.length || 0}/${expectedIndexes?.length || 0} indexes created`,
         {
           expectedIndexes,
           createdIndexes,
@@ -475,7 +475,7 @@ class MigrationTester {
       }
 
       const allSuccessful = performanceResults.every(r => r.success);
-      const avgExecutionTime = performanceResults.reduce((sum, r) => sum + r.executionTime, 0) / performanceResults.length;
+      const avgExecutionTime = performanceResults.reduce((sum: any, r: any) => sum + r.executionTime, 0) / performanceResults?.length || 0;
 
       this.addResult(
         "Performance: Query execution",
@@ -511,7 +511,7 @@ class MigrationTester {
 
       // Check foreign key constraints
       const foreignKeyResult = db.prepare("PRAGMA foreign_key_check").all();
-      const foreignKeysPassed = foreignKeyResult.length === 0;
+      const foreignKeysPassed = foreignKeyResult?.length || 0 === 0;
 
       this.addResult(
         "Integrity: Database validation",
@@ -519,7 +519,7 @@ class MigrationTester {
         `Database integrity maintained`,
         {
           integrityCheck: integrityResult.integrity_check,
-          foreignKeyViolations: foreignKeyResult.length,
+          foreignKeyViolations: foreignKeyResult?.length || 0,
           integrityPassed,
           foreignKeysPassed
         }
@@ -559,8 +559,8 @@ class MigrationTester {
    * Generate test report
    */
   private generateReport(): void {
-    const totalTests = this.results.length;
-    const passedTests = this.results.filter(r => r.passed).length;
+    const totalTests = this?.results?.length;
+    const passedTests = this?.results?.filter(r => r.passed).length;
     const failedTests = totalTests - passedTests;
 
     console.log("\n" + "=".repeat(60));
@@ -603,7 +603,7 @@ class MigrationTester {
    */
   close(): void {
     if (this.db) {
-      this.db.close();
+      this?.db?.close();
       this.db = null;
     }
   }

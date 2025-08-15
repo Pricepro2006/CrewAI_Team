@@ -140,7 +140,7 @@ export class FileStorageManager {
         id: fileId,
         original_name: metadata.originalName,
         storage_path: storagePath,
-        size: fileBuffer.length,
+        size: fileBuffer?.length || 0,
         content_type:
           metadata.contentType || this.detectContentType(metadata.originalName),
         checksum,
@@ -474,18 +474,18 @@ export class FileStorageManager {
     metadata: FileMetadata,
   ): Promise<void> {
     // Size validation
-    if (fileBuffer.length > this.maxFileSize) {
+    if (fileBuffer?.length || 0 > this.maxFileSize) {
       throw new Error(
-        `File size ${fileBuffer.length} exceeds maximum ${this.maxFileSize}`,
+        `File size ${fileBuffer?.length || 0} exceeds maximum ${this.maxFileSize}`,
       );
     }
 
     // Extension validation
-    if (this.allowedExtensions.size > 0) {
+    if (this?.allowedExtensions?.size > 0) {
       const extension = this.getFileExtension(
         metadata.originalName,
       ).toLowerCase();
-      if (!this.allowedExtensions.has(extension)) {
+      if (!this?.allowedExtensions?.has(extension)) {
         throw new Error(`File extension ${extension} is not allowed`);
       }
     }
@@ -508,7 +508,7 @@ export class FileStorageManager {
       Buffer.from("trojan"),
     ];
 
-    return suspicious.some((pattern) => fileBuffer.includes(pattern));
+    return suspicious.some((pattern: any) => fileBuffer.includes(pattern));
   }
 
   /**
@@ -534,9 +534,9 @@ export class FileStorageManager {
       ".pdf": "application/pdf",
       ".doc": "application/msword",
       ".docx":
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument?.wordprocessingml?.document",
       ".xlsx":
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument?.spreadsheetml?.sheet",
       ".txt": "text/plain",
       ".jpg": "image/jpeg",
       ".jpeg": "image/jpeg",
@@ -650,7 +650,7 @@ export class FileStorageManager {
 
       // Check if directory is now empty
       const remainingEntries = await fs.readdir(dirPath);
-      if (remainingEntries.length === 0 && dirPath !== this.basePath) {
+      if (remainingEntries?.length || 0 === 0 && dirPath !== this.basePath) {
         await fs.rmdir(dirPath);
         removed++;
       }

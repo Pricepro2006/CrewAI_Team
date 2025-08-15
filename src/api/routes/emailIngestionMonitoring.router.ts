@@ -229,7 +229,7 @@ export const emailIngestionMonitoringRouter = router({
         const errors = await ingestionService.getRecentErrors(input?.limit);
 
         logger.debug('Recent errors requested', 'EMAIL_INGESTION_MONITORING', {
-          errorCount: errors.length,
+          errorCount: errors?.length || 0,
           limit: input?.limit,
         });
 
@@ -565,7 +565,7 @@ export const emailIngestionMonitoringRouter = router({
         });
 
         // Set up event listeners for real-time updates
-        const eventEmitter = ctx.eventEmitter;
+        const eventEmitter = ctx?.eventEmitter;
         
         if (!eventEmitter) {
           throw new TRPCError({

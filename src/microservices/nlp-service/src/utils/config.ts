@@ -147,8 +147,8 @@ export function loadConfig(): NLPServiceConfig {
     
     if (error instanceof z.ZodError) {
       logger.error('Configuration errors:', 'CONFIG', {
-        errors: error.errors.map(err => ({
-          path: err.path.join('.'),
+        errors: error?.errors?.map(err => ({
+          path: err?.path?.join('.'),
           message: err.message,
           received: err.received
         }))
@@ -235,7 +235,7 @@ export function mergeEnvironmentConfig(baseConfig: NLPServiceConfig): NLPService
       ...baseConfig.monitoring,
       ...envConfig.monitoring,
       alertThresholds: {
-        ...baseConfig.monitoring.alertThresholds,
+        ...baseConfig?.monitoring?.alertThresholds,
         ...envConfig.monitoring?.alertThresholds
       }
     },
@@ -247,15 +247,15 @@ export function mergeEnvironmentConfig(baseConfig: NLPServiceConfig): NLPService
       ...baseConfig.security,
       ...envConfig.security,
       rateLimiting: {
-        ...baseConfig.security.rateLimiting,
+        ...baseConfig?.security?.rateLimiting,
         ...envConfig.security?.rateLimiting
       },
       cors: {
-        ...baseConfig.security.cors,
+        ...baseConfig?.security?.cors,
         ...envConfig.security?.cors
       },
       apiKeys: {
-        ...baseConfig.security.apiKeys,
+        ...baseConfig?.security?.apiKeys,
         ...envConfig.security?.apiKeys
       }
     },
@@ -281,9 +281,9 @@ export function validateEnvironment(): void {
     requiredVars.push('ADMIN_API_KEY');
   }
   
-  const missingVars = requiredVars.filter(varName => !process.env[varName]);
+  const missingVars = requiredVars?.filter(varName => !process.env[varName]);
   
-  if (missingVars.length > 0) {
+  if (missingVars?.length || 0 > 0) {
     logger.error('Missing required environment variables', 'CONFIG', {
       missingVariables: missingVars
     });

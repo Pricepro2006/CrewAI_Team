@@ -139,16 +139,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   // TRPC mutations
-  const loginMutation = api.auth.login.useMutation();
-  const registerMutation = api.auth.register.useMutation();
-  const logoutMutation = api.auth.logout.useMutation();
-  const logoutAllMutation = api.auth.logoutAll.useMutation();
-  const refreshTokenMutation = api.auth.refreshToken.useMutation();
-  const updateProfileMutation = api.auth.updateProfile.useMutation();
-  const changePasswordMutation = api.auth.changePassword.useMutation();
+  const loginMutation = api?.auth?.login.useMutation();
+  const registerMutation = api?.auth?.register.useMutation();
+  const logoutMutation = api?.auth?.logout.useMutation();
+  const logoutAllMutation = api?.auth?.logoutAll.useMutation();
+  const refreshTokenMutation = api?.auth?.refreshToken.useMutation();
+  const updateProfileMutation = api?.auth?.updateProfile.useMutation();
+  const changePasswordMutation = api?.auth?.changePassword.useMutation();
 
   // TRPC queries
-  const { data: userData, refetch: refetchUser } = api.auth.me.useQuery(
+  const { data: userData, refetch: refetchUser } = api?.auth?.me.useQuery(
     undefined,
     {
       enabled: !!tokens?.accessToken,
@@ -157,7 +157,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 
   const checkPasswordStrengthQuery = (password: string) => {
-    return api.auth.checkPasswordStrength.useQuery({ password });
+    return api?.auth?.checkPasswordStrength.useQuery({ password });
   };
 
   // Initialize auth state from storage
@@ -190,7 +190,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Parse JWT to get expiration time
     try {
-      const payload = JSON.parse(atob(tokens.accessToken.split(".")[1]!));
+      const payload = JSON.parse(atob(tokens?.accessToken?.split(".")[1]!));
       const expirationTime = payload.exp * 1000; // Convert to milliseconds
       const currentTime = Date.now();
       const timeUntilExpiry = expirationTime - currentTime;
@@ -215,7 +215,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         const result = await loginMutation.mutateAsync(credentials);
 
-        const newTokens = result.tokens;
+        const newTokens = result?.tokens;
         setTokens(newTokens);
         setUser(result.user);
 
@@ -284,7 +284,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         refreshToken: tokens.refreshToken,
       });
 
-      const newTokens = result.tokens;
+      const newTokens = result?.tokens;
       setTokens(newTokens);
 
       // Update stored tokens
@@ -321,7 +321,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Check password strength function
   const checkPasswordStrength = useCallback(async (password: string) => {
-    const result = await api.auth.checkPasswordStrength.mutate({ password });
+    const result = await api?.auth?.checkPasswordStrength.mutate({ password });
     // Map the result to match the expected interface
     return {
       isValid: result.isValid,

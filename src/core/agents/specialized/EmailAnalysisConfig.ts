@@ -91,7 +91,7 @@ export const TD_SYNNEX_PRIORITY_RULES: TDSynnexPriorityRules = {
   workflowRules: [
     {
       workflow: "License Renewal",
-      condition: (email) => {
+      condition: (email: any) => {
         const daysUntilExpiry =
           email.daysUntilExpiry ||
           extractDaysFromText(email.subject + " " + email.summary);
@@ -106,7 +106,7 @@ export const TD_SYNNEX_PRIORITY_RULES: TDSynnexPriorityRules = {
     },
     {
       workflow: "Order Management",
-      condition: (email) => {
+      condition: (email: any) => {
         const text = (email.subject + " " + email.summary).toLowerCase();
         return text.includes("issue") || text.includes("problem");
       },
@@ -148,8 +148,8 @@ export function enhancePriorityDetection(
     const text = email.subject + " " + email.summary;
     const matches =
       typeof rule.pattern === "string"
-        ? text.toLowerCase().includes(rule.pattern.toLowerCase())
-        : rule.pattern.test(text);
+        ? text.toLowerCase().includes(rule?.pattern?.toLowerCase())
+        : rule?.pattern?.test(text);
 
     if (matches) {
       return {
@@ -166,7 +166,7 @@ export function enhancePriorityDetection(
       if (
         email.workflow_type
           .toLowerCase()
-          .includes(rule.workflow.toLowerCase()) &&
+          .includes(rule?.workflow?.toLowerCase()) &&
         rule.condition(email)
       ) {
         return {

@@ -23,8 +23,8 @@ const upload = multer({
       "application/json",
       "application/xml",
       "text/csv",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.openxmlformats-officedocument?.wordprocessingml?.document",
+      "application/vnd.openxmlformats-officedocument?.spreadsheetml?.sheet",
     ];
 
     const allowedExtensions = [
@@ -41,7 +41,7 @@ const upload = multer({
     ];
 
     const fileExtension =
-      file.originalname.toLowerCase().match(/\.[^.]+$/)?.[0] || "";
+      file?.originalname?.toLowerCase().match(/\.[^.]+$/)?.[0] || "";
 
     if (
       allowedTypes.includes(file.mimetype) ||
@@ -98,21 +98,21 @@ router.post(
       }
 
       logger.info("Processing file upload", "UPLOAD", {
-        filename: req.file.originalname,
-        mimeType: req.file.mimetype,
-        size: req.file.size,
+        filename: req?.file?.originalname,
+        mimeType: req?.file?.mimetype,
+        size: req?.file?.size,
       });
 
       const orchestrator = await getOrchestrator();
-      const content = req.file.buffer.toString("utf-8");
+      const content = req?.file?.buffer.toString("utf-8");
       const documentId = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      await orchestrator.ragSystem.addDocument(content, {
+      await orchestrator?.ragSystem?.addDocument(content, {
         id: documentId,
-        title: req.file.originalname,
-        mimeType: req.file.mimetype,
+        title: req?.file?.originalname,
+        mimeType: req?.file?.mimetype,
         uploadedAt: new Date().toISOString(),
-        ...req.body.metadata, // Additional metadata from form
+        ...req?.body?.metadata, // Additional metadata from form
       });
 
       logger.info("File uploaded successfully", "UPLOAD", { documentId });
@@ -120,8 +120,8 @@ router.post(
       return res.json({
         success: true,
         documentId,
-        filename: req.file.originalname,
-        size: req.file.size,
+        filename: req?.file?.originalname,
+        size: req?.file?.size,
         message: "File uploaded and processed successfully",
       });
     } catch (error) {
@@ -140,12 +140,12 @@ router.post(
   upload.array("files", 10),
   async (req: Request, res: Response) => {
     try {
-      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      if (!req.files || !Array.isArray(req.files) || req?.files?.length === 0) {
         return res.status(400).json({ error: "No files provided" });
       }
 
       logger.info("Processing batch file upload", "UPLOAD", {
-        count: req.files.length,
+        count: req?.files?.length,
       });
 
       const orchestrator = await getOrchestrator();
@@ -154,15 +154,15 @@ router.post(
 
       for (const file of req.files) {
         try {
-          const content = file.buffer.toString("utf-8");
+          const content = file?.buffer?.toString("utf-8");
           const documentId = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-          await orchestrator.ragSystem.addDocument(content, {
+          await orchestrator?.ragSystem?.addDocument(content, {
             id: documentId,
             title: file.originalname,
             mimeType: file.mimetype,
             uploadedAt: new Date().toISOString(),
-            ...req.body.metadata,
+            ...req?.body?.metadata,
           });
 
           results.push({
@@ -180,14 +180,14 @@ router.post(
       }
 
       logger.info("Batch upload completed", "UPLOAD", {
-        uploaded: results.length,
-        failed: errors.length,
+        uploaded: results?.length || 0,
+        failed: errors?.length || 0,
       });
 
       return res.json({
-        success: errors.length === 0,
-        uploaded: results.length,
-        failed: errors.length,
+        success: errors?.length || 0 === 0,
+        uploaded: results?.length || 0,
+        failed: errors?.length || 0,
         results,
         errors,
       });

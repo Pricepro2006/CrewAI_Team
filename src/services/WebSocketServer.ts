@@ -76,16 +76,16 @@ class WalmartWebSocketServer {
    * Setup WebSocket server handlers
    */
   private setupWebSocketServer() {
-    this.wss.on('connection', (ws: WebSocket, req) => {
+    this?.wss?.on('connection', (ws: WebSocket, req) => {
       const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       logger.info('New WebSocket client connected', 'WEBSOCKET', { clientId });
       
-      this.clients.add(ws);
+      this?.clients?.add(ws);
       
       // Send welcome message
       this.sendToClient(ws, {
         type: 'SYSTEM',
-        message: `Connected to Walmart Price Tracker (${this.clients.size} clients online)`,
+        message: `Connected to Walmart Price Tracker (${this?.clients?.size} clients online)`,
         timestamp: new Date().toISOString()
       });
       
@@ -104,21 +104,21 @@ class WalmartWebSocketServer {
       
       // Handle disconnection
       ws.on('close', () => {
-        this.clients.delete(ws);
+        this?.clients?.delete(ws);
         logger.info('Client disconnected', 'WEBSOCKET', { 
           clientId,
-          remainingClients: this.clients.size 
+          remainingClients: this?.clients?.size 
         });
       });
       
       // Handle errors
-      ws.on('error', (error) => {
+      ws.on('error', (error: any) => {
         logger.error('WebSocket client error', 'WEBSOCKET', { clientId, error });
-        this.clients.delete(ws);
+        this?.clients?.delete(ws);
       });
     });
     
-    this.wss.on('error', (error) => {
+    this?.wss?.on('error', (error: any) => {
       logger.error('WebSocket server error', 'WEBSOCKET', { error });
     });
   }
@@ -185,7 +185,7 @@ class WalmartWebSocketServer {
     
     try {
       // Get all products from database
-      const products = this.db.prepare(`
+      const products = this?.db?.prepare(`
         SELECT id, product_id, name, current_price 
         FROM walmart_products 
         WHERE in_stock = 1
@@ -197,7 +197,7 @@ class WalmartWebSocketServer {
       for (const product of products) {
         // Simulate price check (in production, would call BrightData)
         const newPrice = this.simulatePriceChange(product.current_price);
-        const oldPrice = this.lastPrices.get(product.product_id) || product.current_price;
+        const oldPrice = this?.lastPrices?.get(product.product_id) || product.current_price;
         
         if (Math.abs(newPrice - oldPrice) > 0.01) {
           // Price changed!
@@ -207,7 +207,7 @@ class WalmartWebSocketServer {
           this.updateProductPrice(product.id, newPrice);
           
           // Update last price cache
-          this.lastPrices.set(product.product_id, newPrice);
+          this?.lastPrices?.set(product.product_id, newPrice);
           
           // Broadcast price update
           const event: PriceUpdateEvent = {
@@ -228,7 +228,7 @@ class WalmartWebSocketServer {
       }
       
       logger.info('Price check completed', 'WEBSOCKET', {
-        productsChecked: products.length,
+        productsChecked: products?.length || 0,
         priceChanges
       });
       
@@ -242,7 +242,7 @@ class WalmartWebSocketServer {
    */
   private async checkPriceNow(productId: string) {
     try {
-      const product = this.db.prepare(`
+      const product = this?.db?.prepare(`
         SELECT id, product_id, name, current_price 
         FROM walmart_products 
         WHERE product_id = ?
@@ -281,14 +281,14 @@ class WalmartWebSocketServer {
    */
   private updateProductPrice(productId: string, newPrice: number) {
     try {
-      this.db.prepare(`
+      this?.db?.prepare(`
         UPDATE walmart_products 
         SET current_price = ?, updated_at = ? 
         WHERE id = ?
       `).run(newPrice, new Date().toISOString(), productId);
       
       // Also add to price history
-      this.db.prepare(`
+      this?.db?.prepare(`
         INSERT INTO price_history (id, product_id, price, recorded_at)
         VALUES (?, ?, ?, ?)
       `).run(
@@ -307,7 +307,7 @@ class WalmartWebSocketServer {
    */
   private checkPriceAlerts(productId: string, productName: string, currentPrice: number) {
     try {
-      const alerts = this.db.prepare(`
+      const alerts = this?.db?.prepare(`
         SELECT * FROM price_alerts 
         WHERE product_id = ? AND is_active = 1
       `).all(productId) as any[];
@@ -321,14 +321,14 @@ class WalmartWebSocketServer {
             alertType: 'price_drop',
             currentPrice,
             targetPrice: alert.target_price,
-            message: `Price dropped to $${currentPrice.toFixed(2)}! (Target was $${alert.target_price.toFixed(2)})`,
+            message: `Price dropped to $${currentPrice.toFixed(2)}! (Target was $${alert?.target_price?.toFixed(2)})`,
             timestamp: new Date().toISOString()
           };
           
           this.broadcast(event);
           
           // Mark alert as triggered
-          this.db.prepare(`
+          this?.db?.prepare(`
             UPDATE price_alerts SET is_active = 0 WHERE id = ?
           `).run(alert.id);
         }
@@ -345,7 +345,7 @@ class WalmartWebSocketServer {
     try {
       const alertId = `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      this.db.prepare(`
+      this?.db?.prepare(`
         INSERT INTO price_alerts (id, user_id, product_id, alert_type, target_price, is_active, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
@@ -403,7 +403,7 @@ class WalmartWebSocketServer {
    */
   private sendProductStats(ws: WebSocket) {
     try {
-      const stats = this.db.prepare(`
+      const stats = this?.db?.prepare(`
         SELECT 
           COUNT(*) as totalProducts,
           AVG(current_price) as avgPrice,
@@ -426,15 +426,15 @@ class WalmartWebSocketServer {
    */
   private loadLastPrices() {
     try {
-      const products = this.db.prepare(`
+      const products = this?.db?.prepare(`
         SELECT product_id, current_price FROM walmart_products
       `).all() as any[];
       
       for (const product of products) {
-        this.lastPrices.set(product.product_id, product.current_price);
+        this?.lastPrices?.set(product.product_id, product.current_price);
       }
       
-      logger.info('Loaded last prices', 'WEBSOCKET', { count: this.lastPrices.size });
+      logger.info('Loaded last prices', 'WEBSOCKET', { count: this?.lastPrices?.size });
     } catch (error) {
       logger.error('Failed to load last prices', 'WEBSOCKET', { error });
     }
@@ -468,7 +468,7 @@ class WalmartWebSocketServer {
   broadcast(event: WebSocketEvent) {
     const message = JSON.stringify(event);
     
-    this.clients.forEach(client => {
+    this?.clients?.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message);
       }
@@ -476,7 +476,7 @@ class WalmartWebSocketServer {
     
     logger.info('Broadcast sent', 'WEBSOCKET', {
       type: event.type,
-      clients: this.clients.size
+      clients: this?.clients?.size
     });
   }
 
@@ -489,15 +489,15 @@ class WalmartWebSocketServer {
     this.stopPriceMonitoring();
     
     // Close all client connections
-    this.clients.forEach(client => {
+    this?.clients?.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {
         client.close(1000, 'Server shutting down');
       }
     });
     
-    this.wss.close();
-    this.db.close();
-    this.brightDataService.close();
+    this?.wss?.close();
+    this?.db?.close();
+    this?.brightDataService?.close();
   }
 }
 

@@ -1,6 +1,6 @@
 /**
  * Ollama Configuration
- * Aligned with three-stage pipeline architecture from models.config.ts
+ * Aligned with three-stage pipeline architecture from models?.config?.ts
  */
 
 export interface OllamaConfig {
@@ -51,7 +51,7 @@ const ollamaConfig: OllamaConfig = {
       contextWindow: 8192,
       temperature: 0.7
     },
-    // Models from model-selection.config.ts (for potential integration)
+    // Models from model-selection?.config?.ts (for potential integration)
     "granite3.3:2b": {
       name: "granite3.3:2b",
       description: "IBM Granite 3.3 2B - Alternative for complex queries",

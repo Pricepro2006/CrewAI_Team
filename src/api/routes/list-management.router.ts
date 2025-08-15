@@ -63,48 +63,48 @@ export class ListManagementRouter {
 
   private setupRoutes(): void {
     // Health check
-    this.router.get('/health', this.healthCheck.bind(this));
+    this?.router?.get('/health', this?.healthCheck?.bind(this));
 
     // List CRUD operations
-    this.router.post('/lists', this.rateLimiter, this.createList.bind(this));
-    this.router.get('/lists/:listId', this.rateLimiter, this.getList.bind(this));
-    this.router.put('/lists/:listId', this.rateLimiter, this.updateList.bind(this));
-    this.router.delete('/lists/:listId', this.rateLimiter, this.deleteList.bind(this));
+    this?.router?.post('/lists', this.rateLimiter, this?.createList?.bind(this));
+    this?.router?.get('/lists/:listId', this.rateLimiter, this?.getList?.bind(this));
+    this?.router?.put('/lists/:listId', this.rateLimiter, this?.updateList?.bind(this));
+    this?.router?.delete('/lists/:listId', this.rateLimiter, this?.deleteList?.bind(this));
 
     // Item operations
-    this.router.post('/lists/:listId/items', this.rateLimiter, this.addItem.bind(this));
-    this.router.put('/lists/:listId/items/:itemId', this.rateLimiter, this.updateItem.bind(this));
-    this.router.delete('/lists/:listId/items/:itemId', this.rateLimiter, this.deleteItem.bind(this));
-    this.router.post('/lists/:listId/items/reorder', this.rateLimiter, this.reorderItems.bind(this));
+    this?.router?.post('/lists/:listId/items', this.rateLimiter, this?.addItem?.bind(this));
+    this?.router?.put('/lists/:listId/items/:itemId', this.rateLimiter, this?.updateItem?.bind(this));
+    this?.router?.delete('/lists/:listId/items/:itemId', this.rateLimiter, this?.deleteItem?.bind(this));
+    this?.router?.post('/lists/:listId/items/reorder', this.rateLimiter, this?.reorderItems?.bind(this));
 
     // Batch operations
-    this.router.post('/lists/:listId/items/batch', this.rateLimiter, this.batchItemOperations.bind(this));
+    this?.router?.post('/lists/:listId/items/batch', this.rateLimiter, this?.batchItemOperations?.bind(this));
 
     // Real-time subscription endpoint (HTTP upgrade to WebSocket)
-    this.router.get('/lists/:listId/subscribe', this.subscribeToList.bind(this));
+    this?.router?.get('/lists/:listId/subscribe', this?.subscribeToList?.bind(this));
 
     // Metrics and monitoring
-    this.router.get('/metrics', this.getMetrics.bind(this));
-    this.router.post('/flush', this.flush.bind(this));
+    this?.router?.get('/metrics', this?.getMetrics?.bind(this));
+    this?.router?.post('/flush', this?.flush?.bind(this));
   }
 
   private setupEventHandlers(): void {
-    this.listService.on('list:updated', (data) => {
+    this?.listService?.on('list:updated', (data: any) => {
       console.log(`[ListManagementRouter] List updated: ${data.listId} (${data.subscriberCount} subscribers)`);
     });
 
-    this.listService.on('batch:processed', (stats) => {
+    this?.listService?.on('batch:processed', (stats: any) => {
       console.log(`[ListManagementRouter] Batch processed: ${stats.count} operations in ${stats.processingTime}ms`);
     });
 
-    this.listService.on('error', (error) => {
+    this?.listService?.on('error', (error: any) => {
       console.error('[ListManagementRouter] Service error:', error);
     });
   }
 
   private async healthCheck(req: Request, res: Response): Promise<void> {
     try {
-      const metrics = this.listService.getMetrics();
+      const metrics = this?.listService?.getMetrics();
       res.json({
         status: 'healthy',
         service: 'list-management',
@@ -129,7 +129,7 @@ export class ListManagementRouter {
       const userId = this.extractUserId(req);
       const validatedData = CreateListRequestSchema.parse(req.body);
 
-      const newList = await this.listService.createList({
+      const newList = await this?.listService?.createList({
         ...validatedData,
         ownerId: userId,
         collaborators: [],
@@ -162,7 +162,7 @@ export class ListManagementRouter {
         res.status(400).json({ error: 'List ID is required' });
         return;
       }
-      const list = this.listService.getList(listId);
+      const list = this?.listService?.getList(listId);
 
       if (!list) {
         res.status(404).json({ error: 'List not found' });
@@ -186,10 +186,10 @@ export class ListManagementRouter {
       const userId = this.extractUserId(req);
       const updates = UpdateListRequestSchema.parse(req.body);
 
-      await this.listService.updateList(listId!, updates, userId);
+      await this?.listService?.updateList(listId!, updates, userId);
       
       // Return updated list (optimistically)
-      const updatedList = this.listService.getList(listId!);
+      const updatedList = this?.listService?.getList(listId!);
       res.json(updatedList);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -225,7 +225,7 @@ export class ListManagementRouter {
       const userId = this.extractUserId(req);
       const itemData = AddItemRequestSchema.parse(req.body);
 
-      const itemId = await this.listService.addItem(listId, {
+      const itemId = await this?.listService?.addItem(listId, {
         ...itemData,
         completed: false,
         tags: itemData.tags || [],
@@ -259,7 +259,7 @@ export class ListManagementRouter {
       const userId = this.extractUserId(req);
       const updates = UpdateItemRequestSchema.parse(req.body);
 
-      await this.listService.updateItem(listId, itemId, updates, userId);
+      await this?.listService?.updateItem(listId, itemId, updates, userId);
       
       res.json({ 
         message: 'Item updated successfully',
@@ -287,7 +287,7 @@ export class ListManagementRouter {
       }
       const userId = this.extractUserId(req);
 
-      await this.listService.deleteItem(listId, itemId, userId);
+      await this?.listService?.deleteItem(listId, itemId, userId);
       
       res.json({ 
         message: 'Item deleted successfully',
@@ -309,7 +309,7 @@ export class ListManagementRouter {
       const userId = this.extractUserId(req);
       const { fromIndex, toIndex } = ReorderItemsRequestSchema.parse(req.body);
 
-      await this.listService.reorderItems(listId, fromIndex, toIndex, userId);
+      await this?.listService?.reorderItems(listId, fromIndex, toIndex, userId);
       
       res.json({ 
         message: 'Items reordered successfully',
@@ -349,15 +349,15 @@ export class ListManagementRouter {
         try {
           switch (op.type) {
             case 'add':
-              const itemId = await this.listService.addItem(listId!, op.data, userId);
+              const itemId = await this?.listService?.addItem(listId!, op.data, userId);
               results.push({ type: 'add', success: true, itemId });
               break;
             case 'update':
-              await this.listService.updateItem(listId!, op.itemId, op.data, userId);
+              await this?.listService?.updateItem(listId!, op.itemId, op.data, userId);
               results.push({ type: 'update', success: true, itemId: op.itemId });
               break;
             case 'delete':
-              await this.listService.deleteItem(listId!, op.itemId, userId);
+              await this?.listService?.deleteItem(listId!, op.itemId, userId);
               results.push({ type: 'delete', success: true, itemId: op.itemId });
               break;
             default:
@@ -385,7 +385,7 @@ export class ListManagementRouter {
     const { listId } = req.params;
     
     // Check if this is a WebSocket upgrade request
-    if (req.headers.upgrade === 'websocket') {
+    if (req?.headers?.upgrade === 'websocket') {
       // Note: In a real implementation, you'd handle the WebSocket upgrade here
       // For now, return instructions for WebSocket connection
       res.json({
@@ -402,11 +402,11 @@ export class ListManagementRouter {
   }
 
   private async getMetrics(req: Request, res: Response): Promise<void> {
-    const metrics = this.listService.getMetrics();
-    const reset = req.query.reset === 'true';
+    const metrics = this?.listService?.getMetrics();
+    const reset = req?.query?.reset === 'true';
 
     if (reset) {
-      this.listService.clearCache();
+      this?.listService?.clearCache();
     }
 
     res.json({
@@ -422,7 +422,7 @@ export class ListManagementRouter {
 
   private async flush(req: Request, res: Response): Promise<void> {
     try {
-      await this.listService.flush();
+      await this?.listService?.flush();
       res.json({ 
         message: 'All pending operations flushed successfully',
         timestamp: new Date().toISOString() 
@@ -446,10 +446,10 @@ export class ListManagementRouter {
     console.log(`[ListManagementRouter] New WebSocket connection for list: ${listId}`);
     
     // Subscribe to list updates
-    this.listService.subscribeToList(listId, ws);
+    this?.listService?.subscribeToList(listId, ws);
 
     // Handle incoming WebSocket messages
-    ws.on('message', (data) => {
+    ws.on('message', (data: any) => {
       try {
         const message = JSON.parse(data.toString());
         this.handleWebSocketMessage(ws, listId, message);
@@ -464,11 +464,11 @@ export class ListManagementRouter {
     // Handle WebSocket close
     ws.on('close', () => {
       console.log(`[ListManagementRouter] WebSocket disconnected for list: ${listId}`);
-      this.listService.unsubscribeFromList(listId, ws);
+      this?.listService?.unsubscribeFromList(listId, ws);
     });
 
     // Handle WebSocket errors
-    ws.on('error', (error) => {
+    ws.on('error', (error: any) => {
       console.error(`[ListManagementRouter] WebSocket error for list ${listId}:`, error);
     });
   }
@@ -480,7 +480,7 @@ export class ListManagementRouter {
         ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
         break;
       case 'get_list':
-        const list = this.listService.getList(listId);
+        const list = this?.listService?.getList(listId);
         if (list) {
           ws.send(JSON.stringify({
             type: 'list:snapshot',

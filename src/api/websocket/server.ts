@@ -81,7 +81,7 @@ async function startWebSocketServer() {
 }
 
 // Start the server
-startWebSocketServer().catch((error) => {
+startWebSocketServer().catch((error: any) => {
   logger.error('Unhandled error starting WebSocket server', 'WEBSOCKET_SERVER', error);
   process.exit(1);
 });

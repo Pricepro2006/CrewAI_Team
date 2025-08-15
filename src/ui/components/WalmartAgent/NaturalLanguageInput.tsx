@@ -191,7 +191,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
   // Auto-focus
   useEffect(() => {
     if (autoFocus && inputRef.current) {
-      inputRef.current.focus();
+      inputRef?.current?.focus();
     }
   }, [autoFocus]);
 
@@ -207,11 +207,11 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
       return { isValid: false, errors, warnings, suggestions };
     }
 
-    if (trimmed.length < 3) {
+    if (trimmed?.length || 0 < 3) {
       warnings.push('Command seems very short');
     }
 
-    if (trimmed.length > 200) {
+    if (trimmed?.length || 0 > 200) {
       warnings.push('Command is very long - consider breaking it down');
     }
 
@@ -229,7 +229,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
     }
 
     return {
-      isValid: errors.length === 0,
+      isValid: errors?.length || 0 === 0,
       errors,
       warnings,
       suggestions,
@@ -238,7 +238,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
 
   // Handle input changes
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
+    const newValue = e?.target?.value;
     setInputValue(newValue);
     onChange?.(newValue);
 
@@ -248,8 +248,8 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
 
     // Auto-resize textarea
     if (inputRef.current) {
-      inputRef.current.style.height = 'auto';
-      inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`;
+      inputRef?.current?.style.height = 'auto';
+      inputRef?.current?.style.height = `${Math.min(inputRef?.current?.scrollHeight, 120)}px`;
     }
   }, [onChange, validateInput]);
 
@@ -268,7 +268,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
 
     // Add to command history
     setCommandHistory(prev => {
-      const updated = [trimmed, ...prev.filter(cmd => cmd !== trimmed)].slice(0, 10);
+      const updated = [trimmed, ...prev?.filter(cmd => cmd !== trimmed)].slice(0, 10);
       return updated;
     });
 
@@ -280,7 +280,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
 
     // Reset textarea height
     if (inputRef.current) {
-      inputRef.current.style.height = 'auto';
+      inputRef?.current?.style.height = 'auto';
     }
   }, [inputValue, disabled, isProcessing, validateInput, onSubmit, onChange, clearSuggestions]);
 
@@ -294,7 +294,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
     }
 
     // Navigate suggestions
-    if (suggestions.length > 0) {
+    if (suggestions?.length || 0 > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         selectNext();
@@ -317,7 +317,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
     if (e.key === 'Escape') {
       clearSuggestions();
     }
-  }, [suggestions.length, selectedIndex, selectNext, selectPrevious, selectSuggestion, handleSubmit, onChange, clearSuggestions, onSuggestionSelected]);
+  }, [suggestions?.length || 0, selectedIndex, selectNext, selectPrevious, selectSuggestion, handleSubmit, onChange, clearSuggestions, onSuggestionSelected]);
 
   // Handle voice toggle
   const handleVoiceToggle = useCallback(async () => {
@@ -347,8 +347,8 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
     
     // Focus input and position cursor at end
     if (inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.setSelectionRange(template.length, template.length);
+      inputRef?.current?.focus();
+      inputRef?.current?.setSelectionRange(template?.length || 0, template?.length || 0);
     }
   }, [onChange]);
 
@@ -360,7 +360,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
     onSuggestionSelected?.(suggestion.text);
     
     if (inputRef.current) {
-      inputRef.current.focus();
+      inputRef?.current?.focus();
     }
   }, [onChange, clearSuggestions, onSuggestionSelected]);
 
@@ -368,12 +368,12 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
   const inputState = useMemo(() => {
     if (error) return 'error';
     if (success) return 'success';
-    if (validationResult.errors.length > 0) return 'error';
-    if (validationResult.warnings.length > 0) return 'warning';
+    if (validationResult?.errors?.length > 0) return 'error';
+    if (validationResult?.warnings?.length > 0) return 'warning';
     return 'default';
   }, [error, success, validationResult]);
 
-  const showSuggestionsDropdown = showSuggestions && suggestions.length > 0 && inputValue.trim();
+  const showSuggestionsDropdown = showSuggestions && suggestions?.length || 0 > 0 && inputValue.trim();
 
   return (
     <div className={`natural-language-input ${className}`}>
@@ -384,7 +384,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
             <h3 className="input-title">What do you need?</h3>
             <div className="input-meta">
               <span className="help-text">
-                Use natural language like "{EXAMPLE_PHRASES[Math.floor(Math.random() * EXAMPLE_PHRASES.length)]}"
+                Use natural language like "{EXAMPLE_PHRASES[Math.floor(Math.random() * EXAMPLE_PHRASES?.length || 0)]}"
               </span>
             </div>
           </div>
@@ -405,7 +405,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
         {showQuickActions && (
           <div className="quick-actions-panel">
             <div className="quick-actions-grid">
-              {quickActions.map(action => (
+              {quickActions?.map(action => (
                 <button
                   key={action.id}
                   type="button"
@@ -471,7 +471,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
             <div className="input-actions">
               {/* Character count */}
               <div className="char-counter">
-                {inputValue.length}/500
+                {inputValue?.length || 0}/500
               </div>
 
               {/* Voice button */}
@@ -533,7 +533,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
               )}
             </div>
             <div className="suggestions-list">
-              {suggestions.map((suggestion, index) => (
+              {suggestions?.map((suggestion, index) => (
                 <button
                   key={suggestion.id}
                   type="button"
@@ -558,14 +558,14 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
         )}
 
         {/* Validation Messages */}
-        {(validationResult.errors.length > 0 || validationResult.warnings.length > 0 || validationResult.suggestions.length > 0 || error || voiceError) && (
+        {(validationResult?.errors?.length > 0 || validationResult?.warnings?.length > 0 || validationResult?.suggestions?.length > 0 || error || voiceError) && (
           <div className="validation-messages">
             {/* Errors */}
-            {(validationResult.errors.length > 0 || error || voiceError) && (
+            {(validationResult?.errors?.length > 0 || error || voiceError) && (
               <div className="message-group error">
                 <AlertCircle size={16} />
                 <div className="messages">
-                  {validationResult.errors.map((err, i) => (
+                  {validationResult?.errors?.map((err, i) => (
                     <div key={i} className="message">{err}</div>
                   ))}
                   {error && <div className="message">{error}</div>}
@@ -575,11 +575,11 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
             )}
 
             {/* Warnings */}
-            {validationResult.warnings.length > 0 && (
+            {validationResult?.warnings?.length > 0 && (
               <div className="message-group warning">
                 <AlertCircle size={16} />
                 <div className="messages">
-                  {validationResult.warnings.map((warning, i) => (
+                  {validationResult?.warnings?.map((warning, i) => (
                     <div key={i} className="message">{warning}</div>
                   ))}
                 </div>
@@ -587,11 +587,11 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
             )}
 
             {/* Suggestions */}
-            {validationResult.suggestions.length > 0 && (
+            {validationResult?.suggestions?.length > 0 && (
               <div className="message-group suggestion">
                 <MessageCircle size={16} />
                 <div className="messages">
-                  {validationResult.suggestions.map((suggestion, i) => (
+                  {validationResult?.suggestions?.map((suggestion, i) => (
                     <div key={i} className="message">{suggestion}</div>
                   ))}
                 </div>

@@ -33,7 +33,7 @@ import type {
   WorkflowState,
   EmailPriority,
   EmailStatus,
-} from "../../../types/unified-email.types.js";
+} from "../../../types/unified-email?.types.js";
 import type {
   EmailStatsUpdatedEvent,
   EmailAnalyticsUpdatedEvent,
@@ -112,7 +112,7 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
     data: emailData, 
     refetch: refetchEmails,
     isLoading: emailsLoading 
-  } = api.emails.getTableData.useQuery({
+  } = api?.emails?.getTableData.useQuery({
     ...filters,
   });
 
@@ -121,19 +121,19 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
     data: analytics, 
     refetch: refetchAnalytics,
     isLoading: analyticsLoading 
-  } = api.emails.getAnalytics.useQuery({});
+  } = api?.emails?.getAnalytics.useQuery({});
 
   // Dashboard stats
   const { 
     data: dashboardStats, 
     refetch: refetchStats,
     isLoading: statsLoading 
-  } = api.emails.getDashboardStats.useQuery({});
+  } = api?.emails?.getDashboardStats.useQuery({});
 
   // WebSocket event handlers
   const wsHandlers: WebSocketEventHandlers = useMemo(() => ({
     onEmailStatsUpdated: (event: EmailStatsUpdatedEvent) => {
-      setRealtimeStats(event.data.stats);
+      setRealtimeStats(event?.data?.stats);
     },
     onEmailAnalyticsUpdated: async (event: EmailAnalyticsUpdatedEvent) => {
       // Refresh analytics data when updated
@@ -141,7 +141,7 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
     },
     onEmailTableDataUpdated: async (event: EmailTableDataUpdatedEvent) => {
       // Only refresh if current filters match
-      if (JSON.stringify(event.data.filters) === JSON.stringify(filters)) {
+      if (JSON.stringify(event?.data?.filters) === JSON.stringify(filters)) {
         await refetchEmails();
       }
     },
@@ -158,11 +158,11 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
       setSlaAlerts(prev => [
         ...prev,
         {
-          emailId: event.data.emailId,
-          message: `${event.data.workflow} - ${event.data.slaStatus === 'overdue' 
-            ? `Overdue by ${event.data.overdueDuration} mins` 
-            : `At risk - ${event.data.timeRemaining} mins remaining`}`,
-          severity: (event.data.slaStatus === 'overdue' ? 'critical' : 'warning') as 'critical' | 'warning',
+          emailId: event?.data?.emailId,
+          message: `${event?.data?.workflow} - ${event?.data?.slaStatus === 'overdue' 
+            ? `Overdue by ${event?.data?.overdueDuration} mins` 
+            : `At risk - ${event?.data?.timeRemaining} mins remaining`}`,
+          severity: (event?.data?.slaStatus === 'overdue' ? 'critical' : 'warning') as 'critical' | 'warning',
         }
       ].slice(-5)); // Keep last 5 alerts
     },
@@ -363,17 +363,17 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
         <div className="unified-dashboard__alert unified-dashboard__alert--critical">
           <ExclamationTriangleIcon className="unified-dashboard__alert-icon" />
           <span>
-            Critical: Only {metrics.workflowCompletion.toFixed(1)}% of workflows
+            Critical: Only {metrics?.workflowCompletion?.toFixed(1)}% of workflows
             have complete chains. This impacts visibility and tracking across{" "}
-            {metrics.totalEmails.toLocaleString()} emails.
+            {metrics?.totalEmails?.toLocaleString()} emails.
           </span>
         </div>
       )}
 
       {/* SLA Alerts */}
-      {slaAlerts.length > 0 && (
+      {slaAlerts?.length || 0 > 0 && (
         <div className="unified-dashboard__sla-alerts">
-          {slaAlerts.map((alert, index) => (
+          {slaAlerts?.map((alert, index) => (
             <div 
               key={`${alert.emailId}-${index}`}
               className={`unified-dashboard__alert unified-dashboard__alert--${alert.severity}`}
@@ -382,7 +382,7 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
               <span>{alert.message}</span>
               <button
                 className="unified-dashboard__alert-dismiss"
-                onClick={() => setSlaAlerts(prev => prev.filter((_, i) => i !== index))}
+                onClick={() => setSlaAlerts(prev => prev?.filter((_, i) => i !== index))}
               >
                 <XCircleIcon className="w-4 h-4" />
               </button>
@@ -405,10 +405,10 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
         {viewMode === "list" && (
           <EmailListView
             emails={Array.isArray(emailData?.data?.emails) 
-              ? emailData.data.emails.map(convertToUnifiedEmailData) 
+              ? emailData?.data?.emails?.map(convertToUnifiedEmailData) 
               : []
             }
-            onEmailSelect={(email) => setSelectedEmails([email.id])}
+            onEmailSelect={(email: any) => setSelectedEmails([email.id])}
             selectedEmailId={selectedEmails[0]}
           />
         )}
@@ -423,7 +423,7 @@ export const UnifiedEmailDashboardEnhanced: React.FC<UnifiedEmailDashboardProps>
           <div className="workflow-view">
             <h2>Workflow Tracking</h2>
             <EmailListView
-              emails={(Array.isArray(emailData?.data?.emails) ? emailData.data.emails : [])
+              emails={(Array.isArray(emailData?.data?.emails) ? emailData?.data?.emails : [])
                 .filter((e: any) => e.workflow_state === "IN_PROGRESS")
                 .map(convertToUnifiedEmailData)
               }

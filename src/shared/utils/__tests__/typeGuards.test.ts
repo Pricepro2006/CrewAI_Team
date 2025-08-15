@@ -100,7 +100,7 @@ describe("Type Guards", () => {
         { id: 123, name: "John", email: "john@example.com", role: "user" }, // Wrong type
       ];
 
-      invalidUsers.forEach((user) => {
+      invalidUsers.forEach((user: any) => {
         expect(isUser(user)).toBe(false);
       });
     });
@@ -108,7 +108,7 @@ describe("Type Guards", () => {
     it("should validate all valid user roles", () => {
       const roles: User["role"][] = ["admin", "user", "guest"];
 
-      roles.forEach((role) => {
+      roles.forEach((role: any) => {
         const user = {
           id: "user-1",
           name: "Test User",
@@ -141,7 +141,7 @@ describe("Type Guards", () => {
         { id: 123, subject: "Test", body: "Test", timestamp: "2025-01-01" }, // Wrong type
       ];
 
-      invalidEmails.forEach((email) => {
+      invalidEmails.forEach((email: any) => {
         expect(isEmail(email)).toBe(false);
       });
     });
@@ -155,7 +155,7 @@ describe("Type Guards", () => {
         { success: true },
       ];
 
-      validResponses.forEach((response) => {
+      validResponses.forEach((response: any) => {
         expect(isApiResponse(response)).toBe(true);
       });
     });
@@ -169,7 +169,7 @@ describe("Type Guards", () => {
         { data: "test" }, // Missing success field
       ];
 
-      invalidResponses.forEach((response) => {
+      invalidResponses.forEach((response: any) => {
         expect(isApiResponse(response)).toBe(false);
       });
     });
@@ -217,7 +217,7 @@ describe("Type Guards", () => {
     it("should validate email addresses", () => {
       const validEmails = [
         "test@example.com",
-        "user.name@domain.co.uk",
+        "user.name@domain?.co?.uk",
         "user+tag@example.org",
       ];
 
@@ -231,11 +231,11 @@ describe("Type Guards", () => {
         null,
       ];
 
-      validEmails.forEach((email) => {
+      validEmails.forEach((email: any) => {
         expect(isValidEmail(email)).toBe(true);
       });
 
-      invalidEmails.forEach((email) => {
+      invalidEmails.forEach((email: any) => {
         expect(isValidEmail(email)).toBe(false);
       });
     });
@@ -264,7 +264,7 @@ describe("Type Guards", () => {
       const processArray = (value: unknown): number => {
         if (isArray<string>(value)) {
           // TypeScript should know this is string[]
-          return value.length;
+          return value?.length || 0;
         }
         return 0;
       };

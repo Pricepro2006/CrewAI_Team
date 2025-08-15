@@ -60,7 +60,7 @@ export const cartRouter = createFeatureRouter(
           
           logger.info("Cart retrieved", "CART", {
             cartId: cart.id,
-            itemCount: cart.items.length,
+            itemCount: cart?.items?.length,
             userId: input.userId,
           });
           

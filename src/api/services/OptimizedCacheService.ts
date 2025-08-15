@@ -38,7 +38,15 @@ export interface CacheStats {
 
 export class OptimizedCacheService<T = any> extends EventEmitter {
   private cache: LRUCache<string, CacheEntry<T>>;
-  private stats: CacheStats;
+  private stats: CacheStats = {
+    hits: 0,
+    misses: 0,
+    sets: 0,
+    deletes: 0,
+    evictions: 0,
+    hitRate: 0,
+    avgResponseTime: 0
+  };
   private pendingFetches: Map<string, Promise<T>>;
   private responseTimes: number[] = [];
   private readonly maxResponseTimeSamples = 1000;
@@ -57,31 +65,31 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
     };
 
     this.cache = new LRUCache<string, CacheEntry<T>>({
-      max: this.options.max!,
-      maxSize: this.options.maxSize!,
-      ttl: this.options.ttl!,
-      updateAgeOnGet: this.options.updateAgeOnGet,
-      updateAgeOnHas: this.options.updateAgeOnHas,
-      allowStale: this.options.stale,
+      max: this?.options?.max!,
+      maxSize: this?.options?.maxSize!,
+      ttl: this?.options?.ttl!,
+      updateAgeOnGet: this?.options?.updateAgeOnGet,
+      updateAgeOnHas: this?.options?.updateAgeOnHas,
+      allowStale: this?.options?.stale,
       
       // Calculate size of cache entries
-      sizeCalculation: (entry) => entry.size,
+      sizeCalculation: (entry: CacheEntry<T>) => entry.size,
       
       // Handle evictions
       dispose: (entry, key, reason) => {
         if (reason === 'evict' || reason === 'set') {
-          this.stats.evictions++;
+          this?.stats?.evictions++;
           this.emit('eviction', { key, reason, entry });
         }
       },
       
       // TTL based on entry
-      ttl: (entry) => {
+      ttl: (entry: CacheEntry<T>) => {
         // Reduce TTL for frequently accessed items to keep them fresh
         if (entry.accessCount > 10) {
-          return this.options.ttl! * 0.5;
+          return (this?.options?.ttl! * 0.5);
         }
-        return this.options.ttl!;
+        return this?.options?.ttl!;
       }
     });
 
@@ -113,16 +121,16 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
     const startTime = Date.now();
     
     // Check cache first
-    const cached = this.cache.get(key);
+    const cached = this?.cache?.get(key);
     if (cached) {
       cached.accessCount++;
-      this.stats.hits++;
+      this?.stats?.hits++;
       this.recordResponseTime(Date.now() - startTime);
       this.emit('hit', { key, responseTime: Date.now() - startTime });
       return cached.value;
     }
 
-    this.stats.misses++;
+    this?.stats?.misses++;
     
     // If no fetcher provided, return undefined
     if (!fetcher) {
@@ -131,7 +139,7 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
     }
 
     // Check if fetch is already in progress (deduplication)
-    const pending = this.pendingFetches.get(key);
+    const pending = this?.pendingFetches?.get(key);
     if (pending) {
       logger.debug(`Deduplicating fetch for key: ${key}`, "CACHE");
       const result = await pending;
@@ -141,14 +149,14 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
 
     // Start new fetch
     const fetchPromise = this.fetchWithCache(key, fetcher);
-    this.pendingFetches.set(key, fetchPromise);
+    this?.pendingFetches?.set(key, fetchPromise);
     
     try {
       const result = await fetchPromise;
       this.recordResponseTime(Date.now() - startTime);
       return result;
     } finally {
-      this.pendingFetches.delete(key);
+      this?.pendingFetches?.delete(key);
     }
   }
 
@@ -179,12 +187,12 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
 
     // Use custom TTL if provided
     if (ttl !== undefined) {
-      this.cache.set(key, entry, { ttl });
+      this?.cache?.set(key, entry, { ttl });
     } else {
-      this.cache.set(key, entry);
+      this?.cache?.set(key, entry);
     }
 
-    this.stats.sets++;
+    this?.stats?.sets++;
     this.updateCacheStats();
     this.emit('set', { key, size, ttl });
   }
@@ -196,13 +204,13 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
     const results = new Map<string, T | undefined>();
     
     for (const key of keys) {
-      const cached = this.cache.get(key);
+      const cached = this?.cache?.get(key);
       if (cached) {
         cached.accessCount++;
-        this.stats.hits++;
+        this?.stats?.hits++;
         results.set(key, cached.value);
       } else {
-        this.stats.misses++;
+        this?.stats?.misses++;
         results.set(key, undefined);
       }
     }
@@ -223,9 +231,9 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
    * Delete item from cache
    */
   delete(key: string): boolean {
-    const deleted = this.cache.delete(key);
+    const deleted = this?.cache?.delete(key);
     if (deleted) {
-      this.stats.deletes++;
+      this?.stats?.deletes++;
       this.updateCacheStats();
       this.emit('delete', { key });
     }
@@ -236,9 +244,9 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
    * Clear entire cache
    */
   clear(): void {
-    const previousSize = this.cache.size;
-    this.cache.clear();
-    this.pendingFetches.clear();
+    const previousSize = this?.cache?.size;
+    this?.cache?.clear();
+    this?.pendingFetches?.clear();
     this.updateCacheStats();
     this.emit('clear', { itemsCleared: previousSize });
   }
@@ -247,7 +255,7 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
    * Check if key exists and is not expired
    */
   has(key: string): boolean {
-    return this.cache.has(key);
+    return this?.cache?.has(key);
   }
 
   /**
@@ -262,18 +270,18 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
    * Warm cache with predefined data
    */
   async warm(entries: Array<{ key: string; value: T; ttl?: number }>): Promise<void> {
-    logger.info(`Warming cache with ${entries.length} entries`, "CACHE");
+    logger.info(`Warming cache with ${entries?.length || 0} entries`, "CACHE");
     await this.setBatch(entries);
-    this.emit('warm', { count: entries.length });
+    this.emit('warm', { count: entries?.length || 0 });
   }
 
   /**
    * Prune expired entries manually
    */
   prune(): number {
-    const previousSize = this.cache.size;
-    this.cache.purgeStale();
-    const pruned = previousSize - this.cache.size;
+    const previousSize = this?.cache?.size;
+    this?.cache?.purgeStale();
+    const pruned = previousSize - this?.cache?.size;
     
     if (pruned > 0) {
       this.updateCacheStats();
@@ -287,8 +295,8 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
    * Get memory usage estimate
    */
   getMemoryUsage(): { used: number; max: number; percentage: number } {
-    const used = this.cache.calculatedSize || 0;
-    const max = this.options.maxSize!;
+    const used = this?.cache?.calculatedSize || 0;
+    const max = this?.options?.maxSize!;
     const percentage = (used / max) * 100;
     
     return { used, max, percentage };
@@ -306,24 +314,24 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
   }
 
   private updateCacheStats(): void {
-    this.stats.itemCount = this.cache.size;
-    this.stats.size = this.cache.calculatedSize || 0;
+    this?.stats?.itemCount = this?.cache?.size;
+    this?.stats?.size = this?.cache?.calculatedSize || 0;
     
-    const total = this.stats.hits + this.stats.misses;
-    this.stats.hitRate = total > 0 ? (this.stats.hits / total) * 100 : 0;
+    const total = this?.stats?.hits + this?.stats?.misses;
+    this?.stats?.hitRate = total > 0 ? (this?.stats?.hits / total) * 100 : 0;
     
-    if (this.responseTimes.length > 0) {
-      const sum = this.responseTimes.reduce((a, b) => a + b, 0);
-      this.stats.avgResponseTime = sum / this.responseTimes.length;
+    if (this?.responseTimes?.length > 0) {
+      const sum = this?.responseTimes?.reduce((a: any, b: any) => a + b, 0);
+      this?.stats?.avgResponseTime = sum / this?.responseTimes?.length;
     }
   }
 
   private recordResponseTime(time: number): void {
-    this.responseTimes.push(time);
+    this?.responseTimes?.push(time);
     
     // Keep only recent samples
-    if (this.responseTimes.length > this.maxResponseTimeSamples) {
-      this.responseTimes.shift();
+    if (this?.responseTimes?.length > this.maxResponseTimeSamples) {
+      this?.responseTimes?.shift();
     }
   }
 
@@ -332,10 +340,10 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
     const memory = this.getMemoryUsage();
     
     logger.info('Cache statistics', "CACHE", {
-      hitRate: `${stats.hitRate.toFixed(2)}%`,
+      hitRate: `${stats?.hitRate?.toFixed(2)}%`,
       items: stats.itemCount,
       memory: `${(memory.used / 1024 / 1024).toFixed(2)}MB / ${(memory.max / 1024 / 1024).toFixed(2)}MB`,
-      avgResponseTime: `${stats.avgResponseTime.toFixed(2)}ms`,
+      avgResponseTime: `${stats?.avgResponseTime?.toFixed(2)}ms`,
       evictions: stats.evictions
     });
   }
@@ -354,12 +362,12 @@ export class CacheFactory {
   private static caches = new Map<string, OptimizedCacheService<any>>();
 
   static create<T>(name: string, options: CacheOptions = {}): OptimizedCacheService<T> {
-    if (this.caches.has(name)) {
-      return this.caches.get(name)!;
+    if (this?.caches?.has(name)) {
+      return this?.caches?.get(name)!;
     }
 
     const cache = new OptimizedCacheService<T>(options);
-    this.caches.set(name, cache);
+    this?.caches?.set(name, cache);
     
     // Log cache creation
     logger.info(`Created cache: ${name}`, "CACHE_FACTORY", {
@@ -372,7 +380,7 @@ export class CacheFactory {
   }
 
   static get<T>(name: string): OptimizedCacheService<T> | undefined {
-    return this.caches.get(name);
+    return this?.caches?.get(name);
   }
 
   static disposeAll(): void {
@@ -380,7 +388,7 @@ export class CacheFactory {
       cache.dispose();
       logger.info(`Disposed cache: ${name}`, "CACHE_FACTORY");
     }
-    this.caches.clear();
+    this?.caches?.clear();
   }
 
   static getStats(): Map<string, CacheStats> {

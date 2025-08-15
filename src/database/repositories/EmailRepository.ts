@@ -4,7 +4,7 @@ import { metrics } from "../../api/monitoring/metrics.js";
 import type {
   UnifiedEmailData,
   WorkflowState,
-} from "../../types/unified-email.types.js";
+} from "../../types/unified-email?.types.js";
 import { z } from "zod";
 import { DatabaseInputSchemas } from "../security/SqlInjectionProtection.js";
 
@@ -64,7 +64,7 @@ export interface UpdateEmailParams {
 const EmailQueryParamsSchema = z.object({
   offset: z.number().int().min(0).optional(),
   limit: z.number().int().min(1).max(1000).optional(),
-  search: DatabaseInputSchemas.searchQuery.optional(),
+  search: DatabaseInputSchemas?.searchQuery?.optional(),
   senderEmails: z.array(DatabaseInputSchemas.email).optional(),
   statuses: z.array(DatabaseInputSchemas.emailStatus).optional(),
   priorities: z.array(DatabaseInputSchemas.emailPriority).optional(),
@@ -111,9 +111,9 @@ export class EmailRepository {
 
   private prepareStatements(): void {
     // Insert statements
-    this.statements.set(
+    this?.statements?.set(
       "insertEmail",
-      this.db.prepare(`
+      this?.db?.prepare(`
       INSERT INTO emails_enhanced (
         id, graph_id, internet_message_id, subject, body_content, body_content_type, body_preview,
         sender_email, sender_name,
@@ -130,9 +130,9 @@ export class EmailRepository {
     `),
     );
 
-    this.statements.set(
+    this?.statements?.set(
       "insertRecipient",
-      this.db.prepare(`
+      this?.db?.prepare(`
       INSERT INTO email_recipients (
         email_id, recipient_type, email_address, name
       ) VALUES (
@@ -141,9 +141,9 @@ export class EmailRepository {
     `),
     );
 
-    this.statements.set(
+    this?.statements?.set(
       "insertAttachment",
-      this.db.prepare(`
+      this?.db?.prepare(`
       INSERT INTO email_attachments (
         id, email_id, filename, content_type, size_bytes, content_id,
         is_inline, storage_path, created_at
@@ -154,9 +154,9 @@ export class EmailRepository {
     `),
     );
 
-    this.statements.set(
+    this?.statements?.set(
       "insertEntity",
-      this.db.prepare(`
+      this?.db?.prepare(`
       INSERT INTO email_entities (
         id, email_id, entity_type, entity_value, entity_format,
         confidence, extraction_method, verified, created_at
@@ -168,9 +168,9 @@ export class EmailRepository {
     );
 
     // Update statements
-    this.statements.set(
+    this?.statements?.set(
       "updateEmail",
-      this.db.prepare(`
+      this?.db?.prepare(`
       UPDATE emails_enhanced SET
         status = COALESCE(@status, status),
         priority = COALESCE(@priority, priority),
@@ -186,37 +186,37 @@ export class EmailRepository {
     );
 
     // Query statements
-    this.statements.set(
+    this?.statements?.set(
       "getEmailById",
-      this.db.prepare(`
+      this?.db?.prepare(`
       SELECT * FROM emails_enhanced WHERE id = ?
     `),
     );
 
-    this.statements.set(
+    this?.statements?.set(
       "getEmailByGraphId",
-      this.db.prepare(`
+      this?.db?.prepare(`
       SELECT * FROM emails_enhanced WHERE graph_id = ?
     `),
     );
 
-    this.statements.set(
+    this?.statements?.set(
       "getEmailEntities",
-      this.db.prepare(`
+      this?.db?.prepare(`
       SELECT * FROM email_entities WHERE email_id = ? ORDER BY confidence DESC
     `),
     );
 
-    this.statements.set(
+    this?.statements?.set(
       "getEmailAttachments",
-      this.db.prepare(`
+      this?.db?.prepare(`
       SELECT * FROM email_attachments WHERE email_id = ?
     `),
     );
 
-    this.statements.set(
+    this?.statements?.set(
       "getEmailRecipients",
-      this.db.prepare(`
+      this?.db?.prepare(`
       SELECT recipient_type, email_address, name 
       FROM email_recipients 
       WHERE email_id = ? 
@@ -225,9 +225,9 @@ export class EmailRepository {
     );
 
     // Workflow chain statements
-    this.statements.set(
+    this?.statements?.set(
       "createWorkflowChain",
-      this.db.prepare(`
+      this?.db?.prepare(`
       INSERT INTO workflow_chains (
         id, workflow_type, start_email_id, current_state, email_count,
         is_complete, created_at, updated_at
@@ -238,9 +238,9 @@ export class EmailRepository {
     `),
     );
 
-    this.statements.set(
+    this?.statements?.set(
       "updateWorkflowChain",
-      this.db.prepare(`
+      this?.db?.prepare(`
       UPDATE workflow_chains SET
         current_state = @currentState,
         email_count = email_count + 1,
@@ -251,9 +251,9 @@ export class EmailRepository {
     `),
     );
 
-    this.statements.set(
+    this?.statements?.set(
       "linkEmailToChain",
-      this.db.prepare(`
+      this?.db?.prepare(`
       INSERT INTO workflow_chain_emails (
         chain_id, email_id, sequence_number, created_at
       ) VALUES (
@@ -263,33 +263,33 @@ export class EmailRepository {
     );
 
     // Analytics queries
-    this.statements.set(
+    this?.statements?.set(
       "countTodaysEmails",
-      this.db.prepare(`
+      this?.db?.prepare(`
       SELECT COUNT(*) as count FROM emails_enhanced 
       WHERE received_date_time >= date('now', 'start of day')
     `),
     );
 
-    this.statements.set(
+    this?.statements?.set(
       "countByPriority",
-      this.db.prepare(`
+      this?.db?.prepare(`
       SELECT COUNT(*) as count FROM emails_enhanced 
       WHERE priority IN (${new Array(10).fill("?").join(",")})
     `),
     );
 
-    this.statements.set(
+    this?.statements?.set(
       "countUnassigned",
-      this.db.prepare(`
+      this?.db?.prepare(`
       SELECT COUNT(*) as count FROM emails_enhanced 
       WHERE assigned_to IS NULL AND status NOT IN ('completed', 'archived')
     `),
     );
 
-    this.statements.set(
+    this?.statements?.set(
       "getWorkflowStats",
-      this.db.prepare(`
+      this?.db?.prepare(`
       SELECT 
         COUNT(DISTINCT wc.id) as total_chains,
         SUM(CASE WHEN wc.is_complete = 1 THEN 1 ELSE 0 END) as complete_chains,
@@ -326,7 +326,7 @@ export class EmailRepository {
         bodyPreview: params.bodyPreview || params.bodyText?.substring(0, 255),
         senderEmail: params.senderEmail,
         senderName: params.senderName,
-        receivedDateTime: params.receivedAt.toISOString(),
+        receivedDateTime: params?.receivedAt?.toISOString(),
         sentDateTime: params.sentAt?.toISOString() || null,
         importance: params.importance || "normal",
         categories: params.categories
@@ -347,10 +347,10 @@ export class EmailRepository {
         updatedAt: now,
       };
 
-      this.statements.get("insertEmail").run(emailData);
+      this?.statements?.get("insertEmail").run(emailData);
 
       // Insert recipients
-      const insertRecipient = this.statements.get("insertRecipient");
+      const insertRecipient = this?.statements?.get("insertRecipient");
       
       // Insert 'to' recipients
       for (const recipient of params.recipients) {
@@ -421,7 +421,7 @@ export class EmailRepository {
         updatedAt: new Date().toISOString(),
       };
 
-      const result = this.statements.get("updateEmail").run(updateData);
+      const result = this?.statements?.get("updateEmail").run(updateData);
 
       if (result.changes === 0) {
         throw new Error(`Email not found: ${emailId}`);
@@ -454,9 +454,9 @@ export class EmailRepository {
     const startTime = Date.now();
 
     try {
-      const insertEntity = this.statements.get("insertEntity");
+      const insertEntity = this?.statements?.get("insertEntity");
 
-      const transaction = this.db.transaction(() => {
+      const transaction = this?.db?.transaction(() => {
         for (const entity of entities) {
           const entityData = {
             id: this.generateId("entity"),
@@ -476,7 +476,7 @@ export class EmailRepository {
 
       transaction();
 
-      metrics.increment("email_repository.entities_stored", entities.length);
+      metrics.increment("email_repository.entities_stored", entities?.length || 0);
       metrics.histogram(
         "email_repository.store_entities_duration",
         Date.now() - startTime,
@@ -484,7 +484,7 @@ export class EmailRepository {
 
       logger.info("Email entities stored", "EMAIL_REPOSITORY", {
         emailId,
-        entityCount: entities.length,
+        entityCount: entities?.length || 0,
       });
     } catch (error) {
       logger.error("Failed to store email entities", "EMAIL_REPOSITORY", {
@@ -530,7 +530,7 @@ export class EmailRepository {
           chainId = existingChain.id;
 
           // Update existing chain
-          this.statements.get("updateWorkflowChain").run({
+          this?.statements?.get("updateWorkflowChain").run({
             id: chainId,
             currentState: params.workflowState,
             isComplete: params.isComplete ? 1 : 0,
@@ -546,7 +546,7 @@ export class EmailRepository {
 
       // Link email to chain
       const sequenceNumber = this.getNextSequenceNumber(chainId);
-      this.statements.get("linkEmailToChain").run({
+      this?.statements?.get("linkEmailToChain").run({
         chainId,
         emailId: params.emailId,
         sequenceNumber,
@@ -607,7 +607,7 @@ export class EmailRepository {
       }
 
       if (validatedParams.statuses?.length) {
-        const placeholders = validatedParams.statuses.map(() => "?").join(",");
+        const placeholders = validatedParams?.statuses?.map(() => "?").join(",");
         whereClauses.push(`status IN (${placeholders})`);
         queryParams.push(...validatedParams.statuses);
       }
@@ -623,8 +623,8 @@ export class EmailRepository {
       if (validatedParams.dateRange) {
         whereClauses.push(`received_date_time >= ? AND received_date_time <= ?`);
         queryParams.push(
-          validatedParams.dateRange.start.toISOString(),
-          validatedParams.dateRange.end.toISOString(),
+          validatedParams?.dateRange?.start.toISOString(),
+          validatedParams?.dateRange?.end.toISOString(),
         );
       }
 
@@ -659,12 +659,12 @@ export class EmailRepository {
 
       // Build final queries
       const whereClause =
-        whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+        whereClauses?.length || 0 > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
       const baseQuery = `FROM emails_enhanced ${whereClause}`;
 
       // Count query
       const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
-      const { total } = this.db.prepare(countQuery).get(...queryParams) as any;
+      const { total } = this?.db?.prepare(countQuery).get(...queryParams) as any;
 
       // Data query with ordering and pagination
       let dataQuery = `SELECT * ${baseQuery} ORDER BY received_date_time DESC`;
@@ -681,15 +681,15 @@ export class EmailRepository {
       }
 
       // Execute query
-      const emails = this.db.prepare(dataQuery).all(...dataParams);
+      const emails = this?.db?.prepare(dataQuery).all(...dataParams);
 
       // PERFORMANCE OPTIMIZATION: Load related data in bulk to avoid N+1 queries
-      if (emails.length > 0) {
-        const emailIds = emails.map((e: any) => e.id);
-        const placeholders = emailIds.map(() => '?').join(',');
+      if (emails?.length || 0 > 0) {
+        const emailIds = emails?.map((e: any) => e.id);
+        const placeholders = emailIds?.map(() => '?').join(',');
         
         // Bulk load entities from new BI entities table (optimized for performance)
-        const allEntities = this.db.prepare(`
+        const allEntities = this?.db?.prepare(`
           SELECT email_id, entity_type, entity_value, confidence_score 
           FROM email_entities_bi 
           WHERE email_id IN (${placeholders})
@@ -697,7 +697,7 @@ export class EmailRepository {
         `).all(...emailIds);
         
         // Bulk load attachments (FIXED: filename -> name, size_bytes -> size)
-        const allAttachments = this.db.prepare(`
+        const allAttachments = this?.db?.prepare(`
           SELECT email_id, name as filename, size as size_bytes 
           FROM email_attachments 
           WHERE email_id IN (${placeholders})
@@ -705,7 +705,7 @@ export class EmailRepository {
         `).all(...emailIds);
         
         // Bulk load recipients
-        const allRecipients = this.db.prepare(`
+        const allRecipients = this?.db?.prepare(`
           SELECT email_id, recipient_type, email_address, name 
           FROM email_recipients 
           WHERE email_id IN (${placeholders})
@@ -766,7 +766,7 @@ export class EmailRepository {
         "email_repository.query_duration",
         Date.now() - startTime,
       );
-      metrics.increment("email_repository.emails_queried", emails.length);
+      metrics.increment("email_repository.emails_queried", emails?.length || 0);
 
       return { emails, total };
     } catch (error) {
@@ -783,25 +783,25 @@ export class EmailRepository {
    */
   async getEmailById(emailId: string): Promise<any | null> {
     try {
-      const email = this.statements.get("getEmailById").get(emailId);
+      const email = this?.statements?.get("getEmailById").get(emailId);
 
       if (!email) {
         return null;
       }
 
       // Load related data
-      email.entities = this.statements.get("getEmailEntities").all(emailId);
+      email.entities = this?.statements?.get("getEmailEntities").all(emailId);
       email.attachments = this.statements
         .get("getEmailAttachments")
         .all(emailId);
 
       // Load recipients and organize by type
-      const recipients = this.statements.get("getEmailRecipients").all(emailId);
-      email.recipients = recipients.filter((r: any) => r.recipient_type === 'to')
+      const recipients = this?.statements?.get("getEmailRecipients").all(emailId);
+      email.recipients = recipients?.filter((r: any) => r.recipient_type === 'to')
         .map((r: any) => ({ address: r.email_address, name: r.name }));
-      email.ccRecipients = recipients.filter((r: any) => r.recipient_type === 'cc')
+      email.ccRecipients = recipients?.filter((r: any) => r.recipient_type === 'cc')
         .map((r: any) => ({ address: r.email_address, name: r.name }));
-      email.bccRecipients = recipients.filter((r: any) => r.recipient_type === 'bcc')
+      email.bccRecipients = recipients?.filter((r: any) => r.recipient_type === 'bcc')
         .map((r: any) => ({ address: r.email_address, name: r.name }));
 
       return email;
@@ -819,25 +819,25 @@ export class EmailRepository {
    */
   async getEmailByGraphId(graphId: string): Promise<any | null> {
     try {
-      const email = this.statements.get("getEmailByGraphId").get(graphId);
+      const email = this?.statements?.get("getEmailByGraphId").get(graphId);
 
       if (!email) {
         return null;
       }
 
       // Load related data
-      email.entities = this.statements.get("getEmailEntities").all(email.id);
+      email.entities = this?.statements?.get("getEmailEntities").all(email.id);
       email.attachments = this.statements
         .get("getEmailAttachments")
         .all(email.id);
 
       // Load recipients and organize by type
-      const recipients = this.statements.get("getEmailRecipients").all(email.id);
-      email.recipients = recipients.filter((r: any) => r.recipient_type === 'to')
+      const recipients = this?.statements?.get("getEmailRecipients").all(email.id);
+      email.recipients = recipients?.filter((r: any) => r.recipient_type === 'to')
         .map((r: any) => ({ address: r.email_address, name: r.name }));
-      email.ccRecipients = recipients.filter((r: any) => r.recipient_type === 'cc')
+      email.ccRecipients = recipients?.filter((r: any) => r.recipient_type === 'cc')
         .map((r: any) => ({ address: r.email_address, name: r.name }));
-      email.bccRecipients = recipients.filter((r: any) => r.recipient_type === 'bcc')
+      email.bccRecipients = recipients?.filter((r: any) => r.recipient_type === 'bcc')
         .map((r: any) => ({ address: r.email_address, name: r.name }));
 
       return email;
@@ -855,7 +855,7 @@ export class EmailRepository {
    */
   async getAnalytics(dateRange?: { start: Date; end: Date }): Promise<any> {
     try {
-      const todaysCount = this.statements.get("countTodaysEmails").get().count;
+      const todaysCount = this?.statements?.get("countTodaysEmails").get().count;
 
       const urgentCount =
         this.statements
@@ -877,7 +877,7 @@ export class EmailRepository {
         .get("countUnassigned")
         .get().count;
 
-      const workflowStats = this.statements.get("getWorkflowStats").get({
+      const workflowStats = this?.statements?.get("getWorkflowStats").get({
         startDate: dateRange?.start?.toISOString() || null,
         endDate: dateRange?.end?.toISOString() || null,
       });
@@ -908,7 +908,7 @@ export class EmailRepository {
     const chainId = this.generateId("chain");
     const now = new Date().toISOString();
 
-    this.statements.get("createWorkflowChain").run({
+    this?.statements?.get("createWorkflowChain").run({
       id: chainId,
       workflowType: params.workflowType,
       startEmailId: params.emailId,
@@ -957,7 +957,7 @@ export class EmailRepository {
    * Close prepared statements and database connection
    */
   close(): void {
-    this.statements.clear();
+    this?.statements?.clear();
     logger.info("Email repository closed", "EMAIL_REPOSITORY");
   }
 }

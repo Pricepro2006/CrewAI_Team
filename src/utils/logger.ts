@@ -11,7 +11,7 @@ import { piiRedactor, PIIRedactor } from "./PIIRedactor.js";
 
 // Environment detection
 const isNode =
-  typeof process !== "undefined" && process.versions && process.versions.node;
+  typeof process !== "undefined" && process.versions && process?.versions?.node;
 const isBrowser = typeof window !== "undefined";
 const isTest =
   process.env?.NODE_ENV === "test" || process.env?.VITEST === "true";
@@ -180,11 +180,11 @@ export class Logger {
   }
 
   private async processLogQueue(): Promise<void> {
-    if (this.isWriting || this.logQueue.length === 0) return;
+    if (this.isWriting || this?.logQueue?.length === 0) return;
 
     this.isWriting = true;
 
-    const batch = this.logQueue.splice(0, 100); // Process in batches
+    const batch = this?.logQueue?.splice(0, 100); // Process in batches
 
     for (const entry of batch) {
       await this.writeToFile(entry);
@@ -193,7 +193,7 @@ export class Logger {
     this.isWriting = false;
 
     // Process remaining queue
-    if (this.logQueue.length > 0) {
+    if (this?.logQueue?.length > 0) {
       setImmediate(() => this.processLogQueue());
     }
   }
@@ -209,15 +209,15 @@ export class Logger {
 
     // Apply PII redaction if enabled
     const redactedMessage = this.enablePIIRedaction 
-      ? this.piiRedactor.redact(message)
+      ? this?.piiRedactor?.redact(message)
       : message;
     
     const redactedMetadata = this.enablePIIRedaction && metadata
-      ? this.piiRedactor.redactObject(metadata)
+      ? this?.piiRedactor?.redactObject(metadata)
       : metadata;
     
     const redactedStack = this.enablePIIRedaction && error?.stack
-      ? this.piiRedactor.redact(error.stack)
+      ? this?.piiRedactor?.redact(error.stack)
       : error?.stack;
 
     const entry: LogEntry = {
@@ -233,7 +233,7 @@ export class Logger {
 
     // Only queue for file writing if file logging is enabled
     if (this.enableFile) {
-      this.logQueue.push(entry);
+      this?.logQueue?.push(entry);
       this.processLogQueue();
     }
   }
@@ -345,8 +345,8 @@ export class Logger {
   }
 
   async flush(): Promise<void> {
-    while (this.logQueue.length > 0 || this.isWriting) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    while (this?.logQueue?.length > 0 || this.isWriting) {
+      await new Promise((resolve: any) => setTimeout(resolve, 100));
     }
   }
 
@@ -361,7 +361,7 @@ export class Logger {
    * Check if a message contains PII
    */
   containsPII(message: string): boolean {
-    return this.piiRedactor.containsPII(message);
+    return this?.piiRedactor?.containsPII(message);
   }
 
   /**

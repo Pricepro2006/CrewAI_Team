@@ -87,7 +87,7 @@ export async function batchProcessingExample() {
     "Search for dairy products"
   ];
   
-  const operations = queries.map(query => 
+  const operations = queries?.map(query => 
     () => mockNLPProcessor(query, { batchItem: true })
   );
   
@@ -103,7 +103,7 @@ export async function batchProcessingExample() {
       }
     );
     
-    console.log(`Batch processing completed. Processed ${results.length} queries.`);
+    console.log(`Batch processing completed. Processed ${results?.length || 0} queries.`);
     results.forEach((result, index) => {
       console.log(`Query ${index + 1}:`, result);
     });
@@ -158,25 +158,25 @@ export function eventHandlingExample() {
   const queue = getGroceryNLPQueue();
   
   // Listen for queue updates
-  queue.on('queueUpdate', (event) => {
+  queue.on('queueUpdate', (event: any) => {
     console.log("Queue updated:", event.data);
   });
   
   // Listen for request status changes
-  queue.on('requestStatus', (event) => {
-    console.log(`Request ${event.data.requestId} status: ${event.data.status}`);
+  queue.on('requestStatus', (event: any) => {
+    console.log(`Request ${event?.data?.requestId} status: ${event?.data?.status}`);
   });
   
   // Listen for metrics updates
-  queue.on('metricsUpdate', (event) => {
+  queue.on('metricsUpdate', (event: any) => {
     console.log("Metrics updated:", {
-      successRate: event.data.successRate,
-      averageProcessingTime: event.data.averageProcessingTime
+      successRate: event?.data?.successRate,
+      averageProcessingTime: event?.data?.averageProcessingTime
     });
   });
   
   // Listen for batch completion
-  queue.on('batchCompleted', (event) => {
+  queue.on('batchCompleted', (event: any) => {
     console.log(`Batch ${event.batchId} completed:`, {
       completed: event.completedCount,
       failed: event.failedCount
@@ -324,14 +324,14 @@ export const tRPCClientExample = {
     import { trpc } from './trpc-client';
     
     // Process single query
-    const result = await trpc.groceryNLPQueue.process.mutate({
+    const result = await trpc?.groceryNLPQueue?.process.mutate({
       query: "Find organic vegetables",
       priority: "normal",
       metadata: { userId: "user123" }
     });
     
     // Process batch
-    const batchResult = await trpc.groceryNLPQueue.processBatch.mutate({
+    const batchResult = await trpc?.groceryNLPQueue?.processBatch.mutate({
       queries: [
         { query: "Find milk" },
         { query: "Check bread prices" },
@@ -341,13 +341,13 @@ export const tRPCClientExample = {
     });
     
     // Get queue status
-    const status = await trpc.groceryNLPQueue.getStatus.query();
+    const status = await trpc?.groceryNLPQueue?.getStatus.query();
     
     // Get metrics
-    const metrics = await trpc.groceryNLPQueue.getMetrics.query();
+    const metrics = await trpc?.groceryNLPQueue?.getMetrics.query();
     
     // Cancel request
-    await trpc.groceryNLPQueue.cancelRequest.mutate({
+    await trpc?.groceryNLPQueue?.cancelRequest.mutate({
       requestId: "req-123"
     });
   `

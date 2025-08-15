@@ -5,7 +5,7 @@ import {
   type QueryOptions,
   type PaginatedResult,
 } from "../../../database/repositories/BaseRepository.js";
-import { logger } from "../../../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 
 export interface EmailEntity extends BaseEntity {
   graph_id?: string;
@@ -46,7 +46,7 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
   }
 
   private initializeTable(): void {
-    this.db.exec(this.getTableSchema());
+    this?.db?.exec(this.getTableSchema());
   }
 
   protected getTableSchema(): string {
@@ -116,13 +116,13 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
     const params: any[] = [];
 
     if (options.sender_email?.length) {
-      const placeholders = options.sender_email.map(() => "?").join(",");
+      const placeholders = options?.sender_email?.map(() => "?").join(",");
       whereClauses.push(`sender_email IN (${placeholders})`);
       params.push(...options.sender_email);
     }
 
     if (options.assignedTo?.length) {
-      const placeholders = options.assignedTo.map(() => "?").join(",");
+      const placeholders = options?.assignedTo?.map(() => "?").join(",");
       whereClauses.push(`assignedTo IN (${placeholders})`);
       params.push(...options.assignedTo);
     }
@@ -138,7 +138,7 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
     }
 
     if (options.importance?.length) {
-      const placeholders = options.importance.map(() => "?").join(",");
+      const placeholders = options?.importance?.map(() => "?").join(",");
       whereClauses.push(`importance IN (${placeholders})`);
       params.push(...options.importance);
     }
@@ -153,11 +153,11 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
 
     if (options.dateRange) {
       whereClauses.push("received_at BETWEEN ? AND ?");
-      params.push(options.dateRange.start, options.dateRange.end);
+      params.push(options?.dateRange?.start, options?.dateRange?.end);
     }
 
     const clause =
-      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+      whereClauses?.length || 0 > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
     return { clause, params };
   }
 
@@ -187,14 +187,14 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
   // Find emails by assignee
   async findByAssignee(assignee: string): Promise<EmailEntity[]> {
     const sql = `SELECT * FROM emails WHERE assignedTo = ? ORDER BY received_at DESC`;
-    const stmt = this.db.prepare(sql);
+    const stmt = this?.db?.prepare(sql);
     return stmt.all(assignee) as EmailEntity[];
   }
 
   // Find unassigned emails
   async findUnassigned(): Promise<EmailEntity[]> {
     const sql = `SELECT * FROM emails WHERE assignedTo IS NULL OR assignedTo = '' ORDER BY received_at DESC`;
-    const stmt = this.db.prepare(sql);
+    const stmt = this?.db?.prepare(sql);
     return stmt.all() as EmailEntity[];
   }
 
@@ -206,11 +206,11 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
       WHERE assignedTo IS NOT NULL AND assignedTo != ''
       GROUP BY assignedTo
     `;
-    const stmt = this.db.prepare(sql);
+    const stmt = this?.db?.prepare(sql);
     const results = stmt.all() as Array<{ assignedTo: string; count: number }>;
 
     const workload: Record<string, number> = {};
-    results.forEach((row) => {
+    results.forEach((row: any) => {
       workload[row.assignedTo] = row.count;
     });
 
@@ -253,7 +253,7 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
   // Bulk assign emails
   async bulkAssign(emailIds: string[], assignee: string): Promise<void> {
     // Perform bulk updates
-    const updatePromises = emailIds.map((emailId) =>
+    const updatePromises = emailIds?.map((emailId: any) =>
       this.update(emailId, {
         assignedTo: assignee,
         lastUpdated: new Date().toISOString(),
@@ -262,7 +262,7 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
 
     await Promise.all(updatePromises);
     logger.info(
-      `Bulk assigned ${emailIds.length} emails to ${assignee}`,
+      `Bulk assigned ${emailIds?.length || 0} emails to ${assignee}`,
       "EMAIL_REPOSITORY",
     );
   }
@@ -294,14 +294,14 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
       GROUP BY importance
     `;
 
-    const stats = this.db.prepare(statsQuery).get() as any;
-    const importanceResults = this.db.prepare(importanceQuery).all() as Array<{
+    const stats = this?.db?.prepare(statsQuery).get() as any;
+    const importanceResults = this?.db?.prepare(importanceQuery).all() as Array<{
       importance: string;
       count: number;
     }>;
 
     const byImportance: Record<string, number> = {};
-    importanceResults.forEach((row) => {
+    importanceResults.forEach((row: any) => {
       byImportance[row.importance] = row.count;
     });
 
@@ -318,7 +318,7 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
   // Find emails by graph ID
   async findByGraphId(graphId: string): Promise<EmailEntity | null> {
     const sql = `SELECT * FROM emails WHERE graph_id = ?`;
-    const stmt = this.db.prepare(sql);
+    const stmt = this?.db?.prepare(sql);
     const result = stmt.get(graphId) as EmailEntity;
     return result || null;
   }
@@ -326,7 +326,7 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
   // Find recent emails
   async findRecent(limit: number = 10): Promise<EmailEntity[]> {
     const sql = `SELECT * FROM emails ORDER BY received_at DESC LIMIT ?`;
-    const stmt = this.db.prepare(sql);
+    const stmt = this?.db?.prepare(sql);
     return stmt.all(limit) as EmailEntity[];
   }
 
@@ -340,7 +340,7 @@ export class EmailRepository extends BaseRepository<EmailEntity> {
       WHERE received_at BETWEEN ? AND ? 
       ORDER BY received_at DESC
     `;
-    const stmt = this.db.prepare(sql);
+    const stmt = this?.db?.prepare(sql);
     return stmt.all(startDate, endDate) as EmailEntity[];
   }
 

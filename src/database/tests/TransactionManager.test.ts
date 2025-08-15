@@ -46,8 +46,8 @@ describe("TransactionManager", () => {
   });
 
   test("should execute simple transaction successfully", async () => {
-    const result = await transactionManager.executeTransaction(async (tx) => {
-      const stmt = tx.db.prepare("INSERT INTO test_table (value) VALUES (?)");
+    const result = await transactionManager.executeTransaction(async (tx: any) => {
+      const stmt = tx?.db?.prepare("INSERT INTO test_table (value) VALUES (?)");
       const info = stmt.run("test-value");
       return info.lastInsertRowid;
     });
@@ -61,9 +61,9 @@ describe("TransactionManager", () => {
 
   test("should rollback transaction on error", async () => {
     try {
-      await transactionManager.executeTransaction(async (tx) => {
+      await transactionManager.executeTransaction(async (tx: any) => {
         // Insert first row
-        tx.db.prepare("INSERT INTO test_table (value) VALUES (?)").run("first");
+        tx?.db?.prepare("INSERT INTO test_table (value) VALUES (?)").run("first");
 
         // Force an error
         throw new Error("Intentional error");
@@ -88,16 +88,16 @@ describe("TransactionManager", () => {
   });
 
   test("should handle nested transactions with savepoints", async () => {
-    await transactionManager.executeTransaction(async (tx) => {
+    await transactionManager.executeTransaction(async (tx: any) => {
       // Insert first row
-      tx.db.prepare("INSERT INTO test_table (value) VALUES (?)").run("outer");
+      tx?.db?.prepare("INSERT INTO test_table (value) VALUES (?)").run("outer");
 
       // Create savepoint
       const savepoint = await transactionManager.createSavepoint(tx);
 
       try {
         // Insert second row
-        tx.db.prepare("INSERT INTO test_table (value) VALUES (?)").run("inner");
+        tx?.db?.prepare("INSERT INTO test_table (value) VALUES (?)").run("inner");
 
         // Force error
         throw new Error("Inner error");
@@ -124,9 +124,9 @@ describe("TransactionManager", () => {
   test("should timeout long-running transactions", async () => {
     try {
       await transactionManager.executeTransaction(
-        async (tx) => {
+        async (tx: any) => {
           // Start a long operation
-          await new Promise((resolve) => setTimeout(resolve, 200));
+          await new Promise((resolve: any) => setTimeout(resolve, 200));
           return "should-not-reach";
         },
         { timeout: 100 },
@@ -143,7 +143,7 @@ describe("TransactionManager", () => {
     let attempts = 0;
 
     const result = await transactionManager.executeTransaction(
-      async (tx) => {
+      async (tx: any) => {
         attempts++;
 
         if (attempts < 3) {
@@ -242,7 +242,7 @@ describe("TransactionManager", () => {
     transactionManager.resetMetrics();
 
     // Execute successful transaction
-    await transactionManager.executeTransaction(async (tx) => {
+    await transactionManager.executeTransaction(async (tx: any) => {
       tx.db
         .prepare("INSERT INTO test_table (value) VALUES (?)")
         .run("metric-test");
@@ -250,7 +250,7 @@ describe("TransactionManager", () => {
 
     // Execute failed transaction
     try {
-      await transactionManager.executeTransaction(async (tx) => {
+      await transactionManager.executeTransaction(async (tx: any) => {
         throw new Error("Metrics test error");
       });
     } catch {
@@ -268,8 +268,8 @@ describe("TransactionManager", () => {
 
   test("should handle concurrent transactions", async () => {
     const transactions = Array.from({ length: 5 }, (_, i) =>
-      transactionManager.executeTransaction(async (tx) => {
-        const stmt = tx.db.prepare(
+      transactionManager.executeTransaction(async (tx: any) => {
+        const stmt = tx?.db?.prepare(
           "INSERT INTO test_table (value, number) VALUES (?, ?)",
         );
         stmt.run(`concurrent-${i}`, i);
@@ -289,7 +289,7 @@ describe("TransactionManager", () => {
   test("should use different isolation levels", async () => {
     // Test IMMEDIATE isolation
     await transactionManager.executeTransaction(
-      async (tx) => {
+      async (tx: any) => {
         tx.db
           .prepare("INSERT INTO test_table (value) VALUES (?)")
           .run("immediate");
@@ -299,7 +299,7 @@ describe("TransactionManager", () => {
 
     // Test EXCLUSIVE isolation
     await transactionManager.executeTransaction(
-      async (tx) => {
+      async (tx: any) => {
         tx.db
           .prepare("INSERT INTO test_table (value) VALUES (?)")
           .run("exclusive");
@@ -309,7 +309,7 @@ describe("TransactionManager", () => {
 
     // Test read-only transaction
     const result = await transactionManager.executeTransaction(
-      async (tx) => {
+      async (tx: any) => {
         const row = tx.db
           .prepare("SELECT COUNT(*) as count FROM test_table")
           .get() as { count: number };
@@ -328,7 +328,7 @@ describe("TransactionManager", () => {
     transactionManager.on("transaction:failure", () => events.push("failure"));
 
     // Successful transaction
-    await transactionManager.executeTransaction(async (tx) => {
+    await transactionManager.executeTransaction(async (tx: any) => {
       tx.db
         .prepare("INSERT INTO test_table (value) VALUES (?)")
         .run("event-test");

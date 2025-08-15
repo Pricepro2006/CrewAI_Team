@@ -9,7 +9,7 @@ import { EmailRepositoryImpl } from "./repositories/EmailRepositoryImpl.js";
 import { EmailChainRepositoryImpl } from "./repositories/EmailChainRepositoryImpl.js";
 import { AnalysisRepositoryImpl } from "./repositories/AnalysisRepositoryImpl.js";
 import { executeTransaction, getConnectionPool } from "./ConnectionPool.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "../../utils/logger.js";
 // Use require for better-sqlite3 to avoid type issues
 const Database = require("better-sqlite3");
 
@@ -62,7 +62,7 @@ export class UnitOfWork implements IUnitOfWork {
       const pool = getConnectionPool();
       const connection = pool.getConnection();
       this._transactionDb = connection.getDatabase();
-      this._transactionDb.exec("BEGIN TRANSACTION");
+      this?._transactionDb?.exec("BEGIN TRANSACTION");
       this._transactionActive = true;
 
       logger.info("Transaction started", "UNIT_OF_WORK");
@@ -83,7 +83,7 @@ export class UnitOfWork implements IUnitOfWork {
     }
 
     try {
-      this._transactionDb.exec("COMMIT");
+      this?._transactionDb?.exec("COMMIT");
       this._transactionActive = false;
       this._transactionDb = null;
 
@@ -122,7 +122,7 @@ export class UnitOfWork implements IUnitOfWork {
     }
 
     try {
-      this._transactionDb.exec("ROLLBACK");
+      this?._transactionDb?.exec("ROLLBACK");
       this._transactionActive = false;
       this._transactionDb = null;
 
@@ -140,7 +140,7 @@ export class UnitOfWork implements IUnitOfWork {
    */
   async executeInTransaction<T>(work: () => Promise<T>): Promise<T> {
     // Use the connection pool's transaction support
-    return executeTransaction(async (db) => {
+    return executeTransaction(async (db: any) => {
       // Execute the work function
       // The transaction will be automatically managed
       const result = await work();

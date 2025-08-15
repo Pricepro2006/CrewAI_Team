@@ -31,8 +31,8 @@ vi.mock("axios");
 vi.mock("../cache/RedisService.js");
 vi.mock("../../database/ConnectionPool.js", () => ({
   getDatabaseConnection: vi.fn(),
-  executeQuery: vi.fn((callback) => callback(mockDb)),
-  executeTransaction: vi.fn((callback) => callback(mockDb)),
+  executeQuery: vi.fn((callback: any) => callback(mockDb)),
+  executeTransaction: vi.fn((callback: any) => callback(mockDb)),
 }));
 
 const mockedAxios = axios as any;
@@ -54,12 +54,12 @@ describe("CRITICAL INTEGRATION: Full Pipeline with JSON Parsing & Chain Scoring 
         return {
           run: vi.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
           get: vi.fn().mockImplementation((id: string) => {
-            return mockDbData.find((email) => email.id === id) || null;
+            return mockDbData.find((email: any) => email.id === id) || null;
           }),
           all: vi.fn().mockImplementation((param?: string) => {
             if (typeof param === "string") {
-              return mockDbData.filter(
-                (email) =>
+              return mockDbData?.filter(
+                (email: any) =>
                   email.thread_id === param || email.conversation_id === param,
               );
             }
@@ -142,7 +142,7 @@ Based on the content, this appears to be a high-priority emergency request that 
 This is clearly a critical emergency that requires our highest priority response and escalation to executive level.
       `;
 
-      mockedAxios.post.mockResolvedValue({
+      mockedAxios?.post?.mockResolvedValue({
         status: 200,
         data: { response: problematicLLMResponse },
       });
@@ -162,7 +162,7 @@ This is clearly a critical emergency that requires our highest priority response
       expect(analysis.workflow_validation).toBe(
         "EMERGENCY_ESCALATION confirmed - critical system failure",
       );
-      expect(analysis.missed_entities.project_names).toEqual([
+      expect(analysis?.missed_entities?.project_names).toEqual([
         "System Recovery",
       ]);
       expect(analysis.confidence).toBe(0.98);
@@ -183,7 +183,7 @@ This is clearly a critical emergency that requires our highest priority response
 
       // Should complete with Phase 2 only (incomplete chain)
       expect(analysis.phase2_processing_time).toBeGreaterThan(0);
-      expect(analysis.strategic_insights.opportunity).toContain(
+      expect(analysis?.strategic_insights?.opportunity).toContain(
         "Incomplete chain",
       );
 
@@ -315,7 +315,7 @@ This is clearly a critical emergency that requires our highest priority response
       );
       expect(analysis.confidence).toBe(0.94);
       expect(analysis.business_process).toBe("ENTERPRISE_PROJECT_EXECUTION");
-      expect(analysis.missed_entities.project_names).toEqual([
+      expect(analysis?.missed_entities?.project_names).toEqual([
         "Data Center Modernization",
       ]);
 
@@ -390,8 +390,8 @@ This is clearly a critical emergency that requires our highest priority response
         "Final attempt also completely unparseable - no JSON or key-value pairs",
       ];
 
-      unparseableResponses.forEach((response) => {
-        mockedAxios.post.mockResolvedValueOnce({
+      unparseableResponses.forEach((response: any) => {
+        mockedAxios?.post?.mockResolvedValueOnce({
           status: 200,
           data: { response },
         });
@@ -424,7 +424,7 @@ This is clearly a critical emergency that requires our highest priority response
       );
 
       // Should complete with Phase 2 fallback (incomplete chain)
-      expect(analysis.strategic_insights.opportunity).toContain(
+      expect(analysis?.strategic_insights?.opportunity).toContain(
         "Incomplete chain",
       );
       expect(analysis.phase3_processing_time).toBe(0); // No Phase 3
@@ -504,8 +504,8 @@ This is clearly a critical emergency that requires our highest priority response
       for (const scenario of testScenarios) {
         mockDbData = scenario.chain;
 
-        scenario.responses.forEach((response) => {
-          mockedAxios.post.mockResolvedValueOnce({
+        scenario?.responses?.forEach((response: any) => {
+          mockedAxios?.post?.mockResolvedValueOnce({
             status: 200,
             data: { response },
           });
@@ -531,26 +531,26 @@ This is clearly a critical emergency that requires our highest priority response
 
       // Validate parsing metrics were tracked
       const stats = await analysisService.getAnalysisStats();
-      expect(stats.parsingMetrics.totalAttempts).toBeGreaterThan(3);
-      expect(stats.parsingMetrics.successfulParses).toBeGreaterThanOrEqual(2);
-      expect(stats.parsingMetrics.retrySuccesses).toBeGreaterThanOrEqual(1);
-      expect(stats.parsingMetrics.fallbackUses).toBeGreaterThanOrEqual(1);
+      expect(stats?.parsingMetrics?.totalAttempts).toBeGreaterThan(3);
+      expect(stats?.parsingMetrics?.successfulParses).toBeGreaterThanOrEqual(2);
+      expect(stats?.parsingMetrics?.retrySuccesses).toBeGreaterThanOrEqual(1);
+      expect(stats?.parsingMetrics?.fallbackUses).toBeGreaterThanOrEqual(1);
 
       // Validate chain scoring diversity
       const chainScores = results
-        .map((r) => r.chainScore)
-        .filter((s) => s !== undefined);
+        .map((r: any) => r.chainScore)
+        .filter((s: any) => s !== undefined);
       const uniqueChainScores = new Set(chainScores);
       expect(uniqueChainScores.size).toBeGreaterThan(1); // Should have varied scores
 
       console.log(`Integration Test - Parsing Metrics:
-        Total Attempts: ${stats.parsingMetrics.totalAttempts}
-        Success Rate: ${stats.parsingMetrics.successRate}%
-        Retry Rate: ${stats.parsingMetrics.retryRate}%
-        Fallback Rate: ${stats.parsingMetrics.fallbackRate}%
+        Total Attempts: ${stats?.parsingMetrics?.totalAttempts}
+        Success Rate: ${stats?.parsingMetrics?.successRate}%
+        Retry Rate: ${stats?.parsingMetrics?.retryRate}%
+        Fallback Rate: ${stats?.parsingMetrics?.fallbackRate}%
         
         Chain Score Diversity: ${uniqueChainScores.size} unique scores
-        Results: ${results.map((r) => `${r.scenario}: ${r.chainScore}%`).join(", ")}
+        Results: ${results?.map((r: any) => `${r.scenario}: ${r.chainScore}%`).join(", ")}
       `);
     });
   });
@@ -576,8 +576,8 @@ This is clearly a critical emergency that requires our highest priority response
         const responseType = i % 4;
         const mockResponses = generateMockResponses(responseType, i);
 
-        mockResponses.forEach((response) => {
-          mockedAxios.post.mockResolvedValueOnce({
+        mockResponses.forEach((response: any) => {
+          mockedAxios?.post?.mockResolvedValueOnce({
             status: 200,
             data: { response },
           });
@@ -599,7 +599,7 @@ This is clearly a critical emergency that requires our highest priority response
             scenario: i,
             chainLength: analysis.chain_analysis?.chain_length || 0,
             chainScore: analysis.chain_analysis?.completeness_score || 0,
-            jsonParsingAttempts: mockResponses.length,
+            jsonParsingAttempts: mockResponses?.length || 0,
             confidence: analysis.confidence,
             isComplete: analysis.chain_analysis?.is_complete_chain || false,
           });
@@ -611,21 +611,21 @@ This is clearly a critical emergency that requires our highest priority response
       }
 
       // Validate overall results
-      expect(results.length).toBe(100);
+      expect(results?.length || 0).toBe(100);
 
       // Chain scoring validation
-      const chainScores = results.map((r) => r.chainScore);
+      const chainScores = results?.map((r: any) => r.chainScore);
       const uniqueScores = new Set(chainScores);
-      const zeroScores = chainScores.filter((s) => s === 0).length;
-      const hundredScores = chainScores.filter((s) => s === 100).length;
-      const intermediateScores = chainScores.filter(
-        (s) => s > 0 && s < 100,
+      const zeroScores = chainScores?.filter((s: any) => s === 0).length;
+      const hundredScores = chainScores?.filter((s: any) => s === 100).length;
+      const intermediateScores = chainScores?.filter(
+        (s: any) => s > 0 && s < 100,
       ).length;
 
       // CRITICAL: No binary pathology
       expect(uniqueScores.size).toBeGreaterThan(10); // Many different scores
-      expect(intermediateScores).toBeGreaterThan(results.length * 0.5); // >50% intermediate
-      expect(zeroScores + hundredScores).toBeLessThan(results.length * 0.3); // <30% at extremes
+      expect(intermediateScores).toBeGreaterThan(results?.length || 0 * 0.5); // >50% intermediate
+      expect(zeroScores + hundredScores).toBeLessThan(results?.length || 0 * 0.3); // <30% at extremes
 
       // JSON parsing validation
       const totalAttempts = results.reduce(
@@ -635,7 +635,7 @@ This is clearly a critical emergency that requires our highest priority response
       expect(totalAttempts).toBeGreaterThan(100); // Some retries occurred
 
       // All scenarios should complete successfully
-      const confidences = results.map((r) => r.confidence);
+      const confidences = results?.map((r: any) => r.confidence);
       expect(Math.min(...confidences)).toBeGreaterThanOrEqual(0);
       expect(Math.max(...confidences)).toBeLessThanOrEqual(1);
 
@@ -648,7 +648,7 @@ This is clearly a critical emergency that requires our highest priority response
         
         JSON Parsing:
         - Total attempts: ${totalAttempts}
-        - Average attempts: ${(totalAttempts / results.length).toFixed(2)}
+        - Average attempts: ${(totalAttempts / results?.length || 0).toFixed(2)}
         - Confidence range: ${Math.min(...confidences).toFixed(2)} - ${Math.max(...confidences).toFixed(2)}
       `);
     });

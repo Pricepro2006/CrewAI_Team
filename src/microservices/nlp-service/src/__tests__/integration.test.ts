@@ -11,12 +11,12 @@ import type { NLPServiceConfig } from '../types/index.js';
 vi.mock('../../../../api/services/GroceryNLPQueue.js', () => ({
   GroceryNLPQueue: {
     getInstance: vi.fn(() => ({
-      enqueue: vi.fn(async (operation) => {
+      enqueue: vi.fn(async (operation: any) => {
         // Simulate actual NLP processing
         await new Promise(resolve => setTimeout(resolve, 100));
         return await operation();
       }),
-      enqueueBatch: vi.fn(async (operations) => {
+      enqueueBatch: vi.fn(async (operations: any) => {
         // Process operations in sequence for testing
         const results = [];
         for (const operation of operations) {
@@ -157,9 +157,9 @@ describe('NLP Microservice Integration', () => {
       expect(data.success).toBe(true);
       expect(data.requestId).toBeDefined();
       expect(data.result).toBeDefined();
-      expect(data.result.entities).toBeInstanceOf(Array);
-      expect(data.result.intent).toBeDefined();
-      expect(data.result.normalized).toBeDefined();
+      expect(data?.result?.entities).toBeInstanceOf(Array);
+      expect(data?.result?.intent).toBeDefined();
+      expect(data?.result?.normalized).toBeDefined();
       expect(data.processingTime).toBeGreaterThan(0);
     });
 
@@ -247,7 +247,7 @@ describe('NLP Microservice Integration', () => {
       const response = await fetch(`${baseUrl}/metrics`);
       const data = await response.json();
       
-      expect(data.requests.total).toBeGreaterThan(0);
+      expect(data?.requests?.total).toBeGreaterThan(0);
       expect(data.queue).toBeDefined();
     });
   });
@@ -330,7 +330,7 @@ describe('NLP Microservice Integration', () => {
       });
 
       // Verify all responses
-      const results = await Promise.all(responses.map(r => r.json()));
+      const results = await Promise.all(responses?.map(r => r.json()));
       results.forEach((data, i) => {
         expect(data.success).toBe(true);
         expect(data.requestId).toBeDefined();
@@ -370,7 +370,7 @@ describe('NLP Microservice Integration', () => {
       });
 
       expect(response.status).toBe(200);
-      expect(response.headers.get('x-request-id')).toBe('test-request-123');
+      expect(response?.headers?.get('x-request-id')).toBe('test-request-123');
       
       const data = await response.json();
       expect(data.requestId).toBeDefined();
@@ -384,7 +384,7 @@ describe('NLP Microservice Integration', () => {
       });
 
       expect(response.status).toBe(200);
-      expect(response.headers.get('x-request-id')).toBeDefined();
+      expect(response?.headers?.get('x-request-id')).toBeDefined();
       
       const data = await response.json();
       expect(data.requestId).toBeDefined();
@@ -396,11 +396,11 @@ describe('NLP Microservice Integration', () => {
       const status = app.getStatus();
       
       expect(status.service).toBeDefined();
-      expect(status.service.service).toBe('nlp-service');
+      expect(status?.service?.service).toBe('nlp-service');
       expect(status.config).toBeDefined();
-      expect(status.config.environment).toBe('test');
-      expect(status.config.ports.http).toBe(3002);
-      expect(status.config.ports.grpc).toBe(50052);
+      expect(status?.config?.environment).toBe('test');
+      expect(status?.config?.ports.http).toBe(3002);
+      expect(status?.config?.ports.grpc).toBe(50052);
     });
   });
 });

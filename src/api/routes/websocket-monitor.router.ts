@@ -55,7 +55,7 @@ router.get("/stats", (req: AuthenticatedRequest, res) => {
 router.get("/clients", (req: AuthenticatedRequest, res) => {
   try {
     // Only allow admins to view detailed client info
-    if (!req.user || req.user.role !== "admin") {
+    if (!req.user || req?.user?.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -80,7 +80,7 @@ router.get("/clients", (req: AuthenticatedRequest, res) => {
 router.post("/broadcast", (req: AuthenticatedRequest, res) => {
   try {
     // Only allow admins to broadcast
-    if (!req.user || req.user.role !== "admin") {
+    if (!req.user || req?.user?.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -118,7 +118,7 @@ router.post("/broadcast", (req: AuthenticatedRequest, res) => {
 router.delete("/client/:clientId", (req: AuthenticatedRequest, res) => {
   try {
     // Only allow admins to disconnect clients
-    if (!req.user || req.user.role !== "admin") {
+    if (!req.user || req?.user?.role !== "admin") {
       return res.status(403).json({ error: "Admin access required" });
     }
 

@@ -115,7 +115,7 @@ export class HealthChecker extends EventEmitter {
         await this.performHealthCheck(service, healthUrl, finalConfig);
       }, finalConfig.interval);
 
-      this.healthCheckIntervals.set(service.id, interval);
+      this?.healthCheckIntervals?.set(service.id, interval);
 
       // Perform initial health check
       await this.performHealthCheck(service, healthUrl, finalConfig);
@@ -141,10 +141,10 @@ export class HealthChecker extends EventEmitter {
    * Stop health checking for a service
    */
   async stopHealthCheck(serviceId: string): Promise<void> {
-    const interval = this.healthCheckIntervals.get(serviceId);
+    const interval = this?.healthCheckIntervals?.get(serviceId);
     if (interval) {
       clearInterval(interval);
-      this.healthCheckIntervals.delete(serviceId);
+      this?.healthCheckIntervals?.delete(serviceId);
       
       logger.info('Health checking stopped', 'HEALTH_CHECKER', { serviceId });
     }
@@ -192,8 +192,8 @@ export class HealthChecker extends EventEmitter {
       responseTime: Date.now() - startTime,
       error: lastError || 'Health check failed after all retries',
       timestamp: new Date(),
-      consecutive_failures: this.consecutiveFailures.get(service.id) || 0,
-      consecutive_successes: this.consecutiveSuccesses.get(service.id) || 0,
+      consecutive_failures: this?.consecutiveFailures?.get(service.id) || 0,
+      consecutive_successes: this?.consecutiveSuccesses?.get(service.id) || 0,
     };
 
     await this.handleHealthFailure(service.id, failureResult);
@@ -224,8 +224,8 @@ export class HealthChecker extends EventEmitter {
         responseTime: Date.now() - startTime,
         error: error instanceof Error ? error.message : String(error),
         timestamp: new Date(),
-        consecutive_failures: this.consecutiveFailures.get(service.id) || 0,
-        consecutive_successes: this.consecutiveSuccesses.get(service.id) || 0,
+        consecutive_failures: this?.consecutiveFailures?.get(service.id) || 0,
+        consecutive_successes: this?.consecutiveSuccesses?.get(service.id) || 0,
       };
     }
   }
@@ -270,8 +270,8 @@ export class HealthChecker extends EventEmitter {
         responseTime,
         status: response.status,
         timestamp: new Date(),
-        consecutive_failures: this.consecutiveFailures.get(service.id) || 0,
-        consecutive_successes: this.consecutiveSuccesses.get(service.id) || 0,
+        consecutive_failures: this?.consecutiveFailures?.get(service.id) || 0,
+        consecutive_successes: this?.consecutiveSuccesses?.get(service.id) || 0,
         error: healthy ? undefined : `Status: ${response.status}, Body validation failed: ${!isBodyValid}`,
       };
     } catch (error) {
@@ -294,8 +294,8 @@ export class HealthChecker extends EventEmitter {
         status,
         error: errorMessage,
         timestamp: new Date(),
-        consecutive_failures: this.consecutiveFailures.get(service.id) || 0,
-        consecutive_successes: this.consecutiveSuccesses.get(service.id) || 0,
+        consecutive_failures: this?.consecutiveFailures?.get(service.id) || 0,
+        consecutive_successes: this?.consecutiveSuccesses?.get(service.id) || 0,
       };
     }
   }
@@ -310,7 +310,7 @@ export class HealthChecker extends EventEmitter {
   ): Promise<HealthCheckResult> {
     const startTime = Date.now();
 
-    return new Promise((resolve) => {
+    return new Promise((resolve: any) => {
       const ws = new WebSocket(healthUrl);
       let isResolved = false;
 
@@ -325,8 +325,8 @@ export class HealthChecker extends EventEmitter {
             responseTime: Date.now() - startTime,
             error: 'WebSocket health check timeout',
             timestamp: new Date(),
-            consecutive_failures: this.consecutiveFailures.get(service.id) || 0,
-            consecutive_successes: this.consecutiveSuccesses.get(service.id) || 0,
+            consecutive_failures: this?.consecutiveFailures?.get(service.id) || 0,
+            consecutive_successes: this?.consecutiveSuccesses?.get(service.id) || 0,
           });
         }
       }, config.timeout);
@@ -342,13 +342,13 @@ export class HealthChecker extends EventEmitter {
             healthy: true,
             responseTime: Date.now() - startTime,
             timestamp: new Date(),
-            consecutive_failures: this.consecutiveFailures.get(service.id) || 0,
-            consecutive_successes: this.consecutiveSuccesses.get(service.id) || 0,
+            consecutive_failures: this?.consecutiveFailures?.get(service.id) || 0,
+            consecutive_successes: this?.consecutiveSuccesses?.get(service.id) || 0,
           });
         }
       });
 
-      ws.on('error', (error) => {
+      ws.on('error', (error: any) => {
         if (!isResolved) {
           isResolved = true;
           clearTimeout(timeout);
@@ -359,8 +359,8 @@ export class HealthChecker extends EventEmitter {
             responseTime: Date.now() - startTime,
             error: error.message,
             timestamp: new Date(),
-            consecutive_failures: this.consecutiveFailures.get(service.id) || 0,
-            consecutive_successes: this.consecutiveSuccesses.get(service.id) || 0,
+            consecutive_failures: this?.consecutiveFailures?.get(service.id) || 0,
+            consecutive_successes: this?.consecutiveSuccesses?.get(service.id) || 0,
           });
         }
       });
@@ -385,9 +385,9 @@ export class HealthChecker extends EventEmitter {
    */
   private async handleHealthSuccess(serviceId: string, result: HealthCheckResult): Promise<void> {
     // Update consecutive counters
-    this.consecutiveFailures.set(serviceId, 0);
-    const successes = this.consecutiveSuccesses.get(serviceId) || 0;
-    this.consecutiveSuccesses.set(serviceId, successes + 1);
+    this?.consecutiveFailures?.set(serviceId, 0);
+    const successes = this?.consecutiveSuccesses?.get(serviceId) || 0;
+    this?.consecutiveSuccesses?.set(serviceId, successes + 1);
 
     // Update metrics
     this.updateMetrics(serviceId, result, true);
@@ -416,9 +416,9 @@ export class HealthChecker extends EventEmitter {
    */
   private async handleHealthFailure(serviceId: string, result: HealthCheckResult): Promise<void> {
     // Update consecutive counters
-    this.consecutiveSuccesses.set(serviceId, 0);
-    const failures = this.consecutiveFailures.get(serviceId) || 0;
-    this.consecutiveFailures.set(serviceId, failures + 1);
+    this?.consecutiveSuccesses?.set(serviceId, 0);
+    const failures = this?.consecutiveFailures?.get(serviceId) || 0;
+    this?.consecutiveFailures?.set(serviceId, failures + 1);
 
     // Update metrics
     this.updateMetrics(serviceId, result, false);
@@ -468,8 +468,8 @@ export class HealthChecker extends EventEmitter {
    * Initialize metrics for a service
    */
   private initializeMetrics(serviceId: string): void {
-    if (!this.healthMetrics.has(serviceId)) {
-      this.healthMetrics.set(serviceId, {
+    if (!this?.healthMetrics?.has(serviceId)) {
+      this?.healthMetrics?.set(serviceId, {
         serviceId,
         total_checks: 0,
         successful_checks: 0,
@@ -486,7 +486,7 @@ export class HealthChecker extends EventEmitter {
    * Update health metrics
    */
   private updateMetrics(serviceId: string, result: HealthCheckResult, success: boolean): void {
-    const metrics = this.healthMetrics.get(serviceId);
+    const metrics = this?.healthMetrics?.get(serviceId);
     if (!metrics) return;
 
     metrics.total_checks++;
@@ -507,21 +507,21 @@ export class HealthChecker extends EventEmitter {
     // Update uptime percentage
     metrics.uptime_percentage = (metrics.successful_checks / metrics.total_checks) * 100;
 
-    this.healthMetrics.set(serviceId, metrics);
+    this?.healthMetrics?.set(serviceId, metrics);
   }
 
   /**
    * Add result to history
    */
   private addToHistory(serviceId: string, result: HealthCheckResult): void {
-    const history = this.healthHistory.get(serviceId) || [];
+    const history = this?.healthHistory?.get(serviceId) || [];
     history.push(result);
 
-    if (history.length > this.MAX_HISTORY_LENGTH) {
+    if (history?.length || 0 > this.MAX_HISTORY_LENGTH) {
       history.shift();
     }
 
-    this.healthHistory.set(serviceId, history);
+    this?.healthHistory?.set(serviceId, history);
   }
 
   /**
@@ -532,14 +532,14 @@ export class HealthChecker extends EventEmitter {
     metrics: HealthMetrics | null;
     recent_results: HealthCheckResult[];
   } {
-    const metrics = this.healthMetrics.get(serviceId) || null;
-    const history = this.healthHistory.get(serviceId) || [];
+    const metrics = this?.healthMetrics?.get(serviceId) || null;
+    const history = this?.healthHistory?.get(serviceId) || [];
     const recentResults = history.slice(-10); // Last 10 results
 
     let current: 'healthy' | 'unhealthy' | 'unknown' = 'unknown';
     
-    if (recentResults.length > 0) {
-      const latestResult = recentResults[recentResults.length - 1];
+    if (recentResults?.length || 0 > 0) {
+      const latestResult = recentResults[recentResults?.length || 0 - 1];
       current = latestResult.healthy ? 'healthy' : 'unhealthy';
     }
 
@@ -561,9 +561,9 @@ export class HealthChecker extends EventEmitter {
     avg_response_time: number;
     overall_uptime: number;
   } {
-    const allMetrics = Array.from(this.healthMetrics.values());
+    const allMetrics = Array.from(this?.healthMetrics?.values());
     
-    if (allMetrics.length === 0) {
+    if (allMetrics?.length || 0 === 0) {
       return {
         total_services: 0,
         healthy_services: 0,
@@ -574,24 +574,24 @@ export class HealthChecker extends EventEmitter {
       };
     }
 
-    const healthy = allMetrics.filter(m => {
-      const recentResults = this.healthHistory.get(m.serviceId)?.slice(-3) || [];
-      return recentResults.length > 0 && recentResults[recentResults.length - 1].healthy;
+    const healthy = allMetrics?.filter(m => {
+      const recentResults = this?.healthHistory?.get(m.serviceId)?.slice(-3) || [];
+      return recentResults?.length || 0 > 0 && recentResults[recentResults?.length || 0 - 1].healthy;
     });
 
-    const unhealthy = allMetrics.filter(m => {
-      const recentResults = this.healthHistory.get(m.serviceId)?.slice(-3) || [];
-      return recentResults.length > 0 && !recentResults[recentResults.length - 1].healthy;
+    const unhealthy = allMetrics?.filter(m => {
+      const recentResults = this?.healthHistory?.get(m.serviceId)?.slice(-3) || [];
+      return recentResults?.length || 0 > 0 && !recentResults[recentResults?.length || 0 - 1].healthy;
     });
 
-    const avgResponseTime = allMetrics.reduce((sum, m) => sum + m.avg_response_time, 0) / allMetrics.length;
-    const overallUptime = allMetrics.reduce((sum, m) => sum + m.uptime_percentage, 0) / allMetrics.length;
+    const avgResponseTime = allMetrics.reduce((sum: any, m: any) => sum + m.avg_response_time, 0) / allMetrics?.length || 0;
+    const overallUptime = allMetrics.reduce((sum: any, m: any) => sum + m.uptime_percentage, 0) / allMetrics?.length || 0;
 
     return {
-      total_services: allMetrics.length,
-      healthy_services: healthy.length,
-      unhealthy_services: unhealthy.length,
-      unknown_services: allMetrics.length - healthy.length - unhealthy.length,
+      total_services: allMetrics?.length || 0,
+      healthy_services: healthy?.length || 0,
+      unhealthy_services: unhealthy?.length || 0,
+      unknown_services: allMetrics?.length || 0 - healthy?.length || 0 - unhealthy?.length || 0,
       avg_response_time: avgResponseTime,
       overall_uptime: overallUptime,
     };
@@ -601,16 +601,16 @@ export class HealthChecker extends EventEmitter {
    * Setup service registry event listeners
    */
   private setupServiceRegistryListeners(): void {
-    serviceRegistry.on('service:registered', async (service) => {
+    serviceRegistry.on('service:registered', async (service: any) => {
       await this.startHealthCheck(service);
     });
 
-    serviceRegistry.on('service:deregistered', async (serviceId) => {
+    serviceRegistry.on('service:deregistered', async (serviceId: any) => {
       await this.stopHealthCheck(serviceId);
-      this.healthHistory.delete(serviceId);
-      this.healthMetrics.delete(serviceId);
-      this.consecutiveFailures.delete(serviceId);
-      this.consecutiveSuccesses.delete(serviceId);
+      this?.healthHistory?.delete(serviceId);
+      this?.healthMetrics?.delete(serviceId);
+      this?.consecutiveFailures?.delete(serviceId);
+      this?.consecutiveSuccesses?.delete(serviceId);
     });
   }
 
@@ -619,7 +619,7 @@ export class HealthChecker extends EventEmitter {
    */
   async performBatchHealthCheck(serviceIds: string[]): Promise<HealthCheckResult[]> {
     const results: HealthCheckResult[] = [];
-    const promises = serviceIds.map(async (serviceId) => {
+    const promises = serviceIds?.map(async (serviceId: any) => {
       const service = await serviceRegistry.get(serviceId);
       if (service) {
         const healthUrl = this.getHealthCheckUrl(service);
@@ -656,10 +656,10 @@ export class HealthChecker extends EventEmitter {
     }
 
     this.removeAllListeners();
-    this.healthHistory.clear();
-    this.healthMetrics.clear();
-    this.consecutiveFailures.clear();
-    this.consecutiveSuccesses.clear();
+    this?.healthHistory?.clear();
+    this?.healthMetrics?.clear();
+    this?.consecutiveFailures?.clear();
+    this?.consecutiveSuccesses?.clear();
 
     HealthChecker.instance = null;
     logger.info('Health checker shutdown complete', 'HEALTH_CHECKER');

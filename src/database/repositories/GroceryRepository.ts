@@ -114,7 +114,7 @@ export class GroceryListRepository extends BaseRepository<GroceryList> {
       shared_with: data.shared_with || [],
     };
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO grocery_lists (
         id, user_id, list_name, description, list_type, status,
         store_preference, budget_limit, estimated_total, actual_total,
@@ -168,8 +168,8 @@ export class GroceryListRepository extends BaseRepository<GroceryList> {
 
     query += " ORDER BY updated_at DESC";
 
-    const rows = this.db.prepare(query).all(...params) as any[];
-    return rows.map((row) => this.mapRowToList(row));
+    const rows = this?.db?.prepare(query).all(...params) as any[];
+    return rows?.map((row: any) => this.mapRowToList(row));
   }
 
   async updateList(
@@ -192,14 +192,14 @@ export class GroceryListRepository extends BaseRepository<GroceryList> {
       }
     }
 
-    if (fields.length === 0) {
+    if (fields?.length || 0 === 0) {
       return this.getList(id);
     }
 
     fields.push("updated_at = CURRENT_TIMESTAMP");
     values.push(id);
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE grocery_lists 
       SET ${fields.join(", ")}
       WHERE id = ?
@@ -230,13 +230,13 @@ export class GroceryListRepository extends BaseRepository<GroceryList> {
 
   async deleteList(id: string): Promise<void> {
     // First delete all items in the list
-    const stmt1 = this.db.prepare(
+    const stmt1 = this?.db?.prepare(
       `DELETE FROM grocery_items WHERE list_id = ?`,
     );
     stmt1.run(id);
 
     // Then delete the list itself
-    const stmt2 = this.db.prepare(`DELETE FROM grocery_lists WHERE id = ?`);
+    const stmt2 = this?.db?.prepare(`DELETE FROM grocery_lists WHERE id = ?`);
     const result = stmt2.run(id);
 
     if (result.changes === 0) {
@@ -275,7 +275,7 @@ export class GroceryItemRepository extends BaseRepository<GroceryItem> {
       dietary_flags: data.dietary_flags || [],
     };
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO grocery_items (
         id, list_id, item_name, brand_preference, product_id, category,
         quantity, unit, package_size, estimated_price, actual_price,
@@ -328,8 +328,8 @@ export class GroceryItemRepository extends BaseRepository<GroceryItem> {
 
     query += " ORDER BY priority DESC, created_at ASC";
 
-    const rows = this.db.prepare(query).all(...params) as any[];
-    return rows.map((row) => this.mapRowToItem(row));
+    const rows = this?.db?.prepare(query).all(...params) as any[];
+    return rows?.map((row: any) => this.mapRowToItem(row));
   }
 
   async updateItem(
@@ -350,14 +350,14 @@ export class GroceryItemRepository extends BaseRepository<GroceryItem> {
       }
     }
 
-    if (fields.length === 0) {
+    if (fields?.length || 0 === 0) {
       return this.getItem(id);
     }
 
     fields.push("updated_at = CURRENT_TIMESTAMP");
     values.push(id);
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE grocery_items 
       SET ${fields.join(", ")}
       WHERE id = ?
@@ -401,7 +401,7 @@ export class GroceryItemRepository extends BaseRepository<GroceryItem> {
   }
 
   async deleteItem(id: string): Promise<void> {
-    const stmt = this.db.prepare(`DELETE FROM grocery_items WHERE id = ?`);
+    const stmt = this?.db?.prepare(`DELETE FROM grocery_items WHERE id = ?`);
     const result = stmt.run(id);
 
     if (result.changes === 0) {
@@ -460,7 +460,7 @@ export class ShoppingSessionRepository extends BaseRepository<ShoppingSession> {
       started_at: data.started_at || new Date().toISOString(),
     };
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       INSERT INTO shopping_sessions (
         id, user_id, list_id, session_type, status,
         items_total, items_found, items_substituted, items_unavailable,
@@ -533,13 +533,13 @@ export class ShoppingSessionRepository extends BaseRepository<ShoppingSession> {
       }
     }
 
-    if (fields.length === 0) {
+    if (fields?.length || 0 === 0) {
       return this.getSession(id);
     }
 
     values.push(id);
 
-    const stmt = this.db.prepare(`
+    const stmt = this?.db?.prepare(`
       UPDATE shopping_sessions 
       SET ${fields.join(", ")}
       WHERE id = ?

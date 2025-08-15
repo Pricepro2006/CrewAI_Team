@@ -46,9 +46,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="p-4 text-center text-gray-500">Loading...</div>
-        ) : conversations && conversations.length > 0 ? (
+        ) : conversations && conversations?.length || 0 > 0 ? (
           <div className="space-y-1 p-2">
-            {conversations.map((conv: any) => (
+            {conversations?.map((conv: any) => (
               <ConversationItem
                 key={conv.id}
                 conversation={conv}

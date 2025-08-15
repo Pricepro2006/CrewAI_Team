@@ -16,7 +16,7 @@ import type {
   WorkflowState,
   WorkflowTypeStats,
   BottleneckInfo,
-} from "../../types/unified-email.types.js";
+} from "../../types/unified-email?.types.js";
 
 interface GraphEmailData {
   id: string;
@@ -72,24 +72,24 @@ export class UnifiedEmailService {
     try {
       logger.info("Processing incoming email", "UNIFIED_EMAIL", {
         emailId: emailData.id,
-        subject: emailData.subject.substring(0, 50),
+        subject: emailData?.subject?.substring(0, 50),
       });
 
       // 1. Store raw email in database
-      const emailId = await this.emailRepository.createEmail({
+      const emailId = await this?.emailRepository?.createEmail({
         graphId: emailData.id,
         messageId: emailData.id,
         subject: emailData.subject,
-        bodyText: emailData.body.content,
+        bodyText: emailData?.body?.content,
         bodyHtml:
-          emailData.body.contentType === "html"
-            ? emailData.body.content
+          emailData?.body?.contentType === "html"
+            ? emailData?.body?.content
             : undefined,
-        senderEmail: emailData.from.emailAddress.address,
-        senderName: emailData.from.emailAddress.name,
-        recipients: emailData.toRecipients.map((r) => ({
-          address: r.emailAddress.address,
-          name: r.emailAddress.name,
+        senderEmail: emailData?.from?.emailAddress.address,
+        senderName: emailData?.from?.emailAddress.name,
+        recipients: emailData?.toRecipients?.map((r: any) => ({
+          address: r?.emailAddress?.address,
+          name: r?.emailAddress?.name,
         })),
         receivedAt: new Date(emailData.receivedDateTime),
         hasAttachments: emailData.hasAttachments,
@@ -98,12 +98,12 @@ export class UnifiedEmailService {
       });
 
       // 2. Run through analysis pipeline
-      const enrichedEmail = await this.analysisPipeline.process({
+      const enrichedEmail = await this?.analysisPipeline?.process({
         id: emailId,
-        from: emailData.from.emailAddress.address,
-        to: emailData.toRecipients.map((r) => r.emailAddress.address),
+        from: emailData?.from?.emailAddress.address,
+        to: emailData?.toRecipients?.map((r: any) => r?.emailAddress?.address),
         subject: emailData.subject,
-        body: emailData.body.content,
+        body: emailData?.body?.content,
         receivedDateTime: emailData.receivedDateTime,
         hasAttachments: emailData.hasAttachments,
         importance: emailData.importance,
@@ -111,12 +111,12 @@ export class UnifiedEmailService {
       });
 
       // 3. Update email with analysis results
-      await this.emailRepository.updateEmail(emailId, {
+      await this?.emailRepository?.updateEmail(emailId, {
         status: "processed",
         priority: enrichedEmail.priority,
-        workflowState: enrichedEmail.workflow.state,
-        workflowType: enrichedEmail.workflow.type,
-        analysisConfidence: enrichedEmail.workflow.confidence,
+        workflowState: enrichedEmail?.workflow?.state,
+        workflowType: enrichedEmail?.workflow?.type,
+        analysisConfidence: enrichedEmail?.workflow?.confidence,
         processedAt: new Date(),
         processingVersion: "2.0",
       });
@@ -124,43 +124,43 @@ export class UnifiedEmailService {
       // 4. Store entities
       if (enrichedEmail.entities) {
         const entityList = [
-          ...enrichedEmail.entities.people.map((e) => ({
+          ...enrichedEmail?.entities?.people?.map((e: any) => ({
             type: "person",
             value: e,
           })),
-          ...enrichedEmail.entities.organizations.map((e) => ({
+          ...enrichedEmail?.entities?.organizations?.map((e: any) => ({
             type: "organization",
             value: e,
           })),
-          ...enrichedEmail.entities.products.map((e) => ({
+          ...enrichedEmail?.entities?.products?.map((e: any) => ({
             type: "product",
             value: e,
           })),
-          ...enrichedEmail.entities.orderNumbers.map((e) => ({
+          ...enrichedEmail?.entities?.orderNumbers?.map((e: any) => ({
             type: "order",
             value: e,
           })),
-          ...enrichedEmail.entities.trackingNumbers.map((e) => ({
+          ...enrichedEmail?.entities?.trackingNumbers?.map((e: any) => ({
             type: "tracking",
             value: e,
           })),
         ];
-        if (entityList.length > 0) {
-          await this.emailRepository.storeEmailEntities(emailId, entityList);
+        if (entityList?.length || 0 > 0) {
+          await this?.emailRepository?.storeEmailEntities(emailId, entityList);
         }
       }
 
       // 5. Update workflow chain
-      if (enrichedEmail.workflow.type) {
-        const chainId = await this.emailRepository.createOrUpdateWorkflowChain({
+      if (enrichedEmail?.workflow?.type) {
+        const chainId = await this?.emailRepository?.createOrUpdateWorkflowChain({
           emailId,
-          workflowType: enrichedEmail.workflow.type,
-          workflowState: enrichedEmail.workflow.state,
+          workflowType: enrichedEmail?.workflow?.type,
+          workflowState: enrichedEmail?.workflow?.state,
           conversationId: emailData.conversationId,
-          isComplete: enrichedEmail.workflow.isComplete,
+          isComplete: enrichedEmail?.workflow?.isComplete,
         });
 
-        enrichedEmail.workflow.chainId = chainId;
+        enrichedEmail?.workflow?.chainId = chainId;
       }
 
       // Record metrics
@@ -170,12 +170,12 @@ export class UnifiedEmailService {
       );
       metrics.increment("unified_email.processed");
 
-      if (enrichedEmail.workflow.isComplete) {
+      if (enrichedEmail?.workflow?.isComplete) {
         metrics.increment("unified_email.workflow_completed");
       }
 
       // 6. Get full email data
-      const processedEmail = await this.emailRepository.getEmailById(emailId);
+      const processedEmail = await this?.emailRepository?.getEmailById(emailId);
       return this.transformToUnifiedFormat(processedEmail);
     } catch (error) {
       logger.error("Failed to process incoming email", "UNIFIED_EMAIL", {
@@ -219,8 +219,8 @@ export class UnifiedEmailService {
         priorities: filters.priorities,
         workflowStates: filters.workflowStates,
         dateRange:
-          filters.dateRange && filters.dateRange.start && filters.dateRange.end
-            ? { start: filters.dateRange.start, end: filters.dateRange.end }
+          filters.dateRange && filters?.dateRange?.start && filters?.dateRange?.end
+            ? { start: filters?.dateRange?.start, end: filters?.dateRange?.end }
             : undefined,
         assignedTo: filters.assignedAgents?.join(","), // Convert array to string
         hasAttachments: filters.hasAttachments,
@@ -228,13 +228,13 @@ export class UnifiedEmailService {
 
       // Get emails from repository
       const { emails, total } =
-        await this.emailRepository.queryEmails(queryParams);
+        await this?.emailRepository?.queryEmails(queryParams);
 
       // Get analytics data
-      const analytics = await this.emailRepository.getAnalytics();
+      const analytics = await this?.emailRepository?.getAnalytics();
 
       // Transform to unified format
-      const unifiedEmails = emails.map((email) =>
+      const unifiedEmails = emails?.map((email: any) =>
         this.transformToUnifiedFormat(email, {
           includeAnalysis,
           includeWorkflowState,
@@ -325,7 +325,7 @@ export class UnifiedEmailService {
   }): Promise<WorkflowAnalytics> {
     try {
       // Get workflow statistics from repository
-      const analytics = await this.emailRepository.getAnalytics(dateRange);
+      const analytics = await this?.emailRepository?.getAnalytics(dateRange);
       const workflowStats = analytics.workflowStats || {};
 
       const totalChains = workflowStats.total_chains || 0;
@@ -428,14 +428,14 @@ export class UnifiedEmailService {
 
     try {
       // Update in repository
-      await this.emailRepository.updateEmail(emailId, {
+      await this?.emailRepository?.updateEmail(emailId, {
         status: updates.status,
         priority: updates.priority,
         assignedTo: updates.assignedAgentId,
       });
 
       // Get updated email
-      const updatedEmail = await this.emailRepository.getEmailById(emailId);
+      const updatedEmail = await this?.emailRepository?.getEmailById(emailId);
       if (!updatedEmail) {
         throw new Error(`Email not found: ${emailId}`);
       }
@@ -461,22 +461,22 @@ export class UnifiedEmailService {
       from: {
         emailAddress: {
           name:
-            emailData.from.emailAddress.name ||
-            emailData.from.emailAddress.address,
-          address: emailData.from.emailAddress.address,
+            emailData?.from?.emailAddress.name ||
+            emailData?.from?.emailAddress.address,
+          address: emailData?.from?.emailAddress.address,
         },
       },
-      to: emailData.toRecipients.map((r) => ({
+      to: emailData?.toRecipients?.map((r: any) => ({
         emailAddress: {
-          name: r.emailAddress.name || r.emailAddress.address,
-          address: r.emailAddress.address,
+          name: r?.emailAddress?.name || r?.emailAddress?.address,
+          address: r?.emailAddress?.address,
         },
       })),
       receivedDateTime: emailData.receivedDateTime,
       isRead: false,
       hasAttachments: emailData.hasAttachments,
       bodyPreview: emailData.bodyPreview || "",
-      body: emailData.body.content,
+      body: emailData?.body?.content,
       importance: emailData.importance,
       categories: [],
       conversationId: emailData.conversationId,
@@ -538,23 +538,23 @@ export class UnifiedEmailService {
       },
     };
 
-    return await this.emailStorage.storeEmail(email, analysisResult);
+    return await this?.emailStorage?.storeEmail(email, analysisResult);
   }
 
   private async storeProcessedEmail(email: any): Promise<UnifiedEmailData> {
     // Store enriched email data
-    await this.emailRepository.updateEmail(email.id, {
-      workflowState: email.workflow.state,
-      workflowType: email.workflow.type,
-      workflowChainId: email.workflow.chainId,
-      isWorkflowComplete: email.workflow.isComplete,
+    await this?.emailRepository?.updateEmail(email.id, {
+      workflowState: email?.workflow?.state,
+      workflowType: email?.workflow?.type,
+      workflowChainId: email?.workflow?.chainId,
+      isWorkflowComplete: email?.workflow?.isComplete,
       priority: email.priority,
-      analysisConfidence: email.workflow.confidence,
+      analysisConfidence: email?.workflow?.confidence,
       processedAt: new Date(),
     });
 
     // Get the updated email from repository
-    const updatedEmail = await this.emailRepository.getEmailById(email.id);
+    const updatedEmail = await this?.emailRepository?.getEmailById(email.id);
     return this.transformToUnifiedFormat(updatedEmail);
   }
 
@@ -586,8 +586,8 @@ export class UnifiedEmailService {
       bodyText: email.body_text || email.bodyText,
       bodyHtml: email.body_html || email.bodyHtml,
       from: email.sender_email || email.from,
-      to: recipients.map((r: any) => r.address || r),
-      cc: ccRecipients.map((r: any) => r.address || r),
+      to: recipients?.map((r: any) => r.address || r),
+      cc: ccRecipients?.map((r: any) => r.address || r),
       receivedAt: email.received_at || email.receivedAt,
       analysis: options.includeAnalysis !== false ? email.analysis : undefined,
       workflowState:
@@ -665,7 +665,7 @@ export class UnifiedEmailService {
     end: Date;
   }): Promise<any> {
     // Get analytics from repository
-    const analytics = await this.emailRepository.getAnalytics(dateRange);
+    const analytics = await this?.emailRepository?.getAnalytics(dateRange);
 
     // Get status counts
     const statusCounts = await this.getStatusCounts(dateRange);
@@ -683,7 +683,7 @@ export class UnifiedEmailService {
     const alerts = [];
 
     // Check workflow completion rate
-    const analytics = await this.emailRepository.getAnalytics();
+    const analytics = await this?.emailRepository?.getAnalytics();
     const workflowCompletionRate =
       analytics.workflowStats?.completion_rate || 0;
     if (workflowCompletionRate < 10) {
@@ -704,19 +704,19 @@ export class UnifiedEmailService {
   }): Promise<{ critical: number; inProgress: number; completed: number }> {
     try {
       // Query emails by status/priority
-      const criticalResult = await this.emailRepository.queryEmails({
+      const criticalResult = await this?.emailRepository?.queryEmails({
         priorities: ["critical"],
         dateRange,
         limit: 0, // Just get count
       });
 
-      const inProgressResult = await this.emailRepository.queryEmails({
+      const inProgressResult = await this?.emailRepository?.queryEmails({
         statuses: ["processing", "escalated"],
         dateRange,
         limit: 0, // Just get count
       });
 
-      const completedResult = await this.emailRepository.queryEmails({
+      const completedResult = await this?.emailRepository?.queryEmails({
         statuses: ["resolved"],
         dateRange,
         limit: 0, // Just get count
@@ -788,7 +788,7 @@ export class UnifiedEmailService {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const { total } = await this.emailRepository.queryEmails({
+    const { total } = await this?.emailRepository?.queryEmails({
       dateRange: { start: today, end: tomorrow },
       limit: 0, // We just want the count
     });
@@ -796,7 +796,7 @@ export class UnifiedEmailService {
   }
 
   private async getUrgentEmailCount(): Promise<number> {
-    const { total } = await this.emailRepository.queryEmails({
+    const { total } = await this?.emailRepository?.queryEmails({
       priorities: ["critical", "high"],
       limit: 0, // We just want the count
     });
@@ -804,7 +804,7 @@ export class UnifiedEmailService {
   }
 
   private async getPendingAssignmentCount(): Promise<number> {
-    const { total } = await this.emailRepository.queryEmails({
+    const { total } = await this?.emailRepository?.queryEmails({
       assignedTo: "", // Empty string to find unassigned
       limit: 0, // We just want the count
     });
@@ -816,7 +816,7 @@ export class UnifiedEmailService {
     email: UnifiedEmailData,
   ): Promise<void> {
     // Use createOrUpdateWorkflowChain to update existing chain
-    await this.emailRepository.createOrUpdateWorkflowChain({
+    await this?.emailRepository?.createOrUpdateWorkflowChain({
       emailId: email.id,
       workflowType: email.workflowType || "Unknown",
       workflowState: email.workflowState || "IN_PROGRESS",
