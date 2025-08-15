@@ -176,7 +176,7 @@ export async function generateSecureSecret(length = 32): Promise<string> {
   
   // Use crypto.randomBytes for secure random generation
   const crypto = await import('crypto');
-  const randomBytes = crypto.randomBytes || crypto.default?.randomBytes;
+  const randomBytes = crypto.randomBytes;
   
   if (!randomBytes) {
     throw new Error('crypto.randomBytes not available');

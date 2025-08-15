@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { logger } from "./logger.js";
 import { TRPCError } from "@trpc/server";
+// @ts-ignore - isomorphic-dompurify has complex typing
 import DOMPurify from "isomorphic-dompurify";
 import validator from "validator";
 
@@ -122,7 +123,9 @@ export class OptimizedValidator {
     if (validationCache.size >= MAX_CACHE_SIZE) {
       // Remove oldest entries
       const oldestKey = validationCache.keys().next().value;
-      validationCache.delete(oldestKey);
+      if (oldestKey !== undefined) {
+        validationCache.delete(oldestKey);
+      }
     }
     validationCache.set(key, value);
   }
@@ -393,7 +396,8 @@ export class RequestValidator {
     const windowStart = now - windowMs;
     
     // Clean expired entries
-    for (const [key, value] of this.requestCounts.entries()) {
+    const entries = Array.from(this.requestCounts.entries());
+    for (const [key, value] of entries) {
       if (value.resetTime < now) {
         this.requestCounts.delete(key);
       }
