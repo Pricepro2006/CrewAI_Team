@@ -71,7 +71,7 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   }
 
-  componentDidUpdate(prevProps: Props) {
+  override componentDidUpdate(prevProps: Props) {
     const { resetKeys, resetOnKeysChange } = this.props;
     const { hasError } = this.state;
 
@@ -87,7 +87,7 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   }
 
-  componentWillUnmount() {
+  override componentWillUnmount() {
     if (this.resetTimeoutId) {
       clearTimeout(this.resetTimeoutId);
     }
@@ -117,7 +117,7 @@ export class ErrorBoundary extends Component<Props, State> {
     });
   };
 
-  render() {
+  override render() {
     const { hasError, error, errorInfo, errorCount } = this.state;
     const { children, fallback, isolate } = this.props;
 
@@ -163,7 +163,7 @@ export function withErrorBoundary<P extends object>(
 // Hook for error handling in functional components
 export function useErrorHandler() {
   return (error: Error, errorInfo?: { componentStack?: string }) => {
-    logger.error("useErrorHandler caught error:", {
+    logger.error("useErrorHandler caught error: " + error.message, "ERROR_HANDLER", {
       error: error.message,
       stack: error.stack,
       componentStack: errorInfo?.componentStack,
