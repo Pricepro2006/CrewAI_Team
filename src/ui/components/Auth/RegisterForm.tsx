@@ -32,7 +32,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] =
-    useState<PasswordStrength | null>(null);
+    useState<PasswordStrength | undefined>(undefined);
   const [showPasswordStrength, setShowPasswordStrength] = useState(false);
 
   // Check password strength when password changes
@@ -50,8 +50,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       const timer = setTimeout(checkStrength, 300); // Debounce
       return () => clearTimeout(timer);
     } else {
-      setPasswordStrength(null);
+      setPasswordStrength(undefined);
     }
+    return undefined; // Explicit return for the else case
   }, [formData.password, checkPasswordStrength]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -319,7 +320,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             type="submit"
             className={`auth-button primary ${isLoading ? "loading" : ""}`}
             disabled={
-              isLoading || (passwordStrength && !passwordStrength.isValid)
+              isLoading || (passwordStrength !== undefined && !passwordStrength.isValid)
             }
           >
             {isLoading ? "Creating Account..." : "Create Account"}

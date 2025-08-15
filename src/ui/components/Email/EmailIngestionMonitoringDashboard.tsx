@@ -28,7 +28,7 @@ import {
   TrendingUp,
   Users,
   Mail,
-  Queue,
+  // Queue, -- Not available in lucide-react
   Zap,
   AlertTriangle,
   CheckCircle,
@@ -55,7 +55,7 @@ import {
   PieChart,
   Pie,
   Cell,
-  RechartsTooltipPayload,
+  // RechartsTooltipPayload, -- No longer exported
 } from 'recharts';
 import type {
   IngestionMetrics,
@@ -284,6 +284,7 @@ export const EmailIngestionMonitoringDashboard: React.FC = () => {
         }
       };
     }
+    return undefined; // Explicit return when autoRefresh is false
   }, [autoRefresh, connectWebSocket, fetchIngestionData, ws]);
 
   // =====================================================

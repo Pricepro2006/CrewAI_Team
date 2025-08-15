@@ -9,7 +9,7 @@ export { EmailIngestionMonitoringDashboard } from "./EmailIngestionMonitoringDas
 export { EmailIngestionMonitoringErrorBoundary } from "./EmailIngestionMonitoringErrorBoundary.js";
 export { EmailIngestionMonitoringWrapper } from "./EmailIngestionMonitoringWrapper.js";
 
-export type { EmailDashboardProps } from "./EmailDashboard.js";
+// export type { EmailDashboardProps } from "./EmailDashboard.js"; -- Not exported from EmailDashboard
 export type { EmailStatsProps } from "./EmailStats.js";
 export type { EmailListProps, Email } from "./EmailList.js";
 export type { EmailFiltersProps } from "./EmailFilters.js";

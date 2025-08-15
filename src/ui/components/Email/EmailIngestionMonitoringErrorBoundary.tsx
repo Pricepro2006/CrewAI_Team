@@ -62,7 +62,7 @@ export class EmailIngestionMonitoringErrorBoundary extends Component<Props, Stat
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log the error
     console.error('EmailIngestionMonitoring Error Boundary caught an error:', error, errorInfo);
     
@@ -137,7 +137,7 @@ export class EmailIngestionMonitoringErrorBoundary extends Component<Props, Stat
     });
   };
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       // If a custom fallback is provided, use it
       if (this.props.fallback) {

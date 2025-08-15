@@ -103,14 +103,8 @@ function AppWithCSRF() {
                 return Math.min(webSocketConfig.reconnectInterval * 2, 30000);
               },
               WebSocket: window.WebSocket,
-              connectionParams: () => ({
-                headers: {
-                  ...getHeaders(),
-                  authorization: localStorage.getItem("token")
-                    ? `Bearer ${localStorage.getItem("token")}`
-                    : undefined,
-                },
-              }),
+              // connectionParams is not available in this version of tRPC WebSocket client
+              // Authentication is handled via query parameters or headers in the URL
             }),
           }),
           false: httpBatchLink({

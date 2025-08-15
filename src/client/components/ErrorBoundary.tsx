@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const { component = 'unknown', onError } = this.props;
     
     // Track error with Sentry
@@ -58,7 +58,7 @@ export class ErrorBoundary extends Component<Props, State> {
       'error',
       {
         boundary_component: component,
-        component_stack: errorInfo.componentStack,
+        component_stack: errorInfo.componentStack || '',
         error_boundary_id: this.state.errorBoundaryId,
         retry_count: this.state.retryCount.toString(),
       }
@@ -191,13 +191,13 @@ Please describe what you were doing when this error occurred:
     );
   };
 
-  componentWillUnmount() {
+  override componentWillUnmount() {
     // Clean up retry timeouts
     this.retryTimeouts.forEach(timeout => clearTimeout(timeout));
     this.retryTimeouts.clear();
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       const { fallback, component = 'Component', isolate = false } = this.props;
       const canRetry = this.state.retryCount < this.maxRetries;
