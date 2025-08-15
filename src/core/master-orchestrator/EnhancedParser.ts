@@ -1,4 +1,4 @@
-import type { OllamaProvider } from "../llm/OllamaProvider.js";
+import type { LlamaCppProvider } from "../llm/LlamaCppProvider.js";
 import type { Query } from "./types.js";
 import type { QueryAnalysis, ResourceRequirements } from "./enhanced-types.js";
 import { logger } from "../../utils/logger.js";

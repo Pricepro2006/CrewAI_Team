@@ -394,7 +394,7 @@ export class MasterOrchestrator {
       DEFAULT_TIMEOUTS.LLM_GENERATION,
       "LLM generation timed out during plan creation",
     );
-    return this.parsePlan(response, query);
+    return this.parsePlan(response.response, query);
   }
 
   private async replan(
@@ -429,7 +429,7 @@ export class MasterOrchestrator {
       DEFAULT_TIMEOUTS.LLM_GENERATION,
       "LLM generation timed out during replanning",
     );
-    return this.parsePlan(response, query);
+    return this.parsePlan(response.response, query);
   }
 
   private parsePlan(response: string, query?: Query): Plan {

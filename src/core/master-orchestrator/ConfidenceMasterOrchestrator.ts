@@ -206,12 +206,12 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
       );
 
       // Switch model if different from current
-      if (adjustedModelConfig.model !== this.llm.getConfig().model) {
+      if (adjustedModelConfig.model !== this.llm.getConfig().modelPath) {
         logger.info(
           "Switching model based on complexity and system load",
           "CONFIDENCE_ORCHESTRATOR",
           {
-            from: this.llm.getConfig().model,
+            from: this.llm.getConfig().modelPath,
             to: adjustedModelConfig.model,
             complexity: complexity.score,
             systemLoad,
@@ -296,7 +296,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
     // Quick evaluation
     const _evaluation = this.confidenceRAG.evaluator.quickEvaluate(
       query.text,
-      response,
+      response.response,
       0.85, // High base confidence for simple queries
     );
 
@@ -306,7 +306,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
       confidenceFormat: "percentage",
     });
 
-    return this.createOrchestratorResult(response, delivered, "simple-query");
+    return this.createOrchestratorResult(response.response, delivered, "simple-query");
   }
 
   /**
@@ -505,7 +505,7 @@ export class ConfidenceMasterOrchestrator extends EventEmitter {
       maxTokens: 2000,
     });
 
-    return this.parsePlan(response, query);
+    return this.parsePlan(response.response, query);
   }
 
   /**

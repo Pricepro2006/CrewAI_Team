@@ -79,7 +79,8 @@ export class ToolExecutorAgent extends BaseAgent {
       }
     `;
 
-    const response = await this.llm.generate(prompt, { format: "json" });
+    const responseResponse = await this.llm.generate(prompt, { format: "json" });
+    const response = responseResponse.response;
     const parsed = this.parseToolPlan(response);
 
     return {
@@ -220,7 +221,8 @@ export class ToolExecutorAgent extends BaseAgent {
         Provide enhanced parameters in JSON format.
       `;
 
-      const response = await this.llm.generate(prompt, { format: "json" });
+      const responseResponse = await this.llm.generate(prompt, { format: "json" });
+    const response = responseResponse.response;
 
       try {
         enhanced = JSON.parse(response);
@@ -262,7 +264,8 @@ export class ToolExecutorAgent extends BaseAgent {
       4. Provides actionable insights
     `;
 
-    return await this.llm.generate(prompt);
+    const llmResponse = await this.llm.generate(prompt);
+    return llmResponse.response;
   }
 
   protected getAgentSpecificCapabilities(): AgentCapability[] {

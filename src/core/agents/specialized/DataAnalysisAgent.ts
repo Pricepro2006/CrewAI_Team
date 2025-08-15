@@ -4,6 +4,7 @@ import type {
   AgentContext,
   AgentResult,
 } from "../base/AgentTypes.js";
+import type { LlamaCppResponse } from "../../llm/LlamaCppProvider.js";
 
 export class DataAnalysisAgent extends BaseAgent {
   constructor() {
@@ -19,7 +20,7 @@ export class DataAnalysisAgent extends BaseAgent {
       const taskAnalysis = await this.analyzeDataTask(task, context);
 
       // Execute based on task type
-      let result: unknown;
+      let result: AnalysisResult;
       switch (taskAnalysis.type) {
         case "statistical":
           result = await this.performStatisticalAnalysis(taskAnalysis, context);
@@ -78,7 +79,8 @@ export class DataAnalysisAgent extends BaseAgent {
       }
     `;
 
-    const response = await this.llm.generate(prompt, { format: "json" });
+    const llmResponse: LlamaCppResponse = await this.llm.generate(prompt, { format: "json" });
+    const response = llmResponse.response;
     return this.parseDataTaskAnalysis(response);
   }
 
@@ -123,7 +125,8 @@ export class DataAnalysisAgent extends BaseAgent {
       Format as a structured analysis report.
     `;
 
-    const analysisReport = await this.llm.generate(prompt);
+    const llmResponse: LlamaCppResponse = await this.llm.generate(prompt);
+    const analysisReport = llmResponse.response;
 
     return {
       type: "statistical",
@@ -153,7 +156,8 @@ export class DataAnalysisAgent extends BaseAgent {
       Return as visualization configuration in JSON format.
     `;
 
-    const vizConfig = await this.llm.generate(prompt);
+    const llmResponse: LlamaCppResponse = await this.llm.generate(prompt);
+    const vizConfig = llmResponse.response;
 
     return {
       type: "visualization",
@@ -183,7 +187,8 @@ export class DataAnalysisAgent extends BaseAgent {
       Provide transformed data and transformation steps.
     `;
 
-    const transformation = await this.llm.generate(prompt);
+    const llmResponse: LlamaCppResponse = await this.llm.generate(prompt);
+    const transformation = llmResponse.response;
 
     return {
       type: "transformation",
@@ -216,7 +221,8 @@ export class DataAnalysisAgent extends BaseAgent {
       Format as an exploratory data analysis report.
     `;
 
-    const exploration = await this.llm.generate(prompt);
+    const llmResponse: LlamaCppResponse = await this.llm.generate(prompt);
+    const exploration = llmResponse.response;
 
     return {
       type: "exploration",
@@ -239,7 +245,8 @@ export class DataAnalysisAgent extends BaseAgent {
       patterns, insights, and recommendations.
     `;
 
-    const analysis = await this.llm.generate(prompt);
+    const llmResponse: LlamaCppResponse = await this.llm.generate(prompt);
+    const analysis = llmResponse.response;
 
     return {
       type: "general",

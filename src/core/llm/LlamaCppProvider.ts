@@ -98,6 +98,13 @@ export class LlamaCppProvider extends EventEmitter {
   }
 
   /**
+   * Get the current configuration
+   */
+  getConfig(): LlamaCppConfig {
+    return { ...this.config };
+  }
+
+  /**
    * Initialize the llama.cpp process
    */
   private async initializeProcess(): Promise<void> {

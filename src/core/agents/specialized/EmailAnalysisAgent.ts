@@ -17,7 +17,7 @@ import {
 } from "./EmailAnalysisConfig.js";
 
 export class EmailAnalysisAgent extends BaseAgent {
-  private ollamaProvider: LlamaCppProvider;
+  private llamaCppProvider: LlamaCppProvider;
   private cache: any; // Will be initialized later to avoid circular import
 
   // TD SYNNEX specific categories
@@ -81,7 +81,7 @@ export class EmailAnalysisAgent extends BaseAgent {
     );
 
     this.llamaCppProvider = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/this.model.gguf`,
+      modelPath: process.env.LLAMA_MODEL_PATH || `./models/${this.model}.gguf`,
       contextSize: 8192,
       threads: 8,
       temperature: 0.7,
@@ -243,7 +243,7 @@ Response format:
         format: "json",
       });
 
-      return JSON.parse(response);
+      return JSON.parse(response.response);
     } catch (error) {
       logger.error("Quick categorization failed", "EMAIL_AGENT", { error });
 
@@ -284,7 +284,7 @@ Provide detailed categorization with high confidence.`;
       });
 
       // Parse and structure the response
-      return this.parseDeepAnalysis(response);
+      return this.parseDeepAnalysis(response.response);
     } catch (error) {
       logger.error("Deep analysis failed", "EMAIL_AGENT", { error });
       return {};
@@ -494,7 +494,7 @@ Summary:`;
         maxTokens: 100,
       });
 
-      return summary.trim();
+      return summary.response.trim();
     } catch (error) {
       // Fallback to subject-based summary
       return `Email from ${email.from.emailAddress.name || email.from.emailAddress.address} regarding: ${email.subject}`;

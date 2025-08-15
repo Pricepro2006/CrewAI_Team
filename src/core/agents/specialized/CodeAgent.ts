@@ -40,7 +40,7 @@ export class CodeAgent extends BaseAgent {
       return {
         success: true,
         data: result,
-        output: this.formatCodeOutput(result),
+        output: this.formatCodeOutput(result as CodeResult),
         metadata: {
           agent: this.name,
           taskType: taskAnalysis.type,
@@ -78,7 +78,7 @@ export class CodeAgent extends BaseAgent {
     `;
 
     const response = await this.llm.generate(prompt, { format: "json" });
-    return this.parseTaskAnalysis(response);
+    return this.parseTaskAnalysis(response.response);
   }
 
   private parseTaskAnalysis(response: string): TaskAnalysis {
@@ -120,10 +120,10 @@ export class CodeAgent extends BaseAgent {
       4. Best practices for ${analysis.language}
     `;
 
-    const code = await this.llm.generate(prompt);
+    const response = await this.llm.generate(prompt);
 
     return {
-      code,
+      code: response.response,
       language: analysis.language,
       explanation: "Generated code based on requirements",
       suggestions: [],
@@ -156,8 +156,8 @@ export class CodeAgent extends BaseAgent {
     return {
       code: codeToAnalyze,
       language: analysis.language,
-      explanation: analysisResult,
-      suggestions: this.extractSuggestions(analysisResult),
+      explanation: analysisResult.response,
+      suggestions: this.extractSuggestions(analysisResult.response),
     };
   }
 
@@ -184,10 +184,10 @@ export class CodeAgent extends BaseAgent {
       Provide the refactored code with comments explaining changes.
     `;
 
-    const refactoredCode = await this.llm.generate(prompt);
+    const response = await this.llm.generate(prompt);
 
     return {
-      code: refactoredCode,
+      code: response.response,
       language: analysis.language,
       explanation: "Code refactored for improved quality",
       suggestions: [
@@ -220,10 +220,10 @@ export class CodeAgent extends BaseAgent {
       Provide fixed code with comments explaining the bugs and fixes.
     `;
 
-    const fixedCode = await this.llm.generate(prompt);
+    const response = await this.llm.generate(prompt);
 
     return {
-      code: fixedCode,
+      code: response.response,
       language: analysis.language,
       explanation: "Bugs identified and fixed",
       suggestions: ["Test thoroughly", "Add error handling"],
@@ -242,12 +242,12 @@ export class CodeAgent extends BaseAgent {
       Provide a complete solution with explanation.
     `;
 
-    const response = await this.llm.generate(prompt);
+    const llmResponse = await this.llm.generate(prompt);
 
     return {
-      code: this.extractCode(response),
+      code: this.extractCode(llmResponse.response),
       language: "unknown",
-      explanation: response,
+      explanation: llmResponse.response,
       suggestions: [],
     };
   }
