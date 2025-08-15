@@ -78,25 +78,27 @@ export interface DatabaseConfig {
 
 export class DatabaseManager {
   public readonly connectionPool: DatabaseConnectionPool;
-  private db: DatabaseType | null = null;
   private chromaManager: ChromaDBManager;
   private migrator: DatabaseMigrator;
   private isInitialized: boolean = false;
+  
+  // Single shared database instance for connection optimization
+  private sharedDbInstance: DatabaseType | null = null;
 
-  // Repository instances
-  public readonly users: UserRepository;
-  public readonly emails: EmailRepository;
-  public readonly deals: DealRepository;
-  public readonly dealItems: DealItemRepository;
-  public readonly productFamilies: ProductFamilyRepository;
+  // Repository instances - now using shared connection
+  private _users: UserRepository | null = null;
+  private _emails: EmailRepository | null = null;
+  private _deals: DealRepository | null = null;
+  private _dealItems: DealItemRepository | null = null;
+  private _productFamilies: ProductFamilyRepository | null = null;
 
-  // Grocery repository instances
-  public readonly groceryLists: GroceryListRepository;
-  public readonly groceryItems: GroceryItemRepository;
-  public readonly shoppingSessions: ShoppingSessionRepository;
-  public readonly walmartProducts: WalmartProductRepository;
-  public readonly substitutions: SubstitutionRepository;
-  public readonly userPreferences: UserPreferencesRepository;
+  // Grocery repository instances - lazy loaded
+  private _groceryLists: GroceryListRepository | null = null;
+  private _groceryItems: GroceryItemRepository | null = null;
+  private _shoppingSessions: ShoppingSessionRepository | null = null;
+  private _walmartProducts: WalmartProductRepository | null = null;
+  private _substitutions: SubstitutionRepository | null = null;
+  private _userPreferences: UserPreferencesRepository | null = null;
 
   constructor(config?: Partial<DatabaseConfig>) {
     const dbConfig: DatabaseConfig = {
@@ -140,28 +142,19 @@ export class DatabaseManager {
     const migrationConnection = this.connectionPool.getConnection();
     this.migrator = new DatabaseMigrator(migrationConnection.getDatabase());
 
-    // Initialize repositories with connection pool
-    const repoConnection = this.connectionPool.getConnection();
-    const db = repoConnection.getDatabase();
-    this.db = db;
-
-    this.users = new UserRepository(db);
-    this.emails = new EmailRepository({ db });
-    this.deals = new DealRepository(db);
-    this.dealItems = new DealItemRepository(db);
-    this.productFamilies = new ProductFamilyRepository(db);
-
-    // Initialize grocery repositories
-    this.groceryLists = new GroceryListRepository(db);
-    this.groceryItems = new GroceryItemRepository(db);
-    this.shoppingSessions = new ShoppingSessionRepository(db);
-    this.walmartProducts = new WalmartProductRepository(db);
-    this.substitutions = new SubstitutionRepository(db);
-    this.userPreferences = new UserPreferencesRepository(db);
+    // Get shared database instance for all repositories (optimized approach)
+    this.sharedDbInstance = this.connectionPool.getConnection().getDatabase();
 
     logger.info(
-      "DatabaseManager initialized with connection pool",
+      "DatabaseManager initialized with optimized connection pooling",
       "DB_MANAGER",
+      {
+        poolConfig: {
+          maxConnections: dbConfig.sqlite.maxConnections,
+          connectionTimeout: dbConfig.sqlite.connectionTimeout,
+          idleTimeout: dbConfig.sqlite.idleTimeout,
+        }
+      }
     );
   }
 
@@ -487,11 +480,91 @@ export class DatabaseManager {
    * Get direct access to SQLite database (via connection pool)
    */
   getSQLiteDatabase(): DatabaseType {
-    if (!this.db) {
+    if (!this.sharedDbInstance) {
       const connection = this.connectionPool.getConnection();
-      this.db = connection.getDatabase();
+      this.sharedDbInstance = connection.getDatabase();
     }
-    return this.db;
+    return this.sharedDbInstance;
+  }
+
+  /**
+   * Lazy-loaded repository getters for optimal connection management
+   */
+  get users(): UserRepository {
+    if (!this._users) {
+      this._users = new UserRepository(this.getSQLiteDatabase());
+    }
+    return this._users;
+  }
+
+  get emails(): EmailRepository {
+    if (!this._emails) {
+      this._emails = new EmailRepository({ db: this.getSQLiteDatabase() });
+    }
+    return this._emails;
+  }
+
+  get deals(): DealRepository {
+    if (!this._deals) {
+      this._deals = new DealRepository(this.getSQLiteDatabase());
+    }
+    return this._deals;
+  }
+
+  get dealItems(): DealItemRepository {
+    if (!this._dealItems) {
+      this._dealItems = new DealItemRepository(this.getSQLiteDatabase());
+    }
+    return this._dealItems;
+  }
+
+  get productFamilies(): ProductFamilyRepository {
+    if (!this._productFamilies) {
+      this._productFamilies = new ProductFamilyRepository(this.getSQLiteDatabase());
+    }
+    return this._productFamilies;
+  }
+
+  get groceryLists(): GroceryListRepository {
+    if (!this._groceryLists) {
+      this._groceryLists = new GroceryListRepository(this.getSQLiteDatabase());
+    }
+    return this._groceryLists;
+  }
+
+  get groceryItems(): GroceryItemRepository {
+    if (!this._groceryItems) {
+      this._groceryItems = new GroceryItemRepository(this.getSQLiteDatabase());
+    }
+    return this._groceryItems;
+  }
+
+  get shoppingSessions(): ShoppingSessionRepository {
+    if (!this._shoppingSessions) {
+      this._shoppingSessions = new ShoppingSessionRepository(this.getSQLiteDatabase());
+    }
+    return this._shoppingSessions;
+  }
+
+  get walmartProducts(): WalmartProductRepository {
+    if (!this._walmartProducts) {
+      this._walmartProducts = new WalmartProductRepository(this.getSQLiteDatabase());
+    }
+    return this._walmartProducts;
+  }
+
+  get substitutions(): SubstitutionRepository {
+    if (!this._substitutions) {
+      this._substitutions = new SubstitutionRepository(this.getSQLiteDatabase());
+    }
+    return this._substitutions;
+  }
+
+  get userPreferences(): UserPreferencesRepository {
+    if (!this._userPreferences) {
+      this._userPreferences = new UserPreferencesRepository(this.getSQLiteDatabase());
+    }
+    return this._userPreferences;
   }
 
   /**

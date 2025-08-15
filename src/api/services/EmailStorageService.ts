@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-// Use require for better-sqlite3 to avoid type issues
-const Database = require("better-sqlite3");
+// Use dynamic import for better-sqlite3 to avoid type issues
+import Database from "better-sqlite3";
 // Type definitions for database operations
 type DatabaseQueryParams = string | number | boolean | null | undefined;
 type DatabaseInstance = any; // Use any to avoid namespace issues
@@ -11,6 +11,7 @@ import { wsService } from "./WebSocketService.js";
 import { performanceOptimizer } from "./PerformanceOptimizer.js";
 import { queryPerformanceMonitor } from "./QueryPerformanceMonitor.js";
 import { LazyLoader } from "../../utils/LazyLoader.js";
+import { databaseManager, type DatabaseInstance as OptimizedDatabaseInstance } from "../../core/database/DatabaseManager.js";
 import { ConnectionPool } from "../../core/database/ConnectionPool.js";
 import type { EmailRecord } from "../../shared/types/email.js";
 import type { 
@@ -234,33 +235,24 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   private lazyLoader: LazyLoader<any>;
   private useConnectionPool: boolean;
 
-  constructor(dbPath?: string, enableConnectionPool: boolean = false) {
-    const databasePath = dbPath || appConfig.database.path;
+  constructor(dbPath?: string, enableConnectionPool: boolean = true) {
+    // Always use optimized connection pool by default for better performance
     this.useConnectionPool = enableConnectionPool;
 
     if (this.useConnectionPool) {
-      // Initialize connection pool for high-concurrency scenarios
-      this.connectionPool = new ConnectionPool({
-        filename: databasePath,
-        poolSize: 5,
-        enableWAL: true,
-        checkpointInterval: 60000, // 1 minute
-        walSizeLimit: 10 * 1024 * 1024, // 10MB
-        verbose: process.env.NODE_ENV === "development",
-      });
-
-      // Create a proxy db object for compatibility
-      this.db = this.createPooledDbProxy();
-
+      // Use the optimized DatabaseManager for pooled connections
+      this.db = this.createOptimizedDbProxy();
+      
       logger.info(
-        "EmailStorageService initialized with connection pool",
+        "EmailStorageService initialized with optimized connection pool",
         "EMAIL_STORAGE",
       );
     } else {
-      // Use single connection for better performance in single-threaded scenarios
+      // Fallback to direct connection (not recommended for production)
+      const databasePath = dbPath || appConfig.database.path;
       this.db = new Database(databasePath);
       logger.info(
-        "EmailStorageService initialized with single connection",
+        "EmailStorageService initialized with single connection (fallback mode)",
         "EMAIL_STORAGE",
       );
     }
@@ -271,7 +263,76 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   }
 
   /**
-   * Create a proxy database object that uses the connection pool
+   * Create a proxy database object that uses the optimized DatabaseManager
+   * This provides better performance and comprehensive monitoring
+   */
+  private createOptimizedDbProxy(): DatabaseInstance {
+    // Create a proxy that uses the optimized DatabaseManager
+    const handler: ProxyHandler<DatabaseInstance> = {
+      get: (target, prop: string | symbol) => {
+        // For prepare method, return a function that uses the optimized pool
+        if (prop === "prepare") {
+          return (sql: string) => {
+            // Return a statement-like object that uses the DatabaseManager
+            return {
+              run: async (...params: any[]) => {
+                return databaseManager.execute('main', (db) => db.prepare(sql).run(...params));
+              },
+              get: async (...params: any[]) => {
+                return databaseManager.execute('main', (db) => db.prepare(sql).get(...params));
+              },
+              all: async (...params: any[]) => {
+                return databaseManager.execute('main', (db) => db.prepare(sql).all(...params));
+              },
+              iterate: async (...params: any[]) => {
+                return databaseManager.execute('main', (db) => db.prepare(sql).iterate(...params));
+              },
+            };
+          };
+        }
+
+        // For transaction method
+        if (prop === "transaction") {
+          return <T>(fn: (trx: OptimizedDatabaseInstance) => T) => {
+            return async (): Promise<T> => {
+              return databaseManager.transaction('main', fn);
+            };
+          };
+        }
+
+        // For pragma method
+        if (prop === "pragma") {
+          return async (pragma: string, options?: any) => {
+            return databaseManager.execute('main', (db) => db.pragma(pragma, options));
+          };
+        }
+
+        // For exec method
+        if (prop === "exec") {
+          return async (sql: string) => {
+            return databaseManager.execute('main', (db) => db.exec(sql));
+          };
+        }
+
+        // For close method (no-op as DatabaseManager handles connection lifecycle)
+        if (prop === "close") {
+          return () => {
+            logger.debug("Close called on optimized database proxy - handled by DatabaseManager");
+          };
+        }
+
+        // For other methods, delegate to DatabaseManager
+        return async (...args: any[]) => {
+          return databaseManager.execute('main', (db) => (db as any)[prop](...args));
+        };
+      }
+    };
+
+    return new Proxy({} as DatabaseInstance, handler);
+  }
+
+  /**
+   * Create a proxy database object that uses the legacy connection pool
    * This provides compatibility with existing code that expects a db object
    */
   private createPooledDbProxy(): DatabaseInstance {
@@ -308,7 +369,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             return async (): Promise<T> => {
               return pool.execute((db) => {
                 const transaction = db.transaction((trx) => fn(trx));
-                return transaction();
+                return transaction(db);
               });
             };
           };

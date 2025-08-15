@@ -83,7 +83,7 @@ export class GuestUserService {
       id: guestId,
       email: "", // No email for guests
       username: "guest",
-      role: "guest", // Special guest role
+      role: "user", // Guest users get default user role
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

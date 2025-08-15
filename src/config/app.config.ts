@@ -5,6 +5,33 @@ config();
 
 interface DatabaseConfig {
   path: string;
+  pool?: {
+    maxConnections: number;
+    idleTimeout: number; // milliseconds
+    acquireTimeout: number; // milliseconds
+    enableWAL: boolean;
+    enableForeignKeys: boolean;
+    cacheSize: number; // KB
+    memoryMap: number; // bytes
+    busyTimeout: number; // milliseconds
+    checkpointInterval: number; // milliseconds
+    enableMonitoring: boolean;
+  };
+  walmart?: {
+    path: string;
+    pool?: {
+      maxConnections: number;
+      idleTimeout: number;
+      acquireTimeout: number;
+      enableWAL: boolean;
+      enableForeignKeys: boolean;
+      cacheSize: number;
+      memoryMap: number;
+      busyTimeout: number;
+      checkpointInterval: number;
+      enableMonitoring: boolean;
+    };
+  };
 }
 
 interface ApiConfig {
@@ -98,6 +125,33 @@ function createAppConfig(): AppConfig {
 const appConfig: AppConfig = {
   database: {
     path: process.env.DATABASE_PATH || './data/crewai_enhanced.db',
+    pool: {
+      maxConnections: parseInt(process.env.DB_POOL_SIZE || '10', 10),
+      idleTimeout: parseInt(process.env.DB_IDLE_TIMEOUT || '300000', 10), // 5 minutes
+      acquireTimeout: parseInt(process.env.DB_ACQUIRE_TIMEOUT || '30000', 10), // 30 seconds
+      enableWAL: process.env.DB_ENABLE_WAL !== 'false',
+      enableForeignKeys: process.env.DB_ENABLE_FOREIGN_KEYS !== 'false',
+      cacheSize: parseInt(process.env.DB_CACHE_SIZE || '10000', 10), // 10MB
+      memoryMap: parseInt(process.env.DB_MEMORY_MAP || '268435456', 10), // 256MB
+      busyTimeout: parseInt(process.env.DB_BUSY_TIMEOUT || '30000', 10), // 30 seconds
+      checkpointInterval: parseInt(process.env.DB_CHECKPOINT_INTERVAL || '60000', 10), // 1 minute
+      enableMonitoring: process.env.DB_ENABLE_MONITORING !== 'false',
+    },
+    walmart: {
+      path: process.env.WALMART_DATABASE_PATH || './data/walmart_grocery.db',
+      pool: {
+        maxConnections: parseInt(process.env.WALMART_DB_POOL_SIZE || '5', 10),
+        idleTimeout: parseInt(process.env.WALMART_DB_IDLE_TIMEOUT || '300000', 10),
+        acquireTimeout: parseInt(process.env.WALMART_DB_ACQUIRE_TIMEOUT || '30000', 10),
+        enableWAL: process.env.WALMART_DB_ENABLE_WAL !== 'false',
+        enableForeignKeys: process.env.WALMART_DB_ENABLE_FOREIGN_KEYS !== 'false',
+        cacheSize: parseInt(process.env.WALMART_DB_CACHE_SIZE || '5000', 10), // 5MB
+        memoryMap: parseInt(process.env.WALMART_DB_MEMORY_MAP || '134217728', 10), // 128MB
+        busyTimeout: parseInt(process.env.WALMART_DB_BUSY_TIMEOUT || '30000', 10),
+        checkpointInterval: parseInt(process.env.WALMART_DB_CHECKPOINT_INTERVAL || '60000', 10),
+        enableMonitoring: process.env.WALMART_DB_ENABLE_MONITORING !== 'false',
+      },
+    },
   },
   api: {
     port: parseInt(process.env.API_PORT || '3000', 10),

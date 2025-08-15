@@ -35,6 +35,8 @@ import emailAssignmentRouter from "./routes/email-assignment.router.js";
 import csrfRouter from "./routes/csrf.router.js";
 import websocketMonitorRouter from "./routes/websocket-monitor.router.js";
 import metricsRouter from "./routes/metrics.router.js";
+import databasePerformanceRouter from "./routes/database-performance.router.js";
+import { shutdownDatabaseManager } from "../core/database/DatabaseManager.js";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
@@ -42,7 +44,6 @@ import {
 import { setupWalmartWebSocket } from "./websocket/walmart-updates.js";
 import { walmartWSServer } from "./websocket/WalmartWebSocketServer.js";
 import { DealDataService } from "./services/DealDataService.js";
-import { EmailStorageService } from "./services/EmailStorageService.js";
 import { applySecurityHeaders } from "./middleware/security/headers.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import { 
@@ -280,6 +281,9 @@ app.use("/api/health", emailPipelineHealthRouter);
 app.get("/api/health/credentials", credentialHealthCheck);
 app.use("/api/metrics", metricsRouter);
 
+// Database performance monitoring routes
+app.use("/api/database", databasePerformanceRouter);
+
 // tRPC middleware
 app.use(
   "/trpc",
@@ -328,6 +332,11 @@ gracefulShutdown.register(async () => {
 });
 
 gracefulShutdown.register(async () => {
+  logger.info("Shutting down Database Manager...");
+  await shutdownDatabaseManager();
+});
+
+gracefulShutdown.register(async () => {
   logger.info("Running cleanup tasks...");
   await cleanupManager.cleanup();
 });
@@ -346,7 +355,8 @@ const server = app.listen(PORT, async () => {
     console.log(`🏥 Health check: http://localhost:${PORT}/health`);
     console.log(`🔐 Credential health: http://localhost:${PORT}/api/health/credentials`);
 
-    // Initialize Walmart WebSocket server
+    // Initialize Walmart WebSocket server on main port temporarily
+    // The separate port 8080 server will be started by the websocket server script
     walmartWSServer.initialize(server, "/ws/walmart");
     console.log(`🛒 Walmart WebSocket: ws://localhost:${PORT}/ws/walmart`);
 

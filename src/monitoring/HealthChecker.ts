@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { metricsCollector } from "./MetricsCollector.js";
 import { logger } from "../utils/logger.js";
-import ollamaConfig from "../config/ollama.config.js";
+import fs from "fs";
 import appConfig from "../config/app.config.js";
 
 export interface HealthCheck {
@@ -288,30 +288,30 @@ export class HealthChecker extends EventEmitter {
       },
     });
 
-    // Ollama health check
+    // Llama.cpp health check
     this.registerCheck({
-      name: "ollama",
+      name: "llama",
       critical: false,
       check: async () => {
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-          const response = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
-            signal: controller.signal,
-          });
-          clearTimeout(timeoutId);
-
-          if (response.ok) {
-            const data = await response.json();
+          const modelPath = process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf";
+          
+          // Check if model file exists and is accessible
+          const stats = await fs.promises.stat(modelPath);
+          
+          if (stats.isFile()) {
             return {
               status: "healthy",
-              metadata: { models: data.models?.length || 0 },
+              metadata: { 
+                modelPath,
+                modelSize: Math.round(stats.size / 1024 / 1024) + "MB",
+                lastModified: stats.mtime.toISOString()
+              },
             };
           } else {
             return {
-              status: "degraded",
-              message: `Ollama returned status ${response.status}`,
+              status: "unhealthy",
+              message: `Model path exists but is not a file: ${modelPath}`,
             };
           }
         } catch (error) {
@@ -319,8 +319,8 @@ export class HealthChecker extends EventEmitter {
             status: "unhealthy",
             message:
               error instanceof Error
-                ? error.message
-                : "Ollama connection failed",
+                ? `Llama model file check failed: ${error.message}`
+                : "Llama model file access failed",
           };
         }
       },
