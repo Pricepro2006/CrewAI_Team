@@ -407,6 +407,19 @@ diagnose_hang.py
 process_*.py
 monitor_production.py
 
+# Prevent re-pollution from cleanup
+email_batches/
+archived_reports/
+data/
+docs/
+deployment/
+browser-compatibility-report/
+demo-screenshots/
+database/
+config/grafana-dashboard.json
+config/prometheus-alerts.yml
+config/prometheus.yml
+
 # Additional files to keep root clean
 *.sql
 *.mjs
