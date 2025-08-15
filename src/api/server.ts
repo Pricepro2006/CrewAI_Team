@@ -44,6 +44,7 @@ import {
 import { setupWalmartWebSocket } from "./websocket/walmart-updates.js";
 import { walmartWSServer } from "./websocket/WalmartWebSocketServer.js";
 import { DealDataService } from "./services/DealDataService.js";
+import { emailProcessingWebSocket } from "./websocket/EmailProcessingWebSocket.js";
 import { applySecurityHeaders } from "./middleware/security/headers.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import { 
@@ -258,11 +259,11 @@ app.use("/api/email-analysis", emailAnalysisRouter);
 app.use("/api/email-assignment", emailAssignmentRouter);
 
 // Analyzed emails routes (simple direct database access)
-import analyzedEmailsRouter from "./routes/analyzed-emails?.router.js";
+import analyzedEmailsRouter from "./routes/analyzed-emails.router.js";
 app.use("/", analyzedEmailsRouter);
 
 // NLP routes for Walmart Grocery (Qwen3:0.6b)
-import nlpRouter from "./routes/nlp?.router.js";
+import nlpRouter from "./routes/nlp.router.js";
 app.use("/api/nlp", nlpRouter);
 
 // WebSocket monitoring routes (authenticated)
@@ -481,12 +482,26 @@ server.on('upgrade', (request, socket, head) => {
   const pathname = request.url || '';
   
   if (pathname === '/trpc-ws') {
+    // Verify client before upgrading
+    const verifyClient = wss.options.verifyClient;
+    const clientInfo = { origin: request.headers.origin, req: request };
+    
+    if (verifyClient && !verifyClient(clientInfo)) {
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+    
     wss.handleUpgrade(request, socket, head, (ws: any) => {
       wss.emit('connection', ws, request);
     });
+  } else if (pathname === '/ws/walmart') {
+    // Handle Walmart WebSocket upgrades
+    walmartWSServer.handleUpgrade?.(request, socket, head);
   } else {
-    // Let other handlers deal with non-tRPC WebSocket connections
-    // (e.g., Walmart WebSocket is already handled by its own server)
+    // Reject unknown WebSocket requests
+    socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+    socket.destroy();
   }
 });
 
@@ -515,6 +530,20 @@ cleanupManager.register({
 });
 
 console.log(`🛒 Walmart WebSocket handlers initialized`);
+
+// Initialize Email Processing WebSocket
+emailProcessingWebSocket.initialize(wss as any);
+
+// Register email processing WebSocket for cleanup
+cleanupManager.register({
+  name: "email-processing-websocket",
+  cleanup: async () => {
+    emailProcessingWebSocket.shutdown();
+  },
+  priority: 4,
+});
+
+console.log(`📧 Email Processing WebSocket initialized`);
 
 // Note: Graceful shutdown is now handled by the GracefulShutdown class
 // which prevents duplicate signal handler registration and infinite loops
