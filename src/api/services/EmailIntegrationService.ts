@@ -85,10 +85,14 @@ export interface ExtractedEntities {
 
 // Action item types
 export type ActionItemSource = string | {
+  task?: string;
   description?: string;
   priority?: 'low' | 'medium' | 'high' | 'critical';
   due_date?: string;
+  deadline?: string;
   assignee?: string;
+  owner?: string;
+  revenue_impact?: string;
 };
 
 export interface MappedActionItem {
@@ -97,6 +101,9 @@ export interface MappedActionItem {
   priority: 'low' | 'medium' | 'high' | 'critical';
   due_date?: string;
   assignee?: string;
+  slaHours?: number;
+  slaStatus?: 'on-track' | 'at-risk' | 'overdue';
+  estimatedCompletion?: string;
 }
 
 // Define IngestionProgress interface
@@ -315,13 +322,13 @@ export class EmailIntegrationService {
       
       switch (source) {
         case 'json':
-          emails = this.parseJsonEmails(data);
+          emails = this.parseJsonEmails(data as JsonEmailData | string);
           break;
         case 'database':
-          emails = await this.fetchDatabaseEmails(data);
+          emails = await this.fetchDatabaseEmails(data as DatabaseEmailCriteria);
           break;
         case 'api':
-          emails = await this.fetchApiEmails(data);
+          emails = await this.fetchApiEmails(data as ApiEmailConfig);
           break;
       }
 
@@ -420,12 +427,11 @@ export class EmailIntegrationService {
         entitySource.po_numbers.forEach((po: string | number) => {
           entities.push({
             id: crypto.randomUUID(),
-            email_id: '',
-            entity_type: 'PO_NUMBER',
-            entity_value: String(po),
+            type: 'po_number',
+            value: String(po),
             confidence: 0.9,
-            extracted_by: 'email_integration',
-            created_at: new Date()
+            extractedAt: new Date().toISOString(),
+            source: 'email_integration'
           });
         });
       }
@@ -435,12 +441,11 @@ export class EmailIntegrationService {
         entitySource.quote_numbers.forEach((quote: string | number) => {
           entities.push({
             id: crypto.randomUUID(),
-            email_id: '',
-            entity_type: 'QUOTE_NUMBER',
-            entity_value: String(quote),
+            type: 'quote_number',
+            value: String(quote),
             confidence: 0.9,
-            extracted_by: 'email_integration',
-            created_at: new Date()
+            extractedAt: new Date().toISOString(),
+            source: 'email_integration'
           });
         });
       }
@@ -450,12 +455,11 @@ export class EmailIntegrationService {
         entitySource.part_numbers.forEach((part: string | number) => {
           entities.push({
             id: crypto.randomUUID(),
-            email_id: '',
-            entity_type: 'PART_NUMBER',
-            entity_value: String(part),
+            type: 'part_number',
+            value: String(part),
             confidence: 0.9,
-            extracted_by: 'email_integration',
-            created_at: new Date()
+            extractedAt: new Date().toISOString(),
+            source: 'email_integration'
           });
         });
       }
@@ -466,12 +470,11 @@ export class EmailIntegrationService {
         companies.forEach((company: string | number) => {
           entities.push({
             id: crypto.randomUUID(),
-            email_id: '',
-            entity_type: 'COMPANY',
-            entity_value: String(company),
+            type: 'customer',
+            value: String(company),
             confidence: 0.9,
-            extracted_by: 'email_integration',
-            created_at: new Date()
+            extractedAt: new Date().toISOString(),
+            source: 'email_integration'
           });
         });
       }
@@ -504,8 +507,22 @@ export class EmailIntegrationService {
   /**
    * Map action items from analysis
    */
-  private mapActionItems(analysis: AnalysisResult): MappedActionItem[] {
-    const actionItems: MappedActionItem[] = [];
+  private mapActionItems(analysis: AnalysisResult): Array<{
+    type: string;
+    description: string;
+    priority: string;
+    slaHours: number;
+    slaStatus: "on-track" | "at-risk" | "overdue";
+    estimatedCompletion?: string;
+  }> {
+    const actionItems: Array<{
+      type: string;
+      description: string;
+      priority: string;
+      slaHours: number;
+      slaStatus: "on-track" | "at-risk" | "overdue";
+      estimatedCompletion?: string;
+    }> = [];
     
     const actionSource: ActionItemSource[] = analysis.phase3Analysis?.action_items || 
                         analysis.phase2Analysis?.action_items || [];
@@ -555,10 +572,10 @@ export class EmailIntegrationService {
         address: recipient.emailAddress?.address || recipient.address || 'unknown@email.com',
         name: recipient.emailAddress?.name || recipient.name
       })),
-      cc: email.cc,
-      receivedAt: new Date(email.receivedDateTime || email.receivedAt || Date.now()),
+      cc: email.cc || [],
+      receivedDateTime: email.receivedDateTime || new Date(email.receivedAt || Date.now()).toISOString(),
       hasAttachments: email.hasAttachments || false,
-      attachments: email.attachments
+      attachments: email.attachments || []
     }));
   }
 

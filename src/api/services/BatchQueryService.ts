@@ -114,18 +114,27 @@ export class BatchQueryService {
       for (const row of rows) {
         const product: WalmartProduct = {
           id: row.id,
+          walmartId: row.walmart_id || row.id,
           name: row.name,
           brand: row.brand,
           category: row.category,
+          description: row.description || '',
           price: options.includePricing ? row.sale_price || row.current_price : row.current_price,
           regularPrice: options.includePricing ? row.regular_price : undefined,
-          discount: options.includePricing ? row.discount_percentage : undefined,
           unit: row.unit,
           imageUrl: row.image_url,
           inStock: row.in_stock === 1,
-          quantity: options.includeInventory ? row.inventory_quantity : undefined,
-          lastUpdated: row.inventory_updated || row.updated_at
-        };
+          stock: options.includeInventory ? row.inventory_quantity : undefined,
+          images: [],
+          availability: {
+            online: row.in_stock === 1,
+            stores: []
+          },
+          metadata: {
+            lastUpdated: row.inventory_updated || row.updated_at,
+            source: 'batch_query'
+          }
+        } as unknown as WalmartProduct;
 
         result.data.set(row.id, product);
       }
