@@ -205,13 +205,14 @@ export const emailRouter = router({
         const result = await emailStorage.getEmailsForTableView(input);
 
         // Broadcast table data update for real-time synchronization
-        // Temporarily disabled due to import issues
-        // try {
-        //   const { wsService } = await import('../services/WebSocketService.js');
-        //   wsService.broadcastEmailTableDataUpdated(result?.emails?.length, input);
-        // } catch (error) {
-        //   logger.error('Failed to broadcast table data update', 'EMAIL_ROUTER', { error });
-        // }
+        try {
+          const { wsService } = await import('../services/WebSocketService.js');
+          if (wsService && typeof wsService.broadcastEmailTableDataUpdated === 'function') {
+            wsService.broadcastEmailTableDataUpdated(result?.emails?.length || 0, input);
+          }
+        } catch (error) {
+          logger.debug('WebSocket service not available, skipping broadcast', 'EMAIL_ROUTER');
+        }
 
         return {
           success: true,
@@ -238,18 +239,19 @@ export const emailRouter = router({
         const stats = await emailStorage.getDashboardStats();
 
         // Broadcast stats update for real-time dashboard sync
-        // Temporarily disabled due to import issues
-        // try {
-        //   const { wsService } = await import('../services/WebSocketService.js');
-        //   wsService.broadcastEmailStatsUpdated({
-        //     total: stats.totalEmails,
-        //     critical: stats.criticalCount,
-        //     inProgress: stats.inProgressCount,
-        //     completed: stats.completedCount
-        //   });
-        // } catch (error) {
-        //   logger.error('Failed to broadcast stats update', 'EMAIL_ROUTER', { error });
-        // }
+        try {
+          const { wsService } = await import('../services/WebSocketService.js');
+          if (wsService && typeof wsService.broadcastEmailStatsUpdated === 'function') {
+            wsService.broadcastEmailStatsUpdated({
+              total: stats.totalEmails,
+              critical: stats.criticalCount,
+              inProgress: stats.inProgressCount,
+              completed: stats.completedCount
+            });
+          }
+        } catch (error) {
+          logger.debug('WebSocket service not available, skipping stats broadcast', 'EMAIL_ROUTER');
+        }
 
         return {
           success: true,
@@ -278,18 +280,19 @@ export const emailRouter = router({
         const analytics = await emailStorage.getWorkflowAnalytics();
 
         // Broadcast analytics update for real-time dashboard updates
-        // Temporarily disabled due to import issues
-        // try {
-        //   const { wsService } = await import('../services/WebSocketService.js');
-        //   wsService.broadcastEmailAnalyticsUpdated(
-        //     analytics.totalEmails,
-        //     analytics.workflowDistribution,
-        //     analytics.slaCompliance,
-        //     analytics.averageProcessingTime
-        //   );
-        // } catch (error) {
-        //   logger.error('Failed to broadcast analytics update', 'EMAIL_ROUTER', { error });
-        // }
+        try {
+          const { wsService } = await import('../services/WebSocketService.js');
+          if (wsService && typeof wsService.broadcastEmailAnalyticsUpdated === 'function') {
+            wsService.broadcastEmailAnalyticsUpdated(
+              analytics.totalEmails,
+              analytics.workflowDistribution,
+              analytics.slaCompliance,
+              analytics.averageProcessingTime
+            );
+          }
+        } catch (error) {
+          logger.debug('WebSocket service not available, skipping analytics broadcast', 'EMAIL_ROUTER');
+        }
 
         return {
           success: true,
@@ -1476,6 +1479,323 @@ export const emailRouter = router({
     }
   }),
 
+  // Agent Processing Control Endpoints
+  
+  // Start agent-based email processing
+  startAgentProcessing: protectedProcedure
+    .input(
+      z.object({
+        batchSize: z.number().min(1).max(1000).optional().default(100),
+        maxConcurrent: z.number().min(1).max(10).optional().default(3),
+        skipProcessed: z.boolean().optional().default(true),
+        targetEmails: z.array(z.string().uuid()).optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        logger.info("Starting agent processing", "EMAIL_ROUTER", {
+          batchSize: input.batchSize,
+          maxConcurrent: input.maxConcurrent,
+          skipProcessed: input.skipProcessed,
+          targetEmails: input.targetEmails?.length,
+        });
+
+        const user = ctx.user as { email?: string; name?: string } | undefined;
+        const initiatedBy = user?.email ?? user?.name ?? "system";
+
+        // Start the agent processing
+        await emailStorage.startAgentBacklogProcessing({
+          batchSize: input.batchSize,
+          maxConcurrent: input.maxConcurrent,
+          skipProcessed: input.skipProcessed,
+          targetEmails: input.targetEmails,
+          initiatedBy,
+        });
+
+        // Broadcast processing start
+        try {
+          const { wsService } = await import("../services/WebSocketService.js");
+          wsService.broadcastEmailProcessingStarted({
+            initiatedBy,
+            batchSize: input.batchSize,
+            maxConcurrent: input.maxConcurrent,
+            timestamp: new Date(),
+          });
+        } catch (error) {
+          logger.error("Failed to broadcast processing start", "EMAIL_ROUTER", { error });
+        }
+
+        return {
+          success: true,
+          message: "Agent processing started successfully",
+          data: {
+            initiatedBy,
+            batchSize: input.batchSize,
+            maxConcurrent: input.maxConcurrent,
+            startedAt: new Date().toISOString(),
+          },
+        };
+      } catch (error) {
+        logger.error("Failed to start agent processing", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to start agent processing");
+      }
+    }),
+
+  // Stop agent-based email processing
+  stopAgentProcessing: protectedProcedure
+    .input(
+      z.object({
+        reason: z.string().optional().default("Manual stop"),
+        forceStop: z.boolean().optional().default(false),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        logger.info("Stopping agent processing", "EMAIL_ROUTER", {
+          reason: input.reason,
+          forceStop: input.forceStop,
+        });
+
+        const user = ctx.user as { email?: string; name?: string } | undefined;
+        const stoppedBy = user?.email ?? user?.name ?? "system";
+
+        // Stop the agent processing
+        await emailStorage.stopAgentProcessing({
+          reason: input.reason,
+          forceStop: input.forceStop,
+          stoppedBy,
+        });
+
+        // Broadcast processing stop
+        try {
+          const { wsService } = await import("../services/WebSocketService.js");
+          wsService.broadcastEmailProcessingStopped({
+            stoppedBy,
+            reason: input.reason,
+            forceStop: input.forceStop,
+            timestamp: new Date(),
+          });
+        } catch (error) {
+          logger.error("Failed to broadcast processing stop", "EMAIL_ROUTER", { error });
+        }
+
+        return {
+          success: true,
+          message: "Agent processing stopped successfully",
+          data: {
+            stoppedBy,
+            reason: input.reason,
+            stoppedAt: new Date().toISOString(),
+          },
+        };
+      } catch (error) {
+        logger.error("Failed to stop agent processing", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to stop agent processing");
+      }
+    }),
+
+  // Get agent processing status and metrics
+  getAgentProcessingStatus: publicProcedure.query(async () => {
+    try {
+      logger.info("Fetching agent processing status", "EMAIL_ROUTER");
+
+      const status = await emailStorage.getAgentProcessingStatus();
+
+      return {
+        success: true,
+        data: status,
+      };
+    } catch (error) {
+      logger.error("Failed to get agent processing status", "EMAIL_ROUTER", { error });
+      throw new Error("Failed to get agent processing status");
+    }
+  }),
+
+  // Process specific emails through agents
+  processEmailsThroughAgents: protectedProcedure
+    .input(
+      z.object({
+        emailIds: z.array(z.string().uuid()).min(1).max(50),
+        priority: z.enum(["high", "normal", "low"]).optional().default("normal"),
+        agentType: z.enum(["analysis", "research", "data"]).optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        logger.info("Processing specific emails through agents", "EMAIL_ROUTER", {
+          emailIds: input.emailIds,
+          priority: input.priority,
+          agentType: input.agentType,
+        });
+
+        const user = ctx.user as { email?: string; name?: string } | undefined;
+        const requestedBy = user?.email ?? user?.name ?? "system";
+
+        const results = [];
+        const errors = [];
+
+        for (const emailId of input.emailIds) {
+          try {
+            const email = await emailStorage.getEmail(emailId);
+            if (!email) {
+              errors.push({
+                emailId,
+                error: "Email not found",
+                success: false,
+              });
+              continue;
+            }
+
+            // Process through agent system
+            const result = await emailStorage.processEmailThroughAgents(email);
+            
+            results.push({
+              emailId,
+              agentResult: result,
+              success: true,
+            });
+
+            // Broadcast individual email processing completion
+            try {
+              const { wsService } = await import("../services/WebSocketService.js");
+              wsService.broadcastEmailAgentProcessed({
+                emailId,
+                agentType: input.agentType || "analysis",
+                requestedBy,
+                result,
+                timestamp: new Date(),
+              });
+            } catch (error) {
+              logger.error("Failed to broadcast email processing", "EMAIL_ROUTER", { error });
+            }
+
+          } catch (error) {
+            errors.push({
+              emailId,
+              error: error instanceof Error ? error.message : String(error),
+              success: false,
+            });
+            logger.error("Failed to process email through agents", "EMAIL_ROUTER", {
+              emailId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+
+        return {
+          success: true,
+          data: {
+            processed: results.length,
+            failed: errors.length,
+            total: input.emailIds.length,
+            results,
+            errors: errors.length > 0 ? errors : undefined,
+            requestedBy,
+            processedAt: new Date().toISOString(),
+          },
+        };
+      } catch (error) {
+        logger.error("Failed to process emails through agents", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to process emails through agents");
+      }
+    }),
+
+  // Get agent processing metrics and performance data
+  getAgentProcessingMetrics: publicProcedure
+    .input(
+      z.object({
+        timeRange: z.object({
+          start: z.string().datetime(),
+          end: z.string().datetime(),
+        }).optional(),
+        groupBy: z.enum(["hour", "day", "agent", "status"]).optional().default("day"),
+        includeDetails: z.boolean().optional().default(false),
+      }),
+    )
+    .query(async ({ input }) => {
+      try {
+        logger.info("Fetching agent processing metrics", "EMAIL_ROUTER", {
+          timeRange: input.timeRange,
+          groupBy: input.groupBy,
+          includeDetails: input.includeDetails,
+        });
+
+        const metrics = await emailStorage.getAgentProcessingMetrics({
+          timeRange: input.timeRange ? {
+            start: new Date(input.timeRange.start),
+            end: new Date(input.timeRange.end),
+          } : undefined,
+          groupBy: input.groupBy,
+          includeDetails: input.includeDetails,
+        });
+
+        return {
+          success: true,
+          data: metrics,
+        };
+      } catch (error) {
+        logger.error("Failed to get agent processing metrics", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to get agent processing metrics");
+      }
+    }),
+
+  // Reset agent processing state (emergency use)
+  resetAgentProcessing: protectedProcedure
+    .input(
+      z.object({
+        confirmReset: z.boolean(),
+        reason: z.string().min(10),
+        clearProgress: z.boolean().optional().default(false),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        if (!input.confirmReset) {
+          throw new Error("Reset confirmation required");
+        }
+
+        logger.warn("Resetting agent processing state", "EMAIL_ROUTER", {
+          reason: input.reason,
+          clearProgress: input.clearProgress,
+        });
+
+        const user = ctx.user as { email?: string; name?: string } | undefined;
+        const resetBy = user?.email ?? user?.name ?? "system";
+
+        await emailStorage.resetAgentProcessing({
+          reason: input.reason,
+          clearProgress: input.clearProgress,
+          resetBy,
+        });
+
+        // Broadcast processing reset
+        try {
+          const { wsService } = await import("../services/WebSocketService.js");
+          wsService.broadcastEmailProcessingReset({
+            resetBy,
+            reason: input.reason,
+            clearProgress: input.clearProgress,
+            timestamp: new Date(),
+          });
+        } catch (error) {
+          logger.error("Failed to broadcast processing reset", "EMAIL_ROUTER", { error });
+        }
+
+        return {
+          success: true,
+          message: "Agent processing state reset successfully",
+          data: {
+            resetBy,
+            reason: input.reason,
+            resetAt: new Date().toISOString(),
+          },
+        };
+      } catch (error) {
+        logger.error("Failed to reset agent processing", "EMAIL_ROUTER", { error });
+        throw new Error("Failed to reset agent processing");
+      }
+    }),
+
   // WebSocket subscriptions for real-time updates
   subscribeToEmailUpdates: publicProcedure
     .input(
@@ -1488,6 +1808,8 @@ export const emailRouter = router({
             "email.state_changed",
             "email.sla_alert",
             "email.analytics_updated",
+            "email.processing_progress",
+            "email.agent_processed",
           ]),
       }),
     )

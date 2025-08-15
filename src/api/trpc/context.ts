@@ -8,7 +8,7 @@ import { MaestroFramework } from "../../core/maestro/MaestroFramework.js";
 import { UserService } from "../services/UserService.js";
 import type { PublicUser } from "../../database/models/User.js";
 import { jwtManager, JWTError } from "../utils/jwt.js";
-import ollamaConfig from "../../config/ollama?.config.js";
+import ollamaConfig from "../../config/ollama.config.js";
 import { logger } from "../../utils/logger.js";
 import { mcpToolsService } from "../services/MCPToolsService.js";
 import { DealDataService } from "../services/DealDataService.js";

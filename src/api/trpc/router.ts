@@ -19,26 +19,26 @@ export {
 } from "./enhanced-router.js";
 
 // Import routers
-import { agentRouter } from "../routes/agent?.router.js";
-import { taskRouter } from "../routes/task?.router.js";
-import { ragRouter } from "../routes/rag?.router.js";
-import { chatRouter } from "../routes/chat?.router.js";
-import { websocketRouter } from "../routes/websocket?.router.js";
-import { healthRouter } from "../routes/health?.router.js";
-import { dataCollectionRouter } from "../routes/data-collection?.router.js";
-import { authRouter } from "../routes/auth?.router.js";
-import { emailRouter } from "../routes/email?.router.js";
-import { metricsRouter } from "../routes/metrics?.router?.trpc.js";
-import { emailAssignmentRouter } from "./routers/emailAssignment?.router.js";
-import { iemsEmailRouter } from "../routes/iems-email?.router.js";
-import { dealsRouter } from "../routes/deals?.router.js";
-import { walmartGrocerySimpleRouter as walmartGroceryRouter } from "../routes/walmart-grocery-simple?.router.js";
-import { walmartPriceRouter } from "../routes/walmart-price?.router.js";
-import { workflowRouter } from "../routes/workflow?.router.js";
-import { securityRouter } from "./routers/security?.router.js";
-import { monitoringRouter } from "./routers/monitoring?.router.js";
-import { groceryNLPQueueRouter } from "./routers/grocery-nlp-queue?.router.js";
-import { pollingRouter } from "./routers/polling?.router.js";
+import { agentRouter } from "../routes/agent.router.js";
+import { taskRouter } from "../routes/task.router.js";
+import { ragRouter } from "../routes/rag.router.js";
+import { chatRouter } from "../routes/chat.router.js";
+import { websocketRouter } from "../routes/websocket.router.js";
+import { healthRouter } from "../routes/health.router.js";
+import { dataCollectionRouter } from "../routes/data-collection.router.js";
+import { authRouter } from "../routes/auth.router.js";
+import { emailRouter } from "../routes/email.router.js";
+import { metricsRouter } from "../routes/metrics.router.trpc.js";
+import { emailAssignmentRouter } from "./routers/emailAssignment.router.js";
+import { iemsEmailRouter } from "../routes/iems-email.router.js";
+import { dealsRouter } from "../routes/deals.router.js";
+import { walmartGrocerySimpleRouter as walmartGroceryRouter } from "../routes/walmart-grocery-simple.router.js";
+import { walmartPriceRouter } from "../routes/walmart-price.router.js";
+import { workflowRouter } from "../routes/workflow.router.js";
+import { securityRouter } from "./routers/security.router.js";
+import { monitoringRouter } from "./routers/monitoring.router.js";
+import { groceryNLPQueueRouter } from "./routers/grocery-nlp-queue.router.js";
+import { pollingRouter } from "./routers/polling.router.js";
 
 // Import the router function from enhanced-router
 import { router as createRouter } from "./enhanced-router.js";

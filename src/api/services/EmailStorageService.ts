@@ -26,6 +26,7 @@ import type {
   PoolConnection,
   PoolStatistics
 } from "../../types/email-storage.types.js";
+import { MasterOrchestrator } from "../../core/master-orchestrator/MasterOrchestrator.js";
 
 // Extended type for createEmail method
 interface CreateEmailData {
@@ -234,6 +235,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
   private slaMonitoringInterval: NodeJS.Timeout | null = null;
   private lazyLoader: LazyLoader<any>;
   private useConnectionPool: boolean;
+  private masterOrchestrator?: MasterOrchestrator;
 
   constructor(dbPath?: string, enableConnectionPool: boolean = true) {
     // Always use optimized connection pool by default for better performance
@@ -260,6 +262,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
     this.lazyLoader = new LazyLoader(50, 20, 5 * 60 * 1000); // 50 items per chunk, 20 chunks cache, 5min TTL
     this.initializeDatabase();
     this.initializePerformanceMonitoring();
+    this.initializeMasterOrchestrator();
   }
 
   /**
@@ -406,6 +409,195 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
     // Create and return the proxy
     return new Proxy({} as any, handler) as DatabaseInstance;
+  }
+
+  /**
+   * Initialize MasterOrchestrator for agent-based email processing
+   */
+  private async initializeMasterOrchestrator(): Promise<void> {
+    try {
+      this.masterOrchestrator = new MasterOrchestrator({
+        ollamaUrl: process.env.OLLAMA_URL || 'http://localhost:11434',
+        rag: {
+          vectorStore: {
+            type: "chromadb" as const,
+            path: "./data/chroma-email",
+            collectionName: "email-analysis",
+            dimension: 384,
+          },
+          chunking: {
+            size: 500,
+            overlap: 50,
+            method: "sentence" as const,
+          },
+          retrieval: {
+            topK: 5,
+            minScore: 0.5,
+            reranking: false,
+          },
+        },
+      });
+      
+      await this.masterOrchestrator.initialize();
+      logger.info("MasterOrchestrator initialized for email processing", "EMAIL_STORAGE");
+    } catch (error) {
+      logger.warn(
+        `Failed to initialize MasterOrchestrator: ${error instanceof Error ? error.message : 'Unknown error'}. Email processing will use fallback methods.`,
+        "EMAIL_STORAGE"
+      );
+    }
+  }
+
+  /**
+   * Process email through agent system
+   */
+  async processEmailThroughAgents(email: any): Promise<EmailAnalysisResult> {
+    if (!this.masterOrchestrator) {
+      throw new Error("MasterOrchestrator not initialized");
+    }
+
+    logger.info(
+      `Processing email through agent system: ${email.subject}`,
+      "EMAIL_STORAGE"
+    );
+
+    try {
+      const result = await this.masterOrchestrator.processEmail(email);
+      
+      logger.info(
+        `Email processed successfully through agents: ${email.id}`,
+        "EMAIL_STORAGE",
+        {
+          priority: result.quick.priority,
+          workflow: result.quick.workflow.primary,
+          confidence: result.quick.confidence,
+        }
+      );
+
+      return result;
+    } catch (error) {
+      logger.error(
+        `Failed to process email through agents: ${email.id}`,
+        "EMAIL_STORAGE",
+        { error }
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Process a batch of emails through the agent system
+   */
+  async processBatchThroughAgents(
+    emailIds: string[],
+    batchSize: number = 10
+  ): Promise<{ processed: number; failed: number; errors: any[] }> {
+    let processed = 0;
+    let failed = 0;
+    const errors: any[] = [];
+
+    logger.info(
+      `Starting batch processing of ${emailIds.length} emails through agent system`,
+      "EMAIL_STORAGE"
+    );
+
+    // Process in batches to avoid overwhelming the system
+    for (let i = 0; i < emailIds.length; i += batchSize) {
+      const batch = emailIds.slice(i, i + batchSize);
+      
+      await Promise.allSettled(
+        batch.map(async (emailId) => {
+          try {
+            // Get email data
+            const email = await this.getEmail(emailId);
+            if (!email) {
+              throw new Error(`Email not found: ${emailId}`);
+            }
+
+            // Process through agents
+            const analysis = await this.processEmailThroughAgents(email);
+
+            // Store analysis
+            await this.storeEmailAnalysis(emailId, analysis);
+            
+            processed++;
+            
+            // Broadcast progress update
+            if (processed % 10 === 0) {
+              wsService.broadcastEmailProcessingProgress({
+                processed,
+                total: emailIds.length,
+                current: emailId,
+                percentage: Math.round((processed / emailIds.length) * 100),
+              });
+            }
+          } catch (error) {
+            failed++;
+            errors.push({ emailId, error: error instanceof Error ? error.message : String(error) });
+            logger.error(
+              `Failed to process email ${emailId} through agents`,
+              "EMAIL_STORAGE",
+              { error }
+            );
+          }
+        })
+      );
+
+      // Small delay between batches to prevent overwhelming
+      if (i + batchSize < emailIds.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    logger.info(
+      `Batch processing completed: ${processed} processed, ${failed} failed`,
+      "EMAIL_STORAGE"
+    );
+
+    return { processed, failed, errors };
+  }
+
+  /**
+   * Start processing the email backlog through agents
+   */
+  async startAgentBacklogProcessing(): Promise<void> {
+    try {
+      // Get emails that haven't been processed through agents yet
+      const unprocessedQuery = `
+        SELECT id FROM emails 
+        WHERE id NOT IN (
+          SELECT DISTINCT email_id FROM email_analysis 
+          WHERE deep_model LIKE '%Agent%' OR quick_model LIKE '%Agent%'
+        )
+        ORDER BY received_at DESC
+        LIMIT 1000
+      `;
+      
+      const unprocessedEmails = this.db.prepare(unprocessedQuery).all() as any[];
+      const emailIds = unprocessedEmails.map((row: any) => row.id);
+
+      if (emailIds.length === 0) {
+        logger.info("No unprocessed emails found for agent processing", "EMAIL_STORAGE");
+        return;
+      }
+
+      logger.info(
+        `Starting agent processing for ${emailIds.length} unprocessed emails`,
+        "EMAIL_STORAGE"
+      );
+
+      // Process in background
+      this.processBatchThroughAgents(emailIds, 5).catch((error) => {
+        logger.error("Background agent processing failed", "EMAIL_STORAGE", { error });
+      });
+    } catch (error) {
+      logger.error(
+        "Failed to start agent backlog processing",
+        "EMAIL_STORAGE",
+        { error }
+      );
+      throw error;
+    }
   }
 
   /**
@@ -2762,6 +2954,20 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         `Failed to stop performance monitoring: ${error}`,
         "EMAIL_STORAGE",
       );
+    }
+
+    // Clean up MasterOrchestrator
+    if (this.masterOrchestrator) {
+      try {
+        // MasterOrchestrator doesn't have explicit cleanup, but we can clear the reference
+        this.masterOrchestrator = undefined;
+        logger.info("MasterOrchestrator cleaned up", "EMAIL_STORAGE");
+      } catch (error) {
+        logger.warn(
+          `Failed to cleanup MasterOrchestrator: ${error}`,
+          "EMAIL_STORAGE",
+        );
+      }
     }
 
     // Close database or connection pool
