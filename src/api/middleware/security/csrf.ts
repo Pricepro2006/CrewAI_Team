@@ -13,7 +13,7 @@ const CSRF_TOKEN_LENGTH = 32; // 256 bits
 const CSRF_TOKEN_HEADER = "x-csrf-token";
 // FIX: Use __Host- prefix only in production with HTTPS, regular name in development
 // Dynamic function to support testing environment changes
-const getCSRFCookieName = () => process.env.NODE_ENV === 'production' 
+const getCSRFCookieName = (): string => process.env.NODE_ENV === 'production' 
   ? "__Host-csrf-token"  // Requires HTTPS, secure: true, path: /, no domain
   : "csrf-token";         // Works with HTTP in development
 const CSRF_SESSION_KEY = "csrfToken";

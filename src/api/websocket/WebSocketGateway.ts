@@ -196,7 +196,13 @@ export class WebSocketGateway extends EventEmitter {
           path: this.config.path,
           maxPayload: this.config.limits.maxMessageSize,
           perMessageDeflate: this.config.batching.compression.enabled,
-          verifyClient: (info) => this.verifyClient(info)
+          verifyClient: (info, callback) => {
+            // Handle async verification properly
+            this.verifyClient(info, callback).catch((error) => {
+              console.error('WebSocket verification error:', error);
+              callback(false);
+            });
+          }
         });
 
         this.server.on('connection', (ws, request) => {
@@ -248,33 +254,52 @@ export class WebSocketGateway extends EventEmitter {
   }
 
   // Connection management
-  private verifyClient(info: { origin: string; secure: boolean; req: IncomingMessage }): boolean {
+  private async verifyClient(info: { origin: string; secure: boolean; req: IncomingMessage }, callback: (result: boolean) => void): Promise<void> {
     try {
       // Check connection limits
       if (this.connections.size >= this.config.limits.maxConnections) {
-        return false;
+        callback(false);
+        return;
       }
 
-      // Basic auth check (would be more sophisticated in production)
+      // Proper async auth check
       if (this.config.auth.enabled) {
-        const token = info.req.headers[this.config.auth.tokenHeader.toLowerCase()] as string;
-        if (!token) {
+        const authHeader = info.req.headers[this.config.auth.tokenHeader.toLowerCase()] as string;
+        
+        if (!authHeader) {
           this.metrics.authFailures++;
-          return false;
+          callback(false);
+          return;
         }
 
-        // Validate token (in production, this would be async)
+        // Extract token from Bearer format if present
+        const token = authHeader.startsWith('Bearer ') 
+          ? authHeader.substring(7) 
+          : authHeader;
+
+        // Validate token asynchronously
         if (this.config.auth.validateToken) {
-          // Note: This should be async in production
-          // return await this.config.auth.validateToken(token);
+          try {
+            const isValid = await this.config.auth.validateToken(token);
+            if (!isValid) {
+              this.metrics.authFailures++;
+              callback(false);
+              return;
+            }
+          } catch (error) {
+            this.emit('auth_error', error);
+            this.metrics.authFailures++;
+            callback(false);
+            return;
+          }
         }
       }
 
-      return true;
+      callback(true);
 
     } catch (error) {
       this.emit('auth_error', error);
-      return false;
+      callback(false);
     }
   }
 
