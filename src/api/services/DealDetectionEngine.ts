@@ -8,8 +8,40 @@ import { getDatabaseManager } from "../../database/DatabaseManager.js";
 import { PriceHistoryService } from "./PriceHistoryService.js";
 import { WalmartPriceFetcher } from "./WalmartPriceFetcher.js";
 import type Database from "better-sqlite3";
-import type { WalmartProduct } from "../../types/walmart-grocery.js";
+import type { WalmartProduct, ProductPrice, ProductCategory } from "../../types/walmart-grocery.js";
 import type { PriceComparisonResult, PriceStatistics } from "./PriceHistoryService.js";
+
+/**
+ * Helper function to extract numeric price from ProductPrice union type
+ */
+function extractNumericPrice(price: ProductPrice | undefined | null): number {
+  if (price === null || price === undefined) {
+    return 0;
+  }
+  
+  if (typeof price === 'number') {
+    return price;
+  }
+  
+  // If it's an object, return the regular price or sale price if available
+  return price.sale || price.regular || 0;
+}
+
+/**
+ * Helper function to extract category name from ProductCategory union type
+ */
+function extractCategoryName(category: ProductCategory | undefined | null): string | undefined {
+  if (category === null || category === undefined) {
+    return undefined;
+  }
+  
+  if (typeof category === 'string') {
+    return category;
+  }
+  
+  // If it's an object, return the name property
+  return category.name;
+}
 
 export interface DetectedDeal {
   id: string;
@@ -470,15 +502,15 @@ export class DealDetectionEngine {
         if (!categoryStats[row.category]) {
           categoryStats[row.category] = { count: 0, totalSavings: 0 };
         }
-        categoryStats[row.category].count += row.count;
-        categoryStats[row.category].totalSavings += row.avg_savings * row.count;
+        categoryStats[row.category]!.count += row.count;
+        categoryStats[row.category]!.totalSavings += row.avg_savings * row.count;
 
         if (!trendData[row.date]) {
           trendData[row.date] = { deals: 0, totalScore: 0, count: 0 };
         }
-        trendData[row.date].deals += row.count;
-        trendData[row.date].totalScore += row.avg_score * row.count;
-        trendData[row.date].count += row.count;
+        trendData[row.date]!.deals += row.count;
+        trendData[row.date]!.totalScore += row.avg_score * row.count;
+        trendData[row.date]!.count += row.count;
       }
 
       const averageSavings = data.reduce((sum, row) => sum + row.avg_savings * row.count, 0) / totalDeals || 0;
@@ -544,7 +576,7 @@ export class DealDetectionEngine {
         productId: comparison.productId,
         walmartId: product.walmartId || product.id,
         productName: product.name,
-        category: product.category?.name,
+        category: extractCategoryName(product.category),
         dealType: 'price_drop',
         currentPrice: comparison.currentPrice,
         originalPrice: comparison.comparisonPrice,
@@ -576,7 +608,7 @@ export class DealDetectionEngine {
       const stats = await this.priceHistory.getPriceStatistics(product.walmartId || product.id);
       if (!stats) return null;
 
-      const currentPrice = product.livePrice?.price || product.price || 0;
+      const currentPrice = product.livePrice?.price || extractNumericPrice(product.price);
       const historicalLow = Math.min(
         stats.price30dMin || currentPrice,
         stats.price60dMin || currentPrice,
@@ -593,7 +625,7 @@ export class DealDetectionEngine {
           productId: product.walmartId || product.id,
           walmartId: product.walmartId || product.id,
           productName: product.name,
-          category: product.category?.name,
+          category: extractCategoryName(product.category),
           dealType: 'historical_low',
           currentPrice,
           referencePrice: historicalLow,
@@ -623,7 +655,7 @@ export class DealDetectionEngine {
   private async checkSeasonalOpportunity(product: WalmartProduct): Promise<DetectedDeal | null> {
     try {
       const currentMonth = new Date().getMonth() + 1;
-      const category = product.category?.name?.toLowerCase() || '';
+      const category = extractCategoryName(product.category)?.toLowerCase() || '';
 
       for (const [seasonalCategory, pattern] of Object.entries(this.SEASONAL_PATTERNS)) {
         if (category.includes(seasonalCategory) || 
@@ -631,7 +663,7 @@ export class DealDetectionEngine {
           
           if (pattern.offPeakMonths.includes(currentMonth)) {
             // This is off-peak season - likely good deals
-            const currentPrice = product.livePrice?.price || product.price || 0;
+            const currentPrice = product.livePrice?.price || extractNumericPrice(product.price);
             const seasonalDiscount = 0.15; // Assume 15% seasonal discount
             const originalPrice = currentPrice / (1 - seasonalDiscount);
 
@@ -643,7 +675,7 @@ export class DealDetectionEngine {
               productId: product.walmartId || product.id,
               walmartId: product.walmartId || product.id,
               productName: product.name,
-              category: product.category?.name,
+              category: extractCategoryName(product.category),
               dealType: 'seasonal',
               currentPrice,
               originalPrice,
@@ -683,7 +715,7 @@ export class DealDetectionEngine {
       const deals: DetectedDeal[] = [];
 
       // For demonstration, assume bulk discount if product name suggests larger size
-      const currentPrice = product.livePrice?.price || product.price || 0;
+      const currentPrice = product.livePrice?.price || extractNumericPrice(product.price);
       const name = product.name.toLowerCase();
 
       if (name.includes('bulk') || name.includes('family') || name.includes('value') || 
@@ -700,7 +732,7 @@ export class DealDetectionEngine {
           productId: product.walmartId || product.id,
           walmartId: product.walmartId || product.id,
           productName: product.name,
-          category: product.category?.name,
+          category: extractCategoryName(product.category),
           dealType: 'bulk_discount',
           currentPrice,
           originalPrice: regularPrice,

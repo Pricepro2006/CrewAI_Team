@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { ConnectionInfo } from '../../services/MonitoringService';
+import type { ConnectionInfo } from '../../services/MonitoringService.js';
 
 interface ConnectionMonitorProps {
   connections: ConnectionInfo[];

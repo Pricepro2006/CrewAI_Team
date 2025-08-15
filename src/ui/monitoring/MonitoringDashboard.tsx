@@ -10,20 +10,20 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { 
+import type { 
   MonitoringMetric, 
   ConnectionInfo, 
   PerformanceMetric, 
   DatabaseQuery, 
   SystemHealth, 
   MonitoringAlert 
-} from '../../services/MonitoringService';
-import { MetricsChart } from './MetricsChart';
-import { ConnectionMonitor } from './ConnectionMonitor';
-import { PerformancePanel } from './PerformancePanel';
-import { DatabasePanel } from './DatabasePanel';
-import { AlertsPanel } from './AlertsPanel';
-import { SystemHealthIndicator } from './SystemHealthIndicator';
+} from '../../services/MonitoringService.js';
+import { MetricsChart } from './MetricsChart.js';
+import { ConnectionMonitor } from './ConnectionMonitor.js';
+import { PerformancePanel } from './PerformancePanel.js';
+import { DatabasePanel } from './DatabasePanel.js';
+import { AlertsPanel } from './AlertsPanel.js';
+import { SystemHealthIndicator } from './SystemHealthIndicator.js';
 import './MonitoringDashboard.css';
 
 interface DashboardData {

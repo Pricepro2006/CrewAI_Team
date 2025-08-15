@@ -1436,14 +1436,16 @@ export const walmartGroceryRouter = createFeatureRouter(
             const categoryFrequency = purchases
               .flatMap(p => p.items)
               .reduce((acc, item) => {
-                acc[item.category] = (acc[item.category] || 0) + item.quantity;
+                const category = item.category || 'Unknown';
+                acc[category] = (acc[category] || 0) + item.quantity;
                 return acc;
               }, {} as Record<string, number>);
 
             const productFrequency = purchases
               .flatMap(p => p.items)
               .reduce((acc, item) => {
-                acc[item.name] = (acc[item.name] || 0) + item.quantity;
+                const name = item.name || 'Unknown Product';
+                acc[name] = (acc[name] || 0) + item.quantity;
                 return acc;
               }, {} as Record<string, number>);
 
@@ -1588,6 +1590,8 @@ export const walmartGroceryRouter = createFeatureRouter(
           
           for (let i = 0; i < Math.min(input.limit, 12); i++) {
             const baseItem = baseRecommendations[i % baseRecommendations.length];
+            if (!baseItem) continue;
+            
             mockRecommendations.push({
               id: `rec-${Date.now()}-${i}`,
               productId: `walmart-${Math.random().toString(36).substr(2, 9)}`,
@@ -1788,16 +1792,14 @@ export const walmartGroceryRouter = createFeatureRouter(
         
         try {
           // Get real product count from database
-          const productCount = await dbCtx.safeDb.query(
+          const productCount = await dbCtx.safeDb.select(
             'walmart_products',
-            ['COUNT(*) as count'],
-            undefined,
-            []
+            ['COUNT(*) as count']
           );
           
           // Get user's saved amount this month from orders
           const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-          const savedResult = await dbCtx.safeDb.query(
+          const savedResult = await dbCtx.safeDb.select(
             'grocery_orders',
             ['COALESCE(SUM(total_savings), 0) as totalSaved'],
             "strftime('%Y-%m', created_at) = ?",
@@ -1805,16 +1807,15 @@ export const walmartGroceryRouter = createFeatureRouter(
           );
           
           // Get active price alerts count
-          const alertsResult = await dbCtx.safeDb.query(
+          const alertsResult = await dbCtx.safeDb.select(
             'price_alerts',
             ['COUNT(*) as count'],
-            'is_active = 1',
-            []
+            'is_active = 1'
           );
           
-          const productsTracked = safeColumnAccess(productCount.data[0], 'count', 0);
-          const savedThisMonth = safeColumnAccess(savedResult.data[0], 'totalSaved', 0);
-          const activeAlerts = safeColumnAccess(alertsResult.data[0], 'count', 0);
+          const productsTracked = productCount.data[0] ? safeColumnAccess(productCount.data[0], 'count', 0) : 0;
+          const savedThisMonth = savedResult.data[0] ? safeColumnAccess(savedResult.data[0], 'totalSaved', 0) : 0;
+          const activeAlerts = alertsResult.data[0] ? safeColumnAccess(alertsResult.data[0], 'count', 0) : 0;
           
           return {
             success: true,
@@ -1853,18 +1854,18 @@ export const walmartGroceryRouter = createFeatureRouter(
         
         try {
           // Get products with recent price changes
-          const trendingProducts = await dbCtx.safeDb.query(
-            'walmart_products',
-            ['id', 'name', 'category', 'current_price', 'original_price', 'image_url', 'stock_status'],
-            'current_price IS NOT NULL',
-            [],
-            `ORDER BY (CASE 
+          const trendingQuery = `
+            SELECT id, name, category, current_price, original_price, image_url, stock_status
+            FROM walmart_products
+            WHERE current_price IS NOT NULL
+            ORDER BY (CASE 
               WHEN original_price > 0 THEN (original_price - current_price) / original_price 
               ELSE 0 
-            END) DESC LIMIT ${input.limit}`
-          );
+            END) DESC LIMIT ?
+          `;
+          const trendingProducts = await dbCtx.safeDb.query(trendingQuery, [input.limit]);
           
-          const trending = trendingProducts.data.map(product => {
+          const trending = (trendingProducts || []).map((product: any) => {
             const currentPrice = safeColumnAccess(product, 'current_price', 0);
             const originalPrice = safeColumnAccess(product, 'original_price', currentPrice);
             const priceChange = originalPrice > 0 ? ((currentPrice - originalPrice) / originalPrice * 100) : 0;
@@ -1878,7 +1879,7 @@ export const walmartGroceryRouter = createFeatureRouter(
               priceChange: Number(priceChange.toFixed(2)),
               trend: priceChange < 0 ? 'down' : priceChange > 0 ? 'up' : 'stable',
               imageUrl: safeColumnAccess(product, 'image_url', '/api/placeholder/80/80'),
-              inStock: safeColumnAccess(product, 'stock_status', 'unknown') === 'in_stock'
+              inStock: safeColumnAccess(product, 'stock_status', 'unknown') !== 'out_of_stock'
             };
           });
           
@@ -1912,14 +1913,14 @@ export const walmartGroceryRouter = createFeatureRouter(
         
         try {
           // Get user's budget settings
-          const budgetSettings = await dbCtx.safeDb.query(
+          const budgetSettings = await dbCtx.safeDb.select(
             'grocery_user_preferences',
             ['monthly_budget', 'budget_categories'],
             'user_id = ?',
             [input.userId]
           );
           
-          const monthlyBudget = budgetSettings.data.length > 0 
+          const monthlyBudget = budgetSettings.data && budgetSettings.data.length > 0 
             ? safeColumnAccess(budgetSettings.data[0], 'monthly_budget', 400)
             : 400; // Default budget
           
@@ -1936,7 +1937,7 @@ export const walmartGroceryRouter = createFeatureRouter(
             GROUP BY wp.category
           `;
           
-          const categorySpending = await ctx.db.prepare(spendingQuery).all(input.userId, currentMonth) as any[];
+          const categorySpending = await dbCtx.safeDb.query(spendingQuery, [input.userId, currentMonth]);
           
           // Calculate totals
           let totalSpent = 0;

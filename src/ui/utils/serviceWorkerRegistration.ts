@@ -1,6 +1,8 @@
 // Service Worker Registration and Management
 // Handles registration, updates, and communication with the service worker
 
+import React from 'react';
+
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost' ||
   window.location.hostname === '[::1]' ||
@@ -132,10 +134,14 @@ export async function getServiceWorkerMetrics(): Promise<any> {
       resolve(event.data);
     };
 
-    navigator.serviceWorker.controller.postMessage(
-      { type: 'GET_METRICS' },
-      [messageChannel.port2]
-    );
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage(
+        { type: 'GET_METRICS' },
+        [messageChannel.port2]
+      );
+    } else {
+      resolve(null);
+    }
 
     // Timeout after 3 seconds
     setTimeout(() => resolve(null), 3000);

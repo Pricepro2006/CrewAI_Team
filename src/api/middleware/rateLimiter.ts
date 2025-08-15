@@ -67,7 +67,7 @@ function createKeyGenerator(prefix: string) {
 }
 
 // Enhanced rate limiter factory with Redis fallback
-function createRateLimiter(options: {
+export function createRateLimiter(options: {
   windowMs: number;
   max: number;
   maxAuthenticated?: number;

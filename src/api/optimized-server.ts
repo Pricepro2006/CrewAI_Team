@@ -10,6 +10,7 @@ import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { WebSocketServer } from 'ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { logger } from '../utils/logger.js';
+import IORedis from 'ioredis';
 import { 
   ParallelInitializationService, 
   initService,
@@ -108,8 +109,7 @@ initService.register(createInitTask('cache-warming', async () => {
 // Redis connection (optional, parallel)
 initService.register(createInitTask('redis', async () => {
   try {
-    const Redis = (await import('ioredis')).default;
-    const client = new Redis({
+    const client = new (IORedis as any)({
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
       lazyConnect: true,
@@ -295,7 +295,7 @@ async function startServer() {
     const { createContext } = await import('./trpc/context.js');
     
     applyWSSHandler({
-      wss,
+      wss: wss as any,
       router: appRouter,
       createContext: ({ req }) => createContext({ req } as any)
     });

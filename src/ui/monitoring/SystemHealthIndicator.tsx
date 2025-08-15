@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { SystemHealth } from '../../services/MonitoringService';
+import type { SystemHealth, ServiceHealth } from '../../services/MonitoringService.js';
 
 interface SystemHealthIndicatorProps {
   health: SystemHealth;
@@ -145,7 +145,7 @@ export const SystemHealthIndicator: React.FC<SystemHealthIndicatorProps> = ({
       <div className="service-health">
         <div className="service-health-title">Services:</div>
         <div className="service-health-list">
-          {Object.entries(health.services).map(([serviceName, serviceHealth]) => (
+          {Object.entries(health.services).map(([serviceName, serviceHealth]: [string, ServiceHealth]) => (
             <div key={serviceName} className="service-health-item">
               <div 
                 className="service-indicator"
@@ -173,7 +173,7 @@ export const SystemHealthIndicator: React.FC<SystemHealthIndicatorProps> = ({
         <div className="summary-item">
           <span className="summary-label">Services:</span>
           <span className="summary-value">
-            {Object.values(health.services).filter(s => s.status === 'healthy').length}/
+            {Object.values(health.services).filter((s: ServiceHealth) => s.status === 'healthy').length}/
             {Object.values(health.services).length} healthy
           </span>
         </div>

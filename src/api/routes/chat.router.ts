@@ -250,11 +250,14 @@ export const chatRouter = createFeatureRouter(
         Return only the title, no quotes or explanation.
       `;
 
-        const title = await withTimeout(
+        const response = await withTimeout(
           ctx.masterOrchestrator["llm"].generate(prompt),
           DEFAULT_TIMEOUTS.LLM_GENERATION,
           "Title generation timed out",
         );
+
+        // Extract string from LLM response
+        const title = typeof response === 'string' ? response : response.response || String(response);
 
         await ctx.conversationService.updateTitle(
           input.conversationId,

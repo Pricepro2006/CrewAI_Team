@@ -368,6 +368,51 @@ export const commonSchemas = {
   }),
 };
 
+// Create permission middleware for role-based access control
+export function createPermissionMiddleware(requiredPermissions: string[]) {
+  return t.middleware(async ({ ctx, next }) => {
+    if (!ctx.user) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Authentication required",
+      });
+    }
+
+    const userRole = ctx.user.role || "user";
+    const userPermissions = ctx.user.permissions || [];
+
+    // Admin has all permissions
+    if (userRole === "admin" || requiredPermissions.includes("admin")) {
+      if (userRole === "admin") {
+        return next();
+      }
+    }
+
+    // Check if user has required permissions
+    const hasPermission = requiredPermissions.some(
+      (permission) => 
+        userPermissions.includes(permission) || 
+        userRole === permission
+    );
+
+    if (!hasPermission) {
+      logger.warn("Permission denied", "TRPC_PERMISSION", {
+        userId: ctx.user.id,
+        requiredPermissions,
+        userPermissions,
+        userRole,
+      });
+
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Insufficient permissions",
+      });
+    }
+
+    return next();
+  });
+}
+
 // Export enhanced types
 export type EnhancedContext = Context & {
   batchId?: string;

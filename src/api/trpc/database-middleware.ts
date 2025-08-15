@@ -210,6 +210,16 @@ export class SafeDatabaseOperations {
       return this.adapter.executeSafeQuery<T>(query, params);
     }, { operation: 'CUSTOM_QUERY' });
   }
+
+  /**
+   * Execute a general query - alias for customQuery for backward compatibility
+   */
+  async query<T = any>(
+    sql: string,
+    params: any[] = []
+  ): Promise<T[]> {
+    return this.customQuery<T>(sql, params);
+  }
 }
 
 /**

@@ -872,12 +872,12 @@ export class DealReportingService {
 
   private async notifyReportGenerated(report: DealReport): Promise<void> {
     // Send WebSocket notification about new report
-    this.webSocketService.broadcast('deal.report_generated', {
+    // Note: DealWebSocketService doesn't have a generic broadcast method
+    // Would need to implement a report notification method or use deal notification
+    logger.info("Report generated notification", "DEAL_REPORTING", {
       reportId: report.id,
       reportType: report.reportType,
-      reportDate: report.reportDate,
-      summary: report.summary,
-      timestamp: new Date().toISOString()
+      reportDate: report.reportDate
     });
   }
 

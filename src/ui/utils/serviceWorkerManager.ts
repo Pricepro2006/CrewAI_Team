@@ -1,6 +1,15 @@
 // Service Worker Manager for Walmart Grocery Agent
 // Handles registration, updates, and performance monitoring
 
+import { useState } from 'react';
+
+// Global gtag type definition
+declare global {
+  interface Window {
+    gtag?: (command: string, eventName: string, eventParameters?: object) => void;
+  }
+}
+
 export interface ServiceWorkerMetrics {
   cacheHits: number;
   cacheMisses: number;

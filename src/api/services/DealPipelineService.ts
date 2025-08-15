@@ -7,7 +7,7 @@ import { logger } from "../../utils/logger.js";
 import { WalmartPriceFetcher } from "./WalmartPriceFetcher.js";
 import { PriceHistoryService } from "./PriceHistoryService.js";
 import { DealDetectionEngine } from "./DealDetectionEngine.js";
-import { WebSocketService } from "./WebSocketService.js";
+import { DealWebSocketService } from "./DealWebSocketService.js";
 import { EventEmitter } from "events";
 import type { WalmartProduct } from "../../types/walmart-grocery.js";
 import type { DetectedDeal } from "./DealDetectionEngine.js";
@@ -85,7 +85,7 @@ export class DealPipelineService extends EventEmitter {
   private priceFetcher: WalmartPriceFetcher;
   private priceHistory: PriceHistoryService;
   private dealDetection: DealDetectionEngine;
-  private webSocket: WebSocketService;
+  private webSocket: DealWebSocketService;
   
   // Pipeline state
   private isRunning = false;
@@ -162,7 +162,7 @@ export class DealPipelineService extends EventEmitter {
     this.priceFetcher = WalmartPriceFetcher.getInstance();
     this.priceHistory = PriceHistoryService.getInstance();
     this.dealDetection = DealDetectionEngine.getInstance();
-    this.webSocket = WebSocketService.getInstance();
+    this.webSocket = DealWebSocketService.getInstance();
     
     this.setupEventHandlers();
   }
@@ -350,7 +350,13 @@ export class DealPipelineService extends EventEmitter {
         featured: false,
         dateAdded: new Date().toISOString(),
         lastUpdated: new Date().toISOString(),
-        livePrice
+        livePrice: {
+          price: livePrice.price,
+          salePrice: livePrice.salePrice,
+          wasPrice: livePrice.wasPrice,
+          inStock: livePrice.inStock,
+          lastUpdated: livePrice.lastUpdated.toISOString()
+        }
       };
 
       // Record price
@@ -358,9 +364,9 @@ export class DealPipelineService extends EventEmitter {
         currentPrice: livePrice.price,
         salePrice: livePrice.salePrice,
         wasPrice: livePrice.wasPrice,
-        source: livePrice.source,
+        source: livePrice.source as any,
         confidenceScore: 1.0,
-        storeLocation: livePrice.storeLocation
+        storeLocation: livePrice.storeLocation || undefined
       });
 
       // Detect deals
@@ -519,16 +525,22 @@ export class DealPipelineService extends EventEmitter {
                 featured: false,
                 dateAdded: new Date().toISOString(),
                 lastUpdated: new Date().toISOString(),
-                livePrice
+                livePrice: {
+                  price: livePrice.price,
+                  salePrice: livePrice.salePrice,
+                  wasPrice: livePrice.wasPrice,
+                  inStock: livePrice.inStock,
+                  lastUpdated: livePrice.lastUpdated.toISOString()
+                }
               };
 
               await this.priceHistory.recordPrice(product, {
                 currentPrice: livePrice.price,
                 salePrice: livePrice.salePrice,
                 wasPrice: livePrice.wasPrice,
-                source: livePrice.source,
+                source: livePrice.source as any,
                 confidenceScore: 1.0,
-                storeLocation: livePrice.storeLocation
+                storeLocation: livePrice.storeLocation || undefined
               });
 
               this.emit('price_updated', { productId: item.productId, price: livePrice.price });
@@ -628,7 +640,7 @@ export class DealPipelineService extends EventEmitter {
               wasPrice: candidate.wasPrice,
               inStock: true,
               storeLocation: candidate.storeLocation,
-              lastUpdated: new Date(candidate.recordedAt),
+              lastUpdated: new Date(candidate.recordedAt).toISOString(),
               source: candidate.source as 'api' | 'scraper' | 'cache'
             }
           };
@@ -748,10 +760,7 @@ export class DealPipelineService extends EventEmitter {
 
     try {
       // Send WebSocket notification to all connected users
-      this.webSocket.broadcast('deal_detected', {
-        deal,
-        timestamp: new Date().toISOString()
-      });
+      this.webSocket.broadcastDealNotification(deal);
 
       this.metrics.alertsTriggeredLastHour++;
 

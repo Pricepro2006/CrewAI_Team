@@ -3,7 +3,7 @@
  * Implements multi-tier caching strategy for API optimization
  */
 
-import { createClient, RedisClientType } from 'redis';
+import { createClient, type RedisClientType } from 'redis';
 import { logger } from '../../utils/logger.js';
 import crypto from 'crypto';
 

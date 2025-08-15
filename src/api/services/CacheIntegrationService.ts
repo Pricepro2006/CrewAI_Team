@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events';
-import { CentralizedCacheService } from './CentralizedCacheService.js';
-import type { CacheTier } from './CentralizedCacheService.js';
+import { CentralizedCacheService, CacheTier } from './CentralizedCacheService.js';
 import { PricingService } from '../../microservices/pricing-service/PricingService.js';
 import type { PriceRequest, PriceResponse } from '../../microservices/pricing-service/PricingService.js';
 import { ListManagementService } from './ListManagementService.js';
@@ -54,7 +53,7 @@ export class CacheIntegrationService extends EventEmitter {
   private centralCache: CentralizedCacheService;
   private pricingService?: PricingService;
   private listService?: ListManagementService;
-  private stats: CacheStats;
+  private stats!: CacheStats;
   private warmupCompleted = false;
 
   constructor(
@@ -88,9 +87,11 @@ export class CacheIntegrationService extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Listen to central cache events
-    this.centralCache.on('cache:hit', (data) => {
+    this.centralCache.on('cache:hit', (data: any) => {
       this.stats.unified.totalHits++;
-      this.stats.unified.tierDistribution[data.tier]++;
+      if (data.tier && this.stats.unified.tierDistribution[data.tier as CacheTier] !== undefined) {
+        this.stats.unified.tierDistribution[data.tier as CacheTier]++;
+      }
       this.updateOverallStats();
       this.emit('cache:unified:hit', data);
     });

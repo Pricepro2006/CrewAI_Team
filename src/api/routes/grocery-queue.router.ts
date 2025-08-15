@@ -78,14 +78,16 @@ export class GroceryQueueRouter {
     this.jobRateLimiter = createRateLimiter({
       windowMs: 60 * 1000, // 1 minute
       max: 1000, // 1000 jobs per minute
-      message: 'Too many job submissions, please slow down'
+      message: 'Too many job submissions, please slow down',
+      keyPrefix: 'grocery-queue-jobs'
     });
 
     // Rate limiting for admin operations (lower limit)
     this.adminRateLimiter = createRateLimiter({
       windowMs: 60 * 1000, // 1 minute
       max: 50, // 50 admin operations per minute
-      message: 'Too many admin operations, please slow down'
+      message: 'Too many admin operations, please slow down',
+      keyPrefix: 'grocery-queue-admin'
     });
 
     this.setupRoutes();
@@ -266,7 +268,7 @@ export class GroceryQueueRouter {
   private async getQueueStats(req: Request, res: Response): Promise<void> {
     try {
       const { queueName } = req.params;
-      const stats = await this.messageQueue.getQueueStats(queueName);
+      const stats = await this.messageQueue.getQueueStats(queueName || 'default');
       
       if (!stats) {
         res.status(404).json({ error: 'Queue not found' });

@@ -4,8 +4,8 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { PerformanceMetric, MonitoringMetric } from '../../services/MonitoringService';
-import { MetricsChart } from './MetricsChart';
+import type { PerformanceMetric, MonitoringMetric } from '../../services/MonitoringService.js';
+import { MetricsChart } from './MetricsChart.js';
 
 interface PerformancePanelProps {
   performanceData: PerformanceMetric[];
