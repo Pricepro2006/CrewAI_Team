@@ -372,8 +372,41 @@ nicholas_*.json
 *extraction_progress.json
 *_spartanburg.json
 *purchase*.json
-*order*.jsontest_batches/
+*order*.json
+test_batches/
 test_batches_converted/
+
+# Additional files to keep root clean
+*.sql
+*.mjs
+*.py
+*.sh
+!src/**/*.py
+!src/**/*.sh
+*.log
+*.png
+*.jpg
+*.jpeg
+*.xml
+*.config.ts
+!src/**/*.config.ts
+!vitest.config.ts
+!vite.config.ts
+!playwright.config.ts
+!tsconfig*.json
+memory-reports/
+heap-snapshots/
+benchmark-results/
+demo-videos/
+nginx/
+pids/
+prompts/
+.husky/
+venv/
+.github/
+docs/
+scripts/
+.claude/
 
 # Cache files
 .eslintcache
