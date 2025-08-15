@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 import { router, publicProcedure } from "./enhanced-router.js";
-import { getHealthCheckService, HealthCheckLevel } from "../services/HealthCheckService.js";
+import { getHealthCheckService, HealthCheckLevel } from "../../monitoring/HealthCheckService.js";
 import { TRPCError } from "@trpc/server";
 import { logger } from "../../utils/logger.js";
 

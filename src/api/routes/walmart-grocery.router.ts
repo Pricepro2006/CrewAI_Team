@@ -1879,7 +1879,7 @@ export const walmartGroceryRouter = createFeatureRouter(
               priceChange: Number(priceChange.toFixed(2)),
               trend: priceChange < 0 ? 'down' : priceChange > 0 ? 'up' : 'stable',
               imageUrl: safeColumnAccess(product, 'image_url', '/api/placeholder/80/80'),
-              inStock: safeColumnAccess(product, 'stock_status', 'unknown') !== 'out_of_stock'
+              inStock: safeColumnAccess(product, 'stock_status', 'unknown' as any) !== 'out_of_stock'
             };
           });
           

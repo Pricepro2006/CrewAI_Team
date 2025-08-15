@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { LRUCache } from 'lru-cache';
-import Redis, { type Redis as RedisType } from 'ioredis';
+import { Redis, type Redis as RedisType } from 'ioredis';
 import Database from 'better-sqlite3';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
