@@ -283,10 +283,17 @@ export function createSchemaValidatedMiddleware(
   requiredTables: Record<string, string[]> // table -> required columns
 ) {
   return middleware(async ({ ctx, next }) => {
-    // First apply database middleware
-    const dbMiddleware = databaseMiddleware;
-    const enhancedResult = await dbMiddleware({ ctx, next: async ({ ctx: dbCtx }) => {
-      const databaseCtx = dbCtx as DatabaseContext;
+    // Apply database enhancements to context
+    const dbManager = getWalmartDatabaseManager();
+    const dbAdapter = createSchemaAdapter(dbManager.getDatabase());
+    const dbErrorHandler = createDatabaseErrorHandler(dbManager.getDatabase(), dbAdapter);
+    
+    const databaseCtx: DatabaseContext = {
+      ...ctx,
+      dbAdapter,
+      dbErrorHandler,
+      safeDb: new SafeDatabaseOperations(dbManager.getDatabase(), dbAdapter, dbErrorHandler)
+    };
       
       // Validate required schema
       const validationErrors: string[] = [];
@@ -307,18 +314,11 @@ export function createSchemaValidatedMiddleware(
 
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
-          message: 'Database schema validation failed',
-          data: {
-            validationErrors,
-            requiredSchema: requiredTables
-          }
+          message: `Database schema validation failed: ${validationErrors.join(', ')}`,
         });
       }
 
-      return next({ ctx: databaseCtx });
-    }});
-
-    return enhancedResult;
+    return next({ ctx: databaseCtx });
   });
 }
 

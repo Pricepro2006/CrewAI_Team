@@ -15,10 +15,9 @@
  * - Performance optimization
  */
 
-// Use require for better-sqlite3 to avoid type issues
-const Database = require("better-sqlite3");
+import Database, { type Database as DatabaseType } from "better-sqlite3";
 // Type definition for Database instance
-type DatabaseInstance = any;
+type DatabaseInstance = DatabaseType;
 import { Worker, isMainThread, threadId } from "worker_threads";
 import { Logger } from "../utils/logger.js";
 import appConfig from "../config/app.config.js";
@@ -132,7 +131,9 @@ export class DatabaseConnection {
     } catch (error) {
       logger.error(
         `Failed to configure SQLite for connection ${this.metrics.id}:`,
-        error,
+        this.metrics.id,
+        undefined,
+        error instanceof Error ? error : new Error(String(error))
       );
       throw error;
     }
@@ -197,7 +198,12 @@ export class DatabaseConnection {
         `Disposed connection ${this.metrics.id} on thread ${threadId}`,
       );
     } catch (error) {
-      logger.error(`Error disposing connection ${this.metrics.id}:`, error);
+      logger.error(
+        `Error disposing connection ${this.metrics.id}:`,
+        this.metrics.id,
+        undefined,
+        error instanceof Error ? error : new Error(String(error))
+      );
     }
   }
 
@@ -239,10 +245,14 @@ export class DatabaseConnectionPool {
     // Start cleanup interval for idle connections
     this.startCleanupInterval();
 
-    logger.info(`Connection pool initialized for thread ${threadId}`, {
-      config: this.config,
-      isMainThread,
-    });
+    logger.info(
+      `Connection pool initialized for thread ${threadId}`,
+      "ConnectionPool",
+      {
+        config: this.config,
+        isMainThread,
+      }
+    );
   }
 
   /**
@@ -284,9 +294,13 @@ export class DatabaseConnectionPool {
       connection = new DatabaseConnection(this.config);
       this.connections.set(currentThreadId, connection);
 
-      logger.debug(`Created new connection for thread ${currentThreadId}`, {
-        totalConnections: this.connections.size,
-      });
+      logger.debug(
+        `Created new connection for thread ${currentThreadId}`,
+        "ConnectionPool",
+        {
+          totalConnections: this.connections.size,
+        }
+      );
     }
 
     // Update metrics
@@ -320,7 +334,12 @@ export class DatabaseConnectionPool {
 
       return result;
     } catch (error) {
-      logger.error(`Query execution failed on thread ${threadId}:`, error);
+      logger.error(
+        `Query execution failed on thread ${threadId}:`,
+        "ConnectionPool",
+        undefined,
+        error instanceof Error ? error : new Error(String(error))
+      );
       throw error;
     }
   }
@@ -490,7 +509,12 @@ export class DatabaseConnectionPool {
       try {
         connection.dispose();
       } catch (error) {
-        logger.error(`Error closing connection for thread ${threadId}:`, error);
+        logger.error(
+          `Error closing connection for thread ${threadId}:`,
+          "ConnectionPool",
+          undefined,
+          error instanceof Error ? error : new Error(String(error))
+        );
       }
     }
 
@@ -583,7 +607,12 @@ if (isMainThread) {
       await shutdownConnectionPool();
       process.exit(0);
     } catch (error) {
-      logger.error("Error during graceful shutdown:", error);
+      logger.error(
+        "Error during graceful shutdown:",
+        "ConnectionPool",
+        undefined,
+        error instanceof Error ? error : new Error(String(error))
+      );
       process.exit(1);
     }
   };

@@ -70,7 +70,12 @@ export async function importEmailBatchWithTransaction(
           ) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
         `);
 
-      emailStmt.run(email.id, email.message_id, email.subject, email.body_text);
+      emailStmt.run(
+        (email as any).id, 
+        (email as any).message_id, 
+        (email as any).subject, 
+        (email as any).body_text
+      );
 
       // Log import for audit
       const auditStmt = tx.db.prepare(`
@@ -79,7 +84,7 @@ export async function importEmailBatchWithTransaction(
           ) VALUES (?, datetime('now'), ?)
         `);
 
-      auditStmt.run(email.id, index);
+      auditStmt.run((email as any).id, index);
     });
   });
 }
@@ -378,7 +383,7 @@ export class TransactionMonitor {
     // Log metrics periodically
     setInterval(() => {
       const metrics = transactionManager.getMetrics();
-      logger.info("Transaction metrics:", metrics);
+      logger.info("Transaction metrics:", "TransactionIntegration", metrics);
     }, 60000); // Every minute
   }
 }
