@@ -8,6 +8,7 @@
 export * from "./core.js";
 export * from "./api.js";
 export * from "./database.js";
+// Export websocket types except conflicting ones
 export * from "./websocket.js";
 export * from "./agents.js";
 export * from "./monitoring.js";
@@ -16,7 +17,30 @@ export * from "./email.js";
 export * from "./orchestration.js";
 export * from "./rag.js";
 export * from "./auth.js";
-export * from "./errors.js";
+// Export error types with renamed ErrorContext
+export type { 
+  BaseError,
+  ApiError,
+  ValidationError,
+  BusinessError,
+  SystemError,
+  DatabaseError,
+  NetworkError,
+  AuthenticationError,
+  AuthorizationError,
+  RateLimitError,
+  IntegrationError,
+  ExtendedErrorContext,
+  ErrorRecoveryStrategy,
+  ErrorAggregator,
+  ErrorRetryPolicy,
+  ErrorNotificationConfig,
+  ErrorAnalytics,
+  ErrorMonitoring,
+  ErrorReportingService,
+  ErrorHandlingMiddleware,
+  GlobalErrorHandler
+} from "./errors.js";
 export * from "./events.js";
 
 // Re-export common utility types
