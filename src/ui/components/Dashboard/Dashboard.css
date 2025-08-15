@@ -53,6 +53,21 @@
   box-shadow: var(--shadow-lg);
 }
 
+.stats-card--error {
+  border-color: var(--error);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.stats-card--error .stats-icon {
+  background-color: var(--error);
+}
+
+.stats-error-indicator {
+  margin-left: auto;
+  font-size: 1rem;
+  cursor: help;
+}
+
 .stats-header {
   display: flex;
   align-items: center;

@@ -176,17 +176,114 @@ export const EmailDashboard: React.FC = () => {
     return () => observer.disconnect();
   }, [activeTab]);
 
-  // Set up real-time subscriptions (if WebSocket endpoints are available)
-  // This is a placeholder for when WebSocket endpoints are implemented
+  // Set up real-time tRPC subscription for email processing updates
   useEffect(() => {
-    // Auto-refresh data every 30 seconds
-    const interval = setInterval(() => {
-      utils?.emails?.getAnalytics.invalidate();
-      utils?.emails?.getTableData.invalidate();
-      utils?.emails?.getDashboardStats.invalidate();
-    }, 30000);
+    // Subscribe to email processing updates using tRPC subscriptions
+    const subscription = api.emails.subscribeToEmailUpdates.useSubscription(
+      undefined, // No input needed for general updates
+      {
+        onData: (data) => {
+          console.log('📧 Email processing update received:', data);
+          
+          // Handle different event types
+          switch (data.type) {
+            case 'stats_updated':
+              // Invalidate dashboard stats to trigger refresh
+              utils.emails.getDashboardStats.invalidate();
+              break;
+            case 'email_processed':
+              // Invalidate table data and stats
+              utils.emails.getTableData.invalidate();
+              utils.emails.getDashboardStats.invalidate();
+              break;
+            case 'phase_completed':
+              // Update analytics data
+              utils.emails.getAnalytics.invalidate();
+              break;
+            case 'batch_completed':
+              // Refresh all email data
+              utils.emails.invalidate();
+              break;
+          }
+        },
+        onError: (error) => {
+          console.warn('📧 Email processing subscription error:', error);
+        },
+      }
+    );
 
-    return () => clearInterval(interval);
+    // WebSocket fallback for critical updates
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host}/trpc-ws`;
+    
+    let ws: WebSocket | null = null;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 3;
+    const reconnectDelay = 2000;
+
+    const connectFallbackWebSocket = () => {
+      try {
+        ws = new WebSocket(wsUrl);
+        
+        ws.onopen = () => {
+          console.log('📧 Fallback WebSocket connected');
+          reconnectAttempts = 0;
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            
+            // Only handle critical updates via fallback
+            if (data.type === 'critical_update' || data.type === 'system_status') {
+              utils.emails.getDashboardStats.invalidate();
+            }
+          } catch (error) {
+            console.warn('Failed to parse fallback WebSocket message:', error);
+          }
+        };
+
+        ws.onclose = () => {
+          if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            setTimeout(connectFallbackWebSocket, reconnectDelay * reconnectAttempts);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('📧 Fallback WebSocket error:', error);
+        };
+      } catch (error) {
+        console.error('Failed to create fallback WebSocket connection:', error);
+      }
+    };
+
+    // Initial fallback connection
+    connectFallbackWebSocket();
+
+    // Reduced polling interval since we have tRPC subscriptions
+    const fallbackInterval = setInterval(() => {
+      // Only poll if both subscription and WebSocket are down
+      if ((!subscription || subscription.error) && (!ws || ws.readyState !== WebSocket.OPEN)) {
+        utils.emails.getAnalytics.invalidate();
+        utils.emails.getTableData.invalidate();
+        utils.emails.getDashboardStats.invalidate();
+      }
+    }, 120000); // 2 minutes instead of 1 minute
+
+    return () => {
+      // Clean up subscription
+      if (subscription) {
+        subscription.unsubscribe?.();
+      }
+      
+      // Clean up fallback WebSocket
+      if (ws) {
+        ws.close();
+      }
+      
+      clearInterval(fallbackInterval);
+    };
   }, [utils]);
 
   // Transform data into the expected format with accurate processing metrics

@@ -11,7 +11,17 @@ import { logger } from "../../utils/logger.js";
 // CSRF Token configuration matching backend
 const CSRF_TOKEN_HEADER = "x-csrf-token";
 const CSRF_TOKEN_STORAGE_KEY = "csrf-token";
-const CSRF_TOKEN_FETCH_URL = "http://localhost:3001/api/csrf-token";
+// Dynamic CSRF token URL based on environment
+const CSRF_TOKEN_FETCH_URL = (() => {
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol;
+    const host = window.location.hostname;
+    const port = process.env.NODE_ENV === 'development' ? 
+      (process.env.VITE_API_PORT || '3001') : window.location.port || '3001';
+    return `${protocol}//${host}:${port}/api/csrf-token`;
+  }
+  return "http://localhost:3001/api/csrf-token";
+})();
 const CSRF_TOKEN_REFRESH_INTERVAL = 55 * 60 * 1000; // 55 minutes (before 1-hour rotation)
 
 // Types

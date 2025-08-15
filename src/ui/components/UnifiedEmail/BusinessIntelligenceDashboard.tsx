@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { trpc } from "../../utils/trpc.js";
+import { api } from "../../../lib/trpc.js";
 import {
   ChartBarIcon,
   CurrencyDollarIcon,
@@ -213,21 +213,31 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Fetch business intelligence data
-  const { data: biData, isLoading, error } = trpc?.emails?.getBusinessIntelligence.useQuery({
+  const { data: biData, isLoading, error } = api.emails.getBusinessIntelligence.useQuery({
     timeRange,
     useCache: true,
+  }, {
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    onError: (err: any) => {
+      console.warn('Business Intelligence API error:', err.message);
+    },
+    // Add graceful fallback for missing endpoints
+    enabled: true, // Always try to fetch, but handle errors gracefully
   });
 
-  // Format currency values
-  const formatCurrency = (value: number): string => {
+  // Format currency values with null safety
+  const formatCurrency = (value: number | null | undefined): string => {
+    if (value == null || isNaN(value)) return '$0.00';
     if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
     if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
     if (value >= 1e3) return `$${(value / 1e3).toFixed(2)}K`;
     return `$${value.toFixed(2)}`;
   };
 
-  // Format percentage
-  const formatPercentage = (value: number): string => {
+  // Format percentage with null safety
+  const formatPercentage = (value: number | null | undefined): string => {
+    if (value == null || isNaN(value)) return '0.0%';
     return `${value.toFixed(1)}%`;
   };
 
@@ -296,14 +306,30 @@ export const BusinessIntelligenceDashboard: React.FC<BusinessIntelligenceDashboa
       <div className="bi-dashboard bi-dashboard--error">
         <div className="bi-error">
           <p>Failed to load business intelligence data</p>
-          <button onClick={() => setRefreshKey(prev => prev + 1)}>Retry</button>
+          <p className="bi-error-details">Error: {error.message}</p>
+          <p className="bi-error-hint">
+            {error.message?.includes('404') || error.message?.includes('not found') 
+              ? 'The business intelligence service is not yet implemented or not available.'
+              : error.message?.includes('403') || error.message?.includes('401')
+              ? 'You may not have sufficient permissions to access business intelligence data.'
+              : 'The email business intelligence service may not be fully configured yet.'
+            }
+          </p>
+          <button onClick={() => setRefreshKey(prev => prev + 1)} className="bi-retry-btn">Retry</button>
         </div>
       </div>
     );
   }
 
   if (!biData?.data) {
-    return null;
+    return (
+      <div className="bi-dashboard bi-dashboard--empty">
+        <div className="bi-empty">
+          <p>No business intelligence data available</p>
+          <p className="bi-empty-hint">Email processing may still be in progress or not yet configured.</p>
+        </div>
+      </div>
+    );
   }
 
   const { summary, workflowDistribution, priorityDistribution, topCustomers, entityExtracts } = biData.data;

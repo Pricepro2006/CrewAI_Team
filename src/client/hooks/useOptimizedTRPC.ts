@@ -115,7 +115,7 @@ export function useOptimizedEmailSearch(searchTerm: string, enabled: boolean = t
     sortBy: "relevance",
     includeHighlight: true,
   }, {
-    enabled: enabled && searchTerm?.length || 0 > 2, // Only search if enabled and term is long enough
+    enabled: enabled && (searchTerm?.length || 0) > 2, // Only search if enabled and term is long enough
     staleTime: 30000, // 30 seconds
     cacheTime: 300000, // 5 minutes
   });
@@ -168,7 +168,7 @@ export function useOptimizedWalmartProducts(searchQuery: string, filters?: Recor
 
   // Trigger search when query changes
   const searchProducts = useCallback(async (query: string) => {
-    if (query?.length || 0 > 2) {
+    if ((query?.length || 0) > 2) {
       return productsQuery.mutateAsync({
         query,
         limit: filters?.limit || 20,
