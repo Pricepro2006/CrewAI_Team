@@ -3,7 +3,7 @@
  * Initializes comprehensive health monitoring at server startup
  */
 
-import { initializeHealthCheckService, getHealthCheckService } from "./HealthCheckService.js";
+import { initializeHealthCheckService, getHealthCheckService } from "../../monitoring/HealthCheckService.js";
 import { logger } from "../../utils/logger.js";
 
 let isInitialized = false;

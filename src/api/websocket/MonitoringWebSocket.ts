@@ -5,7 +5,7 @@
 
 import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage } from 'http';
-import { monitoringService } from '../../services/MonitoringService';
+import { monitoringService } from '../../services/MonitoringService.js';
 import { logger } from '../../utils/logger.js';
 
 interface MonitoringWebSocketClient {
