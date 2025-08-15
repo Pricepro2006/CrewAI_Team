@@ -130,7 +130,7 @@ const mockEmails: EmailRecord[] = [
 ];
 
 describe("EmailDashboardMultiPanel Component", () => {
-  const user = userEvent.setup();
+  const user = userEvent;
 
   const defaultProps = {
     emails: mockEmails,

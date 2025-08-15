@@ -6,24 +6,28 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import WS from 'jest-websocket-mock';
+
+type WsMock = any; // Type alias for the mock server
 import { useEnhancedWebSocket, useEmailWebSocket } from '../../hooks/useEnhancedWebSocket.js';
 import { useWebSocketStateManager } from '../../stores/webSocketStateManager.js';
 import type { EmailStatsUpdatedEvent } from '../../../shared/types/websocket-events.js';
 
 describe('WebSocket Integration Tests', () => {
-  let server: WS;
+  let server: WsMock;
   const wsUrl = 'ws://localhost:3001/ws';
 
   beforeEach(async () => {
     // Create mock WebSocket server
-    server = new WS(wsUrl);
+    server = new (WS as any)(wsUrl);
     
     // Reset state
     useWebSocketStateManager.getState().reset();
   });
 
   afterEach(() => {
-    WS.clean();
+    if (server && server.close) {
+      server.close();
+    }
   });
 
   describe('WebSocket Connection', () => {
@@ -240,7 +244,7 @@ describe('WebSocket Integration Tests', () => {
       // Verify subscription message sent
       await waitFor(() => {
         const messages = server.messages;
-        const subscribeMsg = messages.find(msg => {
+        const subscribeMsg = messages.find((msg: any) => {
           const parsed = JSON.parse(msg as string);
           return parsed.type === 'subscribe' && parsed.data.channel === 'email:stats';
         });
@@ -264,7 +268,7 @@ describe('WebSocket Integration Tests', () => {
       // Verify unsubscribe message sent
       await waitFor(() => {
         const messages = server.messages;
-        const unsubscribeMsg = messages.find(msg => {
+        const unsubscribeMsg = messages.find((msg: any) => {
           const parsed = JSON.parse(msg as string);
           return parsed.type === 'unsubscribe' && parsed.data.channel === 'email:stats';
         });

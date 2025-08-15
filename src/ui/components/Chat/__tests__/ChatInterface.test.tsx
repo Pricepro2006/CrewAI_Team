@@ -260,7 +260,7 @@ describe("ChatInterface Component", () => {
   });
 
   it("should show New Chat button when conversation exists", () => {
-    mockUseParams.mockReturnValue({ conversationId: "existing-conv" });
+    mockUseParams.mockReturnValue({ conversationId: "existing-conv" } as any);
 
     renderWithRouter(<ChatInterface />);
 
@@ -268,7 +268,7 @@ describe("ChatInterface Component", () => {
   });
 
   it("should handle New Chat button click", () => {
-    mockUseParams.mockReturnValue({ conversationId: "existing-conv" });
+    mockUseParams.mockReturnValue({ conversationId: "existing-conv" } as any);
 
     renderWithRouter(<ChatInterface />);
 
