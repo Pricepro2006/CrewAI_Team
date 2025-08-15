@@ -84,7 +84,9 @@ export const KnowledgeBase: React.FC = () => {
     } finally {
       setIsUploading(false);
       // Clear the input
-      event?.target?.value = "";
+      if (event?.target) {
+        (event.target as HTMLInputElement).value = "";
+      }
     }
   };
 

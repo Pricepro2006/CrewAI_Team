@@ -248,8 +248,8 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
 
     // Auto-resize textarea
     if (inputRef.current) {
-      inputRef?.current?.style.height = 'auto';
-      inputRef?.current?.style.height = `${Math.min(inputRef?.current?.scrollHeight, 120)}px`;
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`;
     }
   }, [onChange, validateInput]);
 
@@ -280,7 +280,7 @@ const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
 
     // Reset textarea height
     if (inputRef.current) {
-      inputRef?.current?.style.height = 'auto';
+      inputRef.current.style.height = 'auto';
     }
   }, [inputValue, disabled, isProcessing, validateInput, onSubmit, onChange, clearSuggestions]);
 

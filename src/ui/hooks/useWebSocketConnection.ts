@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { websocketConfig, getReconnectionDelay, WebSocketEventType } from '../../shared/config/websocket?.config.js';
+import { websocketConfig, getReconnectionDelay, WebSocketEventType } from '../../shared/config/websocket.config.js';
 
 export interface WebSocketMessage {
   type: string;
