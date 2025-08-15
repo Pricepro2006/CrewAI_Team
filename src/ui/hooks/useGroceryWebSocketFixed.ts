@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from "react";
-import { getReconnectionDelay } from "../../config/websocket?.config.js";
+import { getReconnectionDelay } from "../../config/websocket.config.js";
 import { logger } from "../../utils/logger.js";
 
 // Event types specific to grocery operations

@@ -27,7 +27,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary/index.js";
 import { setupGlobalErrorHandlers } from "./utils/error-handling.js";
 import { ToastContainer } from "./components/Toast/index.js";
 import { NetworkStatus } from "./components/NetworkStatus/index.js";
-import { webSocketConfig, getApiBaseUrl } from "../config/websocket?.config.js";
+import { webSocketConfig, getApiBaseUrl } from "../config/websocket.config.js";
 import { ErrorProvider } from "./contexts/ErrorContext.js";
 import {
   DashboardErrorBoundary,
@@ -35,6 +35,7 @@ import {
   ChatErrorBoundary,
   EmailErrorBoundary,
 } from "./components/ErrorBoundary/SectionErrorBoundary.js";
+import { logger } from "../utils/logger.js";
 import "./App.css";
 
 // Setup global error handlers
@@ -98,11 +99,18 @@ function AppWithCSRF() {
           true: wsLink({
             client: createWSClient({
               url: webSocketConfig.url,
-              retryDelayMs: () => {
-                // Exponential backoff with max delay of 30 seconds
-                return Math.min(webSocketConfig.reconnectInterval * 2, 30000);
+              retryDelayMs: (attemptIndex) => {
+                // Exponential backoff with jitter
+                const delay = Math.min(1000 * Math.pow(2, attemptIndex), 30000);
+                return delay + Math.random() * 1000;
               },
               WebSocket: window.WebSocket,
+              onOpen: () => {
+                logger.info('tRPC WebSocket connected', 'WEBSOCKET');
+              },
+              onClose: (cause) => {
+                logger.info('tRPC WebSocket disconnected', 'WEBSOCKET', { cause });
+              },
               // connectionParams is not available in this version of tRPC WebSocket client
               // Authentication is handled via query parameters or headers in the URL
             }),

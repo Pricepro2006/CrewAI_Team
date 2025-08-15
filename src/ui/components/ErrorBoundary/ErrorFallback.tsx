@@ -155,7 +155,7 @@ export function ErrorFallback({
 
             {!isIsolated && (
               <Button
-                onClick={() => (window?.location?.href = "/")}
+                onClick={() => window.location.href = "/"}
                 variant="outline"
                 className="error-action-button"
               >
@@ -166,7 +166,7 @@ export function ErrorFallback({
 
             <Button
               onClick={() =>
-                (window?.location?.href = "mailto:support@example.com")
+                window.location.href = "mailto:support@example.com"
               }
               variant="ghost"
               className="error-action-button"

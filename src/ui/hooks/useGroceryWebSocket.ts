@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { createTRPCProxyClient, createWSClient, wsLink } from "@trpc/client";
 import superjson from "superjson";
 import type { AppRouter } from "../../api/trpc/router.js";
-import { getReconnectionDelay } from "../../config/websocket?.config.js";
+import { getReconnectionDelay } from "../../config/websocket.config.js";
 import { logger } from "../../utils/logger.js";
 
 // Event types specific to grocery operations
