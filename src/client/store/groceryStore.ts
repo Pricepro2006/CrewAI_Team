@@ -296,16 +296,17 @@ export const useGroceryStore = create<GroceryState>()(
             lists: state.lists.map((list) => {
               if (list.id !== listId) return list;
 
-              const item = list.items.find((i) => i.id === itemId);
+              const items = list.items || [];
+              const item = items.find((i) => i.id === itemId);
               if (!item) return list;
 
               return {
                 ...list,
-                items: list.items.filter((i) => i.id !== itemId),
+                items: items.filter((i) => i.id !== itemId),
                 estimated_total:
                   (list.estimated_total || 0) -
                   (typeof item.product?.price === 'number' ? item.product.price : item.product?.price?.regular || 0) * item.quantity,
-                updatedAt: new Date(),
+                updatedAt: new Date().toISOString(),
               };
             }),
           }));

@@ -6,13 +6,39 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import type { WebSocket as WSType } from 'ws';
-import { webSocketConfig, getWebSocketUrl } from '../../config/websocket.config';
 import type {
   WebSocketEvent,
   WebSocketEventHandlers,
   ConnectionEvent,
   WebSocketError,
 } from '../../shared/types/websocket-events.js';
+
+// Mock websocket config until proper config is created
+const webSocketConfig = {
+  heartbeat: {
+    enabled: true,
+    interval: 30000,
+  },
+  reconnection: {
+    maxAttempts: 10,
+  },
+};
+
+const getWebSocketUrl = (endpoint: string): string => {
+  const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  const port = endpoint === 'email' ? '8080' : '3001';
+  return `${protocol}//${host}:${port}/ws`;
+};
+
+const getReconnectionDelay = (attempt: number): number => {
+  // Exponential backoff with jitter
+  const baseDelay = 1000;
+  const maxDelay = 30000;
+  const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), maxDelay);
+  const jitter = Math.random() * 0.3 * delay; // Add up to 30% jitter
+  return Math.floor(delay + jitter);
+};
 
 export interface UseWebSocketOptions {
   endpoint?: 'trpc' | 'socketio' | 'email';
@@ -113,7 +139,7 @@ export function useEnhancedWebSocket(
       s.charAt(0).toUpperCase() + s.slice(1)
     ).join('')}` as keyof WebSocketEventHandlers;
     
-    const handler = handlers[handlerKey];
+    const handler = options.handlers?.[handlerKey];
     if (handler) {
       try {
         handler(event as any);
@@ -123,14 +149,14 @@ export function useEnhancedWebSocket(
     }
 
     // Generic handler
-    if (handlers.onEvent) {
+    if (options.handlers?.onEvent) {
       try {
-        handlers.onEvent(event);
+        options.handlers.onEvent(event);
       } catch (error) {
         console.error('Error in generic WebSocket handler:', error);
       }
     }
-  }, [handlers]);
+  }, [options.handlers]);
 
   // Setup heartbeat
   const setupHeartbeat = useCallback(() => {
