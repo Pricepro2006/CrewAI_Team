@@ -306,9 +306,9 @@ export class CacheService {
       try {
         const replies = await pipeline.exec();
         identifiers.forEach((id, index) => {
-          const cached = replies[index];
-          if (cached) {
-            const entry: CacheEntry<T> = JSON.parse(cached as string);
+          const cached = replies?.[index];
+          if (cached && Array.isArray(cached) && cached[1]) {
+            const entry: CacheEntry<T> = JSON.parse(String(cached[1]));
             if (Date.now() - entry.timestamp <= entry.ttl * 1000) {
               results.set(id, entry.data);
             } else {

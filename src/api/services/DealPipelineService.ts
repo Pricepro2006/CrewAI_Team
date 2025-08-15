@@ -349,8 +349,14 @@ export class DealPipelineService extends EventEmitter {
         unit: '',
         searchKeywords: [],
         featured: false,
-        dateAdded: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
+        availability: {
+          inStock: livePrice.inStock,
+          onlineOnly: true
+        },
+        metadata: {
+          source: 'api',
+          dealEligible: true
+        },
         livePrice: {
           price: livePrice.price,
           salePrice: livePrice.salePrice,
@@ -524,8 +530,14 @@ export class DealPipelineService extends EventEmitter {
                 unit: '',
                 searchKeywords: [],
                 featured: false,
-                dateAdded: new Date().toISOString(),
-                lastUpdated: new Date().toISOString(),
+                availability: {
+                  inStock: livePrice.inStock,
+                  onlineOnly: true
+                },
+                metadata: {
+                  source: 'api',
+                  dealEligible: true
+                },
                 livePrice: {
                   price: livePrice.price,
                   salePrice: livePrice.salePrice,
@@ -632,8 +644,6 @@ export class DealPipelineService extends EventEmitter {
             unit: '',
             searchKeywords: [],
             featured: false,
-            dateAdded: new Date().toISOString(),
-            lastUpdated: new Date().toISOString(),
             livePrice: {
               price: candidate.currentPrice,
               salePrice: candidate.salePrice,

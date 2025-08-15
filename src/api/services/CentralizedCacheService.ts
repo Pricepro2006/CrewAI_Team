@@ -136,7 +136,6 @@ export class CentralizedCacheService extends EventEmitter {
       lazyConnect: true,
       enableOfflineQueue: false,
       maxRetriesPerRequest: this.config.redis.maxRetries,
-      retryDelayOnFailover: 100,
       retryStrategy: (times: number) => {
         if (times > this.config.redis.maxRetries) return null;
         return Math.min(times * 100, 3000);

@@ -79,7 +79,7 @@ export class BudgetTrackingService {
         }
       };
     } catch (error) {
-      logger.error('Error getting budget summary:', error);
+      logger.error('Error getting budget summary:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -96,7 +96,7 @@ export class BudgetTrackingService {
         percentage: 0
       };
     } catch (error) {
-      logger.error('Error updating budget category:', error);
+      logger.error('Error updating budget category:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -105,7 +105,7 @@ export class BudgetTrackingService {
     try {
       logger.info(`Added expense: ${amount} to category ${categoryId} - ${description}`);
     } catch (error) {
-      logger.error('Error adding expense:', error);
+      logger.error('Error adding expense:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }

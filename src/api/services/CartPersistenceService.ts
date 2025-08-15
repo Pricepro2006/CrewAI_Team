@@ -50,7 +50,7 @@ export class CartPersistenceService {
       }
       return cart || null;
     } catch (error) {
-      logger.error('Error getting cart:', error);
+      logger.error('Error getting cart:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -73,7 +73,7 @@ export class CartPersistenceService {
       logger.info(`Created cart ${cart.id}`);
       return cart;
     } catch (error) {
-      logger.error('Error creating cart:', error);
+      logger.error('Error creating cart:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -89,8 +89,11 @@ export class CartPersistenceService {
       
       if (existingItemIndex >= 0) {
         // Update existing item
-        cart.items[existingItemIndex].quantity += item.quantity;
-        cart.items[existingItemIndex].modifiedAt = new Date();
+        const existingItem = cart.items[existingItemIndex];
+        if (existingItem) {
+          existingItem.quantity += item.quantity;
+          existingItem.modifiedAt = new Date();
+        }
       } else {
         // Add new item
         const newItem: CartItem = {
@@ -108,7 +111,7 @@ export class CartPersistenceService {
       logger.info(`Added item to cart ${cartId}`);
       return cart;
     } catch (error) {
-      logger.error('Error adding item to cart:', error);
+      logger.error('Error adding item to cart:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -127,7 +130,7 @@ export class CartPersistenceService {
       logger.info(`Removed item ${itemId} from cart ${cartId}`);
       return cart;
     } catch (error) {
-      logger.error('Error removing item from cart:', error);
+      logger.error('Error removing item from cart:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -157,7 +160,7 @@ export class CartPersistenceService {
       logger.info(`Updated item ${itemId} quantity to ${quantity} in cart ${cartId}`);
       return cart;
     } catch (error) {
-      logger.error('Error updating item quantity:', error);
+      logger.error('Error updating item quantity:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -177,7 +180,7 @@ export class CartPersistenceService {
       logger.info(`Cleared cart ${cartId}`);
       return cart;
     } catch (error) {
-      logger.error('Error clearing cart:', error);
+      logger.error('Error clearing cart:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -191,7 +194,7 @@ export class CartPersistenceService {
     try {
       return Array.from(this.carts.values()).filter(cart => cart.userId === userId);
     } catch (error) {
-      logger.error('Error getting carts by user:', error);
+      logger.error('Error getting carts by user:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -214,7 +217,7 @@ export class CartPersistenceService {
       // Create new cart if none found or expired
       return this.createCart(userId, sessionId);
     } catch (error) {
-      logger.error('Error getting or creating cart:', error);
+      logger.error('Error getting or creating cart:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -223,7 +226,7 @@ export class CartPersistenceService {
     try {
       return this.addItem(cartId, item);
     } catch (error) {
-      logger.error('Error adding or updating item:', error);
+      logger.error('Error adding or updating item:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -248,7 +251,7 @@ export class CartPersistenceService {
       logger.info(`Saved item ${itemId} for later from cart ${cartId}`);
       return cart;
     } catch (error) {
-      logger.error('Error saving item for later:', error);
+      logger.error('Error saving item for later:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -265,7 +268,7 @@ export class CartPersistenceService {
       logger.info(`Moved item ${itemId} to cart ${cartId}`);
       return cart;
     } catch (error) {
-      logger.error('Error moving item to cart:', error);
+      logger.error('Error moving item to cart:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -282,7 +285,7 @@ export class CartPersistenceService {
       logger.info(`Converted cart ${cartId} to type ${type}`);
       return cart;
     } catch (error) {
-      logger.error('Error converting cart:', error);
+      logger.error('Error converting cart:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }

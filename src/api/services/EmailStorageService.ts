@@ -307,7 +307,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           return <T>(fn: (trx: DatabaseInstance) => T) => {
             return async (): Promise<T> => {
               return pool.execute((db) => {
-                const transaction = db.transaction(fn);
+                const transaction = db.transaction((trx) => fn(trx));
                 return transaction();
               });
             };
@@ -2031,7 +2031,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           "(e.subject LIKE ? OR ea.contextual_summary LIKE ? OR e.sender_name LIKE ?)",
         );
         const searchParam = `%${options.search}%`;
-        params.push(searchParam as DatabaseQueryParams, searchParam as DatabaseQueryParams, searchParam as DatabaseQueryParams);
+        params.push(searchParam, searchParam, searchParam);
       }
 
       // Status filter - using parameterized placeholders
@@ -2042,7 +2042,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         whereClauses.push(`ea.workflow_state IN (${statusPlaceholders})`);
         params.push(
           ...options.filters.status.map((s) =>
-            this.mapStatusToWorkflowState(s as any) as DatabaseQueryParams,
+            this.mapStatusToWorkflowState(s as any),
           ),
         );
       }
@@ -2053,7 +2053,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           .map(() => "?")
           .join(",");
         whereClauses.push(`e.sender_email IN (${aliasPlaceholders})`);
-        params.push(...options.filters.emailAlias.map(alias => alias as DatabaseQueryParams));
+        params.push(...options.filters.emailAlias.map(alias => alias));
       }
 
       // Priority filter - using parameterized placeholders
@@ -2062,15 +2062,15 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           .map(() => "?")
           .join(",");
         whereClauses.push(`ea.quick_priority IN (${priorityPlaceholders})`);
-        params.push(...options.filters.priority.map(priority => priority as DatabaseQueryParams));
+        params.push(...options.filters.priority.map(priority => priority));
       }
 
       // Date range filter
       if (options.filters?.dateRange) {
         whereClauses.push("e.received_at BETWEEN ? AND ?");
         params.push(
-          options.filters.dateRange.start as DatabaseQueryParams,
-          options.filters.dateRange.end as DatabaseQueryParams,
+          options.filters.dateRange.start,
+          options.filters.dateRange.end,
         );
       }
 
@@ -2115,7 +2115,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
       `;
 
       // Add pagination params to data query
-      const dataParams = [...params, pageSize as DatabaseQueryParams, offset as DatabaseQueryParams];
+      const dataParams = [...params, pageSize, offset];
 
       // Execute optimized queries with performance monitoring
       const startTime = Date.now();
@@ -2251,7 +2251,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             "(e.subject LIKE ? OR ea.contextual_summary LIKE ? OR e.sender_name LIKE ?)",
           );
           const searchParam = `%${options.search}%`;
-          params.push(searchParam as DatabaseQueryParams, searchParam as DatabaseQueryParams, searchParam as DatabaseQueryParams);
+          params.push(searchParam, searchParam, searchParam);
         }
 
         if (options.filters?.status?.length) {
@@ -2261,7 +2261,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
           whereClauses.push(`ea.workflow_state IN (${statusPlaceholders})`);
           params.push(
             ...options.filters.status.map((s) =>
-              this.mapStatusToWorkflowState(s as any) as DatabaseQueryParams,
+              this.mapStatusToWorkflowState(s as any),
             ),
           );
         }
@@ -2271,7 +2271,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             .map(() => "?")
             .join(",");
           whereClauses.push(`e.sender_email IN (${aliasPlaceholders})`);
-          params.push(...options.filters.emailAlias.map(alias => alias as DatabaseQueryParams));
+          params.push(...options.filters.emailAlias.map(alias => alias));
         }
 
         if (options.filters?.priority?.length) {
@@ -2279,14 +2279,14 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             .map(() => "?")
             .join(",");
           whereClauses.push(`ea.quick_priority IN (${priorityPlaceholders})`);
-          params.push(...options.filters.priority.map(priority => priority as DatabaseQueryParams));
+          params.push(...options.filters.priority.map(priority => priority));
         }
 
         if (options.filters?.dateRange) {
           whereClauses.push("e.received_at BETWEEN ? AND ?");
           params.push(
-            options.filters.dateRange.start as DatabaseQueryParams,
-            options.filters.dateRange.end as DatabaseQueryParams,
+            options.filters.dateRange.start,
+            options.filters.dateRange.end,
           );
         }
 
@@ -2319,7 +2319,7 @@ export class EmailStorageService implements EmailStorageServiceInterface {
         `;
 
         // Add pagination params
-        params.push(limit as DatabaseQueryParams, offset as DatabaseQueryParams);
+        params.push(limit, offset);
 
         const emails = await this.executeOptimizedQuery<any[]>(
           "email_table_lazy_load",

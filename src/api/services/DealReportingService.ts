@@ -292,16 +292,16 @@ export class DealReportingService {
    * Generate weekly deal report
    */
   async generateWeeklyReport(weekEndDate?: string): Promise<DealReport> {
-    const endDate = weekEndDate || new Date().toISOString().split('T')[0];
-    const startDate = new Date(new Date(endDate).getTime() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const reportId = `weekly_${endDate}`;
+    const endDateStr = weekEndDate || new Date().toISOString().split('T')[0];
+    const startDate = new Date(new Date(endDateStr).getTime() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const reportId = `weekly_${endDateStr}`;
     
     try {
-      logger.info("Generating weekly deal report", "DEAL_REPORTING", { startDate, endDate });
+      logger.info("Generating weekly deal report", "DEAL_REPORTING", { startDate, endDate: endDateStr });
       
       const dateRange = {
         startDate: `${startDate}T00:00:00.000Z`,
-        endDate: `${endDate}T23:59:59.999Z`
+        endDate: `${endDateStr}T23:59:59.999Z`
       };
       
       const summary = await this.collectSummaryMetrics(dateRange);
@@ -313,7 +313,7 @@ export class DealReportingService {
       const report: DealReport = {
         id: reportId,
         reportType: 'weekly',
-        reportDate: endDate,
+        reportDate: endDateStr,
         dateRange,
         summary,
         metrics,
@@ -759,8 +759,11 @@ export class DealReportingService {
     }
     
     // Recommendations
-    const topCategory = Object.keys(metrics.dealsByCategory)
-      .reduce((a, b) => metrics.dealsByCategory[a] > metrics.dealsByCategory[b] ? a : b, '');
+    const categoryKeys = Object.keys(metrics.dealsByCategory);
+    const topCategory = categoryKeys.length > 0 
+      ? categoryKeys.reduce((a, b) => 
+          (metrics.dealsByCategory[a] ?? 0) > (metrics.dealsByCategory[b] ?? 0) ? a : b, categoryKeys[0] ?? '')
+      : '';
     
     if (topCategory) {
       insights.recommendations.push(`Focus monitoring efforts on ${topCategory} category which shows highest deal activity`);
@@ -995,7 +998,9 @@ export class DealReportingService {
     const dailyGroups: Record<string, PerformanceMetrics[]> = {};
     
     for (const metric of metrics) {
+      if (!metric.timestamp) continue;
       const date = metric.timestamp.split('T')[0];
+      if (!date) continue;
       if (!dailyGroups[date]) {
         dailyGroups[date] = [];
       }
