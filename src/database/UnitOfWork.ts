@@ -10,7 +10,8 @@ import { EmailChainRepositoryImpl } from "./repositories/EmailChainRepositoryImp
 import { AnalysisRepositoryImpl } from "./repositories/AnalysisRepositoryImpl.js";
 import { executeTransaction, getConnectionPool } from "./ConnectionPool.js";
 import { logger } from "../utils/logger.js";
-import Database from "better-sqlite3";
+// Use require for better-sqlite3 to avoid type issues
+const Database = require("better-sqlite3");
 
 /**
  * Unit of Work implementation for managing transactions across repositories
@@ -20,7 +21,7 @@ export class UnitOfWork implements IUnitOfWork {
   private _chains: IEmailChainRepository;
   private _analyses: IAnalysisRepository;
   private _transactionActive: boolean = false;
-  private _transactionDb: Database.Database | null = null;
+  private _transactionDb: any | null = null;
 
   constructor() {
     this._emails = new EmailRepositoryImpl();
@@ -59,7 +60,8 @@ export class UnitOfWork implements IUnitOfWork {
 
     try {
       const pool = getConnectionPool();
-      this._transactionDb = pool.getConnection();
+      const connection = pool.getConnection();
+      this._transactionDb = connection.getDatabase();
       this._transactionDb.exec("BEGIN TRANSACTION");
       this._transactionActive = true;
 
@@ -141,7 +143,8 @@ export class UnitOfWork implements IUnitOfWork {
     return executeTransaction(async (db) => {
       // Execute the work function
       // The transaction will be automatically managed
-      return await work();
+      const result = await work();
+      return result;
     });
   }
 
