@@ -5,7 +5,7 @@
 
 import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import { logger } from "../../../utils/logger.js";
+import { logger } from "../../../utils/logger";
 
 /**
  * Security headers configuration interface
@@ -28,6 +28,7 @@ interface SecurityHeadersConfig {
     connectSrc: string[];
     frameSrc?: string[];
     workerSrc?: string[];
+    objectSrc?: string[];
     reportUri?: string;
   };
 
@@ -113,8 +114,7 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
       ],
       frameSrc: ["'none'"],
       workerSrc: ["'self'", "blob:"],
-      // mediaSrc: ["'self'", "blob:", "data:"], // For any media elements - Not a valid CSP directive
-      // objectSrc: ["'none'"], // Block plugins like Flash - Use object-src instead
+      objectSrc: ["'none'"], // Block plugins like Flash
       reportUri: process.env.CSP_REPORT_URI,
     },
 
@@ -211,6 +211,10 @@ function createCSPHeader(config: SecurityHeadersConfig): string {
 
   if (config.csp.workerSrc) {
     directives.push(`worker-src ${config.csp.workerSrc.join(" ")}`);
+  }
+
+  if (config.csp.objectSrc) {
+    directives.push(`object-src ${config.csp.objectSrc.join(" ")}`);
   }
 
   // Add security enhancements

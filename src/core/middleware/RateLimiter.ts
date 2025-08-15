@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import rateLimit from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
 import Redis from "ioredis";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../utils/logger";
 
 // Extend Express Request to include user property
 declare module "express" {

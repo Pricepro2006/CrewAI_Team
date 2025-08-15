@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import { getStoredCSRFToken, getRequestCSRFToken, validateCSRFToken } from "./security/csrf.js";
-import { logger } from "../../utils/logger.js";
+import { getStoredCSRFToken, getRequestCSRFToken, validateCSRFToken } from "./security/csrf";
+import { logger } from "../../utils/logger";
 
 /**
  * Express middleware to validate CSRF tokens for state-changing operations

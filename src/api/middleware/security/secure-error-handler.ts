@@ -15,7 +15,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { TRPCError } from "@trpc/server";
 import { randomBytes } from "crypto";
-import { logger } from "../../../utils/logger.js";
+import { logger } from "../../../utils/logger";
 import { ZodError } from "zod";
 
 // Error categories for classification

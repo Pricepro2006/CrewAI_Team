@@ -9,7 +9,7 @@ export {
   webSearchRateLimit,
   businessSearchRateLimit,
   premiumRateLimit,
-} from "./rateLimiter.js";
+} from "./rateLimiter";
 
 // Security middleware exports
 export {
@@ -18,7 +18,7 @@ export {
   createAuthorizationMiddleware,
   createInputValidation,
   sanitizationSchemas,
-} from "./security/index.js";
+} from "./security/index";
 
 // WebSocket authentication
-export { authenticateWebSocket } from "./websocketAuth.js";
+export { authenticateWebSocket } from "./websocketAuth";

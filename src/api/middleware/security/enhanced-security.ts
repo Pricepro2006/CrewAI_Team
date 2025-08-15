@@ -5,14 +5,14 @@
 
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { Context } from "../../trpc/context.js";
-import { logger } from "../../../utils/logger.js";
+import type { Context } from "../../trpc/context";
+import { logger } from "../../../utils/logger";
 import {
   SqlInjectionProtection,
   SqlInjectionError,
   DatabaseInputSchemas,
   createSqlInjectionProtection,
-} from "../../../database/security/SqlInjectionProtection.js";
+} from "../../../database/security/SqlInjectionProtection";
 
 // Create SQL injection protection instance for middleware
 const sqlSecurity = createSqlInjectionProtection({
@@ -526,10 +526,87 @@ export function createSecurityTestMiddleware() {
   };
 }
 
+/**
+ * Audit logging utility for security events
+ */
+export class AuditLogger {
+  static async logSecurityEvent(event: {
+    action: string;
+    userId?: string;
+    resourceId?: string;
+    resourceType?: string;
+    metadata?: any;
+    success?: boolean;
+    error?: string;
+  }): Promise<void> {
+    const logData = {
+      ...event,
+      timestamp: new Date().toISOString(),
+      type: "SECURITY_AUDIT",
+    };
+
+    if (event.success === false || event.error) {
+      logger.error("Security Event Failed", "AUDIT", logData);
+    } else {
+      logger.info("Security Event", "AUDIT", logData);
+    }
+  }
+}
+
+/**
+ * PII redaction utility for sensitive data
+ */
+export class PIIRedactor {
+  private static readonly PII_PATTERNS = {
+    email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+    phone: /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g,
+    ssn: /\b\d{3}-?\d{2}-?\d{4}\b/g,
+    creditCard: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,
+  };
+
+  static redact(data: any): any {
+    if (typeof data === 'string') {
+      return this.redactString(data);
+    }
+    
+    if (Array.isArray(data)) {
+      return data.map(item => this.redact(item));
+    }
+    
+    if (data && typeof data === 'object') {
+      const redacted: any = {};
+      for (const [key, value] of Object.entries(data)) {
+        redacted[key] = this.redact(value);
+      }
+      return redacted;
+    }
+    
+    return data;
+  }
+
+  private static redactString(str: string): string {
+    let result = str;
+    
+    // Redact email addresses
+    result = result.replace(this.PII_PATTERNS.email, '[EMAIL_REDACTED]');
+    
+    // Redact phone numbers
+    result = result.replace(this.PII_PATTERNS.phone, '[PHONE_REDACTED]');
+    
+    // Redact SSNs
+    result = result.replace(this.PII_PATTERNS.ssn, '[SSN_REDACTED]');
+    
+    // Redact credit card numbers
+    result = result.replace(this.PII_PATTERNS.creditCard, '[CARD_REDACTED]');
+    
+    return result;
+  }
+}
+
 // Export SQL injection protection utilities
 export {
   SqlInjectionProtection,
   SqlInjectionError,
   DatabaseInputSchemas,
   createSqlInjectionProtection,
-} from "../../../database/security/SqlInjectionProtection.js";
+} from "../../../database/security/SqlInjectionProtection";

@@ -15,10 +15,10 @@ import type { Request, Response, NextFunction } from "express";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createHash, randomBytes } from "crypto";
-import { jwtManager, JWTError } from "../../utils/jwt.js";
-import { UserService } from "../../services/UserService.js";
-import { logger } from "../../../utils/logger.js";
-import type { PublicUser } from "../../../database/models/User.js";
+import { jwtManager, JWTError } from "../../utils/jwt";
+import { UserService } from "../../services/UserService";
+import { logger } from "../../../utils/logger";
+import type { PublicUser } from "../../../database/models/User";
 
 // Security constants
 const MAX_LOGIN_ATTEMPTS = 5;

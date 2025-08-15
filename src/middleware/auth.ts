@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import appConfig from "../config/app.config.js";
+import appConfig from "../config/app.config";
 
 export interface User {
   id: string;
