@@ -163,63 +163,63 @@ export class GroceryDataPipeline extends EventEmitter {
     this.consumers.set('price_updates', {
       name: 'price_processor',
       concurrency: this.config.processing.concurrency,
-      process: this.processPriceUpdate.bind(this),
-      onError: this.handleProcessingError.bind(this),
-      onRetry: this.shouldRetryJob.bind(this)
+      process: ((message: any) => this.processPriceUpdate(message as GroceryMessage)),
+      onError: ((error: Error, message: any) => this.handleProcessingError(error, message as GroceryMessage)),
+      onRetry: ((message: any, retryCount: number) => this.shouldRetryJob(message as GroceryMessage, retryCount))
     });
 
     // Inventory Sync Consumer
     this.consumers.set('inventory_sync', {
       name: 'inventory_processor',
       concurrency: this.config.processing.concurrency,
-      process: this.processInventoryUpdate.bind(this),
-      onError: this.handleProcessingError.bind(this),
-      onRetry: this.shouldRetryJob.bind(this)
+      process: ((message: any) => this.processInventoryUpdate(message as GroceryMessage)),
+      onError: ((error: Error, message: any) => this.handleProcessingError(error, message as GroceryMessage)),
+      onRetry: ((message: any, retryCount: number) => this.shouldRetryJob(message as GroceryMessage, retryCount))
     });
 
     // Product Matching Consumer
     this.consumers.set('product_matching', {
       name: 'matching_processor',
       concurrency: Math.floor(this.config.processing.concurrency / 2), // CPU intensive
-      process: this.processProductMatch.bind(this),
-      onError: this.handleProcessingError.bind(this),
-      onRetry: this.shouldRetryJob.bind(this)
+      process: ((message: any) => this.processProductMatch(message as GroceryMessage)),
+      onError: ((error: Error, message: any) => this.handleProcessingError(error, message as GroceryMessage)),
+      onRetry: ((message: any, retryCount: number) => this.shouldRetryJob(message as GroceryMessage, retryCount))
     });
 
     // Deal Analysis Consumer
     this.consumers.set('deal_analysis', {
       name: 'deal_processor',
       concurrency: this.config.processing.concurrency,
-      process: this.processDealAnalysis.bind(this),
-      onError: this.handleProcessingError.bind(this),
-      onRetry: this.shouldRetryJob.bind(this)
+      process: ((message: any) => this.processDealAnalysis(message as GroceryMessage)),
+      onError: ((error: Error, message: any) => this.handleProcessingError(error, message as GroceryMessage)),
+      onRetry: ((message: any, retryCount: number) => this.shouldRetryJob(message as GroceryMessage, retryCount))
     });
 
     // Nutrition Fetch Consumer
     this.consumers.set('nutrition_fetch', {
       name: 'nutrition_processor',
       concurrency: 2, // Limited by external API
-      process: this.processNutritionFetch.bind(this),
-      onError: this.handleProcessingError.bind(this),
-      onRetry: this.shouldRetryJob.bind(this)
+      process: ((message: any) => this.processNutritionFetch(message as GroceryMessage)),
+      onError: ((error: Error, message: any) => this.handleProcessingError(error, message as GroceryMessage)),
+      onRetry: ((message: any, retryCount: number) => this.shouldRetryJob(message as GroceryMessage, retryCount))
     });
 
     // Review Analysis Consumer
     this.consumers.set('review_analysis', {
       name: 'review_processor',
       concurrency: this.config.processing.concurrency,
-      process: this.processReviewAnalysis.bind(this),
-      onError: this.handleProcessingError.bind(this),
-      onRetry: this.shouldRetryJob.bind(this)
+      process: ((message: any) => this.processReviewAnalysis(message as GroceryMessage)),
+      onError: ((error: Error, message: any) => this.handleProcessingError(error, message as GroceryMessage)),
+      onRetry: ((message: any, retryCount: number) => this.shouldRetryJob(message as GroceryMessage, retryCount))
     });
 
     // Recommendation Generation Consumer
     this.consumers.set('recommendations', {
       name: 'recommendation_processor',
       concurrency: 1, // Sequential processing for consistency
-      process: this.processRecommendationGeneration.bind(this),
-      onError: this.handleProcessingError.bind(this),
-      onRetry: this.shouldRetryJob.bind(this)
+      process: ((message: any) => this.processRecommendationGeneration(message as GroceryMessage)),
+      onError: ((error: Error, message: any) => this.handleProcessingError(error, message as GroceryMessage)),
+      onRetry: ((message: any, retryCount: number) => this.shouldRetryJob(message as GroceryMessage, retryCount))
     });
   }
 

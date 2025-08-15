@@ -228,7 +228,7 @@ export class DealReportingService {
    * Generate daily deal report
    */
   async generateDailyReport(date?: string): Promise<DealReport> {
-    const reportDate = date || new Date().toISOString().split('T')[0];
+    const reportDate = (date ?? new Date().toISOString().split('T')[0]) as string;
     const reportId = `daily_${reportDate}`;
     
     if (this.isGeneratingReport) {
@@ -292,7 +292,7 @@ export class DealReportingService {
    * Generate weekly deal report
    */
   async generateWeeklyReport(weekEndDate?: string): Promise<DealReport> {
-    const endDateStr = weekEndDate || new Date().toISOString().split('T')[0];
+    const endDateStr = (weekEndDate ?? new Date().toISOString().split('T')[0]) as string;
     const startDate = new Date(new Date(endDateStr).getTime() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const reportId = `weekly_${endDateStr}`;
     

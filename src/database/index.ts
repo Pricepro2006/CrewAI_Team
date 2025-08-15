@@ -6,6 +6,27 @@
 // Core Database Manager
 export { DatabaseManager, getDatabaseManager } from "./DatabaseManager.js";
 
+// Specialized Database Managers
+export { WalmartDatabaseManager, getWalmartDatabaseManager } from "./WalmartDatabaseManager.js";
+export { OptimizedWalmartDatabaseManager, getOptimizedWalmartDatabaseManager } from "./OptimizedWalmartDatabaseManager.js";
+
+// Connection Pool Management
+export {
+  DatabaseConnectionPool,
+  getDatabaseConnection,
+  executeQuery,
+  executeTransaction,
+  shutdownConnectionPool,
+} from "./ConnectionPool.js";
+export { OptimizedConnectionPool, createOptimizedPool } from "./OptimizedConnectionPool.js";
+
+// Unified Connection Management (RECOMMENDED)
+export {
+  UnifiedConnectionManager,
+  getUnifiedConnectionManager,
+  createDefaultConfig,
+} from "./UnifiedConnectionManager.js";
+
 // Repository Pattern Implementation
 export { BaseRepository } from "./repositories/BaseRepository.js";
 export { UserRepository } from "./repositories/UserRepository.js";

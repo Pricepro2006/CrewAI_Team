@@ -561,21 +561,21 @@ export class EmailIntegrationService {
       messageId: email.id || email.messageId || `msg_${Date.now()}_${Math.random()}`,
       subject: email.subject || 'No Subject',
       body: {
-        content: email.body?.content || email.body || '',
+        content: typeof email.body === 'string' ? email.body : (email.body?.content || ''),
         contentType: (email.body?.contentType || 'text') as 'text' | 'html'
       },
       from: {
-        address: email.from?.emailAddress?.address || email.from?.address || 'unknown@email.com',
-        name: email.from?.emailAddress?.name || email.from?.name
+        address: (email.from as any)?.emailAddress?.address || (email.from as any)?.address || 'unknown@email.com',
+        name: (email.from as any)?.emailAddress?.name || (email.from as any)?.name || 'Unknown'
       },
       to: (email.to || []).map((recipient: any) => ({
         address: recipient.emailAddress?.address || recipient.address || 'unknown@email.com',
-        name: recipient.emailAddress?.name || recipient.name
+        name: recipient.emailAddress?.name || recipient.name || 'Unknown'
       })),
-      cc: email.cc || [],
-      receivedDateTime: email.receivedDateTime || new Date(email.receivedAt || Date.now()).toISOString(),
+      cc: (email as any).cc || [],
+      receivedDateTime: email.receivedDateTime || new Date((email as any).receivedAt || Date.now()).toISOString(),
       hasAttachments: email.hasAttachments || false,
-      attachments: email.attachments || []
+      attachments: (email as any).attachments || []
     }));
   }
 

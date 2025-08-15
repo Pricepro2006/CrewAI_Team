@@ -73,8 +73,8 @@ export class RealEmailStorageService {
     const sortOrder = options.sortOrder || 'desc';
     
     try {
-      // Build WHERE clauses
-      const whereClauses: string[] = ['phase_completed >= 2']; // Only show analyzed emails
+      // Build WHERE clauses - Show all emails, not just LLM analyzed ones
+      const whereClauses: string[] = [];
       const params: any[] = [];
       
       // Add search filter
@@ -120,14 +120,16 @@ export class RealEmailStorageService {
           COALESCE(business_summary, body_preview, 'No summary available') as summary,
           CASE 
             WHEN phase_completed = 3 THEN 'green'
-            WHEN phase_completed = 2 THEN 'yellow'
+            WHEN phase_completed = 2 THEN 'yellow' 
+            WHEN phase_completed = 1 THEN 'orange'
             ELSE 'red'
           END as status,
           CASE 
-            WHEN phase_completed = 3 THEN 'Deep Analysis Complete (Phi-4)'
-            WHEN phase_completed = 2 THEN 'Analysis Complete (Llama 3.2)'
-            WHEN phase_completed = 1 THEN 'Quick Analysis Only'
-            ELSE 'Pending Analysis'
+            WHEN phase_completed = 3 THEN 'Strategic Analysis Complete'
+            WHEN phase_completed = 2 THEN 'LLM Analysis Complete'
+            WHEN phase_completed = 1 THEN 'Rule-Based Analysis Only'
+            WHEN phase_completed = 0 THEN 'Unprocessed'
+            ELSE 'Processing Status Unknown'
           END as status_text,
           COALESCE(workflow_state, 'NEW') as workflow_state,
           COALESCE(priority, 'medium') as priority,
@@ -179,6 +181,12 @@ export class RealEmailStorageService {
     inProgressCount: number;
     completedCount: number;
     statusDistribution: Record<string, number>;
+    processingStats: {
+      ruleBasedOnly: number;
+      llmAnalyzed: number;
+      strategicAnalyzed: number;
+      unprocessed: number;
+    };
   }> {
     try {
       const stats = this.db.prepare(`
@@ -187,7 +195,7 @@ export class RealEmailStorageService {
           COUNT(CASE WHEN priority = 'critical' THEN 1 END) as criticalCount,
           COUNT(CASE WHEN workflow_state = 'IN_PROGRESS' THEN 1 END) as inProgressCount,
           COUNT(CASE WHEN workflow_state = 'COMPLETED' THEN 1 END) as completedCount,
-          COUNT(CASE WHEN phase_completed = 0 THEN 1 END) as pendingCount,
+          COUNT(CASE WHEN phase_completed = 0 OR phase_completed IS NULL THEN 1 END) as unprocessedCount,
           COUNT(CASE WHEN phase_completed = 1 THEN 1 END) as phase1Count,
           COUNT(CASE WHEN phase_completed = 2 THEN 1 END) as phase2Count,
           COUNT(CASE WHEN phase_completed = 3 THEN 1 END) as phase3Count
@@ -200,10 +208,16 @@ export class RealEmailStorageService {
         inProgressCount: stats.inProgressCount,
         completedCount: stats.completedCount,
         statusDistribution: {
-          pending: stats.pendingCount,
-          phase1_complete: stats.phase1Count,
-          phase2_complete: stats.phase2Count,
-          phase3_complete: stats.phase3Count
+          unprocessed: stats.unprocessedCount,
+          rule_based_only: stats.phase1Count,
+          llm_analyzed: stats.phase2Count,
+          strategic_complete: stats.phase3Count
+        },
+        processingStats: {
+          ruleBasedOnly: stats.phase1Count,
+          llmAnalyzed: stats.phase2Count,
+          strategicAnalyzed: stats.phase3Count,
+          unprocessed: stats.unprocessedCount
         }
       };
     } catch (error) {

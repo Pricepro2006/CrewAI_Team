@@ -12,7 +12,8 @@ import ollamaConfig from "../../config/ollama.config.js";
 import { logger } from "../../utils/logger.js";
 import { mcpToolsService } from "../services/MCPToolsService.js";
 import { DealDataService } from "../services/DealDataService.js";
-import { EmailStorageService } from "../services/EmailStorageService.js";
+import { realEmailStorageService } from "../services/RealEmailStorageService.js";
+import type { RealEmailStorageService } from "../services/RealEmailStorageService.js";
 import { WalmartGroceryService } from "../services/WalmartGroceryService.js";
 import { getStoredCSRFToken } from "../middleware/security/csrf.js";
 // import { EmailIngestionServiceImpl } from "../../core/services/EmailIngestionServiceImpl.js";
@@ -37,7 +38,7 @@ let maestroFramework: MaestroFramework;
 let taskService: TaskService;
 let userService: UserService;
 let dealDataService: DealDataService;
-let emailStorageService: EmailStorageService;
+let emailStorageService: RealEmailStorageService;
 let walmartGroceryService: WalmartGroceryService;
 // let emailIngestionService: EmailIngestionServiceImpl;
 let eventEmitter: EventEmitter;
@@ -96,10 +97,9 @@ async function initializeServices() {
     dealDataService = new DealDataService();
   }
 
-  // if (!emailStorageService) {
-  //   emailStorageService = new EmailStorageService(); // TODO: Fix database schema issues
-  // }
-  emailStorageService = null as any; // Temporary fix
+  if (!emailStorageService) {
+    emailStorageService = realEmailStorageService; // Use the enhanced email storage service
+  }
 
   if (!walmartGroceryService) {
     walmartGroceryService = WalmartGroceryService.getInstance();
@@ -239,7 +239,7 @@ type TRPCContext = {
   maestroFramework: MaestroFramework;
   userService: UserService;
   dealDataService: DealDataService;
-  emailStorageService: EmailStorageService;
+  emailStorageService: RealEmailStorageService;
   walmartGroceryService: WalmartGroceryService;
   // emailIngestionService: EmailIngestionServiceImpl;
   eventEmitter: EventEmitter;
