@@ -86,7 +86,7 @@ export class AdvancedFieldSelector {
   /**
    * Select specific fields from an object
    */
-  private selectFields<T extends Record<string, any>>(
+  public selectFields<T extends Record<string, any>>(
     obj: T,
     options: FieldSelectionOptions,
     currentDepth: number = 0
@@ -142,7 +142,7 @@ export class AdvancedFieldSelector {
     const result: Partial<T> = {};
 
     for (const [key, value] of Object.entries(selector)) {
-      if (key === '*' && typeof value === 'object') {
+      if (key === '*' && typeof value === 'object' && value !== null) {
         // Wildcard selection - apply to all object properties
         for (const [objKey, objValue] of Object.entries(obj)) {
           if (typeof objValue === 'object' && objValue !== null) {
@@ -152,9 +152,12 @@ export class AdvancedFieldSelector {
               currentDepth + 1,
               maxDepth
             ) as T[keyof T];
-          } else if (value === true) {
-            result[objKey as keyof T] = objValue;
           }
+        }
+      } else if (key === '*' && value === true) {
+        // Wildcard boolean selection - include all properties
+        for (const [objKey, objValue] of Object.entries(obj)) {
+          result[objKey as keyof T] = objValue;
         }
       } else if (key in obj) {
         if (value === true) {
@@ -425,7 +428,7 @@ export class SQLFieldSelector {
       // Remove excluded fields
       fields = fields.filter(field => {
         const fieldName = field.split(' AS ')[1] || field.split('.')[1];
-        return !options.exclude!.includes(fieldName);
+        return fieldName ? !options.exclude!.includes(fieldName) : true;
       });
     }
 
