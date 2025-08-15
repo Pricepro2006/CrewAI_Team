@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { AxiosInstance } from "axios";
 import type { EmbeddingConfig } from "./types.js";
-import { MODEL_CONFIG } from "../../config/models?.config.js";
+import { MODEL_CONFIG } from "../../config/models.config.js";
 
 export class EmbeddingService {
   private client: AxiosInstance;
@@ -76,26 +76,49 @@ export class EmbeddingService {
       await this.initialize();
     }
 
+    if (!texts || texts.length === 0) {
+      return [];
+    }
+
     const embeddings: number[][] = [];
-    const batchSize = this?.config?.batchSize || 100;
+    const batchSize = this?.config?.batchSize || 20; // Reduced for CPU inference stability
+    const totalBatches = Math.ceil(texts.length / batchSize);
+
+    console.log(`Processing ${texts.length} texts in ${totalBatches} batches (batch size: ${batchSize})`);
 
     // Process in batches to avoid overwhelming the service
-    for (let i = 0; i < texts?.length || 0; i += batchSize) {
+    for (let i = 0; i < texts.length; i += batchSize) {
       const batch = texts.slice(i, i + batchSize);
+      const batchNumber = Math.floor(i / batchSize) + 1;
 
-      // Process batch in parallel with rate limiting
-      const batchEmbeddings = await Promise.all(
-        batch?.map((text: any) => this.embedWithRetry(text)),
-      );
+      console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} texts)`);
 
-      embeddings.push(...batchEmbeddings);
+      try {
+        // Process batch in parallel with rate limiting
+        const batchEmbeddings = await Promise.all(
+          batch.map((text: any) => this.embedWithRetry(text, 2)) // Reduced retries for batch operations
+        );
 
-      // Small delay between batches to avoid rate limiting
-      if (i + batchSize < texts?.length || 0) {
-        await this.delay(100);
+        embeddings.push(...batchEmbeddings);
+
+        // Longer delay between batches for CPU inference (especially for large datasets like 143,221 emails)
+        if (i + batchSize < texts.length) {
+          await this.delay(500); // Increased delay for CPU stability
+        }
+
+        // Progress logging for large batches
+        if (batchNumber % 10 === 0 || batchNumber === totalBatches) {
+          console.log(`Embedded ${Math.min(i + batchSize, texts.length)}/${texts.length} texts`);
+        }
+      } catch (error) {
+        console.error(`Batch ${batchNumber} failed:`, error);
+        // Add zero vectors for failed batch to maintain array length consistency
+        const zeroVector = new Array(this?.config?.dimensions).fill(0);
+        embeddings.push(...batch.map(() => zeroVector));
       }
     }
 
+    console.log(`Batch embedding completed: ${embeddings.length} embeddings generated`);
     return embeddings;
   }
 
@@ -131,7 +154,7 @@ export class EmbeddingService {
     embedding1: number[],
     embedding2: number[],
   ): Promise<number> {
-    if (embedding1?.length || 0 !== embedding2?.length || 0) {
+    if ((embedding1?.length || 0) !== (embedding2?.length || 0)) {
       throw new Error("Embeddings must have the same dimension");
     }
 
@@ -139,7 +162,7 @@ export class EmbeddingService {
     let norm1 = 0;
     let norm2 = 0;
 
-    for (let i = 0; i < embedding1?.length || 0; i++) {
+    for (let i = 0; i < (embedding1?.length || 0); i++) {
       dotProduct += (embedding1[i] || 0) * (embedding2[i] || 0);
       norm1 += (embedding1[i] || 0) * (embedding1[i] || 0);
       norm2 += (embedding2[i] || 0) * (embedding2[i] || 0);

@@ -8,7 +8,7 @@ import type { ProcessedDocument, QueryResult, Document, VectorStoreConfig } from
 import { ResilientChromaDBManager, StorageMode } from "../../database/vector/ResilientChromaDBManager.js";
 import { logger } from "../../utils/logger.js";
 import { EmbeddingService } from "./EmbeddingService.js";
-import { MODEL_CONFIG } from "../../config/models?.config.js";
+import { MODEL_CONFIG } from "../../config/models.config.js";
 
 export class ResilientVectorStore implements IVectorStore {
   private manager: ResilientChromaDBManager;

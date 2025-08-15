@@ -371,4 +371,131 @@ export const ragRouter: Router<any> = router({
         message: "Document metadata updated successfully",
       };
     }),
+
+  // Email-specific RAG operations
+  indexEmail: publicProcedure
+    .input(
+      z.object({
+        emailId: z.string(),
+        subject: z.string(),
+        body: z.string(),
+        sender: z.string().optional(),
+        recipients: z.array(z.string()).optional(),
+        date: z.string().optional(),
+        metadata: z.record(z.any()).optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      await ctx?.ragSystem?.indexEmailContent(input.emailId, {
+        subject: input.subject,
+        body: input.body,
+        sender: input.sender,
+        recipients: input.recipients,
+        date: input.date,
+        metadata: input.metadata,
+      });
+
+      return {
+        success: true,
+        message: "Email indexed successfully",
+        emailId: input.emailId,
+      };
+    }),
+
+  // Batch index emails
+  batchIndexEmails: publicProcedure
+    .input(
+      z.object({
+        emails: z
+          .array(
+            z.object({
+              id: z.string(),
+              subject: z.string(),
+              body: z.string(),
+              sender: z.string().optional(),
+              recipients: z.array(z.string()).optional(),
+              date: z.string().optional(),
+              metadata: z.record(z.any()).optional(),
+            })
+          )
+          .max(1000), // Limit batch size
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const result = await ctx?.ragSystem?.batchIndexEmails(input.emails);
+
+      return {
+        success: result.failed === 0,
+        indexed: result.indexed,
+        failed: result.failed,
+        errors: result.errors,
+        message: `Batch indexing completed: ${result.indexed} indexed, ${result.failed} failed`,
+      };
+    }),
+
+  // Search emails semantically
+  searchEmails: publicProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        limit: z.number().min(1).max(50).default(10),
+        sender: z.string().optional(),
+        dateRange: z
+          .object({
+            from: z.string().optional(),
+            to: z.string().optional(),
+          })
+          .optional(),
+        includeBody: z.boolean().default(false),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      return await ctx?.ragSystem?.searchEmails(input.query, {
+        limit: input.limit,
+        sender: input.sender,
+        dateRange: input.dateRange,
+        includeBody: input.includeBody,
+      });
+    }),
+
+  // Get email context for LLM enhancement
+  getEmailContext: publicProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        limit: z.number().min(1).max(20).default(5),
+        focusArea: z.enum(['subject', 'body', 'both']).default('both'),
+        timeframe: z.enum(['recent', 'all']).default('all'),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      const context = await ctx?.ragSystem?.getEmailContext(input.query, {
+        limit: input.limit,
+        focusArea: input.focusArea,
+        timeframe: input.timeframe,
+      });
+
+      return {
+        context,
+        hasContext: context.length > 0,
+        length: context.length,
+      };
+    }),
+
+  // Get email indexing statistics
+  getEmailStats: publicProcedure.query(async ({ ctx }) => {
+    const allDocs = await ctx?.ragSystem?.getAllDocuments(10000);
+    const emailDocs = allDocs.filter((doc: any) => doc.metadata?.type === 'email');
+    const ragStats = await ctx?.ragSystem?.getStats();
+
+    return {
+      totalDocuments: ragStats.totalDocuments,
+      emailDocuments: emailDocs.length,
+      nonEmailDocuments: ragStats.totalDocuments - emailDocs.length,
+      averageChunksPerDocument: ragStats.averageChunksPerDocument,
+      vectorStoreType: ragStats.vectorStoreType,
+      embeddingModel: ragStats.embeddingModel,
+      fallbackMode: ragStats.fallbackMode,
+    };
+  }),
 });
