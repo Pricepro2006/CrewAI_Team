@@ -8,6 +8,7 @@
 import { EmailIngestionServiceImpl } from '../../core/services/EmailIngestionServiceImpl.js';
 import { EmailStorageService } from './EmailStorageService.js';
 import { EmailThreePhaseAnalysisService } from '../../core/services/EmailThreePhaseAnalysisService.js';
+import crypto from 'crypto';
 import { EmailRepository } from '../../database/repositories/EmailRepository.js';
 import { UnifiedEmailService } from './UnifiedEmailService.js';
 import { logger } from '../../utils/logger.js';
@@ -405,8 +406,8 @@ export class EmailIntegrationService {
   /**
    * Extract entities from analysis result
    */
-  private extractEntities(analysis: AnalysisResult): Array<{ type: string; value: string }> {
-    const entities: Array<{ type: string; value: string }> = [];
+  private extractEntities(analysis: AnalysisResult): EmailEntity[] {
+    const entities: EmailEntity[] = [];
     
     // Get entities from the deepest analysis available
     const entitySource: ExtractedEntities | undefined = analysis.phase3Analysis?.entities || 
@@ -417,21 +418,45 @@ export class EmailIntegrationService {
       // Handle PO numbers
       if (entitySource.po_numbers && Array.isArray(entitySource.po_numbers)) {
         entitySource.po_numbers.forEach((po: string | number) => {
-          entities.push({ type: 'PO_NUMBER', value: String(po) });
+          entities.push({
+            id: crypto.randomUUID(),
+            email_id: '',
+            entity_type: 'PO_NUMBER',
+            entity_value: String(po),
+            confidence: 0.9,
+            extracted_by: 'email_integration',
+            created_at: new Date()
+          });
         });
       }
       
       // Handle quote numbers
       if (entitySource.quote_numbers && Array.isArray(entitySource.quote_numbers)) {
         entitySource.quote_numbers.forEach((quote: string | number) => {
-          entities.push({ type: 'QUOTE_NUMBER', value: String(quote) });
+          entities.push({
+            id: crypto.randomUUID(),
+            email_id: '',
+            entity_type: 'QUOTE_NUMBER',
+            entity_value: String(quote),
+            confidence: 0.9,
+            extracted_by: 'email_integration',
+            created_at: new Date()
+          });
         });
       }
       
       // Handle part numbers
       if (entitySource.part_numbers && Array.isArray(entitySource.part_numbers)) {
         entitySource.part_numbers.forEach((part: string | number) => {
-          entities.push({ type: 'PART_NUMBER', value: String(part) });
+          entities.push({
+            id: crypto.randomUUID(),
+            email_id: '',
+            entity_type: 'PART_NUMBER',
+            entity_value: String(part),
+            confidence: 0.9,
+            extracted_by: 'email_integration',
+            created_at: new Date()
+          });
         });
       }
       
@@ -439,7 +464,15 @@ export class EmailIntegrationService {
       const companies = entitySource.companies || (entitySource as ExtractedEntities & { company_names?: (string | number)[] }).company_names;
       if (companies && Array.isArray(companies)) {
         companies.forEach((company: string | number) => {
-          entities.push({ type: 'COMPANY', value: String(company) });
+          entities.push({
+            id: crypto.randomUUID(),
+            email_id: '',
+            entity_type: 'COMPANY',
+            entity_value: String(company),
+            confidence: 0.9,
+            extracted_by: 'email_integration',
+            created_at: new Date()
+          });
         });
       }
     }
@@ -460,7 +493,7 @@ export class EmailIntegrationService {
       quoteNumbers: Array.isArray(phase1Entities.quotes) ? 
         phase1Entities.quotes.map((q: string | number) => ({ value: String(q), type: 'quote', confidence: 0.9 })) : [],
       caseNumbers: Array.isArray(phase1Entities.cases) ?
-        phase1Entities.cases.map((c: string | number) => ({ value: String(c), confidence: 0.9 })) : [],
+        phase1Entities.cases.map((c: string | number) => ({ value: String(c), type: 'case', confidence: 0.9 })) : [],
       partNumbers: Array.isArray(phase1Entities.parts) ? 
         phase1Entities.parts.map((p: string | number) => ({ value: String(p), confidence: 0.9 })) : [],
       orderReferences: [],

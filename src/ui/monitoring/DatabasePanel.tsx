@@ -4,8 +4,8 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { DatabaseQuery, MonitoringMetric } from '../../services/MonitoringService';
-import { MetricsChart } from './MetricsChart';
+import type { DatabaseQuery, MonitoringMetric } from '../../services/MonitoringService.js';
+import { MetricsChart } from './MetricsChart.js';
 
 interface DatabasePanelProps {
   queries: DatabaseQuery[];

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { LRUCache } from 'lru-cache';
-import Redis from 'ioredis';
+import Redis, { type Redis as RedisType } from 'ioredis';
 import Database from 'better-sqlite3';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
@@ -82,10 +82,10 @@ interface CacheResult<T = any> {
 
 export class CentralizedCacheService extends EventEmitter {
   private config: CacheConfig;
-  private memoryCache: LRUCache<string, CacheEntry>;
-  private redisClient: Redis;
-  private sqliteDb: Database.Database;
-  private stats: CacheStats;
+  private memoryCache!: LRUCache<string, CacheEntry>;
+  private redisClient!: RedisType;
+  private sqliteDb!: Database.Database;
+  private stats!: CacheStats;
   private isInitialized = false;
   private cleanupInterval?: NodeJS.Timeout;
 
@@ -570,7 +570,10 @@ export class CentralizedCacheService extends EventEmitter {
 
     results.forEach((result, index) => {
       if (result.status === 'fulfilled' && result.value) {
-        deletedFrom.push([CacheTier.MEMORY, CacheTier.REDIS, CacheTier.SQLITE][index]);
+        const tier = [CacheTier.MEMORY, CacheTier.REDIS, CacheTier.SQLITE][index];
+        if (tier) {
+          deletedFrom.push(tier);
+        }
       }
     });
 

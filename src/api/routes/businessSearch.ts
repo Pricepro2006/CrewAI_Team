@@ -20,7 +20,7 @@ const businessSearchMiddleware = new BusinessSearchMiddleware({
 });
 
 // Initialize Ollama provider
-const llamaCppProvider = new LlamaCppProvider({
+const ollamaProvider = new OllamaProvider({
   model: "llama2",
   temperature: 0.7,
 });

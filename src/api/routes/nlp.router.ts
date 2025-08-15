@@ -17,15 +17,16 @@ const qwenProcessor = getSimplifiedQwenProcessor();
  * Process natural language input
  * POST /api/nlp/process
  */
-router.post("/process", async (req: Request, res: Response) => {
+router.post("/process", async (req: Request, res: Response): Promise<void> => {
   try {
     const { text, userId, sessionId } = req.body;
 
     if (!text) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Text input is required"
       });
+      return;
     }
 
     logger.info(`Processing NLP request: "${text}"`, "NLP_ROUTER");
@@ -153,15 +154,16 @@ router.get("/history", async (req: Request, res: Response) => {
  * Train model with feedback
  * POST /api/nlp/feedback
  */
-router.post("/feedback", async (req: Request, res: Response) => {
+router.post("/feedback", async (req: Request, res: Response): Promise<void> => {
   try {
     const { intentId, correctIntent, rating } = req.body;
 
     if (!intentId || !rating) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Intent ID and rating are required"
       });
+      return;
     }
 
     const db = getWalmartDatabaseManager();

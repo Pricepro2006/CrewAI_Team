@@ -8,6 +8,7 @@ import {
 import { securityMonitor } from "../services/SecurityMonitoringService.js";
 import { guestUserService } from "../services/GuestUserService.js";
 import { TRPCError } from "@trpc/server";
+import { logger } from "../../utils/logger.js";
 
 // Permission middleware for security endpoints
 const requireSecurityRead = createPermissionMiddleware(["security.read", "admin"]);
@@ -98,7 +99,7 @@ export const securityRouter = router({
       guestUserService.revokeGuestSession(input.guestId, input.reason);
 
       // Log admin action
-      ctx.logger?.info("Admin revoked guest session", "ADMIN_ACTION", {
+      logger.info("Admin revoked guest session", "ADMIN_ACTION", {
         adminId: ctx.user.id,
         guestId: input.guestId,
         reason: input.reason,
@@ -192,7 +193,7 @@ export const securityRouter = router({
     guestUserService.cleanup();
 
     // Log admin action
-    ctx.logger?.info("Admin triggered guest session cleanup", "ADMIN_ACTION", {
+    logger.info("Admin triggered guest session cleanup", "ADMIN_ACTION", {
       adminId: ctx.user.id,
     });
 

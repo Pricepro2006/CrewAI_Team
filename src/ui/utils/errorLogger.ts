@@ -1,4 +1,4 @@
-import type { ErrorInfo } from "../contexts/ErrorContext";
+import type { ErrorInfo } from "../contexts/ErrorContext.js";
 
 interface ErrorLogEntry {
   timestamp: string;
@@ -126,11 +126,19 @@ class ErrorLogger {
 
   private serializeError(error: any): any {
     if (error instanceof Error) {
+      // Get all enumerable properties from the error, excluding the built-in ones we handle explicitly
+      const customProps = Object.getOwnPropertyNames(error).reduce((acc, key) => {
+        if (!['name', 'message', 'stack'].includes(key)) {
+          acc[key] = (error as any)[key];
+        }
+        return acc;
+      }, {} as Record<string, any>);
+
       return {
         name: error.name,
         message: error.message,
         stack: error.stack,
-        ...error, // Include any custom properties
+        ...customProps, // Include any custom properties without duplicates
       };
     }
     return error;

@@ -10,6 +10,7 @@ import { createContext } from "./trpc/context.js";
 import { appRouter } from "./trpc/router.js";
 import { WebSocketServer } from "ws";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
+import type { IncomingMessage } from "http";
 import appConfig from "../config/app.config.js";
 import ollamaConfig from "../config/ollama.config.js";
 import type { Express } from "express";
@@ -452,7 +453,7 @@ wss.on("connection", async (ws, req) => {
 });
 
 const wsHandler = applyWSSHandler({
-  wss,
+  wss: wss as any,
   router: appRouter,
   createContext: ({ req }: { req: any }) =>
     createContext({

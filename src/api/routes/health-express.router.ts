@@ -121,7 +121,7 @@ export function createServiceHealthRoutes(serviceId: string, serviceName?: strin
   });
 
   // Comprehensive health check - GET /health
-  router.get('/', async (req, res) => {
+  router.get('/', async (req, res): Promise<void> => {
     try {
       const startTime = Date.now();
 
@@ -133,12 +133,13 @@ export function createServiceHealthRoutes(serviceId: string, serviceName?: strin
       }
 
       if (!healthResult) {
-        return res.status(503).json({
+        res.status(503).json({
           status: 'unhealthy',
           service: serviceId,
           timestamp: new Date().toISOString(),
           error: 'Health check not available'
         });
+        return;
       }
 
       const responseTime = Date.now() - startTime;
@@ -208,16 +209,17 @@ export function createServiceHealthRoutes(serviceId: string, serviceName?: strin
   });
 
   // Detailed health info - GET /health/detailed
-  router.get('/detailed', async (req, res) => {
+  router.get('/detailed', async (req, res): Promise<void> => {
     try {
       const healthResult = await healthCheckService.checkServiceNow(serviceId);
       
       if (!healthResult) {
-        return res.status(503).json({
+        res.status(503).json({
           error: 'Health check not available',
           serviceId,
           timestamp: new Date().toISOString()
         });
+        return;
       }
 
       const detailedResponse = {
@@ -274,7 +276,7 @@ export function createServiceHealthRoutes(serviceId: string, serviceName?: strin
  * Create aggregated health routes for API gateway
  * Usage: app.use('/health', createAggregatedHealthRoutes())
  */
-export function createAggregatedHealthRoutes(): Router {
+export function createAggregatedHealthRoutes(): RouterType {
   const router = Router();
 
   // Aggregated system health - GET /health

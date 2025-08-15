@@ -16,32 +16,32 @@ export {
   commonSchemas,
   createFeatureRouter,
   createSecureRouter,
-} from "./enhanced-router.ts";
+} from "./enhanced-router.js";
 
 // Import routers
-import { agentRouter } from "../routes/agent.router.ts";
-import { taskRouter } from "../routes/task.router.ts";
-import { ragRouter } from "../routes/rag.router.ts";
-import { chatRouter } from "../routes/chat.router.ts";
-import { websocketRouter } from "../routes/websocket.router.ts";
-import { healthRouter } from "../routes/health.router.ts";
-import { dataCollectionRouter } from "../routes/data-collection.router.ts";
-import { authRouter } from "../routes/auth.router.ts";
-import { emailRouter } from "../routes/email.router.ts";
-import { metricsRouter } from "../routes/metrics.router.trpc.ts";
-import { emailAssignmentRouter } from "./routers/emailAssignment.router.ts";
-import { iemsEmailRouter } from "../routes/iems-email.router.ts";
-import { dealsRouter } from "../routes/deals.router.ts";
-import { walmartGrocerySimpleRouter as walmartGroceryRouter } from "../routes/walmart-grocery-simple.router.ts";
-import { walmartPriceRouter } from "../routes/walmart-price.router.ts";
-import { workflowRouter } from "../routes/workflow.router.ts";
-import { securityRouter } from "./routers/security.router.ts";
-import { monitoringRouter } from "./routers/monitoring.router.ts";
-import { groceryNLPQueueRouter } from "./routers/grocery-nlp-queue.router.ts";
-import { pollingRouter } from "./routers/polling.router.ts";
+import { agentRouter } from "../routes/agent.router.js";
+import { taskRouter } from "../routes/task.router.js";
+import { ragRouter } from "../routes/rag.router.js";
+import { chatRouter } from "../routes/chat.router.js";
+import { websocketRouter } from "../routes/websocket.router.js";
+import { healthRouter } from "../routes/health.router.js";
+import { dataCollectionRouter } from "../routes/data-collection.router.js";
+import { authRouter } from "../routes/auth.router.js";
+import { emailRouter } from "../routes/email.router.js";
+import { metricsRouter } from "../routes/metrics.router.trpc.js";
+import { emailAssignmentRouter } from "./routers/emailAssignment.router.js";
+import { iemsEmailRouter } from "../routes/iems-email.router.js";
+import { dealsRouter } from "../routes/deals.router.js";
+import { walmartGrocerySimpleRouter as walmartGroceryRouter } from "../routes/walmart-grocery-simple.router.js";
+import { walmartPriceRouter } from "../routes/walmart-price.router.js";
+import { workflowRouter } from "../routes/workflow.router.js";
+import { securityRouter } from "./routers/security.router.js";
+import { monitoringRouter } from "./routers/monitoring.router.js";
+import { groceryNLPQueueRouter } from "./routers/grocery-nlp-queue.router.js";
+import { pollingRouter } from "./routers/polling.router.js";
 
 // Import the router function from enhanced-router
-import { router as createRouter } from "./enhanced-router.ts";
+import { router as createRouter } from "./enhanced-router.js";
 import type { AnyRouter } from "@trpc/server";
 
 // Create the main app router with enhanced security

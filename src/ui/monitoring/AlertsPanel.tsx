@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { MonitoringAlert } from '../../services/MonitoringService';
+import type { MonitoringAlert } from '../../services/MonitoringService.js';
 
 interface AlertsPanelProps {
   alerts: MonitoringAlert[];

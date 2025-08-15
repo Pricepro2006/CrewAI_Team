@@ -479,6 +479,36 @@ export function serviceConfigEndpoint() {
 }
 
 /**
+ * Create a basic health router for Express apps
+ */
+export function createHealthRouter(serviceId: string) {
+  const express = require('express');
+  const router = express.Router();
+  
+  router.get('/live', livenessProbe(serviceId));
+  router.get('/ready', readinessProbe(serviceId));
+  router.get('/', healthEndpoint(serviceId));
+  
+  return router;
+}
+
+/**
+ * Create an aggregated health router for API gateway
+ */
+export function createAggregatedHealthRouter() {
+  const express = require('express');
+  const router = express.Router();
+  
+  router.get('/', aggregatedHealthEndpoint());
+  router.get('/metrics', metricsEndpoint());
+  router.get('/circuit-breakers', circuitBreakerEndpoint());
+  router.get('/config', serviceConfigEndpoint());
+  router.post('/check', triggerHealthCheckEndpoint());
+  
+  return router;
+}
+
+/**
  * Manual health check trigger endpoint
  */
 export function triggerHealthCheckEndpoint() {

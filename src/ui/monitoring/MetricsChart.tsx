@@ -4,7 +4,7 @@
  */
 
 import React, { useRef, useEffect, useState } from 'react';
-import { MonitoringMetric } from '../../services/MonitoringService';
+import type { MonitoringMetric } from '../../services/MonitoringService.js';
 
 interface MetricsChartProps {
   metrics: MonitoringMetric[];

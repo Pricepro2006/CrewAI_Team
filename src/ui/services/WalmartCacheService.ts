@@ -4,7 +4,7 @@
  * Supports memory, IndexedDB, and API-level caching with smart invalidation
  */
 
-import { WalmartProduct, SearchResult, SearchQuery, PriceHistoryPoint } from '../components/Walmart/types/WalmartTypes';
+import type { WalmartProduct, SearchResult, SearchQuery, PriceHistoryPoint } from '../components/Walmart/types/WalmartTypes.js';
 
 interface CacheEntry<T> {
   data: T;
@@ -171,8 +171,9 @@ class WalmartCacheService {
    * Update cache statistics
    */
   private updateStats(layer: 'memory' | 'indexedDB', type: 'hit' | 'miss'): void {
-    this.stats[layer][`${type}s`]++;
-    this.stats.total[`${type}s`]++;
+    const statKey = type === 'hit' ? 'hits' : 'misses';
+    this.stats[layer][statKey]++;
+    this.stats.total[statKey]++;
     
     // Calculate hit rates
     const layerStats = this.stats[layer];

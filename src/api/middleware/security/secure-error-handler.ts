@@ -260,7 +260,7 @@ function sanitizeErrorForClient(
   }
   
   return {
-    message,
+    message: message || 'An error occurred',
     code,
     statusCode,
     correlationId,
