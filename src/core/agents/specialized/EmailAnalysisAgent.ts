@@ -81,7 +81,7 @@ export class EmailAnalysisAgent extends BaseAgent {
     );
 
     this.llamaCppProvider = new LlamaCppProvider({
-      modelPath: process.env.LLAMA_MODEL_PATH || `./models/${this.model}.gguf`,
+      modelPath: process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
       contextSize: 8192,
       threads: 8,
       temperature: 0.7,

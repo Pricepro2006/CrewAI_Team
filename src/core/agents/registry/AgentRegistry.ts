@@ -23,7 +23,7 @@ export class AgentRegistry {
     this.config = {
       maxAgents: 10,
       idleTimeout: 300000, // 5 minutes
-      preloadAgents: ["ResearchAgent", "CodeAgent"],
+      preloadAgents: ["ResearchAgent", "CodeAgent", "EmailAnalysisAgent"],
       ...config,
     };
 
