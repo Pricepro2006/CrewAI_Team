@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { sentryErrorTracker } from '../../monitoring/SentryErrorTracker.js';
 import { AlertTriangle, RefreshCcw, Home, Bug } from 'lucide-react';
 import { Button } from '../components/ui/button.js';
