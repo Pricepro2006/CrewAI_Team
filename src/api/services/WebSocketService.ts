@@ -265,6 +265,44 @@ export const WebSocketMessageSchema = z.discriminatedUnion("type", [
     timestamp: z.date(),
     userId: z.string(),
   }),
+  // Agent Processing Control message types
+  z.object({
+    type: z.literal("email.processing_started"),
+    initiatedBy: z.string(),
+    batchSize: z.number(),
+    maxConcurrent: z.number(),
+    timestamp: z.date(),
+  }),
+  z.object({
+    type: z.literal("email.processing_stopped"),
+    stoppedBy: z.string(),
+    reason: z.string(),
+    forceStop: z.boolean(),
+    timestamp: z.date(),
+  }),
+  z.object({
+    type: z.literal("email.agent_processed"),
+    emailId: z.string(),
+    agentType: z.string(),
+    requestedBy: z.string(),
+    result: z.any(),
+    timestamp: z.date(),
+  }),
+  z.object({
+    type: z.literal("email.processing_reset"),
+    resetBy: z.string(),
+    reason: z.string(),
+    clearProgress: z.boolean(),
+    timestamp: z.date(),
+  }),
+  z.object({
+    type: z.literal("email.processing_progress"),
+    processed: z.number(),
+    total: z.number(),
+    current: z.string(),
+    percentage: z.number(),
+    timestamp: z.date(),
+  }),
 ]);
 
 export type WebSocketMessage = z.infer<typeof WebSocketMessageSchema>;
@@ -364,7 +402,7 @@ export class WebSocketService extends EventEmitter {
         `WebSocket error for client ${clientId}: ${error.message}`,
         "WS_SERVICE",
       );
-      this?.performanceMetrics?.connectionErrors++;
+      this.performanceMetrics.connectionErrors++;
     });
   }
 
@@ -453,7 +491,7 @@ export class WebSocketService extends EventEmitter {
         sockets.forEach((ws: any) => {
           if (ws.readyState === ws.OPEN) {
             ws.send(messageStr);
-            this?.performanceMetrics?.messagesSent++;
+            this.performanceMetrics.messagesSent++;
           }
         });
       }
@@ -641,7 +679,7 @@ export class WebSocketService extends EventEmitter {
         // Clean up orphaned data structures
         this.cleanupOrphanedData();
 
-        this?.performanceMetrics?.lastCleanup = Date.now();
+        this.performanceMetrics.lastCleanup = Date.now();
 
         // Log memory usage for monitoring
         const memUsage = process.memoryUsage();
@@ -677,19 +715,19 @@ export class WebSocketService extends EventEmitter {
           );
         }
 
-        if (this?.performanceMetrics?.connectionErrors > 10) {
+        if (this.performanceMetrics.connectionErrors > 10) {
           this.broadcastPerformanceWarning(
             "websocket",
             "connection_errors",
-            this?.performanceMetrics?.connectionErrors,
+            this.performanceMetrics.connectionErrors,
             10,
             "critical",
           );
-          this?.performanceMetrics?.connectionErrors = 0; // Reset after alert
+          this.performanceMetrics.connectionErrors = 0; // Reset after alert
         }
 
         // Update response time metrics
-        this?.performanceMetrics?.averageResponseTime =
+        this.performanceMetrics.averageResponseTime =
           this.calculateAverageResponseTime();
 
         // Force garbage collection if available (requires --expose-gc flag)
@@ -790,7 +828,7 @@ export class WebSocketService extends EventEmitter {
         try {
           ws.ping();
         } catch (error) {
-          this?.performanceMetrics?.connectionErrors++;
+          this.performanceMetrics.connectionErrors++;
           this.handleConnectionError(clientId, ws);
         }
       } else {
@@ -1311,6 +1349,69 @@ export class WebSocketService extends EventEmitter {
       averageProcessingTime,
       timestamp: new Date(),
     });
+  }
+
+  broadcastEmailProcessingProgress(progress: {
+    processed: number;
+    total: number;
+    current: string;
+    percentage: number;
+  }): void {
+    this.broadcast({
+      type: "email.processing_progress",
+      ...progress,
+      timestamp: new Date(),
+    } as any);
+  }
+
+  // Agent Processing Control WebSocket Methods
+  broadcastEmailProcessingStarted(data: {
+    initiatedBy: string;
+    batchSize: number;
+    maxConcurrent: number;
+    timestamp: Date;
+  }): void {
+    this.broadcast({
+      type: "email.processing_started",
+      ...data,
+    } as any);
+  }
+
+  broadcastEmailProcessingStopped(data: {
+    stoppedBy: string;
+    reason: string;
+    forceStop: boolean;
+    timestamp: Date;
+  }): void {
+    this.broadcast({
+      type: "email.processing_stopped",
+      ...data,
+    } as any);
+  }
+
+  broadcastEmailAgentProcessed(data: {
+    emailId: string;
+    agentType: string;
+    requestedBy: string;
+    result: any;
+    timestamp: Date;
+  }): void {
+    this.broadcast({
+      type: "email.agent_processed",
+      ...data,
+    } as any);
+  }
+
+  broadcastEmailProcessingReset(data: {
+    resetBy: string;
+    reason: string;
+    clearProgress: boolean;
+    timestamp: Date;
+  }): void {
+    this.broadcast({
+      type: "email.processing_reset",
+      ...data,
+    } as any);
   }
 
   /**
