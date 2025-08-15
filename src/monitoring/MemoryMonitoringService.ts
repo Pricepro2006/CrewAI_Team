@@ -331,13 +331,11 @@ export class MemoryMonitoringService extends EventEmitter {
       const manager = this.memoryManagers.get(service);
       
       if (!manager) {
-        res.status(404).json({ error: 'Service not found' });
-        return;
+        return res.status(404).json({ error: 'Service not found' });
       }
       
       manager.forceGC();
       res.json({ success: true, message: 'Garbage collection triggered' });
-      return;
     });
     
     // Take heap snapshot
@@ -603,7 +601,9 @@ export class MemoryMonitoringService extends EventEmitter {
       
       for (const line of lines) {
         const [key, value] = line.split('=');
-        info[key] = value;
+        if (key && value) {
+          info[key] = value;
+        }
       }
       
       if (info.MainPID && info.MainPID !== '0') {
@@ -612,10 +612,10 @@ export class MemoryMonitoringService extends EventEmitter {
         const [pid, rss, cpu, uptime] = psOutput.trim().split(/\s+/);
         
         return {
-          pid: parseInt(pid),
-          memory: parseInt(rss) / 1024, // Convert KB to MB
-          cpu: parseFloat(cpu),
-          uptime: parseInt(uptime) * 1000 // Convert to milliseconds
+          pid: parseInt(pid || '0'),
+          memory: parseInt(rss || '0') / 1024, // Convert KB to MB
+          cpu: parseFloat(cpu || '0'),
+          uptime: parseInt(uptime || '0') * 1000 // Convert to milliseconds
         };
       }
       
@@ -626,7 +626,7 @@ export class MemoryMonitoringService extends EventEmitter {
         if (port === undefined) return null;
         const { stdout } = await execAsync(`lsof -i -P -n | grep LISTEN | grep :${port}`);
         const parts = stdout.trim().split(/\s+/);
-        const pid = parseInt(parts[1]);
+        const pid = parseInt(parts[1] || '0');
         
         if (pid) {
           const { stdout: psOutput } = await execAsync(`ps -o pid,rss,pcpu,etimes -p ${pid} --no-headers`);
@@ -634,9 +634,9 @@ export class MemoryMonitoringService extends EventEmitter {
           
           return {
             pid,
-            memory: parseInt(rss) / 1024,
-            cpu: parseFloat(cpu),
-            uptime: parseInt(uptime) * 1000
+            memory: parseInt(rss || '0') / 1024,
+            cpu: parseFloat(cpu || '0'),
+            uptime: parseInt(uptime || '0') * 1000
           };
         }
       } catch {

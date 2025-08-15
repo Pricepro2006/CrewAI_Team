@@ -624,9 +624,12 @@ export class BusinessIntelligenceService {
     
     // Clean old cache entries
     if (this.cache.size > 100) {
-      const oldestKey = Array.from(this.cache.entries())
-        .sort((a, b) => a[1].timestamp - b[1].timestamp)[0][0];
-      this.cache.delete(oldestKey);
+      const entries = Array.from(this.cache.entries())
+        .sort((a, b) => a[1].timestamp - b[1].timestamp);
+      if (entries.length > 0 && entries[0]) {
+        const oldestKey = entries[0][0];
+        this.cache.delete(oldestKey);
+      }
     }
   }
 

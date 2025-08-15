@@ -5,9 +5,9 @@
  * priority handling, and comprehensive monitoring.
  */
 
-import { Queue, Worker, QueueEvents, Job } from "bullmq";
-import type { JobsOptions } from "bullmq";
-import { Redis } from "ioredis";
+import { Queue, Worker, QueueEvents } from "bullmq";
+import type { Job, JobOptions } from "bullmq";
+import Redis from "ioredis";
 import { EventEmitter } from "events";
 import { Logger } from "../../utils/logger.js";
 import { z } from "zod";
@@ -353,7 +353,7 @@ export class EmailProcessingQueueService extends EventEmitter {
 
         try {
           // Update progress
-          await job.updateProgress({ status: "processing", startTime });
+          await job.progress({ status: "processing", startTime });
 
           // Process the job
           const result = await processor(job);
