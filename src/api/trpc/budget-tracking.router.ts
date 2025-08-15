@@ -315,12 +315,12 @@ export const budgetTrackingRouter = router({
         }
 
         // Check category budgets
-        summary.categories.forEach(category => {
+        summary.categories.forEach((category: any) => {
           if (category.percentage >= 100) {
             alerts.push({
-              id: `category-exceeded-${category.category}`,
+              id: `category-exceeded-${category.name}`,
               type: "warning",
-              message: `${category.category} budget exceeded`,
+              message: `${category.name} budget exceeded`,
               percentage: category.percentage,
               timestamp: new Date().toISOString(),
             });

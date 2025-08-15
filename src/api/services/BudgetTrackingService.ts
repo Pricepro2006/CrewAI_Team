@@ -110,3 +110,8 @@ export class BudgetTrackingService {
     }
   }
 }
+
+// Export convenience function for singleton access
+export function getBudgetTrackingService(): BudgetTrackingService {
+  return BudgetTrackingService.getInstance();
+}
