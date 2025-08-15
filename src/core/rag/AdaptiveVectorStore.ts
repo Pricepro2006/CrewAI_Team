@@ -168,7 +168,7 @@ export class AdaptiveVectorStore implements IVectorStore {
     this.fallbackUsed = true;
 
     // Restore documents if we managed to retrieve them
-    if (existingDocuments?.length || 0 > 0) {
+    if ((existingDocuments?.length || 0) > 0) {
       logger.info(`Restoring ${existingDocuments?.length || 0} documents to in-memory fallback`, "ADAPTIVE_VECTOR_STORE");
       
       const processedDocs: ProcessedDocument[] = existingDocuments?.map(doc => ({

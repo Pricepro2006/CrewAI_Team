@@ -1,6 +1,6 @@
 import { ChromaClient, type Collection } from "chromadb";
 import { EmbeddingService } from "./EmbeddingService.js";
-import { MODEL_CONFIG } from "../../config/models?.config.js";
+import { MODEL_CONFIG } from "../../config/models.config.js";
 import type {
   Document,
   QueryResult,
@@ -8,6 +8,7 @@ import type {
   ProcessedDocument,
 } from "./types.js";
 import type { DocumentMetadata } from "../shared/types.js";
+import { logger } from "../../utils/logger.js";
 
 export class VectorStore {
   private client: ChromaClient;
@@ -18,17 +19,18 @@ export class VectorStore {
   constructor(config: VectorStoreConfig) {
     this.config = config;
 
-    // Check if path is a URL or file path and configure accordingly
-    const chromaPath = config.path || "http://localhost:8001";
+    // Always use HTTP for ChromaDB connection in 2025+ versions
+    const chromaUrl = config.baseUrl || config.path || "http://localhost:8001";
     const clientConfig: any = {};
 
-    if (chromaPath.startsWith("http")) {
-      // HTTP URL - use as-is
-      clientConfig.path = chromaPath;
+    // Ensure we're using HTTP URL format
+    if (chromaUrl.startsWith("http")) {
+      clientConfig.path = chromaUrl;
     } else {
-      // File path - this will fail in 2025 versions, fallback to HTTP
-      console.warn(
-        "ChromaDB file path configuration is deprecated. Falling back to HTTP.",
+      // Legacy file path - convert to HTTP
+      logger.warn(
+        "ChromaDB file path configuration is deprecated. Using HTTP URL instead.",
+        "VECTOR_STORE"
       );
       clientConfig.path = "http://localhost:8001";
     }
@@ -85,7 +87,7 @@ export class VectorStore {
       throw new Error("Vector store not initialized");
     }
 
-    if (documents?.length || 0 === 0) return;
+    if (!documents || documents.length === 0) return;
 
     // Generate embeddings
     const embeddings = await this?.embeddingService?.embedBatch(
@@ -256,7 +258,7 @@ export class VectorStore {
       include: [],
     });
 
-    return results?.ids?.length;
+    return results?.ids?.length || 0;
   }
 
   async getCollections(): Promise<string[]> {
@@ -281,7 +283,7 @@ export class VectorStore {
   private formatResults(chromaResults: any): QueryResult[] {
     const results: QueryResult[] = [];
 
-    if (!chromaResults.ids || chromaResults?.ids?.length === 0) {
+    if (!chromaResults.ids || !chromaResults.ids[0] || chromaResults.ids[0].length === 0) {
       return results;
     }
 

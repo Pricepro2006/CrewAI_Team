@@ -18,7 +18,7 @@ export interface RAGConfig {
 }
 
 export interface VectorStoreConfig {
-  type: "chromadb" | "pinecone" | "weaviate" | "qdrant" | "mcp-vectorize";
+  type: "chromadb" | "pinecone" | "weaviate" | "qdrant" | "mcp-vectorize" | "adaptive" | "resilient";
   path?: string;
   baseUrl?: string;
   apiKey?: string;

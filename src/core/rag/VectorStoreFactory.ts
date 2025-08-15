@@ -36,8 +36,9 @@ export class VectorStoreFactory {
         );
 
       default:
-        logger.warn(`Unknown vector store type: ${config.type}. Using resilient ChromaDB with advanced fallback.`, "VECTOR_STORE_FACTORY");
-        return new ResilientVectorStore(config);
+        logger.warn(`Unknown vector store type: ${config.type}. Using adaptive ChromaDB with fallback.`, "VECTOR_STORE_FACTORY");
+        // For unknown types, use adaptive store which provides better fallback for email processing
+        return new AdaptiveVectorStore(config);
     }
   }
 

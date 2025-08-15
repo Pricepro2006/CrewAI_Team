@@ -43,4 +43,24 @@ export interface IVectorStore {
    * Get all documents with pagination
    */
   getAllDocuments(limit?: number, offset?: number): Promise<Document[]>;
+
+  /**
+   * Get total document count (optional - for compatibility)
+   */
+  getDocumentCount?(): Promise<number>;
+
+  /**
+   * Get total chunk count (optional - for compatibility)
+   */
+  getChunkCount?(): Promise<number>;
+
+  /**
+   * Get available collections (optional - for compatibility)
+   */
+  getCollections?(): Promise<string[]>;
+
+  /**
+   * Clear all documents (optional - for compatibility)
+   */
+  clear?(): Promise<void>;
 }

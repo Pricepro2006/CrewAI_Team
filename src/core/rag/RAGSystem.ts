@@ -2,7 +2,7 @@ import { AdaptiveVectorStore } from "./AdaptiveVectorStore.js";
 import { DocumentProcessor } from "./DocumentProcessor.js";
 import { EmbeddingService } from "./EmbeddingService.js";
 import { RetrievalService } from "./RetrievalService.js";
-import { MODEL_CONFIG } from "../../config/models?.config.js";
+import { MODEL_CONFIG } from "../../config/models.config.js";
 import { logger } from "../../utils/logger.js";
 import type {
   Document,
@@ -184,7 +184,7 @@ export class RAGSystem {
       ? await this.searchWithFilter(query, filter, limit)
       : await this.search(query, limit);
 
-    if (results?.length || 0 === 0) {
+    if (!results || results.length === 0) {
       return "";
     }
 
@@ -213,6 +213,274 @@ export class RAGSystem {
       // Return raw concatenated content
       return results?.map(r => r.content).join("\n\n");
     }
+  }
+
+  /**
+   * Index email content for semantic search and retrieval
+   */
+  async indexEmailContent(
+    emailId: string,
+    emailData: {
+      subject: string;
+      body: string;
+      sender?: string;
+      recipients?: string[];
+      date?: string;
+      metadata?: Record<string, any>;
+    }
+  ): Promise<void> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    // Combine subject and body for comprehensive indexing
+    const content = `Subject: ${emailData.subject}\n\nBody: ${emailData.body}`;
+    
+    const enhancedMetadata = {
+      ...emailData.metadata,
+      type: 'email',
+      emailId,
+      subject: emailData.subject,
+      sender: emailData.sender,
+      recipients: emailData.recipients?.join(', '),
+      date: emailData.date,
+      indexed: new Date().toISOString(),
+      contentLength: content.length,
+    };
+
+    await this.addDocument(content, enhancedMetadata);
+    
+    logger.info(
+      `Indexed email content for ID: ${emailId}`,
+      "RAG_SYSTEM"
+    );
+  }
+
+  /**
+   * Batch index multiple emails efficiently
+   * Optimized for large datasets like 143,221 emails
+   */
+  async batchIndexEmails(
+    emails: Array<{
+      id: string;
+      subject: string;
+      body: string;
+      sender?: string;
+      recipients?: string[];
+      date?: string;
+      metadata?: Record<string, any>;
+    }>,
+    options: {
+      batchSize?: number;
+      concurrency?: number;
+      progressCallback?: (progress: { indexed: number; total: number; percentage: number }) => void;
+    } = {}
+  ): Promise<{ indexed: number; failed: number; errors: string[]; timeElapsed: number }> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    const startTime = Date.now();
+    const results = { indexed: 0, failed: 0, errors: [] as string[] };
+    
+    // Optimized batch size for email processing (balance between memory and performance)
+    const batchSize = options.batchSize || 25; // Reduced for better memory management
+    const totalBatches = Math.ceil(emails.length / batchSize);
+    
+    logger.info(
+      `Starting batch email indexing: ${emails.length} emails in ${totalBatches} batches (size: ${batchSize})`,
+      "RAG_SYSTEM"
+    );
+
+    for (let i = 0; i < emails.length; i += batchSize) {
+      const batch = emails.slice(i, i + batchSize);
+      const batchNumber = Math.floor(i / batchSize) + 1;
+      
+      logger.info(
+        `Processing batch ${batchNumber}/${totalBatches} (${batch.length} emails)`,
+        "RAG_SYSTEM"
+      );
+      
+      const batchDocs = batch.map(email => {
+        // Truncate very long emails to prevent memory issues
+        const maxBodyLength = 10000; // 10KB limit per email body
+        const truncatedBody = email.body.length > maxBodyLength 
+          ? email.body.substring(0, maxBodyLength) + '... [truncated]'
+          : email.body;
+          
+        const content = `Subject: ${email.subject}\n\nBody: ${truncatedBody}`;
+        
+        return {
+          content,
+          metadata: {
+            ...email.metadata,
+            type: 'email',
+            emailId: email.id,
+            subject: email.subject.substring(0, 500), // Limit subject length
+            sender: email.sender,
+            recipients: email.recipients?.slice(0, 10)?.join(', '), // Limit recipients
+            date: email.date,
+            indexed: new Date().toISOString(),
+            contentLength: content.length,
+            originalBodyLength: email.body.length,
+            wasTruncated: email.body.length > maxBodyLength,
+          },
+        };
+      });
+
+      try {
+        await this.addDocuments(batchDocs);
+        results.indexed += batch.length;
+        
+        // Progress reporting
+        const progress = {
+          indexed: results.indexed,
+          total: emails.length,
+          percentage: Math.round((results.indexed / emails.length) * 100),
+        };
+        
+        options.progressCallback?.(progress);
+        
+        logger.info(
+          `Batch ${batchNumber}/${totalBatches} completed: ${batch.length} emails indexed (${progress.percentage}% total)`,
+          "RAG_SYSTEM"
+        );
+        
+        // Memory management: force garbage collection for large batches
+        if (batchNumber % 10 === 0 && global.gc) {
+          global.gc();
+          logger.info("Triggered garbage collection", "RAG_SYSTEM");
+        }
+        
+        // Small delay to prevent overwhelming the system
+        if (i + batchSize < emails.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+      } catch (error) {
+        results.failed += batch.length;
+        const errorMsg = `Batch ${batchNumber} indexing failed for emails ${i}-${i + batch.length - 1}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        results.errors.push(errorMsg);
+        
+        logger.error(errorMsg, "RAG_SYSTEM");
+        
+        // Continue with next batch even if current batch fails
+        continue;
+      }
+    }
+
+    const timeElapsed = Date.now() - startTime;
+    const timeElapsedSeconds = Math.round(timeElapsed / 1000);
+    const emailsPerSecond = Math.round(results.indexed / (timeElapsedSeconds || 1));
+
+    logger.info(
+      `Email batch indexing completed: ${results.indexed} indexed, ${results.failed} failed in ${timeElapsedSeconds}s (${emailsPerSecond} emails/sec)`,
+      "RAG_SYSTEM"
+    );
+
+    return { ...results, timeElapsed };
+  }
+
+  /**
+   * Search for emails by content similarity
+   */
+  async searchEmails(
+    query: string,
+    options: {
+      limit?: number;
+      dateRange?: { from?: string; to?: string };
+      sender?: string;
+      includeBody?: boolean;
+    } = {}
+  ): Promise<Array<{
+    emailId: string;
+    subject: string;
+    snippet: string;
+    score: number;
+    sender?: string;
+    date?: string;
+    metadata?: Record<string, any>;
+  }>> {
+    const { limit = 10, dateRange, sender, includeBody = false } = options;
+
+    // Build filter for email-specific searches
+    const filter: Record<string, any> = { type: 'email' };
+    
+    if (sender) {
+      filter.sender = sender;
+    }
+    
+    // Note: Date range filtering would need custom implementation in vector store
+    if (dateRange?.from || dateRange?.to) {
+      // This is a simplified approach - would need proper date filtering in vector store
+      logger.warn("Date range filtering not fully implemented in vector store", "RAG_SYSTEM");
+    }
+
+    const results = await this.searchWithFilter(query, filter, limit);
+
+    return results.map(result => ({
+      emailId: result.metadata.emailId || '',
+      subject: result.metadata.subject || '',
+      snippet: includeBody 
+        ? result.content.substring(0, 300) + (result.content.length > 300 ? '...' : '')
+        : result.metadata.subject || '',
+      score: result.score,
+      sender: result.metadata.sender,
+      date: result.metadata.date,
+      metadata: result.metadata,
+    }));
+  }
+
+  /**
+   * Get context for email-related queries to enhance LLM responses
+   */
+  async getEmailContext(
+    query: string,
+    options: {
+      limit?: number;
+      focusArea?: 'subject' | 'body' | 'both';
+      timeframe?: 'recent' | 'all';
+    } = {}
+  ): Promise<string> {
+    const { limit = 5, focusArea = 'both' } = options;
+
+    const filter = { type: 'email' };
+    const results = await this.searchWithFilter(query, filter, limit);
+
+    if (!results || results.length === 0) {
+      return "";
+    }
+
+    const contextParts: string[] = [];
+    contextParts.push("## Relevant Email Context\n");
+
+    results.forEach((result, index) => {
+      contextParts.push(`### Email ${index + 1} (Relevance: ${result.score.toFixed(3)})`);
+      
+      if (result.metadata.subject) {
+        contextParts.push(`**Subject:** ${result.metadata.subject}`);
+      }
+      if (result.metadata.sender) {
+        contextParts.push(`**From:** ${result.metadata.sender}`);
+      }
+      if (result.metadata.date) {
+        contextParts.push(`**Date:** ${result.metadata.date}`);
+      }
+      
+      // Include content based on focus area
+      if (focusArea === 'both' || focusArea === 'body') {
+        const bodyContent = result.content
+          .replace(/^Subject:.*?\n\nBody:\s*/s, '') // Remove subject prefix
+          .trim();
+        if (bodyContent) {
+          contextParts.push("\n" + bodyContent.substring(0, 500) + (bodyContent.length > 500 ? '...' : ''));
+        }
+      }
+      
+      contextParts.push(""); // Empty line between emails
+    });
+
+    return contextParts.join("\n");
   }
 
   /**
@@ -301,7 +569,7 @@ export class RAGSystem {
       totalChunks,
       collections,
       averageChunksPerDocument:
-        totalDocuments > 0 ? Math.round(totalChunks / totalChunks) : 0,
+        totalDocuments > 0 ? Math.round(totalChunks / totalDocuments) : 0,
       vectorStoreType: storeInfo.type,
       embeddingModel: MODEL_CONFIG?.models?.embedding,
       fallbackMode: storeInfo.fallbackUsed,
