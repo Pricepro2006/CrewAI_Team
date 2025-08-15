@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
 import { OllamaProvider } from './OllamaProvider.js';
 import { LlamaCppProvider } from './LlamaCppProvider.js';
+import { KnowledgeBackedLLM } from './KnowledgeBackedLLM.js';
+import { RAGSystem } from '../rag/RAGSystem.js';
 import { logger } from '../../utils/logger.js';
 
 export interface LLMProviderInterface {
@@ -10,7 +12,7 @@ export interface LLMProviderInterface {
 }
 
 export interface LLMProviderConfig {
-  type: 'ollama' | 'llamacpp' | 'auto';
+  type: 'ollama' | 'llamacpp' | 'knowledge-backed' | 'auto';
   ollama?: {
     baseUrl: string;
     model: string;
@@ -24,6 +26,16 @@ export interface LLMProviderConfig {
     temperature?: number;
     gpuLayers?: number;
   };
+  knowledgeBacked?: {
+    modelPath: string;
+    fallbackModelPath?: string;
+    contextSize?: number;
+    threads?: number;
+    temperature?: number;
+    gpuLayers?: number;
+    ragEnabled?: boolean;
+  };
+  ragSystem?: RAGSystem;
 }
 
 export class LLMProviderFactory {
@@ -48,6 +60,10 @@ export class LLMProviderFactory {
       
       case 'llamacpp':
         provider = await LLMProviderFactory.createLlamaCppProvider(config.llamacpp!);
+        break;
+      
+      case 'knowledge-backed':
+        provider = await LLMProviderFactory.createKnowledgeBackedProvider(config.knowledgeBacked!, config.ragSystem);
         break;
       
       case 'auto':
@@ -119,19 +135,75 @@ export class LLMProviderFactory {
   }
 
   /**
+   * Create Knowledge-Backed LLM provider
+   */
+  private static async createKnowledgeBackedProvider(
+    config: NonNullable<LLMProviderConfig['knowledgeBacked']>,
+    ragSystem?: RAGSystem
+  ): Promise<KnowledgeBackedLLM> {
+    logger.info('Creating Knowledge-Backed LLM provider', 'LLM_FACTORY', {
+      modelPath: config.modelPath,
+      ragEnabled: config.ragEnabled !== false,
+    });
+
+    const provider = new KnowledgeBackedLLM(
+      {
+        modelPath: config.modelPath,
+        fallbackModelPath: config.fallbackModelPath,
+        contextSize: config.contextSize || 8192,
+        threads: config.threads || 8,
+        temperature: config.temperature || 0.7,
+        gpuLayers: config.gpuLayers || 0,
+        ragConfig: {
+          enabled: config.ragEnabled !== false,
+          topK: 5,
+          minScore: 0.5,
+          maxContextDocs: 3,
+        },
+      },
+      ragSystem
+    );
+
+    try {
+      await provider.initialize();
+      logger.info('Knowledge-Backed LLM provider initialized successfully', 'LLM_FACTORY');
+      return provider;
+    } catch (error) {
+      logger.error('Failed to initialize Knowledge-Backed LLM provider', 'LLM_FACTORY', { error });
+      throw error;
+    }
+  }
+
+  /**
    * Auto-select the best available provider
    */
   private static async autoSelectProvider(config: LLMProviderConfig): Promise<LLMProviderInterface> {
     logger.info('Auto-selecting LLM provider', 'LLM_FACTORY');
 
-    // Try Llama.cpp first if configured
+    // Try Knowledge-Backed LLM first if configured
+    if (config.knowledgeBacked?.modelPath) {
+      try {
+        const provider = await LLMProviderFactory.createKnowledgeBackedProvider(
+          config.knowledgeBacked,
+          config.ragSystem
+        );
+        logger.info('Auto-selected Knowledge-Backed LLM provider', 'LLM_FACTORY');
+        return provider;
+      } catch (error) {
+        logger.warn('Knowledge-Backed LLM provider failed, trying alternatives', 'LLM_FACTORY', {
+          error: error.message,
+        });
+      }
+    }
+
+    // Try Llama.cpp if configured
     if (config.llamacpp?.modelPath) {
       try {
         const provider = await LLMProviderFactory.createLlamaCppProvider(config.llamacpp);
         logger.info('Auto-selected Llama.cpp provider', 'LLM_FACTORY');
         return provider;
       } catch (error) {
-        logger.warn('Llama.cpp provider failed, trying Ollama', 'LLM_FACTORY', { error: error.message });
+        logger.warn('Llama.cpp provider failed, trying Ollama as fallback', 'LLM_FACTORY', { error: error.message });
       }
     }
 
@@ -154,12 +226,23 @@ export class LLMProviderFactory {
    * Get default configuration based on environment
    */
   static getDefaultConfig(): LLMProviderConfig {
-    const llamaModelPath = process.env.LLAMA_MODEL_PATH || './models/Llama-3.2-3B-Instruct-Q4_K_M.gguf';
+    const mistralModelPath = process.env.MISTRAL_MODEL_PATH || '/home/pricepro2006/CrewAI_Team/models/mistral-7b-instruct-v0.2.Q4_K_M.gguf';
+    const llamaModelPath = process.env.LLAMA_MODEL_PATH || '/home/pricepro2006/CrewAI_Team/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf';
+    const llamaCppPath = process.env.LLAMA_CPP_PATH || '/usr/local/bin/llama-cli';
     const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
     const ollamaModel = process.env.OLLAMA_MODEL_MAIN || 'qwen3:14b';
 
     return {
       type: 'auto',
+      knowledgeBacked: {
+        modelPath: mistralModelPath,
+        fallbackModelPath: llamaModelPath,
+        contextSize: parseInt(process.env.LLM_CONTEXT_SIZE || '8192'),
+        threads: parseInt(process.env.LLM_THREADS || '8'),
+        temperature: 0.7,
+        gpuLayers: parseInt(process.env.LLM_GPU_LAYERS || '0'),
+        ragEnabled: process.env.ENABLE_RAG !== 'false',
+      },
       llamacpp: {
         modelPath: llamaModelPath,
         contextSize: 8192,

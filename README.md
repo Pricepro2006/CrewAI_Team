@@ -100,7 +100,7 @@ The email processing system implements a three-phase architecture with progressi
 - **Database**: SQLite with better-sqlite3
 - **API Layer**: tRPC for type-safe APIs
 - **Queue**: Redis + BullMQ (configured but underutilized)
-- **LLM**: Ollama (transitioning between Ollama and llama.cpp)
+- **LLM**: llama.cpp with node-llama-cpp bindings
 - **Vector Store**: ChromaDB (configured but not actively used)
 - **WebSocket**: Port 8080 (infrastructure ready)
 
@@ -111,7 +111,7 @@ The email processing system implements a three-phase architecture with progressi
 - Node.js 20.11 or higher
 - SQLite 3
 - Redis (optional - for queue management)
-- Ollama (optional - for LLM features when integrated)
+- llama.cpp (for LLM features)
 - Python 3.x with distutils (for node-gyp compilation)
 
 ### Installation
@@ -149,12 +149,12 @@ WALMART_DB_PATH=./data/walmart_grocery.db
 
 # Services
 REDIS_URL=redis://localhost:6379
-OLLAMA_HOST=http://localhost:11434
+LLAMA_CPP_PATH=/path/to/llama.cpp/build/bin/llama-cli
 CHROMADB_URL=http://localhost:8000
 
-# NLP Configuration
-WALMART_NLP_MODEL=qwen3:0.6b
-OLLAMA_MODEL=qwen3:0.6b
+# LLM Configuration
+LLAMA_MODEL_PATH=./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf
+LLAMA_GPU_LAYERS=0
 
 # Microservice Ports
 NLP_SERVICE_PORT=3008
