@@ -14,7 +14,7 @@
  */
 
 import { z } from "zod";
-import * as DOMPurify from "isomorphic-dompurify";
+import DOMPurify from "isomorphic-dompurify";
 import validator from "validator";
 import { createHash } from "crypto";
 import * as path from "path";

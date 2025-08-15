@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
-import express from 'express';
+import express, { type Express } from 'express';
 import { setupRedisQueueSystem } from '../examples/redis-queue-integration.js';
 
 // Mock external dependencies
@@ -29,7 +29,7 @@ vi.mock('nanoid', () => ({
 }));
 
 describe('Redis Queue Integration Tests', () => {
-  let app: express.Application;
+  let app: Express;
   let queueSystem: any;
 
   beforeAll(async () => {

@@ -663,18 +663,18 @@ export const MonitoringDashboard: React.FC = () => {
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <Server className="w-4 h-4" />
-                  <CardTitle className="text-base">Ollama</CardTitle>
+                  <CardTitle className="text-base">Llama.cpp</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
                 <Badge
                   variant={
-                    healthData?.services.ollama === "connected"
+                    healthData?.services.llama === "connected"
                       ? "default"
                       : "destructive"
                   }
                 >
-                  {healthData?.services.ollama || "Unknown"}
+                  {healthData?.services.llama || "Unknown"}
                 </Badge>
               </CardContent>
             </Card>

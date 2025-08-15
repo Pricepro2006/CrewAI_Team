@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { router } from "@trpc/server";
+import type { Context } from "../trpc/context.js";
 import { emailRouter } from "./email.router.js";
 import { EmailStorageService } from "../services/EmailStorageService.js";
 import { wsService } from "../services/WebSocketService.js";
@@ -21,8 +22,8 @@ vi.mock("../services/WebSocketService", () => ({
 // Logger is mocked globally in setup-unit.ts - no need for local mock
 
 describe("Email Router", () => {
-  let mockEmailStorage: unknown;
-  let mockContext: unknown;
+  let mockEmailStorage: any;
+  let mockContext: Partial<Context>;
 
   beforeEach(() => {
     vi.clearAllMocks();
