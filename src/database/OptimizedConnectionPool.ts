@@ -302,10 +302,11 @@ export class OptimizedConnectionPool extends EventEmitter {
     callback: (db: Database.Database) => T
   ): Promise<T> {
     const connection = await this.getConnection();
-    const transaction = connection.db.transaction(callback);
 
     try {
-      const result = transaction();
+      const result = connection.db.transaction(() => {
+        return callback(connection.db);
+      })();
       this.emit('transaction-completed', { connectionId: connection.id });
       return result;
     } catch (error) {
@@ -429,7 +430,7 @@ export class OptimizedConnectionPool extends EventEmitter {
   private getPercentile(sortedArray: number[], percentile: number): number {
     if (sortedArray.length === 0) return 0;
     const index = Math.ceil(sortedArray.length * percentile) - 1;
-    return sortedArray[Math.max(0, index)];
+    return sortedArray[Math.max(0, index)] || 0;
   }
 
   private startCleanupRoutine(): void {

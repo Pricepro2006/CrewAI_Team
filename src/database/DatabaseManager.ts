@@ -3,8 +3,7 @@
  * Coordinates SQLite and ChromaDB operations with proper initialization
  */
 
-// Use require for better-sqlite3 to avoid type issues
-const Database = require("better-sqlite3");
+import Database, { type Database as DatabaseType } from "better-sqlite3";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { logger } from "../utils/logger.js";
@@ -79,7 +78,7 @@ export interface DatabaseConfig {
 
 export class DatabaseManager {
   public readonly connectionPool: DatabaseConnectionPool;
-  private db: Database.Database | null = null;
+  private db: DatabaseType | null = null;
   private chromaManager: ChromaDBManager;
   private migrator: DatabaseMigrator;
   private isInitialized: boolean = false;
@@ -470,7 +469,7 @@ export class DatabaseManager {
    * Execute a database transaction using connection pool
    */
   async transaction<T>(
-    callback: (db: Database.Database) => Promise<T>,
+    callback: (db: DatabaseType) => Promise<T>,
   ): Promise<T> {
     return this.connectionPool.executeTransaction(async (db) => {
       return await callback(db);
@@ -487,7 +486,7 @@ export class DatabaseManager {
   /**
    * Get direct access to SQLite database (via connection pool)
    */
-  getSQLiteDatabase(): Database.Database {
+  getSQLiteDatabase(): DatabaseType {
     if (!this.db) {
       const connection = this.connectionPool.getConnection();
       this.db = connection.getDatabase();
@@ -505,7 +504,7 @@ export class DatabaseManager {
   /**
    * Execute query using connection pool
    */
-  async executeQuery<T>(queryFn: (db: Database.Database) => T): Promise<T> {
+  async executeQuery<T>(queryFn: (db: DatabaseType) => T): Promise<T> {
     return this.connectionPool.executeQuery(queryFn);
   }
 

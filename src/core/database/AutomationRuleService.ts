@@ -16,6 +16,16 @@ interface AutomationRule {
   last_executed: Date | null;
 }
 
+interface EmailRecord {
+  id: number;
+  rule_name: string;
+  success_count: number;
+  executed_count: number;
+  success_rate?: number;
+  avg_execution_time?: number;
+  priority: number;
+}
+
 interface RulePerformance {
   rule_id: number;
   rule_name: string;
@@ -106,7 +116,7 @@ export class AutomationRuleService {
         ORDER BY ar.priority DESC
       `);
 
-      const results = stmt.all() as EmailRecord[];
+      const results = stmt.all() as RulePerformance[];
       return results.map((r) => ({
         ...r,
         success_rate: r.success_rate || 0,

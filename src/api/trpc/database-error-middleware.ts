@@ -204,18 +204,14 @@ export class DatabaseErrorHandler {
     // Don't expose internal details to client in production
     const isDevelopment = process.env.NODE_ENV === 'development';
     
+    const developmentInfo = isDevelopment 
+      ? ` Details: ${errorDetails}. Original: ${error.message}` 
+      : '';
+    
     throw new TRPCError({
       code: trpcCode,
-      message: clientMessage,
+      message: clientMessage + developmentInfo,
       cause: error,
-      // Include detailed information only in development
-      ...(isDevelopment && {
-        data: {
-          details: errorDetails,
-          originalMessage: error.message,
-          context
-        }
-      })
     });
   }
 
@@ -266,12 +262,7 @@ export class DatabaseErrorHandler {
       
       throw new TRPCError({
         code: 'NOT_FOUND',
-        message: 'Database schema mismatch detected',
-        data: {
-          missingColumns,
-          table: tableName,
-          suggestion
-        }
+        message: `Database schema mismatch detected for table ${tableName}. Missing columns: ${missingColumns.join(', ')}. ${suggestion}`,
       });
     }
 
