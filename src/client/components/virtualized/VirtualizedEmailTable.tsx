@@ -192,7 +192,7 @@ export const VirtualizedEmailTable = React.memo<VirtualizedEmailTableProps>(
           itemData={itemData}
           overscanCount={5} // Render 5 extra items for smooth scrolling
         >
-          {EmailRow}
+          {EmailRow as React.ComponentType<RowProps>}
         </VirtualList>
 
         {/* Footer with row count */}

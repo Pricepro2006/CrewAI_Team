@@ -41,18 +41,18 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const { onError } = this.props;
     const { errorCount } = this.state;
 
     // Log error to monitoring service
-    logger.error("React Error Boundary caught error:", {
+    logger.error("React Error Boundary caught error:", JSON.stringify({
       error: error.message,
       stack: error.stack,
       componentStack: errorInfo.componentStack,
       errorCount: errorCount + 1,
       timestamp: new Date().toISOString(),
-    });
+    }));
 
     // Call custom error handler if provided
     if (onError) {

@@ -145,6 +145,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
       }, 3000);
       return () => clearTimeout(timer);
     }
+    return undefined; // Explicit return for when not transitioning
   }, [connection.isTransitioning]);
 
   return (

@@ -159,7 +159,7 @@ export const OptimizedChart: React.FC<ChartProps> = React.memo(({
         </h3>
       )}
       <ResponsiveContainer width="100%" height={height}>
-        {renderChart()}
+        {renderChart() || <div />}
       </ResponsiveContainer>
     </div>
   );

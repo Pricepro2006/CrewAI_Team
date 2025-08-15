@@ -148,21 +148,22 @@ const CircuitBreakerDashboard: React.FC = () => {
 
       return () => clearInterval(interval);
     }
+    return undefined; // Explicit return for when autoRefresh is false
   }, [autoRefresh]);
 
-  const getStateColor = (state: string) => {
+  const getStateColor = (state: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (state) {
-      case 'closed': return 'success';
-      case 'half-open': return 'warning';
+      case 'closed': return 'default';
+      case 'half-open': return 'secondary';
       case 'open': return 'destructive';
       default: return 'secondary';
     }
   };
 
-  const getHealthColor = (health: string) => {
+  const getHealthColor = (health: string): "default" | "destructive" | "secondary" => {
     switch (health) {
-      case 'healthy': return 'success';
-      case 'degraded': return 'warning';
+      case 'healthy': return 'default';
+      case 'degraded': return 'secondary';
       case 'unhealthy': return 'destructive';
       default: return 'secondary';
     }
@@ -247,7 +248,7 @@ const CircuitBreakerDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="health-indicator">
-              <Badge variant={getHealthColor(systemHealth.overall)}>
+              <Badge variant={getHealthColor(systemHealth.overall) as "default" | "secondary" | "destructive" | "outline" | undefined}>
                 {systemHealth.overall.toUpperCase()}
               </Badge>
               <div className="health-stats">
@@ -259,7 +260,7 @@ const CircuitBreakerDashboard: React.FC = () => {
         </Card>
 
         {systemHealth.deadLetterQueue.total > 0 && (
-          <Alert variant="warning" className="dlq-alert">
+          <Alert variant="default" className="dlq-alert warning-alert">
             <AlertDescription>
               {systemHealth.deadLetterQueue.total} operations in dead letter queue require attention
             </AlertDescription>
@@ -278,6 +279,7 @@ const CircuitBreakerDashboard: React.FC = () => {
           <div className="service-grid">
             {filteredServices.map(serviceName => {
               const service = systemHealth.services[serviceName];
+              if (!service) return null;
               const circuitBreakers = Object.entries(service.circuitBreakers);
               
               return (
@@ -296,7 +298,7 @@ const CircuitBreakerDashboard: React.FC = () => {
                         <div key={name} className="circuit-breaker-item">
                           <div className="cb-header">
                             <span className="cb-name">{name.replace(`${serviceName}_`, '')}</span>
-                            <Badge variant={getStateColor(stats.state)}>
+                            <Badge variant={getStateColor(stats.state) as "default" | "secondary" | "destructive" | "outline" | undefined}>
                               {stats.state}
                             </Badge>
                           </div>
@@ -371,7 +373,9 @@ const CircuitBreakerDashboard: React.FC = () => {
         <TabsContent value="bulkheads" className="bulkheads-tab">
           <div className="bulkhead-grid">
             {filteredServices.map(serviceName => {
-              const bulkhead = systemHealth.services[serviceName].bulkhead;
+              const service = systemHealth.services[serviceName];
+              if (!service) return null;
+              const bulkhead = service.bulkhead;
               const utilizationPercent = (bulkhead.currentActive / bulkhead.maxConcurrent) * 100;
               
               return (

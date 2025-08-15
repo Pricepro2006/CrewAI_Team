@@ -39,9 +39,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/button.js';
 import { Badge } from '../../components/ui/badge.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs.js';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select.js';
 import { Switch } from '../../components/ui/switch.js';
-import { Label } from '../../components/ui/label.js';
+import { Label } from '../../../components/ui/label.js';
 
 // Types for monitoring data
 interface MetricData {
@@ -706,7 +706,7 @@ export const MonitoringDashboard: React.FC = () => {
                       cy="50%"
                       outerRadius={80}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                     >
                       {[
                         { name: 'Product Search', value: 45, color: COLORS.primary },

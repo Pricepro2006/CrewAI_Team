@@ -57,6 +57,7 @@ class PerformanceTracker {
 
     return Object.entries(componentTimes)
       .filter(([_, times]) => {
+        if (!times || times.length === 0) return false;
         const avg = times.reduce((sum, time) => sum + time, 0) / times.length;
         return avg > threshold;
       })

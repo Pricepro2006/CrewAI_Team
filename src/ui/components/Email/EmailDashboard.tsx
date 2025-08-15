@@ -211,13 +211,13 @@ export const EmailDashboard: React.FC = () => {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
-        volumeByDate.set(dateStr, 0);
+        volumeByDate.set(dateStr || '', 0);
       }
       
       // Count emails by date
       tableData?.data?.emails?.forEach((email: any) => {
         const emailDate = new Date(email.receivedDate).toISOString().split('T')[0];
-        if (volumeByDate.has(emailDate)) {
+        if (emailDate && volumeByDate.has(emailDate)) {
           volumeByDate.set(emailDate, (volumeByDate.get(emailDate) || 0) + 1);
         }
       });
@@ -697,7 +697,7 @@ export const EmailDashboard: React.FC = () => {
           email.entities.forEach((entity: any) => {
             const type = entity.type?.toUpperCase() || '';
             if (type in counts) {
-              counts[type]++;
+              (counts as any)[type]++;
             }
           });
         }
@@ -832,7 +832,7 @@ export const EmailDashboard: React.FC = () => {
                     x: {
                       grid: {
                         color: "rgba(75, 85, 99, 0.3)",
-                        drawBorder: false,
+                        display: true,
                       },
                       ticks: {
                         color: "#9ca3af",
@@ -845,7 +845,7 @@ export const EmailDashboard: React.FC = () => {
                       beginAtZero: true,
                       grid: {
                         color: "rgba(75, 85, 99, 0.3)",
-                        drawBorder: false,
+                        display: true,
                       },
                       ticks: {
                         color: "#9ca3af",

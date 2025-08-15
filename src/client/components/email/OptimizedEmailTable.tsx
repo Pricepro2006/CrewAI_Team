@@ -50,23 +50,41 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
   
   // Optimized data fetching
   const {
-    data: emails,
+    data: emailResponse,
     isLoading,
     error,
     updateEmail,
     isUpdating,
     prefetchEmailDetail,
   } = useOptimizedEmails(filters);
+  
+  // Extract emails array from response
+  const emails = useMemo(() => {
+    if (!emailResponse) return [];
+    if (Array.isArray(emailResponse)) return emailResponse;
+    if ((emailResponse as any).data?.emails) return (emailResponse as any).data.emails;
+    if ((emailResponse as any).data) return Array.isArray((emailResponse as any).data) ? (emailResponse as any).data : [];
+    return [];
+  }, [emailResponse]);
 
   // Search results (only when search is active)
   const {
-    data: searchResults,
+    data: searchResponse,
     isLoading: isSearching,
   } = useOptimizedEmailSearch(debouncedSearchTerm, debouncedSearchTerm.length >= 2);
+  
+  // Extract search results array from response
+  const searchResults = useMemo(() => {
+    if (!searchResponse) return [];
+    if (Array.isArray(searchResponse)) return searchResponse;
+    if ((searchResponse as any).data?.emails) return (searchResponse as any).data.emails;
+    if ((searchResponse as any).data) return Array.isArray((searchResponse as any).data) ? (searchResponse as any).data : [];
+    return [];
+  }, [searchResponse]);
 
   // Determine which data to use
   const displayEmails = useMemo(() => {
-    let emailsToDisplay = debouncedSearchTerm.length >= 2 ? (searchResults || []) : (emails || []);
+    let emailsToDisplay = debouncedSearchTerm.length >= 2 ? searchResults : emails;
     
     // Apply sorting if configured
     if (sortConfig) {
@@ -103,7 +121,7 @@ export const OptimizedEmailTable = React.memo<OptimizedEmailTableProps>(({
     try {
       await Promise.all(
         selectedEmails.map(emailId =>
-          updateEmail({ id: emailId, updates: { assignedTo: assignee } })
+          updateEmail({ emailId, newState: 'IN_PROGRESS' } as any)
         )
       );
       setSelectedEmails([]);
