@@ -111,7 +111,7 @@ export class AgentPool {
         });
       }
 
-      this?.stats?.requestsServed++;
+      if (this.stats.requestsServed) { this.stats.requestsServed++ };
       this.updateStats();
 
       return agent;
@@ -508,9 +508,21 @@ export class AgentPool {
    * Update pool statistics
    */
   private updateStats(): void {
-    this?.stats?.totalAgents = 0;
-    this?.stats?.activeAgents = 0;
-    this?.stats?.idleAgents = 0;
+    if (this.stats) {
+
+      this.stats.totalAgents = 0;
+
+    }
+    if (this.stats) {
+
+      this.stats.activeAgents = 0;
+
+    }
+    if (this.stats) {
+
+      this.stats.idleAgents = 0;
+
+    }
 
     // Reset type counts
     for (const type of Object.keys(this?.stats?.agentsByType) as AgentType[]) {
@@ -524,9 +536,9 @@ export class AgentPool {
 
       for (const pooledAgent of pool) {
         if (pooledAgent.isActive) {
-          this?.stats?.activeAgents++;
+          if (this.stats.activeAgents) { this.stats.activeAgents++ };
         } else {
-          this?.stats?.idleAgents++;
+          if (this.stats.idleAgents) { this.stats.idleAgents++ };
         }
       }
     }
@@ -538,8 +550,11 @@ export class AgentPool {
   private updateAvgInitTime(newTime: number): void {
     // Simple moving average calculation
     const alpha = 0.1; // Smoothing factor
-    this?.stats?.avgInitTime =
-      this?.stats?.avgInitTime * (1 - alpha) + newTime * alpha;
+    if (this.stats) {
+
+      this.stats.avgInitTime = this?.stats?.avgInitTime * (1 - alpha) + newTime * alpha;
+
+    }
   }
 }
 

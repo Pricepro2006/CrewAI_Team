@@ -255,7 +255,7 @@ export class EventRouter extends EventEmitter {
       // Apply filters first
       const filterResult = await this.applyFilters(event);
       if (!filterResult.passed) {
-        this?.metrics?.filteredEvents++;
+        if (this.metrics.filteredEvents) { this.metrics.filteredEvents++ };
         return {
           matched: false,
           routes: [],
@@ -268,7 +268,7 @@ export class EventRouter extends EventEmitter {
 
       transformedEvent = filterResult.event;
       if (filterResult?.metadata?.transformations?.length || 0 > 0) {
-        this?.metrics?.transformedEvents++;
+        if (this.metrics.transformedEvents) { this.metrics.transformedEvents++ };
       }
 
       // Route through specific table or all tables
@@ -339,7 +339,7 @@ export class EventRouter extends EventEmitter {
         this?.routingCache?.set(cacheKey, result);
       }
 
-      this?.metrics?.routedEvents++;
+      if (this.metrics.routedEvents) { this.metrics.routedEvents++ };
       this.updateAverageRoutingTime(result?.metadata?.processingTime);
 
       this.emit('event_routed', {
@@ -353,7 +353,7 @@ export class EventRouter extends EventEmitter {
       return result;
 
     } catch (error) {
-      this?.metrics?.routingErrors++;
+      if (this.metrics.routingErrors) { this.metrics.routingErrors++ };
       this.emit('routing_error', {
         eventId: event.id,
         error,
@@ -632,11 +632,18 @@ export class EventRouter extends EventEmitter {
 
   private updateAverageRoutingTime(newTime: number): void {
     if (this?.metrics?.routedEvents === 1) {
-      this?.metrics?.averageRoutingTime = newTime;
+      if (this.metrics) {
+
+        this.metrics.averageRoutingTime = newTime;
+
+      }
     } else {
-      this?.metrics?.averageRoutingTime = 
-        (this?.metrics?.averageRoutingTime * (this?.metrics?.routedEvents - 1) + newTime) / 
+      if (this.metrics) {
+
+        this.metrics.averageRoutingTime = (this?.metrics?.averageRoutingTime * (this?.metrics?.routedEvents - 1) + newTime) / 
         this?.metrics?.routedEvents;
+
+      }
     }
   }
 

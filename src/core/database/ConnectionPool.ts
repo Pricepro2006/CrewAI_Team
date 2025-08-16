@@ -138,7 +138,7 @@ export class ConnectionPool extends EventEmitter {
     };
 
     this?.connections?.set(connectionId, connection);
-    this?.stats?.totalConnections++;
+    if (this.stats.totalConnections) { this.stats.totalConnections++ };
 
     logger.debug(`Created new connection: ${connectionId}`, "CONNECTION_POOL");
 
@@ -157,7 +157,7 @@ export class ConnectionPool extends EventEmitter {
       if (connection && !connection.inUse) {
         connection.inUse = true;
         connection.lastUsed = Date.now();
-        this?.stats?.activeConnections++;
+        if (this.stats.activeConnections) { this.stats.activeConnections++ };
 
         this.emit("acquire", { connectionId, poolSize: this?.connections?.size });
 
@@ -169,7 +169,7 @@ export class ConnectionPool extends EventEmitter {
     if (this?.connections?.size < this?.config?.poolSize) {
       const connection = this.createConnection();
       connection.inUse = true;
-      this?.stats?.activeConnections++;
+      if (this.stats.activeConnections) { this.stats.activeConnections++ };
 
       this.emit("acquire", {
         connectionId: connection.id,
@@ -186,7 +186,7 @@ export class ConnectionPool extends EventEmitter {
           if (!conn.inUse) {
             conn.inUse = true;
             conn.lastUsed = Date.now();
-            this?.stats?.activeConnections++;
+            if (this.stats.activeConnections) { this.stats.activeConnections++ };
 
             this.emit("acquire", {
               connectionId: id,
@@ -229,7 +229,7 @@ export class ConnectionPool extends EventEmitter {
     }
 
     if (this?.stats?.activeConnections > 0) {
-      this?.stats?.activeConnections--;
+      if (this.stats.activeConnections) { this.stats.activeConnections-- };
     }
 
     this.emit("release", {
@@ -253,7 +253,7 @@ export class ConnectionPool extends EventEmitter {
 
       try {
         const result = fn(db);
-        this?.stats?.totalQueries++;
+        if (this.stats.totalQueries) { this.stats.totalQueries++ };
 
         // Update connection query count
         for (const conn of this?.connections?.values()) {
@@ -316,7 +316,7 @@ export class ConnectionPool extends EventEmitter {
 
             // Perform full checkpoint
             db.prepare("PRAGMA wal_checkpoint(RESTART)").run();
-            this?.stats?.checkpoints++;
+            if (this.stats.checkpoints) { this.stats.checkpoints++ };
 
             this.emit("checkpoint", { walSize, timestamp: Date.now() });
           }
@@ -355,7 +355,7 @@ export class ConnectionPool extends EventEmitter {
           this.availableConnections = this?.availableConnections?.filter(
             (availId: any) => availId !== id,
           );
-          this?.stats?.recycledConnections++;
+          if (this.stats.recycledConnections) { this.stats.recycledConnections++ };
 
           logger.debug(`Recycled idle connection: ${id}`, "CONNECTION_POOL");
 

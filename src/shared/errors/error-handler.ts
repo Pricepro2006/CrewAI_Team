@@ -258,7 +258,7 @@ export class ErrorHandlerRegistry {
   }
 
   private updateMetrics(error: BaseError): void {
-    this?.metrics?.totalErrors++;
+    if (this.metrics.totalErrors) { this.metrics.totalErrors++ };
 
     // Update error counts by code
     if (!this?.metrics?.errorsByCode[error.code]) {
@@ -357,8 +357,11 @@ export class ErrorHandlerRegistry {
 
   private updateResolutionTime(resolutionTime: number): void {
     // Update average resolution time (simplified calculation)
-    this?.metrics?.averageResolutionTime =
-      (this?.metrics?.averageResolutionTime + resolutionTime) / 2;
+    if (this.metrics) {
+
+      this.metrics.averageResolutionTime = (this?.metrics?.averageResolutionTime + resolutionTime) / 2;
+
+    }
   }
 
   getMetrics(): ErrorMetrics {

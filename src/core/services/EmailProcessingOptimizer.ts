@@ -157,7 +157,7 @@ export class EmailProcessingOptimizer {
         const cached = await this.checkSimilarCache(emails[i], phase1Results[i]);
         if (cached) {
           results[i] = cached;
-          this?.metrics?.cacheHits++;
+          if (this.metrics.cacheHits) { this.metrics.cacheHits++ };
         } else {
           uncachedIndices.push(i);
         }
@@ -198,7 +198,7 @@ export class EmailProcessingOptimizer {
     await Promise.all(batchPromises);
     
     this?.metrics?.totalProcessed += emails?.length || 0;
-    this?.metrics?.batchesProcessed++;
+    if (this.metrics.batchesProcessed) { this.metrics.batchesProcessed++ };
     
     return results as Phase2Results[];
   }
@@ -338,7 +338,7 @@ Required JSON fields:
     
     try {
       const result = await operation();
-      this?.metrics?.connectionReuses++;
+      if (this.metrics.connectionReuses) { this.metrics.connectionReuses++ };
       return result;
     } finally {
       this.activeConnections--;
@@ -506,7 +506,13 @@ Required JSON fields:
     const currentAvg = this?.metrics?.avgResponseTime;
     const totalCount = this?.metrics?.totalProcessed;
     
-    this?.metrics?.avgResponseTime = (currentAvg * totalCount + processingTime) / (totalCount + 1);
+    if (this.metrics) {
+
+    
+      this.metrics.avgResponseTime = (currentAvg * totalCount + processingTime) / (totalCount + 1);
+
+    
+    }
   }
 
   /**

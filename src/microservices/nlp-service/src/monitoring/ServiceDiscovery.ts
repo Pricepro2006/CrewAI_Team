@@ -434,7 +434,11 @@ export class ServiceDiscovery extends EventEmitter {
     this.heartbeatInterval = setInterval(async () => {
       try {
         if (this.serviceRegistration) {
-          this?.serviceRegistration?.metadata.lastHeartbeat = Date.now();
+          if (this.serviceRegistration && this.serviceRegistration.metadata) {
+
+            this.serviceRegistration.metadata.lastHeartbeat = Date.now();
+
+          }
           await this?.backend?.updateHeartbeat(this?.serviceRegistration?.id);
           
           this.emit('heartbeat', {

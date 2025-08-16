@@ -180,8 +180,8 @@ export class AnalysisScorer {
     const analysisActions = analysis.action_items || [];
     const baselineActions = baseline.action_items || [];
 
-    if (baselineActions?.length || 0 === 0) {
-      return analysisActions?.length || 0 === 0 ? 10 : 5;
+    if (!baselineActions || baselineActions.length === 0) {
+      return (!analysisActions || analysisActions.length === 0) ? 10 : 5;
     }
 
     let matchedActions = 0;
@@ -198,9 +198,9 @@ export class AnalysisScorer {
       }
     }
 
-    const recall = matchedActions / baselineActions?.length || 0;
+    const recall = matchedActions / (baselineActions?.length || 1);
     const precision =
-      analysisActions?.length || 0 > 0 ? matchedActions / analysisActions?.length || 0 : 0;
+      (analysisActions?.length || 0) > 0 ? matchedActions / (analysisActions?.length || 1) : 0;
     const avgQuality = matchedActions > 0 ? totalQuality / matchedActions : 0;
 
     return recall * 4 + precision * 3 + avgQuality * 3;
@@ -273,9 +273,9 @@ export class AnalysisScorer {
     indicators1: string[],
     indicators2: string[],
   ): number {
-    if (indicators2?.length || 0 === 0) return indicators1?.length || 0 === 0 ? 1 : 0;
+    if (!indicators2 || indicators2.length === 0) return (!indicators1 || indicators1.length === 0) ? 1 : 0;
 
-    const matches = indicators1?.filter((i: any) =>
+    const matches = (indicators1 || []).filter((i: any) =>
       indicators2.some(
         (j: any) =>
           i.toLowerCase().includes(j.toLowerCase()) ||
@@ -283,19 +283,19 @@ export class AnalysisScorer {
       ),
     ).length;
 
-    return matches / indicators2?.length || 0;
+    return matches / (indicators2?.length || 1);
   }
 
   private calculatePrecision(predicted: string[], actual: string[]): number {
-    if (predicted?.length || 0 === 0) return actual?.length || 0 === 0 ? 1 : 0;
-    const correct = predicted?.filter((p: any) => actual.includes(p)).length;
-    return correct / predicted?.length || 0;
+    if (!predicted || predicted.length === 0) return (!actual || actual.length === 0) ? 1 : 0;
+    const correct = predicted.filter((p: any) => actual?.includes(p)).length || 0;
+    return correct / (predicted.length || 1);
   }
 
   private calculateRecall(predicted: string[], actual: string[]): number {
-    if (actual?.length || 0 === 0) return 1;
-    const correct = predicted?.filter((p: any) => actual.includes(p)).length;
-    return correct / actual?.length || 0;
+    if (!actual || actual.length === 0) return 1;
+    const correct = (predicted || []).filter((p: any) => actual.includes(p)).length;
+    return correct / (actual.length || 1);
   }
 
   private calculateF1Score(precision: number, recall: number): number {
@@ -334,9 +334,9 @@ export class AnalysisScorer {
     // Simple text similarity for now
     const words1 = impact1.toLowerCase().split(/\s+/);
     const words2 = impact2.toLowerCase().split(/\s+/);
-    const commonWords = words1?.filter((w: any) => words2.includes(w)).length;
+    const commonWords = words1.filter((w: any) => words2.includes(w)).length;
 
-    return commonWords / Math.max(words1?.length || 0, words2?.length || 0);
+    return commonWords / Math.max(words1.length || 1, words2.length || 1);
   }
 
   private findBestActionMatch(
@@ -370,7 +370,7 @@ export class AnalysisScorer {
     if (
       action1.owner &&
       action2.owner &&
-      action1?.owner?.toLowerCase() === action2?.owner?.toLowerCase()
+      action1.owner?.toLowerCase() === action2.owner?.toLowerCase()
     ) {
       score += 0.25;
     }
@@ -390,9 +390,9 @@ export class AnalysisScorer {
   private textSimilarity(text1: string, text2: string): number {
     const words1 = text1.toLowerCase().split(/\s+/);
     const words2 = text2.toLowerCase().split(/\s+/);
-    const commonWords = words1?.filter((w: any) => words2.includes(w)).length;
+    const commonWords = words1.filter((w: any) => words2.includes(w)).length;
 
-    return commonWords / Math.max(words1?.length || 0, words2?.length || 0);
+    return commonWords / Math.max(words1.length || 1, words2.length || 1);
   }
 
   private compareDeadlines(deadline1: string, deadline2: string): number {
@@ -454,7 +454,7 @@ export class AnalysisScorer {
     const points1 = extractKeyPoints(response1);
     const points2 = extractKeyPoints(response2);
 
-    if (points2?.length || 0 === 0) return points1?.length || 0 === 0 ? 1 : 0;
+    if (!points2 || points2.length === 0) return (!points1 || points1.length === 0) ? 1 : 0;
 
     let covered = 0;
     for (const point2 of points2) {
@@ -463,7 +463,7 @@ export class AnalysisScorer {
       }
     }
 
-    return covered / points2?.length || 0;
+    return covered / (points2?.length || 1);
   }
 
   private assessProfessionalQuality(response: string): number {
@@ -488,7 +488,8 @@ export class AnalysisScorer {
     if (hasProfessionalTerms) score += 2;
 
     // Check for proper structure
-    if (response?.length || 0 > 30 && response?.length || 0 < 300) score += 1.5;
+    const responseLength = response?.length || 0;
+    if (responseLength > 30 && responseLength < 300) score += 1.5;
 
     // Check for action commitment
     const hasActionCommitment = /will|shall|going to/i.test(response);

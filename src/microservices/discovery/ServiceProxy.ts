@@ -106,14 +106,18 @@ export class ServiceProxy {
    */
   async proxyRequest(request: ProxyRequest): Promise<ProxyResponse> {
     const startTime = Date.now();
-    this?.metrics?.totalRequests++;
+    if (this.metrics.totalRequests) { this.metrics.totalRequests++ };
 
     try {
       // Check cache first if enabled
       if (this?.config?.cachingEnabled && this.isCacheableRequest(request)) {
         const cachedResponse = await this.getCachedResponse(request);
         if (cachedResponse) {
-          this?.metrics?.cacheHitRate = (this?.metrics?.cacheHitRate + 1) / 2;
+          if (this.metrics) {
+
+            this.metrics.cacheHitRate = (this?.metrics?.cacheHitRate + 1) / 2;
+
+          }
           return {
             ...cachedResponse,
             cached: true,
@@ -196,7 +200,7 @@ export class ServiceProxy {
 
         // Wait before retry
         await new Promise(resolve => setTimeout(resolve, this?.config?.retryDelay * attempt));
-        this?.metrics?.retryCount++;
+        if (this.metrics.retryCount) { this.metrics.retryCount++ };
         
         logger.warn('Retrying request', 'SERVICE_PROXY', {
           serviceName: this?.config?.serviceName,
@@ -405,13 +409,17 @@ export class ServiceProxy {
    * Update success metrics
    */
   private updateSuccessMetrics(responseTime: number): void {
-    this?.metrics?.successfulRequests++;
+    if (this.metrics.successfulRequests) { this.metrics.successfulRequests++ };
     
     // Update average response time
     const totalRequests = this?.metrics?.successfulRequests + this?.metrics?.failedRequests;
-    this?.metrics?.avgResponseTime = (
+    if (this.metrics) {
+
+      this.metrics.avgResponseTime = (
       (this?.metrics?.avgResponseTime * (totalRequests - 1)) + responseTime
     ) / totalRequests;
+
+    }
 
     // Record Prometheus metrics
     metrics.increment('service_proxy?.request?.success', {
@@ -426,7 +434,7 @@ export class ServiceProxy {
    * Update failure metrics
    */
   private updateFailureMetrics(): void {
-    this?.metrics?.failedRequests++;
+    if (this.metrics.failedRequests) { this.metrics.failedRequests++ };
     
     // Record Prometheus metrics
     metrics.increment('service_proxy?.request?.failed', {

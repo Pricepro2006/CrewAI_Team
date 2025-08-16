@@ -90,7 +90,7 @@ export class QueryCache {
 
       // Set up event handlers
       this?.redis.on("error", (error: any) => {
-        this?.stats?.errors++;
+        if (this.stats.errors) { this.stats.errors++ };
         logger.error(
           "Redis connection error",
           "QUERY_CACHE",
@@ -135,7 +135,7 @@ export class QueryCache {
       const cached = await this?.redis.get(key);
 
       if (!cached) {
-        this?.stats?.misses++;
+        if (this.stats.misses) { this.stats.misses++ };
         this.updateHitRate();
         return null;
       }
@@ -145,12 +145,12 @@ export class QueryCache {
       // Check if entry has expired (additional check)
       if (Date.now() > entry.timestamp + entry.ttl * 1000) {
         await this?.redis.del(key);
-        this?.stats?.misses++;
+        if (this.stats.misses) { this.stats.misses++ };
         this.updateHitRate();
         return null;
       }
 
-      this?.stats?.hits++;
+      if (this.stats.hits) { this.stats.hits++ };
       this.updateHitRate();
 
       logger.debug("Cache hit", "QUERY_CACHE", {
@@ -160,7 +160,7 @@ export class QueryCache {
 
       return entry.data;
     } catch (error) {
-      this?.stats?.errors++;
+      if (this.stats.errors) { this.stats.errors++ };
       logger.error("Cache get error", "QUERY_CACHE", undefined, error as Error);
       return null;
     }
@@ -191,7 +191,7 @@ export class QueryCache {
       };
 
       await this?.redis.setex(key, effectiveTTL, JSON.stringify(entry));
-      this?.stats?.sets++;
+      if (this.stats.sets) { this.stats.sets++ };
 
       logger.debug("Cache set", "QUERY_CACHE", {
         key: key.substring(0, 20) + "...",
@@ -199,7 +199,7 @@ export class QueryCache {
         dataSize: JSON.stringify(data).length,
       });
     } catch (error) {
-      this?.stats?.errors++;
+      if (this.stats.errors) { this.stats.errors++ };
       logger.error("Cache set error", "QUERY_CACHE", undefined, error as Error);
     }
   }
@@ -220,7 +220,7 @@ export class QueryCache {
         key: key.substring(0, 20) + "...",
       });
     } catch (error) {
-      this?.stats?.errors++;
+      if (this.stats.errors) { this.stats.errors++ };
       logger.error(
         "Cache clear error",
         "QUERY_CACHE",
@@ -249,7 +249,7 @@ export class QueryCache {
         });
       }
     } catch (error) {
-      this?.stats?.errors++;
+      if (this.stats.errors) { this.stats.errors++ };
       logger.error(
         "Cache clear all error",
         "QUERY_CACHE",
@@ -319,7 +319,11 @@ export class QueryCache {
    */
   private updateHitRate(): void {
     const total = this?.stats?.hits + this?.stats?.misses;
-    this?.stats?.hitRate = total > 0 ? (this?.stats?.hits / total) * 100 : 0;
+    if (this.stats) {
+
+      this.stats.hitRate = total > 0 ? (this?.stats?.hits / total) * 100 : 0;
+
+    }
   }
 
   /**

@@ -492,7 +492,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     const batches = [];
     
     for (let i = 0; i < (request.queries?.length ?? 0); i += batchSize) {
-      const queryBatch = request.queries?.slice(i, i + batchSize) ?? [];
+      const queryBatch = request.queries?.slice(i, i + batchSize) || [];
       
       const batchPromise = Promise.all(
         (queryBatch ?? []).map(async (query: any) => {

@@ -179,7 +179,13 @@ class WalmartCacheService {
     const layerStats = this.stats[layer];
     layerStats.hitRate = layerStats.hits / (layerStats.hits + layerStats.misses);
     
-    this?.stats?.total.hitRate = this?.stats?.total.hits / (this?.stats?.total.hits + this?.stats?.total.misses);
+    if (this.stats && this.stats.total) {
+
+    
+      this.stats.total.hitRate = this?.stats?.total.hits / (this?.stats?.total.hits + this?.stats?.total.misses);
+
+    
+    }
   }
   
   /**
@@ -215,8 +221,18 @@ class WalmartCacheService {
       }
     }
     
-    this?.stats?.memory.size = totalSize;
-    this?.stats?.memory.entries = this?.memoryCache?.size;
+    if (this.stats && this.stats.memory) {
+
+    
+      this.stats.memory.size = totalSize;
+
+    
+    }
+    if (this.stats && this.stats.memory) {
+
+      this.stats.memory.entries = this?.memoryCache?.size;
+
+    }
   }
   
   /**

@@ -12,6 +12,7 @@ import crypto from 'crypto';
 import { EmailRepository } from '../../database/repositories/EmailRepository.js';
 import { UnifiedEmailService } from './UnifiedEmailService.js';
 import { logger } from '../../utils/logger.js';
+import { databaseManager } from '../../core/database/DatabaseManager.js';
 import type { 
   EmailRecord, 
   EmailPriority
@@ -161,49 +162,59 @@ export class EmailIntegrationService {
   private isProcessing: boolean = false;
 
   private constructor() {
-    // TODO: Fix TypeScript compilation issues before enabling real service
-    // const { realEmailStorageService } = require('./RealEmailStorageService.js');
-    // this.emailStorage = realEmailStorageService;
-    this.emailStorage = new EmailStorageService(); // Temporary mock until TypeScript fixed
-    // this.emailRepository = new EmailRepository(); // TODO: Fix repository configuration
-    this.emailRepository = null as any; // Temporary fix
-    // this.unifiedEmailService = new UnifiedEmailService(this.emailRepository); // TODO: Fix service dependency
-    this.unifiedEmailService = null as any; // Temporary fix
+    this.emailStorage = new EmailStorageService();
+    // Use a fallback approach if getRawDatabase doesn't exist
+    let db: any;
+    try {
+      if (typeof databaseManager?.getRawDatabase === 'function') {
+        db = databaseManager.getRawDatabase();
+      } else if (typeof databaseManager?.getConnection === 'function') {
+        db = databaseManager.getConnection('main');
+      } else {
+        // Fallback to creating a direct database connection
+        const Database = require('better-sqlite3');
+        db = new Database('./data/crewai_enhanced.db');
+      }
+    } catch (error) {
+      // Final fallback
+      const Database = require('better-sqlite3');
+      db = new Database('./data/crewai_enhanced.db');
+    }
+    this.emailRepository = new EmailRepository({ db });
+    this.unifiedEmailService = new UnifiedEmailService(this.emailRepository);
     
-    // const config: EmailIngestionConfig = {
-    //   mode: IngestionMode.MANUAL,
-    //   redis: {
-    //     host: process.env.REDIS_HOST || 'localhost',
-    //     port: parseInt(process.env.REDIS_PORT || '6379'),
-    //     password: process.env.REDIS_PASSWORD
-    //   },
-    //   processing: {
-    //     batchSize: 50,
-    //     concurrency: 5,
-    //     maxRetries: 3,
-    //     retryDelay: 1000,
-    //     deduplicationWindow: 24,
-    //     priorityBoostKeywords: ['urgent', 'critical', 'asap', 'emergency']
-    //   }
-    // };
+    const config: EmailIngestionConfig = {
+      mode: IngestionMode.MANUAL,
+      redis: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD
+      },
+      processing: {
+        batchSize: 50,
+        concurrency: 5,
+        maxRetries: 3,
+        retryDelay: 1000,
+        deduplicationWindow: 24,
+        priorityBoostKeywords: ['urgent', 'critical', 'asap', 'emergency']
+      }
+    };
     
-    // this.emailIngestion = new EmailIngestionServiceImpl(
-    //   config,
-    //   this.emailRepository,
-    //   this.unifiedEmailService
-    // );
-    this.emailIngestion = null as any; // Temporary fix
+    this.emailIngestion = new EmailIngestionServiceImpl(
+      config,
+      this.emailRepository,
+      this.unifiedEmailService
+    );
     
-    // this.analysisService = new EmailThreePhaseAnalysisService(); // TODO: Fix service dependency
-    this.analysisService = null as any; // Temporary fix
+    this.analysisService = new EmailThreePhaseAnalysisService();
 
     // Initialize the ingestion service
-    // this?.emailIngestion?.initialize().catch(error => {
-    //   logger.error('Failed to initialize email ingestion service', 'EMAIL_INTEGRATION', { error });
-    // });
+    this.emailIngestion.initialize().catch(error => {
+      logger.error('Failed to initialize email ingestion service', 'EMAIL_INTEGRATION', { error });
+    });
 
     // Set up event listeners
-    // this.setupEventListeners(); // TODO: Fix event listener setup
+    this.setupEventListeners();
   }
 
   public static getInstance(): EmailIntegrationService {
@@ -640,6 +651,4 @@ export class EmailIntegrationService {
 }
 
 // Export singleton instance
-// TODO: Fix database schema issues before enabling
-// export const emailIntegrationService = EmailIntegrationService.getInstance();
-export const emailIntegrationService = null as any; // Temporary disable until fixed
+export const emailIntegrationService = EmailIntegrationService.getInstance();

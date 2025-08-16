@@ -279,8 +279,12 @@ export class EventBus extends EventEmitter {
         JSON.stringify(envelope)
       );
 
-      this?.metrics?.published++;
-      this?.metrics?.lastActivity = Date.now();
+      if (this.metrics.published) { this.metrics.published++ };
+      if (this.metrics) {
+
+        this.metrics.lastActivity = Date.now();
+
+      }
 
       this.emit('event:published', {
         eventId,
@@ -292,7 +296,7 @@ export class EventBus extends EventEmitter {
       return eventId;
 
     } catch (error) {
-      this?.metrics?.errors++;
+      if (this.metrics.errors) { this.metrics.errors++ };
       this.emit('event:publish_error', { eventId, eventType, error });
       throw error;
     }
@@ -500,7 +504,7 @@ export class EventBus extends EventEmitter {
         
       } catch (error) {
         const processingTime = Date.now() - startTime;
-        this?.metrics?.errors++;
+        if (this.metrics.errors) { this.metrics.errors++ };
         
         // Record circuit breaker failure
         this.recordCircuitBreakerFailure(eventType);
@@ -539,8 +543,12 @@ export class EventBus extends EventEmitter {
 
     try {
       await Promise.allSettled(processingPromises);
-      this?.metrics?.consumed++;
-      this?.metrics?.lastActivity = Date.now();
+      if (this.metrics.consumed) { this.metrics.consumed++ };
+      if (this.metrics) {
+
+        this.metrics.lastActivity = Date.now();
+
+      }
       
       this.emit('event:processing_completed', { eventId: event.id, eventType });
       
@@ -631,7 +639,7 @@ export class EventBus extends EventEmitter {
 
     const delay = envelope?.deliveryInfo?.retryDelay * Math.pow(2, envelope?.deliveryInfo?.attempt - 1);
     
-    this?.metrics?.retries++;
+    if (this.metrics.retries) { this.metrics.retries++ };
     
     setTimeout(async () => {
       try {

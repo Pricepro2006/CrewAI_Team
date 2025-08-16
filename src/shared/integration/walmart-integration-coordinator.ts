@@ -101,7 +101,13 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       // Start periodic tasks
       this.startPeriodicTasks();
 
-      this?.healthStatus?.status = "healthy";
+      if (this.healthStatus) {
+
+
+        this.healthStatus.status = "healthy";
+
+
+      }
       this.initialized = true;
 
       logger.info(
@@ -112,7 +118,11 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       // Emit initialization complete event
       this.emit("initialized", { timestamp: new Date().toISOString() });
     } catch (error) {
-      this?.healthStatus?.status = "unhealthy";
+      if (this.healthStatus) {
+
+        this.healthStatus.status = "unhealthy";
+
+      }
       logger.error(
         "Failed to initialize Walmart Integration Coordinator",
         "WALMART_INTEGRATION",
@@ -139,7 +149,11 @@ export class WalmartIntegrationCoordinator extends EventEmitter {
       await this?.eventBus?.shutdown();
 
       this.initialized = false;
-      this?.healthStatus?.status = "stopped";
+      if (this.healthStatus) {
+
+        this.healthStatus.status = "stopped";
+
+      }
 
       logger.info(
         "Walmart Integration Coordinator shutdown complete",

@@ -100,7 +100,7 @@ export class TransactionManager extends EventEmitter {
         // Check if error is retryable (SQLITE_BUSY or SQLITE_LOCKED)
         if (this.isRetryableError(error) && attempts < retries) {
           attempts++;
-          this?.metrics?.deadlockRetries++;
+          if (this.metrics.deadlockRetries) { this.metrics.deadlockRetries++ };
 
           const backoffTime = Math.min(1000 * Math.pow(2, attempts), 5000);
           logger.warn(
@@ -142,8 +142,8 @@ export class TransactionManager extends EventEmitter {
     };
 
     this?.activeTransactions?.set(transactionId, context);
-    this?.metrics?.totalTransactions++;
-    this?.metrics?.activeTransactions++;
+    if (this.metrics.totalTransactions) { this.metrics.totalTransactions++ };
+    if (this.metrics.activeTransactions) { this.metrics.activeTransactions++ };
 
     let timeoutHandle: NodeJS.Timeout | null = null;
     let completed = false;
@@ -177,7 +177,7 @@ export class TransactionManager extends EventEmitter {
       completed = true;
 
       // Update metrics
-      this?.metrics?.successfulTransactions++;
+      if (this.metrics.successfulTransactions) { this.metrics.successfulTransactions++ };
       const duration = Date.now() - context.startTime;
       this.updateAverageDuration(duration);
 
@@ -198,10 +198,10 @@ export class TransactionManager extends EventEmitter {
         }
       }
 
-      this?.metrics?.failedTransactions++;
+      if (this.metrics.failedTransactions) { this.metrics.failedTransactions++ };
 
       if (error instanceof Error && error?.message?.includes("timed out")) {
-        this?.metrics?.timeouts++;
+        if (this.metrics.timeouts) { this.metrics.timeouts++ };
       }
 
       this.emit("transaction:failure", {
@@ -219,7 +219,7 @@ export class TransactionManager extends EventEmitter {
 
       // Clean up
       this?.activeTransactions?.delete(transactionId);
-      this?.metrics?.activeTransactions--;
+      if (this.metrics.activeTransactions) { this.metrics.activeTransactions-- };
     }
   }
 
@@ -373,7 +373,11 @@ export class TransactionManager extends EventEmitter {
     }
 
     this?.activeTransactions?.clear();
-    this?.metrics?.activeTransactions = 0;
+    if (this.metrics) {
+
+      this.metrics.activeTransactions = 0;
+
+    }
   }
 
   /**
@@ -405,8 +409,11 @@ export class TransactionManager extends EventEmitter {
     const totalDuration =
       this?.metrics?.averageDuration * (this?.metrics?.successfulTransactions - 1) +
       duration;
-    this?.metrics?.averageDuration =
-      totalDuration / this?.metrics?.successfulTransactions;
+    if (this.metrics) {
+
+      this.metrics.averageDuration = totalDuration / this?.metrics?.successfulTransactions;
+
+    }
   }
 
   /**

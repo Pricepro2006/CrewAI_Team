@@ -99,16 +99,22 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record a connection attempt
    */
   recordConnectionAttempt(success: boolean, duration: number, error?: string): void {
-    this?.metrics?.connectionAttempts++;
+    if (this.metrics) {
+      this.metrics.connectionAttempts++;
+    }
     
     if (success) {
-      this?.metrics?.successfulConnections++;
-      this?.metrics?.lastConnectionTime = new Date();
-      this?.metrics?.currentState = ConnectionState.CONNECTED;
+      if (this.metrics) {
+        this.metrics.successfulConnections++;
+        this.metrics.lastConnectionTime = new Date();
+        this.metrics.currentState = ConnectionState.CONNECTED;
+      }
     } else {
-      this?.metrics?.failedConnections++;
-      this?.metrics?.lastFailureTime = new Date();
-      this?.metrics?.currentState = ConnectionState.FAILED;
+      if (this.metrics) {
+        this.metrics.failedConnections++;
+        this.metrics.lastFailureTime = new Date();
+        this.metrics.currentState = ConnectionState.FAILED;
+      }
     }
     
     this.updateUptimePercentage();
@@ -129,15 +135,17 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record a request to ChromaDB
    */
   recordRequest(success: boolean, duration: number, operation?: string): void {
-    this?.metrics?.totalRequests++;
-    
-    if (!success) {
-      this?.metrics?.failedRequests++;
+    if (this.metrics) {
+      this.metrics.totalRequests++;
     }
     
-    this?.responseTimes?.push(duration);
-    if (this?.responseTimes?.length > 1000) {
-      this?.responseTimes?.shift();
+    if (!success && this.metrics) {
+      this.metrics.failedRequests++;
+    }
+    
+    this.responseTimes.push(duration);
+    if (this.responseTimes.length > 1000) {
+      this.responseTimes.shift();
     }
     
     this.updateResponseTimeMetrics();
@@ -158,8 +166,10 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record fallback activation
    */
   recordFallbackActivation(reason: string): void {
-    this?.metrics?.fallbackActivations++;
-    this?.metrics?.currentMode = "in-memory";
+    if (this.metrics) {
+      this.metrics.fallbackActivations++;
+      this.metrics.currentMode = "in-memory";
+    }
     
     const event: MetricEvent = {
       type: "fallback",
@@ -178,7 +188,9 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record mode change
    */
   recordModeChange(mode: "chromadb" | "in-memory" | "hybrid"): void {
-    this?.metrics?.currentMode = mode;
+    if (this.metrics) {
+      this.metrics.currentMode = mode;
+    }
     
     logger.info(`ChromaDB mode changed to: ${mode}`, "CHROMADB_MONITOR");
   }
@@ -187,9 +199,9 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record document sync
    */
   recordDocumentSync(count: number, success: boolean, duration: number): void {
-    if (success) {
-      this?.metrics?.documentsSynced += count;
-      this?.metrics?.pendingSyncCount = Math.max(0, this?.metrics?.pendingSyncCount - count);
+    if (success && this.metrics) {
+      this.metrics.documentsSynced += count;
+      this.metrics.pendingSyncCount = Math.max(0, this.metrics.pendingSyncCount - count);
     }
     
     const event: MetricEvent = {
@@ -208,11 +220,13 @@ export class ChromaDBMonitor extends EventEmitter {
    * Record circuit breaker event
    */
   recordCircuitBreakerEvent(state: "closed" | "open" | "half-open"): void {
-    this?.metrics?.circuitBreakerState = state;
-    
-    if (state === "open") {
-      this?.metrics?.circuitBreakerTrips++;
-      this?.metrics?.lastCircuitBreakerTrip = new Date();
+    if (this.metrics) {
+      this.metrics.circuitBreakerState = state;
+      
+      if (state === "open") {
+        this.metrics.circuitBreakerTrips++;
+        this.metrics.lastCircuitBreakerTrip = new Date();
+      }
     }
     
     const event: MetricEvent = {
@@ -232,21 +246,27 @@ export class ChromaDBMonitor extends EventEmitter {
    * Update in-memory document count
    */
   updateInMemoryCount(count: number): void {
-    this?.metrics?.documentsInMemory = count;
+    if (this.metrics) {
+      this.metrics.documentsInMemory = count;
+    }
   }
 
   /**
    * Update pending sync count
    */
   updatePendingSyncCount(count: number): void {
-    this?.metrics?.pendingSyncCount = count;
+    if (this.metrics) {
+      this.metrics.pendingSyncCount = count;
+    }
   }
 
   /**
    * Update connection state
    */
   updateConnectionState(state: ConnectionState): void {
-    this?.metrics?.currentState = state;
+    if (this.metrics) {
+      this.metrics.currentState = state;
+    }
   }
 
   /**
@@ -263,7 +283,7 @@ export class ChromaDBMonitor extends EventEmitter {
     let history = this.metricsHistory;
     
     if (type) {
-      history = history?.filter(e => e.type === type);
+      history = history.filter(e => e.type === type);
     }
     
     return history.slice(-limit);
@@ -282,14 +302,14 @@ export class ChromaDBMonitor extends EventEmitter {
     const recommendations: string[] = [];
     
     // Check connection health
-    if (this?.metrics?.currentState !== ConnectionState.CONNECTED) {
+    if (this.metrics.currentState !== ConnectionState.CONNECTED) {
       issues.push("ChromaDB not connected");
       recommendations.push("Check ChromaDB service is running");
     }
     
     // Check failure rate
-    const failureRate = this?.metrics?.totalRequests > 0 
-      ? (this?.metrics?.failedRequests / this?.metrics?.totalRequests) * 100 
+    const failureRate = this.metrics.totalRequests > 0 
+      ? (this.metrics.failedRequests / this.metrics.totalRequests) * 100 
       : 0;
     
     if (failureRate > 10) {
@@ -298,33 +318,33 @@ export class ChromaDBMonitor extends EventEmitter {
     }
     
     // Check response times
-    if (this?.metrics?.averageResponseTime > 1000) {
-      issues.push(`Slow response time: ${this?.metrics?.averageResponseTime.toFixed(0)}ms`);
+    if (this.metrics.averageResponseTime > 1000) {
+      issues.push(`Slow response time: ${this.metrics.averageResponseTime.toFixed(0)}ms`);
       recommendations.push("Consider optimizing queries or scaling ChromaDB");
     }
     
     // Check circuit breaker
-    if (this?.metrics?.circuitBreakerState === "open") {
+    if (this.metrics.circuitBreakerState === "open") {
       issues.push("Circuit breaker is open");
       recommendations.push("ChromaDB experiencing repeated failures");
     }
     
     // Check fallback usage
-    if (this?.metrics?.currentMode === "in-memory") {
+    if (this.metrics.currentMode === "in-memory") {
       issues.push("Using in-memory fallback");
       recommendations.push("Data persistence not available");
     }
     
     // Check pending syncs
-    if (this?.metrics?.pendingSyncCount > 100) {
-      issues.push(`${this?.metrics?.pendingSyncCount} documents pending sync`);
+    if (this.metrics.pendingSyncCount > 100) {
+      issues.push(`${this.metrics.pendingSyncCount} documents pending sync`);
       recommendations.push("Monitor sync progress");
     }
     
-    const healthy = issues?.length || 0 === 0;
+    const healthy = issues.length === 0;
     const status = healthy 
       ? "Healthy" 
-      : this?.metrics?.currentMode === "in-memory" 
+      : this.metrics.currentMode === "in-memory" 
         ? "Degraded (fallback active)" 
         : "Unhealthy";
     
@@ -343,55 +363,55 @@ export class ChromaDBMonitor extends EventEmitter {
     const metrics: string[] = [
       `# HELP chromadb_connection_attempts_total Total connection attempts`,
       `# TYPE chromadb_connection_attempts_total counter`,
-      `chromadb_connection_attempts_total ${this?.metrics?.connectionAttempts}`,
+      `chromadb_connection_attempts_total ${this.metrics.connectionAttempts}`,
       
       `# HELP chromadb_successful_connections_total Successful connections`,
       `# TYPE chromadb_successful_connections_total counter`,
-      `chromadb_successful_connections_total ${this?.metrics?.successfulConnections}`,
+      `chromadb_successful_connections_total ${this.metrics.successfulConnections}`,
       
       `# HELP chromadb_failed_connections_total Failed connections`,
       `# TYPE chromadb_failed_connections_total counter`,
-      `chromadb_failed_connections_total ${this?.metrics?.failedConnections}`,
+      `chromadb_failed_connections_total ${this.metrics.failedConnections}`,
       
       `# HELP chromadb_uptime_percentage Uptime percentage`,
       `# TYPE chromadb_uptime_percentage gauge`,
-      `chromadb_uptime_percentage ${this?.metrics?.uptimePercentage}`,
+      `chromadb_uptime_percentage ${this.metrics.uptimePercentage}`,
       
       `# HELP chromadb_average_response_time_ms Average response time in milliseconds`,
       `# TYPE chromadb_average_response_time_ms gauge`,
-      `chromadb_average_response_time_ms ${this?.metrics?.averageResponseTime}`,
+      `chromadb_average_response_time_ms ${this.metrics.averageResponseTime}`,
       
       `# HELP chromadb_p95_response_time_ms 95th percentile response time`,
       `# TYPE chromadb_p95_response_time_ms gauge`,
-      `chromadb_p95_response_time_ms ${this?.metrics?.p95ResponseTime}`,
+      `chromadb_p95_response_time_ms ${this.metrics.p95ResponseTime}`,
       
       `# HELP chromadb_total_requests_total Total requests`,
       `# TYPE chromadb_total_requests_total counter`,
-      `chromadb_total_requests_total ${this?.metrics?.totalRequests}`,
+      `chromadb_total_requests_total ${this.metrics.totalRequests}`,
       
       `# HELP chromadb_failed_requests_total Failed requests`,
       `# TYPE chromadb_failed_requests_total counter`,
-      `chromadb_failed_requests_total ${this?.metrics?.failedRequests}`,
+      `chromadb_failed_requests_total ${this.metrics.failedRequests}`,
       
       `# HELP chromadb_fallback_activations_total Fallback activations`,
       `# TYPE chromadb_fallback_activations_total counter`,
-      `chromadb_fallback_activations_total ${this?.metrics?.fallbackActivations}`,
+      `chromadb_fallback_activations_total ${this.metrics.fallbackActivations}`,
       
       `# HELP chromadb_documents_in_memory Documents in memory`,
       `# TYPE chromadb_documents_in_memory gauge`,
-      `chromadb_documents_in_memory ${this?.metrics?.documentsInMemory}`,
+      `chromadb_documents_in_memory ${this.metrics.documentsInMemory}`,
       
       `# HELP chromadb_documents_synced_total Documents synced`,
       `# TYPE chromadb_documents_synced_total counter`,
-      `chromadb_documents_synced_total ${this?.metrics?.documentsSynced}`,
+      `chromadb_documents_synced_total ${this.metrics.documentsSynced}`,
       
       `# HELP chromadb_pending_sync_count Documents pending sync`,
       `# TYPE chromadb_pending_sync_count gauge`,
-      `chromadb_pending_sync_count ${this?.metrics?.pendingSyncCount}`,
+      `chromadb_pending_sync_count ${this.metrics.pendingSyncCount}`,
       
       `# HELP chromadb_circuit_breaker_trips_total Circuit breaker trips`,
       `# TYPE chromadb_circuit_breaker_trips_total counter`,
-      `chromadb_circuit_breaker_trips_total ${this?.metrics?.circuitBreakerTrips}`,
+      `chromadb_circuit_breaker_trips_total ${this.metrics.circuitBreakerTrips}`,
     ];
     
     return metrics.join("\n");
@@ -401,14 +421,16 @@ export class ChromaDBMonitor extends EventEmitter {
    * Reset metrics
    */
   resetMetrics(): void {
-    this?.metrics?.connectionAttempts = 0;
-    this?.metrics?.successfulConnections = 0;
-    this?.metrics?.failedConnections = 0;
-    this?.metrics?.totalRequests = 0;
-    this?.metrics?.failedRequests = 0;
-    this?.metrics?.fallbackActivations = 0;
-    this?.metrics?.documentsSynced = 0;
-    this?.metrics?.circuitBreakerTrips = 0;
+    if (this.metrics) {
+      this.metrics.connectionAttempts = 0;
+      this.metrics.successfulConnections = 0;
+      this.metrics.failedConnections = 0;
+      this.metrics.totalRequests = 0;
+      this.metrics.failedRequests = 0;
+      this.metrics.fallbackActivations = 0;
+      this.metrics.documentsSynced = 0;
+      this.metrics.circuitBreakerTrips = 0;
+    }
     this.responseTimes = [];
     this.metricsHistory = [];
     
@@ -422,33 +444,37 @@ export class ChromaDBMonitor extends EventEmitter {
     // Collect memory metrics every 30 seconds
     this.metricsInterval = setInterval(() => {
       const memUsage = process.memoryUsage();
-      this?.metrics?.memoryUsage = memUsage.heapUsed;
+      if (this.metrics) {
+        this.metrics.memoryUsage = memUsage.heapUsed;
+      }
     }, 30000);
   }
 
   private updateUptimePercentage(): void {
-    if (this?.metrics?.connectionAttempts > 0) {
-      this?.metrics?.uptimePercentage = 
-        (this?.metrics?.successfulConnections / this?.metrics?.connectionAttempts) * 100;
+    if (this.metrics && this.metrics.connectionAttempts > 0) {
+      this.metrics.uptimePercentage = 
+        (this.metrics.successfulConnections / this.metrics.connectionAttempts) * 100;
     }
   }
 
   private updateResponseTimeMetrics(): void {
-    if (this?.responseTimes?.length === 0) return;
+    if (this.responseTimes.length === 0) return;
     
     const sorted = [...this.responseTimes].sort((a, b) => a - b);
     const sum = sorted.reduce((a: any, b: any) => a + b, 0);
     
-    this?.metrics?.averageResponseTime = sum / sorted?.length || 0;
-    this?.metrics?.p95ResponseTime = sorted[Math.floor(sorted?.length || 0 * 0.95)] || 0;
-    this?.metrics?.p99ResponseTime = sorted[Math.floor(sorted?.length || 0 * 0.99)] || 0;
+    if (this.metrics) {
+      this.metrics.averageResponseTime = sum / sorted.length;
+      this.metrics.p95ResponseTime = sorted[Math.floor(sorted.length * 0.95)] || 0;
+      this.metrics.p99ResponseTime = sorted[Math.floor(sorted.length * 0.99)] || 0;
+    }
   }
 
   private addMetricEvent(event: MetricEvent): void {
-    this?.metricsHistory?.push(event);
+    this.metricsHistory.push(event);
     
-    if (this?.metricsHistory?.length > this.maxHistorySize) {
-      this?.metricsHistory?.shift();
+    if (this.metricsHistory.length > this.maxHistorySize) {
+      this.metricsHistory.shift();
     }
   }
 

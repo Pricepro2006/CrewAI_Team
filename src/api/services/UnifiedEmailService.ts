@@ -160,7 +160,9 @@ export class UnifiedEmailService {
           isComplete: enrichedEmail?.workflow?.isComplete,
         });
 
-        enrichedEmail?.workflow?.chainId = chainId;
+        if (enrichedEmail?.workflow) {
+          enrichedEmail.workflow.chainId = chainId;
+        }
       }
 
       // Record metrics

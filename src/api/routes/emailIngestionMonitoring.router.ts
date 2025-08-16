@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { router, publicProcedure, protectedProcedure } from '../trpc/router.js';
 import { TRPCError } from '@trpc/server';
-// import { EmailIngestionServiceImpl } from '../../core/services/EmailIngestionServiceImpl.js';
+import { EmailIngestionServiceImpl } from '../../core/services/EmailIngestionServiceImpl.js';
 import { logger } from '../../utils/logger.js';
 import type {
   IngestionMetrics,
@@ -50,8 +50,7 @@ export const emailIngestionMonitoringRouter = router({
   health: publicProcedure
     .query(async ({ ctx }) => {
       try {
-        // const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
-        const ingestionService = null as any; // TODO: Fix service injection
+        const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
         
         if (!ingestionService) {
           // Return mock data for development
@@ -97,8 +96,7 @@ export const emailIngestionMonitoringRouter = router({
   queueStatus: protectedProcedure
     .query(async ({ ctx }) => {
       try {
-        // const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
-        const ingestionService = null as any; // TODO: Fix service injection
+        const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
         
         if (!ingestionService) {
           // Return mock data for development
@@ -152,8 +150,7 @@ export const emailIngestionMonitoringRouter = router({
     .input(timeWindowSchema.optional())
     .query(async ({ ctx, input }) => {
       try {
-        // const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
-        const ingestionService = null as any; // TODO: Fix service injection
+        const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
         
         if (!ingestionService) {
           // Return mock data for development
@@ -215,8 +212,7 @@ export const emailIngestionMonitoringRouter = router({
     .input(batchLimitSchema.optional())
     .query(async ({ ctx, input }) => {
       try {
-        // const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
-        const ingestionService = null as any; // TODO: Fix service injection
+        const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
         
         if (!ingestionService) {
           // Return mock data for development
@@ -260,8 +256,7 @@ export const emailIngestionMonitoringRouter = router({
   pauseQueue: protectedProcedure
     .mutation(async ({ ctx }) => {
       try {
-        // const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
-        const ingestionService = null as any; // TODO: Fix service injection
+        const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
         
         if (!ingestionService) {
           return {
@@ -300,8 +295,7 @@ export const emailIngestionMonitoringRouter = router({
   resumeQueue: protectedProcedure
     .mutation(async ({ ctx }) => {
       try {
-        // const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
-        const ingestionService = null as any; // TODO: Fix service injection
+        const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
         
         if (!ingestionService) {
           return {
@@ -341,8 +335,7 @@ export const emailIngestionMonitoringRouter = router({
     .input(retryLimitSchema.optional())
     .mutation(async ({ ctx, input }) => {
       try {
-        // const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
-        const ingestionService = null as any; // TODO: Fix service injection
+        const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
         
         if (!ingestionService) {
           return {
@@ -391,8 +384,7 @@ export const emailIngestionMonitoringRouter = router({
   clearDeduplicationCache: protectedProcedure
     .mutation(async ({ ctx }) => {
       try {
-        // const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
-        const ingestionService = null as any; // TODO: Fix service injection
+        const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
         
         if (!ingestionService) {
           return {
@@ -435,8 +427,7 @@ export const emailIngestionMonitoringRouter = router({
   startAutoPull: protectedProcedure
     .mutation(async ({ ctx }) => {
       try {
-        // const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
-        const ingestionService = null as any; // TODO: Fix service injection
+        const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
         
         if (!ingestionService) {
           return {
@@ -475,8 +466,7 @@ export const emailIngestionMonitoringRouter = router({
   stopAutoPull: protectedProcedure
     .mutation(async ({ ctx }) => {
       try {
-        // const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
-        const ingestionService = null as any; // TODO: Fix service injection
+        const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
         
         if (!ingestionService) {
           return {
@@ -515,8 +505,7 @@ export const emailIngestionMonitoringRouter = router({
   autoPullStatus: protectedProcedure
     .query(async ({ ctx }) => {
       try {
-        // const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
-        const ingestionService = null as any; // TODO: Fix service injection
+        const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
         
         if (!ingestionService) {
           return {
@@ -625,8 +614,7 @@ export const emailIngestionMonitoringRouter = router({
   diagnostics: protectedProcedure
     .query(async ({ ctx }) => {
       try {
-        // const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
-        const ingestionService = null as any; // TODO: Fix service injection
+        const ingestionService = ctx.emailIngestionService as EmailIngestionServiceImpl;
         
         if (!ingestionService) {
           // Return mock diagnostic data for development

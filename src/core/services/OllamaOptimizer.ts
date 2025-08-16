@@ -514,7 +514,11 @@ export class OllamaOptimizer extends EventEmitter {
 
     // Update queue concurrency
     if (newConfig.queueConcurrency) {
-      this?.inferenceQueue?.concurrency = newConfig.queueConcurrency;
+      if (this.inferenceQueue) {
+
+        this.inferenceQueue.concurrency = newConfig.queueConcurrency;
+
+      }
     }
 
     logger.info("Configuration updated", "OLLAMA_OPTIMIZER", newConfig);

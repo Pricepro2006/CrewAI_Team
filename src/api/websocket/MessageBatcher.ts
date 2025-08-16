@@ -144,11 +144,17 @@ export class MessageBatcher extends EventEmitter {
         this?.config?.adaptive.learningWindow
       );
       
-      this?.metrics?.adaptiveStats = {
+      if (this.metrics) {
+
+      
+        this.metrics.adaptiveStats = {
         currentBatchSize: this?.config?.maxBatchSize,
         currentWaitTime: this?.config?.maxWaitTime,
         adjustmentHistory: []
       };
+
+      
+      }
     }
   }
 
@@ -460,29 +466,41 @@ export class MessageBatcher extends EventEmitter {
     const totalBatches = this?.metrics?.totalBatches;
 
     if (totalBatches > 0) {
-      this?.metrics?.averageBatchSize = totalMessages / totalBatches;
+      if (this.metrics) {
+
+        this.metrics.averageBatchSize = totalMessages / totalBatches;
+
+      }
     }
 
     // Calculate latency percentiles
     if (this?.latencyBuffer?.length > 0) {
       const sorted = [...this.latencyBuffer].sort((a, b) => a - b);
-      this?.metrics?.latencyStats = {
+      if (this.metrics) {
+
+        this.metrics.latencyStats = {
         p50: this.calculatePercentile(sorted, 0.5),
         p90: this.calculatePercentile(sorted, 0.9),
         p95: this.calculatePercentile(sorted, 0.95),
         p99: this.calculatePercentile(sorted, 0.99)
       };
+
+      }
     }
   }
 
   private updateBatchMetrics(batch: BatchedMessage): void {
-    this?.metrics?.totalBatches++;
+    if (this.metrics.totalBatches) { this.metrics.totalBatches++ };
     this?.metrics?.totalMessages += batch?.metadata?.batchSize;
 
     if (batch?.metadata?.compressionRatio) {
       const currentAvg = this?.metrics?.averageCompressionRatio;
       const newAvg = (currentAvg * (this?.metrics?.totalBatches - 1) + batch?.metadata?.compressionRatio) / this?.metrics?.totalBatches;
-      this?.metrics?.averageCompressionRatio = newAvg;
+      if (this.metrics) {
+
+        this.metrics.averageCompressionRatio = newAvg;
+
+      }
     }
   }
 

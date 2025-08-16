@@ -110,11 +110,87 @@ export class EmailRepository {
   }
 
   private prepareStatements(): void {
+    // Check if table exists and create if needed
+    try {
+      this?.db?.exec(`
+        CREATE TABLE IF NOT EXISTS emails_enhanced (
+          id TEXT PRIMARY KEY,
+          graph_id TEXT UNIQUE,
+          internet_message_id TEXT,
+          subject TEXT,
+          body_content TEXT,
+          body_content_type TEXT DEFAULT 'text',
+          body_preview TEXT,
+          sender_email TEXT,
+          sender_name TEXT,
+          received_date_time TEXT,
+          sent_date_time TEXT,
+          importance TEXT,
+          categories TEXT,
+          has_attachments INTEGER DEFAULT 0,
+          is_read INTEGER DEFAULT 0,
+          is_flagged INTEGER DEFAULT 0,
+          thread_id TEXT,
+          conversation_id_ref TEXT,
+          in_reply_to TEXT,
+          "references" TEXT,
+          status TEXT DEFAULT 'pending',
+          priority INTEGER DEFAULT 0,
+          assigned_to TEXT,
+          assigned_at TEXT,
+          due_date TEXT,
+          processed_at TEXT,
+          processing_version TEXT,
+          analysis_confidence REAL,
+          analysis_result TEXT,
+          created_at INTEGER DEFAULT (unixepoch()),
+          updated_at INTEGER DEFAULT (unixepoch())
+        );
+        
+        CREATE TABLE IF NOT EXISTS email_recipients (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email_id TEXT NOT NULL,
+          recipient_type TEXT NOT NULL,
+          email_address TEXT NOT NULL,
+          name TEXT,
+          created_at INTEGER DEFAULT (unixepoch()),
+          FOREIGN KEY (email_id) REFERENCES emails_enhanced(id)
+        );
+        
+        CREATE TABLE IF NOT EXISTS email_attachments (
+          id TEXT PRIMARY KEY,
+          email_id TEXT NOT NULL,
+          filename TEXT NOT NULL,
+          content_type TEXT,
+          size_bytes INTEGER,
+          content_id TEXT,
+          is_inline INTEGER DEFAULT 0,
+          storage_path TEXT,
+          created_at INTEGER DEFAULT (unixepoch()),
+          FOREIGN KEY (email_id) REFERENCES emails_enhanced(id)
+        );
+        
+        CREATE TABLE IF NOT EXISTS workflow_chains (
+          id TEXT PRIMARY KEY,
+          workflow_type TEXT NOT NULL,
+          start_email_id TEXT,
+          current_state TEXT,
+          email_count INTEGER DEFAULT 0,
+          is_complete INTEGER DEFAULT 0,
+          created_at INTEGER DEFAULT (unixepoch()),
+          updated_at INTEGER DEFAULT (unixepoch()),
+          FOREIGN KEY (start_email_id) REFERENCES emails_enhanced(id)
+        );
+      `);
+    } catch (err) {
+      // Tables might already exist, that's ok
+    }
+
     // Insert statements
     this?.statements?.set(
       "insertEmail",
       this?.db?.prepare(`
-      INSERT INTO emails_enhanced (
+      INSERT OR REPLACE INTO emails_enhanced (
         id, graph_id, internet_message_id, subject, body_content, body_content_type, body_preview,
         sender_email, sender_name,
         received_date_time, sent_date_time, importance, categories, has_attachments,

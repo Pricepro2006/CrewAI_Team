@@ -227,7 +227,7 @@ export class EventBroadcaster extends EventEmitter {
     this.concurrentBroadcasts++;
     
     try {
-      this?.metrics?.totalBroadcasts++;
+      if (this.metrics.totalBroadcasts) { this.metrics.totalBroadcasts++ };
       
       const result = await this?.circuitBreaker?.execute(
         'event_broadcasting',
@@ -247,10 +247,10 @@ export class EventBroadcaster extends EventEmitter {
       );
 
       if (result.success) {
-        this?.metrics?.successfulBroadcasts++;
+        if (this.metrics.successfulBroadcasts) { this.metrics.successfulBroadcasts++ };
         this?.metrics?.totalRecipients += result.totalRecipients;
       } else {
-        this?.metrics?.failedBroadcasts++;
+        if (this.metrics.failedBroadcasts) { this.metrics.failedBroadcasts++ };
       }
 
       this.updateBroadcastTime(result.broadcastTime);
@@ -265,7 +265,7 @@ export class EventBroadcaster extends EventEmitter {
       return result;
 
     } catch (error) {
-      this?.metrics?.failedBroadcasts++;
+      if (this.metrics.failedBroadcasts) { this.metrics.failedBroadcasts++ };
       this.emit('broadcast_error', {
         eventId: event.id,
         error,
@@ -298,7 +298,7 @@ export class EventBroadcaster extends EventEmitter {
     try {
       const routingResult = await this?.subscriptionManager?.routeEvent(event);
       localRecipients = routingResult.subscriptionsMatched;
-      this?.metrics?.localDeliveries++;
+      if (this.metrics.localDeliveries) { this.metrics.localDeliveries++ };
     } catch (error) {
       errors.push(`Local broadcast failed: ${error.message}`);
     }
@@ -307,7 +307,7 @@ export class EventBroadcaster extends EventEmitter {
     if (this?.config?.scaling.enabled && !options.localOnly) {
       try {
         remoteNodes = await this.broadcastToRemoteNodes(event, options);
-        this?.metrics?.redisPublishes++;
+        if (this.metrics.redisPublishes) { this.metrics.redisPublishes++ };
       } catch (error) {
         errors.push(`Remote broadcast failed: ${error.message}`);
       }
@@ -528,12 +528,19 @@ export class EventBroadcaster extends EventEmitter {
   private updateMetrics(): void {
     if (this?.broadcastTimes?.length > 0) {
       const sum = this?.broadcastTimes?.reduce((total: any, time: any) => total + time, 0);
-      this?.metrics?.averageBroadcastTime = sum / this?.broadcastTimes?.length;
+      if (this.metrics) {
+
+        this.metrics.averageBroadcastTime = sum / this?.broadcastTimes?.length;
+
+      }
     }
 
     if (this?.metrics?.totalBroadcasts > 0) {
-      this?.metrics?.averageRecipientsPerBroadcast = 
-        this?.metrics?.totalRecipients / this?.metrics?.totalBroadcasts;
+      if (this.metrics) {
+
+        this.metrics.averageRecipientsPerBroadcast = this?.metrics?.totalRecipients / this?.metrics?.totalBroadcasts;
+
+      }
     }
   }
 

@@ -19,10 +19,9 @@ import { PromptSanitizer } from "../../utils/PromptSanitizer.js";
 import { llmRateLimiters } from "./LLMRateLimiter.js";
 import { GroceryNLPQueue } from "../../api/services/GroceryNLPQueue.js";
 import {
-  PHASE2_ENHANCED_PROMPT,
-  PHASE2_RETRY_PROMPT,
-  PHASE3_STRATEGIC_PROMPT,
-  enhancePromptForEmailType,
+  PHASE_2_PROMPT,
+  PHASE_3_PROMPT,
+  THREE_PHASE_PROMPTS,
 } from "../prompts/ThreePhasePrompts.js";
 import { EmailChainAnalyzer } from "./EmailChainAnalyzer.js";
 import { executeQuery } from "../../database/ConnectionPool.js";
@@ -729,12 +728,13 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     // Use enhanced prompt for retries with safe fallbacks
     const basePrompt =
       attempt === 0 
-        ? (PHASE2_ENHANCED_PROMPT || "Analyze this email: {EMAIL_SUBJECT} - {EMAIL_BODY}. Phase 1 results: {PHASE1_RESULTS}")
-        : (PHASE2_RETRY_PROMPT || "Retry analysis of email: {EMAIL_SUBJECT} - {EMAIL_BODY}. Phase 1 results: {PHASE1_RESULTS}");
+        ? (PHASE_2_PROMPT.template || "Analyze this email: {EMAIL_SUBJECT} - {EMAIL_BODY}. Phase 1 results: {PHASE1_RESULTS}")
+        : (PHASE_2_PROMPT.template || "Retry analysis of email: {EMAIL_SUBJECT} - {EMAIL_BODY}. Phase 1 results: {PHASE1_RESULTS}");
 
     let prompt;
     try {
-      prompt = enhancePromptForEmailType(basePrompt, emailCharacteristics) || basePrompt;
+      // enhancePromptForEmailType not available, using base prompt
+      prompt = basePrompt;
     } catch (error) {
       logger.warn("Failed to enhance prompt for email type, using base prompt", COMPONENT, { error });
       prompt = basePrompt;
@@ -982,7 +982,7 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
       // Build comprehensive prompt with all context using safe content
       let prompt;
       try {
-        const baseTemplate = PHASE3_STRATEGIC_PROMPT || "Provide strategic analysis for: {EMAIL_SUBJECT} - {EMAIL_BODY}. Phase 1: {PHASE1_RESULTS}. Phase 2: {PHASE2_RESULTS}";
+        const baseTemplate = PHASE_3_PROMPT.template || "Provide strategic analysis for: {EMAIL_SUBJECT} - {EMAIL_BODY}. Phase 1: {PHASE1_RESULTS}. Phase 2: {PHASE2_RESULTS}";
         prompt = baseTemplate
           .replace("{PHASE1_RESULTS}", JSON.stringify(phase1Results, null, 2))
           .replace("{PHASE2_RESULTS}", JSON.stringify(phase2Results, null, 2))
@@ -2145,33 +2145,35 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     attempt: number,
     usedFallback: boolean = false,
   ): void {
-    this?.parsingMetrics?.totalAttempts++;
+    if (this.parsingMetrics) {
+      this.parsingMetrics.totalAttempts++;
 
-    if (success) {
-      this?.parsingMetrics?.successfulParses++;
-      if (attempt > 1) {
-        this?.parsingMetrics?.retrySuccesses++;
+      if (success) {
+        this.parsingMetrics.successfulParses++;
+        if (attempt > 1) {
+          this.parsingMetrics.retrySuccesses++;
+        }
       }
-    }
 
-    if (usedFallback) {
-      this?.parsingMetrics?.fallbackUses++;
-    }
+      if (usedFallback) {
+        this.parsingMetrics.fallbackUses++;
+      }
 
-    // Update average attempts
-    this?.parsingMetrics?.averageAttempts =
-      (this?.parsingMetrics?.averageAttempts *
-        (this?.parsingMetrics?.totalAttempts - 1) +
+      // Update average attempts
+      this.parsingMetrics.averageAttempts =
+        (this.parsingMetrics.averageAttempts *
+          (this.parsingMetrics.totalAttempts - 1) +
         attempt) /
-      this?.parsingMetrics?.totalAttempts;
+      this.parsingMetrics.totalAttempts;
+    }
 
     // Log metrics periodically
-    if (this?.parsingMetrics?.totalAttempts % 10 === 0) {
+    if (this.parsingMetrics && this.parsingMetrics.totalAttempts % 10 === 0) {
       const successRate =
-        this?.parsingMetrics?.successfulParses /
-        this?.parsingMetrics?.totalAttempts;
+        this.parsingMetrics.successfulParses /
+        this.parsingMetrics.totalAttempts;
       logger.info(
-        `Parsing metrics: ${Math.round(successRate * 100)}% success rate, ${Math.round(this?.parsingMetrics?.averageAttempts * 100) / 100} avg attempts`,
+        `Parsing metrics: ${Math.round(successRate * 100)}% success rate, ${Math.round(this.parsingMetrics.averageAttempts * 100) / 100} avg attempts`,
       );
     }
   }
@@ -2430,39 +2432,41 @@ export class EmailThreePhaseAnalysisService extends EventEmitter {
     assessment: QualityAssessment,
     options: AnalysisOptions,
   ): void {
-    this?.qualityMetrics?.totalResponses++;
+    if (this.qualityMetrics) {
+      this.qualityMetrics.totalResponses++;
 
-    const qualityThreshold =
-      options.qualityThreshold ?? this?.qualityConfig?.minimumQualityThreshold;
+      const qualityThreshold =
+        options.qualityThreshold ?? this?.qualityConfig?.minimumQualityThreshold;
 
-    if (assessment.score >= qualityThreshold) {
-      this?.qualityMetrics?.highQualityResponses++;
-    } else {
-      this?.qualityMetrics?.lowQualityResponses++;
-    }
+      if (assessment.score >= qualityThreshold) {
+        this.qualityMetrics.highQualityResponses++;
+      } else {
+        this.qualityMetrics.lowQualityResponses++;
+      }
 
-    if (assessment.useFallback) {
-      this?.qualityMetrics?.fallbackUsed++;
-    }
+      if (assessment.useFallback) {
+        this.qualityMetrics.fallbackUsed++;
+      }
 
-    if (assessment.useHybrid) {
-      this?.qualityMetrics?.hybridUsed++;
-    }
+      if (assessment.useHybrid) {
+        this.qualityMetrics.hybridUsed++;
+      }
 
-    if (assessment.score < qualityThreshold) {
-      this?.qualityMetrics?.qualityThresholdMisses++;
-    }
+      if (assessment.score < qualityThreshold) {
+        this.qualityMetrics.qualityThresholdMisses++;
+      }
 
-    // Update rolling average
-    this?.qualityMetrics?.averageQualityScore =
-      (this?.qualityMetrics?.averageQualityScore *
-        (this?.qualityMetrics?.totalResponses - 1) +
-        assessment.score) /
-      this?.qualityMetrics?.totalResponses;
+      // Update rolling average
+      this.qualityMetrics.averageQualityScore =
+        (this.qualityMetrics.averageQualityScore *
+          (this.qualityMetrics.totalResponses - 1) +
+          assessment.score) /
+        this.qualityMetrics.totalResponses;
 
-    // Log quality metrics periodically
-    if (this?.qualityMetrics?.totalResponses % 20 === 0) {
-      this.logQualityMetrics();
+      // Log quality metrics periodically
+      if (this.qualityMetrics.totalResponses % 20 === 0) {
+        this.logQualityMetrics();
+      }
     }
   }
 

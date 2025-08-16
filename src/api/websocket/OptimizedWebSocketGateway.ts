@@ -125,7 +125,7 @@ export class OptimizedWebSocketGateway extends EventEmitter {
     };
 
     this?.connections?.set(connectionId, connection);
-    this?.stats?.connections++;
+    if (this.stats.connections) { this.stats.connections++ };
     
     // Set up event handlers
     ws.on('message', (data: any) => this.handleMessage(connectionId, data));
@@ -158,7 +158,7 @@ export class OptimizedWebSocketGateway extends EventEmitter {
       
       connection?.stats?.messagesReceived++;
       connection?.stats?.bytesReceived += Buffer.byteLength(data);
-      this?.stats?.messagesReceived++;
+      if (this.stats.messagesReceived) { this.stats.messagesReceived++ };
       this?.stats?.bytesReceived += Buffer.byteLength(data);
       
       switch (message.type) {
@@ -209,7 +209,13 @@ export class OptimizedWebSocketGateway extends EventEmitter {
       this?.subscriptions?.get(topic)!.add(connectionId);
     }
 
-    this?.stats?.subscriptions = this.countTotalSubscriptions();
+    if (this.stats) {
+
+
+      this.stats.subscriptions = this.countTotalSubscriptions();
+
+
+    }
     
     this.sendMessage(connectionId, { 
       type: 'subscribed', 
@@ -241,7 +247,13 @@ export class OptimizedWebSocketGateway extends EventEmitter {
       }
     }
 
-    this?.stats?.subscriptions = this.countTotalSubscriptions();
+    if (this.stats) {
+
+
+      this.stats.subscriptions = this.countTotalSubscriptions();
+
+
+    }
     
     this.sendMessage(connectionId, { 
       type: 'unsubscribed', 
@@ -279,7 +291,13 @@ export class OptimizedWebSocketGateway extends EventEmitter {
     }
     this?.connectionsByUser?.get(userId)!.add(connectionId);
     
-    this?.stats?.users = this?.connectionsByUser?.size;
+    if (this.stats) {
+
+    
+      this.stats.users = this?.connectionsByUser?.size;
+
+    
+    }
 
     this.sendMessage(connectionId, { 
       type: 'authenticated', 
@@ -325,9 +343,17 @@ export class OptimizedWebSocketGateway extends EventEmitter {
     }
 
     // Update stats
-    this?.stats?.connections--;
-    this?.stats?.subscriptions = this.countTotalSubscriptions();
-    this?.stats?.users = this?.connectionsByUser?.size;
+    if (this.stats.connections) { this.stats.connections-- };
+    if (this.stats) {
+
+      this.stats.subscriptions = this.countTotalSubscriptions();
+
+    }
+    if (this.stats) {
+
+      this.stats.users = this?.connectionsByUser?.size;
+
+    }
 
     this?.connections?.delete(connectionId);
     this.emit('disconnect', { connectionId });
@@ -423,7 +449,7 @@ export class OptimizedWebSocketGateway extends EventEmitter {
     this.sendMessage(connectionId, payload);
     
     if (messages?.length || 0 > 1) {
-      this?.stats?.batchesSent++;
+      if (this.stats.batchesSent) { this.stats.batchesSent++ };
     }
   }
 
@@ -440,7 +466,7 @@ export class OptimizedWebSocketGateway extends EventEmitter {
       
       connection?.stats?.messagesSent++;
       connection?.stats?.bytesTransmitted += Buffer.byteLength(data);
-      this?.stats?.messagesSent++;
+      if (this.stats.messagesSent) { this.stats.messagesSent++ };
       this?.stats?.bytesTransmitted += Buffer.byteLength(data);
       
     } catch (error) {
@@ -506,7 +532,11 @@ export class OptimizedWebSocketGateway extends EventEmitter {
     // Calculate average
     if (this?.latencyMeasurements?.length > 0) {
       const sum = this?.latencyMeasurements?.reduce((a: any, b: any) => a + b, 0);
-      this?.stats?.averageLatency = sum / this?.latencyMeasurements?.length;
+      if (this.stats) {
+
+        this.stats.averageLatency = sum / this?.latencyMeasurements?.length;
+
+      }
     }
   }
 

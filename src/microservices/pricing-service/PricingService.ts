@@ -183,7 +183,7 @@ export class PricingService extends EventEmitter {
   private setupErrorHandlers(): void {
     this?.redisClient?.on('error', (err: any) => {
       this.emit('error', { source: 'redis', error: err });
-      this?.metrics?.errors.redis++;
+      if (this.metrics.errors.redis) { this.metrics.errors.redis++ };
     });
 
     this?.redisClient?.on('ready', () => {
@@ -228,12 +228,12 @@ export class PricingService extends EventEmitter {
     this?.metrics?.latency.memory.push(latency);
 
     if (cached) {
-      this?.metrics?.hits.memory++;
+      if (this.metrics.hits.memory) { this.metrics.hits.memory++ };
       this.emit('cache:hit', { level: 'memory', key: cacheKey, latency });
       return { ...cached, source: 'memory' };
     }
 
-    this?.metrics?.misses.memory++;
+    if (this.metrics.misses.memory) { this.metrics.misses.memory++ };
     return null;
   }
 
@@ -251,7 +251,7 @@ export class PricingService extends EventEmitter {
 
       if (cached) {
         const parsed = JSON.parse(cached) as PriceResponse;
-        this?.metrics?.hits.redis++;
+        if (this.metrics.hits.redis) { this.metrics.hits.redis++ };
         this.emit('cache:hit', { level: 'redis', key: cacheKey, latency });
         
         // Promote to memory cache
@@ -260,10 +260,10 @@ export class PricingService extends EventEmitter {
         return { ...parsed, source: 'redis' };
       }
 
-      this?.metrics?.misses.redis++;
+      if (this.metrics.misses.redis) { this.metrics.misses.redis++ };
       return null;
     } catch (error) {
-      this?.metrics?.errors.redis++;
+      if (this.metrics.errors.redis) { this.metrics.errors.redis++ };
       this.emit('error', { source: 'redis', error, key: cacheKey });
       return null;
     }
@@ -301,7 +301,7 @@ export class PricingService extends EventEmitter {
           ttl: row.expires_at - now
         };
 
-        this?.metrics?.hits.sqlite++;
+        if (this.metrics.hits.sqlite) { this.metrics.hits.sqlite++ };
         this.emit('cache:hit', { level: 'sqlite', key: cacheKey, latency });
         
         // Promote to higher cache layers
@@ -310,10 +310,10 @@ export class PricingService extends EventEmitter {
         return response;
       }
 
-      this?.metrics?.misses.sqlite++;
+      if (this.metrics.misses.sqlite) { this.metrics.misses.sqlite++ };
       return null;
     } catch (error) {
-      this?.metrics?.errors.sqlite++;
+      if (this.metrics.errors.sqlite) { this.metrics.errors.sqlite++ };
       this.emit('error', { source: 'sqlite', error, key: cacheKey });
       return null;
     }
@@ -329,7 +329,7 @@ export class PricingService extends EventEmitter {
         
         const latency = Date.now() - startTime;
         this?.metrics?.latency.api.push(latency);
-        this?.metrics?.hits.api++;
+        if (this.metrics.hits.api) { this.metrics.hits.api++ };
         
         this.emit('api:fetch', { 
           productId: request.productId, 
@@ -344,7 +344,7 @@ export class PricingService extends EventEmitter {
           ttl: this?.config?.cache.memory.ttl
         };
       } catch (error) {
-        this?.metrics?.errors.api++;
+        if (this.metrics.errors.api) { this.metrics.errors.api++ };
         this.emit('error', { source: 'api', error, request });
         throw error;
       }

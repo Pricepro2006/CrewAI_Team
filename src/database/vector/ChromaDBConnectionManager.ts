@@ -122,7 +122,11 @@ export class ChromaDBConnectionManager extends EventEmitter {
         return false;
       }
       // Move to half-open state
-      this?.circuitBreaker?.state = "half-open";
+      if (this.circuitBreaker) {
+
+        this.circuitBreaker.state = "half-open";
+
+      }
     }
 
     this.state = ConnectionState.CONNECTING;
@@ -152,7 +156,7 @@ export class ChromaDBConnectionManager extends EventEmitter {
   private async connectWithRetry(): Promise<boolean> {
     while (this.retryCount < this?.config?.maxRetries) {
       try {
-        this?.metrics?.connectionAttempts++;
+        if (this.metrics.connectionAttempts) { this.metrics.connectionAttempts++ };
         
         const client = await this.createClient();
         
@@ -228,15 +232,39 @@ export class ChromaDBConnectionManager extends EventEmitter {
    */
   private onConnectionSuccess(): void {
     this.state = ConnectionState.CONNECTED;
-    this?.metrics?.successfulConnections++;
-    this?.metrics?.currentState = ConnectionState.CONNECTED;
-    this?.metrics?.lastConnectionTime = new Date();
+    if (this.metrics.successfulConnections) { this.metrics.successfulConnections++ };
+    if (this.metrics) {
+
+      this.metrics.currentState = ConnectionState.CONNECTED;
+
+    }
+    if (this.metrics) {
+
+      this.metrics.lastConnectionTime = new Date();
+
+    }
     
     // Reset circuit breaker
-    this?.circuitBreaker?.failures = 0;
-    this?.circuitBreaker?.state = "closed";
-    this?.circuitBreaker?.lastFailureTime = undefined;
-    this?.circuitBreaker?.nextRetryTime = undefined;
+    if (this.circuitBreaker) {
+
+      this.circuitBreaker.failures = 0;
+
+    }
+    if (this.circuitBreaker) {
+
+      this.circuitBreaker.state = "closed";
+
+    }
+    if (this.circuitBreaker) {
+
+      this.circuitBreaker.lastFailureTime = undefined;
+
+    }
+    if (this.circuitBreaker) {
+
+      this.circuitBreaker.nextRetryTime = undefined;
+
+    }
     
     logger.info("ChromaDB connection established successfully", "CHROMADB_CONNECTION");
     
@@ -251,20 +279,44 @@ export class ChromaDBConnectionManager extends EventEmitter {
    */
   private onConnectionFailure(error: string): void {
     this.state = ConnectionState.FAILED;
-    this?.metrics?.failedConnections++;
-    this?.metrics?.currentState = ConnectionState.FAILED;
-    this?.metrics?.lastFailureTime = new Date();
-    this?.metrics?.lastError = error;
+    if (this.metrics.failedConnections) { this.metrics.failedConnections++ };
+    if (this.metrics) {
+
+      this.metrics.currentState = ConnectionState.FAILED;
+
+    }
+    if (this.metrics) {
+
+      this.metrics.lastFailureTime = new Date();
+
+    }
+    if (this.metrics) {
+
+      this.metrics.lastError = error;
+
+    }
     
     // Update circuit breaker
-    this?.circuitBreaker?.failures++;
-    this?.circuitBreaker?.lastFailureTime = new Date();
+    if (this.circuitBreaker.failures) { this.circuitBreaker.failures++ };
+    if (this.circuitBreaker) {
+
+      this.circuitBreaker.lastFailureTime = new Date();
+
+    }
     
     if (this?.circuitBreaker?.failures >= this?.config?.circuitBreakerThreshold) {
-      this?.circuitBreaker?.state = "open";
-      this?.circuitBreaker?.nextRetryTime = new Date(
+      if (this.circuitBreaker) {
+
+        this.circuitBreaker.state = "open";
+
+      }
+      if (this.circuitBreaker) {
+
+        this.circuitBreaker.nextRetryTime = new Date(
         Date.now() + this?.config?.circuitBreakerResetTimeout
       );
+
+      }
       
       logger.error(
         `Circuit breaker opened after ${this?.circuitBreaker?.failures} failures. Will retry at ${this?.circuitBreaker?.nextRetryTime.toISOString()}`,
@@ -386,8 +438,11 @@ export class ChromaDBConnectionManager extends EventEmitter {
    */
   private updateResponseTime(responseTime: number): void {
     const alpha = 0.3; // Exponential moving average factor
-    this?.metrics?.averageResponseTime = 
-      alpha * responseTime + (1 - alpha) * this?.metrics?.averageResponseTime;
+    if (this.metrics) {
+
+      this.metrics.averageResponseTime = alpha * responseTime + (1 - alpha) * this?.metrics?.averageResponseTime;
+
+    }
   }
 
   /**
@@ -424,8 +479,11 @@ export class ChromaDBConnectionManager extends EventEmitter {
   getMetrics(): ConnectionMetrics {
     // Calculate uptime percentage
     if (this?.metrics?.connectionAttempts > 0) {
-      this?.metrics?.uptimePercentage = 
-        (this?.metrics?.successfulConnections / this?.metrics?.connectionAttempts) * 100;
+      if (this.metrics) {
+
+        this.metrics.uptimePercentage = (this?.metrics?.successfulConnections / this?.metrics?.connectionAttempts) * 100;
+
+      }
     }
     
     return { ...this.metrics };
@@ -451,7 +509,11 @@ export class ChromaDBConnectionManager extends EventEmitter {
     
     this.client = undefined;
     this.state = ConnectionState.DISCONNECTED;
-    this?.metrics?.currentState = ConnectionState.DISCONNECTED;
+    if (this.metrics) {
+
+      this.metrics.currentState = ConnectionState.DISCONNECTED;
+
+    }
     
     logger.info("ChromaDB connection closed", "CHROMADB_CONNECTION");
     

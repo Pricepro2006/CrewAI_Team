@@ -232,14 +232,30 @@ export class GracefulShutdownHandler extends EventEmitter {
 
     try {
       await this.shutdownPromise;
-      this?.metrics?.endTime = Date.now();
-      this?.metrics?.duration = this?.metrics?.endTime - this?.metrics?.startTime;
+      if (this.metrics) {
+
+        this.metrics.endTime = Date.now();
+
+      }
+      if (this.metrics) {
+
+        this.metrics.duration = this?.metrics?.endTime - this?.metrics?.startTime;
+
+      }
 
       logger.info("Graceful shutdown completed", this.metrics);
       this.emit("shutdown:completed", this.metrics);
     } catch (error) {
-      this?.metrics?.endTime = Date.now();
-      this?.metrics?.duration = this?.metrics?.endTime - this?.metrics?.startTime;
+      if (this.metrics) {
+
+        this.metrics.endTime = Date.now();
+
+      }
+      if (this.metrics) {
+
+        this.metrics.duration = this?.metrics?.endTime - this?.metrics?.startTime;
+
+      }
 
       logger.error("Graceful shutdown failed", error as string);
       this.emit("shutdown:failed", { error, metrics: this.metrics });
