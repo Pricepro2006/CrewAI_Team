@@ -80,8 +80,16 @@ export class EmailQueryBuilder {
    * Set ORDER BY
    */
   orderBy(field: string, direction: "ASC" | "DESC" = "ASC"): this {
-    this?.options?.orderBy = field;
-    this?.options?.orderDirection = direction;
+    if (this.options) {
+
+      this.options.orderBy = field;
+
+    }
+    if (this.options) {
+
+      this.options.orderDirection = direction;
+
+    }
     return this;
   }
 
@@ -89,7 +97,11 @@ export class EmailQueryBuilder {
    * Set LIMIT
    */
   limit(limit: number): this {
-    this?.options?.limit = limit;
+    if (this.options) {
+
+      this.options.limit = limit;
+
+    }
     return this;
   }
 
@@ -97,7 +109,11 @@ export class EmailQueryBuilder {
    * Set OFFSET
    */
   offset(offset: number): this {
-    this?.options?.offset = offset;
+    if (this.options) {
+
+      this.options.offset = offset;
+
+    }
     return this;
   }
 

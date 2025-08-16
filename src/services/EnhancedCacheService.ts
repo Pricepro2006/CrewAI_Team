@@ -122,11 +122,23 @@ export class EnhancedCacheService extends EventEmitter {
     for (const cache of this?.caches?.values()) {
       totalSize += cache.size;
     }
-    this?.stats?.size = totalSize;
-    this?.stats?.inflightRequests = this?.requestDeduplication?.size;
+    if (this.stats) {
+
+      this.stats.size = totalSize;
+
+    }
+    if (this.stats) {
+
+      this.stats.inflightRequests = this?.requestDeduplication?.size;
+
+    }
     
     const total = this?.stats?.hits + this?.stats?.misses;
-    this?.stats?.hitRate = total > 0 ? (this?.stats?.hits / total) * 100 : 0;
+    if (this.stats) {
+
+      this.stats.hitRate = total > 0 ? (this?.stats?.hits / total) * 100 : 0;
+
+    }
     
     this.emit('stats', this.stats);
   }
@@ -141,12 +153,12 @@ export class EnhancedCacheService extends EventEmitter {
     if (entry) {
       entry.accessCount++;
       entry.lastAccessed = Date.now();
-      this?.stats?.hits++;
+      if (this.stats.hits) { this.stats.hits++ };
       this.emit('hit', { cache: cacheName, key });
       return entry.value;
     }
     
-    this?.stats?.misses++;
+    if (this.stats.misses) { this.stats.misses++ };
     this.emit('miss', { cache: cacheName, key });
     return null;
   }
@@ -167,7 +179,7 @@ export class EnhancedCacheService extends EventEmitter {
     };
 
     cache.set(key, entry, { ttl: options.ttl });
-    this?.stats?.sets++;
+    if (this.stats.sets) { this.stats.sets++ };
     this.emit('set', { cache: cacheName, key });
   }
 
@@ -183,7 +195,7 @@ export class EnhancedCacheService extends EventEmitter {
     // Check if request is already in flight
     const inflightRequest = this?.requestDeduplication?.get(key);
     if (inflightRequest) {
-      this?.stats?.deduplicatedRequests++;
+      if (this.stats.deduplicatedRequests) { this.stats.deduplicatedRequests++ };
       return inflightRequest;
     }
 
@@ -244,7 +256,7 @@ export class EnhancedCacheService extends EventEmitter {
         if (pattern.test(key)) {
           cache.delete(key);
           invalidated++;
-          this?.stats?.deletes++;
+          if (this.stats.deletes) { this.stats.deletes++ };
         }
       }
     }

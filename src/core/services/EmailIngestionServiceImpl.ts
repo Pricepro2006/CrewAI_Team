@@ -201,8 +201,10 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
 
   private setupQueueEventHandlers(): void {
     this?.worker?.on('completed', (job: Job<IngestionJob>, result: IngestionResult) => {
-      this?.processingMetrics?.totalProcessed++;
-      this?.processingMetrics?.processingTimes.push(result.processingTime);
+      if (this.processingMetrics) {
+        this.processingMetrics.totalProcessed++;
+        this.processingMetrics.processingTimes.push(result.processingTime);
+      }
       this.updateSourceMetrics(job?.data?.source);
       
       metrics.increment('email?.ingestion?.completed');
@@ -218,7 +220,9 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
     this?.worker?.on('failed', async (job: Job<IngestionJob> | undefined, error: Error) => {
       if (!job) return;
       
-      this?.processingMetrics?.failedIngestions++;
+      if (this.processingMetrics) {
+        this.processingMetrics.failedIngestions++;
+      }
       this.recordError(job?.data?.source, error.message);
       
       metrics.increment('email?.ingestion?.failed');
@@ -255,7 +259,9 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
       // Check for duplicates
       const isDuplicate = await this.checkDuplicate(email.messageId);
       if (isDuplicate) {
-        this?.processingMetrics?.duplicatesDetected++;
+        if (this.processingMetrics) {
+          this.processingMetrics.duplicatesDetected++;
+        }
         return {
           success: true,
           data: {
@@ -808,11 +814,15 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
   }
 
   private updateSourceMetrics(source: IngestionSource): void {
-    this?.processingMetrics?.bySource[source] = (this?.processingMetrics?.bySource[source] || 0) + 1;
+    if (this.processingMetrics) {
+      this.processingMetrics.bySource[source] = (this.processingMetrics.bySource[source] || 0) + 1;
+    }
   }
 
   private recordError(source: IngestionSource, error: string): void {
-    const existingError = this?.processingMetrics?.errors.find(e => 
+    if (!this.processingMetrics) return;
+    
+    const existingError = this.processingMetrics.errors.find(e => 
       e.source === source && e.error === error
     );
 
@@ -820,7 +830,7 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
       existingError.count++;
       existingError.timestamp = new Date();
     } else {
-      this?.processingMetrics?.errors.push({
+      this.processingMetrics.errors.push({
         timestamp: new Date(),
         source,
         error,
@@ -829,8 +839,8 @@ export class EmailIngestionServiceImpl implements IEmailIngestionService {
     }
 
     // Keep only last 1000 errors
-    if (this?.processingMetrics?.errors?.length || 0 > 1000) {
-      this?.processingMetrics?.errors = this?.processingMetrics?.errors.slice(-1000);
+    if (this.processingMetrics.errors.length > 1000) {
+      this.processingMetrics.errors = this.processingMetrics.errors.slice(-1000);
     }
   }
 

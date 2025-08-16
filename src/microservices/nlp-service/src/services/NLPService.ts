@@ -75,7 +75,11 @@ export class NLPService extends EventEmitter {
   async start(): Promise<void> {
     try {
       this.emit('starting');
-      this?.status?.status = 'starting';
+      if (this.status) {
+
+        this.status.status = 'starting';
+
+      }
       
       // Initialize dependencies
       await this.initializeDependencies();
@@ -86,7 +90,13 @@ export class NLPService extends EventEmitter {
         this.startMetricsCollection();
       }
       
-      this?.status?.status = 'healthy';
+      if (this.status) {
+
+      
+        this.status.status = 'healthy';
+
+      
+      }
       this.emit('started');
       
       logger.info('NLP Service started successfully', 'NLP_SERVICE', {
@@ -96,7 +106,11 @@ export class NLPService extends EventEmitter {
       });
       
     } catch (error) {
-      this?.status?.status = 'unhealthy';
+      if (this.status) {
+
+        this.status.status = 'unhealthy';
+
+      }
       this.emit('error', error);
       logger.error('Failed to start NLP Service', 'NLP_SERVICE', { error });
       throw error;
@@ -358,7 +372,11 @@ export class NLPService extends EventEmitter {
     }
     
     this.isShuttingDown = true;
-    this?.status?.status = 'stopping';
+    if (this.status) {
+
+      this.status.status = 'stopping';
+
+    }
     this.emit('stopping');
     
     logger.info('Starting graceful shutdown', 'NLP_SERVICE', { timeout });
@@ -382,7 +400,13 @@ export class NLPService extends EventEmitter {
         });
       }
       
-      this?.status?.status = 'stopped';
+      if (this.status) {
+
+      
+        this.status.status = 'stopped';
+
+      
+      }
       this.emit('stopped');
       
       logger.info('NLP Service shutdown completed', 'NLP_SERVICE', {
@@ -599,8 +623,16 @@ export class NLPService extends EventEmitter {
   private setupEventListeners(): void {
     // Listen to queue events
     this?.queue?.on('queueUpdate', (event: any) => {
-      this?.status?.queue.size = event?.data?.queueSize;
-      this?.status?.queue.activeRequests = event?.data?.activeRequests;
+      if (this.status && this.status.queue) {
+
+        this.status.queue.size = event?.data?.queueSize;
+
+      }
+      if (this.status && this.status.queue) {
+
+        this.status.queue.activeRequests = event?.data?.activeRequests;
+
+      }
     });
     
     // Handle process signals
@@ -622,25 +654,45 @@ export class NLPService extends EventEmitter {
     // Check Ollama connectivity (mock)
     try {
       // This would be a real health check to Ollama
-      this?.status?.dependencies.ollama = 'healthy';
+      if (this.status && this.status.dependencies) {
+
+        this.status.dependencies.ollama = 'healthy';
+
+      }
       logger.debug('Ollama connection established', 'NLP_SERVICE');
     } catch (error) {
-      this?.status?.dependencies.ollama = 'unhealthy';
+      if (this.status && this.status.dependencies) {
+
+        this.status.dependencies.ollama = 'unhealthy';
+
+      }
       logger.warn('Ollama connection failed', 'NLP_SERVICE', { error });
     }
     
     // Check Redis connectivity (mock)
     try {
       // This would be a real health check to Redis
-      this?.status?.dependencies.redis = 'healthy';
+      if (this.status && this.status.dependencies) {
+
+        this.status.dependencies.redis = 'healthy';
+
+      }
       logger.debug('Redis connection established', 'NLP_SERVICE');
     } catch (error) {
-      this?.status?.dependencies.redis = 'unhealthy';
+      if (this.status && this.status.dependencies) {
+
+        this.status.dependencies.redis = 'unhealthy';
+
+      }
       logger.warn('Redis connection failed', 'NLP_SERVICE', { error });
     }
     
     // Check queue health
-    this?.status?.dependencies.queue = this?.queue?.isHealthy() ? 'healthy' : 'unhealthy';
+    if (this.status && this.status.dependencies) {
+
+      this.status.dependencies.queue = this?.queue?.isHealthy() ? 'healthy' : 'unhealthy';
+
+    }
   }
 
   /**
@@ -666,26 +718,44 @@ export class NLPService extends EventEmitter {
    * Perform health check
    */
   private performHealthCheck(): void {
-    this?.status?.lastHealthCheck = Date.now();
+    if (this.status) {
+
+      this.status.lastHealthCheck = Date.now();
+
+    }
     
     // Check queue health
     const queueHealthy = this?.queue?.isHealthy();
-    this?.status?.queue.health = queueHealthy ? 'healthy' : 'unhealthy';
+    if (this.status && this.status.queue) {
+
+      this.status.queue.health = queueHealthy ? 'healthy' : 'unhealthy';
+
+    }
     
     // Check memory usage
     const memUsage = process.memoryUsage();
-    this?.status?.resources.memory = {
+    if (this.status && this.status.resources) {
+
+      this.status.resources.memory = {
       used: memUsage.used,
       total: memUsage.used + (memUsage.available || memUsage.heapTotal * 2),
       percentage: (memUsage.heapUsed / memUsage.heapTotal) * 100
     };
+
+    }
     
     // Determine overall health
     const isHealthy = queueHealthy && 
       this?.status?.dependencies.ollama !== 'unhealthy' &&
       this?.status?.resources.memory.percentage < 90;
     
-    this?.status?.status = isHealthy ? 'healthy' : 'degraded';
+    if (this.status) {
+
+    
+      this.status.status = isHealthy ? 'healthy' : 'degraded';
+
+    
+    }
     
     this.emit('health-check', this.status);
   }
@@ -694,10 +764,22 @@ export class NLPService extends EventEmitter {
    * Update service status
    */
   private updateStatus(): void {
-    this?.status?.uptime = Date.now() - this.startedAt;
+    if (this.status) {
+
+      this.status.uptime = Date.now() - this.startedAt;
+
+    }
     const queueStatus = this?.queue?.getStatus();
-    this?.status?.queue.size = queueStatus.queueSize;
-    this?.status?.queue.activeRequests = queueStatus.activeRequests;
+    if (this.status && this.status.queue) {
+
+      this.status.queue.size = queueStatus.queueSize;
+
+    }
+    if (this.status && this.status.queue) {
+
+      this.status.queue.activeRequests = queueStatus.activeRequests;
+
+    }
   }
 
   /**

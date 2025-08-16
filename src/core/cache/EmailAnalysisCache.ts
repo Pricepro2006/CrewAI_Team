@@ -25,7 +25,9 @@ export class EmailAnalysisCache {
       ttl: ttl,
       updateAgeOnGet: true,
       dispose: (value, key) => {
-        this?.stats?.evictions++;
+        if (this.stats) {
+          this.stats.evictions++;
+        }
         logger.debug(`Cache entry evicted: ${key}`, "EMAIL_CACHE", {
           hits: value.hits,
         });
@@ -45,13 +47,17 @@ export class EmailAnalysisCache {
     const entry = this?.cache?.get(emailId);
 
     if (entry) {
-      this?.stats?.hits++;
+      if (this.stats) {
+        this.stats.hits++;
+      }
       entry.hits++;
       logger.debug(`Cache hit for email: ${emailId}`, "EMAIL_CACHE");
       return entry.analysis;
     }
 
-    this?.stats?.misses++;
+    if (this.stats) {
+      this.stats.misses++;
+    }
     return undefined;
   }
 

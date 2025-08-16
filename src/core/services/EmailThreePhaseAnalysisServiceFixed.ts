@@ -95,13 +95,13 @@ export class EmailThreePhaseAnalysisServiceFixed extends EventEmitter {
       this.emit("phase:start", { phase: 1, email: email.id });
       const phase1Result = this.runPhase1(email, emailBody);
       this.emit("phase:complete", { phase: 1, result: phase1Result });
-      this?.stats?.phase1Count++;
+      if (this.stats.phase1Count) { this.stats.phase1Count++ };
 
       // Phase 2: LLM Enhancement
       this.emit("phase:start", { phase: 2, email: email.id });
       const phase2Result = await this.runPhase2(email, emailBody, phase1Result);
       this.emit("phase:complete", { phase: 2, result: phase2Result });
-      this?.stats?.phase2Count++;
+      if (this.stats.phase2Count) { this.stats.phase2Count++ };
 
       // Phase 3: Strategic Analysis (only for complete chains)
       let finalResult = phase2Result;
@@ -117,16 +117,19 @@ export class EmailThreePhaseAnalysisServiceFixed extends EventEmitter {
           options.chainContext,
         );
         this.emit("phase:complete", { phase: 3, result: finalResult });
-        this?.stats?.phase3Count++;
+        if (this.stats.phase3Count) { this.stats.phase3Count++ };
       }
 
       // Update processing stats
       const processingTime = Date.now() - startTime;
-      this?.stats?.totalProcessed++;
-      this?.stats?.averageProcessingTime =
-        (this?.stats?.averageProcessingTime * (this?.stats?.totalProcessed - 1) +
+      if (this.stats.totalProcessed) { this.stats.totalProcessed++ };
+      if (this.stats) {
+
+        this.stats.averageProcessingTime = (this?.stats?.averageProcessingTime * (this?.stats?.totalProcessed - 1) +
           processingTime) /
         this?.stats?.totalProcessed;
+
+      }
 
       // Save analysis results directly to emails_enhanced table
       await this.saveAnalysisToEnhancedTable(
@@ -253,7 +256,7 @@ Respond ONLY with valid JSON.`;
       );
 
       const enhancement = JSON.parse(responseData);
-      this?.stats.jsonSuccessCount++;
+      if (this.stats.jsonSuccessCount) { this.stats.jsonSuccessCount++ };
 
       // Merge with phase 1 results
       return {
@@ -277,7 +280,7 @@ Respond ONLY with valid JSON.`;
       } as AnalysisResult;
     } catch (error) {
       logger.warn("Phase 2 enhancement failed, using phase 1 results:", error);
-      this?.stats.jsonFailureCount++;
+      if (this.stats.jsonFailureCount) { this.stats.jsonFailureCount++ };
 
       return {
         ...phase1Result,
@@ -343,7 +346,7 @@ Respond ONLY with valid JSON.`;
       );
 
       const strategic = JSON.parse(responseData);
-      this?.stats.jsonSuccessCount++;
+      if (this.stats.jsonSuccessCount) { this.stats.jsonSuccessCount++ };
 
       return {
         ...phase2Result,
@@ -354,7 +357,7 @@ Respond ONLY with valid JSON.`;
       };
     } catch (error) {
       logger.warn("Phase 3 strategic analysis failed:", error as string);
-      this?.stats.jsonFailureCount++;
+      if (this.stats.jsonFailureCount) { this.stats.jsonFailureCount++ };
 
       return {
         ...phase2Result,

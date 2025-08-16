@@ -324,7 +324,7 @@ export class EventVersionManager extends EventEmitter {
         const cacheKey = this.getCacheKey(eventType, currentVersion, targetVersion);
         if (this?.transformationCache?.has(cacheKey)) {
           const cached = this?.transformationCache?.get(cacheKey)!;
-          this?.metrics?.transformations.cached++;
+          if (this.metrics.transformations.cached) { this.metrics.transformations.cached++ };
           return {
             ...cached,
             metadata: {
@@ -340,7 +340,7 @@ export class EventVersionManager extends EventEmitter {
       
       if (transformationPath?.length || 0 === 0) {
         const error = `No transformation path found from version ${currentVersion} to ${targetVersion} for ${eventType}`;
-        this?.metrics?.transformations.failed++;
+        if (this.metrics.transformations.failed) { this.metrics.transformations.failed++ };
         
         return {
           success: false,
@@ -406,10 +406,10 @@ export class EventVersionManager extends EventEmitter {
 
       // Update metrics
       if (result.success) {
-        this?.metrics?.transformations.successful++;
+        if (this.metrics.transformations.successful) { this.metrics.transformations.successful++ };
         this?.metrics?.versions[`${transformationType}s` as keyof typeof this.metrics.versions]++;
       } else {
-        this?.metrics?.transformations.failed++;
+        if (this.metrics.transformations.failed) { this.metrics.transformations.failed++ };
       }
 
       // Cache successful transformations
@@ -431,7 +431,7 @@ export class EventVersionManager extends EventEmitter {
       return result;
 
     } catch (error) {
-      this?.metrics?.transformations.failed++;
+      if (this.metrics.transformations.failed) { this.metrics.transformations.failed++ };
       
       this.emit('transformation_error', {
         eventId: event.id,
@@ -461,7 +461,7 @@ export class EventVersionManager extends EventEmitter {
 
       const schema = this.getSchema(eventType, schemaVersion);
       if (!schema) {
-        this?.metrics?.validations.failed++;
+        if (this.metrics.validations.failed) { this.metrics.validations.failed++ };
         return {
           valid: false,
           errors: [`No schema found for ${eventType} version ${schemaVersion}`],
@@ -497,9 +497,9 @@ export class EventVersionManager extends EventEmitter {
 
       // Update metrics
       if (valid) {
-        this?.metrics?.validations.passed++;
+        if (this.metrics.validations.passed) { this.metrics.validations.passed++ };
       } else {
-        this?.metrics?.validations.failed++;
+        if (this.metrics.validations.failed) { this.metrics.validations.failed++ };
       }
 
       this.emit('event_validated', {
@@ -514,7 +514,7 @@ export class EventVersionManager extends EventEmitter {
       return { valid, errors, warnings };
 
     } catch (error) {
-      this?.metrics?.validations.failed++;
+      if (this.metrics.validations.failed) { this.metrics.validations.failed++ };
       return {
         valid: false,
         errors: [`Validation failed: ${error}`],

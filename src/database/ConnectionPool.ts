@@ -19,7 +19,7 @@ import Database, { type Database as DatabaseType } from "better-sqlite3";
 // Type definition for Database instance
 type DatabaseInstance = DatabaseType;
 import { Worker, isMainThread, threadId } from "worker_threads";
-import { Logger } from "../../utils/logger.js";
+import { Logger } from "../utils/logger.js";
 import appConfig from "../config/app.config.js";
 
 const logger = new Logger("ConnectionPool");
@@ -147,8 +147,10 @@ export class DatabaseConnection {
       throw new Error(`Connection ${this?.metrics?.id} has been disposed`);
     }
 
-    this?.metrics?.lastUsed = new Date();
-    this?.metrics?.queryCount++;
+    if (this.metrics) {
+      this.metrics.lastUsed = new Date();
+      this.metrics.queryCount++;
+    }
     return this.db;
   }
 
@@ -165,7 +167,9 @@ export class DatabaseConnection {
         const pageSize = this?.db?.pragma("page_size", {
           simple: true,
         }) as number;
-        this?.metrics?.memoryUsage = pageCount * pageSize;
+        if (this.metrics) {
+          this.metrics.memoryUsage = pageCount * pageSize;
+        }
       } catch (error) {
         // Ignore errors in metrics collection
       }
@@ -193,7 +197,9 @@ export class DatabaseConnection {
     try {
       this?.db?.close();
       this.disposed = true;
-      this?.metrics?.isActive = false;
+      if (this.metrics) {
+        this.metrics.isActive = false;
+      }
       logger.debug(
         `Disposed connection ${this?.metrics?.id} on thread ${threadId}`,
       );

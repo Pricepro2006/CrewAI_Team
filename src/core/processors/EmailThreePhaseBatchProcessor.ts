@@ -137,19 +137,28 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
         results.push(result);
 
         // Update progress
-        this?.progress?.processed++;
-        if (result.success) this?.progress?.successful++;
-        else this?.progress?.failed++;
-        if (result.fromCache) this?.progress?.cacheHits++;
+        this.progress.processed++;
+        if (result.success) {
+          this.progress.successful++;
+        } else {
+          this.progress.failed++;
+        }
+        if (result.fromCache) {
+          this.progress.cacheHits++;
+        }
 
         // Calculate average time
         const totalProcessingTime = results.reduce(
           (sum, r) => sum + (r.processingTime || 0),
           0,
         );
-        this?.progress?.averageTime = Math.round(
+        if (this.progress) {
+
+          this.progress.averageTime = Math.round(
           totalProcessingTime / results?.length || 0,
         );
+
+        }
 
         // Emit progress event
         this.emit("batch:progress", {
@@ -173,8 +182,8 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
       failed: this?.progress?.failed,
       cacheHits: this?.progress?.cacheHits,
       totalTime: totalTime,
-      avgTime: Math.round(totalTime / emails?.length || 0),
-      throughput: Math.round((emails?.length || 0 / totalTime) * 1000), // emails per second
+      avgTime: Math.round(totalTime / (emails?.length || 1)),
+      throughput: Math.round((emails?.length || 0) / totalTime * 1000), // emails per second
     };
 
     logger.info(
@@ -287,14 +296,14 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
     chunkSize = 100,
   ): Promise<BatchResult[]> {
     const allResults: BatchResult[] = [];
-    const totalChunks = Math.ceil(emails?.length || 0 / chunkSize);
+    const totalChunks = Math.ceil((emails?.length || 0) / chunkSize);
 
     logger.info(
       `Processing ${emails?.length || 0} emails in ${totalChunks} chunks`,
       "BATCH_PROCESSOR",
     );
 
-    for (let i = 0; i < emails?.length || 0; i += chunkSize) {
+    for (let i = 0; i < (emails?.length || 0); i += chunkSize) {
       const chunk = emails.slice(i, i + chunkSize);
       const chunkNumber = Math.floor(i / chunkSize) + 1;
 
@@ -315,7 +324,7 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
       });
 
       // Small delay between chunks to avoid overwhelming the system
-      if (i + chunkSize < emails?.length || 0) {
+      if (i + chunkSize < (emails?.length || 0)) {
         await new Promise((resolve: any) => setTimeout(resolve, 1000));
       }
     }
@@ -387,25 +396,53 @@ export class EmailThreePhaseBatchProcessor extends EventEmitter {
    */
   updateOptions(options: Partial<BatchProcessingOptions>): void {
     if (options.concurrency !== undefined) {
-      this?.options?.concurrency = options.concurrency;
-      this?.queue?.concurrency = options.concurrency;
+      if (this.options) {
+
+        this.options.concurrency = options.concurrency;
+
+      }
+      if (this.queue) {
+
+        this.queue.concurrency = options.concurrency;
+
+      }
     }
 
     if (options.timeout !== undefined) {
-      this?.options?.timeout = options.timeout;
-      this?.queue?.timeout = options.timeout;
+      if (this.options) {
+
+        this.options.timeout = options.timeout;
+
+      }
+      if (this.queue) {
+
+        this.queue.timeout = options.timeout;
+
+      }
     }
 
     if (options.useCaching !== undefined) {
-      this?.options?.useCaching = options.useCaching;
+      if (this.options) {
+
+        this.options.useCaching = options.useCaching;
+
+      }
     }
 
     if (options.retryAttempts !== undefined) {
-      this?.options?.retryAttempts = options.retryAttempts;
+      if (this.options) {
+
+        this.options.retryAttempts = options.retryAttempts;
+
+      }
     }
 
     if (options.priority !== undefined) {
-      this?.options?.priority = options.priority;
+      if (this.options) {
+
+        this.options.priority = options.priority;
+
+      }
     }
 
     logger.info(

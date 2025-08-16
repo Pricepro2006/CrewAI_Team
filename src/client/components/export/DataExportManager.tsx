@@ -689,7 +689,7 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                       <table className="min-w-full text-sm">
                         <thead className="bg-gray-50">
                           <tr>
-                            {includedColumns.slice(0, 4).map((column: any) => (
+                            {includedColumns.slice(0, 4).map((column) => (
                               <th
                                 key={column.id}
                                 className="px-4 py-2 text-left text-gray-600"
@@ -710,7 +710,7 @@ export const DataExportManager: React.FC<DataExportManagerProps> = ({
                               key={index}
                               className="border-t border-gray-200"
                             >
-                              {includedColumns.slice(0, 4).map((column: any) => (
+                              {includedColumns.slice(0, 4).map((column) => (
                                 <td
                                   key={column.id}
                                   className="px-4 py-2 text-gray-900"

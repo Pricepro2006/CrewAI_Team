@@ -232,7 +232,7 @@ export class EventMonitor extends EventEmitter {
     const now = Date.now();
 
     // Update basic metrics
-    this?.metrics?.totalEvents++;
+    if (this.metrics.totalEvents) { this.metrics.totalEvents++ };
     
     // Track by type
     this?.metrics?.eventsByType[event.type] = (this?.metrics?.eventsByType[event.type] || 0) + 1;
@@ -498,12 +498,26 @@ export class EventMonitor extends EventEmitter {
     const timeSinceLastCalc = now - this.lastThroughputCalculation;
     const currentThroughput = (this.eventCountSinceLastCalc / timeSinceLastCalc) * 1000; // per second
 
-    this?.metrics?.throughput.current = currentThroughput;
-    this?.metrics?.throughput.peak = Math.max(this?.metrics?.throughput.peak, currentThroughput);
+    if (this.metrics && this.metrics.throughput) {
+
+
+      this.metrics.throughput.current = currentThroughput;
+
+
+    }
+    if (this.metrics && this.metrics.throughput) {
+
+      this.metrics.throughput.peak = Math.max(this?.metrics?.throughput.peak, currentThroughput);
+
+    }
     
     // Calculate average throughput
     const totalTime = (now - this.startTime) / 1000; // in seconds
-    this?.metrics?.throughput.average = this?.metrics?.totalEvents / totalTime;
+    if (this.metrics && this.metrics.throughput) {
+
+      this.metrics.throughput.average = this?.metrics?.totalEvents / totalTime;
+
+    }
 
     // Reset counters
     this.lastThroughputCalculation = now;
@@ -512,18 +526,42 @@ export class EventMonitor extends EventEmitter {
     // Calculate latency percentiles
     if (this?.latencyBuffer?.length > 0) {
       const sorted = [...this.latencyBuffer].sort((a, b) => a - b);
-      this?.metrics?.latency.p50 = this.calculatePercentile(sorted, 0.5);
-      this?.metrics?.latency.p90 = this.calculatePercentile(sorted, 0.9);
-      this?.metrics?.latency.p95 = this.calculatePercentile(sorted, 0.95);
-      this?.metrics?.latency.p99 = this.calculatePercentile(sorted, 0.99);
+      if (this.metrics && this.metrics.latency) {
+
+        this.metrics.latency.p50 = this.calculatePercentile(sorted, 0.5);
+
+      }
+      if (this.metrics && this.metrics.latency) {
+
+        this.metrics.latency.p90 = this.calculatePercentile(sorted, 0.9);
+
+      }
+      if (this.metrics && this.metrics.latency) {
+
+        this.metrics.latency.p95 = this.calculatePercentile(sorted, 0.95);
+
+      }
+      if (this.metrics && this.metrics.latency) {
+
+        this.metrics.latency.p99 = this.calculatePercentile(sorted, 0.99);
+
+      }
     }
 
     // Calculate error rate
     const totalErrors = Object.values(this?.metrics?.errorsByType).reduce((sum: any, count: any) => sum + count, 0);
-    this?.metrics?.health.errorRate = this?.metrics?.totalEvents > 0 ? totalErrors / this?.metrics?.totalEvents : 0;
+    if (this.metrics && this.metrics.health) {
+
+      this.metrics.health.errorRate = this?.metrics?.totalEvents > 0 ? totalErrors / this?.metrics?.totalEvents : 0;
+
+    }
     
     // Update health status
-    this?.metrics?.health.uptime = now - this.startTime;
+    if (this.metrics && this.metrics.health) {
+
+      this.metrics.health.uptime = now - this.startTime;
+
+    }
     this.updateHealthStatus();
 
     // Store metrics history
@@ -541,11 +579,23 @@ export class EventMonitor extends EventEmitter {
     const criticalAlerts = this.getActiveAlerts().filter(a => a.severity === 'critical');
     
     if (criticalAlerts?.length || 0 > 0) {
-      this?.metrics?.health.status = 'unhealthy';
+      if (this.metrics && this.metrics.health) {
+
+        this.metrics.health.status = 'unhealthy';
+
+      }
     } else if (activeAlertsCount > 0 || this?.metrics?.health.errorRate > 0.01) {
-      this?.metrics?.health.status = 'degraded';
+      if (this.metrics && this.metrics.health) {
+
+        this.metrics.health.status = 'degraded';
+
+      }
     } else {
-      this?.metrics?.health.status = 'healthy';
+      if (this.metrics && this.metrics.health) {
+
+        this.metrics.health.status = 'healthy';
+
+      }
     }
   }
 

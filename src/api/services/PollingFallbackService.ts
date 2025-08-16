@@ -166,7 +166,7 @@ export class PollingFallbackService extends EventEmitter {
     if (this.state) {
       this.state.lastPollTime = startTime;
     }
-    this?.metrics?.totalPolls++;
+    if (this.metrics.totalPolls) { this.metrics.totalPolls++ };
 
     try {
       // Create abort controller for timeout
@@ -188,8 +188,8 @@ export class PollingFallbackService extends EventEmitter {
       
       if (hasChanged) {
         this.lastData = data;
-        this?.state?.dataVersion++;
-        this?.metrics?.dataChanges++;
+        if (this.state.dataVersion) { this.state.dataVersion++ };
+        if (this.metrics.dataChanges) { this.metrics.dataChanges++ };
         
         this.emit('data:changed', {
           data,
@@ -211,7 +211,7 @@ export class PollingFallbackService extends EventEmitter {
         this.state.lastSuccessTime = Date.now();
         this.state.mode = 'active';
       }
-      this?.metrics?.successfulPolls++;
+      if (this.metrics.successfulPolls) { this.metrics.successfulPolls++ };
       if (this.metrics) {
         this.metrics.lastError = null;
       }
@@ -240,8 +240,8 @@ export class PollingFallbackService extends EventEmitter {
    * Handle polling error
    */
   private handlePollError(error: Error): void {
-    this?.state?.consecutiveErrors++;
-    this?.metrics?.failedPolls++;
+    if (this.state.consecutiveErrors) { this.state.consecutiveErrors++ };
+    if (this.metrics.failedPolls) { this.metrics.failedPolls++ };
     if (this.metrics) {
       this.metrics.lastError = error;
     }

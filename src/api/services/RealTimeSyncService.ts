@@ -198,7 +198,7 @@ export class RealTimeSyncService extends EventEmitter {
         {},
         error instanceof Error ? error : new Error(String(error)),
       );
-      this?.statistics?.errorCount++;
+      if (this.statistics.errorCount) { this.statistics.errorCount++ };
     } finally {
       this.isProcessing = false;
 
@@ -576,9 +576,13 @@ export class RealTimeSyncService extends EventEmitter {
 
       // Count events in the last minute
       // This is simplified - in production, you'd track timestamps
-      this?.statistics?.eventsPerMinute = Math.floor(
+      if (this.statistics) {
+
+        this.statistics.eventsPerMinute = Math.floor(
         this?.statistics?.eventsProcessed / 10,
       );
+
+      }
     }, 60000); // Every minute
   }
 
@@ -589,9 +593,12 @@ export class RealTimeSyncService extends EventEmitter {
     const { averageProcessingTime, eventsProcessed } = this.statistics;
 
     // Calculate new average
-    this?.statistics?.averageProcessingTime =
-      (averageProcessingTime * (eventsProcessed - 1) + newTime) /
+    if (this.statistics) {
+
+      this.statistics.averageProcessingTime = (averageProcessingTime * (eventsProcessed - 1) + newTime) /
       eventsProcessed;
+
+    }
   }
 
   /**
@@ -638,7 +645,11 @@ export class RealTimeSyncService extends EventEmitter {
    */
   clearSubscriptions(): void {
     this?.subscriptions?.clear();
-    this?.statistics?.activeSubscriptions = 0;
+    if (this.statistics) {
+
+      this.statistics.activeSubscriptions = 0;
+
+    }
     logger.info("All sync subscriptions cleared");
   }
 }

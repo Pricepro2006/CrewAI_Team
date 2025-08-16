@@ -214,35 +214,30 @@ export function sanitizePhoneNumber(phone: string): string {
 }
 
 /**
- * Validate and sanitize file path
+ * Validate and sanitize file path with comprehensive protection
  */
 export function sanitizeFilePath(filePath: string, basePath?: string): string {
-  // Remove null bytes
-  let sanitized = filePath.replace(/\0/g, "");
+  // Import enhanced path validator
+  const { PathValidator } = require('../../../utils/security/path-validation.js');
+  const validator = new PathValidator({
+    basePath: basePath || process.cwd(),
+    strict: true,
+    allowSymlinks: false
+  });
   
-  // Check for path traversal
-  for (const pattern of DANGEROUS_PATTERNS.pathTraversal) {
-    if (pattern.test(sanitized)) {
-      throw new Error("Path traversal detected");
-    }
+  // Validate path with comprehensive checks
+  const result = validator.validatePath(filePath);
+  
+  if (!result.valid) {
+    logger.warn("Path validation failed", "SECURITY", {
+      filePath,
+      error: result.error,
+      inputHash: createHash("sha256").update(filePath).digest("hex").substring(0, 8)
+    });
+    throw new Error(result.error || "Path validation failed");
   }
   
-  // Normalize the path
-  const normalized = path.normalize(sanitized);
-  
-  // If base path provided, ensure file is within it
-  if (basePath) {
-    const resolvedPath = path.resolve(basePath, normalized);
-    const resolvedBase = path.resolve(basePath);
-    
-    if (!resolvedPath.startsWith(resolvedBase)) {
-      throw new Error("Path outside allowed directory");
-    }
-    
-    return resolvedPath;
-  }
-  
-  return normalized;
+  return result.sanitized!;
 }
 
 /**
@@ -333,7 +328,7 @@ export function sanitizeObject(
 /**
  * Validate file upload
  */
-export function validateFileUpload(
+export async function validateFileUpload(
   file: Express.Multer.File,
   options: {
     allowedTypes?: string[];
@@ -404,13 +399,40 @@ export function validateFileUpload(
     }
   }
   
-  // TODO: Implement virus scanning
+  // Implement comprehensive file scanning
   if (scanForVirus) {
-    // In production, integrate with antivirus service
-    // const scanResult = await antivirusService.scan(file.buffer);
-    // if (scanResult.infected) {
-    //   return { valid: false, error: "Virus detected" };
-    // }
+    try {
+      const { FileUploadScanner } = require('../../../utils/security/file-upload-scanner.js');
+      const scanner = new FileUploadScanner({
+        maxFileSize: maxSize,
+        allowedMimeTypes: allowedTypes,
+        scanForVirus: true,
+        deepScan: true
+      });
+      
+      // Create temporary file for scanning if buffer provided
+      if (file.buffer) {
+        const tempPath = path.join('/tmp', `upload_${Date.now()}_${file.originalname}`);
+        require('fs').writeFileSync(tempPath, file.buffer);
+        
+        const scanResult = await scanner.scanFile(tempPath, file.originalname);
+        
+        // Clean up temp file
+        require('fs').unlinkSync(tempPath);
+        
+        if (!scanResult.safe) {
+          return { 
+            valid: false, 
+            error: `Security threats detected: ${scanResult.threats.join(', ')}`
+          };
+        }
+      }
+    } catch (error) {
+      logger.warn("File scanning failed", "VALIDATION", { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+      // Don't block if scanner fails, but log the issue
+    }
   }
   
   return { valid: true };

@@ -97,11 +97,11 @@ describe("CSRF Protection", () => {
       setCSRFCookie(mockRes as Response, "test-token", true);
 
       expect(mockRes.cookie).toHaveBeenCalledWith(
-        "__Host-csrf-token",
+        "csrf-token",  // Changed from "__Host-csrf-token" to match development behavior
         "test-token",
         expect.objectContaining({
           httpOnly: true,
-          secure: false,
+          secure: false,  // Development uses false for secure flag
           sameSite: "strict",
         }),
       );

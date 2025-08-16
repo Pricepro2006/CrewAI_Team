@@ -183,7 +183,13 @@ export class SubscriptionManager extends EventEmitter {
     }
     this?.connectionIndex?.get(connectionId)!.add(subscription.id);
 
-    this?.metrics?.subscriptionCount = this?.routes?.size;
+    if (this.metrics) {
+
+
+      this.metrics.subscriptionCount = this?.routes?.size;
+
+
+    }
     
     this.emit('subscription_added', {
       subscriptionId: subscription.id,
@@ -223,7 +229,13 @@ export class SubscriptionManager extends EventEmitter {
     // Clear any pending batches for this subscription
     this.clearPendingBatches(route.connectionId, subscriptionId);
 
-    this?.metrics?.subscriptionCount = this?.routes?.size;
+    if (this.metrics) {
+
+
+      this.metrics.subscriptionCount = this?.routes?.size;
+
+
+    }
     
     this.emit('subscription_removed', {
       subscriptionId,
@@ -261,7 +273,7 @@ export class SubscriptionManager extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      this?.metrics?.totalEvents++;
+      if (this.metrics.totalEvents) { this.metrics.totalEvents++ };
       
       const targets = await this.findEventTargets(event);
       
@@ -278,7 +290,7 @@ export class SubscriptionManager extends EventEmitter {
 
       const result = await this.deliverToTargets(targets);
       
-      this?.metrics?.routedEvents++;
+      if (this.metrics.routedEvents) { this.metrics.routedEvents++ };
       this.updateRoutingTime(Date.now() - startTime);
       
       this.emit('event_routed', {
@@ -294,7 +306,7 @@ export class SubscriptionManager extends EventEmitter {
       };
 
     } catch (error) {
-      this?.metrics?.routingErrors++;
+      if (this.metrics.routingErrors) { this.metrics.routingErrors++ };
       this.emit('routing_error', {
         eventId: event.id,
         error,
@@ -331,7 +343,7 @@ export class SubscriptionManager extends EventEmitter {
 
       // Apply filters
       if (!await this.matchesFilters(event, route)) {
-        this?.metrics?.filteredEvents++;
+        if (this.metrics.filteredEvents) { this.metrics.filteredEvents++ };
         continue;
       }
 
@@ -339,7 +351,7 @@ export class SubscriptionManager extends EventEmitter {
       let transformedEvent = event;
       if (route.transform?.enabled) {
         transformedEvent = await this.transformEvent(event, route.transform);
-        this?.metrics?.transformedEvents++;
+        if (this.metrics.transformedEvents) { this.metrics.transformedEvents++ };
       }
 
       targets.push({
@@ -395,7 +407,7 @@ export class SubscriptionManager extends EventEmitter {
             priority: target.priority,
             force: target.priority === 'critical'
           });
-          this?.metrics?.batchedEvents++;
+          if (this.metrics.batchedEvents) { this.metrics.batchedEvents++ };
         }
         batchesCreated++;
         routed = true;
@@ -635,12 +647,24 @@ export class SubscriptionManager extends EventEmitter {
 
   // Metrics and monitoring
   private updateMetrics(): void {
-    this?.metrics?.activeConnections = this?.connectionIndex?.size;
-    this?.metrics?.subscriptionCount = this?.routes?.size;
+    if (this.metrics) {
+
+      this.metrics.activeConnections = this?.connectionIndex?.size;
+
+    }
+    if (this.metrics) {
+
+      this.metrics.subscriptionCount = this?.routes?.size;
+
+    }
     
     if (this?.routingTimes?.length > 0) {
       const sum = this?.routingTimes?.reduce((total: any, time: any) => total + time, 0);
-      this?.metrics?.averageRoutingTime = sum / this?.routingTimes?.length;
+      if (this.metrics) {
+
+        this.metrics.averageRoutingTime = sum / this?.routingTimes?.length;
+
+      }
     }
   }
 

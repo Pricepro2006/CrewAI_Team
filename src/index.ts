@@ -3,15 +3,29 @@
  * This demonstrates the full integration of SuperClaude commands with MCP tools
  */
 
-// Legacy example file - remove ollama import since module not installed
-// import type { Ollama } from 'ollama';
 import type { ChromaClient } from "chromadb";
 
-// Initialize core services (mocked for legacy example)
-const ollama = {
-  generate: async (params: any) => ({ response: "Mock response" }),
-} as any;
-const chroma = {} as any;
+// Type definitions for Ollama
+interface OllamaGenerateParams {
+  model: string;
+  prompt: string;
+  system?: string;
+}
+
+interface OllamaResponse {
+  response: string;
+}
+
+interface OllamaService {
+  generate: (params: OllamaGenerateParams) => Promise<OllamaResponse>;
+}
+
+// Initialize core services with proper types
+const ollama: OllamaService = {
+  generate: async (params: OllamaGenerateParams): Promise<OllamaResponse> => ({ response: "Mock response" }),
+};
+
+const chroma: Partial<ChromaClient> = {};
 
 /**
  * Main Application Entry Point
@@ -46,7 +60,7 @@ class AIAgentTeamSystem {
     console.log("✅ System initialized successfully!");
   }
 
-  async processQuery(query: string): Promise<any> {
+  async processQuery(query: string): Promise<ProcessQueryResult> {
     console.log(`\n📥 Processing query: "${query}"`);
 
     try {
@@ -68,6 +82,47 @@ class AIAgentTeamSystem {
   }
 }
 
+// Type definitions
+interface ProcessQueryResult {
+  summary: string;
+  details: AgentResult[];
+  timestamp: Date;
+  confidence: number;
+}
+
+interface QueryAnalysis {
+  intent: string;
+  entities: string[];
+  confidence: number;
+}
+
+interface PlanStep {
+  agent: string;
+  task: string;
+  priority: number;
+  dependencies?: string[];
+}
+
+interface ExecutionPlan {
+  steps: PlanStep[];
+  estimatedTime: string;
+}
+
+interface AgentResult {
+  agent: string;
+  task: string;
+  [key: string]: unknown;
+}
+
+interface AgentParams {
+  task: string;
+  context: MemoryEntry[];
+}
+
+interface MemoryEntry {
+  [key: string]: unknown;
+}
+
 /**
  * Master Orchestrator Implementation
  */
@@ -77,7 +132,7 @@ class MasterOrchestrator {
     private memoryManager: MemoryManager,
   ) {}
 
-  async processQuery(query: string): Promise<any> {
+  async processQuery(query: string): Promise<ProcessQueryResult> {
     // Step 1: Analyze query
     console.log("🔍 Analyzing query...");
     const analysis = await this.analyzeQuery(query);
@@ -95,7 +150,7 @@ class MasterOrchestrator {
     return this.synthesizeResults(results);
   }
 
-  private async analyzeQuery(query: string) {
+  private async analyzeQuery(query: string): Promise<QueryAnalysis> {
     // Simulate /analyze --intent --entities command
     const prompt = `Analyze this query and extract intent and entities: "${query}"`;
 
@@ -112,7 +167,7 @@ class MasterOrchestrator {
     };
   }
 
-  private async createPlan(analysis: any) {
+  private async createPlan(analysis: QueryAnalysis): Promise<ExecutionPlan> {
     // Simulate /design --plan command
     const steps = [];
 
@@ -152,7 +207,7 @@ class MasterOrchestrator {
     return { steps, estimatedTime: "5-10 minutes" };
   }
 
-  private async executePlan(plan: any) {
+  private async executePlan(plan: ExecutionPlan): Promise<AgentResult[]> {
     const results = [];
 
     for (const step of plan.steps) {
@@ -175,7 +230,7 @@ class MasterOrchestrator {
     return results;
   }
 
-  private synthesizeResults(results: any[]) {
+  private synthesizeResults(results: AgentResult[]): ProcessQueryResult {
     return {
       summary: "Task completed successfully",
       details: results,
@@ -190,7 +245,7 @@ class MasterOrchestrator {
  */
 abstract class BaseAgent {
   abstract name: string;
-  abstract execute(params: any): Promise<any>;
+  abstract execute(params: AgentParams): Promise<AgentResult>;
 }
 
 /**
@@ -199,7 +254,7 @@ abstract class BaseAgent {
 class ResearchAgent extends BaseAgent {
   name = "ResearchAgent";
 
-  async execute(params: any): Promise<any> {
+  async execute(params: AgentParams): Promise<AgentResult> {
     console.log("    🔬 Research Agent: Gathering information...");
 
     // Simulate research with Ollama
@@ -306,7 +361,7 @@ class WriterAgent extends BaseAgent {
  * Memory Manager Implementation
  */
 class MemoryManager {
-  private memory: Map<string, any> = new Map();
+  private memory: Map<string, MemoryEntry | ProcessQueryResult | AgentResult> = new Map();
 
   async initialize() {
     console.log("  💾 Initializing memory system...");
@@ -326,17 +381,17 @@ class MemoryManager {
     });
   }
 
-  async storeResult(result: any) {
+  async storeResult(result: ProcessQueryResult) {
     const resultId = `result_${Date.now()}`;
     this?.memory?.set(resultId, result);
   }
 
-  async storeAgentResult(agent: string, result: any) {
+  async storeAgentResult(agent: string, result: AgentResult) {
     const key = `${agent}_${Date.now()}`;
     this?.memory?.set(key, result);
   }
 
-  async getContext(agent: string): Promise<any> {
+  async getContext(agent: string): Promise<MemoryEntry[]> {
     // Get recent context for agent
     const context = [];
     for (const [key, value] of this?.memory?.entries()) {
@@ -359,7 +414,7 @@ async function runExample() {
   const system = new AIAgentTeamSystem();
 
   // Wait for initialization
-  await new Promise((resolve: any) => setTimeout(resolve, 1000));
+  await new Promise<void>((resolve) => setTimeout(resolve, 1000));
 
   // Example queries
   const queries = [

@@ -348,12 +348,12 @@ ${this.generateSystemRecommendations(recentMetrics)}
     // For now, we'll simulate it
     setTimeout(() => {
       const executionTime = performance.now() - startTime;
-      this?.queryStats?.totalQueries++;
+      if (this.queryStats.totalQueries) { this.queryStats.totalQueries++ };
       this?.queryStats?.totalExecutionTime += executionTime;
       
       // Log slow queries
       if (executionTime > this?.thresholds?.maxAvgQueryTime) {
-        this?.queryStats?.slowQueries++;
+        if (this.queryStats.slowQueries) { this.queryStats.slowQueries++ };
         
         const slowQuery: SlowQuery = {
           sql,

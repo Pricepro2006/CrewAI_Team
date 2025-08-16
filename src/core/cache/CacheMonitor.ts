@@ -617,7 +617,11 @@ export class CacheMonitor extends EventEmitter {
     this.stopMonitoring();
     this?.warmingJobs?.clear();
     this?.activeAlerts?.clear();
-    this?.healthHistory?.length = 0;
+    if (this.healthHistory) {
+
+      this.healthHistory.length = 0;
+
+    }
 
     logger.info('Cache monitor shutdown completed', 'CACHE_MONITOR');
   }

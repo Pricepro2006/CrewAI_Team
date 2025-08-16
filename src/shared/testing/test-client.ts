@@ -216,7 +216,11 @@ export class WebSocketTestClient implements TestWebSocketClient {
         if (this.connection) {
           const message = JSON.parse(data.toString()) as WebSocketMessage;
           this?.connection?.receivedMessages.push(message);
-          this?.connection?.lastActivity = new Date().toISOString();
+          if (this.connection) {
+
+            this.connection.lastActivity = new Date().toISOString();
+
+          }
 
           // Trigger event handlers
           const handlers = this?.eventHandlers?.get(message.type) || [];
@@ -236,7 +240,11 @@ export class WebSocketTestClient implements TestWebSocketClient {
 
       ws.on("close", () => {
         if (this.connection) {
-          this?.connection?.connected = false;
+          if (this.connection) {
+
+            this.connection.connected = false;
+
+          }
         }
         this.ws = undefined;
         this.connectionPromise = undefined;
@@ -261,7 +269,11 @@ export class WebSocketTestClient implements TestWebSocketClient {
     }
 
     if (this.connection) {
-      this?.connection?.connected = false;
+      if (this.connection) {
+
+        this.connection.connected = false;
+
+      }
     }
   }
 
@@ -273,7 +285,11 @@ export class WebSocketTestClient implements TestWebSocketClient {
     if (this.ws && this.connection) {
       this?.ws?.send(JSON.stringify(message));
       this?.connection?.sentMessages.push(message);
-      this?.connection?.lastActivity = new Date().toISOString();
+      if (this.connection) {
+
+        this.connection.lastActivity = new Date().toISOString();
+
+      }
     }
   }
 

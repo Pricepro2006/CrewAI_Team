@@ -274,7 +274,11 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
       logger.info(`Batch processing completed: ${emails?.length || 0} emails in ${batchTime}ms (${throughput.toFixed(1)} emails/min)`);
       
       // Update throughput metrics
-      this?.performanceMetrics?.throughputEmailsPerMinute = throughput;
+      if (this.performanceMetrics) {
+
+        this.performanceMetrics.throughputEmailsPerMinute = throughput;
+
+      }
       
       this.emit('batch:complete', {
         processedCount: results?.length || 0,
@@ -765,30 +769,42 @@ export class OptimizedBusinessAnalysisService extends EventEmitter {
     error?: boolean;
   }): void {
     if (update.cacheHit !== undefined) {
-      this?.performanceMetrics?.cacheHitRate = 
-        (this?.performanceMetrics?.cacheHitRate * this?.performanceMetrics?.totalProcessed + (update.cacheHit ? 1 : 0)) /
+      if (this.performanceMetrics) {
+
+        this.performanceMetrics.cacheHitRate = (this?.performanceMetrics?.cacheHitRate * this?.performanceMetrics?.totalProcessed + (update.cacheHit ? 1 : 0)) /
         (this?.performanceMetrics?.totalProcessed + 1);
+
+      }
     }
 
     if (update.processingTime !== undefined) {
-      this?.performanceMetrics?.averageProcessingTime = 
-        (this?.performanceMetrics?.averageProcessingTime * this?.performanceMetrics?.totalProcessed + update.processingTime) /
+      if (this.performanceMetrics) {
+
+        this.performanceMetrics.averageProcessingTime = (this?.performanceMetrics?.averageProcessingTime * this?.performanceMetrics?.totalProcessed + update.processingTime) /
         (this?.performanceMetrics?.totalProcessed + 1);
+
+      }
     }
 
     if (update.qualityScore !== undefined) {
-      this?.performanceMetrics?.businessInsightQuality = 
-        (this?.performanceMetrics?.businessInsightQuality * this?.performanceMetrics?.totalProcessed + update.qualityScore) /
+      if (this.performanceMetrics) {
+
+        this.performanceMetrics.businessInsightQuality = (this?.performanceMetrics?.businessInsightQuality * this?.performanceMetrics?.totalProcessed + update.qualityScore) /
         (this?.performanceMetrics?.totalProcessed + 1);
+
+      }
     }
 
     if (update.error) {
-      this?.performanceMetrics?.errorRate = 
-        (this?.performanceMetrics?.errorRate * this?.performanceMetrics?.totalProcessed + 1) /
+      if (this.performanceMetrics) {
+
+        this.performanceMetrics.errorRate = (this?.performanceMetrics?.errorRate * this?.performanceMetrics?.totalProcessed + 1) /
         (this?.performanceMetrics?.totalProcessed + 1);
+
+      }
     }
 
-    this?.performanceMetrics?.totalProcessed++;
+    if (this.performanceMetrics.totalProcessed) { this.performanceMetrics.totalProcessed++ };
   }
 
   private async saveBusinessAnalysisResults(result: BusinessAnalysisResult, uow: IUnitOfWork): Promise<void> {

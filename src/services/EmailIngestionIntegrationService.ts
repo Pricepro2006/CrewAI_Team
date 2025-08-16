@@ -172,15 +172,21 @@ export class EmailIngestionIntegrationService {
     // Override ingestion completion handler to trigger analysis
     const originalIngestBatch = this?.ingestionService?.ingestBatch.bind(this.ingestionService);
     
-    this?.ingestionService?.ingestBatch = async (emails, source) => {
+    if (this.ingestionService) {
+
+    
+      this.ingestionService.ingestBatch = async (emails, source) => {
       const result = await originalIngestBatch(emails, source);
+
+    
+    }
       
       if (result.success && this?.config?.enableAnalysisIntegration) {
         // Trigger adaptive 3-phase analysis for newly ingested emails
-        this.triggerAnalysisForNewEmails(result?.data?.processed).catch(error => {
+        this.triggerAnalysisForNewEmails(result.data.processed).catch(error => {
           logger.error('Failed to trigger analysis for new emails', {
             error: error instanceof Error ? error.message : 'Unknown error',
-            processed: result?.data?.processed
+            processed: result.data.processed
           });
         });
       }
@@ -353,9 +359,9 @@ export class EmailIngestionIntegrationService {
         
         if (result.success) {
           logger.info(`Auto-pull from ${source.description} completed`, {
-            processed: result?.data?.processed,
-            duplicate: result?.data?.duplicate,
-            failed: result?.data?.failed
+            processed: result.data?.processed,
+            duplicate: result.data?.duplicate,
+            failed: result.data?.failed
           });
         } else {
           logger.error(`Auto-pull from ${source.description} failed`, {

@@ -244,24 +244,24 @@ export class WebSocketMonitor extends EventEmitter {
     });
 
     this?.gateway?.on('message_error', (data: any) => {
-      this?.currentMetrics?.errors.messageErrors++;
-      this?.currentMetrics?.errors.total++;
+      if (this.currentMetrics.errors.messageErrors) { this.currentMetrics.errors.messageErrors++ };
+      if (this.currentMetrics.errors.total) { this.currentMetrics.errors.total++ };
     });
 
     // Connection manager events
     this?.connectionManager?.on('connection_rejected', (data: any) => {
-      this?.currentMetrics?.connections.rejectedConnections++;
+      if (this.currentMetrics.connections.rejectedConnections) { this.currentMetrics.connections.rejectedConnections++ };
       this.recordMetric('connection_rejected', 1, { reason: data.reason });
     });
 
     this?.connectionManager?.on('auth_error', (data: any) => {
-      this?.currentMetrics?.errors.authErrors++;
-      this?.currentMetrics?.errors.total++;
+      if (this.currentMetrics.errors.authErrors) { this.currentMetrics.errors.authErrors++ };
+      if (this.currentMetrics.errors.total) { this.currentMetrics.errors.total++ };
     });
 
     this?.connectionManager?.on('rate_limit_exceeded', (data: any) => {
-      this?.currentMetrics?.errors.rateLimitErrors++;
-      this?.currentMetrics?.errors.total++;
+      if (this.currentMetrics.errors.rateLimitErrors) { this.currentMetrics.errors.rateLimitErrors++ };
+      if (this.currentMetrics.errors.total) { this.currentMetrics.errors.total++ };
     });
 
     // Subscription manager events
@@ -270,27 +270,27 @@ export class WebSocketMonitor extends EventEmitter {
     });
 
     this?.subscriptionManager?.on('routing_error', (data: any) => {
-      this?.currentMetrics?.errors.total++;
+      if (this.currentMetrics.errors.total) { this.currentMetrics.errors.total++ };
     });
 
     // Message batcher events
     this?.batcher?.on('batch_created', (data: any) => {
-      this?.currentMetrics?.batching.totalBatches++;
+      if (this.currentMetrics.batching.totalBatches) { this.currentMetrics.batching.totalBatches++ };
       this.recordLatency('batch_latency', data?.batch?.metadata.createdAt - Date.now());
     });
 
     // Event broadcaster events
     this?.broadcaster?.on('broadcast_completed', (data: any) => {
       if (data?.result?.success) {
-        this?.currentMetrics?.broadcasting.successfulBroadcasts++;
+        if (this.currentMetrics.broadcasting.successfulBroadcasts) { this.currentMetrics.broadcasting.successfulBroadcasts++ };
       }
-      this?.currentMetrics?.broadcasting.totalBroadcasts++;
+      if (this.currentMetrics.broadcasting.totalBroadcasts) { this.currentMetrics.broadcasting.totalBroadcasts++ };
       this.recordLatency('broadcast_latency', data?.result?.broadcastTime);
     });
 
     this?.broadcaster?.on('broadcast_error', (data: any) => {
-      this?.currentMetrics?.errors.broadcastErrors++;
-      this?.currentMetrics?.errors.total++;
+      if (this.currentMetrics.errors.broadcastErrors) { this.currentMetrics.errors.broadcastErrors++ };
+      if (this.currentMetrics.errors.total) { this.currentMetrics.errors.total++ };
     });
   }
 
@@ -324,7 +324,10 @@ export class WebSocketMonitor extends EventEmitter {
     const gatewayMetrics = this?.gateway?.getMetrics();
     const connectionStats = this?.connectionManager?.getStats();
     
-    this?.currentMetrics?.connections = {
+    if (this.currentMetrics) {
+
+    
+      this.currentMetrics.connections = {
       total: connectionStats.total,
       active: connectionStats.active,
       peak: connectionStats.peakConnections,
@@ -333,8 +336,13 @@ export class WebSocketMonitor extends EventEmitter {
       rejectedConnections: this?.currentMetrics?.connections.rejectedConnections
     };
 
+    
+    }
+
     // Message metrics
-    this?.currentMetrics?.messages = {
+    if (this.currentMetrics) {
+
+      this.currentMetrics.messages = {
       totalSent: gatewayMetrics.totalMessages,
       totalReceived: gatewayMetrics.totalMessages, // Approximation
       messagesPerSecond: this.calculateMessagesPerSecond(),
@@ -343,9 +351,13 @@ export class WebSocketMonitor extends EventEmitter {
       failedMessages: this?.currentMetrics?.errors.messageErrors
     };
 
+    }
+
     // Subscription metrics
     const subscriptionStats = this?.subscriptionManager?.getSubscriptionStats();
-    this?.currentMetrics?.subscriptions = {
+    if (this.currentMetrics) {
+
+      this.currentMetrics.subscriptions = {
       total: subscriptionStats.totalSubscriptions,
       byEventType: subscriptionStats.byEventType,
       averagePerConnection: this?.currentMetrics?.connections.active > 0 
@@ -354,9 +366,13 @@ export class WebSocketMonitor extends EventEmitter {
       subscriptionChangesPerSecond: this.calculateSubscriptionChangesPerSecond()
     };
 
+    }
+
     // Batching metrics
     const batchMetrics = this?.batcher?.getMetrics();
-    this?.currentMetrics?.batching = {
+    if (this.currentMetrics) {
+
+      this.currentMetrics.batching = {
       totalBatches: batchMetrics.totalBatches,
       averageBatchSize: batchMetrics.averageBatchSize,
       batchesPerSecond: this.calculateBatchesPerSecond(),
@@ -364,15 +380,21 @@ export class WebSocketMonitor extends EventEmitter {
       compressionRatio: batchMetrics.averageCompressionRatio
     };
 
+    }
+
     // Broadcasting metrics
     const broadcastMetrics = this?.broadcaster?.getMetrics();
-    this?.currentMetrics?.broadcasting = {
+    if (this.currentMetrics) {
+
+      this.currentMetrics.broadcasting = {
       totalBroadcasts: broadcastMetrics.totalBroadcasts,
       successfulBroadcasts: broadcastMetrics.successfulBroadcasts,
       averageBroadcastLatency: broadcastMetrics.averageBroadcastTime,
       averageRecipientsPerBroadcast: broadcastMetrics.averageRecipientsPerBroadcast,
       crossNodeBroadcasts: broadcastMetrics.redisPublishes
     };
+
+    }
 
     // Latency metrics
     this.updateLatencyMetrics();
@@ -386,13 +408,19 @@ export class WebSocketMonitor extends EventEmitter {
 
     const sorted = [...this.latencyBuffer].sort((a, b) => a - b);
     
-    this?.currentMetrics?.latency = {
+    if (this.currentMetrics) {
+
+    
+      this.currentMetrics.latency = {
       p50: this.calculatePercentile(sorted, 0.5),
       p90: this.calculatePercentile(sorted, 0.9),
       p95: this.calculatePercentile(sorted, 0.95),
       p99: this.calculatePercentile(sorted, 0.99),
       max: Math.max(...sorted)
     };
+
+    
+    }
 
     // Clear old latency data
     if (this?.latencyBuffer?.length > 10000) {

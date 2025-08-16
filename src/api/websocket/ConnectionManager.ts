@@ -185,7 +185,7 @@ export class ConnectionManager extends EventEmitter {
 
   // Authentication methods
   public async authenticateConnection(token: string, metadata: Record<string, any> = {}): Promise<AuthContext> {
-    this?.securityMetrics?.authAttempts++;
+    if (this.securityMetrics.authAttempts) { this.securityMetrics.authAttempts++ };
 
     try {
       // Try JWT authentication first
@@ -201,7 +201,7 @@ export class ConnectionManager extends EventEmitter {
       throw new Error('Invalid authentication method');
 
     } catch (error) {
-      this?.securityMetrics?.authFailures++;
+      if (this.securityMetrics.authFailures) { this.securityMetrics.authFailures++ };
       this?.monitor?.recordError(error as Error, {
         eventType: 'authentication_failed',
         source: 'connection_manager'
@@ -234,11 +234,11 @@ export class ConnectionManager extends EventEmitter {
         await this.storeSession(authContext);
       }
 
-      this?.securityMetrics?.authSuccesses++;
+      if (this.securityMetrics.authSuccesses) { this.securityMetrics.authSuccesses++ };
       return authContext;
 
     } catch (error) {
-      this?.securityMetrics?.tokenValidationErrors++;
+      if (this.securityMetrics.tokenValidationErrors) { this.securityMetrics.tokenValidationErrors++ };
       throw new Error(`JWT validation failed: ${error}`);
     }
   }
@@ -261,7 +261,7 @@ export class ConnectionManager extends EventEmitter {
       await this.storeSession(authContext);
     }
 
-    this?.securityMetrics?.authSuccesses++;
+    if (this.securityMetrics.authSuccesses) { this.securityMetrics.authSuccesses++ };
     return authContext;
   }
 
@@ -356,9 +356,13 @@ export class ConnectionManager extends EventEmitter {
     this?.connectionsByIP?.get(userIP)!.add(connection.id);
 
     // Update statistics
-    this?.stats?.total++;
-    this?.stats?.active++;
-    this?.stats?.peakConnections = Math.max(this?.stats?.peakConnections, this?.stats?.active);
+    if (this.stats.total) { this.stats.total++ };
+    if (this.stats.active) { this.stats.active++ };
+    if (this.stats) {
+
+      this.stats.peakConnections = Math.max(this?.stats?.peakConnections, this?.stats?.active);
+
+    }
 
     // Track connection rate
     this?.connectionRateWindow?.push(Date.now());
@@ -403,7 +407,7 @@ export class ConnectionManager extends EventEmitter {
     }
 
     // Update statistics
-    this?.stats?.active--;
+    if (this.stats.active) { this.stats.active-- };
 
     const connectionDuration = Date.now() - connection?.stats?.connectedAt;
     this.updateAverageConnectionTime(connectionDuration);
@@ -483,7 +487,7 @@ export class ConnectionManager extends EventEmitter {
     connection?.metadata?.rateLimits[rateLimitKey] = rateLimit;
 
     if (rateLimit.count > limit) {
-      this?.securityMetrics?.rateLimitViolations++;
+      if (this.securityMetrics.rateLimitViolations) { this.securityMetrics.rateLimitViolations++ };
       this.emit('rate_limit_exceeded', {
         connectionId,
         action,
@@ -497,7 +501,7 @@ export class ConnectionManager extends EventEmitter {
   }
 
   public detectSuspiciousActivity(connectionId: string, activity: string, severity: 'low' | 'medium' | 'high'): void {
-    this?.securityMetrics?.suspiciousActivity++;
+    if (this.securityMetrics.suspiciousActivity) { this.securityMetrics.suspiciousActivity++ };
     
     this.emit('suspicious_activity', {
       connectionId,
@@ -591,13 +595,33 @@ export class ConnectionManager extends EventEmitter {
 
   private updateMetrics(): void {
     // Update connection statistics
-    this?.stats?.active = this?.connections?.size;
-    this?.stats?.idle = 0;
+    if (this.stats) {
+
+      this.stats.active = this?.connections?.size;
+
+    }
+    if (this.stats) {
+
+      this.stats.idle = 0;
+
+    }
 
     // Reset per-request counters
-    this?.stats?.byUser = {};
-    this?.stats?.byIP = {};
-    this?.stats?.byRole = {};
+    if (this.stats) {
+
+      this.stats.byUser = {};
+
+    }
+    if (this.stats) {
+
+      this.stats.byIP = {};
+
+    }
+    if (this.stats) {
+
+      this.stats.byRole = {};
+
+    }
 
     const now = Date.now();
 
@@ -622,7 +646,7 @@ export class ConnectionManager extends EventEmitter {
       // Check if idle
       const idleTime = now - connection?.stats?.lastActivity;
       if (idleTime > 60000) { // 1 minute
-        this?.stats?.idle++;
+        if (this.stats.idle) { this.stats.idle++ };
       }
     }
 
@@ -630,17 +654,28 @@ export class ConnectionManager extends EventEmitter {
     const recentConnections = this?.connectionRateWindow?.filter(
       timestamp => now - timestamp < 60000 // Last minute
     );
-    this?.stats?.connectionsPerSecond = recentConnections?.length || 0 / 60;
+    if (this.stats) {
+
+      this.stats.connectionsPerSecond = recentConnections?.length || 0 / 60;
+
+    }
   }
 
   private updateAverageConnectionTime(newDuration: number): void {
     const totalConnections = this?.stats?.total;
     
     if (totalConnections === 1) {
-      this?.stats?.averageConnectionTime = newDuration;
+      if (this.stats) {
+
+        this.stats.averageConnectionTime = newDuration;
+
+      }
     } else {
-      this?.stats?.averageConnectionTime = 
-        (this?.stats?.averageConnectionTime * (totalConnections - 1) + newDuration) / totalConnections;
+      if (this.stats) {
+
+        this.stats.averageConnectionTime = (this?.stats?.averageConnectionTime * (totalConnections - 1) + newDuration) / totalConnections;
+
+      }
     }
   }
 

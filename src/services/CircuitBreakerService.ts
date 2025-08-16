@@ -60,15 +60,15 @@ class Circuit {
     fn: () => Promise<T>,
     fallback?: () => T | Promise<T>
   ): Promise<T> {
-    this?.stats?.requests++;
+    if (this.stats.requests) { this.stats.requests++ };
     
     // Check if circuit is open
     if (this.state === CircuitState.OPEN) {
       if (Date.now() < this.nextAttempt!) {
-        this?.stats?.rejections++;
+        if (this.stats.rejections) { this.stats.rejections++ };
         
         if (fallback) {
-          this?.stats?.fallbacks++;
+          if (this.stats.fallbacks) { this.stats.fallbacks++ };
           try {
             return await fallback();
           } catch (fallbackError) {
@@ -106,7 +106,7 @@ class Circuit {
       
       // Try fallback if circuit is now open
       if (fallback && this.state === CircuitState.OPEN) {
-        this?.stats?.fallbacks++;
+        if (this.stats.fallbacks) { this.stats.fallbacks++ };
         try {
           return await fallback();
         } catch (fallbackError) {
@@ -123,7 +123,7 @@ class Circuit {
    */
   private onSuccess(latency: number): void {
     this.failures = 0;
-    this?.stats?.successes++;
+    if (this.stats.successes) { this.stats.successes++ };
     this.updateLatency(latency);
     
     if (this.state === CircuitState.HALF_OPEN) {
@@ -144,7 +144,7 @@ class Circuit {
    */
   private onFailure(latency: number): void {
     this.failures++;
-    this?.stats?.failures++;
+    if (this.stats.failures) { this.stats.failures++ };
     this.successes = 0;
     this.updateLatency(latency);
     
@@ -172,15 +172,29 @@ class Circuit {
     // Update average
     if (this?.stats?.latency?.length || 0 > 0) {
       const sum = this?.stats?.latency.reduce((a: any, b: any) => a + b, 0);
-      this?.stats?.averageLatency = sum / this?.stats?.latency?.length || 0;
+      if (this.stats) {
+
+        this.stats.averageLatency = sum / this?.stats?.latency?.length || 0;
+
+      }
     }
     
     // Update error rate
-    this?.stats?.errorRate = this?.stats?.requests > 0 
+    if (this.stats) {
+
+      this.stats.errorRate = this?.stats?.requests > 0 
       ? (this?.stats?.failures / this?.stats?.requests) * 100 
       : 0;
+
+    }
     
-    this?.stats?.state = this.state;
+    if (this.stats) {
+
+    
+      this.stats.state = this.state;
+
+    
+    }
   }
 
   /**

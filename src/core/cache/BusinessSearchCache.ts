@@ -64,7 +64,7 @@ export class BusinessSearchCache {
       noDeleteOnStaleGet: true,
       dispose: (value, key, reason) => {
         if (reason === "evict") {
-          this?.stats?.evictions++;
+          if (this.stats.evictions) { this.stats.evictions++ };
         }
       },
     });
@@ -97,7 +97,11 @@ export class BusinessSearchCache {
             logger.error(
               "Redis connection failed for cache, falling back to memory only",
             );
-            this?.config?.useRedis = false;
+            if (this.config) {
+
+              this.config.useRedis = false;
+
+            }
             return null;
           }
           return Math.min(times * 50, 2000);
@@ -119,7 +123,11 @@ export class BusinessSearchCache {
         "Failed to initialize Redis for cache:",
         error instanceof Error ? error.message : String(error),
       );
-      this?.config?.useRedis = false;
+      if (this.config) {
+
+        this.config.useRedis = false;
+
+      }
     }
   }
 
@@ -169,14 +177,14 @@ export class BusinessSearchCache {
 
         if (isStale && !isWithinStaleWindow) {
           // Too stale, treat as miss
-          this?.stats?.misses++;
+          if (this.stats.misses) { this.stats.misses++ };
           this.trackResponseTime(Date.now() - startTime);
           return null;
         }
 
         // Hit - increment hit count
         entry.hitCount++;
-        this?.stats?.hits++;
+        if (this.stats.hits) { this.stats.hits++ };
 
         // Update in caches
         if (this?.config?.useRedis && this.redisClient) {
@@ -203,7 +211,7 @@ export class BusinessSearchCache {
       }
 
       // Miss
-      this?.stats?.misses++;
+      if (this.stats.misses) { this.stats.misses++ };
       this.trackResponseTime(Date.now() - startTime);
       return null;
     } catch (error) {
@@ -211,7 +219,7 @@ export class BusinessSearchCache {
         "Cache get error:",
         error instanceof Error ? error.message : String(error),
       );
-      this?.stats?.misses++;
+      if (this.stats.misses) { this.stats.misses++ };
       this.trackResponseTime(Date.now() - startTime);
       return null;
     }
@@ -446,7 +454,11 @@ export class BusinessSearchCache {
 
     // Update average
     const sum = this?.responseTimeHistory?.reduce((a: any, b: any) => a + b, 0);
-    this?.stats?.avgResponseTime = sum / this?.responseTimeHistory?.length;
+    if (this.stats) {
+
+      this.stats.avgResponseTime = sum / this?.responseTimeHistory?.length;
+
+    }
   }
 
   /**
