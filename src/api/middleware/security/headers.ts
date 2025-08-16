@@ -439,7 +439,7 @@ export function testSecurityHeaders(headers: Record<string, string>): {
   }
 
   return {
-    passed: issues?.length || 0 === 0,
+    passed: (issues?.length || 0) === 0,
     issues,
   };
 }

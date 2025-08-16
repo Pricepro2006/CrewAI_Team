@@ -41,14 +41,14 @@ export function createPermissionMiddleware(requiredPermissions: string[]) {
 
     // Verify user has all required permissions
     const hasAllPermissions = requiredPermissions.every(permission => 
-      ctx?.user?.permissions.includes(permission)
+      ctx.user?.permissions.includes(permission)
     );
 
     if (!hasAllPermissions) {
       logger.warn("Permission check failed", "SECURITY", {
-        userId: ctx?.user?.id,
+        userId: ctx.user?.id,
         isGuest,
-        userPermissions: ctx?.user?.permissions,
+        userPermissions: ctx.user?.permissions,
         requiredPermissions,
         path,
         requestId: ctx.requestId,
@@ -57,13 +57,13 @@ export function createPermissionMiddleware(requiredPermissions: string[]) {
       // Log to security monitor
       securityMonitor.logEvent({
         type: isGuest ? SecurityEventType.GUEST_ACCESS_DENIED : SecurityEventType.PERMISSION_DENIED,
-        userId: ctx?.user?.id,
+        userId: ctx.user?.id,
         ip: (ctx.user as any).metadata?.ip,
         userAgent: (ctx.user as any).metadata?.userAgent,
         resource: path,
         reason: `Missing permissions: ${requiredPermissions.join(", ")}`,
         metadata: {
-          userPermissions: ctx?.user?.permissions,
+          userPermissions: ctx.user?.permissions,
           requiredPermissions,
         },
       });
@@ -79,7 +79,7 @@ export function createPermissionMiddleware(requiredPermissions: string[]) {
     // Log guest access for monitoring
     if (isGuest) {
       logger.info("Guest user accessing protected resource", "GUEST_ACCESS", {
-        guestId: ctx?.user?.id,
+        guestId: ctx.user?.id,
         path,
         permissions: requiredPermissions,
         requestId: ctx.requestId,
@@ -87,7 +87,9 @@ export function createPermissionMiddleware(requiredPermissions: string[]) {
     }
 
     // Update last activity
-    ctx?.user?.lastActivity = new Date();
+    if (ctx.user) {
+      ctx.user.lastActivity = new Date();
+    }
 
     return next();
   };
@@ -116,14 +118,14 @@ export function createGuestAllowedMiddleware(guestPermissions: string[] = ["read
     if (guestUserService.isGuestUser(ctx.user)) {
       // Verify guest has required permissions
       const hasPermission = guestPermissions.some(permission =>
-        ctx?.user?.permissions.includes(permission)
+        ctx.user?.permissions.includes(permission)
       );
 
       if (!hasPermission) {
         // Log guest access denial
         securityMonitor.logEvent({
           type: SecurityEventType.GUEST_ACCESS_DENIED,
-          userId: ctx?.user?.id,
+          userId: ctx.user?.id,
           ip: (ctx.user as any).metadata?.ip,
           userAgent: (ctx.user as any).metadata?.userAgent,
           resource: (opts as any).path || "unknown",
@@ -161,7 +163,7 @@ export function createStrictAuthMiddleware() {
     }
 
     // Check if user is active
-    if (!ctx?.user?.is_active) {
+    if (!ctx.user?.is_active) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Account is inactive",
@@ -273,10 +275,10 @@ export function createEnhancedAuthorizationMiddleware(
     }
 
     // Block guest users from role-based endpoints
-    if (guestUserService.isGuestUser(ctx.user) && allowedRoles?.length || 0 > 0) {
+    if (guestUserService.isGuestUser(ctx.user) && (allowedRoles?.length || 0) > 0) {
       securityMonitor.logEvent({
         type: SecurityEventType.GUEST_ACCESS_DENIED,
-        userId: ctx?.user?.id,
+        userId: ctx.user?.id,
         ip: (ctx.user as any).metadata?.ip,
         userAgent: (ctx.user as any).metadata?.userAgent,
         resource: (opts as any).path || "role-based-endpoint",
@@ -290,10 +292,10 @@ export function createEnhancedAuthorizationMiddleware(
     }
 
     // Check role-based access
-    if (allowedRoles?.length || 0 > 0 && !allowedRoles.includes(ctx?.user?.role)) {
+    if ((allowedRoles?.length || 0) > 0 && !allowedRoles.includes(ctx.user?.role)) {
       logger.warn("Role-based authorization failed", "SECURITY", {
-        userId: ctx?.user?.id,
-        userRole: ctx?.user?.role,
+        userId: ctx.user?.id,
+        userRole: ctx.user?.role,
         requiredRoles: allowedRoles,
         requestId: ctx.requestId,
       });
@@ -305,15 +307,15 @@ export function createEnhancedAuthorizationMiddleware(
     }
 
     // Check permission-based access
-    if (requiredPermissions?.length || 0 > 0) {
+    if ((requiredPermissions?.length || 0) > 0) {
       const hasAllPermissions = requiredPermissions.every(permission =>
-        ctx?.user?.permissions.includes(permission)
+        ctx.user?.permissions.includes(permission)
       );
 
       if (!hasAllPermissions) {
         logger.warn("Permission-based authorization failed", "SECURITY", {
-          userId: ctx?.user?.id,
-          userPermissions: ctx?.user?.permissions,
+          userId: ctx.user?.id,
+          userPermissions: ctx.user?.permissions,
           requiredPermissions,
           requestId: ctx.requestId,
         });

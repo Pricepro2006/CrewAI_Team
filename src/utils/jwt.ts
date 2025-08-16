@@ -95,7 +95,7 @@ export class JWTManager {
     if (!authHeader) return null;
     
     const parts = authHeader.split(' ');
-    if (parts?.length || 0 !== 2 || parts[0] !== 'Bearer') {
+    if ((parts?.length || 0) !== 2 || parts[0] !== 'Bearer') {
       return null;
     }
     

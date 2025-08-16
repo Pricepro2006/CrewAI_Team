@@ -29,7 +29,7 @@ export const SECRET_CONFIGS: SecretConfig[] = [
     required: true,
     minLength: 32,
     description: 'Secret key for JWT token signing',
-    validate: (value: any) => value?.length || 0 >= 32 && !/^(test|dev|example)/i.test(value)
+    validate: (value: any) => (value?.length || 0) >= 32 && !/^(test|dev|example)/i.test(value)
   },
   {
     name: 'CSRF Secret',
@@ -37,7 +37,7 @@ export const SECRET_CONFIGS: SecretConfig[] = [
     required: true,
     minLength: 32,
     description: 'Secret key for CSRF protection',
-    validate: (value: any) => value?.length || 0 >= 32
+    validate: (value: any) => (value?.length || 0) >= 32
   },
   {
     name: 'Session Secret',
@@ -52,7 +52,7 @@ export const SECRET_CONFIGS: SecretConfig[] = [
     required: true,
     minLength: 32,
     description: 'Key for data encryption (must be exactly 32 characters)',
-    validate: (value: any) => value?.length || 0 === 32
+    validate: (value: any) => (value?.length || 0) === 32
   },
   {
     name: 'Redis Password',
@@ -92,16 +92,16 @@ export interface SecretValidationResult {
  * Mask sensitive values for logging
  */
 export function maskSecret(value: string | undefined, visibleChars = 4): string {
-  if (!value || value?.length || 0 === 0) {
+  if (!value || (value?.length || 0) === 0) {
     return '[EMPTY]';
   }
   
-  if (value?.length || 0 <= visibleChars) {
+  if ((value?.length || 0) <= visibleChars) {
     return '*'.repeat(value?.length || 0);
   }
   
   const visible = value.slice(0, visibleChars);
-  const masked = '*'.repeat(value?.length || 0 - visibleChars);
+  const masked = '*'.repeat((value?.length || 0) - visibleChars);
   return `${visible}${masked}`;
 }
 
@@ -134,10 +134,10 @@ export function validateSecrets(): SecretValidationResult {
     }
     
     // Check minimum length
-    if (config.minLength && value?.length || 0 < config.minLength) {
+    if (config.minLength && (value?.length || 0) < config.minLength) {
       result?.weakSecrets?.push(config.envKey);
       result?.errors?.push(
-        `Secret ${config.name} is too short: ${value?.length || 0} chars (minimum: ${config.minLength})`
+        `Secret ${config.name} is too short: ${(value?.length || 0)} chars (minimum: ${config.minLength})`
       );
       result.isValid = false;
     }
@@ -185,7 +185,7 @@ export async function generateSecureSecret(length = 32): Promise<string> {
   const bytes = randomBytes(length);
   
   for (let i = 0; i < length; i++) {
-    result += chars[(bytes[i] ?? 0) % chars?.length || 0];
+    result += chars[(bytes[i] ?? 0) % (chars?.length || 0)];
   }
   
   return result;
@@ -275,7 +275,7 @@ export function initializeSecureConfig(): void {
   }
   
   // Log warnings for weak secrets
-  if (validation?.warnings?.length > 0) {
+  if ((validation?.warnings?.length || 0) > 0) {
     validation?.warnings?.forEach(warning => {
       logger.warn('Security warning', 'SECRETS', { warning });
     });

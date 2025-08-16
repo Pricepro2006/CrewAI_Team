@@ -452,7 +452,9 @@ export function createEnhancedAuthMiddleware() {
     }
 
     // Update last activity
-    ctx?.user?.lastActivity = new Date();
+    if (ctx?.user) {
+      ctx.user.lastActivity = new Date();
+    }
 
     return next();
   };
@@ -570,7 +572,7 @@ export class PIIRedactor {
     }
     
     if (Array.isArray(data)) {
-      return data?.map(item => this.redact(item));
+      return data.map(item => this.redact(item));
     }
     
     if (data && typeof data === 'object') {
@@ -588,16 +590,16 @@ export class PIIRedactor {
     let result = str;
     
     // Redact email addresses
-    result = result.replace(this?.PII_PATTERNS?.email, '[EMAIL_REDACTED]');
+    result = result.replace(this.PII_PATTERNS.email, '[EMAIL_REDACTED]');
     
     // Redact phone numbers
-    result = result.replace(this?.PII_PATTERNS?.phone, '[PHONE_REDACTED]');
+    result = result.replace(this.PII_PATTERNS.phone, '[PHONE_REDACTED]');
     
     // Redact SSNs
-    result = result.replace(this?.PII_PATTERNS?.ssn, '[SSN_REDACTED]');
+    result = result.replace(this.PII_PATTERNS.ssn, '[SSN_REDACTED]');
     
     // Redact credit card numbers
-    result = result.replace(this?.PII_PATTERNS?.creditCard, '[CARD_REDACTED]');
+    result = result.replace(this.PII_PATTERNS.creditCard, '[CARD_REDACTED]');
     
     return result;
   }
