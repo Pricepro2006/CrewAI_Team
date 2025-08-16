@@ -10,12 +10,14 @@ import { DataAnalysisAgent } from "../specialized/DataAnalysisAgent.js";
 import { WriterAgent } from "../specialized/WriterAgent.js";
 import { ToolExecutorAgent } from "../specialized/ToolExecutorAgent.js";
 import { EmailAnalysisAgent } from "../specialized/EmailAnalysisAgent.js";
+import type { RAGSystem } from "../../rag/RAGSystem.js";
 
 export class AgentRegistry {
   private activeAgents: Map<string, BaseAgent>;
   private agentPool: Map<string, BaseAgent[]>;
   private config: AgentPoolConfig;
   private agentFactories: Map<string, AgentFactory>;
+  private ragSystem: RAGSystem | null = null;
 
   constructor(config?: Partial<AgentPoolConfig>) {
     this.activeAgents = new Map();
@@ -29,6 +31,30 @@ export class AgentRegistry {
 
     this.agentFactories = new Map();
     this.registerDefaultAgents();
+  }
+
+  /**
+   * Set the RAG system for all agents
+   * This should be called by MasterOrchestrator after RAG initialization
+   */
+  setRAGSystem(ragSystem: RAGSystem): void {
+    this.ragSystem = ragSystem;
+    
+    // Update all existing agents with RAG system
+    for (const agent of this.activeAgents.values()) {
+      if ('setRAGSystem' in agent && typeof (agent as any).setRAGSystem === 'function') {
+        (agent as any).setRAGSystem(ragSystem);
+      }
+    }
+    
+    // Update pooled agents
+    for (const agents of this.agentPool.values()) {
+      for (const agent of agents) {
+        if ('setRAGSystem' in agent && typeof (agent as any).setRAGSystem === 'function') {
+          (agent as any).setRAGSystem(ragSystem);
+        }
+      }
+    }
   }
 
   private registerDefaultAgents(): void {
@@ -79,6 +105,12 @@ export class AgentRegistry {
       const agent = factory();
       await agent.initialize();
 
+      // Integrate RAG system if available
+      if (this.ragSystem && 'setRAGSystem' in agent && typeof (agent as any).setRAGSystem === 'function') {
+        (agent as any).setRAGSystem(this.ragSystem);
+        console.log(`RAG system integrated with preloaded agent: ${agentType}`);
+      }
+
       if (!this?.agentPool?.has(agentType)) {
         this?.agentPool?.set(agentType, []);
       }
@@ -98,10 +130,10 @@ export class AgentRegistry {
     }
 
     // Check agent pool
-    const pooledAgents = this?.agentPool?.get(agentType);
-    if (pooledAgents && pooledAgents?.length || 0 > 0) {
+    const pooledAgents = this.agentPool?.get(agentType);
+    if (pooledAgents && (pooledAgents?.length || 0) > 0) {
       const agent = pooledAgents.pop()!;
-      this?.activeAgents?.set(activeKey, agent);
+      this.activeAgents?.set(activeKey, agent);
       return agent;
     }
 
@@ -113,6 +145,13 @@ export class AgentRegistry {
 
     const agent = factory();
     await agent.initialize();
+    
+    // Integrate RAG system if available
+    if (this.ragSystem && 'setRAGSystem' in agent && typeof (agent as any).setRAGSystem === 'function') {
+      (agent as any).setRAGSystem(this.ragSystem);
+      console.log(`RAG system integrated with new agent: ${agentType}`);
+    }
+    
     this?.activeAgents?.set(activeKey, agent);
 
     // Set up idle timeout

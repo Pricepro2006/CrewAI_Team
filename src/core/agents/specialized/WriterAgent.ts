@@ -16,38 +16,90 @@ export class WriterAgent extends BaseAgent {
 
   async execute(task: string, context: AgentContext): Promise<AgentResult> {
     try {
-      // Analyze the writing task
-      const taskAnalysis = await this.analyzeWritingTask(task, context);
+      // Query RAG for writing examples and style guides
+      let ragContext = "";
+      let writingExamples: any[] = [];
+      
+      if (this.ragSystem && this.ragEnabled) {
+        // Search for relevant writing samples
+        ragContext = await this.queryRAG(task, {
+          limit: 5,
+          filter: { 
+            agentType: 'WriterAgent',
+            category: 'writing_samples'
+          }
+        });
+        
+        // Search for style guides and templates
+        const styleContext = await this.queryRAG(task, {
+          limit: 3,
+          filter: {
+            category: 'style_guides'
+          }
+        });
+        
+        if (ragContext || styleContext) {
+          console.log(`[WriterAgent] Retrieved RAG context: ${(ragContext + styleContext).length} characters`);
+          ragContext = ragContext + "\n" + styleContext;
+        }
+        
+        // Search for similar writing examples
+        const searchResults = await this.searchRAG(task, 3);
+        writingExamples = searchResults.filter(r => 
+          r.metadata?.type === 'writing' || r.metadata?.type === 'content'
+        );
+      }
+
+      // Analyze the writing task with context
+      const taskAnalysis = await this.analyzeWritingTask(task, context, ragContext);
 
       // Execute based on content type
       let result: unknown;
       switch (taskAnalysis.contentType) {
         case "article":
-          result = await this.writeArticle(taskAnalysis, context);
+          result = await this.writeArticle(taskAnalysis, context, writingExamples);
           break;
         case "report":
-          result = await this.writeReport(taskAnalysis, context);
+          result = await this.writeReport(taskAnalysis, context, writingExamples);
           break;
         case "email":
-          result = await this.writeEmail(taskAnalysis, context);
+          result = await this.writeEmail(taskAnalysis, context, writingExamples);
           break;
         case "creative":
-          result = await this.writeCreative(taskAnalysis, context);
+          result = await this.writeCreative(taskAnalysis, context, writingExamples);
           break;
         case "technical":
-          result = await this.writeTechnical(taskAnalysis, context);
+          result = await this.writeTechnical(taskAnalysis, context, writingExamples);
           break;
         default:
           result = await this.writeGeneral(task, context);
       }
 
       const writingResult = result as WritingResult;
+      
+      // Index high-quality writing samples back into RAG
+      if (this.ragSystem && this.ragEnabled && writingResult.content) {
+        await this.indexAgentKnowledge([{
+          content: writingResult.content,
+          metadata: {
+            type: 'writing',
+            contentType: taskAnalysis.contentType,
+            style: taskAnalysis.style,
+            task: task,
+            wordCount: writingResult.content.split(' ').length,
+            timestamp: new Date().toISOString()
+          }
+        }]);
+      }
+      
       return {
         success: true,
         data: writingResult,
         output: sanitizeLLMOutput(writingResult.content).content,
         metadata: {
           agent: this.name,
+          ragEnhanced: !!ragContext,
+          examplesUsed: writingExamples.length,
           contentType: taskAnalysis.contentType,
           wordCount: this.countWords(writingResult.content),
           style: taskAnalysis.style,
@@ -62,11 +114,13 @@ export class WriterAgent extends BaseAgent {
   private async analyzeWritingTask(
     task: string,
     context: AgentContext,
+    ragContext: string = ""
   ): Promise<WritingTaskAnalysis> {
     const prompt = `
       Analyze this writing task: "${task}"
       
-      ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
+      ${ragContext ? `RAG Context:\n${ragContext}\n` : ""}
+      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
       
       Determine:
       1. Content type: article, report, email, creative, technical, or general
@@ -85,9 +139,12 @@ export class WriterAgent extends BaseAgent {
       }
     `;
 
-    const responseResponse = await this?.llm?.generate(prompt, { format: "json" });
-    const response = responseResponse?.response;
-    return this.parseWritingTaskAnalysis(response);
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const response = await this.generateLLMResponse(prompt, { format: "json" });
+    return this.parseWritingTaskAnalysis(response.response);
   }
 
   private parseWritingTaskAnalysis(response: string): WritingTaskAnalysis {
@@ -98,7 +155,7 @@ export class WriterAgent extends BaseAgent {
         style: parsed.style || "informative",
         audience: parsed.audience || "general audience",
         requirements: parsed.requirements || [],
-        length: parsed?.length || 0 || "medium",
+        length: parsed.length || "medium",
       };
     } catch {
       return {
@@ -120,9 +177,9 @@ export class WriterAgent extends BaseAgent {
       Style: ${analysis.style}
       Audience: ${analysis.audience}
       Length: ${analysis?.length || 0}
-      Requirements: ${analysis?.requirements?.join(", ")}
+      Requirements: ${analysis.requirements.join(", ")}
       
-      ${context.ragDocuments ? `Reference material:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Reference material:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
       
       Create a well-structured article with:
       1. Engaging headline
@@ -134,8 +191,12 @@ export class WriterAgent extends BaseAgent {
       Use appropriate tone and style for the target audience.
     `;
 
-    const contentResponse = await this?.llm?.generate(prompt);
-    const content = contentResponse?.response;
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const response = await this.generateLLMResponse(prompt);
+    const content = response.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -155,9 +216,9 @@ export class WriterAgent extends BaseAgent {
       Write a professional report with these specifications:
       Style: ${analysis.style}
       Audience: ${analysis.audience}
-      Requirements: ${analysis?.requirements?.join(", ")}
+      Requirements: ${analysis.requirements.join(", ")}
       
-      ${context.ragDocuments ? `Data/Research:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Data/Research:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
       
       Structure the report with:
       1. Executive Summary
@@ -170,8 +231,12 @@ export class WriterAgent extends BaseAgent {
       Use clear, professional language with proper formatting.
     `;
 
-    const contentResponse = await this?.llm?.generate(prompt);
-    const content = contentResponse?.response;
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const response = await this.generateLLMResponse(prompt);
+    const content = response.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -193,9 +258,9 @@ export class WriterAgent extends BaseAgent {
       Write an email with these specifications:
       Style: ${analysis.style}
       Audience: ${analysis.audience}
-      Purpose: ${analysis?.requirements?.join(", ")}
+      Purpose: ${analysis.requirements.join(", ")}
       
-      ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
       
       Create a professional email with:
       1. Appropriate subject line
@@ -208,8 +273,12 @@ export class WriterAgent extends BaseAgent {
       Keep it concise and action-oriented.
     `;
 
-    const contentResponse = await this?.llm?.generate(prompt);
-    const content = contentResponse?.response;
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const response = await this.generateLLMResponse(prompt);
+    const content = response.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -229,9 +298,9 @@ export class WriterAgent extends BaseAgent {
       Write creative content with these specifications:
       Style: ${analysis.style}
       Audience: ${analysis.audience}
-      Requirements: ${analysis?.requirements?.join(", ")}
+      Requirements: ${analysis.requirements.join(", ")}
       
-      ${context.ragDocuments ? `Inspiration/Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Inspiration/Context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
       
       Create engaging creative content with:
       1. Vivid descriptions
@@ -243,8 +312,12 @@ export class WriterAgent extends BaseAgent {
       Be imaginative and captivating.
     `;
 
-    const contentResponse = await this?.llm?.generate(prompt);
-    const content = contentResponse?.response;
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const response = await this.generateLLMResponse(prompt);
+    const content = response.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -263,9 +336,9 @@ export class WriterAgent extends BaseAgent {
     const prompt = `
       Write technical documentation with these specifications:
       Audience: ${analysis.audience}
-      Requirements: ${analysis?.requirements?.join(", ")}
+      Requirements: ${analysis.requirements.join(", ")}
       
-      ${context.ragDocuments ? `Technical details:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Technical details:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
       
       Create clear technical content with:
       1. Precise terminology
@@ -277,8 +350,12 @@ export class WriterAgent extends BaseAgent {
       Be accurate and comprehensive.
     `;
 
-    const contentResponse = await this?.llm?.generate(prompt);
-    const content = contentResponse?.response;
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const response = await this.generateLLMResponse(prompt);
+    const content = response.response;
 
     return {
       content: sanitizeLLMOutput(content).content,
@@ -297,7 +374,7 @@ export class WriterAgent extends BaseAgent {
     const prompt = `
       Complete this writing task: ${task}
       
-      ${context.ragDocuments ? `Reference material:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Reference material:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
       
       Create well-written content that addresses all requirements.
     `;
@@ -371,10 +448,10 @@ export class WriterAgent extends BaseAgent {
     const negativeWords = ["sad", "dark", "fear", "angry", "terrible"];
 
     const lowerContent = content.toLowerCase();
-    const positiveCount = positiveWords?.filter((w: any) =>
+    const positiveCount = positiveWords.filter((w: any) =>
       lowerContent.includes(w),
     ).length;
-    const negativeCount = negativeWords?.filter((w: any) =>
+    const negativeCount = negativeWords.filter((w: any) =>
       lowerContent.includes(w),
     ).length;
 
@@ -391,7 +468,7 @@ export class WriterAgent extends BaseAgent {
       "optimization",
       "complexity",
     ];
-    const count = advancedTerms?.filter((term: any) =>
+    const count = advancedTerms.filter((term: any) =>
       content.toLowerCase().includes(term),
     ).length;
 
