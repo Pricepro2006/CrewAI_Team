@@ -637,7 +637,7 @@ export class BusinessContextManager {
     phase2Results?: Phase2Results
   ): BusinessPriority {
     if (email.importance === "high") return "high";
-    if (phase2Results?.enhanced_classification.confidence > 0.9) return "high";
+    if ((phase2Results?.enhanced_classification?.confidence || 0) > 0.9) return "high";
     return "medium";
   }
 

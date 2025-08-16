@@ -917,7 +917,7 @@ export class ThreadContextManager {
       return `Active - ${recentDecisions?.length || 0} recent decisions`;
     }
 
-    return `Active - last activity from ${lastEntry.sender}`;
+    return `Active - last activity from ${lastEntry?.sender || 'Unknown'}`;
   }
 
   private extractNextActions(flow: ChronologicalEntry[], decisions: BusinessDecision[]): string[] {

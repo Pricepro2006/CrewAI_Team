@@ -8,7 +8,7 @@ import {
   MODEL_CONFIG,
   getModelTimeout,
   getModelBatchSize,
-} from "../../config/models?.config.js";
+} from "../../config/models.config.js";
 import type {
   Email,
   LlamaAnalysisResult,

@@ -4,7 +4,7 @@
  */
 
 import { logger } from "../../utils/logger.js";
-import { MODEL_CONFIG } from "../../config/models?.config.js";
+import { MODEL_CONFIG } from "../../config/models.config.js";
 import type { Email, TriageResult, TriageResults } from "./types.js";
 
 export class Stage1PatternTriage {

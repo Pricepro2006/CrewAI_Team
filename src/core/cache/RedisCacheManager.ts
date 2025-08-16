@@ -238,7 +238,7 @@ export class RedisCacheManager {
             let parsedValue = value;
 
             // Decompress if needed
-            if (value.startsWith('compressed:')) {
+            if (value && value.startsWith('compressed:')) {
               const compressedData = Buffer.from(value.slice(11), 'base64');
               const decompressed = await gunzip(compressedData);
               parsedValue = decompressed.toString();
