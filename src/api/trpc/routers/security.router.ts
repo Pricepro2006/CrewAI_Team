@@ -5,7 +5,7 @@ import {
   csrfTokenProcedure,
 } from "../enhanced-router.js";
 import type { Context } from "../context.js";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../../utils/logger.js";
 import { getCSRFStats } from "../../middleware/security/index.js";
 
 /**

@@ -3,13 +3,13 @@ import type { Context } from "../trpc/context.js";
 import { emailRouter } from "./email.router.js";
 import { EmailStorageService } from "../services/EmailStorageService.js";
 import Database from "better-sqlite3";
-import path from "path";
+import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
 
 describe("Email Router", () => {
-  let testDb: Database.Database;
+  let testDb: InstanceType<typeof Database>;
   let emailStorageService: EmailStorageService;
-  let mockContext: Partial<Context>;
+  let mockContext: Context;
 
   beforeEach(async () => {
     // Create in-memory test database
@@ -19,7 +19,7 @@ describe("Email Router", () => {
     // Seed test data
     await seedTestData();
 
-    // Create test context
+    // Create test context - using unknown first to avoid complex type checking
     mockContext = {
       user: {
         id: "test-user-1",
@@ -28,7 +28,48 @@ describe("Email Router", () => {
         role: "user",
         isAdmin: false,
       },
-    };
+      session: null,
+      ip: "127.0.0.1",
+      userAgent: "test-agent",
+      req: {} as any,
+      res: {} as any,
+      requestId: "test-request",
+      timestamp: new Date(),
+      traceId: "test-trace",
+      spanId: "test-span",
+      device: {
+        isMobile: false,
+        isTablet: false,
+        isDesktop: true,
+        browser: "test",
+        os: "test"
+      },
+      security: {
+        rateLimitRemaining: 100,
+        rateLimitReset: new Date(),
+        requestCount: 1,
+        isSecure: true,
+        csrfToken: "test-token"
+      },
+      performance: {
+        startTime: Date.now(),
+        memoryUsage: process.memoryUsage()
+      },
+      metadata: {},
+      featureFlags: {},
+      batchId: "test-batch",
+      validatedInput: {},
+      masterOrchestrator: {} as any,
+      conversationService: {} as any,
+      emailStorageService: {} as any,
+      businessIntelligenceService: {} as any,
+      healthCheckService: {} as any,
+      databaseManager: {} as any,
+      cache: new Map(),
+      redisClient: {} as any,
+      monitoring: {} as any,
+      llmService: {} as any
+    } as unknown as Context;
   });
 
   afterEach(async () => {
@@ -191,7 +232,7 @@ describe("Email Router", () => {
       const caller = emailRouter.createCaller(mockContext);
       const result = await caller.updateWorkflowState({
         emailId: "email-1",
-        newState: "COMPLETION",
+        newState: "Completed",
       });
 
       expect(result.success).toBe(true);
@@ -199,7 +240,7 @@ describe("Email Router", () => {
 
       // Verify the update in database
       const updatedEmail = await caller.getById({ id: "email-1" });
-      expect(updatedEmail.data.analysis.deep.workflowState.current).toBe("COMPLETION");
+      expect(updatedEmail.data.analysis.deep.workflowState.current).toBe("Completed");
     });
 
     it("should handle updates to non-existent emails", async () => {
@@ -208,7 +249,7 @@ describe("Email Router", () => {
       // This should not throw but may not update anything
       const result = await caller.updateWorkflowState({
         emailId: "non-existent-email",
-        newState: "COMPLETION",
+        newState: "Completed",
       });
 
       expect(result.success).toBe(true);

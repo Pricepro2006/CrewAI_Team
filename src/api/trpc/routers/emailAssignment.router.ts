@@ -12,7 +12,7 @@ import {
   getTeamMemberById,
   TEAM_MEMBERS,
   getSuggestedAssignees,
-} from "../../../config/team-members?.config.js";
+} from "../../../config/team-members.config.js";
 
 // const emailStorage = new EmailStorageService(); // TODO: Fix database schema issues
 const emailStorage = null as any; // Temporary fix

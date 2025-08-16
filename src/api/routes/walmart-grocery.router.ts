@@ -324,7 +324,7 @@ export const walmartGroceryRouter = createFeatureRouter(
           });
 
           // Store in RAG for future use
-          if (productData && productData?.length || 0 > 0 && productData[0]) {
+          if (productData && (productData?.length || 0) > 0 && productData[0]) {
             await ctx?.ragSystem?.addDocument(JSON.stringify(productData[0].data), {
               id: `walmart-product-${input.productId}`,
               title: `Walmart Product: ${input.productId}`,
@@ -336,7 +336,7 @@ export const walmartGroceryRouter = createFeatureRouter(
 
           return {
             source: "fresh",
-            data: productData && productData?.length || 0 > 0 && productData[0] ? productData[0].data : null,
+            data: productData && (productData?.length || 0) > 0 && productData[0] ? productData[0].data : null,
             timestamp: new Date(),
           };
         } catch (error) {
@@ -1455,11 +1455,11 @@ export const walmartGroceryRouter = createFeatureRouter(
 
             patterns = {
               topCategories: Object.entries(categoryFrequency)
-                .sort(([,a], [,b]) => b - a)
+                .sort(([,a], [,b]) => (b as number) - (a as number))
                 .slice(0, 5)
                 .map(([category, count]) => ({ category, count })),
               topProducts: Object.entries(productFrequency)
-                .sort(([,a], [,b]) => b - a)
+                .sort(([,a], [,b]) => (b as number) - (a as number))
                 .slice(0, 10)
                 .map(([product, count]) => ({ product, count })),
               avgOrderValue: Number(avgOrderValue.toFixed(2)),
