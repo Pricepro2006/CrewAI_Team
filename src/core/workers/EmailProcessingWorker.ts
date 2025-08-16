@@ -353,7 +353,7 @@ class EmailProcessingWorker {
           };
 
       results.push({
-        emailId: email.id,
+        emailId: email?.id || 'unknown',
         ...result,
       });
     }

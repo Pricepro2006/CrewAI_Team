@@ -8,7 +8,7 @@ import { logger } from "../../utils/logger.js";
 import { metrics } from "../../api/monitoring/metrics.js";
 import { getDatabaseConnection } from "../../database/connection.js";
 import { PipelineOrchestrator } from "../pipeline/PipelineOrchestrator.js";
-import ollamaConfig from "../../config/ollama?.config.js";
+import ollamaConfig from "../../config/ollama.config.js";
 import type {
   EmailPipelineHealthStatus,
   ServiceHealth,
@@ -16,8 +16,8 @@ import type {
   HealthStatus,
   ServiceHealthMap,
   SystemResourceMetrics,
-} from "../../types/email-pipeline-health?.types.js";
-import { DEFAULT_HEALTH_CHECK_CONFIG } from "../../types/email-pipeline-health?.types.js";
+} from "../../types/email-pipeline-health.types.js";
+import { DEFAULT_HEALTH_CHECK_CONFIG } from "../../types/email-pipeline-health.types.js";
 
 export class EmailPipelineHealthChecker {
   private static instance: EmailPipelineHealthChecker;

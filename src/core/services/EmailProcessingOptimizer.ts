@@ -189,7 +189,7 @@ export class EmailProcessingOptimizer {
           
           return result;
         } catch (error) {
-          logger.error(`Phase 2 processing failed for email ${email.id}:`, error as string);
+          logger.error(`Phase 2 processing failed for email ${email?.id || 'unknown'}:`, error as string);
           throw error;
         }
       })

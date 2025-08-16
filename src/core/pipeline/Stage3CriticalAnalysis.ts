@@ -4,7 +4,7 @@
  */
 
 import { logger } from "../../utils/logger.js";
-import { MODEL_CONFIG } from "../../config/models?.config.js";
+import { MODEL_CONFIG } from "../../config/models.config.js";
 import type {
   Email,
   CriticalAnalysisResult,
@@ -338,16 +338,20 @@ Respond ONLY with valid JSON, no additional text.`;
       const jsonSplit = responseText.split("```json");
       const codeSplit = responseText.split("```");
 
-      if (jsonSplit?.length || 0 > 1 && jsonSplit[1]) {
+      if ((jsonSplit?.length || 0) > 1 && jsonSplit[1]) {
         const afterJson = jsonSplit[1];
-        const endSplit = afterJson.split("```");
-        cleanedText =
-          endSplit?.length || 0 > 0 && endSplit[0] ? endSplit[0] : afterJson;
-      } else if (codeSplit?.length || 0 > 1 && codeSplit[1]) {
+        if (afterJson) {
+          const endSplit = afterJson.split("```");
+          cleanedText =
+            (endSplit?.length || 0) > 0 && endSplit[0] ? endSplit[0] : afterJson;
+        }
+      } else if ((codeSplit?.length || 0) > 1 && codeSplit[1]) {
         const afterCode = codeSplit[1];
-        const endSplit = afterCode.split("```");
-        cleanedText =
-          endSplit?.length || 0 > 0 && endSplit[0] ? endSplit[0] : afterCode;
+        if (afterCode) {
+          const endSplit = afterCode.split("```");
+          cleanedText =
+            (endSplit?.length || 0) > 0 && endSplit[0] ? endSplit[0] : afterCode;
+        }
       }
 
       return JSON.parse(cleanedText.trim());

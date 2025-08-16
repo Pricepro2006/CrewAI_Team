@@ -237,10 +237,10 @@ export class CoherenceAnalyzer {
     }
 
     // Factor in token confidence if available
-    if (tokenConfidence && tokenConfidence?.length || 0 > 0) {
+    if (tokenConfidence && (tokenConfidence?.length || 0) > 0) {
       const avgTokenConfidence =
         tokenConfidence.reduce((sum: any, token: any) => sum + token.confidence, 0) /
-        tokenConfidence?.length || 0;
+        (tokenConfidence?.length || 1);
       score = score * 0.7 + avgTokenConfidence * 0.3;
     }
 

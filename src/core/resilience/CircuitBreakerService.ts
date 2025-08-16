@@ -157,9 +157,11 @@ class DeadLetterQueue {
 
     // Prevent memory leaks
     if (this?.items?.size > this.maxSize) {
-      const oldest = Array.from(this?.items?.entries())
+      const oldest = Array.from(this.items?.entries() || [])
         .sort((a, b) => a[1].timestamp.getTime() - b[1].timestamp.getTime())[0];
-      this?.items?.delete(oldest[0]);
+      if (oldest) {
+        this.items?.delete(oldest[0]);
+      }
     }
 
     logger.warn('Operation added to dead letter queue', 'CIRCUIT_BREAKER', {
