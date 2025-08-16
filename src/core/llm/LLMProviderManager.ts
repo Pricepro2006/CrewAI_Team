@@ -4,6 +4,7 @@
 
 import { SafeLlamaCppProvider, LlamaCppResponse, LlamaCppGenerateOptions } from "./SafeLlamaCppProvider.js";
 import { SimpleLLMProvider } from "./SimpleLLMProvider.js";
+import { HttpLlamaProvider } from "./HttpLlamaProvider.js";
 import { logger } from "../../utils/logger.js";
 
 export interface LLMProvider {
@@ -20,7 +21,7 @@ export interface LLMProvider {
 }
 
 export class LLMProviderManager implements LLMProvider {
-  private primaryProvider: SafeLlamaCppProvider | null = null;
+  private primaryProvider: HttpLlamaProvider | SafeLlamaCppProvider | null = null;
   private fallbackProvider: SimpleLLMProvider;
   private useFallback: boolean = false;
   private initializationAttempted: boolean = false;
@@ -40,7 +41,21 @@ export class LLMProviderManager implements LLMProvider {
     this.initializationAttempted = true;
 
     try {
-      // Try to initialize the primary llama.cpp provider
+      // First try HTTP connection to running llama-server
+      const llamaServerUrl = process.env.LLAMA_SERVER_URL || "http://localhost:11434";
+      this.primaryProvider = new HttpLlamaProvider(llamaServerUrl);
+      
+      try {
+        await this.primaryProvider.initialize();
+        logger.info("Primary LLM provider (HTTP llama-server) initialized successfully", "LLM_MANAGER");
+        this.useFallback = false;
+        return; // Success, exit early
+      } catch (httpError) {
+        logger.warn("HTTP llama-server not available, trying direct llama.cpp", "LLM_MANAGER");
+        this.primaryProvider = null;
+      }
+      
+      // Fallback to direct llama.cpp if HTTP fails
       const modelPath = process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf";
       
       this.primaryProvider = new SafeLlamaCppProvider({
