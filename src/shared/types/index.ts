@@ -18,28 +18,28 @@ export * from "./orchestration.js";
 export * from "./rag.js";
 export * from "./auth.js";
 // Export error types with renamed ErrorContext
-export type { 
-  BaseError,
-  ApiError,
-  ValidationError,
-  BusinessError,
-  SystemError,
-  DatabaseError,
-  NetworkError,
-  AuthenticationError,
-  AuthorizationError,
-  RateLimitError,
-  IntegrationError,
-  ExtendedErrorContext,
-  ErrorRecoveryStrategy,
-  ErrorAggregator,
-  ErrorRetryPolicy,
-  ErrorNotificationConfig,
-  ErrorAnalytics,
-  ErrorMonitoring,
-  ErrorReportingService,
-  ErrorHandlingMiddleware,
-  GlobalErrorHandler
+export {
+  type BaseError,
+  type ApiError,
+  type ValidationError,
+  type BusinessError,
+  type SystemError,
+  type DatabaseError,
+  type NetworkError,
+  type AuthenticationError,
+  type AuthorizationError,
+  type RateLimitError,
+  type IntegrationError,
+  type ExtendedErrorContext,
+  type ErrorRecoveryStrategy,
+  type ErrorAggregator,
+  type ErrorRetryPolicy,
+  type ErrorNotificationConfig,
+  type ErrorAnalytics,
+  type ErrorMonitoring,
+  type ErrorReportingService,
+  type ErrorHandlingMiddleware,
+  type GlobalErrorHandler
 } from "./errors.js";
 export * from "./events.js";
 

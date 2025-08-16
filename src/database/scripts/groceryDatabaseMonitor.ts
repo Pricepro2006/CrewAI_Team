@@ -650,7 +650,7 @@ ${this.generateSystemRecommendations(recentMetrics)}
     const latestMetric = metrics[metrics?.length || 0 - 1];
     
     // Performance recommendations
-    if (latestMetric?.performance?.avgQueryTime > 50) {
+    if ((latestMetric?.performance?.avgQueryTime || 0) > 50) {
       recommendations.push('🔍 **Query Optimization**: Consider adding indexes for frequently accessed columns');
     }
     
@@ -659,7 +659,7 @@ ${this.generateSystemRecommendations(recentMetrics)}
       recommendations.push('🧹 **Database Maintenance**: Schedule VACUUM during low-usage period to reclaim space');
     }
     
-    if (latestMetric?.storage?.walSize > 50 * 1024 * 1024) { // 50MB
+    if ((latestMetric?.storage?.walSize || 0) > 50 * 1024 * 1024) { // 50MB
       recommendations.push('📝 **WAL Management**: Consider checkpoint operations to reduce WAL file size');
     }
     

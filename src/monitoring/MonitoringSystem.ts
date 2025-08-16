@@ -290,46 +290,54 @@ export class MonitoringSystem extends EventEmitter {
       const errorStats = errorTracker.getStatistics(30 * 60 * 1000); // Last 30 minutes
       const errorRate = errorStats.total > 0 ? errorStats.unhandled / errorStats.total : 0;
       
-      healthStatus?.components?.error_tracker = {
-        status: errorRate > 0.1 ? 'unhealthy' : errorRate > 0.05 ? 'degraded' : 'healthy',
-        error_rate: errorRate,
-        total_errors: errorStats.total,
-        unhandled_errors: errorStats.unhandled,
-      };
+      if (healthStatus?.components) {
+        healthStatus.components.error_tracker = {
+          status: errorRate > 0.1 ? 'unhealthy' : errorRate > 0.05 ? 'degraded' : 'healthy',
+          error_rate: errorRate,
+          total_errors: errorStats.total,
+          unhandled_errors: errorStats.unhandled,
+        };
+      }
 
       // Check performance metrics
       const perfStats = performanceMonitor.getStatistics();
       const avgResponseTime = Object.values(perfStats).length > 0 ? 
         Object.values(perfStats).reduce((sum: number, stat: any) => sum + stat.avg, 0) / Object.values(perfStats).length : 0;
 
-      healthStatus?.components?.performance = {
-        status: avgResponseTime > 2000 ? 'unhealthy' : avgResponseTime > 1000 ? 'degraded' : 'healthy',
-        avg_response_time: avgResponseTime,
-        monitored_operations: Object.keys(perfStats).length,
-      };
+      if (healthStatus?.components) {
+        healthStatus.components.performance = {
+          status: avgResponseTime > 2000 ? 'unhealthy' : avgResponseTime > 1000 ? 'degraded' : 'healthy',
+          avg_response_time: avgResponseTime,
+          monitored_operations: Object.keys(perfStats).length,
+        };
+      }
 
       // Check grocery metrics
       const groceryMetrics = groceryAgentMetrics.exportAllMetrics();
       const nlpSuccessRate = groceryMetrics?.nlp?.successfulParses / Math.max(groceryMetrics?.nlp?.totalQueries, 1);
       const priceSuccessRate = groceryMetrics?.price?.successfulFetches / Math.max(groceryMetrics?.price?.totalRequests, 1);
 
-      healthStatus?.components?.grocery_agent = {
-        status: (nlpSuccessRate < 0.8 || priceSuccessRate < 0.9) ? 'degraded' : 'healthy',
-        nlp_success_rate: nlpSuccessRate,
-        price_success_rate: priceSuccessRate,
-        active_users: groceryMetrics?.session?.totalSessions,
-      };
+      if (healthStatus?.components) {
+        healthStatus.components.grocery_agent = {
+          status: (nlpSuccessRate < 0.8 || priceSuccessRate < 0.9) ? 'degraded' : 'healthy',
+          nlp_success_rate: nlpSuccessRate,
+          price_success_rate: priceSuccessRate,
+          active_users: groceryMetrics?.session?.totalSessions,
+        };
+      }
 
       // Check system resources
       const resourceUsage = performanceMonitor.monitorResourceUsage();
       const memoryUsagePercent = (resourceUsage?.memory?.heapUsed / resourceUsage?.memory?.heapTotal) * 100;
 
-      healthStatus?.components?.system_resources = {
-        status: memoryUsagePercent > 90 ? 'unhealthy' : memoryUsagePercent > 75 ? 'degraded' : 'healthy',
-        memory_usage_percent: memoryUsagePercent,
-        memory_used_mb: resourceUsage?.memory?.heapUsed,
-        cpu_user_ms: resourceUsage?.cpu?.user,
-      };
+      if (healthStatus?.components) {
+        healthStatus.components.system_resources = {
+          status: memoryUsagePercent > 90 ? 'unhealthy' : memoryUsagePercent > 75 ? 'degraded' : 'healthy',
+          memory_usage_percent: memoryUsagePercent,
+          memory_used_mb: resourceUsage?.memory?.heapUsed,
+          cpu_user_ms: resourceUsage?.cpu?.user,
+        };
+      }
 
       // Determine overall health
       const componentStatuses = Object.values(healthStatus.components).map(c => c.status);

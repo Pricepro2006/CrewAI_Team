@@ -73,7 +73,7 @@ export class SentryErrorTracker {
 
         // Add custom context
         if (event.contexts) {
-          event?.contexts?.grocery_agent = {
+          event.contexts.grocery_agent = {
             feature: 'walmart_grocery',
             version: '1.1.0',
           };
@@ -86,7 +86,7 @@ export class SentryErrorTracker {
       beforeSendTransaction(event) {
         // Add custom tags for transactions
         if (event.tags) {
-          event?.tags?.feature = 'grocery_agent';
+          event.tags.feature = 'grocery_agent';
         }
         return event;
       },
@@ -122,11 +122,11 @@ export class SentryErrorTracker {
 
   private setupCustomMeasurements(): void {
     // Initialize custom metrics
-    this?.customMetrics?.set('nlp_parsing_success_rate', 0);
-    this?.customMetrics?.set('product_matching_accuracy', 0);
-    this?.customMetrics?.set('price_fetch_success_rate', 0);
-    this?.customMetrics?.set('deal_detection_effectiveness', 0);
-    this?.customMetrics?.set('websocket_stability', 0);
+    this.customMetrics.set('nlp_parsing_success_rate', 0);
+    this.customMetrics.set('product_matching_accuracy', 0);
+    this.customMetrics.set('price_fetch_success_rate', 0);
+    this.customMetrics.set('deal_detection_effectiveness', 0);
+    this.customMetrics.set('websocket_stability', 0);
   }
 
   // Main error tracking method
@@ -190,7 +190,7 @@ export class SentryErrorTracker {
 
       // Trigger critical error callbacks for immediate alerts
       if (severity === 'fatal') {
-        this?.criticalErrorCallbacks?.forEach(callback => {
+        this.criticalErrorCallbacks.forEach(callback => {
           try {
             callback(error, context);
           } catch (callbackError) {
@@ -207,7 +207,7 @@ export class SentryErrorTracker {
 
   // Track custom metrics
   recordCustomMetric(name: string, value: number, tags?: Record<string, string>): void {
-    this?.customMetrics?.set(name, value);
+    this.customMetrics.set(name, value);
 
     // Send to Sentry as measurement
     Sentry.withScope(scope => {
@@ -376,12 +376,12 @@ export class SentryErrorTracker {
 
   // Register critical error callback
   onCriticalError(callback: (error: Error, context?: ErrorContext) => void): void {
-    this?.criticalErrorCallbacks?.add(callback);
+    this.criticalErrorCallbacks.add(callback);
   }
 
   // Remove critical error callback
   offCriticalError(callback: (error: Error, context?: ErrorContext) => void): void {
-    this?.criticalErrorCallbacks?.delete(callback);
+    this.criticalErrorCallbacks.delete(callback);
   }
 
   // Get current metrics

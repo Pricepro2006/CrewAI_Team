@@ -268,7 +268,7 @@ export class DatabasePerformanceOptimizer {
       );
       if (whereMatch) {
         const whereClause = whereMatch[1];
-        const columnMatches = whereClause.matchAll(/(\w+)\s*[=<>!]/g);
+        const columnMatches = whereClause ? whereClause.matchAll(/(\w+)\s*[=<>!]/g) : [];
         const columns = Array.from(columnMatches, (m: any) => m[1]);
 
         // Suggest composite indexes for multiple columns

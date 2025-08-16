@@ -6,7 +6,7 @@
 import Database from "better-sqlite3";
 import { existsSync, mkdirSync } from "fs";
 import { dirname, join } from "path";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger.js";
 import { walmartConfig, type WalmartDatabaseConfig } from "../config/walmart.config.js";
 
 // Repository imports

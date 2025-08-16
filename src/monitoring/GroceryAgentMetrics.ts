@@ -185,20 +185,28 @@ export class GroceryAgentMetrics extends EventEmitter {
     query?: string,
     failureReason?: string
   ): void {
-    this?.nlpMetrics?.totalQueries++;
+    if (this.nlpMetrics) {
+      this.nlpMetrics.totalQueries++;
+    }
     
     if (success) {
-      this?.nlpMetrics?.successfulParses++;
+      if (this.nlpMetrics) {
+        this.nlpMetrics.successfulParses++;
+      }
       this.updateMovingAverage(
         'nlpMetrics.averageConfidence',
         confidence,
         this?.nlpMetrics?.successfulParses
       );
     } else {
-      this?.nlpMetrics?.failedParses++;
+      if (this.nlpMetrics) {
+        this.nlpMetrics.failedParses++;
+      }
       if (failureReason) {
-        this?.nlpMetrics?.commonFailureReasons[failureReason] = 
-          (this?.nlpMetrics?.commonFailureReasons[failureReason] || 0) + 1;
+        if (this.nlpMetrics) {
+          this.nlpMetrics.commonFailureReasons[failureReason] = 
+            (this.nlpMetrics.commonFailureReasons[failureReason] || 0) + 1;
+        }
       }
     }
 
@@ -236,17 +244,25 @@ export class GroceryAgentMetrics extends EventEmitter {
     searchTerm: string,
     category?: string
   ): void {
-    this?.productMetrics?.totalSearches++;
+    if (this.productMetrics) {
+      this.productMetrics.totalSearches++;
+    }
 
     switch (matchType) {
       case 'exact':
-        this?.productMetrics?.exactMatches++;
+        if (this.productMetrics) {
+          this.productMetrics.exactMatches++;
+        }
         break;
       case 'fuzzy':
-        this?.productMetrics?.fuzzyMatches++;
+        if (this.productMetrics) {
+          this.productMetrics.fuzzyMatches++;
+        }
         break;
       case 'none':
-        this?.productMetrics?.noMatches++;
+        if (this.productMetrics) {
+          this.productMetrics.noMatches++;
+        }
         break;
     }
 
@@ -267,8 +283,10 @@ export class GroceryAgentMetrics extends EventEmitter {
 
     // Track categories
     if (category) {
-      this?.productMetrics?.categoryDistribution[category] = 
-        (this?.productMetrics?.categoryDistribution[category] || 0) + 1;
+      if (this.productMetrics) {
+        this.productMetrics.categoryDistribution[category] = 
+          (this.productMetrics.categoryDistribution[category] || 0) + 1;
+      }
     }
 
     // Send to Sentry
@@ -307,25 +325,37 @@ export class GroceryAgentMetrics extends EventEmitter {
     errorType?: string,
     priceUnavailable = false
   ): void {
-    this?.priceMetrics?.totalRequests++;
+    if (this.priceMetrics) {
+      this.priceMetrics.totalRequests++;
+    }
 
     if (success) {
-      this?.priceMetrics?.successfulFetches++;
+      if (this.priceMetrics) {
+        this.priceMetrics.successfulFetches++;
+      }
     } else {
-      this?.priceMetrics?.failedFetches++;
+      if (this.priceMetrics) {
+        this.priceMetrics.failedFetches++;
+      }
       if (errorType) {
-        this?.priceMetrics?.apiErrorTypes[errorType] = 
-          (this?.priceMetrics?.apiErrorTypes[errorType] || 0) + 1;
+        if (this.priceMetrics) {
+          this.priceMetrics.apiErrorTypes[errorType] = 
+            (this.priceMetrics.apiErrorTypes[errorType] || 0) + 1;
+        }
       }
     }
 
     if (priceUnavailable) {
-      this?.priceMetrics?.priceUnavailableCount++;
+      if (this.priceMetrics) {
+        this.priceMetrics.priceUnavailableCount++;
+      }
     }
 
     if (storeId) {
-      this?.priceMetrics?.storeAvailability[storeId] = 
-        (this?.priceMetrics?.storeAvailability[storeId] || 0) + (success ? 1 : 0);
+      if (this.priceMetrics) {
+        this.priceMetrics.storeAvailability[storeId] = 
+          (this.priceMetrics.storeAvailability[storeId] || 0) + (success ? 1 : 0);
+      }
     }
 
     this.updateMovingAverage(
@@ -371,13 +401,19 @@ export class GroceryAgentMetrics extends EventEmitter {
     falsePositives = 0,
     missedDeals = 0
   ): void {
-    this?.dealMetrics?.totalProducts++;
-    this?.dealMetrics?.dealsFound += dealsFound;
-    this?.dealMetrics?.falsePositives += falsePositives;
-    this?.dealMetrics?.missedDeals += missedDeals;
+    if (this.dealMetrics) {
+      this.dealMetrics.totalProducts++;
+    }
+    if (this.dealMetrics) {
+      this.dealMetrics.dealsFound += dealsFound;
+      this.dealMetrics.falsePositives += falsePositives;
+      this.dealMetrics.missedDeals += missedDeals;
+    }
 
     dealTypes.forEach(type => {
-      this?.dealMetrics?.dealTypes[type] = (this?.dealMetrics?.dealTypes[type] || 0) + 1;
+      if (this.dealMetrics) {
+        this.dealMetrics.dealTypes[type] = (this.dealMetrics.dealTypes[type] || 0) + 1;
+      }
     });
 
     this.updateMovingAverage(
@@ -426,7 +462,9 @@ export class GroceryAgentMetrics extends EventEmitter {
     featuresUsed: string[],
     deviceType?: string
   ): void {
-    this?.sessionMetrics?.totalSessions++;
+    if (this.sessionMetrics) {
+      this.sessionMetrics.totalSessions++;
+    }
 
     this.updateMovingAverage(
       'sessionMetrics.averageSessionDuration',
@@ -441,27 +479,35 @@ export class GroceryAgentMetrics extends EventEmitter {
     );
 
     if (bounced) {
-      this?.sessionMetrics?.bounceRate = this.calculateRate(
-        this?.sessionMetrics?.bounceRate * (this?.sessionMetrics?.totalSessions - 1) + 1,
-        this?.sessionMetrics?.totalSessions
-      );
+      if (this.sessionMetrics) {
+        this.sessionMetrics.bounceRate = this.calculateRate(
+          this.sessionMetrics.bounceRate * (this.sessionMetrics.totalSessions - 1) + 1,
+          this.sessionMetrics.totalSessions
+        );
+      }
     }
 
     if (converted) {
-      this?.sessionMetrics?.conversionRate = this.calculateRate(
-        this?.sessionMetrics?.conversionRate * (this?.sessionMetrics?.totalSessions - 1) + 1,
-        this?.sessionMetrics?.totalSessions
-      );
+      if (this.sessionMetrics) {
+        this.sessionMetrics.conversionRate = this.calculateRate(
+          this.sessionMetrics.conversionRate * (this.sessionMetrics.totalSessions - 1) + 1,
+          this.sessionMetrics.totalSessions
+        );
+      }
     }
 
     featuresUsed.forEach(feature => {
-      this?.sessionMetrics?.topFeatures[feature] = 
-        (this?.sessionMetrics?.topFeatures[feature] || 0) + 1;
+      if (this.sessionMetrics) {
+        this.sessionMetrics.topFeatures[feature] = 
+          (this.sessionMetrics.topFeatures[feature] || 0) + 1;
+      }
     });
 
     if (deviceType) {
-      this?.sessionMetrics?.deviceTypes[deviceType] = 
-        (this?.sessionMetrics?.deviceTypes[deviceType] || 0) + 1;
+      if (this.sessionMetrics) {
+        this.sessionMetrics.deviceTypes[deviceType] = 
+          (this.sessionMetrics.deviceTypes[deviceType] || 0) + 1;
+      }
     }
 
     // Send to Sentry
@@ -496,11 +542,15 @@ export class GroceryAgentMetrics extends EventEmitter {
   ): void {
     switch (eventType) {
       case 'connect':
-        this?.websocketMetrics?.totalConnections++;
-        this?.websocketMetrics?.activeConnections++;
+        if (this.websocketMetrics) {
+          this.websocketMetrics.totalConnections++;
+          this.websocketMetrics.activeConnections++;
+        }
         break;
       case 'disconnect':
-        this?.websocketMetrics?.activeConnections = Math.max(0, this?.websocketMetrics?.activeConnections - 1);
+        if (this.websocketMetrics) {
+          this.websocketMetrics.activeConnections = Math.max(0, this.websocketMetrics.activeConnections - 1);
+        }
         if (duration) {
           this.updateMovingAverage(
             'websocketMetrics.averageConnectionDuration',
@@ -510,17 +560,25 @@ export class GroceryAgentMetrics extends EventEmitter {
         }
         break;
       case 'error':
-        this?.websocketMetrics?.connectionErrors++;
-        this?.websocketMetrics?.reconnectionRate = this.calculateRate(
-          this?.websocketMetrics?.connectionErrors,
-          this?.websocketMetrics?.totalConnections
-        );
+        if (this.websocketMetrics) {
+          this.websocketMetrics.connectionErrors++;
+        }
+        if (this.websocketMetrics) {
+          this.websocketMetrics.reconnectionRate = this.calculateRate(
+            this.websocketMetrics.connectionErrors,
+            this.websocketMetrics.totalConnections
+          );
+        }
         break;
       case 'message_sent':
-        this?.websocketMetrics?.messagesSent++;
+        if (this.websocketMetrics) {
+          this.websocketMetrics.messagesSent++;
+        }
         break;
       case 'message_received':
-        this?.websocketMetrics?.messagesReceived++;
+        if (this.websocketMetrics) {
+          this.websocketMetrics.messagesReceived++;
+        }
         break;
     }
 
@@ -755,7 +813,7 @@ export class GroceryAgentMetrics extends EventEmitter {
 
   getMetricSnapshots(hours = 24): Array<{ timestamp: Date; snapshot: Record<string, any> }> {
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
-    return this?.metricSnapshots?.filter(s => s.timestamp >= cutoff);
+    return this.metricSnapshots?.filter(s => s.timestamp >= cutoff) || [];
   }
 
   updateAlertThresholds(newThresholds: Partial<typeof this.alertThresholds>): void {
