@@ -161,13 +161,13 @@ export class PerformanceOptimizer {
 
     // Check cache hit
     if (cached && !this.isCacheExpired(cached)) {
-      this?.performanceMetrics?.cacheHits++;
+      this.performanceMetrics.cacheHits++;
       logger.debug("Cache hit", "PERFORMANCE_OPTIMIZER", { key: cacheKey });
       return cached.data as T;
     }
 
     // Cache miss - execute query
-    this?.performanceMetrics?.cacheMisses++;
+    this.performanceMetrics.cacheMisses++;
     logger.debug("Cache miss - executing query", "PERFORMANCE_OPTIMIZER", {
       key: cacheKey,
     });
@@ -315,8 +315,8 @@ export class PerformanceOptimizer {
 
     // Keep only last 100 query times
     if (this?.performanceMetrics?.queryTimes?.length || 0 > 100) {
-      this?.performanceMetrics?.queryTimes =
-        this?.performanceMetrics?.queryTimes.slice(-100);
+      this.performanceMetrics.queryTimes =
+        this.performanceMetrics.queryTimes.slice(-100);
     }
   }
 
@@ -409,13 +409,13 @@ export class PerformanceOptimizer {
     // Check cache first
     const cached = this?.queryCache?.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < ttl) {
-      this?.performanceMetrics?.cacheHits++;
+      this.performanceMetrics.cacheHits++;
       logger.debug("Cache hit", "PERFORMANCE_OPTIMIZER", { cacheKey });
       return cached.data as T;
     }
 
     // Execute query
-    this?.performanceMetrics?.cacheMisses++;
+    this.performanceMetrics.cacheMisses++;
     const startTime = Date.now();
     const result = await queryFn();
     const executionTime = Date.now() - startTime;
@@ -594,8 +594,8 @@ export class PerformanceOptimizer {
    */
   clearCache(): void {
     this?.queryCache?.clear();
-    this?.performanceMetrics?.cacheHits = 0;
-    this?.performanceMetrics?.cacheMisses = 0;
+    this.performanceMetrics.cacheHits = 0;
+    this.performanceMetrics.cacheMisses = 0;
     logger.info("Performance cache cleared", "PERFORMANCE_OPTIMIZER");
   }
 

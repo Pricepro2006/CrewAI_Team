@@ -85,11 +85,11 @@ export class CacheService {
     try {
       this.redisClient = createClient({
         socket: {
-          host: this?.config?.redis.host,
-          port: this?.config?.redis.port
+          host: this?.config?.redis?.host || 'localhost',
+          port: this?.config?.redis?.port || 6379
         },
-        password: this?.config?.redis.password,
-        database: this?.config?.redis.db
+        password: this?.config?.redis?.password,
+        database: this?.config?.redis?.db || 0
       });
 
       this?.redisClient?.on('error', (err: Error) => {

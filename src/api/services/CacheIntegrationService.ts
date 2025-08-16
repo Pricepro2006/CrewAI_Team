@@ -87,10 +87,12 @@ export class CacheIntegrationService extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Listen to central cache events
-    this?.centralCache?.on('cache:hit', (data: any) => {
-      this?.stats?.unified.totalHits++;
-      if (data.tier && this?.stats?.unified.tierDistribution[data.tier as CacheTier] !== undefined) {
-        this?.stats?.unified.tierDistribution[data.tier as CacheTier]++;
+    this.centralCache?.on('cache:hit', (data: any) => {
+      if (this.stats) {
+        this.stats.unified.totalHits++;
+        if (data.tier && this.stats.unified.tierDistribution[data.tier as CacheTier] !== undefined) {
+          this.stats.unified.tierDistribution[data.tier as CacheTier]++;
+        }
       }
       this.updateOverallStats();
       this.emit('cache:unified:hit', data);
@@ -106,8 +108,10 @@ export class CacheIntegrationService extends EventEmitter {
   }
 
   private updateOverallStats(): void {
-    const total = this?.stats?.unified.totalHits + this?.stats?.unified.totalMisses;
-    this?.stats?.unified.overallHitRatio = total > 0 ? (this?.stats?.unified.totalHits / total) * 100 : 0;
+    if (this.stats) {
+      const total = this.stats.unified.totalHits + this.stats.unified.totalMisses;
+      this.stats.unified.overallHitRatio = total > 0 ? (this.stats.unified.totalHits / total) * 100 : 0;
+    }
   }
 
   // Service registration methods
@@ -136,9 +140,10 @@ export class CacheIntegrationService extends EventEmitter {
     if (!this.pricingService) return;
 
     // Override pricing service cache methods to use unified cache
-    const originalGetPrice = this?.pricingService?.getPrice.bind(this.pricingService);
+    const originalGetPrice = this.pricingService.getPrice.bind(this.pricingService);
     
-    this?.pricingService?.getPrice = async (request: PriceRequest): Promise<PriceResponse> => {
+    if (this.pricingService) {
+      this.pricingService.getPrice = async (request: PriceRequest): Promise<PriceResponse> => {
       const cacheKey = this.generatePricingCacheKey(request);
       const startTime = Date.now();
 
@@ -147,8 +152,10 @@ export class CacheIntegrationService extends EventEmitter {
         const cachedResult = await this?.centralCache?.get<PriceResponse>(cacheKey);
         
         if (cachedResult.found && cachedResult.value) {
-          this?.stats?.pricing.hits++;
-          this?.stats?.pricing.avgLatency = this.updateAvgLatency(this?.stats?.pricing.avgLatency, cachedResult.latency);
+          if (this.stats) {
+            this.stats.pricing.hits++;
+            this.stats.pricing.avgLatency = this.updateAvgLatency(this.stats.pricing.avgLatency, cachedResult.latency);
+          }
           
           this.emit('cache:pricing:hit', {
             key: cacheKey,
@@ -161,7 +168,9 @@ export class CacheIntegrationService extends EventEmitter {
         }
 
         // Cache miss - fetch from original service
-        this?.stats?.pricing.misses++;
+        if (this.stats) {
+          this.stats.pricing.misses++;
+        }
         const result = await originalGetPrice(request);
         
         // Store in unified cache
@@ -171,7 +180,9 @@ export class CacheIntegrationService extends EventEmitter {
         });
 
         const totalLatency = Date.now() - startTime;
-        this?.stats?.pricing.avgLatency = this.updateAvgLatency(this?.stats?.pricing.avgLatency, totalLatency);
+        if (this.stats) {
+          this.stats.pricing.avgLatency = this.updateAvgLatency(this.stats.pricing.avgLatency, totalLatency);
+        }
 
         this.emit('cache:pricing:miss', {
           key: cacheKey,
@@ -186,7 +197,8 @@ export class CacheIntegrationService extends EventEmitter {
         // Fallback to original service
         return originalGetPrice(request);
       }
-    };
+      };
+    }
   }
 
   // List service cache integration
@@ -194,9 +206,10 @@ export class CacheIntegrationService extends EventEmitter {
     if (!this.listService) return;
 
     // Override list service methods to use unified cache
-    const originalGetList = this?.listService?.getList.bind(this.listService);
+    const originalGetList = this.listService.getList.bind(this.listService);
     
-    this?.listService?.getList = (listId: string): List | undefined => {
+    if (this.listService) {
+      this.listService.getList = (listId: string): List | undefined => {
       const cacheKey = this.generateListCacheKey(listId);
       
       // For synchronous methods, we'll use a different approach
@@ -214,7 +227,8 @@ export class CacheIntegrationService extends EventEmitter {
       }
 
       return list;
-    };
+      };
+    }
 
     // Listen to list updates and invalidate cache
     this?.listService?.on('list:updated', (data: any) => {

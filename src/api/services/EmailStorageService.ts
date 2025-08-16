@@ -11,7 +11,7 @@ import { wsService } from "./WebSocketService.js";
 import { performanceOptimizer } from "./PerformanceOptimizer.js";
 import { queryPerformanceMonitor } from "./QueryPerformanceMonitor.js";
 import { LazyLoader } from "../../utils/LazyLoader.js";
-import { databaseManager, type DatabaseInstance as OptimizedDatabaseInstance } from "../../core/database/DatabaseManager.js";
+import { databaseManager } from "../../core/database/DatabaseManager.js";
 import { ConnectionPool } from "../../core/database/ConnectionPool.js";
 import type { EmailRecord } from "../../shared/types/email.js";
 import type { 
@@ -279,16 +279,20 @@ export class EmailStorageService implements EmailStorageServiceInterface {
             // Return a statement-like object that uses the DatabaseManager
             return {
               run: async (...params: any[]) => {
-                return databaseManager.execute('main', (db: any) => db.prepare(sql).run(...params));
+                const connection = databaseManager.getConnection('main');
+                return connection.execute((db: any) => db.prepare(sql).run(...params));
               },
               get: async (...params: any[]) => {
-                return databaseManager.execute('main', (db: any) => db.prepare(sql).get(...params));
+                const connection = databaseManager.getConnection('main');
+                return connection.execute((db: any) => db.prepare(sql).get(...params));
               },
               all: async (...params: any[]) => {
-                return databaseManager.execute('main', (db: any) => db.prepare(sql).all(...params));
+                const connection = databaseManager.getConnection('main');
+                return connection.execute((db: any) => db.prepare(sql).all(...params));
               },
               iterate: async (...params: any[]) => {
-                return databaseManager.execute('main', (db: any) => db.prepare(sql).iterate(...params));
+                const connection = databaseManager.getConnection('main');
+                return connection.execute((db: any) => db.prepare(sql).iterate(...params));
               },
             };
           };
@@ -296,24 +300,25 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
         // For transaction method
         if (prop === "transaction") {
-          return <T>(fn: (trx: OptimizedDatabaseInstance) => T) => {
-            return async (): Promise<T> => {
-              return databaseManager.transaction('main', fn);
-            };
+          return <T>(fn: any) => {
+            const connection = databaseManager.getConnection('main');
+            return connection.transaction(fn);
           };
         }
 
         // For pragma method
         if (prop === "pragma") {
           return async (pragma: string, options?: any) => {
-            return databaseManager.execute('main', (db: any) => db.pragma(pragma, options));
+            const connection = databaseManager.getConnection('main');
+            return connection.execute((db: any) => db.pragma(pragma, options));
           };
         }
 
         // For exec method
         if (prop === "exec") {
           return async (sql: string) => {
-            return databaseManager.execute('main', (db: any) => db.exec(sql));
+            const connection = databaseManager.getConnection('main');
+            return connection.execute((db: any) => db.exec(sql));
           };
         }
 
@@ -326,7 +331,11 @@ export class EmailStorageService implements EmailStorageServiceInterface {
 
         // For other methods, delegate to DatabaseManager
         return async (...args: any[]) => {
-          return databaseManager.execute('main', (db: any) => (db as any)[prop](...args));
+          const connection = databaseManager.getConnection('main');
+          if (!connection || typeof connection.execute !== 'function') {
+            throw new Error(`DatabaseManager connection does not support method: ${String(prop)}`);
+          }
+          return connection.execute((db: any) => (db as any)[prop](...args));
         };
       }
     };

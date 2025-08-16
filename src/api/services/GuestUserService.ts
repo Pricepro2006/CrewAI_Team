@@ -85,8 +85,9 @@ export class GuestUserService {
       username: "guest",
       role: "user", // Guest users get default user role
       is_active: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      is_verified: false, // Guest users are not verified
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       permissions: this.getGuestPermissions(),
       lastActivity: new Date(),
       // Additional metadata for security tracking

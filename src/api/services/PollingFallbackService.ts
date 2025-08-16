@@ -163,7 +163,9 @@ export class PollingFallbackService extends EventEmitter {
     }
 
     const startTime = Date.now();
-    this?.state?.lastPollTime = startTime;
+    if (this.state) {
+      this.state.lastPollTime = startTime;
+    }
     this?.metrics?.totalPolls++;
 
     try {
@@ -204,11 +206,15 @@ export class PollingFallbackService extends EventEmitter {
       }
 
       // Update success metrics
-      this?.state?.consecutiveErrors = 0;
-      this?.state?.lastSuccessTime = Date.now();
-      this?.state?.mode = 'active';
+      if (this.state) {
+        this.state.consecutiveErrors = 0;
+        this.state.lastSuccessTime = Date.now();
+        this.state.mode = 'active';
+      }
       this?.metrics?.successfulPolls++;
-      this?.metrics?.lastError = null;
+      if (this.metrics) {
+        this.metrics.lastError = null;
+      }
 
       // Adjust interval based on activity
       if (this?.config?.adaptivePolling) {
@@ -236,7 +242,9 @@ export class PollingFallbackService extends EventEmitter {
   private handlePollError(error: Error): void {
     this?.state?.consecutiveErrors++;
     this?.metrics?.failedPolls++;
-    this?.metrics?.lastError = error;
+    if (this.metrics) {
+      this.metrics.lastError = error;
+    }
 
     logger.error('Polling error', 'POLLING', {
       error: error.message,
@@ -252,7 +260,9 @@ export class PollingFallbackService extends EventEmitter {
     // Check if we should stop polling
     if (this?.state?.consecutiveErrors >= this?.config?.maxRetries) {
       logger.error('Max polling retries exceeded, stopping', 'POLLING');
-      this?.state?.mode = 'error';
+      if (this.state) {
+        this.state.mode = 'error';
+      }
       this.stopPolling();
       this.emit('polling:failed', {
         error,
@@ -260,11 +270,13 @@ export class PollingFallbackService extends EventEmitter {
       });
     } else {
       // Increase interval on error (backoff)
-      this?.state?.interval = Math.min(
-        this?.state?.interval * this?.config?.backoffMultiplier,
-        this?.config?.maxInterval
-      );
-      this?.state?.mode = 'error';
+      if (this.state && this.config) {
+        this.state.interval = Math.min(
+          this.state.interval * this.config.backoffMultiplier,
+          this.config.maxInterval
+        );
+        this.state.mode = 'error';
+      }
     }
   }
 
@@ -308,7 +320,9 @@ export class PollingFallbackService extends EventEmitter {
         this?.config?.minInterval,
         currentInterval / this?.config?.backoffMultiplier
       );
-      this?.state?.mode = 'active';
+      if (this.state) {
+        this.state.mode = 'active';
+      }
     } else {
       // No changes, increase interval (poll less frequently)
       const timeSinceLastChange = this?.state?.lastSuccessTime 
@@ -320,7 +334,9 @@ export class PollingFallbackService extends EventEmitter {
           this?.config?.maxInterval,
           currentInterval * this?.config?.backoffMultiplier
         );
-        this?.state?.mode = 'idle';
+        if (this.state) {
+          this.state.mode = 'idle';
+        }
       }
     }
 
@@ -335,7 +351,9 @@ export class PollingFallbackService extends EventEmitter {
     }
 
     if (newInterval !== currentInterval) {
-      this?.state?.interval = Math.round(newInterval);
+      if (this.state) {
+        this.state.interval = Math.round(newInterval);
+      }
       logger.debug('Polling interval adjusted', 'POLLING', {
         from: currentInterval,
         to: this?.state?.interval,
@@ -361,14 +379,16 @@ export class PollingFallbackService extends EventEmitter {
     }
 
     // Update average
-    this?.metrics?.averageResponseTime = this.getAverageResponseTime();
+    if (this.metrics) {
+      this.metrics.averageResponseTime = this.getAverageResponseTime();
+    }
   }
 
   /**
    * Get average response time
    */
   private getAverageResponseTime(): number {
-    if (this?.responseTimes?.length === 0) {
+    if (!this.responseTimes || this.responseTimes.length === 0) {
       return 0;
     }
     
@@ -414,10 +434,12 @@ export class PollingFallbackService extends EventEmitter {
 
     // If actively polling, apply new interval bounds
     if (this?.state?.isPolling) {
-      this?.state?.interval = Math.max(
-        this?.config?.minInterval,
-        Math.min(this?.config?.maxInterval, this?.state?.interval)
-      );
+      if (this.state && this.config) {
+        this.state.interval = Math.max(
+          this.config.minInterval,
+          Math.min(this.config.maxInterval, this.state.interval)
+        );
+      }
     }
   }
 

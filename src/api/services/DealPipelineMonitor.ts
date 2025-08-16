@@ -195,7 +195,7 @@ export class DealPipelineMonitor extends EventEmitter {
       // Start health checks
       this.healthCheckTimer = setInterval(
         () => this.performHealthCheck(),
-        this?.config?.healthCheckIntervalMs
+        this.config?.healthCheckIntervalMs
       );
       
       // Start metrics collection
@@ -262,7 +262,7 @@ export class DealPipelineMonitor extends EventEmitter {
       await this.saveConfiguration();
       
       // Update pipeline service configuration
-      this?.pipelineService?.updateConfig(this.config);
+      this.pipelineService?.updateConfig(this.config);
       
       // Restart timers if intervals changed
       if (newConfig.healthCheckIntervalMs && 
@@ -301,7 +301,7 @@ export class DealPipelineMonitor extends EventEmitter {
    */
   getMetricsHistory(hours: number = 24): Array<PerformanceMetrics & { timestamp: string }> {
     const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
-    return this?.metricsHistory?.filter(m => m.timestamp >= cutoffTime);
+    return this.metricsHistory?.filter(m => m.timestamp >= cutoffTime);
   }
 
   /**
@@ -315,14 +315,14 @@ export class DealPipelineMonitor extends EventEmitter {
    * Get active alerts
    */
   getActiveAlerts(): Alert[] {
-    return Array.from(this?.activeAlerts?.values()).filter(alert => alert.isActive);
+    return Array.from(this.activeAlerts?.values()).filter(alert => alert.isActive);
   }
 
   /**
    * Acknowledge an alert
    */
   async acknowledgeAlert(alertId: string): Promise<void> {
-    const alert = this?.activeAlerts?.get(alertId);
+    const alert = this.activeAlerts?.get(alertId);
     if (alert) {
       alert.acknowledgedAt = new Date().toISOString();
       await this.saveAlert(alert);
@@ -336,7 +336,7 @@ export class DealPipelineMonitor extends EventEmitter {
    * Resolve an alert
    */
   async resolveAlert(alertId: string): Promise<void> {
-    const alert = this?.activeAlerts?.get(alertId);
+    const alert = this.activeAlerts?.get(alertId);
     if (alert) {
       alert.isActive = false;
       alert.resolvedAt = new Date().toISOString();
@@ -389,13 +389,13 @@ export class DealPipelineMonitor extends EventEmitter {
       await this.checkThresholds();
       
       // Send health status to WebSocket clients
-      this?.webSocketService?.sendPipelineStatus({
-        isRunning: this?.pipelineService?.getMetrics().isHealthy,
-        queueSize: this?.currentMetrics?.currentQueueSize,
-        dealsDetectedLastHour: this?.currentMetrics?.dealsDetectedLastHour,
-        pricesUpdatedLastHour: this?.currentMetrics?.pricesUpdatedLastHour,
-        avgDealScore: this?.currentMetrics?.avgDealScore,
-        successRate: this?.currentMetrics?.successRate
+      this.webSocketService?.sendPipelineStatus({
+        isRunning: this.pipelineService?.getMetrics().isHealthy,
+        queueSize: this.currentMetrics?.currentQueueSize,
+        dealsDetectedLastHour: this.currentMetrics?.dealsDetectedLastHour,
+        pricesUpdatedLastHour: this.currentMetrics?.pricesUpdatedLastHour,
+        avgDealScore: this.currentMetrics?.avgDealScore,
+        successRate: this.currentMetrics?.successRate
       });
       
       return this.healthStatus;
@@ -403,8 +403,10 @@ export class DealPipelineMonitor extends EventEmitter {
     } catch (error) {
       logger.error("Health check failed", "DEAL_MONITOR", { error });
       
-      this?.healthStatus?.overall = 'critical';
-      this?.healthStatus?.errors.push(error instanceof Error ? error.message : 'Unknown error');
+      if (this.healthStatus) {
+        this.healthStatus.overall = 'critical';
+        this.healthStatus.errors.push(error instanceof Error ? error.message : 'Unknown error');
+      }
       
       return this.healthStatus;
     }
@@ -655,15 +657,21 @@ export class DealPipelineMonitor extends EventEmitter {
 
   private setupEventHandlers(): void {
     this?.pipelineService?.on('price_updated', (data: any) => {
-      this?.performanceCounters?.successes++;
+      if (this?.performanceCounters) {
+        this.performanceCounters.successes++;
+      }
     });
 
     this?.pipelineService?.on('deal_detected', (deal: any) => {
-      this?.performanceCounters?.successes++;
+      if (this?.performanceCounters) {
+        this.performanceCounters.successes++;
+      }
     });
 
     this?.pipelineService?.on('error', (data: any) => {
-      this?.performanceCounters?.errors++;
+      if (this?.performanceCounters) {
+        this.performanceCounters.errors++;
+      }
     });
   }
 

@@ -369,29 +369,29 @@ export class QueryPerformanceMonitor {
   private updateQueryMonitor(entry: QueryPerformanceEntry): void {
     this?.monitors?.forEach((monitor: any) => {
       if (this.matchesPattern(entry.query, monitor.pattern)) {
-        monitor?.statistics?.totalQueries++;
-        monitor?.statistics?.totalExecutionTime += entry.executionTime;
-        monitor?.statistics?.averageExecutionTime =
-          monitor?.statistics?.totalExecutionTime /
-          monitor?.statistics?.totalQueries;
+        monitor.statistics.totalQueries++;
+        monitor.statistics.totalExecutionTime += entry.executionTime;
+        monitor.statistics.averageExecutionTime =
+          monitor.statistics.totalExecutionTime /
+          monitor.statistics.totalQueries;
 
-        if (entry.executionTime > monitor?.statistics?.maxExecutionTime) {
-          monitor?.statistics?.maxExecutionTime = entry.executionTime;
-          monitor?.statistics?.slowestQuery = entry.query;
+        if (entry.executionTime > monitor.statistics.maxExecutionTime) {
+          monitor.statistics.maxExecutionTime = entry.executionTime;
+          monitor.statistics.slowestQuery = entry.query;
         }
 
         if (
-          entry.executionTime < monitor?.statistics?.minExecutionTime ||
-          monitor?.statistics?.minExecutionTime === 0
+          entry.executionTime < monitor.statistics.minExecutionTime ||
+          monitor.statistics.minExecutionTime === 0
         ) {
-          monitor?.statistics?.minExecutionTime = entry.executionTime;
+          monitor.statistics.minExecutionTime = entry.executionTime;
         }
 
         if (entry.error) {
-          monitor?.statistics?.errorCount++;
+          monitor.statistics.errorCount++;
         }
 
-        monitor?.statistics?.lastExecution = entry.timestamp;
+        monitor.statistics.lastExecution = entry.timestamp;
       }
     });
   }
