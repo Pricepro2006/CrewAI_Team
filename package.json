@@ -13,6 +13,7 @@
     "dev:websocket": "./scripts/start-websocket.sh",
     "websocket:start": "./scripts/start-websocket.sh",
     "websocket:dev": "NODE_OPTIONS='--import tsx --experimental-specifier-resolution=node' tsx src/api/websocket/server.ts",
+    "websocket:test": "node test-websocket.js",
     "dev:client": "vite",
     "dev:client:walmart": "VITE_PORT=5178 vite --open=/walmart",
     "build": "npm run build:client && npm run build:server",
