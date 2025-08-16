@@ -310,6 +310,36 @@ export class WalmartWebSocketServer extends EventEmitter {
   }
 
   /**
+   * Handle upgrade for WebSocket connections
+   */
+  handleUpgrade(request: any, socket: any, head: Buffer, callback?: (ws: WebSocket) => void): void {
+    logger.info('Handling WebSocket upgrade request', 'WS_SERVER', { 
+      url: request.url,
+      origin: request.headers.origin 
+    });
+
+    if (!this.wss) {
+      logger.error('WebSocket server not initialized', 'WS_SERVER');
+      socket.destroy();
+      return;
+    }
+
+    try {
+      this.wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
+        logger.info('WebSocket upgrade successful', 'WS_SERVER');
+        this.wss?.emit('connection', ws, request);
+        
+        if (callback) {
+          callback(ws);
+        }
+      });
+    } catch (error) {
+      logger.error('WebSocket upgrade failed', 'WS_SERVER', { error });
+      socket.destroy();
+    }
+  }
+
+  /**
    * Generate unique client ID
    */
   private generateClientId(): string {
