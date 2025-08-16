@@ -84,6 +84,8 @@ export class DatabaseManager {
   
   // Single shared database instance for connection optimization
   private sharedDbInstance: DatabaseType | null = null;
+  private preparedStatements = new Map<string, any>();
+  private isClosing = false;
 
   // Repository instances - now using shared connection
   private _users: UserRepository | null = null;
@@ -205,7 +207,7 @@ export class DatabaseManager {
       const statements = schemaSql
         .split(";")
         .map((stmt: any) => stmt.trim())
-        .filter((stmt: any) => stmt?.length || 0 > 0 && !stmt.startsWith("--"));
+        .filter((stmt: any) => stmt.length > 0 && !stmt.startsWith("--"));
 
       for (const statement of statements) {
         try {
@@ -364,28 +366,35 @@ export class DatabaseManager {
     };
   }> {
     try {
-      // SQLite statistics using connection pool
+      // SQLite statistics using connection pool with cached statements
       const { tableCount, indexCount, size } =
         await this?.connectionPool?.executeQuery((db: any) => {
-          const tableCountResult = db
-            .prepare(
+          // Use cached prepared statements for better performance
+          let tableCountStmt = this.preparedStatements.get('tableCountStmt');
+          if (!tableCountStmt) {
+            tableCountStmt = db.prepare(
               `
           SELECT COUNT(*) as count 
           FROM sqlite_master 
           WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
         `,
-            )
-            .get() as { count: number };
+            );
+            this.preparedStatements.set('tableCountStmt', tableCountStmt);
+          }
+          const tableCountResult = tableCountStmt.get() as { count: number };
 
-          const indexCountResult = db
-            .prepare(
+          let indexCountStmt = this.preparedStatements.get('indexCountStmt');
+          if (!indexCountStmt) {
+            indexCountStmt = db.prepare(
               `
           SELECT COUNT(*) as count 
           FROM sqlite_master 
           WHERE type = 'index' AND name NOT LIKE 'sqlite_%'
         `,
-            )
-            .get() as { count: number };
+            );
+            this.preparedStatements.set('indexCountStmt', indexCountStmt);
+          }
+          const indexCountResult = indexCountStmt.get() as { count: number };
 
           // Get page count and page size to calculate database size
           const pageCountResult = db.pragma("page_count", {

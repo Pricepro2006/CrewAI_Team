@@ -347,7 +347,7 @@ export function validatePath(inputPath: string, options?: PathValidationOptions)
 export function pathValidationMiddleware(options?: PathValidationOptions) {
   const validator = new PathValidator(options);
   
-  return (req: any, res: any, next: any) => {
+  return (req: any, res: any, next: any): any => {
     // Validate all path-like parameters
     const pathParams = [
       req.params?.path,

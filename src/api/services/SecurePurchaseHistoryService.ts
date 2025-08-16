@@ -8,6 +8,7 @@ import { PurchaseHistoryService } from "./PurchaseHistoryService.js";
 import { DataEncryptionService } from "../../database/security/DataEncryption.js";
 import { AuditLogger, PIIRedactor } from "../middleware/security/enhanced-security.js";
 import { logger } from "../../utils/logger.js";
+import type Database from "better-sqlite3";
 import type { 
   PurchaseRecord, 
   PurchaseFilters, 
@@ -23,6 +24,7 @@ import type {
 export class SecurePurchaseHistoryService extends PurchaseHistoryService {
   private static secureInstance: SecurePurchaseHistoryService;
   private encryption: DataEncryptionService;
+  protected db!: Database.Database;
 
   private constructor() {
     super();
@@ -351,18 +353,18 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
       });
 
       // Execute deletion
-      const stmt = this.db.prepare(`
+      const stmt = this.db?.prepare(`
         DELETE FROM purchase_records WHERE user_id = ?
       `);
       
-      const result = stmt.run(userId);
+      const result = stmt?.run(userId) ?? { changes: 0 };
 
       // Also delete from receipts
-      const receiptStmt = this.db.prepare(`
+      const receiptStmt = this.db?.prepare(`
         DELETE FROM purchase_receipts WHERE user_id = ?
       `);
       
-      receiptStmt.run(userId);
+      receiptStmt?.run(userId);
 
       logger.info("User purchase data deleted", "SECURE_PURCHASE", {
         userId,
@@ -455,7 +457,7 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
       const cutoffDate = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
 
       // Update records to remove PII but keep aggregate data
-      const stmt = this.db.prepare(`
+      const stmt = this.db?.prepare(`
         UPDATE purchase_records 
         SET 
           notes = NULL,
@@ -465,7 +467,7 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
         WHERE purchase_date < ?
       `);
 
-      const result = stmt.run(cutoffDate);
+      const result = stmt?.run(cutoffDate) ?? { changes: 0 };
 
       await AuditLogger.logSecurityEvent({
         type: "MODIFY",

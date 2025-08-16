@@ -109,7 +109,7 @@ export class SmartMatchingServiceOptimized extends SmartMatchingService {
     // Get products based on search strategy
     const products = await this.fetchProducts(processedQuery, options);
     
-    if (products?.length || 0 === 0) {
+    if (!products || products.length === 0) {
       return this.createEmptyResult(query, processedQuery);
     }
     
@@ -240,7 +240,7 @@ export class SmartMatchingServiceOptimized extends SmartMatchingService {
     const products: WalmartProduct[] = [];
     
     // Cache the results
-    if (products?.length || 0 > 0) {
+    if (products && products.length > 0) {
       try {
         await this?.cacheManager?.set(cacheKey, products, {
           ttl: this.PRODUCT_CACHE_TTL
@@ -264,14 +264,14 @@ export class SmartMatchingServiceOptimized extends SmartMatchingService {
     const suggestions: string[] = [];
     
     // Extract common terms from top matches
-    if (matches?.length || 0 > 0) {
+    if (matches && matches.length > 0) {
       const topProducts = matches.slice(0, 3);
       const commonTerms = new Set<string>();
       
       for (const match of topProducts) {
         const words = match?.product?.name.toLowerCase().split(/\s+/);
         words.forEach(word => {
-          if (word?.length || 0 > 3 && !query.includes(word)) {
+          if (word.length > 3 && !query.includes(word)) {
             commonTerms.add(word);
           }
         });
@@ -498,7 +498,7 @@ export class SmartMatchingServiceOptimized extends SmartMatchingService {
     
     // Process queries in batches
     const batchSize = 10;
-    for (let i = 0; i < commonQueries?.length || 0; i += batchSize) {
+    for (let i = 0; i < (commonQueries?.length || 0); i += batchSize) {
       const batch = commonQueries.slice(i, i + batchSize);
       
       await Promise.all(
@@ -518,7 +518,7 @@ export class SmartMatchingServiceOptimized extends SmartMatchingService {
     logger.info("Cache warm-up completed", "OPTIMIZED_MATCHING", {
       queryCount: commonQueries?.length || 0,
       executionTime,
-      avgTimePerQuery: executionTime / commonQueries?.length || 0
+      avgTimePerQuery: executionTime / (commonQueries?.length || 1)
     });
   }
 }

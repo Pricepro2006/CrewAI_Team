@@ -45,10 +45,10 @@ export function generateCSRFToken(): string {
 export function setCSRFCookie(
   res: Response,
   token: string,
-  isSecure: boolean = true,
+  isSecure?: boolean,
 ): void {
   // __Host- prefix requires secure: true, so only use in production with HTTPS
-  const useSecure = process.env.NODE_ENV === "production" ? true : false;
+  const useSecure = isSecure !== undefined ? isSecure : process.env.NODE_ENV === "production";
   
   res.cookie(getCSRFCookieName(), token, {
     httpOnly: true,
@@ -61,7 +61,7 @@ export function setCSRFCookie(
 
   logger.debug("CSRF cookie set", "CSRF", {
     tokenHash: hashToken(token),
-    secure: isSecure,
+    secure: useSecure,
     maxAge: CSRF_TOKEN_MAX_AGE,
   });
 }

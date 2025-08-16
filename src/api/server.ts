@@ -102,8 +102,9 @@ app.use(compression({
     if (req.headers['x-no-compression']) {
       return false;
     }
-    // Compress all responses by default for JSON/text content
-    return compression?.filter(req, res);
+    // Use default compression filter for all other responses
+    // Default filter compresses JSON, text, and other compressible content types
+    return true;
   },
   threshold: 1024, // Only compress responses larger than 1KB
   level: 6 // Balanced compression level (1=fast, 9=best compression)

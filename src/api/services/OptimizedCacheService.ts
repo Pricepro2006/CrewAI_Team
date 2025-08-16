@@ -52,6 +52,8 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
   private pendingFetches: Map<string, Promise<T>>;
   private responseTimes: number[] = [];
   private readonly maxResponseTimeSamples = 1000;
+  private statsReportInterval?: NodeJS.Timeout;
+  private isDisposed = false;
 
   constructor(private options: CacheOptions = {}) {
     super();
@@ -97,8 +99,12 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
     this.pendingFetches = new Map();
     this.initializeStats();
     
-    // Periodic stats reporting
-    setInterval(() => this.reportStats(), 60000); // Every minute
+    // Periodic stats reporting with cleanup
+    this.statsReportInterval = setInterval(() => {
+      if (!this.isDisposed) {
+        this.reportStats();
+      }
+    }, 60000); // Every minute
   }
 
   private initializeStats(): void {
@@ -330,15 +336,20 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
   }
 
   private recordResponseTime(time: number): void {
+    if (this.isDisposed) return;
+    
     this?.responseTimes?.push(time);
     
-    // Keep only recent samples
+    // Keep only recent samples - optimize with slice instead of shift
     if (this?.responseTimes?.length > this.maxResponseTimeSamples) {
-      this?.responseTimes?.shift();
+      // More efficient than multiple shifts
+      this.responseTimes = this.responseTimes.slice(-this.maxResponseTimeSamples);
     }
   }
 
   private reportStats(): void {
+    if (this.isDisposed) return;
+    
     const stats = this.getStats();
     const memory = this.getMemoryUsage();
     
@@ -355,7 +366,22 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
    * Cleanup and shutdown
    */
   dispose(): void {
+    if (this.isDisposed) return;
+    
+    this.isDisposed = true;
+    
+    // Clear stats reporting interval
+    if (this.statsReportInterval) {
+      clearInterval(this.statsReportInterval);
+      this.statsReportInterval = undefined;
+    }
+    
+    // Clear cache and pending operations
     this.clear();
+    this.pendingFetches?.clear();
+    this.responseTimes = [];
+    
+    // Remove all listeners
     this.removeAllListeners();
   }
 }
@@ -387,9 +413,14 @@ export class CacheFactory {
   }
 
   static disposeAll(): void {
-    for (const [name, cache] of this.caches) {
-      cache.dispose();
-      logger.info(`Disposed cache: ${name}`, "CACHE_FACTORY");
+    const cacheEntries = Array.from(this.caches.entries());
+    for (const [name, cache] of cacheEntries) {
+      try {
+        cache.dispose();
+        logger.info(`Disposed cache: ${name}`, "CACHE_FACTORY");
+      } catch (error) {
+        logger.error(`Error disposing cache ${name}`, "CACHE_FACTORY", { error });
+      }
     }
     this?.caches?.clear();
   }

@@ -10,7 +10,7 @@
  */
 
 import Database from "better-sqlite3";
-import { Logger } from "../../utils/logger.js";
+import { Logger } from "../utils/logger.js";
 import {
   getDatabaseConnection,
   type DatabaseConnection,
@@ -58,6 +58,8 @@ export class TransactionManager extends EventEmitter {
   private activeTransactions: Map<string, TransactionContext> = new Map();
   private readonly DEFAULT_TIMEOUT = 30000; // 30 seconds
   private readonly MAX_RETRIES = 3;
+  private preparedStatements = new Map<string, any>();
+  private isShuttingDown = false;
 
   private constructor() {
     super();
@@ -100,7 +102,7 @@ export class TransactionManager extends EventEmitter {
         // Check if error is retryable (SQLITE_BUSY or SQLITE_LOCKED)
         if (this.isRetryableError(error) && attempts < retries) {
           attempts++;
-          if (this.metrics.deadlockRetries) { this.metrics.deadlockRetries++ };
+          this.metrics.deadlockRetries++;
 
           const backoffTime = Math.min(1000 * Math.pow(2, attempts), 5000);
           logger.warn(
@@ -142,19 +144,24 @@ export class TransactionManager extends EventEmitter {
     };
 
     this?.activeTransactions?.set(transactionId, context);
-    if (this.metrics.totalTransactions) { this.metrics.totalTransactions++ };
-    if (this.metrics.activeTransactions) { this.metrics.activeTransactions++ };
+    this.metrics.totalTransactions++;
+    this.metrics.activeTransactions++;
 
     let timeoutHandle: NodeJS.Timeout | null = null;
     let completed = false;
 
     try {
-      // Start transaction with specified isolation level
+      // Start transaction with specified isolation level - use cached statement
       const beginCommand = options.readOnly
         ? "BEGIN DEFERRED"
         : `BEGIN ${options.isolationLevel}`;
 
-      db.prepare(beginCommand).run();
+      let beginStmt = this.preparedStatements.get(beginCommand);
+      if (!beginStmt) {
+        beginStmt = db.prepare(beginCommand);
+        this.preparedStatements.set(beginCommand, beginStmt);
+      }
+      beginStmt.run();
 
       // Set up timeout
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -172,12 +179,17 @@ export class TransactionManager extends EventEmitter {
       // Execute operation with timeout
       const result = await Promise.race([operation(context), timeoutPromise]);
 
-      // Commit transaction
-      db.prepare("COMMIT").run();
+      // Commit transaction - use cached statement
+      let commitStmt = this.preparedStatements.get('COMMIT');
+      if (!commitStmt) {
+        commitStmt = db.prepare("COMMIT");
+        this.preparedStatements.set('COMMIT', commitStmt);
+      }
+      commitStmt.run();
       completed = true;
 
       // Update metrics
-      if (this.metrics.successfulTransactions) { this.metrics.successfulTransactions++ };
+      this.metrics.successfulTransactions++;
       const duration = Date.now() - context.startTime;
       this.updateAverageDuration(duration);
 
@@ -191,8 +203,13 @@ export class TransactionManager extends EventEmitter {
     } catch (error) {
       if (!completed) {
         try {
-          // Rollback transaction
-          db.prepare("ROLLBACK").run();
+          // Rollback transaction - use cached statement
+          let rollbackStmt = this.preparedStatements.get('ROLLBACK');
+          if (!rollbackStmt) {
+            rollbackStmt = db.prepare("ROLLBACK");
+            this.preparedStatements.set('ROLLBACK', rollbackStmt);
+          }
+          rollbackStmt.run();
         } catch (rollbackError) {
           logger.error("Failed to rollback transaction:", rollbackError);
         }
@@ -298,7 +315,7 @@ export class TransactionManager extends EventEmitter {
     return this.executeTransaction(async (tx: any) => {
       const results: T[] = [];
 
-      for (let i = 0; i < operations?.length || 0; i++) {
+      for (let i = 0; i < (operations?.length || 0); i++) {
         const savepoint = await this.createSavepoint(tx, `batch_op_${i}`);
 
         try {
@@ -348,7 +365,7 @@ export class TransactionManager extends EventEmitter {
    * Get all active transaction IDs
    */
   getActiveTransactionIds(): string[] {
-    return Array.from(this?.activeTransactions?.keys());
+    return Array.from(this?.activeTransactions?.keys() || []);
   }
 
   /**
@@ -374,9 +391,7 @@ export class TransactionManager extends EventEmitter {
 
     this?.activeTransactions?.clear();
     if (this.metrics) {
-
       this.metrics.activeTransactions = 0;
-
     }
   }
 

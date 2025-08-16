@@ -13,6 +13,7 @@ import { EmailRepository } from '../../database/repositories/EmailRepository.js'
 import { UnifiedEmailService } from './UnifiedEmailService.js';
 import { logger } from '../../utils/logger.js';
 import { databaseManager } from '../../core/database/DatabaseManager.js';
+import Database from 'better-sqlite3';
 import type { 
   EmailRecord, 
   EmailPriority
@@ -163,22 +164,23 @@ export class EmailIntegrationService {
 
   private constructor() {
     this.emailStorage = new EmailStorageService();
-    // Use a fallback approach if getRawDatabase doesn't exist
+    // Use a fallback approach to get database connection
     let db: any;
     try {
-      if (typeof databaseManager?.getRawDatabase === 'function') {
-        db = databaseManager.getRawDatabase();
-      } else if (typeof databaseManager?.getConnection === 'function') {
+      if (typeof databaseManager?.getConnection === 'function') {
         db = databaseManager.getConnection('main');
       } else {
         // Fallback to creating a direct database connection
-        const Database = require('better-sqlite3');
         db = new Database('./data/crewai_enhanced.db');
       }
     } catch (error) {
       // Final fallback
-      const Database = require('better-sqlite3');
-      db = new Database('./data/crewai_enhanced.db');
+      try {
+        db = new Database('./data/crewai_enhanced.db');
+      } catch (fallbackError) {
+        logger.error('Failed to initialize database connection', 'EMAIL_INTEGRATION', { error: fallbackError });
+        throw new Error('Could not initialize database connection');
+      }
     }
     this.emailRepository = new EmailRepository({ db });
     this.unifiedEmailService = new UnifiedEmailService(this.emailRepository);

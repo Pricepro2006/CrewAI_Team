@@ -36,18 +36,18 @@ export async function initializeCaching(): Promise<void> {
     // Register event listeners for cache monitoring
     cacheMonitor.on('alert:created', (alert: any) => {
       logger.warn('Cache alert created', 'CACHE_INTEGRATION', {
-        alertId: alert.id,
-        type: alert.type,
-        severity: alert.severity,
-        message: alert.message,
+        alertId: alert?.id,
+        type: alert?.type,
+        severity: alert?.severity,
+        message: alert?.message,
       });
     });
 
     cacheMonitor.on('health:checked', (health: any) => {
-      if (!health.healthy) {
+      if (!health?.healthy) {
         logger.warn('Cache health check failed', 'CACHE_INTEGRATION', {
-          issues: health.issues,
-          recommendations: health.recommendations,
+          issues: health?.issues,
+          recommendations: health?.recommendations,
         });
       }
     });
@@ -67,7 +67,7 @@ export async function initializeCaching(): Promise<void> {
 export async function setupCachedEmailRepository(): Promise<CachedEmailRepository> {
   try {
     const db = getDatabaseConnection();
-    const cachedEmailRepo = new CachedEmailRepository({ db: db.getDatabase() });
+    const cachedEmailRepo = new CachedEmailRepository({ db: db?.getDatabase() } as any);
 
     // Warm the email cache with recent data
     await cachedEmailRepo.warmCache({
@@ -330,10 +330,10 @@ export class CachedWebSocketHandler {
   async broadcastToRoom(roomId: string, message: any): Promise<void> {
     try {
       // Get all connections in room
-      const connections = await webSocketCache.getRoomConnections(roomId);
+      const connections = await webSocketCache?.getRoomConnections(roomId) || [];
 
       // Cache the broadcast message for a short time
-      await webSocketCache.cacheRealtimeData(
+      await webSocketCache?.cacheRealtimeData(
         `broadcast:${roomId}:${Date.now()}`,
         message,
         60, // 1 minute TTL
@@ -364,10 +364,10 @@ export async function executeCacheWarmingStrategy(): Promise<void> {
 
     // Warm email cache
     const emailRepo = await setupCachedEmailRepository();
-    const emailWarmedCount = await emailRepo.warmCache({
+    const emailWarmedCount = await emailRepo?.warmCache({
       recentDays: 3,
       priorityEmails: true,
-    });
+    }) || 0;
 
     // Warm LLM cache with common prompts
     const commonPrompts = [
@@ -377,7 +377,7 @@ export async function executeCacheWarmingStrategy(): Promise<void> {
       { prompt: 'Detect email sentiment and tone', model: 'llama3.2:3b' },
     ];
 
-    const llmWarmedCount = await llmCache.warmCache(commonPrompts);
+    const llmWarmedCount = await llmCache?.warmCache(commonPrompts) || 0;
 
     // Execute registered warming jobs
     await cacheMonitor.executeWarmingJobs();
@@ -416,9 +416,9 @@ export async function monitorCacheHealth(): Promise<void> {
 
     logger.info('Cache performance report generated', 'CACHE_INTEGRATION', {
       healthy: health.healthy,
-      alertCount: report?.alerts?.active || 0,
-      hitRate: health?.stats?.hitRate,
-      memoryUsage: health?.stats?.memoryUsage,
+      alertCount: (report as any)?.alerts?.active || 0,
+      hitRate: (health as any)?.stats?.hitRate,
+      memoryUsage: (health as any)?.stats?.memoryUsage,
     });
   } catch (error) {
     logger.error('Cache health monitoring failed', 'CACHE_INTEGRATION', {

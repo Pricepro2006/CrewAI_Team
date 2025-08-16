@@ -37,7 +37,8 @@ export class OptimizedWebSocketService extends EventEmitter {
   private batchTimers = new Map<string, NodeJS.Timeout>();
   private heartbeatInterval?: NodeJS.Timeout;
   private cleanupInterval?: NodeJS.Timeout;
-  private cache = new OptimizedCacheService({ max: 1000, ttl: 60000 });
+  private cache?: OptimizedCacheService;
+  private isShuttingDown = false;
   
   // Configuration
   private readonly config = {
@@ -53,7 +54,8 @@ export class OptimizedWebSocketService extends EventEmitter {
 
   constructor() {
     super();
-    this.setupCleanupTasks();
+    this.setMaxListeners(100); // Prevent memory leak warnings
+    // Lazy initialize cache and cleanup tasks
   }
 
   /**
@@ -75,8 +77,25 @@ export class OptimizedWebSocketService extends EventEmitter {
       clientTracking: false // We manage connections ourselves
     });
 
+    // Initialize cache lazily
+    if (!this.cache) {
+      this.cache = new OptimizedCacheService({ max: 1000, ttl: 60000 });
+    }
+    
+    // Start cleanup tasks if not already running
+    if (!this.heartbeatInterval) {
+      this.setupCleanupTasks();
+    }
+    
     this?.wss?.on('connection', (ws, req) => this.handleConnection(ws, req));
     this?.wss?.on('error', (error: any) => this.handleServerError(error));
+    
+    // Set connection limits
+    this?.wss?.on('connection', () => {
+      if (this.connections.size > 1000) {
+        logger.warn('Connection limit approaching', "WS_OPTIMIZED", { connections: this.connections.size });
+      }
+    });
 
     logger.info(`WebSocket server initialized on path ${path}`, "WS_OPTIMIZED");
   }
@@ -97,11 +116,20 @@ export class OptimizedWebSocketService extends EventEmitter {
     this?.connections?.set(connectionId, ws);
     this?.connectionMetadata?.set(connectionId, metadata);
 
-    // Set up event handlers
-    ws.on('message', (data: any) => this.handleMessage(connectionId, data));
-    ws.on('close', () => this.handleClose(connectionId));
-    ws.on('error', (error: any) => this.handleError(connectionId, error));
-    ws.on('pong', () => this.handlePong(connectionId));
+    // Set up event handlers with proper cleanup
+    const messageHandler = (data: any) => this.handleMessage(connectionId, data);
+    const closeHandler = () => {
+      this.handleClose(connectionId);
+      // Clean up event listeners to prevent memory leaks
+      ws.removeAllListeners();
+    };
+    const errorHandler = (error: any) => this.handleError(connectionId, error);
+    const pongHandler = () => this.handlePong(connectionId);
+    
+    ws.on('message', messageHandler);
+    ws.on('close', closeHandler);
+    ws.on('error', errorHandler);
+    ws.on('pong', pongHandler);
 
     // Send welcome message
     this.sendDirect(connectionId, {
@@ -348,15 +376,15 @@ export class OptimizedWebSocketService extends EventEmitter {
     }
 
     // Flush immediately if batch size reached
-    const queue = this?.messageQueue?.get(connectionId)!;
-    if (queue?.length || 0 >= this?.config?.batchSize) {
+    const queue = this?.messageQueue?.get(connectionId);
+    if (queue && queue.length >= this?.config?.batchSize) {
       this.flushMessageQueue(connectionId);
     }
   }
 
   private flushMessageQueue(connectionId: string): void {
     const queue = this?.messageQueue?.get(connectionId);
-    if (!queue || queue?.length || 0 === 0) return;
+    if (!queue || queue.length === 0) return;
 
     // Clear timer
     const timer = this?.batchTimers?.get(connectionId);
@@ -367,9 +395,9 @@ export class OptimizedWebSocketService extends EventEmitter {
 
     // Send batch
     const batch: MessageBatch = {
-      messages: queue,
+      messages: [...queue], // Create copy to avoid mutation
       timestamp: Date.now(),
-      compressed: queue?.length || 0 > 3
+      compressed: queue.length > 3
     };
 
     this.sendDirect(connectionId, {
@@ -441,28 +469,43 @@ export class OptimizedWebSocketService extends EventEmitter {
   }
 
   private setupCleanupTasks(): void {
-    // Heartbeat to detect dead connections
+    if (this.isShuttingDown) return;
+    
+    // Heartbeat to detect dead connections (optimized batch processing)
     this.heartbeatInterval = setInterval(() => {
+      if (this.isShuttingDown) return;
+      
+      const deadConnections: string[] = [];
       for (const [connectionId, ws] of this.connections) {
         if (ws.readyState === WebSocket.OPEN) {
           ws.ping();
         } else {
-          this.cleanupConnection(connectionId);
+          deadConnections.push(connectionId);
         }
       }
+      // Batch cleanup to reduce overhead
+      deadConnections.forEach(id => this.cleanupConnection(id));
     }, this?.config?.heartbeatInterval);
 
-    // Cleanup inactive connections
+    // Cleanup inactive connections (optimized)
     this.cleanupInterval = setInterval(() => {
+      if (this.isShuttingDown) return;
+      
       const now = Date.now();
       const timeout = 5 * 60 * 1000; // 5 minutes
+      const inactiveConnections: string[] = [];
 
       for (const [connectionId, metadata] of this.connectionMetadata) {
         const inactive = now - metadata?.lastActivity?.getTime();
         if (inactive > timeout) {
-          logger.info(`Closing inactive connection: ${connectionId}`, "WS_OPTIMIZED");
-          this.closeConnection(connectionId, 'inactive');
+          inactiveConnections.push(connectionId);
         }
+      }
+      
+      // Batch cleanup
+      if (inactiveConnections.length > 0) {
+        logger.info(`Closing ${inactiveConnections.length} inactive connections`, "WS_OPTIMIZED");
+        inactiveConnections.forEach(id => this.closeConnection(id, 'inactive'));
       }
     }, this?.config?.cleanupInterval);
   }
@@ -507,12 +550,16 @@ export class OptimizedWebSocketService extends EventEmitter {
    * Shutdown service gracefully
    */
   async shutdown(): Promise<void> {
+    this.isShuttingDown = true;
+    
     // Clear intervals
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = undefined;
     }
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
     }
 
     // Flush all message queues
@@ -533,7 +580,18 @@ export class OptimizedWebSocketService extends EventEmitter {
     this?.userConnections?.clear();
     this?.topicSubscriptions?.clear();
     this?.messageQueue?.clear();
+    
+    // Clear all batch timers properly
+    for (const timer of this?.batchTimers?.values() || []) {
+      clearTimeout(timer);
+    }
     this?.batchTimers?.clear();
+    
+    // Dispose cache properly
+    if (this.cache) {
+      this.cache.dispose();
+      this.cache = undefined;
+    }
 
     // Close WebSocket server
     if (this.wss) {

@@ -174,7 +174,7 @@ export class PreferenceLearningService {
    */
   getHealthStatus(): {
     healthy: boolean;
-    metrics: typeof this.performanceMetrics;
+    metrics: any; // Performance metrics object
     dbConnected: boolean;
     memoryUsage: NodeJS.MemoryUsage;
   } {

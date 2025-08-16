@@ -150,8 +150,9 @@ export class FileUploadScanner {
       const stats = fs.statSync(filePath);
       
       // Check file size
-      if (stats.size > this.options.maxFileSize!) {
-        threats.push(`File exceeds maximum size of ${this.options.maxFileSize} bytes`);
+      const maxSize = this.options.maxFileSize || DEFAULT_OPTIONS.maxFileSize!;
+      if (stats.size > maxSize) {
+        threats.push(`File exceeds maximum size of ${maxSize} bytes`);
         return this.createResult(false, threats, warnings);
       }
 
@@ -179,12 +180,14 @@ export class FileUploadScanner {
       }
 
       // Check blocked extensions
-      if (this.options.blockedExtensions?.includes(metadata.extension)) {
+      const blockedExts = this.options.blockedExtensions || DEFAULT_OPTIONS.blockedExtensions || [];
+      if (blockedExts.includes(metadata.extension)) {
         threats.push(`Blocked file extension: ${metadata.extension}`);
       }
 
       // Check blocked MIME types
-      if (this.options.blockedMimeTypes?.includes(metadata.mimeType)) {
+      const blockedMimes = this.options.blockedMimeTypes || DEFAULT_OPTIONS.blockedMimeTypes || [];
+      if (blockedMimes.includes(metadata.mimeType)) {
         threats.push(`Blocked MIME type: ${metadata.mimeType}`);
       }
 
@@ -528,7 +531,7 @@ export const fileScanner = new FileUploadScanner();
 export function fileScanMiddleware(options?: ScanOptions) {
   const scanner = new FileUploadScanner(options);
   
-  return async (req: any, res: any, next: any) => {
+  return async (req: any, res: any, next: any): Promise<any> => {
     if (!req.files || req.files.length === 0) {
       return next();
     }

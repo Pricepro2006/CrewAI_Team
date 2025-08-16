@@ -554,7 +554,7 @@ export function validateInput(schema: z.ZodSchema) {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {
+  ): Promise<void | Response> => {
     try {
       // Validate and sanitize input
       const validated = await schema.parseAsync(req.body);
@@ -562,7 +562,7 @@ export function validateInput(schema: z.ZodSchema) {
       // Replace request body with sanitized data
       req.body = validated;
       
-      next();
+      return next();
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.warn("Input validation failed", "VALIDATION", {
@@ -571,7 +571,7 @@ export function validateInput(schema: z.ZodSchema) {
           ip: req.ip,
         });
         
-        res.status(400).json({
+        return res.status(400).json({
           error: "Validation failed",
           code: "VALIDATION_ERROR",
           details: error?.errors?.map(e => ({
@@ -579,11 +579,10 @@ export function validateInput(schema: z.ZodSchema) {
             message: e.message,
           })),
         });
-        return;
       }
       
       logger.error("Input validation error", "VALIDATION", { error });
-      res.status(500).json({
+      return res.status(500).json({
         error: "Validation service error",
         code: "VALIDATION_ERROR",
       });
@@ -599,22 +598,21 @@ export function validateQuery(schema: z.ZodSchema) {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {
+  ): Promise<void | Response> => {
     try {
       const validated = await schema.parseAsync(req.query);
       req.query = validated as any;
-      next();
+      return next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({
+        return res.status(400).json({
           error: "Query validation failed",
           code: "VALIDATION_ERROR",
           details: error.errors,
         });
-        return;
       }
       
-      res.status(500).json({
+      return res.status(500).json({
         error: "Validation service error",
         code: "VALIDATION_ERROR",
       });

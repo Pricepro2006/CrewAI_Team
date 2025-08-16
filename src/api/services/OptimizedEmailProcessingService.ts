@@ -44,6 +44,8 @@ export class OptimizedEmailProcessingService {
   private readonly BATCH_SIZE = 50;
   private readonly MAX_CONCURRENT_BATCHES = 3;
   private activeBatches: Set<string> = new Set();
+  private preparedStatements: Map<string, any> = new Map();
+  private isShuttingDown = false;
 
   private constructor() {
     this.dbManager = getDatabaseManager();
@@ -61,7 +63,10 @@ export class OptimizedEmailProcessingService {
    */
   async getEmailsForPhase2Processing(limit: number = this.BATCH_SIZE): Promise<EmailBatch> {
     return this.dbManager.executeQuery((db: Database.Database) => {
-      const stmt = db.prepare(`
+      // Use cached prepared statement for better performance
+      let stmt = this.preparedStatements.get('phase2Query');
+      if (!stmt) {
+        stmt = db.prepare(`
         SELECT 
           id,
           subject,
@@ -78,6 +83,8 @@ export class OptimizedEmailProcessingService {
         ORDER BY received_date DESC
         LIMIT ?
       `);
+        this.preparedStatements.set('phase2Query', stmt);
+      }
 
       const emails = stmt.all(limit).map((row: any) => ({
         ...row,
@@ -97,7 +104,10 @@ export class OptimizedEmailProcessingService {
    */
   async getEmailsForPhase3Processing(limit: number = this.BATCH_SIZE): Promise<EmailBatch> {
     return this.dbManager.executeQuery((db: Database.Database) => {
-      const stmt = db.prepare(`
+      // Use cached prepared statement for better performance
+      let stmt = this.preparedStatements.get('phase3Query');
+      if (!stmt) {
+        stmt = db.prepare(`
         SELECT 
           id,
           subject,
@@ -115,6 +125,8 @@ export class OptimizedEmailProcessingService {
         ORDER BY received_date DESC
         LIMIT ?
       `);
+        this.preparedStatements.set('phase3Query', stmt);
+      }
 
       const emails = stmt.all(limit).map((row: any) => ({
         ...row,
@@ -151,7 +163,11 @@ export class OptimizedEmailProcessingService {
 
     await this.dbManager.executeQuery((db: Database.Database) => {
       const transaction = db.transaction((results: ProcessingResult[]) => {
-        const updateStmt = db.prepare(`
+        // Use cached prepared statement
+        const cacheKey = `updatePhase${phase}Stmt`;
+        let updateStmt = this.preparedStatements.get(cacheKey);
+        if (!updateStmt) {
+          updateStmt = db.prepare(`
           UPDATE emails 
           SET 
             ${phaseColumn} = ?,
@@ -159,6 +175,8 @@ export class OptimizedEmailProcessingService {
             processing_time_phase_${phase} = ?
           WHERE id = ?
         `);
+          this.preparedStatements.set(cacheKey, updateStmt);
+        }
 
         for (const result of results) {
           try {
@@ -200,6 +218,10 @@ export class OptimizedEmailProcessingService {
     emailBatch: EmailBatch,
     processingFunction: (email: any) => Promise<any>
   ): Promise<BatchProcessingStats> {
+    if (this.isShuttingDown) {
+      throw new Error('Service is shutting down');
+    }
+    
     const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.activeBatches.add(batchId);
 
@@ -207,8 +229,11 @@ export class OptimizedEmailProcessingService {
       const results: ProcessingResult[] = [];
       const chunks = this.chunkArray(emailBatch.emails, Math.ceil(emailBatch.emails.length / this.MAX_CONCURRENT_BATCHES));
       
-      // Process chunks in parallel
+      // Process chunks in parallel with controlled concurrency
       const chunkPromises = chunks.map(async (chunk, chunkIndex) => {
+        if (this.isShuttingDown) {
+          throw new Error('Service is shutting down');
+        }
         logger.debug(`Processing chunk ${chunkIndex + 1}/${chunks.length}`, "EMAIL_PROCESSING", {
           batchId,
           chunkSize: chunk.length,
@@ -380,13 +405,20 @@ export class OptimizedEmailProcessingService {
    * Cleanup and shutdown
    */
   async shutdown(): Promise<void> {
+    this.isShuttingDown = true;
+    
+    // Clear prepared statements to free memory
+    this.preparedStatements.clear();
+    
     // Wait for active batches to complete
     const maxWaitTime = 30000; // 30 seconds
     const startTime = Date.now();
 
     while (this.activeBatches.size > 0 && (Date.now() - startTime) < maxWaitTime) {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      logger.info(`Waiting for ${this.activeBatches.size} active batches to complete...`, "EMAIL_PROCESSING");
+      if (this.activeBatches.size > 0) {
+        logger.info(`Waiting for ${this.activeBatches.size} active batches to complete...`, "EMAIL_PROCESSING");
+      }
     }
 
     if (this.activeBatches.size > 0) {

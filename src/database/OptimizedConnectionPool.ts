@@ -67,6 +67,8 @@ export class OptimizedConnectionPool extends EventEmitter {
   private readonly queryTimes: number[] = [];
   private cleanupInterval?: NodeJS.Timeout;
   private readonly dbPath: string;
+  private isClosing = false;
+  private preparedStatementsCache = new Map<string, any>();
 
   constructor(dbPath: string, config: Partial<ConnectionPoolConfig> = {}) {
     super();
@@ -120,8 +122,9 @@ export class OptimizedConnectionPool extends EventEmitter {
 
     try {
       const db = new Database(this.dbPath, { 
-        verbose: process.env.NODE_ENV === 'development' ? console.log : undefined,
+        verbose: false, // Disable verbose logging for performance
         fileMustExist: false,
+        timeout: 5000,
       });
 
       // Apply performance optimizations
@@ -182,6 +185,10 @@ export class OptimizedConnectionPool extends EventEmitter {
    * Get a connection from the pool
    */
   public async getConnection(): Promise<ConnectionWrapper> {
+    if (this.isClosing) {
+      throw new Error('Connection pool is closing');
+    }
+    
     return new Promise((resolve, reject) => {
       // Find available idle connection
       const idleConnection = Array.from(this.connections.values())
@@ -213,7 +220,7 @@ export class OptimizedConnectionPool extends EventEmitter {
       this.metrics.waitingQueries++;
 
       // Set timeout for waiting requests
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         const index = this.waitingQueue.findIndex(req => req.resolve === resolve);
         if (index !== -1) {
           this.waitingQueue.splice(index, 1);
@@ -221,6 +228,9 @@ export class OptimizedConnectionPool extends EventEmitter {
           reject(new Error('Connection timeout: No connection available'));
         }
       }, this.config.connectionTimeout);
+      
+      // Store timeout ID for cleanup
+      (this.waitingQueue[this.waitingQueue.length - 1] as any).timeoutId = timeoutId;
     });
   }
 
@@ -242,6 +252,12 @@ export class OptimizedConnectionPool extends EventEmitter {
     if (this.waitingQueue.length > 0) {
       const waitingRequest = this.waitingQueue.shift()!;
       this.metrics.waitingQueries--;
+      
+      // Clear timeout if exists
+      if ((waitingRequest as any).timeoutId) {
+        clearTimeout((waitingRequest as any).timeoutId);
+      }
+      
       this.activateConnection(connection);
       waitingRequest.resolve(connection);
     }
@@ -263,10 +279,15 @@ export class OptimizedConnectionPool extends EventEmitter {
     try {
       connection = await this.getConnection();
       
-      // Prepare statement for reuse if specified
+      // Use cached prepared statements for better performance
       let result: T;
       if (options.prepare) {
-        const stmt = connection.db.prepare(query);
+        const cacheKey = `${connection.id}:${query}`;
+        let stmt = this.preparedStatementsCache.get(cacheKey);
+        if (!stmt) {
+          stmt = connection.db.prepare(query);
+          this.preparedStatementsCache.set(cacheKey, stmt);
+        }
         result = stmt.all(params) as T;
       } else {
         result = connection.db.prepare(query).all(params) as T;
@@ -375,9 +396,15 @@ export class OptimizedConnectionPool extends EventEmitter {
    * Close all connections and clean up
    */
   public async close(): Promise<void> {
+    this.isClosing = true;
+    
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
     }
+    
+    // Clear prepared statements cache
+    this.preparedStatementsCache.clear();
 
     // Close all connections
     for (const connection of this.connections.values()) {
@@ -390,9 +417,14 @@ export class OptimizedConnectionPool extends EventEmitter {
     }
 
     this.connections.clear();
-    this.waitingQueue.forEach(req => 
-      req.reject(new Error('Connection pool closed'))
-    );
+    
+    // Clear waiting queue with proper timeout cleanup
+    this.waitingQueue.forEach(req => {
+      if ((req as any).timeoutId) {
+        clearTimeout((req as any).timeoutId);
+      }
+      req.reject(new Error('Connection pool closed'));
+    });
     this.waitingQueue.length = 0;
 
     this.emit('pool-closed', this.metrics);
@@ -412,9 +444,9 @@ export class OptimizedConnectionPool extends EventEmitter {
     this.metrics.totalQueries++;
     this.queryTimes.push(queryTime);
     
-    // Keep only last 1000 query times for percentile calculation
+    // Keep only last 1000 query times - use slice for better performance
     if (this.queryTimes.length > 1000) {
-      this.queryTimes.shift();
+      this.queryTimes.splice(0, this.queryTimes.length - 1000);
     }
 
     // Update average query time
@@ -435,7 +467,9 @@ export class OptimizedConnectionPool extends EventEmitter {
 
   private startCleanupRoutine(): void {
     this.cleanupInterval = setInterval(() => {
-      this.cleanupIdleConnections();
+      if (!this.isClosing) {
+        this.cleanupIdleConnections();
+      }
     }, 60000); // Run every minute
   }
 

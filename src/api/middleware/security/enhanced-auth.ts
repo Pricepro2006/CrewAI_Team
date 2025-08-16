@@ -291,7 +291,7 @@ export function enhancedAuthenticateJWT(
   req: Request & { user?: EnhancedUser; sessionId?: string },
   res: Response,
   next: NextFunction
-): Response | void {
+): Response<any, Record<string, any>> | void {
   try {
     const token = jwtManager.extractTokenFromHeader(req?.headers?.authorization);
     const sessionId = req.headers["x-session-id"] as string;
@@ -450,7 +450,7 @@ export function requirePermission(...permissions: string[]) {
     req: Request & { user?: EnhancedUser },
     res: Response,
     next: NextFunction
-  ): Promise<Response | void> => {
+  ): Promise<Response<any, Record<string, any>> | void> => {
     if (!req.user) {
       return res.status(401).json({
         error: "Authentication required",
@@ -492,7 +492,7 @@ export function requireOwnership(
     req: Request & { user?: EnhancedUser },
     res: Response,
     next: NextFunction
-  ): Promise<Response | void> => {
+  ): Promise<Response<any, Record<string, any>> | void> => {
     if (!req.user) {
       return res.status(401).json({
         error: "Authentication required",

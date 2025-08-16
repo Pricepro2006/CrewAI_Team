@@ -78,7 +78,7 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
       scriptSrc: [
         "'self'",
         ...(isDevelopment ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
-        "https://cdn.jsdelivr?.net", // For any CDN scripts
+        "https://cdn.jsdelivr.net", // For any CDN scripts  
         "https://unpkg.com",
         // Add nonce support for production builds
         ...(isProduction ? ["'nonce-{NONCE}'"] : []),
@@ -86,8 +86,8 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
       styleSrc: [
         "'self'",
         "'unsafe-inline'", // Required for React and many UI libraries
-        "https://fonts?.googleapis?.com",
-        "https://cdn.jsdelivr?.net",
+        "https://fonts.googleapis.com",
+        "https://cdn.jsdelivr.net",
       ],
       imgSrc: [
         "'self'",
@@ -96,7 +96,7 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
         "https:",
         "http://localhost:*", // For development
       ],
-      fontSrc: ["'self'", "https://fonts?.gstatic?.com", "data:"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
       connectSrc: [
         "'self'",
         "ws://localhost:*", // WebSocket in development
@@ -109,7 +109,7 @@ export function getSecurityHeadersConfig(): SecurityHeadersConfig {
         process.env.OLLAMA_URL || "http://localhost:11434",
         process.env.CHROMA_URL || "http://localhost:8001",
         // Add any external APIs the frontend needs
-        "https://api?.openai?.com", // If using OpenAI
+        "https://api.openai.com", // If using OpenAI
         "https://*.huggingface.co", // If using Hugging Face models
       ],
       frameSrc: ["'none'"],
