@@ -534,10 +534,14 @@ Analyze and provide:
 Focus on TD SYNNEX operations: orders, quotes, shipping, support, deals, approvals, renewals, vendors.`;
 
     try {
-      const response = await this?.deepProvider?.generate(prompt, {
+      const response = await this.deepProvider?.generate?.(prompt, {
         temperature: 0.2,
         maxTokens: 1000,
       });
+      
+      if (!response?.response) {
+        throw new Error('No response from deep provider');
+      }
 
       // Parse and structure the deep analysis
       const deepAnalysis = await this.parseDeepAnalysis(
@@ -986,12 +990,12 @@ Priority: ${analysis.priority}
 Summary:`;
 
     try {
-      const summary = await this?.quickProvider?.generate(prompt, {
+      const summary = await this.quickProvider?.generate?.(prompt, {
         temperature: 0.3,
         maxTokens: 50,
       });
 
-      return summary?.response?.trim().substring(0, 100);
+      return summary?.response?.trim()?.substring(0, 100) || 'Summary generation failed';
     } catch (error) {
       // Fallback to truncated action
       return primaryAction?.action?.substring(0, 100);

@@ -13,7 +13,7 @@ import type {
   IEMSMailbox,
   IEMSDistributionList,
   CategorizedEmails,
-} from "../../types/iems-email.types";
+} from "../../types/iems-email.types.js";
 import { logger } from "../../utils/logger.js";
 import { EmailAnalysisAgent } from "../../core/agents/specialized/EmailAnalysisAgent.js";
 

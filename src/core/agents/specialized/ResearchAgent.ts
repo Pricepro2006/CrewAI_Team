@@ -41,7 +41,7 @@ export class ResearchAgent extends BaseAgent {
           topK: 5,
         },
       });
-      await this?.searchKnowledgeService?.initialize();
+      await this.searchKnowledgeService?.initialize?.();
     } catch (error) {
       console.warn("Failed to initialize SearchKnowledgeService:", error);
     }
@@ -172,7 +172,7 @@ export class ResearchAgent extends BaseAgent {
       if (this.searchKnowledgeService) {
         try {
           cachedResults =
-            await this?.searchKnowledgeService?.searchPreviousResults(query, 3);
+            await this.searchKnowledgeService?.searchPreviousResults?.(query, 3);
           if ((cachedResults?.length || 0) > 0) {
             console.log(
               `[ResearchAgent] Found ${cachedResults?.length || 0} cached results for similar queries`,
@@ -408,7 +408,7 @@ export class ResearchAgent extends BaseAgent {
     if (this.searchKnowledgeService) {
       try {
         const cachedResults =
-          await this?.searchKnowledgeService?.searchPreviousResults(task, 2);
+          await this.searchKnowledgeService?.searchPreviousResults?.(task, 2);
         if (cachedResults?.length || 0 > 0) {
           cachedContext = `\n\nPreviously cached relevant information:\n${cachedResults
             .map((r: any) => r.content)

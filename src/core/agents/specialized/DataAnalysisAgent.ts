@@ -75,7 +75,7 @@ export class DataAnalysisAgent extends BaseAgent {
       // Index valuable analysis results and patterns back into RAG
       if (this.ragSystem && this.ragEnabled && result) {
         const valuableInsights = this.extractValuableInsights(result);
-        if (valuableInsights.length > 0) {
+        if (valuableInsights && valuableInsights.length > 0) {
           await this.indexAgentKnowledge(valuableInsights.map(insight => ({
             content: JSON.stringify(insight),
             metadata: {
@@ -111,11 +111,13 @@ export class DataAnalysisAgent extends BaseAgent {
   private async analyzeDataTask(
     task: string,
     context: AgentContext,
+    ragContext?: string
   ): Promise<DataTaskAnalysis> {
     const prompt = `
       Analyze this data analysis task: "${task}"
       
       ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
+      ${ragContext ? `Additional Context:\n${ragContext}` : ""}
       
       Determine:
       1. Analysis type: statistical, visualization, transformation, or exploration
@@ -135,6 +137,16 @@ export class DataAnalysisAgent extends BaseAgent {
 
     const llmResponse = await this.generateLLMResponse(prompt, { format: "json" });
     const response = llmResponse?.response;
+    if (!response) {
+      // Return default analysis if LLM response fails
+      return {
+        type: "exploration",
+        techniques: [],
+        outputFormat: "summary",
+        dataSize: "medium",
+        complexity: "moderate",
+      };
+    }
     return this.parseDataTaskAnalysis(response);
   }
 
@@ -168,7 +180,7 @@ export class DataAnalysisAgent extends BaseAgent {
       Perform statistical analysis based on these requirements:
       Techniques: ${analysis?.techniques?.join(", ")}
       
-      ${context.ragDocuments ? `Data context:\n${context.ragDocuments[0]?.content}` : ""}
+      ${context.ragDocuments && context.ragDocuments.length > 0 ? `Data context:\n${context.ragDocuments[0]?.content}` : ""}
       
       Provide:
       1. Descriptive statistics
@@ -199,7 +211,7 @@ export class DataAnalysisAgent extends BaseAgent {
       Create visualization specifications for this data:
       Output format: ${analysis.outputFormat}
       
-      ${context.ragDocuments ? `Data:\n${context.ragDocuments[0]?.content}` : ""}
+      ${context.ragDocuments && context.ragDocuments.length > 0 ? `Data:\n${context.ragDocuments[0]?.content}` : ""}
       
       Provide:
       1. Chart type recommendation
@@ -230,7 +242,7 @@ export class DataAnalysisAgent extends BaseAgent {
       Transform data according to these requirements:
       Techniques: ${analysis?.techniques?.join(", ")}
       
-      ${context.ragDocuments ? `Input data:\n${context.ragDocuments[0]?.content}` : ""}
+      ${context.ragDocuments && context.ragDocuments.length > 0 ? `Input data:\n${context.ragDocuments[0]?.content}` : ""}
       
       Apply transformations:
       1. Data cleaning
@@ -263,7 +275,7 @@ export class DataAnalysisAgent extends BaseAgent {
       Analysis complexity: ${analysis.complexity}
       Expected techniques: ${analysis?.techniques?.join(", ")}
       
-      ${context.ragDocuments ? `Data:\n${context.ragDocuments[0]?.content}` : ""}
+      ${context.ragDocuments && context.ragDocuments.length > 0 ? `Data:\n${context.ragDocuments[0]?.content}` : ""}
       
       Provide:
       1. Data structure overview

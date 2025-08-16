@@ -297,7 +297,8 @@ export class OptimizedEmailProcessingService {
             AND phase_1_results != '{}'
             AND (phase_2_results IS NULL OR phase_2_results = '{}')
         `);
-        return (stmt.get() as any)?.count ?? 0;
+        const result1 = stmt.get() as any;
+        return result1?.count ?? 0;
       }),
       this.dbManager.executeQuery((db: Database.Database) => {
         const stmt = db.prepare(`
@@ -307,7 +308,8 @@ export class OptimizedEmailProcessingService {
             AND phase_2_results != '{}'
             AND (phase_3_results IS NULL OR phase_3_results = '{}')
         `);
-        return (stmt.get() as any)?.count ?? 0;
+        const result2 = stmt.get() as any;
+        return result2?.count ?? 0;
       })
     ]);
 
@@ -344,14 +346,18 @@ export class OptimizedEmailProcessingService {
         FROM emails
       `).get() as any;
 
-      const processingRate = (stats?.phase2Completed ?? 0) + (stats?.phase3Completed ?? 0) > 0 
-        ? ((stats?.phase2Completed ?? 0) + (stats?.phase3Completed ?? 0)) / (stats?.totalEmails ?? 1) * 100 
+      const phase2Count = stats?.phase2Completed ?? 0;
+      const phase3Count = stats?.phase3Completed ?? 0;
+      const totalEmails = stats?.totalEmails ?? 1;
+      
+      const processingRate = (phase2Count + phase3Count) > 0 
+        ? (phase2Count + phase3Count) / totalEmails * 100 
         : 0;
 
       return {
-        totalEmailsProcessed: stats?.totalEmails ?? 0,
-        phase2Completed: stats?.phase2Completed ?? 0,
-        phase3Completed: stats?.phase3Completed ?? 0,
+        totalEmailsProcessed: totalEmails,
+        phase2Completed: phase2Count,
+        phase3Completed: phase3Count,
         averagePhase2Time: stats?.avgPhase2Time ?? 0,
         averagePhase3Time: stats?.avgPhase3Time ?? 0,
         processingRate: Math.round(processingRate * 100) / 100,

@@ -113,7 +113,7 @@ export class CodeAgent extends BaseAgent {
       Analyze this coding task: "${task}"
       
       ${ragContext ? `RAG Context:\n${ragContext}\n` : ""}
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       
       Determine:
       1. Task type: generation, analysis, refactoring, or debugging
@@ -163,18 +163,18 @@ export class CodeAgent extends BaseAgent {
     codeExamples: any[] = []
   ): Promise<CodeResult> {
     const examplesText = codeExamples.length > 0 
-      ? `\nRelevant code examples:\n${codeExamples.map(e => e.content).join("\n\n")}\n`
+      ? `\nRelevant code examples:\n${codeExamples.map(e => e.content || '').join("\n\n")}\n`
       : "";
       
     const prompt = `
       Generate ${analysis.language} code for the following requirements:
-      ${analysis.requirements.join("\n")}
+      ${(analysis.requirements || []).join("\n")}
       
       Consider these challenges:
-      ${analysis.challenges.join("\n")}
+      ${(analysis.challenges || []).join("\n")}
       
       ${examplesText}
-      ${context.ragDocuments ? `Reference context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Reference context:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       
       Generate clean, well-documented code with:
       1. Proper error handling
@@ -316,7 +316,7 @@ export class CodeAgent extends BaseAgent {
     const prompt = `
       Complete this coding task: ${task}
       
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       
       Provide a complete solution with explanation.
     `;
@@ -374,7 +374,7 @@ export class CodeAgent extends BaseAgent {
 
     if (result.suggestions && result.suggestions.length > 0) {
       parts.push(
-        `\n**Suggestions:**\n${result.suggestions.map((s: any) => `- ${s}`).join("\n")}`,
+        `\n**Suggestions:**\n${result.suggestions.map((s: any) => `- ${s || ''}`).join("\n")}`,
       );
     }
 

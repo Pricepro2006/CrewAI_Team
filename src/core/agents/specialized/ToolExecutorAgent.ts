@@ -113,18 +113,18 @@ export class ToolExecutorAgent extends BaseAgent {
     const availableTools = this.getTools();
 
     const examplesText = toolExamples.length > 0 
-      ? `\nRelevant tool execution examples:\n${toolExamples.map(e => e.content).join("\n\n")}\n`
+      ? `\nRelevant tool execution examples:\n${toolExamples.map(e => e.content || '').join("\n\n")}\n`
       : "";
       
     const prompt = `
       Create a tool execution plan for this task: "${task}"
       
       ${ragContext ? `RAG Context:\n${ragContext}\n` : ""}
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       ${examplesText}
       
       Available tools:
-      ${availableTools.map((t: any) => `- ${t.name}: ${t.description}`).join("\n")}
+      ${availableTools.map((t: any) => `- ${t.name || 'Unknown'}: ${t.description || 'No description'}`).join("\n")}
       
       Determine:
       1. Which tools to use
@@ -280,7 +280,7 @@ export class ToolExecutorAgent extends BaseAgent {
         Tool: ${spec.name}
         Current parameters: ${JSON.stringify(spec.parameters)}
         
-        ${context.ragDocuments ? `Context from knowledge base:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
+        ${context.ragDocuments ? `Context from knowledge base:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
         
         Previous results from dependencies:
         ${previousResults
