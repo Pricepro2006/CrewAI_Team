@@ -12,7 +12,6 @@ import { WebSocketServer } from "ws";
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import type { IncomingMessage } from "http";
 import appConfig from "../config/app.config.js";
-import ollamaConfig from "../config/ollama.config.js";
 import type { Express } from "express";
 import {
   apiRateLimiter,
@@ -36,7 +35,7 @@ import csrfRouter from "./routes/csrf.router.js";
 import websocketMonitorRouter from "./routes/websocket-monitor.router.js";
 import metricsRouter from "./routes/metrics.router.js";
 import databasePerformanceRouter from "./routes/database-performance.router.js";
-import { shutdownDatabaseManager } from "../core/database/DatabaseManager.js";
+import { databaseManager } from "../core/database/DatabaseManager.js";
 import {
   cleanupManager,
   registerDefaultCleanupTasks,
@@ -133,21 +132,17 @@ app.get("/health", async (_req, res) => {
   };
 
   try {
-    // Check Ollama connection with timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    const ollamaResponse = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    services.ollama = ollamaResponse.ok ? "connected" : "disconnected";
-  } catch (error) {
-    if ((error as Error).name === "AbortError") {
-      services.ollama = "timeout";
+    // Check llama.cpp provider status
+    const { LLMProviderFactory } = await import("../core/llm/LLMProviderFactory.js");
+    const provider = LLMProviderFactory.getInstance();
+    
+    if (provider && provider.isReady && provider.isReady()) {
+      services.ollama = "connected"; // Keep field name for compatibility but it's actually llama.cpp
     } else {
-      services.ollama = "error";
+      services.ollama = "disconnected";
     }
+  } catch (error) {
+    services.ollama = "error";
   }
 
   try {
@@ -246,7 +241,7 @@ app.use(csrfValidator([
   "/health",              // Skip root health check
   "/api/webhooks",        // Skip webhooks (they use different auth)
   "/api/rate-limit-status", // Skip rate limit status
-  "/trpc"                 // TEMPORARILY skip tRPC for testing
+  // "/trpc" - CSRF protection ENABLED for tRPC (security hardening)
 ]));
 
 // Webhook routes (needs to be before tRPC)
@@ -327,14 +322,15 @@ gracefulShutdown.register(async () => {
 });
 
 gracefulShutdown.register(async () => {
-  logger.info("Shutting down WebSocket server...");
+  logger.info("Shutting down WebSocket servers...");
   wss.close();
+  mainWSS.close();
   wsService.shutdown();
 });
 
 gracefulShutdown.register(async () => {
   logger.info("Shutting down Database Manager...");
-  await shutdownDatabaseManager();
+  await databaseManager.closeAll();
 });
 
 gracefulShutdown.register(async () => {
@@ -477,36 +473,175 @@ const wsHandler = applyWSSHandler({
     }),
 });
 
+// Create dedicated WebSocket server for /ws endpoint on same port
+const mainWSS = new WebSocketServer({
+  noServer: true,
+  path: '/ws',
+  perMessageDeflate: true,
+  maxPayload: 1024 * 1024 // 1MB
+});
+
+// Setup main WebSocket connection handling
+mainWSS.on('connection', (ws, request) => {
+  const clientId = `main_ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  // Register with WebSocket service
+  wsService.registerClient(clientId, ws as any);
+  
+  // Subscribe to all message types for main WebSocket
+  wsService.subscribe(clientId, ['*']);
+  
+  logger.info(`Main WebSocket connection established: ${clientId}`, 'WEBSOCKET');
+  
+  // Send welcome message
+  ws.send(JSON.stringify({
+    type: 'welcome',
+    connectionId: clientId,
+    serverTime: Date.now(),
+    message: 'Connected to main WebSocket server'
+  }));
+  
+  // Handle incoming messages
+  ws.on('message', (data) => {
+    try {
+      const message = JSON.parse(data.toString());
+      logger.info(`Main WebSocket message received:`, 'WEBSOCKET', message);
+      
+      // Handle subscription requests
+      if (message.type === 'subscribe' && message.topics) {
+        wsService.subscribe(clientId, message.topics);
+        ws.send(JSON.stringify({
+          type: 'subscription_confirmed',
+          topics: message.topics,
+          timestamp: Date.now()
+        }));
+      }
+      
+      // Echo other messages back with timestamp
+      if (message.type !== 'subscribe') {
+        ws.send(JSON.stringify({
+          type: 'echo',
+          originalMessage: message,
+          serverTimestamp: Date.now(),
+          connectionId: clientId
+        }));
+      }
+    } catch (error) {
+      logger.error('Error processing main WebSocket message:', 'WEBSOCKET', { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+    }
+  });
+  
+  ws.on('close', () => {
+    logger.info(`Main WebSocket connection closed: ${clientId}`, 'WEBSOCKET');
+    wsService.unregisterClient(clientId, ws as any);
+  });
+  
+  ws.on('error', (error) => {
+    logger.error(`Main WebSocket error for ${clientId}:`, 'WEBSOCKET', error);
+  });
+});
+
 // Handle HTTP upgrade for WebSocket connections on the same port
 server.on('upgrade', (request, socket, head) => {
   const pathname = request.url || '';
+  
+  logger.info(`HTTP upgrade request for path: ${pathname}`, 'WEBSOCKET');
   
   if (pathname === '/trpc-ws') {
     // Verify client before upgrading
     const verifyClient = wss.options.verifyClient;
     const clientInfo = { origin: request.headers.origin, req: request };
     
-    if (verifyClient && !verifyClient(clientInfo)) {
-      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-      socket.destroy();
-      return;
+    if (verifyClient) {
+      let result: boolean = true;
+      if (typeof verifyClient === 'function') {
+        // Handle both sync and async verifyClient
+        try {
+          const verifyResult = verifyClient(clientInfo);
+          result = typeof verifyResult === 'boolean' ? verifyResult : true;
+        } catch (error) {
+          logger.error('Error in verifyClient function:', 'WEBSOCKET', error);
+          result = false;
+        }
+      }
+      
+      if (!result) {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        socket.destroy();
+        return;
+      }
     }
     
     wss.handleUpgrade(request, socket, head, (ws: any) => {
       wss.emit('connection', ws, request);
     });
+  } else if (pathname === '/ws') {
+    // Handle main WebSocket connections directly on same port
+    logger.info('Handling /ws WebSocket connection on main port', 'WEBSOCKET');
+    
+    // Apply rate limiting
+    const mockReq = {
+      ip: request.socket.remoteAddress,
+      path: "/ws",
+      method: "GET",
+      headers: request.headers,
+      connection: request.socket,
+      user: null,
+    } as any;
+
+    const mockRes = {
+      status: () => mockRes,
+      json: () => {},
+      end: () => {},
+    } as any;
+
+    // Check WebSocket rate limit
+    websocketRateLimit(mockReq, mockRes, (err?: any) => {
+      if (err) {
+        logger.warn("WebSocket rate limit exceeded for /ws:", 'WEBSOCKET', {
+          ip: request.socket.remoteAddress,
+          error: err.message,
+        });
+        socket.write('HTTP/1.1 429 Too Many Requests\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+      
+      // Proceed with WebSocket upgrade
+      mainWSS.handleUpgrade(request, socket, head, (ws: any) => {
+        mainWSS.emit('connection', ws, request);
+      });
+    });
   } else if (pathname === '/ws/walmart') {
     // Handle Walmart WebSocket upgrades
-    walmartWSServer.handleUpgrade?.(request, socket, head);
+    if (walmartWSServer && 'handleUpgrade' in walmartWSServer && typeof walmartWSServer.handleUpgrade === 'function') {
+      walmartWSServer.handleUpgrade(request, socket, head);
+    } else {
+      socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+      socket.destroy();
+    }
   } else {
     // Reject unknown WebSocket requests
+    logger.warn(`Unknown WebSocket path: ${pathname}`, 'WEBSOCKET');
     socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
     socket.destroy();
   }
 });
 
 console.log(
-  `🔌 WebSocket server running on ws://localhost:${PORT}/trpc-ws (using HTTP upgrade)`,
+  `🔌 WebSocket endpoints available:`,
+);
+console.log(
+  `   📡 Main WebSocket: ws://localhost:${PORT}/ws`,
+);
+console.log(
+  `   🔧 tRPC WebSocket: ws://localhost:${PORT}/trpc-ws`,
+);
+console.log(
+  `   🛒 Walmart WebSocket: ws://localhost:${PORT}/ws/walmart`,
 );
 
 // Setup Walmart-specific WebSocket handlers

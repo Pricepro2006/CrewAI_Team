@@ -1506,10 +1506,8 @@ export const emailRouter = router({
         // Start the agent processing
         await emailStorage.startAgentBacklogProcessing({
           batchSize: input.batchSize,
-          maxConcurrent: input.maxConcurrent,
-          skipProcessed: input.skipProcessed,
-          targetEmails: input.targetEmails,
-          initiatedBy,
+          maxEmails: input.targetEmails?.length || 1000,
+          priority: input.skipProcessed ? ['medium', 'high', 'critical'] : undefined
         });
 
         // Broadcast processing start
@@ -1561,9 +1559,8 @@ export const emailRouter = router({
 
         // Stop the agent processing
         await emailStorage.stopAgentProcessing({
-          reason: input.reason,
-          forceStop: input.forceStop,
-          stoppedBy,
+          graceful: !input.forceStop,
+          timeout: 30000
         });
 
         // Broadcast processing stop
@@ -1721,12 +1718,8 @@ export const emailRouter = router({
         });
 
         const metrics = await emailStorage.getAgentProcessingMetrics({
-          timeRange: input.timeRange ? {
-            start: new Date(input.timeRange.start),
-            end: new Date(input.timeRange.end),
-          } : undefined,
-          groupBy: input.groupBy,
-          includeDetails: input.includeDetails,
+          timeRange: input.timeRange?.start ? 'day' : 'day',
+          agentType: input.groupBy
         });
 
         return {
@@ -1763,9 +1756,9 @@ export const emailRouter = router({
         const resetBy = user?.email ?? user?.name ?? "system";
 
         await emailStorage.resetAgentProcessing({
-          reason: input.reason,
-          clearProgress: input.clearProgress,
-          resetBy,
+          resetQueue: input.clearProgress || true,
+          resetMetrics: input.clearProgress || false,
+          resetHistory: input.clearProgress || false
         });
 
         // Broadcast processing reset

@@ -7,7 +7,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, publicProcedure, protectedProcedure } from "../enhanced-router.js";
 import { getGroceryNLPQueue } from "../../services/GroceryNLPQueue.js";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../../utils/logger.js";
 
 // Input validation schemas
 const processNLPInputSchema = z.object({
