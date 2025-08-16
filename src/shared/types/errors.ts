@@ -51,6 +51,50 @@ export interface SystemError extends BaseError {
   resolution?: ErrorResolution;
 }
 
+export interface DatabaseError extends BaseError {
+  operation: string;
+  table?: string;
+  query?: string;
+  constraint?: string;
+  connectionId?: string;
+}
+
+export interface NetworkError extends BaseError {
+  url?: string;
+  method?: string;
+  statusCode?: number;
+  timeout?: boolean;
+  retryable: boolean;
+}
+
+export interface AuthenticationError extends BaseError {
+  provider?: string;
+  username?: string;
+  reason: "invalid_credentials" | "expired_token" | "malformed_token" | "missing_token";
+}
+
+export interface AuthorizationError extends BaseError {
+  resource: string;
+  action: string;
+  requiredPermissions: string[];
+  userPermissions: string[];
+}
+
+export interface RateLimitError extends BaseError {
+  limit: number;
+  remaining: number;
+  resetTime: number;
+  retryAfter: number;
+}
+
+export interface IntegrationError extends BaseError {
+  service: string;
+  endpoint?: string;
+  operation: string;
+  retryable: boolean;
+  fallbackAvailable: boolean;
+}
+
 export interface ErrorResolution {
   strategy: "retry" | "fallback" | "manual" | "ignore";
   retryAfter?: number;
@@ -542,4 +586,213 @@ export interface RecoveryLog {
   level: "debug" | "info" | "warn" | "error";
   message: string;
   data?: Record<string, unknown>;
+}
+
+// =====================================================
+// Additional Error Processing Types (Required for Type Exports)
+// =====================================================
+
+export interface ErrorRecoveryStrategy {
+  name: string;
+  type: "automatic" | "manual" | "hybrid";
+  priority: number;
+  conditions: RecoveryCondition[];
+  actions: RecoveryAction[];
+  timeout: number;
+  maxRetries: number;
+  enabled: boolean;
+}
+
+export interface ErrorAggregator {
+  id: string;
+  name: string;
+  groupingStrategy: "fingerprint" | "stack_trace" | "message" | "custom";
+  aggregationWindow: number;
+  maxGroupSize: number;
+  similarityThreshold: number;
+  customGroupingRules?: GroupingRule[];
+}
+
+export interface GroupingRule {
+  field: string;
+  operator: "equals" | "contains" | "regex" | "exists";
+  value?: string;
+  weight: number;
+}
+
+export interface ErrorRetryPolicy {
+  name: string;
+  maxAttempts: number;
+  initialDelay: number;
+  maxDelay: number;
+  backoffStrategy: "fixed" | "exponential" | "linear" | "custom";
+  backoffMultiplier: number;
+  jitterEnabled: boolean;
+  retryableErrorCodes: string[];
+  retryableErrorTypes: string[];
+  stopRetryConditions: RetryStopCondition[];
+}
+
+export interface RetryStopCondition {
+  type: "max_attempts" | "timeout" | "error_type" | "custom";
+  value: unknown;
+  operator?: "eq" | "gt" | "gte" | "lt" | "lte";
+}
+
+export interface ErrorNotificationConfig {
+  id: string;
+  name: string;
+  enabled: boolean;
+  triggers: NotificationTrigger[];
+  channels: string[];
+  template: string;
+  throttling: ThrottlingConfig;
+  escalation?: EscalationConfig;
+}
+
+export interface NotificationTrigger {
+  type: "error_count" | "error_rate" | "severity" | "pattern" | "custom";
+  condition: AlertCondition;
+  timeWindow: number;
+}
+
+export interface EscalationConfig {
+  enabled: boolean;
+  levels: EscalationLevel[];
+  timeout: number;
+}
+
+export interface EscalationLevel {
+  level: number;
+  delay: number;
+  channels: string[];
+  conditions: AlertCondition[];
+}
+
+export interface ErrorAnalytics {
+  id: string;
+  name: string;
+  type: "trending" | "pattern" | "anomaly" | "correlation";
+  dataSource: string;
+  analysisWindow: number;
+  updateFrequency: number;
+  thresholds: AnalyticsThreshold[];
+  enabled: boolean;
+}
+
+export interface AnalyticsThreshold {
+  metric: string;
+  operator: "gt" | "gte" | "lt" | "lte";
+  value: number;
+  severity: "low" | "medium" | "high" | "critical";
+}
+
+export interface ErrorMonitoring {
+  id: string;
+  name: string;
+  targets: MonitoringTarget[];
+  metrics: MonitoringMetric[];
+  alerting: AlertingConfig;
+  dashboard: DashboardConfig;
+  enabled: boolean;
+}
+
+export interface MonitoringTarget {
+  type: "service" | "endpoint" | "component" | "custom";
+  identifier: string;
+  filters?: Record<string, unknown>;
+}
+
+export interface MonitoringMetric {
+  name: string;
+  type: "counter" | "gauge" | "histogram" | "summary";
+  aggregation: "sum" | "avg" | "min" | "max" | "count";
+  labels: string[];
+}
+
+export interface AlertingConfig {
+  enabled: boolean;
+  rules: AlertRule[];
+  channels: string[];
+  escalation: EscalationConfig;
+}
+
+export interface DashboardConfig {
+  enabled: boolean;
+  refresh: number;
+  charts: ChartConfig[];
+  filters: FilterConfig[];
+}
+
+export interface ChartConfig {
+  type: "line" | "bar" | "pie" | "scatter";
+  metric: string;
+  timeRange: string;
+  aggregation: string;
+}
+
+export interface FilterConfig {
+  field: string;
+  type: "select" | "multiselect" | "date" | "text";
+  options?: string[];
+}
+
+export interface ErrorReportingService {
+  id: string;
+  name: string;
+  type: "sentry" | "bugsnag" | "rollbar" | "custom";
+  configuration: ReportingServiceConfig;
+  filters: ReportingFilter[];
+  enabled: boolean;
+}
+
+export interface ReportingServiceConfig {
+  apiKey: string;
+  projectId?: string;
+  environment?: string;
+  release?: string;
+  customEndpoint?: string;
+  rateLimit?: number;
+}
+
+export interface ReportingFilter {
+  type: "include" | "exclude";
+  field: string;
+  operator: "equals" | "contains" | "regex";
+  value: string;
+}
+
+export interface ErrorHandlingMiddleware {
+  name: string;
+  order: number;
+  enabled: boolean;
+  configuration: MiddlewareConfig;
+  errorHandlers: ErrorHandler[];
+}
+
+export interface MiddlewareConfig {
+  logErrors: boolean;
+  reportErrors: boolean;
+  transformErrors: boolean;
+  customHeaders?: Record<string, string>;
+  timeout?: number;
+}
+
+export interface GlobalErrorHandler {
+  id: string;
+  name: string;
+  type: "catch_all" | "specific" | "pattern_based";
+  priority: number;
+  handlers: ErrorHandler[];
+  fallbackHandler?: ErrorHandler;
+  configuration: GlobalHandlerConfig;
+}
+
+export interface GlobalHandlerConfig {
+  enableStackTrace: boolean;
+  enableErrorReporting: boolean;
+  enableRecovery: boolean;
+  enableNotification: boolean;
+  maxErrorsPerMinute: number;
+  customErrorPages?: Record<string, string>;
 }

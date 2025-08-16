@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { metricsCollector } from "./MetricsCollector.js";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../utils/logger.js";
 import fs from "fs";
 import appConfig from "../config/app.config.js";
 

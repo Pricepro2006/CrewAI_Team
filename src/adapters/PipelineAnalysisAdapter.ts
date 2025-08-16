@@ -15,7 +15,7 @@ import type {
   QuickAnalysis,
   DeepWorkflowAnalysis,
   ProcessingMetadata,
-  // ActionItem, // Unused import
+  ActionItem,
 } from "../types/analysis-results.js";
 import { EmailPriority } from "../types/EmailTypes.js";
 
@@ -279,22 +279,22 @@ export class PipelineAnalysisAdapter
     const insights: string[] = [];
 
     // Add summary as first insight if substantial
-    if (summary && summary?.length || 0 > 50) {
+    if (summary && typeof summary === 'string' && summary.length > 50) {
       insights.push(summary);
     }
 
     // Add deep insights
-    if (deepInsights && deepInsights?.length || 0 > 0) {
-      insights.push(...deepInsights);
+    if (deepInsights && Array.isArray(deepInsights) && deepInsights.length > 0) {
+      insights.push(...deepInsights.filter(insight => typeof insight === 'string' && insight.trim().length > 0));
     }
 
     // Add strategic recommendations
-    if (recommendations && recommendations?.length || 0 > 0) {
-      insights.push(...recommendations);
+    if (recommendations && Array.isArray(recommendations) && recommendations.length > 0) {
+      insights.push(...recommendations.filter(rec => typeof rec === 'string' && rec.trim().length > 0));
     }
 
     // Ensure we have at least one insight
-    if (insights?.length || 0 === 0) {
+    if (insights.length === 0) {
       insights.push("Email processed successfully through analysis pipeline");
     }
 
@@ -308,7 +308,7 @@ export class PipelineAnalysisAdapter
   async batchFromDatabase(
     rows: PipelineEmailAnalysis[],
   ): Promise<EmailAnalysisResult[]> {
-    this?.logger?.info(`Batch transforming ${rows?.length || 0} pipeline records`);
+    this?.logger?.info(`Batch transforming ${rows.length} pipeline records`);
 
     const results: EmailAnalysisResult[] = [];
     const errors: Array<{ emailId: string; error: string }> = [];
@@ -327,9 +327,9 @@ export class PipelineAnalysisAdapter
       }
     }
 
-    if (errors?.length || 0 > 0) {
+    if (errors.length > 0) {
       this?.logger?.warn(
-        `Batch transformation completed with ${errors?.length || 0} errors - totalProcessed: ${rows?.length || 0}, successCount: ${results?.length || 0}, errorCount: ${errors?.length || 0}`,
+        `Batch transformation completed with ${errors.length} errors - totalProcessed: ${rows.length}, successCount: ${results.length}, errorCount: ${errors.length}`,
       );
     }
 

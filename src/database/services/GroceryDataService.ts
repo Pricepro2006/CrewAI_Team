@@ -198,17 +198,19 @@ export class GroceryDataService {
       if (products?.length || 0 > 0) {
         // Use the first match for now (could be improved with better matching logic)
         const bestMatch = products[0];
+        
+        if (bestMatch) {
+          await this?.itemRepo?.updateItem(item.id!, {
+            product_id: bestMatch.product_id,
+            category: bestMatch.category_path?.split("/")[0],
+            estimated_price: bestMatch.current_price,
+          });
 
-        await this?.itemRepo?.updateItem(item.id!, {
-          product_id: bestMatch.product_id,
-          category: bestMatch.category_path?.split("/")[0],
-          estimated_price: bestMatch.current_price,
-        });
-
-        logger.info(
-          `Matched item ${item.item_name} to product ${bestMatch.name}`,
-          "GROCERY_SERVICE",
-        );
+          logger.info(
+            `Matched item ${item.item_name} to product ${bestMatch.name}`,
+            "GROCERY_SERVICE",
+          );
+        }
       }
     } catch (error) {
       logger.warn(
@@ -370,6 +372,9 @@ export class GroceryDataService {
 
     // Use the best substitution
     const bestSub = substitutions[0];
+    if (!bestSub) {
+      return null;
+    }
     const substituteProduct = await this?.productRepo?.getProduct(
       bestSub.substitute_id,
     );
@@ -394,9 +399,9 @@ export class GroceryDataService {
     const substitution = await this?.substitutionRepo?.recordSubstitution({
       original_product_id: item.product_id,
       substitute_product_id: substituteProduct.product_id,
-      reason: bestSub.reason,
-      similarity_score: bestSub.similarity,
-      price_difference: bestSub.price_difference,
+      reason: bestSub?.reason,
+      similarity_score: bestSub?.similarity,
+      price_difference: bestSub?.price_difference,
       user_id: (await this?.sessionRepo?.getSession(sessionId)).user_id,
     });
 

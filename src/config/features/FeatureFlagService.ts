@@ -145,8 +145,8 @@ export class FeatureFlagService extends EventEmitter {
         });
       }
 
-      if (config.defaultRolloutPercentage !== undefined) {
-        this?.config?.defaultRolloutPercentage = config.defaultRolloutPercentage;
+      if (config.defaultRolloutPercentage !== undefined && this.config) {
+        this.config.defaultRolloutPercentage = config.defaultRolloutPercentage;
       }
     } catch (error) {
       logger.error('Error loading feature flags from file', error instanceof Error ? error.message : String(error));
