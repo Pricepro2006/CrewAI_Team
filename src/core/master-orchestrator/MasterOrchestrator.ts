@@ -484,7 +484,7 @@ export class MasterOrchestrator {
     try {
       logger.debug("Searching knowledge base for relevant context", "ORCHESTRATOR");
       const ragResults = await this.ragSystem?.search(query.text, 3);
-      if (ragResults?.length || 0 > 0) {
+      if ((ragResults?.length || 0) > 0) {
         ragContext = `
       
       Relevant Knowledge Base Context:
@@ -523,8 +523,8 @@ export class MasterOrchestrator {
       - Execution strategy: ${routingPlan.executionStrategy}
       - Overall confidence: ${routingPlan.confidence}
       - Risk level: ${routingPlan?.riskAssessment?.level}
-      - Risk factors: ${routingPlan?.riskAssessment?.factors.join(", ")}
-      - Fallback agents available: ${routingPlan?.fallbackAgents?.join(", ")}
+      - Risk factors: ${routingPlan?.riskAssessment?.factors?.join(", ") || 'None'}
+      - Fallback agents available: ${routingPlan?.fallbackAgents?.join(", ") || 'None'}
     `
       : "";
 

@@ -120,7 +120,7 @@ export class WriterAgent extends BaseAgent {
       Analyze this writing task: "${task}"
       
       ${ragContext ? `RAG Context:\n${ragContext}\n` : ""}
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       
       Determine:
       1. Content type: article, report, email, creative, technical, or general
@@ -171,15 +171,16 @@ export class WriterAgent extends BaseAgent {
   private async writeArticle(
     analysis: WritingTaskAnalysis,
     context: AgentContext,
+    writingExamples: any[] = []
   ): Promise<WritingResult> {
     const prompt = `
       Write an article with these specifications:
       Style: ${analysis.style}
       Audience: ${analysis.audience}
-      Length: ${analysis?.length || 0}
-      Requirements: ${analysis.requirements.join(", ")}
+      Length: ${analysis.length}
+      Requirements: ${(analysis.requirements || []).join(", ")}
       
-      ${context.ragDocuments ? `Reference material:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Reference material:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       
       Create a well-structured article with:
       1. Engaging headline
@@ -211,14 +212,15 @@ export class WriterAgent extends BaseAgent {
   private async writeReport(
     analysis: WritingTaskAnalysis,
     context: AgentContext,
+    writingExamples: any[] = []
   ): Promise<WritingResult> {
     const prompt = `
       Write a professional report with these specifications:
       Style: ${analysis.style}
       Audience: ${analysis.audience}
-      Requirements: ${analysis.requirements.join(", ")}
+      Requirements: ${(analysis.requirements || []).join(", ")}
       
-      ${context.ragDocuments ? `Data/Research:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Data/Research:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       
       Structure the report with:
       1. Executive Summary
@@ -253,6 +255,7 @@ export class WriterAgent extends BaseAgent {
   private async writeEmail(
     analysis: WritingTaskAnalysis,
     context: AgentContext,
+    writingExamples: any[] = []
   ): Promise<WritingResult> {
     const prompt = `
       Write an email with these specifications:
@@ -260,7 +263,7 @@ export class WriterAgent extends BaseAgent {
       Audience: ${analysis.audience}
       Purpose: ${analysis.requirements.join(", ")}
       
-      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       
       Create a professional email with:
       1. Appropriate subject line
@@ -293,14 +296,15 @@ export class WriterAgent extends BaseAgent {
   private async writeCreative(
     analysis: WritingTaskAnalysis,
     context: AgentContext,
+    writingExamples: any[] = []
   ): Promise<WritingResult> {
     const prompt = `
       Write creative content with these specifications:
       Style: ${analysis.style}
       Audience: ${analysis.audience}
-      Requirements: ${analysis.requirements.join(", ")}
+      Requirements: ${(analysis.requirements || []).join(", ")}
       
-      ${context.ragDocuments ? `Inspiration/Context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Inspiration/Context:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       
       Create engaging creative content with:
       1. Vivid descriptions
@@ -332,13 +336,14 @@ export class WriterAgent extends BaseAgent {
   private async writeTechnical(
     analysis: WritingTaskAnalysis,
     context: AgentContext,
+    writingExamples: any[] = []
   ): Promise<WritingResult> {
     const prompt = `
       Write technical documentation with these specifications:
       Audience: ${analysis.audience}
-      Requirements: ${analysis.requirements.join(", ")}
+      Requirements: ${(analysis.requirements || []).join(", ")}
       
-      ${context.ragDocuments ? `Technical details:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Technical details:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       
       Create clear technical content with:
       1. Precise terminology
@@ -374,13 +379,17 @@ export class WriterAgent extends BaseAgent {
     const prompt = `
       Complete this writing task: ${task}
       
-      ${context.ragDocuments ? `Reference material:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Reference material:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       
       Create well-written content that addresses all requirements.
     `;
 
-    const contentResponse = await this?.llm?.generate(prompt);
-    const content = contentResponse?.response;
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const contentResponse = await this.generateLLMResponse(prompt);
+    const content = contentResponse.response;
 
     return {
       content: sanitizeLLMOutput(content).content,

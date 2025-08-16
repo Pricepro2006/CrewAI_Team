@@ -415,8 +415,8 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
       return 0;
     }
     
-    const brand1 = features1?.brand?.toLowerCase();
-    const brand2 = features2?.brand?.toLowerCase();
+    const brand1 = features1.brand?.toLowerCase();
+    const brand2 = features2.brand?.toLowerCase();
     
     // Exact match
     if (brand1 === brand2) {
@@ -424,8 +424,8 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     }
     
     // Check brand synonyms
-    const synonyms1 = this?.brandSynonyms?.get(brand1);
-    const synonyms2 = this?.brandSynonyms?.get(brand2);
+    const synonyms1 = brand1 ? this.brandSynonyms?.get(brand1) : undefined;
+    const synonyms2 = brand2 ? this.brandSynonyms?.get(brand2) : undefined;
     
     if (synonyms1?.has(brand2) || synonyms2?.has(brand1)) {
       return 0.9;
@@ -451,8 +451,8 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
       return 0;
     }
     
-    const cat1 = features1?.category?.toLowerCase();
-    const cat2 = features2?.category?.toLowerCase();
+    const cat1 = features1.category?.toLowerCase();
+    const cat2 = features2.category?.toLowerCase();
     
     // Exact match
     if (cat1 === cat2) {
@@ -460,8 +460,8 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     }
     
     // Check category synonyms
-    const synonyms1 = this?.categorySynonyms?.get(cat1);
-    const synonyms2 = this?.categorySynonyms?.get(cat2);
+    const synonyms1 = cat1 ? this.categorySynonyms?.get(cat1) : undefined;
+    const synonyms2 = cat2 ? this.categorySynonyms?.get(cat2) : undefined;
     
     if (synonyms1?.has(cat2) || synonyms2?.has(cat1)) {
       return 0.8;
@@ -491,15 +491,15 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     const batchSize = 100;
     const batches = [];
     
-    for (let i = 0; i < (request?.queries?.length ?? 0); i += batchSize) {
-      const queryBatch = request?.queries?.slice(i, i + batchSize) ?? [];
+    for (let i = 0; i < (request.queries?.length ?? 0); i += batchSize) {
+      const queryBatch = request.queries?.slice(i, i + batchSize) ?? [];
       
       const batchPromise = Promise.all(
         (queryBatch ?? []).map(async (query: any) => {
           const productScores = new Map<string, number>();
           
           await Promise.all(
-            (request?.products ?? []).map(async (product: any) => {
+            (request.products ?? []).map(async (product: any) => {
               totalRequests++;
               
               // Check cache first
@@ -539,17 +539,17 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
    * Pre-warm cache for frequently accessed products
    */
   private async prewarmProductFeatures(products: string[]): Promise<void> {
-    const uncachedProducts = (products ?? []).filter(
+    const uncachedProducts = products.filter(
       product => !this.featureCache?.has(`features:${product}`)
     );
     
-    if ((uncachedProducts?.length ?? 0) === 0) {
+    if (uncachedProducts.length === 0) {
       return;
     }
     
     // Extract features in parallel
     await Promise.all(
-      (uncachedProducts ?? []).map(product => this.getOptimizedFeatures(product))
+      uncachedProducts.map(product => this.getOptimizedFeatures(product))
     );
   }
 
@@ -613,14 +613,14 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     });
     
     // Simple gradient descent update
-    const learningRate = this.mlModel?.learningRate ?? 0.01;
-    const newWeights = { ...this.mlModel?.weights };
+    const learningRate = this.mlModel.learningRate;
+    const newWeights = { ...this.mlModel.weights };
     
     for (const feedback of this.feedbackHistory) {
       const expectedScore = feedback.userFeedback === 'positive' ? 1 : 
                           feedback.userFeedback === 'negative' ? 0 : 0.5;
       
-      const actualScore = feedback?.score ?? 0;
+      const actualScore = feedback.score;
       const error = expectedScore - actualScore;
       
       // Update weights based on error
@@ -642,7 +642,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     }
     
     // Clear old feedback
-    this.feedbackHistory = this.feedbackHistory?.slice(-100) ?? [];
+    this.feedbackHistory = this.feedbackHistory.slice(-100);
     
     logger.info("ML model updated", "OPTIMIZED_MATCHING", { newWeights });
   }
@@ -733,7 +733,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     
     // Split on whitespace and filter
     const tokens = cleaned.split(/\s+/)
-      .filter(token => (token?.length ?? 0) > 1)
+      .filter(token => token.length > 1)
       .map(token => this.stemWord(token));
     
     return tokens;
@@ -847,7 +847,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     brand?: string,
     size?: string
   ): string[] {
-    return (tokens ?? []).filter(token => {
+    return tokens.filter(token => {
       // Filter out brand and size words
       if (brand && brand.toLowerCase().includes(token)) {
         return false;
@@ -856,7 +856,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
         return false;
       }
       // Filter out common words
-      return (token?.length ?? 0) > 2;
+      return token.length > 2;
     });
   }
 
@@ -869,9 +869,9 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     size?: string
   ): Record<string, number> {
     const features: Record<string, number> = {
-      textLength: text?.length ?? 0,
-      wordCount: tokens?.length ?? 0,
-      avgWordLength: tokens.reduce((sum: any, t: any) => sum + (t?.length ?? 0), 0) / Math.max(tokens?.length ?? 0, 1),
+      textLength: text.length,
+      wordCount: tokens.length,
+      avgWordLength: tokens.reduce((sum, t) => sum + t.length, 0) / Math.max(tokens.length, 1),
       uniqueWords: new Set(tokens).size,
       numericCount: (text.match(/\d+/g) || []).length,
     };
@@ -909,13 +909,13 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
    * Optimized Levenshtein with early termination
    */
   private calculateOptimizedLevenshtein(s1: string, s2: string): number {
-    if (Math.abs((s1?.length ?? 0) - (s2?.length ?? 0)) > Math.max(s1?.length ?? 0, s2?.length ?? 0) * 0.5) {
+    if (Math.abs(s1.length - s2.length) > Math.max(s1.length, s2.length) * 0.5) {
       // Early termination if strings are too different in length
       return 0;
     }
     
     const distance = this.levenshteinDistance(s1, s2);
-    const maxLength = Math.max(s1?.length ?? 0, s2?.length ?? 0);
+    const maxLength = Math.max(s1.length, s2.length);
     return maxLength === 0 ? 1 : 1 - distance / maxLength;
   }
 
@@ -923,7 +923,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
    * Fast keyword similarity calculation
    */
   private calculateFastKeywordSimilarity(keywords1: string[], keywords2: string[]): number {
-    if ((keywords1?.length ?? 0) === 0 || (keywords2?.length ?? 0) === 0) {
+    if (keywords1.length === 0 || keywords2.length === 0) {
       return 0;
     }
     
@@ -960,8 +960,8 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
       return 1.0;
     }
     
-    const synonyms1 = this?.categorySynonyms?.get(cat1);
-    const synonyms2 = this?.categorySynonyms?.get(cat2);
+    const synonyms1 = cat1 ? this.categorySynonyms?.get(cat1) : undefined;
+    const synonyms2 = cat2 ? this.categorySynonyms?.get(cat2) : undefined;
     
     if (synonyms1?.has(cat2) || synonyms2?.has(cat1)) {
       return 0.8;
@@ -1076,7 +1076,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     }
     
     logger.info("Cache warming completed", "OPTIMIZED_MATCHING", {
-      warmedProducts: commonProducts?.length ?? 0,
+      warmedProducts: commonProducts.length,
     });
   }
 
@@ -1086,7 +1086,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
   private startModelTraining(): void {
     // Train model every hour if feedback available
     setInterval(() => {
-      if ((this.feedbackHistory?.length ?? 0) >= 50) {
+      if (this.feedbackHistory.length >= 50) {
         this.trainModel().catch(error => {
           logger.error("Model training failed", "OPTIMIZED_MATCHING", { error });
         });
@@ -1112,7 +1112,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
       cacheHitRate,
       avgCalculationTime: this.performanceMetrics.avgCalculationTime,
       totalCalculations: this.performanceMetrics.totalCalculations,
-      cacheSize: this.similarityCache?.size ?? 0,
+      cacheSize: this.similarityCache.size,
     };
   }
 

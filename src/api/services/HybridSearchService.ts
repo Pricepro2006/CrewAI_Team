@@ -69,7 +69,7 @@ export class HybridSearchService {
         total: rankedResults?.length || 0,
         page,
         limit,
-        hasMore: Boolean(offset + limit < (rankedResults?.length || 0)),
+        hasMore: offset + limit < (rankedResults?.length || 0),
         searchTime: Date.now() - startTime,
         strategies: ['text', 'semantic', 'hybrid']
       };
