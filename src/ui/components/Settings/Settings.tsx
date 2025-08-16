@@ -36,8 +36,8 @@ export const Settings: React.FC = () => {
       notifications: true,
     },
     llm: {
-      provider: "ollama",
-      model: "llama3.2:3b",
+      provider: "llama.cpp",
+      model: "llama-3.2-3b-instruct",
       temperature: 0.3,
       maxTokens: 1000,
       endpoint: "http://localhost:11434",
@@ -272,14 +272,14 @@ export const Settings: React.FC = () => {
                     updateSetting("llm", "provider", e?.target?.value)
                   }
                 >
-                  <option value="ollama">Ollama (Local)</option>
+                  <option value="llama.cpp">Llama.cpp (Local)</option>
                   <option value="openai">OpenAI</option>
                   <option value="anthropic">Anthropic</option>
                   <option value="huggingface">Hugging Face</option>
                 </select>
               </div>
 
-              {settings?.llm?.provider === "ollama" && (
+              {settings?.llm?.provider === "llama.cpp" && (
                 <>
                   <div className="setting-group">
                     <label htmlFor="model">Model</label>
@@ -290,8 +290,8 @@ export const Settings: React.FC = () => {
                         updateSetting("llm", "model", e?.target?.value)
                       }
                     >
-                      <option value="llama3.2:3b">
-                        Llama 3.2 (3B) - Primary
+                      <option value="llama-3.2-3b-instruct">
+                        Llama 3.2 (3B) Instruct - Primary
                       </option>
                       <option value="doomgrave/phi-4:14b-tools-Q3_K_S">
                         Phi-4 14B Tools - Critical
