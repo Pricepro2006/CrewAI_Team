@@ -45,6 +45,22 @@ export interface LearningEvent {
   timestamp: string;
 }
 
+// Database row interface for user_preferences table
+interface UserPreferenceRow {
+  id: string;
+  user_id: string;
+  category: string;
+  preference_type: string;
+  value: string;
+  confidence: number;
+  strength: number;
+  source: string;
+  created_at: string;
+  updated_at: string;
+  last_reinforced: string;
+  reinforcement_count: number;
+}
+
 export interface PreferenceSummary {
   userId: string;
   brandPreferences: Record<string, number>; // brand -> preference score
@@ -541,7 +557,7 @@ export class PreferenceLearningService {
   private async processDealAccept(event: LearningEvent): Promise<void> {
     // Learn price sensitivity and deal preferences
     const dealType = event.metadata?.dealType;
-    if (dealType) {
+    if (dealType && event.category) {
       await this.reinforcePreference(event.userId, 'price_sensitivity', dealType, event.category);
     }
   }
@@ -549,7 +565,7 @@ export class PreferenceLearningService {
   private async processDealReject(event: LearningEvent): Promise<void> {
     // Learn what deals user doesn't want
     const dealType = event.metadata?.dealType;
-    if (dealType) {
+    if (dealType && event.category) {
       await this.weakenPreference(event.userId, 'price_sensitivity', dealType, event.category);
     }
   }
@@ -641,7 +657,7 @@ export class PreferenceLearningService {
   } {
     const lower = query.toLowerCase();
     
-    const dietaryKeywords = [];
+    const dietaryKeywords: string[] = [];
     const dietaryTerms = ['organic', 'gluten-free', 'sugar-free', 'low-fat', 'fat-free', 'vegan', 'vegetarian', 'keto', 'low-carb'];
     for (const term of dietaryTerms) {
       if (lower.includes(term.replace('-', ' ')) || lower.includes(term)) {
@@ -649,10 +665,10 @@ export class PreferenceLearningService {
       }
     }
 
-    const brandHints = [];
+    const brandHints: string[] = [];
     // Would implement brand detection logic here
 
-    const sizeHints = [];
+    const sizeHints: string[] = [];
     // Would implement size detection logic here
 
     return { dietaryKeywords, brandHints, sizeHints };
@@ -665,15 +681,16 @@ export class PreferenceLearningService {
       ORDER BY confidence DESC, strength DESC
     `);
 
-    return stmt.all(userId).map((row: any) => ({
+    const rows = stmt.all(userId) as UserPreferenceRow[];
+    return rows.map((row) => ({
       id: row.id,
       userId: row.user_id,
       category: row.category,
-      preferenceType: row.preference_type,
+      preferenceType: row.preference_type as UserPreference['preferenceType'],
       value: row.value,
       confidence: row.confidence,
       strength: row.strength,
-      source: row.source,
+      source: row.source as UserPreference['source'],
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       lastReinforced: row.last_reinforced,
@@ -692,18 +709,18 @@ export class PreferenceLearningService {
       WHERE user_id = ? AND preference_type = ? AND value = ? AND category = ?
     `);
 
-    const row = stmt.get(userId, preferenceType, value, category);
+    const row = stmt.get(userId, preferenceType, value, category) as UserPreferenceRow | undefined;
     if (!row) return null;
 
     return {
       id: row.id,
       userId: row.user_id,
       category: row.category,
-      preferenceType: row.preference_type,
+      preferenceType: row.preference_type as UserPreference['preferenceType'],
       value: row.value,
       confidence: row.confidence,
       strength: row.strength,
-      source: row.source,
+      source: row.source as UserPreference['source'],
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       lastReinforced: row.last_reinforced,
@@ -821,18 +838,18 @@ export class PreferenceLearningService {
         if (!categoryPrices[p.category]) {
           categoryPrices[p.category] = [];
         }
-        categoryPrices[p.category].push(p.unitPrice);
+        categoryPrices[p.category]?.push(p.unitPrice);
       }
     });
     
     const priceRanges: Record<string, { min: number; max: number; preferred: number }> = {};
     
     Object.entries(categoryPrices).forEach(([category, prices]) => {
-      if (prices?.length || 0 > 0) {
+      if (prices && prices.length > 0) {
         const sorted = prices.sort((a, b) => a - b);
         priceRanges[category] = {
-          min: sorted[0],
-          max: sorted[sorted?.length || 0 - 1],
+          min: sorted[0]!,
+          max: sorted[sorted.length - 1]!,
           preferred: this.calculateMedian(sorted)
         };
       }
@@ -843,7 +860,7 @@ export class PreferenceLearningService {
 
   private analyzeShoppingPatterns(purchases: PurchaseRecord[]): PreferenceSummary['shoppingPatterns'] {
     const totalSpent = purchases.reduce((sum: any, p: any) => sum + p.totalPrice, 0);
-    const averageBasketSize = totalSpent / Math.max(1, purchases?.length || 0);
+    const averageBasketSize = totalSpent / Math.max(1, purchases.length);
     
     // Analyze shopping days
     const dayFrequency: Record<string, number> = {};
@@ -916,18 +933,18 @@ export class PreferenceLearningService {
       avoidBrands,
       dietaryRestrictions,
       brandLoyalty,
-      prioritizeHistory: purchases?.length || 0 > 5
+      prioritizeHistory: (purchases?.length || 0) > 5
     };
   }
 
   private calculateMedian(numbers: number[]): number {
     const sorted = numbers.sort((a, b) => a - b);
-    const middle = Math.floor(sorted?.length || 0 / 2);
+    const middle = Math.floor(sorted.length / 2);
     
-    if (sorted?.length || 0 % 2 === 0) {
-      return (sorted[middle - 1] + sorted[middle]) / 2;
+    if (sorted.length % 2 === 0 && middle > 0) {
+      return (sorted[middle - 1]! + sorted[middle]!) / 2;
     }
     
-    return sorted[middle];
+    return sorted[middle] ?? 0;
   }
 }
