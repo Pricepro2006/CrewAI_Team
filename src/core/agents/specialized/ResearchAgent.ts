@@ -49,14 +49,49 @@ export class ResearchAgent extends BaseAgent {
 
   async execute(task: string, context: AgentContext): Promise<AgentResult> {
     try {
+      // First, check RAG system for relevant knowledge
+      let ragContext = "";
+      if (this.ragSystem && this.ragEnabled) {
+        ragContext = await this.queryRAG(task, {
+          limit: 5,
+          filter: { agentType: 'ResearchAgent' }
+        });
+        
+        if (ragContext) {
+          console.log(`[ResearchAgent] Retrieved RAG context: ${ragContext.length} characters`);
+        }
+      }
+
       // Analyze the task to determine research strategy
       const researchPlan = await this.createResearchPlan(task, context);
 
       // Execute research based on the plan
       const results = await this.executeResearchPlan(researchPlan, context);
 
-      // Synthesize findings
+      // Enhance results with RAG knowledge if available
+      if (ragContext) {
+        results.unshift({
+          type: 'knowledge_base',
+          source: 'RAG System',
+          content: ragContext,
+          relevance: 1.0
+        });
+      }
+
+      // Synthesize findings including RAG context
       const synthesis = await this.synthesizeFindings(results, task);
+
+      // Index successful research results back into RAG for future use
+      if (this.ragSystem && this.ragEnabled && synthesis) {
+        await this.indexAgentKnowledge([{
+          content: synthesis,
+          metadata: {
+            task,
+            timestamp: new Date().toISOString(),
+            sources: this.extractSources(results)
+          }
+        }]);
+      }
 
       return {
         success: true,
@@ -64,6 +99,7 @@ export class ResearchAgent extends BaseAgent {
           findings: results,
           synthesis: synthesis,
           sources: this.extractSources(results),
+          ragContextUsed: !!ragContext
         },
         output: synthesis,
         metadata: {
@@ -71,6 +107,7 @@ export class ResearchAgent extends BaseAgent {
           toolsUsed: researchPlan.tools,
           queriesExecuted: researchPlan?.queries?.length,
           sourcesFound: results?.length || 0,
+          ragEnhanced: !!ragContext,
           timestamp: new Date().toISOString(),
         },
       };
@@ -136,7 +173,7 @@ export class ResearchAgent extends BaseAgent {
         try {
           cachedResults =
             await this?.searchKnowledgeService?.searchPreviousResults(query, 3);
-          if (cachedResults?.length || 0 > 0) {
+          if ((cachedResults?.length || 0) > 0) {
             console.log(
               `[ResearchAgent] Found ${cachedResults?.length || 0} cached results for similar queries`,
             );

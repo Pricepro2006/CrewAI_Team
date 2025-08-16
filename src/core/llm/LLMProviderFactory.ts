@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { OllamaProvider } from './OllamaProvider.js';
+import { SafeLlamaCppProvider } from './SafeLlamaCppProvider.js';
 import { LlamaCppProvider } from './LlamaCppProvider.js';
 import { KnowledgeBackedLLM } from './KnowledgeBackedLLM.js';
 import { RAGSystem } from '../rag/RAGSystem.js';
@@ -12,19 +12,24 @@ export interface LLMProviderInterface {
 }
 
 export interface LLMProviderConfig {
-  type: 'ollama' | 'llamacpp' | 'knowledge-backed' | 'auto';
-  ollama?: {
-    baseUrl: string;
-    model: string;
-    temperature?: number;
-    maxTokens?: number;
-  };
+  type: 'llamacpp' | 'safe-llamacpp' | 'knowledge-backed' | 'auto';
   llamacpp?: {
     modelPath: string;
     contextSize?: number;
     threads?: number;
     temperature?: number;
     gpuLayers?: number;
+  };
+  safeLlamacpp?: {
+    modelPath: string;
+    contextSize?: number;
+    threads?: number;
+    temperature?: number;
+    gpuLayers?: number;
+    maxProcesses?: number;
+    maxMemoryMB?: number;
+    processTimeout?: number;
+    allowedModelPaths?: string[];
   };
   knowledgeBacked?: {
     modelPath: string;
@@ -54,8 +59,8 @@ export class LLMProviderFactory {
     let provider: LLMProviderInterface;
 
     switch (config.type) {
-      case 'ollama':
-        provider = await LLMProviderFactory.createOllamaProvider(config.ollama!);
+      case 'safe-llamacpp':
+        provider = await LLMProviderFactory.createSafeLlamaCppProvider(config.safeLlamacpp!);
         break;
       
       case 'llamacpp':
@@ -86,24 +91,33 @@ export class LLMProviderFactory {
   }
 
   /**
-   * Create Ollama provider
+   * Create Safe Llama.cpp provider with security controls
    */
-  private static async createOllamaProvider(config: NonNullable<LLMProviderConfig['ollama']>): Promise<OllamaProvider> {
-    logger.info('Creating Ollama provider', 'LLM_FACTORY', { model: config.model });
+  private static async createSafeLlamaCppProvider(config: NonNullable<LLMProviderConfig['safeLlamacpp']>): Promise<SafeLlamaCppProvider> {
+    logger.info('Creating Safe Llama.cpp provider', 'LLM_FACTORY', { modelPath: config.modelPath });
     
-    const provider = new OllamaProvider({
-      baseUrl: config.baseUrl,
-      model: config.model,
+    const provider = new SafeLlamaCppProvider({
+      modelPath: config.modelPath,
+      contextSize: config.contextSize || 8192,
+      threads: config.threads || 8,
       temperature: config.temperature || 0.7,
-      maxTokens: config.maxTokens || 4096,
+      gpuLayers: config.gpuLayers || 0,
+      maxProcesses: config.maxProcesses || 2,
+      maxMemoryMB: config.maxMemoryMB || 8192,
+      processTimeout: config.processTimeout || 300000,
+      allowedModelPaths: config.allowedModelPaths || [
+        "./models",
+        "/home/pricepro2006/CrewAI_Team/models",
+        "/opt/models",
+      ],
     });
 
     try {
       await provider.initialize();
-      logger.info('Ollama provider initialized successfully', 'LLM_FACTORY');
+      logger.info('Safe Llama.cpp provider initialized successfully', 'LLM_FACTORY');
       return provider;
     } catch (error) {
-      logger.error('Failed to initialize Ollama provider', 'LLM_FACTORY', { error });
+      logger.error('Failed to initialize Safe Llama.cpp provider', 'LLM_FACTORY', { error });
       throw error;
     }
   }
@@ -196,25 +210,25 @@ export class LLMProviderFactory {
       }
     }
 
-    // Try Llama.cpp if configured
+    // Try Safe Llama.cpp if configured (preferred for security)
+    if (config.safeLlamacpp?.modelPath) {
+      try {
+        const provider = await LLMProviderFactory.createSafeLlamaCppProvider(config.safeLlamacpp);
+        logger.info('Auto-selected Safe Llama.cpp provider', 'LLM_FACTORY');
+        return provider;
+      } catch (error) {
+        logger.warn('Safe Llama.cpp provider failed, trying regular Llama.cpp', 'LLM_FACTORY', { error: error.message });
+      }
+    }
+
+    // Try regular Llama.cpp as fallback
     if (config.llamacpp?.modelPath) {
       try {
         const provider = await LLMProviderFactory.createLlamaCppProvider(config.llamacpp);
         logger.info('Auto-selected Llama.cpp provider', 'LLM_FACTORY');
         return provider;
       } catch (error) {
-        logger.warn('Llama.cpp provider failed, trying Ollama as fallback', 'LLM_FACTORY', { error: error.message });
-      }
-    }
-
-    // Fallback to Ollama if available
-    if (config.ollama?.baseUrl && config.ollama?.model) {
-      try {
-        const provider = await LLMProviderFactory.createOllamaProvider(config.ollama);
-        logger.info('Auto-selected Ollama provider', 'LLM_FACTORY');
-        return provider;
-      } catch (error) {
-        logger.error('Ollama provider also failed', 'LLM_FACTORY', { error: error.message });
+        logger.error('Llama.cpp provider also failed', 'LLM_FACTORY', { error: error.message });
         throw new Error('No LLM providers are available');
       }
     }
@@ -228,9 +242,6 @@ export class LLMProviderFactory {
   static getDefaultConfig(): LLMProviderConfig {
     const mistralModelPath = process.env.MISTRAL_MODEL_PATH || '/home/pricepro2006/CrewAI_Team/models/mistral-7b-instruct-v0.2.Q4_K_M.gguf';
     const llamaModelPath = process.env.LLAMA_MODEL_PATH || '/home/pricepro2006/CrewAI_Team/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf';
-    const llamaCppPath = process.env.LLAMA_CPP_PATH || '/usr/local/bin/llama-cli';
-    const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
-    const ollamaModel = process.env.OLLAMA_MODEL_MAIN || 'qwen3:14b';
 
     return {
       type: 'auto',
@@ -243,18 +254,27 @@ export class LLMProviderFactory {
         gpuLayers: parseInt(process.env.LLM_GPU_LAYERS || '0'),
         ragEnabled: process.env.ENABLE_RAG !== 'false',
       },
+      safeLlamacpp: {
+        modelPath: llamaModelPath,
+        contextSize: 8192,
+        threads: parseInt(process.env.LLAMA_THREADS || '8'),
+        temperature: 0.7,
+        gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || '0'),
+        maxProcesses: 2,
+        maxMemoryMB: 8192,
+        processTimeout: 300000,
+        allowedModelPaths: [
+          "./models",
+          "/home/pricepro2006/CrewAI_Team/models",
+          "/opt/models",
+        ],
+      },
       llamacpp: {
         modelPath: llamaModelPath,
         contextSize: 8192,
         threads: parseInt(process.env.LLAMA_THREADS || '8'),
         temperature: 0.7,
         gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || '0'),
-      },
-      ollama: {
-        baseUrl: ollamaUrl,
-        model: ollamaModel,
-        temperature: 0.7,
-        maxTokens: 4096,
       },
     };
   }

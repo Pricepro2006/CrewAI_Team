@@ -16,14 +16,48 @@ export class DataAnalysisAgent extends BaseAgent {
 
   async execute(task: string, context: AgentContext): Promise<AgentResult> {
     try {
-      // Analyze the data analysis task
-      const taskAnalysis = await this.analyzeDataTask(task, context);
+      // Query RAG for historical data patterns and insights
+      let ragContext = "";
+      let historicalPatterns: any[] = [];
+      
+      if (this.ragSystem && this.ragEnabled) {
+        // Search for similar data analysis patterns
+        ragContext = await this.queryRAG(task, {
+          limit: 5,
+          filter: { 
+            agentType: 'DataAnalysisAgent',
+            category: 'data_patterns'
+          }
+        });
+        
+        // Search for historical insights
+        const insightsContext = await this.queryRAG(task, {
+          limit: 3,
+          filter: {
+            category: 'business_insights'
+          }
+        });
+        
+        if (ragContext || insightsContext) {
+          console.log(`[DataAnalysisAgent] Retrieved RAG context: ${(ragContext + insightsContext).length} characters`);
+          ragContext = ragContext + "\n" + insightsContext;
+        }
+        
+        // Search for similar analysis results
+        const searchResults = await this.searchRAG(task, 5);
+        historicalPatterns = searchResults.filter(r => 
+          r.metadata?.type === 'analysis' || r.metadata?.type === 'pattern'
+        );
+      }
+
+      // Analyze the data analysis task with historical context
+      const taskAnalysis = await this.analyzeDataTask(task, context, ragContext);
 
       // Execute based on task type
       let result: AnalysisResult;
       switch (taskAnalysis.type) {
         case "statistical":
-          result = await this.performStatisticalAnalysis(taskAnalysis, context);
+          result = await this.performStatisticalAnalysis(taskAnalysis, context, historicalPatterns);
           break;
         case "visualization":
           result = await this.createVisualization(taskAnalysis, context);
@@ -32,10 +66,28 @@ export class DataAnalysisAgent extends BaseAgent {
           result = await this.transformData(taskAnalysis, context);
           break;
         case "exploration":
-          result = await this.exploreData(taskAnalysis, context);
+          result = await this.exploreData(taskAnalysis, context, historicalPatterns);
           break;
         default:
           result = await this.generalDataAnalysis(task, context);
+      }
+
+      // Index valuable analysis results and patterns back into RAG
+      if (this.ragSystem && this.ragEnabled && result) {
+        const valuableInsights = this.extractValuableInsights(result);
+        if (valuableInsights.length > 0) {
+          await this.indexAgentKnowledge(valuableInsights.map(insight => ({
+            content: JSON.stringify(insight),
+            metadata: {
+              type: 'analysis',
+              category: insight.category || 'data_patterns',
+              task: task,
+              taskType: taskAnalysis.type,
+              confidence: insight.confidence || 0.7,
+              timestamp: new Date().toISOString()
+            }
+          })));
+        }
       }
 
       return {
@@ -46,6 +98,8 @@ export class DataAnalysisAgent extends BaseAgent {
           agent: this.name,
           taskType: taskAnalysis.type,
           dataSize: taskAnalysis.dataSize,
+          ragEnhanced: !!ragContext,
+          historicalPatternsUsed: historicalPatterns.length,
           timestamp: new Date().toISOString(),
         },
       };
@@ -108,6 +162,7 @@ export class DataAnalysisAgent extends BaseAgent {
   private async performStatisticalAnalysis(
     analysis: DataTaskAnalysis,
     context: AgentContext,
+    historicalPatterns: any[] = []
   ): Promise<AnalysisResult> {
     const prompt = `
       Perform statistical analysis based on these requirements:
@@ -201,6 +256,7 @@ export class DataAnalysisAgent extends BaseAgent {
   private async exploreData(
     analysis: DataTaskAnalysis,
     context: AgentContext,
+    historicalPatterns: any[] = []
   ): Promise<AnalysisResult> {
     const prompt = `
       Explore this dataset comprehensively:
@@ -288,6 +344,35 @@ export class DataAnalysisAgent extends BaseAgent {
         options: {},
       };
     }
+  }
+
+  private extractValuableInsights(result: AnalysisResult): Array<{category: string, confidence: number, content: string}> {
+    const insights: Array<{category: string, confidence: number, content: string}> = [];
+    
+    // Extract insights from the analysis result
+    if (result.insights && result.insights.length > 0) {
+      result.insights.forEach(insight => {
+        insights.push({
+          category: result.type === 'statistical' ? 'statistical_patterns' : 'data_patterns',
+          confidence: 0.8,
+          content: insight
+        });
+      });
+    }
+    
+    // Extract valuable patterns from the report
+    if (result.report) {
+      const reportInsights = this.extractInsights(result.report);
+      reportInsights.forEach(insight => {
+        insights.push({
+          category: 'analysis_findings',
+          confidence: 0.7,
+          content: insight
+        });
+      });
+    }
+    
+    return insights.filter(insight => insight.content.length > 20); // Only meaningful insights
   }
 
   private formatAnalysisOutput(result: AnalysisResult): string {

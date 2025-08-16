@@ -557,12 +557,12 @@ ${prompt}`;
   }
 
   setModel(model: string): void {
-    this?.config?.model = model;
+    this.config.model = model;
     this.clearContext();
   }
 
   getModel(): string {
-    return this?.config?.model;
+    return this.config.model;
   }
 
   getConfig(): OllamaConfig {

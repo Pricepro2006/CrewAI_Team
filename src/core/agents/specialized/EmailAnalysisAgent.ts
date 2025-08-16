@@ -1,6 +1,6 @@
 import { BaseAgent } from "../base/BaseAgent.js";
 import type { AgentContext, AgentResult } from "../base/AgentTypes.js";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../../utils/logger.js";
 // Re-export types for backward compatibility
 export * from "./EmailAnalysisTypes.js";
 import type {
@@ -77,6 +77,10 @@ export class EmailAnalysisAgent extends BaseAgent {
       "Specializes in analyzing and categorizing TD SYNNEX email communications",
       PRODUCTION_EMAIL_CONFIG.primaryModel, // Use production-tested model
     );
+
+    // IMPORTANT: Disable RAG for EmailAnalysisAgent to prevent circular dependencies
+    // Email content is indexed into RAG by the email processing pipeline
+    this.ragEnabled = false;
 
     // LLM provider will be initialized by BaseAgent
 

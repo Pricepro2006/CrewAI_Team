@@ -5,20 +5,24 @@ import type {
   AgentResult,
   ToolExecutionParams,
 } from "./AgentTypes.js";
-import { logger } from "../../utils/logger.js";
-import { LLMProviderFactory, LLMProviderInterface } from "../../llm/LLMProviderFactory.js";
+import { logger } from "../../../utils/logger.js";
+import { LLMProviderManager, LLMProvider } from "../../llm/LLMProviderManager.js";
 import {
   MODEL_CONFIG,
   getModelConfig,
   getModelTimeout,
-} from "../../../config/models?.config.js";
+} from "../../../config/models.config.js";
+import type { RAGSystem } from "../../rag/RAGSystem.js";
+import type { QueryResult } from "../../rag/types.js";
 
 export abstract class BaseAgent {
   protected tools: Map<string, BaseTool> = new Map();
   protected capabilities: Set<string> = new Set();
   protected initialized = false;
-  protected llm: LLMProviderInterface;
+  protected llm: LLMProvider | null = null;
   protected timeout: number;
+  protected ragSystem: RAGSystem | null = null;
+  protected ragEnabled: boolean = true; // Can be overridden by subclasses
 
   constructor(
     public readonly name: string,
@@ -30,8 +34,7 @@ export abstract class BaseAgent {
     // Get timeout for this model
     this.timeout = getModelTimeout("primary");
 
-    // Initialize LLM provider using factory for standardization
-    this.llm = null as any; // Will be initialized in initialize() method
+    // LLM provider will be initialized in initialize() method
   }
 
   abstract execute(task: string, context: AgentContext): Promise<AgentResult>;
@@ -64,24 +67,24 @@ export abstract class BaseAgent {
   }
 
   registerTool(tool: BaseTool): void {
-    this?.tools?.set(tool.name, tool);
+    this.tools.set(tool.name, tool);
     logger.debug(`Registered tool ${tool.name} with ${this.name}`, "AGENT");
   }
 
   getTools(): BaseTool[] {
-    return Array.from(this?.tools?.values());
+    return Array.from(this.tools.values());
   }
 
   getTool(name: string): BaseTool | undefined {
-    return this?.tools?.get(name);
+    return this.tools.get(name);
   }
 
   hasTool(name: string): boolean {
-    return this?.tools?.has(name);
+    return this.tools.has(name);
   }
 
   hasCapability(capability: string): boolean {
-    return this?.capabilities?.has(capability);
+    return this.capabilities.has(capability);
   }
 
   async initialize(): Promise<void> {
@@ -92,11 +95,14 @@ export abstract class BaseAgent {
 
     logger.info(`Initializing agent ${this.name}`, "AGENT");
 
-    // Initialize LLM provider using factory
+    // Initialize LLM provider using new manager
     try {
-      const llmConfig = LLMProviderFactory.getDefaultConfig();
-      this.llm = await LLMProviderFactory.createProvider(llmConfig);
-      logger.debug(`LLM provider initialized successfully for ${this.name}`, "AGENT");
+      this.llm = new LLMProviderManager();
+      await this.llm.initialize();
+      logger.debug(`LLM provider initialized successfully for ${this.name}`, "AGENT", {
+        isUsingFallback: this.llm.isUsingFallback(),
+        modelInfo: this.llm.getModelInfo()
+      });
     } catch (error) {
       logger.warn(
         `LLM initialization failed for ${this.name}: ${error instanceof Error ? error.message : 'Unknown error'}. Continuing with fallback responses.`,
@@ -113,7 +119,7 @@ export abstract class BaseAgent {
     }
 
     // Initialize any tools (if they have initialization method)
-    for (const tool of this?.tools?.values()) {
+    for (const tool of this.tools.values()) {
       if (
         "initialize" in tool &&
         typeof (tool as any).initialize === "function"
@@ -124,12 +130,12 @@ export abstract class BaseAgent {
 
     this.initialized = true;
     logger.info(
-      `Agent ${this.name} initialized successfully with ${this?.tools?.size} tools`,
+      `Agent ${this.name} initialized successfully with ${this.tools.size} tools`,
       "AGENT",
     );
   }
 
-  private createFallbackLLM(): LLMProviderInterface {
+  private createFallbackLLM(): LLMProvider {
     return {
       async generate(prompt: string, options?: any): Promise<{ response: string; [key: string]: any }> {
         logger.warn(`Fallback LLM used for agent ${this.name}`, "AGENT");
@@ -144,6 +150,22 @@ export abstract class BaseAgent {
       },
       isReady(): boolean {
         return true; // Fallback is always ready
+      },
+      async cleanup(): Promise<void> {
+        // No-op for fallback
+      },
+      getModelInfo(): {
+        model: string;
+        contextSize: number;
+        loaded: boolean;
+        processCount: number;
+      } {
+        return {
+          model: "fallback",
+          contextSize: 0,
+          loaded: true,
+          processCount: 0
+        };
       }
     };
   }
@@ -178,6 +200,165 @@ export abstract class BaseAgent {
   }
 
   protected addCapability(capability: string): void {
-    this?.capabilities?.add(capability);
+    this.capabilities.add(capability);
+  }
+
+  /**
+   * Set the RAG system for this agent
+   * Called by MasterOrchestrator during agent initialization
+   */
+  setRAGSystem(ragSystem: RAGSystem): void {
+    if (!this.ragEnabled) {
+      logger.debug(`RAG system disabled for agent ${this.name}`, "AGENT");
+      return;
+    }
+    
+    this.ragSystem = ragSystem;
+    logger.info(`RAG system integrated with agent ${this.name}`, "AGENT");
+  }
+
+  /**
+   * Query the RAG system for relevant context
+   * @param query The query to search for
+   * @param options Search options
+   * @returns Relevant context from RAG system
+   */
+  protected async queryRAG(
+    query: string,
+    options: {
+      limit?: number;
+      filter?: Record<string, any>;
+      includeMetadata?: boolean;
+      formatForLLM?: boolean;
+    } = {}
+  ): Promise<string> {
+    if (!this.ragSystem || !this.ragEnabled) {
+      logger.debug(`RAG system not available for agent ${this.name}`, "AGENT");
+      return "";
+    }
+
+    try {
+      const context = await this.ragSystem.getContextForPrompt(query, {
+        limit: options.limit || 5,
+        filter: {
+          ...options.filter,
+          // Add agent-specific filter to get relevant knowledge for this agent type
+          agentType: this.name,
+        },
+        includeMetadata: options.includeMetadata !== false,
+        formatForLLM: options.formatForLLM !== false,
+      });
+
+      if (context) {
+        logger.debug(
+          `Retrieved RAG context for agent ${this.name}: ${context.length} characters`,
+          "AGENT"
+        );
+      }
+
+      return context;
+    } catch (error) {
+      logger.error(
+        `Failed to query RAG system for agent ${this.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        "AGENT"
+      );
+      return "";
+    }
+  }
+
+  /**
+   * Search RAG system for specific documents
+   * @param query Search query
+   * @param limit Number of results
+   * @returns Array of search results
+   */
+  protected async searchRAG(
+    query: string,
+    limit: number = 5
+  ): Promise<QueryResult[]> {
+    if (!this.ragSystem || !this.ragEnabled) {
+      return [];
+    }
+
+    try {
+      return await this.ragSystem.search(query, limit);
+    } catch (error) {
+      logger.error(
+        `RAG search failed for agent ${this.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        "AGENT"
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Index knowledge specific to this agent in the RAG system
+   * @param documents Documents to index
+   */
+  protected async indexAgentKnowledge(
+    documents: Array<{ content: string; metadata?: Record<string, any> }>
+  ): Promise<void> {
+    if (!this.ragSystem || !this.ragEnabled) {
+      return;
+    }
+
+    try {
+      await this.ragSystem.indexAgentKnowledge(this.name, documents);
+      logger.info(
+        `Indexed ${documents.length} documents for agent ${this.name}`,
+        "AGENT"
+      );
+    } catch (error) {
+      logger.error(
+        `Failed to index knowledge for agent ${this.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        "AGENT"
+      );
+    }
+  }
+
+  /**
+   * Generate LLM response with RAG context enhancement
+   * @param prompt The prompt to send to LLM
+   * @param options Generation options
+   * @returns LLM response with optional RAG enhancement
+   */
+  protected async generateLLMResponseWithRAG(
+    prompt: string,
+    options?: {
+      useRAG?: boolean;
+      ragQuery?: string;
+      ragLimit?: number;
+      includeContext?: boolean;
+      [key: string]: any;
+    }
+  ): Promise<{ response: string; context?: string; [key: string]: any }> {
+    const useRAG = options?.useRAG !== false && this.ragEnabled && this.ragSystem;
+    let ragContext = "";
+
+    if (useRAG) {
+      // Use custom RAG query or extract from prompt
+      const ragQuery = options?.ragQuery || prompt;
+      ragContext = await this.queryRAG(ragQuery, { limit: options?.ragLimit || 5 });
+    }
+
+    // Enhance prompt with RAG context if available
+    let enhancedPrompt = prompt;
+    if (ragContext) {
+      enhancedPrompt = `${ragContext}\n\n## Query\n${prompt}`;
+      logger.debug(`Enhanced prompt with RAG context for agent ${this.name}`, "AGENT");
+    }
+
+    // Generate response using base method
+    const response = await this.generateLLMResponse(enhancedPrompt, options);
+
+    // Include context in response if requested
+    if (options?.includeContext && ragContext) {
+      return {
+        ...response,
+        context: ragContext,
+      };
+    }
+
+    return response;
   }
 }

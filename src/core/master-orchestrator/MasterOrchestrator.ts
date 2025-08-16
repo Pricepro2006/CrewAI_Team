@@ -1,4 +1,4 @@
-import { LLMProviderFactory, LLMProviderInterface } from "../llm/LLMProviderFactory.js";
+import { LLMProviderManager, LLMProvider } from "../llm/LLMProviderManager.js";
 import type { EmailAnalysisResult } from "../../api/services/EmailStorageService.js";
 import { AgentRegistry } from "../agents/registry/AgentRegistry.js";
 import { RAGSystem } from "../rag/RAGSystem.js";
@@ -24,7 +24,7 @@ import {
 } from "../../utils/timeout.js";
 
 export class MasterOrchestrator {
-  private llm: LLMProviderInterface | null = null;
+  private llm: LLMProvider | null = null;
   private config: MasterOrchestratorConfig;
   public agentRegistry: AgentRegistry;
   public ragSystem: RAGSystem;
@@ -72,76 +72,42 @@ export class MasterOrchestrator {
     logger.info("MasterOrchestrator initialized successfully", "ORCHESTRATOR");
   }
 
-  private buildLLMConfig() {
-    // Check if explicit LLM config is provided
-    if (this?.config?.llm) {
-      return {
-        type: this?.config?.llm.type,
-        llamacpp: this?.config?.llm.type === 'llamacpp' || this?.config?.llm.type === 'auto' ? {
-          modelPath: this?.config?.llm.llamaModelPath || process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
-          contextSize: parseInt(process.env.LLAMA_CONTEXT_SIZE || "8192"),
-          threads: this?.config?.llm.threads || parseInt(process.env.LLAMA_THREADS || "8"),
-          temperature: parseFloat(process.env.LLAMA_TEMPERATURE || "0.7"),
-          gpuLayers: this?.config?.llm.gpuLayers || parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-        } : undefined,
-        ollama: this?.config?.llm.type === 'ollama' || this?.config?.llm.type === 'auto' ? {
-          baseUrl: this?.config?.llm.ollamaUrl || this?.config?.ollamaUrl || process.env.OLLAMA_URL || 'http://localhost:11434',
-          model: this?.config?.llm.ollamaModel || process.env.OLLAMA_MODEL_MAIN || 'qwen3:14b',
-          temperature: 0.7,
-          maxTokens: 4096,
-        } : undefined,
-      };
-    }
-
-    // Fallback to backward compatibility (ollamaUrl provided)
-    if (this?.config?.ollamaUrl) {
-      return {
-        type: 'auto' as const,
-        llamacpp: {
-          modelPath: process.env.LLAMA_MODEL_PATH || "./models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
-          contextSize: parseInt(process.env.LLAMA_CONTEXT_SIZE || "8192"),
-          threads: parseInt(process.env.LLAMA_THREADS || "8"),
-          temperature: 0.7,
-          gpuLayers: parseInt(process.env.LLAMA_GPU_LAYERS || "0"),
-        },
-        ollama: {
-          baseUrl: this?.config?.ollamaUrl,
-          model: process.env.OLLAMA_MODEL_MAIN || 'qwen3:14b',
-          temperature: 0.7,
-          maxTokens: 4096,
-        },
-      };
-    }
-
-    // Default to auto-selection
-    return LLMProviderFactory.getDefaultConfig();
-  }
-
-  async initialize(): Promise<void> {
-    // Initialize LLM provider using factory
+  private async initializeLLMProvider(): Promise<void> {
     try {
-      const llmConfig = this.buildLLMConfig();
-      this.llm = await LLMProviderFactory.createProvider(llmConfig);
+      // Use the new LLMProviderManager
+      this.llm = new LLMProviderManager();
+      await this.llm.initialize();
       
-      // Initialize EnhancedParser now that LLM is available
-      this.enhancedParser = new EnhancedParser(this.llm);
-      
-      logger.info("LLM provider initialized successfully", "ORCHESTRATOR", { type: llmConfig.type });
+      logger.info("LLM provider initialized successfully", "ORCHESTRATOR", { 
+        isUsingFallback: this.llm.isUsingFallback(),
+        modelInfo: this.llm.getModelInfo()
+      });
     } catch (error) {
       logger.warn(
         `LLM initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}. System will use fallback responses.`,
         "ORCHESTRATOR"
       );
       // Don't fail initialization - the system can work with limited functionality
+      this.llm = null;
+    }
+  }
+
+  async initialize(): Promise<void> {
+    // Initialize LLM provider using new manager
+    await this.initializeLLMProvider();
+    
+    // Initialize EnhancedParser now that LLM is available
+    if (this.llm) {
+      this.enhancedParser = new EnhancedParser(this.llm);
     }
 
     // Initialize RAG system (gracefully handle ChromaDB failures)
     if (this.ragSystem) {
       try {
-        await this?.ragSystem?.initialize();
+        await this.ragSystem.initialize();
         
         // Check if we're using fallback mode
-        const ragHealth = await this?.ragSystem?.getHealthStatus();
+        const ragHealth = await this.ragSystem.getHealthStatus();
         if (ragHealth?.vectorStore?.fallbackUsed) {
           logger.info(
             "RAG system initialized with in-memory fallback - ChromaDB unavailable but system operational", 
@@ -162,7 +128,14 @@ export class MasterOrchestrator {
     }
 
     // Initialize agents registry
-    await this?.agentRegistry?.initialize();
+    await this.agentRegistry.initialize();
+
+    // Pass RAG system to agent registry so all agents can access it
+    // This will integrate RAG with all agents except EmailAnalysisAgent
+    if (this.ragSystem && this.agentRegistry) {
+      this.agentRegistry.setRAGSystem(this.ragSystem);
+      logger.info("RAG system integrated with agent registry", "ORCHESTRATOR");
+    }
 
     logger.info("MasterOrchestrator initialization completed", "ORCHESTRATOR");
   }
@@ -284,7 +257,7 @@ export class MasterOrchestrator {
   }
 
   async processQuery(query: Query): Promise<ExecutionResult> {
-    const perf = this?.perfMonitor?.start("processQuery");
+    const perf = this.perfMonitor.start("processQuery");
 
     logger.info("Processing query", "ORCHESTRATOR", {
       query: query?.text?.substring(0, 100),
@@ -293,11 +266,23 @@ export class MasterOrchestrator {
 
     try {
       // Step 0: Enhanced query analysis with timeout
-      const queryAnalysis = await withTimeout(
-        this?.enhancedParser?.parseQuery(query),
-        DEFAULT_TIMEOUTS.QUERY_PROCESSING,
-        "Query analysis timed out",
-      );
+      let queryAnalysis;
+      if (this.enhancedParser) {
+        queryAnalysis = await withTimeout(
+          this.enhancedParser.parseQuery(query),
+          DEFAULT_TIMEOUTS.QUERY_PROCESSING,
+          "Query analysis timed out",
+        );
+      } else {
+        // Fallback query analysis when parser is not available
+        queryAnalysis = {
+          intent: 'general',
+          complexity: 5,
+          domains: ['general'],
+          priority: 'medium',
+          estimatedDuration: 30
+        };
+      }
 
       logger.info("Query analysis completed", "ORCHESTRATOR", {
         intent: queryAnalysis.intent,
@@ -309,7 +294,7 @@ export class MasterOrchestrator {
 
       // Step 0.5: Create intelligent agent routing plan with timeout
       const routingPlan = await withTimeout(
-        this?.agentRouter?.routeQuery(queryAnalysis),
+        this.agentRouter.routeQuery(queryAnalysis),
         DEFAULT_TIMEOUTS.PLAN_CREATION,
         "Agent routing plan creation timed out",
       );
@@ -335,7 +320,7 @@ export class MasterOrchestrator {
       // Broadcast plan creation
       wsService.broadcastPlanUpdate(plan.id, "created", {
         completed: 0,
-        total: plan?.steps?.length,
+        total: plan.steps.length,
       });
 
       // Step 2: Execute plan with replan loop
@@ -363,19 +348,19 @@ export class MasterOrchestrator {
           `Executing plan (attempt ${attempts + 1}/${maxAttempts})`,
           "ORCHESTRATOR",
           {
-            stepsCount: plan?.steps?.length,
+            stepsCount: plan.steps.length,
           },
         );
 
         executionResult = await withTimeout(
-          this?.planExecutor?.execute(plan),
+          this.planExecutor.execute(plan),
           DEFAULT_TIMEOUTS.AGENT_EXECUTION,
           "Plan execution timed out",
         );
 
         // Step 3: Review execution results with timeout
         const review = await withTimeout(
-          this?.planReviewer?.reviewPlan(plan),
+          this.planReviewer.reviewPlan(plan),
           DEFAULT_TIMEOUTS.PLAN_CREATION,
           "Plan review timed out",
         );
@@ -498,7 +483,7 @@ export class MasterOrchestrator {
     let ragContext = "";
     try {
       logger.debug("Searching knowledge base for relevant context", "ORCHESTRATOR");
-      const ragResults = await this?.ragSystem?.search(query.text, 3);
+      const ragResults = await this.ragSystem?.search(query.text, 3);
       if (ragResults?.length || 0 > 0) {
         ragContext = `
       
@@ -586,7 +571,7 @@ export class MasterOrchestrator {
     }
 
     const llamaResponse = await withTimeout(
-      this?.llm?.generate(prompt, {
+      this.llm.generate(prompt, {
         format: "json",
         temperature: 0.3,
         maxTokens: 2000,
@@ -626,7 +611,7 @@ export class MasterOrchestrator {
     }
 
     const llamaResponse = await withTimeout(
-      this?.llm?.generate(prompt, {
+      this.llm.generate(prompt, {
         format: "json",
         temperature: 0.3,
         maxTokens: 2000,
@@ -654,7 +639,7 @@ export class MasterOrchestrator {
 
       return {
         id: `plan-${Date.now()}`,
-        steps: parsed?.steps?.map((step: any) => ({
+        steps: parsed.steps.map((step: any) => ({
           id: step.id || `step-${Date.now()}-${Math.random()}`,
           task: step.task || step.description,
           description: step.description,
@@ -699,8 +684,8 @@ export class MasterOrchestrator {
       ...executionResult,
       summary,
       metadata: {
-        totalSteps: executionResult?.results?.length,
-        successfulSteps: executionResult?.results?.filter((r: any) => r.success)
+        totalSteps: executionResult.results.length,
+        successfulSteps: executionResult.results.filter((r: any) => r.success)
           .length,
         timestamp: new Date().toISOString(),
       },

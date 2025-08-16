@@ -15,14 +15,46 @@ export class CodeAgent extends BaseAgent {
 
   async execute(task: string, context: AgentContext): Promise<AgentResult> {
     try {
-      // Analyze the coding task
-      const taskAnalysis = await this.analyzeTask(task, context);
+      // Query RAG for relevant code examples and documentation
+      let ragContext = "";
+      let codeExamples: any[] = [];
+      
+      if (this.ragSystem && this.ragEnabled) {
+        // Search for code patterns and examples
+        ragContext = await this.queryRAG(task, {
+          limit: 5,
+          filter: { 
+            agentType: 'CodeAgent',
+            category: 'code_examples'
+          }
+        });
+        
+        // Also search for relevant documentation
+        const docContext = await this.queryRAG(task, {
+          limit: 3,
+          filter: {
+            category: 'documentation'
+          }
+        });
+        
+        if (ragContext || docContext) {
+          console.log(`[CodeAgent] Retrieved RAG context: ${(ragContext + docContext).length} characters`);
+          ragContext = ragContext + "\n" + docContext;
+        }
+        
+        // Search for specific code examples
+        const searchResults = await this.searchRAG(task, 3);
+        codeExamples = searchResults.filter(r => r.metadata?.type === 'code');
+      }
+
+      // Analyze the coding task with RAG context
+      const taskAnalysis = await this.analyzeTask(task, context, ragContext);
 
       // Execute based on task type
       let result: unknown;
       switch (taskAnalysis.type) {
         case "generation":
-          result = await this.generateCode(taskAnalysis, context);
+          result = await this.generateCode(taskAnalysis, context, codeExamples);
           break;
         case "analysis":
           result = await this.analyzeCode(taskAnalysis, context);
@@ -37,6 +69,23 @@ export class CodeAgent extends BaseAgent {
           result = await this.generalCodeTask(task, context);
       }
 
+      // Index successful code generation back into RAG
+      if (this.ragSystem && this.ragEnabled && taskAnalysis.type === "generation" && result) {
+        const codeResult = result as CodeResult;
+        if (codeResult.code) {
+          await this.indexAgentKnowledge([{
+            content: codeResult.code,
+            metadata: {
+              type: 'code',
+              language: taskAnalysis.language,
+              task: task,
+              taskType: taskAnalysis.type,
+              timestamp: new Date().toISOString()
+            }
+          }]);
+        }
+      }
+
       return {
         success: true,
         data: result,
@@ -45,6 +94,8 @@ export class CodeAgent extends BaseAgent {
           agent: this.name,
           taskType: taskAnalysis.type,
           language: taskAnalysis.language,
+          ragEnhanced: !!ragContext,
+          codeExamplesUsed: codeExamples.length,
           timestamp: new Date().toISOString(),
         },
       };
@@ -56,11 +107,13 @@ export class CodeAgent extends BaseAgent {
   private async analyzeTask(
     task: string,
     context: AgentContext,
+    ragContext: string = ""
   ): Promise<TaskAnalysis> {
     const prompt = `
       Analyze this coding task: "${task}"
       
-      ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
+      ${ragContext ? `RAG Context:\n${ragContext}\n` : ""}
+      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
       
       Determine:
       1. Task type: generation, analysis, refactoring, or debugging
@@ -77,7 +130,11 @@ export class CodeAgent extends BaseAgent {
       }
     `;
 
-    const response = await this?.llm?.generate(prompt, { format: "json" });
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const response = await this.generateLLMResponse(prompt, { format: "json" });
     return this.parseTaskAnalysis(response.response);
   }
 
@@ -103,15 +160,21 @@ export class CodeAgent extends BaseAgent {
   private async generateCode(
     analysis: TaskAnalysis,
     context: AgentContext,
+    codeExamples: any[] = []
   ): Promise<CodeResult> {
+    const examplesText = codeExamples.length > 0 
+      ? `\nRelevant code examples:\n${codeExamples.map(e => e.content).join("\n\n")}\n`
+      : "";
+      
     const prompt = `
       Generate ${analysis.language} code for the following requirements:
-      ${analysis?.requirements?.join("\n")}
+      ${analysis.requirements.join("\n")}
       
       Consider these challenges:
-      ${analysis?.challenges?.join("\n")}
+      ${analysis.challenges.join("\n")}
       
-      ${context.ragDocuments ? `Reference context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
+      ${examplesText}
+      ${context.ragDocuments ? `Reference context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
       
       Generate clean, well-documented code with:
       1. Proper error handling
@@ -120,7 +183,11 @@ export class CodeAgent extends BaseAgent {
       4. Best practices for ${analysis.language}
     `;
 
-    const response = await this?.llm?.generate(prompt);
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const response = await this.generateLLMResponse(prompt);
 
     return {
       code: response.response,
@@ -151,7 +218,11 @@ export class CodeAgent extends BaseAgent {
       5. Improvement suggestions
     `;
 
-    const analysisResult = await this?.llm?.generate(prompt);
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const analysisResult = await this.generateLLMResponse(prompt);
 
     return {
       code: codeToAnalyze,
@@ -184,7 +255,11 @@ export class CodeAgent extends BaseAgent {
       Provide the refactored code with comments explaining changes.
     `;
 
-    const response = await this?.llm?.generate(prompt);
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const response = await this.generateLLMResponse(prompt);
 
     return {
       code: response.response,
@@ -220,7 +295,11 @@ export class CodeAgent extends BaseAgent {
       Provide fixed code with comments explaining the bugs and fixes.
     `;
 
-    const response = await this?.llm?.generate(prompt);
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const response = await this.generateLLMResponse(prompt);
 
     return {
       code: response.response,
@@ -237,12 +316,16 @@ export class CodeAgent extends BaseAgent {
     const prompt = `
       Complete this coding task: ${task}
       
-      ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
+      ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content).join("\n")}` : ""}
       
       Provide a complete solution with explanation.
     `;
 
-    const llmResponse = await this?.llm?.generate(prompt);
+    if (!this.llm) {
+      throw new Error("LLM provider not initialized");
+    }
+    
+    const llmResponse = await this.generateLLMResponse(prompt);
 
     return {
       code: this.extractCode(llmResponse.response),
@@ -257,7 +340,7 @@ export class CodeAgent extends BaseAgent {
     const codeBlockRegex = /```[\w]*\n([\s\S]*?)```/g;
     const matches = response.match(codeBlockRegex);
 
-    if (matches && matches?.length || 0 > 0) {
+    if (matches && matches.length > 0) {
       return matches[0].replace(/```[\w]*\n/, "").replace(/```$/, "");
     }
 
@@ -289,9 +372,9 @@ export class CodeAgent extends BaseAgent {
       parts.push(`\n**Explanation:**\n${result.explanation}`);
     }
 
-    if (result.suggestions && result?.suggestions?.length > 0) {
+    if (result.suggestions && result.suggestions.length > 0) {
       parts.push(
-        `\n**Suggestions:**\n${result?.suggestions?.map((s: any) => `- ${s}`).join("\n")}`,
+        `\n**Suggestions:**\n${result.suggestions.map((s: any) => `- ${s}`).join("\n")}`,
       );
     }
 
@@ -326,6 +409,11 @@ export class CodeAgent extends BaseAgent {
   protected registerDefaultTools(): void {
     // Code-specific tools could be registered here
     // For now, the agent relies on LLM capabilities
+    // Add capabilities for this agent
+    this.addCapability("code_generation");
+    this.addCapability("code_analysis");
+    this.addCapability("code_refactoring");
+    this.addCapability("debugging");
   }
 }
 
