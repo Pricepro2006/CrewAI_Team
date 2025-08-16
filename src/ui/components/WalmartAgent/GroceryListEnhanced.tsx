@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { 
   Plus, 
   Minus, 
@@ -264,10 +264,10 @@ export const GroceryListEnhanced: React.FC = () => {
       // Subscribe to price updates for current products
       subscribeToPrices(currentProductIds);
     }
-  }, [groceryList, subscribeToPrices, currentProductIds]);
+  }, [groceryList, subscribeToPrices, currentProductIds, calculateTotalsMutation, location.zipCode, location.state]);
 
   // Handle natural language input submission
-  const handleInputSubmit = async (input: string) => {
+  const handleInputSubmit = useCallback(async (input: string) => {
     if (!input.trim()) return;
     
     const commandId = `cmd-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -322,10 +322,10 @@ export const GroceryListEnhanced: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [processGroceryInputMutation, conversationId, userId, location]);
 
   // Detect command category for history classification
-  const detectCommandCategory = (command: string): string => {
+  const detectCommandCategory = useCallback((command: string): string => {
     const lowerCommand = command.toLowerCase();
     
     if (lowerCommand.includes('add') || lowerCommand.includes('need') || lowerCommand.includes('get')) {
@@ -341,22 +341,22 @@ export const GroceryListEnhanced: React.FC = () => {
     }
     
     return 'query';
-  };
+  }, []);
 
   // Generate success message from API result
-  const getSuccessMessage = (result: any): string => {
+  const getSuccessMessage = useCallback((result: any): string => {
     if (result.groceryList && result?.groceryList?.items?.length || 0 > 0) {
       return `Updated list with ${result?.groceryList?.items?.length || 0} items`;
     } else if (result.suggestions && result?.suggestions?.length > 0) {
       return `Found ${result?.suggestions?.length} suggestions`;
     }
     return 'Command processed successfully';
-  };
+  }, []);
 
   // Handle command history replay
-  const handleCommandReplay = (command: string) => {
+  const handleCommandReplay = useCallback((command: string) => {
     setNaturalInput(command);
-  };
+  }, []);
 
   // Handle command editing
   const handleCommandEdit = (command: string) => {

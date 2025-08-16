@@ -184,6 +184,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [userData]);
 
+  // Refresh token function
+  const handleRefreshToken = useCallback(async (): Promise<void> => {
+    if (!tokens?.refreshToken) {
+      throw new Error("No refresh token available");
+    }
+
+    try {
+      const result = await refreshTokenMutation.mutateAsync({
+        refreshToken: tokens.refreshToken,
+      });
+
+      const newTokens = result?.tokens;
+      setTokens(newTokens);
+
+      // Update stored tokens
+      setStoredToken(ACCESS_TOKEN_KEY, newTokens.accessToken);
+      setStoredToken(REFRESH_TOKEN_KEY, newTokens.refreshToken);
+    } catch (error) {
+      // If refresh fails, logout user
+      console.warn("Token refresh failed:", error);
+      setTokens(null);
+      setUser(null);
+      clearAllTokens();
+      throw error;
+    }
+  }, [refreshTokenMutation, tokens?.refreshToken]);
+
   // Set up automatic token refresh
   useEffect(() => {
     if (!tokens?.accessToken) return;
@@ -207,7 +234,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.warn("Failed to parse access token:", error);
       return; // Add explicit return for catch block
     }
-  }, [tokens?.accessToken]);
+  }, [tokens?.accessToken, handleRefreshToken]);
 
   // Login function
   const login = useCallback(
@@ -272,33 +299,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       clearAllTokens();
     }
   }, [logoutAllMutation]);
-
-  // Refresh token function
-  const handleRefreshToken = useCallback(async (): Promise<void> => {
-    if (!tokens?.refreshToken) {
-      throw new Error("No refresh token available");
-    }
-
-    try {
-      const result = await refreshTokenMutation.mutateAsync({
-        refreshToken: tokens.refreshToken,
-      });
-
-      const newTokens = result?.tokens;
-      setTokens(newTokens);
-
-      // Update stored tokens
-      setStoredToken(ACCESS_TOKEN_KEY, newTokens.accessToken);
-      setStoredToken(REFRESH_TOKEN_KEY, newTokens.refreshToken);
-    } catch (error) {
-      // If refresh fails, logout user
-      console.warn("Token refresh failed:", error);
-      setTokens(null);
-      setUser(null);
-      clearAllTokens();
-      throw error;
-    }
-  }, [refreshTokenMutation, tokens?.refreshToken]);
 
   // Update profile function
   const updateProfile = useCallback(

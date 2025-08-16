@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   EnvelopeIcon,
   ChartBarIcon,
@@ -106,28 +106,35 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
     refreshKey: Date.now(),
   });
 
+  // Memoize WebSocket callbacks to prevent unnecessary re-renders
+  const onConnect = useCallback(() => {
+    console.log("WebSocket connected");
+  }, []);
+
+  const onDisconnect = useCallback(() => {
+    console.log("WebSocket disconnected");
+  }, []);
+
+  const onError = useCallback((error: any) => {
+    console.error("WebSocket error:", error);
+  }, []);
+
   // Real-time updates via WebSocket
   useWebSocket({
-    onConnect: () => {
-      console.log("WebSocket connected");
-    },
-    onDisconnect: () => {
-      console.log("WebSocket disconnected");
-    },
-    onError: (error: any) => {
-      console.error("WebSocket error:", error);
-    },
+    onConnect,
+    onDisconnect,
+    onError,
   });
 
-  // Manual refresh
-  const handleRefresh = async () => {
+  // Manual refresh - memoized to prevent unnecessary re-renders
+  const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
       await Promise.all([refetchEmails(), refetchAnalytics()]);
     } finally {
       setTimeout(() => setIsRefreshing(false), 500);
     }
-  };
+  }, [refetchEmails, refetchAnalytics]);
 
   // Calculate critical metrics with robust null checking
   const metrics = useMemo<DashboardMetrics>(
@@ -149,7 +156,7 @@ export const UnifiedEmailDashboard: React.FC<UnifiedEmailDashboardProps> = ({
         urgentCount: emailDataResult?.emails?.filter((e: any) => e.priority === 'high' || e.priority === 'critical').length ?? 0,
       };
     },
-    [emailData, analytics],
+    [emailData?.data, analytics?.data], // More specific dependencies
   );
 
   return (

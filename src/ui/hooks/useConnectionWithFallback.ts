@@ -153,48 +153,53 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
    * Assess connection quality based on metrics
    */
   const assessQuality = useCallback((): ConnectionQuality => {
-    const { latency } = state.metrics;
-    const { mode, isConnected } = state;
+    // Use current state directly to avoid stale closures
+    return ((currentState: ConnectionState): ConnectionQuality => {
+      const { latency } = currentState.metrics;
+      const { mode, isConnected } = currentState;
 
-    if (!isConnected) return 'offline';
+      if (!isConnected) return 'offline';
 
-    if (mode === 'websocket' || mode === 'hybrid') {
-      if (latency < 100 && websocketFailuresRef.current === 0) return 'excellent';
-      if (latency < 300 && websocketFailuresRef.current < 2) return 'good';
-      if (latency < 1000 && websocketFailuresRef.current < 3) return 'fair';
-      return 'poor';
-    } else if (mode === 'polling') {
-      if (latency < 500) return 'good';
-      if (latency < 2000) return 'fair';
-      return 'poor';
-    }
+      if (mode === 'websocket' || mode === 'hybrid') {
+        if (latency < 100 && websocketFailuresRef.current === 0) return 'excellent';
+        if (latency < 300 && websocketFailuresRef.current < 2) return 'good';
+        if (latency < 1000 && websocketFailuresRef.current < 3) return 'fair';
+        return 'poor';
+      } else if (mode === 'polling') {
+        if (latency < 500) return 'good';
+        if (latency < 2000) return 'fair';
+        return 'poor';
+      }
 
-    return 'offline';
-  }, [state]);
+      return 'offline';
+    })(state);
+  }, [state.metrics.latency, state.mode, state.isConnected]);
 
   /**
    * Handle mode transition
    */
   const transitionToMode = useCallback((newMode: ConnectionMode, reason?: string) => {
-    if (state.mode === newMode) return;
+    setState(prev => {
+      if (prev.mode === newMode) return prev;
 
-    logger.info('Connection mode transition', 'CONNECTION', {
-      from: state.mode,
-      to: newMode,
-      reason
+      logger.info('Connection mode transition', 'CONNECTION', {
+        from: prev.mode,
+        to: newMode,
+        reason
+      });
+
+      onModeChange?.(newMode);
+
+      return {
+        ...prev,
+        mode: newMode,
+        isTransitioning: true,
+        metrics: {
+          ...prev.metrics,
+          modeChanges: prev?.metrics?.modeChanges + 1
+        }
+      };
     });
-
-    setState(prev => ({
-      ...prev,
-      mode: newMode,
-      isTransitioning: true,
-      metrics: {
-        ...prev.metrics,
-        modeChanges: prev?.metrics?.modeChanges + 1
-      }
-    }));
-
-    onModeChange?.(newMode);
 
     // Complete transition after a short delay
     setTimeout(() => {
@@ -204,7 +209,7 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
         isConnected: newMode !== 'offline'
       }));
     }, 100);
-  }, [state.mode, onModeChange]);
+  }, [onModeChange]); // Removed state.mode to prevent stale closures
 
   /**
    * Start polling
@@ -359,20 +364,24 @@ export function useConnectionWithFallback(options: ConnectionOptions = {}) {
    */
   useEffect(() => {
     metricsTimerRef.current = setInterval(() => {
-      const quality = assessQuality();
-      
-      if (quality !== state.quality) {
-        setState(prev => ({ ...prev, quality }));
-        onQualityChange?.(quality);
-      }
+      setState(prev => {
+        const quality = assessQuality();
+        
+        if (quality !== prev.quality) {
+          onQualityChange?.(quality);
+          return { ...prev, quality };
+        }
+        return prev;
+      });
     }, 5000);
 
     return () => {
       if (metricsTimerRef.current) {
         clearInterval(metricsTimerRef.current);
+        metricsTimerRef.current = null;
       }
     };
-  }, [assessQuality, state.quality, onQualityChange]);
+  }, [assessQuality, onQualityChange]); // Removed state.quality to prevent stale closures
 
   /**
    * Cleanup on unmount

@@ -95,8 +95,8 @@ export function useRealtimePrices(
     enableLogging: true,
   });
 
-  // Handle incoming WebSocket events
-  function handleWebSocketEvent(event: GroceryWebSocketEvent) {
+  // Handle incoming WebSocket events - use useCallback for stable reference
+  const handleWebSocketEvent = useCallback((event: GroceryWebSocketEvent) => {
     switch (event.type) {
       case 'price_updated':
         handlePriceUpdate(event);
@@ -113,7 +113,7 @@ export function useRealtimePrices(
       default:
         break;
     }
-  }
+  }, []);
 
   // Handle price update events
   const handlePriceUpdate = useCallback((event: GroceryWebSocketEvent) => {
@@ -331,7 +331,7 @@ export function useRealtimePrices(
 
   // Initialize subscriptions
   useEffect(() => {
-    if (productIds?.length || 0 > 0) {
+    if (productIds?.length > 0) {
       subscribeToPrices(productIds);
     }
 
@@ -340,7 +340,7 @@ export function useRealtimePrices(
       animationTimersRef?.current?.forEach(timer => clearTimeout(timer));
       animationTimersRef?.current?.clear();
     };
-  }, [productIds, subscribeToPrices]);
+  }, [productIds]); // Removed subscribeToPrices to prevent dependency cycles
 
   return {
     ...state,
