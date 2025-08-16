@@ -74,7 +74,7 @@ export class ReactiveListState extends EventEmitter {
     };
 
     this.cache = new LRUCache<string, List>({
-      max: this?.config?.maxCacheSize,
+      max: this.config?.maxCacheSize ?? 10000,
       updateAgeOnGet: true
     });
 
@@ -84,14 +84,14 @@ export class ReactiveListState extends EventEmitter {
 
   private startReactiveLoop(): void {
     setInterval(() => {
-      if (!this.isProcessing && this?.operationQueue?.length > 0) {
+      if (!this.isProcessing && (this.operationQueue?.length ?? 0) > 0) {
         this.processOperationBatch();
       }
-    }, this?.config?.syncInterval);
+    }, this.config?.syncInterval ?? 100);
   }
 
   private async processOperationBatch(): Promise<void> {
-    if (this.isProcessing || this?.operationQueue?.length === 0) return;
+    if (this.isProcessing || (this.operationQueue?.length ?? 0) === 0) return;
 
     this.isProcessing = true;
     const startTime = Date.now();
@@ -99,7 +99,7 @@ export class ReactiveListState extends EventEmitter {
     try {
       // Process operations in batches for better performance
       const batchSize = 50;
-      const batch = this?.operationQueue?.splice(0, batchSize);
+      const batch = this.operationQueue?.splice(0, batchSize) ?? [];
       
       // Group operations by list for efficient processing
       const operationsByList = new Map<string, ListOperation[]>();
@@ -368,9 +368,9 @@ export class ReactiveListState extends EventEmitter {
   }
 
   public clearCache(): void {
-    this?.cache?.clear();
-    this?.operationQueue?.length = 0;
-    this?.pendingOperations?.clear();
+    this.cache?.clear();
+    this.operationQueue.length = 0;
+    this.pendingOperations?.clear();
   }
 }
 

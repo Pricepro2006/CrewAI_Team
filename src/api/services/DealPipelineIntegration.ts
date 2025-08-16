@@ -140,7 +140,9 @@ export class DealPipelineIntegration {
     const startTime = Date.now();
     
     try {
-      this?.performanceStats?.totalRequests++;
+      if (this?.performanceStats) {
+        this.performanceStats.totalRequests++;
+      }
       
       // Get user purchase history for personalization
       const userHistory = await this?.purchaseHistory?.getProductFrequency(userId);
@@ -158,21 +160,27 @@ export class DealPipelineIntegration {
         const combined = await this.combineAndRankDeals(legacyDeals, newDeals, userHistory);
         results.push(...combined.slice(0, limit));
         
-        this?.performanceStats?.hybridDeals++;
+        if (this?.performanceStats) {
+          this.performanceStats.hybridDeals++;
+        }
         
       } else if (this.migrationProgress >= 100) {
         // Use new pipeline exclusively
         const newDeals = await this.getNewPipelineDeals(userId, preferences, userHistory, limit);
         results.push(...newDeals);
         
-        this?.performanceStats?.newPipelineDeals++;
+        if (this?.performanceStats) {
+          this.performanceStats.newPipelineDeals++;
+        }
         
       } else {
         // Use legacy engine
         const legacyDeals = await this.getLegacyDeals(userId, preferences, userHistory, limit);
         results.push(...legacyDeals);
         
-        this?.performanceStats?.legacyEngineDeals++;
+        if (this?.performanceStats) {
+          this.performanceStats.legacyEngineDeals++;
+        }
       }
       
       // Apply user learning
@@ -608,7 +616,9 @@ export class DealPipelineIntegration {
 
   private updatePerformanceStats(responseTime: number): void {
     // Update rolling average response time
-    this?.performanceStats?.avgResponseTime = 
-      (this?.performanceStats?.avgResponseTime * 0.9) + (responseTime * 0.1);
+    if (this?.performanceStats) {
+      this.performanceStats.avgResponseTime = 
+        (this.performanceStats.avgResponseTime * 0.9) + (responseTime * 0.1);
+    }
   }
 }

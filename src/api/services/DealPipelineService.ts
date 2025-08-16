@@ -271,7 +271,9 @@ export class DealPipelineService extends EventEmitter {
       this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority)
     );
 
-    this?.metrics?.queueSize = this?.processingQueue?.length;
+    if (this.metrics) {
+      this.metrics.queueSize = this.processingQueue?.length || 0;
+    }
     
     logger.debug("Product added to monitoring queue", "DEAL_PIPELINE", { 
       productId, 
@@ -582,13 +584,23 @@ export class DealPipelineService extends EventEmitter {
 
       const duration = Date.now() - startTime;
       this?.recentTimings?.priceUpdates.push(duration);
-      this?.recentTimings?.priceUpdates = this?.recentTimings?.priceUpdates.slice(-10); // Keep last 10
+      if (this.recentTimings?.priceUpdates) {
+        this.recentTimings.priceUpdates = this.recentTimings.priceUpdates.slice(-10); // Keep last 10
+      }
 
-      this?.metrics?.pricesUpdatedLastHour += successCount;
-      this?.metrics?.lastPriceUpdateAt = new Date().toISOString();
-      this?.metrics?.queueSize = this?.processingQueue?.length;
-      this?.recentTimings?.successes += successCount;
-      this?.recentTimings?.errors += errorCount;
+      if (this?.metrics) {
+        this.metrics.pricesUpdatedLastHour += successCount;
+      }
+      if (this.metrics) {
+        this.metrics.lastPriceUpdateAt = new Date().toISOString();
+      }
+      if (this.metrics) {
+        this.metrics.queueSize = this.processingQueue?.length || 0;
+      }
+      if (this?.recentTimings) {
+        this.recentTimings.successes += successCount;
+        this.recentTimings.errors += errorCount;
+      }
 
       logger.info("Price update batch completed", "DEAL_PIPELINE", {
         processed: batch?.length || 0,
@@ -692,10 +704,16 @@ export class DealPipelineService extends EventEmitter {
 
       const duration = Date.now() - startTime;
       this?.recentTimings?.dealDetections.push(duration);
-      this?.recentTimings?.dealDetections = this?.recentTimings?.dealDetections.slice(-10);
+      if (this.recentTimings?.dealDetections) {
+        this.recentTimings.dealDetections = this.recentTimings.dealDetections.slice(-10);
+      }
 
-      this?.metrics?.dealsDetectedLastHour += dealsDetected;
-      this?.metrics?.lastDealDetectionAt = new Date().toISOString();
+      if (this?.metrics) {
+        this.metrics.dealsDetectedLastHour += dealsDetected;
+      }
+      if (this.metrics) {
+        this.metrics.lastDealDetectionAt = new Date().toISOString();
+      }
 
       logger.info("Deal detection run completed", "DEAL_PIPELINE", {
         candidates: dealCandidates?.length || 0,
@@ -717,7 +735,9 @@ export class DealPipelineService extends EventEmitter {
       
       await this?.dealDetection?.checkDealAlerts();
       
-      this?.metrics?.lastAlertCheckAt = new Date().toISOString();
+      if (this.metrics) {
+        this.metrics.lastAlertCheckAt = new Date().toISOString();
+      }
       
     } catch (error) {
       logger.error("Alert check failed", "DEAL_PIPELINE", { error });
@@ -746,31 +766,51 @@ export class DealPipelineService extends EventEmitter {
     const hourAgo = now - (60 * 60 * 1000);
 
     // Calculate recent performance metrics
-    this?.metrics?.avgPriceUpdateTime = this?.recentTimings?.priceUpdates?.length || 0 > 0 ?
-      this?.recentTimings?.priceUpdates.reduce((sum: any, time: any) => sum + time, 0) / this?.recentTimings?.priceUpdates?.length || 0 : 0;
+    if (this.metrics && this.recentTimings?.priceUpdates) {
+      this.metrics.avgPriceUpdateTime = this.recentTimings.priceUpdates.length > 0 ?
+        this.recentTimings.priceUpdates.reduce((sum: any, time: any) => sum + time, 0) / this.recentTimings.priceUpdates.length : 0;
+    }
 
-    this?.metrics?.avgDealDetectionTime = this?.recentTimings?.dealDetections?.length || 0 > 0 ?
-      this?.recentTimings?.dealDetections.reduce((sum: any, time: any) => sum + time, 0) / this?.recentTimings?.dealDetections?.length || 0 : 0;
+    if (this.metrics && this.recentTimings?.dealDetections) {
+      this.metrics.avgDealDetectionTime = this.recentTimings.dealDetections.length > 0 ?
+        this.recentTimings.dealDetections.reduce((sum: any, time: any) => sum + time, 0) / this.recentTimings.dealDetections.length : 0;
+    }
 
     const totalOperations = this?.recentTimings?.successes + this?.recentTimings?.errors;
-    this?.metrics?.successRate = totalOperations > 0 ? (this?.recentTimings?.successes / totalOperations) * 100 : 100;
-    this?.metrics?.errorRate = totalOperations > 0 ? (this?.recentTimings?.errors / totalOperations) * 100 : 0;
+    if (this.metrics && this.recentTimings) {
+      this.metrics.successRate = totalOperations > 0 ? (this.recentTimings.successes / totalOperations) * 100 : 100;
+    }
+    if (this.metrics && this.recentTimings) {
+      this.metrics.errorRate = totalOperations > 0 ? (this.recentTimings.errors / totalOperations) * 100 : 0;
+    }
 
     // Determine health status
     const isHealthy = this?.metrics?.errorRate < 10 && // Less than 10% error rate
                      this?.metrics?.queueSize < 1000 && // Queue not too large
                      this.isRunning;
 
-    this?.metrics?.isHealthy = isHealthy;
+    if (this.metrics) {
+      this.metrics.isHealthy = isHealthy;
+    }
 
     // Reset hourly counters
-    this?.metrics?.pricesUpdatedLastHour = 0;
-    this?.metrics?.dealsDetectedLastHour = 0;
-    this?.metrics?.alertsTriggeredLastHour = 0;
+    if (this.metrics) {
+      this.metrics.pricesUpdatedLastHour = 0;
+    }
+    if (this.metrics) {
+      this.metrics.dealsDetectedLastHour = 0;
+    }
+    if (this.metrics) {
+      this.metrics.alertsTriggeredLastHour = 0;
+    }
 
     // Reset performance counters
-    this?.recentTimings?.successes = 0;
-    this?.recentTimings?.errors = 0;
+    if (this.recentTimings) {
+      this.recentTimings.successes = 0;
+    }
+    if (this.recentTimings) {
+      this.recentTimings.errors = 0;
+    }
 
     this.emit('health_check', { metrics: this.metrics });
     
@@ -786,7 +826,9 @@ export class DealPipelineService extends EventEmitter {
       // Send WebSocket notification to all connected users
       this?.webSocket?.broadcastDealNotification(deal);
 
-      this?.metrics?.alertsTriggeredLastHour++;
+      if (this?.metrics) {
+        this.metrics.alertsTriggeredLastHour++;
+      }
 
       logger.debug("Deal notification sent", "DEAL_PIPELINE", {
         dealId: deal.id,
@@ -814,7 +856,9 @@ export class DealPipelineService extends EventEmitter {
 
   private handleError(data: { type: string; error: any }): void {
     logger.error("Pipeline error event", "DEAL_PIPELINE", data);
-    this?.recentTimings?.errors++;
+    if (this?.recentTimings) {
+      this.recentTimings.errors++;
+    }
   }
 
   private getPriorityValue(priority: 'high' | 'normal' | 'low'): number {

@@ -64,11 +64,11 @@ export class SecurityMonitoringService extends EventEmitter {
     };
 
     // Add to event history
-    this?.events?.push(fullEvent);
+    this.events.push(fullEvent);
     
     // Maintain size limit
-    if (this?.events?.length > this.MAX_EVENTS) {
-      this.events = this?.events?.slice(-this.MAX_EVENTS);
+    if (this.events.length > this.MAX_EVENTS) {
+      this.events = this.events.slice(-this.MAX_EVENTS);
     }
 
     // Log to system logger
@@ -96,7 +96,7 @@ export class SecurityMonitoringService extends EventEmitter {
     const now = Date.now();
     const windowStart = new Date(now - timeWindowMs);
 
-    const recentEvents = this?.events?.filter(
+    const recentEvents = this.events.filter(
       event => event.timestamp >= windowStart
     );
 
@@ -130,7 +130,7 @@ export class SecurityMonitoringService extends EventEmitter {
     const now = Date.now();
     const windowStart = new Date(now - timeWindowMs);
 
-    const userEvents = this?.events?.filter(
+    const userEvents = this.events.filter(
       event => event.userId === userId && event.timestamp >= windowStart
     );
 
@@ -155,21 +155,21 @@ export class SecurityMonitoringService extends EventEmitter {
     const alerts: string[] = [];
     const stats = this.getEventCountsByType(timeWindowMs);
 
-    if (stats.GUEST_USER_CREATED > this?.ALERT_THRESHOLDS?.guestCreationPerHour) {
-      alerts.push(`High guest user creation rate: ${stats.GUEST_USER_CREATED}/hour`);
+    if ((stats.GUEST_USER_CREATED || 0) > this.ALERT_THRESHOLDS.guestCreationPerHour) {
+      alerts.push(`High guest user creation rate: ${stats.GUEST_USER_CREATED || 0}/hour`);
     }
 
-    if (stats.AUTH_FAILURE > this?.ALERT_THRESHOLDS?.failedAuthPerHour) {
-      alerts.push(`High authentication failure rate: ${stats.AUTH_FAILURE}/hour`);
+    if ((stats.AUTH_FAILURE || 0) > this.ALERT_THRESHOLDS.failedAuthPerHour) {
+      alerts.push(`High authentication failure rate: ${stats.AUTH_FAILURE || 0}/hour`);
     }
 
-    if (stats.GUEST_ACCESS_DENIED + stats.PERMISSION_DENIED > 
-        this?.ALERT_THRESHOLDS?.deniedAccessPerHour) {
-      alerts.push(`High access denial rate: ${stats.GUEST_ACCESS_DENIED + stats.PERMISSION_DENIED}/hour`);
+    if ((stats.GUEST_ACCESS_DENIED || 0) + (stats.PERMISSION_DENIED || 0) > 
+        this.ALERT_THRESHOLDS.deniedAccessPerHour) {
+      alerts.push(`High access denial rate: ${(stats.GUEST_ACCESS_DENIED || 0) + (stats.PERMISSION_DENIED || 0)}/hour`);
     }
 
-    if (stats.SUSPICIOUS_ACTIVITY > this?.ALERT_THRESHOLDS?.suspiciousActivityPerHour) {
-      alerts.push(`Suspicious activity detected: ${stats.SUSPICIOUS_ACTIVITY} events/hour`);
+    if ((stats.SUSPICIOUS_ACTIVITY || 0) > this.ALERT_THRESHOLDS.suspiciousActivityPerHour) {
+      alerts.push(`Suspicious activity detected: ${stats.SUSPICIOUS_ACTIVITY || 0} events/hour`);
     }
 
     return alerts;
@@ -235,7 +235,7 @@ export class SecurityMonitoringService extends EventEmitter {
   private checkAlertConditions(event: SecurityEvent): void {
     // Check for rapid guest creation from same IP
     if (event.type === SecurityEventType.GUEST_USER_CREATED && event.ip) {
-      const recentGuestCreations = this?.events?.filter(
+      const recentGuestCreations = this.events.filter(
         e => 
           e.type === SecurityEventType.GUEST_USER_CREATED &&
           e.ip === event.ip &&
@@ -253,7 +253,7 @@ export class SecurityMonitoringService extends EventEmitter {
 
     // Check for brute force patterns
     if (event.type === SecurityEventType.AUTH_FAILURE && event.ip) {
-      const recentFailures = this?.events?.filter(
+      const recentFailures = this.events.filter(
         e => 
           e.type === SecurityEventType.AUTH_FAILURE &&
           e.ip === event.ip &&
@@ -309,7 +309,7 @@ export class SecurityMonitoringService extends EventEmitter {
 
       // Clean up old events (keep last 24 hours)
       const cutoff = new Date(Date.now() - 86400000);
-      this.events = this?.events?.filter(event => event.timestamp >= cutoff);
+      this.events = this.events.filter(event => event.timestamp >= cutoff);
     }, 300000); // 5 minutes
   }
 

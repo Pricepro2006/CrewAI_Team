@@ -8,7 +8,7 @@ import { DealDataService } from "./DealDataService.js";
 import type { WalmartProductRepository } from "../../database/repositories/WalmartProductRepository.js";
 import { getWalmartDatabaseManager } from "../../database/WalmartDatabaseManager.js";
 import type { WalmartProduct } from "../../types/walmart-grocery.js";
-import type { Deal, DealItem } from "../types/deal?.types.js";
+import type { Deal, DealItem } from "../types/deal.types.js";
 
 interface DealMatch {
   product: WalmartProduct;

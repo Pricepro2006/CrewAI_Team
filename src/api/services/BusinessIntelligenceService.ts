@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { logger } from '../../utils/logger.js';
-import type { EmailRow, EmailWithAnalysis } from '../../types/unified-email?.types.js';
+import type { EmailRow, EmailWithAnalysis } from '../../types/unified-email.types.js';
 
 export interface BusinessIntelligenceSummary {
   totalEmailsAnalyzed: number;
@@ -626,7 +626,7 @@ export class BusinessIntelligenceService {
     if (this?.cache?.size > 100) {
       const entries = Array.from(this?.cache?.entries())
         .sort((a, b) => a[1].timestamp - b[1].timestamp);
-      if (entries?.length || 0 > 0 && entries[0]) {
+      if ((entries?.length || 0) > 0 && entries[0]) {
         const oldestKey = entries[0][0];
         this?.cache?.delete(oldestKey);
       }

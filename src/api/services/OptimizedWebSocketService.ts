@@ -225,8 +225,10 @@ export class OptimizedWebSocketService extends EventEmitter {
       // Enforce connection limit per user
       if (userConns.size >= this?.config?.maxConnectionsPerUser) {
         const oldestConn = Array.from(userConns)[0];
-        this.closeConnection(oldestConn, 'max_connections_exceeded');
-        userConns.delete(oldestConn);
+        if (oldestConn) {
+          this.closeConnection(oldestConn, 'max_connections_exceeded');
+          userConns.delete(oldestConn);
+        }
       }
       
       userConns.add(connectionId);

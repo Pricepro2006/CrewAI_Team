@@ -595,17 +595,19 @@ export class SmartMatchingService {
           1
         );
         
-        if (searchResults && searchResults?.length || 0 > 0) {
+        if (searchResults && (searchResults?.length || 0) > 0) {
           const altProduct = searchResults[0];
-          const altPrice = altProduct.livePrice?.price || altProduct.price || 0;
-          const originalPrice = product.livePrice?.price || product.price || 0;
-          
-          alternatives.push({
-            product: altProduct,
-            reason: 'size_variant',
-            savings: originalPrice > altPrice ? originalPrice - altPrice : undefined,
-            matchScore: 0.8
-          });
+          if (altProduct) {
+            const altPrice = altProduct.livePrice?.price || altProduct.price || 0;
+            const originalPrice = product.livePrice?.price || product.price || 0;
+            
+            alternatives.push({
+              product: altProduct,
+              reason: 'size_variant',
+              savings: originalPrice > altPrice ? originalPrice - altPrice : undefined,
+              matchScore: 0.8
+            });
+          }
         }
       }
     }
@@ -650,17 +652,19 @@ export class SmartMatchingService {
           1
         );
         
-        if (searchResults && searchResults?.length || 0 > 0) {
+        if (searchResults && (searchResults?.length || 0) > 0) {
           const altProduct = searchResults[0];
-          const altPrice = altProduct.livePrice?.price || altProduct.price || 0;
-          const originalPrice = product.livePrice?.price || product.price || 0;
-          
-          alternatives.push({
-            product: altProduct,
-            reason: 'brand_alternative',
-            savings: originalPrice > altPrice ? originalPrice - altPrice : undefined,
-            matchScore: 0.7
-          });
+          if (altProduct) {
+            const altPrice = altProduct.livePrice?.price || altProduct.price || 0;
+            const originalPrice = product.livePrice?.price || product.price || 0;
+            
+            alternatives.push({
+              product: altProduct,
+              reason: 'brand_alternative',
+              savings: originalPrice > altPrice ? originalPrice - altPrice : undefined,
+              matchScore: 0.7
+            });
+          }
         }
       }
     }

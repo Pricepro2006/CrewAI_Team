@@ -200,9 +200,15 @@ export class GroceryNLPQueue extends EventEmitter {
       this.sortQueue();
       
       // Update metrics
-      this?.metrics?.totalRequests++;
-      this?.metrics?.currentQueueSize = this?.queue?.length;
-      this?.metrics?.peakQueueSize = Math.max(this?.metrics?.peakQueueSize, this?.queue?.length);
+      if (this.metrics) {
+        this.metrics.totalRequests++;
+      }
+      if (this.metrics && this.queue) {
+        this.metrics.currentQueueSize = this.queue.length;
+      }
+      if (this.metrics && this.queue) {
+        this.metrics.peakQueueSize = Math.max(this.metrics.peakQueueSize, this.queue.length);
+      }
       
       // Emit queue update event
       this.emitQueueUpdate();
@@ -247,7 +253,9 @@ export class GroceryNLPQueue extends EventEmitter {
             this?.queue?.splice(index, 1);
             request.status = "timeout";
             reject(new Error(`Request timeout after ${request.timeout}ms`));
-            this?.metrics?.timeoutRequests++;
+            if (this.metrics) {
+              this.metrics.timeoutRequests++;
+            }
             this.emitRequestStatus(requestId, "timeout", undefined, "Request timeout");
           }
         }, request.timeout);
@@ -420,8 +428,12 @@ export class GroceryNLPQueue extends EventEmitter {
       if (!request) break;
       
       this.activeRequests++;
-      this?.metrics?.activeRequests = this.activeRequests;
-      this?.metrics?.currentQueueSize = this?.queue?.length;
+      if (this.metrics) {
+        this.metrics.activeRequests = this.activeRequests;
+      }
+      if (this.metrics && this.queue) {
+        this.metrics.currentQueueSize = this.queue.length;
+      }
       
       // Track wait time
       const waitTime = Date.now() - request.timestamp;
@@ -465,7 +477,9 @@ export class GroceryNLPQueue extends EventEmitter {
       this.updateAverageProcessingTime(processingTime);
       
       request.resolve(result);
-      this?.metrics?.completedRequests++;
+      if (this.metrics) {
+        this.metrics.completedRequests++;
+      }
       this.updateSuccessRate();
       
       // Emit status update
@@ -502,7 +516,9 @@ export class GroceryNLPQueue extends EventEmitter {
         this.emitRequestStatus(request.id, "pending");
       } else {
         request.reject(error);
-        this?.metrics?.failedRequests++;
+        if (this.metrics) {
+          this.metrics.failedRequests++;
+        }
         this.updateSuccessRate();
         
         // Emit failure status
@@ -510,7 +526,9 @@ export class GroceryNLPQueue extends EventEmitter {
       }
     } finally {
       this.activeRequests--;
-      this?.metrics?.activeRequests = this.activeRequests;
+      if (this.metrics) {
+        this.metrics.activeRequests = this.activeRequests;
+      }
       
       // Emit queue update
       this.emitQueueUpdate();
@@ -565,7 +583,9 @@ export class GroceryNLPQueue extends EventEmitter {
   private updateAverageWaitTime(waitTime: number): void {
     const totalWaitTime = this?.metrics?.averageWaitTime * (this?.metrics?.completedRequests + this?.metrics?.failedRequests);
     const newTotal = this?.metrics?.completedRequests + this?.metrics?.failedRequests + 1;
-    this?.metrics?.averageWaitTime = (totalWaitTime + waitTime) / newTotal;
+    if (this.metrics) {
+      this.metrics.averageWaitTime = (totalWaitTime + waitTime) / newTotal;
+    }
   }
 
   /**
@@ -574,19 +594,23 @@ export class GroceryNLPQueue extends EventEmitter {
   private updateAverageProcessingTime(processingTime: number): void {
     const totalProcessingTime = this?.metrics?.averageProcessingTime * this?.metrics?.completedRequests;
     const newTotal = this?.metrics?.completedRequests + 1;
-    this?.metrics?.averageProcessingTime = (totalProcessingTime + processingTime) / newTotal;
+    if (this.metrics) {
+      this.metrics.averageProcessingTime = (totalProcessingTime + processingTime) / newTotal;
+    }
   }
 
   /**
    * Update success rate metric
    */
   private updateSuccessRate(): void {
-    if (this?.metrics?.totalRequests === 0) {
-      this?.metrics?.successRate = 0;
+    if (this.metrics && this.metrics.totalRequests === 0) {
+      this.metrics.successRate = 0;
       return;
     }
     
-    this?.metrics?.successRate = this?.metrics?.completedRequests / this?.metrics?.totalRequests;
+    if (this.metrics) {
+      this.metrics.successRate = this.metrics.completedRequests / this.metrics.totalRequests;
+    }
   }
 
   /**
@@ -608,7 +632,9 @@ export class GroceryNLPQueue extends EventEmitter {
     });
     
     this.queue = [];
-    this?.metrics?.currentQueueSize = 0;
+    if (this.metrics) {
+      this.metrics.currentQueueSize = 0;
+    }
     
     logger.warn("NLP queue cleared", "NLP_QUEUE", {
       clearedCount,
@@ -628,7 +654,7 @@ export class GroceryNLPQueue extends EventEmitter {
    */
   isHealthy(): boolean {
     const queueSizeHealthy = this?.queue?.length < this?.configuration?.healthCheck.maxQueueSize;
-    const errorRateHealthy = this?.metrics?.totalRequests === 0 || 
+    const errorRateHealthy = !this.metrics || this.metrics.totalRequests === 0 || 
       (this?.metrics?.failedRequests / this?.metrics?.totalRequests) < this?.configuration?.healthCheck.maxErrorRate;
     const processingTimeHealthy = this?.metrics?.averageProcessingTime < this?.configuration?.healthCheck.maxProcessingTime;
     
@@ -792,7 +818,7 @@ export class GroceryNLPQueue extends EventEmitter {
    * Calculate estimated wait time for new requests
    */
   private calculateEstimatedWaitTime(): number {
-    if (this?.queue?.length === 0) return 0;
+    if (!this.queue || this.queue.length === 0) return 0;
     
     const availableSlots = Math.max(0, this.maxConcurrent - this.activeRequests);
     const queuePosition = Math.max(0, this?.queue?.length - availableSlots);
@@ -865,7 +891,9 @@ export class GroceryNLPQueue extends EventEmitter {
         request.status = "failed";
       }
       
-      this?.metrics?.currentQueueSize = this?.queue?.length;
+      if (this.metrics && this.queue) {
+        this.metrics.currentQueueSize = this.queue.length;
+      }
       this.emitQueueUpdate();
       this.emitRequestStatus(requestId, "failed", undefined, "Request cancelled");
       

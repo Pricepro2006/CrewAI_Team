@@ -86,7 +86,9 @@ export class IEMSDataFlowService extends EventEmitter {
     }
 
     logger.info("Starting IEMS data flow service");
-    this?.status?.isRunning = true;
+    if (this.status) {
+      this.status.isRunning = true;
+    }
 
     // Perform initial sync
     await this.performSync();
@@ -115,7 +117,9 @@ export class IEMSDataFlowService extends EventEmitter {
    */
   async stop(): Promise<void> {
     logger.info("Stopping IEMS data flow service");
-    this?.status?.isRunning = false;
+    if (this.status) {
+      this.status.isRunning = false;
+    }
 
     // Clear scheduled sync
     if (this.syncInterval) {
@@ -163,7 +167,7 @@ export class IEMSDataFlowService extends EventEmitter {
       this.emit("sync:start");
 
       // Run the migration pipeline
-      const migrationScript = path.join(
+      const migrationScript = path.resolve(
         __dirname,
         "..",
         "..",
@@ -171,6 +175,11 @@ export class IEMSDataFlowService extends EventEmitter {
         "migration",
         "data_pipeline.py",
       );
+
+      // Validate script path for security
+      if (!migrationScript.includes(path.normalize(__dirname))) {
+        throw new Error("Invalid script path - potential path traversal detected");
+      }
 
       const { stdout, stderr } = await execAsync(
         `python3 "${migrationScript}"`,
@@ -195,9 +204,9 @@ export class IEMSDataFlowService extends EventEmitter {
       }
 
       result.success = true;
-      this?.status?.lastSync = new Date();
-      this?.status?.totalSyncs++;
-      this?.status?.totalRecordsProcessed += result.recordsProcessed;
+      this.status.lastSync = new Date();
+      this.status.totalSyncs++;
+      this.status.totalRecordsProcessed += result.recordsProcessed;
 
       // Notify via WebSocket
       this?.wsService?.broadcastEmailBulkUpdate("sync_complete", [], {
@@ -213,7 +222,7 @@ export class IEMSDataFlowService extends EventEmitter {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       result.errors?.push(errorMessage as string);
-      this?.status?.lastError = errorMessage;
+      this.status.lastError = errorMessage;
       logger.error(
         "Sync failed:",
         error instanceof Error ? error.message : String(error),
@@ -497,7 +506,7 @@ export class IEMSDataFlowService extends EventEmitter {
    * Set up scheduled sync
    */
   private setupScheduledSync(): void {
-    const intervalMs = this?.config?.syncIntervalMinutes * 60 * 1000;
+    const intervalMs = (this.config?.syncIntervalMinutes ?? 30) * 60 * 1000;
 
     this.syncInterval = setInterval(async () => {
       logger.info("Running scheduled sync");
@@ -505,9 +514,11 @@ export class IEMSDataFlowService extends EventEmitter {
     }, intervalMs);
 
     // Calculate next sync time
-    this?.status?.nextSync = new Date(Date.now() + intervalMs);
+    if (this.status) {
+      this.status.nextSync = new Date(Date.now() + intervalMs);
+    }
     logger.info(
-      `Scheduled sync every ${this?.config?.syncIntervalMinutes} minutes`,
+      `Scheduled sync every ${this.config?.syncIntervalMinutes ?? 30} minutes`,
     );
   }
 
@@ -582,10 +593,10 @@ export class IEMSDataFlowService extends EventEmitter {
     const stats = {
       ...this.status,
       config: {
-        syncInterval: this?.config?.syncIntervalMinutes,
-        batchSize: this?.config?.batchSize,
-        realTimeSync: this?.config?.enableRealTimeSync,
-        fileWatching: this?.config?.watchNewFiles,
+        syncInterval: this.config?.syncIntervalMinutes,
+        batchSize: this.config?.batchSize,
+        realTimeSync: this.config?.enableRealTimeSync,
+        fileWatching: this.config?.watchNewFiles,
       },
       analysisFileCount: 0,
       lastAnalysisFile: null as string | null,
@@ -593,7 +604,7 @@ export class IEMSDataFlowService extends EventEmitter {
 
     try {
       // Count analysis files
-      const files = await fs.readdir(this?.config?.iemsAnalysisDir);
+      const files = await fs.readdir(this.config?.iemsAnalysisDir ?? '/tmp');
       const analysisFiles = files?.filter((f: any) =>
         f.match(/analysis_batch_.*\.txt$/),
       );

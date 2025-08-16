@@ -111,8 +111,10 @@ export class RealTimeSyncService extends EventEmitter {
       callback,
     };
 
-    this?.subscriptions?.set(id, subscription);
-    this?.statistics?.activeSubscriptions = this?.subscriptions?.size;
+    this.subscriptions?.set(id, subscription);
+    if (this.statistics) {
+      this.statistics.activeSubscriptions = this.subscriptions?.size;
+    }
 
     logger.info(`New sync subscription created: ${id}`, "REAL_TIME_SYNC", {
       events,
@@ -126,10 +128,10 @@ export class RealTimeSyncService extends EventEmitter {
    * Unsubscribe from real-time sync events
    */
   unsubscribe(subscriptionId: string): boolean {
-    const deleted = this?.subscriptions?.delete(subscriptionId);
+    const deleted = this.subscriptions?.delete(subscriptionId);
 
-    if (deleted) {
-      this?.statistics?.activeSubscriptions = this?.subscriptions?.size;
+    if (deleted && this.statistics) {
+      this.statistics.activeSubscriptions = this.subscriptions?.size;
       logger.info(`Sync subscription removed: ${subscriptionId}`);
     }
 
@@ -159,7 +161,7 @@ export class RealTimeSyncService extends EventEmitter {
     }
 
     // Add to queue
-    this?.eventQueue?.push(fullEvent);
+    this.eventQueue?.push(fullEvent);
 
     // Process queue
     await this.processEventQueue();
@@ -169,7 +171,7 @@ export class RealTimeSyncService extends EventEmitter {
    * Process the event queue
    */
   private async processEventQueue(): Promise<void> {
-    if (this.isProcessing || this?.eventQueue?.length === 0) {
+    if (this.isProcessing || this.eventQueue?.length === 0) {
       return;
     }
 
@@ -177,15 +179,17 @@ export class RealTimeSyncService extends EventEmitter {
     const startTime = Date.now();
 
     try {
-      while (this?.eventQueue?.length > 0) {
-        const event = this?.eventQueue?.shift()!;
+      while (this.eventQueue?.length > 0) {
+        const event = this.eventQueue?.shift()!;
 
         // Process event
         await this.processEvent(event);
 
         // Update statistics
-        this?.statistics?.eventsProcessed++;
-        this?.statistics?.lastEventTime = new Date();
+        if (this.statistics) {
+          this.statistics.eventsProcessed++;
+          this.statistics.lastEventTime = new Date();
+        }
       }
     } catch (error) {
       logger.error(

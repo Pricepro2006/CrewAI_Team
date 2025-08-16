@@ -44,6 +44,8 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
     sets: 0,
     deletes: 0,
     evictions: 0,
+    size: 0,
+    itemCount: 0,
     hitRate: 0,
     avgResponseTime: 0
   };
@@ -65,12 +67,11 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
     };
 
     this.cache = new LRUCache<string, CacheEntry<T>>({
-      max: this?.options?.max!,
-      maxSize: this?.options?.maxSize!,
-      ttl: this?.options?.ttl!,
-      updateAgeOnGet: this?.options?.updateAgeOnGet,
-      updateAgeOnHas: this?.options?.updateAgeOnHas,
-      allowStale: this?.options?.stale,
+      max: this.options.max ?? 1000,
+      maxSize: this.options.maxSize ?? 50 * 1024 * 1024,
+      updateAgeOnGet: this.options.updateAgeOnGet,
+      updateAgeOnHas: this.options.updateAgeOnHas,
+      allowStale: this.options.stale,
       
       // Calculate size of cache entries
       sizeCalculation: (entry: CacheEntry<T>) => entry.size,
@@ -78,7 +79,7 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
       // Handle evictions
       dispose: (entry, key, reason) => {
         if (reason === 'evict' || reason === 'set') {
-          this?.stats?.evictions++;
+          this.stats.evictions++;
           this.emit('eviction', { key, reason, entry });
         }
       },
@@ -87,9 +88,9 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
       ttl: (entry: CacheEntry<T>) => {
         // Reduce TTL for frequently accessed items to keep them fresh
         if (entry.accessCount > 10) {
-          return (this?.options?.ttl! * 0.5);
+          return Math.floor((this.options.ttl ?? 5 * 60 * 1000) * 0.5);
         }
-        return this?.options?.ttl!;
+        return this.options.ttl ?? 5 * 60 * 1000;
       }
     });
 
@@ -124,13 +125,13 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
     const cached = this?.cache?.get(key);
     if (cached) {
       cached.accessCount++;
-      this?.stats?.hits++;
+      this.stats.hits++;
       this.recordResponseTime(Date.now() - startTime);
       this.emit('hit', { key, responseTime: Date.now() - startTime });
       return cached.value;
     }
 
-    this?.stats?.misses++;
+    this.stats.misses++;
     
     // If no fetcher provided, return undefined
     if (!fetcher) {
@@ -192,7 +193,7 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
       this?.cache?.set(key, entry);
     }
 
-    this?.stats?.sets++;
+    this.stats.sets++;
     this.updateCacheStats();
     this.emit('set', { key, size, ttl });
   }
@@ -207,10 +208,10 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
       const cached = this?.cache?.get(key);
       if (cached) {
         cached.accessCount++;
-        this?.stats?.hits++;
+        this.stats.hits++;
         results.set(key, cached.value);
       } else {
-        this?.stats?.misses++;
+        this.stats.misses++;
         results.set(key, undefined);
       }
     }
@@ -233,11 +234,11 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
   delete(key: string): boolean {
     const deleted = this?.cache?.delete(key);
     if (deleted) {
-      this?.stats?.deletes++;
+      this.stats.deletes++;
       this.updateCacheStats();
       this.emit('delete', { key });
     }
-    return deleted;
+    return deleted || false;
   }
 
   /**
@@ -314,15 +315,17 @@ export class OptimizedCacheService<T = any> extends EventEmitter {
   }
 
   private updateCacheStats(): void {
-    this?.stats?.itemCount = this?.cache?.size;
-    this?.stats?.size = this?.cache?.calculatedSize || 0;
+    if (this.cache) {
+      this.stats.itemCount = this.cache.size;
+      this.stats.size = this.cache.calculatedSize || 0;
+    }
     
-    const total = this?.stats?.hits + this?.stats?.misses;
-    this?.stats?.hitRate = total > 0 ? (this?.stats?.hits / total) * 100 : 0;
+    const total = this.stats.hits + this.stats.misses;
+    this.stats.hitRate = total > 0 ? (this.stats.hits / total) * 100 : 0;
     
-    if (this?.responseTimes?.length > 0) {
-      const sum = this?.responseTimes?.reduce((a: any, b: any) => a + b, 0);
-      this?.stats?.avgResponseTime = sum / this?.responseTimes?.length;
+    if (this.responseTimes.length > 0) {
+      const sum = this.responseTimes.reduce((a, b) => a + b, 0);
+      this.stats.avgResponseTime = sum / this.responseTimes.length;
     }
   }
 

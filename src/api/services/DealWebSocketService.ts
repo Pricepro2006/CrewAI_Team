@@ -212,8 +212,10 @@ export class DealWebSocketService extends EventEmitter {
     // Send initial data
     this.sendWelcomeMessage(ws, userId);
     
-    this?.stats?.totalConnections++;
-    this?.stats?.activeConnections = this?.connections?.size;
+    if (this?.stats) {
+      this.stats.totalConnections++;
+      this.stats.activeConnections = this?.connections?.size || 0;
+    }
     
     logger.info("Deal WebSocket connection registered", "DEAL_WEBSOCKET", { 
       connectionId, 
@@ -243,7 +245,9 @@ export class DealWebSocketService extends EventEmitter {
       }
     }
     
-    this?.stats?.activeConnections = this?.connections?.size;
+    if (this?.stats) {
+      this.stats.activeConnections = this?.connections?.size || 0;
+    }
     
     logger.info("Deal WebSocket connection unregistered", "DEAL_WEBSOCKET", { 
       connectionId, 
@@ -635,7 +639,9 @@ export class DealWebSocketService extends EventEmitter {
         try {
           ws.send(JSON.stringify(message));
           sent = true;
-          this?.stats?.messagesSent++;
+          if (this?.stats) {
+            this.stats.messagesSent++;
+          }
         } catch (error) {
           logger.warn("Failed to send message to WebSocket", "DEAL_WEBSOCKET", { 
             error, 
@@ -648,10 +654,14 @@ export class DealWebSocketService extends EventEmitter {
 
     if (sent) {
       this.incrementUserNotificationCount(userId);
-      this?.stats?.messagesDelivered++;
+      if (this?.stats) {
+        this.stats.messagesDelivered++;
+      }
     } else {
       this.queueMessage(userId, message, priority);
-      this?.stats?.messagesFailed++;
+      if (this?.stats) {
+        this.stats.messagesFailed++;
+      }
     }
   }
 
@@ -660,7 +670,9 @@ export class DealWebSocketService extends EventEmitter {
       if (ws.readyState === ws.OPEN) {
         try {
           ws.send(JSON.stringify(message));
-          this?.stats?.messagesSent++;
+          if (this?.stats) {
+            this.stats.messagesSent++;
+          }
         } catch (error) {
           logger.warn("Failed to broadcast message to WebSocket", "DEAL_WEBSOCKET", { 
             error, 
@@ -670,7 +682,9 @@ export class DealWebSocketService extends EventEmitter {
       }
     }
     
-    this?.stats?.messagesDelivered += this?.connections?.size;
+    if (this?.stats) {
+      this.stats.messagesDelivered += (this?.connections?.size || 0);
+    }
   }
 
   private queueMessage(userId: string, message: DealWebSocketMessage, priority: 'low' | 'normal' | 'high' | 'urgent'): void {
@@ -687,7 +701,9 @@ export class DealWebSocketService extends EventEmitter {
     };
 
     this?.notificationQueue?.push(queueItem);
-    this?.stats?.messagesQueued++;
+    if (this?.stats) {
+      this.stats.messagesQueued++;
+    }
 
     // Sort by priority
     this?.notificationQueue?.sort((a, b) => {
