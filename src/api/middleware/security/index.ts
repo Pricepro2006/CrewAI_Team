@@ -117,7 +117,9 @@ export function createAuthMiddleware() {
     }
 
     // Update last activity
-    ctx?.user?.lastActivity = new Date();
+    if (ctx?.user) {
+      ctx.user.lastActivity = new Date();
+    }
 
     return next();
   };

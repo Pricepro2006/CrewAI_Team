@@ -104,8 +104,8 @@ export function readinessProbe(serviceId: string, readinessChecks?: (() => Promi
       const checkResults: Array<{ check: string; ready: boolean; error?: string }> = [];
 
       // Run custom readiness checks
-      if (readinessChecks && readinessChecks?.length || 0 > 0) {
-        for (let i = 0; i < readinessChecks?.length || 0; i++) {
+      if (readinessChecks && (readinessChecks?.length || 0) > 0) {
+        for (let i = 0; i < (readinessChecks?.length || 0); i++) {
           try {
             const checkFn = readinessChecks[i];
             if (!checkFn) {

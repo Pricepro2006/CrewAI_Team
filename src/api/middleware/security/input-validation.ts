@@ -15,11 +15,11 @@
 
 import { z } from "zod";
 import DOMPurify from "isomorphic-dompurify";
+import { NodeSanitizer } from "../../../utils/node-sanitizer.js";
 import validator from "validator";
 import { createHash } from "crypto";
 import * as path from "path";
 import type { Request, Response, NextFunction } from "express";
-import type { File as MulterFile } from "multer";
 import { logger } from "../../../utils/logger.js";
 
 // Validation constants
@@ -98,24 +98,34 @@ export function sanitizeString(
   }
 
   // Enforce max length
-  if (sanitized?.length || 0 > maxLength) {
+  if ((sanitized?.length || 0) > maxLength) {
     sanitized = sanitized.substring(0, maxLength);
   }
 
-  // Remove HTML if not allowed
-  if (!allowHtml) {
-    sanitized = DOMPurify.sanitize(sanitized, { 
-      ALLOWED_TAGS: [],
-      ALLOWED_ATTR: [],
-      KEEP_CONTENT: true,
+  // Remove HTML if not allowed - use fallback for Node.js compatibility
+  try {
+    if (!allowHtml) {
+      sanitized = DOMPurify.sanitize(sanitized, { 
+        ALLOWED_TAGS: [],
+        ALLOWED_ATTR: [],
+        KEEP_CONTENT: true,
+      });
+    } else {
+      // Allow safe HTML only
+      sanitized = DOMPurify.sanitize(sanitized, {
+        ALLOWED_TAGS: ["b", "i", "em", "strong", "a", "p", "br"],
+        ALLOWED_ATTR: ["href", "title"],
+        ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+      });
+    }
+  } catch (error) {
+    logger.warn("DOMPurify failed, using fallback sanitizer", "VALIDATION", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      allowHtml,
     });
-  } else {
-    // Allow safe HTML only
-    sanitized = DOMPurify.sanitize(sanitized, {
-      ALLOWED_TAGS: ["b", "i", "em", "strong", "a", "p", "br"],
-      ALLOWED_ATTR: ["href", "title"],
-      ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
-    });
+    
+    // Fallback to Node.js compatible sanitizer
+    sanitized = NodeSanitizer.sanitize(sanitized, { allowHtml });
   }
 
   // Remove special characters if not allowed
@@ -287,7 +297,7 @@ export function sanitizeObject(
   }
   
   if (Array.isArray(obj)) {
-    if (obj?.length || 0 > MAX_ARRAY_LENGTH) {
+    if ((obj?.length || 0) > MAX_ARRAY_LENGTH) {
       throw new Error("Array length exceeds maximum allowed");
     }
     return obj?.map(item => sanitizeObject(item, depth + 1));
@@ -297,7 +307,7 @@ export function sanitizeObject(
     const sanitized: any = {};
     const keys = Object.keys(obj);
     
-    if (keys?.length || 0 > MAX_ARRAY_LENGTH) {
+    if ((keys?.length || 0) > MAX_ARRAY_LENGTH) {
       throw new Error("Object has too many properties");
     }
     
@@ -324,7 +334,7 @@ export function sanitizeObject(
  * Validate file upload
  */
 export function validateFileUpload(
-  file: MulterFile,
+  file: Express.Multer.File,
   options: {
     allowedTypes?: string[];
     maxSize?: number;
@@ -476,7 +486,7 @@ export const enhancedSchemas = {
     .transform(val => {
       // Never log credit card numbers
       // Return masked version for display
-      return val.substring(0, 4) + "****" + val.substring(val?.length || 0 - 4);
+      return val.substring(0, 4) + "****" + val.substring((val?.length || 0) - 4);
     }),
   
   // Price validation
@@ -622,7 +632,7 @@ export class SafeQueryBuilder {
   where(condition: string, ...params: any[]): this {
     // Use parameterized queries
     this.query += ` WHERE ${condition}`;
-    this?.params?.push(...params);
+    this.params.push(...params);
     return this;
   }
   
@@ -678,7 +688,7 @@ export function monitorSuspiciousInput(
     }
   }
   
-  if (suspicious?.length || 0 > 0) {
+  if ((suspicious?.length || 0) > 0) {
     logger.warn("Suspicious input detected", "SECURITY", {
       source,
       patterns: suspicious,
