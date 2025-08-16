@@ -3,7 +3,7 @@
  * Displays real-time connection status, quality, and metrics
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useConnectionWithFallback } from '../hooks/useConnectionWithFallback.js';
 import type { ConnectionMode, ConnectionQuality } from '../hooks/useConnectionWithFallback.js';
 import { 
@@ -53,8 +53,8 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
     'bottom-right': 'bottom-4 right-4'
   };
 
-  // Mode colors and icons
-  const getModeConfig = (mode: ConnectionMode) => {
+  // Mode colors and icons - memoized for performance
+  const getModeConfig = useCallback((mode: ConnectionMode) => {
     switch (mode) {
       case 'websocket':
         return {
@@ -97,10 +97,10 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
           label: 'Unknown'
         };
     }
-  };
+  }, []);
 
-  // Quality indicators
-  const getQualityConfig = (quality: ConnectionQuality) => {
+  // Quality indicators - memoized for performance
+  const getQualityConfig = useCallback((quality: ConnectionQuality) => {
     switch (quality) {
       case 'excellent':
         return { bars: 4, color: 'bg-green-500', label: 'Excellent' };
@@ -115,14 +115,15 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
       default:
         return { bars: 0, color: 'bg-gray-400', label: 'Unknown' };
     }
-  };
+  }, []);
 
-  const modeConfig = getModeConfig(connection.mode);
-  const qualityConfig = getQualityConfig(connection.quality);
+  // Memoize configurations to prevent unnecessary re-calculations
+  const modeConfig = useMemo(() => getModeConfig(connection.mode), [connection.mode, getModeConfig]);
+  const qualityConfig = useMemo(() => getQualityConfig(connection.quality), [connection.quality, getQualityConfig]);
   const ModeIcon = modeConfig?.icon;
 
-  // Format uptime
-  const formatUptime = (ms: number) => {
+  // Format uptime - memoized for performance
+  const formatUptime = useCallback((ms: number) => {
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
@@ -134,7 +135,7 @@ export const ConnectionMonitor: React.FC<ConnectionMonitorProps> = ({
     } else {
       return `${seconds}s`;
     }
-  };
+  }, []);
 
   // Auto-collapse after mode change
   useEffect(() => {

@@ -4,7 +4,26 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { websocketConfig, getReconnectionDelay, WebSocketEventType } from '../../shared/config/websocket.config.js';
+import { getWebSocketUrl, getReconnectionDelay, getWebSocketDebugInfo } from '../../config/websocket.config.js';
+
+// WebSocket Event Types for real-time updates
+export enum WebSocketEventType {
+  // Connection events
+  CONNECT = 'connect',
+  DISCONNECT = 'disconnect',
+  ERROR = 'error',
+  
+  // Agent events (5 new message types mentioned in requirements)
+  AGENT_STATUS = 'agent.status',
+  AGENT_TASK = 'agent.task',
+  PLAN_UPDATE = 'plan.update',
+  RAG_OPERATION = 'rag.operation',
+  SYSTEM_HEALTH = 'system.health',
+  
+  // Additional events
+  EMAIL_UPDATE = 'email.update',
+  WORKFLOW_UPDATE = 'workflow.update'
+}
 
 export interface WebSocketMessage {
   type: string;
@@ -36,7 +55,7 @@ export interface UseWebSocketOptions {
 
 export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
   const {
-    url = 'ws://localhost:8080/ws/walmart',
+    url = getWebSocketUrl(), // Use dynamic URL from config
     protocols = [],
     autoReconnect = true,
     maxReconnectAttempts = 5,
@@ -76,31 +95,58 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
   const startHeartbeat = useCallback(() => {
     clearHeartbeat();
     
-    if (websocketConfig?.heartbeat?.enabled) {
-      heartbeatIntervalRef.current = setInterval(() => {
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-          sendMessage({
+    // Enable heartbeat for connection monitoring
+    heartbeatIntervalRef.current = setInterval(() => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        try {
+          const pingMessage = JSON.stringify({
             type: 'ping',
             data: { timestamp: Date.now() },
             timestamp: new Date().toISOString()
           });
+          wsRef.current.send(pingMessage);
+        } catch (error) {
+          console.warn('❌ Failed to send heartbeat ping:', error);
         }
-      }, websocketConfig?.heartbeat?.interval);
-    }
-  }, []);
+      }
+    }, 30000); // 30 second heartbeat
+  }, [clearHeartbeat]); // Remove sendMessage dependency to avoid circular reference
 
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       return; // Already connected
     }
 
-    setState(prev => ({ ...prev, connecting: true, error: null }));
+    setState(prev => {
+      // Prevent multiple concurrent connection attempts
+      if (prev.connecting) {
+        console.log('⏳ Connection already in progress, skipping...');
+        return prev;
+      }
+      return { ...prev, connecting: true, error: null };
+    });
 
     try {
+      console.log('🔌 Connecting to native WebSocket:', url);
+      console.log('📊 WebSocket Debug Info:', getWebSocketDebugInfo());
+      
+      // Add connection timeout
+      const connectionTimeout = setTimeout(() => {
+        if (wsRef.current?.readyState === WebSocket.CONNECTING) {
+          wsRef.current?.close();
+          setState(prev => ({
+            ...prev,
+            error: 'Connection timeout',
+            connecting: false
+          }));
+        }
+      }, 10000); // 10 second timeout
+      
       wsRef.current = new WebSocket(url, protocols);
 
-      wsRef?.current?.onopen = () => {
-        console.log('✅ WebSocket connected to:', url);
+      wsRef.current.onopen = () => {
+        clearTimeout(connectionTimeout);
+        console.log('✅ Native WebSocket connected to:', url);
         setState(prev => ({
           ...prev,
           connected: true,
@@ -115,38 +161,68 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
         onConnect?.();
       };
 
-      wsRef?.current?.onmessage = (event: any) => {
+      wsRef.current.onmessage = (event: MessageEvent) => {
         try {
-          const message: WebSocketMessage = JSON.parse(event.data);
+          // Handle both JSON and plain text messages
+          let message: WebSocketMessage;
+          
+          if (typeof event.data === 'string') {
+            try {
+              message = JSON.parse(event.data);
+            } catch {
+              // Handle plain text messages
+              message = {
+                type: 'text',
+                data: event.data,
+                timestamp: new Date().toISOString()
+              };
+            }
+          } else {
+            message = {
+              type: 'binary',
+              data: event.data,
+              timestamp: new Date().toISOString()
+            };
+          }
+          
+          console.log('📨 Received WebSocket message:', message.type, message);
           setState(prev => ({ ...prev, lastMessage: message }));
           onMessage?.(message);
         } catch (error) {
-          console.warn('Invalid WebSocket message:', event.data);
+          console.warn('⚠️ Error processing WebSocket message:', error);
         }
       };
 
-      wsRef?.current?.onclose = (event: any) => {
-        console.log('🔚 WebSocket disconnected:', event.code, event.reason);
+      wsRef.current.onclose = (event: CloseEvent) => {
+        clearTimeout(connectionTimeout);
+        console.log('🔚 Native WebSocket disconnected:', event.code, event.reason);
         setState(prev => ({ ...prev, connected: false, connecting: false }));
         
         clearHeartbeat();
         onDisconnect?.();
 
         // Auto-reconnect if enabled and not a normal closure
-        if (autoReconnect && event.code !== 1000 && state.reconnectAttempts < maxReconnectAttempts) {
-          const delay = getReconnectionDelay(state.reconnectAttempts + 1);
-          console.log(`🔄 Reconnecting in ${delay}ms (attempt ${state.reconnectAttempts + 1}/${maxReconnectAttempts})`);
-          
-          setState(prev => ({ ...prev, reconnectAttempts: prev.reconnectAttempts + 1 }));
-          
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
-          }, delay);
-        }
+        setState(prev => {
+          if (autoReconnect && event.code !== 1000 && prev.reconnectAttempts < maxReconnectAttempts) {
+            const delay = getReconnectionDelay(prev.reconnectAttempts + 1);
+            console.log(`🔄 Reconnecting in ${delay}ms (attempt ${prev.reconnectAttempts + 1}/${maxReconnectAttempts})`);
+            
+            reconnectTimeoutRef.current = setTimeout(() => {
+              connect();
+            }, delay);
+            
+            return { ...prev, reconnectAttempts: prev.reconnectAttempts + 1 };
+          } else if (prev.reconnectAttempts >= maxReconnectAttempts) {
+            console.error('❌ Max reconnection attempts reached');
+            return { ...prev, error: 'Max reconnection attempts reached' };
+          }
+          return prev;
+        });
       };
 
-      wsRef?.current?.onerror = (error: any) => {
-        console.error('❌ WebSocket error:', error);
+      wsRef.current.onerror = (error: Event) => {
+        clearTimeout(connectionTimeout);
+        console.error('❌ Native WebSocket error:', error);
         setState(prev => ({ 
           ...prev, 
           error: 'Connection failed',
@@ -156,14 +232,14 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
       };
 
     } catch (error) {
-      console.error('❌ Failed to create WebSocket:', error);
+      console.error('❌ Failed to create native WebSocket:', error);
       setState(prev => ({ 
         ...prev, 
         error: (error as Error).message,
         connecting: false 
       }));
     }
-  }, [url, protocols, autoReconnect, maxReconnectAttempts, onMessage, onConnect, onDisconnect, onError, state.reconnectAttempts, startHeartbeat]);
+  }, [url, protocols, autoReconnect, maxReconnectAttempts, onMessage, onConnect, onDisconnect, onError, startHeartbeat, clearReconnectTimeout, clearHeartbeat]);
 
   const disconnect = useCallback(() => {
     clearReconnectTimeout();
@@ -184,17 +260,26 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
 
   const sendMessage = useCallback((message: Partial<WebSocketMessage>) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      const fullMessage: WebSocketMessage = {
-        type: message.type || 'message',
-        data: message.data || {},
-        timestamp: message.timestamp || new Date().toISOString(),
-        ...message
-      };
-      
-      wsRef?.current?.send(JSON.stringify(fullMessage));
-      return true;
+      try {
+        const fullMessage: WebSocketMessage = {
+          type: message.type || 'message',
+          data: message.data || {},
+          timestamp: message.timestamp || new Date().toISOString(),
+          ...message
+        };
+        
+        const messageStr = JSON.stringify(fullMessage);
+        wsRef.current.send(messageStr);
+        console.log('📤 Sent WebSocket message:', fullMessage.type);
+        return true;
+      } catch (error) {
+        console.error('❌ Failed to send WebSocket message:', error);
+        return false;
+      }
     } else {
-      console.warn('❌ Cannot send message - WebSocket not connected');
+      const readyState = wsRef.current?.readyState;
+      const stateNames = ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'];
+      console.warn(`❌ Cannot send message - WebSocket state: ${stateNames[readyState || 3]}`);
       return false;
     }
   }, []);
@@ -205,14 +290,23 @@ export const useWebSocketConnection = (options: UseWebSocketOptions = {}) => {
     setTimeout(connect, 1000);
   }, [disconnect, connect]);
 
-  // Auto-connect on mount
+  // Auto-connect on mount with cleanup
   useEffect(() => {
-    connect();
+    let mounted = true;
+    
+    const connectIfMounted = async () => {
+      if (mounted) {
+        await connect();
+      }
+    };
+    
+    connectIfMounted();
     
     return () => {
+      mounted = false;
       disconnect();
     };
-  }, []);
+  }, [url, protocols]); // Re-connect if URL or protocols change
 
   // Cleanup on unmount
   useEffect(() => {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { createTRPCProxyClient, createWSClient, wsLink } from "@trpc/client";
 import superjson from "superjson";
 import type { AppRouter } from "../../api/trpc/router.js";
-import { webSocketConfig } from "../../config/websocket.config.js";
+import { trpcWebSocketConfig, getTRPCWebSocketUrl, getWebSocketDebugInfo } from "../../config/websocket.config.js";
 
 interface WebSocketOptions {
   onConnect?: () => void;
@@ -39,7 +39,7 @@ export function useWebSocket(options: WebSocketOptions = {}): {
   const isReconnectingRef = useRef(false);
   const isMountedRef = useRef(true);
 
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     // Prevent multiple simultaneous connections
     if (isReconnectingRef.current || !isMountedRef.current) {
       return;
@@ -48,40 +48,56 @@ export function useWebSocket(options: WebSocketOptions = {}): {
     setConnectionStatus("connecting");
 
     try {
+      const wsUrl = getTRPCWebSocketUrl();
+      console.log('🔌 Connecting to tRPC WebSocket:', wsUrl);
+      console.log('📊 WebSocket Debug Info:', getWebSocketDebugInfo());
+
       const wsClient = createWSClient({
-        url: webSocketConfig.url,
+        url: wsUrl,
         onOpen: () => {
           if (!isMountedRef.current) return;
 
+          console.log('✅ tRPC WebSocket connected successfully');
           setIsConnected(true);
           setConnectionStatus("connected");
           setReconnectAttempts(0);
           isReconnectingRef.current = false;
           onConnect?.();
         },
-        onClose: () => {
+        onClose: (event) => {
           if (!isMountedRef.current) return;
 
+          console.log('🔚 tRPC WebSocket disconnected:', event?.code, event?.reason);
           setIsConnected(false);
           setConnectionStatus("disconnected");
           onDisconnect?.();
 
-          // Attempt to reconnect if not manually disconnected
-          if (
-            reconnectAttempts < maxReconnectAttempts &&
-            isMountedRef.current
-          ) {
-            isReconnectingRef.current = true;
-            reconnectTimeoutRef.current = setTimeout(() => {
-              if (isMountedRef.current) {
-                setReconnectAttempts((prev: any) => prev + 1);
-                connect();
-              }
-            }, reconnectDelay);
-          } else if (reconnectAttempts >= maxReconnectAttempts) {
-            setConnectionStatus("error");
-            onError?.(new Error("Max reconnection attempts reached"));
-          }
+          // Attempt to reconnect if not manually disconnected and not a normal closure
+          setReconnectAttempts((currentAttempts) => {
+            if (
+              currentAttempts < maxReconnectAttempts &&
+              isMountedRef.current &&
+              event?.code !== 1000
+            ) {
+              isReconnectingRef.current = true;
+              const delay = reconnectDelay * Math.pow(1.5, currentAttempts); // Exponential backoff
+              console.log(`🔄 Reconnecting in ${delay}ms (attempt ${currentAttempts + 1}/${maxReconnectAttempts})`);
+              
+              reconnectTimeoutRef.current = setTimeout(() => {
+                if (isMountedRef.current) {
+                  connect();
+                }
+              }, delay);
+              
+              return currentAttempts + 1;
+            } else if (currentAttempts >= maxReconnectAttempts) {
+              console.error('❌ Max reconnection attempts reached');
+              setConnectionStatus("error");
+              onError?.(new Error("Max reconnection attempts reached"));
+              return currentAttempts;
+            }
+            return currentAttempts;
+          });
         },
         // onError is not supported in tRPC WebSocket client
         // Error handling happens in subscription error callbacks
@@ -90,6 +106,7 @@ export function useWebSocket(options: WebSocketOptions = {}): {
       clientRef.current = wsClient;
       return wsClient;
     } catch (error) {
+      console.error('❌ Failed to create tRPC WebSocket client:', error);
       setConnectionStatus("error");
       onError?.(error as Error);
       isReconnectingRef.current = false;
@@ -100,9 +117,8 @@ export function useWebSocket(options: WebSocketOptions = {}): {
     onDisconnect,
     onError,
     reconnectDelay,
-    reconnectAttempts,
     maxReconnectAttempts,
-  ]);
+  ]); // Removed reconnectAttempts to prevent stale closures
 
   const disconnect = useCallback(() => {
     isMountedRef.current = false;
@@ -125,13 +141,13 @@ export function useWebSocket(options: WebSocketOptions = {}): {
 
   useEffect(() => {
     isMountedRef.current = true;
-    const wsClient = connect();
+    connect();
 
     return () => {
       isMountedRef.current = false;
       disconnect();
     };
-  }, []); // Empty dependency array to prevent reconnection loops
+  }, [connect, disconnect]); // Include connect and disconnect dependencies
 
   const client = createTRPCProxyClient<AppRouter>({
     transformer: superjson,

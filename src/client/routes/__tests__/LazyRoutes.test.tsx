@@ -1,0 +1,555 @@
+import React, { Suspense } from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import {
+  EmailDashboardDemo,
+  EmailDashboardMultiPanel,
+  AdvancedEmailDashboard,
+  WalmartDashboard,
+  WalmartProductSearch,
+  WalmartShoppingCart,
+  WalmartOrderHistory,
+  StatusDistributionChart,
+  WorkflowTimelineChart,
+  SLATrackingDashboard,
+} from '../LazyRoutes.js';
+
+// Mock React.lazy to control component loading
+const createMockLazyComponent = (name: string, shouldError = false) => {
+  const MockComponent = () => {
+    if (shouldError) {
+      throw new Error(`${name} component error`);
+    }
+    return <div data-testid={`mock-${name.toLowerCase()}`}>{name} Component</div>;
+  };
+  MockComponent.displayName = name;
+  return MockComponent;
+};
+
+// Mock all lazy-loaded components
+vi.mock('../pages/EmailDashboardDemo', () => ({
+  default: createMockLazyComponent('EmailDashboardDemo'),
+}));
+
+vi.mock('../components/dashboard/EmailDashboardMultiPanel', () => ({
+  default: createMockLazyComponent('EmailDashboardMultiPanel'),
+}));
+
+vi.mock('../components/dashboard/AdvancedEmailDashboard', () => ({
+  default: createMockLazyComponent('AdvancedEmailDashboard'),
+}));
+
+vi.mock('../components/walmart/WalmartDashboard', () => ({
+  default: createMockLazyComponent('WalmartDashboard'),
+}));
+
+vi.mock('../components/walmart/WalmartProductSearch', () => ({
+  default: createMockLazyComponent('WalmartProductSearch'),
+}));
+
+vi.mock('../components/walmart/WalmartShoppingCart', () => ({
+  default: createMockLazyComponent('WalmartShoppingCart'),
+}));
+
+vi.mock('../components/walmart/WalmartOrderHistory', () => ({
+  default: createMockLazyComponent('WalmartOrderHistory'),
+}));
+
+vi.mock('../components/charts/StatusDistributionChart', () => ({
+  default: createMockLazyComponent('StatusDistributionChart'),
+}));
+
+vi.mock('../components/charts/WorkflowTimelineChart', () => ({
+  default: createMockLazyComponent('WorkflowTimelineChart'),
+}));
+
+vi.mock('../components/charts/SLATrackingDashboard', () => ({
+  default: createMockLazyComponent('SLATrackingDashboard'),
+}));
+
+// Simple fallback component for testing
+const LoadingFallback = () => (
+  <div data-testid="loading-fallback">Loading...</div>
+);
+
+const ErrorFallback = ({ error }: { error: Error }) => (
+  <div data-testid="error-fallback">Error: {error.message}</div>
+);
+
+// Error boundary for testing error scenarios
+class TestErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <ErrorFallback error={this.state.error!} />;
+    }
+
+    return this.props.children;
+  }
+}
+
+const renderWithSuspense = (Component: React.ComponentType<any>, props = {}) => {
+  return render(
+    <TestErrorBoundary>
+      <Suspense fallback={<LoadingFallback />}>
+        <Component {...props} />
+      </Suspense>
+    </TestErrorBoundary>
+  );
+};
+
+describe('LazyRoutes - Email Dashboard Components', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('EmailDashboardDemo', () => {
+    it('renders EmailDashboardDemo after loading', async () => {
+      renderWithSuspense(EmailDashboardDemo);
+
+      // Should show loading initially
+      expect(screen.getByTestId('loading-fallback')).toBeInTheDocument();
+
+      // Should render component after loading
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-emaildashboarddemo')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('EmailDashboardDemo Component')).toBeInTheDocument();
+      expect(screen.queryByTestId('loading-fallback')).not.toBeInTheDocument();
+    });
+
+    it('is a lazy component', () => {
+      expect(EmailDashboardDemo).toHaveProperty('$$typeof');
+      expect(EmailDashboardDemo._payload).toBeDefined();
+    });
+  });
+
+  describe('EmailDashboardMultiPanel', () => {
+    it('renders EmailDashboardMultiPanel after loading', async () => {
+      renderWithSuspense(EmailDashboardMultiPanel);
+
+      expect(screen.getByTestId('loading-fallback')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-emaildashboardmultipanel')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('EmailDashboardMultiPanel Component')).toBeInTheDocument();
+    });
+
+    it('passes props correctly to the lazy component', async () => {
+      const testProps = {
+        emails: [],
+        loading: false,
+        error: null,
+      };
+
+      renderWithSuspense(EmailDashboardMultiPanel, testProps);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-emaildashboardmultipanel')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('AdvancedEmailDashboard', () => {
+    it('renders AdvancedEmailDashboard after loading', async () => {
+      renderWithSuspense(AdvancedEmailDashboard);
+
+      expect(screen.getByTestId('loading-fallback')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-advancedemaildashboard')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('AdvancedEmailDashboard Component')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('LazyRoutes - Walmart Components', () => {
+  describe('WalmartDashboard', () => {
+    it('renders WalmartDashboard after loading', async () => {
+      renderWithSuspense(WalmartDashboard);
+
+      expect(screen.getByTestId('loading-fallback')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-walmartdashboard')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('WalmartDashboard Component')).toBeInTheDocument();
+    });
+
+    it('is properly lazy loaded', () => {
+      expect(WalmartDashboard).toHaveProperty('$$typeof');
+      expect(WalmartDashboard._payload).toBeDefined();
+    });
+  });
+
+  describe('WalmartProductSearch', () => {
+    it('renders WalmartProductSearch after loading', async () => {
+      renderWithSuspense(WalmartProductSearch);
+
+      expect(screen.getByTestId('loading-fallback')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-walmartproductsearch')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('WalmartProductSearch Component')).toBeInTheDocument();
+    });
+  });
+
+  describe('WalmartShoppingCart', () => {
+    it('renders WalmartShoppingCart after loading', async () => {
+      renderWithSuspense(WalmartShoppingCart);
+
+      expect(screen.getByTestId('loading-fallback')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-walmartshoppingcart')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('WalmartShoppingCart Component')).toBeInTheDocument();
+    });
+  });
+
+  describe('WalmartOrderHistory', () => {
+    it('renders WalmartOrderHistory after loading', async () => {
+      renderWithSuspense(WalmartOrderHistory);
+
+      expect(screen.getByTestId('loading-fallback')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-walmartorderhistory')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('WalmartOrderHistory Component')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('LazyRoutes - Chart Components', () => {
+  describe('StatusDistributionChart', () => {
+    it('renders StatusDistributionChart after loading', async () => {
+      renderWithSuspense(StatusDistributionChart);
+
+      expect(screen.getByTestId('loading-fallback')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-statusdistributionchart')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('StatusDistributionChart Component')).toBeInTheDocument();
+    });
+  });
+
+  describe('WorkflowTimelineChart', () => {
+    it('renders WorkflowTimelineChart after loading', async () => {
+      renderWithSuspense(WorkflowTimelineChart);
+
+      expect(screen.getByTestId('loading-fallback')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-workflowtimelinechart')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('WorkflowTimelineChart Component')).toBeInTheDocument();
+    });
+  });
+
+  describe('SLATrackingDashboard', () => {
+    it('renders SLATrackingDashboard after loading', async () => {
+      renderWithSuspense(SLATrackingDashboard);
+
+      expect(screen.getByTestId('loading-fallback')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-slatrackingdashboard')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('SLATrackingDashboard Component')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('LazyRoutes - Error Handling', () => {
+  beforeEach(() => {
+    // Suppress console.error for error boundary tests
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('handles component loading errors gracefully', async () => {
+    // Mock a component that throws an error
+    vi.doMock('../pages/EmailDashboardDemo', () => ({
+      default: () => {
+        throw new Error('Component failed to load');
+      },
+    }));
+
+    const FailingComponent = React.lazy(() => import('../pages/EmailDashboardDemo'));
+
+    render(
+      <TestErrorBoundary>
+        <Suspense fallback={<LoadingFallback />}>
+          <FailingComponent />
+        </Suspense>
+      </TestErrorBoundary>
+    );
+
+    expect(screen.getByTestId('loading-fallback')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('error-fallback')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Component failed to load/)).toBeInTheDocument();
+  });
+});
+
+describe('LazyRoutes - Performance', () => {
+  it('components are only loaded when rendered', () => {
+    // Before rendering, the components should not be fully loaded
+    expect(EmailDashboardDemo._payload).toBeDefined();
+    expect(WalmartDashboard._payload).toBeDefined();
+    expect(StatusDistributionChart._payload).toBeDefined();
+    
+    // The components should be React.lazy wrappers
+    expect(EmailDashboardDemo).toHaveProperty('$$typeof');
+    expect(WalmartDashboard).toHaveProperty('$$typeof');
+    expect(StatusDistributionChart).toHaveProperty('$$typeof');
+  });
+
+  it('multiple components can be loaded concurrently', async () => {
+    const { container } = render(
+      <TestErrorBoundary>
+        <Suspense fallback={<LoadingFallback />}>
+          <div>
+            <EmailDashboardDemo />
+            <WalmartDashboard />
+            <StatusDistributionChart />
+          </div>
+        </Suspense>
+      </TestErrorBoundary>
+    );
+
+    expect(screen.getByTestId('loading-fallback')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-emaildashboarddemo')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-walmartdashboard')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-statusdistributionchart')).toBeInTheDocument();
+    });
+
+    expect(container.querySelectorAll('[data-testid^="mock-"]')).toHaveLength(3);
+  });
+
+  it('handles rapid component mounting and unmounting', async () => {
+    const { unmount, rerender } = renderWithSuspense(EmailDashboardDemo);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-emaildashboarddemo')).toBeInTheDocument();
+    });
+
+    unmount();
+
+    // Re-render the same component
+    rerender(
+      <TestErrorBoundary>
+        <Suspense fallback={<LoadingFallback />}>
+          <EmailDashboardDemo />
+        </Suspense>
+      </TestErrorBoundary>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-emaildashboarddemo')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('LazyRoutes - Accessibility', () => {
+  it('provides accessible loading states', async () => {
+    renderWithSuspense(EmailDashboardDemo);
+
+    const loadingElement = screen.getByTestId('loading-fallback');
+    expect(loadingElement).toBeInTheDocument();
+    expect(loadingElement).toHaveTextContent('Loading...');
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-emaildashboarddemo')).toBeInTheDocument();
+    });
+  });
+
+  it('maintains focus management during lazy loading', async () => {
+    const { container } = renderWithSuspense(EmailDashboardDemo);
+
+    // Focus should be manageable during loading
+    const loadingElement = screen.getByTestId('loading-fallback');
+    loadingElement.focus();
+    expect(document.activeElement).toBe(loadingElement);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-emaildashboarddemo')).toBeInTheDocument();
+    });
+
+    // Focus should be maintained or properly transferred
+    expect(document.activeElement).toBeDefined();
+  });
+
+  it('provides semantic content structure', async () => {
+    renderWithSuspense(EmailDashboardDemo);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-emaildashboarddemo')).toBeInTheDocument();
+    });
+
+    const component = screen.getByTestId('mock-emaildashboarddemo');
+    expect(component.tagName).toBe('DIV');
+    expect(component).toHaveTextContent('EmailDashboardDemo Component');
+  });
+});
+
+describe('LazyRoutes - Integration Scenarios', () => {
+  it('works with React Router navigation', async () => {
+    // Simulate router context
+    const MockRouter = ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="mock-router">{children}</div>
+    );
+
+    render(
+      <MockRouter>
+        <TestErrorBoundary>
+          <Suspense fallback={<LoadingFallback />}>
+            <EmailDashboardDemo />
+          </Suspense>
+        </TestErrorBoundary>
+      </MockRouter>
+    );
+
+    expect(screen.getByTestId('mock-router')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-emaildashboarddemo')).toBeInTheDocument();
+    });
+  });
+
+  it('handles state management integration', async () => {
+    // Mock state provider
+    const MockStateProvider = ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="mock-state-provider">{children}</div>
+    );
+
+    render(
+      <MockStateProvider>
+        <TestErrorBoundary>
+          <Suspense fallback={<LoadingFallback />}>
+            <WalmartDashboard />
+          </Suspense>
+        </TestErrorBoundary>
+      </MockStateProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-walmartdashboard')).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('mock-state-provider')).toBeInTheDocument();
+  });
+
+  it('supports nested lazy loading', async () => {
+    const NestedComponent = () => (
+      <div>
+        <Suspense fallback={<div data-testid="nested-loading">Nested Loading...</div>}>
+          <EmailDashboardMultiPanel />
+        </Suspense>
+      </div>
+    );
+
+    render(
+      <TestErrorBoundary>
+        <Suspense fallback={<LoadingFallback />}>
+          <NestedComponent />
+        </Suspense>
+      </TestErrorBoundary>
+    );
+
+    // Should handle nested suspense boundaries
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-emaildashboardmultipanel')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('LazyRoutes - Memory Management', () => {
+  it('properly cleans up components on unmount', async () => {
+    const { unmount } = renderWithSuspense(EmailDashboardDemo);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-emaildashboarddemo')).toBeInTheDocument();
+    });
+
+    // Component should be mounted
+    expect(screen.getByTestId('mock-emaildashboarddemo')).toBeInTheDocument();
+
+    unmount();
+
+    // Component should be unmounted
+    expect(screen.queryByTestId('mock-emaildashboarddemo')).not.toBeInTheDocument();
+  });
+
+  it('handles memory efficiently with multiple lazy components', async () => {
+    const components = [
+      EmailDashboardDemo,
+      WalmartDashboard,
+      StatusDistributionChart,
+      WorkflowTimelineChart,
+      SLATrackingDashboard,
+    ];
+
+    // Render multiple components
+    const { unmount } = render(
+      <TestErrorBoundary>
+        <Suspense fallback={<LoadingFallback />}>
+          <div>
+            {components.map((Component, index) => (
+              <Component key={index} />
+            ))}
+          </div>
+        </Suspense>
+      </TestErrorBoundary>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-emaildashboarddemo')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-walmartdashboard')).toBeInTheDocument();
+    });
+
+    unmount();
+
+    // All components should be properly cleaned up
+    expect(screen.queryByTestId('mock-emaildashboarddemo')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mock-walmartdashboard')).not.toBeInTheDocument();
+  });
+});

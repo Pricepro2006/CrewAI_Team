@@ -3,7 +3,7 @@
  * Displays real-time WebSocket connection status and message flow
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useWebSocketConnection, WebSocketMessage } from '../hooks/useWebSocketConnection.js';
 
 interface MessageLog {
@@ -16,6 +16,29 @@ export const WebSocketMonitor: React.FC = () => {
   const [messages, setMessages] = useState<MessageLog[]>([]);
   const [testMessage, setTestMessage] = useState('');
 
+  // Memoize callback functions to prevent unnecessary re-renders
+  const onMessage = useCallback((message: any) => {
+    const logEntry: MessageLog = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      message,
+      timestamp: Date.now()
+    };
+    
+    setMessages(prev => [logEntry, ...prev.slice(0, 49)]); // Keep last 50 messages
+  }, []);
+
+  const onConnect = useCallback(() => {
+    console.log('WebSocket Monitor: Connected');
+  }, []);
+
+  const onDisconnect = useCallback(() => {
+    console.log('WebSocket Monitor: Disconnected');
+  }, []);
+
+  const onError = useCallback((error: any) => {
+    console.error('WebSocket Monitor: Error', error);
+  }, []);
+
   const {
     connected,
     connecting,
@@ -25,27 +48,13 @@ export const WebSocketMonitor: React.FC = () => {
     sendMessage,
     reconnect
   } = useWebSocketConnection({
-    onMessage: (message: any) => {
-      const logEntry: MessageLog = {
-        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        message,
-        timestamp: Date.now()
-      };
-      
-      setMessages(prev => [logEntry, ...prev.slice(0, 49)]); // Keep last 50 messages
-    },
-    onConnect: () => {
-      console.log('WebSocket Monitor: Connected');
-    },
-    onDisconnect: () => {
-      console.log('WebSocket Monitor: Disconnected');
-    },
-    onError: (error: any) => {
-      console.error('WebSocket Monitor: Error', error);
-    }
+    onMessage,
+    onConnect,
+    onDisconnect,
+    onError
   });
 
-  const handleSendTest = () => {
+  const handleSendTest = useCallback(() => {
     if (!testMessage.trim()) return;
     
     const sent = sendMessage({
@@ -57,22 +66,22 @@ export const WebSocketMonitor: React.FC = () => {
     if (sent) {
       setTestMessage('');
     }
-  };
+  }, [testMessage, sendMessage]);
 
-  const handleSendPing = () => {
+  const handleSendPing = useCallback(() => {
     sendMessage({
       type: 'ping',
       data: { timestamp: Date.now() },
       timestamp: new Date().toISOString()
     });
-  };
+  }, [sendMessage]);
 
-  const getConnectionStatus = () => {
+  const getConnectionStatus = useCallback(() => {
     if (connecting) return { text: 'Connecting...', color: 'text-yellow-600 bg-yellow-100' };
     if (connected) return { text: 'Connected', color: 'text-green-600 bg-green-100' };
     if (error) return { text: `Error: ${error}`, color: 'text-red-600 bg-red-100' };
     return { text: 'Disconnected', color: 'text-gray-600 bg-gray-100' };
-  };
+  }, [connecting, connected, error]);
 
   const status = getConnectionStatus();
 
@@ -139,7 +148,7 @@ export const WebSocketMonitor: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-3">Message Log</h3>
             <div className="bg-gray-50 rounded-lg max-h-96 overflow-y-auto">
-              {messages?.length || 0 === 0 ? (
+              {messages.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   No messages received yet
                 </div>

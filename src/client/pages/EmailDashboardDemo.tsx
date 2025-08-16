@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { EmailDashboardMultiPanel } from "../components/dashboard/EmailDashboardMultiPanel.js";
 import { useEmailAssignment } from "../hooks/useEmailAssignment.js";
-import { api } from "../../lib/trpc.js";
+import { api, handleTrpcError } from "../lib/api.js";
 import { Button } from "../../components/ui/button.js";
 import { Alert, AlertDescription } from "../../components/ui/alert.js";
 import { Badge } from "../../components/ui/badge.js";
@@ -116,23 +116,14 @@ export function EmailDashboardDemo() {
     null,
   );
 
-  // Use tRPC to fetch emails with table data endpoint
+  // Use tRPC to fetch emails with proper error handling
   const {
     data: tableData,
     isLoading: loadingEmails,
     error: emailsError,
     refetch,
     isFetching,
-  } = (
-    (api as any).emails?.getTableData?.useQuery ||
-    (() => ({
-      data: undefined,
-      isLoading: false,
-      error: null,
-      refetch: () => {},
-      isFetching: false,
-    }))
-  )(
+  } = api.emails.getTableData.useQuery(
     {
       page: 1,
       pageSize: 100,
@@ -140,94 +131,143 @@ export function EmailDashboardDemo() {
       sortOrder: "desc",
     },
     {
-      retry: (failureCount: number, error: any) => {
-        // Retry up to 3 times for network errors
-        if (failureCount < 3 && error?.message?.includes("fetch")) {
+      retry: (failureCount, error) => {
+        // Retry up to 3 times for network errors only
+        if (failureCount < 3 && (!error?.data?.code || error.message?.includes("fetch"))) {
           return true;
         }
         return false;
       },
-      retryDelay: (attemptIndex: number) =>
-        Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 2 * 60 * 1000, // 2 minutes
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
     },
   );
 
-  // Transform API data to component format
+  // Transform API data to component format with error handling
   const emails: EmailRecord[] = React.useMemo(() => {
-    if (!tableData?.data?.emails) return [];
+    try {
+      if (!tableData?.data?.emails || !Array.isArray(tableData.data.emails)) {
+        return [];
+      }
 
-    return tableData?.data?.emails?.map((email: any) => ({
-      id: email.id,
-      email_alias: email.email_alias,
-      requested_by: email.requested_by || "Unknown",
-      subject: email.subject || "No Subject",
-      summary: email.summary || "No summary",
-      status: (email.status || "yellow") as EmailStatus,
-      status_text: email.status_text || "Pending",
-      workflow_state: (email.workflow_state || "START_POINT") as WorkflowState,
-      timestamp: email.received_date,
-      priority: email.priority || "medium",
-      assignedTo: undefined as string | undefined, // This field doesn't exist in the API response
-      hasAttachments: email.has_attachments || false,
-      isRead: email.is_read || false,
-      lastUpdated: email.received_date,
-    }));
+      return tableData.data.emails.map((email: any) => {
+        // Validate required fields
+        if (!email.id) {
+          console.warn('Email record missing ID:', email);
+          return null;
+        }
+
+        return {
+          id: email.id,
+          email_alias: email.email_alias || "Unknown Alias",
+          requested_by: email.requested_by || "Unknown",
+          subject: email.subject || "No Subject",
+          summary: email.summary || "No summary",
+          status: (email.status || "yellow") as EmailStatus,
+          status_text: email.status_text || "Pending",
+          workflow_state: (email.workflow_state || "START_POINT") as WorkflowState,
+          timestamp: email.received_date || new Date().toISOString(),
+          priority: email.priority || "medium",
+          assignedTo: email.assigned_to || undefined,
+          hasAttachments: Boolean(email.has_attachments),
+          isRead: Boolean(email.is_read),
+          lastUpdated: email.received_date || email.updated_at || new Date().toISOString(),
+        };
+      }).filter(Boolean); // Remove null entries
+    } catch (error) {
+      console.error('Error transforming email data:', error);
+      return [];
+    }
   }, [tableData]);
 
-  // Use email assignment hook
+  // Use email assignment hook with proper async handling
   const {
     assignEmail,
     isAssigning,
     error: assignmentError,
+    errorMessage: assignmentErrorMessage,
   } = useEmailAssignment({
-    onSuccess: () => {
+    onSuccess: async () => {
       setShowSuccessMessage("Email assigned successfully!");
-      refetch(); // Refresh the email list
+      try {
+        await refetch(); // Refresh the email list
+      } catch (error) {
+        console.warn('Failed to refresh after assignment:', error);
+      }
       // Clear success message after 3 seconds
       setTimeout(() => setShowSuccessMessage(null), 3000);
     },
-    onError: (error: any) => {
-      console.error("Assignment failed:", error);
-      // Error is handled in the error display logic below
+    onError: (error) => {
+      console.error("Assignment failed:", handleTrpcError(error));
     },
   });
 
-  // Handle email assignment
+  // Handle email assignment with proper error handling
   const handleAssignEmail = useCallback(
     async (emailId: string, assignedTo: string) => {
+      if (!emailId) {
+        console.error('Email ID is required for assignment');
+        return;
+      }
+
       try {
         await assignEmail(emailId, assignedTo || null);
       } catch (err) {
-        console.error("Failed to assign email:", err);
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error("Failed to assign email:", errorMessage);
+        // Error will be shown in UI through the assignment hook's error state
       }
     },
     [assignEmail],
   );
 
-  // Update email status using tRPC mutation
-  const updateEmailMutation = (api as any).emails?.updateStatus?.useMutation({
-    onSuccess: () => {
+  // Update email status using tRPC mutation with proper async handling
+  const updateEmailMutation = api.emails.updateStatus.useMutation({
+    onSuccess: async () => {
       setShowSuccessMessage("Email status updated successfully!");
-      refetch(); // Refresh the email list
+      try {
+        await refetch(); // Refresh the email list
+      } catch (error) {
+        console.warn('Failed to refresh after status update:', error);
+      }
       // Clear success message after 3 seconds
       setTimeout(() => setShowSuccessMessage(null), 3000);
     },
-    onError: (error: any) => {
-      console.error("Status update failed:", error);
-      // Error is handled in the error display logic below
+    onError: (error) => {
+      const errorMessage = handleTrpcError(error);
+      console.error("Status update failed:", errorMessage);
+    },
+    retry: (failureCount, error) => {
+      // Only retry for network errors
+      if (failureCount < 2 && (!error?.data?.code || error.message?.includes('fetch'))) {
+        return true;
+      }
+      return false;
     },
   });
 
-  // Handle status change
+  // Handle status change with validation and error handling
   const handleStatusChange = useCallback(
     async (emailId: string, newStatus: EmailStatus) => {
+      if (!emailId) {
+        console.error('Email ID is required for status update');
+        return;
+      }
+
+      if (!['red', 'yellow', 'green'].includes(newStatus)) {
+        console.error('Invalid status:', newStatus);
+        return;
+      }
+
       try {
         await updateEmailMutation.mutateAsync({
           id: emailId,
           status: newStatus,
           status_text:
             newStatus === "red"
-              ? "critical"
+              ? "Critical"
               : newStatus === "yellow"
                 ? "In Progress"
                 : "Completed",
@@ -241,7 +281,8 @@ export function EmailDashboardDemo() {
 
         console.log(`Email ${emailId} status changed to ${newStatus}`);
       } catch (err) {
-        console.error("Failed to update status:", err);
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error("Failed to update status:", errorMessage);
       }
     },
     [updateEmailMutation],
@@ -253,61 +294,29 @@ export function EmailDashboardDemo() {
     console.log("Selected email:", email);
   }, []);
 
-  // Manual retry function
+  // Manual retry function with proper error handling
   const handleRetry = useCallback(async () => {
-    setRetryCount((prev: any) => prev + 1);
+    setRetryCount((prev) => prev + 1);
     try {
-      await refetch();
-      setShowSuccessMessage("Data refreshed successfully!");
-      setTimeout(() => setShowSuccessMessage(null), 3000);
+      const result = await refetch();
+      if (result.data) {
+        setShowSuccessMessage("Data refreshed successfully!");
+        setTimeout(() => setShowSuccessMessage(null), 3000);
+      }
     } catch (error) {
-      console.error("Retry failed:", error);
+      const errorMessage = handleTrpcError(error);
+      console.error("Retry failed:", errorMessage);
     }
   }, [refetch]);
 
   // Calculate loading state - include isFetching for refresh operations
   const loading =
-    loadingEmails || isFetching || isAssigning || updateEmailMutation.isLoading;
+    loadingEmails || isFetching || isAssigning || updateEmailMutation.isPending;
 
-  // Combine errors with user-friendly messages
-  const getErrorMessage = (error: any): string | null => {
-    if (!error) return null;
-
-    // Handle tRPC errors
-    if (error?.data?.zodError) {
-      return "Invalid data format. Please check your input.";
-    }
-
-    if (error?.data?.code === "UNAUTHORIZED") {
-      return "You are not authorized to perform this action.";
-    }
-
-    if (error?.data?.code === "NOT_FOUND") {
-      return "The requested email was not found.";
-    }
-
-    if (error?.data?.code === "BAD_REQUEST") {
-      return "Invalid request. Please check your input.";
-    }
-
-    // Handle network errors
-    if (error?.message?.includes("fetch")) {
-      return "Network error. Please check your connection and try again.";
-    }
-
-    // Handle timeout errors
-    if (error?.message?.includes("timeout")) {
-      return "Request timed out. Please try again.";
-    }
-
-    // Default error message
-    return error?.message || "An unexpected error occurred. Please try again.";
-  };
-
-  const error =
-    getErrorMessage(emailsError) ||
-    getErrorMessage(assignmentError) ||
-    getErrorMessage(updateEmailMutation.error);
+  // Combine errors with user-friendly messages using central error handler
+  const error = handleTrpcError(
+    emailsError || assignmentError || updateEmailMutation.error
+  );
 
   return (
     <div className="min-h-screen bg-background p-4">

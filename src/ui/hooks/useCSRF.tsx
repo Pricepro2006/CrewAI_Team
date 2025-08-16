@@ -210,6 +210,15 @@ export function CSRFProvider({ children }: CSRFProviderProps) {
     }
   }, [token]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+      }
+    };
+  }, []);
+
   const value: CSRFContextValue = {
     token,
     isLoading,
