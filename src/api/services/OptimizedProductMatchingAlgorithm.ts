@@ -17,7 +17,7 @@ import { ProductMatchingAlgorithm } from "./ProductMatchingAlgorithm.js";
 import type { SimilarityMetrics, ComprehensiveScore, ProductFeatures } from "./ProductMatchingAlgorithm.js";
 import type { MatchedProduct, SmartMatchingOptions } from "./SmartMatchingService.js";
 import type { ProductFrequency } from "./PurchaseHistoryService.js";
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 // ML model configuration for adaptive scoring
 interface MLScoringModel {
@@ -95,12 +95,12 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
   };
 
   // Spell correction dictionary
-  private spellCorrections: Map<string, string>;
-  private commonMisspellings: Map<string, string[]>;
+  private spellCorrections: Map<string, string> = new Map();
+  private commonMisspellings: Map<string, string[]> = new Map();
   
   // Brand and category synonyms
-  private brandSynonyms: Map<string, Set<string>>;
-  private categorySynonyms: Map<string, Set<string>>;
+  private brandSynonyms: Map<string, Set<string>> = new Map();
+  private categorySynonyms: Map<string, Set<string>> = new Map();
 
   private constructor() {
     super();
@@ -154,8 +154,10 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     this.initializeSynonyms();
     
     // Start background tasks
-    this.startCacheWarming();
-    this.startModelTraining();
+    this.startCacheWarming().catch(error => {
+      logger.error("Cache warming failed", "OPTIMIZED_MATCHING", { error });
+      });
+      this.startModelTraining();
   }
 
   static getOptimizedInstance(): OptimizedProductMatchingAlgorithm {
@@ -168,7 +170,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
   /**
    * Enhanced similarity calculation with caching
    */
-  async calculateSimilarity(query: string, productName: string): Promise<number> {
+  override async calculateSimilarity(query: string, productName: string): Promise<number> {
     const startTime = Date.now();
     
     // Generate cache key
@@ -369,7 +371,9 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     // Limit memoization size
     if ((this.levenshteinMemo?.size ?? 0) > 10000) {
       const firstKey = this.levenshteinMemo?.keys().next().value;
-      this.levenshteinMemo?.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.levenshteinMemo?.delete(firstKey);
+      }
     }
     
     return similarity;
@@ -817,7 +821,7 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     }
     
     let size = match[1];
-    let unit = match[2].toLowerCase();
+    let unit = match[2]?.toLowerCase() || '';
     
     // Normalize units
     const unitMap: Record<string, string> = {
@@ -899,7 +903,9 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     // Limit cache size
     if ((this.ngramMemo?.size ?? 0) > 5000) {
       const firstKey = this.ngramMemo?.keys().next().value;
-      this.ngramMemo?.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.ngramMemo?.delete(firstKey);
+      }
     }
     
     return ngrams;
@@ -1083,10 +1089,12 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
   /**
    * Start background model training
    */
+  private modelTrainingInterval?: NodeJS.Timeout;
+
   private startModelTraining(): void {
     // Train model every hour if feedback available
-    setInterval(() => {
-      if (this.feedbackHistory.length >= 50) {
+    this.modelTrainingInterval = setInterval(() => {
+      if (this.feedbackHistory && this.feedbackHistory.length >= 50) {
         this.trainModel().catch(error => {
           logger.error("Model training failed", "OPTIMIZED_MATCHING", { error });
         });
@@ -1129,11 +1137,27 @@ export class OptimizedProductMatchingAlgorithm extends ProductMatchingAlgorithm 
     
     // Clear Redis caches
     try {
-      await this.cacheManager?.clearNamespace('similarity');
+      await this.cacheManager?.clear('similarity');
     } catch (error) {
       logger.warn("Failed to clear Redis cache", "OPTIMIZED_MATCHING", { error });
     }
     
     logger.info("All caches cleared", "OPTIMIZED_MATCHING");
+  }
+
+  /**
+   * Shutdown and cleanup resources
+   */
+  async shutdown(): Promise<void> {
+    // Clear the model training interval
+    if (this.modelTrainingInterval) {
+      clearInterval(this.modelTrainingInterval);
+      this.modelTrainingInterval = undefined;
+    }
+    
+    // Clear all caches
+    await this.clearCaches();
+    
+    logger.info("OptimizedProductMatchingAlgorithm shut down", "OPTIMIZED_MATCHING");
   }
 }

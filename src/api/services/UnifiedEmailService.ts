@@ -5,6 +5,7 @@ import { EmailAnalysisAgent } from "../../core/agents/specialized/EmailAnalysisA
 import { EmailAnalysisPipeline } from "../../core/processors/EmailAnalysisPipeline.js";
 import { EmailRepository } from "../../database/repositories/index.js";
 import { getDatabaseConnection } from "../../database/connection.js";
+import { databaseManager } from "../../core/database/DatabaseManager.js";
 import { logger } from "../../utils/logger.js";
 import { metrics } from "../monitoring/metrics.js";
 import type {
@@ -16,7 +17,7 @@ import type {
   WorkflowState,
   WorkflowTypeStats,
   BottleneckInfo,
-} from "../../types/unified-email?.types.js";
+} from "../../types/unified-email.types.js";
 
 interface GraphEmailData {
   id: string;
@@ -50,15 +51,37 @@ export class UnifiedEmailService {
   private analysisPipeline: EmailAnalysisPipeline;
   private emailRepository: EmailRepository;
 
-  constructor() {
+  constructor(emailRepository?: EmailRepository) {
     // Use the real email storage service
     this.emailStorage = new EmailStorageService();
     this.iemsData = IEMSDataService.getInstance();
     this.analysisPipeline = new EmailAnalysisPipeline();
 
-    // Initialize database repository
-    const db = getDatabaseConnection();
-    this.emailRepository = new EmailRepository({ db });
+    // Use provided repository or create new one
+    if (emailRepository) {
+      this.emailRepository = emailRepository;
+    } else {
+      try {
+        // Try DatabaseManager first for consistency
+        try {
+          const connection = databaseManager.getConnection('main');
+          const db = connection.getRawDatabase();
+          this.emailRepository = new EmailRepository({ db });
+        } catch (dmError) {
+          // Fallback to direct connection
+          logger.warn('DatabaseManager failed, using direct connection', 'UNIFIED_EMAIL', { dmError });
+          const db = getDatabaseConnection();
+          this.emailRepository = new EmailRepository({ db });
+        }
+      } catch (error) {
+        logger.error('Failed to initialize EmailRepository', 'UNIFIED_EMAIL', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        // Create a minimal repository that will throw errors when used
+        // This allows the service to be instantiated but will fail on actual operations
+        this.emailRepository = {} as EmailRepository;
+      }
+    }
   }
 
   /**
@@ -76,7 +99,12 @@ export class UnifiedEmailService {
       });
 
       // 1. Store raw email in database
-      const emailId = await this?.emailRepository?.createEmail({
+      if (!this.emailRepository || typeof this.emailRepository.createEmail !== 'function') {
+        logger.error('EmailRepository not properly initialized', 'UNIFIED_EMAIL');
+        throw new Error('EmailRepository not properly initialized');
+      }
+      
+      const emailId = await this.emailRepository.createEmail({
         graphId: emailData.id,
         messageId: emailData.id,
         subject: emailData.subject,
@@ -98,7 +126,12 @@ export class UnifiedEmailService {
       });
 
       // 2. Run through analysis pipeline
-      const enrichedEmail = await this?.analysisPipeline?.process({
+      if (!this.analysisPipeline || typeof this.analysisPipeline.process !== 'function') {
+        logger.error('AnalysisPipeline not properly initialized', 'UNIFIED_EMAIL');
+        throw new Error('AnalysisPipeline not properly initialized');
+      }
+      
+      const enrichedEmail = await this.analysisPipeline.process({
         id: emailId,
         from: emailData?.from?.emailAddress.address,
         to: emailData?.toRecipients?.map((r: any) => r?.emailAddress?.address),
@@ -111,7 +144,11 @@ export class UnifiedEmailService {
       });
 
       // 3. Update email with analysis results
-      await this?.emailRepository?.updateEmail(emailId, {
+      if (!this.emailRepository || typeof this.emailRepository.updateEmail !== 'function') {
+        throw new Error('EmailRepository not properly initialized');
+      }
+      
+      await this.emailRepository.updateEmail(emailId, {
         status: "processed",
         priority: enrichedEmail.priority,
         workflowState: enrichedEmail?.workflow?.state,
@@ -146,13 +183,17 @@ export class UnifiedEmailService {
           })),
         ];
         if (entityList?.length || 0 > 0) {
-          await this?.emailRepository?.storeEmailEntities(emailId, entityList);
+          if (this.emailRepository && typeof this.emailRepository.storeEmailEntities === 'function') {
+            await this.emailRepository.storeEmailEntities(emailId, entityList);
+          } else {
+            logger.warn('Cannot store entities - repository not initialized', 'UNIFIED_EMAIL');
+          }
         }
       }
 
       // 5. Update workflow chain
-      if (enrichedEmail?.workflow?.type) {
-        const chainId = await this?.emailRepository?.createOrUpdateWorkflowChain({
+      if (enrichedEmail?.workflow?.type && this.emailRepository && typeof this.emailRepository.createOrUpdateWorkflowChain === 'function') {
+        const chainId = await this.emailRepository.createOrUpdateWorkflowChain({
           emailId,
           workflowType: enrichedEmail?.workflow?.type,
           workflowState: enrichedEmail?.workflow?.state,
@@ -177,7 +218,10 @@ export class UnifiedEmailService {
       }
 
       // 6. Get full email data
-      const processedEmail = await this?.emailRepository?.getEmailById(emailId);
+      if (!this.emailRepository || typeof this.emailRepository.getEmailById !== 'function') {
+        throw new Error('EmailRepository not properly initialized');
+      }
+      const processedEmail = await this.emailRepository.getEmailById(emailId);
       return this.transformToUnifiedFormat(processedEmail);
     } catch (error) {
       logger.error("Failed to process incoming email", "UNIFIED_EMAIL", {
@@ -229,14 +273,27 @@ export class UnifiedEmailService {
       };
 
       // Get emails from repository
+      if (!this.emailRepository || typeof this.emailRepository.queryEmails !== 'function') {
+        logger.error('EmailRepository not available for querying', 'UNIFIED_EMAIL');
+        return {
+          emails: [],
+          total: 0,
+          page,
+          pageSize: limit,
+          todaysCount: 0,
+          urgentCount: 0,
+          pendingAssignmentCount: 0,
+        };
+      }
+      
       const { emails, total } =
-        await this?.emailRepository?.queryEmails(queryParams);
+        await this.emailRepository.queryEmails(queryParams);
 
       // Get analytics data
-      const analytics = await this?.emailRepository?.getAnalytics();
+      const analytics = this.emailRepository ? await this.emailRepository.getAnalytics() : { todaysCount: 0, urgentCount: 0, unassignedCount: 0 };
 
       // Transform to unified format
-      const unifiedEmails = emails?.map((email: any) =>
+      const unifiedEmails = (emails || []).map((email: any) =>
         this.transformToUnifiedFormat(email, {
           includeAnalysis,
           includeWorkflowState,
@@ -327,7 +384,19 @@ export class UnifiedEmailService {
   }): Promise<WorkflowAnalytics> {
     try {
       // Get workflow statistics from repository
-      const analytics = await this?.emailRepository?.getAnalytics(dateRange);
+      if (!this.emailRepository) {
+        logger.warn('EmailRepository not available', 'UNIFIED_EMAIL');
+        return {
+          completeChains: 0,
+          partialChains: 0,
+          brokenChains: 0,
+          totalChains: 0,
+          workflowTypes: [],
+          bottlenecks: [],
+          recommendations: [],
+        };
+      }
+      const analytics = await this.emailRepository.getAnalytics(dateRange);
       const workflowStats = analytics.workflowStats || {};
 
       const totalChains = workflowStats.total_chains || 0;
@@ -430,14 +499,18 @@ export class UnifiedEmailService {
 
     try {
       // Update in repository
-      await this?.emailRepository?.updateEmail(emailId, {
+      if (!this.emailRepository) {
+        throw new Error('EmailRepository not available');
+      }
+      
+      await this.emailRepository.updateEmail(emailId, {
         status: updates.status,
         priority: updates.priority,
         assignedTo: updates.assignedAgentId,
       });
 
       // Get updated email
-      const updatedEmail = await this?.emailRepository?.getEmailById(emailId);
+      const updatedEmail = await this.emailRepository.getEmailById(emailId);
       if (!updatedEmail) {
         throw new Error(`Email not found: ${emailId}`);
       }
@@ -545,7 +618,11 @@ export class UnifiedEmailService {
 
   private async storeProcessedEmail(email: any): Promise<UnifiedEmailData> {
     // Store enriched email data
-    await this?.emailRepository?.updateEmail(email.id, {
+    if (!this.emailRepository) {
+      throw new Error('EmailRepository not available for storing processed email');
+    }
+    
+    await this.emailRepository.updateEmail(email.id, {
       workflowState: email?.workflow?.state,
       workflowType: email?.workflow?.type,
       workflowChainId: email?.workflow?.chainId,
@@ -556,7 +633,7 @@ export class UnifiedEmailService {
     });
 
     // Get the updated email from repository
-    const updatedEmail = await this?.emailRepository?.getEmailById(email.id);
+    const updatedEmail = await this.emailRepository.getEmailById(email.id);
     return this.transformToUnifiedFormat(updatedEmail);
   }
 
@@ -667,7 +744,16 @@ export class UnifiedEmailService {
     end: Date;
   }): Promise<any> {
     // Get analytics from repository
-    const analytics = await this?.emailRepository?.getAnalytics(dateRange);
+    if (!this.emailRepository) {
+      return {
+        workflowCompletion: 0,
+        avgResponseTime: 0,
+        criticalAlerts: [],
+        agentUtilization: 0,
+        statusCounts: { critical: 0, inProgress: 0, completed: 0 },
+      };
+    }
+    const analytics = await this.emailRepository.getAnalytics(dateRange);
 
     // Get status counts
     const statusCounts = await this.getStatusCounts(dateRange);
@@ -684,8 +770,12 @@ export class UnifiedEmailService {
   private async getCriticalAlerts(): Promise<any[]> {
     const alerts = [];
 
+    if (!this.emailRepository) {
+      return alerts;
+    }
+    
     // Check workflow completion rate
-    const analytics = await this?.emailRepository?.getAnalytics();
+    const analytics = await this.emailRepository.getAnalytics();
     const workflowCompletionRate =
       analytics.workflowStats?.completion_rate || 0;
     if (workflowCompletionRate < 10) {
@@ -706,19 +796,27 @@ export class UnifiedEmailService {
   }): Promise<{ critical: number; inProgress: number; completed: number }> {
     try {
       // Query emails by status/priority
-      const criticalResult = await this?.emailRepository?.queryEmails({
+      if (!this.emailRepository) {
+        return {
+          critical: 0,
+          inProgress: 0,
+          completed: 0,
+        };
+      }
+      
+      const criticalResult = await this.emailRepository.queryEmails({
         priorities: ["critical"],
         dateRange,
         limit: 0, // Just get count
       });
 
-      const inProgressResult = await this?.emailRepository?.queryEmails({
+      const inProgressResult = await this.emailRepository.queryEmails({
         statuses: ["processing", "escalated"],
         dateRange,
         limit: 0, // Just get count
       });
 
-      const completedResult = await this?.emailRepository?.queryEmails({
+      const completedResult = await this.emailRepository.queryEmails({
         statuses: ["resolved"],
         dateRange,
         limit: 0, // Just get count
@@ -790,7 +888,10 @@ export class UnifiedEmailService {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const { total } = await this?.emailRepository?.queryEmails({
+    if (!this.emailRepository) {
+      return 0;
+    }
+    const { total } = await this.emailRepository.queryEmails({
       dateRange: { start: today, end: tomorrow },
       limit: 0, // We just want the count
     });
@@ -818,7 +919,11 @@ export class UnifiedEmailService {
     email: UnifiedEmailData,
   ): Promise<void> {
     // Use createOrUpdateWorkflowChain to update existing chain
-    await this?.emailRepository?.createOrUpdateWorkflowChain({
+    if (!this.emailRepository) {
+      logger.warn('Cannot update workflow chain - repository not available', 'UNIFIED_EMAIL');
+      return;
+    }
+    await this.emailRepository.createOrUpdateWorkflowChain({
       emailId: email.id,
       workflowType: email.workflowType || "Unknown",
       workflowState: email.workflowState || "IN_PROGRESS",

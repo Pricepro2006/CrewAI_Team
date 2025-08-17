@@ -59,27 +59,27 @@ export class AgentRegistry {
 
   private registerDefaultAgents(): void {
     // Register agent factories
-    this?.agentFactories?.set(
+    this.agentFactories.set(
       "ResearchAgent",
       () => new ResearchAgent() as unknown as BaseAgent,
     );
-    this?.agentFactories?.set(
+    this.agentFactories.set(
       "CodeAgent",
       () => new CodeAgent() as unknown as BaseAgent,
     );
-    this?.agentFactories?.set(
+    this.agentFactories.set(
       "DataAnalysisAgent",
       () => new DataAnalysisAgent() as unknown as BaseAgent,
     );
-    this?.agentFactories?.set(
+    this.agentFactories.set(
       "WriterAgent",
       () => new WriterAgent() as unknown as BaseAgent,
     );
-    this?.agentFactories?.set(
+    this.agentFactories.set(
       "ToolExecutorAgent",
       () => new ToolExecutorAgent() as unknown as BaseAgent,
     );
-    this?.agentFactories?.set(
+    this.agentFactories.set(
       "EmailAnalysisAgent",
       () => new EmailAnalysisAgent() as unknown as BaseAgent,
     );
@@ -163,7 +163,7 @@ export class AgentRegistry {
   releaseAgent(agentType: string, agent: BaseAgent): void {
     // Find and remove from active agents
     let keyToRemove: string | undefined;
-    for (const [key, activeAgent] of this?.activeAgents?.entries()) {
+    for (const [key, activeAgent] of this.activeAgents.entries()) {
       if (activeAgent === agent && key.startsWith(agentType)) {
         keyToRemove = key;
         break;
@@ -186,16 +186,19 @@ export class AgentRegistry {
   }
 
   private setupIdleTimeout(key: string, agentType: string): void {
+    // Validate timeout is reasonable (between 0 and 24 hours)
+    const timeout = Math.max(0, Math.min(this?.config?.idleTimeout || 300000, 86400000));
+    
     setTimeout(() => {
       const agent = this?.activeAgents?.get(key);
       if (agent) {
         this.releaseAgent(agentType, agent);
       }
-    }, this?.config?.idleTimeout);
+    }, timeout);
   }
 
   registerAgentType(type: string, factory: AgentFactory): void {
-    this?.agentFactories?.set(type, factory);
+    this.agentFactories.set(type, factory);
   }
 
   getRegisteredTypes(): string[] {
@@ -205,7 +208,7 @@ export class AgentRegistry {
   getActiveAgents(): AgentStatus[] {
     const statuses: AgentStatus[] = [];
 
-    for (const [key] of this?.activeAgents?.entries()) {
+    for (const [key] of this.activeAgents.entries()) {
       const [type] = key.split("-");
       statuses.push({
         id: key,

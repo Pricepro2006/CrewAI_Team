@@ -1,10 +1,10 @@
-import type Database from "better-sqlite3";
+import type * as Database from "better-sqlite3";
 import { logger } from "../../utils/logger.js";
 import { metrics } from "../../api/monitoring/metrics.js";
 import type {
   UnifiedEmailData,
   WorkflowState,
-} from "../../types/unified-email?.types.js";
+} from "../../types/unified-email.types.js";
 import { z } from "zod";
 import { DatabaseInputSchemas } from "../security/SqlInjectionProtection.js";
 
@@ -106,6 +106,7 @@ export class EmailRepository {
 
   constructor(config: EmailRepositoryConfig) {
     this.db = config.db;
+    console.log('[EmailRepository] Database path:', this.db?.name || 'Unknown database');
     this.prepareStatements();
   }
 
@@ -177,12 +178,15 @@ export class EmailRepository {
           current_state TEXT,
           email_count INTEGER DEFAULT 0,
           is_complete INTEGER DEFAULT 0,
+          completed_at TEXT,
           created_at INTEGER DEFAULT (unixepoch()),
           updated_at INTEGER DEFAULT (unixepoch()),
           FOREIGN KEY (start_email_id) REFERENCES emails_enhanced(id)
         );
       `);
+      console.log('[EmailRepository] Tables created successfully');
     } catch (err) {
+      console.log('[EmailRepository] Table creation error:', err);
       // Tables might already exist, that's ok
     }
 

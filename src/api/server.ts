@@ -97,7 +97,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // Add response compression (Performance Optimization - 60-70% bandwidth reduction)
 // Compression should come after parsers but before routes
 app.use(compression({
-  filter: (req, res) => {
+  filter: (req: express.Request, res: express.Response) => {
     // Don't compress if client explicitly requests no compression
     if (req.headers['x-no-compression']) {
       return false;
@@ -166,7 +166,7 @@ app.get("/health", async (_req, res) => {
 
   try {
     // Check database connection
-    const Database = (await import("better-sqlite3")).default;
+    const { default: Database } = await import("better-sqlite3") as any;
     const db = new Database(appConfig.database?.path || "./data/app.db", {
       readonly: true,
     });
@@ -553,17 +553,26 @@ server.on('upgrade', (request, socket, head) => {
   if (pathname === '/trpc-ws') {
     // Verify client before upgrading
     const verifyClient = wss.options.verifyClient;
-    const clientInfo = { origin: request.headers.origin, req: request };
+    const clientInfo = { 
+      origin: request.headers.origin || '', 
+      secure: (request.connection as any)?.encrypted || false,
+      req: request 
+    };
     
     if (verifyClient) {
       let result: boolean = true;
       if (typeof verifyClient === 'function') {
         // Handle both sync and async verifyClient
         try {
-          const verifyResult = verifyClient(clientInfo);
-          result = typeof verifyResult === 'boolean' ? verifyResult : true;
+          const verifyResult = verifyClient(clientInfo, (res: boolean) => {
+            result = res;
+          });
+          // If verifyClient returns a value directly (sync), use it
+          if (typeof verifyResult === 'boolean') {
+            result = verifyResult;
+          }
         } catch (error) {
-          logger.error('Error in verifyClient function:', 'WEBSOCKET', error);
+          logger.error('Error in verifyClient function:', 'WEBSOCKET', error as Error);
           result = false;
         }
       }

@@ -71,9 +71,9 @@ class MetricsCollector {
           key,
           {
             count: values?.length || 0,
-            min: Math.min(...values),
-            max: Math.max(...values),
-            avg: values.reduce((a: any, b: any) => a + b, 0) / values?.length || 0,
+            min: values.length > 0 ? Math.min(...values) : 0,
+            max: values.length > 0 ? Math.max(...values) : 0,
+            avg: values.length > 0 ? values.reduce((a: any, b: any) => a + b, 0) / values.length : 0,
             p50: this.percentile(values, 0.5),
             p95: this.percentile(values, 0.95),
             p99: this.percentile(values, 0.99),
@@ -104,10 +104,10 @@ class MetricsCollector {
   }
 
   private percentile(values: number[], p: number): number {
-    if (values?.length || 0 === 0) return 0;
+    if (!values || values.length === 0) return 0;
     const sorted = values.slice().sort((a, b) => a - b);
-    const index = Math.ceil(sorted?.length || 0 * p) - 1;
-    return sorted[index] || 0;
+    const index = Math.ceil(sorted.length * p) - 1;
+    return sorted[Math.max(0, Math.min(index, sorted.length - 1))] || 0;
   }
 }
 

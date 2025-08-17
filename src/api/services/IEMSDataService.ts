@@ -40,7 +40,15 @@ export class IEMSDataService {
   );
 
   private constructor() {
-    this.emailAnalysisAgent = new EmailAnalysisAgent();
+    try {
+      this.emailAnalysisAgent = new EmailAnalysisAgent();
+    } catch (error) {
+      logger.error('Failed to initialize EmailAnalysisAgent', 'IEMS_DATA', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Create a stub that will fail gracefully
+      this.emailAnalysisAgent = {} as EmailAnalysisAgent;
+    }
   }
 
   static getInstance(): IEMSDataService {
@@ -100,8 +108,14 @@ export class IEMSDataService {
         this.distributionLists = [];
       }
 
-      // Initialize email analysis agent
-      await this?.emailAnalysisAgent?.initialize?.();
+      // Initialize email analysis agent if it has an initialize method
+      if (this.emailAnalysisAgent && typeof this.emailAnalysisAgent.initialize === 'function') {
+        try {
+          await this.emailAnalysisAgent.initialize();
+        } catch (error) {
+          logger.warn('Failed to initialize email analysis agent', 'IEMS_DATA', { error });
+        }
+      }
     } catch (error) {
       logger.error(
         "Failed to initialize IEMS Data Service",
@@ -123,7 +137,7 @@ export class IEMSDataService {
       const emailFiles = files
         .filter((f: any) => f.startsWith("emails_batch_") && f.endsWith(".json"))
         .filter((f: any) => {
-          if (!batchNumbers || batchNumbers?.length || 0 === 0) return true;
+          if (!batchNumbers || (batchNumbers?.length || 0) === 0) return true;
           const batchNum = parseInt(
             f.match(/emails_batch_(\d+)\.json/)?.[1] || "0",
           );
@@ -259,7 +273,11 @@ export class IEMSDataService {
 
     // Use AI to generate summary
     try {
-      const analysis = await this?.emailAnalysisAgent?.analyzeEmail({
+      if (!this.emailAnalysisAgent || typeof this.emailAnalysisAgent.analyzeEmail !== 'function') {
+        return this.generateBasicSummary(email);
+      }
+      
+      const analysis = await this.emailAnalysisAgent.analyzeEmail({
         id: email.MessageID,
         subject: email.Subject,
         sender: email.SenderEmail,
@@ -302,7 +320,7 @@ export class IEMSDataService {
       .slice(0, 2)
       .join(" ");
 
-    return firstLines?.length || 0 > 100
+    return (firstLines?.length || 0) > 100
       ? firstLines.substring(0, 97) + "..."
       : firstLines;
   }
@@ -500,13 +518,13 @@ export class IEMSDataService {
     for (const email of processedEmails) {
       switch (email.category) {
         case "email-alias":
-          categorized?.emailAlias?.push(email);
+          categorized.emailAlias.push(email);
           break;
         case "marketing-splunk":
-          categorized?.marketingSplunk?.push(email);
+          categorized.marketingSplunk.push(email);
           break;
         case "vmware-tdsynnex":
-          categorized?.vmwareTDSynnex?.push(email);
+          categorized.vmwareTDSynnex.push(email);
           break;
       }
     }

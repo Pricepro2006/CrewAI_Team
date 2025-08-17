@@ -16,7 +16,7 @@ import { realEmailStorageService } from "../services/RealEmailStorageService.js"
 import type { RealEmailStorageService } from "../services/RealEmailStorageService.js";
 import { WalmartGroceryService } from "../services/WalmartGroceryService.js";
 import { getStoredCSRFToken } from "../middleware/security/csrf.js";
-// import { EmailIngestionServiceImpl } from "../../core/services/EmailIngestionServiceImpl.js";
+import type { EmailIngestionServiceImpl } from "../../core/services/EmailIngestionServiceImpl.js";
 import { EventEmitter } from "events";
 
 // Context User interface (extends PublicUser with runtime properties)
@@ -241,7 +241,7 @@ type TRPCContext = {
   dealDataService: DealDataService;
   emailStorageService: RealEmailStorageService;
   walmartGroceryService: WalmartGroceryService;
-  // emailIngestionService: EmailIngestionServiceImpl;
+  emailIngestionService?: EmailIngestionServiceImpl;
   eventEmitter: EventEmitter;
   agentRegistry: any;
   ragSystem: any;
