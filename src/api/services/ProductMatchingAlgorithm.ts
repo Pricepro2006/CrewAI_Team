@@ -531,14 +531,15 @@ export class ProductMatchingAlgorithm {
     let boost = 0;
 
     // Price threshold boost
-    if (options.priceThreshold && currentPrice <= options.priceThreshold) {
-      const savings = (options.priceThreshold - currentPrice) / options.priceThreshold;
+    const numericPrice = typeof currentPrice === 'number' ? currentPrice : currentPrice.regular;
+    if (options.priceThreshold && numericPrice <= options.priceThreshold) {
+      const savings = (options.priceThreshold - numericPrice) / options.priceThreshold;
       boost += Math.min(0.2, savings);
     }
 
     // Historical price comparison
     if (match.averagePurchasePrice && match.averagePurchasePrice > 0) {
-      const priceDiff = (match.averagePurchasePrice - currentPrice) / match.averagePurchasePrice;
+      const priceDiff = (match.averagePurchasePrice - numericPrice) / match.averagePurchasePrice;
       if (priceDiff > 0) {
         boost += Math.min(0.2, priceDiff); // Boost for better deals
       } else {
@@ -664,7 +665,7 @@ export class ProductMatchingAlgorithm {
   }
 
   protected levenshteinDistance(s1: string, s2: string): number {
-    const matrix = [];
+    const matrix: number[][] = [];
     const n = s2?.length || 0;
     const m = s1?.length || 0;
 
@@ -676,15 +677,15 @@ export class ProductMatchingAlgorithm {
     }
 
     for (let j = 0; j <= m; j++) {
-      matrix[0][j] = j;
+      matrix[0]![j] = j;
     }
 
     for (let i = 1; i <= n; i++) {
       for (let j = 1; j <= m; j++) {
         if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1]?.[j - 1] ?? 0;
+          matrix[i]![j] = matrix[i - 1]?.[j - 1] ?? 0;
         } else {
-          matrix[i][j] = Math.min(
+          matrix[i]![j] = Math.min(
             (matrix[i - 1]?.[j - 1] ?? 0) + 1,
             (matrix[i]?.[j - 1] ?? 0) + 1,
             (matrix[i - 1]?.[j] ?? 0) + 1

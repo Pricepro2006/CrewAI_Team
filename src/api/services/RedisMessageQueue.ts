@@ -118,8 +118,8 @@ export interface QueueConsumer<T = BaseMessage> {
  */
 export class RedisMessageQueue extends EventEmitter {
   private config: MessageQueueConfig;
-  private redisClient: Redis;
-  private subscriberClient: Redis;
+  private redisClient!: Redis;
+  private subscriberClient!: Redis;
   private isConnected = false;
   private consumers: Map<string, QueueConsumer> = new Map();
   private processingQueues: Map<string, Set<string>> = new Map();
@@ -286,8 +286,8 @@ export class RedisMessageQueue extends EventEmitter {
 
       const messages: BaseMessage[] = [];
       
-      if (results && results?.length || 0 > 0) {
-        const [, streamEntries] = results[0];
+      if (results && Array.isArray(results) && results.length > 0) {
+        const [, streamEntries] = results[0] as [string, [string, string[]][]];
         
         for (const [streamId, fields] of streamEntries) {
           const messageData = fields[1]; // fields = ['message', '{...}']

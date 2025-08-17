@@ -106,7 +106,7 @@ export function createCursorPagination<T extends { id: string; created_at?: stri
   
   const meta: CursorPaginationMeta = {
     limit,
-    hasNext: data?.length || 0 === limit, // If we got exactly limit items, there might be more
+    hasNext: (data?.length || 0) === limit, // If we got exactly limit items, there might be more
     hasPrev: !!input.cursor, // If cursor was provided, we can go back
     startCursor,
     endCursor,

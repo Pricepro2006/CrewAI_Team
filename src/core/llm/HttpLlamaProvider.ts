@@ -6,15 +6,17 @@ import axios, { AxiosInstance } from 'axios';
 import { logger } from '../../utils/logger.js';
 import type { LlamaCppResponse, LlamaCppGenerateOptions } from './SafeLlamaCppProvider.js';
 
-export class HttpLlamaProvider {
+import type { LLMProviderInterface } from './LLMProviderFactory.js';
+
+export class HttpLlamaProvider implements LLMProviderInterface {
   private client: AxiosInstance;
   private baseUrl: string;
-  private modelPath: string;
+  private modelName: string;
   private isInitialized: boolean = false;
 
   constructor(baseUrl: string = 'http://localhost:11434') {
     this.baseUrl = baseUrl;
-    this.modelPath = './models/llama-3.2-3b-instruct.Q4_K_M.gguf';
+    this.modelName = 'llama-3.2-3b-instruct';
     
     this.client = axios.create({
       baseURL: this.baseUrl,
@@ -41,31 +43,39 @@ export class HttpLlamaProvider {
 
   async generate(
     prompt: string,
-    options: LlamaCppGenerateOptions = {}
-  ): Promise<LlamaCppResponse> {
+    options: any = {}
+  ): Promise<{ response: string; [key: string]: any }> {
     if (!this.isInitialized) {
       await this.initialize();
     }
 
     try {
+      // Use chat completions endpoint with proper message format
       const requestBody = {
-        model: this.modelPath,
-        prompt: prompt,
+        model: "llama-3.2-3b-instruct",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful AI assistant."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
         temperature: options.temperature || 0.7,
         max_tokens: options.maxTokens || 2048,
         top_p: options.topP || 0.9,
-        top_k: options.topK || 40,
-        repeat_penalty: options.repeatPenalty || 1.1,
-        stop: options.stopWords || [],
         stream: false,
       };
 
       // Simplified logging to avoid PIIRedactor issues
       console.log(`[HTTP_LLAMA] Sending request: prompt length=${prompt.length}, max_tokens=${requestBody.max_tokens}`);
 
-      const response = await this.client.post('/v1/completions', requestBody);
+      const response = await this.client.post('/v1/chat/completions', requestBody);
 
-      const text = response.data.choices?.[0]?.text || '';
+      // Extract content from chat completion response format
+      const text = response.data.choices?.[0]?.message?.content || '';
       const tokensGenerated = response.data.usage?.completion_tokens || 0;
       const totalTokens = response.data.usage?.total_tokens || 0;
 
@@ -73,16 +83,15 @@ export class HttpLlamaProvider {
       console.log(`[HTTP_LLAMA] Received response: length=${text.length}, tokens=${tokensGenerated}`);
 
       return {
-        text: text.trim(),
+        model: "llama-3.2-3b-instruct",
+        created_at: new Date().toISOString(),
+        response: text.trim(),
+        done: true,
         tokensGenerated,
-        totalTokens,
-        timings: {
-          promptMs: response.data.usage?.prompt_eval_duration || 0,
-          generationMs: response.data.usage?.total_duration || 0,
-          tokensPerSecond: tokensGenerated > 0 && response.data.usage?.total_duration > 0
-            ? (tokensGenerated / (response.data.usage.total_duration / 1000))
-            : 0,
-        },
+        totalDuration: response.data.usage?.total_duration || 0,
+        tokensPerSecond: tokensGenerated > 0 && response.data.usage?.total_duration > 0
+          ? (tokensGenerated / (response.data.usage.total_duration / 1000))
+          : 0,
       };
     } catch (error) {
       logger.error('Failed to generate text', 'HTTP_LLAMA', { error });
@@ -109,7 +118,7 @@ export class HttpLlamaProvider {
 
   getModelInfo() {
     return {
-      model: this.modelPath,
+      model: this.modelName,
       contextSize: 8192,
       loaded: this.isInitialized,
       processCount: 0, // Not applicable for HTTP

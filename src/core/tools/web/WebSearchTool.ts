@@ -33,15 +33,15 @@ export class WebSearchTool extends BaseTool {
           type: "string",
           required: false,
           description: "Search engine to use",
-          default: "duckduckgo",
-          enum: ["duckduckgo", "searx", "google"],
+          default: "searx",
+          enum: ["searx", "duckduckgo", "google"],
         },
       ],
     );
 
     this.searchEngines = [
-      new DuckDuckGoEngineFixed(),
-      new SearxEngine(),
+      new SearxEngine(),  // Use local SearXNG first
+      new DuckDuckGoEngineFixed(),  // Fallback to DuckDuckGo
       // Google engine would require API key
     ];
 
@@ -305,7 +305,7 @@ class DuckDuckGoEngineFixed extends SearchEngine {
 
 class SearxEngine extends SearchEngine {
   name = "searx";
-  private baseUrl = process.env.SEARX_URL || "https://searx.space/search"; // Public instance
+  private baseUrl = process.env.SEARX_URL || "http://localhost:8888/search"; // Local instance
 
   async search(query: string, limit: number): Promise<SearchResult[]> {
     try {

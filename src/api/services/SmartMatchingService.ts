@@ -120,7 +120,7 @@ export class SmartMatchingService {
         processedQuery,
         userHistoryResult,
         preFetchedPrices
-      ] = await this?.nlpQueue?.enqueueBatch(parallelOps, "high") as [string, ProductFrequency[], any];
+      ] = await this?.nlpQueue?.enqueueBatch(parallelOps as any, "high") as [string, ProductFrequency[], any];
       
       const userHistory: ProductFrequency[] = userHistoryResult || [];
 
@@ -159,7 +159,7 @@ export class SmartMatchingService {
           rankedMatches.slice(0, 10), 
           userHistory, 
           options,
-          cachedSuggestions
+          cachedSuggestions as string[] | null
         )
       ]);
       
@@ -247,7 +247,7 @@ export class SmartMatchingService {
       const historyMatch = userHistory.find(h => 
         h.productName && (
           h?.productName?.toLowerCase().includes(query.toLowerCase()) ||
-          query.toLowerCase().includes(h?.productName?.toLowerCase().split(' ')[0])
+          query.toLowerCase().includes(h?.productName?.toLowerCase()?.split(' ')[0] || "")
         )
       );
       if (historyMatch) {

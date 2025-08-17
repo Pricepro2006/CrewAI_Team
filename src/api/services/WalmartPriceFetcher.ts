@@ -357,7 +357,7 @@ export class WalmartPriceFetcher {
           if (!text) return null;
           // Match various price formats: $12.99, 12.99, $12
           const match = text.match(/\$?(\d+(?:\.\d{1,2})?)/);
-          return match ? parseFloat(match[1]) : null;
+          return match && match[1] ? parseFloat(match[1]) : null;
         };
 
         // Enhanced price selectors based on current Walmart structure
@@ -743,7 +743,7 @@ export class WalmartPriceFetcher {
         currentPrice = priceInfo;
       } else if (typeof priceInfo === 'string') {
         const priceMatch = priceInfo.match(/(\d+\.?\d*)/);
-        currentPrice = priceMatch ? parseFloat(priceMatch[1]) : 0;
+        currentPrice = priceMatch && priceMatch[1] ? parseFloat(priceMatch[1]) : 0;
       }
 
       // Extract was price
@@ -918,7 +918,7 @@ export class WalmartPriceFetcher {
       const batchResults = await Promise.all(batchPromises);
       
       batch.forEach((id, index) => {
-        results.set(id, batchResults[index]);
+        results.set(id, batchResults[index] || null);
       });
       
       // Add delay between batches

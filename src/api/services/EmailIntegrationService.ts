@@ -383,7 +383,8 @@ export class EmailIntegrationService {
 
       // Notify WebSocket about processing start
       if (this.wsService) {
-        this.wsService.broadcast('email.ingestion.started', {
+        this.wsService.broadcast({
+          type: 'email.ingestion.started',
           source,
           totalEmails: emails.length,
           timestamp: new Date().toISOString()
@@ -396,7 +397,8 @@ export class EmailIntegrationService {
       // Handle Result type
       if (!result.success) {
         if (this.wsService) {
-          this.wsService.broadcast('email.ingestion.failed', {
+          this.wsService.broadcast({
+            type: 'email.ingestion.failed',
             source,
             error: result.error?.message || 'Unknown error',
             timestamp: new Date().toISOString()
@@ -407,11 +409,12 @@ export class EmailIntegrationService {
       
       // Notify WebSocket about completion
       if (this.wsService && result.data) {
-        this.wsService.broadcast('email.ingestion.completed', {
+        this.wsService.broadcast({
+          type: 'email.ingestion.completed',
           source,
           processed: result.data.processed,
           failed: result.data.failed, 
-          total: result.data.total,
+          total: result.data.totalEmails,
           timestamp: new Date().toISOString()
         });
       }

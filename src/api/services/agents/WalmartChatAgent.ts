@@ -1,4 +1,4 @@
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../../utils/logger";
 import { WalmartAgentOrchestrator } from "../walmart/WalmartAgentOrchestrator.js";
 import type { 
   ProcessMessageRequest, 

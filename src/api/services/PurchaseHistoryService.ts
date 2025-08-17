@@ -830,13 +830,13 @@ export class PurchaseHistoryService {
         totalItems: basicStats.total_items || 0,
         averageBasketSize: Math.round((basicStats.avg_basket_size || 0) * 100) / 100,
         averageItemPrice: Math.round((basicStats.avg_item_price || 0) * 100) / 100,
-        mostFrequentCategory: categoryStats[0]?.category || "Unknown",
-        mostExpensiveCategory: categoryStats.reduce((max: any, cat: any) => 
+        mostFrequentCategory: (categoryStats[0] as any)?.category || "Unknown",
+        mostExpensiveCategory: (categoryStats as any[]).reduce((max: any, cat: any) => 
           cat.category_spent > (max?.category_spent || 0) ? cat : max
         )?.category || "Unknown",
-        preferredBrands: brandStats.slice(0, 5).map(b => b.brand),
+        preferredBrands: (brandStats as any[]).slice(0, 5).map((b: any) => b.brand),
         shoppingFrequency: Math.round((basicStats.avg_days_between_shopping || 0) * 100) / 100,
-        seasonalSpending: seasonalStats?.map(s => ({
+        seasonalSpending: (seasonalStats as any[])?.map((s: any) => ({
           month: s.month,
           averageQuantity: s.avg_quantity,
           averagePurchases: s.avg_purchases
