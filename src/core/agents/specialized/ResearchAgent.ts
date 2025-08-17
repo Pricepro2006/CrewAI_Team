@@ -262,19 +262,11 @@ export class ResearchAgent extends BaseAgent {
       
       ${context.ragDocuments ? `Existing knowledge base context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n\n")}` : ""}
       
-      Create a research plan that includes:
+      Create a comprehensive research plan that includes:
       1. Key search queries to execute
-      2. Types of sources to prioritize
-      3. Information to extract
-      4. Validation strategies
-      
-      Respond with a JSON object:
-      {
-        "queries": ["query1", "query2", ...],
-        "sourceTypes": ["academic", "news", "technical", ...],
-        "extractionFocus": ["facts", "statistics", "expert opinions", ...],
-        "tools": ["web_search", "web_scraper"]
-      }
+      2. Types of sources to prioritize (academic, news, technical, etc.)
+      3. Information to extract (facts, statistics, expert opinions, etc.)
+      4. Tools to use (web_search, web_scraper, etc.)
     `;
 
     const responseResponse = await this.generateLLMResponse(prompt);
@@ -283,27 +275,60 @@ export class ResearchAgent extends BaseAgent {
   }
 
   private parseResearchPlan(response: string): ResearchPlan {
-    try {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return {
-          queries: parsed.queries || ["general research query"],
-          sourceTypes: parsed.sourceTypes || ["general"],
-          extractionFocus: parsed.extractionFocus || ["information"],
-          tools: parsed.tools || ["web_search"],
-        };
+    // Parse natural language response
+    const queries: string[] = [];
+    const sourceTypes: string[] = [];
+    const extractionFocus: string[] = [];
+    const tools: string[] = [];
+    
+    const lines = response.split('\n');
+    
+    // Extract queries (look for quoted text or bullet points about queries)
+    for (const line of lines) {
+      // Look for quoted queries
+      const quotedMatches = line.match(/"([^"]+)"/g);
+      if (quotedMatches) {
+        queries.push(...quotedMatches.map(m => m.replace(/"/g, '')));
       }
-    } catch (error) {
-      console.error("Failed to parse research plan:", error);
+      
+      // Look for source types
+      if (line.toLowerCase().includes('source') || line.toLowerCase().includes('type')) {
+        const sourceKeywords = ['academic', 'news', 'technical', 'blog', 'documentation', 'official'];
+        for (const keyword of sourceKeywords) {
+          if (line.toLowerCase().includes(keyword) && !sourceTypes.includes(keyword)) {
+            sourceTypes.push(keyword);
+          }
+        }
+      }
+      
+      // Look for extraction focus
+      const focusKeywords = ['facts', 'statistics', 'expert opinions', 'examples', 'trends', 'data'];
+      for (const keyword of focusKeywords) {
+        if (line.toLowerCase().includes(keyword) && !extractionFocus.includes(keyword)) {
+          extractionFocus.push(keyword);
+        }
+      }
+      
+      // Look for tools
+      if (line.toLowerCase().includes('web_search') || line.toLowerCase().includes('search')) {
+        if (!tools.includes('web_search')) tools.push('web_search');
+      }
+      if (line.toLowerCase().includes('scraper') || line.toLowerCase().includes('scrape')) {
+        if (!tools.includes('web_scraper')) tools.push('web_scraper');
+      }
     }
 
-    // Fallback plan
+    // Ensure we have at least some defaults
+    if (queries.length === 0) queries.push("general research query");
+    if (sourceTypes.length === 0) sourceTypes.push("general");
+    if (extractionFocus.length === 0) extractionFocus.push("information");
+    if (tools.length === 0) tools.push("web_search");
+
     return {
-      queries: ["general research query"],
-      sourceTypes: ["general"],
-      extractionFocus: ["information"],
-      tools: ["web_search"],
+      queries: queries.slice(0, 5), // Limit to 5 queries
+      sourceTypes: sourceTypes.slice(0, 5),
+      extractionFocus: extractionFocus.slice(0, 5),
+      tools: tools.slice(0, 3),
     };
   }
 

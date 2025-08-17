@@ -122,50 +122,79 @@ export class WriterAgent extends BaseAgent {
       ${ragContext ? `RAG Context:\n${ragContext}\n` : ""}
       ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       
-      Determine:
+      Provide a detailed analysis including:
       1. Content type: article, report, email, creative, technical, or general
       2. Writing style: formal, casual, persuasive, informative, narrative
       3. Target audience
       4. Key requirements
       5. Desired length
-      
-      Respond in JSON format:
-      {
-        "contentType": "article|report|email|creative|technical|general",
-        "style": "formal|casual|persuasive|informative|narrative",
-        "audience": "description of target audience",
-        "requirements": ["req1", "req2"],
-        "length": "short|medium|long"
-      }
     `;
 
     if (!this.llm) {
       throw new Error("LLM provider not initialized");
     }
     
-    const response = await this.generateLLMResponse(prompt, { format: "json" });
+    const response = await this.generateLLMResponse(prompt);
     return this.parseWritingTaskAnalysis(response.response);
   }
 
   private parseWritingTaskAnalysis(response: string): WritingTaskAnalysis {
-    try {
-      const parsed = JSON.parse(response);
-      return {
-        contentType: parsed.contentType || "general",
-        style: parsed.style || "informative",
-        audience: parsed.audience || "general audience",
-        requirements: parsed.requirements || [],
-        length: parsed.length || "medium",
-      };
-    } catch {
-      return {
-        contentType: "general",
-        style: "informative",
-        audience: "general audience",
-        requirements: [],
-        length: "medium",
-      };
+    // Parse natural language response
+    const lowerResponse = response.toLowerCase();
+    
+    // Determine content type
+    let contentType: "article" | "report" | "email" | "creative" | "technical" | "general" = "general";
+    if (lowerResponse.includes("article") || lowerResponse.includes("blog")) {
+      contentType = "article";
+    } else if (lowerResponse.includes("report")) {
+      contentType = "report";
+    } else if (lowerResponse.includes("email")) {
+      contentType = "email";
+    } else if (lowerResponse.includes("creative") || lowerResponse.includes("story")) {
+      contentType = "creative";
+    } else if (lowerResponse.includes("technical") || lowerResponse.includes("documentation")) {
+      contentType = "technical";
     }
+    
+    // Determine style
+    let style = "informative";
+    if (lowerResponse.includes("formal")) style = "formal";
+    else if (lowerResponse.includes("casual")) style = "casual";
+    else if (lowerResponse.includes("persuasive")) style = "persuasive";
+    else if (lowerResponse.includes("narrative")) style = "narrative";
+    
+    // Extract audience (look for patterns like "audience: X" or "for X")
+    let audience = "general audience";
+    const audienceMatch = response.match(/audience[:\s]+([^.\n]+)/i) || 
+                         response.match(/for\s+([^.\n]+audience[^.\n]*)/i);
+    if (audienceMatch) {
+      audience = audienceMatch[1].trim();
+    }
+    
+    // Extract requirements (look for numbered lists or bullet points)
+    const requirements: string[] = [];
+    const lines = response.split('\n');
+    for (const line of lines) {
+      if (/^\d+\./.test(line.trim()) || /^[-•]/.test(line.trim())) {
+        const req = line.replace(/^[\d.-•]\s*/, '').trim();
+        if (req.length > 0 && req.length < 100) {
+          requirements.push(req);
+        }
+      }
+    }
+    
+    // Determine length
+    let length = "medium";
+    if (lowerResponse.includes("short") || lowerResponse.includes("brief")) length = "short";
+    else if (lowerResponse.includes("long") || lowerResponse.includes("detailed")) length = "long";
+    
+    return {
+      contentType,
+      style,
+      audience,
+      requirements: requirements.slice(0, 5), // Limit to 5 requirements
+      length,
+    };
   }
 
   private async writeArticle(
