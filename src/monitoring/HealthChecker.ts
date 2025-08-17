@@ -332,7 +332,7 @@ export class HealthChecker extends EventEmitter {
       critical: false,
       check: async () => {
         try {
-          const chromaUrl = process.env.CHROMA_URL || "http://localhost:8001";
+          const chromaUrl = process.env.CHROMA_URL || "http://localhost:8000";
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000);
 

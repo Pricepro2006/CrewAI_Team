@@ -4,6 +4,92 @@ import type { AgentType } from "../shared/types.js";
 import { logger } from "../../utils/logger.js";
 
 export class SimplePlanGenerator {
+  static createMultiAgentPlan(
+    query: Query, 
+    routingPlan?: AgentRoutingPlan,
+    analysis?: any
+  ): Plan {
+    // Create multi-step plans for complex queries
+    const steps: any[] = [];
+    const queryLower = query.text.toLowerCase();
+    
+    // Detect required agents based on query components
+    const agentSteps: Array<{agent: AgentType, task: string, tool?: string}> = [];
+    
+    // Research component
+    if (queryLower.includes('research') || queryLower.includes('find') || 
+        queryLower.includes('latest') || queryLower.includes('trends')) {
+      agentSteps.push({
+        agent: 'ResearchAgent',
+        task: 'Gather relevant information and research',
+        tool: 'web_search'
+      });
+    }
+    
+    // Code component
+    if (queryLower.includes('code') || queryLower.includes('implement') || 
+        queryLower.includes('function') || queryLower.includes('example')) {
+      agentSteps.push({
+        agent: 'CodeAgent',
+        task: 'Create code examples or implementations',
+        tool: 'code_executor'
+      });
+    }
+    
+    // Analysis component
+    if (queryLower.includes('analyze') || queryLower.includes('data') || 
+        queryLower.includes('metrics') || queryLower.includes('statistics')) {
+      agentSteps.push({
+        agent: 'DataAnalysisAgent',
+        task: 'Analyze data and provide insights',
+        tool: 'data_analyzer'
+      });
+    }
+    
+    // Writing component (for summaries/reports)
+    if (queryLower.includes('report') || queryLower.includes('summary') || 
+        queryLower.includes('document') || agentSteps.length > 1) {
+      agentSteps.push({
+        agent: 'WriterAgent',
+        task: 'Compile findings into comprehensive report',
+        tool: undefined
+      });
+    }
+    
+    // Build dependency chain
+    agentSteps.forEach((step, index) => {
+      steps.push({
+        id: `step-${index + 1}`,
+        task: step.task,
+        description: `${step.task} for: ${query.text}`,
+        agentType: step.agent,
+        requiresTool: !!step.tool,
+        toolName: step.tool,
+        ragQuery: query.text,
+        expectedOutput: `Output from ${step.agent}`,
+        dependencies: index > 0 ? [`step-${index}`] : [],
+        parameters: {}
+      });
+    });
+    
+    // Fallback to single agent if no multi-agent detected
+    if (steps.length === 0) {
+      return SimplePlanGenerator.createSimplePlan(query, routingPlan);
+    }
+    
+    return {
+      id: `plan-multi-${Date.now()}`,
+      steps,
+      metadata: {
+        goal: query.text,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+        isMultiAgent: true,
+        agentCount: steps.length
+      }
+    };
+  }
+
   static createSimplePlan(query: Query, routingPlan?: AgentRoutingPlan): Plan {
     // For CPU performance, bypass complex LLM plan generation
     // but still use intelligent agent routing

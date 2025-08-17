@@ -44,7 +44,7 @@ export class MasterOrchestrator {
     const ragConfig = config.rag || {
       vectorStore: {
         type: "adaptive" as const, // Use adaptive store for better fallback handling
-        baseUrl: process.env.CHROMADB_URL || "http://localhost:8001",
+        baseUrl: process.env.CHROMADB_URL || "http://localhost:8000",
         collectionName: process.env.CHROMADB_COLLECTION || "email-rag-collection",
         dimension: 4096, // Match Llama 3.2:3b embedding dimensions
       },
@@ -469,14 +469,23 @@ export class MasterOrchestrator {
     analysis?: QueryAnalysis,
     routingPlan?: AgentRoutingPlan,
   ): Promise<Plan> {
-    // Use simple plan generator for CPU performance
-    const USE_SIMPLE_PLAN = process.env["USE_SIMPLE_PLAN"] !== "false";
-    if (USE_SIMPLE_PLAN) {
+    // Use simple plan generator only as fallback or when explicitly requested
+    const USE_SIMPLE_PLAN = process.env["USE_SIMPLE_PLAN"] === "true"; // Changed default to false
+    const isComplexQuery = this.isComplexQuery(query, analysis);
+    
+    // Use LLM for complex queries unless simple plan is forced
+    if (USE_SIMPLE_PLAN && !isComplexQuery) {
       logger.info(
-        "Using simple plan generator for CPU performance",
+        "Using simple plan generator for basic query",
         "ORCHESTRATOR",
       );
       return SimplePlanGenerator.createSimplePlan(query, routingPlan);
+    }
+    
+    // For complex queries, always try LLM first
+    if (isComplexQuery && !this.llm) {
+      logger.warn("Complex query detected but LLM unavailable, using enhanced simple plan", "ORCHESTRATOR");
+      return SimplePlanGenerator.createMultiAgentPlan(query, routingPlan, analysis);
     }
     
     // Retrieve relevant context from RAG system
@@ -671,6 +680,39 @@ export class MasterOrchestrator {
         ],
       };
     }
+  }
+
+  private isComplexQuery(query: Query, analysis?: QueryAnalysis): boolean {
+    // Determine if query requires multiple agents or complex processing
+    const queryText = query.text.toLowerCase();
+    
+    // Check for multi-step indicators
+    const multiStepIndicators = [
+      'and then', 'after that', 'followed by', 'next',
+      'multiple', 'several', 'various', 'comprehensive',
+      'analyze and', 'research and', 'create and'
+    ];
+    
+    // Check for cross-domain requirements
+    const hasCrossDomain = analysis?.domains && analysis.domains.length > 1;
+    
+    // Check for high complexity score
+    const isHighComplexity = analysis?.complexity && analysis.complexity > 7;
+    
+    // Check for multiple entities
+    const hasMultipleEntities = analysis?.entities && 
+      Object.keys(analysis.entities).length > 2;
+    
+    // Check query length (complex queries tend to be longer)
+    const isLongQuery = query.text.length > 150;
+    
+    // Check for multi-step keywords in query
+    const hasMultiStepKeywords = multiStepIndicators.some(indicator => 
+      queryText.includes(indicator)
+    );
+    
+    return hasCrossDomain || isHighComplexity || hasMultipleEntities || 
+           isLongQuery || hasMultiStepKeywords;
   }
 
   private formatResponse(executionResult: ExecutionResult): ExecutionResult {
