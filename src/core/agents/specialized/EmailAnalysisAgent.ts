@@ -246,7 +246,7 @@ export class EmailAnalysisAgent extends BaseAgent {
   }
 
   private async quickCategorize(email: Email): Promise<Partial<EmailAnalysis>> {
-    const prompt = `Analyze this email and categorize it. Respond ONLY with a JSON object.
+    const prompt = `Analyze this email and categorize it.
 
 Subject: ${email.subject}
 From: ${email?.from?.emailAddress.address}
@@ -258,31 +258,79 @@ Categories to assign:
 - intent: ${this?.categories?.intent.join(", ")}
 - urgency: ${this?.categories?.urgency.join(", ")}
 
-Response format:
-{
-  "categories": {
-    "workflow": ["selected workflow categories"],
-    "priority": "selected priority",
-    "intent": "selected intent",
-    "urgency": "selected urgency"
-  },
-  "priority": "Critical|High|Medium|Low",
-  "confidence": 0.0-1.0
-}`;
+Please provide:
+1. Workflow categories that apply
+2. Priority level (Critical, High, Medium, or Low)
+3. Intent of the email
+4. Urgency level
+5. Confidence score (0.0 to 1.0)`;
 
     try {
       const response = await this.generateLLMResponse(prompt, {
         temperature: 0.1,
-        format: "json",
       });
 
-      return JSON.parse(response.response);
+      return this.parseCategorizeResponse(response.response);
     } catch (error) {
       logger.error("Quick categorization failed", "EMAIL_AGENT", { error });
 
       // Fallback to rule-based categorization
       return this.fallbackCategorization(email);
     }
+  }
+
+  private parseCategorizeResponse(response: string): Partial<EmailAnalysis> {
+    const lowerResponse = response.toLowerCase();
+    
+    // Extract priority
+    let priority: "Critical" | "High" | "Medium" | "Low" = "Medium";
+    if (lowerResponse.includes("critical")) priority = "Critical";
+    else if (lowerResponse.includes("high")) priority = "High";
+    else if (lowerResponse.includes("low")) priority = "Low";
+    
+    // Extract workflow categories
+    const workflowCategories: string[] = [];
+    for (const category of this?.categories?.workflow || []) {
+      if (lowerResponse.includes(category.toLowerCase())) {
+        workflowCategories.push(category);
+      }
+    }
+    
+    // Extract intent
+    let intent = "general";
+    for (const intentType of this?.categories?.intent || []) {
+      if (lowerResponse.includes(intentType.toLowerCase())) {
+        intent = intentType;
+        break;
+      }
+    }
+    
+    // Extract urgency
+    let urgency = "normal";
+    for (const urgencyLevel of this?.categories?.urgency || []) {
+      if (lowerResponse.includes(urgencyLevel.toLowerCase())) {
+        urgency = urgencyLevel;
+        break;
+      }
+    }
+    
+    // Extract confidence (look for decimal numbers)
+    let confidence = 0.7;
+    const confidenceMatch = response.match(/\b0?\.\d+\b|\b1\.0\b/);
+    if (confidenceMatch) {
+      confidence = parseFloat(confidenceMatch[0]);
+    }
+    
+    return {
+      categories: {
+        workflow: workflowCategories,
+        priority,
+        intent,
+        urgency,
+      },
+      priority,
+      confidence,
+    };
   }
 
   private async deepAnalyze(email: Email): Promise<Partial<EmailAnalysis>> {

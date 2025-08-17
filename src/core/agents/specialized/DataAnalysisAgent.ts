@@ -119,23 +119,14 @@ export class DataAnalysisAgent extends BaseAgent {
       ${context.ragDocuments ? `Context:\n${context?.ragDocuments?.map((d: any) => d.content).join("\n")}` : ""}
       ${ragContext ? `Additional Context:\n${ragContext}` : ""}
       
-      Determine:
+      Provide a comprehensive analysis including:
       1. Analysis type: statistical, visualization, transformation, or exploration
       2. Required techniques or methods
       3. Expected output format
       4. Data characteristics
-      
-      Respond in JSON format:
-      {
-        "type": "statistical|visualization|transformation|exploration",
-        "techniques": ["technique1", "technique2"],
-        "outputFormat": "table|chart|summary|report",
-        "dataSize": "small|medium|large",
-        "complexity": "simple|moderate|complex"
-      }
     `;
 
-    const llmResponse = await this.generateLLMResponse(prompt, { format: "json" });
+    const llmResponse = await this.generateLLMResponse(prompt);
     const response = llmResponse?.response;
     if (!response) {
       // Return default analysis if LLM response fails

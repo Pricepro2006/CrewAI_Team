@@ -126,31 +126,19 @@ export class ToolExecutorAgent extends BaseAgent {
       Available tools:
       ${availableTools.map((t: any) => `- ${t.name || 'Unknown'}: ${t.description || 'No description'}`).join("\n")}
       
-      Determine:
-      1. Which tools to use
+      Create a detailed plan including:
+      1. Which tools to use (from the available list)
       2. Order of execution
       3. Parameters for each tool
-      4. Dependencies between tools
-      
-      Respond in JSON format:
-      {
-        "tools": [
-          {
-            "name": "tool_name",
-            "parameters": {},
-            "dependsOn": []
-          }
-        ],
-        "parallel": true/false,
-        "description": "Plan description"
-      }
+      4. Whether tools can run in parallel
+      5. Description of the overall approach
     `;
 
     if (!this.llm) {
       throw new Error("LLM provider not initialized");
     }
     
-    const response = await this.generateLLMResponse(prompt, { format: "json" });
+    const response = await this.generateLLMResponse(prompt);
     const parsed = this.parseToolPlan(response.response);
 
     return {
@@ -162,16 +150,49 @@ export class ToolExecutorAgent extends BaseAgent {
   }
 
   private parseToolPlan(response: string): any {
-    try {
-      return JSON.parse(response);
-    } catch (error) {
-      console.warn("Failed to parse tool plan:", error);
-      return {
-        tools: [],
-        parallel: false,
-        description: `Failed to parse plan: ${error instanceof Error ? error.message : "Unknown error"}`,
-      };
+    // Parse natural language response
+    const tools: any[] = [];
+    const lines = response.split('\n');
+    const lowerResponse = response.toLowerCase();
+    
+    // Extract tool names mentioned
+    const availableToolNames = ['web_search', 'web_scraper', 'calculator', 'file_reader'];
+    for (const toolName of availableToolNames) {
+      if (lowerResponse.includes(toolName.replace('_', ' ')) || lowerResponse.includes(toolName)) {
+        tools.push({
+          name: toolName,
+          parameters: {},
+          dependsOn: []
+        });
+      }
     }
+    
+    // Check if parallel execution is mentioned
+    const parallel = lowerResponse.includes('parallel') || lowerResponse.includes('simultaneously');
+    
+    // Extract description (first sentence or line that looks like a description)
+    let description = "Execute tools to complete the task";
+    for (const line of lines) {
+      if (line.length > 20 && !line.startsWith('-') && !line.match(/^\d+\./)) {
+        description = line.trim();
+        break;
+      }
+    }
+    
+    // If we couldn't extract tools, add a default
+    if (tools.length === 0) {
+      tools.push({
+        name: 'web_search',
+        parameters: {},
+        dependsOn: []
+      });
+    }
+    
+    return {
+      tools,
+      parallel,
+      description,
+    };
   }
 
   private resolveTools(toolSpecs: any[]): ToolSpec[] {
@@ -288,20 +309,18 @@ export class ToolExecutorAgent extends BaseAgent {
           .map((r: any) => `${r.toolName}: ${JSON.stringify(r.result)}`)
           .join("\n")}
         
-        Provide enhanced parameters in JSON format.
+        Suggest any parameter improvements or additional values needed.
       `;
 
       if (!this.llm) {
         throw new Error("LLM provider not initialized");
       }
       
-      const response = await this.generateLLMResponse(prompt, { format: "json" });
+      const response = await this.generateLLMResponse(prompt, { temperature: 0.1 });
 
-      try {
-        enhanced = JSON.parse(response.response);
-      } catch {
-        // Keep original parameters if parsing fails
-      }
+      // For now, keep the original parameters since we're not forcing JSON
+      // The LLM response could be parsed for key-value suggestions in the future
+      enhanced = spec.parameters;
     }
 
     return enhanced;

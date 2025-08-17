@@ -115,42 +115,46 @@ export class CodeAgent extends BaseAgent {
       ${ragContext ? `RAG Context:\n${ragContext}\n` : ""}
       ${context.ragDocuments ? `Context:\n${context.ragDocuments.map((d: any) => d.content || '').join("\n")}` : ""}
       
-      Determine:
+      Provide a detailed analysis of:
       1. Task type: generation, analysis, refactoring, or debugging
       2. Programming language
       3. Key requirements
       4. Potential challenges
-      
-      Respond in JSON format:
-      {
-        "type": "generation|analysis|refactoring|debugging",
-        "language": "typescript|python|javascript|etc",
-        "requirements": ["req1", "req2"],
-        "challenges": ["challenge1", "challenge2"]
-      }
     `;
 
     if (!this.llm) {
       throw new Error("LLM provider not initialized");
     }
     
-    const response = await this.generateLLMResponse(prompt, { format: "json" });
+    const response = await this.generateLLMResponse(prompt);
     return this.parseTaskAnalysis(response.response);
   }
 
   private parseTaskAnalysis(response: string): TaskAnalysis {
-    try {
-      const parsed = JSON.parse(response);
-      return {
-        type: parsed.type || "generation",
-        language: parsed.language || "typescript",
-        requirements: parsed.requirements || [],
-        challenges: parsed.challenges || [],
-      };
-    } catch {
-      return {
-        type: "generation",
-        language: "typescript",
+    // Don't require JSON - parse the text response intelligently
+    const lowerResponse = response.toLowerCase();
+    
+    // Determine task type from response
+    let type: "generation" | "analysis" | "refactoring" | "debugging" = "generation";
+    if (lowerResponse.includes("analyz") || lowerResponse.includes("review")) {
+      type = "analysis";
+    } else if (lowerResponse.includes("refactor") || lowerResponse.includes("improve")) {
+      type = "refactoring";
+    } else if (lowerResponse.includes("debug") || lowerResponse.includes("fix") || lowerResponse.includes("error")) {
+      type = "debugging";
+    }
+    
+    // Detect language mentioned
+    let language = "typescript";
+    if (lowerResponse.includes("javascript")) language = "javascript";
+    else if (lowerResponse.includes("python")) language = "python";
+    else if (lowerResponse.includes("java")) language = "java";
+    else if (lowerResponse.includes("rust")) language = "rust";
+    else if (lowerResponse.includes("go")) language = "go";
+    
+    return {
+      type,
+      language,
         requirements: [],
         challenges: [],
       };
