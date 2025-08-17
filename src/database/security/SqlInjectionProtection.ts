@@ -279,7 +279,7 @@ export class SqlInjectionProtection {
     }
 
     // Check length
-    if (sanitized?.length || 0 > 64) {
+    if ((sanitized?.length || 0) > 64) {
       // Standard SQL column name limit
       throw new SqlInjectionError("Column name too long");
     }
@@ -331,7 +331,7 @@ export class SqlInjectionProtection {
       );
     }
 
-    if (sanitized?.length || 0 > 64) {
+    if ((sanitized?.length || 0) > 64) {
       throw new SqlInjectionError("Table name too long");
     }
 

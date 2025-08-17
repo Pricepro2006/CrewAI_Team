@@ -7,8 +7,8 @@
 export const MODEL_CONFIG = {
   // Model definitions
   models: {
-    primary: "llama3.2:3b",
-    fallback: "llama3.2:3b", // Same model for consistency
+    primary: "./models/llama-3.2-3b-instruct.Q4_K_M.gguf",
+    fallback: "./models/llama-3.2-3b-instruct.Q4_K_M.gguf", // Same model for consistency
     critical: "doomgrave/phi-4:14b-tools-Q3_K_S",
     embedding: process.env.OLLAMA_MODEL_EMBEDDING || "nomic-embed-text", // Optimized embedding model
     pattern: "iteration-script", // Local pattern matching
@@ -35,7 +35,7 @@ export const MODEL_CONFIG = {
   // Memory configurations
   memory: {
     modelSizes: {
-      "llama3.2:3b": 4 * 1024 * 1024 * 1024, // 4GB
+      "./models/llama-3.2-3b-instruct.Q4_K_M.gguf": 4 * 1024 * 1024 * 1024, // 4GB
       "doomgrave/phi-4:14b-tools-Q3_K_S": 8 * 1024 * 1024 * 1024, // 8GB estimated
     },
     maxMemoryUsage: 50 * 1024 * 1024 * 1024, // 50GB limit
@@ -88,7 +88,7 @@ export const MODEL_CONFIG = {
     minAcceptableScore: 6.0,
     targetScore: 8.5,
     currentScores: {
-      "llama3.2:3b": 6.56,
+      "./models/llama-3.2-3b-instruct.Q4_K_M.gguf": 6.56,
       "doomgrave/phi-4:14b-tools-Q3_K_S": 7.75, // Estimated
       pattern: 4.6,
     },

@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import type * as WebSocket from "ws";
+import type { WebSocket } from "ws";
 import type { WebSocketService } from "./WebSocketService.js";
 import type { EmailStorageService } from "./EmailStorageService.js";
 import type { IEMSDataFlowService } from "./IEMSDataFlowService.js";

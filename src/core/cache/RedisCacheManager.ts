@@ -422,7 +422,7 @@ export class RedisCacheManager {
       const memoryMatch = memory.match(/used_memory:(\d+)/);
       
       const hits = statsMatch ? parseInt(statsMatch[1]) : 0;
-      const misses = missesMatch ? parseInt(missMatch[1]) : 0;
+      const misses = missesMatch ? parseInt(missesMatch[1]) : 0;
       const total = hits + misses;
       
       // Calculate metrics from our collector

@@ -112,7 +112,7 @@ export function sanitizeLLMOutput(content: string): SanitizedOutput {
   return {
     content: sanitized,
     metadata: {
-      sanitized: removedItems?.length || 0 > 0,
+      sanitized: (removedItems?.length || 0) > 0,
       removedItems,
       warnings,
     },

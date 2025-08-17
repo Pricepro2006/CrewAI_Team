@@ -232,7 +232,7 @@ export class OllamaManager {
    * Comprehensive startup check and initialization
    */
   static async initialize(
-    requiredModels: string[] = ["llama3.2:3b"],
+    requiredModels: string[] = ["./models/llama-3.2-3b-instruct.Q4_K_M.gguf"],
   ): Promise<boolean> {
     // Step 1: Check if running
     if (!(await this.isRunning())) {

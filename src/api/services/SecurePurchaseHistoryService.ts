@@ -20,12 +20,13 @@ import type {
 /**
  * Secure wrapper for PurchaseHistoryService with encryption and audit logging
  */
-export class SecurePurchaseHistoryService extends PurchaseHistoryService {
+export class SecurePurchaseHistoryService {
   private static secureInstance: SecurePurchaseHistoryService;
   private encryption: DataEncryptionService;
+  private purchaseService: PurchaseHistoryService;
 
   private constructor() {
-    super();
+    this.purchaseService = PurchaseHistoryService.getInstance();
     this.encryption = DataEncryptionService.getInstance();
   }
 
@@ -40,19 +41,15 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
    * Track purchase with encryption and audit logging
    */
   async trackPurchase(
-    purchase: Omit<PurchaseRecord, 'id' | 'createdAt' | 'updatedAt'>,
-    userId: string,
-    requestId?: string
+    purchase: Omit<PurchaseRecord, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<PurchaseRecord> {
     try {
       // Audit the purchase tracking attempt
       await AuditLogger.logSecurityEvent({
-        type: "PAYMENT",
         action: "track_purchase",
-        userId,
-        result: "SUCCESS",
+        userId: purchase.userId,
+        success: true,
         metadata: {
-          requestId,
           category: purchase.category,
           amount: purchase.totalPrice,
           // Don't log sensitive data
@@ -64,7 +61,7 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
       const encryptedPurchase = {
         ...purchase,
         paymentMethod: purchase.paymentMethod 
-          ? this.encryption.encryptPaymentMethod(purchase.paymentMethod)
+          ? this.encryption.encryptPaymentMethod(purchase.paymentMethod) as PurchaseRecord["paymentMethod"]
           : undefined,
         // Tokenize rather than encrypt for better security
         sessionId: purchase.sessionId 
@@ -72,8 +69,8 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
           : undefined,
       };
 
-      // Call parent method with encrypted data
-      const result = await super.trackPurchase(encryptedPurchase);
+      // Call delegate method with encrypted data
+      const result = await this.purchaseService.trackPurchase(encryptedPurchase);
 
       // Decrypt for response (but mask sensitive data)
       const decryptedResult = {
@@ -86,14 +83,13 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
 
       logger.info("Secure purchase tracked", "SECURE_PURCHASE", {
         purchaseId: result.id,
-        userId,
+        userId: purchase.userId,
         encrypted: true,
       });
 
-      return decryptedResult;
+      return decryptedResult as PurchaseRecord;
     } catch (error) {
       await AuditLogger.logSecurityEvent({
-        type: "ERROR",
         action: "track_purchase_failed",
         userId,
         result: "FAILURE",
@@ -373,7 +369,6 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
       return { deleted: result.changes };
     } catch (error) {
       await AuditLogger.logSecurityEvent({
-        type: "ERROR",
         action: "delete_user_data_failed",
         userId: requesterId,
         targetId: userId,
@@ -434,7 +429,6 @@ export class SecurePurchaseHistoryService extends PurchaseHistoryService {
       return exportData;
     } catch (error) {
       await AuditLogger.logSecurityEvent({
-        type: "ERROR",
         action: "export_user_data_failed",
         userId: requesterId,
         result: "FAILURE",

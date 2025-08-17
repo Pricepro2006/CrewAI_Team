@@ -46,6 +46,7 @@ export interface LlamaCppGenerateOptions {
   format?: "json" | "text";
   repeatPenalty?: number;
   seed?: number;
+  stopWords?: string[];
 }
 
 export class LlamaCppProvider extends EventEmitter {

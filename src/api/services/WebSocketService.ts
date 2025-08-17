@@ -303,11 +303,42 @@ export const WebSocketMessageSchema = z.discriminatedUnion("type", [
     percentage: z.number(),
     timestamp: z.date(),
   }),
+  z.object({
+    type: z.literal("email.ingestion.started"),
+    source: z.string(),
+    totalEmails: z.number(),
+    timestamp: z.string(),
+  }),
+  z.object({
+    type: z.literal("email.ingestion.completed"),
+    source: z.string(),
+    processed: z.number(),
+    failed: z.number(),
+    total: z.number(),
+    timestamp: z.string(),
+  }),
+  z.object({
+    type: z.literal("email.ingestion.failed"),
+    source: z.string(),
+    error: z.string(),
+    timestamp: z.string(),
+  }),
 ]);
 
 export type WebSocketMessage = z.infer<typeof WebSocketMessageSchema>;
 
 export class WebSocketService extends EventEmitter {
+  private static instance: WebSocketService | null = null;
+
+  /**
+   * Get singleton instance
+   */
+  static getInstance(): WebSocketService {
+    if (!WebSocketService.instance) {
+      WebSocketService.instance = new WebSocketService();
+    }
+    return WebSocketService.instance;
+  }
   private clients: Map<string, Set<AuthenticatedWebSocket>> = new Map();
   private subscriptions: Map<string, Set<string>> = new Map();
   private healthInterval: NodeJS.Timeout | null = null;

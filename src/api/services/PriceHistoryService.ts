@@ -176,7 +176,7 @@ export class PriceHistoryService {
         product.walmartId || product.id,
         product.walmartId || product.id,
         product.name,
-        product.category?.name,
+        typeof product.category === 'string' ? product.category : product.category?.name,
         product.brand,
         priceData.currentPrice,
         priceData.salePrice,
@@ -668,14 +668,14 @@ export class PriceHistoryService {
   }
 
   private predictNextPrice(prices: number[]): number {
-    if (prices?.length || 0 < 3) return prices[prices?.length || 0 - 1];
+    if ((prices?.length || 0) < 3) return prices[(prices?.length || 0) - 1] || 0;
 
     // Simple linear regression for prediction
     const n = prices?.length || 0;
     const x = Array.from({ length: n }, (_, i) => i);
     const sumX = x.reduce((sum: any, val: any) => sum + val, 0);
     const sumY = prices.reduce((sum: any, val: any) => sum + val, 0);
-    const sumXY = x.reduce((sum, val, i) => sum + val * prices[i], 0);
+    const sumXY = x.reduce((sum, val, i) => sum + val * (prices[i] || 0), 0);
     const sumXX = x.reduce((sum: any, val: any) => sum + val * val, 0);
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
